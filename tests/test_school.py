@@ -8,7 +8,8 @@ import unittest
 from bilqis_mlx.champions import Checkpoint, vote_counts, soup_weights
 from bilqis_mlx.school import (Assessment, SchoolState, Score, start_new, visit,
     assess, next_capability, teacher_vote_weights, whole_school_soup_weights,
-    continue_after_soup, save_new_state, read_state, weakest_three)
+    continue_after_soup, save_new_state, read_state, weakest_three,
+    append_next_grade)
 from test_curriculum import sample_course
 
 
@@ -125,6 +126,100 @@ class SchoolTests(unittest.TestCase):
     def test_exact_ratio_ranking_not_wrong_count(self):
         scores={"a":Score(7,8),"b":Score(1,2),"c":Score(2,3),"d":Score(0,1)}
         self.assertEqual(weakest_three(scores,tuple(scores)),("d","b","c"))
+
+    def test_rubric_identity_cannot_change_across_student_visits(self):
+        course = self.course
+        student = self.init
+        state = grade_loop(course, start_new(course, student), student)
+        imperfect = {f"a.{i}": (5,8) for i in range(6)}
+        state = assess(course, state, snapshot(course, student, imperfect))
+        self.assertEqual(state.latest_rubric_digest, "a"*64)
+        state = grade_loop(course, state, student)
+        self.assertEqual(state.latest_rubric_digest, "a"*64)
+        with self.assertRaisesRegex(ValueError, "RUBRIC_CHANGED"):
+            assess(course, state, snapshot(course, student, imperfect,
+                                           from_rubric="b"*64))
+
+    def test_exam_digest_is_bound_to_admitted_course_if_present(self):
+        sealed_a = replace(self.course.grades[0], assessment_sha256="c"*64)
+        course = replace(self.course, grades=(sealed_a, self.course.grades[1]))
+        student = self.init
+        state = grade_loop(course, start_new(course, student), student)
+        perfect = {f"a.{i}": (8,8) for i in range(6)}
+        with self.assertRaisesRegex(ValueError, "GRADE_SEALED_RUBRIC"):
+            assess(course, state, snapshot(course, student, perfect))
+        moved = assess(course, state, snapshot(course, student, perfect,
+                                             from_rubric="c"*64))
+        self.assertEqual(moved.grade, "B")
+
+    def test_next_grade_may_use_new_cumulative_rubric_without_mutating_a(self):
+        a, b = self.course.grades
+        course = replace(self.course,
+                         grades=(replace(a, assessment_sha256="a"*64),
+                                 replace(b, assessment_sha256="b"*64)),
+                         assessment_manifest_sha256="b"*64)
+        student = cp("advanced", 119000)
+        state = grade_loop(course, start_new(course, self.init), student)
+        state = assess(course, state, snapshot(
+            course, student, {f"a.{i}": (8,8) for i in range(6)}))
+        self.assertEqual(state.grade, "B")
+        self.assertIsNone(state.latest_rubric_digest)
+        state = grade_loop(course, state, student)
+        scores = {**{f"a.{i}": (8,8) for i in range(6)},
+                  **{f"b.{i}": (8,8) for i in range(6)}}
+        with self.assertRaisesRegex(ValueError, "GRADE_SEALED_RUBRIC"):
+            assess(course, state, snapshot(course, student, scores,
+                                           from_rubric="a"*64))
+        state = assess(course, state, snapshot(course, student, scores,
+                                               from_rubric="b"*64))
+        self.assertEqual(state.stage, "WHOLE_SCHOOL_MASTERED")
+
+    def test_admitted_grade_rejects_fabricated_one_question_perfect_score(self):
+        grade = replace(self.course.grades[0],
+                        exam_item_counts=tuple((f"a.{i}", 12) for i in range(6)))
+        course = replace(self.course, grades=(grade, self.course.grades[1]))
+        state = grade_loop(course, start_new(course, self.init), self.init)
+        with self.assertRaisesRegex(ValueError, "SEALED_ITEM_COUNT"):
+            assess(course, state, snapshot(
+                course, self.init, {f"a.{i}": (1,1) for i in range(6)}))
+        moved = assess(course, state, snapshot(
+            course, self.init, {f"a.{i}": (12,12) for i in range(6)}))
+        self.assertEqual(moved.grade, "B")
+
+    def test_partial_grade_a_waits_and_future_grade_appends_without_relearning(self):
+        full = self.course
+        a = replace(full.grades[0], assessment_sha256="a"*64)
+        a_only = replace(full, grades=(a,), version="partial-A/v1",
+                         program_complete=False, assessment_manifest_sha256="a"*64)
+        student = cp("human-A", 116800)
+        state = grade_loop(a_only, start_new(a_only, self.init), student)
+        state = assess(a_only, state, snapshot(
+            a_only, student, {f"a.{i}": (12,12) for i in range(6)}))
+        self.assertEqual(state.stage, "AWAITING_NEXT_GRADE")
+        self.assertNotEqual(state.stage, "WHOLE_SCHOOL_MASTERED")
+        self.assertEqual(state.champions["A"], student)
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "a-only.json"
+            save_new_state(target, state)
+            self.assertEqual(read_state(target, a_only), state)
+            # B was not appended by simply passing a different course digest.
+            successor = replace(full, grades=(a, full.grades[1]),
+                                version="partial-A-plus-B/v2", program_complete=False,
+                                assessment_manifest_sha256="b"*64)
+            with self.assertRaisesRegex(ValueError, "DRIFTED"):
+                read_state(target, successor)
+        resumed = append_next_grade(a_only, successor, state)
+        self.assertEqual(resumed.grade, "B")
+        self.assertEqual(resumed.queue, tuple(f"b.{i}" for i in range(6)))
+        self.assertEqual(resumed.champions["A"], student)
+        self.assertEqual(resumed.current_student, student)
+        self.assertEqual(resumed.latest_rubric_digest, None)
+        with self.assertRaisesRegex(ValueError, "DRIFTED"):
+            append_next_grade(a_only, successor, resumed)
+        with self.assertRaisesRegex(ValueError, "CHANGE_PREVIOUS_GRADE"):
+            changed_a = replace(a, assessment_sha256="c"*64)
+            append_next_grade(a_only, replace(successor, grades=(changed_a, full.grades[1])),
+                              state)
 
 
 if __name__=="__main__":

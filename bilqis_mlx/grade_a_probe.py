@@ -17,10 +17,11 @@ import random
 import sys
 
 from .curriculum import AnswerFamily, BINARY, Capability, Course, Grade, ExamItem, validate_exam_item
+from .grade_a_oracle import VERSION as INDEPENDENT_ORACLE, evaluate as third_oracle
 from .source import AUDITED_PARENT
 from .backup import digest_file
 
-SCHEMA = "bilqis.mlx.direct-grade-a-source-probe/v1"
+SCHEMA = "bilqis.mlx.direct-grade-a-source-probe/v2"
 PINNED_SOURCES = {
     "bilqis_development/kernel.py": "1c73e1987a38e9612ffa84b12895c8a5a9841a8b595fe200ce933831c37d8ba4",
     "bilqis_development/registry.py": "5f0c80d797a98868bfe2c585160ad5d95c9ef3a529e55d8bcba54d4bd0c8de9a",
@@ -73,11 +74,13 @@ def candidate_course() -> Course:
           taught_roots=(root,),examined_roots=(root,),prerequisites=(),
           composed_of=(),answer_families=(AnswerFamily("binary",BINARY),),
           lesson_generator="bilqis_mlx.grade_a_probe.make_record",
-          independent_oracle="bilqis.mlx.legacy-two-oracle/v1"))
+          independent_oracle=INDEPENDENT_ORACLE))
     # Deliberately no attestation signatures. A successful structural/source
     # report is not yet authorization to teach or claim mastered grade A.
-    return Course(grades=(Grade("A",tuple(capabilities)),),
-                  version="bilqis.mlx.grade-a-direct-proposal/v1")
+    return Course(grades=(Grade("A",tuple(capabilities),
+                                exam_item_counts=tuple((name, 12) for name,_,_,_
+                                                       in FAMILIES)),),
+                  version="bilqis.mlx.grade-a-direct-proposal/v2")
 
 
 def make_record(identifier: str, rng: random.Random, positive: bool,
@@ -108,7 +111,9 @@ def make_record(identifier: str, rng: random.Random, positive: bool,
         w=micro.world(universe,[("LINK",*edge)] if positive else [("LINK",a,c)])
         return micro.record(w,micro.relation("LINK",micro.entity(a),micro.entity(b))),micro
     if identifier == "A.MEMBER":
-        items=[a,c] if positive else [c]
+        # Equal set cardinality across TRUE/FALSE: membership, not the
+        # number of elements, must decide the answer.
+        items=[a,c] if positive else [b,c]
         w=development.world(universe,sets={"K0":items})
         q=development.op("MEMBER",development.const("Entity",a),
                          development.const("Set","K0"))
@@ -140,7 +145,9 @@ def _draw(identifier, split, *, count, micro, development, graph, past_ids: set[
                                        universe_size=universe_size)
             gold=library.evaluate(record)
             independent=library.independent_evaluate(record)
-            if gold != independent or gold not in BINARY or (gold=="TRUE") != positive:
+            third=third_oracle(record,identifier)
+            if (gold != independent or gold != third or gold not in BINARY or
+                    (gold=="TRUE") != positive):
                 raise ValueError("GRADE_A_INDEPENDENT_ORACLE_OR_PREDICATE_DRIFT:"+identifier)
             encoded=tuple(library.encode(record))
             source_id=hashlib.sha256(json.dumps(record,sort_keys=True,separators=(",", ":"))
@@ -154,7 +161,8 @@ def _draw(identifier, split, *, count, micro, development, graph, past_ids: set[
                            "gold":gold,"kind":"binary", "tokens":encoded,
                            "universe_size":universe_size,
                            "root":next(f[1] for f in FAMILIES if f[0]==identifier),
-                           "oracle":"bilqis.mlx.legacy-two-oracle/v1"})
+                           "oracle":INDEPENDENT_ORACLE,
+                           "record":record})
             break
         else:
             raise ValueError("GRADE_A_EXHAUSTED_DISTINCT_SEMANTIC_RECORDS:"+identifier)
@@ -234,6 +242,7 @@ def probe(legacy_root: Path, *, train_each=24, exam_each=12,
             "historic_student_graph_binding":binding,
             "capability_count":len(FAMILIES),"capabilities":report,
             "all_independent_oracle_pairs_agree":True,
+            "three_source_interpreters_agree":True,
             "all_exam_semantic_tokens_taught":True,
             "neural_updates":0,"training_permission_granted":False}
 

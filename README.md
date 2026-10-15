@@ -1,6 +1,6 @@
 # Bilqis MLX: private, independent successor
 
-**State: implementation and validation in progress. No neural training is enabled.**
+**State: Grade A source and disposable full-student MLX repairs verified. Human neural training is not yet enabled.**
 
 This private repository implements the successor directed by protected IPR-0220. Its public interoperability-facing summaries are Bilqis #160 (MLX backend qualification) and #162 (successor integration). The detailed internal curriculum, promotion and resource policy stays private.
 
@@ -33,6 +33,8 @@ npm run train
 
 `status`, `dashboard` and `--dry-run` are neural-inert. **`train` currently refuses to start.** Training will only be enabled after full migration, a source-grounded course, rubric, and explicit human launch. Do not use `--resume` to mean "start from the original old grade G12". Resumption applies only to a previously initialized *new* run.
 
+Grade A's 216 source records are now separately frozen as a candidate manifest; membership label leakage and two insufficiently independent legacy gold calculations have been repaired. The 72-item scorer, per-grade rubric seals and explicit later-grade append contract are implemented. A real Apple GPU one-step optimizer and full semantic-bundle restart qualification passed on **disposable copies** of the actual 222-token, 39-parameter-family student. The original weights, AdamW and checkpoint were not updated. See [Grade A fixes and the backend receipt](docs/GRADE_A_REPAIR_AND_BACKEND_20261015.md). The long-running human-operated training backend, adaptive teacher connection and new curriculum admission are still distinct release gates.
+
 Inspect the candidate six-capability Grade A without a training run:
 
 ```sh
@@ -41,7 +43,14 @@ npm run curriculum:audit -- \
   --champion-checkpoint ../bilqis-triplets-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt
 ```
 
-The audit checks two independent symbolic oracles, all teaching/examination source tokens, both three- and four-entity world sizes, and the saved student's frozen vocabulary prefix. Its machine-readable result is in `docs/GRADE_A_SOURCE_PROBE_V1.json`. The course remains a **proposal**, with no authorized neural lessons or new-grade mastery claim. The old source directory must be available for this transitional audit.
+The source probe now requires three separately implemented interpreters to agree, including a new independently written Grade A source-record oracle. It checks all teaching/examination tokens, both three- and four-entity world sizes, and the saved student's frozen vocabulary prefix. `docs/GRADE_A_SOURCE_PROBE_V1.json` preserves the historical v1 audit; the **current** item inventory is `docs/GRADE_A_CANDIDATE_MANIFEST_V2.json`. The course remains a **proposal**, with no authorized neural lessons or new-grade mastery claim. The old source directory must be available for this transitional audit.
+
+Reproduce the full candidate exam and nontraining Apple GPU parity independently:
+
+```sh
+npm run grade-a:verify
+npm run mlx:qualify
+```
 
 ## Data and storage boundaries
 
@@ -63,7 +72,7 @@ npm run test
 npm run train -- --dry-run
 ```
 
-The MLX tests also prove disposable FP32 model+AdamW save/reload and four matching PyTorch/MLX optimizer updates starting at synthetic step 116760. They test gradient and clipping parity on a tiny fixture. See [the fixture receipt](docs/MLX_DISPOSABLE_ADAMW_RESTART_20261015.md). The complete trained student's optimizer still requires separate continuation qualification.
+MLX tests prove tiny-fixture restarts and optimizer agreement. The additional [actual-student disposable parity probe](docs/GRADE_A_REPAIR_AND_BACKEND_20261015.md) now verifies all 39 parameters and native AdamW moments on one realistic candidate Grade A step using Apple GPU MLX versus PyTorch, with a complete semantic-catalog-bound snapshot restart. That proof does **not** implement or authorize the long-running human trainer.
 
 See `AGENTS.md` and `docs/REQUIREMENTS.md` for implementation constraints and current gaps.
 
@@ -83,4 +92,4 @@ npm run vocabulary:preflight -- \
   --checkpoint ../bilqis-triplets-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt
 ```
 
-Current training is still blocked because no newly versioned Grade A rubric and completely verified MLX optimizer continuation exist. Safe inspections run through the same npm interface and can be run by agents without requesting operator time.
+Current training remains blocked because the Grade A rubric is source-sealed but not admitted as a fully New Ithkuil-conformant curriculum, and the live MLX teaching loop, adaptive teacher and checkpoint operator are not end-to-end qualified. The disposable optimizer comparison has passed. Safe inspections use the same npm interface and can run without operator time.

@@ -11,6 +11,8 @@
     "backup:copy": "python3 -m bilqis_mlx.backup copy",
     "backup:verify": "python3 -m bilqis_mlx.backup verify",
     "curriculum:audit": "python3 -m bilqis_mlx.grade_a_probe",
+    "grade-a:verify": "python3 -B -m bilqis_mlx.grade_a_manifest --legacy-code-root ../bilqis-triplets-v16 --champion-checkpoint ../bilqis-triplets-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt --verify-manifest docs/GRADE_A_CANDIDATE_MANIFEST_V2.json",
+    "mlx:qualify": "python3 -B -m bilqis_mlx.full_student_qualification --legacy-code-root ../bilqis-triplets-v16 --checkpoint ../bilqis-triplets-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt --grade-a-manifest docs/GRADE_A_CANDIDATE_MANIFEST_V2.json --verify-disposable-restart --device gpu",
     "vocabulary:preflight": "python3 -m bilqis_mlx.vocabulary_probe",
     "tokens:atlas": "python3 -m bilqis_mlx.token_atlas"
   }

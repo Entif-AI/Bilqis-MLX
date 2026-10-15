@@ -19,7 +19,7 @@ from .disk import atomic_text
 
 STAGES = frozenset(("MAIN", "ASSESS_MAIN", "RECOVERY_1", "ASSESS_RECOVERY_1",
                     "RECOVERY_2", "ASSESS_RECOVERY_2", "AWAITING_TEACHER_SOUP",
-                    "WHOLE_SCHOOL_MASTERED"))
+                    "AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED"))
 
 
 @dataclass(frozen=True)
@@ -61,10 +61,30 @@ class Assessment:
                 any(c not in "0123456789abcdef" for c in self.rubric_digest) or
                 not self.evaluation_id):
             raise ValueError("ASSESSMENT_RUBRIC_IDENTITY_MISSING")
+        represented = [grade for grade in course.grades if
+                       any(cap.id in required_capabilities
+                           for cap in grade.capabilities)]
+        if not represented:
+            raise ValueError("ASSESSMENT_HAS_NO_REPRESENTED_GRADE")
+        # Each grade seals its *cumulative* exam (including prior grades).
+        # A newly introduced B rubric need not share A's exam digest.
+        grade_seal = represented[-1].assessment_sha256
+        if grade_seal is not None and self.rubric_digest != grade_seal:
+            raise ValueError("ASSESSMENT_NOT_GRADE_SEALED_RUBRIC")
+        all_caps = _caps(course, tuple(g.id for g in course.grades))
+        if (set(required_capabilities) == set(all_caps) and
+                course.assessment_manifest_sha256 is not None and
+                self.rubric_digest != course.assessment_manifest_sha256):
+            raise ValueError("ASSESSMENT_NOT_COURSE_SEALED_RUBRIC")
         if set(self.scores) != set(required_capabilities):
             raise ValueError("ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL")
         if not all(isinstance(s, Score) for s in self.scores.values()):
             raise ValueError("ASSESSMENT_INVALID_SCORE_TYPE")
+        declared_counts = {cap: count for grade in course.grades
+                           for cap, count in grade.exam_item_counts}
+        if any(cap in declared_counts and score.total != declared_counts[cap]
+               for cap, score in self.scores.items()):
+            raise ValueError("ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT")
 
 
 @dataclass(frozen=True)
@@ -126,6 +146,13 @@ def verify_state(course: Course, state: SchoolState):
         raise ValueError("QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES")
     if state.visits < 0 or state.school_cycles < 1:
         raise ValueError("INVALID_SCHOOL_COUNTER")
+    if state.stage == "AWAITING_NEXT_GRADE" and (
+            course.program_complete or state.grade != course.grades[-1].id or
+            state.queue or state.pending_failures or
+            state.grade not in state.champions):
+        raise ValueError("INVALID_PARTIAL_SCHOOL_COMPLETION")
+    if state.stage == "WHOLE_SCHOOL_MASTERED" and not course.program_complete:
+        raise ValueError("WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE")
 
 
 def next_capability(state: SchoolState) -> str | None:
@@ -144,7 +171,7 @@ def visit(course: Course, state: SchoolState, capability: str,
     rest = state.queue[1:]
     after = state.stage if rest else "ASSESS_" + ("MAIN" if state.stage == "MAIN" else state.stage)
     return replace(state, queue=rest, stage=after, visits=state.visits+1,
-                   current_student=student_after_visit, latest_rubric_digest=None)
+                   current_student=student_after_visit)
 
 
 def weakest_three(scores: dict[str, Score], pool: tuple[str, ...],
@@ -176,6 +203,14 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
         next_grade = state.active_grades[next_index]
         return replace(state, grade_index=next_index, queue=_caps(course, (next_grade,)),
                        stage="MAIN", first_recovery=(), champions=pointers,
+                       # Grade B has its own cumulative A+B sealed rubric.
+                       latest_rubric_digest=None)
+    if not course.program_complete:
+        # Passing the last *published* grade cannot silently certify the
+        # still-unpublished rest of New Ithkuil. Retain the intact champion
+        # and wait for an explicitly versioned next-grade admission.
+        return replace(state, queue=(), first_recovery=(), champions=pointers,
+                       stage="AWAITING_NEXT_GRADE", pending_failures=(),
                        latest_rubric_digest=assessment.rubric_digest)
     # Whole-school result is *one* model's all-grade result. A collection of
     # per-grade champions does not substitute for a perfect all-grade student.
@@ -211,6 +246,39 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
                        latest_rubric_digest=snapshot.rubric_digest)
     return replace(state, stage="MAIN", queue=_caps(course, (state.grade,)),
                    first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
+
+
+def append_next_grade(previous: Course, successor: Course,
+                      state: SchoolState) -> SchoolState:
+    """Explicit append-only course migration at a completed tranche boundary.
+
+    A previously released grade's exact definitions and grade-level question
+    seal may not change when the next grade is added. A full-program terminal
+    status never arises just because one released tranche was the last known.
+    """
+    verify_state(previous, state)
+    validate(successor)
+    if previous.program_complete or state.stage != "AWAITING_NEXT_GRADE":
+        raise ValueError("GRADE_APPEND_NOT_AT_PARTIAL_BOUNDARY")
+    if len(successor.grades) != len(previous.grades) + 1:
+        raise ValueError("GRADE_APPEND_REQUIRES_EXACTLY_ONE_NEW_GRADE")
+    if tuple(successor.grades[:len(previous.grades)]) != previous.grades:
+        raise ValueError("GRADE_APPEND_WOULD_CHANGE_PREVIOUS_GRADE")
+    if any(g.assessment_sha256 is None for g in previous.grades):
+        raise ValueError("GRADE_APPEND_UNSEALED_PREVIOUS_GRADE")
+    if (previous.assessment_manifest_sha256 is not None and
+            state.latest_rubric_digest != previous.assessment_manifest_sha256):
+        raise ValueError("GRADE_APPEND_PRIOR_RUBRIC_NOT_VERIFIED")
+    successor_ids = tuple(g.id for g in successor.grades)
+    added = successor.grades[-1].id
+    if added in state.champions:
+        raise ValueError("GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS")
+    return replace(state, course_digest=successor.digest(),
+                   active_grades=successor_ids,
+                   grade_index=len(previous.grades), stage="MAIN",
+                   queue=_caps(successor, (added,)), first_recovery=(),
+                   latest_rubric_digest=None, pending_failures=(),
+                   teacher_soup_digest=None)
 
 
 def continue_after_soup(course: Course, state: SchoolState,

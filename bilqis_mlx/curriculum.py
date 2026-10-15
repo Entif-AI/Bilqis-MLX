@@ -44,6 +44,9 @@ class Capability:
 class Grade:
     id: str
     capabilities: tuple[Capability, ...]
+    assessment_sha256: str | None = None
+    # Optional draft count inventory; mandatory for a training-admitted grade.
+    exam_item_counts: tuple[tuple[str, int], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -52,6 +55,9 @@ class Course:
     version: str
     source_attestation_sha256: str | None = None
     assessment_manifest_sha256: str | None = None
+    # A course may intentionally contain only the first released tranche.
+    # Only an explicitly complete course can finish the entire NI school.
+    program_complete: bool = False
 
     @property
     def capability_map(self) -> dict[str, Capability]:
@@ -70,18 +76,38 @@ class Course:
         hashes = (self.source_attestation_sha256, self.assessment_manifest_sha256)
         certified = all(isinstance(h, str) and len(h) == 64 and
                         all(x in "0123456789abcdef" for x in h) for h in hashes)
-        return bool(certified and all(c.lesson_generator and c.independent_oracle and
+        grade_seals = all(bool(g.exam_item_counts) and
+                          isinstance(g.assessment_sha256, str) and
+                          len(g.assessment_sha256) == 64 and
+                          all(x in "0123456789abcdef" for x in g.assessment_sha256)
+                          for g in self.grades)
+        return bool(certified and grade_seals and
+                    all(c.lesson_generator and c.independent_oracle and
                    c.source_anchor.startswith(("repo:", "https://"))
                    for grade in self.grades for c in grade.capabilities))
 
 
 def validate(course: Course) -> None:
     """Validate *structure*, not independently assert that cited sources are true."""
+    if type(course.program_complete) is not bool:
+        raise ValueError("COURSE_COMPLETE_FLAG_MUST_BE_BOOLEAN")
     if not course.version or not course.grades:
         raise ValueError("COURSE_VERSION_OR_GRADES_MISSING")
     all_ids: set[str] = set()
     past_roots: set[str] = set()
     for idx, grade in enumerate(course.grades):
+        if grade.assessment_sha256 is not None and (
+                not isinstance(grade.assessment_sha256, str) or
+                len(grade.assessment_sha256) != 64 or
+                any(c not in "0123456789abcdef" for c in grade.assessment_sha256)):
+            raise ValueError("GRADE_ASSESSMENT_SEAL_INVALID")
+        if grade.exam_item_counts:
+            if (len(grade.exam_item_counts) != len(grade.capabilities) or
+                    tuple(name for name, _ in grade.exam_item_counts) !=
+                    tuple(cap.id for cap in grade.capabilities) or
+                    any(type(count) is not int or count < 1
+                        for _, count in grade.exam_item_counts)):
+                raise ValueError("GRADE_ASSESSMENT_COUNTS_NOT_BOUND_TO_CAPABILITIES")
         if idx >= len(GRADE_IDS) or grade.id != GRADE_IDS[idx]:
             raise ValueError("NONSEQUENTIAL_LETTER_GRADE")
         if not 6 <= len(grade.capabilities) <= 9:

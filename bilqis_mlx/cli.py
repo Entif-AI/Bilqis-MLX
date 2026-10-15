@@ -35,7 +35,7 @@ def _inspect(run_dir: Path) -> dict:
     return {"status":"NOT_PREPARED_CURRICULUM_REDESIGN",
             "grade":"A","phase":"GRADE_A_SOURCE_VALIDATION_HOLD",
             "historical_seed":AUDITED_PARENT.__dict__,
-            "grade_a_draft":"SIX_SOURCE_TESTED_DIRECT_PREDICATES_NOT_ADMITTED",
+            "grade_a_draft":"SIX_SOURCE_SEALED_DIRECT_PREDICATES_216_ITEMS_NOT_ADMITTED",
             "native_mlx_full_optimizer_verified":False,
             "source_grounded_grade_a_admitted":False,
             "neural_training_started_by_this_command":False,
@@ -61,9 +61,11 @@ def preflight(run_dir: Path, *, resume=False):
     snapshot.update({"result":"PREFLIGHT_ONLY_NO_NEURAL_UPDATES",
                      "start_behavior":"EXPLICIT_SAVED_STATE_RESUME" if resume else "GRADE_A_NEW_RUN",
                      "blockers":["NEW_GRADE_A_SOURCE_DRAFT_NOT_FINAL_CURRICULUM_ADMITTED",
-                                 "FULL_STUDENT_MLX_OPTIMIZER_CONTINUATION_NOT_PROVEN",
-                                 "NEW_CAPABILITY_RUBRIC_NOT_APPROVED",
+                                 "REAL_GRADE_A_MLX_TRAINER_NOT_END_TO_END_QUALIFIED",
+                                 "SOURCE_SEALED_CANDIDATE_RUBRIC_NOT_RELEASED",
                                  "HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES"]})
+    snapshot["grade_a_source_manifest"] = "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
+    snapshot["source_manifest_preflight"] = "VERIFY_SEPARATELY_WITH_npm_run_grade-a:verify"
     # The source remains unchanged. This probes only current disk headroom.
     snapshot["disk"] = assert_headroom(ROOT, required_bytes=0)
     return _print_status(snapshot)

@@ -1,5 +1,7 @@
 # First-grade curriculum source audit (not yet admitted for training)
 
+**2026-10-15 v2 correction:** This file preserves the earlier Grade A proposal and its first source census, including the earlier claim that the two historic evaluators were independent. Subsequent source examination found that EQ and EDGE shared their calculation path, and that the v1 MEMBER question set leaked the answer through set size. The current [Grade A repair and backend evidence](GRADE_A_REPAIR_AND_BACKEND_20261015.md) documents a third independent source-record oracle, balanced membership cardinality, a 216-item frozen *candidate* manifest, exact 72-item assessment scoring, and full-student disposable Apple GPU parity. **Do not treat the historical v1 source-probe digest or this earlier assertion as a current training-admission receipt.**
+
 ## Observed source foundation
 
 The audited historical FP32 checkpoint has an append-only graph containing 222 semantic tokens. Source: `bilqis_micro/graph.py` and `bilqis_logic/kernel.py` in the preserved v16 worktree (historical source only). The archived compiled 29 `G##` headings are **capabilities**, not the new school grades. The original lesson dispatcher and source-fixed assessment must not be carried forward as the new grade hierarchy without restructuring.

@@ -22,7 +22,8 @@ def sample_course():
                       pre=("a.0", "a.1") if i == 0 else (),
                       composed=("a.0", "a.1") if i == 0 else ())
                          for i in range(6)))
-    return Course(grades=(a,b), version="synthetic/v1")
+    return Course(grades=(a,b), version="synthetic/v1",
+                  program_complete=True)
 
 
 class CourseTests(unittest.TestCase):
@@ -74,6 +75,17 @@ class CourseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "SIX_TO_NINE"):
             validate(replace(course,grades=(replace(a,capabilities=a.capabilities[:5]),
                                             course.grades[1])))
+
+    def test_per_grade_exam_count_shape_is_guarded(self):
+        course = sample_course()
+        a = course.grades[0]
+        with self.assertRaisesRegex(ValueError, "COUNTS_NOT_BOUND"):
+            validate(replace(course, grades=(replace(a, exam_item_counts=(("a.0", 12),)),
+                                             course.grades[1])))
+        with self.assertRaisesRegex(ValueError, "COUNTS_NOT_BOUND"):
+            validate(replace(course, grades=(replace(
+                a, exam_item_counts=tuple((f"a.{i}", 0) for i in range(6))),
+                course.grades[1])))
 
 
 if __name__ == "__main__":
