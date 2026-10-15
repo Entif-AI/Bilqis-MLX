@@ -89,13 +89,14 @@ human-owned session, though a process already running the former dashboard
 code cannot hot-load these display changes. On the **next operator-owned
 invocation**, the six panels upgrade automatically in the same terminal.
 
-**Storage is an operational metric, not an automatic reclaim policy.** The
+**Storage was originally observational; ADR-018 now separately authorizes
+reference-aware champion supersession by the human-operated trainer.** The
 read-only dashboard reports actual free space against the configured/default
 reserve plus estimated next bundle size, with `READY` or `BLOCKED` status.
 When this preflight cannot reserve the next model/AdamW checkpoint, the
 trainer now emits `DISK_RESERVE_REACHED` as a normal, durable, legible stop
 reason, with byte-exact disk evidence. Do not silently reduce reserves,
-delete prior complete bundles, skip mandated checkpoints or reinterpret a
+delete protected complete bundles, skip mandated recovery checkpoints or reinterpret a
 free-space block as neural mastery. A hard budget failure between the check
 and a bundle write remains fail-closed and may require resume from the prior
 fully committed student. The disk guard never modifies optimizer data.
@@ -121,3 +122,24 @@ semantic and prerequisite nodes, emit versioned event family identities,
 and bind both a *source partition* and *whole-student checkpoint*. Merely
 generating more questions or adding a new grade letter is not evidence of
 independent semantic generalization.
+
+## Capability-frontier evidence after ADR-018
+
+Grade qualification and capability bests are different status spaces. Each
+sealed capability score is scoped to one rubric. A model that improves a
+capability's maximum below perfect can own that best pointer and can take all
+other equal-best slots as well. Its single complete FP32+AdamW checkpoint is
+shared by those slots. Replaced, unreferenced old binaries can be retired.
+Current trainable student and separate 100%-grade champions remain protected.
+`SCHOOL_CAPABILITY_BEST_COMMITTED` records capability roles and a single
+checkpoint SHA. `SCHOOL_CHECKPOINTS_RETIRED` records the bounded GC count.
+Neither event grants mastery or adaptive-teacher reward.
+
+Intervening instructional visits are held in memory, then their training
+observations and complete optimizer are committed at the next tested recovery
+boundary (scheduled exam or operator stop). Until then, a crash can discard
+only the uncommitted visit group. Older `states/*.json` provide audit receipts
+but no longer promise replayable retired binary snapshots. The fixed Grade A
+exam used for capability selection is NOT independent model-selection-free
+generalization evidence; a future independently sourced validation partition
+will be needed for separate generalization claims.

@@ -75,6 +75,10 @@ def _inspect(run_dir: Path) -> dict:
                 "optimizer_step": student["optimizer_step"],
                 "checkpoint_sha256": student["sha256"],
                 "champion_pointer_count": len(school["champions"]),
+                "capability_best_pointer_count": len(saved.get("capability_best", {})),
+                "capability_best_bundle_count": len({
+                    item["checkpoint"]["sha256"]
+                    for item in saved.get("capability_best", {}).values()}),
                 "teacher_events": saved["teacher"]["events"],
                 "teacher_strategy_count": len(saved["teacher"]["strategies"]),
                 "last_exam": saved["last_exam"],

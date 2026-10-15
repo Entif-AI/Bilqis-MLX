@@ -192,8 +192,11 @@ class GradeATrainerContractTests(unittest.TestCase):
                 self.assertEqual(control["school"]["visits"], 6)
                 self.assertEqual(control["teacher"]["events"],teacher["events"]+6)
                 self.assertEqual(int(opt.state["step"].item()),7)
+                self.assertFalse((run_dir / "bundles").exists(),
+                                 "Unscored visits must not create a candidate checkpoint")
                 completed = _take_exam(
-                    mx,run_dir,control,manifest,course,ROOT,SOURCE,params)
+                    mx,run_dir,control,manifest,course,ROOT,SOURCE,
+                    params,opt,graph,reserve_gib=0.)
             self.assertEqual(completed["last_exam"]["exam_rubric_sha256"],
                              manifest["exam_rubric_sha256"])
             self.assertEqual(sum(score["total"] for score in
@@ -201,7 +204,27 @@ class GradeATrainerContractTests(unittest.TestCase):
             self.assertEqual(completed["school"]["current_student"]["optimizer_step"],7)
             self.assertEqual(json.loads((run_dir/"state.json").read_text()),
                              completed)
-            self.assertEqual(len(list((run_dir/"bundles").iterdir())),6)
+            self.assertEqual(len(list((run_dir/"bundles").iterdir())),1)
+            self.assertEqual(len(completed["capability_best"]),6)
+            # A second incomplete recovery group must never create three more
+            # intermediate student archives. Old capability winners remain
+            # pinned when a new full-student recovery point is committed.
+            if completed["school"]["stage"] == "RECOVERY_1":
+                with redirect_stdout(io.StringIO()):
+                    for i in range(3):
+                        completed = _take_visit(
+                            mx, run_dir, completed, manifest, course, engine,
+                            params, opt, graph, steps_per_visit=1, batch_size=4,
+                            reserve_gib=0.)
+                    self.assertEqual(len(list((run_dir/"bundles").iterdir())), 1)
+                    completed = _take_exam(
+                        mx, run_dir, completed, manifest, course, ROOT, SOURCE,
+                        params, opt, graph, reserve_gib=0.)
+                retained = {x["checkpoint"]["filename"]
+                            for x in completed["capability_best"].values()}
+                retained.add(completed["model_bundle"])
+                self.assertEqual(len(list((run_dir/"bundles").iterdir())),
+                                 len(retained))
 
 
 if __name__ == "__main__":

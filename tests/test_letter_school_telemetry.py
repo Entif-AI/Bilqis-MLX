@@ -30,6 +30,22 @@ class SchoolTelemetryTests(unittest.TestCase):
                              ["GRADE", "TRY", "STRATEGY"])
             self.assertTrue(Dashboard(stream=io.StringIO()).rows)
 
+    def test_capability_best_below_perfect_is_displayed_without_grade_mastery(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {"event": "SCHOOL_CAPABILITY_BEST_COMMITTED",
+                           "grade": "A", "optimizer_step": 116776,
+                           "student_sha256": "e" * 64,
+                           "rubric": "a" * 64,
+                           "scores": {"A.IDENTITY": {"correct": 5, "total": 12},
+                                      "A.LINK": {"correct": 7, "total": 12}},
+                           "capabilities": ["A.IDENTITY", "A.LINK"]})
+            message = board.rows["SYSTEM & QUALIFICATION"][-1]["detail"]
+            self.assertIn("A.IDENTITY", message)
+            self.assertIn("A.LINK", message)
+            self.assertIn("NOT grade mastery", message)
+            self.assertFalse(board.rows["SENTINEL & RETENTION"])
+
     def test_real_source_visit_shows_strategy_loss_reward_and_no_fake_sentinel(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

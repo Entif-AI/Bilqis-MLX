@@ -1,15 +1,15 @@
 """Human-operated Grade A MLX training; never invoked by agent test paths.
 
-Transaction boundary = one complete capability visit or one full-grade exam.
-Every committed visit owns a separate intact model+AdamW bundle and a
-generation-numbered state receipt. An interrupted visit can be replayed from
-its last committed boundary; no source or past student is overwritten.
+The in-memory student can perform several lessons between full assessments.
+Only tested capability leaders receive permanent binary status.  One bounded
+working recovery snapshot preserves the continuously learning student at
+assessment and operator-stop boundaries; other routine visits are provisional.
 """
 from __future__ import annotations
 
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import fcntl
 import hashlib
 import json
@@ -22,8 +22,11 @@ import uuid
 
 from .backup import digest_file
 from .champions import Checkpoint
+from .capability_frontier import (
+    candidate_roles, historical_frontier, pinned, promote, retire_bundles,
+)
 from .disk import assert_headroom, headroom_snapshot
-from .grade_a_evaluator import score_predictions
+from .grade_a_evaluator import capability_scores, score_predictions
 from .grade_a_manifest import verify_manifest
 from .grade_a_release import AUTHORITY, accepted_grade_a
 from .mlx_checkpoint import save_new_bundle, load_semantically_bound_bundle
@@ -327,6 +330,7 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
         "teacher_source_sha256": policy_sha,
         "school": asdict(state),
         "model_bundle": initial_pointer.filename,
+        "capability_best": {},
         "teacher": json.loads(_canonical(historical_teacher)),
         "teacher_provenance": teacher_provenance,
         "config": config,
@@ -376,11 +380,49 @@ def _resume(run_dir, manifest, course, policy_sha):
                    f"{receipt['generation']:07d}.json").read_text()) != receipt:
         raise ValueError("HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED")
     mx.eval(parameters, optimizer.state)
+    if "capability_best" not in receipt:
+        # Existing full-history run: reconstruct bests from actual sealed
+        # checkpoint receipts before permitting reference-aware retirement.
+        counts = {cap.id: dict(course.grades[0].exam_item_counts)[cap.id]
+                  for cap in course.grades[0].capabilities}
+        frontier = historical_frontier(
+            run_dir, expected_rubric=manifest["exam_rubric_sha256"],
+            expected_capabilities=counts)
+        _verify_best_custody(run_dir, {**receipt, "capability_best": frontier})
+        receipt = _advance(run_dir, receipt, school, frontier=frontier)
+        _record(run_dir, {"event": "SCHOOL_CAPABILITY_FRONTIER_MIGRATED",
+                          "grade": "A", "generation": receipt["generation"],
+                          "champion_roles": len(frontier),
+                          "whole_student_unchanged": True})
+    _verify_best_custody(run_dir, receipt)
+    # Also finishes a retirement interrupted after the prior state commit.
+    _publish_boundary(run_dir, receipt, (), ())
     return parameters, optimizer, graph, receipt
 
 
+def _verify_best_custody(run_dir, receipt):
+    school = receipt["school"]
+    sources = [school["current_student"], *school["champions"].values(),
+               *(cap["checkpoint"] for cap in receipt.get("capability_best", {}).values())]
+    protected = pinned(receipt.get("capability_best", {}),
+                       school["current_student"], school["champions"])
+    for name in sorted(protected):
+        root = run_dir / name
+        if root.is_symlink() or root.parent != run_dir / "bundles":
+            raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT")
+        manifest = json.loads((root / "manifest.json").read_text())
+        if digest_file(root / "model-and-own-adamw.safetensors") != manifest["safetensors_sha256"]:
+            raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT")
+        for ref in sources:
+            if (ref["filename"] == name and
+                    (manifest["safetensors_sha256"] != ref["sha256"] or
+                     manifest["optimizer_step"] != ref["optimizer_step"])):
+                raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_REFERENCE_DRIFT")
+
+
 def _advance(run_dir, old: dict, school: SchoolState, *,
-             teacher=None, model_bundle=None, last_exam=None, result=None):
+             teacher=None, model_bundle=None, last_exam=None, result=None,
+             frontier=None, persist=True):
     # One snapshot captures teacher learning, school progress and model pointer.
     record = dict(old)
     record["generation"] = old["generation"] + 1
@@ -393,7 +435,12 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
         record["last_exam"] = last_exam
     if result is not None:
         record["result"] = result
-    return _persist(run_dir, record)
+    if frontier is not None:
+        record["capability_best"] = frontier
+    if persist:
+        record.pop("_pending_visit_events", None)
+        return _persist(run_dir, record)
+    return json.loads(_canonical(record))
 
 
 def _seed(receipt: dict, *, capability: str, step: int = 0) -> int:
@@ -430,34 +477,104 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     engine.observe(teacher, "A", policy_key, reward)
     if int(optimizer.state["step"].item()) != step_before+steps_per_visit:
         raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
-    name = "visit-"+str(school.visits+1)+"-"+uuid.uuid4().hex[:12]
-    next_student = _bundle_pointer(
-        run_dir, name, params, optimizer, graph, reserve_gib=reserve_gib)
-    school = visit(course, school, cap, next_student)
-    result = _advance(
-        run_dir, receipt, school, teacher=teacher,
-        model_bundle=next_student.filename)
-    _record(run_dir, {
-        "event": "GRADE_A_TEACHER_VISIT_COMMITTED", "generation": result["generation"],
+    # No new archive exists yet. The retained checkpoint is the last complete
+    # recovery point, NOT a representation of these newly updated RAM weights.
+    school = visit(course, school, cap, school.current_student)
+    event = {
+        "event": "GRADE_A_TEACHER_VISIT_COMMITTED",
+        "generation": receipt["generation"] + 1,
         "capability": cap, "teacher_policy": policy_key,
         "strategy": policy, "loss": last_loss, "gradient_norm": last_norm,
         "source_training_accuracy_before": before,
         "source_training_accuracy_after": after,
-        "teacher_reward": reward, "optimizer_step": next_student.optimizer_step,
-        "student_sha256": next_student.sha256,
+        "teacher_reward": reward,
+        "optimizer_step": int(optimizer.state["step"].item()),
         "next_phase": school.stage,
+        "checkpoint_status": "PROVISIONAL_UNTIL_NEXT_RECOVERY_BOUNDARY",
         "unavailable_teacher_dimensions": ["old", "preview", "distill"],
-    })
+    }
+    pending = list(receipt.get("_pending_visit_events", ()))
+    pending.append(event)
+    result = _advance(run_dir, receipt, school, teacher=teacher, persist=False)
+    result["_pending_visit_events"] = pending
     return result
 
 
+def _commit_scored_student(run_dir, receipt, manifest, course, school,
+                           predictions, parameters, optimizer, graph, *,
+                           reserve_gib):
+    """Only evaluated best scores mint permanent capability candidates.
+
+    If none improve, the single live student still needs a replaceable
+    recovery point. This is NOT a champion or an additional archive slot.
+    """
+    tested = capability_scores(manifest, course, predictions)
+    grades = {cap: {"correct": s.correct, "total": s.total}
+              for cap, s in tested.items()}
+    frontier = receipt.get("capability_best", {})
+    rubric = manifest["exam_rubric_sha256"]
+    roles = candidate_roles(frontier, grades, rubric)
+    name = ("best-" if roles else "working-") + str(school.visits) + "-" + uuid.uuid4().hex[:12]
+    candidate = _bundle_pointer(run_dir, name, parameters, optimizer, graph,
+                                reserve_gib=reserve_gib)
+    if roles:
+        proof = _fingerprint({"manifest": manifest["manifest_sha256"],
+                              "rubric": rubric, "predictions": sorted(predictions.items()),
+                              "student_sha256": candidate.sha256,
+                              "optimizer_step": candidate.optimizer_step})
+        frontier = promote(frontier, grades, rubric, asdict(candidate),
+                           "capability-evaluation/" + proof, roles)
+    return replace(school, current_student=candidate), frontier, roles
+
+
+def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
+    """Publish visits only after model and teacher are durably recoverable."""
+    for event in pending:
+        event["recovered_at_student_sha256"] = record["school"]["current_student"]["sha256"]
+        event["checkpoint_status"] = "RECORDED_AT_BOUNDARY"
+        _record(run_dir, event)
+    if roles:
+        frontier = record["capability_best"]
+        slots = [frontier[key] for key in sorted(frontier)
+                 if (frontier[key]["capability"] in roles and
+                     frontier[key]["checkpoint"]["sha256"] ==
+                     record["school"]["current_student"]["sha256"])]
+        if ({slot["capability"] for slot in slots} != set(roles) or
+                len({slot["rubric"] for slot in slots}) != 1):
+            raise ValueError("HUMAN_TRAINER_CAPABILITY_BEST_RECEIPT_DRIFT")
+        _record(run_dir, {"event": "SCHOOL_CAPABILITY_BEST_COMMITTED",
+                          "grade": "A", "generation": record["generation"],
+                          "capabilities": list(roles),
+                          "rubric": slots[0]["rubric"],
+                          "scores": {entry["capability"]: {
+                              "correct": entry["correct"], "total": entry["total"]}
+                              for entry in slots},
+                          "evaluation_ids": {entry["capability"]: entry["evaluation_id"]
+                                             for entry in slots},
+                          "student_sha256": record["school"]["current_student"]["sha256"],
+                          "optimizer_step": record["school"]["current_student"]["optimizer_step"]})
+    if exam_event is not None:
+        _record(run_dir, exam_event)
+    school = record["school"]
+    retained = pinned(record.get("capability_best", {}), school["current_student"],
+                      school["champions"])
+    removed = retire_bundles(run_dir, retained)
+    if removed:
+        _record(run_dir, {"event": "SCHOOL_CHECKPOINTS_RETIRED", "grade": "A",
+                          "generation": record["generation"],
+                          "count": len(removed), "protected_count": len(retained)})
+
+
 def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
-               source_checkpoint, parameters):
+               source_checkpoint, parameters, optimizer, graph, *, reserve_gib):
     school = _state_from_json(receipt["school"], course)
     if not school.stage.startswith("ASSESS_"):
         raise ValueError("HUMAN_TRAINER_EXAM_OUTSIDE_SCHEDULED_BOUNDARY")
     guesses = _predictions(mx, parameters, manifest["examination_rows"],
                            receipt["config"], receipt["answer_ids"])
+    school, frontier, roles = _commit_scored_student(
+        run_dir, receipt, manifest, course, school, guesses, parameters,
+        optimizer, graph, reserve_gib=reserve_gib)
     assessment = score_predictions(
         manifest, course, school.current_student, guesses,
         legacy_root=source_root, source_checkpoint=source_checkpoint)
@@ -471,16 +588,38 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "optimizer_step": assessment.optimizer_step,
         "scores": scores,
     }
+    pending = receipt.get("_pending_visit_events", ())
     result = _advance(
-        run_dir, receipt, advanced, last_exam=last_exam,
+        run_dir, receipt, advanced, frontier=frontier,
+        model_bundle=school.current_student.filename, last_exam=last_exam,
         result="GRADE_A_MASTERED_AWAITING_GRADE_B" if
         advanced.stage == "AWAITING_NEXT_GRADE" else "ACTIVE_GRADE_A")
-    _record(run_dir, {"event": "GRADE_A_EXAM_COMMITTED",
-                      "generation": result["generation"],
-                      "scores": scores, "phase": advanced.stage,
-                      "student_sha256": assessment.checkpoint_sha256,
-                      "rubric": assessment.rubric_digest})
+    _publish_boundary(run_dir, result, pending, roles, exam_event={
+        "event": "GRADE_A_EXAM_COMMITTED", "generation": result["generation"],
+        "scores": scores, "phase": advanced.stage,
+        "student_sha256": assessment.checkpoint_sha256,
+        "optimizer_step": assessment.optimizer_step,
+        "rubric": assessment.rubric_digest,
+    })
     return result
+
+
+def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
+                           optimizer, graph, *, reserve_gib):
+    """Protect an unfinished grade cycle when the human stops mid-cycle."""
+    pending = receipt.get("_pending_visit_events", ())
+    if not pending:
+        return receipt
+    school = _state_from_json(receipt["school"], course)
+    guesses = _predictions(mx, parameters, manifest["examination_rows"],
+                           receipt["config"], receipt["answer_ids"])
+    current, frontier, roles = _commit_scored_student(
+        run_dir, receipt, manifest, course, school, guesses, parameters,
+        optimizer, graph, reserve_gib=reserve_gib)
+    record = _advance(run_dir, receipt, current, frontier=frontier,
+                      model_bundle=current.current_student.filename)
+    _publish_boundary(run_dir, record, pending, roles)
+    return record
 
 
 def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
@@ -533,7 +672,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             if school.stage.startswith("ASSESS_"):
                 receipt = _take_exam(
                     mx, run_dir, receipt, manifest, course, source_root,
-                    source_checkpoint, params)
+                    source_checkpoint, params, optimizer, graph,
+                    reserve_gib=reserve_gib)
                 continue
             budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
                                        reserve_gib=reserve_gib)
@@ -549,6 +689,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 params, optimizer, graph, steps_per_visit=steps_per_visit,
                 batch_size=batch_size, reserve_gib=reserve_gib)
             visits += 1
+        receipt = _flush_working_student(
+            mx, run_dir, receipt, manifest, course, params, optimizer, graph,
+            reserve_gib=reserve_gib)
         school = _state_from_json(receipt["school"], course)
         budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
                                    reserve_gib=reserve_gib)

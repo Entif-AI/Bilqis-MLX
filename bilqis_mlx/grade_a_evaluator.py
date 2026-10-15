@@ -16,6 +16,27 @@ from .grade_a_manifest import verify_manifest
 from .school import Assessment, Score
 
 
+def capability_scores(manifest: dict, course: Course,
+                      predictions: dict[str, str]) -> dict[str, Score]:
+    """Evaluate a complete in-memory candidate before writing its archive."""
+    rows = manifest["examination_rows"]
+    ids = [row["id"] for row in rows]
+    if (not isinstance(predictions, dict) or len(ids) != len(set(ids))
+            or set(predictions) != set(ids)):
+        raise ValueError("GRADE_A_EVALUATOR_INCOMPLETE_OR_UNKNOWN_EXAM_ITEMS")
+    if any(predictions[i] not in ("TRUE", "FALSE") for i in ids):
+        raise ValueError("GRADE_A_EVALUATOR_WRONG_ANSWER_TYPE")
+    found = {}
+    for cap in course.grades[0].capabilities:
+        group = [r for r in rows if r["capability"] == cap.id]
+        expected = dict(course.grades[0].exam_item_counts)[cap.id]
+        if len(group) != expected:
+            raise ValueError("GRADE_A_EVALUATOR_GRADE_COUNT_DRIFT")
+        found[cap.id] = Score(sum(predictions[r["id"]] == r["gold"]
+                                  for r in group), len(group))
+    return found
+
+
 def score_predictions(manifest: dict, course: Course, checkpoint: Checkpoint,
                       predictions: dict[str, str], *, legacy_root: Path,
                       source_checkpoint: Path) -> Assessment:
@@ -28,22 +49,7 @@ def score_predictions(manifest: dict, course: Course, checkpoint: Checkpoint,
         raise ValueError("GRADE_A_EVALUATOR_NOT_PINNED_PROPOSAL_OR_ACCEPTED_RELEASE")
     if not checkpoint.model_and_native_adamw:
         raise ValueError("GRADE_A_EVALUATOR_REQUIRES_WHOLE_STUDENT_AND_OPTIMIZER")
-    if not isinstance(predictions, dict):
-        raise ValueError("GRADE_A_EVALUATOR_PREDICTIONS_REQUIRED")
-    rows = manifest["examination_rows"]
-    row_ids = [row["id"] for row in rows]
-    if len(row_ids) != len(set(row_ids)) or set(predictions) != set(row_ids):
-        raise ValueError("GRADE_A_EVALUATOR_INCOMPLETE_OR_UNKNOWN_EXAM_ITEMS")
-    if any(predictions[row_id] not in ("TRUE", "FALSE") for row_id in row_ids):
-        raise ValueError("GRADE_A_EVALUATOR_WRONG_ANSWER_TYPE")
-    by_capability = {}
-    for cap in course.grades[0].capabilities:
-        bound = [row for row in rows if row["capability"] == cap.id]
-        expected_count = dict(course.grades[0].exam_item_counts)[cap.id]
-        if len(bound) != expected_count:
-            raise ValueError("GRADE_A_EVALUATOR_GRADE_COUNT_DRIFT")
-        right = sum(predictions[row["id"]] == row["gold"] for row in bound)
-        by_capability[cap.id] = Score(right, len(bound))
+    by_capability = capability_scores(manifest, course, predictions)
     evaluation = {
         "manifest_sha256": manifest["manifest_sha256"],
         "rubric": verified["exam_rubric_sha256"],

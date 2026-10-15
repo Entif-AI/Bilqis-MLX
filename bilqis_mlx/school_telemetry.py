@@ -94,6 +94,7 @@ EVENT_KINDS = {
     "SCHOOL_SOUP_COMMITTED": "soup",
     "SCHOOL_FAMILY_PROBE_COMMITTED": "family",
     "SCHOOL_RESOURCE_OBSERVED": "resource",
+    "SCHOOL_CAPABILITY_BEST_COMMITTED": "capability_best",
     "SCHOOL_QUALIFICATION_COMMITTED": "qualification",
 }
 
@@ -193,11 +194,34 @@ class SchoolTelemetry:
             "soup": self._soup,
             "family": self._family,
             "resource": self._resource,
+            "capability_best": self._capability_best,
             "qualification": self._qualification,
         }[kind](grade, event)
 
     def _init(self, grade, event):
         self.board.state["step"] = event.get("optimizer_step", self.board.state.get("step"))
+
+    def _capability_best(self, grade, event):
+        """One student's best capability slots do not mean grade mastery."""
+        step, caps = event.get("optimizer_step"), event.get("capabilities")
+        rubric, scores = event.get("rubric"), event.get("scores") or {}
+        sha = event.get("student_sha256")
+        if (type(step) is not int or not caps or
+                not isinstance(sha, str) or len(sha) != 64 or
+                not isinstance(rubric, str) or len(rubric) != 64 or
+                not isinstance(scores, dict) or
+                set(caps) != set(scores) or
+                any(not isinstance(scores[cap], dict) or
+                    type(scores[cap].get("correct")) is not int or
+                    type(scores[cap].get("total")) is not int or
+                    scores[cap]["total"] <= 0 or
+                    not 0 <= scores[cap]["correct"] <= scores[cap]["total"]
+                    for cap in caps)):
+            raise ValueError("SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED")
+        self.board.push("system", {"kind": "CAP BEST", "grade": grade,
+                        "detail": (f"Best slots: {', '.join(sorted(caps))} "
+                                   f"at step {step} | NOT grade mastery")},
+                        redraw=False)
 
     def _visit(self, grade, event):
         self.visits += 1

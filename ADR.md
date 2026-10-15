@@ -175,3 +175,14 @@ changes. Nothing reduces the reserve, prunes historic/student checkpoints,
 or relaxes human-only optimizer authority. A future storage-efficiency
 strategy must preserve verifiable full model/own-AdamW custody and be approved
 separately, not concealed as dashboard repair.
+
+## ADR-018 | 2026-10-15 | Best-score capability frontier
+
+Capability champions are the best measured per-capability rubric scores, even
+below 100%. A new checkpoint inherits all capabilities where it establishes
+or consolidates a best. Old checkpoint binaries are superseded when no active
+student, capability leader, or grade champion still points to them. This is
+distinct from 100% whole-grade mastery. Only tested candidates become long-term
+champions. Short-lived complete student+AdamW recovery checkpoints remain
+necessary at exam or operator-stop boundaries. Each old durable receipt remains
+historical evidence after its superseded binary is retired.

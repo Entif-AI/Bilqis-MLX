@@ -44,6 +44,14 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
     board.push("system", {"kind": "SOURCE", "detail": "Source-bound FP32 + own AdamW | immutable receipts"}, redraw=False)
     board.push("system", {"kind": "RUBRIC", "detail": "Grade A frozen 72 items; all grade rubrics require 100% same-step"}, redraw=False)
     board.push("system", {"kind": "METRIC", "detail": "NOT MEASURED: independent sentinel/CE/P(C)/margin; cross-grade soup inactive"}, redraw=False)
+    if state and state.get("capability_best"):
+        bests = state["capability_best"]
+        for item in sorted(bests.values(), key=lambda x: x["capability"]):
+            model = item["checkpoint"]
+            board.push("system", {"kind": "CAP BEST", "grade": item["capability"].split(".")[0],
+                        "detail": (f"{item['capability']} {item['correct']}/{item['total']} "
+                                   f"at step {model['optimizer_step']} | {model['sha256'][:10]}")},
+                       redraw=False)
     board.push("system", {"kind": "RESTART", "detail": "Saved run: train --human-run --resume"}, redraw=False)
     board.log_hint = str(run_dir / "events.jsonl")
     events = run_dir / "events.jsonl"

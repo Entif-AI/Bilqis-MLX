@@ -34,24 +34,28 @@ npm run dashboard
 
 The trainer defaults to **no hidden per-command visit cap**, **16 optimizer
 steps per visit**, **32 source-backed examples per step**, **100 GiB disk
-reserve**, and one recorded full-state checkpoint after every complete visit.
+reserve**. Per ADR-018, ordinary visits remain in memory until the next
+scheduled examination; only tested best-scoring capability candidates become
+permanent champion binaries. A complete working-student recovery bundle is
+still preserved at each assessment or human stop, even when not a champion.
 The human-selected `--minutes` is the default session limit; an operator can
 add `--max-visits N` to request an additional explicit visit cap. Setting
 `--max-visits 0` (the default) disables only that cap, not the minute or disk
-reserve limits. Save files are never
-silently pruned. The default run directory is
+reserve limits. Superseded unreferenced run-local bundle directories are
+retired once their replacement pointer is durable; historical receipts remain.
+The default run directory is
 `runs/school-mlx-v1`, always separate from the historical source run.
 
 On an interactive terminal, the human training command uses that terminal for
 the six-panel School50 live dashboard. It refreshes on **committed** model
-visits and scheduled exams, not in-flight optimizer steps. On normal stop the
+assessment/recovery boundaries, not in-flight optimizer steps. On normal stop the
 trainer appends a `GRADE_A_SESSION_STOPPED` event identifying the actual
 reason (`TIME_LIMIT_REACHED`, explicitly requested `VISIT_LIMIT_REACHED`, or
 `GRADE_A_AWAITING_NEXT_GRADE`, or protected `DISK_RESERVE_REACHED`), elapsed seconds, visit count, and latest
 optimizer step. A due complete-grade exam finishes before normal stopping.
 Disk stops include measured free GiB, protected reserve and estimated next
-checkpoint allowance. They do not delete, prune, rewrite or compact the
-complete student/AdamW bundle history. The dashboard also independently
+checkpoint allowance. They never reduce the reserve or overwrite a protected
+current student or champion. The dashboard also independently
 reads and shows live disk headroom even if an older run lacks a stop receipt.
 A final read-only snapshot remains. `npm run dashboard` independently replays
 the persisted events and renders the complete latest snapshot after the
@@ -87,21 +91,24 @@ those curricula become active.
 - `runs/school-mlx-v1/bundles/<unique>/` contains one complete FP32 model,
   optimizer AdamW moments, step, parameter-order manifest and semantic catalog
   SHA-bound to the historical source.
-- `states/0000001.json`, `states/0000002.json`, and successors retain an
-  append-only school/teacher/pointer snapshot per committed transaction.
+- `states/<generation>.json` contains immutable committed assessment,
+  migration or operator-stop receipts. Interim training visits do not need
+  their own weight files or restorable state receipts.
 - `state.json` is the atomic latest pointer. Only this file is replaced
   after a numbered immutable snapshot was fully written and verified.
 - `events.jsonl` is an append-only human-readable progress record.
 - `.grade-a-operator.lock` is an exclusive OS lock, not a claim of a
   distributed lease.
 
-Interrupted *mid-visit* in-memory steps are intentionally **not** claimed as
-committed. A human `--resume` restarts from the latest complete, source-bound
-model+own-optimizer state. No bundle or historical checkpoint is overwritten.
+Interrupted in-memory visits since the last scored checkpoint boundary may be
+lost on a crash. A human `--resume` restarts from the most recent complete,
+source-bound model+own-optimizer and teacher state. Earlier numbered receipts
+remain historical evidence even after binaries with no remaining champion or
+working role have been retired.
 If a process dies after a complete bundle write but before pointer promotion,
-an orphan bundle may remain as evidence; it is not automatically selected,
-deleted or treated as a student. Reserve checks prevent unbounded growth
-below the agreed 100 GiB headroom.
+an orphan bundle may temporarily remain; it is never automatically selected
+as student or champion. Future successful scored commits can retire orphaned
+complete bundles under the exclusive lock and checked reference plan.
 
 ## Graduation and generalization
 
