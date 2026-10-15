@@ -102,3 +102,24 @@ not release decisions. A generated exercise or proposed next task does not
 become a neural lesson without source/oracle and versioned admission. The
 existing human-operated Grade A run, its teacher/AdamW, and its sealed exam
 remain intact. See `docs/CURRICULUM_AST_COMPILER_20261015.md`.
+
+## ADR-015 | 2026-10-15 | Trainer limits must announce and persist their stop causes
+
+Three human-operated Grade A commands each reached the previous implicit
+48-visit ceiling. The third invocation returned to the shell after exactly
+48 more committed visits while the requested 90-minute time budget was still
+the operator's visible intent. The trainer recorded individual visits and
+assessments, but no session-ending event or terminal explanation. This was a
+misleading operator contract and an observability failure, not observed
+model corruption or Grade A mastery.
+
+`--minutes` is now the default session budget without a hidden 48-visit cap.
+The human may still set an explicit finite `--max-visits`; disk reserve and
+exclusive writer lock remain enforced. Finish an already-due sealed grade
+assessment before exiting normally. Every normal stop must produce a
+human-legible reason and an append-only event identifying its limits, elapsed
+time, committed visits, checkpoint step and resume status. Dashboard replay
+and `npm run status` may display that event; the model/optimizer state pointer
+must not be rewritten merely because a shell session completed. This pattern
+applies to future letter grades so fast MLX execution does not look like a
+silent failure. Agent tests remain neural-inert or disposable.

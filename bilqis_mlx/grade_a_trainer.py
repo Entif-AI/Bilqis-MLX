@@ -483,9 +483,23 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     return result
 
 
+def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
+                        visits: int, max_visits: int) -> str | None:
+    """State-machine stop condition; a due exam must not be silently skipped."""
+    if stage == "AWAITING_NEXT_GRADE":
+        return "GRADE_A_AWAITING_NEXT_GRADE"
+    if stage.startswith("ASSESS_"):
+        return None
+    if elapsed_seconds >= minutes * 60:
+        return "TIME_LIMIT_REACHED"
+    if max_visits and visits >= max_visits:
+        return "VISIT_LIMIT_REACHED"
+    return None
+
+
 def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             manifest_path: Path, *, resume: bool = False, minutes: int = 90,
-            max_visits: int = 48, steps_per_visit: int = 16,
+            max_visits: int = 0, steps_per_visit: int = 16,
             batch_size: int = 32, reserve_gib: float = 100.) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
@@ -509,17 +523,18 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 historical_teacher, provenance, source_checkpoint,
                 reserve_gib=reserve_gib)
         visits = 0
-        while time.monotonic()-start < minutes*60:
+        while True:
             school = _state_from_json(receipt["school"], course)
-            if school.stage == "AWAITING_NEXT_GRADE":
+            reason = session_stop_reason(
+                stage=school.stage, elapsed_seconds=time.monotonic() - start,
+                minutes=minutes, visits=visits, max_visits=max_visits)
+            if reason is not None:
                 break
             if school.stage.startswith("ASSESS_"):
                 receipt = _take_exam(
                     mx, run_dir, receipt, manifest, course, source_root,
                     source_checkpoint, params)
                 continue
-            if max_visits and visits >= max_visits:
-                break
             assert_headroom(run_dir, required_bytes=600_000_000,
                             reserve_gib=reserve_gib)
             receipt = _take_visit(
@@ -528,8 +543,23 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 batch_size=batch_size, reserve_gib=reserve_gib)
             visits += 1
         school = _state_from_json(receipt["school"], course)
+        elapsed_seconds = round(time.monotonic() - start, 3)
+        _record(run_dir, {
+            "event": "GRADE_A_SESSION_STOPPED", "stop_reason": reason,
+            "generation": receipt["generation"], "run_id": receipt["run_id"],
+            "optimizer_step": school.current_student.optimizer_step,
+            "checkpoint_sha256": school.current_student.sha256,
+            "visits_this_command": visits, "committed_total_visits": school.visits,
+            "minutes": minutes, "max_visits": max_visits,
+            "elapsed_seconds": elapsed_seconds,
+            "grade_phase": school.stage, "resume_required": school.stage != "AWAITING_NEXT_GRADE",
+        })
         return {
             "status": receipt["result"],
+            "stop_reason": reason,
+            "elapsed_seconds": elapsed_seconds,
+            "time_limit_minutes": minutes,
+            "max_visits": max_visits,
             "grade": school.grade,
             "phase": school.stage,
             "visits_this_command": visits,

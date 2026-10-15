@@ -37,6 +37,26 @@ def _qualification_scope() -> dict:
     }
 
 
+def _latest_session_stop(run_dir: Path, generation: int, step: int) -> dict | None:
+    """The append-only event ledger owns per-invocation stop reasons."""
+    events = run_dir / "events.jsonl"
+    if not events.is_file():
+        return None
+    lines = events.read_text(encoding="utf-8").splitlines()
+    if not lines:
+        return None
+    event = json.loads(lines[-1])
+    if (event.get("event") != "GRADE_A_SESSION_STOPPED" or
+            event.get("generation") != generation or
+            event.get("optimizer_step") != step):
+        return None
+    return {"reason": event["stop_reason"],
+            "visits_this_command": event["visits_this_command"],
+            "elapsed_seconds": event["elapsed_seconds"],
+            "time_limit_minutes": event["minutes"],
+            "max_visits": event["max_visits"]}
+
+
 def _inspect(run_dir: Path) -> dict:
     state = run_dir / "state.json"
     if state.is_file():
@@ -56,6 +76,8 @@ def _inspect(run_dir: Path) -> dict:
                 "teacher_events": saved["teacher"]["events"],
                 "teacher_strategy_count": len(saved["teacher"]["strategies"]),
                 "last_exam": saved["last_exam"],
+                "last_session_stop": _latest_session_stop(
+                    run_dir, saved["generation"], student["optimizer_step"]),
                 "grade_a_release": GRADE_A_RELEASE,
                 "source_grounded_grade_a_admitted": True,
                 **_qualification_scope(),
@@ -134,7 +156,25 @@ def dashboard(run_dir: Path):
     return 0
 
 
-def main(argv=None):
+def human_stop_summary(result: dict) -> str:
+    """A legible termination receipt for the human-operated live terminal."""
+    explanations = {
+        "TIME_LIMIT_REACHED": "The requested time budget was reached.",
+        "VISIT_LIMIT_REACHED": "The explicitly configured --max-visits cap was reached.",
+        "GRADE_A_AWAITING_NEXT_GRADE": "Grade A is mastered; awaiting an admitted next grade.",
+    }
+    reason = result["stop_reason"]
+    message = ("TRAINING STOPPED NORMALLY: " + reason + "\n" +
+               explanations[reason] +
+               f" Completed {result['visits_this_command']} visits in "
+               f"{result['elapsed_seconds']:.1f} seconds, "
+               f"optimizer step {result['optimizer_step']}.")
+    if reason != "GRADE_A_AWAITING_NEXT_GRADE":
+        message += "\nTo continue: npm run train -- --human-run --resume --minutes 90"
+    return message + "\nHistorical dashboard: npm run dashboard"
+
+
+def parse_args(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     actions=parser.add_subparsers(dest="action",required=True)
     for name in ("status","dashboard","train"):
@@ -149,13 +189,17 @@ def main(argv=None):
                            help="Explicitly authorizes actual optimizer steps by the human operator")
             p.add_argument("--minutes",type=int,default=90)
             p.add_argument("--steps-per-visit",type=int,default=16)
-            p.add_argument("--max-visits",type=int,default=48,
-                           help="Cap complete checkpoint generations in one command (0 disables cap)")
+            p.add_argument("--max-visits",type=int,default=0,
+                           help="Optional complete visit cap (default 0: use --minutes and disk reserve)")
             p.add_argument("--batch-size",type=int,default=32)
             p.add_argument("--reserve-gib",type=float,default=100.)
             p.add_argument("--triplets","--triples",dest="triples",action="store_true",
                            help="Global weakest-three recovery is intrinsic to the new scheduler")
-    args=parser.parse_args(argv)
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    args=parse_args(argv)
     try:
         if args.action=="status":return status(args.run_dir)
         if args.action=="dashboard":return dashboard(args.run_dir)
@@ -188,9 +232,9 @@ def main(argv=None):
                 batch_size=args.batch_size, reserve_gib=args.reserve_gib)
         if board is not None:
             board = build(args.run_dir)
-            board.mode = "STOPPED | LAST COMMITTED"
+            board.mode = "STOPPED | " + result["stop_reason"]
             board.draw()
-            print("\nTraining stopped. Historical dashboard: npm run dashboard", flush=True)
+            print("\n" + human_stop_summary(result), flush=True)
             return 0
         return _print_status(result)
     except KeyboardInterrupt:

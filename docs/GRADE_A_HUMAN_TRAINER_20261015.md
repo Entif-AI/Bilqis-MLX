@@ -32,22 +32,29 @@ npm run status
 npm run dashboard
 ```
 
-The trainer defaults to **48 maximum complete visits per command**, **16
-optimizer steps per visit**, **32 source-backed examples per step**, **100 GiB
-disk reserve**, and one recorded full-state checkpoint after every complete
-visit. Tune using `--max-visits`, `--steps-per-visit`, `--batch-size` and
-`--reserve-gib`. Setting max visits to 0 removes only the per-command visit
-cap; disk reserve and minute limit remain in effect. Save files are never
+The trainer defaults to **no hidden per-command visit cap**, **16 optimizer
+steps per visit**, **32 source-backed examples per step**, **100 GiB disk
+reserve**, and one recorded full-state checkpoint after every complete visit.
+The human-selected `--minutes` is the default session limit; an operator can
+add `--max-visits N` to request an additional explicit visit cap. Setting
+`--max-visits 0` (the default) disables only that cap, not the minute or disk
+reserve limits. Save files are never
 silently pruned. The default run directory is
 `runs/school-mlx-v1`, always separate from the historical source run.
 
 On an interactive terminal, the human training command uses that terminal for
 the six-panel School50 live dashboard. It refreshes on **committed** model
-visits and scheduled exams, not in-flight optimizer steps. On normal stop a
-final read-only snapshot remains. `npm run dashboard` independently replays
+visits and scheduled exams, not in-flight optimizer steps. On normal stop the
+trainer appends a `GRADE_A_SESSION_STOPPED` event identifying the actual
+reason (`TIME_LIMIT_REACHED`, explicitly requested `VISIT_LIMIT_REACHED`, or
+`GRADE_A_AWAITING_NEXT_GRADE`), elapsed seconds, visit count, and latest
+optimizer step. A due complete-grade exam finishes before normal stopping.
+A final read-only snapshot remains. `npm run dashboard` independently replays
 the persisted events and renders the complete latest snapshot after the
 training command has exited. Non-TTY training preserves machine-readable
-JSON event lines. Running the fresh command with an existing run does not
+JSON event lines plus the final result with stop reason. `npm run status`
+reports the most recent completed stop when its event matches the saved
+student generation and optimizer step. Running the fresh command with an existing run does not
 reset anything: the guard instructs the human to use `--resume`.
 
 The original native PyTorch source is pinned to exact SHA-256

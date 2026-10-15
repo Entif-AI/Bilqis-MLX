@@ -71,6 +71,15 @@ def ingest(board: Dashboard, event: dict) -> None:
                      "family": cap, "before": "sealed exam", "after": f"{score['correct']}/{score['total']}",
                      "gain": "-"})
         board.state["phase"] = event["phase"]
+    elif kind == "GRADE_A_SESSION_STOPPED":
+        reason = event["stop_reason"]
+        board.mode = "STOPPED | " + reason
+        board.push("system", {
+            "kind": "STOP",
+            "detail": f"{reason} | {event['visits_this_command']} visits | "
+                      f"{event['elapsed_seconds']:.1f}s | step {event['optimizer_step']}",
+        }, redraw=False)
+        board.state["last_run_status"] = reason
 
 
 def render(run_dir: Path, *, stream=None) -> None:
