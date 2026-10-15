@@ -23,6 +23,16 @@ npm run train
 
 `status`, `dashboard` and `--dry-run` are neural-inert. **`train` currently refuses to start.** Training will only be enabled after full migration, a source-grounded course, rubric, and explicit human launch. Do not use `--resume` to mean "start from the original old grade G12". Resumption applies only to a previously initialized *new* run.
 
+Inspect the candidate six-capability Grade A without a training run:
+
+```sh
+npm run curriculum:audit -- \
+  --legacy-code-root ../bilqis-triplets-v16 \
+  --champion-checkpoint ../bilqis-triplets-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt
+```
+
+The audit checks two independent symbolic oracles, all teaching/examination source tokens, both three- and four-entity world sizes, and the saved student's frozen vocabulary prefix. Its machine-readable result is in `docs/GRADE_A_SOURCE_PROBE_V1.json`. The course remains a **proposal**, with no authorized neural lessons or new-grade mastery claim. The old source directory must be available for this transitional audit.
+
 ## Data and storage boundaries
 
 Source code lives here; ignored `runs/` and `artifacts/` never enter Git. The source pre-repair complete FP32 checkpoint is `student-116760-7e9af4651f28.pt` (SHA-256 `646d8590cf8fddb7b3c412ecead4ac185a0578f93baadf24e05f92dd15068a78`) from the original v16 run. It was audited at 1,052/1,150 **on the former rubric**; this is not a new-grade mastery claim. **No checkpoint files are copied by repository setup.** Existing v16, v2-r1 and v17 research lineages remain at their original locations.
@@ -42,6 +52,8 @@ These are examples; name each actual retired source tree separately. The script 
 npm run test
 npm run train -- --dry-run
 ```
+
+The MLX tests also prove disposable FP32 model+AdamW save/reload and four matching PyTorch/MLX optimizer updates starting at synthetic step 116760. They test gradient and clipping parity on a tiny fixture. See [the fixture receipt](docs/MLX_DISPOSABLE_ADAMW_RESTART_20261015.md). The complete trained student's optimizer still requires separate continuation qualification.
 
 See `AGENTS.md` and `docs/REQUIREMENTS.md` for implementation constraints and current gaps.
 

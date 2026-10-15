@@ -25,8 +25,8 @@ def _norm(mx, values, gamma):
     return delta * mx.rsqrt(var + 1e-5) * gamma
 
 
-def forward(mx, tensors, ids, lengths, *, heads: int, layers: int, answer_ids):
-    """Direct FP32 MLX map of the existing typed causal transformer."""
+def forward_arrays(mx, tensors, ids, lengths, *, heads: int, layers: int, answer_ids):
+    """Differentiable FP32 MLX forward; never silently detach gradients."""
     import numpy as np
     ids = np.asarray(ids, dtype=np.int32)
     lengths = np.asarray(lengths, dtype=np.int32)
@@ -57,8 +57,32 @@ def forward(mx, tensors, ids, lengths, *, heads: int, layers: int, answer_ids):
     x = _norm(mx, x, tensors["norm.weight"])
     hidden = mx.stack([x[i,int(lengths[i])-1] for i in range(batch)])
     logits = hidden @ mx.transpose(tensors["embedding.weight"][mx.array(answer_ids,dtype=mx.int32)])
+    return logits
+
+
+def forward(mx, tensors, ids, lengths, *, heads: int, layers: int, answer_ids):
+    """Read-only NumPy projection of the same differentiable MLX forward."""
+    import numpy as np
+    logits = forward_arrays(mx, tensors, ids, lengths, heads=heads,
+                            layers=layers, answer_ids=answer_ids)
     mx.eval(logits)
     return np.asarray(logits)
+
+
+def clip_gradients(mx, gradients, *, max_norm: float):
+    """Global L2 clipping matching PyTorch's native max-norm boundary."""
+    from mlx.utils import tree_flatten, tree_map
+    import math
+    if not math.isfinite(max_norm) or max_norm <= 0:
+        raise ValueError("MLX_INVALID_GRADIENT_CLIP_NORM")
+    leaves = [array for _,array in tree_flatten(gradients)]
+    if not leaves:
+        raise ValueError("MLX_EMPTY_GRADIENT_TREE")
+    norms = mx.stack([mx.sum(array * array) for array in leaves])
+    total = mx.sqrt(mx.sum(norms))
+    factor = mx.minimum(mx.array(1.0, dtype=total.dtype),
+                        max_norm / (total + 1e-6))
+    return tree_map(lambda array: array * factor, gradients), total
 
 
 def native_optimizer_to_mlx(optimizer_state, model_weights, *, parameter_order):

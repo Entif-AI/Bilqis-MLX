@@ -44,3 +44,13 @@ Not all nine necessarily belong in A. Domain, difficulty, independence and prere
 - The actual per-grade same-checkpoint criterion and whole-school final evaluation are fresh versioned rubrics; the historic 1,150-item exam remains provenance, not the graduation contract.
 
 **Status:** `GRADE_A_SOURCE_VALIDATION_HOLD`. This document is a source-guided shortlist, not user-approved capability allocation or evidence that MLX neural training may start.
+
+## Source-backed six-capability draft, 2026-10-15
+
+The private `bilqis_mlx.grade_a_probe` now generates six single-predicate proposals: `A.IDENTITY`, `A.PARENT`, `A.LINK`, `A.MEMBER`, `A.EDGE` and `A.MAPS`. They test entity equality, directed parent facts, symmetric links, set membership, graph edges and direct function mappings. Each is a flat Boolean lookup with no quantified, temporal, inverse, subset or composed query. The source of each predicate is the existing `bilqis_micro.kernel` or `bilqis_development.kernel`, verified by five pinned SHA-256 source hashes.
+
+The reproducible audit yields 24 instructional and 12 assessment questions per predicate (216 total). Each partition has balanced TRUE/FALSE labels; both old independently implemented symbolic oracles agree. No train/exam input identity repeats, including across capabilities. Each capability teaches every token and world size it later examines. **Both three- and four-entity worlds appear in training and testing.** The tests vary mathematical relations or queried operands, not unrelated Boolean decorations.
+
+A read-only check against the preserved complete step-116760 FP32 checkpoint confirms the first **113** source-token IDs are exactly the initial 113 entries of the saved **222**-token vocabulary. The additional 109 tokens stay unchanged. The full model graph and original file SHA are pinned in `docs/GRADE_A_SOURCE_PROBE_V1.json`.
+
+**Decision still open:** Six direct predicates are a viable source-tested draft, but their comparable difficulty and ordering still require evaluation. In particular, `MEMBER`, `EDGE` and `MAPS` draw on more developed typed world structures than `IDENTITY`, `PARENT` and `LINK`. The proposal is **not** a training-admitted Grade A, and no real-student score or mastery receipt has been recorded. The old model may already recognize the roots; that does not establish new-grade mastery. Numeric 0–3 answer readouts remain reserved for a grade whose numeral prerequisites and independent assessment contract are taught first. The workbook's provisional grade labels and New Ithkuil research bridges are not imported as new exam answers.

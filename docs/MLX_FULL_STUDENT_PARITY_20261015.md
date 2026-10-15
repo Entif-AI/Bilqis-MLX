@@ -55,3 +55,7 @@ The source tree is read-only for this invocation. The probe never calls an optim
 5. Verify six-panel dashboard source adapter and protected legacy/backup custody before any human-operated neural session.
 
 **Disposition:** `PARTIAL_MLX_READ_ONLY_PARITY_PASS / TRAINING_HELD`.
+
+## Subsequent disposable continuation proof
+
+See [MLX AdamW fixture restart](MLX_DISPOSABLE_ADAMW_RESTART_20261015.md). It verifies four PyTorch/MLX continuation steps from restored fixture moments, state-file corruption rejection, and a tiny causal-transformer gradient/clipping comparison. The historical 116760-step student remains read-only; full-student training continuation is still pending.

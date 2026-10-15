@@ -1,0 +1,185 @@
+{
+  "all_exam_semantic_tokens_taught": true,
+  "all_independent_oracle_pairs_agree": true,
+  "capabilities": {
+    "A.EDGE": {
+      "exam_identity_digest": "ab59445ed210a9128a11166ea77422c2f0a4061d5088eee70ae782e49627890a",
+      "exam_rows": 12,
+      "exam_truth_counts": {
+        "FALSE": 6,
+        "TRUE": 6
+      },
+      "exam_world_sizes": [
+        3,
+        4
+      ],
+      "max_context_tokens": 28,
+      "source_root": "development.op.EDGE",
+      "train_exam_input_overlap": 0,
+      "train_identity_digest": "8c67e8f095812abe5fdfe6511e3f114b9ec34331e3ac5b9a259d48067769c4a8",
+      "train_rows": 24,
+      "train_truth_counts": {
+        "FALSE": 12,
+        "TRUE": 12
+      },
+      "train_world_sizes": [
+        3,
+        4
+      ],
+      "unintroduced_exam_tokens": 0
+    },
+    "A.IDENTITY": {
+      "exam_identity_digest": "6e9c13fc777762690aa7aa87e457f3a1a09308241cc1c0b63d27679852748021",
+      "exam_rows": 12,
+      "exam_truth_counts": {
+        "FALSE": 6,
+        "TRUE": 6
+      },
+      "exam_world_sizes": [
+        3,
+        4
+      ],
+      "max_context_tokens": 17,
+      "source_root": "micro.compare.EQ",
+      "train_exam_input_overlap": 0,
+      "train_identity_digest": "df60dbd25d95a5cee50aea8d5bbec70b9c2b15297746ea3957f221786b2d5828",
+      "train_rows": 24,
+      "train_truth_counts": {
+        "FALSE": 12,
+        "TRUE": 12
+      },
+      "train_world_sizes": [
+        3,
+        4
+      ],
+      "unintroduced_exam_tokens": 0
+    },
+    "A.LINK": {
+      "exam_identity_digest": "3dd159ca3240fbbc9576ca5eec1c52a9cd9266c32dee14b81979c066eba8e150",
+      "exam_rows": 12,
+      "exam_truth_counts": {
+        "FALSE": 6,
+        "TRUE": 6
+      },
+      "exam_world_sizes": [
+        3,
+        4
+      ],
+      "max_context_tokens": 20,
+      "source_root": "micro.relation.LINK",
+      "train_exam_input_overlap": 0,
+      "train_identity_digest": "f51755ac005b04697b7432913be8dee3d21ea2c73da13fdaad4c7e8bbd4995fa",
+      "train_rows": 24,
+      "train_truth_counts": {
+        "FALSE": 12,
+        "TRUE": 12
+      },
+      "train_world_sizes": [
+        3,
+        4
+      ],
+      "unintroduced_exam_tokens": 0
+    },
+    "A.MAPS": {
+      "exam_identity_digest": "08d14beb76e70aee7d00c48ee9e549220cc9590a2b02ec61daa6480de88aa200",
+      "exam_rows": 12,
+      "exam_truth_counts": {
+        "FALSE": 6,
+        "TRUE": 6
+      },
+      "exam_world_sizes": [
+        3,
+        4
+      ],
+      "max_context_tokens": 29,
+      "source_root": "development.op.MAPS",
+      "train_exam_input_overlap": 0,
+      "train_identity_digest": "75c3481f016257f8d2b533101dbbf188059838920884f2c19dd1658fa5bb8798",
+      "train_rows": 24,
+      "train_truth_counts": {
+        "FALSE": 12,
+        "TRUE": 12
+      },
+      "train_world_sizes": [
+        3,
+        4
+      ],
+      "unintroduced_exam_tokens": 0
+    },
+    "A.MEMBER": {
+      "exam_identity_digest": "e48a136184c9b3922ad494f7149c96d814e3b4a9852577d9e048a5f95d174b86",
+      "exam_rows": 12,
+      "exam_truth_counts": {
+        "FALSE": 6,
+        "TRUE": 6
+      },
+      "exam_world_sizes": [
+        3,
+        4
+      ],
+      "max_context_tokens": 28,
+      "source_root": "development.op.MEMBER",
+      "train_exam_input_overlap": 0,
+      "train_identity_digest": "1de1b0e6ee8a44407d75149ac473dcdfb8f05e15c6bad812edca631cf0e6176d",
+      "train_rows": 24,
+      "train_truth_counts": {
+        "FALSE": 12,
+        "TRUE": 12
+      },
+      "train_world_sizes": [
+        3,
+        4
+      ],
+      "unintroduced_exam_tokens": 0
+    },
+    "A.PARENT": {
+      "exam_identity_digest": "b6a00a757ee845d601820868be55d8c77ecd2ada9ac2d4519239e98800b1b84b",
+      "exam_rows": 12,
+      "exam_truth_counts": {
+        "FALSE": 6,
+        "TRUE": 6
+      },
+      "exam_world_sizes": [
+        3,
+        4
+      ],
+      "max_context_tokens": 20,
+      "source_root": "micro.relation.PARENT",
+      "train_exam_input_overlap": 0,
+      "train_identity_digest": "6c99215340e4a5a39a3e7224efd1cb195dd31863ce75ff5593aed448abfb9c52",
+      "train_rows": 24,
+      "train_truth_counts": {
+        "FALSE": 12,
+        "TRUE": 12
+      },
+      "train_world_sizes": [
+        3,
+        4
+      ],
+      "unintroduced_exam_tokens": 0
+    }
+  },
+  "capability_count": 6,
+  "course": "0303894cd0017adba19ea229eb35d740973a1ba7b0197822e6ea0c36ebc3d5f6",
+  "historic_student_graph_binding": {
+    "checkpoint_sha256": "646d8590cf8fddb7b3c412ecead4ac185a0578f93baadf24e05f92dd15068a78",
+    "checkpoint_written": false,
+    "full_student_graph_sha256": "57ab0a141a9bfc25c6da8d0568f14e0a8beaab2c0c3fd33931e51e2624a0b16f",
+    "optimizer_updated": false,
+    "prefix_identity_preserved": true,
+    "preserved_legacy_semantic_prefix": 113,
+    "student_vocab_size": 222
+  },
+  "legacy_graph_sha256": "67a582c803c7365429c1b30e97c33365a5c2e7081808759afa49dc8949923de7",
+  "neural_updates": 0,
+  "original_source_sha256_by_file": {
+    "bilqis_development/kernel.py": "1c73e1987a38e9612ffa84b12895c8a5a9841a8b595fe200ce933831c37d8ba4",
+    "bilqis_development/registry.py": "5f0c80d797a98868bfe2c585160ad5d95c9ef3a529e55d8bcba54d4bd0c8de9a",
+    "bilqis_logic/kernel.py": "9b73993d042cebb9d46656884966ca92b024fccdd0d32e89b0071b0718fb2c6c",
+    "bilqis_micro/graph.py": "04898206f76c7a5fae27a03c3a2c01f2c684e076c5771b169397d6bf12afb31b",
+    "bilqis_micro/kernel.py": "1355d914cda4200503ac8aa5cac4fd8601ebaca33ae9531d963d8cc47451503d"
+  },
+  "schema": "bilqis.mlx.direct-grade-a-source-probe/v1",
+  "state": "SOURCE_ATTESTED_DRAFT_NOT_TRAINING_ADMITTED",
+  "training_permission_granted": false
+}

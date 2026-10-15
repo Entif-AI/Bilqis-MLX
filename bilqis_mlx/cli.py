@@ -35,6 +35,7 @@ def _inspect(run_dir: Path) -> dict:
     return {"status":"NOT_PREPARED_CURRICULUM_REDESIGN",
             "grade":"A","phase":"GRADE_A_SOURCE_VALIDATION_HOLD",
             "historical_seed":AUDITED_PARENT.__dict__,
+            "grade_a_draft":"SIX_SOURCE_TESTED_DIRECT_PREDICATES_NOT_ADMITTED",
             "native_mlx_full_optimizer_verified":False,
             "source_grounded_grade_a_admitted":False,
             "neural_training_started_by_this_command":False,
@@ -59,8 +60,8 @@ def preflight(run_dir: Path, *, resume=False):
     snapshot = _inspect(run_dir)
     snapshot.update({"result":"PREFLIGHT_ONLY_NO_NEURAL_UPDATES",
                      "start_behavior":"EXPLICIT_SAVED_STATE_RESUME" if resume else "GRADE_A_NEW_RUN",
-                     "blockers":["NEW_GRADE_A_CURRICULUM_NOT_SOURCE_ATTESTED",
-                                 "FULL_NATIVE_MLX_FP32_AND_ADAMW_CONVERSION_NOT_VERIFIED",
+                     "blockers":["NEW_GRADE_A_SOURCE_DRAFT_NOT_FINAL_CURRICULUM_ADMITTED",
+                                 "FULL_STUDENT_MLX_OPTIMIZER_CONTINUATION_NOT_PROVEN",
                                  "NEW_CAPABILITY_RUBRIC_NOT_APPROVED",
                                  "HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES"]})
     # The source remains unchanged. This probes only current disk headroom.
