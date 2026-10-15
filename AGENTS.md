@@ -1,0 +1,15 @@
+# Bilqis MLX implementation authority
+
+Read `README.md`, this file and `docs/REQUIREMENTS.md` before changing this repository. Controlling private user instructions: `IPR-0220` (protected issue #335 in `socr8s/private-ip`). Public #160/#162 are summaries, not full training authority. Do not copy unpublished operating details from this repo into public Bilqis/Rosetta artifacts.
+
+- This is a **new private repository**, not a migration that rewrites or cleans earlier v16/v2-r1/v17 runs. No historical run files or student checkpoint may be changed or pruned.
+- The human alone operates neural optimizer updates. Agents may build, test, inspect and prepare *nontraining* assets. Never trigger `npm run train` without `--dry-run` while implementing or verifying.
+- The complete original FP32 student and its own AdamW are the preferred historical seed. Do not mix per-grade weights into the trainable whole-student, reset its optimizer under the guise of migration, or claim full MLX state parity based on a tiny synthetic test.
+- In the successor, letter grades and source-defined capabilities are distinct. Grade mastery is a 100%-correct same-checkpoint exam on every capability in the active grade. Previously passed grades may regress without blocking current-grade advancement; maintain exact provenance of regressions.
+- After every full pass through the active grade, rank the weakest 3 across capabilities from the active and all already-passed grades, visit them once, then recompute/rank the next 3 nonrepeated weakest and visit each once before another active-grade pass. Never silently retest only a flattering subset.
+- A grade champion is one whole checkpoint including its AdamW. Its grade-specific pointer may be shared. One champion of 3 grades casts 3 grade-linked teacher votes and has weight 3 in whole-school teacher soup; no repeated model storage per grade.
+- Teach roots before testing them; test decomposed constituent semantics to mastery in earlier grades before composition. Every capability receives binary questions plus every additional appropriate finite typed answer family. Do not fill curriculum gaps with fabricated labels.
+- `npm run status/dashboard/train -- --dry-run` must remain stable and inert. Reuse the original six-panel renderer instead of rebuilding dashboard variants.
+- No sweeping manipulation of `~/Code`. All code mutations are scoped to this repo. Bulk copy tools operate only on explicit source trees, default to plan-only, hash and verify every entry, require an external target, and **never delete local sources**.
+- Keep new run size bounded, monitor free-space before material writes, write files atomically, preserve checkpoints and receipt history. No broad cleanup, forced push, destructive history rewrite, or direct push to main.
+- Follow existing project governance for public/private authority and remote writer coordination. IPR archives preserve verbatim rationale; this file is an implementation guide, not a replacement for controlling user instructions.

@@ -1,0 +1,46 @@
+# Bilqis MLX: private, independent successor
+
+**State: implementation and validation in progress. No neural training is enabled.**
+
+This private repository implements the successor directed by protected IPR-0220. Its public interoperability-facing summaries are Bilqis #160 (MLX backend qualification) and #162 (successor integration). The detailed internal curriculum, promotion and resource policy stays private.
+
+The prior 29 `G##` units are **capabilities**. This new school uses lettered **grades** (A, B, C...) with about six to nine prerequisite-compatible capabilities per grade. A run starts with grade A unless the operator explicitly supplies `--resume`. A grade is mastered only by one complete candidate model and its *own* optimizer scoring 100% on all that grade's tests at the same checkpoint. Past grade champions vote once *per represented grade*, even when multiple pointers share one physical checkpoint. Weighted whole-school soup makes a teacher only, never a synthetic trainable student.
+
+Read [whole-student MLX parity evidence](docs/MLX_FULL_STUDENT_PARITY_20261015.md) and [Grade A source audit](docs/GRADE_A_SOURCE_AUDIT.md) before suggesting training.
+
+Development rules: do not invent untaught roots, do not examine composed semantics before mastered constituents, and do not inherit the historic 1,150-question exam as the new graduation rule. Preserve the old entire FP32 checkpoint and its AdamW. MLX conversion is fail-closed until actual full-state parity is proven.
+
+## Operator interface
+
+Run from this repository:
+
+```sh
+npm run status
+npm run dashboard
+npm run train -- --dry-run
+npm run train
+```
+
+`status`, `dashboard` and `--dry-run` are neural-inert. **`train` currently refuses to start.** Training will only be enabled after full migration, a source-grounded course, rubric, and explicit human launch. Do not use `--resume` to mean "start from the original old grade G12". Resumption applies only to a previously initialized *new* run.
+
+## Data and storage boundaries
+
+Source code lives here; ignored `runs/` and `artifacts/` never enter Git. The source pre-repair complete FP32 checkpoint is `student-116760-7e9af4651f28.pt` (SHA-256 `646d8590cf8fddb7b3c412ecead4ac185a0578f93baadf24e05f92dd15068a78`) from the original v16 run. It was audited at 1,052/1,150 **on the former rubric**; this is not a new-grade mastery claim. **No checkpoint files are copied by repository setup.** Existing v16, v2-r1 and v17 research lineages remain at their original locations.
+
+Run the backup script **yourself** once an external disk is mounted and you have chosen the old worktrees/runs to retire. The first command is plan-only; the second is an explicitly bounded verified **copy**, never a move or deletion:
+
+```sh
+./scripts/backup-retired.sh plan --source "$HOME/Code/bilqis-triplets-v16" --destination "/Volumes/YourBackupDisk"
+./scripts/backup-retired.sh copy --source "$HOME/Code/bilqis-triplets-v16" --destination "/Volumes/YourBackupDisk" --confirm-copy --max-gib 400
+```
+
+These are examples; name each actual retired source tree separately. The script rejects the whole `~/Code` directory, requires destination on a different volume for copy, includes dotfiles/ignored models and symlink identity (manifest-encoded on USB formats without POSIX symlinks), verifies every destination file against SHA-256, and **never deletes originals**. After copying, run `npm run backup:verify -- --manifest <printed-manifest-path>`. If a source directory is a linked Git worktree, its `.git` pointer does **not** include the shared Git object database; create a separate Git bundle before retiring Git history. The script uses exclusive file creation, not hard-link operations that fail on exFAT. Interrupted/partially copied files fail verification; nothing is deleted. Never treat a successful copy as an authorization to delete source data. Do not run broad filesystem cleanups, `git clean`, or recursive delete commands against `~/Code`.
+
+## Verification
+
+```sh
+npm run test
+npm run train -- --dry-run
+```
+
+See `AGENTS.md` and `docs/REQUIREMENTS.md` for implementation constraints and current gaps.

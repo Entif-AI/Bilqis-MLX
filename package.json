@@ -1,0 +1,14 @@
+{
+  "name": "bilqis-mlx-private",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "status": "python3 -m bilqis_mlx.cli status",
+    "dashboard": "python3 -m bilqis_mlx.cli dashboard",
+    "train": "python3 -m bilqis_mlx.cli train",
+    "test": "python3 -m unittest discover -s tests -v",
+    "backup:plan": "python3 -m bilqis_mlx.backup plan",
+    "backup:copy": "python3 -m bilqis_mlx.backup copy",
+    "backup:verify": "python3 -m bilqis_mlx.backup verify"
+  }
+}
