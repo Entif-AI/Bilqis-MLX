@@ -41,6 +41,15 @@ cap; disk reserve and minute limit remain in effect. Save files are never
 silently pruned. The default run directory is
 `runs/school-mlx-v1`, always separate from the historical source run.
 
+On an interactive terminal, the human training command uses that terminal for
+the six-panel School50 live dashboard. It refreshes on **committed** model
+visits and scheduled exams, not in-flight optimizer steps. On normal stop a
+final read-only snapshot remains. `npm run dashboard` independently replays
+the persisted events and renders the complete latest snapshot after the
+training command has exited. Non-TTY training preserves machine-readable
+JSON event lines. Running the fresh command with an existing run does not
+reset anything: the guard instructs the human to use `--resume`.
+
 The original native PyTorch source is pinned to exact SHA-256
 `646d8590cf8fddb7b3c412ecead4ac185a0578f93baadf24e05f92dd15068a78`
 and optimizer step 116760. At the initial launch the model and all AdamW

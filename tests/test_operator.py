@@ -7,9 +7,40 @@ import tempfile
 import unittest
 from bilqis_mlx.cli import main,DEFAULT_RUN,ORIGINAL_CHECKPOINT
 from bilqis_mlx.spiral_dashboard import TABLES
+from bilqis_mlx.grade_a_dashboard import build, ingest
 
 
 class OperatorTests(unittest.TestCase):
+    def test_saved_grade_a_dashboard_replays_exam_without_training(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            (run / "events.jsonl").write_text(json.dumps({
+                "event": "GRADE_A_EXAM_COMMITTED", "generation": 8,
+                "phase": "RECOVERY_1", "scores": {
+                    name: {"correct": 6, "total": 12}
+                    for name in ("A.IDENTITY", "A.PARENT", "A.LINK", "A.MEMBER", "A.EDGE", "A.MAPS")
+                }}) + "\n")
+            board = build(run, stream=io.StringIO())
+            output = board.render(width=115, height=38)
+            self.assertIn("SEALED EXAM 36/72", output)
+            self.assertIn("50.0%", output)
+            self.assertIn("RECOVERY_1", output)
+            self.assertFalse((run / "state.json").exists())
+
+    def test_event_ingest_updates_live_view_without_running_optimizer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {"event": "GRADE_A_TEACHER_VISIT_COMMITTED",
+                           "capability": "A.LINK", "generation": 2,
+                           "optimizer_step": 116776, "teacher_policy": "abc123",
+                           "source_training_accuracy_before": .5,
+                           "source_training_accuracy_after": .75,
+                           "teacher_reward": .25, "next_phase": "MAIN"})
+            shown = board.render(width=115, height=38)
+            self.assertIn("LESSON COMMITTED", shown)
+            self.assertIn("116776", shown)
+            self.assertIn("exam pending", shown)
+
     def test_six_panel_renderer_still_has_same_names_and_rows(self):
         self.assertEqual([name for name,_ in TABLES],[
             "CANDIDATES","SENTINEL & RETENTION","SOUP & TEACHER",

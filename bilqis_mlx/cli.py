@@ -129,25 +129,8 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False):
 
 
 def dashboard(run_dir: Path):
-    info = _inspect(run_dir)
-    d = Dashboard(redraw=False, title="BILQIS / SCHOOL50 MLX | LETTER GRADES",
-                  show_all_panels=True)
-    d.mode = "READ-ONLY"
-    d.grade_program=("A",)
-    d.push("state", {"mastery":{"phase":info["phase"],"prefix":info["grade"],
-                          "position":0}, "optimizer_step":info.get("optimizer_step") or
-                          AUDITED_PARENT.optimizer_step,
-                     "grade_visits":info.get("visits",0),
-                     "last_run_status":info["status"]},redraw=False)
-    d.push("system", {"kind":"SOURCE","detail":"Complete FP32 champion pinned by SHA, never copied"},redraw=False)
-    d.push("system", {"kind":"MLX","detail":"Disposable full model+AdamW parity passed; live trainer not qualified"},redraw=False)
-    d.push("system", {"kind":"CURRICULUM","detail":"Grade A accepted for human experimental training; broader NI awaits proof"},redraw=False)
-    d.push("system", {"kind":"MODE","detail":"Six inherited School50 panels, read-only"},redraw=False)
-    d.rows["GRADES & MASTERY"].append({"visit":info.get("visits",0),
-      "grade":info["grade"],"step":info.get("optimizer_step") or AUDITED_PARENT.optimizer_step,
-      "eligible":"-","selected":"N","prefix":"A","outcome":info["phase"],
-      "right_pct":"-"})
-    d.draw()
+    from .grade_a_dashboard import render
+    render(run_dir)
     return 0
 
 
@@ -185,12 +168,31 @@ def main(argv=None):
                   "agents may run only --dry-run and tests. "
                   "Use npm run train -- --dry-run for preflight.",file=sys.stderr)
             return 2
-        from .grade_a_trainer import operate
-        return _print_status(operate(
-            args.run_dir, LEGACY_ROOT, ORIGINAL_CHECKPOINT, GRADE_A_MANIFEST,
-            resume=args.resume, minutes=args.minutes,
-            steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
-            batch_size=args.batch_size, reserve_gib=args.reserve_gib))
+        from .grade_a_trainer import operate, operator_view
+        from .grade_a_dashboard import build, ingest
+        # Interactive training owns the dashboard in its *own* terminal.
+        # Non-TTY operators continue to receive machine-readable events.
+        visual = sys.stdout.isatty()
+        board = build(args.run_dir) if visual else None
+        def on_event(event):
+            ingest(board, event)
+            board.mode = "LIVE"
+            board.draw()
+        if board is not None:
+            board.draw()
+        with operator_view(on_event if visual else None):
+            result = operate(
+                args.run_dir, LEGACY_ROOT, ORIGINAL_CHECKPOINT, GRADE_A_MANIFEST,
+                resume=args.resume, minutes=args.minutes,
+                steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
+                batch_size=args.batch_size, reserve_gib=args.reserve_gib)
+        if board is not None:
+            board = build(args.run_dir)
+            board.mode = "STOPPED | LAST COMMITTED"
+            board.draw()
+            print("\nTraining stopped. Historical dashboard: npm run dashboard", flush=True)
+            return 0
+        return _print_status(result)
     except KeyboardInterrupt:
         print("HUMAN TRAINING INTERRUPTED: the last completed visit/checkpoint "
               "remains the resume point. Run npm run train -- --human-run --resume.",
@@ -198,6 +200,9 @@ def main(argv=None):
         return 130
     except (ValueError,RuntimeError,OSError,KeyError,IndexError) as err:
         print("OPERATOR BLOCKED: "+str(err),file=sys.stderr)
+        if "HUMAN_TRAINER_NEW_RUN_HAS_EXISTING_CONTENT" in str(err):
+            print("Saved school exists. To continue it, use: "
+                  "npm run train -- --human-run --resume --minutes 90", file=sys.stderr)
         return 2
 
 

@@ -8,6 +8,7 @@ its last committed boundary; no source or past student is overwritten.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import asdict
 import fcntl
 import hashlib
@@ -33,6 +34,16 @@ from .source import AUDITED_PARENT
 
 VERSION = "bilqis.mlx.human-grade-a-trainer/v1"
 LOCKFILE = ".grade-a-operator.lock"
+_event_view = ContextVar("grade_a_event_view", default=None)
+
+
+@contextmanager
+def operator_view(callback):
+    token = _event_view.set(callback)
+    try:
+        yield
+    finally:
+        _event_view.reset(token)
 
 
 def _canonical(data: object) -> str:
@@ -255,7 +266,14 @@ def _record(run_dir: Path, event: dict):
         stream.write(_canonical(event) + "\n")
         stream.flush()
         os.fsync(stream.fileno())
-    print(json.dumps(event, sort_keys=True), flush=True)
+    viewer = _event_view.get()
+    if viewer is None:
+        print(json.dumps(event, sort_keys=True), flush=True)
+    else:
+        try:
+            viewer(event)
+        except Exception as exc:
+            print("DASHBOARD UNAVAILABLE: " + str(exc), file=sys.stderr, flush=True)
 
 
 def _bundle_pointer(run_dir: Path, name: str, parameters, optimizer, graph,
