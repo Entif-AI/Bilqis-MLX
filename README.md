@@ -8,6 +8,8 @@ This private repository implements the successor directed by protected IPR-0220.
 
 **Living catalog:** models pin their approved semantic ABI while spreadsheet descriptions and New Ithkuil correspondences evolve. Propose, review, approve and version changes; never discard learned weights due to an editorial update. Search the official Ithkuil grammar and lexicon before inventing roots. See [the living-ledger policy](docs/LIVING_PASIGRAPHY_LEDGER_20261015.md).
 
+For the historical 222-token New Ithkuil crosswalk, the user delegated semantic-review decisions to the assistant (protected IPR-0220 comment `6187168824`). Any approved version must distinguish exact, qualified, compositional, native protocol and unresolved relationships; it does not certify an executable New Ithkuil wordform or neural learning.
+
 The prior 29 `G##` units are **capabilities**. This new school uses lettered **grades** (A, B, C...) with about six to nine prerequisite-compatible capabilities per grade. A run starts with grade A unless the operator explicitly supplies `--resume`. A grade is mastered only by one complete candidate model and its *own* optimizer scoring 100% on all that grade's tests at the same checkpoint. Past grade champions vote once *per represented grade*, even when multiple pointers share one physical checkpoint. Weighted whole-school soup makes a teacher only, never a synthetic trainable student.
 
 Read [whole-student MLX parity evidence](docs/MLX_FULL_STUDENT_PARITY_20261015.md) and [Grade A source audit](docs/GRADE_A_SOURCE_AUDIT.md) before suggesting training.
