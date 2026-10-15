@@ -17,3 +17,7 @@ The user expressly authorizes agents to execute inert preflights and dry-runs di
 ## ADR-004 | 2026-10-15 | New Ithkuil alignment without legacy ABI rupture
 
 Begin aligning newly introduced semantic primitives and concepts to **New Ithkuil** immediately. Preserve historical legacy semantic primitives *exactly as they are* to retain the previously trained model. New alignments are separate versioned mappings; a cognate, approximate analogy, or research seed never grants permission to relabel the original token graph, declare a new mastery gate satisfied, or test untaught abstractions. The uploaded curriculum registry is input and provenance, not automatic training authorization.
+
+## ADR-005 | 2026-10-15 | Open-ended semantic vocabulary and lexicalized roots
+
+The user explicitly rejects treating the historic 222-token checkpoint as a semantic ceiling. Extend Bilqis through New Ithkuil roots and morphology, external mathematical, logical and reasoning concepts, and independent lexicalized roots where composition would obscure a concept's distinctive meaning (examples supplied: `enshittification` and `shibboleth`). Preserve every legacy root/token ID and previously trained whole-student representation; allow future growth well beyond the 330 proposed Semantic Bridges entries. Research entries are not automatically acquired knowledge. Allocate and teach new identities only through source-grounded admission and prerequisite-respecting instruction, without silently rewriting the prior neural vocabulary.

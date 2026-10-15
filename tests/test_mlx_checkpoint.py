@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 import torch
 import mlx.core as mx
-from bilqis_mlx.mlx_checkpoint import save_new_bundle,load_bundle
+from bilqis_mlx.mlx_checkpoint import save_new_bundle,load_bundle,load_semantically_bound_bundle
 from bilqis_mlx.mlx_parity import native_optimizer_to_mlx
 
 
@@ -38,6 +38,8 @@ class MlxCheckpointTests(unittest.TestCase):
                                     reserve_gib=0)
             self.assertEqual(receipt['optimizer_step'],116760)
             self.assertEqual(receipt['tensor_count'],8)
+            with self.assertRaisesRegex(ValueError,'NO_SEMANTIC_CATALOG'):
+                load_semantically_bound_bundle(destination)
             with self.assertRaises(FileExistsError):
                 save_new_bundle(destination,parameters,original_optimizer,
                     source_digest=receipt['source_digest'],reserve_gib=0)

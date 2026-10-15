@@ -10,6 +10,7 @@
     "backup:plan": "python3 -m bilqis_mlx.backup plan",
     "backup:copy": "python3 -m bilqis_mlx.backup copy",
     "backup:verify": "python3 -m bilqis_mlx.backup verify",
-    "curriculum:audit": "python3 -m bilqis_mlx.grade_a_probe"
+    "curriculum:audit": "python3 -m bilqis_mlx.grade_a_probe",
+    "vocabulary:preflight": "python3 -m bilqis_mlx.vocabulary_probe"
   }
 }

@@ -40,7 +40,8 @@ def _fp32_array(mx, item, *, what: str):
 
 
 def save_new_bundle(destination: Path, parameters: Mapping[str, object], optimizer,
-                    *, source_digest: str, reserve_gib: float = 100.0) -> dict:
+                    *, source_digest: str, reserve_gib: float = 100.0,
+                    semantic_catalog: dict | None = None) -> dict:
     """Store an optimizer-bearing snapshot in an exclusive new directory.
 
     For now used by disposable fixtures only. The caller may not substitute
@@ -75,6 +76,12 @@ def save_new_bundle(destination: Path, parameters: Mapping[str, object], optimiz
             expected_bytes += arr.size * arr.itemsize
     arrays["adamw_global_step"] = state["step"]
     arrays["adamw_learning_rate"] = state["learning_rate"]
+    if semantic_catalog is not None:
+        from .vocabulary_growth import _check_catalog, digest
+        _check_catalog(semantic_catalog)
+        if ("embedding.weight" not in parameters or
+                len(semantic_catalog["tokens"]) != int(parameters["embedding.weight"].shape[0])):
+            raise ValueError("MLX_BUNDLE_CATALOG_EMBEDDING_ROW_COUNT_MISMATCH")
     if arrays["adamw_global_step"].dtype != mx.uint64:
         raise ValueError("MLX_BUNDLE_OPTIMIZER_STEP_DTYPE_DRIFT")
     if arrays["adamw_learning_rate"].dtype != mx.float32:
@@ -92,9 +99,20 @@ def save_new_bundle(destination: Path, parameters: Mapping[str, object], optimiz
         "tensor_count": len(arrays),
         "uncompressed_parameter_and_moment_bytes": expected_bytes,
     }
+    if semantic_catalog is not None:
+        manifest["semantic_catalog"] = {
+            "filename": "semantic-catalog.json",
+            "digest": digest(semantic_catalog),
+            "token_count": len(semantic_catalog["tokens"]),
+        }
     destination = Path(destination)
     assert_headroom(destination, required_bytes=expected_bytes*2+65536, reserve_gib=reserve_gib)
     destination.mkdir(parents=True, exist_ok=False)
+    if semantic_catalog is not None:
+        semantic_file = destination / "semantic-catalog.json"
+        semantic_file.write_text(json.dumps(semantic_catalog,sort_keys=True,indent=2,
+                                            ensure_ascii=False)+"\n",encoding="utf-8")
+        manifest["semantic_catalog"]["file_sha256"] = digest_file(semantic_file)
     data_path = destination / "model-and-own-adamw.safetensors"
     mx.save_safetensors(str(data_path), arrays)
     manifest["safetensors_sha256"] = digest_file(data_path)
@@ -115,6 +133,9 @@ def load_bundle(destination: Path):
     manifest = json.loads((destination/"manifest.json").read_text())
     if manifest.get("schema") != SCHEMA:
         raise ValueError("MLX_BUNDLE_SCHEMA_DRIFT")
+    vocabulary_record = manifest.get("semantic_catalog")
+    if vocabulary_record is not None:
+        _read_catalog(destination,vocabulary_record)
     names = manifest.get("parameter_names")
     if not isinstance(names,list):
         raise ValueError("MLX_BUNDLE_NAMES_MISSING")
@@ -154,3 +175,31 @@ def load_bundle(destination: Path):
     restored.state=state
     mx.eval(params, restored.state)
     return params,restored,manifest
+
+
+def _read_catalog(destination: Path, binding: dict) -> dict:
+    from .vocabulary_growth import _check_catalog, digest
+    if (not isinstance(binding,dict) or
+            binding.get("filename") != "semantic-catalog.json"):
+        raise ValueError("MLX_BUNDLE_UNRECOGNIZED_CATALOG_BINDING")
+    catalog_file = destination / binding["filename"]
+    if digest_file(catalog_file) != binding.get("file_sha256"):
+        raise ValueError("MLX_BUNDLE_SEMANTIC_CATALOG_FILE_CHANGED")
+    catalog = json.loads(catalog_file.read_text(encoding="utf-8"))
+    _check_catalog(catalog)
+    if (digest(catalog) != binding.get("digest") or
+            len(catalog["tokens"]) != binding.get("token_count")):
+        raise ValueError("MLX_BUNDLE_SEMANTIC_CATALOG_DIGEST_DRIFT")
+    return catalog
+
+
+def load_semantically_bound_bundle(destination: Path):
+    """Return model, own AdamW, immutable semantic manifest and exact token graph."""
+    params,optimizer,manifest = load_bundle(destination)
+    binding = manifest.get("semantic_catalog")
+    if binding is None:
+        raise ValueError("MLX_BUNDLE_HAS_NO_SEMANTIC_CATALOG")
+    catalog = _read_catalog(Path(destination),binding)
+    if int(params["embedding.weight"].shape[0]) != len(catalog["tokens"]):
+        raise ValueError("MLX_BUNDLE_RELOADED_MODEL_VOCAB_DRIFT")
+    return params,optimizer,manifest,catalog
