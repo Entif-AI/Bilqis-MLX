@@ -22,7 +22,7 @@ import uuid
 
 from .backup import digest_file
 from .champions import Checkpoint
-from .disk import assert_headroom
+from .disk import assert_headroom, headroom_snapshot
 from .grade_a_evaluator import score_predictions
 from .grade_a_manifest import verify_manifest
 from .grade_a_release import AUTHORITY, accepted_grade_a
@@ -535,6 +535,13 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     mx, run_dir, receipt, manifest, course, source_root,
                     source_checkpoint, params)
                 continue
+            budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
+                                       reserve_gib=reserve_gib)
+            if not budget["sufficient"]:
+                reason = "DISK_RESERVE_REACHED"
+                break
+            # Retain the original fail-closed checkpoint preflight against
+            # disk changes between telemetry and the actual write boundary.
             assert_headroom(run_dir, required_bytes=600_000_000,
                             reserve_gib=reserve_gib)
             receipt = _take_visit(
@@ -543,6 +550,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 batch_size=batch_size, reserve_gib=reserve_gib)
             visits += 1
         school = _state_from_json(receipt["school"], course)
+        budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
+                                   reserve_gib=reserve_gib)
         elapsed_seconds = round(time.monotonic() - start, 3)
         _record(run_dir, {
             "event": "GRADE_A_SESSION_STOPPED", "stop_reason": reason,
@@ -553,6 +562,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "minutes": minutes, "max_visits": max_visits,
             "elapsed_seconds": elapsed_seconds,
             "grade_phase": school.stage, "resume_required": school.stage != "AWAITING_NEXT_GRADE",
+            **{k: budget[k] for k in ("free_bytes", "reserve_bytes", "estimated_write_bytes")},
         })
         return {
             "status": receipt["result"],
@@ -560,6 +570,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "elapsed_seconds": elapsed_seconds,
             "time_limit_minutes": minutes,
             "max_visits": max_visits,
+            "disk_free_gib": round(budget["free_bytes"] / 1024**3, 3),
+            "disk_reserve_gib": round(budget["reserve_bytes"] / 1024**3, 3),
+            "disk_next_visit_gib": round(budget["estimated_write_bytes"] / 1024**3, 3),
             "grade": school.grade,
             "phase": school.stage,
             "visits_this_command": visits,

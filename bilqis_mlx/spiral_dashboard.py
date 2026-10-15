@@ -273,11 +273,13 @@ def _metric_delta(before,after,key):
 class Dashboard:
     """Bounded category buffers; render depends only on input records and size."""
     def __init__(self,*,stream=None,clock=None,max_records=512,redraw=True,
-                 title="BILQIS / SCHOOL50 V5",show_all_panels=False):
+                 title="BILQIS / SCHOOL50 V5",show_all_panels=False,
+                 tables=TABLES):
         self.stream=stream if stream is not None else sys.stdout
         self.clock=clock if clock is not None else time.monotonic
         self.started=self.clock()
-        self.rows={name:deque(maxlen=max_records) for name,_ in TABLES}
+        self.tables=tables
+        self.rows={name:deque(maxlen=max_records) for name,_ in self.tables}
         self.state={}
         self.mode="LIVE"
         self.log_hint=""
@@ -295,6 +297,7 @@ class Dashboard:
         self._champion_mtime_ns=None
         self.current_course={}
         self.current_graduation_line=None
+        self.operator_lines=[]
 
     def _refresh_champions(self):
         """Read canonical champion inventory if a grade checkpoint changed."""
@@ -493,7 +496,7 @@ class Dashboard:
 
     def _wide_section(self,name,width,shown):
         """Deduplicate conceptual rows, not the underlying receipt history."""
-        specs=dict(TABLES)[name]
+        specs=dict(self.tables)[name]
         fitted=_wide_columns(specs,width)
         available=self._section_rows(name)
         shown=min(shown,len(available))
@@ -620,12 +623,14 @@ class Dashboard:
                      ' | '+current_course_progress.advancement(self.current_course)]
         if self.current_graduation_line:
             headers.append(self.current_graduation_line)
+        if self.operator_lines:
+            headers.extend(self.operator_lines)
         if width>=WIDE_MIN_WIDTH and height>=WIDE_MIN_HEIGHT:
             return self._render_wide(headers,footer,width=width,height=height)
-        groups=list(TABLES) if self.show_all_panels else [
-            (name,columns) for name,columns in TABLES if self.rows[name]]
+        groups=list(self.tables) if self.show_all_panels else [
+            (name,columns) for name,columns in self.tables if self.rows[name]]
         if not groups:
-            groups=[TABLES[0],TABLES[3]]
+            groups=[self.tables[0],self.tables[3]]
         # A heading and one header row per visible category are non-negotiable.
         # At very small heights prioritize candidate and mastery categories.
         priority=("CANDIDATES","GRADES & MASTERY","BRIDGE FAMILIES",
@@ -653,7 +658,7 @@ class Dashboard:
             if not progressed:
                 break
         lines=[_clean(header)[:width] for header in headers]
-        for name,columns in TABLES:
+        for name,columns in self.tables:
             if name not in counts:
                 continue
             available=self._section_rows(name)

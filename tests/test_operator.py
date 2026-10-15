@@ -16,7 +16,8 @@ class OperatorTests(unittest.TestCase):
             run = Path(tmp)
             (run / "events.jsonl").write_text(json.dumps({
                 "event": "GRADE_A_EXAM_COMMITTED", "generation": 8,
-                "phase": "RECOVERY_1", "scores": {
+                "phase": "RECOVERY_1", "rubric": "fixture-grade-a-rubric",
+                "student_sha256": "fixture-intact-model", "scores": {
                     name: {"correct": 6, "total": 12}
                     for name in ("A.IDENTITY", "A.PARENT", "A.LINK", "A.MEMBER", "A.EDGE", "A.MAPS")
                 }}) + "\n")

@@ -47,8 +47,12 @@ the six-panel School50 live dashboard. It refreshes on **committed** model
 visits and scheduled exams, not in-flight optimizer steps. On normal stop the
 trainer appends a `GRADE_A_SESSION_STOPPED` event identifying the actual
 reason (`TIME_LIMIT_REACHED`, explicitly requested `VISIT_LIMIT_REACHED`, or
-`GRADE_A_AWAITING_NEXT_GRADE`), elapsed seconds, visit count, and latest
+`GRADE_A_AWAITING_NEXT_GRADE`, or protected `DISK_RESERVE_REACHED`), elapsed seconds, visit count, and latest
 optimizer step. A due complete-grade exam finishes before normal stopping.
+Disk stops include measured free GiB, protected reserve and estimated next
+checkpoint allowance. They do not delete, prune, rewrite or compact the
+complete student/AdamW bundle history. The dashboard also independently
+reads and shows live disk headroom even if an older run lacks a stop receipt.
 A final read-only snapshot remains. `npm run dashboard` independently replays
 the persisted events and renders the complete latest snapshot after the
 training command has exited. Non-TTY training preserves machine-readable

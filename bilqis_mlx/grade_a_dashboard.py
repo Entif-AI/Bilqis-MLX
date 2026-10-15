@@ -1,85 +1,73 @@
-"""Neural-inert live and historical School50 view for the Grade A event ledger."""
+"""Read-only School50 adapter for the legacy Grade A and future school events.
+
+The six panels use a grade-neutral telemetry contract. This module does not
+score exams, influence teacher rewards, or touch neural state and checkpoints.
+"""
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from .spiral_dashboard import Dashboard
+from .school_telemetry import SchoolTelemetry, LETTER_TABLES
+from .disk import headroom_snapshot
 from .source import AUDITED_PARENT
+from .spiral_dashboard import Dashboard
 
 
-def build(run_dir: Path, *, stream=None) -> Dashboard:
+def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard:
     run_dir = Path(run_dir)
     board = Dashboard(stream=stream, redraw=False,
                       title="BILQIS / SCHOOL50 MLX | LETTER GRADES",
-                      show_all_panels=True)
-    board.grade_program = ("A",)
+                      show_all_panels=True, tables=LETTER_TABLES)
     board.mode = "READ-ONLY"
     state_path = run_dir / "state.json"
-    state = json.loads(state_path.read_text()) if state_path.exists() else None
+    state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else None
     school = state["school"] if state else {}
     step = school.get("current_student", {}).get("optimizer_step", AUDITED_PARENT.optimizer_step)
     visits = school.get("visits", 0)
     phase = school.get("stage", "READY_FOR_HUMAN_GRADE_A_START")
-    board.push("state", {"mastery": {"phase": phase, "prefix": "A", "position": 0},
+    active = school.get("active_grades", ("A",))
+    grade_index = school.get("grade_index", 0)
+    current_grade = active[grade_index] if 0 <= grade_index < len(active) else active[0]
+    board.push("state", {"mastery": {"phase": phase, "prefix": current_grade, "position": 0},
                          "optimizer_step": step, "grade_visits": visits,
                          "teacher": state.get("teacher") if state else None,
                          "last_run_status": state.get("result", "NOT_STARTED") if state else "NOT_STARTED"},
                redraw=False)
-    board.push("system", {"kind": "SOURCE", "detail": "Original FP32 + own AdamW retained"}, redraw=False)
-    board.push("system", {"kind": "SCHOOL", "detail": "Accepted Grade A | 72 sealed exam items"}, redraw=False)
-    board.push("system", {"kind": "RESTART", "detail": "Existing run: train --human-run --resume"}, redraw=False)
+    board.school_telemetry = SchoolTelemetry(board, active_grades=active,
+                                              champions=school.get("champions"))
+    budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
+                               reserve_gib=reserve_gib)
+    ingest(board, {"event": "SCHOOL_RESOURCE_OBSERVED",
+                  "grade": current_grade, **{k: budget[k] for k in
+                  ("free_bytes", "reserve_bytes", "estimated_write_bytes")}})
+    board.push("system", {"kind": "SOURCE", "detail": "Source-bound FP32 + own AdamW | immutable receipts"}, redraw=False)
+    board.push("system", {"kind": "RUBRIC", "detail": "Grade A frozen 72 items; all grade rubrics require 100% same-step"}, redraw=False)
+    board.push("system", {"kind": "METRIC", "detail": "NOT MEASURED: independent sentinel/CE/P(C)/margin; cross-grade soup inactive"}, redraw=False)
+    board.push("system", {"kind": "RESTART", "detail": "Saved run: train --human-run --resume"}, redraw=False)
     board.log_hint = str(run_dir / "events.jsonl")
     events = run_dir / "events.jsonl"
     if events.exists():
-        for line in events.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                try:
-                    ingest(board, json.loads(line))
-                except (ValueError, TypeError, KeyError):
-                    board.push("system", {"kind": "LOG", "detail": "Invalid event ignored"}, redraw=False)
+        # Bounded visual history, streaming replay: no whole-log materialization
+        # as the school eventually expands through many letter grades.
+        with events.open(encoding="utf-8") as log:
+            for line in log:
+                if line.strip():
+                    try:
+                        ingest(board, json.loads(line))
+                    except (ValueError, TypeError, KeyError) as exc:
+                        board.push("system", {"kind": "LOG", "detail":
+                                   f"Invalid telemetry event ignored: {str(exc)[:62]}"}, redraw=False)
     if not board.rows["GRADES & MASTERY"]:
-        board.push("grade", {"grade": "A", "grade_visit": visits, "step": step,
-                             "prefix": "A", "outcome": phase}, redraw=False)
+        board.rows["GRADES & MASTERY"].append({"grade": active[0], "step": step,
+                 "first": "-", "latest": "-", "best": "-", "to100": "-",
+                 "right_pct": "-", "outcome": phase})
     return board
 
 
 def ingest(board: Dashboard, event: dict) -> None:
-    kind = event.get("event")
-    if kind == "GRADE_A_TEACHER_VISIT_COMMITTED":
-        before = event.get("source_training_accuracy_before")
-        after = event.get("source_training_accuracy_after")
-        board.push("candidate", {"grade": event["capability"],
-                   "attempt": event["generation"], "policy_id": event.get("teacher_policy", ""),
-                   "reward": event.get("teacher_reward"), "decision": "LESSON COMMITTED",
-                   "reason": f"training {before:.0%}->{after:.0%}"}, redraw=False)
-        board.push("grade", {"grade": "A", "grade_visit": event["generation"],
-                   "step": event["optimizer_step"], "prefix": "A",
-                   "outcome": event["capability"] + " lesson; exam pending"}, redraw=False)
-        board.state.update(step=event["optimizer_step"], visits=event["generation"] - 1,
-                           phase=event.get("next_phase", "MAIN"))
-    elif kind == "GRADE_A_EXAM_COMMITTED":
-        scores = event["scores"]
-        total = sum(v["total"] for v in scores.values())
-        correct = sum(v["correct"] for v in scores.values())
-        board.push("grade", {"grade": "A", "grade_visit": event["generation"],
-                   "step": board.state.get("step"), "prefix": "A",
-                   "outcome": f"SEALED EXAM {correct}/{total} | {event['phase']}",
-                   "accuracy": 100 * correct / total}, redraw=False)
-        for cap, score in sorted(scores.items()):
-            board.rows["BRIDGE FAMILIES"].append({"grade": "A", "attempt": event["generation"],
-                     "family": cap, "before": "sealed exam", "after": f"{score['correct']}/{score['total']}",
-                     "gain": "-"})
-        board.state["phase"] = event["phase"]
-    elif kind == "GRADE_A_SESSION_STOPPED":
-        reason = event["stop_reason"]
-        board.mode = "STOPPED | " + reason
-        board.push("system", {
-            "kind": "STOP",
-            "detail": f"{reason} | {event['visits_this_command']} visits | "
-                      f"{event['elapsed_seconds']:.1f}s | step {event['optimizer_step']}",
-        }, redraw=False)
-        board.state["last_run_status"] = reason
+    """Incrementally update the same renderer used by past/future grades."""
+    board.school_telemetry.ingest(event)
 
 
 def render(run_dir: Path, *, stream=None) -> None:

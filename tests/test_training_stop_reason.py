@@ -3,10 +3,13 @@ from contextlib import redirect_stdout
 import io
 import json
 from pathlib import Path
+from types import SimpleNamespace
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.cli import parse_args, human_stop_summary, _inspect
+from bilqis_mlx.disk import headroom_snapshot, assert_headroom
 from bilqis_mlx.grade_a_dashboard import build
 from bilqis_mlx.grade_a_trainer import session_stop_reason, _record
 
@@ -60,6 +63,33 @@ class HumanSessionStopTests(unittest.TestCase):
         self.assertIn("--human-run --resume", summary)
         result["stop_reason"] = "GRADE_A_AWAITING_NEXT_GRADE"
         self.assertNotIn("--human-run --resume", human_stop_summary(result))
+
+    def test_disk_budget_breach_is_proven_without_writing_any_checkpoint(self):
+        # 100.28 GiB free is insufficient for 100 GiB reserve + 600 MB.
+        free = int(100.28 * 1024 ** 3)
+        with tempfile.TemporaryDirectory() as directory, patch(
+                "bilqis_mlx.disk.shutil.disk_usage",
+                return_value=SimpleNamespace(total=1000 * 1024 ** 3,
+                                             used=0, free=free)):
+            report = headroom_snapshot(Path(directory),
+                                       required_bytes=600_000_000, reserve_gib=100.)
+            self.assertFalse(report["sufficient"])
+            self.assertEqual(report["free_bytes"], free)
+            self.assertEqual(report["reserve_bytes"], 100 * 1024 ** 3)
+            with self.assertRaisesRegex(RuntimeError, "DISK_BUDGET_EXHAUSTED"):
+                assert_headroom(Path(directory), required_bytes=600_000_000,
+                                reserve_gib=100.)
+
+    def test_disk_reserve_normal_stop_explains_why_training_did_not_continue(self):
+        result = {"stop_reason": "DISK_RESERVE_REACHED",
+                  "visits_this_command": 849, "elapsed_seconds": 389.2,
+                  "optimizer_step": 132648, "disk_free_gib": 100.28,
+                  "disk_reserve_gib": 100.0, "disk_next_visit_gib": .559}
+        output = human_stop_summary(result)
+        self.assertIn("DISK_RESERVE_REACHED", output)
+        self.assertIn("100.28 GiB", output)
+        self.assertIn("reserve", output.lower())
+        self.assertIn("--human-run --resume", output)
 
     def test_status_uses_only_stop_matching_latest_model_checkpoint(self):
         with tempfile.TemporaryDirectory() as directory:

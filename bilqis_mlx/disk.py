@@ -4,8 +4,9 @@ from pathlib import Path
 import shutil
 
 
-def assert_headroom(path: Path, *, required_bytes: int = 0,
-                    reserve_gib: float = 100.0) -> dict:
+def headroom_snapshot(path: Path, *, required_bytes: int = 0,
+                      reserve_gib: float = 100.0) -> dict:
+    """Read-only budget witness usable by both operator and checkpoint guard."""
     if required_bytes < 0 or not 0 <= reserve_gib <= 100_000:
         raise ValueError("INVALID_DISK_BUDGET")
     location = Path(path)
@@ -15,10 +16,19 @@ def assert_headroom(path: Path, *, required_bytes: int = 0,
         location = location.parent
     available = shutil.disk_usage(location).free
     reserve = int(reserve_gib * 1024**3)
-    if available < required_bytes + reserve:
-        raise RuntimeError("DISK_BUDGET_EXHAUSTED")
     return {"free_bytes": available, "reserve_bytes": reserve,
-            "estimated_write_bytes": required_bytes}
+            "estimated_write_bytes": required_bytes,
+            "sufficient": available >= required_bytes + reserve}
+
+
+def assert_headroom(path: Path, *, required_bytes: int = 0,
+                    reserve_gib: float = 100.0) -> dict:
+    report = headroom_snapshot(path, required_bytes=required_bytes,
+                               reserve_gib=reserve_gib)
+    if not report["sufficient"]:
+        raise RuntimeError("DISK_BUDGET_EXHAUSTED")
+    return {key: report[key] for key in
+            ("free_bytes", "reserve_bytes", "estimated_write_bytes")}
 
 
 def atomic_text(path: Path, content: str):

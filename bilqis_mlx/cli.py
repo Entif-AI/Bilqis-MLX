@@ -54,7 +54,9 @@ def _latest_session_stop(run_dir: Path, generation: int, step: int) -> dict | No
             "visits_this_command": event["visits_this_command"],
             "elapsed_seconds": event["elapsed_seconds"],
             "time_limit_minutes": event["minutes"],
-            "max_visits": event["max_visits"]}
+            "max_visits": event["max_visits"],
+            "disk_free_gib": round(event["free_bytes"]/1024**3, 3)
+                if "free_bytes" in event else None}
 
 
 def _inspect(run_dir: Path) -> dict:
@@ -162,6 +164,7 @@ def human_stop_summary(result: dict) -> str:
         "TIME_LIMIT_REACHED": "The requested time budget was reached.",
         "VISIT_LIMIT_REACHED": "The explicitly configured --max-visits cap was reached.",
         "GRADE_A_AWAITING_NEXT_GRADE": "Grade A is mastered; awaiting an admitted next grade.",
+        "DISK_RESERVE_REACHED": "Free space cannot cover the protected disk reserve plus another checkpoint.",
     }
     reason = result["stop_reason"]
     message = ("TRAINING STOPPED NORMALLY: " + reason + "\n" +
@@ -169,6 +172,11 @@ def human_stop_summary(result: dict) -> str:
                f" Completed {result['visits_this_command']} visits in "
                f"{result['elapsed_seconds']:.1f} seconds, "
                f"optimizer step {result['optimizer_step']}.")
+    if reason == "DISK_RESERVE_REACHED":
+        message += (f"\nDisk: {result['disk_free_gib']:.2f} GiB free, "
+                    f"{result['disk_reserve_gib']:.1f} GiB reserve + "
+                    f"{result['disk_next_visit_gib']:.2f} GiB estimated next checkpoint. "
+                    "No checkpoint cleanup or reserve reduction was performed.")
     if reason != "GRADE_A_AWAITING_NEXT_GRADE":
         message += "\nTo continue: npm run train -- --human-run --resume --minutes 90"
     return message + "\nHistorical dashboard: npm run dashboard"
@@ -217,7 +225,7 @@ def main(argv=None):
         # Interactive training owns the dashboard in its *own* terminal.
         # Non-TTY operators continue to receive machine-readable events.
         visual = sys.stdout.isatty()
-        board = build(args.run_dir) if visual else None
+        board = build(args.run_dir, reserve_gib=args.reserve_gib) if visual else None
         def on_event(event):
             ingest(board, event)
             board.mode = "LIVE"
@@ -231,7 +239,7 @@ def main(argv=None):
                 steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
                 batch_size=args.batch_size, reserve_gib=args.reserve_gib)
         if board is not None:
-            board = build(args.run_dir)
+            board = build(args.run_dir, reserve_gib=args.reserve_gib)
             board.mode = "STOPPED | " + result["stop_reason"]
             board.draw()
             print("\n" + human_stop_summary(result), flush=True)

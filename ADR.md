@@ -123,3 +123,55 @@ and `npm run status` may display that event; the model/optimizer state pointer
 must not be rewritten merely because a shell session completed. This pattern
 applies to future letter grades so fast MLX execution does not look like a
 silent failure. Agent tests remain neural-inert or disposable.
+
+## ADR-016 | 2026-10-15 | School50 must expose grade-neutral, provenance-bound learning diagnostics
+
+The human requested the historical six-panel dashboard's analytical depth
+while Grade A MLX training was active, and explicitly instructed us to
+restore **future-grade telemetry capability now** rather than revisiting
+each missing statistic with every new grade. Retain all six legacy panel
+identities, but project letter-grade receipts through a shared, versioned
+read-only metric contract. Different curricula may have different rubrics,
+answer types, construction families and available teachers. Interpret their
+metrics by evidence and source identity, never by grade-specific strings or
+the retired 1,150-item rubric.
+
+Show first/latest/best sealed exam scores with each checkpoint step,
+per-capability first/previous/latest correctness and gains, distance from
+100%, candidate source-training gain/reward/loss/gradient, actual adaptive
+teacher settings, cross-grade regressions and recorded qualification state.
+Allow future independently sourced sentinel/retention, semantic-family and
+teacher-only soup receipts to populate the existing panels without a new
+dashboard rewrite. Source-training results are *not* independent
+generalization evidence; absent measurements remain explicit, not invented.
+Require source/model identity for purported independent evaluations, and
+never combine grade scores from different student checkpoints into an
+apparent whole-school pass. Dashboard diagnostics are observational and do
+not influence the adaptive teacher, optimizer, or lesson admissions.
+
+Implementation: `bilqis_mlx/school_telemetry.py`, adapted
+`grade_a_dashboard.py`, with the old `spiral_dashboard.TABLES` preserved;
+contract in `docs/SCHOOL50_TELEMETRY_V1_20261015.md`. Runtime code changes
+take effect on the next human-owned trainer invocation, not the active
+process. All evaluation and rendering must remain neural-inert.
+
+## ADR-017 | 2026-10-15 | Disk reserve is a first-class, non-destructive stop condition
+
+The human's long, uncapped MLX run ended without a normal stop event at
+generation 1242 / 993 visits / optimizer step 132648. The checkpoint run
+occupied approximately 120 GiB. Read-only disk headroom was 100.28 GiB,
+insufficient to satisfy the original protected 100 GiB reserve plus the
+estimated 600 MB next checkpoint. `assert_headroom` was raising
+`DISK_BUDGET_EXHAUSTED` outside the trainer's normal stop-receipt path.
+This is a *resource-protection stop*, not an observed neural crash, training
+mastery, or a justification to delete checkpoint evidence.
+
+Expose a single source-of-truth disk budget witness for both preflight and
+dashboard telemetry. At a committed visit boundary, insufficient headroom
+now causes a normal `DISK_RESERVE_REACHED` stop with durable receipt,
+free/reserve/required bytes and human-readable explanation. The original
+fail-closed check still guards the actual bundle write against free-space
+changes. Nothing reduces the reserve, prunes historic/student checkpoints,
+or relaxes human-only optimizer authority. A future storage-efficiency
+strategy must preserve verifiable full model/own-AdamW custody and be approved
+separately, not concealed as dashboard repair.
