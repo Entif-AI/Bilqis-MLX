@@ -10,6 +10,8 @@ This private repository implements the successor directed by protected IPR-0220.
 
 For the historical 222-token New Ithkuil crosswalk, the user delegated semantic-review decisions to the assistant (protected IPR-0220 comment `6187168824`). Any approved version must distinguish exact, qualified, compositional, native protocol and unresolved relationships; it does not certify an executable New Ithkuil wordform or neural learning.
 
+The current native ledger successor `mapping-review/20261015-d` has 222/222 explicit reviewed semantic classifications and preserves the predecessor in `Token Mapping Reviews vC Snapshot`. Its 94 newly adjudicated tokens are individually documented in [the source-checked NI adjudication](docs/NI_SEMANTIC_ADJUDICATION_VD_20261015.md); no New Ithkuil surface wordforms or student language competence are certified. The prior model remains pinned to `legacy-source/v1`. Formal composition, grammar, and proficiency testing remain ahead, not silently passed.
+
 The prior 29 `G##` units are **capabilities**. This new school uses lettered **grades** (A, B, C...) with about six to nine prerequisite-compatible capabilities per grade. A run starts with grade A unless the operator explicitly supplies `--resume`. A grade is mastered only by one complete candidate model and its *own* optimizer scoring 100% on all that grade's tests at the same checkpoint. Past grade champions vote once *per represented grade*, even when multiple pointers share one physical checkpoint. Weighted whole-school soup makes a teacher only, never a synthetic trainable student.
 
 Read [whole-student MLX parity evidence](docs/MLX_FULL_STUDENT_PARITY_20261015.md) and [Grade A source audit](docs/GRADE_A_SOURCE_AUDIT.md) before suggesting training.
