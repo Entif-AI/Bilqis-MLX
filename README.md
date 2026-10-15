@@ -44,3 +44,9 @@ npm run train -- --dry-run
 ```
 
 See `AGENTS.md` and `docs/REQUIREMENTS.md` for implementation constraints and current gaps.
+
+## Curriculum and New Ithkuil
+
+The successor does **not** rename the old model's learned token identities. They remain frozen as the historic semantic ABI. New lessons and semantic roots will be source-attested separately, with graded prerequisites and independent oracles. The [curriculum registry reconciliation](docs/REGISTRY_RECONCILIATION_20261015.md) explains how the workbook's older provisional A/B/C tranche labels differ from the later controlling letter-grade plan. New Ithkuil alignments begin with [the official 2023 grammar's morphology](https://www.ithkuil.net/newithkuil_03_morphology.htm) and [numbers](https://www.ithkuil.net/newithkuil_13_numbers.htm); the research bridge mappings in `bilqis_mlx/ithkuil_alignment.py` are explicitly **not** yet executable teaching material.
+
+Current training is still blocked because no newly versioned Grade A rubric and completely verified MLX optimizer continuation exist. Safe inspections run through the same npm interface and can be run by agents without requesting operator time.
