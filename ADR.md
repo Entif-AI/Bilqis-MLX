@@ -51,3 +51,30 @@ The assistant may implement independently source-checked language constructions 
 The user directed an immediate repair of the Grade A defects to support an eventual human-operated training run while other New Ithkuil grades are developed independently. Source analysis found that `A.MEMBER` TRUE/FALSE answers were perfectly predicted by set cardinality (two vs one member); corrected examples use equal cardinality across both answers. Historic equality and edge predicate evaluations also had shared implementation paths masquerading as independent oracles. A third separately written interpreter now checks all six typed predicate records. A 216-record candidate manifest fixes 144 teaching and 72 full gold-bearing examination inputs, independently regenerated and source-bound, with frozen exam digest `7f351f93b81a1d08a45dd53d5f253ad34c238019015e84284d50ca40378a1370`. Exam scoring rejects any missing/extra typed answers or fabricated 1/1 perfect scores.
 
 Partial courses may now graduate their **last published grade** into `AWAITING_NEXT_GRADE`, never `WHOLE_SCHOOL_MASTERED` without an explicitly complete full program. Append-only grade migration preserves each earlier grade's exact configuration, exam seal and champion/student checkpoint. Exam hashes remain fixed across visits and may change only at the explicit next-grade boundary to a separately sealed cumulative rubric. A full-size detached clone of the original 222-token FP32 student and all 39 native AdamW tensor identities demonstrated source-bound cross-entropy, gradients, clipping, one AdamW update and whole semantic-bundle save/reload parity against PyTorch on Apple GPU, with the original model unmodified. These are **candidate source, scheduler and disposable backend qualifications**, not Grade A New Ithkuil release, mastery, adaptive-teacher integration or authorization for actual neural optimizer updates. Keep `npm run train` fail-closed until a complete human-operated runner and source-conformant curriculum have their own verifiable release. See `docs/GRADE_A_REPAIR_AND_BACKEND_20261015.md`.
+
+## ADR-013 | 2026-10-15 | User accepts bounded Grade A and commissions an experimental human-only trainer
+
+The user explicitly rejected the ongoing training hold as riskier than an
+imperfect, improvable first release: **the existing six-capability Grade A
+curriculum is accepted, and the assistant must write the trainer.** This
+decision supersedes the previous hold on *admitting that exact tranche*.
+It does not assert independent New Ithkuil morphological certification,
+permit changes to historical 222 token identities, authorize the agent to
+run the original optimizer, approve future grades, or waive intact
+same-checkpoint graduation. The unchanged 144 teaching/72 examination
+source manifest is adopted through a separate versioned acceptance contract,
+`bilqis.mlx.grade-a-user-accepted/20261015`.
+
+The human-only experimental trainer implements source-checked loading of
+the complete original FP32 student/AdamW, inheritance of the original
+teacher's learned selection policy rather than reset, native MLX binary
+teaching steps, source-train-only policy rewards, complete own-AdamW
+checkpoint and atomic school/teacher resume receipts, six-capability
+same-checkpoint rubric, and the existing full-pass/weakest-three recovery
+scheduler. Every initial or resumed run has explicit user ownership
+(`--human-run`), bounded visits and disk reserve, and stops Grade A
+completion at `AWAITING_NEXT_GRADE`. The assistant tests with disposable
+synthetic weights and read-only original model conversion only. See
+`docs/GRADE_A_HUMAN_TRAINER_20261015.md`. Successful first real-user
+training, learned competence and advanced NI grammar remain future
+empirical milestones, not presumptive release gates.

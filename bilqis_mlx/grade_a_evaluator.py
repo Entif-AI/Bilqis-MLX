@@ -21,8 +21,11 @@ def score_predictions(manifest: dict, course: Course, checkpoint: Checkpoint,
                       source_checkpoint: Path) -> Assessment:
     """Require one candidate checkpoint and exactly all 72 sealed exam IDs."""
     verified = verify_manifest(manifest, legacy_root, source_checkpoint)
-    if course.digest() != manifest["course_proposal_digest"]:
-        raise ValueError("GRADE_A_EVALUATOR_COURSE_PROPOSAL_DRIFT")
+    from .grade_a_probe import candidate_course
+    from .grade_a_release import accepted_grade_a
+    candidate = candidate_course()
+    if course not in (candidate, accepted_grade_a(manifest)):
+        raise ValueError("GRADE_A_EVALUATOR_NOT_PINNED_PROPOSAL_OR_ACCEPTED_RELEASE")
     if not checkpoint.model_and_native_adamw:
         raise ValueError("GRADE_A_EVALUATOR_REQUIRES_WHOLE_STUDENT_AND_OPTIMIZER")
     if not isinstance(predictions, dict):

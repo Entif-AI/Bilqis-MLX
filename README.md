@@ -1,6 +1,6 @@
 # Bilqis MLX: private, independent successor
 
-**State: Grade A source and disposable full-student MLX repairs verified. Human neural training is not yet enabled.**
+**State: User-accepted six-capability Grade A; an experimental human-operated MLX trainer is available. Agents do not run actual student training.**
 
 This private repository implements the successor directed by protected IPR-0220. Its public interoperability-facing summaries are Bilqis #160 (MLX backend qualification) and #162 (successor integration). The detailed internal curriculum, promotion and resource policy stays private.
 
@@ -27,13 +27,15 @@ Run from this repository:
 ```sh
 npm run status
 npm run dashboard
-npm run train -- --dry-run
-npm run train
+npm run train -- --dry-run --verify-source
+npm run train -- --human-run --minutes 90
+# Later, resume the same saved Grade A student:
+npm run train -- --human-run --resume --minutes 90
 ```
 
-`status`, `dashboard` and `--dry-run` are neural-inert. **`train` currently refuses to start.** Training will only be enabled after full migration, a source-grounded course, rubric, and explicit human launch. Do not use `--resume` to mean "start from the original old grade G12". Resumption applies only to a previously initialized *new* run.
+`status`, `dashboard` and `--dry-run` are neural-inert. **Actual student training requires the human to supply `--human-run`**. The default is 90 minutes, at most 48 complete capability visits and 16 optimizer steps per visit; all can be adjusted using `--minutes`, `--max-visits`, `--steps-per-visit` and `--batch-size`. A single visit must finish before the trainer advances the persistent state. Interruptions recover the last *committed* complete student plus its own AdamW, without reinterpreting `--resume` as the old G12 curriculum. Check `npm run status` to see current grade, phase, student SHA, optimizer step and teacher events.
 
-Grade A's 216 source records are now separately frozen as a candidate manifest; membership label leakage and two insufficiently independent legacy gold calculations have been repaired. The 72-item scorer, per-grade rubric seals and explicit later-grade append contract are implemented. A real Apple GPU one-step optimizer and full semantic-bundle restart qualification passed on **disposable copies** of the actual 222-token, 39-parameter-family student. The original weights, AdamW and checkpoint were not updated. See [Grade A fixes and the backend receipt](docs/GRADE_A_REPAIR_AND_BACKEND_20261015.md). The long-running human-operated training backend, adaptive teacher connection and new curriculum admission are still distinct release gates.
+**Grade A admission changed by explicit user decision:** the existing six foundational typed predicates and exact 144 teaching/72 examination examples are accepted as the experimental first tranche. This is not a declaration of full New Ithkuil surface-form legality. The live trainer loads the historical whole 222-token FP32 student and AdamW; **inherits the original adaptive teacher's 4,288 observations and 390 policy strategies**; uses only pinned teaching rows to train and reward teacher policies; examines the separate fixed 72-item rubric only at scheduled grade boundaries; and appends a complete model+optimizer+semantic-catalog bundle after each visit. Candidate Grade A mastery remains a same-checkpoint 72/72 standard and ends at `AWAITING_NEXT_GRADE` until a new grade is independently admitted. The trainer never rewrites the original checkpoint. See [Grade A source/MLX proof](docs/GRADE_A_REPAIR_AND_BACKEND_20261015.md) and [the trainer operating contract](docs/GRADE_A_HUMAN_TRAINER_20261015.md).
 
 Inspect the candidate six-capability Grade A without a training run:
 
@@ -43,14 +45,18 @@ npm run curriculum:audit -- \
   --champion-checkpoint ../bilqis-triplets-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt
 ```
 
-The source probe now requires three separately implemented interpreters to agree, including a new independently written Grade A source-record oracle. It checks all teaching/examination tokens, both three- and four-entity world sizes, and the saved student's frozen vocabulary prefix. `docs/GRADE_A_SOURCE_PROBE_V1.json` preserves the historical v1 audit; the **current** item inventory is `docs/GRADE_A_CANDIDATE_MANIFEST_V2.json`. The course remains a **proposal**, with no authorized neural lessons or new-grade mastery claim. The old source directory must be available for this transitional audit.
+The source probe requires three separately implemented interpreters to agree, including a new independent Grade A source-record oracle. It checks teaching/examination tokens, three- and four-entity world sizes, and the frozen vocabulary prefix. `docs/GRADE_A_SOURCE_PROBE_V1.json` preserves historical research; the **current** accepted source inventory remains `docs/GRADE_A_CANDIDATE_MANIFEST_V2.json` without rewriting its former candidate-state field. The separate `grade_a_release.py` version records the user's explicit acceptance. Source records remain typed-pasigraphy teaching material, not a claim of acquired NI mastery.
 
 Reproduce the full candidate exam and nontraining Apple GPU parity independently:
 
 ```sh
 npm run grade-a:verify
 npm run mlx:qualify
+npm run grade-a:baseline
+npm run train -- --dry-run --verify-source
 ```
+
+`grade-a:baseline` examines the unchanged historical student on all 72 fixed exam items (full five-state versus binary-constrained answer reports). `--verify-source` validates the 216 original source records in a neural-inert dry-run. The operator status now declares Grade A accepted and the human experimental trainer available; the broader NI grammar and first actual long-session outcome remain experimental uncertainty, not gates silently imposed over the user's decision.
 
 ## Data and storage boundaries
 
@@ -72,7 +78,7 @@ npm run test
 npm run train -- --dry-run
 ```
 
-MLX tests prove tiny-fixture restarts and optimizer agreement. The additional [actual-student disposable parity probe](docs/GRADE_A_REPAIR_AND_BACKEND_20261015.md) now verifies all 39 parameters and native AdamW moments on one realistic candidate Grade A step using Apple GPU MLX versus PyTorch, with a complete semantic-catalog-bound snapshot restart. That proof does **not** implement or authorize the long-running human trainer.
+MLX tests prove tiny-fixture restarts and optimizer agreement. The [actual-student disposable parity probe](docs/GRADE_A_REPAIR_AND_BACKEND_20261015.md) independently checks the full 39-parameter FP32+AdamW model against PyTorch. The experimental human trainer has also passed a complete **six-visit synthetic school run and rubric evaluation**, plus a **real-source, no-neural-update initialization/save/reload** check of the original whole student. This does not yet establish long-session convergence or a successful real-human Grade A training outcome.
 
 See `AGENTS.md` and `docs/REQUIREMENTS.md` for implementation constraints and current gaps.
 
@@ -92,4 +98,4 @@ npm run vocabulary:preflight -- \
   --checkpoint ../bilqis-triplets-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt
 ```
 
-Current training remains blocked because the Grade A rubric is source-sealed but not admitted as a fully New Ithkuil-conformant curriculum, and the live MLX teaching loop, adaptive teacher and checkpoint operator are not end-to-end qualified. The disposable optimizer comparison has passed. Safe inspections use the same npm interface and can run without operator time.
+The accepted source-defined Grade A tranche can be run experimentally by its human operator without waiting for the full New Ithkuil grammar. Full New Ithkuil morphological conformance, Grade B curriculum, long-horizon retention and actual trained Grade A mastery remain future milestones. Never use the agent-side harness to invoke `--human-run`.

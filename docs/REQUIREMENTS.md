@@ -27,5 +27,21 @@ Source: protected issue `IPR-0220` (private issue #335). This document summarize
 ### Current private implementation update: 2026-10-15 Grade A repair
 
 The earlier BMLX-001/004/010/011 status summaries above are retained as point-in-time evidence. ADR-012 and [Grade A repair/MLX parity receipts](GRADE_A_REPAIR_AND_BACKEND_20261015.md) now provide stronger, separately qualified proof: corrected six direct candidate predicates; an independent third oracle; 144 complete teaching + 72 fixed exam records with source AST/token/gold and item-level hashes; fixed 12-item per-capability graduation totals; Grade A-only terminal distinction and explicit future append-only grade migration; and one real-shape disposable, GPU-verified full 39-parameter/moment step with a complete semantic-bundle restart, zero original model mutation. The Grade A source/lesson and New Ithkuil admission decision, adaptive teacher and actual long-running human MLX trainer remain outstanding. Do not promote the source record or this documentation alone into training authorization.
+
+The follow-on read-only `grade-a_baseline` evaluator now feeds **actual whole-model** five-state and constrained binary logits through the fixed Grade A source exam, with per-capability score and PyTorch/MLX inference parity. Operator preflight distinguishes previous disposable whole-model optimizer evidence, fresh optional source verification and outstanding live trainer admission; human-only optimization is a rule, not a failed qualification. The nontraining tests pass while the real trainer stays fail-closed.
+
+### Superseding user decision: bounded Grade A accepted for experimental human training
+
+ADR-013 records the user's explicit acceptance of the six direct predicates
+and frozen 144 instructional / 72 examination records. The assistant
+implemented a human-only native MLX trainer with original whole student and
+AdamW, original adaptive policy inheritance, train-only policy rewards,
+immutable per-visit complete checkpoints, atomic state-pointer/resume,
+the existing full-grade and weakest-three scheduler, explicit `--human-run`
+and a 100 GiB disk reserve. A disposable toy model passed a six-visit
+learning/exam cycle; the original student passed a *no-neural-update*
+initialization and complete MLX bundle reload. This authorization does not
+certify full New Ithkuil morphology or successful real-world Grade A
+training. See [the human operator contract](GRADE_A_HUMAN_TRAINER_20261015.md).
 | BMLX-018 | Living semantic-ledger proposal, independent human approval, versioned adoption and pinned-model compatibility instead of fail-on-row-edit | `registry_versions.py` and tests prove normal editorial drift retains prior student validity; native review/version sheets have 10 unapproved proposals; authenticated live approval integration pending |
 | BMLX-019 | Search the current official New Ithkuil grammar AND lexicon before proposing any custom pasigraphy root; Rosetta/Entif/MCA novelty is exceptional and source-dependent | NI-LX-009 vs syntax.bind differentiated using original codec and NI lexicon; 10 first-pass lexical candidates queued, no equivalences or custom roots approved |

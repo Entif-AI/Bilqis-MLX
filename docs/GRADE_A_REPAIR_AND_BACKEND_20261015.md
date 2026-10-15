@@ -1,5 +1,13 @@
 # Grade A repairs and real-student MLX continuation evidence
 
+**Superseding user decision, ADR-013:** The user accepted the exact six
+source-defined Grade A capabilities for immediate experimental human training.
+The source manifest remains intact and historically labeled a candidate.
+See [Human Grade A trainer](GRADE_A_HUMAN_TRAINER_20261015.md) for the now
+implemented human-only operator, complete own-AdamW checkpoints, inherited
+teacher and safe resume. Earlier release holds below describe the situation
+*before* this explicit new authority.
+
 **2026-10-15 | Private Bilqis MLX feature branch | Human training remains disabled**
 
 ## What was wrong and what changed
@@ -52,6 +60,12 @@ npm run train -- --dry-run
 ## Remaining Grade A release gates
 
 **Actual human training remains blocked.** This repair does not fabricate New Ithkuil-valid carrier/reference morphology for `A..E`, `K0`, and `F0`. Independent curriculum admission must decide whether all six similarly difficult direct predicates and their typed set/function operands belong in Grade A, with justified prerequisite expectations and source-root/case/form coverage. The Grade A course still omits admission SHA fields and remains nonexecutable.
+
+### Subsequent read-only neural evaluation and corrected preflight reporting
+
+`bilqis_mlx/grade_a_baseline.py` now loads the **whole original** model and optimizer using the original source verifier, checks the 216-record manifest, computes all **72 fixed Grade A exam questions** with no optimizer operations, and compares full five-state PyTorch versus MLX model logits within `2e-3`. Its report shows both the unrestricted **FALSE/TRUE/UNKNOWN/CONFLICT/AMBIGUOUS** predictions and a separate **binary-constrained** view. This is intentionally not a pass/fail model graduation receipt; a binary-constrained score may be better than the model's actual five-state answer performance. The real source file hash and native step remain pinned; tests run this source check on CPU. The Mac operator can run `npm run grade-a:baseline` to reproduce it on Apple GPU, without training. The optional `npm run train -- --dry-run --verify-source` independently regenerates and checks every source item before reporting launch blockers.
+
+The preflight status no longer uses the misleading field `native_mlx_full_optimizer_verified: false` to collapse two different milestones. It reports the **previously verified disposable whole-model one-step and full AdamW restart** separately from `human_live_grade_a_trainer_end_to_end_qualified: false`. Human-only optimizer operation is an invariant and appears under `operator_constraint`, not as a technical failure. These status corrections do not change the Grade A source/admission or human-trainer release gates.
 
 The native letter-grade CLI is also still an intentional training stub, not a long-running optimizer. A supervised human-only operator command must load the exact trained student and its AdamW, dispatch actual source-bound batches through the MLX GPU, integrate adaptive teacher policy without replacing it, evaluate all 72 independently held-out items, archive the complete student/optimizer after verifiable updates, expose School50 telemetry, and prove safe interruption/resume and disk reservations. No agent should use the disposable single-step proof to bypass that integration or permission boundary.
 
