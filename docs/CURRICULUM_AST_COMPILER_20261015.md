@@ -52,6 +52,39 @@ establish new neural mastery or NI morphology conformance.
 
 ## Next design layers
 
+### Live-Registry-to-AST vertical slice (implemented)
+
+The connected native Sheets read captured eight bounded tabs, preserving
+their exact column labels, sheet IDs and 1-based source row coordinates, in
+`docs/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json`. The frozen source has
+111 lesson descriptions, 76 prerequisite rows, 14 historical/proposed grade
+tranches, 222 individually interpretable historical token identities and
+330 New Ithkuil research-seed bridges. `bilqis_mlx/registry_ast.py` parses the
+snapshot into typed, immutable semantic nodes. It checks the original token
+graph SHA, ID order, pasigraphy identity and strict sheet-column order,
+rejects unknown/forward/cyclic structured lesson prerequisites and preserves
+non-structured addenda as **additional qualification constraints**, rather
+than overwriting a prior lesson. The current Grade A source operations each
+bind to their original Token Atlas entries. No source cell was changed.
+
+`npm run curriculum:plan` provides a reproducible, **neural-inert** JSON
+report: source snapshot/AST digests, current Grade A semantic token bindings,
+existing 96 candidate probes, and the five prospective Grade C authoring
+tasks (`LESSON-058` through `LESSON-062`) with their explicit earlier grade
+and intra-grade dependencies. `--assume-mastered A B` is solely a what-if
+planning input; it exposes `LESSON-058` as a ready construction task and
+still reports `training_authorized_by_this_report: false`. The old Grade A
+entry in `Grade Tranches` remains *historical continuity*, not the accepted
+new-school A; the J Mood addenda remain uncompiled qualification blockers.
+
+This is a **connector-refreshed snapshot**, not a local authenticated Sheet
+watcher. Repeating the native connector read is necessary to incorporate
+future Sheet edits, after review and a versioned snapshot commit. It does not
+claim to compile the 330 bridge prose proposals into verified New Ithkuil
+semantics; source-attested reusable constructors must be added separately.
+
+### Next engineering layers
+
 1. Build a versioned **Sheet-to-AST importer** from exact tab/column schemas,
    preserving cells' source row IDs, proposal status, source links and
    prerequisite graph. Fail closed on ambiguous historical tranche aliases,

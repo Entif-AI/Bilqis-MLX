@@ -78,3 +78,27 @@ synthetic weights and read-only original model conversion only. See
 `docs/GRADE_A_HUMAN_TRAINER_20261015.md`. Successful first real-user
 training, learned competence and advanced NI grammar remain future
 empirical milestones, not presumptive release gates.
+
+## ADR-014 | 2026-10-15 | Curriculum AST generates lessons and probes; failed lessons trigger structural correction
+
+The user rejected repeated lesson-specific repairs and reactive whack-a-mole
+following previous training stalls. Diagnose *classes* of instructional failure,
+prevent recurrence, and use a typed AST derived from the canonical Curriculum
+Registry to deterministically construct families of semantically valid lessons,
+metamorphic variations, counterexamples, generalization checks and future
+construction tasks. Reusable mathematical axioms and source-grounded linguistic
+grammar should generate their own exercises wherever gold semantics can be
+independently verified. Instructional breadth is an engineered property, not
+a collection of manually authored exceptions. The AST must reflect the
+Registry's stable token meanings, prerequisites, grade dependencies, lesson
+construction intents, and source/evidence status.
+
+The first bounded importer snapshots the native Registry, preserves exact
+sheet/row provenance and protected proposal states, binds the already
+accepted Grade A curriculum to its 222-token historical ABI and creates a
+deterministic *candidate* authoring frontier for proposed future stages.
+Grade-level Sheet aliases and New Ithkuil research seeds are planning input,
+not release decisions. A generated exercise or proposed next task does not
+become a neural lesson without source/oracle and versioned admission. The
+existing human-operated Grade A run, its teacher/AdamW, and its sealed exam
+remain intact. See `docs/CURRICULUM_AST_COMPILER_20261015.md`.

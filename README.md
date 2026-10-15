@@ -86,6 +86,18 @@ See `AGENTS.md` and `docs/REQUIREMENTS.md` for implementation constraints and cu
 
 The successor does **not** rename the old model's learned token identities. They remain frozen as the historic semantic ABI. New lessons and semantic roots will be source-attested separately, with graded prerequisites and independent oracles. The [curriculum registry reconciliation](docs/REGISTRY_RECONCILIATION_20261015.md) explains how the workbook's older provisional A/B/C tranche labels differ from the later controlling letter-grade plan. New Ithkuil alignments begin with [the official 2023 grammar's morphology](https://www.ithkuil.net/newithkuil_03_morphology.htm) and [numbers](https://www.ithkuil.net/newithkuil_13_numbers.htm); the research bridge mappings in `bilqis_mlx/ithkuil_alignment.py` are explicitly **not** yet executable teaching material.
 
+### AST-driven curriculum planning
+
+Rather than writing each lesson/probe by hand, the new `registry_ast.py` compiles a reproducible, **read-only native-Sheet snapshot** into typed semantic tokens, historical/proposed lessons, explicit same-grade prerequisite edges, grade plans, and New Ithkuil bridge research nodes. It retains extra qualification notes (such as Mood/presupposition constraints) without treating them as automatically runnable grammar. The admitted Grade A course binds separately to the exact 222-token ledger, with no semantic relabeling. Use:
+
+```sh
+npm run curriculum:plan
+# Hypothetical proposed Grade C planning once A/B prerequisites are satisfied:
+npm run curriculum:plan -- --grade C --assume-mastered A B
+```
+
+The default report enumerates five proposed Grade C construction tasks and their unmet dependencies. With the explicitly hypothetical A/B assumption, only its first task becomes *ready for curriculum authoring*, never ready for neural training. The command makes no model, optimizer, run-state, Sheet, or sealed-exam changes. The checked-in [Registry snapshot](docs/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json) was read from the native connected Google Sheet; it is pinned evidence, **not an automatically refreshing Sheet connection**. Refresh requires another native connector read and checked snapshot update. The compiler's executable source-probe family generates 96 source-oracled *candidate* Grade A worlds, none admitted as teaching/examination rows. See the [compiler design and remaining tasks](docs/CURRICULUM_AST_COMPILER_20261015.md).
+
 ### Vocabulary can expand
 
 The preserved model's 222 tokens are a historical snapshot: 113 foundational symbols followed by 109 mathematics additions. There is no 222-token limit. The original implementation already supported append-only embedding/AdamW expansion; the MLX successor now has a separately tested, neural-inert growth adapter. Existing model answers remained exactly unchanged in an in-memory test of the real historical student with one added disposable token. The 330 entries in the connected Semantic Bridges worksheet are *research candidates*, not current neural tokens or mastered meanings. New Ithkuil morphology, external mathematical concepts and irreducibly lexicalized concepts can all be admitted later as appropriately sourced semantic identities. See [vocabulary architecture and proof](docs/SEMANTIC_VOCABULARY_GROWTH_20261015.md).
