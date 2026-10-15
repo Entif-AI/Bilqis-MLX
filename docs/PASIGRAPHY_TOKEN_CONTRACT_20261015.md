@@ -53,3 +53,7 @@ New Ithkuil is the governed **starting dialect** and reference atlas. Source-gro
 - A composite exam refers to untaught constituents, uses a nonexistent grammar form or claims NI meaning from an analogous mathematical operation: **reject**.
 - A root is allocated with valid JSON but no independently attested provenance/lesson/oracle: **hold for source validation**. Syntactically valid SHA strings are not evidence by themselves.
 - A later autonomous vocabulary expansion happens without the active New Ithkuil completion gate or a reviewed dialect-extension decision: **do not claim authorized evolution beyond the starter dialect**.
+
+## Living catalog correction (ADR-007)
+
+The strict 222-row `verify_sheet_rows` check is a historical provenance fixture, not a live model execution gate. The user now requires proposed, reviewed, approved and versioned semantic-ledger changes that preserve already learned weights and optimizer history. Editorial differences do not invalidate an old checkpoint; revisions use the new `Token Mapping Reviews` and `Token Ledger Versions` tabs, with approved aliases materialized into versioned views. Source search begins at the current official Ithkuil grammar and lexicon before novel primitives. See `docs/LIVING_PASIGRAPHY_LEDGER_20261015.md`.

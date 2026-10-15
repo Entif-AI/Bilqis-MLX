@@ -95,7 +95,11 @@ def rows_for_graph(graph: dict) -> list[list[str]]:
 
 
 def verify_sheet_rows(graph: dict, rows: list[list[object]], *, require_header: bool=True) -> dict:
-    """Fail when *any* token is missing, reordered, aliased, replaced or spurious."""
+    """Exact historical source-projection test, not a live model validity gate.
+
+    Current spreadsheet annotations evolve via registry_versions; the model
+    remains pinned to its approved semantic ABI until migration is approved.
+    """
     expected=rows_for_graph(graph)
     source=rows
     if require_header:

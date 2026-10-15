@@ -107,7 +107,9 @@ def _check_admission(entry: AdmittedToken, prior: set[str], additional: set[str]
 
 def append_catalog(prior: dict, admissions: tuple[AdmittedToken,...], *,
                    allow_disposable_fixtures: bool = False,
-                   canonical_registry_rows: list[list[object]] | None = None) -> tuple[dict,dict]:
+                   canonical_registry_rows: list[list[object]] | None = None,
+                   approved_ledger_version: str = '',
+                   approved_admissions: tuple[str,...] = ()) -> tuple[dict,dict]:
     """Extend graph identities without changing one byte of old row JSON."""
     _check_catalog(prior)
     if not isinstance(admissions,tuple) or not admissions:
@@ -148,12 +150,22 @@ def append_catalog(prior: dict, admissions: tuple[AdmittedToken,...], *,
     result['nodes'].extend(nodes)
     result['row_contract_sha256'].update({n['id']:digest(n) for n in nodes})
     _check_catalog(result)
-    from .token_atlas import validate_one_to_one, verify_sheet_rows
+    from .token_atlas import validate_one_to_one
     validate_one_to_one(result)
     if not allow_disposable_fixtures:
         if canonical_registry_rows is None:
             raise ValueError('PASIGRAPHY_CANONICAL_REGISTRY_READBACK_REQUIRED')
-        verify_sheet_rows(result,canonical_registry_rows)
+        from .registry_versions import reconcile_live_ledger
+        view=reconcile_live_ledger(result,canonical_registry_rows,
+                                  pinned_version=approved_ledger_version or 'legacy-source/v1')
+        if view['identity_conflicts']:
+            raise ValueError('PASIGRAPHY_NEW_ADMISSION_IDENTITY_CONFLICT')
+        # A living ledger may receive editorial proposals without rewriting
+        # the existing student. New allocations still need *their own*
+        # approved admission receipts in the pinned control version.
+        if (set(approved_admissions)!={a.admission_receipt for a in admissions}
+                or not approved_ledger_version):
+            raise ValueError('PASIGRAPHY_NEW_ADMISSION_APPROVAL_REQUIRED')
     if result['tokens'][:len(prior['tokens'])]!=prior['tokens'] or \
             result['nodes'][:len(prior['nodes'])]!=prior['nodes'] or \
             any(result['row_contract_sha256'][p]!=prior['row_contract_sha256'][p]

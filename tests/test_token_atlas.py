@@ -8,6 +8,7 @@ from bilqis_mlx.token_atlas import (
     COLUMNS, REGISTRY_SHEET, identity, read_historic_graph,
     role, rows_for_graph, validate_one_to_one, verify_sheet_rows)
 from bilqis_mlx.vocabulary_growth import append_catalog, digest
+from bilqis_mlx.registry_versions import reconcile_live_ledger
 from tests.test_vocabulary_growth import admission, root_graph
 
 
@@ -85,10 +86,26 @@ class TokenAtlasTests(unittest.TestCase):
         rows=[list(COLUMNS)]+rows_for_graph(fixture_graph)
         changed=copy.deepcopy(rows)
         changed[-1][2]='test:silent-relabel'
-        with self.assertRaisesRegex(ValueError,'ROW_DRIFT'):
+        with self.assertRaisesRegex(ValueError,'IDENTITY_CONFLICT'):
             append_catalog(graph,(candidate,),canonical_registry_rows=changed)
-        admitted,_=append_catalog(graph,(candidate,),canonical_registry_rows=rows)
+        admitted,_=append_catalog(graph,(candidate,),canonical_registry_rows=rows,
+                                  approved_ledger_version='v1-approved-fixture',
+                                  approved_admissions=(candidate.admission_receipt,))
         self.assertEqual(admitted,fixture_graph)
+        change=reconcile_live_ledger(fixture_graph,changed,
+                                     pinned_version='v1-approved-fixture')
+        self.assertEqual(change['disposition'],'CONTINUE_PINNED_MODEL_HOLD_NEW_ALLOCATIONS')
+        self.assertEqual(change['conflict_token_ids'],(3,))
+        editorial=copy.deepcopy(rows)
+        editorial[-1][3]='Reviewed meaning wording change'
+        revised=reconcile_live_ledger(fixture_graph,editorial,
+                                      pinned_version='v1-approved-fixture')
+        self.assertEqual(revised['disposition'],'CONTINUE_PINNED_MODEL')
+        self.assertEqual(len(revised['pending_reviews']),1)
+        updated,_=append_catalog(graph,(candidate,),canonical_registry_rows=editorial,
+                                 approved_ledger_version='v1-approved-fixture',
+                                 approved_admissions=(candidate.admission_receipt,))
+        self.assertEqual(updated,fixture_graph)
 
 
 if __name__=='__main__':
