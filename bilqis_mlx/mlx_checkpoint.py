@@ -179,6 +179,7 @@ def load_bundle(destination: Path):
 
 def _read_catalog(destination: Path, binding: dict) -> dict:
     from .vocabulary_growth import _check_catalog, digest
+    from .token_atlas import validate_one_to_one
     if (not isinstance(binding,dict) or
             binding.get("filename") != "semantic-catalog.json"):
         raise ValueError("MLX_BUNDLE_UNRECOGNIZED_CATALOG_BINDING")
@@ -187,6 +188,7 @@ def _read_catalog(destination: Path, binding: dict) -> dict:
         raise ValueError("MLX_BUNDLE_SEMANTIC_CATALOG_FILE_CHANGED")
     catalog = json.loads(catalog_file.read_text(encoding="utf-8"))
     _check_catalog(catalog)
+    validate_one_to_one(catalog)
     if (digest(catalog) != binding.get("digest") or
             len(catalog["tokens"]) != binding.get("token_count")):
         raise ValueError("MLX_BUNDLE_SEMANTIC_CATALOG_DIGEST_DRIFT")

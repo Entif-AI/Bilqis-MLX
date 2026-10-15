@@ -11,6 +11,7 @@
     "backup:copy": "python3 -m bilqis_mlx.backup copy",
     "backup:verify": "python3 -m bilqis_mlx.backup verify",
     "curriculum:audit": "python3 -m bilqis_mlx.grade_a_probe",
-    "vocabulary:preflight": "python3 -m bilqis_mlx.vocabulary_probe"
+    "vocabulary:preflight": "python3 -m bilqis_mlx.vocabulary_probe",
+    "tokens:atlas": "python3 -m bilqis_mlx.token_atlas"
   }
 }

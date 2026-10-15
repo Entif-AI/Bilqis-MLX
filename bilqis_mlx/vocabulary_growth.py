@@ -106,16 +106,22 @@ def _check_admission(entry: AdmittedToken, prior: set[str], additional: set[str]
 
 
 def append_catalog(prior: dict, admissions: tuple[AdmittedToken,...], *,
-                   allow_disposable_fixtures: bool = False) -> tuple[dict,dict]:
+                   allow_disposable_fixtures: bool = False,
+                   canonical_registry_rows: list[list[object]] | None = None) -> tuple[dict,dict]:
     """Extend graph identities without changing one byte of old row JSON."""
     _check_catalog(prior)
     if not isinstance(admissions,tuple) or not admissions:
         raise ValueError("VOCAB_ADMISSIONS_REQUIRED_NOT_RESEARCH_SEEDS")
     prior_ids=set(prior['tokens'])
     seen=set()
+    prior_concepts={node.get('semantic_id') or ('legacy:'+node['id'])
+                    for node in prior['nodes']}
+    seen_concepts=set()
     nodes=[]
     for entry in admissions:
         _check_admission(entry,prior_ids,seen)
+        if entry.semantic_id in prior_concepts|seen_concepts:
+            raise ValueError('PASIGRAPHY_SEMANTIC_IDENTITY_ALREADY_ASSIGNED')
         if (not allow_disposable_fixtures and
                 (entry.token_id.startswith('fixture.') or
                  entry.semantic_id.startswith('fixture:') or
@@ -124,6 +130,7 @@ def append_catalog(prior: dict, admissions: tuple[AdmittedToken,...], *,
         if entry.token_id in prior_ids|seen:
             raise ValueError("VOCAB_EXISTING_OR_DUPLICATE_TOKEN_ID")
         seen.add(entry.token_id)
+        seen_concepts.add(entry.semantic_id)
         nodes.append({
             'id':entry.token_id, 'family':entry.source_kind,
             'subtype':entry.representation, 'signature':'SemanticSymbol',
@@ -141,6 +148,12 @@ def append_catalog(prior: dict, admissions: tuple[AdmittedToken,...], *,
     result['nodes'].extend(nodes)
     result['row_contract_sha256'].update({n['id']:digest(n) for n in nodes})
     _check_catalog(result)
+    from .token_atlas import validate_one_to_one, verify_sheet_rows
+    validate_one_to_one(result)
+    if not allow_disposable_fixtures:
+        if canonical_registry_rows is None:
+            raise ValueError('PASIGRAPHY_CANONICAL_REGISTRY_READBACK_REQUIRED')
+        verify_sheet_rows(result,canonical_registry_rows)
     if result['tokens'][:len(prior['tokens'])]!=prior['tokens'] or \
             result['nodes'][:len(prior['nodes'])]!=prior['nodes'] or \
             any(result['row_contract_sha256'][p]!=prior['row_contract_sha256'][p]
