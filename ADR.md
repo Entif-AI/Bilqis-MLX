@@ -186,3 +186,27 @@ distinct from 100% whole-grade mastery. Only tested candidates become long-term
 champions. Short-lived complete student+AdamW recovery checkpoints remain
 necessary at exam or operator-stop boundaries. Each old durable receipt remains
 historical evidence after its superseded binary is retired.
+
+## ADR-019 | 2026-10-15 | Preserve School50 pedagogical parity in the MLX successor
+
+The human corrects our repeated pattern of redesigning solved PyTorch
+School50 problems without reviewing their source and lessons learned. MLX
+changes the backend, not the instructional specification. Before extending
+curricula or assessment, read the predecessor's source, teacher strategy,
+answer-type and acquisition/transfer contracts as a required design input.
+Where meaningful, explicitly teach a direct high-fidelity typed result and
+its lower-fidelity TRUE/FALSE assertion with a verified false counterexample.
+Assess atomic acquired meaning first, then gated compositions; exposed
+teaching replay is not independent transfer. Maintain distinct developmental
+candidate selection and sealed whole-grade qualification evidence.
+
+The original v10 numerical school taught direct 0..3 answers with the
+existing tied numeral embeddings, used all five evidence states, replayed
+exact taught questions, and reserved held-out arithmetic sources. The
+accepted current MLX Grade A contains only 144 binary training and 72 binary
+exam rows, and its current best-score selection repeatedly consults the
+fixed rubric. The new read-only `pedagogical_parity.py` and disposable
+`typed_answer_training.py` reconstruct the prior source/oracle contract;
+they are not an admitted curriculum, model-training release or replacement
+for the currently frozen Grade A test. See the new pedagogical parity report
+for explicit remaining scientific and release gates.
