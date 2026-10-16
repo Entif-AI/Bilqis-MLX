@@ -1,6 +1,9 @@
 """Disposable champion confidence tests; no real student updates."""
 import unittest
 import numpy as np
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from bilqis_mlx.champion_confidence import vote_targets, champion_roster
 
 
@@ -15,6 +18,32 @@ def record(cap, sha, perfect):
 
 
 class ChampionConfidenceTests(unittest.TestCase):
+    def test_only_frozen_soup_not_foreign_capability_champions_advises_grade_b(self):
+        from bilqis_mlx.grade_a_trainer import (
+            _frozen_confidence_champions, _frozen_grade_soup_votes,
+        )
+        a_champ = record("A.3", "1", ("A.3", "A.5"))
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            a_only = {"graduation_perfect": {"A.3": a_champ}}
+            # The grade-A champion bundle is deliberately absent. The B
+            # confidence reader must not even attempt to load it.
+            self.assertEqual(_frozen_confidence_champions(root, a_only, "B", {}), ())
+            path = root / "soups" / "A-frozen.safetensors"
+            path.parent.mkdir()
+            path.write_bytes(b"synthetic immutable path")
+            soup = {"grade": "A", "filename": str(path.relative_to(root)),
+                    "sha256": "c" * 64, "token_count": 12,
+                    "recipe_sha256": "d" * 64, "vote_count": 7}
+            with patch("bilqis_mlx.grade_a_trainer._cached_grade_soup",
+                       return_value={"embedding.weight": "synthetic"}):
+                mentors, receipts = _frozen_grade_soup_votes(
+                    root, {"grade_soups": {"A": soup}}, "B", 3)
+            self.assertEqual(len(mentors), 1)
+            self.assertAlmostEqual(mentors[0]["breadth"], 7 / 3)
+            self.assertEqual(receipts[0]["frozen_base_votes"], 7)
+            self.assertAlmostEqual(receipts[0]["effective_votes"], 7 / 3)
+
     def test_mlx_supervised_step_absorbs_advice_without_modifying_exam_inference(self):
         import mlx.core as mx
         import mlx.optimizers as optim
@@ -77,6 +106,9 @@ class ChampionConfidenceTests(unittest.TestCase):
         chosen = champion_roster(roster, "A")
         self.assertEqual(len(chosen), 1)
         self.assertEqual(chosen[0]["breadth"], 2)
+        self.assertEqual(len(champion_roster(roster, "B")), 1)
+        self.assertEqual(champion_roster(roster, "B")[0]["breadth"], 1)
+        self.assertEqual(champion_roster(roster, "C"), ())
 
     def test_gold_agreeing_logits_vote_proportional_to_breadth(self):
         labels = np.array([1, 0], dtype=np.int64)

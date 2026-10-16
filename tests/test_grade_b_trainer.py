@@ -12,11 +12,11 @@ from unittest.mock import patch
 from bilqis_mlx.grade_a_release import accepted_grade_a, AUTHORITY
 from bilqis_mlx.grade_a_trainer import (
     VERSION, _activate_next_admitted_grade, _bundle_pointer,
-    _champion_teacher_votes, _draw_live_rows, _fingerprint, _persist,
+    _draw_live_rows, _fingerprint, _persist,
     _persist_live_cohort, _recover_orphaned_commit, _seed, _state_from_json,
     _publish_boundary, _reconcile_delivery_outbox, _resume, _take_exam,
     _take_visit, _verify_saved_cohort, _with_delivery_outbox,
-    champion_directed_lessons, prepare_source,
+    prepare_source,
 )
 from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.live_grade_a import live_course as a_live_course
@@ -271,23 +271,6 @@ class GradeBTrainerTests(unittest.TestCase):
                     "last_exam":{"cohort_sha256":b_cohort.digest,
                                  "cohort_seed":b_cohort.seed,"cohort_file":b_file}},self.b_course)
 
-    def test_champion_votes_only_shift_source_approved_teaching_examples(self):
-        chosen = ([{"id":f"t{i}","gold":"TRUE"} for i in range(4)] +
-                  [{"id":f"f{i}","gold":"FALSE"} for i in range(4)])
-        candidates = [
-            {"id":"new-true","gold":"TRUE"},
-            {"id":"new-false","gold":"FALSE"},
-        ]
-        result = champion_directed_lessons(chosen,candidates,
-                                         {"new-true":3,"new-false":1},capacity=2)
-        self.assertEqual({r["id"] for r in result}&{"new-true","new-false"},
-                         {"new-true","new-false"})
-        self.assertEqual(sum(r["gold"] == "TRUE" for r in result),4)
-        self.assertEqual(sum(r["gold"] == "FALSE" for r in result),4)
-        self.assertEqual(chosen[0]["id"],"t0")
-        with self.assertRaisesRegex(ValueError,"COUNT_INVALID"):
-            champion_directed_lessons(chosen,candidates,{"new-false":-1},capacity=1)
-
     def test_b_weakest_three_rehearsal_credits_actual_a_lesson_not_b(self):
         """An A predicate taught during B recovery must train A's policy stats."""
         from types import SimpleNamespace
@@ -327,8 +310,8 @@ class GradeBTrainerTests(unittest.TestCase):
 
         with (patch("bilqis_mlx.grade_a_trainer._draw_live_rows",
                     return_value=examples),
-              patch("bilqis_mlx.grade_a_trainer._champion_teacher_votes",
-                    return_value={}),
+              patch("bilqis_mlx.grade_a_trainer.load_semantically_bound_bundle",
+                    side_effect=AssertionError("prior grade master cannot nominate rows")),
               patch("bilqis_mlx.grade_a_trainer._train_score",return_value=.5),
               patch("bilqis_mlx.grade_a_trainer._predictions",
                     return_value={"old-true":"TRUE","old-false":"TRUE"}),
@@ -343,6 +326,8 @@ class GradeBTrainerTests(unittest.TestCase):
         self.assertEqual(event["grade"],"A")
         self.assertEqual(event["active_grade"],"B")
         self.assertEqual(event["event"],"GRADE_A_TEACHER_VISIT_COMMITTED")
+        self.assertEqual(event["prior_grade_champion_votes"], {})
+        self.assertEqual(event["champion_directed_examples_available"], 0)
         self.assertEqual([row["id"] for row in updated["teacher_misses"]], ["old-false"])
         self.assertNotIn("old-true", updated["teacher_miss_exposures"])
         self.assertEqual(event["prior_exam_misses_available"],2)
@@ -467,14 +452,14 @@ class GradeBTrainerTests(unittest.TestCase):
             self.assertEqual(json.loads((root/"state.json").read_text()),receipt)
             events = [json.loads(line) for line in
                       (root/"events.jsonl").read_text().splitlines()]
-            self.assertTrue(any(event.get("grade") == "B" and
-                list(event.get("prior_grade_champion_votes",{}).values()) == [1]
-                for event in events if event.get("event") ==
-                                   "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED"))
-            self.assertTrue(any(event.get("grade") == "A" and
-                list(event.get("prior_grade_champion_votes",{}).values()) == [2]
-                for event in events if event.get("event") ==
-                                   "GRADE_A_TEACHER_VISIT_COMMITTED"))
+            teacher_visits = [event for event in events if event.get("event") in (
+                "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED",
+                "GRADE_A_TEACHER_VISIT_COMMITTED")]
+            self.assertTrue(teacher_visits)
+            self.assertTrue(all(event.get("prior_grade_champion_votes") == {}
+                                for event in teacher_visits))
+            self.assertTrue(all(event.get("champion_directed_examples_available") == 0
+                                for event in teacher_visits))
             b_visits = [e for e in events if e.get("event") ==
                         "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED"]
             self.assertEqual(len(b_visits), 12)

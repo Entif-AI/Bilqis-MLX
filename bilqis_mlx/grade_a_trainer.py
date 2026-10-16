@@ -52,7 +52,7 @@ from .mlx_checkpoint import save_new_bundle, load_semantically_bound_bundle
 from .mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
 from .school import (start_new, visit, assess, next_capability, append_next_grade,
-                     teacher_vote_weights, assessment_capabilities, SchoolState, Assessment, Score)
+                     assessment_capabilities, SchoolState, Assessment, Score)
 from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .source import AUDITED_PARENT
 from .teacher_feedback import (
@@ -267,72 +267,6 @@ def replay_missed_lessons(chosen: list[dict], missed: list[dict]) -> list[dict]:
         result[replacement] = item
         consumed.add(replacement)
     return result
-
-
-def champion_directed_lessons(chosen: list[dict], candidates: list[dict],
-                              votes: dict[str, int], *, capacity: int) -> list[dict]:
-    """Let prior-grade champion votes nominate teaching rows, never golds.
-
-    Each retained grade is one vote for practicing a source-verifiably missed
-    construction. Keep the policy's existing TRUE/FALSE balance unchanged.
-    """
-    if capacity < 0 or len({r["id"] for r in candidates}) != len(candidates):
-        raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_INPUT_INVALID")
-    if any(type(count) is not int or count < 0 for count in votes.values()):
-        raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_COUNT_INVALID")
-    result = list(chosen)
-    used = set()
-    for example in sorted(candidates, key=lambda r: (-votes.get(r["id"], 0), r["id"])):
-        if not votes.get(example["id"]) or len(used) >= capacity:
-            break
-        if any(row["id"] == example["id"] for row in result):
-            continue
-        location = next((i for i, row in enumerate(result)
-                         if i not in used and row["gold"] == example["gold"]), None)
-        if location is not None:
-            result[location] = example
-            used.add(location)
-    return result
-
-
-def _champion_teacher_votes(mx, run_dir: Path, school: SchoolState, course,
-                            rows: list[dict], graph, config, answer_ids) -> dict[str, int]:
-    """Score frozen, own-optimizer grade champions as teachers, not students.
-
-    Load each distinct bundle once. Every grade pointer contributes a vote,
-    including when several grade pointers identify the same physical bundle.
-    Champion mistakes on source-oracle-verified lessons receive teaching
-    priority. Do not expose these guesses as examination answers.
-    """
-    weights = teacher_vote_weights(course, school)
-    if not weights:
-        return {}
-    by_sha = {cp.sha256: cp for cp in school.champions.values()}
-    if set(weights) != set(by_sha):
-        raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_POINTER_DRIFT")
-    scores = {row["id"]: 0 for row in rows}
-    for sha, multiplicity in sorted(weights.items()):
-        pointer = by_sha[sha]
-        parts = Path(pointer.filename).parts
-        path = run_dir / pointer.filename
-        if (len(parts) != 2 or parts[0] != "bundles" or
-                parts[1] in (".", "..") or path.is_symlink() or
-                path.parent != run_dir / "bundles" or
-                not pointer.model_and_native_adamw):
-            raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_UNSAFE_CHECKPOINT")
-        parameters, optimizer, meta, loaded_graph = load_semantically_bound_bundle(path)
-        if (not _compatible_graphs(loaded_graph, graph) or meta["safetensors_sha256"] != sha or
-                meta["optimizer_step"] != pointer.optimizer_step or
-                meta["source_digest"] != AUDITED_PARENT.sha256):
-            raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_CHECKPOINT_DRIFT")
-        readable = [row for row in rows if max(row["tokens"]) < len(loaded_graph["tokens"])]
-        guesses = _predictions(mx, parameters, readable,
-            _compatible_answer_config(config, loaded_graph), answer_ids) if readable else {}
-        for row in readable:
-            if guesses[row["id"]] != row["gold"]:
-                scores[row["id"]] += multiplicity
-        del parameters, optimizer
-    return scores
 
 
 @lru_cache(maxsize=16)
@@ -1160,9 +1094,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     rows = _draw_live_rows(source_root, graph,
                            seed=_seed(receipt, capability=cap),
                            capability=cap, each=max(32, batch_size), course=course)
-    champion_votes = _champion_teacher_votes(
-        mx, run_dir, school, course, rows, graph,
-        receipt["config"], receipt["answer_ids"])
+    # Champion influence across grades belongs exclusively to frozen soups.
+    # Individual capability champions advise only their own lesson grade.
     confidence_champions = _frozen_confidence_champions(
         run_dir, receipt, lesson_grade, graph)
     frozen_soups, soup_vote_receipts = _frozen_grade_soup_votes(
@@ -1170,7 +1103,6 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     confidence_examples = 0
     confidence_total_weight = 0.0
     confidence_applied_steps = 0
-    teacher_candidates = [r for r in rows if champion_votes.get(r["id"], 0)]
     # Every unsuccessful examination construction can become direct teaching
     # material once scoring has completed. No held-out embargo survives.
     priority = [r for r in receipt.get("teacher_misses", ())
@@ -1187,7 +1119,6 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     methodology_steps = []
     methodology_unavailable = None
     replayed_misses = 0
-    champion_prioritized = 0
     step_before = int(optimizer.state["step"].item())
     for step in range(steps_per_visit):
         fresh = _draw_live_rows(source_root, graph,
@@ -1197,14 +1128,6 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         picked = choose_lesson_batch(
             fresh, policy, _seed(receipt, capability=cap, step=step+1),
             batch_size=batch_size)
-        before_champion = list(picked)
-        picked = champion_directed_lessons(
-            picked, teacher_candidates, champion_votes, capacity=batch_size)
-        inserted_by_champion = {
-            after_row["id"] for before_row, after_row in zip(before_champion, picked)
-            if before_row["id"] != after_row["id"] and
-               champion_votes.get(after_row["id"], 0)
-        }
         window = select_fair_miss_window(
             priority, FairMissRequest(
                 exposures=miss_exposures,
@@ -1222,11 +1145,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             miss_exposures[identity] = miss_exposures.get(identity, 0) + 1
             selected_misses.add(identity)
         replayed_misses += len(window)
-        champion_prioritized += sum(row["id"] in inserted_by_champion for row in picked)
         if methodology_unavailable is None:
             try:
                 methodology_steps.append(inspect_lesson_step(
-                    course, cap, [*fresh, *teacher_candidates], picked))
+                    course, cap, fresh, picked))
             except ValueError as exc:
                 # A diagnostic implementation gap must not invent a new
                 # training gate or silently change the evolved teacher.
@@ -1280,13 +1202,13 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     teacher_decision = summarize_teacher_decision(TeacherDecisionInput(
         capability=cap, policy_key=policy_key, warnings=warnings,
         unresolved_miss_count=len(priority),
-        champion_candidate_count=len(teacher_candidates),
+        champion_candidate_count=0,
         prerequisite_capabilities=course.capability_map[cap].prerequisites,
         methodology=methodology,
         delivered_examples=steps_per_visit*batch_size,
         replayed_misses=replayed_misses,
         resolved_exam_misses=len(resolved_priority_ids),
-        champion_prioritized=champion_prioritized,
+        champion_prioritized=0,
         seed=_seed(receipt, capability=cap),
     ))
     event = {
@@ -1307,8 +1229,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "lesson_seed": _seed(receipt, capability=cap),
         "prior_exam_misses_available": len(priority),
         "prior_exam_misses_remaining": len(remaining_priority),
-        "prior_grade_champion_votes": teacher_vote_weights(course, school),
-        "champion_directed_examples_available": len(teacher_candidates),
+        "prior_grade_champion_votes": {},
+        "champion_directed_examples_available": 0,
         "champion_confidence": {
             "policy": CHAMPION_CONFIDENCE_POLICY,
             "frozen_unique_champions": len(confidence_champions),
