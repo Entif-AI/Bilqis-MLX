@@ -230,3 +230,29 @@ construction, not unrestricted multi-token language generation or proof of
 learned meanings. The currently approved Grade A trainer, fixed teaching and
 examination manifests, complete student and AdamW remain unmodified; no
 actual neural training is authorized by this experimental parity adapter.
+
+## ADR-021 | 2026-10-15 | One bounded integer type scope and on-demand test regeneration
+
+The user requires integer concepts to start with a deliberately small range,
+and to expand without rewriting any lesson or test case by hand. The single
+`BILQIS_INTEGER_MAX` environment setting (default `3`, currently attested
+range `1..100`) defines the upper bound of exposed number operands,
+intermediate results, and direct answers. It does not restrict the original
+model vocabulary or replace stable `school.number.N` token identities. The
+source-pinned type signatures and independently agreeing arithmetic oracles
+generate varied arithmetic/Boolean/eq/negation specimens from seeded ASTs.
+
+**Generated assessment files are never regenerated just because the setting
+changed.** An explicit `npm run curriculum:tests -- --regenerate-tests=type:integer`
+rebuilds *every test family whose type-dependency graph contains Number* and
+leaves unrelated Boolean-only suites byte-for-byte unchanged. A changed
+integer scope makes old generated tests stale until this operation occurs;
+normal verification fails closed rather than silently evaluating the old
+limits. Sealed historical Grade A tests are outside this generated-test
+system and must not be rewritten. Each generated release is content-addressed
+and the current pointer is atomically published; source partition identities
+are stable across seeds and limits. The developer may sample fresh training
+examples on each pass without automatically resampling saved assessment
+sets. These are still research-only typed constructions, not proof of
+live neural acquisition or grade qualification. Full contract and example
+commands: `docs/TYPED_INTEGER_GENERATED_TESTS_20261015.md`.

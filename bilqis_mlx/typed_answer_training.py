@@ -14,7 +14,8 @@ import numpy as np
 from .mlx_parity import clip_gradients, forward_arrays
 
 
-TRAIN_CASTES = ("numeric_0_3", "numeric_full_101", "evidence", "semantic_token")
+TRAIN_CASTES = ("numeric_0_3", "numeric_active", "numeric_full_101",
+                "evidence", "semantic_token")
 
 
 def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
@@ -37,6 +38,8 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
         sizes = {"numeric_0_3":4, "numeric_full_101":101, "evidence":5}
         if (len(labels) != len(answer_ids) or
                 kind in sizes and len(labels) != sizes[kind] or
+                kind == "numeric_active" and (len(labels) < 2 or
+                         labels != [str(i) for i in range(len(labels))]) or
                 kind == "semantic_token" and len(labels) != len(vocabulary) or
                 len(set(answer_ids)) != len(answer_ids) or
                 kind == "numeric_0_3" and labels != ["0", "1", "2", "3"] or
