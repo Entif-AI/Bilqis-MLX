@@ -147,6 +147,8 @@ distinguishable in the separate read-only baseline report.
 
 This is the first experimental human trainer, not a measured successful
 real-student long session. It is expected to improve through observation.
-The 24-item-per-capability teaching inventory is intentionally finite;
-future lessons can increase diversity under new versioned admission, without
-silently replacing the frozen examination or historical token semantics.
+The original 24-item-per-capability teaching inventory was a provisional
+experimental constraint, subsequently retired by ADR-031's exposure-aware
+miss replay. The current grade exam remains fixed only during a single grade
+enrollment, with fresh examination on return after passing; historical token
+semantics remain unchanged.

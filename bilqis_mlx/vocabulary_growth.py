@@ -61,6 +61,8 @@ class AdmittedToken:
     capability_id: str
     admission_receipt: str
     state: str = GROWTH_STATE
+    signature: str = "SemanticSymbol"
+    arity: int = 0
 
 
 def candidate_examples() -> tuple[ResearchSeed,...]:
@@ -91,7 +93,7 @@ def _check_catalog(catalog: dict) -> None:
 
 def _check_admission(entry: AdmittedToken, prior: set[str], additional: set[str]):
     if (not isinstance(entry,AdmittedToken) or entry.state != GROWTH_STATE or
-            not re.fullmatch(r"[a-z][a-z0-9._-]{2,120}",entry.token_id) or
+            not re.fullmatch(r"[a-z][A-Za-z0-9._-]{2,120}",entry.token_id) or
             not entry.semantic_id or not entry.meaning.strip() or
             entry.source_kind not in SOURCE_KINDS or
             entry.representation not in REPRESENTATIONS or
@@ -99,6 +101,15 @@ def _check_admission(entry: AdmittedToken, prior: set[str], additional: set[str]
             any(not _sha(x) for x in (entry.source_digest,entry.lesson_digest,
                                        entry.oracle_digest,entry.admission_receipt))):
         raise ValueError("VOCAB_ROOT_HAS_NO_ATTESTED_ADMISSION_OR_BAD_IDENTITY")
+    if type(entry.arity) is not int or entry.arity < 0:
+        raise ValueError("VOCAB_TYPED_ARITY_INVALID")
+    if entry.arity:
+        from .semantics.core import Signature
+        signature = Signature.parse(entry.signature)
+        if len(signature.inputs) != entry.arity:
+            raise ValueError("VOCAB_TYPED_SIGNATURE_ARITY_MISMATCH")
+    elif not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", entry.signature):
+        raise ValueError("VOCAB_LITERAL_TYPE_INVALID")
     if not isinstance(entry.prerequisite_tokens,tuple):
         raise ValueError("VOCAB_PREREQUISITE_TYPE")
     if any(p not in prior|additional for p in entry.prerequisite_tokens):
@@ -135,8 +146,8 @@ def append_catalog(prior: dict, admissions: tuple[AdmittedToken,...], *,
         seen_concepts.add(entry.semantic_id)
         nodes.append({
             'id':entry.token_id, 'family':entry.source_kind,
-            'subtype':entry.representation, 'signature':'SemanticSymbol',
-            'arity':0,'stage':0,
+            'subtype':entry.representation, 'signature':entry.signature,
+            'arity':entry.arity,'stage':0,
             'source':entry.source_locator,
             'semantic_id':entry.semantic_id,
             'meaning':entry.meaning,

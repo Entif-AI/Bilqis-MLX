@@ -15,7 +15,7 @@ from bilqis_mlx.live_grade_a import live_course, RELEASE as LIVE_RELEASE
 from bilqis_mlx.grade_a_trainer import (
     _make_batch, _persist, _seed, _state_from_json, _train_step,
     _take_visit, _take_exam,
-    choose_lesson_batch, replay_missed_lessons, missed_lesson_window,
+    choose_lesson_batch, replay_missed_lessons,
     operator_lock, prepare_source,
     _initial_model, _bundle_pointer, _resume, _durable_json,
     _clean_staged_bundles, _quarantine_newer_uncommitted_bundles,
@@ -24,6 +24,7 @@ from bilqis_mlx.champions import Checkpoint
 from bilqis_mlx.source import AUDITED_PARENT
 from bilqis_mlx.school import start_new, visit
 from bilqis_mlx.capability_frontier import promote
+from bilqis_mlx.diagnostics import DiagnosticStatus
 
 ROOT = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
 SOURCE = ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
@@ -72,10 +73,11 @@ class GradeATrainerContractTests(unittest.TestCase):
         self.assertEqual({p["id"] for p in priority} & {p["id"] for p in mixed},
                          {p["id"] for p in priority})
         self.assertEqual(sum(r["gold"] == "TRUE" for r in mixed), 8)
-        longer = [{"id": "miss-" + str(i), "gold": "TRUE"} for i in range(22)]
-        seen = {row["id"] for cursor in (0, 4, 8, 12, 16, 20)
-                for row in missed_lesson_window(longer, cursor, 4)}
-        self.assertEqual(seen, {row["id"] for row in longer})
+        full_class = [{"id": f"miss-all-{i}", "gold": "TRUE"} for i in range(8)]
+        no_quarter_ceiling = replay_missed_lessons(chosen, full_class)
+        self.assertEqual({p["id"] for p in full_class} &
+                         {p["id"] for p in no_quarter_ceiling},
+                         {p["id"] for p in full_class})
 
     def test_failed_bundle_write_never_enters_active_bundles(self):
         def fail_after_partial_stage(directory, *args, **kwargs):
@@ -249,6 +251,7 @@ class GradeATrainerContractTests(unittest.TestCase):
             "schema": "synthetic-fixture", "run_id": "synthetic-execution",
             "generation": 1, "school": asdict(school),
             "teacher": teacher, "config": {"heads":3,"layers":1},
+            "source_manifest_sha256": manifest["manifest_sha256"],
             "answer_ids": [6,7],
             "model_bundle": initial.filename, "last_exam": None,
             "curriculum_mode": LIVE_RELEASE,
@@ -286,6 +289,19 @@ class GradeATrainerContractTests(unittest.TestCase):
             self.assertEqual(len(saved_cohort["rows"]), 72)
             self.assertEqual(saved_cohort["cohort_sha256"],
                              completed["last_exam"]["cohort_sha256"])
+            events = [json.loads(line) for line in
+                      (run_dir / "events.jsonl").read_text().splitlines()]
+            visits = [event for event in events if event.get("event") ==
+                      "GRADE_A_TEACHER_VISIT_COMMITTED"]
+            self.assertEqual(len(visits), 6)
+            for event in visits:
+                method = event["lesson_methodology"]
+                self.assertEqual(method["optimizer_batches_observed"], 1)
+                self.assertEqual(method["delivered_examples"], 4)
+                self.assertTrue(method["introductory_full_grade_pass"])
+                s4, s5 = method["findings"]
+                self.assertEqual(s4["status"], DiagnosticStatus.NOT_APPLICABLE)
+                self.assertNotEqual(s5["status"], DiagnosticStatus.NOT_MEASURED)
             # A second incomplete recovery group must never create three more
             # intermediate student archives. Old capability winners remain
             # pinned when a new full-student recovery point is committed.
@@ -300,8 +316,14 @@ class GradeATrainerContractTests(unittest.TestCase):
                     completed = _take_exam(
                         mx, run_dir, completed, manifest, course, ROOT, SOURCE,
                         params, opt, graph, reserve_gib=0.)
-                self.assertNotEqual(completed["last_exam"]["cohort_sha256"],
-                                    saved_cohort["cohort_sha256"])
+                self.assertEqual(completed["last_exam"]["cohort_sha256"],
+                                 saved_cohort["cohort_sha256"])
+                outcomes = completed["last_exam"]["teacher_outcomes"]
+                self.assertEqual(len(outcomes), 3)
+                self.assertEqual({outcome["attribution"] for outcome in outcomes},
+                                 {"MEASURED_FIXED_EXAM_UNIQUE_ACTION"})
+                self.assertTrue(all(len(outcome["decision_ids"]) == 1
+                                    for outcome in outcomes))
                 self.assertEqual(len(completed["last_exam"]["incumbent_comparisons"]), 1)
                 self.assertEqual(completed["last_exam"]["incumbent_comparisons"][0]["cohort_sha256"],
                                  completed["last_exam"]["cohort_sha256"])

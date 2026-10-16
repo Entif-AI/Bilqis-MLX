@@ -1,17 +1,19 @@
 """Evidence-limited learning diagnostics over source-scored exam observations.
 
 These findings do not change the learned teacher or stop a grade in progress.
-Five signal identities preserve the user's original warning questions. The
-current observable source supports only S1/S2; S3-S5 stay NOT_MEASURED until
-delivered/retained instruction and typed prerequisite/minimality evidence exist.
+Five signal identities preserve the user's original warning questions. S1/S2
+inspect scored predictions, S3 compares checkpoints on the same fixed exam,
+and S4/S5 inspect delivered lesson methodology where evidence exists. Absent
+source evidence remains NOT_MEASURED.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Iterable
 
-from .observations import CapabilityObservation, ExamObservation
+from .observations import CapabilityObservation, ExamObservation, aggregate_capabilities
+from .trajectories import latest_fixed_exam_trajectory
 
 
 class LearningSignal(str, Enum):
@@ -27,16 +29,21 @@ class DiagnosticStatus(str, Enum):
     OBSERVED_LONGITUDINALLY = "OBSERVED_LONGITUDINALLY"
     NOT_OBSERVED = "NOT_OBSERVED"
     NOT_MEASURED = "NOT_MEASURED"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
+    OBSERVED_IN_INSTRUCTION = "OBSERVED_IN_INSTRUCTION"
 
 
 class ObservationScope(str, Enum):
     SINGLE_COHORT = "SINGLE_COHORT"
     DISTINCT_COHORT_SERIES = "DISTINCT_COHORT_SERIES"
+    FIXED_COHORT_CHECKPOINT_SERIES = "FIXED_COHORT_CHECKPOINT_SERIES"
+    TRAINING_VISIT = "TRAINING_VISIT"
 
 
 class DiagnosticTarget(str, Enum):
     CAPABILITY = "CAPABILITY"
     GRADE = "GRADE"
+    WHOLE_STUDENT = "WHOLE_STUDENT"
 
 
 @dataclass(frozen=True)
@@ -52,6 +59,7 @@ class DiagnosticFinding:
     majority_baseline: int | None
     source_cohorts: tuple[str, ...]
     note: str
+    trajectory: tuple[tuple[int, int, int], ...] = ()
 
 
 def _inspect_capability(cap: CapabilityObservation, cohort_sha256: str,
@@ -79,6 +87,12 @@ def _inspect_capability(cap: CapabilityObservation, cohort_sha256: str,
         "Observed correctness at or below the gold majority baseline" if below_baseline else
         "Observed correctness above the gold majority baseline",
     )
+    if not cap.mixed_gold:
+        note = "A single gold class cannot distinguish collapse or baseline-level learning"
+        s1 = replace(s1, status=DiagnosticStatus.NOT_MEASURED, note=note)
+    if not cap.baseline_measured:
+        s2 = replace(s2, status=DiagnosticStatus.NOT_MEASURED,
+                     note="Each constituent capability needs both gold classes for baseline discrimination")
     missing = {
         LearningSignal.LACK_OF_DURABLE_GAIN:
             "Requires delivered lessons, new source-cohort retest and delayed retention comparisons",
@@ -95,54 +109,101 @@ def _inspect_capability(cap: CapabilityObservation, cohort_sha256: str,
 
 def diagnose_exam(observation: ExamObservation) -> tuple[DiagnosticFinding, ...]:
     """Observe, never intervene. Same tested vocabulary as original warnings."""
-    grade_symbols = sorted({cap.capability.split(".", 1)[0]
-                            for cap in observation.capabilities})
-    return tuple(finding for cap, target in (
-        *((cap, DiagnosticTarget.CAPABILITY) for cap in observation.capabilities),
-        *((observation.grade_total(g), DiagnosticTarget.GRADE) for g in grade_symbols))
+    return tuple(finding for cap, target in _targets(observation)
         for finding in _inspect_capability(cap, observation.cohort_sha256, target))
 
 
-def diagnose_history(observations: Iterable[ExamObservation]) -> tuple[DiagnosticFinding, ...]:
-    """Mark repeated S1/S2 signals only across *distinct* saved cohorts.
+def _targets(observation):
+    yield from ((cap, DiagnosticTarget.CAPABILITY) for cap in observation.capabilities)
+    for grade in sorted({c.capability.split(".", 1)[0] for c in observation.capabilities}):
+        yield observation.grade_total(grade), DiagnosticTarget.GRADE
+    yield aggregate_capabilities("*", observation.capabilities), DiagnosticTarget.WHOLE_STUDENT
 
-    No inference of durable forgetting can follow from independently sampled
-    exam scores without evidence of what was actually taught in between.
+
+def diagnose_history(observations: Iterable[ExamObservation]) -> tuple[DiagnosticFinding, ...]:
+    """Use distinct student checkpoints; reused fixed exams are paired evidence.
+
+    An unchanged cohort across successive complete checkpoints makes score
+    persistence observable, without claiming which practice questions caused it.
     """
-    history = tuple(sorted(observations, key=lambda obs: obs.optimizer_step))
-    if len({o.cohort_sha256 for o in history}) != len(history):
-        raise ValueError("DIAGNOSTIC_REPEATED_COHORT_IS_NOT_NEW_EVIDENCE")
+    history = tuple(observations)
+    if (len({o.optimizer_step for o in history}) != len(history) or
+            len({o.student_sha256 for o in history}) != len(history)):
+        raise ValueError("DIAGNOSTIC_REPEATED_CHECKPOINT_IS_NOT_A_LEARNING_TRAJECTORY")
+    if any(b.optimizer_step <= a.optimizer_step for a, b in zip(history, history[1:])):
+        raise ValueError("DIAGNOSTIC_NON_MONOTONIC_CHECKPOINT_HISTORY")
+    if len({o.inventory for o in history}) > 1:
+        raise ValueError("DIAGNOSTIC_INVENTORY_DRIFT")
+    if len({o.run_id for o in history}) > 1:
+        raise ValueError("DIAGNOSTIC_INCOMPARABLE_RUN_HISTORY")
     by_cap: dict[tuple[DiagnosticTarget, str], list[tuple[ExamObservation, CapabilityObservation]]] = {}
     for obs in history:
-        for cap in obs.capabilities:
-            by_cap.setdefault((DiagnosticTarget.CAPABILITY, cap.capability), []).append((obs, cap))
-        for grade in sorted({cap.capability.split(".", 1)[0] for cap in obs.capabilities}):
-            by_cap.setdefault((DiagnosticTarget.GRADE, grade), []).append(
-                (obs, obs.grade_total(grade)))
+        for cap, target in _targets(obs):
+            by_cap.setdefault((target, cap.capability), []).append((obs, cap))
     findings = []
     for (target, cap_name), rows in sorted(by_cap.items()):
         if len(rows) < 2:
             continue
-        if len({o.rubric_sha256 for o, _ in rows}) != 1:
+        if len({o.contract for o, _ in rows}) != 1:
             raise ValueError("DIAGNOSTIC_INCOMPARABLE_RUBRIC_HISTORY")
+        paired = len({obs.cohort_sha256 for obs, _ in rows}) == 1
+        scope = (ObservationScope.FIXED_COHORT_CHECKPOINT_SERIES if paired else
+                 ObservationScope.DISTINCT_COHORT_SERIES)
         # Do not call one checkpoint repeatedly evaluated on new questions a
         # learned trajectory: it is observationally new, not temporal gain.
         for signal, pattern in (
             (LearningSignal.REPETITIVE_ANSWERS,
              lambda c: c.constant_prediction and c.mixed_gold),
             (LearningSignal.CHANCE_LEVEL_OR_LAGGING,
-             lambda c: c.correct <= c.majority_baseline),
+             lambda c: c.baseline_measured and c.correct <= c.majority_baseline),
         ):
-            sustained = all(pattern(cap) for _, cap in rows)
+            streak = []
+            for pair in reversed(rows):
+                if not pattern(pair[1]):
+                    break
+                streak.append(pair)
+            sustained = len(streak) >= 2
+            window = tuple(reversed(streak)) if sustained else (rows[-1],)
+            status = (DiagnosticStatus.OBSERVED_LONGITUDINALLY if sustained else
+                      DiagnosticStatus.OBSERVED_IN_COHORT if streak else
+                      DiagnosticStatus.NOT_OBSERVED)
+            if (not rows[-1][1].mixed_gold or
+                    (signal is LearningSignal.CHANCE_LEVEL_OR_LAGGING and
+                     not rows[-1][1].baseline_measured)):
+                status = DiagnosticStatus.NOT_MEASURED
             findings.append(DiagnosticFinding(
-                signal,
-                DiagnosticStatus.OBSERVED_LONGITUDINALLY if sustained else DiagnosticStatus.NOT_OBSERVED,
-                cap_name, target, ObservationScope.DISTINCT_COHORT_SERIES,
-                len(rows), sum(cap.correct for _, cap in rows),
-                sum(cap.total for _, cap in rows),
-                sum(cap.majority_baseline for _, cap in rows),
-                tuple(obs.cohort_sha256 for obs, _ in rows),
-                "Repeated observation across distinct archived cohorts" if sustained else
-                "The warning pattern did not persist across the observed cohort series",
+                signal, status,
+                cap_name, target, scope,
+                len(window), sum(cap.correct for _, cap in window),
+                sum(cap.total for _, cap in window),
+                sum(cap.majority_baseline for _, cap in window),
+                tuple(obs.cohort_sha256 for obs, _ in window),
+                ("Consecutive observations on an unchanged exam and distinct checkpoints"
+                 if paired else "Consecutive observations on changing exams; not a paired gain") if sustained else
+                "No sustained warning in the latest consecutive cohort window",
             ))
+        trend = latest_fixed_exam_trajectory(tuple(rows))
+        if trend is None:
+            status = DiagnosticStatus.NOT_MEASURED
+            note = "Need three distinct student checkpoints on one fixed exam for durable-gain measurement"
+            window = ()
+        else:
+            status = (DiagnosticStatus.OBSERVED_LONGITUDINALLY if
+                      trend.no_lasting_gain or trend.regressed_from_peak
+                      else DiagnosticStatus.NOT_OBSERVED)
+            note = ("No net gain over the first checkpoint on this fixed exam"
+                    if trend.no_lasting_gain else
+                    "Some gains persist, but score regressed from the intervening peak"
+                    if trend.regressed_from_peak else
+                    "Latest checkpoint retains its best measured gain on this fixed exam")
+            window = trend.scores_by_step
+        findings.append(DiagnosticFinding(
+            LearningSignal.LACK_OF_DURABLE_GAIN, status, cap_name, target,
+            ObservationScope.FIXED_COHORT_CHECKPOINT_SERIES if trend else scope,
+            len(window), trend.latest_correct if trend else None,
+            window[-1][2] if window else None,
+            rows[-1][1].majority_baseline if trend else None,
+            (trend.cohort_sha256,) if trend else (rows[-1][0].cohort_sha256,),
+            note, window,
+        ))
     return tuple(findings)

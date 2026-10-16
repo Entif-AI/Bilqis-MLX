@@ -11,6 +11,8 @@ from dataclasses import dataclass
 import hashlib
 import json
 
+GRADE_TEST_LIFECYCLE = "bilqis.grade-test.fixed-until-passed/v1"
+
 
 def digest(value) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True,

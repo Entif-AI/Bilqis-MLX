@@ -15,7 +15,7 @@ from .mlx_parity import clip_gradients, forward_arrays
 
 
 TRAIN_CASTES = ("numeric_0_3", "numeric_active", "numeric_full_101",
-                "evidence", "semantic_token")
+                "binary", "evidence", "semantic_token")
 
 
 def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
@@ -35,8 +35,10 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
         head = heads.get(kind) or {}
         labels = head.get("values") or []
         answer_ids = head.get("token_ids") or []
-        sizes = {"numeric_0_3":4, "numeric_full_101":101, "evidence":5}
+        sizes = {"numeric_0_3":4, "numeric_full_101":101, "evidence":5, "binary":2}
         if (len(labels) != len(answer_ids) or
+                len(set(labels)) != len(labels) or
+                any(type(i) is not int or not 0 <= i < len(vocabulary) for i in answer_ids) or
                 kind in sizes and len(labels) != sizes[kind] or
                 kind == "numeric_active" and (len(labels) < 2 or
                          labels != [str(i) for i in range(len(labels))]) or
@@ -44,7 +46,7 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
                 len(set(answer_ids)) != len(answer_ids) or
                 kind == "numeric_0_3" and labels != ["0", "1", "2", "3"] or
                 kind == "numeric_full_101" and labels != [str(i) for i in range(101)] or
-                kind == "evidence" and labels[:2] != ["FALSE", "TRUE"]):
+                kind in ("evidence", "binary") and labels[:2] != ["FALSE", "TRUE"]):
             raise ValueError("ANSWER_CASTE_UNTRUSTED_HEAD_ABI")
         if row.get("gold") not in labels:
             raise ValueError("ANSWER_CASTE_GOLD_OUTSIDE_HEAD")
@@ -88,6 +90,38 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
                         "gold_labels": [row["gold"] for row in group],
                         "answer_ids": list(head["token_ids"]),
                         "row_ids": [row.get("id") for row in group]}
+    return result
+
+
+def predict_rows(mx, weights, rows, heads, config) -> dict[str, str]:
+    """Inference reads tokens and declared answer mode, never specimen gold."""
+    result = {}
+    for offset in range(0, len(rows), 24):
+        group = rows[offset:offset+24]
+        for kind in {row["answer_kind"] for row in group}:
+            if kind not in TRAIN_CASTES:
+                raise ValueError("ANSWER_CASTE_NOT_ADMITTED_FOR_INFERENCE")
+            own = [row for row in group if row["answer_kind"] == kind]
+            head = heads["semantic_token" if kind.startswith("numeric_") else kind]
+            vocabulary = heads["semantic_token"]["values"]
+            if len(vocabulary) != weights["embedding.weight"].shape[0]:
+                raise ValueError("ANSWER_CASTE_MODEL_FULL_VOCABULARY_DRIFT")
+            lengths = np.asarray([len(row["tokens"]) for row in own], dtype=np.int32)
+            if any(not 1 <= n <= 96 for n in lengths) or any(
+                    type(t) is not int or not 0 <= t < len(vocabulary)
+                    for row in own for t in row["tokens"]):
+                raise ValueError("ANSWER_CASTE_INPUT_TOKENS_INVALID")
+            ids = np.zeros((len(own), int(lengths.max())), dtype=np.int32)
+            for i, row in enumerate(own):
+                ids[i, :lengths[i]] = row["tokens"]
+            logits = forward_arrays(mx, weights, ids, lengths,
+                heads=config["heads"], layers=config["layers"], answer_ids=head["token_ids"])
+            mx.eval(logits)
+            for row, index in zip(own, np.asarray(logits).argmax(-1).tolist()):
+                label = head["values"][index]
+                result[row["id"]] = (label.removeprefix("school.number.")
+                    if kind.startswith("numeric_") and label.startswith("school.number.")
+                    else "TOKEN:" + label if kind.startswith("numeric_") else label)
     return result
 
 

@@ -47,6 +47,8 @@ class Grade:
     assessment_sha256: str | None = None
     # Optional draft count inventory; mandatory for a training-admitted grade.
     exam_item_counts: tuple[tuple[str, int], ...] = ()
+    # Explicit ordered introductions; later stages require earlier stage mastery.
+    teaching_stages: tuple[tuple[str, ...], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -65,7 +67,11 @@ class Course:
 
     def digest(self) -> str:
         from dataclasses import asdict
-        value = json.dumps(asdict(self), sort_keys=True, separators=(",", ":"),
+        payload = asdict(self)
+        for grade in payload["grades"]:
+            if not grade["teaching_stages"]:
+                del grade["teaching_stages"]  # preserve admitted A/B contract bytes
+        value = json.dumps(payload, sort_keys=True, separators=(",", ":"),
                            ensure_ascii=False)
         return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
@@ -117,6 +123,13 @@ def validate(course: Course) -> None:
             raise ValueError("GRADE_MIXES_DIFFICULTY_LEVELS")
         seen_roots_in_grade: set[str] = set()
         grade_ids: set[str] = set()
+        stages = {name: index for index, names in enumerate(grade.teaching_stages)
+                  for name in names}
+        if grade.teaching_stages and (
+                any(not names for names in grade.teaching_stages) or
+                tuple(name for names in grade.teaching_stages for name in names) !=
+                tuple(cap.id for cap in grade.capabilities)):
+            raise ValueError("GRADE_TEACHING_STAGES_MUST_PARTITION_CAPABILITIES_IN_ORDER")
         for cap in grade.capabilities:
             if not re.fullmatch(r"[A-Za-z][A-Za-z0-9._-]+", cap.id) or cap.id in all_ids or cap.id in grade_ids:
                 raise ValueError("INVALID_OR_DUPLICATE_CAPABILITY_ID")
@@ -126,7 +139,9 @@ def validate(course: Course) -> None:
                 raise ValueError("UNTAUGHT_ROOT_IN_EXAM")
             if len(set(cap.taught_roots)) != len(cap.taught_roots):
                 raise ValueError("DUPLICATE_TAUGHT_ROOT")
-            if any(pre not in all_ids for pre in cap.prerequisites):
+            if any(pre not in all_ids and not (
+                    pre in grade_ids and stages.get(pre, 0) < stages.get(cap.id, 0))
+                   for pre in cap.prerequisites):
                 raise ValueError("CAPABILITY_PREREQUISITE_NOT_MASTERED_IN_EARLIER_GRADE")
             if cap.composed_of:
                 if len(cap.composed_of) < 2 or not set(cap.composed_of) <= set(cap.prerequisites):
@@ -160,7 +175,8 @@ class ExamItem:
 
 
 def validate_exam_item(course: Course, active_grade: str, item: ExamItem,
-                       *, mastered_grade_ids: tuple[str, ...] = ()) -> None:
+                       *, mastered_grade_ids: tuple[str, ...] = (),
+                       mastered_capability_ids: tuple[str, ...] = ()) -> None:
     """Validate test admission, not the oracle's mathematical calculation.
 
     An independently verified oracle must still check gold answers at runtime.
@@ -179,21 +195,32 @@ def validate_exam_item(course: Course, active_grade: str, item: ExamItem,
     active_idx = GRADE_IDS.index(active_grade)
     earlier = {c.id: g.id for g in course.grades[:active_idx]
                for c in g.capabilities}
+    staged = grades[active_grade].teaching_stages
+    stages = {name: index for index, names in enumerate(staged) for name in names}
+    same_grade = {c.id: c for c in grades[active_grade].capabilities
+                  if c.id in stages and stages[c.id] < stages[cap.id]}
+    if not set(mastered_capability_ids) <= set(earlier) | set(same_grade):
+        raise ValueError("EXAM_FUTURE_OR_SAME_STAGE_MASTERY_CLAIM")
     prior_roots = {root for g in course.grades[:active_idx]
                    for c in g.capabilities for root in c.taught_roots}
+    prior_roots.update(root for name, prior in same_grade.items()
+                       if name in mastered_capability_ids for root in prior.taught_roots)
     if not item.roots or not set(item.roots) <= prior_roots | set(cap.taught_roots):
         raise ValueError("EXAM_USES_UNTAUGHT_SEMANTIC_ROOT")
     if (not item.oracle_ref or not item.item_id or
             item.oracle_ref != cap.independent_oracle):
         raise ValueError("EXAM_HAS_NO_INDEPENDENT_ORACLE_IDENTITY")
-    if cap.prerequisites and any(earlier.get(c) not in mastered_grade_ids
-                                  for c in cap.prerequisites):
+    if cap.prerequisites and any(
+            earlier.get(c) not in mastered_grade_ids and
+            not (c in same_grade and c in mastered_capability_ids)
+            for c in cap.prerequisites):
         raise ValueError("EXAM_PREREQUISITE_GRADE_NOT_PASSED")
     if cap.composed_of:
         if not set(cap.composed_of) <= set(item.constituents):
             raise ValueError("EXAM_MISSING_DECOMPOSED_CONSTITUENTS")
     if item.constituents:
-        if any(c not in earlier for c in item.constituents):
+        if any(c not in earlier and c not in same_grade for c in item.constituents):
             raise ValueError("COMPOSED_EXAM_UNMASTERED_EARLIER_CONSTITUENT")
-        if any(earlier[c] not in mastered_grade_ids for c in item.constituents):
+        if any(earlier.get(c) not in mastered_grade_ids and c not in mastered_capability_ids
+               for c in item.constituents):
             raise ValueError("COMPOSED_EXAM_PREREQUISITE_GRADE_NOT_PASSED")

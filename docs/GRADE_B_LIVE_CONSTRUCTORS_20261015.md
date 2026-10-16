@@ -45,11 +45,12 @@ cohort**. No permanent Grade B sealed-question embargo exists, but each new
 exam previously discarded the whole previous mistake queue. The second
 weakest-three round also excluded first-round members even when still worst.
 
-ADR-026 corrects both: retain bounded still-incorrect earlier mistakes across
-fresh cohorts and freshly rerank the entire eligible pool twice; direct
-source-oracled A operand micro-lessons now accompany each B expression in
-up to one-quarter of its optimizer batch, without introducing a separate
-old-grade full loop or exposing exam gold during scoring. See
+ADR-026 originally proposed retaining a fixed-size still-incorrect mistake
+backlog, reranking the full eligible pool, and inserting up to one-quarter
+source-oracled A operand micro-lessons in B batches. The fixed-size quota and
+injection were later retired under ADR-031. Current fair replay tracks actual
+exposure and uses available batch answer classes while the inherited teacher
+retains its policy selection; exams reveal no gold during scoring. See
 `docs/GRADE_B_REGRESSION_FORENSICS_20261016.md` for the measured failure
 and verification limits. Software regressions pass; actual recovery remains
 untested until a human deliberately runs and measures the intact student.

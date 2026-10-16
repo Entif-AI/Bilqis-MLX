@@ -3,6 +3,8 @@
 These tests never load student model weights or mutate training state.
 """
 from copy import deepcopy
+import hashlib
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -29,12 +31,13 @@ def constructed_exam(*, predicted: tuple[str, ...], seed: int = 7):
                    generator_version=cohort.generator_version,
                    seed=cohort.seed, cohort_sha256=cohort.digest, rows=rows)
     predictions = dict(zip((r["id"] for r in rows), predicted))
-    measured = score(cohort, predictions, dict(sha256="d" * 64,
+    student_sha = hashlib.sha256(str(seed).encode()).hexdigest()
+    measured = score(cohort, predictions, dict(sha256=student_sha,
                  optimizer_step=100 + seed, model_and_native_adamw=True))
     last_exam = dict(cohort_sha256=cohort.digest, cohort_seed=seed,
                      generator_version=cohort.generator_version,
                      exam_rubric_sha256=payload["rubric_sha256"],
-                     student_sha256="d" * 64, optimizer_step=100 + seed,
+                     student_sha256=student_sha, optimizer_step=100 + seed,
                      scores=measured["scores"],
                      misses_for_teacher=list(measured["misses_for_teacher"]))
     return payload, last_exam
@@ -45,7 +48,114 @@ def find_signal(findings, signal, target, capability):
                 and x.capability == capability)
 
 
+def rescore_fixed_exam(cohort, earlier, predicted, *, step, student_sha):
+    """Another real score of the same test, on a different intact checkpoint."""
+    recorded = make_cohort(cohort["rows"],
+        generator_version=cohort["generator_version"], seed=cohort["seed"],
+        rubric_version=cohort["schema"])
+    measured = score(recorded, {row["id"]: answer
+                             for row, answer in zip(cohort["rows"], predicted)},
+                     dict(sha256=student_sha, optimizer_step=step,
+                          model_and_native_adamw=True))
+    return {**earlier, "student_sha256": student_sha, "optimizer_step": step,
+            "scores": measured["scores"],
+            "misses_for_teacher": list(measured["misses_for_teacher"])}
+
+
 class DiagnosticObservationTests(unittest.TestCase):
+    def test_single_gold_class_does_not_make_perfect_answers_a_chance_alarm(self):
+        cohort, last = constructed_exam(predicted=("TRUE",) * 12)
+        for row in cohort["rows"]:
+            row["gold"] = "TRUE"
+        cohort["cohort_sha256"] = make_cohort(cohort["rows"],
+            generator_version=cohort["generator_version"], seed=cohort["seed"],
+            rubric_version=cohort["schema"]).digest
+        last.update(cohort_sha256=cohort["cohort_sha256"], misses_for_teacher=[],
+                    scores={"X.NOT": {"correct": 12, "total": 12}})
+        findings = diagnose_exam(observe_binary_exam(cohort, last))
+        for signal in (LearningSignal.REPETITIVE_ANSWERS,
+                       LearningSignal.CHANCE_LEVEL_OR_LAGGING):
+            self.assertEqual(find_signal(findings, signal,
+                DiagnosticTarget.CAPABILITY, "X.NOT").status,
+                DiagnosticStatus.NOT_MEASURED)
+
+    def test_pooled_labels_cannot_hide_single_class_capabilities(self):
+        cohort, last = constructed_exam(predicted=("FALSE",) * 6 + ("TRUE",) * 6)
+        for i, row in enumerate(cohort["rows"]):
+            row.update(capability="X.A" if i < 6 else "X.B",
+                       gold="FALSE" if i < 6 else "TRUE")
+        cohort["cohort_sha256"] = make_cohort(cohort["rows"],
+            generator_version=cohort["generator_version"], seed=cohort["seed"],
+            rubric_version=cohort["schema"]).digest
+        last.update(cohort_sha256=cohort["cohort_sha256"], misses_for_teacher=[],
+                    scores={c: {"correct": 6, "total": 6} for c in ("X.A", "X.B")})
+        observed = observe_binary_exam(cohort, last)
+        findings = diagnose_exam(observed)
+        for name, target in (("X", DiagnosticTarget.GRADE),
+                             ("*", DiagnosticTarget.WHOLE_STUDENT)):
+            finding = find_signal(findings, LearningSignal.CHANCE_LEVEL_OR_LAGGING,
+                                  target, name)
+            self.assertEqual(finding.status, DiagnosticStatus.NOT_MEASURED)
+            self.assertEqual(finding.majority_baseline, 12)
+
+    def test_repeated_checkpoint_is_not_a_learning_trajectory(self):
+        cohort1, last1 = constructed_exam(predicted=("FALSE",) * 12, seed=7)
+        cohort2, last2 = constructed_exam(predicted=("FALSE",) * 12, seed=8)
+        last2.update(student_sha256=last1["student_sha256"],
+                     optimizer_step=last1["optimizer_step"])
+        with self.assertRaisesRegex(ValueError, "REPEATED_CHECKPOINT"):
+            diagnose_history((observe_binary_exam(cohort1, last1),
+                              observe_binary_exam(cohort2, last2)))
+
+    def test_checkpoint_order_is_evidence_and_must_not_be_sorted(self):
+        a = observe_binary_exam(*constructed_exam(predicted=("FALSE",) * 12, seed=8))
+        b = observe_binary_exam(*constructed_exam(predicted=("FALSE",) * 12, seed=7))
+        with self.assertRaisesRegex(ValueError, "NON_MONOTONIC"):
+            diagnose_history((a, b))
+
+    def test_recent_persistent_failure_survives_an_older_good_score(self):
+        good, good_last = constructed_exam(predicted=("FALSE", "TRUE") * 6, seed=6)
+        bad1, last1 = constructed_exam(predicted=("FALSE",) * 12, seed=7)
+        bad2, last2 = constructed_exam(predicted=("FALSE",) * 12, seed=8)
+        findings = diagnose_history(observe_binary_exam(c, e)
+            for c, e in ((good, good_last), (bad1, last1), (bad2, last2)))
+        finding = find_signal(findings, LearningSignal.CHANCE_LEVEL_OR_LAGGING,
+                              DiagnosticTarget.CAPABILITY, "X.NOT")
+        self.assertEqual(finding.status, DiagnosticStatus.OBSERVED_LONGITUDINALLY)
+        self.assertEqual(finding.evidence_count, 2)
+
+    def test_extra_score_capability_and_negative_step_are_rejected(self):
+        cohort, last = constructed_exam(predicted=("FALSE",) * 12)
+        bad = deepcopy(last)
+        bad["scores"]["UNKNOWN"] = {"correct": 1, "total": 1}
+        with self.assertRaisesRegex(ValueError, "SCORE_EVIDENCE_DRIFT"):
+            observe_binary_exam(cohort, bad)
+        last["optimizer_step"] = -1
+        with self.assertRaisesRegex(ValueError, "CUSTODY_MISMATCH"):
+            observe_binary_exam(cohort, last)
+
+    def test_nonconsecutive_low_scores_are_not_a_sustained_warning(self):
+        findings = diagnose_history(observe_binary_exam(*constructed_exam(
+            predicted=values, seed=seed)) for seed, values in (
+                (7, ("FALSE",) * 12), (8, ("FALSE", "TRUE") * 6),
+                (9, ("FALSE",) * 12)))
+        finding = find_signal(findings, LearningSignal.CHANCE_LEVEL_OR_LAGGING,
+                              DiagnosticTarget.CAPABILITY, "X.NOT")
+        self.assertEqual(finding.status, DiagnosticStatus.OBSERVED_IN_COHORT)
+        self.assertEqual(finding.evidence_count, 1)
+
+    def test_malformed_identity_and_bool_scores_do_not_verify(self):
+        cohort, last = constructed_exam(predicted=("FALSE",) * 12)
+        for sha in (True, "x", "z" * 64):
+            with self.subTest(sha=sha):
+                bad = deepcopy(last)
+                bad["student_sha256"] = sha
+                with self.assertRaisesRegex(ValueError, "CUSTODY_MISMATCH"):
+                    observe_binary_exam(cohort, bad)
+        last["scores"]["X.NOT"]["total"] = True
+        with self.assertRaisesRegex(ValueError, "SCORE_EVIDENCE_DRIFT"):
+            observe_binary_exam(cohort, last)
+
     def test_binary_collapse_distinct_from_baseline_quality(self):
         constant_false = ("FALSE",) * 12
         cohort, receipt = constructed_exam(predicted=constant_false)
@@ -89,13 +199,83 @@ class DiagnosticObservationTests(unittest.TestCase):
         self.assertEqual(find_signal(findings, LearningSignal.REPETITIVE_ANSWERS,
                                     DiagnosticTarget.GRADE, "X").status,
                          DiagnosticStatus.OBSERVED_LONGITUDINALLY)
-        with self.assertRaisesRegex(ValueError, "REPEATED_COHORT"):
+        with self.assertRaisesRegex(ValueError, "REPEATED_CHECKPOINT"):
             diagnose_history((a, a))
         shifted = deepcopy(cohort2)
         shifted["rubric_sha256"] = "b" * 64
         last2["exam_rubric_sha256"] = shifted["rubric_sha256"]
         with self.assertRaisesRegex(ValueError, "INCOMPARABLE_RUBRIC"):
             diagnose_history((a, observe_binary_exam(shifted, last2)))
+
+    def test_fixed_qualification_questions_are_valid_again_on_new_student_checkpoints(self):
+        cohort, first = constructed_exam(predicted=("FALSE",) * 12)
+        better = rescore_fixed_exam(cohort, first,
+                    tuple(row["gold"] for row in cohort["rows"]),
+                    step=first["optimizer_step"] + 16, student_sha="a" * 64)
+        observations = (observe_binary_exam(cohort, first),
+                        observe_binary_exam(cohort, better))
+        results = diagnose_history(observations)
+        finding = find_signal(results, LearningSignal.CHANCE_LEVEL_OR_LAGGING,
+                              DiagnosticTarget.GRADE, "X")
+        self.assertEqual(finding.status, DiagnosticStatus.NOT_OBSERVED)
+        self.assertEqual(finding.source_cohorts, (cohort["cohort_sha256"],))
+
+    def test_s3_detects_transient_gain_lost_on_the_same_grade_exam(self):
+        cohort, first = constructed_exam(predicted=("FALSE",) * 12)
+        golds = tuple(row["gold"] for row in cohort["rows"])
+        middle = rescore_fixed_exam(cohort, first, golds[:10] + ("FALSE", "FALSE"),
+                    step=123, student_sha="a" * 64)
+        last = rescore_fixed_exam(cohort, first, ("FALSE",) * 12,
+                    step=139, student_sha="b" * 64)
+        observations = tuple(observe_binary_exam(cohort, receipt)
+                             for receipt in (first, middle, last))
+        result = find_signal(diagnose_history(observations),
+                LearningSignal.LACK_OF_DURABLE_GAIN, DiagnosticTarget.GRADE, "X")
+        self.assertEqual(result.status, DiagnosticStatus.OBSERVED_LONGITUDINALLY)
+        self.assertEqual(result.trajectory,
+                         ((107, 6, 12), (123, 11, 12), (139, 6, 12)))
+
+    def test_s3_durable_improvement_is_not_falsely_flagged(self):
+        cohort, first = constructed_exam(predicted=("FALSE",) * 12)
+        golds = tuple(row["gold"] for row in cohort["rows"])
+        middle = rescore_fixed_exam(cohort, first, golds[:8] + ("FALSE",) * 4,
+                    step=123, student_sha="a" * 64)
+        last = rescore_fixed_exam(cohort, first, golds,
+                    step=139, student_sha="b" * 64)
+        observations = tuple(observe_binary_exam(cohort, receipt)
+                             for receipt in (first, middle, last))
+        result = find_signal(diagnose_history(observations),
+                LearningSignal.LACK_OF_DURABLE_GAIN, DiagnosticTarget.GRADE, "X")
+        self.assertEqual(result.status, DiagnosticStatus.NOT_OBSERVED)
+        self.assertEqual(result.trajectory[-1], (139, 12, 12))
+
+    def test_s3_partial_regression_is_visible_even_with_some_retained_gain(self):
+        cohort, first = constructed_exam(predicted=("FALSE",) * 12)
+        golds = tuple(row["gold"] for row in cohort["rows"])
+        middle = rescore_fixed_exam(cohort, first, golds[:10] + ("FALSE", "FALSE"),
+                    step=123, student_sha="a" * 64)
+        partial = rescore_fixed_exam(cohort, first, golds[:4] + ("FALSE",) * 8,
+                    step=139, student_sha="b" * 64)
+        results = diagnose_history(observe_binary_exam(cohort, item)
+                                   for item in (first, middle, partial))
+        finding = find_signal(results, LearningSignal.LACK_OF_DURABLE_GAIN,
+                              DiagnosticTarget.GRADE, "X")
+        self.assertEqual(finding.status, DiagnosticStatus.OBSERVED_LONGITUDINALLY)
+        self.assertIn("regressed", finding.note)
+
+    def test_s3_does_not_infer_retention_from_rotating_tests_or_two_scores(self):
+        cohort, first = constructed_exam(predicted=("FALSE",) * 12)
+        second = rescore_fixed_exam(cohort, first, ("FALSE",) * 12,
+                    step=123, student_sha="a" * 64)
+        observations = [observe_binary_exam(cohort, r) for r in (first, second)]
+        s3 = find_signal(diagnose_history(observations),
+                    LearningSignal.LACK_OF_DURABLE_GAIN, DiagnosticTarget.GRADE, "X")
+        self.assertEqual(s3.status, DiagnosticStatus.NOT_MEASURED)
+        another_cohort, third = constructed_exam(predicted=("FALSE",) * 12, seed=139)
+        observations.append(observe_binary_exam(another_cohort, third))
+        s3 = find_signal(diagnose_history(observations),
+                    LearningSignal.LACK_OF_DURABLE_GAIN, DiagnosticTarget.GRADE, "X")
+        self.assertEqual(s3.status, DiagnosticStatus.NOT_MEASURED)
 
     def test_corrupt_cohort_gold_misses_and_scores_are_not_silent_passes(self):
         cohort, last = constructed_exam(predicted=("FALSE",) * 12)

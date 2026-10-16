@@ -35,7 +35,7 @@ def candidate_roles(frontier: dict, scores: dict, rubric: str) -> tuple[str, ...
         raise ValueError("CAPABILITY_FRONTIER_EMPTY_TEST")
     previously_measured = {item["capability"] for item in frontier.values()
                            if item["rubric"] == rubric}
-    if previously_measured and set(scores) != previously_measured:
+    if previously_measured and not previously_measured <= set(scores):
         raise ValueError("CAPABILITY_FRONTIER_INCOMPLETE_RUBRIC")
     gain, tied = set(), set()
     for cap, score in scores.items():

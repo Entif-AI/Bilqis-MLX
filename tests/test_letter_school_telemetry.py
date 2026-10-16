@@ -137,7 +137,12 @@ class SchoolTelemetryTests(unittest.TestCase):
                            "source_training_accuracy_before": 7/12,
                            "source_training_accuracy_after": 11/12,
                            "teacher_reward": 4/12, "gradient_norm": 1.26,
-                           "loss": .467, "next_phase": "MAIN"})
+                           "loss": .467, "next_phase": "MAIN",
+                           "teacher_decision": {
+                               "warning_signals": ["DISCONNECTED_PREREQUISITES"],
+                               "selected": {"exam_mistake_replay": 2,
+                                            "champion_priority": 1},
+                           }})
             candidate = board.rows["CANDIDATES"][-1]
             teacher = board.rows["SOUP & TEACHER"][-1]
             self.assertEqual(candidate["capability"], "A.IDENTITY")
@@ -149,9 +154,44 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(teacher["distill"], "OFF")
             self.assertIn("0.467", candidate["loss"])
             self.assertIn("1.26", candidate["gradient"])
+            self.assertIn("S4", candidate["decision"])
+            self.assertIn("miss 2", candidate["decision"])
+            self.assertIn("champ 1", candidate["decision"])
             self.assertFalse(board.rows["SENTINEL & RETENTION"])
             self.assertTrue(any("NOT MEASURED" in x["detail"]
                                 for x in board.rows["SYSTEM & QUALIFICATION"]))
+
+    def test_live_exam_projects_warning_and_teacher_outcome_receipts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {
+                "event": "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED", "grade": "B",
+                "generation": 8, "rubric": "b" * 64,
+                "cohort_sha256": "c" * 64,
+                "generator_version": "grade-b-live/v1",
+                "cohort_file": f"cohorts/{'c'*64}.json",
+                "optimizer_step": 200, "student_sha256": "d" * 64,
+                "scores": {"B.NOT": {"correct": 6, "total": 12}},
+                "learning_diagnostics": {
+                    "active_warnings": [{"signal":"CHANCE_LEVEL_OR_LAGGING",
+                                         "target":"CAPABILITY","capability":"B.NOT"}],
+                    "findings": [{"signal":"CHANCE_LEVEL_OR_LAGGING",
+                                  "status":"OBSERVED_IN_COHORT","capability":"B.NOT"},
+                                 {"signal":"LACK_OF_DURABLE_GAIN",
+                                  "status":"NOT_MEASURED","capability":"B.NOT"}],
+                },
+                "teacher_outcomes": [{
+                    "capability":"B.NOT",
+                    "attribution":"MEASURED_FIXED_EXAM_UNIQUE_ACTION",
+                    "delta_correct": 2,
+                }],
+            })
+            system = board.rows["SYSTEM & QUALIFICATION"]
+            diagnostic = next(row for row in system if row["kind"] == "DIAGNOSTIC")
+            outcome = next(row for row in system if row["kind"] == "TEACH OUTCOME")
+            self.assertIn("S2:B.NOT", diagnostic["detail"])
+            self.assertIn("1 NOT MEASURED", diagnostic["detail"])
+            self.assertIn("B.NOT +2", outcome["detail"])
 
     def test_first_latest_best_and_regression_use_same_sealed_rubric(self):
         with tempfile.TemporaryDirectory() as tmp:

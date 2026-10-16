@@ -1,16 +1,30 @@
-"""Reconstruct independently checkable binary predictions from saved exam gold/misses.
+"""Reconstruct source-scored exam observations from saved gold and misses.
 
 Historical source cohorts and their *actual recorded misses* are read-only;
-unobserved future multi-class predictions must be reported NOT_MEASURED.
+unobserved answer classes and absent prediction evidence remain NOT_MEASURED.
 """
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 import json
 
 from ..generated_assessment import make_cohort
+
+
+def _require_evidence_file(root: Path, path: Path) -> Path:
+    """The named run's evidence must be regular files, with no redirected parents."""
+    if not path.is_relative_to(root):
+        raise ValueError("DIAGNOSTIC_EVIDENCE_NOT_REGULAR")
+    cursor = root
+    for part in path.relative_to(root).parts:
+        cursor = cursor / part
+        if part == ".." or cursor.is_symlink():
+            raise ValueError("DIAGNOSTIC_EVIDENCE_NOT_REGULAR")
+    if not path.is_file():
+        raise ValueError("DIAGNOSTIC_EVIDENCE_NOT_REGULAR")
+    return path
 
 
 @dataclass(frozen=True)
@@ -26,19 +40,50 @@ class CapabilityObservation:
     confusion_ft: int
     confusion_tf: int
     confusion_tt: int
+    component_majority_baseline: int | None = None
+    component_classes_measured: bool = True
+    gold_counts: tuple[tuple[str, int], ...] = ()
+    prediction_counts: tuple[tuple[str, int], ...] = ()
 
     @property
     def constant_prediction(self) -> bool:
+        if self.prediction_counts:
+            return self.total > 1 and max(dict(self.prediction_counts).values()) == self.total
         return self.total > 1 and (self.predicted_false == self.total or
                                     self.predicted_true == self.total)
 
     @property
     def mixed_gold(self) -> bool:
+        if self.gold_counts:
+            return len(self.gold_counts) > 1
         return self.gold_false > 0 and self.gold_true > 0
 
     @property
     def majority_baseline(self) -> int:
-        return max(self.gold_false, self.gold_true)
+        return (self.component_majority_baseline if self.component_majority_baseline is not None
+                else max(dict(self.gold_counts).values()) if self.gold_counts
+                else max(self.gold_false, self.gold_true))
+
+    @property
+    def baseline_measured(self) -> bool:
+        return self.mixed_gold and self.component_classes_measured
+
+
+def aggregate_capabilities(name: str, group: tuple[CapabilityObservation, ...]) -> CapabilityObservation:
+    """Retain capability-conditioned baselines when pooling prediction counts."""
+    fields = ("correct", "total", "gold_false", "gold_true", "predicted_false",
+              "predicted_true", "confusion_ff", "confusion_ft", "confusion_tf", "confusion_tt")
+    gold, predictions = Counter(), Counter()
+    for cap in group:
+        gold.update(dict(cap.gold_counts) if cap.gold_counts else
+                    {"FALSE": cap.gold_false, "TRUE": cap.gold_true})
+        predictions.update(dict(cap.prediction_counts) if cap.prediction_counts else
+                    {"FALSE": cap.predicted_false, "TRUE": cap.predicted_true})
+    return CapabilityObservation(name, *(sum(getattr(c, field) for c in group) for field in fields),
+        component_majority_baseline=sum(c.majority_baseline for c in group),
+        component_classes_measured=all(c.baseline_measured for c in group),
+        gold_counts=tuple(sorted((k,v) for k,v in gold.items() if v)),
+        prediction_counts=tuple(sorted((k,v) for k,v in predictions.items() if v)))
 
 
 @dataclass(frozen=True)
@@ -49,6 +94,21 @@ class ExamObservation:
     rubric_sha256: str
     generator_version: str
     capabilities: tuple[CapabilityObservation, ...]
+    source_manifest_sha256: str = ""
+    generator_code_sha256: str = ""
+    event_outbox_verified: bool = False
+    run_id: str = ""
+    assessment_scope_sha256: str = ""
+
+    @property
+    def inventory(self) -> tuple[tuple[str, int], ...]:
+        return tuple(sorted((c.capability, c.total) for c in self.capabilities))
+
+    @property
+    def contract(self) -> tuple[str, ...]:
+        return (self.rubric_sha256, self.generator_version,
+                self.source_manifest_sha256, self.generator_code_sha256,
+                self.assessment_scope_sha256)
 
     def grade(self, letter: str) -> tuple[CapabilityObservation, ...]:
         return tuple(c for c in self.capabilities if c.capability.split(".", 1)[0] == letter)
@@ -58,36 +118,42 @@ class ExamObservation:
         group = self.grade(letter)
         if not group:
             raise ValueError("DIAGNOSTIC_GRADE_NOT_OBSERVED")
-        fields = ("correct", "total", "gold_false", "gold_true",
-                  "predicted_false", "predicted_true", "confusion_ff",
-                  "confusion_ft", "confusion_tf", "confusion_tt")
-        return CapabilityObservation(letter, *(sum(getattr(c, field) for c in group)
-                                              for field in fields))
+        return aggregate_capabilities(letter, group)
 
 
-def observe_binary_exam(cohort: dict, last_exam: dict) -> ExamObservation:
+def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
     """Fail closed on imperfect source custody; no inference or teacher mutation.
 
     The scorer's saved `misses_for_teacher` contains all wrong predictions and
     their gold labels. Missing IDs are correct *only* after score validation.
     Never reconstruct a nonbinary label from absence in the missed-row list.
     """
-    if (cohort.get("cohort_sha256") != last_exam.get("cohort_sha256") or
+    def is_sha(value):
+        return (isinstance(value, str) and len(value) == 64 and
+                all(c in "0123456789abcdef" for c in value))
+
+    if (not isinstance(cohort, dict) or not isinstance(last_exam, dict) or
+            not all(is_sha(last_exam.get(key)) for key in (
+                "cohort_sha256", "student_sha256", "exam_rubric_sha256")) or
+            not cohort.get("schema") or not cohort.get("generator_version") or
+            type(cohort.get("seed")) is not int or
+            cohort.get("cohort_sha256") != last_exam.get("cohort_sha256") or
             cohort.get("seed") != last_exam.get("cohort_seed") or
             cohort.get("generator_version") != last_exam.get("generator_version") or
             cohort.get("rubric_sha256") != last_exam.get("exam_rubric_sha256") or
-            not last_exam.get("student_sha256") or
-            type(last_exam.get("optimizer_step")) is not int):
+            type(last_exam.get("optimizer_step")) is not int or
+            last_exam["optimizer_step"] < 0):
         raise ValueError("DIAGNOSTIC_EXAM_CUSTODY_MISMATCH")
     rows = cohort.get("rows")
-    if not isinstance(rows, list):
+    if not isinstance(rows, list) or not rows or any(not isinstance(r, dict) for r in rows):
         raise ValueError("DIAGNOSTIC_COHORT_ROWS_MISSING")
     candidate = make_cohort(rows, generator_version=cohort["generator_version"],
                             seed=cohort["seed"], rubric_version=cohort["schema"])
     if candidate.digest != cohort["cohort_sha256"]:
         raise ValueError("DIAGNOSTIC_COHORT_CONTENT_DRIFT")
-    if any(r.get("answer_kind") != "binary" or r.get("gold") not in ("TRUE", "FALSE")
-           for r in rows):
+    if any(not ((r.get("answer_kind") == "binary" and r.get("gold") in ("TRUE", "FALSE")) or
+               (r.get("answer_kind") == "numeric_active" and isinstance(r.get("gold"), str)
+                and r["gold"].isascii() and r["gold"].isdecimal())) for r in rows):
         raise ValueError("DIAGNOSTIC_UNSUPPORTED_PREDICTION_CASTE")
     ordered = {r["id"]: r for r in rows}
     failures = last_exam.get("misses_for_teacher")
@@ -95,22 +161,35 @@ def observe_binary_exam(cohort: dict, last_exam: dict) -> ExamObservation:
         raise ValueError("DIAGNOSTIC_INCOMPLETE_PREDICTION_EVIDENCE")
     by_miss = {}
     for failed in failures:
+        if not isinstance(failed, dict):
+            raise ValueError("DIAGNOSTIC_MISS_EVIDENCE_DRIFT")
         source_row = ordered.get(failed.get("id"))
         if (source_row is None or failed["id"] in by_miss or
                 failed.get("source_id") != source_row.get("source_id", source_row["id"]) or
                 failed.get("capability") != source_row["capability"] or
                 failed.get("gold") != source_row["gold"] or
-                failed.get("predicted") not in ("TRUE", "FALSE") or
+                not isinstance(failed.get("predicted"), str) or not failed["predicted"] or
+                (source_row["answer_kind"] == "binary" and failed["predicted"] not in ("TRUE", "FALSE")) or
                 failed["predicted"] == failed["gold"]):
             raise ValueError("DIAGNOSTIC_MISS_EVIDENCE_DRIFT")
         by_miss[failed["id"]] = failed["predicted"]
     scores = last_exam.get("scores", {})
+    names = {r["capability"] for r in rows}
+    if not isinstance(scores, dict) or set(scores) != names:
+        raise ValueError("DIAGNOSTIC_SCORE_EVIDENCE_DRIFT")
     capabilities = []
-    for name in sorted(set(r["capability"] for r in rows)):
+    for name in sorted(names):
         own = [r for r in rows if r["capability"] == name]
         matrix = Counter((r["gold"], by_miss.get(r["id"], r["gold"])) for r in own)
-        correct = matrix[("FALSE", "FALSE")] + matrix[("TRUE", "TRUE")]
-        if scores.get(name) != {"correct": correct, "total": len(own)}:
+        correct = sum(count for (gold, predicted), count in matrix.items() if gold == predicted)
+        gold_counts = Counter(r["gold"] for r in own)
+        prediction_counts = Counter(by_miss.get(r["id"], r["gold"]) for r in own)
+        kinds = {kind: Counter(r["gold"] for r in own if r["answer_kind"] == kind)
+                 for kind in {r["answer_kind"] for r in own}}
+        stated = scores[name]
+        if (not isinstance(stated, dict) or
+                any(type(stated.get(key)) is not int for key in ("correct", "total")) or
+                stated != {"correct": correct, "total": len(own)}):
             raise ValueError("DIAGNOSTIC_SCORE_EVIDENCE_DRIFT:" + name)
         capabilities.append(CapabilityObservation(
             name, correct, len(own),
@@ -120,10 +199,24 @@ def observe_binary_exam(cohort: dict, last_exam: dict) -> ExamObservation:
             matrix[("FALSE", "TRUE")] + matrix[("TRUE", "TRUE")],
             matrix[("FALSE", "FALSE")], matrix[("FALSE", "TRUE")],
             matrix[("TRUE", "FALSE")], matrix[("TRUE", "TRUE")],
+            component_majority_baseline=sum(max(counts.values()) for counts in kinds.values()),
+            component_classes_measured=all(len(counts) > 1 for counts in kinds.values()),
+            gold_counts=tuple(sorted(gold_counts.items())),
+            prediction_counts=tuple(sorted(prediction_counts.items())),
         ))
     return ExamObservation(cohort["cohort_sha256"], last_exam["student_sha256"],
                            last_exam["optimizer_step"], cohort["rubric_sha256"],
-                           cohort["generator_version"], tuple(capabilities))
+                           cohort["generator_version"], tuple(capabilities),
+                           cohort.get("source_manifest_sha256", ""),
+                           cohort.get("generator_code_sha256", ""),
+                           assessment_scope_sha256=last_exam.get("assessment_scope_sha256", ""))
+
+
+def observe_binary_exam(cohort: dict, last_exam: dict) -> ExamObservation:
+    """Compatibility API for archived binary-only evaluation contracts."""
+    if any(r.get("answer_kind") != "binary" for r in cohort.get("rows", ())):
+        raise ValueError("DIAGNOSTIC_UNSUPPORTED_PREDICTION_CASTE")
+    return observe_exam(cohort, last_exam)
 
 
 def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObservation:
@@ -132,20 +225,30 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
     path = Path(state_file) if state_file is not None else root / "state.json"
     if not path.resolve(strict=True).is_relative_to(root):
         raise ValueError("DIAGNOSTIC_STATE_OUTSIDE_RUN")
+    _require_evidence_file(root, path)
     receipt = json.loads(path.read_text(encoding="utf-8"))
     exam = receipt.get("last_exam")
     if not isinstance(exam, dict):
         raise ValueError("DIAGNOSTIC_EXAM_NOT_MEASURED")
     relative = Path(exam.get("cohort_file", ""))
-    if relative.is_absolute() or ".." in relative.parts:
+    if (relative.as_posix() != "cohorts/" + str(exam.get("cohort_sha256")) + ".json" or
+            relative.is_absolute() or ".." in relative.parts):
         raise ValueError("DIAGNOSTIC_COHORT_OUTSIDE_RUN")
-    cohort_file = (root / relative).resolve(strict=True)
+    cohort_file = _require_evidence_file(root, root / relative).resolve(strict=True)
     if not cohort_file.is_relative_to(root / "cohorts"):
         raise ValueError("DIAGNOSTIC_COHORT_OUTSIDE_RUN")
-    return observe_binary_exam(json.loads(cohort_file.read_text(encoding="utf-8")), exam)
+    if path.parent == root / "states":
+        generation = receipt.get("generation")
+        if (type(generation) is not int or generation < 0 or
+                path.name != f"{generation:07d}.json"):
+            raise ValueError("DIAGNOSTIC_STATE_GENERATION_DRIFT")
+    if not isinstance(receipt.get("run_id"), str) or not receipt["run_id"]:
+        raise ValueError("DIAGNOSTIC_STATE_RUN_ID_MISSING")
+    return replace(observe_exam(
+        json.loads(cohort_file.read_text(encoding="utf-8")), exam), run_id=receipt["run_id"])
 
 
-def load_archived_exam_history(run_dir: Path, *, grade: str = "B") -> tuple[ExamObservation, ...]:
+def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B") -> tuple[ExamObservation, ...]:
     """Read each committed exam through immutable event→state→cohort custody.
 
     This is an audit of saved observations. It does not load, rescore, optimize
@@ -154,25 +257,52 @@ def load_archived_exam_history(run_dir: Path, *, grade: str = "B") -> tuple[Exam
     root = Path(run_dir).resolve(strict=True)
     observations = []
     seen = set()
-    for line in (root / "events.jsonl").read_text(encoding="utf-8").splitlines():
+    run_id = None
+    last_generation = last_step = -1
+    ledger = _require_evidence_file(root, root / "events.jsonl")
+    for line in ledger.read_text(encoding="utf-8").splitlines():
         event = json.loads(line)
         if event.get("event") not in ("GRADE_A_LIVE_EXAM_COMMITTED",
-                                      "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED"):
+                                      "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED", "SCHOOL_LIVE_EXAM_COMMITTED"):
             continue
-        if event.get("grade") != grade:
+        if grade is not None and event.get("grade") != grade:
             continue
         generation = event.get("generation")
         if type(generation) is not int or generation < 0 or generation in seen:
             raise ValueError("DIAGNOSTIC_EVENT_GENERATION_DRIFT")
+        if generation <= last_generation:
+            raise ValueError("DIAGNOSTIC_NON_MONOTONIC_EVENT_HISTORY")
         seen.add(generation)
         saved = root / "states" / f"{generation:07d}.json"
         obs = load_saved_exam(root, state_file=saved)
+        receipt = json.loads(saved.read_text(encoding="utf-8"))
+        if (not receipt.get("run_id") or
+                (run_id is not None and receipt["run_id"] != run_id)):
+            raise ValueError("DIAGNOSTIC_EVENT_RUN_CONFLICT")
+        run_id = receipt["run_id"]
+        if "delivery_outbox" in receipt:
+            # The trainer owns generation event IDs. Reuse its pure serializer;
+            # it imports no neural runtime and performs no checkpoint I/O.
+            from ..grade_a_trainer import _with_delivery_outbox
+            outbox = receipt["delivery_outbox"]
+            if not isinstance(outbox, list) or any(not isinstance(e, dict) for e in outbox):
+                raise ValueError("DIAGNOSTIC_EVENT_OUTBOX_CONFLICT")
+            expected = _with_delivery_outbox(receipt, tuple(
+                {key: value for key, value in e.items() if key != "event_id"}
+                for e in outbox))["delivery_outbox"]
+            if expected != outbox or outbox.count(event) != 1:
+                raise ValueError("DIAGNOSTIC_EVENT_OUTBOX_CONFLICT")
+            obs = replace(obs, event_outbox_verified=True)
         if (obs.cohort_sha256 != event.get("cohort_sha256") or
                 obs.student_sha256 != event.get("student_sha256") or
                 obs.optimizer_step != event.get("optimizer_step") or
+                obs.generator_version != event.get("generator_version") or
                 obs.rubric_sha256 != event.get("rubric") or
                 {cap.capability: {"correct": cap.correct, "total": cap.total}
                  for cap in obs.capabilities} != event.get("scores")):
             raise ValueError("DIAGNOSTIC_EVENT_STATE_CONFLICT")
+        if obs.optimizer_step <= last_step:
+            raise ValueError("DIAGNOSTIC_NON_MONOTONIC_CHECKPOINT_HISTORY")
+        last_generation, last_step = generation, obs.optimizer_step
         observations.append(obs)
     return tuple(observations)

@@ -1,5 +1,14 @@
 # Grade B regression audit (2026-10-16)
 
+**Historical implementation note (later 2026-10-16):** The 24-item backlog
+and automatic quarter-batch prerequisite injection described below were
+unratified experimental repairs and have since been retired from the active
+trainer under ADR-031 and private issue #336. Current code retains unresolved
+exam mistakes until verified correction, tracks replay exposure, preserves
+the inherited teacher selection, and uses a fixed examination per grade
+enrollment. The observations and original trial below remain historical
+evidence of the earlier design and human-run regression.
+
 Private internal record. Governing policy: IPR-0220, ADR-022 through ADR-025.
 
 Read-only inspection of the human saved run at `runs/school-mlx-v1` confirmed

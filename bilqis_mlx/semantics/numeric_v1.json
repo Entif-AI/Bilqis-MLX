@@ -1,0 +1,142 @@
+{
+  "schema": "bilqis.numeric-semantics/v1",
+  "source_mode": "SCOPED_TYPED_FORMAL_ADAPTER",
+  "sources": [
+    "https://ithkuil.net/newithkuil_13_numbers.htm",
+    "https://ithkuil.net/New_Ithkuil_Lexicon.pdf"
+  ],
+  "source_loci": [
+    "Chapter 13.2; exact cardinality and ordinal distinctions",
+    "Lexicon page 298: counting, addition/subtraction, multiplication/division"
+  ],
+  "operators": [
+    {
+      "symbol": "school.op.ADD",
+      "token_index": 114,
+      "signature": "Number*Number->Number",
+      "contract_sha256": "1e0d8a8b074022ac6be1ae4c4a79f2c6bab0c843a2068c83412424b7f02fcfa3"
+    },
+    {
+      "symbol": "school.op.SUB",
+      "token_index": 115,
+      "signature": "Number*Number->Number",
+      "contract_sha256": "4a29e51db8a193dc824a968c650bbc7d691ac9815170f234637bed9f52dd3556"
+    },
+    {
+      "symbol": "school.op.MUL",
+      "token_index": 116,
+      "signature": "Number*Number->Number",
+      "contract_sha256": "149c1916ef8492521c9c204a489e064380b075f5ae4ecd0a12e05fdc714ed4b3"
+    },
+    {
+      "symbol": "school.op.MOD",
+      "token_index": 117,
+      "signature": "Number*Number->Number",
+      "contract_sha256": "5dcbbc4bd2622ac265f0c1b5548e6b91385403f0d5d966d501c18008ce1e8db6"
+    },
+    {
+      "symbol": "school.op.EQ",
+      "token_index": 118,
+      "signature": "Number*Number->Boolean",
+      "contract_sha256": "c23e307093044d3e25ea9d6ecead61cd1c66b4c8d524182265dedfd155dc068c"
+    },
+    {
+      "symbol": "school.op.LT",
+      "token_index": 119,
+      "signature": "Number*Number->Boolean",
+      "contract_sha256": "73c65726201cded1023fadff36d7e1fd77e74b865815beb9555cf744e7da6856"
+    },
+    {
+      "symbol": "school.op.LE",
+      "token_index": 120,
+      "signature": "Number*Number->Boolean",
+      "contract_sha256": "788b0bd8df4b28bcfe0994e493481767325a30a44366a64bb1d272bf31d6d6cd"
+    },
+    {
+      "symbol": "school.op.COUNT",
+      "token_index": 222,
+      "signature": "NumberSet->Number",
+      "contract_sha256": "4b24cfb8bb750e0cc79c169b620bce6b7ca2b3b0a803770aaf5b5b9d4c6f50ee"
+    },
+    {
+      "symbol": "school.op.SUCC",
+      "token_index": 223,
+      "signature": "Number->Number",
+      "contract_sha256": "a4a96de40b81153143371b0f58a142012dbc1b86d737e551bebc3653ce166d11"
+    },
+    {
+      "symbol": "school.op.DIV",
+      "token_index": 224,
+      "signature": "Number*Number->Number",
+      "contract_sha256": "8ed6655e5c327b95df1c761bd686189e184794324443347fdeaf566e51798bea"
+    },
+    {
+      "symbol": "school.syntax.number_set",
+      "token_index": 225,
+      "signature": "NumberSet",
+      "contract_sha256": "d8902ff77464bec0da015327bdc8a352cf66194070ef3e5da60f8764ff94a9f5"
+    },
+    {
+      "symbol": "school.syntax.number_groups",
+      "token_index": 226,
+      "signature": "NumberGroups",
+      "contract_sha256": "d7af122f144bc9e4ecad9ea80d6f0a3479147d60a8998171dc6bb52e21b5883b"
+    }
+  ],
+  "append_only_nodes": [
+    {
+      "id": "school.op.COUNT",
+      "semantic_id": "bilqis.numeric/v1:school.op.COUNT",
+      "signature": "NumberSet->Number",
+      "arity": 1,
+      "meaning": "Exact cardinality of a finite set of distinct nonnegative integer identities.",
+      "lesson_id": "LESSON-058"
+    },
+    {
+      "id": "school.op.SUCC",
+      "semantic_id": "bilqis.numeric/v1:school.op.SUCC",
+      "signature": "Number->Number",
+      "arity": 1,
+      "meaning": "Immediate finite-natural successor n+1, within the declared teaching bound.",
+      "lesson_id": "LESSON-058"
+    },
+    {
+      "id": "school.op.DIV",
+      "semantic_id": "bilqis.numeric/v1:school.op.DIV",
+      "signature": "Number*Number->Number",
+      "arity": 2,
+      "meaning": "Exact nonnegative integer quotient; divisor must be positive and divide the dividend.",
+      "lesson_id": "LESSON-062"
+    },
+    {
+      "id": "school.syntax.number_set",
+      "semantic_id": "bilqis.numeric/v1:school.syntax.number_set",
+      "signature": "NumberSet",
+      "arity": 0,
+      "meaning": "Begin a literal finite Number set; existing syntax.end closes it. Duplicate members are invalid.",
+      "lesson_id": "LESSON-058"
+    },
+    {
+      "id": "school.syntax.number_groups",
+      "semantic_id": "bilqis.numeric/v1:school.syntax.number_groups",
+      "signature": "NumberGroups",
+      "arity": 0,
+      "meaning": "Begin disjoint equal-sized finite Number sets; each set and the group list close with syntax.end. Context witnesses multiplication or exact division.",
+      "lesson_id": "LESSON-061"
+    }
+  ],
+  "source_receipts": [
+    {
+      "url": "https://ithkuil.net/newithkuil_13_numbers.htm",
+      "sha256": "bfccda659c150949e8f5ae347f987ed6008db8a6fd2d85fd81e9a821f77ff581",
+      "bytes": 247625,
+      "read_date": "2026-10-16"
+    },
+    {
+      "url": "https://ithkuil.net/New_Ithkuil_Lexicon.pdf",
+      "sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+      "bytes": 4685069,
+      "read_date": "2026-10-16"
+    }
+  ]
+}

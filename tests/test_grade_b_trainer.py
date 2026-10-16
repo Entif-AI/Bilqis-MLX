@@ -3,7 +3,7 @@ from dataclasses import asdict, replace
 import hashlib
 import io
 import json
-from contextlib import redirect_stdout
+from contextlib import nullcontext, redirect_stdout
 from pathlib import Path
 import tempfile
 import unittest
@@ -16,8 +16,7 @@ from bilqis_mlx.grade_a_trainer import (
     _persist_live_cohort, _recover_orphaned_commit, _seed, _state_from_json,
     _publish_boundary, _reconcile_delivery_outbox, _resume, _take_exam,
     _take_visit, _verify_saved_cohort, _with_delivery_outbox,
-    champion_directed_lessons, prepare_source, retain_missed_semantics,
-    decompose_grade_b_operands, select_prerequisite_micro_lessons,
+    champion_directed_lessons, prepare_source,
 )
 from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.live_grade_a import live_course as a_live_course
@@ -25,6 +24,8 @@ from bilqis_mlx.live_grade_b import (GENERATOR as B_GENERATOR, RELEASE as B_RELE
                                     live_course as b_live_course)
 from bilqis_mlx.school import (Assessment, Score, assess, start_new, visit)
 from bilqis_mlx.champions import Checkpoint
+from bilqis_mlx.diagnostics import DiagnosticStatus, LearningSignal
+from bilqis_mlx.teacher_feedback import OutcomeAttribution, TeachingOpportunity
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = ROOT.parent / "bilqis-triplets-v16"
@@ -268,53 +269,6 @@ class GradeBTrainerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"COUNT_INVALID"):
             champion_directed_lessons(chosen,candidates,{"new-false":-1},capacity=1)
 
-    def test_unrehearsed_old_exam_misses_remain_available_after_new_cohort(self):
-        old = [{"id":"A-old","capability":"A.IDENTITY","gold":"FALSE"},
-               {"id":"B-corrected","capability":"B.NOT","gold":"TRUE"}]
-        fresh = [{"id":"B-new","capability":"B.NOT","gold":"FALSE"}]
-        outcome, stats = retain_missed_semantics(
-            old, fresh, {"A-old":"TRUE","B-corrected":"TRUE"})
-        self.assertEqual({r["id"] for r in outcome},{"A-old","B-new"})
-        self.assertEqual(stats["previous_unresolved"],1)
-        self.assertEqual(stats["previous_resolved"],1)
-        self.assertEqual(stats["new_misses"],1)
-        self.assertEqual(stats["dropped_for_budget"],0)
-        # A backlog cannot grow unbounded through repeated exams, and a
-        # genuinely persistent miss must be represented alongside new ones.
-        old = [{"id":f"old-{i}","capability":"B.AND","gold":"TRUE"}
-               for i in range(20)]
-        fresh = [{"id":f"new-{i}","capability":"B.AND","gold":"FALSE"}
-                 for i in range(20)]
-        result, evidence = retain_missed_semantics(
-            old,fresh,{r["id"]:"FALSE" for r in old},per_cap=24)
-        self.assertEqual(len(result),24)
-        self.assertIn("old-0",{r["id"] for r in result})
-        self.assertIn("new-19",{r["id"] for r in result})
-        self.assertEqual(evidence["dropped_for_budget"],16)
-
-    def test_b_primitive_operands_remain_taught_as_own_verified_a_questions(self):
-        """Teach a composed rule alongside independently scored constituents."""
-        from bilqis_mlx.grade_a_probe import read_sources
-        _, _, graph, _, _ = read_sources(SOURCE_ROOT)
-        rows = _draw_live_rows(SOURCE_ROOT, graph, seed=123441,
-                               capability="B.XOR", each=12, course=self.b_course)
-        pieces = decompose_grade_b_operands(SOURCE_ROOT, graph, rows)
-        self.assertGreaterEqual(len(pieces),12)
-        self.assertLessEqual(len(pieces),24)
-        self.assertEqual(len({p["id"] for p in pieces}),len(pieces))
-        self.assertTrue({p["gold"] for p in pieces} == {"TRUE","FALSE"})
-        self.assertTrue(all(p["capability"] in
-                            ("A.IDENTITY","A.PARENT","A.LINK") for p in pieces))
-        self.assertTrue(all(1 <= len(p["tokens"]) <= 96 for p in pieces))
-        self.assertTrue(all(p["id"] == p["source_id"] for p in pieces))
-        chosen = [{"id":f"b-{i}","capability":"B.XOR",
-                   "gold":"TRUE" if i%2 else "FALSE"} for i in range(32)]
-        mixed = select_prerequisite_micro_lessons(chosen,pieces,capacity=8)
-        self.assertEqual(len(mixed),32)
-        self.assertEqual(sum(x["capability"].startswith("A.") for x in mixed),8)
-        self.assertEqual(sum(x["gold"] == "TRUE" for x in mixed),16)
-        self.assertEqual(sum(x["gold"] == "FALSE" for x in mixed),16)
-
     def test_b_weakest_three_rehearsal_credits_actual_a_lesson_not_b(self):
         """An A predicate taught during B recovery must train A's policy stats."""
         from types import SimpleNamespace
@@ -323,8 +277,14 @@ class GradeBTrainerTests(unittest.TestCase):
         school = append_next_grade(self.a_course,self.b_course,self._graduated_a(pointer))
         school = replace(school, stage="RECOVERY_1",queue=("A.IDENTITY",),
                          first_recovery=("A.IDENTITY",))
+        misses = [
+            {"id":"old-true","capability":"A.IDENTITY","tokens":[4,6],"gold":"TRUE"},
+            {"id":"old-false","capability":"A.IDENTITY","tokens":[4,7],"gold":"FALSE"},
+        ]
         receipt = self._receipt(school,pointer,config={"heads":3,"layers":1},
-                                answer_ids=[6,7],curriculum_mode=B_RELEASE)
+                                answer_ids=[6,7],curriculum_mode=B_RELEASE,
+                                teacher_misses=misses,
+                                teacher_miss_exposures={"old-true":2,"old-false":1})
         observed = []
 
         class Teacher:
@@ -351,6 +311,8 @@ class GradeBTrainerTests(unittest.TestCase):
               patch("bilqis_mlx.grade_a_trainer._champion_teacher_votes",
                     return_value={}),
               patch("bilqis_mlx.grade_a_trainer._train_score",return_value=.5),
+              patch("bilqis_mlx.grade_a_trainer._predictions",
+                    return_value={"old-true":"TRUE","old-false":"TRUE"}),
               patch("bilqis_mlx.grade_a_trainer._train_step",side_effect=toy_step)):
             updated = _take_visit(
                 None,Path("/unused-during-disposable-test"),receipt,self.manifest,
@@ -362,6 +324,11 @@ class GradeBTrainerTests(unittest.TestCase):
         self.assertEqual(event["grade"],"A")
         self.assertEqual(event["active_grade"],"B")
         self.assertEqual(event["event"],"GRADE_A_TEACHER_VISIT_COMMITTED")
+        self.assertEqual([row["id"] for row in updated["teacher_misses"]], ["old-false"])
+        self.assertNotIn("old-true", updated["teacher_miss_exposures"])
+        self.assertEqual(event["prior_exam_misses_available"],2)
+        self.assertEqual(event["prior_exam_misses_remaining"],1)
+        self.assertEqual(event["teacher_decision"]["selected"]["exam_mistakes_resolved"],1)
 
     def test_b_exam_best_receipt_keeps_completed_grade_after_b_to_a_transition(self):
         pointer = {"sha256":"b"*64,"filename":"bundles/fixture",
@@ -426,17 +393,10 @@ class GradeBTrainerTests(unittest.TestCase):
                 receipt = _activate_next_admitted_grade(
                     root,receipt,self.a_course,self.b_course)
 
-            # Real generated prior B exam mistakes must survive fresh perfect
-            # cohorts if no subsequent direct evaluation has corrected them.
-            old_miss = _draw_live_rows(
-                SOURCE_ROOT,graph,seed=91044,capability="B.NOT",each=12,
-                course=self.b_course)[0]
-            receipt["teacher_misses"] = [old_miss]
-
             def perfect_oracle_predictions(mx,parameters,rows,config,answer_ids):
-                return {r["id"]: ("FALSE" if r["gold"] == "TRUE" else "TRUE")
-                        if r["id"] == old_miss["id"] else r["gold"] for r in rows}
+                return {r["id"]:r["gold"] for r in rows}
 
+            qualification_cohorts = []
             for expected_grade in ("B","A","B"):
                 self.assertEqual(_state_from_json(receipt["school"],self.b_course).grade,
                                  expected_grade)
@@ -447,21 +407,25 @@ class GradeBTrainerTests(unittest.TestCase):
                             params,opt,graph,steps_per_visit=1,batch_size=4,
                             reserve_gib=0.,source_root=SOURCE_ROOT)
                 self.assertEqual(receipt["school"]["stage"],"ASSESS_MAIN")
+                diagnostic_observer = (
+                    patch("bilqis_mlx.diagnostics.exam_events.observe_binary_exam",
+                          side_effect=ValueError("INJECTED_DIAGNOSTIC_OBSERVER_FAILURE"))
+                    if not qualification_cohorts else nullcontext()
+                )
                 with (patch("bilqis_mlx.grade_a_trainer._predictions",
                             side_effect=perfect_oracle_predictions),
-                      redirect_stdout(io.StringIO())):
+                      diagnostic_observer, redirect_stdout(io.StringIO())):
                     receipt = _take_exam(
                         mx,root,receipt,self.manifest,self.b_course,
                         SOURCE_ROOT,CHECKPOINT,params,opt,graph,reserve_gib=0.)
                 exam = receipt["last_exam"]
+                qualification_cohorts.append(exam["cohort_sha256"])
                 self.assertEqual(len(exam["scores"]),12)
                 self.assertEqual(sum(s["total"] for s in exam["scores"].values()),144)
                 self.assertTrue(all(s["correct"] == s["total"] for s in exam["scores"].values()))
                 self.assertEqual(len(exam["cohort_sha256"]),64)
-                self.assertIn(old_miss["id"], {r["id"] for r in
-                              receipt["teacher_misses"]})
-                self.assertEqual(receipt["delivery_outbox"][-1]["teaching_miss_backlog"]
-                                 ["previous_unresolved"],1)
+            self.assertEqual(len(set(qualification_cohorts)), 3,
+                             "Every grade enrollment, including a revisit, gets a new test")
             final = _state_from_json(receipt["school"],self.b_course)
             self.assertEqual(final.stage,"AWAITING_NEXT_GRADE")
             self.assertEqual(final.active_grades,("A","B"))
@@ -480,6 +444,75 @@ class GradeBTrainerTests(unittest.TestCase):
                 list(event.get("prior_grade_champion_votes",{}).values()) == [2]
                 for event in events if event.get("event") ==
                                    "GRADE_A_TEACHER_VISIT_COMMITTED"))
+            b_visits = [e for e in events if e.get("event") ==
+                        "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED"]
+            self.assertEqual(len(b_visits), 12)
+            for event in b_visits:
+                evidence = event["lesson_methodology"]
+                decision = event["teacher_decision"]
+                self.assertEqual(evidence["delivered_examples"], 4)
+                self.assertEqual(evidence["optimizer_batches_observed"], 1)
+                self.assertTrue(evidence["constituent_capabilities_delivered"])
+                self.assertEqual(evidence["findings"][0]["status"], DiagnosticStatus.NOT_OBSERVED)
+                self.assertNotEqual(evidence["findings"][1]["status"], DiagnosticStatus.NOT_MEASURED)
+                self.assertEqual(decision["capability"], event["capability"])
+                self.assertEqual(decision["policy_key"], event["teacher_policy"])
+                self.assertIn(TeachingOpportunity.PREREQUISITE_CONNECTION,
+                              decision["opportunities"])
+                self.assertEqual(len(decision["decision_id"]), 64)
+            examination_events = [e for e in events if e.get("event") ==
+                                  "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED"]
+            self.assertEqual(len(examination_events), 3)
+            for index, event in enumerate(examination_events):
+                warnings = event["learning_diagnostics"]
+                self.assertEqual(warnings["assessment_cohort_sha256"],
+                                 event["cohort_sha256"])
+                self.assertEqual(warnings["optimizer_step"], event["optimizer_step"])
+                self.assertEqual(warnings["active_warnings"], [])
+                if index == 0:
+                    self.assertFalse(warnings["history_usable"])
+                    self.assertEqual(warnings["history_issue"],
+                                     "INJECTED_DIAGNOSTIC_OBSERVER_FAILURE")
+                    self.assertTrue(warnings["findings"])
+                    self.assertTrue(all(finding["status"] == DiagnosticStatus.NOT_MEASURED
+                                        for finding in warnings["findings"]))
+                self.assertTrue(any(f["signal"] == LearningSignal.CHANCE_LEVEL_OR_LAGGING and
+                                    f["target"] == "GRADE" for f in warnings["findings"]))
+                self.assertEqual(len(event["teacher_outcomes"]), 6)
+                expected_attribution = (
+                    OutcomeAttribution.NOT_MEASURED_NO_FIXED_BASELINE if index == 0 else
+                    OutcomeAttribution.NOT_MEASURED_CHANGED_EXAM)
+                self.assertEqual({outcome["attribution"] for outcome in event["teacher_outcomes"]},
+                                 {expected_attribution})
+            self.assertEqual(receipt["last_exam"]["learning_diagnostics"],
+                             examination_events[-1]["learning_diagnostics"])
+            self.assertEqual(receipt["last_exam"]["teacher_outcomes"],
+                             examination_events[-1]["teacher_outcomes"])
+            from bilqis_mlx.diagnostics.audit import audit_saved_run
+            audit = audit_saved_run(root)
+            self.assertEqual(audit["verified_methodology_visit_count"], 18)
+            self.assertEqual(audit["verified_teacher_decision_count"], 18)
+            self.assertEqual(set(audit["latest_teacher_decisions"]), {
+                cap.id for grade in self.b_course.grades for cap in grade.capabilities})
+            self.assertEqual(audit["latest_teacher_outcomes"],
+                             examination_events[-1]["teacher_outcomes"])
+            self.assertEqual(audit["unresolved_teacher_miss_count"], 0)
+            latest_b = next(item for item in audit["current_findings"] if
+                            item["capability"] == "B.NOT" and
+                            item["signal"] == LearningSignal.DISCONNECTED_PREREQUISITES)
+            self.assertEqual(latest_b["status"], DiagnosticStatus.NOT_OBSERVED)
+            # A plausible but uncommitted rewritten teaching warning must
+            # not enter the audit merely because it appears in events.jsonl.
+            ledger = root / "events.jsonl"
+            original = ledger.read_text()
+            changed = [json.loads(line) for line in original.splitlines()]
+            target = next(event for event in changed if "lesson_methodology" in event)
+            target["lesson_methodology"]["findings"][0]["status"] = DiagnosticStatus.NOT_MEASURED
+            ledger.write_text("".join(json.dumps(e) + "\n" for e in changed))
+            with self.assertRaisesRegex(ValueError, "METHOD_LEDGER_OUTBOX_CONFLICT"):
+                audit_saved_run(root)
+            ledger.write_text(original)
+            self.assertEqual(audit_saved_run(root)["verified_methodology_visit_count"], 18)
 
 
 if __name__ == "__main__":

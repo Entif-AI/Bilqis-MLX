@@ -15,6 +15,84 @@ from .spiral_dashboard import Column
 
 
 TELEMETRY_VERSION = "bilqis.school50.telemetry/v1"
+_SIGNAL_LABELS = {
+    "REPETITIVE_ANSWERS": "S1",
+    "CHANCE_LEVEL_OR_LAGGING": "S2",
+    "LACK_OF_DURABLE_GAIN": "S3",
+    "DISCONNECTED_PREREQUISITES": "S4",
+    "EXCESSIVE_INTRODUCTORY_COMPLEXITY": "S5",
+}
+
+
+def _signal_label(signal) -> str:
+    return _SIGNAL_LABELS.get(str(signal), str(signal))
+
+
+def _teacher_decision_text(decision: object) -> str:
+    if not isinstance(decision, dict):
+        return "LESSON COMMITTED; exam pending"
+    warnings = [_signal_label(signal) for signal in decision.get("warning_signals", ())]
+    selected = decision.get("selected") or {}
+    selection = decision.get("policy_selection") or {}
+    warning_prefix = ("warn " if selection.get("diagnostic_context_consumed") else
+                      "warn-context ")
+    parts = [warning_prefix + ",".join(warnings)] if warnings else []
+    replayed = selected.get("exam_mistake_replay")
+    champion = selected.get("champion_priority")
+    if type(replayed) is int and replayed:
+        parts.append(f"miss {replayed}")
+    if type(champion) is int and champion:
+        parts.append(f"champ {champion}")
+    return " | ".join(parts) + "; exam pending" if parts else "LESSON COMMITTED; exam pending"
+
+
+def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
+    rows = []
+    diagnostics = event.get("learning_diagnostics")
+    if isinstance(diagnostics, dict):
+        warning_labels = [
+            f"{_signal_label(warning.get('signal'))}:{warning.get('capability', '?')}"
+            for warning in diagnostics.get("active_warnings", ())
+            if isinstance(warning, dict)
+        ]
+        not_measured = sum(
+            1 for finding in diagnostics.get("findings", ())
+            if isinstance(finding, dict) and finding.get("status") == "NOT_MEASURED")
+        detail = ("active " + ", ".join(warning_labels)
+                  if warning_labels else "no active warnings")
+        rows.append({"kind":"DIAGNOSTIC", "grade":grade,
+                     "detail":detail + f" | {not_measured} NOT MEASURED"})
+    outcomes = event.get("teacher_outcomes")
+    if isinstance(outcomes, list) and outcomes:
+        rows.append({"kind":"TEACH OUTCOME", "grade":grade,
+                     "detail":_teacher_outcome_text(outcomes)})
+    return tuple(rows)
+
+
+def _teacher_outcome_text(outcomes: list[dict]) -> str:
+    measured = _measured_teacher_outcomes(outcomes)
+    if measured:
+        return "fixed-exam action outcome " + (_measured_outcome_changes(measured) or "measured")
+    return _unmeasured_outcome_counts(outcomes)
+
+
+def _measured_teacher_outcomes(outcomes: list[dict]) -> list[dict]:
+    return [item for item in outcomes if isinstance(item, dict) and
+            item.get("attribution") == "MEASURED_FIXED_EXAM_UNIQUE_ACTION"]
+
+
+def _measured_outcome_changes(measured: list[dict]) -> str:
+    return ", ".join(
+        f"{item.get('capability', '?')} {item.get('delta_correct', 0):+d}"
+        for item in measured if type(item.get("delta_correct")) is int)
+
+
+def _unmeasured_outcome_counts(outcomes: list[dict]) -> str:
+    counts = defaultdict(int)
+    for item in outcomes:
+        if isinstance(item, dict):
+            counts[str(item.get("attribution", "UNKNOWN"))] += 1
+    return " | ".join(f"{key} x{count}" for key, count in sorted(counts.items()))
 
 # Same six historical panel identities, new-school labels that describe what
 # the data actually measures. The old School50 TABLES constant is untouched.
@@ -89,6 +167,9 @@ EVENT_KINDS = {
     "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED": "visit",
     "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED": "exam",
     "SCHOOL_GRADE_B_COURSE_ADMITTED": "init",
+    "SCHOOL_TEACHER_VISIT_COMMITTED": "visit",
+    "SCHOOL_LIVE_EXAM_COMMITTED": "exam",
+    "SCHOOL_COURSE_ADMITTED": "init",
     "GRADE_A_SESSION_STOPPED": "stop",
     "SCHOOL_RUN_INITIALIZED": "init",
     "SCHOOL_VISIT_COMMITTED": "visit",
@@ -154,6 +235,7 @@ class ExamScore:
     checkpoint_sha256: str
     generation: int
     capabilities: dict[str, tuple[int, int]]
+    assessment_scope: str = ""
 
 
 class SchoolTelemetry:
@@ -261,7 +343,7 @@ class SchoolTelemetry:
             "loss": _display(event.get("loss")),
             "gradient": (f"{event['gradient_norm']:.3g}" if type(event.get("gradient_norm")) in (float,int) else "-"),
             "old": _delta(event.get("earlier_grade_delta_pp"), pp=True),
-            "decision": "LESSON COMMITTED; exam pending",
+            "decision": _teacher_decision_text(event.get("teacher_decision")),
         }
         self.board.rows["CANDIDATES"].append(row)
         teacher = {"grade": grade, "attempt": self.visits, "policy": policy[:10],
@@ -288,7 +370,8 @@ class SchoolTelemetry:
         if not checkpoint:
             raise ValueError("SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED")
         live = event.get("event") in ("GRADE_A_LIVE_EXAM_COMMITTED",
-                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED")
+                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED", "SCHOOL_LIVE_EXAM_COMMITTED")
+        scope = event.get("assessment_scope_sha256", "") if event.get("event") == "SCHOOL_LIVE_EXAM_COMMITTED" else ""
         cohort_sha = event.get("cohort_sha256") if live else None
         if live and (not isinstance(cohort_sha, str) or len(cohort_sha) != 64 or
                      not event.get("cohort_file") or not event.get("generator_version")):
@@ -309,7 +392,7 @@ class SchoolTelemetry:
 
         # Validate the full exam before emitting any dashboard rows.
         for g, caps in cohort.items():
-            previous = self.latest.get((g, rubric))
+            previous = self.latest.get((g, rubric, scope))
             if previous is not None and (set(previous.capabilities) != set(caps) or
                 any(previous.capabilities[k][1] != caps[k][1] for k in caps)):
                 raise ValueError("SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT")
@@ -319,8 +402,8 @@ class SchoolTelemetry:
             total = sum(x[1] for x in caps.values())
             correct = sum(x[0] for x in caps.values())
             report = ExamScore(g, rubric, correct, total, step, checkpoint,
-                               event.get("generation", 0), caps)
-            key = (g, rubric)
+                               event.get("generation", 0), caps, scope)
+            key = (g, rubric, scope)
             prev = self.latest.get(key)
             first = self.first.setdefault(key, report)
             best = self.best.get(key)
@@ -330,8 +413,8 @@ class SchoolTelemetry:
             self.latest[key] = report
             same_cohort = not live or self.exam_cohorts.get(key) == cohort_sha
             for cap, (score, count) in sorted(caps.items()):
-                baseline = self.first_cap.setdefault((cap, rubric), (score, count))
-                earlier = self.last_cap.get((cap, rubric))
+                baseline = self.first_cap.setdefault((cap, rubric, scope), (score, count))
+                earlier = self.last_cap.get((cap, rubric, scope))
                 gain = score - earlier[0] if earlier and same_cohort else None
                 self.board.rows["BRIDGE FAMILIES"].append({
                     "grade": g, "family": cap, "attempt": report.generation,
@@ -340,7 +423,7 @@ class SchoolTelemetry:
                     "after": f"{score}/{count}",
                     "gain": f"{gain:+d}" if gain is not None else "-",
                 })
-                self.last_cap[(cap, rubric)] = (score, count)
+                self.last_cap[(cap, rubric, scope)] = (score, count)
             # This is a sealed-exam-to-sealed-exam change. It is NOT the
             # independent sentinel/held-out teacher reward channel.
             if prev and same_cohort:
@@ -377,16 +460,18 @@ class SchoolTelemetry:
         self.last_exam_grade = grade
         self.board.state.update(phase=event.get("phase", self.board.state.get("phase")),
                                 prefix=grade, step=step)
+        for system_row in _diagnostic_system_rows(event, grade):
+            self.board.push("system", system_row, redraw=False)
         self._summary()
 
     def _summary(self):
         grade = self.last_exam_grade
         if grade is None:
             return
-        report = next((v for (g, _), v in reversed(tuple(self.latest.items())) if g == grade), None)
+        report = next((v for (g, _, _), v in reversed(tuple(self.latest.items())) if g == grade), None)
         if report is None:
             return
-        key = (grade, report.rubric)
+        key = (grade, report.rubric, report.assessment_scope)
         first = self.first[key]
         best = self.best[key]
         latest = report
