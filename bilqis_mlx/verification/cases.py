@@ -8,10 +8,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import product
 
-from .core import (
-    Apply, Backend, Operation, Proof, TypedError, curry, expression_digest,
-    literal, verify,
-)
+from ..semantics.core import Apply, Operation, TypedError, expression_digest, literal
+from ..semantics.functions import curry
+from .expressions import Backend, Proof, verify
+from .outcomes import CoverageStatus
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,7 @@ class BooleanCoverage:
     cases: tuple[BooleanCase, ...]
     expected_patterns: int
     covered_patterns: int
-    status: str = "EXHAUSTIVE_FINITE_TRUTH_TABLE"
+    status: CoverageStatus = CoverageStatus.EXHAUSTIVE_FINITE_TRUTH_TABLE
 
 
 def exhaustive_boolean_cases(operation: Operation, *, source: Backend,

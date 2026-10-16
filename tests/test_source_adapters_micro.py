@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
-from bilqis_mlx.composition import (TypedError, bind_source_catalog,
-                                   from_micro_query, verify)
+from bilqis_mlx.semantics import TypedError
+from bilqis_mlx.source_adapters import bind_source_catalog, from_micro_query
+from bilqis_mlx.verification import verify
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_b_oracle import CONNECTIVES, operand_truth
 from bilqis_mlx.live_grade_b import draw_connectives
@@ -77,7 +78,7 @@ class IndependentFiniteSymbolic:
         return operand_truth(self.world, node)
 
 
-class OriginalSourceCompositionTests(unittest.TestCase):
+class MicroSourceAdapterTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.micro, _, cls.graph, _, _ = read_sources(SOURCE_ROOT)

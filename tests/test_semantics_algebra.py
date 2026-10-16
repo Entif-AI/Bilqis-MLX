@@ -7,17 +7,22 @@ from itertools import product
 from pathlib import Path
 import unittest
 
-from bilqis_mlx.composition import (
-    Catalog, Curried, Operation, TypedError, bind_source_catalog, compose, curry,
-    exhaustive_boolean_cases, lift2, literal, partial_apply, verify,
-    verify_constituents,
+from bilqis_mlx.semantics import (
+    Catalog, Curried, Operation, Signature, TypedError, compose, curry,
+    expression_digest, lift2, literal, partial_apply,
 )
-from bilqis_mlx.composition.core import Signature, expression_digest
+from bilqis_mlx.source_adapters import bind_source_catalog
+from bilqis_mlx.verification import (
+    ProofStatus, exhaustive_boolean_cases, verify, verify_constituents,
+)
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_b_oracle import CONNECTIVES
 from bilqis_mlx.live_grade_b import independent_truth
 from bilqis_mlx.registry_ast import load_registry
 from bilqis_mlx.token_atlas import ORIGINAL_GRAPH_DIGEST
+from tests.support.boolean_backends import (
+    FaultyBooleanBackend, SourceBooleanBackend, SymbolicBooleanBackend,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,52 +30,7 @@ SOURCE_ROOT = ROOT.parent / "bilqis-triplets-v16"
 SNAPSHOT = ROOT / "docs/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json"
 
 
-class SourceBooleanBackend:
-    identity = "original-boolean-source-interpreter"
-
-    def __init__(self, original, named):
-        self.original = original
-        self.named = named
-
-    def invoke(self, operation, values, world_contract):
-        if operation.token_index not in self.named:
-            raise ValueError("BACKEND_UNKNOWN_TOKEN_INDEX")
-        name = self.named[operation.token_index]
-        expr = self.original.apply(
-            name, *(self.original.literal(v) for v in values))
-        truth = self.original.evaluate(expr, {})
-        if truth != self.original.independent_evaluate(expr, {}):
-            raise ValueError("BACKEND_SOURCE_DISAGREEMENT")
-        return truth
-
-
-class SymbolicBooleanBackend:
-    identity = "sympy-symbolic-backend"
-
-    def __init__(self, named):
-        import sympy
-        self.named = named
-        self.functions = {
-            "NOT": sympy.Not,
-            "AND": sympy.And,
-            "OR": sympy.Or,
-            "XOR": sympy.Xor,
-            "IMPLIES": sympy.Implies,
-            "IFF": sympy.Equivalent,
-        }
-
-    def invoke(self, operation, values, world_contract):
-        return bool(self.functions[self.named[operation.token_index]](*values))
-
-
-class FaultyBooleanBackend(SymbolicBooleanBackend):
-    identity = "deliberately-faulty-symbolic-backend"
-
-    def invoke(self, operation, values, world_contract):
-        return not super().invoke(operation, values, world_contract)
-
-
-class CompositionCoreTests(unittest.TestCase):
+class SemanticAlgebraTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tokens = load_registry(SNAPSHOT).tokens
@@ -101,7 +61,7 @@ class CompositionCoreTests(unittest.TestCase):
             for bits in product((False, True), repeat=arity):
                 expr = curry(operation)(*(literal(value, "Boolean") for value in bits))
                 proof = verify(expr, source=self.source, independent=self.symbolic)
-                self.assertEqual(proof.status, "VERIFIED")
+                self.assertEqual(proof.status, ProofStatus.VERIFIED)
                 self.assertEqual(proof.result, independent_truth(name, bits))
                 self.assertEqual(len(proof.expression_sha256), 64)
                 checked += 1

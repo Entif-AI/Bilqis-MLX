@@ -4,7 +4,8 @@ Read-only compatibility adapter. No semantic IDs are allocated or admitted.
 """
 from __future__ import annotations
 
-from .core import Catalog, Operation, Signature, TypedError
+from ..semantics.catalog import Catalog
+from ..semantics.core import Operation, Signature, TypedError
 
 
 def bind_source_catalog(tokens, source_graph: dict, symbols, *,
