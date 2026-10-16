@@ -72,6 +72,7 @@ def _inspect(run_dir: Path) -> dict:
             return {
                 "status": saved["result"],
                 "grade": grade, "phase": school["stage"],
+                "revalidation_target_grade": school.get("revalidation_target_grade"),
                 "visits": school["visits"],
                 "optimizer_step": student["optimizer_step"],
                 "checkpoint_sha256": student["sha256"],
@@ -101,6 +102,7 @@ def _inspect(run_dir: Path) -> dict:
         grade = active_grades[grade_index] if 0 <= grade_index < len(active_grades) else "INVALID"
         return {"status":"PREPARED_SOURCE_STATE_READ_ONLY",
                 "grade":grade,"phase":saved.get("stage"),
+                "revalidation_target_grade":saved.get("revalidation_target_grade"),
                 "visits":saved.get("visits",0),
                 "optimizer_step":(saved.get("current_student") or {}).get("optimizer_step"),
                 "checkpoint_sha256":(saved.get("current_student") or {}).get("sha256"),

@@ -103,6 +103,9 @@ class SchoolState:
     latest_rubric_digest: str | None = None
     pending_failures: tuple[str, ...] = ()
     teacher_soup_digest: str | None = None
+    # A newly graduated grade B or later triggers an ordered A..grade replay.
+    # Optional so saved letter-grade/v1 and human-run states remain readable.
+    revalidation_target_grade: str | None = None
 
     @property
     def grade(self) -> str:
@@ -146,6 +149,14 @@ def verify_state(course: Course, state: SchoolState):
         raise ValueError("QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES")
     if state.visits < 0 or state.school_cycles < 1:
         raise ValueError("INVALID_SCHOOL_COUNTER")
+    if state.revalidation_target_grade is not None:
+        if (state.revalidation_target_grade not in state.active_grades[1:] or
+                state.grade_index > state.active_grades.index(state.revalidation_target_grade) or
+                state.stage not in ("MAIN", "ASSESS_MAIN", "RECOVERY_1",
+                                    "ASSESS_RECOVERY_1", "RECOVERY_2", "ASSESS_RECOVERY_2") or
+                not set(state.active_grades[:state.active_grades.index(
+                    state.revalidation_target_grade) + 1]) <= set(state.champions)):
+            raise ValueError("INVALID_GRADE_REVALIDATION_STATE")
     if state.stage == "AWAITING_NEXT_GRADE" and (
             course.program_complete or state.grade != course.grades[-1].id or
             state.queue or state.pending_failures or
@@ -190,20 +201,16 @@ def _perfect_in_grade(course: Course, grade: str, scores: dict[str, Score]) -> b
     return all(scores[c].perfect for c in _caps(course, (grade,)))
 
 
-def _promote(course: Course, state: SchoolState, assessment: Assessment) -> SchoolState:
-    candidate = state.current_student
-    previous = tuple(g.id for g in course.grades if g.id in state.champions)
-    full_at_candidate = tuple(g for g in previous if _perfect_in_grade(course, g, assessment.scores))
-    pointers = repoint_earlier(state.champions, candidate,
-                               previously_passed=previous,
-                               fully_mastered_at_this_candidate=full_at_candidate)
-    pointers[state.grade] = candidate
+def _finish_grade_series(course: Course, state: SchoolState, assessment: Assessment,
+                         pointers: dict[str, Checkpoint]) -> SchoolState:
+    """Advance to the next grade or stop at a verified course boundary."""
     next_index = state.grade_index + 1
     if next_index < len(state.active_grades):
         next_grade = state.active_grades[next_index]
         return replace(state, grade_index=next_index, queue=_caps(course, (next_grade,)),
                        stage="MAIN", first_recovery=(), champions=pointers,
-                       # Grade B has its own cumulative A+B sealed rubric.
+                       revalidation_target_grade=None,
+                       # The newly admitted grade owns the next cumulative seal.
                        latest_rubric_digest=None)
     if not course.program_complete:
         # Passing the last *published* grade cannot silently certify the
@@ -211,6 +218,7 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
         # and wait for an explicitly versioned next-grade admission.
         return replace(state, queue=(), first_recovery=(), champions=pointers,
                        stage="AWAITING_NEXT_GRADE", pending_failures=(),
+                       revalidation_target_grade=None,
                        latest_rubric_digest=assessment.rubric_digest)
     # Whole-school result is *one* model's all-grade result. A collection of
     # per-grade champions does not substitute for a perfect all-grade student.
@@ -221,8 +229,57 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
                    if not _perfect_in_grade(course, g.id, assessment.scores))
     return replace(state, queue=(), first_recovery=(), champions=pointers,
                    stage="AWAITING_TEACHER_SOUP" if failed else "WHOLE_SCHOOL_MASTERED",
+                   revalidation_target_grade=None,
                    latest_rubric_digest=assessment.rubric_digest,
                    pending_failures=failed)
+
+
+def _promote(course: Course, state: SchoolState, assessment: Assessment) -> SchoolState:
+    candidate = state.current_student
+    previous = tuple(g.id for g in course.grades if g.id in state.champions)
+    full_at_candidate = tuple(g for g in previous if _perfect_in_grade(course, g, assessment.scores))
+    pointers = repoint_earlier(state.champions, candidate,
+                               previously_passed=previous,
+                               fully_mastered_at_this_candidate=full_at_candidate)
+    pointers[state.grade] = candidate
+
+    target = state.revalidation_target_grade
+    if target is not None:
+        target_index = state.active_grades.index(target)
+        if state.grade_index < target_index:
+            # A/B/C are revisited in order, with their normal full-grade,
+            # weakest-three and same-checkpoint assessment schedule.
+            next_index = state.grade_index + 1
+            return replace(state, grade_index=next_index,
+                           queue=_caps(course, (state.active_grades[next_index],)),
+                           stage="MAIN", first_recovery=(), champions=pointers)
+        failed = tuple(g for g in state.active_grades[:target_index + 1]
+                       if not _perfect_in_grade(course, g, assessment.scores))
+        if failed:
+            if course.program_complete and target == course.grades[-1].id:
+                # Preserve the original final-program teacher-soup recovery:
+                # only failed grades are revisited in that next school cycle.
+                return replace(state, queue=(), first_recovery=(), champions=pointers,
+                               stage="AWAITING_TEACHER_SOUP", pending_failures=failed,
+                               revalidation_target_grade=None,
+                               latest_rubric_digest=assessment.rubric_digest)
+            # At a partial-program boundary, do not start C if the final B
+            # checkpoint lost A. Repeat the ordered prefix until it sticks.
+            return replace(state, grade_index=0, stage="MAIN",
+                           queue=_caps(course, (state.active_grades[0],)),
+                           first_recovery=(), champions=pointers)
+        return _finish_grade_series(course, state, assessment, pointers)
+
+    if state.grade_index > 0 and state.grade not in state.champions:
+        # Newly mastered B triggers A->B; C triggers A->B->C, etc.
+        # Even a perfect initial cumulative B examination is followed by a
+        # fresh ordered revalidation pass before the next grade is entered.
+        return replace(state, grade_index=0, stage="MAIN",
+                       queue=_caps(course, (state.active_grades[0],)),
+                       first_recovery=(), champions=pointers,
+                       revalidation_target_grade=state.grade,
+                       latest_rubric_digest=assessment.rubric_digest)
+    return _finish_grade_series(course, state, assessment, pointers)
 
 
 def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolState:
@@ -277,6 +334,7 @@ def append_next_grade(previous: Course, successor: Course,
                    active_grades=successor_ids,
                    grade_index=len(previous.grades), stage="MAIN",
                    queue=_caps(successor, (added,)), first_recovery=(),
+                   revalidation_target_grade=None,
                    latest_rubric_digest=None, pending_failures=(),
                    teacher_soup_digest=None)
 
@@ -294,10 +352,15 @@ def continue_after_soup(course: Course, state: SchoolState,
     return replace(state, active_grades=state.pending_failures, grade_index=0,
                    queue=_caps(course, (first,)), first_recovery=(), stage="MAIN",
                    pending_failures=(), school_cycles=state.school_cycles+1,
+                   revalidation_target_grade=None,
                    teacher_soup_digest=frozen_teacher_receipt)
 
 
 def teacher_vote_weights(course: Course, state: SchoolState) -> dict[str, int]:
+    if state.revalidation_target_grade is not None:
+        # Every already-graduated grade is an eligible teacher when revisited,
+        # including a grade numerically later than the active replay grade.
+        return soup_weights(state.champions)
     return vote_counts(state.champions,
                        grade_order=tuple(g.id for g in course.grades),
                        active_grade=state.grade)
