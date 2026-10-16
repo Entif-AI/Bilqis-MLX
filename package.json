@@ -12,6 +12,7 @@
     "backup:verify": "python3 -m bilqis_mlx.backup verify",
     "curriculum:audit": "python3 -m bilqis_mlx.grade_a_probe",
     "curriculum:plan": "python3 -m bilqis_mlx.registry_ast",
+    "curriculum:coverage": "python3 -m bilqis_mlx.semantic_coverage",
     "curriculum:parity": "python3 -m bilqis_mlx.pedagogical_parity",
     "curriculum:tests": "python3 -m bilqis_mlx.semantic_test_generation",
     "curriculum:learning-smoke": "python3 -m bilqis_mlx.integer_learning_smoke",
