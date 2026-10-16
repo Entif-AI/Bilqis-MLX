@@ -49,6 +49,11 @@ class PredecessorPedagogyTests(unittest.TestCase):
                     self.assertEqual((positive["gold"], negative["gold"]),
                                      ("TRUE", "FALSE"))
                     self.assertEqual(direct["gold"], str(pair["value"]))
+                    native = direct["native_output"]
+                    self.assertEqual(native["identity"],
+                                     "school.number." + direct["gold"])
+                    self.assertEqual(native["token_id"],
+                        self.plan["heads"]["semantic_token"]["values"].index(native["identity"]))
                     self.assertEqual(len({r["source_id"] for r in pair["rows"]}), 1)
                     self.assertEqual(len({r["id"] for r in pair["rows"]}), 3)
 
@@ -91,6 +96,10 @@ class PredecessorPedagogyTests(unittest.TestCase):
         self.assertEqual(len(set(mapping["numeric_full_101"]["token_ids"])), 101)
         self.assertEqual(mapping["numeric_0_3"]["token_ids"],
                          mapping["numeric_full_101"]["token_ids"][:4])
+        self.assertEqual(mapping["semantic_token"]["token_ids"],list(range(222)))
+        self.assertEqual([mapping["semantic_token"]["values"][i]
+                          for i in mapping["numeric_full_101"]["token_ids"]],
+                         ["school.number." + str(i) for i in range(101)])
 
     def test_stage_gate_requires_measured_exposed_acquisition_and_source_identity(self):
         stage = self.plan["stages"]["NUMERAL_IDENTITY"]
@@ -108,7 +117,9 @@ class PredecessorPedagogyTests(unittest.TestCase):
     def test_operator_report_exposes_known_direct_and_false_pair_but_not_sealed_gold(self):
         report = audit_summary(self.plan)
         self.assertEqual(report["example"], {"source": "ADD(1,2)",
-                         "direct": "3", "correct_claim": "TRUE",
+                         "direct": "3", "native_output_identity": "school.number.3",
+                         "native_output_token_id": self.plan["heads"]["numeric_0_3"]["token_ids"][3],
+                         "correct_claim": "TRUE",
                          "incorrect_claim": "FALSE"})
         self.assertEqual(report["source_partitions"],
                          {"train": 12, "development": 4, "sealed": 4})
@@ -127,6 +138,7 @@ class PredecessorPedagogyTests(unittest.TestCase):
                     {"current": 42, "random_old": 6, "preview": 0})
                 self.assertEqual(sum(r["answer_kind"] == "numeric_0_3"
                                      for r in rows), 6)
+                self.assertEqual(sum(bool(r.get("native_output")) for r in rows),6)
                 self.assertEqual(sum(r["answer_kind"] == "evidence"
                                      for r in rows), 42)
                 self.assertEqual(len({r["id"] for r in rows}), 48)

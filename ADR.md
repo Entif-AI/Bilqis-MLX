@@ -210,3 +210,23 @@ fixed rubric. The new read-only `pedagogical_parity.py` and disposable
 they are not an admitted curriculum, model-training release or replacement
 for the currently frozen Grade A test. See the new pedagogical parity report
 for explicit remaining scientific and release gates.
+
+## ADR-020 | 2026-10-15 | Native semantic-token outputs alongside typed answers
+
+The human clarifies ADR-019: restricting training to a four-way number-answer
+classification and five-state truth classification is insufficient. An answer
+such as `ADD(1,2) -> 3` must **also** teach emission of the existing
+`school.number.3` vocabulary token using a full-catalog tied-embedding
+readout. Retain the original direct-number and TRUE/FALSE contrast training
+as complementary perspectives; do not substitute one for the other.
+
+The source-oracled direct numeral row therefore carries an exact token identity
+and numeric ID from the model's pinned semantic ABI. One research-only MLX
+objective now combines restricted numeric, full-vocabulary semantic-token,
+and five-state evidence cross-entropies without new embeddings or invented
+semantic identities. The full-vocabulary head size tracks append-only model
+vocabulary changes and refuses mismatches. This is a single-token output
+construction, not unrestricted multi-token language generation or proof of
+learned meanings. The currently approved Grade A trainer, fixed teaching and
+examination manifests, complete student and AdamW remain unmodified; no
+actual neural training is authorized by this experimental parity adapter.

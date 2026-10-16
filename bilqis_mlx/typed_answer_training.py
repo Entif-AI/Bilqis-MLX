@@ -1,8 +1,10 @@
 """Typed MLX output-caste adapter for a separately admitted future curriculum.
 
 No source or student is loaded here. The existing two-class Grade A trainer
-is deliberately untouched. A four-way numeric head and five-way evidence
-head reuse the model's *original tied embedding*, as School50 v10 did.
+is deliberately untouched. A native full-catalog output target accompanies
+each oracle-attested direct numeral, alongside a restricted numeric exercise
+and the original five-way evidence head. All three reuse the same tied
+embedding weights, rather than creating a new classifier or semantic catalog.
 All model steps must remain operator-controlled; tests use disposable arrays.
 """
 from __future__ import annotations
@@ -12,13 +14,18 @@ import numpy as np
 from .mlx_parity import clip_gradients, forward_arrays
 
 
-TRAIN_CASTES = ("numeric_0_3", "evidence")
+TRAIN_CASTES = ("numeric_0_3", "numeric_full_101", "evidence", "semantic_token")
 
 
 def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
-    """Partition mixed supervision by output type, never merge softmaxes."""
+    """Teach direct numerals both as numeric exercises and real output tokens."""
     if not rows:
         raise ValueError("ANSWER_CASTE_EMPTY_LESSON")
+    native = heads.get("semantic_token") or {}
+    vocabulary = native.get("values") or []
+    if (not vocabulary or len(vocabulary) != len(set(vocabulary)) or
+            native.get("token_ids") != list(range(len(vocabulary)))):
+        raise ValueError("ANSWER_CASTE_FULL_VOCABULARY_ABI_INVALID")
     grouped = {}
     for row in rows:
         kind = row.get("answer_kind")
@@ -27,9 +34,13 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
         head = heads.get(kind) or {}
         labels = head.get("values") or []
         answer_ids = head.get("token_ids") or []
-        if (len(labels) != len(answer_ids) or len(labels) not in (4, 5) or
+        sizes = {"numeric_0_3":4, "numeric_full_101":101, "evidence":5}
+        if (len(labels) != len(answer_ids) or
+                kind in sizes and len(labels) != sizes[kind] or
+                kind == "semantic_token" and len(labels) != len(vocabulary) or
                 len(set(answer_ids)) != len(answer_ids) or
                 kind == "numeric_0_3" and labels != ["0", "1", "2", "3"] or
+                kind == "numeric_full_101" and labels != [str(i) for i in range(101)] or
                 kind == "evidence" and labels[:2] != ["FALSE", "TRUE"]):
             raise ValueError("ANSWER_CASTE_UNTRUSTED_HEAD_ABI")
         if row.get("gold") not in labels:
@@ -39,6 +50,24 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
                 any(type(t) is not int or t < 0 for t in tokens)):
             raise ValueError("ANSWER_CASTE_INPUT_TOKENS_INVALID")
         grouped.setdefault(kind, []).append(row)
+        if kind.startswith("numeric_") or kind == "semantic_token":
+            # A restricted numeric readout by itself does not teach selection from
+            # Bilqis's entire semantic catalog. The additional supervised
+            # response competes against every admitted output token. An
+            # explicit semantic-token row may name another existing identity,
+            # but must still be source-qualified before any curriculum release.
+            identity = ("school.number." + row["gold"]
+                        if kind.startswith("numeric_") else row["gold"])
+            binding = row.get("native_output")
+            if (identity not in vocabulary or
+                    binding != {"identity": identity,
+                                "token_id": vocabulary.index(identity)} or
+                    kind.startswith("numeric_") and
+                    head["token_ids"][labels.index(row["gold"])] != binding["token_id"]):
+                raise ValueError("ANSWER_CASTE_NATIVE_SEMANTIC_TARGET_MISMATCH")
+            if kind != "semantic_token":
+                grouped.setdefault("semantic_token", []).append({
+                    **row, "answer_kind": "semantic_token", "gold": identity})
     result = {}
     for kind, group in grouped.items():
         head = heads[kind]
@@ -62,6 +91,9 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
 def _check_model_shape(weights, batches):
     emb = weights["embedding.weight"]
     positions = weights["position.weight"].shape[0]
+    if ("semantic_token" in batches and
+            len(batches["semantic_token"]["answer_ids"]) != emb.shape[0]):
+        raise ValueError("ANSWER_CASTE_MODEL_FULL_VOCABULARY_DRIFT")
     for batch in batches.values():
         if (max(batch["answer_ids"]) >= emb.shape[0] or
                 int(batch["ids"].max()) >= emb.shape[0] or
@@ -76,10 +108,10 @@ def _objective(mx, weights, batches, config):
             mx, weights, batch["ids"], batch["lengths"],
             heads=config["heads"], layers=config["layers"],
             answer_ids=batch["answer_ids"])
-        targets = mx.array(np.eye(len(batch["answer_ids"]), dtype=np.float32)
-                           [batch["target_indices"]])
-        losses.append(mx.mean(mx.logsumexp(logits, axis=-1) -
-                              mx.sum(logits * targets, axis=-1)))
+        target_index = mx.array(np.asarray(batch["target_indices"],
+                                           dtype=np.int32))[:, None]
+        correct_logit = mx.take_along_axis(logits,target_index,axis=-1)[:,0]
+        losses.append(mx.mean(mx.logsumexp(logits, axis=-1) - correct_logit))
     # High-fidelity direct numeric supervision is not drowned out by the
     # two assertion/contrast examples accompanying every one direct answer.
     return sum(losses) / len(losses)

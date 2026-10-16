@@ -19,7 +19,7 @@ from .grade_a_probe import PINNED_FULL_STUDENT_GRAPH_SHA256, read_sources
 from .source import AUDITED_PARENT
 
 
-SCHEMA = "bilqis.mlx.predecessor-pedagogy/v1"
+SCHEMA = "bilqis.mlx.predecessor-pedagogy/v2"
 PREDECESSOR = {
     "bilqis_school/small_domain_lessons.py":
         "44c73637ed9bcfb6316446937cdc318d911f6178c07fd929ac6222014c83f6e5",
@@ -98,6 +98,8 @@ def _answer_heads(graph, numbers, micro):
     if evidence_ids[:2] != [6, 7] or len(set(evidence_ids)) != 5:
         raise ValueError("PARITY_NATIVE_EVIDENCE_HEAD_DRIFT")
     return {
+        "semantic_token": {"values": list(graph["tokens"]),
+                           "token_ids": list(range(len(graph["tokens"])))},
         "numeric_0_3": {"values": [str(i) for i in range(4)],
                          "token_ids": all_numbers[:4]},
         "numeric_full_101": {"values": [str(i) for i in range(101)],
@@ -118,11 +120,23 @@ def _row(arithmetic, mapping, expression, *, source_id, source,
     if (not ids or len(ids) > 96 or
             any(type(i) is not int or i < 0 or i >= len(mapping) for i in ids)):
         raise ValueError("PARITY_UNKNOWN_SOURCE_TOKEN_OR_CONTEXT")
+    native = _native_output(kind, expected, mapping)
     return {"id": _digest(record), "source_id": source_id,
             "source": list(source), "partition": partition,
             "answer_kind": kind, "gold": expected,
+            **({"native_output": native} if native else {}),
             "record": record, "tokens": ids,
             "oracle": "bilqis_school.arithmetic.evaluate+independent_evaluate"}
+
+
+def _native_output(kind: str, gold: str, mapping: dict[str, int]):
+    """Bind an oracle-checked number answer to its full-catalog token ID."""
+    if kind != "numeric_0_3":
+        return None
+    identity = "school.number." + gold
+    if gold not in ("0", "1", "2", "3") or identity not in mapping:
+        raise ValueError("PARITY_DIRECT_NUMBER_NOT_IN_MODEL_SEMANTIC_ABI")
+    return {"identity": identity, "token_id": mapping[identity]}
 
 
 def _pair(source, arithmetic, mapping, assignment, partition):
@@ -222,12 +236,17 @@ def _validate_structure(plan: dict):
             if source_id in ids:
                 raise ValueError("PARITY_SOURCE_PARTITION_LEAK")
             ids[source_id] = partition
+            native=pair["rows"][0].get("native_output") if pair["rows"] else None
+            heads=plan["heads"]
+            expect="school.number."+str(pair["value"])
             if (len(pair["rows"]) != 3 or
                     [r["answer_kind"] for r in pair["rows"]] !=
                     ["numeric_0_3", "evidence", "evidence"] or
                     [r["gold"] for r in pair["rows"]] !=
                     [str(pair["value"]), "TRUE", "FALSE"] or
-                    any(r["source_id"] != source_id for r in pair["rows"])):
+                    any(r["source_id"] != source_id for r in pair["rows"]) or
+                    native != {"identity": expect,
+                               "token_id": heads["semantic_token"]["values"].index(expect)}):
                 raise ValueError("PARITY_INCOMPLETE_DIRECT_TRUTH_NEGATIVE_PAIR")
     if len(ids) != 20:
         raise ValueError("PARITY_MISSING_PREDECESSOR_EXPRESSIONS")
@@ -294,8 +313,10 @@ def predecessor_teaching_batch(legacy_root: Path, *, grade="B01",
                 any(type(t) is not int or not 0 <= t < len(mapping) for t in tokens)):
             raise ValueError("PARITY_SOURCE_TEACHER_BATCH_CASTE_OR_CODEC_DRIFT")
         meta = row["course_meta"]
+        native = _native_output(kind, gold, mapping)
         converted.append({"id": row["id"], "tokens": tokens,
                           "answer_kind": kind, "gold": gold,
+                          **({"native_output": native} if native else {}),
                           "tranche": meta["tranche"],
                           "semantic_source_id": meta.get("semantic_source_id"),
                           "projection": meta.get("projection")})
@@ -370,6 +391,8 @@ def audit_summary(plan: dict) -> dict:
                        for k, stage in plan["stages"].items()},
         "answer_classes": {k: len(h["values"]) for k, h in plan["heads"].items()},
         "example": {"source": "ADD(1,2)", "direct": sample["rows"][0]["gold"],
+                    "native_output_identity": sample["rows"][0]["native_output"]["identity"],
+                    "native_output_token_id": sample["rows"][0]["native_output"]["token_id"],
                     "correct_claim": sample["rows"][1]["gold"],
                     "incorrect_claim": sample["rows"][2]["gold"]},
         "first_training_gate": "NUMERAL_IDENTITY_EXPOSED_REPLAY_NOT_YET_MEASURED",
