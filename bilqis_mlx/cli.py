@@ -192,6 +192,11 @@ def dashboard(run_dir: Path):
     return 0
 
 
+def diagnostics(run_dir: Path):
+    from .diagnostics.audit import audit_saved_run
+    return _print_status(audit_saved_run(run_dir))
+
+
 def human_stop_summary(result: dict) -> str:
     """A legible termination receipt for the human-operated live terminal."""
     explanations = {
@@ -223,7 +228,7 @@ def human_stop_summary(result: dict) -> str:
 def parse_args(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     actions=parser.add_subparsers(dest="action",required=True)
-    for name in ("status","dashboard","train"):
+    for name in ("status","dashboard","diagnostics","train"):
         p=actions.add_parser(name)
         p.add_argument("--run-dir",type=Path,default=DEFAULT_RUN)
         if name=="train":
@@ -249,6 +254,7 @@ def main(argv=None):
     try:
         if args.action=="status":return status(args.run_dir)
         if args.action=="dashboard":return dashboard(args.run_dir)
+        if args.action=="diagnostics":return diagnostics(args.run_dir)
         if args.dry_run:return preflight(args.run_dir,resume=args.resume,
                                         verify_source=args.verify_source)
         if args.verify_source:

@@ -24,6 +24,8 @@ Development rules: do not invent untaught roots, do not examine composed semanti
 
 ## Operator interface
 
+`npm run diagnostics -- --run-dir /absolute/path/to/existing/run` audits saved binary exam receipts without loading a model or changing the run. It reports prediction counts, capability-conditioned baselines and consecutive observations at capability, grade and whole-student scope. Durable learning, prerequisite linkage and introduction complexity remain `NOT_MEASURED` until delivered-example and semantic-contract evidence exists. This command does not establish training readiness. See [the A/B diagnostic qualification](docs/AB_DIAGNOSTIC_QUALIFICATION_20261016.md).
+
 Run from this repository:
 
 ```sh

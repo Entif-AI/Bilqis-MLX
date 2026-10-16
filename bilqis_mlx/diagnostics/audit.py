@@ -1,0 +1,67 @@
+"""Neural-inert diagnostic readback of existing school evidence."""
+from __future__ import annotations
+
+from dataclasses import asdict, replace
+import hashlib
+from pathlib import Path
+
+from .observations import load_archived_exam_history, load_saved_exam
+from .signals import DiagnosticStatus, diagnose_exam, diagnose_history
+
+
+VERSION = "bilqis.school.learning-diagnostic-audit/v1"
+
+
+def audit_saved_run(run_dir: Path) -> dict:
+    """Check recorded score consistency, without replaying source or model code.
+
+    Historical binary correct predictions can be reconstructed from complete
+    gold/miss/score receipts. This is evidence readback, not fresh inference.
+    A changing live pointer/ledger requires a fresh read, never an operator lock.
+    """
+    root = Path(run_dir).resolve(strict=True)
+    paths = (root / "state.json", root / "events.jsonl")
+
+    def identities():
+        return tuple(hashlib.sha256(p.read_bytes()).hexdigest() for p in paths)
+
+    before = identities()
+    latest = load_saved_exam(root)
+    history = load_archived_exam_history(root, grade=None)
+    comparable = tuple(obs for obs in history if obs.contract == latest.contract)
+    if any(obs.inventory != latest.inventory for obs in comparable):
+        raise ValueError("DIAGNOSTIC_INVENTORY_DRIFT")
+    matched = next((obs for obs in comparable
+                    if replace(obs, event_outbox_verified=False) == latest), None)
+    if matched is None:
+        raise ValueError("DIAGNOSTIC_LATEST_EXAM_NOT_IN_COMMITTED_HISTORY")
+    latest = matched
+    findings = diagnose_exam(latest)
+    longitudinal = diagnose_history(comparable)
+    if identities() != before:
+        raise ValueError("DIAGNOSTIC_RUN_CHANGED_DURING_READ_RETRY")
+    unmeasured = sorted({f.signal for f in findings
+                         if f.status is DiagnosticStatus.NOT_MEASURED})
+    return {
+        "schema": VERSION,
+        "run_dir": str(root),
+        "state_sha256": before[0],
+        "events_sha256": before[1],
+        "neural_training_started_by_this_command": False,
+        "source_oracles_replayed": False,
+        "model_or_optimizer_loaded": False,
+        "teacher_policy_changed": False,
+        "archived_exam_count": len(history),
+        "outbox_verified_exam_count": sum(obs.event_outbox_verified for obs in history),
+        "legacy_exam_count_without_outbox": sum(not obs.event_outbox_verified for obs in history),
+        "comparable_exam_count": len(comparable),
+        "excluded_contract_observations": len(history) - len(comparable),
+        "latest_exam": asdict(latest),
+        "latest_findings": [asdict(f) for f in findings],
+        "history_findings": [asdict(f) for f in longitudinal],
+        "unmeasured_signals": unmeasured,
+        "evidence_boundary": (
+            "Binary predictions reconstructed from archived gold, complete misses and scores. "
+            "Baseline warnings are descriptive; rotating cohorts are not paired learning gains. "
+            "This audit does not qualify a curriculum release or a human training resume."),
+    }
