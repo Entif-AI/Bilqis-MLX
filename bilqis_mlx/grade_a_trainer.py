@@ -39,6 +39,7 @@ from .mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
 from .school import (start_new, visit, assess, next_capability, append_next_grade,
                      teacher_vote_weights, SchoolState, Assessment, Score)
+from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .source import AUDITED_PARENT
 
 VERSION = "bilqis.mlx.human-grade-a-trainer/v1"
@@ -145,7 +146,7 @@ def _initial_model(source_checkpoint: Path):
     from bilqis_development.continuation import load
     model, optimizer, payload = load(source_checkpoint)
     if (payload["config"]["precision"] != "fp32" or
-            len(payload["graph"]["tokens"]) != 222):
+            len(payload["graph"]["tokens"]) != HISTORICAL_PREFIX_SIZE):
         raise ValueError("HUMAN_TRAINER_HISTORICAL_SEMANTIC_ABI_INVALID")
     names = {id(p): name for name, p in model.named_parameters()}
     order = [names[id(p)] for p in optimizer.param_groups[0]["params"]]
@@ -578,7 +579,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None):
             bundle["safetensors_sha256"] != school.current_student.sha256 or
             bundle["optimizer_step"] != school.current_student.optimizer_step or
             school.current_student.filename != receipt["model_bundle"] or
-            len(graph["tokens"]) != 222 or
+            len(graph["tokens"]) != HISTORICAL_PREFIX_SIZE or
             _fingerprint(graph) != receipt["semantic_graph_sha256"] or
             _fingerprint(graph) != manifest["parent_student"]["full_student_graph_sha256"] or
             {name:list(value.shape) for name,value in parameters.items()} !=

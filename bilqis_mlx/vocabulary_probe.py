@@ -16,6 +16,7 @@ import sys
 from .backup import digest_file
 from .mlx_parity import forward, native_optimizer_to_mlx
 from .source import AUDITED_PARENT
+from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .vocabulary_growth import AdmittedToken, append_catalog, extend_mlx_student
 
 
@@ -38,8 +39,8 @@ def probe(checkpoint: Path, legacy_root: Path) -> dict:
     model,optimizer,payload=load(checkpoint)
     model.eval()
     cfg=payload['config'];catalog=payload['graph']
-    if (cfg['precision']!='fp32' or cfg['vocab_size']!=222 or
-            len(catalog['tokens'])!=222 or
+    if (cfg['precision']!='fp32' or cfg['vocab_size']!=HISTORICAL_PREFIX_SIZE or
+            len(catalog['tokens'])!=HISTORICAL_PREFIX_SIZE or
             payload.get('optimizer_receipt',{}).get('steps')!=[116760]):
         # Optimizer receipt structure may vary; fail if this implementation's
         # graph/model/checkpoint is not the exact audited historical parent.

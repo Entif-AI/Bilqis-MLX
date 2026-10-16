@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 
 from .registry_versions import REVIEW_COLUMNS
+from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .token_atlas import ORIGINAL_GRAPH_DIGEST, rows_for_graph
 from .vocabulary_growth import digest
 
@@ -43,7 +44,7 @@ def inspect_adjudication(document: dict, graph: dict) -> dict:
         or not isinstance(document.get("authority_comment_sha256"), str)
         or len(document["authority_comment_sha256"]) != 64
         or any(c not in "0123456789abcdef" for c in document["authority_comment_sha256"])
-        or len(rows) != 222
+        or len(rows) != HISTORICAL_PREFIX_SIZE
     ):
         raise ValueError("NI_ADJUDICATION_CONTRACT_DRIFT")
     observations = document.get("outcomes")
@@ -55,7 +56,7 @@ def inspect_adjudication(document: dict, graph: dict) -> dict:
         if (
             type(index) is not int
             or index in seen
-            or not 0 <= index < 222
+            or not 0 <= index < HISTORICAL_PREFIX_SIZE
             or item.get("token_symbol") != rows[index][1]
             or item.get("legacy_identity") != rows[index][2]
             or item.get("historic_catalog_description") != rows[index][3]
@@ -104,7 +105,8 @@ def materialize_review_view(document: dict, graph: dict, snapshot: list[list[str
     Leaves review history and all original model token identities intact.
     """
     evidence = inspect_adjudication(document, graph)
-    if not snapshot or list(snapshot[0]) != list(REVIEW_COLUMNS) or len(snapshot) != 223:
+    if (not snapshot or list(snapshot[0]) != list(REVIEW_COLUMNS) or
+            len(snapshot) != HISTORICAL_PREFIX_SIZE + 1):
         raise ValueError("NI_PARENT_REVIEW_SNAPSHOT_INVALID")
     old = [list(map(str, r)) + [""] * (16 - len(r)) for r in snapshot[1:]]
     if any(len(r) != 16 for r in old):
@@ -113,12 +115,12 @@ def materialize_review_view(document: dict, graph: dict, snapshot: list[list[str
     by_id = {}
     for row in old:
         token_id = int(row[2])
-        if token_id in by_id or not 0 <= token_id < 222:
+        if token_id in by_id or not 0 <= token_id < HISTORICAL_PREFIX_SIZE:
             raise ValueError("NI_PARENT_DUPLICATE_TOKEN_ID")
         by_id[token_id] = row
         if row[3:6] != [refs[token_id][1], refs[token_id][2], refs[token_id][3]]:
             raise ValueError(f"NI_PARENT_HISTORICAL_DRIFT:{token_id}")
-    if len(by_id) != 222:
+    if len(by_id) != HISTORICAL_PREFIX_SIZE:
         raise ValueError("NI_PARENT_MISSING_TOKEN")
     changed = copy.deepcopy(old)
     changes_by_id = {int(row[2]): row for row in changed}
@@ -146,6 +148,6 @@ def materialize_review_view(document: dict, graph: dict, snapshot: list[list[str
         row[13] = "Delegated AI semantic steward (IPR-0220)"
         row[14] = decision["authority_reference"]
         row[15] = SUCCESSOR
-    if any(changed[i][:6] != old[i][:6] for i in range(222)):
+    if any(changed[i][:6] != old[i][:6] for i in range(HISTORICAL_PREFIX_SIZE)):
         raise ValueError("NI_HISTORICAL_IDENTITY_MUTATION")
     return [list(REVIEW_COLUMNS)] + changed, evidence

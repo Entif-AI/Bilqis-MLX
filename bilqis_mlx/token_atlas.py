@@ -13,12 +13,13 @@ import json
 from pathlib import Path
 
 from .backup import digest_file
+from .semantics.abi import HISTORICAL_ABI, HISTORICAL_PREFIX_SIZE, prefix_preserving_vocab_size
 from .source import AUDITED_PARENT
 from .vocabulary_growth import _check_catalog, digest
 
 SCHEMA = "bilqis.mlx.pasigraphy-token-atlas/v1"
 REGISTRY_SHEET = "Token Atlas"
-ORIGINAL_GRAPH_DIGEST = "57ab0a141a9bfc25c6da8d0568f14e0a8beaab2c0c3fd33931e51e2624a0b16f"
+ORIGINAL_GRAPH_DIGEST = HISTORICAL_ABI.graph_sha256
 COLUMNS = (
     "0-based Token ID", "Bilqis token symbol", "Pasigraphy identity",
     "Source-grounded semantic role/function", "Formal signature", "Semantic family",
@@ -124,7 +125,8 @@ def read_historic_graph(path:Path)->dict:
         raise ValueError("PASIGRAPHY_ORIGINAL_CHECKPOINT_SHA_CHANGED")
     payload=torch.load(p,map_location="cpu",weights_only=True)
     graph=payload["graph"]
-    if digest(graph)!=ORIGINAL_GRAPH_DIGEST or len(graph["tokens"])!=222:
+    if (digest(graph)!=ORIGINAL_GRAPH_DIGEST or
+            prefix_preserving_vocab_size(graph)!=HISTORICAL_PREFIX_SIZE):
         raise ValueError("PASIGRAPHY_LEGACY_GRAPH_DRIFT")
     if payload["config"]["vocab_size"]!=len(graph["tokens"]):
         raise ValueError("PASIGRAPHY_MODEL_TOKEN_COUNT_DRIFT")
@@ -136,9 +138,9 @@ def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint",required=True,type=Path)
     parser.add_argument("--start",type=int,default=0)
-    parser.add_argument("--limit",type=int,default=222)
+    parser.add_argument("--limit",type=int,default=HISTORICAL_PREFIX_SIZE)
     args=parser.parse_args(argv)
-    if args.start<0 or args.limit<1 or args.limit>222:
+    if args.start<0 or args.limit<1 or args.limit>HISTORICAL_PREFIX_SIZE:
         parser.error("invalid bounded atlas slice")
     rows=rows_for_graph(read_historic_graph(args.checkpoint))
     print(json.dumps({"schema":SCHEMA,"columns":COLUMNS,"start":args.start,

@@ -5,6 +5,7 @@ from dataclasses import replace
 
 from .curriculum import Course
 from .grade_a_probe import candidate_course
+from .semantics.abi import HISTORICAL_PREFIX_SIZE
 
 RELEASE = "bilqis.mlx.grade-a-user-accepted/20261015"
 AUTHORITY = "user-explicit-grade-a-acceptance/20261015"
@@ -20,7 +21,7 @@ def accepted_grade_a(manifest: dict) -> Course:
         raise ValueError("GRADE_A_ACCEPTANCE_SOURCE_INVENTORY_MISMATCH")
     seal = manifest["exam_rubric_sha256"]
     graph = manifest["parent_student"]
-    if (graph.get("student_vocab_size") != 222 or
+    if (graph.get("student_vocab_size") != HISTORICAL_PREFIX_SIZE or
             not graph.get("prefix_identity_preserved")
             or len(seal) != 64
             or not manifest.get("manifest_sha256")):

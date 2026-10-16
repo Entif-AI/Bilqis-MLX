@@ -1,5 +1,7 @@
 # Bilqis MLX: private, independent successor
 
+**Vocabulary-size authority (ADR-030):** The original complete student's model ABI is declared once by [`bilqis_mlx/semantics/legacy_abi_v1.json`](bilqis_mlx/semantics/legacy_abi_v1.json). Import `HISTORICAL_PREFIX_SIZE` from [`bilqis_mlx.semantics.abi`](bilqis_mlx/semantics/abi.py) for historical checkpoint/index compatibility. An admitted **current** model's vocabulary length comes from its versioned graph/catalog, not from the old prefix as a ceiling. The [ABI/merge guard](docs/architecture/09_HISTORICAL_ABI_AND_MERGE_CHECK.md) checks exact historical semantic fields and separately controlled expected evidence; numeric counts in dated results below are frozen observations, not independent configuration knobs. New grade admission and actual training remain separately governed.
+
 **State: Source-generated six-capability Grade A instruction and rotating 72-item assessments are wired for human-operated training. Historical 144+72 records remain immutable evidence; agents never train the actual student.**
 
 This private repository implements the successor directed by protected IPR-0220. Its public interoperability-facing summaries are Bilqis #160 (MLX backend qualification) and #162 (successor integration). The detailed internal curriculum, promotion and resource policy stays private.

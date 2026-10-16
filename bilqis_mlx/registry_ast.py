@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 
 from .curriculum_compiler import CurriculumAST
+from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .token_atlas import ORIGINAL_GRAPH_DIGEST
 
 
@@ -235,7 +236,8 @@ def parse_registry(snapshot: dict) -> RegistryAST:
         raise ValueError("REGISTRY_DUPLICATE_TOKEN_IDENTITY")
     if len({t.symbol for t in tokens}) != len(tokens):
         raise ValueError("REGISTRY_DUPLICATE_TOKEN_SYMBOL")
-    if (len(tokens) != 222 or tuple(t.id for t in tokens) != tuple(range(222))
+    if (len(tokens) != HISTORICAL_PREFIX_SIZE or
+            tuple(t.id for t in tokens) != tuple(range(HISTORICAL_PREFIX_SIZE))
             or any(t.graph_sha256 != ORIGINAL_GRAPH_DIGEST for t in tokens)):
         raise ValueError("REGISTRY_PINNED_222_TOKEN_GRAPH_DRIFT")
     if any(t.identity != "legacy:" + t.symbol or not t.signature or not t.meaning or

@@ -1,0 +1,9 @@
+{
+  "schema": "bilqis.semantic-abi/v1",
+  "release": "legacy-source/v1",
+  "historical_prefix_tokens": 222,
+  "historical_checkpoint_sha256": "646d8590cf8fddb7b3c412ecead4ac185a0578f93baadf24e05f92dd15068a78",
+  "historical_graph_sha256": "57ab0a141a9bfc25c6da8d0568f14e0a8beaab2c0c3fd33931e51e2624a0b16f",
+  "historical_index_contract_sha256": "f4b02ca311146df741eef1b05f1446640898b82f1a4fb12b2327059a0ad28eb2",
+  "historical_source_fields_sha256": "25be81dbb10fb5acc1a638e9f3226c927eb7ff733e2c06ec6ba070af8ebd7a46"
+}

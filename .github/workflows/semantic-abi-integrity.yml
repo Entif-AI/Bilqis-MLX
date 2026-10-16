@@ -1,0 +1,34 @@
+name: Semantic ABI integrity
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [codex/lettergrade-mlx-v1]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  semantic-abi-integrity:
+    name: semantic-abi-integrity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read proposed source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # audited checkout 4.2.2
+        with:
+          persist-credentials: false
+      - name: Verify original model semantic ABI
+        shell: bash
+        env:
+          BILQIS_EXPECTED_ABI_SHA256: ${{ vars.BILQIS_EXPECTED_ABI_SHA256 }}
+          BILQIS_ABI_REQUIRE_EXTERNAL: ${{ vars.BILQIS_ABI_REQUIRE_EXTERNAL }}
+        run: |
+          set -euo pipefail
+          if [[ "$BILQIS_ABI_REQUIRE_EXTERNAL" == "true" ]]; then
+            python3 -B scripts/check_historical_abi.py --require-external
+          else
+            python3 -B scripts/check_historical_abi.py
+          fi
+          python3 -B scripts/check_semantic_boundaries.py

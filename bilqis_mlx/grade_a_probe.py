@@ -19,6 +19,7 @@ import sys
 from .curriculum import AnswerFamily, BINARY, Capability, Course, Grade, ExamItem, validate_exam_item
 from .grade_a_oracle import VERSION as INDEPENDENT_ORACLE, evaluate as third_oracle
 from .source import AUDITED_PARENT
+from .semantics.abi import HISTORICAL_ABI
 from .backup import digest_file
 
 SCHEMA = "bilqis.mlx.direct-grade-a-source-probe/v2"
@@ -30,7 +31,7 @@ PINNED_SOURCES = {
     "bilqis_micro/kernel.py": "1355d914cda4200503ac8aa5cac4fd8601ebaca33ae9531d963d8cc47451503d",
 }
 PINNED_GRAPH_SHA256 = "67a582c803c7365429c1b30e97c33365a5c2e7081808759afa49dc8949923de7"
-PINNED_FULL_STUDENT_GRAPH_SHA256 = "57ab0a141a9bfc25c6da8d0568f14e0a8beaab2c0c3fd33931e51e2624a0b16f"
+PINNED_FULL_STUDENT_GRAPH_SHA256 = HISTORICAL_ABI.graph_sha256
 FAMILIES = (
     ("A.IDENTITY", "micro.compare.EQ", "bilqis_micro.kernel", "compare"),
     ("A.PARENT", "micro.relation.PARENT", "bilqis_micro.kernel", "relation"),

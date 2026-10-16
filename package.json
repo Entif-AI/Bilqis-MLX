@@ -20,6 +20,7 @@
     "grade-a:baseline": "python3 -B -m bilqis_mlx.grade_a_baseline --legacy-code-root ../bilqis-triplets-v16 --champion-checkpoint ../bilqis-triplets-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt --grade-a-manifest docs/GRADE_A_CANDIDATE_MANIFEST_V2.json --device gpu",
     "mlx:qualify": "python3 -B -m bilqis_mlx.full_student_qualification --legacy-code-root ../bilqis-triplets-v16 --checkpoint ../bilqis-triplets-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt --grade-a-manifest docs/GRADE_A_CANDIDATE_MANIFEST_V2.json --verify-disposable-restart --device gpu",
     "vocabulary:preflight": "python3 -m bilqis_mlx.vocabulary_probe",
-    "tokens:atlas": "python3 -m bilqis_mlx.token_atlas"
+    "tokens:atlas": "python3 -m bilqis_mlx.token_atlas",
+    "abi:verify": "python3 -B scripts/check_historical_abi.py"
   }
 }

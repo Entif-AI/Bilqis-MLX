@@ -17,6 +17,7 @@ from pathlib import Path
 from .backup import digest_file
 from .grade_a_probe import PINNED_FULL_STUDENT_GRAPH_SHA256, read_sources
 from .source import AUDITED_PARENT
+from .semantics.abi import HISTORICAL_PREFIX_SIZE
 
 
 SCHEMA = "bilqis.mlx.predecessor-pedagogy/v2"
@@ -80,7 +81,7 @@ def _source_stack(root: Path):
     graph_sha = _digest(graph)
     if (graph_sha != PINNED_FULL_STUDENT_GRAPH_SHA256 or
             graph["tokens"][:len(earlier_graph["tokens"])] != earlier_graph["tokens"] or
-            len(graph["tokens"]) != 222):
+            len(graph["tokens"]) != HISTORICAL_PREFIX_SIZE):
         raise ValueError("PARITY_PINNED_FULL_STUDENT_GRAPH_DRIFT")
     full = dict(actual, **other_sources)
     return source, arithmetic, numbers, micro, graph, _digest({

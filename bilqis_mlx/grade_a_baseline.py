@@ -19,6 +19,7 @@ from .grade_a_manifest import verify_manifest
 from .grade_a_probe import candidate_course
 from .mlx_parity import forward
 from .source import AUDITED_PARENT
+from .semantics.abi import HISTORICAL_PREFIX_SIZE
 
 
 def _fixed_batch(rows: list[dict]):
@@ -67,7 +68,7 @@ def evaluate_parent(manifest: dict, legacy_root: Path, checkpoint: Path,
     model, optimizer, payload = load(checkpoint)
     model.eval()
     if (payload["config"]["precision"] != "fp32" or
-            len(payload["graph"]["tokens"]) != 222 or
+            len(payload["graph"]["tokens"]) != HISTORICAL_PREFIX_SIZE or
             tuple(STATES[:2]) != ("FALSE", "TRUE")):
         raise ValueError("GRADE_A_BASELINE_SOURCE_OR_LABEL_ABI_DRIFT")
     answer_ids = model.answer_ids.cpu().numpy().tolist()
@@ -117,7 +118,7 @@ def evaluate_parent(manifest: dict, legacy_root: Path, checkpoint: Path,
         "status": "HISTORICAL_STUDENT_READ_ONLY_CANDIDATE_GRADE_A_EXAM",
         "source_checkpoint_sha256": AUDITED_PARENT.sha256,
         "source_optimizer_step": AUDITED_PARENT.optimizer_step,
-        "source_token_count": 222,
+        "source_token_count": len(payload["graph"]["tokens"]),
         "source_manifest_sha256": manifest["manifest_sha256"],
         "exam_rubric_sha256": assessment.rubric_digest,
         "exam_count": len(raw),
