@@ -59,6 +59,14 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
+    def test_still_weak_capabilities_remain_eligible_for_the_second_round(self):
+        state = grade_loop(self.course, start_new(self.course, self.init), self.init)
+        scores = {f"a.{i}": (i, 8) for i in range(6)}
+        first = assess(self.course, state, snapshot(self.course, self.init, scores))
+        state = grade_loop(self.course, first, self.init)
+        second = assess(self.course, state, snapshot(self.course, self.init, scores))
+        self.assertEqual(second.queue, first.queue)
+
     def setUp(self):
         self.course = sample_course()
         self.init = cp("seed", 116760)

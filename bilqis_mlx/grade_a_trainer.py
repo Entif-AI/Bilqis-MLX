@@ -26,7 +26,7 @@ from .capability_frontier import (
     candidate_roles, historical_frontier, pinned, promote, retire_bundles,
 )
 from .disk import assert_headroom, headroom_snapshot
-from .generated_assessment import make_cohort, score as score_cohort
+from .generated_assessment import GRADE_TEST_LIFECYCLE, make_cohort, score as score_cohort
 from .grade_a_manifest import verify_manifest
 from .grade_a_release import AUTHORITY, accepted_grade_a
 from .live_grade_a import (GENERATOR as LIVE_GENERATOR, RELEASE as LIVE_RELEASE,
@@ -814,6 +814,55 @@ def _verify_saved_cohort(run_dir, receipt, course):
                          seed=stored["seed"], rubric_version=release)
     if cohort.digest != sha:
         raise ValueError("HUMAN_TRAINER_SAVED_COHORT_CONTENT_DRIFT")
+    return cohort
+
+
+def _grade_test_cohort(run_dir, receipt, manifest, course, source_root, graph):
+    """Reuse the enrolled grade's test until passed; generate anew on a return."""
+    school = _state_from_json(receipt["school"], course)
+    rubric, release, generator, _ = _cohort_contract(course)
+    pointer = receipt.get("qualification_cohort")
+    if pointer is not None:
+        if (not isinstance(pointer, dict) or pointer.get("policy") != GRADE_TEST_LIFECYCLE or
+                type(pointer.get("grade_exam_epoch")) is not int):
+            raise ValueError("HUMAN_TRAINER_GRADE_TEST_POLICY_DRIFT")
+        if (pointer.get("assessment_grade") == school.grade and
+                pointer["grade_exam_epoch"] == school.grade_exam_epoch):
+            cohort = _verify_saved_cohort(run_dir, {**receipt, "last_exam": pointer}, course)
+            if cohort is None:
+                raise ValueError("HUMAN_TRAINER_GRADE_TEST_MISSING")
+            return cohort, pointer
+
+    # Adopt a saved failed exam when upgrading the old rotating-test trainer.
+    # The original immutable state and questions remain unchanged.
+    previous = receipt.get("last_exam") or {}
+    previous_grade = previous.get("assessment_grade")
+    if previous_grade is None:
+        for event in receipt.get("delivery_outbox", ()):
+            if (event.get("cohort_sha256") == previous.get("cohort_sha256") and
+                    event.get("optimizer_step") == previous.get("optimizer_step")):
+                previous_grade = event.get("grade")
+        if previous_grade is None and len(course.grades) == 1:
+            previous_grade = course.grades[0].id
+    own_caps = next(g.capabilities for g in course.grades if g.id == school.grade)
+    scores = previous.get("scores", {})
+    failed_current = (all(c.id in scores for c in own_caps) and
+                      any(scores[c.id]["correct"] < scores[c.id]["total"] for c in own_caps))
+    if (pointer is None and previous.get("cohort_sha256") and failed_current and
+            previous_grade == school.grade and
+            previous.get("grade_exam_epoch", 0) == school.grade_exam_epoch and
+            previous.get("exam_rubric_sha256") == rubric):
+        cohort = _verify_saved_cohort(run_dir, receipt, course)
+        cohort_file = previous["cohort_file"]
+    else:
+        seed = _seed(receipt, capability=f"GRADE_TEST:{school.grade}:{school.grade_exam_epoch}")
+        rows = _draw_live_rows(source_root, graph, seed=seed, course=course)
+        cohort = make_cohort(rows, generator_version=generator, seed=seed, rubric_version=release)
+        cohort_file = _persist_live_cohort(run_dir, manifest, course, cohort)
+    return cohort, {"policy": GRADE_TEST_LIFECYCLE, "assessment_grade": school.grade,
+                    "grade_exam_epoch": school.grade_exam_epoch,
+                    "cohort_sha256": cohort.digest, "cohort_file": cohort_file,
+                    "cohort_seed": cohort.seed}
 
 
 def _seed(receipt: dict, *, capability: str, step: int = 0) -> int:
@@ -1183,13 +1232,10 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     if not school.stage.startswith("ASSESS_"):
         raise ValueError("HUMAN_TRAINER_EXAM_OUTSIDE_SCHEDULED_BOUNDARY")
     rubric, release, generator, _ = _cohort_contract(course)
-    seed = _seed(receipt, capability="FULL_" + school.grade + "_LIVE_EXAM")
-    rows = _draw_live_rows(source_root, graph, seed=seed, course=course)
-    cohort = make_cohort(rows, generator_version=generator,
-                         seed=seed, rubric_version=release)
-    # The exact cohort is frozen for every whole-checkpoint comparison in this
-    # decision, then preserved for reproducibility and later teacher feedback.
-    cohort_file = _persist_live_cohort(run_dir, manifest, course, cohort)
+    cohort, qualification = _grade_test_cohort(
+        run_dir, receipt, manifest, course, source_root, graph)
+    seed, rows = cohort.seed, list(cohort.rows)
+    cohort_file = qualification["cohort_file"]
     guesses = _predictions(mx, parameters, rows,
                            receipt["config"], receipt["answer_ids"])
     school, frontier, roles, compared = _commit_scored_student(
@@ -1208,6 +1254,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     scores = {k: {"correct": v.correct, "total": v.total}
               for k, v in assessment.scores.items()}
     last_exam = {
+        "assessment_grade": school.grade,
+        "grade_exam_epoch": school.grade_exam_epoch,
+        "grade_test_lifecycle": GRADE_TEST_LIFECYCLE,
         "evaluation_id": assessment.evaluation_id,
         "exam_rubric_sha256": assessment.rubric_digest,
         "cohort_sha256": cohort.digest,
@@ -1227,6 +1276,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     failed_ids = {m["id"] for m in measured["misses_for_teacher"]}
     priority = [r for r in rows if r["id"] in failed_ids]
     migrated_receipt = {**receipt, "teacher_misses": priority,
+                        "qualification_cohort": qualification,
                         "teacher_miss_cursor": 0,
                         "legacy_frontier_pending_replay": False,
                         "live_rubric_sha256": assessment.rubric_digest}
@@ -1244,6 +1294,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "event": "GRADE_A_LIVE_EXAM_COMMITTED" if len(course.grades) == 1
                  else "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
         "grade": school.grade, "generation": result["generation"],
+        "grade_exam_epoch": school.grade_exam_epoch,
+        "grade_test_lifecycle": GRADE_TEST_LIFECYCLE,
         "scores": scores, "phase": advanced.stage,
         "student_sha256": assessment.checkpoint_sha256,
         "optimizer_step": assessment.optimizer_step,
@@ -1267,16 +1319,15 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
         return receipt
     school = _state_from_json(receipt["school"], course)
     rubric, release, generator, _ = _cohort_contract(course)
-    seed = _seed(receipt, capability="LIVE_WORKING_COMPARISON")
-    rows = _draw_live_rows(source_root, graph, seed=seed, course=course)
-    cohort = make_cohort(rows, generator_version=generator,
-                         seed=seed, rubric_version=release)
-    _persist_live_cohort(run_dir, manifest, course, cohort)
+    cohort, qualification = _grade_test_cohort(
+        run_dir, receipt, manifest, course, source_root, graph)
+    rows = list(cohort.rows)
     guesses = _predictions(mx, parameters, rows, receipt["config"], receipt["answer_ids"])
     current, frontier, roles, compared = _commit_scored_student(
         mx, run_dir, receipt, manifest, course, school, cohort, guesses,
         parameters, optimizer, graph, reserve_gib=reserve_gib)
     record = _advance(run_dir, {**receipt, "legacy_frontier_pending_replay": False,
+                                "qualification_cohort": qualification,
                                 "live_rubric_sha256": rubric},
                       current, frontier=frontier,
                       model_bundle=current.current_student.filename, persist=False)

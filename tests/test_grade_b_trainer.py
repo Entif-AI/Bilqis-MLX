@@ -381,6 +381,7 @@ class GradeBTrainerTests(unittest.TestCase):
             def perfect_oracle_predictions(mx,parameters,rows,config,answer_ids):
                 return {r["id"]:r["gold"] for r in rows}
 
+            qualification_cohorts = []
             for expected_grade in ("B","A","B"):
                 self.assertEqual(_state_from_json(receipt["school"],self.b_course).grade,
                                  expected_grade)
@@ -398,10 +399,13 @@ class GradeBTrainerTests(unittest.TestCase):
                         mx,root,receipt,self.manifest,self.b_course,
                         SOURCE_ROOT,CHECKPOINT,params,opt,graph,reserve_gib=0.)
                 exam = receipt["last_exam"]
+                qualification_cohorts.append(exam["cohort_sha256"])
                 self.assertEqual(len(exam["scores"]),12)
                 self.assertEqual(sum(s["total"] for s in exam["scores"].values()),144)
                 self.assertTrue(all(s["correct"] == s["total"] for s in exam["scores"].values()))
                 self.assertEqual(len(exam["cohort_sha256"]),64)
+            self.assertEqual(len(set(qualification_cohorts)), 3,
+                             "Every grade enrollment, including a revisit, gets a new test")
             final = _state_from_json(receipt["school"],self.b_course)
             self.assertEqual(final.stage,"AWAITING_NEXT_GRADE")
             self.assertEqual(final.active_grades,("A","B"))

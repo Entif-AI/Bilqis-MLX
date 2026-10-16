@@ -300,8 +300,8 @@ class GradeATrainerContractTests(unittest.TestCase):
                     completed = _take_exam(
                         mx, run_dir, completed, manifest, course, ROOT, SOURCE,
                         params, opt, graph, reserve_gib=0.)
-                self.assertNotEqual(completed["last_exam"]["cohort_sha256"],
-                                    saved_cohort["cohort_sha256"])
+                self.assertEqual(completed["last_exam"]["cohort_sha256"],
+                                 saved_cohort["cohort_sha256"])
                 self.assertEqual(len(completed["last_exam"]["incumbent_comparisons"]), 1)
                 self.assertEqual(completed["last_exam"]["incumbent_comparisons"][0]["cohort_sha256"],
                                  completed["last_exam"]["cohort_sha256"])

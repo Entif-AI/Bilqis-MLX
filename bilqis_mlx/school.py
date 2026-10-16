@@ -106,6 +106,8 @@ class SchoolState:
     # A newly graduated grade B or later triggers an ordered A..grade replay.
     # Optional so saved letter-grade/v1 and human-run states remain readable.
     revalidation_target_grade: str | None = None
+    # A pass ends one enrollment. A return to the grade owns a fresh test.
+    grade_exam_epoch: int = 0
 
     @property
     def grade(self) -> str:
@@ -147,7 +149,8 @@ def verify_state(course: Course, state: SchoolState):
         raise ValueError("INVALID_GRADE_PROGRAM_OR_CHAMPIONS")
     if any(cap not in _score_pool(course, state) for cap in state.queue + state.first_recovery):
         raise ValueError("QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES")
-    if state.visits < 0 or state.school_cycles < 1:
+    if (state.visits < 0 or state.school_cycles < 1 or
+            type(state.grade_exam_epoch) is not int or state.grade_exam_epoch < 0):
         raise ValueError("INVALID_SCHOOL_COUNTER")
     if state.revalidation_target_grade is not None:
         if (state.revalidation_target_grade not in state.active_grades[1:] or
@@ -292,13 +295,14 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
             state.latest_rubric_digest != snapshot.rubric_digest):
         raise ValueError("ASSESSMENT_RUBRIC_CHANGED_MID_COURSE")
     if _perfect_in_grade(course, state.grade, snapshot.scores):
-        return _promote(course, state, snapshot)
+        return replace(_promote(course, state, snapshot),
+                       grade_exam_epoch=state.grade_exam_epoch + 1)
     if state.stage == "ASSESS_MAIN":
         trio = weakest_three(snapshot.scores, pool)
         return replace(state, stage="RECOVERY_1", queue=trio,
                        first_recovery=trio, latest_rubric_digest=snapshot.rubric_digest)
     if state.stage == "ASSESS_RECOVERY_1":
-        trio = weakest_three(snapshot.scores, pool, exclude=state.first_recovery)
+        trio = weakest_three(snapshot.scores, pool)
         return replace(state, stage="RECOVERY_2", queue=trio,
                        latest_rubric_digest=snapshot.rubric_digest)
     return replace(state, stage="MAIN", queue=_caps(course, (state.grade,)),
@@ -331,6 +335,7 @@ def append_next_grade(previous: Course, successor: Course,
     if added in state.champions:
         raise ValueError("GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS")
     return replace(state, course_digest=successor.digest(),
+                   grade_exam_epoch=state.grade_exam_epoch + 1,
                    active_grades=successor_ids,
                    grade_index=len(previous.grades), stage="MAIN",
                    queue=_caps(successor, (added,)), first_recovery=(),
@@ -350,6 +355,7 @@ def continue_after_soup(course: Course, state: SchoolState,
         raise ValueError("TEACHER_SOUP_RECEIPT_MISSING")
     first = state.pending_failures[0]
     return replace(state, active_grades=state.pending_failures, grade_index=0,
+                   grade_exam_epoch=state.grade_exam_epoch + 1,
                    queue=_caps(course, (first,)), first_recovery=(), stage="MAIN",
                    pending_failures=(), school_cycles=state.school_cycles+1,
                    revalidation_target_grade=None,
