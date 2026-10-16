@@ -13,6 +13,20 @@ import json
 from ..generated_assessment import make_cohort
 
 
+def _require_evidence_file(root: Path, path: Path) -> Path:
+    """The named run's evidence must be regular files, with no redirected parents."""
+    if not path.is_relative_to(root):
+        raise ValueError("DIAGNOSTIC_EVIDENCE_NOT_REGULAR")
+    cursor = root
+    for part in path.relative_to(root).parts:
+        cursor = cursor / part
+        if part == ".." or cursor.is_symlink():
+            raise ValueError("DIAGNOSTIC_EVIDENCE_NOT_REGULAR")
+    if not path.is_file():
+        raise ValueError("DIAGNOSTIC_EVIDENCE_NOT_REGULAR")
+    return path
+
+
 @dataclass(frozen=True)
 class CapabilityObservation:
     capability: str
@@ -176,6 +190,7 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
     path = Path(state_file) if state_file is not None else root / "state.json"
     if not path.resolve(strict=True).is_relative_to(root):
         raise ValueError("DIAGNOSTIC_STATE_OUTSIDE_RUN")
+    _require_evidence_file(root, path)
     receipt = json.loads(path.read_text(encoding="utf-8"))
     exam = receipt.get("last_exam")
     if not isinstance(exam, dict):
@@ -184,7 +199,7 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
     if (relative.as_posix() != "cohorts/" + str(exam.get("cohort_sha256")) + ".json" or
             relative.is_absolute() or ".." in relative.parts):
         raise ValueError("DIAGNOSTIC_COHORT_OUTSIDE_RUN")
-    cohort_file = (root / relative).resolve(strict=True)
+    cohort_file = _require_evidence_file(root, root / relative).resolve(strict=True)
     if not cohort_file.is_relative_to(root / "cohorts"):
         raise ValueError("DIAGNOSTIC_COHORT_OUTSIDE_RUN")
     if path.parent == root / "states":
@@ -208,7 +223,9 @@ def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B") -> tup
     observations = []
     seen = set()
     run_id = None
-    for line in (root / "events.jsonl").read_text(encoding="utf-8").splitlines():
+    last_generation = last_step = -1
+    ledger = _require_evidence_file(root, root / "events.jsonl")
+    for line in ledger.read_text(encoding="utf-8").splitlines():
         event = json.loads(line)
         if event.get("event") not in ("GRADE_A_LIVE_EXAM_COMMITTED",
                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED"):
@@ -218,6 +235,8 @@ def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B") -> tup
         generation = event.get("generation")
         if type(generation) is not int or generation < 0 or generation in seen:
             raise ValueError("DIAGNOSTIC_EVENT_GENERATION_DRIFT")
+        if generation <= last_generation:
+            raise ValueError("DIAGNOSTIC_NON_MONOTONIC_EVENT_HISTORY")
         seen.add(generation)
         saved = root / "states" / f"{generation:07d}.json"
         obs = load_saved_exam(root, state_file=saved)
@@ -247,5 +266,8 @@ def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B") -> tup
                 {cap.capability: {"correct": cap.correct, "total": cap.total}
                  for cap in obs.capabilities} != event.get("scores")):
             raise ValueError("DIAGNOSTIC_EVENT_STATE_CONFLICT")
+        if obs.optimizer_step <= last_step:
+            raise ValueError("DIAGNOSTIC_NON_MONOTONIC_CHECKPOINT_HISTORY")
+        last_generation, last_step = generation, obs.optimizer_step
         observations.append(obs)
     return tuple(observations)

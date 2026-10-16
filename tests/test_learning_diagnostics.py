@@ -93,6 +93,12 @@ class DiagnosticObservationTests(unittest.TestCase):
             diagnose_history((observe_binary_exam(cohort1, last1),
                               observe_binary_exam(cohort2, last2)))
 
+    def test_checkpoint_order_is_evidence_and_must_not_be_sorted(self):
+        a = observe_binary_exam(*constructed_exam(predicted=("FALSE",) * 12, seed=8))
+        b = observe_binary_exam(*constructed_exam(predicted=("FALSE",) * 12, seed=7))
+        with self.assertRaisesRegex(ValueError, "NON_MONOTONIC"):
+            diagnose_history((a, b))
+
     def test_recent_persistent_failure_survives_an_older_good_score(self):
         good, good_last = constructed_exam(predicted=("FALSE", "TRUE") * 6, seed=6)
         bad1, last1 = constructed_exam(predicted=("FALSE",) * 12, seed=7)

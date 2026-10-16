@@ -119,12 +119,14 @@ def diagnose_history(observations: Iterable[ExamObservation]) -> tuple[Diagnosti
     No inference of durable forgetting can follow from independently sampled
     exam scores without evidence of what was actually taught in between.
     """
-    history = tuple(sorted(observations, key=lambda obs: obs.optimizer_step))
+    history = tuple(observations)
     if len({o.cohort_sha256 for o in history}) != len(history):
         raise ValueError("DIAGNOSTIC_REPEATED_COHORT_IS_NOT_NEW_EVIDENCE")
     if (len({o.optimizer_step for o in history}) != len(history) or
             len({o.student_sha256 for o in history}) != len(history)):
         raise ValueError("DIAGNOSTIC_REPEATED_CHECKPOINT_IS_NOT_A_LEARNING_TRAJECTORY")
+    if any(b.optimizer_step <= a.optimizer_step for a, b in zip(history, history[1:])):
+        raise ValueError("DIAGNOSTIC_NON_MONOTONIC_CHECKPOINT_HISTORY")
     if len({o.inventory for o in history}) > 1:
         raise ValueError("DIAGNOSTIC_INVENTORY_DRIFT")
     if len({o.run_id for o in history}) > 1:

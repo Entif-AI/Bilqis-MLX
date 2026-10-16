@@ -43,6 +43,40 @@ def snapshot(root):
 
 
 class DiagnosticAuditTests(unittest.TestCase):
+    def test_regressing_history_is_rejected_instead_of_sorted(self):
+        from bilqis_mlx.diagnostics.audit import audit_saved_run
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            save_exam(root, 1, 8, outbox=True)
+            save_exam(root, 2, 7, outbox=True)
+            with self.assertRaisesRegex(ValueError, "NON_MONOTONIC"):
+                audit_saved_run(root)
+
+    def test_current_pointer_cannot_hide_a_later_committed_exam(self):
+        from bilqis_mlx.diagnostics.audit import audit_saved_run
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            save_exam(root, 1, 7, outbox=True)
+            old = (root / "state.json").read_bytes()
+            save_exam(root, 2, 8, outbox=True)
+            (root / "state.json").write_bytes(old)
+            with self.assertRaisesRegex(ValueError, "LATEST_EXAM_NOT_IN_COMMITTED_HISTORY"):
+                audit_saved_run(root)
+
+    def test_symlinks_cannot_replace_immutable_evidence(self):
+        from bilqis_mlx.diagnostics.audit import audit_saved_run
+        for name in ("state.json", "states/0000001.json", "events.jsonl", "cohort"):
+            with self.subTest(file=name), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                save_exam(root, 1, 7, outbox=True)
+                path = (next((root / "cohorts").iterdir()) if name == "cohort"
+                        else root / name)
+                copy = path.with_name(path.name + ".preserved")
+                copy.write_bytes(path.read_bytes())
+                path.unlink()
+                path.symlink_to(copy)
+                with self.assertRaisesRegex(ValueError, "EVIDENCE_NOT_REGULAR"):
+                    audit_saved_run(root)
     def test_latest_pointer_cannot_borrow_another_runs_exam_history(self):
         from bilqis_mlx.diagnostics.audit import audit_saved_run
         with tempfile.TemporaryDirectory() as temp:

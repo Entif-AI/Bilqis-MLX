@@ -5,7 +5,7 @@ from dataclasses import asdict, replace
 import hashlib
 from pathlib import Path
 
-from .observations import load_archived_exam_history, load_saved_exam
+from .observations import _require_evidence_file, load_archived_exam_history, load_saved_exam
 from .signals import DiagnosticStatus, diagnose_exam, diagnose_history
 
 
@@ -21,6 +21,8 @@ def audit_saved_run(run_dir: Path) -> dict:
     """
     root = Path(run_dir).resolve(strict=True)
     paths = (root / "state.json", root / "events.jsonl")
+    for path in paths:
+        _require_evidence_file(root, path)
 
     def identities():
         return tuple(hashlib.sha256(p.read_bytes()).hexdigest() for p in paths)
@@ -31,11 +33,9 @@ def audit_saved_run(run_dir: Path) -> dict:
     comparable = tuple(obs for obs in history if obs.contract == latest.contract)
     if any(obs.inventory != latest.inventory for obs in comparable):
         raise ValueError("DIAGNOSTIC_INVENTORY_DRIFT")
-    matched = next((obs for obs in comparable
-                    if replace(obs, event_outbox_verified=False) == latest), None)
-    if matched is None:
+    if not comparable or replace(comparable[-1], event_outbox_verified=False) != latest:
         raise ValueError("DIAGNOSTIC_LATEST_EXAM_NOT_IN_COMMITTED_HISTORY")
-    latest = matched
+    latest = comparable[-1]
     findings = diagnose_exam(latest)
     longitudinal = diagnose_history(comparable)
     if identities() != before:
