@@ -1,0 +1,163 @@
+{
+  "schema": "bilqis.research.upstream-method-trace/v1",
+  "created": "2026-10-16",
+  "status": "research",
+  "governing_spec": "05_BEHAVIORAL_CONTRACT_V1.md",
+  "note": "Research source IDs are not Bilqis semantic IDs. This ledger describes independently reusable behaviors, not copied source implementations.",
+  "sources": [
+    {
+      "id": "S01",
+      "repo": "pietrobarbiero/logic_explained_networks",
+      "commit": "5d36cebeead6958490cc27f797c331468eb9238b",
+      "files": ["lens/logic/explain.py", "lens/logic/eval.py"],
+      "mechanisms": ["symbolic_explanation_extraction", "neural_rule_fidelity"],
+      "contracts": ["C08", "C16", "C19"],
+      "method": "NEURAL_RULE_FIDELITY",
+      "use": "optional_shaded_read_only_diagnostic",
+      "proof_needed": "Compare source-oracled gold, actual student predictions and extracted rule on identical cohort"
+    },
+    {
+      "id": "S02",
+      "repo": "Mr-TalhaIlyas/REASON",
+      "commit": "3c178c6cf0a80fbd97c9855b480a80f80f7677fa",
+      "files": ["model/crl/components.py"],
+      "mechanisms": ["differentiable_logical_composition", "rule_extraction", "concept_binarization"],
+      "contracts": ["C19"],
+      "method": "NEURAL_RULE_FIDELITY",
+      "use": "disposable_neural_research_lane_only",
+      "proof_needed": "Independent isolated training comparison before any model architecture decision"
+    },
+    {
+      "id": "S03",
+      "repo": "SavinRazvan/knights",
+      "commit": "171ffe34ee2fed5d70268d7fb0aac6e8064f7885",
+      "files": ["logic.py"],
+      "mechanisms": ["composable_boolean_expression_ast", "model_check"],
+      "contracts": ["C04", "C10", "C14"],
+      "method": "BOOLEAN_LIFT",
+      "use": "behavioral_reference",
+      "proof_needed": "Typed AST agreement under finite exhaustive Boolean models"
+    },
+    {
+      "id": "S04",
+      "repo": "Zangir/SymStep",
+      "commit": "8b7091c67b07d578878063bc3b0109365dc7341b",
+      "files": ["graphstep/engine/core.py", "graphstep/engine/constraints.py", "graphstep/engine/ir.py", "experiments/symstep.py"],
+      "mechanisms": ["constraint_propagation", "deduction_validation", "contradiction_ledger", "reified_constraints"],
+      "contracts": ["C07", "C13", "C14"],
+      "method": "CONSTRAINT_PROPAGATION",
+      "use": "finite_constraint_backend_candidate",
+      "proof_needed": "Cross-check solved and unsatisfiable instances against independent finite model"
+    },
+    {
+      "id": "S05",
+      "repo": "jongwonryu/dyna-skill",
+      "commit": "e2c5561a7aa46ce3b290e25eea3debb950ffc942",
+      "files": ["scripts/generate_graph.py"],
+      "mechanisms": ["graph_relation_proposal", "resumable_generation"],
+      "contracts": ["C09", "C20"],
+      "method": "GRAPH_PROPOSAL",
+      "use": "untrusted_candidate_source_only",
+      "proof_needed": "Source-attest each proposed edge before admission; demonstrate deterministic replay"
+    },
+    {
+      "id": "S06",
+      "repo": "namanshukla93/ai-math-tutor",
+      "commit": "d5392076c66870925345a5e0ac3be9d0f0bfe6b2",
+      "files": ["formula_book.py"],
+      "mechanisms": ["concept_formula_catalog", "human_readable_pedagogical_notes"],
+      "contracts": ["C01", "C11"],
+      "method": "source_candidate_ingestion",
+      "use": "research_reference_for_catalog_content",
+      "proof_needed": "Validate every formula against formal source before generating a lesson"
+    },
+    {
+      "id": "S07",
+      "repo": "ApplePiesFromScratch/math-of-logic",
+      "commit": "94526ce6ee110d1464c7157c1bf994dbbba46b25",
+      "files": ["pl/PROCESS.py", "README.md"],
+      "mechanisms": ["bounded_certificate", "falsifier", "admissibility", "vacuity_check"],
+      "contracts": ["C07", "C12", "C13"],
+      "method": "SCOPED_CERTIFICATE",
+      "use": "certificate_pattern",
+      "proof_needed": "Explicit input domain, discharged cases, counterexample, UNKNOWN on insufficient coverage"
+    },
+    {
+      "id": "S08",
+      "repo": "hjbolus/Mathematical-Logic-Through-Python",
+      "commit": "cc7fe8275545bec0236c007670f154b1ecf388c3",
+      "files": ["propositions/semantics.py"],
+      "mechanisms": ["recursive_formula_evaluation", "model_enumeration", "truth_tables", "tautology_satisfiability"],
+      "contracts": ["C10", "C14"],
+      "method": "BOOLEAN_LIFT",
+      "use": "behavioral_reference",
+      "proof_needed": "Exhaustive valuations for supported Boolean arity and comparison to source-defined operation"
+    },
+    {
+      "id": "S09",
+      "repo": "Datamance/Mathematical-Logic-Through-Python",
+      "commit": "99b7ebf3c8a6d191a6d67fdd296e5135623b1531",
+      "files": ["predicates/semantics.py"],
+      "mechanisms": ["finite_universe_model", "relation_function_interpretations", "bound_variable_scope"],
+      "contracts": ["C03", "C14"],
+      "method": "FINITE_QUANTIFIER",
+      "use": "structural_reference_only",
+      "proof_needed": "Implement and validate missing evaluation methods in independent adapter"
+    },
+    {
+      "id": "S10",
+      "repo": "kakwa/pylogic",
+      "commit": "46b6cfecca7ccb74b8caae054464d8092b40c97b",
+      "files": ["src/pylogic/logic.py"],
+      "mechanisms": ["predicate_callable_registration", "arity_constraints", "finite_domain_validation"],
+      "contracts": ["C04", "C06", "C14"],
+      "method": "PARTIAL_APPLICATION",
+      "use": "public_api_design_reference",
+      "proof_needed": "Typed registrable callable, curry equivalence, source-world preservation"
+    },
+    {
+      "id": "S11",
+      "repo": "sympy/sympy",
+      "commit": "9350380769d772f6fb320052214afc2d488a41a3",
+      "files": ["sympy/logic/boolalg.py"],
+      "mechanisms": ["symbolic_boolean_algebra", "equivalence", "simplification"],
+      "contracts": ["C06", "C10", "C13"],
+      "method": "ALGEBRAIC_REWRITE",
+      "use": "installed_dependency_candidate",
+      "proof_needed": "Independent truth-table oracle agreement on source-attested Boolean operators"
+    },
+    {
+      "id": "S12",
+      "repo": "Z3Prover/z3",
+      "commit": "01614435dcc4f6588c6d3a94a94c908f4ce1ef73",
+      "files": ["src/api"],
+      "mechanisms": ["satisfiability", "countermodels", "constraint_reasoning"],
+      "contracts": ["C10", "C13", "C14"],
+      "method": "CONSTRAINT_PROPAGATION",
+      "use": "optional_dependency_candidate",
+      "proof_needed": "Native install compatibility and counterexample agreement; UNKNOWN on timeout"
+    },
+    {
+      "id": "S13",
+      "repo": "HypothesisWorks/hypothesis",
+      "commit": "ba6c3e39cf741c226412194acc21ab719a35f6e7",
+      "files": ["hypothesis"],
+      "mechanisms": ["property_based_testing", "recursive_data_generation", "shrinking"],
+      "contracts": ["C11", "C12", "C20"],
+      "method": "mutation_fixture_generation",
+      "use": "test_dependency_candidate",
+      "proof_needed": "Deterministic scoped seed recipes for live teaching independent of test-runner internals"
+    },
+    {
+      "id": "S14",
+      "repo": "networkx/networkx",
+      "commit": "6da4704cbf32ba6f50f6d9c46cc0a071e3a87985",
+      "files": ["networkx/algorithms/dag.py"],
+      "mechanisms": ["dependency_closure", "topological_ordering", "cycle_detection"],
+      "contracts": ["C09", "C12", "C20"],
+      "method": "dependency_planning",
+      "use": "installed_dependency_candidate",
+      "proof_needed": "Cycle, rename and selective invalidation against synthetic graph"
+    }
+  ]
+}
