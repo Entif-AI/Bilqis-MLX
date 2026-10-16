@@ -10,6 +10,7 @@ from .disk import assert_headroom
 from .source import AUDITED_PARENT
 from .grade_a_release import RELEASE as GRADE_A_RELEASE
 from .live_grade_a import RELEASE as LIVE_GRADE_A_RELEASE
+from .live_grade_b import RELEASE as LIVE_GRADE_B_RELEASE
 from .spiral_dashboard import Dashboard, TABLES
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,7 +48,7 @@ def _latest_session_stop(run_dir: Path, generation: int, step: int) -> dict | No
     if not lines:
         return None
     event = json.loads(lines[-1])
-    if (event.get("event") != "GRADE_A_SESSION_STOPPED" or
+    if (event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED") or
             event.get("generation") != generation or
             event.get("optimizer_step") != step):
         return None
@@ -86,12 +87,16 @@ def _inspect(run_dir: Path) -> dict:
                 "last_exam": saved["last_exam"],
                 "last_session_stop": _latest_session_stop(
                     run_dir, saved["generation"], student["optimizer_step"]),
-                "grade_a_release": saved.get("curriculum_mode") or GRADE_A_RELEASE,
+                "grade_a_release": LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE else saved.get("curriculum_mode") or GRADE_A_RELEASE,
                 "historical_source_release": GRADE_A_RELEASE,
-                "grade_a_curriculum_mode": saved.get("curriculum_mode", "HISTORICAL_FIXED_72"),
+                "grade_a_curriculum_mode": (LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE
+                                             else saved.get("curriculum_mode", "HISTORICAL_FIXED_72")),
+                "grade_b_curriculum_mode": LIVE_GRADE_B_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE else None,
+                "grade_b_source_admitted": saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE,
                 "assessment_cohort_sha256": (saved.get("last_exam") or {}).get("cohort_sha256"),
                 "source_grounded_grade_a_admitted": True,
                 **_qualification_scope(),
+                "human_live_grade_a_trainer_end_to_end_qualified": "A" in school["champions"],
                 "neural_training_started_by_this_command": False,
                 "run_dir": str(run_dir),
             }
@@ -145,6 +150,23 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False):
                      "experimental_risks":["FIRST_HUMAN_RUN_NOT_YET_OBSERVED",
                                            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"],
                      "operator_constraint":"HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES"})
+    if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE" and snapshot.get("grade") == "A":
+        # Announce the actual next semantic release before the human operates.
+        # This compiles/verifies source only; no checkpoint is opened for edits.
+        from .grade_a_release import accepted_grade_a
+        from .live_grade_a import live_course as admitted_a
+        from .live_grade_b import live_course as admitted_b
+        manifest = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
+        next_course = admitted_b(admitted_a(accepted_grade_a(manifest)),LEGACY_ROOT)
+        snapshot["start_behavior"] = "HUMAN_RESUME_ADMIT_B_FROM_MASTERY_A"
+        snapshot["next_grade"] = "B"
+        snapshot["next_grade_source_checked"] = next_course.executable
+        snapshot["next_grade_rubric_sha256"] = next_course.grades[-1].assessment_sha256
+        snapshot["next_grade_complete_assessment_items"] = sum(
+            count for grade in next_course.grades for _, count in grade.exam_item_counts)
+        snapshot["experimental_risks"] = [
+            "GRADE_B_REAL_STUDENT_CONVERGENCE_NOT_YET_OBSERVED",
+            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"]
     snapshot["grade_a_source_manifest"] = "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
     if verify_source:
         from .grade_a_manifest import verify_manifest
@@ -175,7 +197,10 @@ def human_stop_summary(result: dict) -> str:
     explanations = {
         "TIME_LIMIT_REACHED": "The requested time budget was reached.",
         "VISIT_LIMIT_REACHED": "The explicitly configured --max-visits cap was reached.",
-        "GRADE_A_AWAITING_NEXT_GRADE": "Grade A is mastered; awaiting an admitted next grade.",
+        "GRADE_A_AWAITING_NEXT_GRADE": "Grade A is mastered; the admitted Grade B starts when the human operator resumes.",
+        "GRADE_B_AWAITING_NEXT_GRADE": "Grades A and B passed cumulative revalidation; awaiting Grade C admission.",
+        "WHOLE_SCHOOL_MASTERED": "Every grade in the explicitly complete school program passed at one whole student.",
+        "AWAITING_TEACHER_SOUP": "Whole-school consolidation requires a separately verified frozen teacher-soup continuation.",
         "DISK_RESERVE_REACHED": "Free space cannot cover the protected disk reserve plus another checkpoint.",
     }
     reason = result["stop_reason"]
@@ -189,7 +214,8 @@ def human_stop_summary(result: dict) -> str:
                     f"{result['disk_reserve_gib']:.1f} GiB reserve + "
                     f"{result['disk_next_visit_gib']:.2f} GiB estimated next checkpoint. "
                     "No checkpoint cleanup or reserve reduction was performed.")
-    if reason != "GRADE_A_AWAITING_NEXT_GRADE":
+    if reason not in ("GRADE_A_AWAITING_NEXT_GRADE", "GRADE_B_AWAITING_NEXT_GRADE",
+                      "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
         message += "\nTo continue: npm run train -- --human-run --resume --minutes 90"
     return message + "\nHistorical dashboard: npm run dashboard"
 

@@ -12,6 +12,7 @@ from .school_telemetry import SchoolTelemetry, LETTER_TABLES
 from .disk import headroom_snapshot
 from .source import AUDITED_PARENT
 from .live_grade_a import RELEASE as LIVE_GRADE_A_RELEASE
+from .live_grade_b import RELEASE as LIVE_GRADE_B_RELEASE
 from .spiral_dashboard import Dashboard
 
 
@@ -43,9 +44,11 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
                   "grade": current_grade, **{k: budget[k] for k in
                   ("free_bytes", "reserve_bytes", "estimated_write_bytes")}})
     board.push("system", {"kind": "SOURCE", "detail": "Source-bound FP32 + own AdamW | immutable receipts"}, redraw=False)
-    live = not state or state.get("curriculum_mode") == LIVE_GRADE_A_RELEASE
+    is_b = bool(state and state.get("curriculum_mode") == LIVE_GRADE_B_RELEASE)
+    live = not state or state.get("curriculum_mode") in (LIVE_GRADE_A_RELEASE, LIVE_GRADE_B_RELEASE)
     board.push("system", {"kind": "RUBRIC", "detail":
-               ("Grade A: generated 72 source-oracled items per cohort; 100% one checkpoint"
+               ("Grades A+B: generated 144 source-oracled items; same-checkpoint cumulative 100%"
+                if is_b else "Grade A: generated 72 source-oracled items per cohort; 100% one checkpoint"
                 if live else "Historical Grade A frozen 72-item rubric; 100% one checkpoint")},
                redraw=False)
     if live and state and (state.get("last_exam") or {}).get("cohort_sha256"):

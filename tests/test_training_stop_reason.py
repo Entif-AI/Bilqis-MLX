@@ -37,6 +37,15 @@ class HumanSessionStopTests(unittest.TestCase):
         self.assertEqual(session_stop_reason(stage="AWAITING_NEXT_GRADE",
                          elapsed_seconds=20, minutes=90, visits=2, max_visits=48),
                          "GRADE_A_AWAITING_NEXT_GRADE")
+        self.assertEqual(session_stop_reason(stage="AWAITING_NEXT_GRADE",
+                         elapsed_seconds=20, minutes=90, visits=2, max_visits=48,
+                         grade="B"),"GRADE_B_AWAITING_NEXT_GRADE")
+        self.assertEqual(session_stop_reason(stage="WHOLE_SCHOOL_MASTERED",
+                         elapsed_seconds=0,minutes=90,visits=0,max_visits=0),
+                         "WHOLE_SCHOOL_MASTERED")
+        self.assertEqual(session_stop_reason(stage="AWAITING_TEACHER_SOUP",
+                         elapsed_seconds=0,minutes=90,visits=0,max_visits=0),
+                         "AWAITING_TEACHER_SOUP")
 
     def test_durable_stop_event_appears_in_snapshot_after_exit(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -63,6 +72,12 @@ class HumanSessionStopTests(unittest.TestCase):
         self.assertIn("--human-run --resume", summary)
         result["stop_reason"] = "GRADE_A_AWAITING_NEXT_GRADE"
         self.assertNotIn("--human-run --resume", human_stop_summary(result))
+        result["stop_reason"] = "GRADE_B_AWAITING_NEXT_GRADE"
+        self.assertIn("awaiting Grade C",human_stop_summary(result))
+        self.assertNotIn("--human-run --resume",human_stop_summary(result))
+        result["stop_reason"] = "AWAITING_TEACHER_SOUP"
+        self.assertIn("separately verified",human_stop_summary(result))
+        self.assertNotIn("--human-run --resume",human_stop_summary(result))
 
     def test_disk_budget_breach_is_proven_without_writing_any_checkpoint(self):
         # 100.28 GiB free is insufficient for 100 GiB reserve + 600 MB.

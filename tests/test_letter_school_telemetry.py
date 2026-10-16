@@ -42,6 +42,63 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertIn("BEST OBSERVED SAMPLE (not paired)", rendered)
             self.assertIn("fresh sampled cohort", rendered)
 
+    def test_both_grades_use_live_144_item_cohorts_without_unpaired_gains(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp),stream=io.StringIO())
+            for index, a_score, b_score in ((1,65,41),(2,70,49)):
+                ingest(board,{"event":"SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+                    "grade":"B", "generation":index,
+                    "rubric":"b"*64, "cohort_sha256":str(index)*64,
+                    "generator_version":"bilqis.mlx.grade-b-connectives-constructor/v1",
+                    "cohort_file":f"cohorts/{str(index)*64}.json",
+                    "optimizer_step":153144+index,
+                    "student_sha256":str(index)*64,
+                    "scores":{
+                        "A.IDENTITY":{"correct":a_score%12,"total":12},
+                        "A.PARENT":{"correct":a_score//12,"total":12},
+                        "B.NOT":{"correct":b_score%12,"total":12},
+                        "B.AND":{"correct":b_score//12,"total":12}},
+                })
+            mastery = {row["grade"]:row for row in
+                       board._section_rows("GRADES & MASTERY")}
+            self.assertEqual(set(mastery),{"A","B"})
+            self.assertEqual(mastery["B"]["latest"],"5/24")
+            self.assertEqual(board._section_rows("BRIDGE FAMILIES")[-1]["gain"],"-")
+            self.assertTrue(any("GENERATED COHORT" in event["evidence"] for event in
+                                board._section_rows("SENTINEL & RETENTION")))
+
+    def test_cumulative_backward_a_replay_shows_a_as_exam_target_not_b(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp),stream=io.StringIO())
+            ingest(board,{"event":"SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+                "grade":"A","phase":"MAIN","generation":27,
+                "rubric":"b"*64,"cohort_sha256":"8"*64,
+                "generator_version":"bilqis.mlx.grade-b-connectives-constructor/v1",
+                "cohort_file":f"cohorts/{'8'*64}.json",
+                "optimizer_step":154008,"student_sha256":"8"*64,
+                "scores":{"A.IDENTITY":{"correct":12,"total":12},
+                           "B.NOT":{"correct":9,"total":12}}})
+            self.assertEqual(board.school_telemetry.last_exam_grade,"A")
+            self.assertIn("LATEST A 12/12",board.operator_lines[0])
+            self.assertEqual(board.state["prefix"],"A")
+
+    def test_saved_b_grade_dashboard_shows_current_cumulative_contract(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            state = {"curriculum_mode":"bilqis.mlx.grade-a-b-live/20261015-v1",
+                "result":"GRADE_B_REVALIDATING_A", "teacher":{"events":4000},
+                "school":{"stage":"MAIN", "active_grades":["A","B"],
+                    "grade_index":0,"visits":1000,
+                    "current_student":{"optimizer_step":154000},
+                    "champions":{}},"last_exam":None}
+            (run/"state.json").write_text(json.dumps(state))
+            board = build(run,stream=io.StringIO())
+            source = next(row["detail"] for row in
+                          board.rows["SYSTEM & QUALIFICATION"]
+                          if row["kind"]=="RUBRIC")
+            self.assertIn("generated 144",source)
+            self.assertIn("same-checkpoint",source)
+
     def test_six_legacy_panel_names_remain_but_new_school_columns_are_useful(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

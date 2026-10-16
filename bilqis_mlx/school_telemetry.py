@@ -86,6 +86,9 @@ EVENT_KINDS = {
     "GRADE_A_TEACHER_VISIT_COMMITTED": "visit",
     "GRADE_A_EXAM_COMMITTED": "exam",
     "GRADE_A_LIVE_EXAM_COMMITTED": "exam",
+    "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED": "visit",
+    "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED": "exam",
+    "SCHOOL_GRADE_B_COURSE_ADMITTED": "init",
     "GRADE_A_SESSION_STOPPED": "stop",
     "SCHOOL_RUN_INITIALIZED": "init",
     "SCHOOL_VISIT_COMMITTED": "visit",
@@ -284,7 +287,8 @@ class SchoolTelemetry:
         checkpoint = event.get("student_sha256")
         if not checkpoint:
             raise ValueError("SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED")
-        live = event.get("event") == "GRADE_A_LIVE_EXAM_COMMITTED"
+        live = event.get("event") in ("GRADE_A_LIVE_EXAM_COMMITTED",
+                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED")
         cohort_sha = event.get("cohort_sha256") if live else None
         if live and (not isinstance(cohort_sha, str) or len(cohort_sha) != 64 or
                      not event.get("cohort_file") or not event.get("generator_version")):
@@ -324,7 +328,6 @@ class SchoolTelemetry:
                 self.best[key] = report
             best = self.best[key]
             self.latest[key] = report
-            self.last_exam_grade = g
             same_cohort = not live or self.exam_cohorts.get(key) == cohort_sha
             for cap, (score, count) in sorted(caps.items()):
                 baseline = self.first_cap.setdefault((cap, rubric), (score, count))
@@ -368,6 +371,10 @@ class SchoolTelemetry:
             })
             if live:
                 self.exam_cohorts[key] = cohort_sha
+        # The A+B cohort reports both rows, but the operator summary must
+        # identify the grade whose scheduled exam just completed, especially
+        # during the Billy Madison backward A replay.
+        self.last_exam_grade = grade
         self.board.state.update(phase=event.get("phase", self.board.state.get("phase")),
                                 prefix=grade, step=step)
         self._summary()

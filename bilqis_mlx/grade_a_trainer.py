@@ -31,11 +31,14 @@ from .grade_a_manifest import verify_manifest
 from .grade_a_release import AUTHORITY, accepted_grade_a
 from .live_grade_a import (GENERATOR as LIVE_GENERATOR, RELEASE as LIVE_RELEASE,
                            draw_predicates, live_course, generator_source_digest)
+from .live_grade_b import (GENERATOR as B_GENERATOR, RELEASE as B_RELEASE,
+                           draw_connectives, live_course as live_b_course,
+                           constructor_digest as b_constructor_digest)
 from .mlx_checkpoint import save_new_bundle, load_semantically_bound_bundle
 from .mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
-from .school import (start_new, visit, assess, next_capability, SchoolState,
-                     Assessment, Score)
+from .school import (start_new, visit, assess, next_capability, append_next_grade,
+                     teacher_vote_weights, SchoolState, Assessment, Score)
 from .source import AUDITED_PARENT
 
 VERSION = "bilqis.mlx.human-grade-a-trainer/v1"
@@ -235,6 +238,70 @@ def missed_lesson_window(missed: list[dict], cursor: int, capacity: int) -> list
     return [missed[(cursor + i) % len(missed)] for i in range(count)]
 
 
+def champion_directed_lessons(chosen: list[dict], candidates: list[dict],
+                              votes: dict[str, int], *, capacity: int) -> list[dict]:
+    """Let prior-grade champion votes nominate teaching rows, never golds.
+
+    Each retained grade is one vote for practicing a source-verifiably missed
+    construction. Keep the policy's existing TRUE/FALSE balance unchanged.
+    """
+    if capacity < 0 or len({r["id"] for r in candidates}) != len(candidates):
+        raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_INPUT_INVALID")
+    if any(type(count) is not int or count < 0 for count in votes.values()):
+        raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_COUNT_INVALID")
+    result = list(chosen)
+    used = set()
+    for example in sorted(candidates, key=lambda r: (-votes.get(r["id"], 0), r["id"])):
+        if not votes.get(example["id"]) or len(used) >= capacity:
+            break
+        if any(row["id"] == example["id"] for row in result):
+            continue
+        location = next((i for i, row in enumerate(result)
+                         if i not in used and row["gold"] == example["gold"]), None)
+        if location is not None:
+            result[location] = example
+            used.add(location)
+    return result
+
+
+def _champion_teacher_votes(mx, run_dir: Path, school: SchoolState, course,
+                            rows: list[dict], graph, config, answer_ids) -> dict[str, int]:
+    """Score frozen, own-optimizer grade champions as teachers, not students.
+
+    Load each distinct bundle once. Every grade pointer contributes a vote,
+    including when several grade pointers identify the same physical bundle.
+    Champion mistakes on source-oracle-verified lessons receive teaching
+    priority. Do not expose these guesses as examination answers.
+    """
+    weights = teacher_vote_weights(course, school)
+    if not weights:
+        return {}
+    by_sha = {cp.sha256: cp for cp in school.champions.values()}
+    if set(weights) != set(by_sha):
+        raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_POINTER_DRIFT")
+    scores = {row["id"]: 0 for row in rows}
+    for sha, multiplicity in sorted(weights.items()):
+        pointer = by_sha[sha]
+        parts = Path(pointer.filename).parts
+        path = run_dir / pointer.filename
+        if (len(parts) != 2 or parts[0] != "bundles" or
+                parts[1] in (".", "..") or path.is_symlink() or
+                path.parent != run_dir / "bundles" or
+                not pointer.model_and_native_adamw):
+            raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_UNSAFE_CHECKPOINT")
+        parameters, optimizer, meta, loaded_graph = load_semantically_bound_bundle(path)
+        if (loaded_graph != graph or meta["safetensors_sha256"] != sha or
+                meta["optimizer_step"] != pointer.optimizer_step or
+                meta["source_digest"] != AUDITED_PARENT.sha256):
+            raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_CHECKPOINT_DRIFT")
+        guesses = _predictions(mx, parameters, rows, config, answer_ids)
+        for row in rows:
+            if guesses[row["id"]] != row["gold"]:
+                scores[row["id"]] += multiplicity
+        del parameters, optimizer
+    return scores
+
+
 def _train_step(mx, parameters, optimizer, rows, config, answer_ids):
     import numpy as np
     ids, lengths, labels = _make_batch(rows)
@@ -315,6 +382,9 @@ def _recover_orphaned_commit(run_dir: Path, latest: dict) -> dict:
     _durable_json(run_dir / "state.json", proposed, replace_existing=True)
     if json.loads((run_dir / "state.json").read_text()) != proposed:
         raise ValueError("HUMAN_TRAINER_RECOVERY_POINTER_NOT_DURABLE")
+    # Publish the recovered generation's original causal events before its
+    # recovery annotation, retaining a legible ordered School50 history.
+    _reconcile_delivery_outbox(run_dir, proposed)
     _record(run_dir, {"event": "SCHOOL_INTERRUPT_POINTER_RECOVERED", "grade": "A",
                       "generation": proposed["generation"],
                       "student_sha256": proposed["school"]["current_student"]["sha256"],
@@ -458,19 +528,21 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
         "result": "ACTIVE_GRADE_A",
         "last_exam": None,
     }
-    receipt = _persist(run_dir, receipt)
-    _record(run_dir, {"event": "GRADE_A_NEW_RUN_INITIALIZED", "generation": 1,
+    init_event = {"event": "GRADE_A_NEW_RUN_INITIALIZED", "generation": 1,
+                      "grade": "A",
                       "student": initial_pointer.sha256,
                       "optimizer_step": initial_pointer.optimizer_step,
                       "exam_rubric": course.grades[0].assessment_sha256,
                       "historical_rubric": manifest["exam_rubric_sha256"],
                       "generator_version": LIVE_GENERATOR,
                       "generator_code_sha256": generator_source_digest(),
-                      "source_version": course.version})
+                      "source_version": course.version}
+    receipt = _persist(run_dir, _with_delivery_outbox(receipt, (init_event,)))
+    _reconcile_delivery_outbox(run_dir, receipt)
     return parameters, optimizer, graph, receipt
 
 
-def _resume(run_dir, manifest, course, policy_sha):
+def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None):
     import mlx.core as mx
     path = run_dir / "state.json"
     if not path.is_file():
@@ -486,10 +558,17 @@ def _resume(run_dir, manifest, course, policy_sha):
                           "grade": "A", "generation": receipt["generation"],
                           **reconciled})
     receipt = _recover_orphaned_commit(run_dir, receipt)
-    old_mode = receipt.get("curriculum_mode") is None
-    old_course = accepted_grade_a(manifest) if old_mode else course
-    if not old_mode and receipt["curriculum_mode"] != LIVE_RELEASE:
+    saved_mode = receipt.get("curriculum_mode")
+    old_mode = saved_mode is None
+    if saved_mode not in (None, LIVE_RELEASE, B_RELEASE):
         raise ValueError("HUMAN_TRAINER_UNKNOWN_CURRICULUM_MODE")
+    old_course = (accepted_grade_a(manifest) if old_mode else
+                  live_course(accepted_grade_a(manifest)) if saved_mode == LIVE_RELEASE
+                  else successor_course if successor_course is not None else course)
+    if saved_mode == B_RELEASE and (len(old_course.grades) != 2 or
+                                    old_course.version != B_RELEASE or
+                                    receipt.get("grade_b_code_sha256") != b_constructor_digest()):
+        raise ValueError("HUMAN_TRAINER_GRADE_B_COURSE_NOT_LOADED")
     school = _state_from_json(receipt["school"], old_course)
     directory = (run_dir / receipt["model_bundle"]).resolve(strict=True)
     if directory.parent != (run_dir / "bundles").resolve(strict=True):
@@ -510,13 +589,13 @@ def _resume(run_dir, manifest, course, policy_sha):
                    f"{receipt['generation']:07d}.json").read_text()) != receipt:
         raise ValueError("HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED")
     if not old_mode:
-        _verify_saved_cohort(run_dir, receipt, course)
+        _verify_saved_cohort(run_dir, receipt, old_course)
     mx.eval(parameters, optimizer.state)
     if "capability_best" not in receipt:
         # Existing full-history run: reconstruct bests from actual sealed
         # checkpoint receipts before permitting reference-aware retirement.
-        counts = {cap.id: dict(course.grades[0].exam_item_counts)[cap.id]
-                  for cap in course.grades[0].capabilities}
+        counts = {cap.id: dict(old_course.grades[0].exam_item_counts)[cap.id]
+                  for cap in old_course.grades[0].capabilities}
         frontier = historical_frontier(
             run_dir, expected_rubric=manifest["exam_rubric_sha256"],
             expected_capabilities=counts)
@@ -540,7 +619,8 @@ def _resume(run_dir, manifest, course, policy_sha):
             school = replace(school, champions={}, stage="MAIN",
                              queue=tuple(c.id for c in course.grades[0].capabilities),
                              first_recovery=(), pending_failures=())
-        school = replace(school, course_digest=course.digest(),
+        school = replace(school, course_digest=old_course.digest() if not old_mode
+                         else course.digest(),
                          latest_rubric_digest=None)
         record = dict(receipt)
         record["historical_capability_best"] = legacy_frontier
@@ -560,6 +640,35 @@ def _resume(run_dir, manifest, course, policy_sha):
     # Also finishes a retirement interrupted after the prior state commit.
     _publish_boundary(run_dir, receipt, (), ())
     return parameters, optimizer, graph, receipt
+
+
+def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor):
+    """Preserve the already-mastered student and teacher at a grade boundary."""
+    school = _state_from_json(receipt["school"], previous_course)
+    if (not successor.executable or successor.version != B_RELEASE or
+            school.stage != "AWAITING_NEXT_GRADE" or
+            school.grade != "A" or "A" not in school.champions or
+            receipt.get("curriculum_mode") != LIVE_RELEASE):
+        raise ValueError("HUMAN_TRAINER_GRADE_B_ADMISSION_BOUNDARY_NOT_MET")
+    next_state = append_next_grade(previous_course, successor, school)
+    candidate = {**receipt, "curriculum_mode": B_RELEASE,
+                 "live_rubric_sha256": successor.grades[-1].assessment_sha256,
+                 "grade_b_code_sha256": b_constructor_digest()}
+    record = _advance(run_dir, candidate, next_state, result="ACTIVE_GRADE_B",
+                      persist=False)
+    admitted = {"event": "SCHOOL_GRADE_B_COURSE_ADMITTED",
+                      "generation": record["generation"], "grade": "B",
+                      "previous_cohort_sha256": (record.get("last_exam") or {}).get("cohort_sha256"),
+                      "grade_a_champion_sha256": school.champions["A"].sha256,
+                      "student_sha256": school.current_student.sha256,
+                      "optimizer_step": school.current_student.optimizer_step,
+                      "teacher_events": record["teacher"]["events"],
+                      "grade_b_rubric": successor.grades[-1].assessment_sha256,
+                      "grade_b_generator": B_GENERATOR,
+                      "model_and_own_adamw_unchanged": True}
+    record = _persist(run_dir, _with_delivery_outbox(record, (admitted,)))
+    _reconcile_delivery_outbox(run_dir, record)
+    return record
 
 
 def _verify_best_custody(run_dir, receipt):
@@ -614,26 +723,51 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
     return json.loads(_canonical(record))
 
 
-def _draw_live_rows(source_root, graph, *, seed, capability=None, each=12):
-    rows = draw_predicates(source_root, graph, seed=seed,
-                           capability=capability, each=each)
-    if capability is None:
-        expected = {cap: each for cap in (
-            "A.IDENTITY", "A.PARENT", "A.LINK", "A.MEMBER", "A.EDGE", "A.MAPS")}
-        actual = {cap: sum(r["capability"] == cap for r in rows) for cap in expected}
-        if actual != expected:
-            raise ValueError("HUMAN_TRAINER_LIVE_GRADE_NOT_COMPREHENSIVE")
+def _draw_live_rows(source_root, graph, *, seed, capability=None, each=12, course=None):
+    """Draw A only or cumulative A+B with identical source-oracle standards."""
+    scopes = ({"A"} if course is None else {grade.id for grade in course.grades})
+    if scopes not in ({"A"}, {"A", "B"}):
+        raise ValueError("HUMAN_TRAINER_UNADMITTED_GRADE_SOURCE")
+    selected = {capability.split(".", 1)[0]} if capability else scopes
+    if not selected <= scopes:
+        raise ValueError("HUMAN_TRAINER_CAPABILITY_NOT_IN_COURSE")
+    rows = []
+    if "A" in selected:
+        rows.extend(draw_predicates(source_root, graph, seed=seed,
+                                   capability=capability if capability else None, each=each))
+    if "B" in selected:
+        rows.extend(draw_connectives(source_root, graph, seed=seed,
+                                    capability=capability if capability else None, each=each))
+    expected = ({cap.id: each for grade in course.grades for cap in grade.capabilities}
+                if course else {cap: each for cap in (
+                  "A.IDENTITY", "A.PARENT", "A.LINK", "A.MEMBER", "A.EDGE", "A.MAPS")})
+    if capability:
+        expected = {capability: each}
+    actual = {cap: sum(r["capability"] == cap for r in rows) for cap in expected}
+    if actual != expected or len(rows) != sum(expected.values()):
+        raise ValueError("HUMAN_TRAINER_LIVE_GRADE_NOT_COMPREHENSIVE")
     return list(rows)
+
+
+def _cohort_contract(course):
+    if len(course.grades) == 1:
+        return course.grades[0].assessment_sha256, LIVE_RELEASE, LIVE_GENERATOR, generator_source_digest()
+    if len(course.grades) == 2 and course.grades[1].id == "B":
+        return course.grades[-1].assessment_sha256, B_RELEASE, B_GENERATOR, b_constructor_digest()
+    raise ValueError("HUMAN_TRAINER_UNADMITTED_GRADE_COHORT")
 
 
 def _persist_live_cohort(run_dir, manifest, course, cohort):
     """Make generation retry safe if a crash follows cohort publication."""
+    rubric, release, generator, code_sha = _cohort_contract(course)
+    if cohort.generator_version != generator or cohort.rubric_version != release:
+        raise ValueError("HUMAN_TRAINER_COHORT_VERSION_MISMATCH")
     path = run_dir / "cohorts" / (cohort.digest + ".json")
-    payload = {"schema": LIVE_RELEASE,
+    payload = {"schema": release,
                "source_manifest_sha256": manifest["manifest_sha256"],
-               "rubric_sha256": course.grades[0].assessment_sha256,
-               "generator_version": LIVE_GENERATOR,
-               "generator_code_sha256": generator_source_digest(),
+               "rubric_sha256": rubric,
+               "generator_version": generator,
+               "generator_code_sha256": code_sha,
                "seed": cohort.seed,
                "cohort_sha256": cohort.digest, "rows": list(cohort.rows)}
     if path.exists():
@@ -658,16 +792,25 @@ def _verify_saved_cohort(run_dir, receipt, course):
     if path.is_symlink() or not path.is_file():
         raise ValueError("HUMAN_TRAINER_SAVED_COHORT_MISSING")
     stored = json.loads(path.read_text())
-    if (stored.get("rubric_sha256") != course.grades[0].assessment_sha256 or
+    # The archived A cohort remains verifiable after explicitly admitting B;
+    # neither its historic source hash nor its old release bytes are rewritten.
+    prior_a = stored.get("schema") == LIVE_RELEASE
+    if prior_a:
+        rubric, release, generator, code_sha = (
+            course.grades[0].assessment_sha256, LIVE_RELEASE,
+            LIVE_GENERATOR, generator_source_digest())
+    else:
+        rubric, release, generator, code_sha = _cohort_contract(course)
+    if (stored.get("rubric_sha256") != rubric or
             stored.get("source_manifest_sha256") != receipt["source_manifest_sha256"] or
-            stored.get("generator_version") != LIVE_GENERATOR or
-            stored.get("generator_code_sha256") != generator_source_digest() or
+            stored.get("generator_version") != generator or
+            stored.get("generator_code_sha256") != code_sha or
             stored.get("cohort_sha256") != sha or
             stored.get("seed") != exam.get("cohort_seed") or
-            stored.get("schema") != LIVE_RELEASE):
+            stored.get("schema") != release):
         raise ValueError("HUMAN_TRAINER_SAVED_COHORT_METADATA_DRIFT")
-    cohort = make_cohort(stored["rows"], generator_version=LIVE_GENERATOR,
-                         seed=stored["seed"], rubric_version=LIVE_RELEASE)
+    cohort = make_cohort(stored["rows"], generator_version=generator,
+                         seed=stored["seed"], rubric_version=release)
     if cohort.digest != sha:
         raise ValueError("HUMAN_TRAINER_SAVED_COHORT_CONTENT_DRIFT")
 
@@ -684,15 +827,22 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     cap = next_capability(school)
     if cap is None:
         raise ValueError("HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY")
+    lesson_grade = cap.split(".", 1)[0]
+    if lesson_grade not in ("A", "B"):
+        raise ValueError("HUMAN_TRAINER_UNKNOWN_LESSON_GRADE")
     teacher = json.loads(_canonical(receipt["teacher"]))
     rng = random.Random(_seed(receipt, capability=cap))
-    policy_key, policy = engine.pick(teacher, "A", rng)
+    policy_key, policy = engine.pick(teacher, lesson_grade, rng)
     optimizer.learning_rate = float(policy["lr"])
     if source_root is None:
         raise ValueError("HUMAN_TRAINER_LIVE_SOURCE_REQUIRED")
     rows = _draw_live_rows(source_root, graph,
                            seed=_seed(receipt, capability=cap),
-                           capability=cap, each=max(32, batch_size))
+                           capability=cap, each=max(32, batch_size), course=course)
+    champion_votes = _champion_teacher_votes(
+        mx, run_dir, school, course, rows, graph,
+        receipt["config"], receipt["answer_ids"])
+    teacher_candidates = [r for r in rows if champion_votes.get(r["id"], 0)]
     # Every unsuccessful examination construction can become direct teaching
     # material once scoring has completed. No held-out embargo survives.
     priority = [r for r in receipt.get("teacher_misses", ())
@@ -707,11 +857,13 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     for step in range(steps_per_visit):
         fresh = _draw_live_rows(source_root, graph,
             seed=_seed(receipt, capability=cap, step=step+1),
-            capability=cap, each=max(32, batch_size))
+            capability=cap, each=max(32, batch_size), course=course)
         fresh.extend(priority)
         picked = choose_lesson_batch(
             fresh, policy, _seed(receipt, capability=cap, step=step+1),
             batch_size=batch_size)
+        picked = champion_directed_lessons(
+            picked, teacher_candidates, champion_votes, capacity=batch_size // 4)
         # Reserve a bounded slice for previously missed specimens, preserving
         # the policy's binary balance by replacing the same answer class.
         window = missed_lesson_window(priority, priority_cursor, batch_size // 4)
@@ -723,25 +875,31 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     after = _train_score(mx, params, rows, receipt["config"],
                          receipt["answer_ids"])
     reward = after - before
-    engine.observe(teacher, "A", policy_key, reward)
+    engine.observe(teacher, lesson_grade, policy_key, reward)
     if int(optimizer.state["step"].item()) != step_before+steps_per_visit:
         raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
     # No new archive exists yet. The retained checkpoint is the last complete
     # recovery point, NOT a representation of these newly updated RAM weights.
     school = visit(course, school, cap, school.current_student)
     event = {
-        "event": "GRADE_A_TEACHER_VISIT_COMMITTED",
+        "event": "GRADE_A_TEACHER_VISIT_COMMITTED" if lesson_grade == "A"
+                 else "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED",
+        "grade": lesson_grade,
+        "active_grade": school.grade,
         "generation": receipt["generation"] + 1,
         "capability": cap, "teacher_policy": policy_key,
         "strategy": policy, "loss": last_loss, "gradient_norm": last_norm,
         "source_training_accuracy_before": before,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
-        "generator_version": LIVE_GENERATOR,
-        "generator_code_sha256": generator_source_digest(),
+        "generator_version": LIVE_GENERATOR if cap.startswith("A.") else B_GENERATOR,
+        "generator_code_sha256": (generator_source_digest()
+                                  if cap.startswith("A.") else b_constructor_digest()),
         "lesson_source_sha256": manifest["manifest_sha256"],
         "lesson_seed": _seed(receipt, capability=cap),
         "prior_exam_misses_available": len(priority),
+        "prior_grade_champion_votes": teacher_vote_weights(course, school),
+        "champion_directed_examples_available": len(teacher_candidates),
         "optimizer_step": int(optimizer.state["step"].item()),
         "next_phase": school.stage,
         "checkpoint_status": "PROVISIONAL_UNTIL_NEXT_RECOVERY_BOUNDARY",
@@ -763,6 +921,10 @@ def _compare_incumbents(mx, run_dir, receipt, cohort, config, answer_ids, graph)
     references = list(current.values()) + list(historic.values())
     references.extend({"checkpoint": p} for p in
                       receipt.get("historical_grade_champions", {}).values())
+    # A graduate keeps a teacher/champion vote even if its current capability
+    # best slot was superseded under a newer multi-grade rubric.
+    references.extend({"checkpoint": p} for p in
+                      receipt["school"]["champions"].values())
     unique = {}
     for item in references:
         pointer = item["checkpoint"]
@@ -801,15 +963,17 @@ def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
     If none improve, the single live student still needs a replaceable
     recovery point. This is NOT a champion or an additional archive slot.
     """
-    rubric = course.grades[0].assessment_sha256
+    rubric, cohort_release, _, _ = _cohort_contract(course)
     if (receipt.get("live_rubric_sha256", rubric) != rubric or
-            cohort.rubric_version != LIVE_RELEASE or
-            len(cohort.rows) != sum(dict(course.grades[0].exam_item_counts).values())):
+            cohort.rubric_version != cohort_release or
+            len(cohort.rows) != sum(count for grade in course.grades
+                                   for _, count in grade.exam_item_counts)):
         raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_SCOPE_DRIFT")
     grades = score_cohort(cohort, predictions, {
         "sha256": "IN_MEMORY_CANDIDATE", "optimizer_step": int(optimizer.state["step"].item()),
         "model_and_native_adamw": True})["scores"]
-    expected = dict(course.grades[0].exam_item_counts)
+    expected = {cap: count for grade in course.grades
+                for cap, count in grade.exam_item_counts}
     if ({cap: row["total"] for cap, row in grades.items()} != expected or
             any({r["gold"] for r in cohort.rows if r["capability"] == cap} !=
                 {"TRUE", "FALSE"} or
@@ -835,35 +999,124 @@ def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
             incumbent_comparisons)
 
 
-def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
-    """Publish visits only after model and teacher are durably recoverable."""
-    for event in pending:
-        event["recovered_at_student_sha256"] = record["school"]["current_student"]["sha256"]
+def _boundary_delivery_events(record, pending, roles, exam_event):
+    """Freeze truthful source-scored events before publishing state.json."""
+    school = record["school"]
+    completed_grade = (exam_event["grade"] if exam_event is not None else
+                       school["active_grades"][school["grade_index"]])
+    events = []
+    for provisional in pending:
+        event = dict(provisional)
+        event["recovered_at_student_sha256"] = school["current_student"]["sha256"]
         event["checkpoint_status"] = "RECORDED_AT_BOUNDARY"
-        _record(run_dir, event)
+        events.append(event)
     if roles:
         frontier = record["capability_best"]
         slots = [frontier[key] for key in sorted(frontier)
-                 if (frontier[key]["capability"] in roles and
-                     frontier[key]["checkpoint"]["sha256"] ==
-                     record["school"]["current_student"]["sha256"])]
+                 if frontier[key]["capability"] in roles and
+                 frontier[key]["checkpoint"]["sha256"] ==
+                 school["current_student"]["sha256"]]
         if ({slot["capability"] for slot in slots} != set(roles) or
                 len({slot["rubric"] for slot in slots}) != 1):
             raise ValueError("HUMAN_TRAINER_CAPABILITY_BEST_RECEIPT_DRIFT")
-        _record(run_dir, {"event": "SCHOOL_CAPABILITY_BEST_COMMITTED",
-                          "grade": "A", "generation": record["generation"],
-                          "capabilities": list(roles),
-                          "rubric": slots[0]["rubric"],
-                          "scores": {entry["capability"]: {
-                              "correct": entry["correct"], "total": entry["total"]}
-                              for entry in slots},
-                          "evaluation_ids": {entry["capability"]: entry["evaluation_id"]
-                                             for entry in slots},
-                          "student_sha256": record["school"]["current_student"]["sha256"],
-                          "optimizer_step": record["school"]["current_student"]["optimizer_step"]})
+        events.append({"event": "SCHOOL_CAPABILITY_BEST_COMMITTED",
+                       "grade": completed_grade, "generation": record["generation"],
+                       "capabilities": list(roles), "rubric": slots[0]["rubric"],
+                       "scores": {entry["capability"]: {
+                           "correct": entry["correct"], "total": entry["total"]}
+                           for entry in slots},
+                       "evaluation_ids": {entry["capability"]: entry["evaluation_id"]
+                                          for entry in slots},
+                       "student_sha256": school["current_student"]["sha256"],
+                       "optimizer_step": school["current_student"]["optimizer_step"]})
     if exam_event is not None:
-        _record(run_dir, exam_event)
-    school = record["school"]
+        events.append(dict(exam_event))
+    return tuple(events)
+
+
+def _with_delivery_outbox(record: dict, events) -> dict:
+    """Commit event intent atomically with the immutable student generation."""
+    if not record.get("run_id") or type(record.get("generation")) is not int:
+        raise ValueError("HUMAN_TRAINER_OUTBOX_MISSING_LINEAGE")
+    prepared = dict(record)
+    prepared.pop("_pending_visit_events", None)
+    if not events:
+        raise ValueError("HUMAN_TRAINER_OUTBOX_REQUIRES_EVENT")
+    outbox = []
+    for index, event in enumerate(events):
+        if not isinstance(event, dict) or not event.get("event") or "event_id" in event:
+            raise ValueError("HUMAN_TRAINER_OUTBOX_UNTRUSTED_EVENT")
+        copy = json.loads(_canonical(event))
+        copy["event_id"] = _fingerprint(["school-generation-event/v1",
+                                         record["run_id"], record["generation"],
+                                         index, copy])
+        outbox.append(copy)
+    prepared["delivery_outbox"] = outbox
+    return prepared
+
+
+def _reconcile_delivery_outbox(run_dir: Path, record: dict):
+    """Replay missing events; never duplicate or amend prior ledger history.
+
+    Caller must hold the exclusive operator lock. JSONL write+fsync can succeed
+    even if the process dies before acknowledging it, so dedupe by the exact
+    immutable generation event ID *and* payload rather than a stale boolean.
+    """
+    outbox = record.get("delivery_outbox")
+    if outbox is None:
+        return False
+    if not isinstance(outbox, list) or not outbox:
+        raise ValueError("HUMAN_TRAINER_OUTBOX_INVALID")
+    expected = {}
+    for index, event in enumerate(outbox):
+        if not isinstance(event, dict) or "event_id" not in event:
+            raise ValueError("HUMAN_TRAINER_OUTBOX_EVENT_ID_MISSING")
+        payload = {k:v for k,v in event.items() if k != "event_id"}
+        identity = _fingerprint(["school-generation-event/v1", record["run_id"],
+                                 record["generation"], index, payload])
+        if event["event_id"] != identity or identity in expected:
+            raise ValueError("HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT")
+        expected[identity] = event
+    observed = set()
+    journal = run_dir / "events.jsonl"
+    if journal.exists():
+        if journal.is_symlink() or not journal.is_file():
+            raise ValueError("HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER")
+        with journal.open(encoding="utf-8") as stream:
+            for line in stream:
+                item = json.loads(line)
+                identity = item.get("event_id")
+                if identity in expected:
+                    if item != expected[identity]:
+                        raise ValueError("HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT")
+                    observed.add(identity)
+    for event in outbox:
+        if event["event_id"] not in observed:
+            _record(run_dir, event)
+    return True
+
+
+def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
+    """Publish visits only after model and teacher are durably recoverable."""
+    student_school = record["school"]
+    # The scheduler may have moved B -> A for cumulative revalidation before
+    # this grade-B examination's capability winners are published. Preserve
+    # the *completed assessment grade* instead of the next scheduled grade.
+    active_grade = (exam_event["grade"] if exam_event is not None else
+                    student_school["active_grades"][student_school["grade_index"]])
+    if record.get("delivery_outbox") is not None:
+        if pending or roles or exam_event is not None:
+            expect = _with_delivery_outbox(
+                record, _boundary_delivery_events(record, pending, roles, exam_event))
+            if expect["delivery_outbox"] != record["delivery_outbox"]:
+                raise ValueError("HUMAN_TRAINER_OUTBOX_BOUNDARY_ARGUMENT_DRIFT")
+        _reconcile_delivery_outbox(run_dir, record)
+    else:
+        # Old Grade A states predate immutable event publication. Keep their
+        # established behavior and their source receipts byte-for-byte.
+        for event in _boundary_delivery_events(record, pending, roles, exam_event):
+            _record(run_dir, event)
+    school = student_school
     retained = pinned(record.get("capability_best", {}), school["current_student"],
                       school["champions"])
     for item in record.get("historical_grade_champions", {}).values():
@@ -875,7 +1128,7 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
                                           school["current_student"]["optimizer_step"])
     removed = retire_bundles(run_dir, retained)
     if removed:
-        _record(run_dir, {"event": "SCHOOL_CHECKPOINTS_RETIRED", "grade": "A",
+        _record(run_dir, {"event": "SCHOOL_CHECKPOINTS_RETIRED", "grade": active_grade,
                           "generation": record["generation"],
                           "count": len(removed), "protected_count": len(retained)})
 
@@ -928,10 +1181,11 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     school = _state_from_json(receipt["school"], course)
     if not school.stage.startswith("ASSESS_"):
         raise ValueError("HUMAN_TRAINER_EXAM_OUTSIDE_SCHEDULED_BOUNDARY")
-    seed = _seed(receipt, capability="FULL_GRADE_A_LIVE_EXAM")
-    rows = _draw_live_rows(source_root, graph, seed=seed)
-    cohort = make_cohort(rows, generator_version=LIVE_GENERATOR,
-                         seed=seed, rubric_version=LIVE_RELEASE)
+    rubric, release, generator, _ = _cohort_contract(course)
+    seed = _seed(receipt, capability="FULL_" + school.grade + "_LIVE_EXAM")
+    rows = _draw_live_rows(source_root, graph, seed=seed, course=course)
+    cohort = make_cohort(rows, generator_version=generator,
+                         seed=seed, rubric_version=release)
     # The exact cohort is frozen for every whole-checkpoint comparison in this
     # decision, then preserved for reproducibility and later teacher feedback.
     cohort_file = _persist_live_cohort(run_dir, manifest, course, cohort)
@@ -945,7 +1199,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         checkpoint_sha256=school.current_student.sha256,
         optimizer_step=school.current_student.optimizer_step,
         course_digest=course.digest(),
-        rubric_digest=course.grades[0].assessment_sha256,
+        rubric_digest=rubric,
         scores={cap: Score(**entry) for cap, entry in measured["scores"].items()},
         evaluation_id="source-oracled-live-cohort/" + cohort.digest + "/" +
                       school.current_student.sha256)
@@ -958,7 +1212,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "cohort_sha256": cohort.digest,
         "cohort_file": cohort_file,
         "cohort_seed": seed,
-        "generator_version": LIVE_GENERATOR,
+        "generator_version": generator,
         "incumbent_comparisons": compared,
         "misses_for_teacher": measured["misses_for_teacher"],
         "student_sha256": assessment.checkpoint_sha256,
@@ -978,19 +1232,29 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     result = _advance(
         run_dir, migrated_receipt, advanced, frontier=frontier,
         model_bundle=school.current_student.filename, last_exam=last_exam,
-        result="GRADE_A_MASTERED_AWAITING_GRADE_B" if
-        advanced.stage == "AWAITING_NEXT_GRADE" else "ACTIVE_GRADE_A")
-    _publish_boundary(run_dir, result, pending, roles, exam_event={
-        "event": "GRADE_A_LIVE_EXAM_COMMITTED", "generation": result["generation"],
+        result=(("GRADE_A_MASTERED_AWAITING_GRADE_B" if advanced.grade == "A"
+                 else "GRADE_B_MASTERED_AWAITING_GRADE_C")
+                if advanced.stage == "AWAITING_NEXT_GRADE" else
+                ("GRADE_" + advanced.revalidation_target_grade +
+                 "_REVALIDATING_" + advanced.grade)
+                if advanced.revalidation_target_grade else
+                "ACTIVE_GRADE_" + advanced.grade), persist=False)
+    exam_event = {
+        "event": "GRADE_A_LIVE_EXAM_COMMITTED" if len(course.grades) == 1
+                 else "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+        "grade": school.grade, "generation": result["generation"],
         "scores": scores, "phase": advanced.stage,
         "student_sha256": assessment.checkpoint_sha256,
         "optimizer_step": assessment.optimizer_step,
         "rubric": assessment.rubric_digest,
-        "cohort_sha256": cohort.digest, "generator_version": LIVE_GENERATOR,
+        "cohort_sha256": cohort.digest, "generator_version": generator,
         "cohort_seed": seed, "cohort_file": last_exam["cohort_file"],
         "incumbent_comparisons": compared,
         "teacher_miss_count": len(priority),
-    })
+    }
+    result = _persist(run_dir, _with_delivery_outbox(
+        result, _boundary_delivery_events(result, pending, roles, exam_event)))
+    _publish_boundary(run_dir, result, pending, roles, exam_event=exam_event)
     return result
 
 
@@ -1001,37 +1265,47 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
     if not pending:
         return receipt
     school = _state_from_json(receipt["school"], course)
+    rubric, release, generator, _ = _cohort_contract(course)
     seed = _seed(receipt, capability="LIVE_WORKING_COMPARISON")
-    rows = _draw_live_rows(source_root, graph, seed=seed)
-    cohort = make_cohort(rows, generator_version=LIVE_GENERATOR,
-                         seed=seed, rubric_version=LIVE_RELEASE)
+    rows = _draw_live_rows(source_root, graph, seed=seed, course=course)
+    cohort = make_cohort(rows, generator_version=generator,
+                         seed=seed, rubric_version=release)
     _persist_live_cohort(run_dir, manifest, course, cohort)
     guesses = _predictions(mx, parameters, rows, receipt["config"], receipt["answer_ids"])
     current, frontier, roles, compared = _commit_scored_student(
         mx, run_dir, receipt, manifest, course, school, cohort, guesses,
         parameters, optimizer, graph, reserve_gib=reserve_gib)
     record = _advance(run_dir, {**receipt, "legacy_frontier_pending_replay": False,
-                                "live_rubric_sha256": course.grades[0].assessment_sha256},
+                                "live_rubric_sha256": rubric},
                       current, frontier=frontier,
-                      model_bundle=current.current_student.filename)
-    _publish_boundary(run_dir, record, pending, roles, exam_event={
-        "event": "SCHOOL_LIVE_CANDIDATE_COMPARED", "grade": "A",
+                      model_bundle=current.current_student.filename, persist=False)
+    comparison_event = {
+        "event": "SCHOOL_LIVE_CANDIDATE_COMPARED", "grade": school.grade,
         "generation": record["generation"],
-        "rubric": course.grades[0].assessment_sha256,
-        "cohort_sha256": cohort.digest, "generator_version": LIVE_GENERATOR,
+        "rubric": rubric,
+        "cohort_sha256": cohort.digest, "generator_version": generator,
         "scores": score_cohort(cohort, guesses,
             asdict(current.current_student))["scores"],
         "student_sha256": current.current_student.sha256,
         "optimizer_step": current.current_student.optimizer_step,
-        "incumbent_comparisons": compared})
+        "incumbent_comparisons": compared}
+    record = _persist(run_dir, _with_delivery_outbox(
+        record, _boundary_delivery_events(record, pending, roles, comparison_event)))
+    _publish_boundary(run_dir, record, pending, roles, exam_event=comparison_event)
     return record
 
 
 def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
-                        visits: int, max_visits: int) -> str | None:
+                        visits: int, max_visits: int, grade: str = "A") -> str | None:
     """State-machine stop condition; a due exam must not be silently skipped."""
+    if stage == "WHOLE_SCHOOL_MASTERED":
+        return "WHOLE_SCHOOL_MASTERED"
+    if stage == "AWAITING_TEACHER_SOUP":
+        # Future full-program releases must not accidentally invoke a lesson
+        # with no scheduled capability or convert a soup into a student.
+        return "AWAITING_TEACHER_SOUP"
     if stage == "AWAITING_NEXT_GRADE":
-        return "GRADE_A_AWAITING_NEXT_GRADE"
+        return "GRADE_" + grade + "_AWAITING_NEXT_GRADE"
     if stage.startswith("ASSESS_"):
         return None
     if elapsed_seconds >= minutes * 60:
@@ -1055,13 +1329,49 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
     mx.set_default_device(mx.gpu)
     manifest, historical_course, engine, teacher_sha, historical_teacher, provenance = prepare_source(
         source_root, source_checkpoint, manifest_path)
-    course = live_course(historical_course)
+    course_a = live_course(historical_course)
+    # Build only verified source-bound metadata; no student, optimizer or
+    # checkpoint is touched while preparing a future grade's course.
+    course_b = None
+    course = course_a
     run_dir = Path(run_dir).expanduser().resolve()
     start = time.monotonic()
     with operator_lock(run_dir):
         if resume:
+            saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+            pending = run_dir / "states" / f"{saved['generation'] + 1:07d}.json"
+            if pending.exists() and (pending.is_symlink() or not pending.is_file()):
+                raise ValueError("HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH")
+            pending_mode = (json.loads(pending.read_text(encoding="utf-8")).get(
+                "curriculum_mode") if pending.exists() else None)
+            # A trainer still acquiring A must never depend on readiness of a
+            # *future* B release. Only a B run, graduated A, or prospective B
+            # orphan needs B's source construction and version guard.
+            if (saved.get("curriculum_mode") == B_RELEASE or
+                    pending_mode == B_RELEASE or
+                    saved["school"]["stage"] == "AWAITING_NEXT_GRADE"):
+                course_b = live_b_course(course_a, source_root)
+            if saved.get("curriculum_mode") == B_RELEASE:
+                course = course_b
             params, optimizer, graph, receipt = _resume(
-                run_dir, manifest, course, teacher_sha)
+                run_dir, manifest, course, teacher_sha,
+                successor_course=course_b)
+            # A fully written B migration might have survived a crash before
+            # publishing the latest state pointer. _resume recovers it under
+            # operator_lock; do not interpret recovered B as an A-only run.
+            if receipt.get("curriculum_mode") == B_RELEASE:
+                course = course_b
+            # A previously graduated human student is the only admissible B
+            # starter. Never reset its whole weights, AdamW or teacher policy.
+            if (course == course_a and
+                    receipt["school"]["stage"] == "AWAITING_NEXT_GRADE"):
+                # An A graduation itself can be the recovered orphan rather
+                # than the state originally read before _resume's recovery.
+                if course_b is None:
+                    course_b = live_b_course(course_a, source_root)
+                receipt = _activate_next_admitted_grade(
+                    run_dir, receipt, course_a, course_b)
+                course = course_b
         else:
             params, optimizer, graph, receipt = _init(
                 run_dir, manifest, course, teacher_sha,
@@ -1072,7 +1382,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             school = _state_from_json(receipt["school"], course)
             reason = session_stop_reason(
                 stage=school.stage, elapsed_seconds=time.monotonic() - start,
-                minutes=minutes, visits=visits, max_visits=max_visits)
+                minutes=minutes, visits=visits, max_visits=max_visits,
+                grade=school.grade)
             if reason is not None:
                 break
             if school.stage.startswith("ASSESS_"):
@@ -1104,14 +1415,16 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                                    reserve_gib=reserve_gib)
         elapsed_seconds = round(time.monotonic() - start, 3)
         _record(run_dir, {
-            "event": "GRADE_A_SESSION_STOPPED", "stop_reason": reason,
+            "event": "GRADE_A_SESSION_STOPPED" if len(course.grades) == 1
+                     else "SCHOOL_SESSION_STOPPED", "stop_reason": reason,
             "generation": receipt["generation"], "run_id": receipt["run_id"],
             "optimizer_step": school.current_student.optimizer_step,
             "checkpoint_sha256": school.current_student.sha256,
             "visits_this_command": visits, "committed_total_visits": school.visits,
             "minutes": minutes, "max_visits": max_visits,
             "elapsed_seconds": elapsed_seconds,
-            "grade_phase": school.stage, "resume_required": school.stage != "AWAITING_NEXT_GRADE",
+            "grade_phase": school.stage, "grade": school.grade,
+            "resume_required": school.stage != "AWAITING_NEXT_GRADE",
             **{k: budget[k] for k in ("free_bytes", "reserve_bytes", "estimated_write_bytes")},
         })
         return {
