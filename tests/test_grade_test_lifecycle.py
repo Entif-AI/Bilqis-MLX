@@ -10,7 +10,9 @@ from unittest.mock import patch
 from bilqis_mlx.champions import Checkpoint
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
-from bilqis_mlx.grade_a_trainer import _grade_test_cohort, choose_lesson_batch
+from bilqis_mlx.grade_a_trainer import (
+    _candidate_cohort, _grade_test_cohort, choose_lesson_batch,
+)
 from bilqis_mlx.live_grade_a import live_course
 from bilqis_mlx.school import start_new
 
@@ -47,6 +49,25 @@ class GradeTestLifecycleTests(unittest.TestCase):
                 retry, saved = self.draw(root, receipt)
             self.assertEqual(retry, original)
             self.assertEqual(saved, pointer)
+
+    def test_candidate_cohort_rotates_without_changing_graduation_exam(self):
+        receipt = self.receipt()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            graduation, pointer = self.draw(root, receipt)
+            receipt["qualification_cohort"] = pointer
+            first = _candidate_cohort(root, receipt, self.manifest,
+                                      self.course, SOURCE, self.graph)
+            self.assertNotEqual(first.digest, graduation.digest)
+            receipt["generation"] += 1
+            second = _candidate_cohort(root, receipt, self.manifest,
+                                       self.course, SOURCE, self.graph)
+            self.assertNotEqual(first.digest, second.digest)
+            with patch("bilqis_mlx.grade_a_trainer._draw_live_rows",
+                       side_effect=AssertionError("Graduation exam was redrawn")):
+                stable, stable_pointer = self.draw(root, receipt)
+            self.assertEqual(stable.digest, graduation.digest)
+            self.assertEqual(stable_pointer, pointer)
 
     def test_returning_to_the_same_grade_gets_new_questions(self):
         receipt = self.receipt()

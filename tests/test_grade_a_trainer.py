@@ -326,7 +326,9 @@ class GradeATrainerContractTests(unittest.TestCase):
                                     for outcome in outcomes))
                 self.assertEqual(len(completed["last_exam"]["incumbent_comparisons"]), 1)
                 self.assertEqual(completed["last_exam"]["incumbent_comparisons"][0]["cohort_sha256"],
-                                 completed["last_exam"]["cohort_sha256"])
+                                 completed["last_exam"]["candidate_cohort_sha256"])
+                self.assertNotEqual(completed["last_exam"]["cohort_sha256"],
+                                    completed["last_exam"]["candidate_cohort_sha256"])
                 retained = {x["checkpoint"]["filename"]
                             for x in completed["capability_best"].values()}
                 retained.add(completed["model_bundle"])
@@ -404,7 +406,7 @@ class GradeATrainerContractTests(unittest.TestCase):
             self.assertEqual(after["last_exam"]["incumbent_comparisons"][0]
                              ["checkpoint"]["sha256"], base.sha256)
             self.assertEqual(after["last_exam"]["incumbent_comparisons"][0]
-                             ["cohort_sha256"], after["last_exam"]["cohort_sha256"])
+                             ["cohort_sha256"], after["last_exam"]["candidate_cohort_sha256"])
 
 
 if __name__ == "__main__":

@@ -923,6 +923,17 @@ def _grade_test_cohort(run_dir, receipt, manifest, course, source_root, graph):
                     "cohort_seed": cohort.seed}
 
 
+def _candidate_cohort(run_dir, receipt, manifest, course, source_root, graph):
+    """Fresh randomized qualification for checkpoint candidates, not graduation."""
+    rubric, release, generator, _ = _cohort_contract(course)
+    seed = _seed(receipt, capability="CANDIDATE_CHECKPOINT")
+    rows = _draw_live_rows(source_root, graph, seed=seed, course=course)
+    cohort = make_cohort(rows, generator_version=generator, seed=seed,
+                         rubric_version=release)
+    _persist_live_cohort(run_dir, manifest, course, cohort)
+    return cohort
+
+
 def _seed(receipt: dict, *, capability: str, step: int = 0) -> int:
     return int(_fingerprint([receipt["run_id"], receipt["generation"],
                              capability, step])[:16], 16)
@@ -1393,11 +1404,19 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         run_dir, receipt, manifest, course, source_root, graph)
     cohort, cohort_file = _introduced_cohort(run_dir, manifest, course, school, cohort)
     seed, rows = cohort.seed, list(cohort.rows)
+    candidate_cohort = _candidate_cohort(
+        run_dir, receipt, manifest, course, source_root, graph)
+    candidate_cohort, _ = _introduced_cohort(
+        run_dir, manifest, course, school, candidate_cohort)
+    candidate_guesses = _predictions(
+        mx, parameters, list(candidate_cohort.rows),
+        receipt["config"], receipt["answer_ids"])
+    school, frontier, roles, compared = _commit_scored_student(
+        mx, run_dir, receipt, manifest, course, school,
+        candidate_cohort, candidate_guesses,
+        parameters, optimizer, graph, reserve_gib=reserve_gib)
     guesses = _predictions(mx, parameters, rows,
                            receipt["config"], receipt["answer_ids"])
-    school, frontier, roles, compared = _commit_scored_student(
-        mx, run_dir, receipt, manifest, course, school, cohort, guesses,
-        parameters, optimizer, graph, reserve_gib=reserve_gib)
     measured = score_cohort(cohort, guesses, asdict(school.current_student))
     assessment = Assessment(
         checkpoint_sha256=school.current_student.sha256,
@@ -1420,6 +1439,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "cohort_sha256": cohort.digest,
         "cohort_file": cohort_file,
         "cohort_seed": seed,
+        "candidate_cohort_sha256": candidate_cohort.digest,
         "generator_version": generator,
         "incumbent_comparisons": compared,
         "misses_for_teacher": list(measured["misses_for_teacher"]),
@@ -1497,6 +1517,7 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
     rubric, release, generator, _ = _cohort_contract(course)
     cohort, qualification = _grade_test_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
+    cohort = _candidate_cohort(run_dir, receipt, manifest, course, source_root, graph)
     cohort, _ = _introduced_cohort(run_dir, manifest, course, school, cohort)
     rows = list(cohort.rows)
     guesses = _predictions(mx, parameters, rows, receipt["config"], receipt["answer_ids"])
