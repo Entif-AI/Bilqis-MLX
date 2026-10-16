@@ -1,5 +1,7 @@
 # School50 telemetry v1: six panels across all letter grades
 
+**Live Grade A update (ADR-023):** In addition to historical `GRADE_A_EXAM_COMMITTED` sealed events, the adapter accepts `GRADE_A_LIVE_EXAM_COMMITTED` with `cohort_sha256`, source-generator identity, seeded cohort filename, six complete scores and same-cohort incumbent comparisons. The six panels distinguish fresh cohort samples from the historical fixed exam. Cross-cohort raw score changes never count as paired champion improvements or a generalization-gap diagnosis; only matched cohort replay establishes capability best promotions. `SCHOOL_LIVE_CANDIDATE_COMPARED` documents safe interim whole-student selection during a human stop.
+
 The human operator requested the old dashboard's diagnostic depth back,
 without rebuilding it at each future letter-grade admission. This is a
 **read-only visualization contract**, not a neural training protocol, grade

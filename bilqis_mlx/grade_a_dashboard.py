@@ -11,6 +11,7 @@ from pathlib import Path
 from .school_telemetry import SchoolTelemetry, LETTER_TABLES
 from .disk import headroom_snapshot
 from .source import AUDITED_PARENT
+from .live_grade_a import RELEASE as LIVE_GRADE_A_RELEASE
 from .spiral_dashboard import Dashboard
 
 
@@ -42,7 +43,16 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
                   "grade": current_grade, **{k: budget[k] for k in
                   ("free_bytes", "reserve_bytes", "estimated_write_bytes")}})
     board.push("system", {"kind": "SOURCE", "detail": "Source-bound FP32 + own AdamW | immutable receipts"}, redraw=False)
-    board.push("system", {"kind": "RUBRIC", "detail": "Grade A frozen 72 items; all grade rubrics require 100% same-step"}, redraw=False)
+    live = not state or state.get("curriculum_mode") == LIVE_GRADE_A_RELEASE
+    board.push("system", {"kind": "RUBRIC", "detail":
+               ("Grade A: generated 72 source-oracled items per cohort; 100% one checkpoint"
+                if live else "Historical Grade A frozen 72-item rubric; 100% one checkpoint")},
+               redraw=False)
+    if live and state and (state.get("last_exam") or {}).get("cohort_sha256"):
+        exam = state["last_exam"]
+        board.push("system", {"kind": "COHORT", "detail":
+                   f"Seed {exam['cohort_seed']} | SHA {exam['cohort_sha256'][:16]} | "
+                   f"rubric {exam['exam_rubric_sha256'][:12]}"}, redraw=False)
     board.push("system", {"kind": "METRIC", "detail": "NOT MEASURED: independent sentinel/CE/P(C)/margin; cross-grade soup inactive"}, redraw=False)
     if state and state.get("capability_best"):
         bests = state["capability_best"]

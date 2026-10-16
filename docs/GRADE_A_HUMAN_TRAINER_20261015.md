@@ -1,5 +1,7 @@
 # Accepted Grade A: experimental human MLX trainer
 
+**Current operation after ADR-023:** The six admitted source-defined Boolean predicates now use the live source-generated trainer, automatically selected by the ordinary human `--human-run` path. On each visit fresh examples are checked by three oracles; each due assessment draws a seeded 72-item complete cohort and stores its questions, SHA and seed for replay. Every distinct retained whole-student incumbent is scored on the same cohort before champion promotion. Misses are supplied to subsequent instruction. Original 144+72 specimens, fixed-exam scores and their legacy receipts remain historical evidence rather than an ongoing embargo. Human `--resume` automatically migrates old saved `v1` states, protecting model+own AdamW and original teacher. Generated assessment admission remains 100% of all 72 items at one complete checkpoint; no new numeric Grade A competence is assumed. This paragraph supersedes any old fixed-exam training description below without modifying its historical evidence.
+
 **Private / 2026-10-15 / user-authorized Grade A only**
 
 ## Scope and authority

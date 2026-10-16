@@ -85,6 +85,7 @@ EVENT_KINDS = {
     "GRADE_A_NEW_RUN_INITIALIZED": "init",
     "GRADE_A_TEACHER_VISIT_COMMITTED": "visit",
     "GRADE_A_EXAM_COMMITTED": "exam",
+    "GRADE_A_LIVE_EXAM_COMMITTED": "exam",
     "GRADE_A_SESSION_STOPPED": "stop",
     "SCHOOL_RUN_INITIALIZED": "init",
     "SCHOOL_VISIT_COMMITTED": "visit",
@@ -95,6 +96,7 @@ EVENT_KINDS = {
     "SCHOOL_FAMILY_PROBE_COMMITTED": "family",
     "SCHOOL_RESOURCE_OBSERVED": "resource",
     "SCHOOL_CAPABILITY_BEST_COMMITTED": "capability_best",
+    "SCHOOL_LIVE_CANDIDATE_COMPARED": "candidate",
     "SCHOOL_QUALIFICATION_COMMITTED": "qualification",
 }
 
@@ -164,6 +166,7 @@ class SchoolTelemetry:
         self.last_cap = {}  # (capability, complete-rubric) -> (correct,total)
         self.first_cap = {}
         self.last_source_training = {}  # capability -> (accuracy, optimizer_step)
+        self.exam_cohorts = {}  # (grade, semantic rubric) -> last sampled cohort
         self.visits = 0
         self.last_exam_grade = None
         self.board.grade_program = tuple(self.grades)
@@ -195,11 +198,21 @@ class SchoolTelemetry:
             "family": self._family,
             "resource": self._resource,
             "capability_best": self._capability_best,
+            "candidate": self._candidate,
             "qualification": self._qualification,
         }[kind](grade, event)
 
     def _init(self, grade, event):
         self.board.state["step"] = event.get("optimizer_step", self.board.state.get("step"))
+
+    def _candidate(self, grade, event):
+        digest = event.get("cohort_sha256")
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise ValueError("SCHOOL_TELEMETRY_CANDIDATE_COHORT_REQUIRED")
+        self.board.push("system", {"kind": "COMPARATOR", "grade": grade,
+            "detail": ("Same-cohort incumbent replay " + digest[:12] +
+                       f" | {len(event.get('incumbent_comparisons', []))} complete incumbents")},
+            redraw=False)
 
     def _capability_best(self, grade, event):
         """One student's best capability slots do not mean grade mastery."""
@@ -271,6 +284,11 @@ class SchoolTelemetry:
         checkpoint = event.get("student_sha256")
         if not checkpoint:
             raise ValueError("SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED")
+        live = event.get("event") == "GRADE_A_LIVE_EXAM_COMMITTED"
+        cohort_sha = event.get("cohort_sha256") if live else None
+        if live and (not isinstance(cohort_sha, str) or len(cohort_sha) != 64 or
+                     not event.get("cohort_file") or not event.get("generator_version")):
+            raise ValueError("SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED")
         cohort = defaultdict(dict)
         for cap, raw in scores.items():
             score_grade = raw.get("grade") or _grade_from_capability(cap, grade)
@@ -307,21 +325,22 @@ class SchoolTelemetry:
             best = self.best[key]
             self.latest[key] = report
             self.last_exam_grade = g
+            same_cohort = not live or self.exam_cohorts.get(key) == cohort_sha
             for cap, (score, count) in sorted(caps.items()):
                 baseline = self.first_cap.setdefault((cap, rubric), (score, count))
                 earlier = self.last_cap.get((cap, rubric))
-                gain = score - earlier[0] if earlier else None
+                gain = score - earlier[0] if earlier and same_cohort else None
                 self.board.rows["BRIDGE FAMILIES"].append({
                     "grade": g, "family": cap, "attempt": report.generation,
                     "first": f"{baseline[0]}/{baseline[1]}",
-                    "before": f"{earlier[0]}/{earlier[1]}" if earlier else "-",
+                    "before": f"{earlier[0]}/{earlier[1]}" if earlier and same_cohort else "-",
                     "after": f"{score}/{count}",
                     "gain": f"{gain:+d}" if gain is not None else "-",
                 })
                 self.last_cap[(cap, rubric)] = (score, count)
             # This is a sealed-exam-to-sealed-exam change. It is NOT the
             # independent sentinel/held-out teacher reward channel.
-            if prev:
+            if prev and same_cohort:
                 pp = 100 * (correct / total - prev.correct / prev.total)
                 worst = min(100 * (caps[c][0] / caps[c][1] -
                          prev.capabilities[c][0] / prev.capabilities[c][1]) for c in caps)
@@ -331,13 +350,15 @@ class SchoolTelemetry:
                 "grade": g, "attempt": report.generation,
                 "probe": _delta(pp, pp=True), "worst": _delta(worst, pp=True),
                 "sent": "-", "ce": "-", "prob": "-", "margin": "-",
-                "evidence": "SEALED EXAM; NO SENTINEL",
+                "evidence": ("GENERATED COHORT; NO SENTINEL" if live else
+                             "SEALED EXAM; NO SENTINEL"),
             })
             champion = self.champions.get(g)
-            label = ("CHAMPION SAVED; CURRENT REGRESSION" if champion and correct < total else
+            label = ("CHAMPION SAVED; FRESH SAMPLE" if live and champion else
+                     "CHAMPION SAVED; CURRENT REGRESSION" if champion and correct < total else
                      "CHAMPION RECORDED; CURRENT PASS" if champion else
                      "100% EXAM; GATE PENDING" if correct == total else
-                     f"SEALED EXAM {correct}/{total} | {event.get('phase', '?')}")
+                     f"{'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | {event.get('phase', '?')}")
             self.board.rows["GRADES & MASTERY"].append({
                 "visit": self.visits, "grade": g, "step": step or "-",
                 "first": f"{first.correct}/{first.total}",
@@ -345,6 +366,8 @@ class SchoolTelemetry:
                 "to100": str(total-correct), "right_pct": f"{100*correct/total:.1f}%",
                 "outcome": label, "mastered": bool(champion),
             })
+            if live:
+                self.exam_cohorts[key] = cohort_sha
         self.board.state.update(phase=event.get("phase", self.board.state.get("phase")),
                                 prefix=grade, step=step)
         self._summary()
@@ -360,23 +383,26 @@ class SchoolTelemetry:
         first = self.first[key]
         best = self.best[key]
         latest = report
+        live = key in self.exam_cohorts
+        category = "GENERATED SAMPLE" if live else "SEALED"
         self.board.operator_lines = [
-            f"FIRST SEALED {grade} {first.correct}/{first.total} @step {first.step or '-'} | "
+            f"FIRST {category} {grade} {first.correct}/{first.total} @step {first.step or '-'} | "
             f"LATEST {grade} {latest.correct}/{latest.total} @step {latest.step or '-'} | "
-            f"BEST {grade} {best.correct}/{best.total} @step {best.step or '-'}",
-            f"TO100 {latest.total-latest.correct}/{latest.total} wrong (sealed rubric) | "
+            f"{'BEST OBSERVED SAMPLE (not paired)' if live else 'BEST'} {grade} "
+            f"{best.correct}/{best.total} @step {best.step or '-'}",
+            f"TO100 {latest.total-latest.correct}/{latest.total} wrong ({'fresh sampled cohort' if live else 'sealed rubric'}) | "
             f"Source-train rewards are in-sample; independent sentinel NOT MEASURED",
         ]
         # A diagnostic observation, not an optimizer signal. Individual
         # source-training measurements may come from different checkpoints.
         families = tuple(latest.capabilities)
-        if (latest.correct < latest.total and families and
+        if (not live and latest.correct < latest.total and families and
                 all(cap in self.last_source_training and
                     self.last_source_training[cap][0] >= .99 for cap in families)):
             self.board.operator_lines.append(
                 f"GENERALIZATION GAP OBSERVED: recent source-train accuracy >=99% "
                 f"for {len(families)}/{len(families)} capabilities (different steps); "
-                f"sealed {latest.correct}/{latest.total} at one checkpoint")
+                f"{'generated' if live else 'sealed'} {latest.correct}/{latest.total} at one checkpoint")
 
     def _sentinel(self, grade, event):
         if event.get("partition") != "independent_validation":

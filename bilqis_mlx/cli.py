@@ -9,6 +9,7 @@ import sys
 from .disk import assert_headroom
 from .source import AUDITED_PARENT
 from .grade_a_release import RELEASE as GRADE_A_RELEASE
+from .live_grade_a import RELEASE as LIVE_GRADE_A_RELEASE
 from .spiral_dashboard import Dashboard, TABLES
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -84,7 +85,10 @@ def _inspect(run_dir: Path) -> dict:
                 "last_exam": saved["last_exam"],
                 "last_session_stop": _latest_session_stop(
                     run_dir, saved["generation"], student["optimizer_step"]),
-                "grade_a_release": GRADE_A_RELEASE,
+                "grade_a_release": saved.get("curriculum_mode") or GRADE_A_RELEASE,
+                "historical_source_release": GRADE_A_RELEASE,
+                "grade_a_curriculum_mode": saved.get("curriculum_mode", "HISTORICAL_FIXED_72"),
+                "assessment_cohort_sha256": (saved.get("last_exam") or {}).get("cohort_sha256"),
                 "source_grounded_grade_a_admitted": True,
                 **_qualification_scope(),
                 "neural_training_started_by_this_command": False,
@@ -107,8 +111,10 @@ def _inspect(run_dir: Path) -> dict:
     return {"status":"GRADE_A_EXPERIMENTAL_HUMAN_LAUNCH_AVAILABLE",
             "grade":"A","phase":"READY_FOR_HUMAN_GRADE_A_START",
             "historical_seed":AUDITED_PARENT.__dict__,
-            "grade_a_release": GRADE_A_RELEASE,
-            "grade_a_curriculum": "SIX_USER_ACCEPTED_SOURCE_SEALED_PREDICATES_216_ITEMS",
+            "grade_a_release": LIVE_GRADE_A_RELEASE,
+            "historical_source_release": GRADE_A_RELEASE,
+            "grade_a_curriculum": "SIX_SOURCE_TYPED_PREDICATES_FRESH_GENERATED_COHORTS",
+            "grade_a_curriculum_mode": LIVE_GRADE_A_RELEASE,
             **_qualification_scope(),
             "source_grounded_grade_a_admitted":True,
             "neural_training_started_by_this_command":False,

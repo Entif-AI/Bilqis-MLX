@@ -20,6 +20,28 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_rotating_live_cohort_exams_never_report_cross_sample_gain(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            for number, total in ((1, 5), (2, 9)):
+                ingest(board, {
+                    "event": "GRADE_A_LIVE_EXAM_COMMITTED",
+                    "generation": number, "rubric": "a"*64,
+                    "cohort_sha256": str(number)*64,
+                    "generator_version": "grade-a-live/v1",
+                    "cohort_file": f"cohorts/{str(number)*64}.json",
+                    "optimizer_step": 100 + number,
+                    "student_sha256": str(number)*64,
+                    "scores": {"A.IDENTITY": {"correct": total, "total": 12}},
+                })
+            latest = board._section_rows("BRIDGE FAMILIES")[-1]
+            self.assertEqual(latest["before"], "-")
+            self.assertEqual(latest["gain"], "-")
+            self.assertIn("GENERATED COHORT", board._section_rows("SENTINEL & RETENTION")[-1]["evidence"])
+            rendered = board.render(width=180, height=42)
+            self.assertIn("BEST OBSERVED SAMPLE (not paired)", rendered)
+            self.assertIn("fresh sampled cohort", rendered)
+
     def test_six_legacy_panel_names_remain_but_new_school_columns_are_useful(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

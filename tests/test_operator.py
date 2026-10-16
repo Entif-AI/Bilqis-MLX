@@ -70,6 +70,8 @@ class OperatorTests(unittest.TestCase):
             self.assertEqual(report["blockers"], [])
             self.assertTrue(report["source_grounded_grade_a_admitted"])
             self.assertEqual(report["grade_a_release"],
+                             "bilqis.mlx.grade-a-live/20261015")
+            self.assertEqual(report["historical_source_release"],
                              "bilqis.mlx.grade-a-user-accepted/20261015")
             self.assertEqual(len(report["experimental_risks"]), 2)
             self.assertEqual(report["operator_constraint"], "HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES")

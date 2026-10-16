@@ -1,6 +1,6 @@
 # Bilqis MLX: private, independent successor
 
-**State: User-accepted six-capability Grade A; an experimental human-operated MLX trainer is available. Agents do not run actual student training.**
+**State: Source-generated six-capability Grade A instruction and rotating 72-item assessments are wired for human-operated training. Historical 144+72 records remain immutable evidence; agents never train the actual student.**
 
 This private repository implements the successor directed by protected IPR-0220. Its public interoperability-facing summaries are Bilqis #160 (MLX backend qualification) and #162 (successor integration). The detailed internal curriculum, promotion and resource policy stays private.
 
@@ -32,6 +32,10 @@ npm run train -- --human-run --minutes 90
 # Later, resume the same saved Grade A student:
 npm run train -- --human-run --resume --minutes 90
 ```
+
+**Current live contract (ADR-022/023):** This same human-run command automatically executes the generated Grade A curriculum. Each of the six admitted predicates receives newly constructed, three-oracle-checked instruction on every visit and every optimizer batch. Each due exam samples a reproducible fresh 72-item cohort (12 per capability, balanced TRUE/FALSE and attested world sizes). All current and historical whole-student leaders are replayed on **that same cohort** before best-score promotion; its SHA, source IDs, misses and comparator receipts persist. Every exam miss becomes eligible for subsequent teacher instruction, with no permanent holdout embargo. The 144 historical teaching records and original fixed 72 exam questions remain unchanged as archival evidence. Legacy `--resume` migrates its saved state automatically while preserving the FP32 model, own AdamW, teacher history and old receipts. Grade A still requires 72/72 on one complete sampled cohort at the same model checkpoint. There is no activation flag beyond `--human-run` and `--resume` as applicable. Typed numeric/native-token training exists separately as a tested research adapter; it has not been admitted into these six Boolean Grade A capabilities.
+
+Historical sections below describe the predecessor sealed-exam policy and should be read as source-lineage evidence where they mention frozen Grade A as the active examination.
 
 `status`, `dashboard` and `--dry-run` are neural-inert. `npm run dashboard` **replays the saved event ledger and displays the latest six-panel School50 snapshot even after training stops**. A human training command on an interactive terminal presents the same dashboard **in that terminal**, redrawing at each durably committed assessment or operator-stop boundary (intermediate visits are provisional under ADR-018). At normal exit it now announces and records the exact reason for stopping, including elapsed time, visits and optimizer step. Non-TTY runs retain JSON event output with a terminal stop receipt. **Actual student training requires the human to supply `--human-run`**. A run with existing saved content must use `--resume`; omitting it deliberately blocks a fresh start and prints the safe resume command. The default is 90 minutes, **no hidden visit cap** and 16 optimizer steps per visit. Use `--max-visits N` only if an explicit earlier stop is desired; the 100 GiB disk reserve remains in force. Due grade exams finish before a normal stop. Interruptions recover the last *committed* complete student plus its own AdamW, without reinterpreting `--resume` as the old G12 curriculum. Check `npm run status` for current grade, phase, student SHA, optimizer step, teacher events and most recent complete stop reason.
 

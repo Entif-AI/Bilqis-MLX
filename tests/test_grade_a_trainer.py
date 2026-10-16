@@ -8,15 +8,22 @@ import math
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from bilqis_mlx.grade_a_release import accepted_grade_a, RELEASE
+from bilqis_mlx.grade_a_release import accepted_grade_a, RELEASE, AUTHORITY
+from bilqis_mlx.live_grade_a import live_course, RELEASE as LIVE_RELEASE
 from bilqis_mlx.grade_a_trainer import (
     _make_batch, _persist, _seed, _state_from_json, _train_step,
     _take_visit, _take_exam,
-    choose_lesson_batch, operator_lock, prepare_source,
+    choose_lesson_batch, replay_missed_lessons, missed_lesson_window,
+    operator_lock, prepare_source,
+    _initial_model, _bundle_pointer, _resume, _durable_json,
+    _clean_staged_bundles, _quarantine_newer_uncommitted_bundles,
 )
 from bilqis_mlx.champions import Checkpoint
-from bilqis_mlx.school import start_new
+from bilqis_mlx.source import AUDITED_PARENT
+from bilqis_mlx.school import start_new, visit
+from bilqis_mlx.capability_frontier import promote
 
 ROOT = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
 SOURCE = ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
@@ -40,7 +47,7 @@ class GradeATrainerContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "SOURCE_INVENTORY_MISMATCH"):
             accepted_grade_a(tampered)
 
-    def test_teacher_batches_stay_inside_sealed_training_partition(self):
+    def test_historical_manifest_partition_remains_unchanged_as_evidence(self):
         cap = "A.MEMBER"
         rows = [row for row in self.manifest["training_rows"]
                 if row["capability"] == cap]
@@ -56,6 +63,66 @@ class GradeATrainerContractTests(unittest.TestCase):
         self.assertEqual(tokens.shape[0], 32)
         self.assertTrue((lengths >= 1).all())
         self.assertEqual(sum(labels), 16)
+
+    def test_distinct_same_label_exam_misses_all_replay_without_skew(self):
+        chosen = ([{"id": f"t{i}", "gold": "TRUE"} for i in range(8)] +
+                  [{"id": f"f{i}", "gold": "FALSE"} for i in range(8)])
+        priority = [{"id": f"miss-{i}", "gold": "TRUE"} for i in range(3)]
+        mixed = replay_missed_lessons(chosen, priority)
+        self.assertEqual({p["id"] for p in priority} & {p["id"] for p in mixed},
+                         {p["id"] for p in priority})
+        self.assertEqual(sum(r["gold"] == "TRUE" for r in mixed), 8)
+        longer = [{"id": "miss-" + str(i), "gold": "TRUE"} for i in range(22)]
+        seen = {row["id"] for cursor in (0, 4, 8, 12, 16, 20)
+                for row in missed_lesson_window(longer, cursor, 4)}
+        self.assertEqual(seen, {row["id"] for row in longer})
+
+    def test_failed_bundle_write_never_enters_active_bundles(self):
+        def fail_after_partial_stage(directory, *args, **kwargs):
+            directory.mkdir(parents=True)
+            (directory / "manifest.json").write_text("partial stage")
+            raise OSError("injected disk interruption")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch("bilqis_mlx.grade_a_trainer.save_new_bundle",
+                       side_effect=fail_after_partial_stage):
+                with self.assertRaisesRegex(OSError, "injected disk interruption"):
+                    _bundle_pointer(root, "interrupted-unique", {}, None, {},
+                                    reserve_gib=0.)
+            self.assertFalse((root / "bundles").exists())
+            self.assertTrue((root / ".bundle-staging/interrupted-unique/manifest.json").is_file())
+            self.assertEqual(_clean_staged_bundles(root),
+                             {"discarded": ("interrupted-unique",), "quarantined": ()})
+            self.assertFalse((root / ".bundle-staging").exists())
+            # Failure after binary materialization retains it for an explicit
+            # human recovery decision, outside active candidate retirement.
+            staged = root / ".bundle-staging/completed-weights"
+            staged.mkdir(parents=True)
+            (staged / "model-and-own-adamw.safetensors").write_bytes(b"toy-weights")
+            (staged / "manifest.json").write_text("partial")
+            self.assertEqual(_clean_staged_bundles(root),
+                             {"discarded": (), "quarantined": ("completed-weights",)})
+            self.assertEqual((root / ".bundle-quarantine/completed-weights/"
+                              "model-and-own-adamw.safetensors").read_bytes(),
+                             b"toy-weights")
+
+    def test_uncommitted_published_newer_student_is_saved_from_retirement(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            late = root / "bundles/candidate-after-crash"
+            late.mkdir(parents=True)
+            details = {"source_digest": AUDITED_PARENT.sha256,
+                       "optimizer_step": 101, "safetensors_sha256": "f" * 64}
+            with patch("bilqis_mlx.grade_a_trainer.load_semantically_bound_bundle",
+                       return_value=({}, None, details, {})):
+                found = _quarantine_newer_uncommitted_bundles(root, set(), 100)
+            self.assertEqual(found, ("candidate-after-crash",))
+            self.assertFalse(late.exists())
+            self.assertTrue((root / ".bundle-quarantine/candidate-after-crash").is_dir())
+            event = json.loads((root / "events.jsonl").read_text().splitlines()[-1])
+            self.assertEqual(event["optimizer_step"], 101)
+            self.assertEqual(event["prior_committed_optimizer_step"], 100)
 
     def test_snapshots_are_immutable_generations_with_one_latest_pointer(self):
         course = accepted_grade_a(self.manifest)
@@ -75,8 +142,9 @@ class GradeATrainerContractTests(unittest.TestCase):
             self.assertEqual(json.loads((root/"states/0000001.json").read_text()),
                              normalized)
             self.assertEqual(_state_from_json(second["school"], course),state)
-            with self.assertRaises(FileExistsError):
-                _persist(root, second)
+            self.assertEqual(_persist(root, second), json.loads(json.dumps(second)))
+            with self.assertRaisesRegex(ValueError, "IMMUTABLE_GENERATION_COLLISION"):
+                _persist(root, {**second, "model_bundle": "bundles/incorrect"})
             with operator_lock(root):
                 with self.assertRaisesRegex(ValueError, "ANOTHER_OPERATOR_ACTIVE"):
                     with operator_lock(root):
@@ -89,8 +157,12 @@ class GradeATrainerContractTests(unittest.TestCase):
 
     @unittest.skipUnless(SOURCE.is_file(), "Original teacher/archive unavailable")
     def test_inherited_teacher_retains_original_policy_observations(self):
-        manifest, course, engine, sha, teacher, provenance = prepare_source(
+        manifest, old_course, engine, sha, teacher, provenance = prepare_source(
             ROOT, SOURCE, MANIFEST)
+        course = live_course(old_course)
+        # Prove the active path draws from constructors, even if the legacy
+        # manifest's preserved fixed inventories are unavailable to it.
+        manifest = {**manifest, "training_rows": [], "examination_rows": []}
         self.assertEqual(manifest["exam_count"], 72)
         self.assertEqual(provenance["teacher_origin_events"], teacher["events"])
         self.assertGreater(teacher["events"], 4000)
@@ -144,15 +216,16 @@ class GradeATrainerContractTests(unittest.TestCase):
             self.assertEqual(set(opt.state[name]), {"m","v"})
 
     @unittest.skipUnless(SOURCE.is_file(), "Pinned historic source not mounted")
-    def test_synthetic_end_to_end_six_visits_checkpoint_and_sealed_grade_exam(self):
+    def test_synthetic_end_to_end_six_visits_generated_grade_exam(self):
         """The real training path executes, but only on freshly invented toy weights."""
         import mlx.core as mx
         import mlx.optimizers as optim
         import numpy as np
         import torch
         mx.set_default_device(mx.cpu)
-        manifest, course, engine, sha, teacher, provenance = prepare_source(
+        manifest, historical_course, engine, sha, teacher, provenance = prepare_source(
             ROOT, SOURCE, MANIFEST)
+        course = live_course(historical_course)
         graph = torch.load(SOURCE,map_location="cpu",weights_only=True)["graph"]
         d = 12
         shapes = {
@@ -178,6 +251,7 @@ class GradeATrainerContractTests(unittest.TestCase):
             "teacher": teacher, "config": {"heads":3,"layers":1},
             "answer_ids": [6,7],
             "model_bundle": initial.filename, "last_exam": None,
+            "curriculum_mode": LIVE_RELEASE,
             "result": "ACTIVE_GRADE_A",
         }
         with tempfile.TemporaryDirectory() as tmp:
@@ -187,7 +261,7 @@ class GradeATrainerContractTests(unittest.TestCase):
                     control = _take_visit(
                         mx,run_dir,control,manifest,course,engine,
                         params,opt,graph,steps_per_visit=1,batch_size=4,
-                        reserve_gib=0.)
+                        reserve_gib=0.,source_root=ROOT)
                 self.assertEqual(control["school"]["stage"], "ASSESS_MAIN")
                 self.assertEqual(control["school"]["visits"], 6)
                 self.assertEqual(control["teacher"]["events"],teacher["events"]+6)
@@ -198,7 +272,7 @@ class GradeATrainerContractTests(unittest.TestCase):
                     mx,run_dir,control,manifest,course,ROOT,SOURCE,
                     params,opt,graph,reserve_gib=0.)
             self.assertEqual(completed["last_exam"]["exam_rubric_sha256"],
-                             manifest["exam_rubric_sha256"])
+                             course.grades[0].assessment_sha256)
             self.assertEqual(sum(score["total"] for score in
                                  completed["last_exam"]["scores"].values()),72)
             self.assertEqual(completed["school"]["current_student"]["optimizer_step"],7)
@@ -206,6 +280,12 @@ class GradeATrainerContractTests(unittest.TestCase):
                              completed)
             self.assertEqual(len(list((run_dir/"bundles").iterdir())),1)
             self.assertEqual(len(completed["capability_best"]),6)
+            self.assertEqual(completed["last_exam"]["generator_version"],
+                             "bilqis.mlx.grade-a-live-constructor/v1")
+            saved_cohort = json.loads((run_dir / completed["last_exam"]["cohort_file"]).read_text())
+            self.assertEqual(len(saved_cohort["rows"]), 72)
+            self.assertEqual(saved_cohort["cohort_sha256"],
+                             completed["last_exam"]["cohort_sha256"])
             # A second incomplete recovery group must never create three more
             # intermediate student archives. Old capability winners remain
             # pinned when a new full-student recovery point is committed.
@@ -215,16 +295,94 @@ class GradeATrainerContractTests(unittest.TestCase):
                         completed = _take_visit(
                             mx, run_dir, completed, manifest, course, engine,
                             params, opt, graph, steps_per_visit=1, batch_size=4,
-                            reserve_gib=0.)
+                            reserve_gib=0.,source_root=ROOT)
                     self.assertEqual(len(list((run_dir/"bundles").iterdir())), 1)
                     completed = _take_exam(
                         mx, run_dir, completed, manifest, course, ROOT, SOURCE,
                         params, opt, graph, reserve_gib=0.)
+                self.assertNotEqual(completed["last_exam"]["cohort_sha256"],
+                                    saved_cohort["cohort_sha256"])
+                self.assertEqual(len(completed["last_exam"]["incumbent_comparisons"]), 1)
+                self.assertEqual(completed["last_exam"]["incumbent_comparisons"][0]["cohort_sha256"],
+                                 completed["last_exam"]["cohort_sha256"])
                 retained = {x["checkpoint"]["filename"]
                             for x in completed["capability_best"].values()}
                 retained.add(completed["model_bundle"])
                 self.assertEqual(len(list((run_dir/"bundles").iterdir())),
                                  len(retained))
+
+    @unittest.skipUnless(SOURCE.is_file(), "Pinned original student unavailable")
+    def test_historical_v1_resume_preserves_full_optimizer_teacher_and_replays_old_best(self):
+        """Copy, never optimize, original weights; migrate a disposable v1 run."""
+        import mlx.core as mx
+        mx.set_default_device(mx.cpu)
+        manifest, old_course, engine, sha, teacher, provenance = prepare_source(
+            ROOT, SOURCE, MANIFEST)
+        course = live_course(old_course)
+        parameters, optimizer, config, graph, answer_ids = _initial_model(SOURCE)
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                base = _bundle_pointer(run_dir, "old-v1-student", parameters,
+                                       optimizer, graph, reserve_gib=0.)
+            old_school = start_new(old_course, base)
+            for cap in [c.id for c in old_course.grades[0].capabilities]:
+                old_school = visit(old_course, old_school, cap, base)
+            scores = {c.id: {"correct": 5, "total": 12}
+                      for c in old_course.grades[0].capabilities}
+            frontier = promote({}, scores, manifest["exam_rubric_sha256"],
+                               asdict(base), "historic-evaluation",
+                               tuple(sorted(scores)))
+            historical = {
+                "schema": "bilqis.mlx.human-grade-a-trainer/v1",
+                "generation": 1, "run_id": "historic-disposable",
+                "accepted_authority": AUTHORITY,
+                "source_manifest_sha256": manifest["manifest_sha256"],
+                "teacher_source_sha256": sha,
+                "school": asdict(old_school), "model_bundle": base.filename,
+                "capability_best": frontier, "teacher": teacher,
+                "teacher_provenance": provenance, "config": config,
+                "parameter_shapes": {name: list(value.shape)
+                                     for name, value in parameters.items()},
+                "semantic_graph_sha256": __import__("bilqis_mlx.grade_a_trainer",
+                    fromlist=["_fingerprint"])._fingerprint(graph),
+                "answer_ids": answer_ids, "result": "ACTIVE_GRADE_A",
+                "last_exam": None,
+            }
+            _persist(run_dir, historical)
+            with redirect_stdout(io.StringIO()):
+                loaded, own_adamw, loaded_graph, resumed = _resume(
+                    run_dir, manifest, course, sha)
+            self.assertEqual(resumed["curriculum_mode"], LIVE_RELEASE)
+            self.assertEqual(resumed["school"]["current_student"], asdict(base))
+            self.assertEqual(int(own_adamw.state["step"].item()), base.optimizer_step)
+            self.assertEqual(resumed["teacher"], teacher)
+            self.assertEqual(resumed["historical_capability_best"], frontier)
+            self.assertTrue(resumed["legacy_frontier_pending_replay"])
+            self.assertEqual(resumed["school"]["course_digest"], course.digest())
+            self.assertEqual(json.loads((run_dir/"states/0000001.json").read_text()),
+                             json.loads(json.dumps(historical)))
+            # Fault injection: immutable generation 2 exists but the mutable
+            # latest pointer still says generation 1 after interruption.
+            _durable_json(run_dir / "state.json",
+                          json.loads(json.dumps(historical)), replace_existing=True)
+            with redirect_stdout(io.StringIO()):
+                restored_weights, restored_adamw, restored_graph, repaired = _resume(
+                    run_dir, manifest, course, sha)
+            self.assertEqual(repaired, resumed)
+            self.assertEqual(repaired["generation"], 2)
+            self.assertEqual(int(restored_adamw.state["step"].item()),
+                             base.optimizer_step)
+            with redirect_stdout(io.StringIO()):
+                after = _take_exam(mx, run_dir, resumed, manifest, course,
+                                   ROOT, SOURCE, loaded, own_adamw, loaded_graph,
+                                   reserve_gib=0.)
+            self.assertFalse(after["legacy_frontier_pending_replay"])
+            self.assertEqual(len(after["last_exam"]["incumbent_comparisons"]), 1)
+            self.assertEqual(after["last_exam"]["incumbent_comparisons"][0]
+                             ["checkpoint"]["sha256"], base.sha256)
+            self.assertEqual(after["last_exam"]["incumbent_comparisons"][0]
+                             ["cohort_sha256"], after["last_exam"]["cohort_sha256"])
 
 
 if __name__ == "__main__":
