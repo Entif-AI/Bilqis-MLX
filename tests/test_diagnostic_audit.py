@@ -8,6 +8,8 @@ import unittest
 
 from bilqis_mlx.cli import main
 from bilqis_mlx.diagnostics import DiagnosticStatus, LearningSignal
+from bilqis_mlx.diagnostics.signals import DiagnosticTarget
+from bilqis_mlx.diagnostics.teaching import METHODOLOGY_VERSION
 from tests.test_learning_diagnostics import constructed_exam
 
 
@@ -48,6 +50,67 @@ def snapshot(root):
 
 
 class DiagnosticAuditTests(unittest.TestCase):
+    def test_methodology_commit_survives_boundary_ledger_replay_window(self):
+        from bilqis_mlx.diagnostics.event_evidence import load_verified_lesson_methodology
+        from bilqis_mlx.grade_a_trainer import _with_delivery_outbox
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "states").mkdir()
+            generation = 4
+            capability = "B.NOT"
+            findings = [{
+                "signal": signal,
+                "status": DiagnosticStatus.NOT_OBSERVED,
+                "capability": capability,
+                "target": DiagnosticTarget.CAPABILITY,
+            } for signal in (
+                LearningSignal.DISCONNECTED_PREREQUISITES,
+                LearningSignal.EXCESSIVE_INTRODUCTORY_COMPLEXITY,
+            )]
+            visit = {
+                "event": "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED",
+                "generation": generation,
+                "capability": capability,
+                "lesson_methodology": {
+                    "schema": METHODOLOGY_VERSION,
+                    "course_sha256": "a" * 64,
+                    "capability": capability,
+                    "optimizer_batches_observed": 1,
+                    "delivered_examples": 4,
+                    "findings": findings,
+                },
+            }
+            comparison = {
+                "event": "SCHOOL_LIVE_CANDIDATE_COMPARED",
+                "generation": generation,
+                "grade": "B",
+            }
+            committed = _with_delivery_outbox(
+                {"run_id": "diagnostic-stop-fixture", "generation": generation},
+                (visit, comparison),
+            )
+            state = root / "states" / f"{generation:07d}.json"
+            state.write_text(json.dumps(committed))
+            (root / "state.json").write_text(json.dumps(committed))
+            # Model the crash window after the visit is fsynced but before the
+            # already committed boundary member is replayed to events.jsonl.
+            delivered_visit = committed["delivery_outbox"][0]
+            (root / "events.jsonl").write_text(json.dumps(delivered_visit) + "\n")
+            verified = load_verified_lesson_methodology(root)
+            self.assertEqual(verified, (delivered_visit,))
+
+            no_boundary = _with_delivery_outbox(
+                {"run_id": "diagnostic-stop-fixture", "generation": generation},
+                (visit,),
+            )
+            state.write_text(json.dumps(no_boundary))
+            (root / "state.json").write_text(json.dumps(no_boundary))
+            (root / "events.jsonl").write_text(
+                json.dumps(no_boundary["delivery_outbox"][0]) + "\n")
+            with self.assertRaisesRegex(ValueError, "BOUNDARY_OUTBOX_MISSING"):
+                load_verified_lesson_methodology(root)
+
     def test_exam_boundary_builds_automatic_s1_s2_without_sealed_question_policy(self):
         from bilqis_mlx.diagnostics.exam_events import summarize_completed_exam
         with tempfile.TemporaryDirectory() as temp:

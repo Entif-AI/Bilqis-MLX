@@ -15,7 +15,7 @@ from bilqis_mlx.live_grade_a import live_course, RELEASE as LIVE_RELEASE
 from bilqis_mlx.grade_a_trainer import (
     _make_batch, _persist, _seed, _state_from_json, _train_step,
     _take_visit, _take_exam,
-    choose_lesson_batch, replay_missed_lessons, missed_lesson_window,
+    choose_lesson_batch, replay_missed_lessons,
     operator_lock, prepare_source,
     _initial_model, _bundle_pointer, _resume, _durable_json,
     _clean_staged_bundles, _quarantine_newer_uncommitted_bundles,
@@ -73,10 +73,11 @@ class GradeATrainerContractTests(unittest.TestCase):
         self.assertEqual({p["id"] for p in priority} & {p["id"] for p in mixed},
                          {p["id"] for p in priority})
         self.assertEqual(sum(r["gold"] == "TRUE" for r in mixed), 8)
-        longer = [{"id": "miss-" + str(i), "gold": "TRUE"} for i in range(22)]
-        seen = {row["id"] for cursor in (0, 4, 8, 12, 16, 20)
-                for row in missed_lesson_window(longer, cursor, 4)}
-        self.assertEqual(seen, {row["id"] for row in longer})
+        full_class = [{"id": f"miss-all-{i}", "gold": "TRUE"} for i in range(8)]
+        no_quarter_ceiling = replay_missed_lessons(chosen, full_class)
+        self.assertEqual({p["id"] for p in full_class} &
+                         {p["id"] for p in no_quarter_ceiling},
+                         {p["id"] for p in full_class})
 
     def test_failed_bundle_write_never_enters_active_bundles(self):
         def fail_after_partial_stage(directory, *args, **kwargs):
@@ -317,6 +318,12 @@ class GradeATrainerContractTests(unittest.TestCase):
                         params, opt, graph, reserve_gib=0.)
                 self.assertEqual(completed["last_exam"]["cohort_sha256"],
                                  saved_cohort["cohort_sha256"])
+                outcomes = completed["last_exam"]["teacher_outcomes"]
+                self.assertEqual(len(outcomes), 3)
+                self.assertEqual({outcome["attribution"] for outcome in outcomes},
+                                 {"MEASURED_FIXED_EXAM_UNIQUE_ACTION"})
+                self.assertTrue(all(len(outcome["decision_ids"]) == 1
+                                    for outcome in outcomes))
                 self.assertEqual(len(completed["last_exam"]["incumbent_comparisons"]), 1)
                 self.assertEqual(completed["last_exam"]["incumbent_comparisons"][0]["cohort_sha256"],
                                  completed["last_exam"]["cohort_sha256"])

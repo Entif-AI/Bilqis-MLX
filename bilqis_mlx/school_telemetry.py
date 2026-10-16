@@ -15,6 +15,84 @@ from .spiral_dashboard import Column
 
 
 TELEMETRY_VERSION = "bilqis.school50.telemetry/v1"
+_SIGNAL_LABELS = {
+    "REPETITIVE_ANSWERS": "S1",
+    "CHANCE_LEVEL_OR_LAGGING": "S2",
+    "LACK_OF_DURABLE_GAIN": "S3",
+    "DISCONNECTED_PREREQUISITES": "S4",
+    "EXCESSIVE_INTRODUCTORY_COMPLEXITY": "S5",
+}
+
+
+def _signal_label(signal) -> str:
+    return _SIGNAL_LABELS.get(str(signal), str(signal))
+
+
+def _teacher_decision_text(decision: object) -> str:
+    if not isinstance(decision, dict):
+        return "LESSON COMMITTED; exam pending"
+    warnings = [_signal_label(signal) for signal in decision.get("warning_signals", ())]
+    selected = decision.get("selected") or {}
+    selection = decision.get("policy_selection") or {}
+    warning_prefix = ("warn " if selection.get("diagnostic_context_consumed") else
+                      "warn-context ")
+    parts = [warning_prefix + ",".join(warnings)] if warnings else []
+    replayed = selected.get("exam_mistake_replay")
+    champion = selected.get("champion_priority")
+    if type(replayed) is int and replayed:
+        parts.append(f"miss {replayed}")
+    if type(champion) is int and champion:
+        parts.append(f"champ {champion}")
+    return " | ".join(parts) + "; exam pending" if parts else "LESSON COMMITTED; exam pending"
+
+
+def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
+    rows = []
+    diagnostics = event.get("learning_diagnostics")
+    if isinstance(diagnostics, dict):
+        warning_labels = [
+            f"{_signal_label(warning.get('signal'))}:{warning.get('capability', '?')}"
+            for warning in diagnostics.get("active_warnings", ())
+            if isinstance(warning, dict)
+        ]
+        not_measured = sum(
+            1 for finding in diagnostics.get("findings", ())
+            if isinstance(finding, dict) and finding.get("status") == "NOT_MEASURED")
+        detail = ("active " + ", ".join(warning_labels)
+                  if warning_labels else "no active warnings")
+        rows.append({"kind":"DIAGNOSTIC", "grade":grade,
+                     "detail":detail + f" | {not_measured} NOT MEASURED"})
+    outcomes = event.get("teacher_outcomes")
+    if isinstance(outcomes, list) and outcomes:
+        rows.append({"kind":"TEACH OUTCOME", "grade":grade,
+                     "detail":_teacher_outcome_text(outcomes)})
+    return tuple(rows)
+
+
+def _teacher_outcome_text(outcomes: list[dict]) -> str:
+    measured = _measured_teacher_outcomes(outcomes)
+    if measured:
+        return "fixed-exam action outcome " + (_measured_outcome_changes(measured) or "measured")
+    return _unmeasured_outcome_counts(outcomes)
+
+
+def _measured_teacher_outcomes(outcomes: list[dict]) -> list[dict]:
+    return [item for item in outcomes if isinstance(item, dict) and
+            item.get("attribution") == "MEASURED_FIXED_EXAM_UNIQUE_ACTION"]
+
+
+def _measured_outcome_changes(measured: list[dict]) -> str:
+    return ", ".join(
+        f"{item.get('capability', '?')} {item.get('delta_correct', 0):+d}"
+        for item in measured if type(item.get("delta_correct")) is int)
+
+
+def _unmeasured_outcome_counts(outcomes: list[dict]) -> str:
+    counts = defaultdict(int)
+    for item in outcomes:
+        if isinstance(item, dict):
+            counts[str(item.get("attribution", "UNKNOWN"))] += 1
+    return " | ".join(f"{key} x{count}" for key, count in sorted(counts.items()))
 
 # Same six historical panel identities, new-school labels that describe what
 # the data actually measures. The old School50 TABLES constant is untouched.
@@ -261,7 +339,7 @@ class SchoolTelemetry:
             "loss": _display(event.get("loss")),
             "gradient": (f"{event['gradient_norm']:.3g}" if type(event.get("gradient_norm")) in (float,int) else "-"),
             "old": _delta(event.get("earlier_grade_delta_pp"), pp=True),
-            "decision": "LESSON COMMITTED; exam pending",
+            "decision": _teacher_decision_text(event.get("teacher_decision")),
         }
         self.board.rows["CANDIDATES"].append(row)
         teacher = {"grade": grade, "attempt": self.visits, "policy": policy[:10],
@@ -377,6 +455,8 @@ class SchoolTelemetry:
         self.last_exam_grade = grade
         self.board.state.update(phase=event.get("phase", self.board.state.get("phase")),
                                 prefix=grade, step=step)
+        for system_row in _diagnostic_system_rows(event, grade):
+            self.board.push("system", system_row, redraw=False)
         self._summary()
 
     def _summary(self):

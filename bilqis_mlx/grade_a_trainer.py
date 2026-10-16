@@ -27,7 +27,7 @@ from .capability_frontier import (
 )
 from .disk import assert_headroom, headroom_snapshot
 from .diagnostics.teaching import inspect_lesson_step, summarize_teaching_visit
-from .diagnostics.exam_events import summarize_completed_exam
+from .diagnostics.exam_events import summarize_completed_exam_safely
 from .generated_assessment import GRADE_TEST_LIFECYCLE, make_cohort, score as score_cohort
 from .grade_a_manifest import verify_manifest
 from .grade_a_release import AUTHORITY, accepted_grade_a
@@ -43,6 +43,11 @@ from .school import (start_new, visit, assess, next_capability, append_next_grad
                      teacher_vote_weights, SchoolState, Assessment, Score)
 from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .source import AUDITED_PARENT
+from .teacher_feedback import (
+    FairMissRequest, TeacherDecisionInput, active_warning_signals, reconcile_unresolved_misses,
+    select_fair_miss_window, summarize_teacher_decision,
+    summarize_teacher_outcomes,
+)
 
 VERSION = "bilqis.mlx.human-grade-a-trainer/v1"
 LOCKFILE = ".grade-a-operator.lock"
@@ -221,24 +226,19 @@ def choose_lesson_batch(rows: list[dict], policy: dict,
 
 
 def replay_missed_lessons(chosen: list[dict], missed: list[dict]) -> list[dict]:
-    """Guarantee distinct previously missed semantics receive fresh updates."""
+    """Guarantee every requested missed construction reaches this optimizer batch."""
+    if len(missed) > len(chosen):
+        raise ValueError("HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH")
     result = list(chosen)
     consumed = set()
-    for item in missed[:max(1, len(chosen) // 4)]:
+    for item in missed:
         replacement = next((i for i, row in enumerate(result)
                             if i not in consumed and row["gold"] == item["gold"]), None)
-        if replacement is not None:
-            result[replacement] = item
-            consumed.add(replacement)
+        if replacement is None:
+            raise ValueError("HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY")
+        result[replacement] = item
+        consumed.add(replacement)
     return result
-
-
-def missed_lesson_window(missed: list[dict], cursor: int, capacity: int) -> list[dict]:
-    """Rotate missed specimens across all optimizer steps and resumed visits."""
-    if not missed:
-        return []
-    count = min(len(missed), capacity)
-    return [missed[(cursor + i) % len(missed)] for i in range(count)]
 
 
 def champion_directed_lessons(chosen: list[dict], candidates: list[dict],
@@ -900,7 +900,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     # material once scoring has completed. No held-out embargo survives.
     priority = [r for r in receipt.get("teacher_misses", ())
                 if r["capability"] == cap]
-    priority_cursor = receipt.get("teacher_miss_cursor", 0)
+    miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
+    if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
+        raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
+    selected_misses = set()
     rows.extend(priority)
     before = _train_score(mx, params, rows, receipt["config"],
                           receipt["answer_ids"])
@@ -908,6 +911,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     last_norm = 0.0
     methodology_steps = []
     methodology_unavailable = None
+    replayed_misses = 0
+    champion_prioritized = 0
     step_before = int(optimizer.state["step"].item())
     for step in range(steps_per_visit):
         fresh = _draw_live_rows(source_root, graph,
@@ -917,13 +922,32 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         picked = choose_lesson_batch(
             fresh, policy, _seed(receipt, capability=cap, step=step+1),
             batch_size=batch_size)
+        before_champion = list(picked)
         picked = champion_directed_lessons(
-            picked, teacher_candidates, champion_votes, capacity=batch_size // 4)
-        # Reserve a bounded slice for previously missed specimens, preserving
-        # the policy's binary balance by replacing the same answer class.
-        window = missed_lesson_window(priority, priority_cursor, batch_size // 4)
+            picked, teacher_candidates, champion_votes, capacity=batch_size)
+        inserted_by_champion = {
+            after_row["id"] for before_row, after_row in zip(before_champion, picked)
+            if before_row["id"] != after_row["id"] and
+               champion_votes.get(after_row["id"], 0)
+        }
+        window = select_fair_miss_window(
+            priority, FairMissRequest(
+                exposures=miss_exposures,
+                selected_this_visit=frozenset(selected_misses),
+                remaining_steps=steps_per_visit-step,
+                batch_size=batch_size,
+                gold_capacity={
+                gold: sum(row["gold"] == gold for row in picked)
+                for gold in {row["gold"] for row in picked}
+                },
+            ))
         picked = replay_missed_lessons(picked, window)
-        priority_cursor += len(window)
+        for row in window:
+            identity = row["id"]
+            miss_exposures[identity] = miss_exposures.get(identity, 0) + 1
+            selected_misses.add(identity)
+        replayed_misses += len(window)
+        champion_prioritized += sum(row["id"] in inserted_by_champion for row in picked)
         if methodology_unavailable is None:
             try:
                 methodology_steps.append(inspect_lesson_step(
@@ -937,6 +961,21 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             receipt["answer_ids"])
     after = _train_score(mx, params, rows, receipt["config"],
                          receipt["answer_ids"])
+    remaining_priority = priority
+    if priority:
+        miss_guesses = _predictions(
+            mx, params, priority, receipt["config"], receipt["answer_ids"])
+        remaining_priority = reconcile_unresolved_misses(
+            priority, priority, miss_guesses)
+    remaining_priority_ids = {row["id"] for row in remaining_priority}
+    resolved_priority_ids = {row["id"] for row in priority} - remaining_priority_ids
+    for identity in resolved_priority_ids:
+        miss_exposures.pop(identity, None)
+    all_teacher_misses = [
+        row for row in receipt.get("teacher_misses", ())
+        if row["capability"] != cap
+    ] + remaining_priority
+    all_teacher_misses.sort(key=lambda row: (row["capability"], row["id"]))
     reward = after - before
     engine.observe(teacher, lesson_grade, policy_key, reward)
     if int(optimizer.state["step"].item()) != step_before+steps_per_visit:
@@ -944,6 +983,28 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     # No new archive exists yet. The retained checkpoint is the last complete
     # recovery point, NOT a representation of these newly updated RAM weights.
     school = visit(course, school, cap, school.current_student)
+    methodology = summarize_teaching_visit(
+        course, cap, tuple(methodology_steps),
+        introductory=introduction_pass,
+        unmeasured_reason=methodology_unavailable)
+    previous_methodology = next((
+        member.get("lesson_methodology")
+        for member in reversed(receipt.get("delivery_outbox", ()))
+        if member.get("capability") == cap and "lesson_methodology" in member
+    ), None)
+    warnings = active_warning_signals(receipt.get("last_exam"), previous_methodology, cap)
+    teacher_decision = summarize_teacher_decision(TeacherDecisionInput(
+        capability=cap, policy_key=policy_key, warnings=warnings,
+        unresolved_miss_count=len(priority),
+        champion_candidate_count=len(teacher_candidates),
+        prerequisite_capabilities=course.capability_map[cap].prerequisites,
+        methodology=methodology,
+        delivered_examples=steps_per_visit*batch_size,
+        replayed_misses=replayed_misses,
+        resolved_exam_misses=len(resolved_priority_ids),
+        champion_prioritized=champion_prioritized,
+        seed=_seed(receipt, capability=cap),
+    ))
     event = {
         "event": "GRADE_A_TEACHER_VISIT_COMMITTED" if lesson_grade == "A"
                  else "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED",
@@ -961,12 +1022,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "lesson_source_sha256": manifest["manifest_sha256"],
         "lesson_seed": _seed(receipt, capability=cap),
         "prior_exam_misses_available": len(priority),
+        "prior_exam_misses_remaining": len(remaining_priority),
         "prior_grade_champion_votes": teacher_vote_weights(course, school),
         "champion_directed_examples_available": len(teacher_candidates),
-        "lesson_methodology": summarize_teaching_visit(
-            course, cap, tuple(methodology_steps),
-            introductory=introduction_pass,
-            unmeasured_reason=methodology_unavailable),
+        "lesson_methodology": methodology,
+        "teacher_decision": teacher_decision,
         "optimizer_step": int(optimizer.state["step"].item()),
         "next_phase": school.stage,
         "checkpoint_status": "PROVISIONAL_UNTIL_NEXT_RECOVERY_BOUNDARY",
@@ -975,7 +1035,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     pending = list(receipt.get("_pending_visit_events", ()))
     pending.append(event)
     result = _advance(run_dir, receipt, school, teacher=teacher, persist=False)
-    result["teacher_miss_cursor"] = priority_cursor
+    result["teacher_misses"] = all_teacher_misses
+    result["teacher_miss_exposures"] = miss_exposures
+    result.pop("teacher_miss_cursor", None)
     result["_pending_visit_events"] = pending
     return result
 
@@ -1286,18 +1348,30 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "optimizer_step": assessment.optimizer_step,
         "scores": scores,
     }
-    exam_warnings = summarize_completed_exam(run_dir, receipt, last_exam)
     pending = receipt.get("_pending_visit_events", ())
+    exam_warnings = summarize_completed_exam_safely(run_dir, receipt, last_exam)
+    last_exam["learning_diagnostics"] = exam_warnings
+    teacher_outcomes = summarize_teacher_outcomes(receipt.get("last_exam"), last_exam, pending)
+    last_exam["teacher_outcomes"] = teacher_outcomes
     # Exam golds become eligible *after* the complete examination. Retain
     # tokens and source provenance so the next weakest-three visits can train
     # directly on missed semantics, with no answer leakage during scoring.
-    failed_ids = {m["id"] for m in measured["misses_for_teacher"]}
-    priority = [r for r in rows if r["id"] in failed_ids]
+    priority = reconcile_unresolved_misses(
+        receipt.get("teacher_misses", ()), rows, guesses)
+    unresolved_ids = {row["id"] for row in priority}
+    miss_exposures = {
+        identity: count for identity, count in
+        receipt.get("teacher_miss_exposures", {}).items()
+        if identity in unresolved_ids and type(count) is int and count >= 0
+    }
+    for identity in unresolved_ids:
+        miss_exposures.setdefault(identity, 0)
     migrated_receipt = {**receipt, "teacher_misses": priority,
                         "qualification_cohort": qualification,
-                        "teacher_miss_cursor": 0,
+                        "teacher_miss_exposures": miss_exposures,
                         "legacy_frontier_pending_replay": False,
                         "live_rubric_sha256": assessment.rubric_digest}
+    migrated_receipt.pop("teacher_miss_cursor", None)
     result = _advance(
         run_dir, migrated_receipt, advanced, frontier=frontier,
         model_bundle=school.current_student.filename, last_exam=last_exam,
@@ -1323,6 +1397,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "incumbent_comparisons": compared,
         "teacher_miss_count": len(priority),
         "learning_diagnostics": exam_warnings,
+        "teacher_outcomes": teacher_outcomes,
     }
     result = _persist(run_dir, _with_delivery_outbox(
         result, _boundary_delivery_events(result, pending, roles, exam_event)))
