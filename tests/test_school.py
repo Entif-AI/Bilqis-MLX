@@ -74,7 +74,7 @@ class SchoolTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 save_new_state(target,state)
 
-    def test_two_distinct_weakest_three_rounds_before_returning_to_grade_a(self):
+    def test_two_freshly_ranked_weakest_three_rounds_before_returning_to_grade_a(self):
         course = self.course
         state = grade_loop(course,start_new(course,self.init),self.init)
         self.assertEqual(state.stage,"ASSESS_MAIN")
@@ -171,6 +171,16 @@ class SchoolTests(unittest.TestCase):
     def test_exact_ratio_ranking_not_wrong_count(self):
         scores={"a":Score(7,8),"b":Score(1,2),"c":Score(2,3),"d":Score(0,1)}
         self.assertEqual(weakest_three(scores,tuple(scores)),("d","b","c"))
+
+    def test_second_recovery_revisits_same_weakest_if_they_are_still_weak(self):
+        school=grade_loop(self.course,start_new(self.course,self.init),self.init)
+        scores={f"a.{i}": (1+i,8) for i in range(6)}
+        school=assess(self.course,school,snapshot(self.course,self.init,scores))
+        self.assertEqual(school.queue,("a.0","a.1","a.2"))
+        school=grade_loop(self.course,school,self.init)
+        school=assess(self.course,school,snapshot(self.course,self.init,scores))
+        self.assertEqual(school.stage,"RECOVERY_2")
+        self.assertEqual(school.queue,("a.0","a.1","a.2"))
 
     def test_rubric_identity_cannot_change_across_student_visits(self):
         course = self.course
@@ -385,7 +395,7 @@ class SchoolTests(unittest.TestCase):
         state = grade_loop(course, state, student)
         state = assess(course, state, snapshot(course, student, imperfect))
         self.assertEqual(state.stage, "RECOVERY_2")
-        self.assertFalse(set(state.queue) & set(state.first_recovery))
+        self.assertEqual(state.queue[:2], ("a.0", "a.1"))
         self.assertEqual(state.revalidation_target_grade, "B")
 
     def test_admitted_grade_rejects_fabricated_one_question_perfect_score(self):

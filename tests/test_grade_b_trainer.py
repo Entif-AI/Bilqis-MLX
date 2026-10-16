@@ -16,7 +16,8 @@ from bilqis_mlx.grade_a_trainer import (
     _persist_live_cohort, _recover_orphaned_commit, _seed, _state_from_json,
     _publish_boundary, _reconcile_delivery_outbox, _resume, _take_exam,
     _take_visit, _verify_saved_cohort, _with_delivery_outbox,
-    champion_directed_lessons, prepare_source,
+    champion_directed_lessons, prepare_source, retain_missed_semantics,
+    decompose_grade_b_operands, select_prerequisite_micro_lessons,
 )
 from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.live_grade_a import live_course as a_live_course
@@ -267,6 +268,53 @@ class GradeBTrainerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"COUNT_INVALID"):
             champion_directed_lessons(chosen,candidates,{"new-false":-1},capacity=1)
 
+    def test_unrehearsed_old_exam_misses_remain_available_after_new_cohort(self):
+        old = [{"id":"A-old","capability":"A.IDENTITY","gold":"FALSE"},
+               {"id":"B-corrected","capability":"B.NOT","gold":"TRUE"}]
+        fresh = [{"id":"B-new","capability":"B.NOT","gold":"FALSE"}]
+        outcome, stats = retain_missed_semantics(
+            old, fresh, {"A-old":"TRUE","B-corrected":"TRUE"})
+        self.assertEqual({r["id"] for r in outcome},{"A-old","B-new"})
+        self.assertEqual(stats["previous_unresolved"],1)
+        self.assertEqual(stats["previous_resolved"],1)
+        self.assertEqual(stats["new_misses"],1)
+        self.assertEqual(stats["dropped_for_budget"],0)
+        # A backlog cannot grow unbounded through repeated exams, and a
+        # genuinely persistent miss must be represented alongside new ones.
+        old = [{"id":f"old-{i}","capability":"B.AND","gold":"TRUE"}
+               for i in range(20)]
+        fresh = [{"id":f"new-{i}","capability":"B.AND","gold":"FALSE"}
+                 for i in range(20)]
+        result, evidence = retain_missed_semantics(
+            old,fresh,{r["id"]:"FALSE" for r in old},per_cap=24)
+        self.assertEqual(len(result),24)
+        self.assertIn("old-0",{r["id"] for r in result})
+        self.assertIn("new-19",{r["id"] for r in result})
+        self.assertEqual(evidence["dropped_for_budget"],16)
+
+    def test_b_primitive_operands_remain_taught_as_own_verified_a_questions(self):
+        """Teach a composed rule alongside independently scored constituents."""
+        from bilqis_mlx.grade_a_probe import read_sources
+        _, _, graph, _, _ = read_sources(SOURCE_ROOT)
+        rows = _draw_live_rows(SOURCE_ROOT, graph, seed=123441,
+                               capability="B.XOR", each=12, course=self.b_course)
+        pieces = decompose_grade_b_operands(SOURCE_ROOT, graph, rows)
+        self.assertGreaterEqual(len(pieces),12)
+        self.assertLessEqual(len(pieces),24)
+        self.assertEqual(len({p["id"] for p in pieces}),len(pieces))
+        self.assertTrue({p["gold"] for p in pieces} == {"TRUE","FALSE"})
+        self.assertTrue(all(p["capability"] in
+                            ("A.IDENTITY","A.PARENT","A.LINK") for p in pieces))
+        self.assertTrue(all(1 <= len(p["tokens"]) <= 96 for p in pieces))
+        self.assertTrue(all(p["id"] == p["source_id"] for p in pieces))
+        chosen = [{"id":f"b-{i}","capability":"B.XOR",
+                   "gold":"TRUE" if i%2 else "FALSE"} for i in range(32)]
+        mixed = select_prerequisite_micro_lessons(chosen,pieces,capacity=8)
+        self.assertEqual(len(mixed),32)
+        self.assertEqual(sum(x["capability"].startswith("A.") for x in mixed),8)
+        self.assertEqual(sum(x["gold"] == "TRUE" for x in mixed),16)
+        self.assertEqual(sum(x["gold"] == "FALSE" for x in mixed),16)
+
     def test_b_weakest_three_rehearsal_credits_actual_a_lesson_not_b(self):
         """An A predicate taught during B recovery must train A's policy stats."""
         from types import SimpleNamespace
@@ -378,8 +426,16 @@ class GradeBTrainerTests(unittest.TestCase):
                 receipt = _activate_next_admitted_grade(
                     root,receipt,self.a_course,self.b_course)
 
+            # Real generated prior B exam mistakes must survive fresh perfect
+            # cohorts if no subsequent direct evaluation has corrected them.
+            old_miss = _draw_live_rows(
+                SOURCE_ROOT,graph,seed=91044,capability="B.NOT",each=12,
+                course=self.b_course)[0]
+            receipt["teacher_misses"] = [old_miss]
+
             def perfect_oracle_predictions(mx,parameters,rows,config,answer_ids):
-                return {r["id"]:r["gold"] for r in rows}
+                return {r["id"]: ("FALSE" if r["gold"] == "TRUE" else "TRUE")
+                        if r["id"] == old_miss["id"] else r["gold"] for r in rows}
 
             for expected_grade in ("B","A","B"):
                 self.assertEqual(_state_from_json(receipt["school"],self.b_course).grade,
@@ -402,6 +458,10 @@ class GradeBTrainerTests(unittest.TestCase):
                 self.assertEqual(sum(s["total"] for s in exam["scores"].values()),144)
                 self.assertTrue(all(s["correct"] == s["total"] for s in exam["scores"].values()))
                 self.assertEqual(len(exam["cohort_sha256"]),64)
+                self.assertIn(old_miss["id"], {r["id"] for r in
+                              receipt["teacher_misses"]})
+                self.assertEqual(receipt["delivery_outbox"][-1]["teaching_miss_backlog"]
+                                 ["previous_unresolved"],1)
             final = _state_from_json(receipt["school"],self.b_course)
             self.assertEqual(final.stage,"AWAITING_NEXT_GRADE")
             self.assertEqual(final.active_grades,("A","B"))

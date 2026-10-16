@@ -185,13 +185,11 @@ def visit(course: Course, state: SchoolState, capability: str,
                    current_student=student_after_visit)
 
 
-def weakest_three(scores: dict[str, Score], pool: tuple[str, ...],
-                  *, exclude: tuple[str, ...] = ()) -> tuple[str, ...]:
-    """Normalized exact-rational ordering; re-rank the remaining pool each round."""
+def weakest_three(scores: dict[str, Score], pool: tuple[str, ...]) -> tuple[str, ...]:
+    """Re-rank the full pool each round, including still-struggling students."""
     if len(set(pool)) != len(pool) or not set(pool) <= set(scores):
         raise ValueError("WEAKEST_THREE_INCOMPLETE_POOL")
-    ranking = sorted((c for c in pool if c not in exclude),
-                     key=lambda c: (scores[c].accuracy, c))
+    ranking = sorted(pool, key=lambda c: (scores[c].accuracy, c))
     if len(ranking) < 3:
         raise ValueError("WEAKEST_THREE_NOT_ENOUGH_REMAINING_CAPABILITIES")
     return tuple(ranking[:3])
@@ -298,7 +296,9 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
         return replace(state, stage="RECOVERY_1", queue=trio,
                        first_recovery=trio, latest_rubric_digest=snapshot.rubric_digest)
     if state.stage == "ASSESS_RECOVERY_1":
-        trio = weakest_three(snapshot.scores, pool, exclude=state.first_recovery)
+        # The second ranking is fresh, not disjoint. An unresolved weakness
+        # must not become ineligible merely because round one selected it.
+        trio = weakest_three(snapshot.scores, pool)
         return replace(state, stage="RECOVERY_2", queue=trio,
                        latest_rubric_digest=snapshot.rubric_digest)
     return replace(state, stage="MAIN", queue=_caps(course, (state.grade,)),

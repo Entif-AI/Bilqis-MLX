@@ -34,3 +34,22 @@ The immutable `delivery_outbox` in each newly committed generation records the i
 Tests in `tests/test_live_grade_b.py` require exact source/graph identity, constructor and oracle agreement, balanced 72-item B source cohorts, sample rotation and tamper rejection. `tests/test_grade_b_trainer.py` checks immutable A→B saved-state migration with unchanged student/optimizer/teacher pointers, interrupted state-pointer and event publication recovery with exactly-once readback, ledger tamper detection, per-capability grade credit, preserved A and B cohort hashes, source-gold-only champion votes, and a full disposable MLX B→A→B 144-item examination progression. The latter uses toy trainable tensors and explicitly mocked correct predictions for its graduation transitions: it verifies pipeline mechanics and *does not* measure actual student acquisition. Historical Grade A test receipts remain immutable, and human model optimizer step 153144 remains the live observed pre-B boundary.
 
 **Not yet measured:** any genuine human-trained B score, B learning curve, persistence of A competencies under real B updates, full-program New Ithkuil completion, numeric/native-token output admission, and exact NI morphological conformance. No agent invokes `--human-run`. Grade C and later syllabi need their own independent source+prerequisite+admission releases.
+
+## 2026-10-16 human-run correction: observed regression, not sealed exams
+
+This document originally described a pre-run implementation. Real operator
+training has now exposed weak B acquisition and rapid A forgetting. The
+human student scored 55/72 A and 33/72 B at step 155640, against its original
+retained Grade A champion's 71/72 A and 39/72 B on **the identical sampled
+cohort**. No permanent Grade B sealed-question embargo exists, but each new
+exam previously discarded the whole previous mistake queue. The second
+weakest-three round also excluded first-round members even when still worst.
+
+ADR-026 corrects both: retain bounded still-incorrect earlier mistakes across
+fresh cohorts and freshly rerank the entire eligible pool twice; direct
+source-oracled A operand micro-lessons now accompany each B expression in
+up to one-quarter of its optimizer batch, without introducing a separate
+old-grade full loop or exposing exam gold during scoring. See
+`docs/GRADE_B_REGRESSION_FORENSICS_20261016.md` for the measured failure
+and verification limits. Software regressions pass; actual recovery remains
+untested until a human deliberately runs and measures the intact student.

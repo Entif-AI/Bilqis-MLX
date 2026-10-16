@@ -28,12 +28,15 @@ from .capability_frontier import (
 from .disk import assert_headroom, headroom_snapshot
 from .generated_assessment import make_cohort, score as score_cohort
 from .grade_a_manifest import verify_manifest
+from .grade_a_oracle import evaluate as grade_a_record_oracle
+from .grade_a_probe import read_sources
 from .grade_a_release import AUTHORITY, accepted_grade_a
 from .live_grade_a import (GENERATOR as LIVE_GENERATOR, RELEASE as LIVE_RELEASE,
                            draw_predicates, live_course, generator_source_digest)
 from .live_grade_b import (GENERATOR as B_GENERATOR, RELEASE as B_RELEASE,
                            draw_connectives, live_course as live_b_course,
                            constructor_digest as b_constructor_digest)
+from .grade_b_oracle import operand_truth
 from .mlx_checkpoint import save_new_bundle, load_semantically_bound_bundle
 from .mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
@@ -237,6 +240,133 @@ def missed_lesson_window(missed: list[dict], cursor: int, capacity: int) -> list
         return []
     count = min(len(missed), capacity)
     return [missed[(cursor + i) % len(missed)] for i in range(count)]
+
+
+def retain_missed_semantics(previous: list[dict], new: list[dict],
+                           prior_predictions: dict[str, str], *, per_cap=24):
+    """Carry source-attested unresolved mistakes across rotating exams.
+
+    The old implementation *replaced* every missed item at the next exam,
+    even if that capability received no intervening lesson. Retain still-wrong
+    constructions until direct instruction/transfer fixes them, keeping a
+    bounded, mixed-age queue per capability rather than unlimited snapshots.
+    This is a teaching-only queue, never a candidate qualification cohort.
+    """
+    if type(per_cap) is not int or per_cap < 2:
+        raise ValueError("HUMAN_TRAINER_MISS_CAP_INVALID")
+    if set(prior_predictions) != {row["id"] for row in previous}:
+        raise ValueError("HUMAN_TRAINER_PRIOR_MISS_PREDICTIONS_INCOMPLETE")
+    older, fresh = {}, {}
+    seen = set()
+    resolved = 0
+    for row in previous:
+        identity = row["id"]
+        if identity in seen:
+            raise ValueError("HUMAN_TRAINER_DUPLICATE_PRIOR_MISS")
+        seen.add(identity)
+        if prior_predictions[identity] == row["gold"]:
+            resolved += 1
+        else:
+            older.setdefault(row["capability"], []).append(row)
+    for row in new:
+        if row["id"] not in seen:
+            fresh.setdefault(row["capability"], []).append(row)
+            seen.add(row["id"])
+    retained = []
+    dropped = 0
+    for cap in sorted(set(older) | set(fresh)):
+        prior = older.get(cap, [])
+        incoming = fresh.get(cap, [])
+        if len(prior) + len(incoming) <= per_cap:
+            chosen = prior + incoming
+        else:
+            # Reserve space both for older omissions awaiting their first
+            # visit and for recent diverse counterexamples, without allowing
+            # any one family to grow the immutable state without bound.
+            old_quota = min(len(prior), per_cap // 2) if incoming else per_cap
+            recent_quota = min(len(incoming), per_cap - old_quota)
+            older_extra = min(len(prior) - old_quota,
+                              per_cap - old_quota - recent_quota)
+            chosen = prior[:old_quota + older_extra]
+            if recent_quota:
+                chosen += incoming[-recent_quota:]
+        dropped += len(prior) + len(incoming) - len(chosen)
+        retained.extend(chosen)
+    return retained, {"previous_unresolved":sum(map(len,older.values())),
+                      "previous_resolved":resolved,
+                      "new_misses":len(new),
+                      "dropped_for_budget":dropped,
+                      "available_for_teaching":len(retained)}
+
+
+def decompose_grade_b_operands(source_root, graph: dict, rows: list[dict]):
+    """Derive verified A prerequisite lessons from each new B construction.
+
+    These are already-mastered predicates in the *same attested world* as the
+    composite B rule. They are not new roots, synthetic truth labels, separate
+    Grade A course visits, or withheld exam items. Pairing the constituents
+    with a B operator prevents teaching only the outer answer while allowing
+    its mastered semantic foundation to erode.
+    """
+    micro, _, source_graph, _, _ = read_sources(source_root)
+    if graph["tokens"][:len(source_graph["tokens"])] != source_graph["tokens"]:
+        raise ValueError("HUMAN_TRAINER_B_PREREQUISITE_GRAPH_DRIFT")
+    lessons = []
+    seen = set()
+    for row in rows:
+        if not row["capability"].startswith("B."):
+            continue
+        root = row["record"]
+        truth_parts = row["operand_truths"]
+        operands = root["query"]["args"]
+        if len(operands) != len(truth_parts):
+            raise ValueError("HUMAN_TRAINER_B_PREREQUISITE_OPERAND_DRIFT")
+        for node, asserted_truth in zip(operands, truth_parts):
+            if node["kind"] == "compare" and node["operator"] == "EQ":
+                cap = "A.IDENTITY"
+            elif node["kind"] == "relation" and node["name"] in ("PARENT", "LINK"):
+                cap = "A." + node["name"]
+            else:
+                raise ValueError("HUMAN_TRAINER_B_PREREQUISITE_UNMASTERED_ROOT")
+            record = micro.record(root["world"], node)
+            expected = "TRUE" if asserted_truth else "FALSE"
+            gold = micro.evaluate(record)
+            if (gold != expected or gold != micro.independent_evaluate(record) or
+                    gold != grade_a_record_oracle(record, cap) or
+                    gold != ("TRUE" if operand_truth(root["world"], node) else "FALSE")):
+                raise ValueError("HUMAN_TRAINER_B_PREREQUISITE_ORACLE_DRIFT")
+            tokens = list(micro.encode(record))
+            if (not 1 <= len(tokens) <= 96 or min(tokens) < 0 or
+                    max(tokens) >= len(graph["tokens"])):
+                raise ValueError("HUMAN_TRAINER_B_PREREQUISITE_TOKEN_DRIFT")
+            identity = _fingerprint(record)
+            if identity not in seen:
+                lessons.append({"id":identity,"source_id":identity,
+                                "capability":cap,"answer_kind":"binary",
+                                "gold":gold,"record":record,"tokens":tokens,
+                                "universe_size":len(root["world"]["entities"]),
+                                "oracle":"original+independent+grade_a_oracle",
+                                "generator":"grade-b-decomposed-prerequisite/v1"})
+                seen.add(identity)
+    return lessons
+
+
+def select_prerequisite_micro_lessons(chosen: list[dict], pieces: list[dict],
+                                     *, capacity: int):
+    """Keep B dominant and both truth classes balanced in B-step mini-batches."""
+    if capacity < 0 or capacity > len(chosen)//4:
+        raise ValueError("HUMAN_TRAINER_B_PREREQUISITE_CAPACITY_INVALID")
+    counts = {"TRUE":[],"FALSE":[]}
+    for row in pieces:
+        if row["gold"] not in counts:
+            raise ValueError("HUMAN_TRAINER_B_PREREQUISITE_GOLD_INVALID")
+        if not any(old["id"] == row["id"] for old in counts[row["gold"]]):
+            counts[row["gold"]].append(row)
+    pairs = min(capacity//2, len(counts["TRUE"]), len(counts["FALSE"]))
+    if not pairs:
+        return list(chosen)
+    return replay_missed_lessons(chosen,
+        counts["TRUE"][:pairs] + counts["FALSE"][:pairs])
 
 
 def champion_directed_lessons(chosen: list[dict], candidates: list[dict],
@@ -854,6 +984,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                           receipt["answer_ids"])
     last_loss = 0.0
     last_norm = 0.0
+    prerequisite_micro_lessons = 0
     step_before = int(optimizer.state["step"].item())
     for step in range(steps_per_visit):
         fresh = _draw_live_rows(source_root, graph,
@@ -865,10 +996,17 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             batch_size=batch_size)
         picked = champion_directed_lessons(
             picked, teacher_candidates, champion_votes, capacity=batch_size // 4)
-        # Reserve a bounded slice for previously missed specimens, preserving
-        # the policy's binary balance by replacing the same answer class.
+        if lesson_grade == "B":
+            components = decompose_grade_b_operands(source_root, graph, fresh)
+            picked = select_prerequisite_micro_lessons(
+                picked, components, capacity=batch_size//4)
+        # Assessment mistakes outrank optional constituent refreshers. Keep
+        # the exact error examples teachable even after another cohort rotates.
         window = missed_lesson_window(priority, priority_cursor, batch_size // 4)
         picked = replay_missed_lessons(picked, window)
+        if lesson_grade == "B":
+            prerequisite_micro_lessons += sum(
+                row["capability"].startswith("A.") for row in picked)
         priority_cursor += len(window)
         last_loss, last_norm = _train_step(
             mx, params, optimizer, picked, receipt["config"],
@@ -901,6 +1039,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "prior_exam_misses_available": len(priority),
         "prior_grade_champion_votes": teacher_vote_weights(course, school),
         "champion_directed_examples_available": len(teacher_candidates),
+        "source_verified_prerequisite_micro_lessons": prerequisite_micro_lessons,
         "optimizer_step": int(optimizer.state["step"].item()),
         "next_phase": school.stage,
         "checkpoint_status": "PROVISIONAL_UNTIL_NEXT_RECOVERY_BOUNDARY",
@@ -1226,7 +1365,11 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     # directly on missed semantics, with no answer leakage during scoring.
     failed_ids = {m["id"] for m in measured["misses_for_teacher"]}
     priority = [r for r in rows if r["id"] in failed_ids]
-    migrated_receipt = {**receipt, "teacher_misses": priority,
+    prior = receipt.get("teacher_misses", [])
+    prior_guesses = (_predictions(mx, parameters, prior, receipt["config"],
+                                 receipt["answer_ids"]) if prior else {})
+    unresolved, miss_stats = retain_missed_semantics(prior, priority, prior_guesses)
+    migrated_receipt = {**receipt, "teacher_misses": unresolved,
                         "teacher_miss_cursor": 0,
                         "legacy_frontier_pending_replay": False,
                         "live_rubric_sha256": assessment.rubric_digest}
@@ -1252,6 +1395,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "cohort_seed": seed, "cohort_file": last_exam["cohort_file"],
         "incumbent_comparisons": compared,
         "teacher_miss_count": len(priority),
+        "teaching_miss_backlog": miss_stats,
     }
     result = _persist(run_dir, _with_delivery_outbox(
         result, _boundary_delivery_events(result, pending, roles, exam_event)))
