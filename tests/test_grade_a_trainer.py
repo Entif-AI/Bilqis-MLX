@@ -320,8 +320,10 @@ class GradeATrainerContractTests(unittest.TestCase):
                                  saved_cohort["cohort_sha256"])
                 outcomes = completed["last_exam"]["teacher_outcomes"]
                 self.assertEqual(len(outcomes), 3)
+                # Three different optimizer-changing visits intervene. One
+                # visit per capability is not unique whole-student causality.
                 self.assertEqual({outcome["attribution"] for outcome in outcomes},
-                                 {"MEASURED_FIXED_EXAM_UNIQUE_ACTION"})
+                                 {"NOT_MEASURED_MULTIPLE_ACTIONS"})
                 self.assertTrue(all(len(outcome["decision_ids"]) == 1
                                     for outcome in outcomes))
                 self.assertEqual(len(completed["last_exam"]["incumbent_comparisons"]), 1)

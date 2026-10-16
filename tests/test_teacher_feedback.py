@@ -155,6 +155,26 @@ class TeacherFeedbackTests(unittest.TestCase):
         self.assertEqual(changed["attribution"],
                          OutcomeAttribution.NOT_MEASURED_CHANGED_EXAM)
 
+    def test_other_capability_optimizer_visits_prevent_unique_causal_attribution(self):
+        """XOR forgetting after teaching NOT is not uniquely attributable to XOR."""
+        previous = {"cohort_sha256": "c"*64, "optimizer_step": 100,
+                    "scores": {"B.XOR": {"correct": 12, "total": 12},
+                               "B.NOT": {"correct": 12, "total": 12}}}
+        current = {"cohort_sha256": "c"*64, "optimizer_step": 132,
+                   "scores": {"B.XOR": {"correct": 8, "total": 12},
+                              "B.NOT": {"correct": 9, "total": 12}}}
+        pending = [
+            {"teacher_decision": {"capability": "B.XOR", "policy_key": "minerva",
+                                  "decision_id": "x"*64}},
+            {"teacher_decision": {"capability": "B.NOT", "policy_key": "minerva",
+                                  "decision_id": "n"*64}},
+        ]
+        outcomes = summarize_teacher_outcomes(previous, current, pending)
+        self.assertEqual({row["capability"] for row in outcomes}, {"B.XOR", "B.NOT"})
+        self.assertEqual({row["attribution"] for row in outcomes},
+                         {OutcomeAttribution.NOT_MEASURED_MULTIPLE_ACTIONS})
+        self.assertTrue(all(row["delta_correct"] is None for row in outcomes))
+
 
 if __name__ == "__main__":
     unittest.main()

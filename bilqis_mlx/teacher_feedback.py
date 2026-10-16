@@ -328,12 +328,15 @@ def _valid_score_pair(before: dict | None, after: dict | None) -> bool:
 
 
 def _measure_outcome(previous_exam: dict | None, current_exam: dict,
-                     decisions: list[dict], capability: str) -> _OutcomeMeasurement:
+                     decisions: list[dict], capability: str,
+                     intervening_visits: int) -> _OutcomeMeasurement:
     if not isinstance(previous_exam, dict):
         return _OutcomeMeasurement(OutcomeAttribution.NOT_MEASURED_NO_FIXED_BASELINE)
     if previous_exam.get("cohort_sha256") != current_exam.get("cohort_sha256"):
         return _OutcomeMeasurement(OutcomeAttribution.NOT_MEASURED_CHANGED_EXAM)
-    if len(decisions) != 1:
+    # A single visit on this skill is not a unique intervention when other
+    # capability visits have also changed the same whole student's weights.
+    if len(decisions) != 1 or intervening_visits != 1:
         return _OutcomeMeasurement(OutcomeAttribution.NOT_MEASURED_MULTIPLE_ACTIONS)
     before = _score(previous_exam.get("scores", {}), capability)
     after = _score(current_exam.get("scores", {}), capability)
@@ -347,8 +350,10 @@ def _measure_outcome(previous_exam: dict | None, current_exam: dict,
 
 
 def _outcome_payload(previous_exam: dict | None, current_exam: dict,
-                     capability: str, decisions: list[dict]) -> dict:
-    measurement = _measure_outcome(previous_exam, current_exam, decisions, capability)
+                     capability: str, decisions: list[dict],
+                     intervening_visits: int) -> dict:
+    measurement = _measure_outcome(previous_exam, current_exam, decisions,
+                                   capability, intervening_visits)
     return {
         "schema": VERSION,
         "capability": capability,
@@ -371,5 +376,6 @@ def summarize_teacher_outcomes(previous_exam: dict | None, current_exam: dict,
                                pending_visits: list[dict] | tuple[dict, ...]) -> list[dict]:
     """Attribute the next fixed-exam change only when one action window is identifiable."""
     groups = _group_decisions(pending_visits)
-    return [_outcome_payload(previous_exam, current_exam, capability, decisions)
+    return [_outcome_payload(previous_exam, current_exam, capability, decisions,
+                             len(pending_visits))
             for capability, decisions in sorted(groups.items())]
