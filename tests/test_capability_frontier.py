@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from bilqis_mlx.capability_frontier import (
-    candidate_roles, historical_frontier, promote, pinned,
+    candidate_roles, graduation_perfect, historical_frontier, promote, pinned,
     retirement_plan, retire_bundles,
 )
 
@@ -23,6 +23,23 @@ def scores(*values):
 
 
 class CapabilityFrontierTests(unittest.TestCase):
+    def test_perfect_graduation_retained_independent_of_candidate_ranking(self):
+        student = checkpoint("perfect", 20)
+        old = checkpoint("old", 10)
+        frontier = promote({}, scores(7, 5, 4), RUBRIC, old,
+                           "candidate-prior", tuple(scores(7, 5, 4)))
+        self.assertEqual(candidate_roles(frontier, scores(6, 4, 3), RUBRIC), ())
+        perfect, roles = graduation_perfect({}, scores(12, 9, 8), RUBRIC,
+                                            "b" * 64, student, "graduation")
+        self.assertEqual(roles, ("A.IDENTITY",))
+        self.assertEqual(perfect[RUBRIC + ":A.IDENTITY"]["checkpoint"], student)
+        self.assertEqual(pinned(frontier, student, {}) | pinned(perfect, student, {}),
+                         {"bundles/old", "bundles/perfect"})
+        subsequent, new_roles = graduation_perfect(perfect, scores(8, 9, 8),
+                            RUBRIC, "b" * 64, checkpoint("next", 30), "retry")
+        self.assertEqual(new_roles, ())
+        self.assertEqual(subsequent, perfect)
+
     def test_best_can_be_subperfect_and_share_multiple_capabilities(self):
         a = checkpoint("first", 1)
         s = scores(5, 7, 4)

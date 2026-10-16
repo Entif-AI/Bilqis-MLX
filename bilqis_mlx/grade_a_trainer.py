@@ -23,7 +23,7 @@ import uuid
 from .backup import digest_file
 from .champions import Checkpoint
 from .capability_frontier import (
-    candidate_roles, historical_frontier, pinned, promote, retire_bundles,
+    candidate_roles, graduation_perfect, historical_frontier, pinned, promote, retire_bundles,
 )
 from .disk import assert_headroom, headroom_snapshot
 from .diagnostics.teaching import inspect_lesson_step, summarize_teaching_visit
@@ -734,9 +734,12 @@ def _verify_best_custody(run_dir, receipt):
     sources = [school["current_student"], *school["champions"].values(),
                *receipt.get("historical_grade_champions", {}).values(),
                *(cap["checkpoint"] for cap in receipt.get("capability_best", {}).values()),
+               *(cap["checkpoint"] for cap in receipt.get("graduation_perfect", {}).values()),
                *(cap["checkpoint"] for cap in historical_pending.values())]
     protected = pinned(receipt.get("capability_best", {}),
                        school["current_student"], school["champions"])
+    protected |= pinned(receipt.get("graduation_perfect", {}),
+                        school["current_student"], school["champions"])
     if historical_pending:
         protected |= pinned(historical_pending,
                             school["current_student"], school["champions"])
@@ -1124,7 +1127,7 @@ def _compare_incumbents(mx, run_dir, receipt, cohort, config, answer_ids, graph)
     historic = receipt.get("historical_capability_best", {}) if receipt.get(
         "legacy_frontier_pending_replay") else {}
     current = receipt.get("capability_best", {})
-    references = list(current.values()) + list(historic.values())
+    references = list(current.values()) + list(historic.values()) + list(receipt.get("graduation_perfect", {}).values())
     references.extend({"checkpoint": p} for p in
                       receipt.get("historical_grade_champions", {}).values())
     # A graduate keeps a teacher/champion vote even if its current capability
@@ -1337,6 +1340,8 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
     school = student_school
     retained = pinned(record.get("capability_best", {}), school["current_student"],
                       school["champions"])
+    retained |= pinned(record.get("graduation_perfect", {}),
+                       school["current_student"], school["champions"])
     for item in record.get("historical_grade_champions", {}).values():
         retained |= pinned({}, item, {})
     if record.get("legacy_frontier_pending_replay"):
@@ -1429,6 +1434,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     advanced = assess(course, school, assessment)
     scores = {k: {"correct": v.correct, "total": v.total}
               for k, v in assessment.scores.items()}
+    perfect, perfect_roles = graduation_perfect(
+        receipt.get("graduation_perfect", {}), scores, rubric, cohort.digest,
+        asdict(school.current_student), assessment.evaluation_id)
     last_exam = {
         "assessment_grade": school.grade,
         "grade_exam_epoch": school.grade_exam_epoch,
@@ -1440,6 +1448,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "cohort_file": cohort_file,
         "cohort_seed": seed,
         "candidate_cohort_sha256": candidate_cohort.digest,
+        "graduation_perfect_roles": list(perfect_roles),
         "generator_version": generator,
         "incumbent_comparisons": compared,
         "misses_for_teacher": list(measured["misses_for_teacher"]),
@@ -1466,6 +1475,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     for identity in unresolved_ids:
         miss_exposures.setdefault(identity, 0)
     migrated_receipt = {**receipt, "teacher_misses": priority,
+                        "graduation_perfect": perfect,
                         "qualification_cohort": qualification,
                         "teacher_miss_exposures": miss_exposures,
                         "legacy_frontier_pending_replay": False,

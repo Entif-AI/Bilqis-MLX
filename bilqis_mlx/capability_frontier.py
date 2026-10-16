@@ -93,6 +93,28 @@ def pinned(frontier: dict, current: dict,
     return result
 
 
+def graduation_perfect(previous, scores, rubric, cohort, checkpoint, evaluation_id):
+    """Retain a whole-student witness of each perfect graduation capability."""
+    result = dict(previous)
+    updated = []
+    if not checkpoint.get("model_and_native_adamw"):
+        raise ValueError("GRADUATION_PERFECT_REQUIRES_WHOLE_STUDENT")
+    for capability, score in sorted(scores.items()):
+        correct, total = _score(score)
+        if correct == total:
+            key = _key(rubric, capability)
+            prior = result.get(key)
+            if prior and prior["checkpoint"]["sha256"] == checkpoint["sha256"]:
+                continue
+            result[key] = {"rubric": rubric, "capability": capability,
+                           "correct": correct, "total": total,
+                           "cohort_sha256": cohort,
+                           "checkpoint": dict(checkpoint),
+                           "evaluation_id": evaluation_id}
+            updated.append(capability)
+    return result, tuple(updated)
+
+
 def retirement_plan(run_dir: Path, keep: set[str]) -> tuple[str, ...]:
     """Conservative, nonmutating census; any unknown data blocks retirement."""
     root = Path(run_dir) / "bundles"
