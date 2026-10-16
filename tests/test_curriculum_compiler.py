@@ -1,10 +1,13 @@
 """Neural-inert proof that curriculum structure generates reusable probes."""
 import json
+from dataclasses import replace
 from pathlib import Path
 import unittest
 
 from bilqis_mlx.curriculum_compiler import (compile_ast, compile_probe_plan,
-                                          diagnose_coverage, materialize_probes)
+                                          diagnose_coverage, materialize_probes,
+                                          dependency_coverage_plan,
+                                          affected_dependency_closure)
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_a_probe import read_sources
 
@@ -40,6 +43,45 @@ class CurriculumCompilerTests(unittest.TestCase):
         self.assertEqual(len(diagnose_coverage(ast, narrowed)), 6)
         with self.assertRaisesRegex(ValueError, 'TOO_NARROW'):
             compile_probe_plan(ast, variants_per_axis=1)
+
+    def test_dependency_coverage_tracks_new_and_revised_semantics(self):
+        ast = compile_ast(self.course)
+        prototype = replace(ast.nodes[0], id='C.NEW', grade='C',
+                            requires=('A.IDENTITY', 'A.EDGE'))
+        expanded = replace(ast, nodes=(*ast.nodes, prototype))
+        plan = dependency_coverage_plan(expanded,
+                                         supported_edges=(('C.NEW', 'A.IDENTITY'),))
+        self.assertEqual([(p['predecessor'], p['status']) for p in plan],
+                         [('A.EDGE', 'MISSING_CONSTRUCTOR'),
+                          ('A.IDENTITY', 'CONSTRUCTOR_DECLARED_UNVERIFIED')])
+        self.assertTrue(all(p['coverage_debt'] for p in plan))
+        revised = replace(expanded, nodes=(*ast.nodes, replace(
+            prototype, requires=('A.MAPS',))))
+        self.assertEqual(dependency_coverage_plan(revised)[0]['predecessor'],
+                         'A.MAPS')
+        self.assertFalse(dependency_coverage_plan(revised)[0]['training_authorized'])
+        with self.assertRaisesRegex(ValueError, 'UNDECLARED_SUPPORTED_EDGE'):
+            dependency_coverage_plan(revised,
+                                     supported_edges=(('C.NEW', 'A.IDENTITY'),))
+        with self.assertRaisesRegex(ValueError, 'UNRESOLVED_DEPENDENCY'):
+            dependency_coverage_plan(replace(ast, nodes=(*ast.nodes, replace(
+                prototype, requires=('A.UNKNOWN',)))))
+
+    def test_dependency_change_regenerates_transitive_dependents_only(self):
+        ast = compile_ast(self.course)
+        b = replace(ast.nodes[0], id='B.SYNTHETIC', grade='B',
+                    requires=('A.EDGE',))
+        c = replace(ast.nodes[0], id='C.SYNTHETIC', grade='C',
+                    requires=('B.SYNTHETIC',))
+        expanded = replace(ast, nodes=(*ast.nodes, b, c))
+        self.assertEqual(affected_dependency_closure(expanded, ('A.EDGE',)),
+                         ('A.EDGE', 'B.SYNTHETIC', 'C.SYNTHETIC'))
+        self.assertEqual(affected_dependency_closure(expanded, ('A.MAPS',)),
+                         ('A.MAPS',))
+        self.assertEqual(affected_dependency_closure(expanded, ('B.SYNTHETIC',)),
+                         ('B.SYNTHETIC', 'C.SYNTHETIC'))
+        with self.assertRaisesRegex(ValueError, 'UNKNOWN_CHANGED_SEMANTIC_ID'):
+            affected_dependency_closure(expanded, ('C.UNKNOWN',))
 
     def test_source_interpreters_materialize_actual_unreleased_probes(self):
         root = Path(__file__).resolve().parents[2] / 'bilqis-triplets-v16'

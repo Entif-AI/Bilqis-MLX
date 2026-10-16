@@ -49,6 +49,60 @@ def compile_ast(course: Course) -> CurriculumAST:
     return CurriculumAST(course.version, nodes)
 
 
+def dependency_coverage_plan(ast: CurriculumAST, supported_edges=()):
+    """Inventory declared predecessor obligations without asserting admission.
+
+    Supported edges are constructor declarations only. Source witnesses and
+    independently verified oracle agreement are still required to discharge
+    coverage debt; this planner intentionally cannot claim their proof.
+    """
+    nodes = {node.id: node for node in ast.nodes}
+    if len(nodes) != len(ast.nodes):
+        raise ValueError("CURRICULUM_DUPLICATE_SEMANTIC_ID")
+    declared = {(node.id, pre) for node in ast.nodes
+                for pre in (*node.requires, *node.composed_of)}
+    for dependent, predecessor in declared:
+        if dependent == predecessor or predecessor not in nodes:
+            raise ValueError("CURRICULUM_UNRESOLVED_DEPENDENCY")
+        if nodes[predecessor].grade >= nodes[dependent].grade:
+            raise ValueError("CURRICULUM_DEPENDENCY_NOT_EARLIER_GRADE")
+    supported = set(supported_edges)
+    if supported - declared:
+        raise ValueError("CURRICULUM_UNDECLARED_SUPPORTED_EDGE")
+    return tuple({"capability": dependent, "predecessor": predecessor,
+                  "capability_grade": nodes[dependent].grade,
+                  "predecessor_grade": nodes[predecessor].grade,
+                  "status": ("CONSTRUCTOR_DECLARED_UNVERIFIED"
+                             if (dependent, predecessor) in supported
+                             else "MISSING_CONSTRUCTOR"),
+                  "coverage_debt": True,
+                  "training_authorized": False}
+                 for dependent, predecessor in sorted(declared))
+
+
+def affected_dependency_closure(ast: CurriculumAST, changed: tuple[str, ...]):
+    """Return all affected capabilities when an admitted semantic ID changes.
+
+    Walk the reverse prerequisite graph, not grade-specific constructor code;
+    outputs are stable and include the changed identities themselves.
+    """
+    obligations = dependency_coverage_plan(ast)
+    nodes = {node.id for node in ast.nodes}
+    if not set(changed) <= nodes:
+        raise ValueError("CURRICULUM_UNKNOWN_CHANGED_SEMANTIC_ID")
+    reverse = {identity: set() for identity in nodes}
+    for edge in obligations:
+        reverse[edge["predecessor"]].add(edge["capability"])
+    impacted = set(changed)
+    pending = list(changed)
+    while pending:
+        for dependent in reverse[pending.pop()]:
+            if dependent not in impacted:
+                impacted.add(dependent)
+                pending.append(dependent)
+    return tuple(sorted(impacted))
+
+
 def compile_probe_plan(ast: CurriculumAST, *, variants_per_axis: int = 4):
     """Reusable factorized probe design, separate from admission and golds.
 
