@@ -233,6 +233,32 @@ actual neural training is authorized by this experimental parity adapter.
 
 ## ADR-021 | 2026-10-15 | One bounded integer type scope and on-demand test regeneration
 
+## ADR-022 | 2026-10-15 | No item embargo in generated semantic assessment
+
+The user rejects the inherited notion that questions used for assessment may
+never be used for instruction or teacher feedback. The intended school teaches
+by generating varied constructions from source-attested semantic rules.
+Assessments likewise sample those rules, score without changing weights during
+the measurement, and expose every missed construction to the adaptive teacher.
+An independently checked oracle is required; a secret question inventory is
+not. The original fixed Grade A exam is historical evidence, not a precedent
+for future generated-exam embargo rules. Never delete or falsify its receipts.
+
+Keep distinct source competence and comparable checkpoint scores: a challenger
+and incumbent must be measured on the same fully materialized, seeded cohort
+with a versioned rubric and preserved question/source IDs. A finite 100% score
+means perfect on that cohort, not mathematical universal mastery. The standard
+for graduation remains a complete same-checkpoint grade assessment and the
+whole FP32 student with its own AdamW, not a synthetic mixture of winners.
+Champion/custody retention remains aggressive and evidence-driven.
+
+The new pure `generated_assessment.py` provides provenance-bound cohorts,
+checkpoint scoring, feedback-ready failures, and same-cohort comparator
+validation. The old human-operated Grade A path remains unchanged until the
+replacement scheduler, teacher rewards, typed predictors, migration strategy,
+telemetry and regression tests can be verified end-to-end. Historical sealed
+files and saved training remain preserved throughout the transition.
+
 The user requires integer concepts to start with a deliberately small range,
 and to expand without rewriting any lesson or test case by hand. The single
 `BILQIS_INTEGER_MAX` environment setting (default `3`, currently attested

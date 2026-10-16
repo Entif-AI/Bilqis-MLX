@@ -98,10 +98,14 @@ semantics; source-attested reusable constructors must be added separately.
    permutations, directed-relation reversals, logical equivalence, cardinality
    controls, illegal structures and unseen recombinations. Differentiate
    *invariance* from semantic changes that should flip the answer.
-4. Independently partition new candidate material into teaching, teacher
-   reward-validation and sealed examination sets. Prevent near-duplicate
-   worlds, lexical shortcuts, output-label skew and exposure of held-out
-   answers. The *existing* Grade A exam remains frozen.
+4. Generate assessment cohorts from the same source-attested semantic
+   constructors used for instruction. Assessment is a read-only measurement
+   interval for the student; its errors may subsequently inform the teacher.
+   Compare candidate and incumbent checkpoints on the *same* seeded cohort,
+   retaining generator version, seed, item IDs and checkpoint provenance.
+   Prevent lexical shortcuts and output-label skew by construction, not by
+   imposing a teaching embargo on assessment questions. Preserve the existing
+   historical Grade A examination as provenance; do not delete its records.
 5. Treat weak held-out growth despite high teaching accuracy as a
    classifiable `GENERALIZATION_GAP`, with coverage and interference
    diagnostics. Generate a corrective *curriculum proposal*, not endless
