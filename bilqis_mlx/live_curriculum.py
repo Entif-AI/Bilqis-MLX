@@ -17,7 +17,18 @@ def cohort_contract(course):
     if grade.id not in releases:
         raise ValueError("HUMAN_TRAINER_UNADMITTED_GRADE_COHORT")
     release, generator, fingerprint = releases[grade.id]
-    return grade.assessment_sha256, release, generator, fingerprint()
+    source_sha = fingerprint()
+    if grade.id == "A":
+        from .historical_live_release import (
+            ABI_REFACTORED_A_GENERATOR_SHA256,
+            HISTORICAL_A_GENERATOR_SHA256,
+            HISTORICAL_A_RUBRIC_SHA256,
+        )
+        if grade.assessment_sha256 == HISTORICAL_A_RUBRIC_SHA256:
+            if source_sha != ABI_REFACTORED_A_GENERATOR_SHA256:
+                raise ValueError("HISTORICAL_GRADE_A_SOURCE_COMPATIBILITY_NOT_PROVEN")
+            source_sha = HISTORICAL_A_GENERATOR_SHA256
+    return grade.assessment_sha256, release, generator, source_sha
 
 
 def numeric_maximum(course):

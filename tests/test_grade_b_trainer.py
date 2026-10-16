@@ -43,6 +43,25 @@ class GradeBTrainerTests(unittest.TestCase):
         cls.a_course = a_live_course(historical)
         cls.b_course = b_live_course(cls.a_course, SOURCE_ROOT)
 
+    def test_pre_abi_refactor_human_release_retains_exact_seals(self):
+        """A source-neutral ABI import must not strand sealed training states."""
+        from bilqis_mlx.historical_live_release import (
+            HISTORICAL_A_RUBRIC_SHA256, HISTORICAL_B_COURSE_SHA256,
+            HISTORICAL_B_RUBRIC_SHA256, historical_grade_b_course,
+        )
+        historical_a, historical_b = historical_grade_b_course(
+            accepted_grade_a(self.manifest), SOURCE_ROOT)
+        self.assertEqual(historical_a.grades[0].assessment_sha256,
+                         HISTORICAL_A_RUBRIC_SHA256)
+        self.assertEqual(historical_b.grades[-1].assessment_sha256,
+                         HISTORICAL_B_RUBRIC_SHA256)
+        self.assertEqual(historical_b.digest(), HISTORICAL_B_COURSE_SHA256)
+        self.assertNotEqual(historical_b.digest(), self.b_course.digest())
+        school = start_new(historical_b, Checkpoint("a"*64,"bundles/test",0,True))
+        self.assertEqual(_state_from_json(asdict(school),historical_b), school)
+        with self.assertRaisesRegex(ValueError,"INVALID_OR_DRIFTED_SCHOOL_STATE"):
+            _state_from_json(asdict(school),self.b_course)
+
     def _graduated_a(self, pointer):
         school = start_new(self.a_course, pointer)
         for c in self.a_course.grades[0].capabilities:
