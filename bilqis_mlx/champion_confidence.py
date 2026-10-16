@@ -50,7 +50,8 @@ def vote_targets(votes, labels, *, eligible_capabilities: int,
     weight = np.zeros(len(labels), dtype=np.float64)
     for breadth, raw in votes:
         raw = np.asarray(raw, dtype=np.float64)
-        if (type(breadth) is not int or not 1 <= breadth <= eligible_capabilities or
+        if (type(breadth) not in (int, float) or
+                not np.isfinite(breadth) or not 0 < breadth <= eligible_capabilities or
                 raw.shape != (len(labels), 2) or not np.isfinite(raw).all()):
             raise ValueError("CHAMPION_CONFIDENCE_INVALID_VOTE")
         accepted = np.argmax(raw, axis=-1) == labels

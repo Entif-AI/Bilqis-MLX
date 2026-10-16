@@ -84,6 +84,23 @@ npm run train -- --dry-run --verify-source
 
 `grade-a:baseline` examines the unchanged historical student on all 72 fixed exam items (full five-state versus binary-constrained answer reports). `--verify-source` validates the 216 original source records in a neural-inert dry-run. The operator status now declares Grade A accepted and the human experimental trainer available; the broader NI grammar and first actual long-session outcome remain experimental uncertainty, not gates silently imposed over the user's decision.
 
+### Frozen grade soups and scoped confidence votes (ADR-034)
+
+Each newly covered 12/12 capability, or displacement of its perfect champion,
+refreshes the **grade-specific frozen weights-only soup** at the next scored
+exam boundary. The recipe averages verified champion FP32 weights with one
+ingredient share per mastered capability; an intact student+own AdamW remains
+the sole trainable model. The soup's vote count is frozen at the number of
+maxed capabilities in its recipe. For questions within its own grade it casts
+that entire vote count; for questions in other grades it casts the count
+divided by the current number of admitted grades (7 votes in A; 7/3 in B/C
+when the school has A/B/C). These votes are small, source-gold-agreeing,
+teacher-`distill`-scaled **training-confidence advice** only. Independent
+candidate and graduation scores remain the student's unassisted predictions.
+The committed recipe binds a SHA-verified frozen `soups/` artifact; unchanged
+recipes are never rewritten, and active plus one prior version per grade are
+retained for recoverable custody without unbounded soup snapshots.
+
 ## Data and storage boundaries
 
 Source code lives here; ignored `runs/` and `artifacts/` never enter Git. The source pre-repair complete FP32 checkpoint is `student-116760-7e9af4651f28.pt` (SHA-256 `646d8590cf8fddb7b3c412ecead4ac185a0578f93baadf24e05f92dd15068a78`) from the original v16 run. It was audited at 1,052/1,150 **on the former rubric**; this is not a new-grade mastery claim. **No checkpoint files are copied by repository setup.** Existing v16, v2-r1 and v17 research lineages remain at their original locations.

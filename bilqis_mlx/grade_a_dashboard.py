@@ -59,7 +59,19 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
         board.push("system", {"kind": "COHORT", "detail":
                    f"Seed {exam['cohort_seed']} | SHA {exam['cohort_sha256'][:16]} | "
                    f"rubric {exam['exam_rubric_sha256'][:12]}"}, redraw=False)
-    board.push("system", {"kind": "METRIC", "detail": "NOT MEASURED: independent sentinel/CE/P(C)/margin; cross-grade soup inactive"}, redraw=False)
+    board.push("system", {"kind": "METRIC", "detail":
+               "NOT MEASURED: independent sentinel/CE/P(C)/margin; "
+               "frozen soups advise training only, never examination scoring"},
+               redraw=False)
+    if state and state.get("grade_soups"):
+        from .grade_soup import soup_vote_count
+        for grade, soup in sorted(state["grade_soups"].items()):
+            effective = soup_vote_count(soup, current_grade, len(active))
+            board.push("system", {"kind": "GRADE SOUP", "grade": grade,
+                       "detail": (f"Frozen {grade} recipe: "
+                                  f"{soup['vote_count']} mastered capability votes; "
+                                  f"{effective:.2f} votes for {current_grade} lessons | "
+                                  f"SHA {soup['sha256'][:12]}")}, redraw=False)
     if state and state.get("capability_best"):
         bests = state["capability_best"]
         for item in sorted(bests.values(), key=lambda x: x["capability"]):

@@ -26,6 +26,9 @@ from .champions import Checkpoint
 from .champion_confidence import MAX_INFLUENCE as MAX_CHAMPION_INFLUENCE
 from .champion_confidence import POLICY as CHAMPION_CONFIDENCE_POLICY
 from .champion_confidence import champion_roster, vote_targets
+from .grade_soup import (grade_soup_recipe, needs_refresh, soup_vote_count,
+                         weighted_average, save_frozen_soup, verify_frozen_soup,
+                         retire_stale_soups)
 from .capability_frontier import (
     candidate_roles, graduation_perfect, historical_frontier, pinned, promote,
     recover_graduation_breadth, retire_bundles,
@@ -365,6 +368,88 @@ def _frozen_confidence_champions(run_dir, receipt, grade, graph):
     return tuple(mentors)
 
 
+def _cook_new_grade_soups(mx, run_dir, receipt, frontier, course, graph,
+                          *, reserve_gib):
+    """Freeze newly broader or displaced grade-champion weight recipes."""
+    current = dict(receipt.get("grade_soups", {}))
+    refreshed = []
+    for grade in course.grades:
+        plan = grade_soup_recipe(
+            frontier, grade.id, tuple(cap.id for cap in grade.capabilities))
+        if not needs_refresh(current.get(grade.id), plan):
+            continue
+        members = []
+        catalog = None
+        for item in plan["members"]:
+            pointer = item["checkpoint"]
+            path = run_dir / pointer["filename"]
+            if path.is_symlink() or path.parent != run_dir / "bundles":
+                raise ValueError("GRADE_SOUP_UNSAFE_CHAMPION_BUNDLE")
+            weights, own_adamw, manifest, original_graph = load_semantically_bound_bundle(path)
+            if (manifest["source_digest"] != AUDITED_PARENT.sha256 or
+                    manifest["safetensors_sha256"] != pointer["sha256"] or
+                    manifest["optimizer_step"] != pointer["optimizer_step"] or
+                    not _compatible_graphs(original_graph, graph)):
+                raise ValueError("GRADE_SOUP_CHAMPION_CUSTODY_DRIFT")
+            if catalog is None:
+                catalog = original_graph
+            elif original_graph != catalog:
+                raise ValueError("GRADE_SOUP_INGREDIENT_GRAPH_DRIFT")
+            members.append((item["votes"], weights))
+            del own_adamw
+        combined = weighted_average(mx, members)
+        snapshot = save_frozen_soup(run_dir, plan, combined,
+                                    reserve_gib=reserve_gib,
+                                    token_count=len(catalog["tokens"]))
+        snapshot["source_graph_sha256"] = _fingerprint(catalog)
+        previous = current.get(grade.id)
+        if previous is not None:
+            snapshot["coverage_peak"] = max(
+                previous["coverage_peak"], snapshot["coverage_peak"])
+            snapshot["previous"] = {"filename": previous["filename"],
+                                    "sha256": previous["sha256"]}
+        current[grade.id] = snapshot
+        refreshed.append(grade.id)
+    return current, tuple(refreshed)
+
+
+@lru_cache(maxsize=12)
+def _cached_grade_soup(path_string, sha, token_count, stat_size, stat_mtime_ns):
+    """Verify a frozen soup once per exact file identity for repeated lessons."""
+    import mlx.core as mx
+    path = Path(path_string)
+    if digest_file(path) != sha:
+        raise ValueError("GRADE_SOUP_SAVED_ARTIFACT_CHANGED")
+    weights = mx.load(str(path))
+    if ("embedding.weight" not in weights or
+            weights["embedding.weight"].shape[0] != token_count or
+            any(array.dtype != mx.float32 for array in weights.values())):
+        raise ValueError("GRADE_SOUP_FROZEN_MODEL_SHAPE_DRIFT")
+    return weights
+
+
+def _frozen_grade_soup_votes(run_dir, receipt, lesson_grade, school_grade_count):
+    """Use frozen base votes; only the foreign-grade divisor is live."""
+    mentors, receipts = [], []
+    for grade, snapshot in sorted(receipt.get("grade_soups", {}).items()):
+        if grade != snapshot.get("grade"):
+            raise ValueError("GRADE_SOUP_GRADE_POINTER_DRIFT")
+        path = run_dir / snapshot["filename"]
+        if (path.parent != run_dir / "soups" or path.is_symlink()):
+            raise ValueError("GRADE_SOUP_UNSAFE_SAVED_PATH")
+        stat = path.stat()
+        weights = _cached_grade_soup(
+            str(path), snapshot["sha256"], snapshot["token_count"],
+            stat.st_size, stat.st_mtime_ns)
+        votes = soup_vote_count(snapshot, lesson_grade, school_grade_count)
+        mentors.append({"weights": weights, "vocab_size": snapshot["token_count"],
+                        "breadth": votes})
+        receipts.append({"soup_grade": grade, "recipe_sha256": snapshot["recipe_sha256"],
+                         "frozen_base_votes": snapshot["vote_count"],
+                         "effective_votes": votes})
+    return tuple(mentors), tuple(receipts)
+
+
 def _confidence_guidance(mx, mentors, picked, config, answer_ids,
                          *, scope_size, teacher_distill):
     """Gold-agreeing frozen logits are small, policy-shaped gradient advice."""
@@ -375,8 +460,9 @@ def _confidence_guidance(mx, mentors, picked, config, answer_ids,
     ids, lengths, labels = _make_batch(picked)
     vote_logits = []
     for mentor in mentors:
-        if any(max(row["tokens"]) >= len(mentor["graph"]["tokens"])
-               for row in picked):
+        vocabulary = (mentor.get("vocab_size") or len(mentor["graph"]["tokens"]))
+        if (max(answer_ids) >= vocabulary or
+                any(max(row["tokens"]) >= vocabulary for row in picked)):
             continue
         logits = forward_arrays(mx, mentor["weights"], ids, lengths,
                                 heads=config["heads"], layers=config["layers"],
@@ -849,6 +935,16 @@ def _verify_best_custody(run_dir, receipt):
                     (manifest["safetensors_sha256"] != ref["sha256"] or
                      manifest["optimizer_step"] != ref["optimizer_step"])):
                 raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_REFERENCE_DRIFT")
+    for grade, soup in receipt.get("grade_soups", {}).items():
+        if grade != soup.get("grade"):
+            raise ValueError("GRADE_SOUP_CUSTODY_GRADE_DRIFT")
+        verify_frozen_soup(run_dir, soup)
+        if soup.get("previous"):
+            old = soup["previous"]
+            previous = run_dir / old["filename"]
+            if (previous.parent != run_dir / "soups" or previous.is_symlink() or
+                    not previous.is_file() or digest_file(previous) != old["sha256"]):
+                raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
 
 
 def _advance(run_dir, old: dict, school: SchoolState, *,
@@ -1069,6 +1165,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         receipt["config"], receipt["answer_ids"])
     confidence_champions = _frozen_confidence_champions(
         run_dir, receipt, lesson_grade, graph)
+    frozen_soups, soup_vote_receipts = _frozen_grade_soup_votes(
+        run_dir, receipt, lesson_grade, len(course.grades))
     confidence_examples = 0
     confidence_total_weight = 0.0
     confidence_applied_steps = 0
@@ -1134,7 +1232,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 # training gate or silently change the evolved teacher.
                 methodology_unavailable = str(exc)
         guidance = _confidence_guidance(
-            mx, confidence_champions, picked, receipt["config"],
+            mx, (*confidence_champions, *frozen_soups), picked, receipt["config"],
             receipt["answer_ids"], scope_size=len(course.capability_map),
             teacher_distill=float(policy.get("distill", 0.0)))
         if guidance is not None:
@@ -1214,6 +1312,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "champion_confidence": {
             "policy": CHAMPION_CONFIDENCE_POLICY,
             "frozen_unique_champions": len(confidence_champions),
+            "frozen_grade_soups": list(soup_vote_receipts),
             "teacher_distill": float(policy.get("distill", 0.0)),
             "examples_with_gold_agreeing_advice": confidence_examples,
             "total_per_row_influence": round(confidence_total_weight, 8),
@@ -1366,6 +1465,19 @@ def _boundary_delivery_events(record, pending, roles, exam_event):
                        "student_sha256": school["current_student"]["sha256"],
                        "optimizer_step": school["current_student"]["optimizer_step"]})
     if exam_event is not None:
+        for grade in record.get("last_exam", {}).get("grade_soups_refreshed", ()):
+            snapshot = record["grade_soups"][grade]
+            events.append({
+                "event": "SCHOOL_GRADE_SOUP_FROZEN",
+                "generation": record["generation"], "grade": grade,
+                "filename": snapshot["filename"], "sha256": snapshot["sha256"],
+                "recipe_sha256": snapshot["recipe_sha256"],
+                "vote_count": snapshot["vote_count"],
+                "covered_capabilities": snapshot["perfect_capabilities"],
+                "source_champion_shas": [item["checkpoint"]["sha256"]
+                                          for item in snapshot["members"]],
+                "frozen_source_weights_only": True,
+            })
         events.append(dict(exam_event))
     return tuple(events)
 
@@ -1469,6 +1581,11 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
         _record(run_dir, {"event": "SCHOOL_CHECKPOINTS_RETIRED", "grade": active_grade,
                           "generation": record["generation"],
                           "count": len(removed), "protected_count": len(retained)})
+    retired_soups = retire_stale_soups(run_dir, record.get("grade_soups", {}))
+    if retired_soups:
+        _record(run_dir, {"event": "SCHOOL_OLD_GRADE_SOUPS_RETIRED",
+                          "generation": record["generation"],
+                          "grade": active_grade, "count": len(retired_soups)})
 
 
 def _quarantine_newer_uncommitted_bundles(run_dir: Path, retained: set[str],
@@ -1552,6 +1669,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     perfect, perfect_roles = graduation_perfect(
         receipt.get("graduation_perfect", {}), scores, rubric, cohort.digest,
         asdict(school.current_student), assessment.evaluation_id)
+    frozen_soups, soup_changes = _cook_new_grade_soups(
+        mx, run_dir, receipt, perfect, course, graph, reserve_gib=reserve_gib)
     last_exam = {
         "assessment_grade": school.grade,
         "grade_exam_epoch": school.grade_exam_epoch,
@@ -1564,6 +1683,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "cohort_seed": seed,
         "candidate_cohort_sha256": candidate_cohort.digest,
         "graduation_perfect_roles": list(perfect_roles),
+        "grade_soups_refreshed": list(soup_changes),
         "generator_version": generator,
         "incumbent_comparisons": compared,
         "misses_for_teacher": list(measured["misses_for_teacher"]),
@@ -1591,6 +1711,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         miss_exposures.setdefault(identity, 0)
     migrated_receipt = {**receipt, "teacher_misses": priority,
                         "graduation_perfect": perfect,
+                        "grade_soups": frozen_soups,
                         "qualification_cohort": qualification,
                         "teacher_miss_exposures": miss_exposures,
                         "legacy_frontier_pending_replay": False,
