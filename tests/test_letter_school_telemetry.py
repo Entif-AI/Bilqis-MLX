@@ -67,6 +67,58 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertTrue(any("GENERATED COHORT" in event["evidence"] for event in
                                 board._section_rows("SENTINEL & RETENTION")))
 
+    def test_independent_perfect_grade_bests_do_not_claim_cumulative_graduation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            for generation, a, b in ((1, 12, 10), (2, 8, 12), (3, 11, 11)):
+                ingest(board, {
+                    "event": "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED", "grade": "B",
+                    "generation": generation, "rubric": "b" * 64,
+                    "cohort_sha256": str(generation) * 64,
+                    "generator_version": "grade-b-live/v1",
+                    "cohort_file": f"cohorts/{str(generation)*64}.json",
+                    "optimizer_step": 200 + generation,
+                    "student_sha256": str(generation) * 64,
+                    "phase": "RECOVERY_1",
+                    "scores": {"A.IDENTITY": {"correct": a, "total": 12},
+                               "B.NOT": {"correct": b, "total": 12}},
+                })
+            grades = {row["grade"]: row for row in
+                      board._section_rows("GRADES & MASTERY")}
+            self.assertEqual(grades["A"]["best"], "12/12")
+            self.assertEqual(grades["B"]["best"], "12/12")
+            rows = [row for row in board.rows["SYSTEM & QUALIFICATION"]
+                    if row["kind"] == "CUMULATIVE"]
+            self.assertEqual(len(rows), 1)
+            self.assertIn("latest 22/24", rows[0]["detail"])
+            self.assertIn("best same student 22/24", rows[0]["detail"])
+            self.assertIn("24/24 REQUIRED", rows[0]["detail"])
+            self.assertIn("CUMULATIVE", " ".join(board.operator_lines))
+            self.assertNotIn("QUALIFIED", " ".join(board.operator_lines))
+
+            ingest(board, {"event": "SCHOOL_SESSION_STOPPED", "grade": "B",
+                           "stop_reason": "TIME_LIMIT_REACHED",
+                           "visits_this_command": 3, "elapsed_seconds": 5401.,
+                           "optimizer_step": 203})
+            self.assertIn("TIME_LIMIT_REACHED", board.mode)
+            self.assertIn("24/24 REQUIRED", " ".join(board.operator_lines))
+
+    def test_cumulative_perfect_requires_one_complete_scored_student(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {"event": "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+                "grade": "B", "generation": 1, "rubric": "b" * 64,
+                "cohort_sha256": "c" * 64, "cohort_file": f"cohorts/{'c'*64}.json",
+                "generator_version": "grade-b-live/v1", "optimizer_step": 300,
+                "student_sha256": "d" * 64, "phase": "AWAITING_NEXT_GRADE",
+                "scores": {"A.IDENTITY": {"correct": 12, "total": 12},
+                           "B.NOT": {"correct": 12, "total": 12}}})
+            rows = [row for row in board.rows["SYSTEM & QUALIFICATION"]
+                    if row["kind"] == "CUMULATIVE"]
+            self.assertEqual(len(rows), 1)
+            self.assertIn("24/24", rows[0]["detail"])
+            self.assertIn("GATE MET", rows[0]["detail"])
+
     def test_cumulative_backward_a_replay_shows_a_as_exam_target_not_b(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp),stream=io.StringIO())

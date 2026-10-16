@@ -252,6 +252,9 @@ class SchoolTelemetry:
         self.first_cap = {}
         self.last_source_training = {}  # capability -> (accuracy, optimizer_step)
         self.exam_cohorts = {}  # (grade, semantic rubric) -> last sampled cohort
+        # Whole-student exam scores are distinct from separate per-grade bests.
+        self.cumulative_best = {}  # (grades, rubric, scope) -> (correct, total, step)
+        self.cumulative_latest = None  # (key, correct, total, step, status)
         self.visits = 0
         self.last_exam_grade = None
         self.board.grade_program = tuple(self.grades)
@@ -454,6 +457,7 @@ class SchoolTelemetry:
             })
             if live:
                 self.exam_cohorts[key] = cohort_sha
+        self._cumulative_exam(cohort, rubric, scope, step, event.get("phase"))
         # The A+B cohort reports both rows, but the operator summary must
         # identify the grade whose scheduled exam just completed, especially
         # during the Billy Madison backward A replay.
@@ -463,6 +467,34 @@ class SchoolTelemetry:
         for system_row in _diagnostic_system_rows(event, grade):
             self.board.push("system", system_row, redraw=False)
         self._summary()
+
+    def _cumulative_exam(self, cohort, rubric, scope, step, phase):
+        """Show one checkpoint's complete grade-prefix exam, never summed bests."""
+        if len(cohort) < 2 or set(cohort) != set(self.grades):
+            return
+        key = (tuple(sorted(cohort)), rubric, scope)
+        correct = sum(score for caps in cohort.values() for score, _ in caps.values())
+        total = sum(count for caps in cohort.values() for _, count in caps.values())
+        best = self.cumulative_best.get(key)
+        if best is None or correct * best[1] > best[0] * total:
+            best = (correct, total, step)
+            self.cumulative_best[key] = best
+        status = ("GATE MET" if correct == total and phase in
+                  ("AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED") else
+                  "REVALIDATION PENDING" if correct == total else
+                  f"{total}/{total} REQUIRED")
+        self.cumulative_latest = (key, correct, total, step, status)
+        label = "+".join(key[0])
+        detail = (f"{status} | latest {correct}/{total} | "
+                  f"best same student {best[0]}/{best[1]}")
+        rows = self.board.rows["SYSTEM & QUALIFICATION"]
+        new_row = {"kind": "CUMULATIVE", "grade": label, "detail": detail}
+        for index, existing in enumerate(rows):
+            if existing["kind"] == "CUMULATIVE":
+                rows[index] = new_row
+                break
+        else:
+            rows.append(new_row)
 
     def _summary(self):
         grade = self.last_exam_grade
@@ -485,6 +517,13 @@ class SchoolTelemetry:
             f"TO100 {latest.total-latest.correct}/{latest.total} wrong ({'fresh sampled cohort' if live else 'sealed rubric'}) | "
             f"Source-train rewards are in-sample; independent sentinel NOT MEASURED",
         ]
+        if self.cumulative_latest is not None:
+            key, correct, total, step, status = self.cumulative_latest
+            best = self.cumulative_best[key]
+            self.board.operator_lines.append(
+                f"CUMULATIVE {'+'.join(key[0])}: {status}; latest {correct}/{total} @step {step}; "
+                f"best SAME STUDENT {best[0]}/{best[1]} @step {best[2]}. "
+                "Individual grade champions are not additive.")
         # A diagnostic observation, not an optimizer signal. Individual
         # source-training measurements may come from different checkpoints.
         families = tuple(latest.capabilities)
