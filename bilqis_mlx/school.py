@@ -108,6 +108,7 @@ class SchoolState:
     revalidation_target_grade: str | None = None
     # A pass ends one enrollment. A return to the grade owns a fresh test.
     grade_exam_epoch: int = 0
+    introduction_stage: int = 0
 
     @property
     def grade(self) -> str:
@@ -122,18 +123,43 @@ def _caps(course: Course, grade_ids: tuple[str, ...]) -> tuple[str, ...]:
 def _score_pool(course: Course, state: SchoolState) -> tuple[str, ...]:
     seen = tuple(g.id for g in course.grades
                  if g.id in state.champions or g.id == state.grade)
-    return _caps(course, seen)
+    current = {g.id: g for g in course.grades}[state.grade]
+    introduced = (set(c for stage in current.teaching_stages[:state.introduction_stage+1]
+                      for c in stage) if current.teaching_stages else
+                  {c.id for c in current.capabilities})
+    return tuple(cap for cap in _caps(course, seen)
+                 if cap in introduced or cap not in {c.id for c in current.capabilities})
+
+
+def assessment_capabilities(course: Course, state: SchoolState) -> tuple[str, ...]:
+    """Expose only already introduced concepts plus earlier mastered grades."""
+    verify_state(course, state)
+    return _score_pool(course, state)
+
+
+def _main_queue(course: Course, state: SchoolState) -> tuple[str, ...]:
+    return tuple(c for c in _score_pool(course, state)
+                 if c in _caps(course, (state.grade,)))
+
+
+def _enter_grade(course: Course, state: SchoolState, grade_index: int, **changes) -> SchoolState:
+    grade_id = state.active_grades[grade_index]
+    grade = next(g for g in course.grades if g.id == grade_id)
+    index = len(grade.teaching_stages)-1 if grade_id in state.champions and grade.teaching_stages else 0
+    entered = replace(state, grade_index=grade_index, introduction_stage=index, **changes)
+    return replace(entered, queue=_main_queue(course, entered))
 
 
 def start_new(course: Course, initial_student: Checkpoint) -> SchoolState:
     validate(course)
-    return SchoolState(schema="bilqis.mlx.letter-grade/v1",
+    state = SchoolState(schema="bilqis.mlx.letter-grade/v1",
                        course_digest=course.digest(),
                        active_grades=tuple(g.id for g in course.grades),
                        grade_index=0, stage="MAIN",
                        queue=_caps(course, (course.grades[0].id,)),
                        first_recovery=(), current_student=initial_student,
                        champions={})
+    return replace(state, queue=_main_queue(course, state))
 
 
 def verify_state(course: Course, state: SchoolState):
@@ -150,8 +176,12 @@ def verify_state(course: Course, state: SchoolState):
     if any(cap not in _score_pool(course, state) for cap in state.queue + state.first_recovery):
         raise ValueError("QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES")
     if (state.visits < 0 or state.school_cycles < 1 or
-            type(state.grade_exam_epoch) is not int or state.grade_exam_epoch < 0):
+            type(state.grade_exam_epoch) is not int or state.grade_exam_epoch < 0 or
+            type(state.introduction_stage) is not int or state.introduction_stage < 0):
         raise ValueError("INVALID_SCHOOL_COUNTER")
+    current = next(g for g in course.grades if g.id == state.grade)
+    if state.introduction_stage >= max(1, len(current.teaching_stages)):
+        raise ValueError("INVALID_INTRODUCTION_STAGE")
     if state.revalidation_target_grade is not None:
         if (state.revalidation_target_grade not in state.active_grades[1:] or
                 state.grade_index > state.active_grades.index(state.revalidation_target_grade) or
@@ -188,13 +218,11 @@ def visit(course: Course, state: SchoolState, capability: str,
                    current_student=student_after_visit)
 
 
-def weakest_three(scores: dict[str, Score], pool: tuple[str, ...],
-                  *, exclude: tuple[str, ...] = ()) -> tuple[str, ...]:
-    """Normalized exact-rational ordering; re-rank the remaining pool each round."""
+def weakest_three(scores: dict[str, Score], pool: tuple[str, ...]) -> tuple[str, ...]:
+    """Re-rank the complete introduced pool, including unresolved weaknesses."""
     if len(set(pool)) != len(pool) or not set(pool) <= set(scores):
         raise ValueError("WEAKEST_THREE_INCOMPLETE_POOL")
-    ranking = sorted((c for c in pool if c not in exclude),
-                     key=lambda c: (scores[c].accuracy, c))
+    ranking = sorted(pool, key=lambda c: (scores[c].accuracy, c))
     if len(ranking) < 3:
         raise ValueError("WEAKEST_THREE_NOT_ENOUGH_REMAINING_CAPABILITIES")
     return tuple(ranking[:3])
@@ -210,7 +238,7 @@ def _finish_grade_series(course: Course, state: SchoolState, assessment: Assessm
     next_index = state.grade_index + 1
     if next_index < len(state.active_grades):
         next_grade = state.active_grades[next_index]
-        return replace(state, grade_index=next_index, queue=_caps(course, (next_grade,)),
+        return _enter_grade(course, state, next_index,
                        stage="MAIN", first_recovery=(), champions=pointers,
                        revalidation_target_grade=None,
                        # The newly admitted grade owns the next cumulative seal.
@@ -253,8 +281,7 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
             # A/B/C are revisited in order, with their normal full-grade,
             # weakest-three and same-checkpoint assessment schedule.
             next_index = state.grade_index + 1
-            return replace(state, grade_index=next_index,
-                           queue=_caps(course, (state.active_grades[next_index],)),
+            return _enter_grade(course, state, next_index,
                            stage="MAIN", first_recovery=(), champions=pointers)
         failed = tuple(g for g in state.active_grades[:target_index + 1]
                        if not _perfect_in_grade(course, g, assessment.scores))
@@ -268,8 +295,7 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
                                latest_rubric_digest=assessment.rubric_digest)
             # At a partial-program boundary, do not start C if the final B
             # checkpoint lost A. Repeat the ordered prefix until it sticks.
-            return replace(state, grade_index=0, stage="MAIN",
-                           queue=_caps(course, (state.active_grades[0],)),
+            return _enter_grade(course, state, 0, stage="MAIN",
                            first_recovery=(), champions=pointers)
         return _finish_grade_series(course, state, assessment, pointers)
 
@@ -277,8 +303,7 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
         # Newly mastered B triggers A->B; C triggers A->B->C, etc.
         # Even a perfect initial cumulative B examination is followed by a
         # fresh ordered revalidation pass before the next grade is entered.
-        return replace(state, grade_index=0, stage="MAIN",
-                       queue=_caps(course, (state.active_grades[0],)),
+        return _enter_grade(course, state, 0, stage="MAIN",
                        first_recovery=(), champions=pointers,
                        revalidation_target_grade=state.grade,
                        latest_rubric_digest=assessment.rubric_digest)
@@ -294,6 +319,14 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
     if (state.latest_rubric_digest is not None and
             state.latest_rubric_digest != snapshot.rubric_digest):
         raise ValueError("ASSESSMENT_RUBRIC_CHANGED_MID_COURSE")
+    grade = next(g for g in course.grades if g.id == state.grade)
+    if grade.teaching_stages and state.introduction_stage < len(grade.teaching_stages)-1:
+        own = set(_main_queue(course, state))
+        if all(snapshot.scores[c].perfect for c in own):
+            next_stage = state.introduction_stage + 1
+            return replace(state, introduction_stage=next_stage, stage="MAIN",
+                           queue=grade.teaching_stages[next_stage], first_recovery=(),
+                           latest_rubric_digest=snapshot.rubric_digest)
     if _perfect_in_grade(course, state.grade, snapshot.scores):
         return replace(_promote(course, state, snapshot),
                        grade_exam_epoch=state.grade_exam_epoch + 1)
@@ -305,7 +338,7 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
         trio = weakest_three(snapshot.scores, pool)
         return replace(state, stage="RECOVERY_2", queue=trio,
                        latest_rubric_digest=snapshot.rubric_digest)
-    return replace(state, stage="MAIN", queue=_caps(course, (state.grade,)),
+    return replace(state, stage="MAIN", queue=_main_queue(course, state),
                    first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
 
 
@@ -334,14 +367,14 @@ def append_next_grade(previous: Course, successor: Course,
     added = successor.grades[-1].id
     if added in state.champions:
         raise ValueError("GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS")
-    return replace(state, course_digest=successor.digest(),
+    extended = replace(state, course_digest=successor.digest(),
                    grade_exam_epoch=state.grade_exam_epoch + 1,
                    active_grades=successor_ids,
-                   grade_index=len(previous.grades), stage="MAIN",
-                   queue=_caps(successor, (added,)), first_recovery=(),
+                   stage="MAIN", first_recovery=(),
                    revalidation_target_grade=None,
                    latest_rubric_digest=None, pending_failures=(),
                    teacher_soup_digest=None)
+    return _enter_grade(successor, extended, len(previous.grades))
 
 
 def continue_after_soup(course: Course, state: SchoolState,
@@ -353,13 +386,13 @@ def continue_after_soup(course: Course, state: SchoolState,
     if (len(frozen_teacher_receipt) != 64 or
             any(c not in "0123456789abcdef" for c in frozen_teacher_receipt)):
         raise ValueError("TEACHER_SOUP_RECEIPT_MISSING")
-    first = state.pending_failures[0]
-    return replace(state, active_grades=state.pending_failures, grade_index=0,
+    restarted = replace(state, active_grades=state.pending_failures,
                    grade_exam_epoch=state.grade_exam_epoch + 1,
-                   queue=_caps(course, (first,)), first_recovery=(), stage="MAIN",
+                   first_recovery=(), stage="MAIN",
                    pending_failures=(), school_cycles=state.school_cycles+1,
                    revalidation_target_grade=None,
                    teacher_soup_digest=frozen_teacher_receipt)
+    return _enter_grade(course, restarted, 0)
 
 
 def teacher_vote_weights(course: Course, state: SchoolState) -> dict[str, int]:

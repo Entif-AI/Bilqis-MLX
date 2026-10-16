@@ -43,7 +43,12 @@ def inspect_lesson_step(course: Course, capability: str, offered: list[dict],
                 not isinstance(row.get("tokens"), list) or
                 not row["tokens"] or not row.get("oracle") or not row.get("generator")):
             raise ValueError("LESSON_EVIDENCE_INVALID_SOURCE_ROW")
-        shape = inspect_source_query(row["record"].get("query"))
+        from ..source_adapters.numeric import DIALECT
+        if row["record"].get("task") == DIALECT:
+            from ..source_adapters.numeric import inspect_record
+            shape = inspect_record(row["record"])
+        else:
+            shape = inspect_source_query(row["record"].get("query"))
         if shape.root not in own.taught_roots:
             raise ValueError("LESSON_EVIDENCE_WRONG_ROOT")
         involved = set()

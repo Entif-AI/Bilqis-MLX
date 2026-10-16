@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import Final
 
-from .observations import load_archived_exam_history, observe_binary_exam
+from .observations import load_archived_exam_history, observe_binary_exam, observe_exam
 from .signals import (DiagnosticFinding, DiagnosticStatus, DiagnosticTarget,
                       LearningSignal, ObservationScope, diagnose_exam,
                       diagnose_history)
@@ -118,7 +118,9 @@ def summarize_completed_exam(run_dir: Path, receipt: dict, last_exam: dict) -> d
     """Observations only: cannot withhold lessons or change the teacher policy."""
     root = Path(run_dir)
     payload = json.loads((root / last_exam["cohort_file"]).read_text(encoding="utf-8"))
-    observed = replace(observe_binary_exam(payload, last_exam), run_id=receipt["run_id"])
+    observer = observe_binary_exam if all(row.get("answer_kind") == "binary"
+                                         for row in payload["rows"]) else observe_exam
+    observed = replace(observer(payload, last_exam), run_id=receipt["run_id"])
     current = diagnose_exam(observed)
     comparable, history_error = _comparable_history(root, observed)
     timeline, timeline_error = _history_findings(comparable, observed)

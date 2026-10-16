@@ -11,6 +11,7 @@ from .source import AUDITED_PARENT
 from .grade_a_release import RELEASE as GRADE_A_RELEASE
 from .live_grade_a import RELEASE as LIVE_GRADE_A_RELEASE
 from .live_grade_b import RELEASE as LIVE_GRADE_B_RELEASE
+from .live_grade_c import RELEASE as LIVE_GRADE_C_RELEASE
 from .spiral_dashboard import Dashboard, TABLES
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,7 +93,10 @@ def _inspect(run_dir: Path) -> dict:
                 "grade_a_curriculum_mode": (LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE
                                              else saved.get("curriculum_mode", "HISTORICAL_FIXED_72")),
                 "grade_b_curriculum_mode": LIVE_GRADE_B_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE else None,
-                "grade_b_source_admitted": saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE,
+                "grade_b_source_admitted": saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_C_RELEASE),
+                "grade_c_curriculum_mode": LIVE_GRADE_C_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_C_RELEASE else None,
+                "introduction_stage": school.get("introduction_stage", 0),
+                "numeric_maximum": saved.get("numeric_maximum"),
                 "assessment_cohort_sha256": (saved.get("last_exam") or {}).get("cohort_sha256"),
                 "source_grounded_grade_a_admitted": True,
                 **_qualification_scope(),
@@ -168,6 +172,15 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False):
             "GRADE_B_REAL_STUDENT_CONVERGENCE_NOT_YET_OBSERVED",
             "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"]
     snapshot["grade_a_source_manifest"] = "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
+    if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE" and snapshot.get("grade") == "B":
+        from .grade_c_preflight import qualify
+        from .live_grade_c import integer_scope, registry_graph, REGISTRY_COUNTING_TARGET
+        manifest = json.loads(GRADE_A_MANIFEST.read_text())
+        snapshot["next_grade_source"] = qualify(LEGACY_ROOT, manifest)
+        snapshot["next_grade"] = "C"
+        snapshot["start_behavior"] = "HUMAN_RESUME_ADMIT_C_AFTER_CUMULATIVE_A_B_PASS"
+        if integer_scope(registry_graph()) != REGISTRY_COUNTING_TARGET:
+            snapshot["blockers"].append("C_REQUIRES_BILQIS_INTEGER_MAX="+str(REGISTRY_COUNTING_TARGET))
     if verify_source:
         from .grade_a_manifest import verify_manifest
         source = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))

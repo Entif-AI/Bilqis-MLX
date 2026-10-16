@@ -167,6 +167,9 @@ EVENT_KINDS = {
     "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED": "visit",
     "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED": "exam",
     "SCHOOL_GRADE_B_COURSE_ADMITTED": "init",
+    "SCHOOL_TEACHER_VISIT_COMMITTED": "visit",
+    "SCHOOL_LIVE_EXAM_COMMITTED": "exam",
+    "SCHOOL_COURSE_ADMITTED": "init",
     "GRADE_A_SESSION_STOPPED": "stop",
     "SCHOOL_RUN_INITIALIZED": "init",
     "SCHOOL_VISIT_COMMITTED": "visit",
@@ -232,6 +235,7 @@ class ExamScore:
     checkpoint_sha256: str
     generation: int
     capabilities: dict[str, tuple[int, int]]
+    assessment_scope: str = ""
 
 
 class SchoolTelemetry:
@@ -366,7 +370,8 @@ class SchoolTelemetry:
         if not checkpoint:
             raise ValueError("SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED")
         live = event.get("event") in ("GRADE_A_LIVE_EXAM_COMMITTED",
-                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED")
+                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED", "SCHOOL_LIVE_EXAM_COMMITTED")
+        scope = event.get("assessment_scope_sha256", "") if event.get("event") == "SCHOOL_LIVE_EXAM_COMMITTED" else ""
         cohort_sha = event.get("cohort_sha256") if live else None
         if live and (not isinstance(cohort_sha, str) or len(cohort_sha) != 64 or
                      not event.get("cohort_file") or not event.get("generator_version")):
@@ -387,7 +392,7 @@ class SchoolTelemetry:
 
         # Validate the full exam before emitting any dashboard rows.
         for g, caps in cohort.items():
-            previous = self.latest.get((g, rubric))
+            previous = self.latest.get((g, rubric, scope))
             if previous is not None and (set(previous.capabilities) != set(caps) or
                 any(previous.capabilities[k][1] != caps[k][1] for k in caps)):
                 raise ValueError("SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT")
@@ -397,8 +402,8 @@ class SchoolTelemetry:
             total = sum(x[1] for x in caps.values())
             correct = sum(x[0] for x in caps.values())
             report = ExamScore(g, rubric, correct, total, step, checkpoint,
-                               event.get("generation", 0), caps)
-            key = (g, rubric)
+                               event.get("generation", 0), caps, scope)
+            key = (g, rubric, scope)
             prev = self.latest.get(key)
             first = self.first.setdefault(key, report)
             best = self.best.get(key)
@@ -408,8 +413,8 @@ class SchoolTelemetry:
             self.latest[key] = report
             same_cohort = not live or self.exam_cohorts.get(key) == cohort_sha
             for cap, (score, count) in sorted(caps.items()):
-                baseline = self.first_cap.setdefault((cap, rubric), (score, count))
-                earlier = self.last_cap.get((cap, rubric))
+                baseline = self.first_cap.setdefault((cap, rubric, scope), (score, count))
+                earlier = self.last_cap.get((cap, rubric, scope))
                 gain = score - earlier[0] if earlier and same_cohort else None
                 self.board.rows["BRIDGE FAMILIES"].append({
                     "grade": g, "family": cap, "attempt": report.generation,
@@ -418,7 +423,7 @@ class SchoolTelemetry:
                     "after": f"{score}/{count}",
                     "gain": f"{gain:+d}" if gain is not None else "-",
                 })
-                self.last_cap[(cap, rubric)] = (score, count)
+                self.last_cap[(cap, rubric, scope)] = (score, count)
             # This is a sealed-exam-to-sealed-exam change. It is NOT the
             # independent sentinel/held-out teacher reward channel.
             if prev and same_cohort:
@@ -463,10 +468,10 @@ class SchoolTelemetry:
         grade = self.last_exam_grade
         if grade is None:
             return
-        report = next((v for (g, _), v in reversed(tuple(self.latest.items())) if g == grade), None)
+        report = next((v for (g, _, _), v in reversed(tuple(self.latest.items())) if g == grade), None)
         if report is None:
             return
-        key = (grade, report.rubric)
+        key = (grade, report.rubric, report.assessment_scope)
         first = self.first[key]
         best = self.best[key]
         latest = report

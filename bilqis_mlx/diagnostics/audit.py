@@ -81,7 +81,7 @@ def _verify_teacher_outcomes(saved: dict, teacher_outcomes: list[dict]) -> None:
     exam_events = (event for event in reversed(saved.get("delivery_outbox", ()))
                    if event.get("event") in (
                        "GRADE_A_LIVE_EXAM_COMMITTED",
-                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED"))
+                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED", "SCHOOL_LIVE_EXAM_COMMITTED"))
     exam_event = next(exam_events, None)
     if exam_event is None or exam_event.get("teacher_outcomes") != teacher_outcomes:
         raise ValueError("DIAGNOSTIC_TEACHER_OUTCOME_DRIFT")

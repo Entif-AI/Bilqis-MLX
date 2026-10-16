@@ -13,6 +13,7 @@ from .disk import headroom_snapshot
 from .source import AUDITED_PARENT
 from .live_grade_a import RELEASE as LIVE_GRADE_A_RELEASE
 from .live_grade_b import RELEASE as LIVE_GRADE_B_RELEASE
+from .live_grade_c import RELEASE as LIVE_GRADE_C_RELEASE
 from .spiral_dashboard import Dashboard
 
 
@@ -45,9 +46,11 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
                   ("free_bytes", "reserve_bytes", "estimated_write_bytes")}})
     board.push("system", {"kind": "SOURCE", "detail": "Source-bound FP32 + own AdamW | immutable receipts"}, redraw=False)
     is_b = bool(state and state.get("curriculum_mode") == LIVE_GRADE_B_RELEASE)
-    live = not state or state.get("curriculum_mode") in (LIVE_GRADE_A_RELEASE, LIVE_GRADE_B_RELEASE)
+    is_c = bool(state and state.get("curriculum_mode") == LIVE_GRADE_C_RELEASE)
+    live = not state or state.get("curriculum_mode") in (LIVE_GRADE_A_RELEASE, LIVE_GRADE_B_RELEASE, LIVE_GRADE_C_RELEASE)
     board.push("system", {"kind": "RUBRIC", "detail":
-               ("Grades A+B: generated 144 source-oracled items; same-checkpoint cumulative 100%"
+               ("Grades A+B+C: fixed enrollment exam; introduced stages only until full cumulative 100%"
+                if is_c else "Grades A+B: generated 144 source-oracled items; same-checkpoint cumulative 100%"
                 if is_b else "Grade A: generated 72 source-oracled items per cohort; 100% one checkpoint"
                 if live else "Historical Grade A frozen 72-item rubric; 100% one checkpoint")},
                redraw=False)

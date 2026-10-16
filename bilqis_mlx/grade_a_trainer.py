@@ -36,11 +36,13 @@ from .live_grade_a import (GENERATOR as LIVE_GENERATOR, RELEASE as LIVE_RELEASE,
 from .live_grade_b import (GENERATOR as B_GENERATOR, RELEASE as B_RELEASE,
                            draw_connectives, live_course as live_b_course,
                            constructor_digest as b_constructor_digest)
+from .live_curriculum import cohort_contract, draw_course_rows, lesson_contract, numeric_maximum
+from .live_grade_c import RELEASE as C_RELEASE
 from .mlx_checkpoint import save_new_bundle, load_semantically_bound_bundle
 from .mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
 from .school import (start_new, visit, assess, next_capability, append_next_grade,
-                     teacher_vote_weights, SchoolState, Assessment, Score)
+                     teacher_vote_weights, assessment_capabilities, SchoolState, Assessment, Score)
 from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .source import AUDITED_PARENT
 from .teacher_feedback import (
@@ -182,6 +184,9 @@ def _make_batch(rows: list[dict]):
 
 
 def _predictions(mx, parameters, rows, config, answer_ids):
+    if any(row.get("answer_kind", "binary") != "binary" for row in rows):
+        from .typed_answer_training import predict_rows
+        return predict_rows(mx, parameters, rows, config["answer_heads"], config)
     import numpy as np
     result = {}
     for offset in range(0, len(rows), 24):
@@ -208,6 +213,19 @@ def choose_lesson_batch(rows: list[dict], policy: dict,
     if not rows or batch_size < 2 or batch_size % 2:
         raise ValueError("HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE")
     rng = random.Random(seed)
+    if any(row.get("answer_kind", "binary") != "binary" for row in rows):
+        # Sample linked direct/TRUE/FALSE views from the same verified meaning.
+        # This is an answer contract, independent of old/new lesson allocation.
+        sources = {}
+        for row in rows:
+            sources.setdefault(row["source_id"], []).append(row)
+        chosen = []
+        groups = list(sources.values())
+        while len(chosen) < batch_size:
+            chosen.extend(rng.choice(groups))
+        chosen = chosen[:batch_size]
+        rng.shuffle(chosen)
+        return chosen
     truths = {label: [r for r in rows if r["gold"] == label]
               for label in ("FALSE", "TRUE")}
     if any(not values for values in truths.values()):
@@ -293,19 +311,41 @@ def _champion_teacher_votes(mx, run_dir: Path, school: SchoolState, course,
                 not pointer.model_and_native_adamw):
             raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_UNSAFE_CHECKPOINT")
         parameters, optimizer, meta, loaded_graph = load_semantically_bound_bundle(path)
-        if (loaded_graph != graph or meta["safetensors_sha256"] != sha or
+        if (not _compatible_graphs(loaded_graph, graph) or meta["safetensors_sha256"] != sha or
                 meta["optimizer_step"] != pointer.optimizer_step or
                 meta["source_digest"] != AUDITED_PARENT.sha256):
             raise ValueError("HUMAN_TRAINER_CHAMPION_VOTE_CHECKPOINT_DRIFT")
-        guesses = _predictions(mx, parameters, rows, config, answer_ids)
-        for row in rows:
+        readable = [row for row in rows if max(row["tokens"]) < len(loaded_graph["tokens"])]
+        guesses = _predictions(mx, parameters, readable,
+            _compatible_answer_config(config, loaded_graph), answer_ids) if readable else {}
+        for row in readable:
             if guesses[row["id"]] != row["gold"]:
                 scores[row["id"]] += multiplicity
         del parameters, optimizer
     return scores
 
 
+def _compatible_graphs(earlier, current):
+    """A frozen earlier teacher retains its exact historical semantic prefix."""
+    count = len(earlier["tokens"])
+    return (earlier["tokens"] == current["tokens"][:count] and
+            earlier["nodes"] == current["nodes"][:count] and
+            all(current["row_contract_sha256"].get(s) == value
+                for s, value in earlier["row_contract_sha256"].items()))
+
+
+def _compatible_answer_config(config, graph):
+    if "answer_heads" not in config:
+        return config
+    from .live_grade_c import answer_heads
+    maximum = len(config["answer_heads"]["numeric_active"]["values"])-1
+    return {**config, "answer_heads": answer_heads(graph, maximum)}
+
+
 def _train_step(mx, parameters, optimizer, rows, config, answer_ids):
+    if any(row.get("answer_kind", "binary") != "binary" for row in rows):
+        from .typed_answer_training import typed_step
+        return typed_step(mx, parameters, optimizer, rows, config["answer_heads"], config)
     import numpy as np
     ids, lengths, labels = _make_batch(rows)
     expected = mx.array(np.eye(2, dtype=np.float32)[labels])
@@ -545,7 +585,7 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
     return parameters, optimizer, graph, receipt
 
 
-def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None):
+def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, admitted_courses=None):
     import mlx.core as mx
     path = run_dir / "state.json"
     if not path.is_file():
@@ -563,27 +603,38 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None):
     receipt = _recover_orphaned_commit(run_dir, receipt)
     saved_mode = receipt.get("curriculum_mode")
     old_mode = saved_mode is None
-    if saved_mode not in (None, LIVE_RELEASE, B_RELEASE):
+    if saved_mode not in (None, LIVE_RELEASE, B_RELEASE, C_RELEASE):
         raise ValueError("HUMAN_TRAINER_UNKNOWN_CURRICULUM_MODE")
-    old_course = (accepted_grade_a(manifest) if old_mode else
+    old_course = ((admitted_courses or {})[saved_mode] if saved_mode in (admitted_courses or {}) else
+                  accepted_grade_a(manifest) if old_mode else
                   live_course(accepted_grade_a(manifest)) if saved_mode == LIVE_RELEASE
                   else successor_course if successor_course is not None else course)
     if saved_mode == B_RELEASE and (len(old_course.grades) != 2 or
                                     old_course.version != B_RELEASE or
                                     receipt.get("grade_b_code_sha256") != b_constructor_digest()):
         raise ValueError("HUMAN_TRAINER_GRADE_B_COURSE_NOT_LOADED")
+    if saved_mode == C_RELEASE:
+        from .live_grade_c import constructor_digest
+        if (old_course.version != C_RELEASE or len(old_course.grades) != 3 or
+                receipt.get("grade_c_code_sha256") != constructor_digest()):
+            raise ValueError("HUMAN_TRAINER_GRADE_C_COURSE_NOT_LOADED")
     school = _state_from_json(receipt["school"], old_course)
     directory = (run_dir / receipt["model_bundle"]).resolve(strict=True)
     if directory.parent != (run_dir / "bundles").resolve(strict=True):
         raise ValueError("HUMAN_TRAINER_BUNDLE_PATH_ESCAPES_RUN")
     parameters, optimizer, bundle, graph = load_semantically_bound_bundle(directory)
+    if saved_mode == C_RELEASE:
+        from .live_grade_c import registry_graph
+        source_graph_ok = graph == registry_graph()
+    else:
+        source_graph_ok = (len(graph["tokens"]) == HISTORICAL_PREFIX_SIZE and
+            _fingerprint(graph) == manifest["parent_student"]["full_student_graph_sha256"])
     if (bundle["source_digest"] != AUDITED_PARENT.sha256 or
             bundle["safetensors_sha256"] != school.current_student.sha256 or
             bundle["optimizer_step"] != school.current_student.optimizer_step or
             school.current_student.filename != receipt["model_bundle"] or
-            len(graph["tokens"]) != HISTORICAL_PREFIX_SIZE or
+            not source_graph_ok or
             _fingerprint(graph) != receipt["semantic_graph_sha256"] or
-            _fingerprint(graph) != manifest["parent_student"]["full_student_graph_sha256"] or
             {name:list(value.shape) for name,value in parameters.items()} !=
             receipt["parameter_shapes"] or
             len(parameters) != 39):
@@ -726,9 +777,13 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
     return json.loads(_canonical(record))
 
 
-def _draw_live_rows(source_root, graph, *, seed, capability=None, each=12, course=None):
+def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None, course=None):
     """Draw A only or cumulative A+B with identical source-oracle standards."""
-    scopes = ({"A"} if course is None else {grade.id for grade in course.grades})
+    if course is not None:
+        return draw_course_rows(source_root, graph, course, seed=seed,
+                                capability=capability, each=each)
+    each = 12 if each is None else each
+    scopes = {"A"}
     if scopes not in ({"A"}, {"A", "B"}):
         raise ValueError("HUMAN_TRAINER_UNADMITTED_GRADE_SOURCE")
     selected = {capability.split(".", 1)[0]} if capability else scopes
@@ -753,11 +808,7 @@ def _draw_live_rows(source_root, graph, *, seed, capability=None, each=12, cours
 
 
 def _cohort_contract(course):
-    if len(course.grades) == 1:
-        return course.grades[0].assessment_sha256, LIVE_RELEASE, LIVE_GENERATOR, generator_source_digest()
-    if len(course.grades) == 2 and course.grades[1].id == "B":
-        return course.grades[-1].assessment_sha256, B_RELEASE, B_GENERATOR, b_constructor_digest()
-    raise ValueError("HUMAN_TRAINER_UNADMITTED_GRADE_COHORT")
+    return cohort_contract(course)
 
 
 def _persist_live_cohort(run_dir, manifest, course, cohort):
@@ -802,6 +853,9 @@ def _verify_saved_cohort(run_dir, receipt, course):
         rubric, release, generator, code_sha = (
             course.grades[0].assessment_sha256, LIVE_RELEASE,
             LIVE_GENERATOR, generator_source_digest())
+    elif stored.get("schema") == B_RELEASE and len(course.grades) > 2:
+        rubric, release, generator, code_sha = (
+            course.grades[1].assessment_sha256, B_RELEASE, B_GENERATOR, b_constructor_digest())
     else:
         rubric, release, generator, code_sha = _cohort_contract(course)
     if (stored.get("rubric_sha256") != rubric or
@@ -872,6 +926,16 @@ def _seed(receipt: dict, *, capability: str, step: int = 0) -> int:
                              capability, step])[:16], 16)
 
 
+def _introduced_cohort(run_dir, manifest, course, school, cohort):
+    """Activate taught portions of one fixed enrollment exam without redrawing."""
+    eligible = set(assessment_capabilities(course, school))
+    rows = tuple(row for row in cohort.rows if row["capability"] in eligible)
+    selected = cohort if rows == cohort.rows else make_cohort(rows,
+        generator_version=cohort.generator_version, seed=cohort.seed,
+        rubric_version=cohort.rubric_version)
+    return selected, _persist_live_cohort(run_dir, manifest, course, selected)
+
+
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 params, optimizer, graph, *, steps_per_visit, batch_size, reserve_gib,
                 source_root=None):
@@ -881,7 +945,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         raise ValueError("HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY")
     introduction_pass = school.stage == "MAIN"
     lesson_grade = cap.split(".", 1)[0]
-    if lesson_grade not in ("A", "B"):
+    if lesson_grade not in {grade.id for grade in course.grades}:
         raise ValueError("HUMAN_TRAINER_UNKNOWN_LESSON_GRADE")
     teacher = json.loads(_canonical(receipt["teacher"]))
     rng = random.Random(_seed(receipt, capability=cap))
@@ -1006,8 +1070,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         seed=_seed(receipt, capability=cap),
     ))
     event = {
-        "event": "GRADE_A_TEACHER_VISIT_COMMITTED" if lesson_grade == "A"
-                 else "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED",
+        "event": ("SCHOOL_TEACHER_VISIT_COMMITTED" if lesson_grade not in ("A", "B") else
+                  "GRADE_A_TEACHER_VISIT_COMMITTED" if lesson_grade == "A"
+                  else "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED"),
         "grade": lesson_grade,
         "active_grade": school.grade,
         "generation": receipt["generation"] + 1,
@@ -1016,9 +1081,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "source_training_accuracy_before": before,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
-        "generator_version": LIVE_GENERATOR if cap.startswith("A.") else B_GENERATOR,
-        "generator_code_sha256": (generator_source_digest()
-                                  if cap.startswith("A.") else b_constructor_digest()),
+        "generator_version": lesson_contract(course, lesson_grade)[2],
+        "generator_code_sha256": lesson_contract(course, lesson_grade)[3],
         "lesson_source_sha256": manifest["manifest_sha256"],
         "lesson_seed": _seed(receipt, capability=cap),
         "prior_exam_misses_available": len(priority),
@@ -1065,13 +1129,25 @@ def _compare_incumbents(mx, run_dir, receipt, cohort, config, answer_ids, graph)
         if (path.parent != run_dir / "bundles" or path.is_symlink()):
             raise ValueError("HUMAN_TRAINER_INCUMBENT_UNSAFE_PATH")
         weights, own_optimizer, meta, loaded_graph = load_semantically_bound_bundle(path)
-        if (loaded_graph != graph or meta["safetensors_sha256"] != sha or
+        if (not _compatible_graphs(loaded_graph, graph) or meta["safetensors_sha256"] != sha or
                 meta["optimizer_step"] != pointer["optimizer_step"]):
             raise ValueError("HUMAN_TRAINER_INCUMBENT_CHECKPOINT_DRIFT")
-        guesses = _predictions(mx, weights, cohort.rows, config, answer_ids)
-        measured = score_cohort(cohort, guesses, pointer)
+        supported = {cap for cap in {r["capability"] for r in cohort.rows}
+            if all(max(r["tokens"]) < len(loaded_graph["tokens"])
+                   for r in cohort.rows if r["capability"] == cap)}
+        readable = tuple(r for r in cohort.rows if r["capability"] in supported)
+        if not readable:
+            continue
+        subset = make_cohort(readable, generator_version=cohort.generator_version,
+                             seed=cohort.seed, rubric_version=cohort.rubric_version)
+        guesses = _predictions(mx, weights, readable,
+            _compatible_answer_config(config, loaded_graph), answer_ids)
+        measured = score_cohort(subset, guesses, pointer)
         comparisons.append({"checkpoint": dict(pointer),
                             "cohort_sha256": cohort.digest,
+                            "scored_capabilities": sorted(supported),
+                            "unsupported_capabilities": sorted(
+                                {r["capability"] for r in cohort.rows}-supported),
                             "scores": measured["scores"]})
         for cap, value in measured["scores"].items():
             prior = best.get(cap)
@@ -1093,21 +1169,21 @@ def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
     recovery point. This is NOT a champion or an additional archive slot.
     """
     rubric, cohort_release, _, _ = _cohort_contract(course)
+    allowed = set(assessment_capabilities(course, school))
+    expected = {cap: count for grade in course.grades
+                for cap, count in grade.exam_item_counts if cap in allowed}
     if (receipt.get("live_rubric_sha256", rubric) != rubric or
             cohort.rubric_version != cohort_release or
-            len(cohort.rows) != sum(count for grade in course.grades
-                                   for _, count in grade.exam_item_counts)):
+            len(cohort.rows) != sum(expected.values())):
         raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_SCOPE_DRIFT")
     grades = score_cohort(cohort, predictions, {
         "sha256": "IN_MEMORY_CANDIDATE", "optimizer_step": int(optimizer.state["step"].item()),
         "model_and_native_adamw": True})["scores"]
-    expected = {cap: count for grade in course.grades
-                for cap, count in grade.exam_item_counts}
     if ({cap: row["total"] for cap, row in grades.items()} != expected or
             any({r["gold"] for r in cohort.rows if r["capability"] == cap} !=
                 {"TRUE", "FALSE"} or
                 {r["universe_size"] for r in cohort.rows if r["capability"] == cap}
-                != {3, 4} for cap in expected)):
+                != {3, 4} for cap in expected if not cap.startswith("C."))):
         raise ValueError("HUMAN_TRAINER_LIVE_EXAM_INCOMPLETE_FACTORS")
     replay_receipt = {**receipt, "live_rubric_sha256": rubric}
     frontier, incumbent_comparisons = _compare_incumbents(
@@ -1313,8 +1389,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     rubric, release, generator, _ = _cohort_contract(course)
     cohort, qualification = _grade_test_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
+    cohort, cohort_file = _introduced_cohort(run_dir, manifest, course, school, cohort)
     seed, rows = cohort.seed, list(cohort.rows)
-    cohort_file = qualification["cohort_file"]
     guesses = _predictions(mx, parameters, rows,
                            receipt["config"], receipt["answer_ids"])
     school, frontier, roles, compared = _commit_scored_student(
@@ -1336,6 +1412,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "assessment_grade": school.grade,
         "grade_exam_epoch": school.grade_exam_epoch,
         "grade_test_lifecycle": GRADE_TEST_LIFECYCLE,
+        "assessment_scope_sha256": _fingerprint(assessment_capabilities(course, school)),
         "evaluation_id": assessment.evaluation_id,
         "exam_rubric_sha256": assessment.rubric_digest,
         "cohort_sha256": cohort.digest,
@@ -1375,19 +1452,22 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     result = _advance(
         run_dir, migrated_receipt, advanced, frontier=frontier,
         model_bundle=school.current_student.filename, last_exam=last_exam,
-        result=(("GRADE_A_MASTERED_AWAITING_GRADE_B" if advanced.grade == "A"
-                 else "GRADE_B_MASTERED_AWAITING_GRADE_C")
+        result=(("GRADE_"+advanced.grade+"_MASTERED_AWAITING_GRADE_"+chr(ord(advanced.grade)+1))
                 if advanced.stage == "AWAITING_NEXT_GRADE" else
                 ("GRADE_" + advanced.revalidation_target_grade +
                  "_REVALIDATING_" + advanced.grade)
                 if advanced.revalidation_target_grade else
                 "ACTIVE_GRADE_" + advanced.grade), persist=False)
     exam_event = {
-        "event": "GRADE_A_LIVE_EXAM_COMMITTED" if len(course.grades) == 1
-                 else "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+        "event": ("SCHOOL_LIVE_EXAM_COMMITTED" if len(course.grades) > 2 else
+                  "GRADE_A_LIVE_EXAM_COMMITTED" if len(course.grades) == 1
+                  else "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED"),
         "grade": school.grade, "generation": result["generation"],
         "grade_exam_epoch": school.grade_exam_epoch,
         "grade_test_lifecycle": GRADE_TEST_LIFECYCLE,
+        "assessment_scope_sha256": last_exam["assessment_scope_sha256"],
+        "qualification_cohort_sha256": qualification["cohort_sha256"],
+        "introduction_stage": school.introduction_stage,
         "scores": scores, "phase": advanced.stage,
         "student_sha256": assessment.checkpoint_sha256,
         "optimizer_step": assessment.optimizer_step,
@@ -1415,6 +1495,7 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
     rubric, release, generator, _ = _cohort_contract(course)
     cohort, qualification = _grade_test_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
+    cohort, _ = _introduced_cohort(run_dir, manifest, course, school, cohort)
     rows = list(cohort.rows)
     guesses = _predictions(mx, parameters, rows, receipt["config"], receipt["answer_ids"])
     current, frontier, roles, compared = _commit_scored_student(
@@ -1479,6 +1560,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
     # Build only verified source-bound metadata; no student, optimizer or
     # checkpoint is touched while preparing a future grade's course.
     course_b = None
+    course_c = None
     course = course_a
     run_dir = Path(run_dir).expanduser().resolve()
     start = time.monotonic()
@@ -1493,20 +1575,33 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             # A trainer still acquiring A must never depend on readiness of a
             # *future* B release. Only a B run, graduated A, or prospective B
             # orphan needs B's source construction and version guard.
-            if (saved.get("curriculum_mode") == B_RELEASE or
-                    pending_mode == B_RELEASE or
+            if (saved.get("curriculum_mode") in (B_RELEASE, C_RELEASE) or
+                    pending_mode in (B_RELEASE, C_RELEASE) or
                     saved["school"]["stage"] == "AWAITING_NEXT_GRADE"):
                 course_b = live_b_course(course_a, source_root)
             if saved.get("curriculum_mode") == B_RELEASE:
                 course = course_b
+            if (saved.get("curriculum_mode") == C_RELEASE or pending_mode == C_RELEASE or
+                    (saved.get("curriculum_mode") == B_RELEASE and
+                     saved["school"]["stage"] == "AWAITING_NEXT_GRADE")):
+                from .live_grade_c import prepare_course
+                pinned_maximum = saved.get("numeric_maximum")
+                if pending_mode == C_RELEASE and pinned_maximum is None:
+                    pinned_maximum = json.loads(pending.read_text())["numeric_maximum"]
+                course_c, _ = prepare_course(course_b, maximum=pinned_maximum)
+                if saved.get("curriculum_mode") == C_RELEASE:
+                    course = course_c
             params, optimizer, graph, receipt = _resume(
                 run_dir, manifest, course, teacher_sha,
-                successor_course=course_b)
+                successor_course=course_b,
+                admitted_courses={c.version: c for c in (course_a, course_b, course_c) if c is not None})
             # A fully written B migration might have survived a crash before
             # publishing the latest state pointer. _resume recovers it under
             # operator_lock; do not interpret recovered B as an A-only run.
             if receipt.get("curriculum_mode") == B_RELEASE:
                 course = course_b
+            elif receipt.get("curriculum_mode") == C_RELEASE:
+                course = course_c
             # A previously graduated human student is the only admissible B
             # starter. Never reset its whole weights, AdamW or teacher policy.
             if (course == course_a and
@@ -1518,6 +1613,15 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 receipt = _activate_next_admitted_grade(
                     run_dir, receipt, course_a, course_b)
                 course = course_b
+            elif (course == course_b and receipt["school"]["stage"] == "AWAITING_NEXT_GRADE"):
+                from .live_grade_c import prepare_course
+                from .grade_transition import activate_numeric_grade
+                if course_c is None:
+                    course_c, _ = prepare_course(course_b)
+                params, optimizer, graph, receipt = activate_numeric_grade(
+                    mx, run_dir, receipt, course_b, course_c, params, optimizer, graph,
+                    reserve_gib=reserve_gib)
+                course = course_c
         else:
             params, optimizer, graph, receipt = _init(
                 run_dir, manifest, course, teacher_sha,
