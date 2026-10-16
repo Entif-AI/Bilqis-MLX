@@ -2,7 +2,7 @@
 
 Verified 2026-10-16. Governing private contract: [socr8s/private-ip#336](https://github.com/socr8s/private-ip/issues/336), **OPEN**, IPR-0220, parent #335. This is a bounded evidence-audit milestone. The requested generative A/B training trial, all five runtime diagnostic loops and Grade C admission remain unfinished.
 
-Source baseline: `codex/lettergrade-mlx-v1` at `1478bdd71d135b8ad20b84b5151146d3a6db0958`. Isolated implementation: `codex/336-ab-diagnostic-qualification`. See the latest protected issue checkpoint for its verified implementation HEAD. The primary checkout's trainer, scheduler, catalog and unrelated research WIP were preserved. Four explicit diagnostic WIP files were reused and qualified here; the provisional prerequisite ratio and error-memory bound were not adopted.
+Source baseline: `codex/lettergrade-mlx-v1` at `1478bdd71d135b8ad20b84b5151146d3a6db0958`. Isolated implementation: `codex/336-ab-diagnostic-qualification`, verified implementation HEAD `18deb37407f568c5be71a82680d06ec42ee3a1ab`. A subsequent documentation-only checkpoint may advance HEAD. The primary checkout's trainer, scheduler, catalog and unrelated research WIP were preserved. Four explicit diagnostic WIP files were reused and qualified here; the provisional prerequisite ratio and error-memory bound were not adopted.
 
 ## Observed saved student
 
@@ -42,7 +42,7 @@ No teacher decision or policy allocation is changed. There is no new training st
 
 Negative controls first reproduced the draft's false single-class alarm, same-checkpoint longitudinal claim, stale whole-history suppression and acceptance of extraneous scores. Independent review supplied additional aggregate-discrimination, capability-inventory and event-outbox controls. Run-ID borrowing, malformed identities and corrupted event/state/generator metadata are also rejected. CLI fixtures compare every saved file byte before and after the read.
 
-The focused suite and full-suite result are recorded in the protected implementation checkpoint. Two optional tests for a run mounted directly under this isolated checkout are skipped; the separate actual saved-run audit above provides the real JSON evidence readback. No synthetic result is a neural mastery result.
+Focused suite: **25 tests, 23 passed, 2 skipped**. Full suite: **283 tests, 281 passed, 2 skipped**. The two optional tests expect a run mounted directly under this isolated checkout; the separate actual saved-run audit above provides the real JSON evidence readback. Independent review's final chronology and regular-file controls were reproduced failing before correction and then passed. No synthetic result is a neural mastery result.
 
 The source-only human-resume dry-run verified all **216** historical source records. Its existing `blockers: []` describes that preflight's checks, not completion of #336. The ABI and module-boundary checks pass. Independent external ABI expectation remains unconfigured, so the ABI guard is **advisory**.
 
