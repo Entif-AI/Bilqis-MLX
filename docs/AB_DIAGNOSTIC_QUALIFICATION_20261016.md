@@ -1,5 +1,7 @@
 # A/B saved-evidence diagnostic qualification
 
+**Historical checkpoint notice (2026-10-16):** The measurements below document the earlier bounded audit and its gaps at the specified commit. The user's subsequent correction, governing through ADR-031 and issue #336 comment `6215237912`, removed the false specimen-identity readiness dependency and prescribed a fixed-until-passed grade exam with teachable mistakes. See [the subsequent classroom diagnostic implementation](AB_CLASSROOM_DIAGNOSTICS_20261016.md) for the later S3 and compact S4/S5 checks. The historical numerical receipts below remain unchanged.
+
 Verified 2026-10-16. Governing private contract: [socr8s/private-ip#336](https://github.com/socr8s/private-ip/issues/336), **OPEN**, IPR-0220, parent #335. This is a bounded evidence-audit milestone. The requested generative A/B training trial, all five runtime diagnostic loops and Grade C admission remain unfinished.
 
 Source baseline: `codex/lettergrade-mlx-v1` at `1478bdd71d135b8ad20b84b5151146d3a6db0958`. Isolated implementation: `codex/336-ab-diagnostic-qualification`, verified implementation HEAD `18deb37407f568c5be71a82680d06ec42ee3a1ab`. A subsequent documentation-only checkpoint may advance HEAD. The primary checkout's trainer, scheduler, catalog and unrelated research WIP were preserved. Four explicit diagnostic WIP files were reused and qualified here; the provisional prerequisite ratio and error-memory bound were not adopted.

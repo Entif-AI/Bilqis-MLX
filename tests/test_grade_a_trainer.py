@@ -24,6 +24,7 @@ from bilqis_mlx.champions import Checkpoint
 from bilqis_mlx.source import AUDITED_PARENT
 from bilqis_mlx.school import start_new, visit
 from bilqis_mlx.capability_frontier import promote
+from bilqis_mlx.diagnostics import DiagnosticStatus
 
 ROOT = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
 SOURCE = ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
@@ -249,6 +250,7 @@ class GradeATrainerContractTests(unittest.TestCase):
             "schema": "synthetic-fixture", "run_id": "synthetic-execution",
             "generation": 1, "school": asdict(school),
             "teacher": teacher, "config": {"heads":3,"layers":1},
+            "source_manifest_sha256": manifest["manifest_sha256"],
             "answer_ids": [6,7],
             "model_bundle": initial.filename, "last_exam": None,
             "curriculum_mode": LIVE_RELEASE,
@@ -286,6 +288,19 @@ class GradeATrainerContractTests(unittest.TestCase):
             self.assertEqual(len(saved_cohort["rows"]), 72)
             self.assertEqual(saved_cohort["cohort_sha256"],
                              completed["last_exam"]["cohort_sha256"])
+            events = [json.loads(line) for line in
+                      (run_dir / "events.jsonl").read_text().splitlines()]
+            visits = [event for event in events if event.get("event") ==
+                      "GRADE_A_TEACHER_VISIT_COMMITTED"]
+            self.assertEqual(len(visits), 6)
+            for event in visits:
+                method = event["lesson_methodology"]
+                self.assertEqual(method["optimizer_batches_observed"], 1)
+                self.assertEqual(method["delivered_examples"], 4)
+                self.assertTrue(method["introductory_full_grade_pass"])
+                s4, s5 = method["findings"]
+                self.assertEqual(s4["status"], DiagnosticStatus.NOT_APPLICABLE)
+                self.assertNotEqual(s5["status"], DiagnosticStatus.NOT_MEASURED)
             # A second incomplete recovery group must never create three more
             # intermediate student archives. Old capability winners remain
             # pinned when a new full-student recovery point is committed.

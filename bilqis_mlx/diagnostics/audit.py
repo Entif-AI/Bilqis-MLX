@@ -6,7 +6,9 @@ import hashlib
 from pathlib import Path
 
 from .observations import _require_evidence_file, load_archived_exam_history, load_saved_exam
-from .signals import DiagnosticStatus, diagnose_exam, diagnose_history
+from .event_evidence import load_verified_lesson_methodology, latest_methodology_findings
+from .signals import (DiagnosticStatus, DiagnosticTarget, LearningSignal,
+                      diagnose_exam, diagnose_history)
 
 
 VERSION = "bilqis.school.learning-diagnostic-audit/v1"
@@ -38,10 +40,24 @@ def audit_saved_run(run_dir: Path) -> dict:
     latest = comparable[-1]
     findings = diagnose_exam(latest)
     longitudinal = diagnose_history(comparable)
+    method_visits = load_verified_lesson_methodology(root)
+    method = latest_methodology_findings(method_visits)
+    durable = {(f.capability, f.target): f for f in longitudinal
+               if f.signal is LearningSignal.LACK_OF_DURABLE_GAIN and
+               f.status is not DiagnosticStatus.NOT_MEASURED}
+    current = tuple(
+        durable.get((f.capability, f.target), f)
+        if f.signal is LearningSignal.LACK_OF_DURABLE_GAIN else
+        method.get((f.capability, f.signal), f)
+        if f.target is DiagnosticTarget.CAPABILITY and f.signal in (
+            LearningSignal.DISCONNECTED_PREREQUISITES,
+            LearningSignal.EXCESSIVE_INTRODUCTORY_COMPLEXITY) else f
+        for f in findings)
     if identities() != before:
         raise ValueError("DIAGNOSTIC_RUN_CHANGED_DURING_READ_RETRY")
-    unmeasured = sorted({f.signal for f in findings
-                         if f.status is DiagnosticStatus.NOT_MEASURED})
+    unmeasured = sorted({f.signal for f in current
+                         if f.status is DiagnosticStatus.NOT_MEASURED and
+                         f.target is DiagnosticTarget.CAPABILITY})
     return {
         "schema": VERSION,
         "run_dir": str(root),
@@ -55,13 +71,16 @@ def audit_saved_run(run_dir: Path) -> dict:
         "outbox_verified_exam_count": sum(obs.event_outbox_verified for obs in history),
         "legacy_exam_count_without_outbox": sum(not obs.event_outbox_verified for obs in history),
         "comparable_exam_count": len(comparable),
+        "verified_methodology_visit_count": len(method_visits),
         "excluded_contract_observations": len(history) - len(comparable),
         "latest_exam": asdict(latest),
         "latest_findings": [asdict(f) for f in findings],
         "history_findings": [asdict(f) for f in longitudinal],
+        "current_findings": [asdict(f) for f in current],
         "unmeasured_signals": unmeasured,
         "evidence_boundary": (
             "Binary predictions reconstructed from archived gold, complete misses and scores. "
-            "Baseline warnings are descriptive; rotating cohorts are not paired learning gains. "
+            "Different examination cohorts are not paired learning gains; an identical "
+            "fixed exam at distinct student checkpoints can measure persistence. "
             "This audit does not qualify a curriculum release or a human training resume."),
     }

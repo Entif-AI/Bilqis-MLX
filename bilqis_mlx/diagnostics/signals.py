@@ -12,6 +12,7 @@ from enum import Enum
 from typing import Iterable
 
 from .observations import CapabilityObservation, ExamObservation, aggregate_capabilities
+from .trajectories import latest_fixed_exam_trajectory
 
 
 class LearningSignal(str, Enum):
@@ -27,11 +28,15 @@ class DiagnosticStatus(str, Enum):
     OBSERVED_LONGITUDINALLY = "OBSERVED_LONGITUDINALLY"
     NOT_OBSERVED = "NOT_OBSERVED"
     NOT_MEASURED = "NOT_MEASURED"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
+    OBSERVED_IN_INSTRUCTION = "OBSERVED_IN_INSTRUCTION"
 
 
 class ObservationScope(str, Enum):
     SINGLE_COHORT = "SINGLE_COHORT"
     DISTINCT_COHORT_SERIES = "DISTINCT_COHORT_SERIES"
+    FIXED_COHORT_CHECKPOINT_SERIES = "FIXED_COHORT_CHECKPOINT_SERIES"
+    TRAINING_VISIT = "TRAINING_VISIT"
 
 
 class DiagnosticTarget(str, Enum):
@@ -53,6 +58,7 @@ class DiagnosticFinding:
     majority_baseline: int | None
     source_cohorts: tuple[str, ...]
     note: str
+    trajectory: tuple[tuple[int, int, int], ...] = ()
 
 
 def _inspect_capability(cap: CapabilityObservation, cohort_sha256: str,
@@ -114,14 +120,12 @@ def _targets(observation):
 
 
 def diagnose_history(observations: Iterable[ExamObservation]) -> tuple[DiagnosticFinding, ...]:
-    """Mark repeated S1/S2 signals only across *distinct* saved cohorts.
+    """Use distinct student checkpoints; reused fixed exams are paired evidence.
 
-    No inference of durable forgetting can follow from independently sampled
-    exam scores without evidence of what was actually taught in between.
+    An unchanged cohort across successive complete checkpoints makes score
+    persistence observable, without claiming which practice questions caused it.
     """
     history = tuple(observations)
-    if len({o.cohort_sha256 for o in history}) != len(history):
-        raise ValueError("DIAGNOSTIC_REPEATED_COHORT_IS_NOT_NEW_EVIDENCE")
     if (len({o.optimizer_step for o in history}) != len(history) or
             len({o.student_sha256 for o in history}) != len(history)):
         raise ValueError("DIAGNOSTIC_REPEATED_CHECKPOINT_IS_NOT_A_LEARNING_TRAJECTORY")
@@ -141,6 +145,9 @@ def diagnose_history(observations: Iterable[ExamObservation]) -> tuple[Diagnosti
             continue
         if len({o.contract for o, _ in rows}) != 1:
             raise ValueError("DIAGNOSTIC_INCOMPARABLE_RUBRIC_HISTORY")
+        paired = len({obs.cohort_sha256 for obs, _ in rows}) == 1
+        scope = (ObservationScope.FIXED_COHORT_CHECKPOINT_SERIES if paired else
+                 ObservationScope.DISTINCT_COHORT_SERIES)
         # Do not call one checkpoint repeatedly evaluated on new questions a
         # learned trajectory: it is observationally new, not temporal gain.
         for signal, pattern in (
@@ -165,12 +172,37 @@ def diagnose_history(observations: Iterable[ExamObservation]) -> tuple[Diagnosti
                 status = DiagnosticStatus.NOT_MEASURED
             findings.append(DiagnosticFinding(
                 signal, status,
-                cap_name, target, ObservationScope.DISTINCT_COHORT_SERIES,
+                cap_name, target, scope,
                 len(window), sum(cap.correct for _, cap in window),
                 sum(cap.total for _, cap in window),
                 sum(cap.majority_baseline for _, cap in window),
                 tuple(obs.cohort_sha256 for obs, _ in window),
-                "Consecutive observations on distinct cohorts and checkpoints; not a paired gain" if sustained else
+                ("Consecutive observations on an unchanged exam and distinct checkpoints"
+                 if paired else "Consecutive observations on changing exams; not a paired gain") if sustained else
                 "No sustained warning in the latest consecutive cohort window",
             ))
+        trend = latest_fixed_exam_trajectory(tuple(rows))
+        if trend is None:
+            status = DiagnosticStatus.NOT_MEASURED
+            note = "Need three distinct student checkpoints on one fixed exam for durable-gain measurement"
+            window = ()
+        else:
+            status = (DiagnosticStatus.OBSERVED_LONGITUDINALLY if
+                      trend.no_lasting_gain or trend.regressed_from_peak
+                      else DiagnosticStatus.NOT_OBSERVED)
+            note = ("No net gain over the first checkpoint on this fixed exam"
+                    if trend.no_lasting_gain else
+                    "Some gains persist, but score regressed from the intervening peak"
+                    if trend.regressed_from_peak else
+                    "Latest checkpoint retains its best measured gain on this fixed exam")
+            window = trend.scores_by_step
+        findings.append(DiagnosticFinding(
+            LearningSignal.LACK_OF_DURABLE_GAIN, status, cap_name, target,
+            ObservationScope.FIXED_COHORT_CHECKPOINT_SERIES if trend else scope,
+            len(window), trend.latest_correct if trend else None,
+            window[-1][2] if window else None,
+            rows[-1][1].majority_baseline if trend else None,
+            (trend.cohort_sha256,) if trend else (rows[-1][0].cohort_sha256,),
+            note, window,
+        ))
     return tuple(findings)

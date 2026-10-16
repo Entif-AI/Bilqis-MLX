@@ -393,7 +393,8 @@ class SchoolTests(unittest.TestCase):
         state = grade_loop(course, state, student)
         state = assess(course, state, snapshot(course, student, imperfect))
         self.assertEqual(state.stage, "RECOVERY_2")
-        self.assertFalse(set(state.queue) & set(state.first_recovery))
+        self.assertEqual(state.queue, state.first_recovery,
+                         "Still-weak capabilities must remain eligible in round two")
         self.assertEqual(state.revalidation_target_grade, "B")
 
     def test_admitted_grade_rejects_fabricated_one_question_perfect_score(self):

@@ -11,8 +11,13 @@ from bilqis_mlx.diagnostics import DiagnosticStatus, LearningSignal
 from tests.test_learning_diagnostics import constructed_exam
 
 
-def save_exam(root, generation, seed, *, outbox=False):
+def save_exam(root, generation, seed, *, outbox=False,
+              optimizer_step=None, student_sha256=None):
     cohort, exam = constructed_exam(predicted=("FALSE",) * 12, seed=seed)
+    if optimizer_step is not None:
+        exam["optimizer_step"] = optimizer_step
+    if student_sha256 is not None:
+        exam["student_sha256"] = student_sha256
     exam["cohort_file"] = "cohorts/" + cohort["cohort_sha256"] + ".json"
     record = {"generation": generation, "run_id": "disposable-audit",
               "last_exam": exam}
@@ -43,6 +48,50 @@ def snapshot(root):
 
 
 class DiagnosticAuditTests(unittest.TestCase):
+    def test_exam_boundary_builds_automatic_s1_s2_without_sealed_question_policy(self):
+        from bilqis_mlx.diagnostics.exam_events import summarize_completed_exam
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            save_exam(root, 1, 7)
+            state = json.loads((root / "state.json").read_text())
+            # The live teacher has already completed supervised source scoring;
+            # this method only consumes those results for nonbinding warnings.
+            report = summarize_completed_exam(root, state, state["last_exam"])
+            self.assertEqual(report["optimizer_step"], 107)
+            self.assertTrue(any(warning == {
+                "signal": LearningSignal.REPETITIVE_ANSWERS,
+                "target": "CAPABILITY", "capability": "X.NOT"}
+                for warning in report["active_warnings"]))
+            self.assertTrue(any(warning == {
+                "signal": LearningSignal.CHANCE_LEVEL_OR_LAGGING,
+                "target": "GRADE", "capability": "X"}
+                for warning in report["active_warnings"]))
+            self.assertNotIn("holdout", report)
+
+    def test_fixed_exam_retry_history_reports_s3_not_false_unmeasured(self):
+        from bilqis_mlx.diagnostics.audit import audit_saved_run
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for generation, step, student_sha in (
+                (1, 107, "1" * 64), (2, 123, "2" * 64),
+                (3, 139, "3" * 64)):
+                save_exam(root, generation, 7, outbox=True,
+                          optimizer_step=step, student_sha256=student_sha)
+            report = audit_saved_run(root)
+            self.assertEqual(report["archived_exam_count"], 3)
+            self.assertEqual(report["comparable_exam_count"], 3)
+            current = [f for f in report["current_findings"]
+                       if f["capability"] == "X" and
+                       f["signal"] == LearningSignal.LACK_OF_DURABLE_GAIN]
+            self.assertEqual(len(current), 1)
+            self.assertEqual(current[0]["status"],
+                             DiagnosticStatus.OBSERVED_LONGITUDINALLY)
+            self.assertEqual(current[0]["trajectory"],
+                             ((107, 6, 12), (123, 6, 12), (139, 6, 12)))
+            self.assertNotIn(LearningSignal.LACK_OF_DURABLE_GAIN,
+                             report["unmeasured_signals"])
+            self.assertIn(LearningSignal.DISCONNECTED_PREREQUISITES,
+                          report["unmeasured_signals"])
     def test_regressing_history_is_rejected_instead_of_sorted(self):
         from bilqis_mlx.diagnostics.audit import audit_saved_run
         with tempfile.TemporaryDirectory() as temp:

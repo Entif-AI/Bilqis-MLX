@@ -26,6 +26,8 @@ from .capability_frontier import (
     candidate_roles, historical_frontier, pinned, promote, retire_bundles,
 )
 from .disk import assert_headroom, headroom_snapshot
+from .diagnostics.teaching import inspect_lesson_step, summarize_teaching_visit
+from .diagnostics.exam_events import summarize_completed_exam
 from .generated_assessment import GRADE_TEST_LIFECYCLE, make_cohort, score as score_cohort
 from .grade_a_manifest import verify_manifest
 from .grade_a_release import AUTHORITY, accepted_grade_a
@@ -877,6 +879,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     cap = next_capability(school)
     if cap is None:
         raise ValueError("HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY")
+    introduction_pass = school.stage == "MAIN"
     lesson_grade = cap.split(".", 1)[0]
     if lesson_grade not in ("A", "B"):
         raise ValueError("HUMAN_TRAINER_UNKNOWN_LESSON_GRADE")
@@ -903,6 +906,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                           receipt["answer_ids"])
     last_loss = 0.0
     last_norm = 0.0
+    methodology_steps = []
+    methodology_unavailable = None
     step_before = int(optimizer.state["step"].item())
     for step in range(steps_per_visit):
         fresh = _draw_live_rows(source_root, graph,
@@ -919,6 +924,14 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         window = missed_lesson_window(priority, priority_cursor, batch_size // 4)
         picked = replay_missed_lessons(picked, window)
         priority_cursor += len(window)
+        if methodology_unavailable is None:
+            try:
+                methodology_steps.append(inspect_lesson_step(
+                    course, cap, [*fresh, *teacher_candidates], picked))
+            except ValueError as exc:
+                # A diagnostic implementation gap must not invent a new
+                # training gate or silently change the evolved teacher.
+                methodology_unavailable = str(exc)
         last_loss, last_norm = _train_step(
             mx, params, optimizer, picked, receipt["config"],
             receipt["answer_ids"])
@@ -950,6 +963,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "prior_exam_misses_available": len(priority),
         "prior_grade_champion_votes": teacher_vote_weights(course, school),
         "champion_directed_examples_available": len(teacher_candidates),
+        "lesson_methodology": summarize_teaching_visit(
+            course, cap, tuple(methodology_steps),
+            introductory=introduction_pass,
+            unmeasured_reason=methodology_unavailable),
         "optimizer_step": int(optimizer.state["step"].item()),
         "next_phase": school.stage,
         "checkpoint_status": "PROVISIONAL_UNTIL_NEXT_RECOVERY_BOUNDARY",
@@ -1264,11 +1281,12 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "cohort_seed": seed,
         "generator_version": generator,
         "incumbent_comparisons": compared,
-        "misses_for_teacher": measured["misses_for_teacher"],
+        "misses_for_teacher": list(measured["misses_for_teacher"]),
         "student_sha256": assessment.checkpoint_sha256,
         "optimizer_step": assessment.optimizer_step,
         "scores": scores,
     }
+    exam_warnings = summarize_completed_exam(run_dir, receipt, last_exam)
     pending = receipt.get("_pending_visit_events", ())
     # Exam golds become eligible *after* the complete examination. Retain
     # tokens and source provenance so the next weakest-three visits can train
@@ -1304,6 +1322,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "cohort_seed": seed, "cohort_file": last_exam["cohort_file"],
         "incumbent_comparisons": compared,
         "teacher_miss_count": len(priority),
+        "learning_diagnostics": exam_warnings,
     }
     result = _persist(run_dir, _with_delivery_outbox(
         result, _boundary_delivery_events(result, pending, roles, exam_event)))

@@ -24,6 +24,7 @@ from bilqis_mlx.live_grade_b import (GENERATOR as B_GENERATOR, RELEASE as B_RELE
                                     live_course as b_live_course)
 from bilqis_mlx.school import (Assessment, Score, assess, start_new, visit)
 from bilqis_mlx.champions import Checkpoint
+from bilqis_mlx.diagnostics import DiagnosticStatus, LearningSignal
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = ROOT.parent / "bilqis-triplets-v16"
@@ -424,6 +425,46 @@ class GradeBTrainerTests(unittest.TestCase):
                 list(event.get("prior_grade_champion_votes",{}).values()) == [2]
                 for event in events if event.get("event") ==
                                    "GRADE_A_TEACHER_VISIT_COMMITTED"))
+            b_visits = [e for e in events if e.get("event") ==
+                        "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED"]
+            self.assertEqual(len(b_visits), 12)
+            for event in b_visits:
+                evidence = event["lesson_methodology"]
+                self.assertEqual(evidence["delivered_examples"], 4)
+                self.assertEqual(evidence["optimizer_batches_observed"], 1)
+                self.assertTrue(evidence["constituent_capabilities_delivered"])
+                self.assertEqual(evidence["findings"][0]["status"], DiagnosticStatus.NOT_OBSERVED)
+                self.assertNotEqual(evidence["findings"][1]["status"], DiagnosticStatus.NOT_MEASURED)
+            examination_events = [e for e in events if e.get("event") ==
+                                  "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED"]
+            self.assertEqual(len(examination_events), 3)
+            for event in examination_events:
+                warnings = event["learning_diagnostics"]
+                self.assertEqual(warnings["assessment_cohort_sha256"],
+                                 event["cohort_sha256"])
+                self.assertEqual(warnings["optimizer_step"], event["optimizer_step"])
+                self.assertEqual(warnings["active_warnings"], [])
+                self.assertTrue(any(f["signal"] == LearningSignal.CHANCE_LEVEL_OR_LAGGING and
+                                    f["target"] == "GRADE" for f in warnings["findings"]))
+            from bilqis_mlx.diagnostics.audit import audit_saved_run
+            audit = audit_saved_run(root)
+            self.assertEqual(audit["verified_methodology_visit_count"], 18)
+            latest_b = next(item for item in audit["current_findings"] if
+                            item["capability"] == "B.NOT" and
+                            item["signal"] == LearningSignal.DISCONNECTED_PREREQUISITES)
+            self.assertEqual(latest_b["status"], DiagnosticStatus.NOT_OBSERVED)
+            # A plausible but uncommitted rewritten teaching warning must
+            # not enter the audit merely because it appears in events.jsonl.
+            ledger = root / "events.jsonl"
+            original = ledger.read_text()
+            changed = [json.loads(line) for line in original.splitlines()]
+            target = next(event for event in changed if "lesson_methodology" in event)
+            target["lesson_methodology"]["findings"][0]["status"] = DiagnosticStatus.NOT_MEASURED
+            ledger.write_text("".join(json.dumps(e) + "\n" for e in changed))
+            with self.assertRaisesRegex(ValueError, "METHOD_LEDGER_OUTBOX_CONFLICT"):
+                audit_saved_run(root)
+            ledger.write_text(original)
+            self.assertEqual(audit_saved_run(root)["verified_methodology_visit_count"], 18)
 
 
 if __name__ == "__main__":
