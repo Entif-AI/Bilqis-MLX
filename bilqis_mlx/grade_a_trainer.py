@@ -10,6 +10,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict, replace
+from functools import lru_cache
 import fcntl
 import hashlib
 import json
@@ -22,8 +23,12 @@ import uuid
 
 from .backup import digest_file
 from .champions import Checkpoint
+from .champion_confidence import MAX_INFLUENCE as MAX_CHAMPION_INFLUENCE
+from .champion_confidence import POLICY as CHAMPION_CONFIDENCE_POLICY
+from .champion_confidence import champion_roster, vote_targets
 from .capability_frontier import (
-    candidate_roles, graduation_perfect, historical_frontier, pinned, promote, retire_bundles,
+    candidate_roles, graduation_perfect, historical_frontier, pinned, promote,
+    recover_graduation_breadth, retire_bundles,
 )
 from .disk import assert_headroom, headroom_snapshot
 from .diagnostics.teaching import inspect_lesson_step, summarize_teaching_visit
@@ -327,6 +332,63 @@ def _champion_teacher_votes(mx, run_dir: Path, school: SchoolState, course,
     return scores
 
 
+@lru_cache(maxsize=16)
+def _cached_frozen_champion(path_string, sha, step, file_size, file_mtime_ns):
+    """Bound repeat source reads; never cache optimizer moments."""
+    weights, own_optimizer, meta, source_graph = load_semantically_bound_bundle(
+        Path(path_string))
+    if (meta["safetensors_sha256"] != sha or
+            meta["optimizer_step"] != step or
+            meta["source_digest"] != AUDITED_PARENT.sha256):
+        raise ValueError("CHAMPION_CONFIDENCE_BUNDLE_DRIFT")
+    del own_optimizer
+    return weights, source_graph
+
+
+def _frozen_confidence_champions(run_dir, receipt, grade, graph):
+    """Read each current-grade perfect champion once, without changing it."""
+    mentors = []
+    for item in champion_roster(receipt.get("graduation_perfect", {}), grade):
+        pointer = item["checkpoint"]
+        path = run_dir / pointer["filename"]
+        if (path.is_symlink() or path.parent != run_dir / "bundles" or
+                not pointer["filename"].startswith("bundles/")):
+            raise ValueError("CHAMPION_CONFIDENCE_UNSAFE_BUNDLE")
+        content = (path / "model-and-own-adamw.safetensors").stat()
+        weights, source_graph = _cached_frozen_champion(
+            str(path), pointer["sha256"], pointer["optimizer_step"],
+            content.st_size, content.st_mtime_ns)
+        if not _compatible_graphs(source_graph, graph):
+            raise ValueError("CHAMPION_CONFIDENCE_BUNDLE_DRIFT")
+        mentors.append({"weights": weights, "graph": source_graph,
+                        "breadth": item["breadth"]})
+    return tuple(mentors)
+
+
+def _confidence_guidance(mx, mentors, picked, config, answer_ids,
+                         *, scope_size, teacher_distill):
+    """Gold-agreeing frozen logits are small, policy-shaped gradient advice."""
+    if not mentors or teacher_distill <= 0 or any(
+            row.get("answer_kind", "binary") != "binary" for row in picked):
+        return None
+    import numpy as np
+    ids, lengths, labels = _make_batch(picked)
+    vote_logits = []
+    for mentor in mentors:
+        if any(max(row["tokens"]) >= len(mentor["graph"]["tokens"])
+               for row in picked):
+            continue
+        logits = forward_arrays(mx, mentor["weights"], ids, lengths,
+                                heads=config["heads"], layers=config["layers"],
+                                answer_ids=answer_ids)
+        mx.eval(logits)
+        vote_logits.append((mentor["breadth"], np.asarray(logits)[:, :2]))
+    target, influence = vote_targets(vote_logits, labels,
+                                     eligible_capabilities=scope_size,
+                                     teacher_distill=teacher_distill)
+    return (target, influence) if np.any(influence) else None
+
+
 def _compatible_graphs(earlier, current):
     """A frozen earlier teacher retains its exact historical semantic prefix."""
     count = len(earlier["tokens"])
@@ -344,21 +406,43 @@ def _compatible_answer_config(config, graph):
     return {**config, "answer_heads": answer_heads(graph, maximum)}
 
 
-def _train_step(mx, parameters, optimizer, rows, config, answer_ids):
+def _train_step(mx, parameters, optimizer, rows, config, answer_ids,
+                *, champion_guidance=None):
     if any(row.get("answer_kind", "binary") != "binary" for row in rows):
+        if champion_guidance is not None:
+            raise ValueError("CHAMPION_CONFIDENCE_TYPED_GUIDANCE_NOT_ADMITTED")
         from .typed_answer_training import typed_step
         return typed_step(mx, parameters, optimizer, rows, config["answer_heads"], config)
     import numpy as np
     ids, lengths, labels = _make_batch(rows)
     expected = mx.array(np.eye(2, dtype=np.float32)[labels])
+    advice = None
+    if champion_guidance is not None:
+        target, weight = champion_guidance
+        target = np.asarray(target, dtype=np.float32)
+        weight = np.asarray(weight, dtype=np.float32)
+        if (target.shape != (len(rows), 2) or weight.shape != (len(rows),) or
+                not np.isfinite(target).all() or not np.isfinite(weight).all() or
+                (weight < 0).any() or (weight > MAX_CHAMPION_INFLUENCE + 1e-6).any() or
+                (target < 0).any() or
+                not np.allclose(target.sum(axis=-1), 1., atol=1e-6)):
+            raise ValueError("CHAMPION_CONFIDENCE_TRAINING_GUIDANCE_INVALID")
+        advice = (mx.array(target), mx.array(weight))
 
     def objective(weights):
         logits = forward_arrays(mx, weights, ids, lengths,
                                 heads=config["heads"], layers=config["layers"],
                                 answer_ids=answer_ids)
         typed = logits[:, :2]
-        return mx.mean(mx.logsumexp(typed, axis=-1) -
-                       mx.sum(typed * expected, axis=-1))
+        normalizer = mx.logsumexp(typed, axis=-1)
+        loss = mx.mean(normalizer - mx.sum(typed * expected, axis=-1))
+        if advice is not None:
+            # Frozen confidence teaches only through this bounded gradient;
+            # no exam inference ever reads the champion-adjusted logits.
+            soft_target, strength = advice
+            loss = loss + mx.mean(strength *
+                 (normalizer - mx.sum(typed * soft_target, axis=-1)))
+        return loss
 
     loss, gradients = mx.value_and_grad(objective)(parameters)
     # Native torch.nn.Embedding(padding_idx=0) never trains padding row.
@@ -695,6 +779,14 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, adm
     _verify_best_custody(run_dir, receipt)
     # Also finishes a retirement interrupted after the prior state commit.
     _publish_boundary(run_dir, receipt, (), ())
+    if any("breadth" not in entry for entry in
+           receipt.get("graduation_perfect", {}).values()):
+        with (run_dir / "events.jsonl").open(encoding="utf-8") as history:
+            ranked = recover_graduation_breadth(
+                receipt["graduation_perfect"],
+                (json.loads(line) for line in history if line.strip()))
+        # Original immutable generations stay untouched until a new boundary.
+        receipt = {**receipt, "graduation_perfect": ranked}
     return parameters, optimizer, graph, receipt
 
 
@@ -975,6 +1067,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     champion_votes = _champion_teacher_votes(
         mx, run_dir, school, course, rows, graph,
         receipt["config"], receipt["answer_ids"])
+    confidence_champions = _frozen_confidence_champions(
+        run_dir, receipt, lesson_grade, graph)
+    confidence_examples = 0
+    confidence_total_weight = 0.0
+    confidence_applied_steps = 0
     teacher_candidates = [r for r in rows if champion_votes.get(r["id"], 0)]
     # Every unsuccessful examination construction can become direct teaching
     # material once scoring has completed. No held-out embargo survives.
@@ -1036,9 +1133,18 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 # A diagnostic implementation gap must not invent a new
                 # training gate or silently change the evolved teacher.
                 methodology_unavailable = str(exc)
+        guidance = _confidence_guidance(
+            mx, confidence_champions, picked, receipt["config"],
+            receipt["answer_ids"], scope_size=len(course.capability_map),
+            teacher_distill=float(policy.get("distill", 0.0)))
+        if guidance is not None:
+            import numpy as np
+            confidence_examples += int(np.count_nonzero(guidance[1]))
+            confidence_total_weight += float(np.sum(guidance[1]))
+            confidence_applied_steps += 1
         last_loss, last_norm = _train_step(
             mx, params, optimizer, picked, receipt["config"],
-            receipt["answer_ids"])
+            receipt["answer_ids"], champion_guidance=guidance)
     after = _train_score(mx, params, rows, receipt["config"],
                          receipt["answer_ids"])
     remaining_priority = priority
@@ -1105,12 +1211,21 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "prior_exam_misses_remaining": len(remaining_priority),
         "prior_grade_champion_votes": teacher_vote_weights(course, school),
         "champion_directed_examples_available": len(teacher_candidates),
+        "champion_confidence": {
+            "policy": CHAMPION_CONFIDENCE_POLICY,
+            "frozen_unique_champions": len(confidence_champions),
+            "teacher_distill": float(policy.get("distill", 0.0)),
+            "examples_with_gold_agreeing_advice": confidence_examples,
+            "total_per_row_influence": round(confidence_total_weight, 8),
+            "guided_optimizer_steps": confidence_applied_steps,
+        },
         "lesson_methodology": methodology,
         "teacher_decision": teacher_decision,
         "optimizer_step": int(optimizer.state["step"].item()),
         "next_phase": school.stage,
         "checkpoint_status": "PROVISIONAL_UNTIL_NEXT_RECOVERY_BOUNDARY",
-        "unavailable_teacher_dimensions": ["old", "preview", "distill"],
+        "unavailable_teacher_dimensions": (["old", "preview"] if
+            confidence_applied_steps else ["old", "preview", "distill"]),
     }
     pending = list(receipt.get("_pending_visit_events", ()))
     pending.append(event)

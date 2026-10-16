@@ -94,25 +94,85 @@ def pinned(frontier: dict, current: dict,
 
 
 def graduation_perfect(previous, scores, rubric, cohort, checkpoint, evaluation_id):
-    """Retain a whole-student witness of each perfect graduation capability."""
+    """Give every perfect role to its broadest complete student, never a soup.
+
+    An already-owned role transfers only when a new checkpoint demonstrates
+    strictly more *simultaneously* perfect capabilities on one complete exam.
+    Previously saved unranked receipts require evidence-backed migration.
+    """
     result = dict(previous)
     updated = []
-    if not checkpoint.get("model_and_native_adamw"):
+    if (len(rubric) != 64 or len(cohort) != 64 or not evaluation_id or
+            not checkpoint.get("model_and_native_adamw")):
         raise ValueError("GRADUATION_PERFECT_REQUIRES_WHOLE_STUDENT")
+    mastered = tuple(sorted(cap for cap, score in scores.items()
+                            if _score(score)[0] == _score(score)[1]))
+    breadth = len(mastered)
     for capability, score in sorted(scores.items()):
         correct, total = _score(score)
         if correct == total:
             key = _key(rubric, capability)
             prior = result.get(key)
-            if prior and prior["checkpoint"]["sha256"] == checkpoint["sha256"]:
-                continue
+            if prior:
+                prior_caps = prior.get("perfect_capabilities")
+                if (not isinstance(prior_caps, list) or
+                        len(prior_caps) != prior.get("breadth") or
+                        capability not in prior_caps):
+                    raise ValueError("GRADUATION_PERFECT_LEGACY_BREADTH_UNVERIFIED")
+                if breadth <= prior["breadth"]:
+                    continue
             result[key] = {"rubric": rubric, "capability": capability,
                            "correct": correct, "total": total,
                            "cohort_sha256": cohort,
+                           "breadth": breadth,
+                           "perfect_capabilities": list(mastered),
                            "checkpoint": dict(checkpoint),
                            "evaluation_id": evaluation_id}
             updated.append(capability)
     return result, tuple(updated)
+
+
+def recover_graduation_breadth(previous: dict, events) -> dict:
+    """Hydrate legacy perfect roles from original scored whole-student events.
+
+    The saved rank is the complete examination's perfect count, not the count
+    of roles still assigned to that model. Incomplete evidence fails closed.
+    This reads existing evidence; it never reconstructs or rewrites a bundle.
+    """
+    pending = {key: item for key, item in previous.items()
+               if "breadth" not in item or "perfect_capabilities" not in item}
+    if not pending:
+        return dict(previous)
+    result = dict(previous)
+    observed = {}
+    for event in events:
+        if event.get("event") not in (
+                "GRADE_A_LIVE_EXAM_COMMITTED", "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+                "SCHOOL_LIVE_EXAM_COMMITTED"):
+            continue
+        identity = (event.get("rubric"), event.get("cohort_sha256"),
+                    event.get("student_sha256"))
+        matching = [(key, item) for key, item in pending.items()
+                    if (item["rubric"], item["cohort_sha256"],
+                        item["checkpoint"]["sha256"]) == identity]
+        if not matching:
+            continue
+        scores = event.get("scores")
+        if not isinstance(scores, dict) or not scores:
+            raise ValueError("GRADUATION_PERFECT_MISSING_EXAM_EVIDENCE")
+        perfect = sorted(cap for cap, score in scores.items()
+                         if _score(score)[0] == _score(score)[1])
+        for key, item in matching:
+            if item["capability"] not in perfect:
+                raise ValueError("GRADUATION_PERFECT_HISTORICAL_SCORE_DRIFT")
+            if key in observed and observed[key] != perfect:
+                raise ValueError("GRADUATION_PERFECT_CONFLICTING_HISTORY")
+            observed[key] = perfect
+            result[key] = {**item, "breadth": len(perfect),
+                           "perfect_capabilities": list(perfect)}
+    if set(observed) != set(pending):
+        raise ValueError("GRADUATION_PERFECT_HISTORICAL_EVIDENCE_MISSING")
+    return result
 
 
 def retirement_plan(run_dir: Path, keep: set[str]) -> tuple[str, ...]:

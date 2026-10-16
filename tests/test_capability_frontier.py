@@ -6,6 +6,7 @@ import unittest
 
 from bilqis_mlx.capability_frontier import (
     candidate_roles, graduation_perfect, historical_frontier, promote, pinned,
+    recover_graduation_breadth,
     retirement_plan, retire_bundles,
 )
 
@@ -23,6 +24,37 @@ def scores(*values):
 
 
 class CapabilityFrontierTests(unittest.TestCase):
+    def test_simultaneous_perfect_breadth_consolidates_only_eligible_roles(self):
+        rubric = "b" * 64
+        caps = ("A.3", "A.5", "A.7", "A.11")
+        def result(*perfect):
+            return {cap: {"correct": 12 if cap in perfect else 9, "total": 12}
+                    for cap in caps}
+        original, double, triple, successor = (
+            checkpoint(name, step) for step, name in enumerate(
+                ("one", "two", "three", "four"), 1))
+        ranks = {}
+        ranks, roles = graduation_perfect(ranks, result("A.3"), rubric,
+                                          "e" * 64, original, "exam/1")
+        self.assertEqual(roles, ("A.3",))
+        ranks, roles = graduation_perfect(ranks, result("A.3", "A.5"), rubric,
+                                          "e" * 64, double, "exam/2")
+        self.assertEqual(roles, ("A.3", "A.5"))
+        self.assertEqual({v["checkpoint"]["filename"] for v in ranks.values()},
+                         {double["filename"]})
+        ranks, roles = graduation_perfect(ranks, result("A.5", "A.7", "A.11"),
+                                          rubric, "e" * 64, triple, "exam/3")
+        self.assertEqual(roles, ("A.11", "A.5", "A.7"))
+        self.assertEqual(ranks[rubric + ":A.3"]["checkpoint"], double)
+        self.assertEqual(ranks[rubric + ":A.5"]["checkpoint"], triple)
+        self.assertEqual(ranks[rubric + ":A.5"]["breadth"], 3)
+        same, roles = graduation_perfect(ranks, result("A.3", "A.5", "A.11"),
+                                         rubric, "e" * 64, successor, "exam/tie")
+        self.assertEqual(roles, ("A.3",))
+        self.assertEqual(same[rubric + ":A.5"]["checkpoint"], triple)
+        self.assertEqual({v["checkpoint"]["filename"] for v in same.values()},
+                         {triple["filename"], successor["filename"]})
+
     def test_perfect_graduation_retained_independent_of_candidate_ranking(self):
         student = checkpoint("perfect", 20)
         old = checkpoint("old", 10)
@@ -39,6 +71,30 @@ class CapabilityFrontierTests(unittest.TestCase):
                             RUBRIC, "b" * 64, checkpoint("next", 30), "retry")
         self.assertEqual(new_roles, ())
         self.assertEqual(subsequent, perfect)
+
+    def test_legacy_perfect_breadth_requires_matching_committed_exam_evidence(self):
+        checkpoint_data = checkpoint("legacy", 5)
+        rubric = "a" * 64
+        cohort = "b" * 64
+        old = {rubric + ":A.3": {"rubric": rubric, "capability": "A.3",
+            "correct": 12, "total": 12, "checkpoint": checkpoint_data,
+            "cohort_sha256": cohort, "evaluation_id": "exam"}}
+        event = {"event": "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+            "student_sha256": checkpoint_data["sha256"],
+            "rubric": rubric, "cohort_sha256": cohort,
+            "scores": {"A.3": {"correct": 12, "total": 12},
+                       "A.5": {"correct": 12, "total": 12},
+                       "A.7": {"correct": 9, "total": 12}}}
+        from copy import deepcopy
+        untouched = deepcopy(old)
+        upgraded = recover_graduation_breadth(old, (event,))
+        self.assertEqual(upgraded[rubric + ":A.3"]["breadth"], 2)
+        self.assertEqual(old, untouched)
+        with self.assertRaisesRegex(ValueError, "HISTORICAL_EVIDENCE_MISSING"):
+            recover_graduation_breadth(old, ())
+        wrong = {**event, "student_sha256": "e" * 64}
+        with self.assertRaisesRegex(ValueError, "HISTORICAL_EVIDENCE_MISSING"):
+            recover_graduation_breadth(old, (wrong,))
 
     def test_best_can_be_subperfect_and_share_multiple_capabilities(self):
         a = checkpoint("first", 1)
