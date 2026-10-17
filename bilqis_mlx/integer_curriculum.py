@@ -164,11 +164,13 @@ def _row(arithmetic, vocab, expression, *, source_id, partition, kind, gold,
 
 
 def generate_integer_curriculum(parity: dict, legacy_root: Path, *, seed: int,
-                                count: int, maximum: int | None = None) -> dict:
+                                count: int, maximum: int | None = None,
+                                operation_names: tuple[str, ...] | None = None) -> dict:
     """Generate fresh typed math/Boolean views with stable source partitions.
 
     A `seed` changes sampled expressions but never a source's partition.
     The passed maximum is for isolated tests; normal runs use the sole env var.
+    An exploratory slice may select existing numeric operations by source name.
     """
     if type(seed) is not int or type(count) is not int or count < 1:
         raise ValueError("INTEGER_SCOPE_INVALID_GENERATOR_ARGUMENTS")
@@ -178,6 +180,14 @@ def generate_integer_curriculum(parity: dict, legacy_root: Path, *, seed: int,
     if parity["graph_sha256"] != _digest(graph):
         raise ValueError("INTEGER_SCOPE_UNEXPECTED_GRAPH_ABI")
     operations = _operators(graph)
+    if operation_names is not None:
+        available = {op.name for op in operations if op.output == "Number"}
+        if (not isinstance(operation_names, tuple) or not operation_names or
+                len(set(operation_names)) != len(operation_names) or
+                any(name not in available for name in operation_names)):
+            raise ValueError("INTEGER_SCOPE_UNKNOWN_OPERATION")
+        operations = tuple(op for op in operations
+                           if op.output != "Number" or op.name in operation_names)
     vocab = {name: idx for idx, name in enumerate(graph["tokens"])}
     heads = deepcopy(parity["heads"])
     heads["numeric_active"] = scope.head(parity)

@@ -92,6 +92,42 @@ class IntegerCurriculumTests(TestCase):
         self.assertEqual(len(generated["heads"]["numeric_full_101"]["values"]), 101)
         self.assertFalse(generated["qualification_authorized"])
 
+    def test_trial_can_narrow_the_existing_generator_to_one_operation(self):
+        generated = generate_integer_curriculum(self.parity, LEGACY,
+            seed=100, count=40, maximum=3, operation_names=("ADD",))
+        def names(expression):
+            if expression["kind"] == "number":
+                return set()
+            return {expression["name"]}.union(*(names(arg)
+                for arg in expression["args"]))
+        for group in generated["rows"]:
+            self.assertEqual(names(group["views"][0]["record"]["expression"]),
+                             {"ADD"})
+        with self.assertRaisesRegex(ValueError, "INTEGER_SCOPE_UNKNOWN_OPERATION"):
+            generate_integer_curriculum(self.parity, LEGACY, seed=100,
+                count=20, operation_names=("MADE_UP",))
+
+    def test_disposable_trial_uses_scores_to_choose_one_recovery_round(self):
+        from bilqis_mlx.integer_learning_smoke import run_trial
+        result = run_trial(self.parity, LEGACY, seed=100, count=80,
+                           steps=2, maximum=3)
+        self.assertEqual(result["scope"], "DISPOSABLE_SYNTHETIC_STUDENT_ONLY")
+        self.assertEqual(result["optimizer_steps"], 6)
+        visits = result["visits"]
+        self.assertEqual([v["focus"] for v in visits[:2]], ["simple", "composed"])
+        observed = visits[1]["scores"]
+        weakest = min(observed, key=lambda name: observed[name]["correct"] /
+                      observed[name]["total"])
+        self.assertEqual(visits[2]["focus"], weakest)
+        for visit in visits:
+            for name in ("simple", "composed"):
+                self.assertEqual(visit["scores"][name]["total"],
+                                 result["before"][name]["total"])
+        for name, score in visits[-1]["scores"].items():
+            self.assertEqual(sum(score["predictions"].values()), score["total"])
+            self.assertEqual(sum(score["gold"].values()), score["total"])
+        self.assertFalse(result["student_model_or_teacher_modified"])
+
     def test_disposable_mlx_student_actually_learns_source_examples(self):
         from bilqis_mlx.integer_learning_smoke import run_smoke
         result = run_smoke(self.parity, LEGACY, seed=100, count=20,
