@@ -20,6 +20,13 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_lesson_accuracy_is_not_labeled_as_cumulative_exam(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            labels = [column.name for column in dict(board.tables)["CANDIDATES"]]
+            self.assertIn("LESSON% BFR>AFTER", labels)
+            self.assertNotIn("TRAIN BEFORE>AFTER", labels)
+
     def test_rotating_live_cohort_exams_never_report_cross_sample_gain(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

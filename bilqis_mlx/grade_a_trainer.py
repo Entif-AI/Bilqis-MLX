@@ -1397,6 +1397,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                           receipt["answer_ids"])
     parent_parameters, parent_optimizer = params, optimizer
     probe_rows = protected_caps = parent_predictions = None
+    replay_rows = ()
+    replay_parent = {}
     if learning_settings is not None:
         probe_rows, protected_caps, unsampled_caps = _learning_probe_rows(
             source_root, graph, receipt, course, school, cap, learning_settings)
@@ -1412,6 +1414,12 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             return _skip_perfect_target_visit(
                 run_dir, receipt, school, course, cap, len(target_rows),
                 int(parent_optimizer.state["step"].item()), teacher=teacher)
+        from .fragile_replay import load_replay_rows
+        replay_rows = load_replay_rows(run_dir, receipt)
+        if replay_rows:
+            replay_parent = _predictions(
+                mx, parent_parameters, list(replay_rows),
+                receipt["config"], receipt["answer_ids"])
         params, optimizer = fork_student(mx, parent_parameters, parent_optimizer)
     last_loss = 0.0
     last_norm = 0.0
@@ -1509,13 +1517,21 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         candidate_predictions = _predictions(
             mx, params, probe_rows, receipt["config"], receipt["answer_ids"])
         pair = paired_outcomes(probe_rows, parent_predictions, candidate_predictions)
+        from .fragile_replay import screen_replay
+        replay = (screen_replay(replay_rows, replay_parent,
+                  _predictions(mx, params, list(replay_rows), receipt["config"],
+                               receipt["answer_ids"]),
+                  receipt["last_exam"]["cohort_sha256"])
+                  if replay_rows else {"status": "NOT_MEASURED",
+                                       "reason": "B_OR_XOR_EXAM_NOT_YET_ADMITTED"})
         outcome = decide_learning_trial(
             pair, active_capability=cap, phase=school.stage,
             protected=protected_caps, settings=learning_settings,
             mature_grades=frozenset(school.champions),
             negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
             source_cohort_sha256=_fingerprint([
-                (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows]))
+                (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows]),
+            fragile_replay=replay)
         from .matrix_strain import observe as observe_matrix_strain
         outcome["matrix_strain"] = observe_matrix_strain(
             mx, run_dir, receipt, parent_parameters, params)

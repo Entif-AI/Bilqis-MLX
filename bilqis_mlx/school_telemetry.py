@@ -102,7 +102,7 @@ LETTER_TABLES = (
         Column("VISIT", 5, "attempt", right=True),
         Column("POLICY", 10, "strategy", optional=True),
         Column("LR", 8, "lr", optional=True),
-        Column("TRAIN BEFORE>AFTER", 18, "train"),
+        Column("LESSON% BFR>AFTER", 18, "train"),
         Column("REWARD", 8, "reward", right=True),
         Column("LOSS", 8, "loss", optional=True),
         Column("GRAD", 10, "gradient", optional=True),

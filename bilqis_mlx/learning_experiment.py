@@ -125,7 +125,8 @@ def decide(paired: dict, *, active_capability: str, phase: str,
            protected: set[str], settings: Settings,
            mature_grades: frozenset[str] = frozenset(),
            negative_prototypes: list[dict] | None = None,
-           source_cohort_sha256: str | None = None) -> dict:
+           source_cohort_sha256: str | None = None,
+           fragile_replay: dict | None = None) -> dict:
     """Promote only measured targeted gains, protecting graduated grades.
 
     The parent/student and native AdamW remain untouched on rejection.
@@ -164,6 +165,10 @@ def decide(paired: dict, *, active_capability: str, phase: str,
     # Local lesson training reward is not evidence of improved capability.
     # The same, source-oracled parent/challenger probe must improve strictly.
     no_target_gain = active_gain <= 0
+    fragile_losses = bool(fragile_replay and fragile_replay.get("regressions"))
+    if fragile_replay is not None and fragile_replay.get("status") not in (
+            "MEASURED", "NOT_MEASURED"):
+        raise ValueError("LEARNING_EXPERIMENT_INVALID_FRAGILE_REPLAY")
     fingerprint = json.dumps(paired, sort_keys=True, separators=(",", ":"))
     if (source_cohort_sha256 is not None and
             (len(source_cohort_sha256) != 64 or
@@ -171,10 +176,12 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         raise ValueError("LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID")
     return {
         "version": VERSION,
-        "decision": "REJECT" if no_target_gain or exceeded else "PROVISIONAL",
+        "decision": "REJECT" if no_target_gain or exceeded or fragile_losses else "PROVISIONAL",
         "reason": ("NO_MEASURABLE_TARGET_GAIN" if no_target_gain else
+                   "FRAGILE_COMPOSITION_REPLAY_REGRESSION" if fragile_losses else
                    "PROTECTED_CAPABILITY_REGRESSION" if exceeded else
                    "PAIRED_SCREEN_WITHIN_BUDGET"),
+        "fragile_replay": fragile_replay,
         "phase": phase, "active_capability": active_capability,
         "active_probe_before": active["before"],
         "active_probe_after": active["after"],
@@ -291,6 +298,14 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                                    for item in matrices.values()) / len(matrices),
             "mean_delta_start": sum(item["delta_start_mean_sq"]
                                     for item in matrices.values()) / len(matrices),
+        }
+    replay = decision.get("fragile_replay") or {}
+    if replay.get("status") == "MEASURED":
+        record["latest_fragile_replay"] = {
+            "cohort_sha256": replay["cohort_sha256"],
+            "rows": replay["rows"],
+            "regressions": len(replay["regressions"]),
+            "repaired": replay["repaired"],
         }
     channel["events"] += 1
     return {"version": VERSION, "teacher_context_reward": reward,

@@ -24,6 +24,29 @@ def predicted(rows_, wrong):
 
 
 class CausalTeacherExperimentTests(unittest.TestCase):
+    def test_vulnerable_boolean_anchor_flip_vetoes_positive_c_trial_and_teaches_teacher(self):
+        paired = {"C.SUCCESSOR": {"before": 20, "after": 21, "total": 21},
+                  "B.XOR": {"before": 6, "after": 6, "total": 6}}
+        replay = {"status": "MEASURED", "cohort_sha256": "a" * 64,
+                  "rows": 24, "regressions": [{"id": "xor_true_case", "capability": "B.XOR"}],
+                  "repaired": 1}
+        trial = decide(paired, active_capability="C.SUCCESSOR", phase="MAIN",
+                       protected={"B.XOR"}, settings=Settings(),
+                       mature_grades=frozenset({"A", "B"}), fragile_replay=replay)
+        self.assertEqual(trial["decision"], "REJECT")
+        self.assertEqual(trial["reason"], "FRAGILE_COMPOSITION_REPLAY_REGRESSION")
+        self.assertEqual(trial["fragile_replay"]["regressions"], replay["regressions"])
+        teacher = {"strategies": {"p": {"lr": 0.0001}}}
+        observe_context(teacher, capability="C.SUCCESSOR", phase="MAIN",
+                        policy_key="p", decision=trial, local_gain=0.03)
+        strategy = teacher["causal_experiment"]["contexts"]["C.SUCCESSOR|MAIN|"]["p"]
+        self.assertEqual(strategy["unsafe"], 1)
+        self.assertEqual(strategy["latest_fragile_replay"]["regressions"], 1)
+        replay["regressions"] = []
+        safe = decide(paired, active_capability="C.SUCCESSOR", phase="MAIN",
+                      protected={"B.XOR"}, settings=Settings(), fragile_replay=replay)
+        self.assertEqual(safe["decision"], "PROVISIONAL")
+
     def setUp(self):
         self.rows = rows()
         self.before = predicted(self.rows, {"C.ADD0", "C.ADD1", "C.ADD2"})
