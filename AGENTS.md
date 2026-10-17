@@ -2,6 +2,8 @@
 
 Authority: user's latest directives, protected `IPR-0220`, `ADR.md`, and approved issue #1. Implementation is **private**; public Bilqis #160/#162 receive screened summaries only.
 
+**Current untested WIP:** The human deferred tests for the contract-authoring turn and delegated subsequent testing/analysis to the receiving machine's fresh quota. Read `HANDOFF.md` and `docs/architecture/EVERGREEN_CONTRACTS_WIP_20261017.md` first. New domain/family/witness/cutover/outcome modules are unfinished and unwired. Existing green results apply only to baseline `a28b5f5`; inspect and test new contracts before integration. Do not convert declarations, hashes or a Pareto frontier into source approval, grade selection or teacher policy.
+
 **Current evergreen evidence:** Start from `HANDOFF.md` and `docs/architecture/EVERGREEN_FACTORY_ACCEPTANCE_20261017.md` for the current branch, Q01–Q10 dispositions, bounded Boolean factory proof, independent-review repairs and actual historical replay. `next_grade_review.py` now uses v3 with externally pinned exact-artifact/checker evidence; offline readiness does not activate a grade. `scripts/replay_health_shadow.py` is an exploratory read-only procedure. The static import guard rejects explicit live imports of unratified shadow modules; any separately approved activation needs its own reviewed change. Wider typed outputs, authentic C Registry/review, generic runtime cutover and measured selection improvement remain incomplete.
 
 ## READ FIRST: protected curriculum-remediation authority

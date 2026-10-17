@@ -1,37 +1,77 @@
-# Bilqis MLX | Evergreen factory continuation
+# Bilqis evergreen factory | untested contracts handoff
 
-Verified 2026-10-17. Governing private issue [socr8s/private-ip #336](https://github.com/socr8s/private-ip/issues/336), **OPEN**, parent #335 / IPR-0220. Read human source comments `6234271928`, `6233567989` and `6234081376`, the most recent implementation checkpoint, root README/AGENTS, append-only ADR, and the [Q01–Q10 acceptance report](docs/architecture/EVERGREEN_FACTORY_ACCEPTANCE_20261017.md). This file records current state; earlier implementation history remains in Git, ADR and protected issue checkpoints.
+**Start here.** The human explicitly requested contracts/scaffolding **without tests**, then transfer to the other machine's fresh quota. Five new Python modules are unfinished and unverified. They were not imported, compiled, tested or executed. They have no live trainer wiring. The receiving agent is authorized to test and analyze them. Do not carry the baseline's green results forward to this WIP.
 
-## Source and writer
+## Authority and source recovery
 
-- Branch `codex/336-evergreen-factory`; verified source implementation HEAD **3b3fc257fdccf656ca2bee517c239c3439b1550f**. This documentation checkpoint follows that code commit; read the latest #336 checkpoint and verify local/remote HEAD before continuing. Earlier delivered increments: `49e9d903f33ca762edb33ada2d8ba831bb6d6757`, `5a0ed18c74b1499dca71a5ab151a871b8426019f`; inherited preparation baseline `a6e4368dfb289e4fbae809db7d1d0fd154ef3af0`.
-- Actual branch worktree: `/Users/emilie/.codex/worktrees/ff64/bilqis-mlx`, M3 Ultra. The requested branch was already checked out there; the original `/Users/emilie/Code/bilqis-mlx` checkout stays on its preparation branch. Reconcile worktrees before changing either.
-- Serialized writer uptake: no dirty edits or active process cwd in the feature worktree were found before writing; no lease was claimed. Git HEAD and authoritative remote SHA were checked at each checkpoint.
-- SSH symbolic target `m3-ultra` currently needs `-o Hostname=192.168.0.16 -o HostKeyAlias=192.168.0.92`; its host key matched the already trusted machine. Use `/Library/Frameworks/Python.framework/Versions/3.14/bin/python3` on M3 for installed MLX/Torch dependencies. The headless system Python is a different environment.
-- A workflow-scope rejection affected the latest OAuth Git push. The existing GitHub connector then fast-forwarded the exact existing commit with expected-parent fencing; independent GitHub readback verified it. No force push or credential-scope expansion occurred.
+- Governing **https://github.com/socr8s/private-ip/issues/336 (#336), OPEN**, parent #335 / IPR-0220; private implementation issue `Entif-AI/bilqis-mlx#1` remains open. Protected source comments `6234271928`, `6233567989` and `6234081376` preserve the generalized ten questions, original mandate/correction and positive-identification clarification. Read them and the latest checkpoint before grade decisions. Keep private links out of public projections.
+- Branch **`codex/336-evergreen-factory`**. Verified baseline HEAD **`a28b5f5a5f48ea5068ae0981ffbf4089109174db`**; verified implementation underneath it **`3b3fc257fdccf656ca2bee517c239c3439b1550f`**. The latest #336 checkpoint records this WIP's exact successor SHA; a file cannot contain its own commit SHA. Verify local/GitHub heads before writing.
+- Actual M3 feature worktree: **`/Users/emilie/.codex/worktrees/ff64/bilqis-mlx`**. Originally requested `/Users/emilie/Code/bilqis-mlx` stays on `codex/lettergrade-mlx-v1` at `ba97c982ecc399baf76cdf2e3bb95d194045f7a7`; do not repurpose it. Clean feature state and exact baseline were rechecked before WIP. No lease was invented; recheck writers/processes at takeover.
+- From MBP: `ssh -T -o Hostname=192.168.0.16 -o HostKeyAlias=192.168.0.92 -o BatchMode=yes m3-ultra`. The IP override uses the previously trusted key. Already on M3, work locally in the feature worktree.
+- Correct M3 runtime: **`/Library/Frameworks/Python.framework/Versions/3.14/bin/python3`**, 3.14.3 with Torch/MLX. Headless system/Homebrew Python are different environments.
 
-## Delivered and provisional
+## Read in stages
 
-- Existing review v3 binds external expected manifest SHA, artifact bytes/revisions, parent/semantic release, exact claims and executing verifier bytes. Earlier phase reviews survive later retrospective outcomes; changed dependencies invalidate affected reviews. No real trust root or approval was minted.
-- Existing semantic AST/curry/source/verification owners now compile unfamiliar Boolean fixture primitives and dependent constructions with finite-domain coverage, ordered stages, constituent proofs and exact dependent invalidation. Consumer readiness rechecks canonical roots, outer operator, answer family, AST, gold, domain coverage and source binding. Stage/cumulative mastery needs independently pinned evidence.
-- Health and mature-candidate retention are **shadow only**: explicit experimental thresholds, same-cohort parent checks, no teacher penalty or candidate veto, separate proposed quarantine and required mastery denominators, checkpoint-bound deduplicated end-of-run alerts. Static guards reject explicit live imports of these modules.
-- Real historical replay read 750 committed B-grade exams through step 204072. Older missing assessment-scope fields remain visible gaps; no lineage was invented. Three exploratory settings propose no current quarantine, with 11 ACTIVE and one proposed reintegration state. Detection quality and causal benefit remain `NOT_MEASURED`.
-- Independent worktrees can pass explicit predecessor/checkpoint paths to existing operator commands without changing globals. CI now runs the fast source/evidence/coverage/shadow checks on `codex/**` branches.
+1. This file, latest #336 checkpoint, root AGENTS/README and append-only ADR; observe the human-student boundary below.
+2. [WIP contract guide](docs/architecture/EVERGREEN_CONTRACTS_WIP_20261017.md), then its five modules. The guide contains the full contract rationale, boundaries and focused negative-control matrix. No whole transcript or Registry dump is needed at startup.
+3. Inspect existing owners as needed: `curriculum_compiler.py`, `verification/curriculum.py`, `semantics/{core,numeric}.py`, `verification/{cases,laws,review_evidence}.py`, `grade_transition.py`, `vocabulary_growth.py`, `mlx_checkpoint.py`, `next_grade_review.py` and school outboxes. Source/module/ABI contracts `docs/architecture/04`, `05`, `06`, `08`, `09` still govern affected boundaries. The [earlier acceptance report](docs/architecture/EVERGREEN_FACTORY_ACCEPTANCE_20261017.md) describes the verified baseline only.
 
-## Verification and custody
+## Content written, not executed
 
-**440 tests passed, 2 skipped (442 total)** on the M3. The two skipped tests expect human-run data relative to this isolated worktree; the explicit historical replay separately audited the actual saved run. Semantic boundaries and `git diff --check` passed. Historical ABI local checks passed with **independent expected enforcement still advisory** (`external_expected_verified=false`). Source commit 3b3fc257 was independently observed with hosted CI success.
+| File | Draft scope |
+| --- | --- |
+| `bilqis_mlx/semantics/domains.py` | Source-bound finite domains; literal/decimal-text codecs; binary/finite/native-token answers and declaration hashes |
+| `bilqis_mlx/curriculum_contracts.py` | Existing-template leaf/domain bindings, all construction-family dispositions, finite counts and explicit debt |
+| `bilqis_mlx/verification/construction_contracts.py` | Catalog-bound final-answer witnesses; pinned finite reconstruction/inverse equivalence receipts through existing proof/law owners |
+| `bilqis_mlx/grade_release_plan.py` | Pure disposable cutover intent/observation/actions, parent/staged/committed drift and event-replay obligations; no executor |
+| `bilqis_mlx/selection_outcomes.py` | Common-parent/cohort post-replay trials, missing metrics and per-capability Pareto frontier; never selects a grade |
 
-Actual read-only `train --dry-run --resume --verify-source` with explicit predecessor path verified **216** pinned historical records and returned `PREFLIGHT_ONLY_NO_NEURAL_UPDATES`. Current state: generation **6824**, optimizer step **204072**, `AWAITING_NEXT_GRADE`; complete student plus matching native AdamW SHA **e65d62174b7c9681991d27e3e2a424358f38dceeb50c90544803bc94d7546585**. Recorded before/after byte hashes match for that bundle, semantic catalog/manifest, school+teacher state and event ledger; see `docs/EVERGREEN_SOURCE_ONLY_CUSTODY_20261017.json`. Actual replay inputs/procedure/implementation fingerprints are in `docs/EVERGREEN_HEALTH_SHADOW_REPLAY_20261017.json`.
+Existing live Python files, source adapters, Registry, model ABI and teacher were not edited. These proposals are unwired and confer no approval. No native Registry or production trust root was fabricated. No test files were written. Commit requests `[skip ci]`; new tests/CI are deliberately deferred. Only source inspection, transport/hash/Git/receipt readback and whitespace checks are permitted in this authoring turn.
 
-## Remaining gates and next permitted action
+## Next executable work on fresh quota
 
-**C remains blocked** by `GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING` and `GRADE_C_SELECTION_REVIEW_NOT_QUALIFIED`. D is **unselected**. The current generic generator is bounded Boolean-only; wider numeric/native-token answer modes, morphology, lawful transformations, actual catalog/native source packages and generic atomic runtime cutover are unfinished. New grade preparation must use authentic receipts, not `proposed_graph()` fixtures as release authority. Recursively improved curriculum selection still needs outcome-driven comparisons and human empirical evidence; the historical spreadsheet is candidate provenance only.
+Inspect first; then run import/syntax/serialization checks and write focused tests from the guide's matrix. Fix drafts before integration. Priority:
 
-Next permitted source-only increment: qualify explicit typed input/output/domain contracts and lawful construction families using the existing semantic AST and source adapters; then feed real prior-grade outcomes into versioned alternative selection and connect generic admission to disposable complete model/own-AdamW custody. Existing A/B trained releases stay readable. Preserve composition/source contracts `docs/architecture/04`, `05`, `06`, `08`, `09`, and remaining cross-world coverage debt.
+1. Nested dataclass/mapping hashes; malformed inputs; integer/Boolean distinction; source-complete finite domains; actual native catalog mapping. No core Literal or historical ABI mutation.
+2. Input and intermediate domains, canonical roots and prerequisite bindings. The new witness helper checks final output/Catalog binding, not every input/intermediate scope. Do not remove the existing Boolean consumer checks.
+3. Source-bound family witnesses/debt discharge. REQUIRED remains debt. Only Apply-to-Apply reconstruction/inverse equivalence is drafted; invalid/negative/contrast and Literal-ending inverses remain unsupported.
+4. Independently authenticate executable transformations and bundle readback receipts. Supplied SHA/locator fields are declarations. Extend `verification.review_evidence.VERIFIER_FILES` **when these new helpers become executing consumers**; it currently omits these unwired files. Do not mint approval by hashing one's own proposal.
+5. Implement disposable cutover through existing atomic school/outbox/checkpoint owners, not a second journal. Prove every crash/retry window, unchanged own AdamW, append-only catalog, actual 100 GiB reserve and independent complete-bundle readback before operator integration.
+6. Independently attest and causally qualify outcomes. Current Pareto comparison covers a common prior assessment substrate, not novel-subject transfer automatically. Preserve negative outcomes and temporary acquisition forgetting; no grade choice or teacher reward.
 
-Inherited classroom risks remain open: the 33 previously identified typed-but-not-source-proven cross-world positions, calibrated peer/champion baselines, and the full-batch capacity supplied to champion-directed lessons. Their neural effects remain unmeasured. Keep legacy `old`/`preview` separate-question counts and `distill` retention-row KL semantics intact; diagnostic evidence does not authorize remapping them. C's missing native-release incident `PM-2026-10-17-002` and the classroom diagnostic incidents `PM-2026-10-16-001` through `-006` remain applicable.
+After focused repairs, run existing review/construction/admission/boundary checks, historical ABI guard and the full M3 suite. These are receiving-agent commands, **not executed in this turn**:
 
-Incident **PM-2026-10-17-003** was enriched repeatedly at discovery and read back from the native ledger; RC-095/096/097 and PAT-076 apply. Independent review found root/outer-operator, answer-family, Boolean-subdomain, constituent-edge and checkpoint-alert gaps; red/green controls now cover them. Earlier **PM-2026-10-16-003** governs the composition/source gaps and **PM-2026-10-14-014** governs teacher noninterference. Retain their source evidence rather than duplicating incidents.
+```sh
+cd /Users/emilie/.codex/worktrees/ff64/bilqis-mlx
+/Library/Frameworks/Python.framework/Versions/3.14/bin/python3 -B -m unittest \
+  tests.test_review_evidence tests.test_next_grade_review \
+  tests.test_factory_construction tests.test_curriculum_compiler \
+  tests.test_grade_admission tests.test_semantic_module_boundaries -q
+# Add and run new focused contract tests, then the full suite at integration.
+```
 
-Only the human may start or resume actual student neural updates. No agent `--human-run`, student/own-AdamW/teacher/soup/champion/ABI mutation, source release admission, active quarantine/reward/veto policy, public projection, merge or issue closure is authorized by these source-only proofs.
+Baseline result only: **440 passed, 2 skipped (442 total)**, hosted CI `39041722509` at `a28b5f5`. The earlier claim of 442 passed plus two skipped was corrected in Git, #336 and the native incident ledger. It is not a result for this new WIP.
+
+## Actual student, remaining gates and incidents
+
+Last verified human run: `/Users/emilie/Code/bilqis-mlx/runs/school-mlx-v1`, generation **6824**, step **204072**, `AWAITING_NEXT_GRADE`; human-operated cumulative A+B **144/144** at one complete student. Recorded full hashes:
+
+- Student **and own native AdamW**: `e65d62174b7c9681991d27e3e2a424358f38dceeb50c90544803bc94d7546585`.
+- State/teacher/pointers: `5ec458dfc779629ec4256072be3f29c9d7d225291fd3b2e780510ecd9062a77e`.
+- Event ledger: `2812a23caf411c94fd80162721086e1eb817e1e20e59a4a0e1186c54ffa302a2`.
+
+All five recorded file hashes are in `docs/EVERGREEN_SOURCE_ONLY_CUSTODY_20261017.json`. Recheck live bytes at takeover; the human could continue independently. No agent `--human-run`, actual neural update or student/teacher/soup/champion mutation is authorized. Preserve original identities, archives, FP32/own AdamW and **100 GiB reserve**.
+
+**C remains blocked** by `GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING` and `GRADE_C_SELECTION_REVIEW_NOT_QUALIFIED`; **D is unselected**. Authentic source/catalog packages, NI grammar/lexicon morphology, generic runtime cutover, wider output qualification and measured recursive learning/health benefit remain unfinished. Historical spreadsheet tranches are provenance, not scheduling authority. No semantic primitives or admitted meanings were added.
+
+Baseline historical replay covers 750 B exams; 39 older records lack modern scope lineage. Three exploratory settings proposed no current quarantine; detection quality/attention/causal benefit remained NOT_MEASURED. Health/retention/reward remain shadow-only. Retain 33 typed-but-not-source-proven cross-world positions, calibrated peer/champion baseline debt and unresolved full-batch champion lesson allocation. Preserve legacy `old`/`preview` separate-question counts and `distill` retention-row KL semantics. No policy remapping or veto of allowed temporary forgetting.
+
+Existing **PM-2026-10-17-003**, RC-095/096/097 and PAT-076, was natively read back including the accounting correction. C-source **PM-2026-10-17-002**, composition **PM-2026-10-16-003**, classroom **PM-2026-10-16-001 through -006** and teacher-boundary **PM-2026-10-14-014** remain applicable. Newly discovered material failures require immediate BIOS failure-intelligence filing/enrichment and native readback; do not duplicate existing incidents or wait until fixes.
+
+## Transport and next checkpoint
+
+Authoring mirror `/tmp/bilqis-evergreen.K2Fw4m` on MBP is not a checkout. The actual feature branch is on M3. Its bare relay `/tmp/bilqis-evergreen.K2Fw4m/relay.git` receives source-only Git bundles and pushes through `gh auth git-credential`; no models are copied. Do not reset the unrelated MBP `/Users/cr8s/Code/bilqis-mlx`. Remote tracking refs may be stale after relay pushes; compare authoritative GitHub branch SHA.
+
+Headless M3 HTTPS Git credentials failed previously. Prefer ordinary non-force pushes if the receiving environment has working credentials. An earlier workflow-scope rejection was resolved by the connected GitHub connector's exact expected-parent non-force ref update; no scope expansion or force push. Use that only if necessary.
+
+Next checkpoint must record exact source/head, observed versus untested work, remaining gates, applicable incidents and human boundary in #336, with remote readback and an updated current handoff. No merge, public projection, issue closure, policy activation, real neural continuation or full-factory completion follows from this WIP.

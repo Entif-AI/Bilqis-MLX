@@ -1,5 +1,7 @@
 # Evergreen factory: verified source-only increment
 
+**Historical verification boundary:** This report covers implementation `3b3fc257` and corrected documentation baseline `a28b5f5`. Subsequent contract scaffolding is **untested and unfinished** by explicit human instruction; it has no live wiring. See [current handoff](../../HANDOFF.md) and [WIP guide](EVERGREEN_CONTRACTS_WIP_20261017.md). None of the results below qualify that later code.
+
 Verified 2026-10-17 on the M3 Ultra. Governing [private issue #336](https://github.com/socr8s/private-ip/issues/336) remains **OPEN**, under IPR-0220 / parent #335. Human source comments `6234271928`, `6233567989` and `6234081376` govern this implementation. The immutable [clean-room contract](https://github.com/Entif-AI/bilqis-mlx/blob/ac69a8d726a1908799dd4f77f40636b191acfb1b/docs/architecture/CLEANROOM_COMPOSITION_CONTRACT_20261016.md) is a scoped draft, not a release authorization.
 
 Branch: `codex/336-evergreen-factory`. Verified implementation HEAD: `3b3fc257fdccf656ca2bee517c239c3439b1550f`; earlier delivered increments `49e9d903f33ca762edb33ada2d8ba831bb6d6757` and `5a0ed18c74b1499dca71a5ab151a871b8426019f`. The final documentation checkpoint is recorded separately in #336. The branch already occupied `/Users/emilie/.codex/worktrees/ff64/bilqis-mlx`; this run reused that clean worktree. `/Users/emilie/Code/bilqis-mlx` remained on its preparation branch.
