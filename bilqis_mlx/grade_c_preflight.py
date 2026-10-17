@@ -11,11 +11,13 @@ from .live_grade_c import (PLANS, REGISTRY_COUNTING_TARGET, RELEASE, admissions,
                           draw, prepare_course)
 
 
-def qualify(legacy_root, manifest):
-    previous = b_course(a_course(accepted_grade_a(manifest)), legacy_root)
+def qualify(legacy_root, manifest, *, previous=None):
+    if previous is None:
+        previous = b_course(a_course(accepted_grade_a(manifest)), legacy_root)
     course, graph = prepare_course(previous, maximum=REGISTRY_COUNTING_TARGET)
     rows = draw(graph, seed=2026101602, maximum=REGISTRY_COUNTING_TARGET)
     return {"release": RELEASE, "source_only": True, "neural_updates": 0,
+        "parent_course_sha256": previous.digest(),
         "source_executable": course.executable,
         "registry_counting_target": REGISTRY_COUNTING_TARGET,
         "grade_c_items": len(rows),

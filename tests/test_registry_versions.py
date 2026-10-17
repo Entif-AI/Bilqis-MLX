@@ -23,6 +23,16 @@ class RevisionTests(unittest.TestCase):
             primary_url='https://ithkuil.net/New_Ithkuil_Lexicon.pdf',
             primary_locus='6.4',reasoning='Related, not proven equal.')
 
+    def test_native_column_reordering_preserves_identity_validation(self):
+        order = tuple(reversed(range(len(COLUMNS))))
+        native = [[row[i] for i in order] for row in self.rows]
+        state = reconcile_live_ledger(self.graph, native, pinned_version='legacy/v1')
+        self.assertFalse(state['identity_conflicts'])
+        self.assertFalse(state['pending_reviews'])
+        native[1][native[0].index('Bilqis token symbol')] = 'swapped'
+        self.assertTrue(reconcile_live_ledger(self.graph, native,
+            pinned_version='legacy/v1')['identity_conflicts'])
+
     def test_copyediting_live_ledger_does_not_invalidate_model(self):
         live=copy.deepcopy(self.rows)
         live[2][3]='Improved description'

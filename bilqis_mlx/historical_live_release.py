@@ -57,3 +57,17 @@ def historical_grade_b_course(accepted, source_root):
             old_b.grades[-1].assessment_sha256 != HISTORICAL_B_RUBRIC_SHA256):
         raise ValueError("HISTORICAL_GRADE_B_RUBRIC_NOT_REPRODUCIBLE")
     return old_a, old_b
+
+
+def resume_grade_courses(accepted, source_root, saved):
+    """Select pinned A/B ancestors, including after their C successor commits."""
+    course_a, course_b = live_course(accepted), None
+    saved_digest = saved["school"]["course_digest"]
+    if (saved_digest == HISTORICAL_B_COURSE_SHA256 or
+            saved.get("grade_c_parent_course_digest") == HISTORICAL_B_COURSE_SHA256):
+        course_a, course_b = historical_grade_b_course(accepted, source_root)
+    elif saved.get("curriculum_mode") == RELEASE and saved_digest != course_a.digest():
+        historical_a = historical_grade_a_course(accepted)
+        if saved_digest == historical_a.digest():
+            course_a = historical_a
+    return course_a, course_b

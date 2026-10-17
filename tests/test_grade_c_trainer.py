@@ -9,12 +9,13 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.champions import Checkpoint
+from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_a_trainer import (_bundle_pointer, _fingerprint, _persist,
     _resume, _state_from_json, _take_exam, _take_visit, prepare_source)
 from bilqis_mlx.grade_transition import activate_numeric_grade
 from bilqis_mlx.live_grade_a import live_course as a_course
 from bilqis_mlx.live_grade_b import RELEASE as B_RELEASE, constructor_digest as b_digest, live_course as b_course
-from bilqis_mlx.live_grade_c import PLANS, RELEASE as C_RELEASE, live_course, proposed_graph
+from bilqis_mlx.live_grade_c import PLANS, RELEASE as C_RELEASE, live_course, prepare_course
 from bilqis_mlx.school import Assessment, Score, assess, next_capability, start_new, visit
 from bilqis_mlx.source import AUDITED_PARENT
 
@@ -31,8 +32,7 @@ class GradeCTrainerTests(unittest.TestCase):
         cls.previous = b_course(a_course(old), SOURCE)
         from bilqis_mlx.pedagogical_parity import _source_stack
         _, _, _, _, cls.parent_graph, _ = _source_stack(SOURCE)
-        cls.graph = proposed_graph(cls.parent_graph)
-        cls.course = live_course(cls.previous, cls.graph, maximum=10)
+        cls.course, cls.graph = prepare_course(cls.previous, maximum=10)
 
     def toy(self):
         import mlx.core as mx
@@ -80,6 +80,15 @@ class GradeCTrainerTests(unittest.TestCase):
             last_exam=dict(student_sha256=pointer.sha256,optimizer_step=pointer.optimizer_step,
                 scores={c.id: {"correct":12,"total":12} for g in self.previous.grades for c in g.capabilities}))
 
+    def test_c_resume_selects_the_exact_historical_parent_release(self):
+        from bilqis_mlx.historical_live_release import (
+            HISTORICAL_B_COURSE_SHA256, resume_grade_courses)
+        a, b = resume_grade_courses(accepted_grade_a(self.manifest), SOURCE,
+            {'curriculum_mode': C_RELEASE, 'school': {'course_digest': 'successor'},
+             'grade_c_parent_course_digest': HISTORICAL_B_COURSE_SHA256})
+        self.assertEqual(b.digest(), HISTORICAL_B_COURSE_SHA256)
+        self.assertEqual(a.grades, b.grades[:1])
+
     def test_c_requires_one_complete_cumulative_a_b_result_before_growth(self):
         mx, params, opt = self.toy()
         pointer = Checkpoint("a"*64,"bundles/inert",1,True)
@@ -90,13 +99,17 @@ class GradeCTrainerTests(unittest.TestCase):
                 activate_numeric_grade(mx, Path("/unused"), receipt, self.previous, self.course,
                     params,opt,self.parent_graph,reserve_gib=0.)
 
-    def test_c_requires_repeated_selection_review_before_model_growth(self):
+    def test_c_checks_native_catalog_without_external_review_before_growth(self):
         mx, params, opt = self.toy()
         pointer = Checkpoint("a"*64,"bundles/inert",1,True)
         receipt = self.receipt(self.graduated(pointer), pointer, params)
-        with patch("bilqis_mlx.grade_transition.extend_mlx_student",
-                   side_effect=AssertionError("model growth happened")):
-            with self.assertRaisesRegex(ValueError, "NEXT_GRADE_REVIEW_BLOCKED"):
+        with patch("bilqis_mlx.grade_transition.expanded_graph",
+                   side_effect=ValueError("NATIVE_CATALOG_INVALID")), \
+                patch("bilqis_mlx.next_grade_review.require_admission_review",
+                      side_effect=AssertionError("research review entered")), \
+                patch("bilqis_mlx.grade_transition.extend_mlx_student",
+                      side_effect=AssertionError("premature growth")):
+            with self.assertRaisesRegex(ValueError, "NATIVE_CATALOG_INVALID"):
                 activate_numeric_grade(mx, Path("/unused"), receipt, self.previous,
                     self.course, params, opt, self.parent_graph, reserve_gib=0.)
 
@@ -110,11 +123,8 @@ class GradeCTrainerTests(unittest.TestCase):
             root = Path(temp)
             pointer = _bundle_pointer(root,"initial",params,opt,self.parent_graph,reserve_gib=0.)
             receipt = _persist(root,self.receipt(self.graduated(pointer),pointer,params))
-            with patch("bilqis_mlx.grade_transition.expanded_graph",return_value=self.graph), \
-                    patch("bilqis_mlx.next_grade_review.require_admission_review",
-                          return_value={"status":"READY_FOR_INDEPENDENT_REVIEW"}):
-                params,opt,graph,receipt = activate_numeric_grade(mx,root,receipt,self.previous,
-                    self.course,params,opt,self.parent_graph,reserve_gib=0.)
+            params,opt,graph,receipt = activate_numeric_grade(mx,root,receipt,self.previous,
+                self.course,params,opt,self.parent_graph,reserve_gib=0.)
             self.assertEqual(receipt["curriculum_mode"],C_RELEASE)
             self.assertEqual(receipt["teacher"],self.teacher)
             self.assertEqual(int(opt.state["step"].item()),1)
@@ -137,9 +147,8 @@ class GradeCTrainerTests(unittest.TestCase):
                 self.assertEqual(full,fixed)
                 self.assertEqual(len(receipt["last_exam"]["scores"]),13+stage)
                 self.assertEqual(receipt["last_exam"]["learning_diagnostics"]["history_issue"],None)
-                with patch("bilqis_mlx.live_grade_c.registry_graph",return_value=self.graph):
-                    params,opt,graph,reloaded = _resume(root,self.manifest,self.course,self.policy_sha,
-                        admitted_courses={self.course.version:self.course})
+                params,opt,graph,reloaded = _resume(root,self.manifest,self.course,self.policy_sha,
+                    admitted_courses={self.course.version:self.course})
                 self.assertEqual(reloaded,receipt)
             self.assertEqual(receipt["school"]["active_grades"][receipt["school"]["grade_index"]],"A")
             self.assertEqual(receipt["school"]["revalidation_target_grade"],"C")

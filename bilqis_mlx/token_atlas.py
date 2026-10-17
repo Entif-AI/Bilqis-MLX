@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 from .backup import digest_file
-from .semantics.abi import HISTORICAL_ABI, HISTORICAL_PREFIX_SIZE, prefix_preserving_vocab_size
+from .semantics.abi import HISTORICAL_ABI, HISTORICAL_PREFIX_SIZE, prefix_preserving_vocab_size, fingerprint_graph_prefix
 from .source import AUDITED_PARENT
 from .vocabulary_growth import _check_catalog, digest
 
@@ -77,6 +77,10 @@ def validate_one_to_one(graph: dict) -> None:
 def rows_for_graph(graph: dict) -> list[list[str]]:
     validate_one_to_one(graph)
     graph_sha = digest(graph)
+    historical_graph_sha = graph_sha
+    if (len(graph['tokens']) >= HISTORICAL_PREFIX_SIZE and
+            fingerprint_graph_prefix(graph) == HISTORICAL_ABI.index_contract_sha256):
+        historical_graph_sha = ORIGINAL_GRAPH_DIGEST
     result=[]
     for token_index, node in enumerate(graph["nodes"]):
         new = "semantic_id" in node
@@ -84,7 +88,8 @@ def rows_for_graph(graph: dict) -> list[list[str]]:
             str(token_index), node["id"], identity(node), role(node),
             node["signature"],node["family"],node["subtype"],
             str(node["arity"]),str(node["stage"]),
-            graph["row_contract_sha256"][node["id"]],graph_sha,
+            graph["row_contract_sha256"][node["id"]],
+            graph_sha if new else historical_graph_sha,
             "UNMAPPED_TO_NI_NOT_ASSERTED",
             "ADMITTED_NOT_YET_TAUGHT" if new else "HISTORICAL_SOURCE_DEFINED",
             "NO_SAME_CHECKPOINT_TOKEN_MASTERY_PROOF",

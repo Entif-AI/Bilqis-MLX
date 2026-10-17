@@ -7,7 +7,7 @@ import unittest
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.live_grade_a import live_course as a_course
 from bilqis_mlx.live_grade_b import live_course as b_course
-from bilqis_mlx.live_grade_c import PLANS, draw, live_course, proposed_graph
+from bilqis_mlx.live_grade_c import PLANS, draw, live_course, proposed_graph, registry_graph
 from bilqis_mlx.pedagogical_parity import _source_stack
 from bilqis_mlx.source_adapters.numeric import decode
 from bilqis_mlx.semantics.numeric import evaluate
@@ -23,9 +23,15 @@ class GradeCSourceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         _, _, _, _, cls.parent, _ = _source_stack(SOURCE)
-        cls.graph = proposed_graph(cls.parent)
+        cls.graph = registry_graph()
+        assert cls.graph == proposed_graph(cls.parent)
         manifest = json.loads((ROOT / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
         cls.previous = b_course(a_course(accepted_grade_a(manifest)), SOURCE)
+
+    def test_c_growth_preserves_historical_registry_rows(self):
+        from bilqis_mlx.token_atlas import rows_for_graph
+        self.assertEqual(rows_for_graph(self.graph)[:len(self.parent['tokens'])],
+                         rows_for_graph(self.parent))
 
     def test_full_staged_registry_sequence_preserves_a_b_and_old_token_contracts(self):
         course = live_course(self.previous, self.graph, maximum=10)

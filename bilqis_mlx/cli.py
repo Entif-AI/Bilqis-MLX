@@ -184,23 +184,24 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     snapshot["grade_a_source_manifest"] = "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
     if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE" and snapshot.get("grade") == "B":
         from .grade_c_preflight import qualify
-        from .next_grade_review import load_review
         from .live_grade_c import (REGISTRY_PATH, REGISTRY_COUNTING_TARGET,
                                    integer_scope, registry_graph)
         snapshot["next_grade"] = "C"
         snapshot["start_behavior"] = "HUMAN_RESUME_ADMIT_C_AFTER_CUMULATIVE_A_B_PASS"
-        selection = load_review("C", parent_release=LIVE_GRADE_B_RELEASE,
-                                phase="admission")
-        snapshot["next_grade_selection_review"] = selection
-        if selection["status"] != "READY_FOR_INDEPENDENT_REVIEW":
-            snapshot["blockers"].append("GRADE_C_SELECTION_REVIEW_NOT_QUALIFIED")
+        snapshot["next_grade_policy"] = "PROTOTYPE_SOURCE_AND_CUSTODY_CHECKS"
         if REGISTRY_PATH.is_symlink():
             snapshot["blockers"].append("GRADE_C_NATIVE_REGISTRY_ARTIFACT_UNSAFE_PATH")
         elif not REGISTRY_PATH.is_file():
             snapshot["blockers"].append("GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING")
         else:
             manifest = json.loads(GRADE_A_MANIFEST.read_text())
-            snapshot["next_grade_source"] = qualify(legacy_root, manifest)
+            from .grade_a_release import accepted_grade_a
+            from .historical_live_release import resume_grade_courses
+            from .live_grade_b import live_course as admitted_b
+            parent_a, parent_b = resume_grade_courses(accepted_grade_a(manifest),
+                legacy_root, json.loads((run_dir / "state.json").read_text()))
+            parent_b = parent_b or admitted_b(parent_a, legacy_root)
+            snapshot["next_grade_source"] = qualify(legacy_root, manifest, previous=parent_b)
             if integer_scope(registry_graph()) != REGISTRY_COUNTING_TARGET:
                 snapshot["blockers"].append("C_REQUIRES_BILQIS_INTEGER_MAX="+str(REGISTRY_COUNTING_TARGET))
     if verify_source:

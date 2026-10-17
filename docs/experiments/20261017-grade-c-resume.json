@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-17",
+  "scope": "DISPOSABLE_COPY_NO_OPTIMIZER_UPDATES",
+  "source_generation": 6824,
+  "recovered_generation": 6825,
+  "optimizer_step": 204072,
+  "token_count": 227,
+  "first_capability": [
+    "C.COUNT"
+  ],
+  "pointer_crash_recovered": true,
+  "repeat_resume_idempotent": true,
+  "C_admission_events": 1,
+  "old_parameters_and_AdamW_moments_preserved": true,
+  "teacher_champions_and_soups_preserved": true,
+  "elapsed_seconds": 6.33,
+  "actual_saved_files_unchanged": true,
+  "actual_saved_file_sha256": {
+    "state.json": "5ec458dfc779629ec4256072be3f29c9d7d225291fd3b2e780510ecd9062a77e",
+    "events.jsonl": "2812a23caf411c94fd80162721086e1eb817e1e20e59a4a0e1186c54ffa302a2",
+    "bundles/working-5457-dc95c8b23386/manifest.json": "46908474983b33b8ffee5e981e13a9a7e47842fa52180f8bf03520f8d54f083b",
+    "bundles/working-5457-dc95c8b23386/semantic-catalog.json": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716",
+    "bundles/working-5457-dc95c8b23386/model-and-own-adamw.safetensors": "e65d62174b7c9681991d27e3e2a424358f38dceeb50c90544803bc94d7546585"
+  },
+  "preflight": {
+    "result": "PREFLIGHT_ONLY_NO_NEURAL_UPDATES",
+    "grade": "B",
+    "phase": "AWAITING_NEXT_GRADE",
+    "optimizer_step": 204072,
+    "next_grade": "C",
+    "next_grade_policy": "PROTOTYPE_SOURCE_AND_CUSTODY_CHECKS",
+    "blockers": [],
+    "source_manifest_preflight": {
+      "exam_rubric_sha256": "7f351f93b81a1d08a45dd53d5f253ad34c238019015e84284d50ca40378a1370",
+      "grade_a_user_acceptance_is_separate": true,
+      "original_candidate_manifest_release_flag": false,
+      "status": "PINNED_HISTORICAL_SOURCE_VERIFIED",
+      "verified_items": 216
+    },
+    "parent_course_sha256": "8b50a9c964c82785fe65cbfd65344b706f492cc9e8348f95a3c24d803845e8c6",
+    "C_items": 231,
+    "cumulative_items": 375
+  },
+  "native_registry": {
+    "spreadsheet_id": "1xtOjO0jGCxjU2bgcg0TKpVruJ4Z5O3vW9ixu6oMQ-so",
+    "range": "'Token Atlas'!A1:P228",
+    "old_222_rows_unchanged": true,
+    "new_token_ids": [
+      222,
+      223,
+      224,
+      225,
+      226
+    ]
+  }
+}

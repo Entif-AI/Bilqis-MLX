@@ -1758,22 +1758,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
     with operator_lock(run_dir):
         if resume:
             saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
-            # Source-neutral ABI constant extraction changed the byte-derived
-            # A fingerprint, cascading into B's course seal. Preserve the
-            # exact archived A/B contract when its known digest is present.
-            from .historical_live_release import (
-                HISTORICAL_B_COURSE_SHA256, historical_grade_a_course,
-                historical_grade_b_course,
-            )
-            saved_digest = saved["school"]["course_digest"]
-            if saved_digest == HISTORICAL_B_COURSE_SHA256:
-                course_a, course_b = historical_grade_b_course(
-                    historical_course, source_root)
-            elif (saved.get("curriculum_mode") == LIVE_RELEASE and
-                  saved_digest != course_a.digest()):
-                historical_a = historical_grade_a_course(historical_course)
-                if saved_digest == historical_a.digest():
-                    course_a = historical_a
+            from .historical_live_release import resume_grade_courses
+            course_a, course_b = resume_grade_courses(historical_course, source_root, saved)
+            course = course_a
             pending = run_dir / "states" / f"{saved['generation'] + 1:07d}.json"
             if pending.exists() and (pending.is_symlink() or not pending.is_file()):
                 raise ValueError("HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH")

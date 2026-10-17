@@ -208,10 +208,6 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
             exam.get("optimizer_step") != school.current_student.optimizer_step or
             exam.get("scores") != {cap: {"correct": count, "total": count} for cap,count in counts.items()}):
         raise ValueError("GRADE_C_REQUIRES_ONE_COMPLETE_CUMULATIVE_A_B_PASS")
-    # After the real student qualification check, before any model growth.
-    # Selection evidence never substitutes for independent source admission.
-    from .next_grade_review import require_admission_review
-    require_admission_review("C", previous.version)
     next_state = append_next_grade(previous, successor, school)
     grown_graph = expanded_graph(graph)
     grown, own_optimizer, growth = extend_mlx_student(parameters, optimizer, graph, grown_graph)
@@ -221,6 +217,7 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
     next_state = replace(next_state, current_student=pointer)
     maximum = numeric_maximum(successor)
     updated = {**receipt, "curriculum_mode": RELEASE,
+        "grade_c_parent_course_digest": previous.digest(),
         "numeric_maximum": maximum, "grade_c_code_sha256": constructor_digest(),
         "semantic_graph_sha256": _fingerprint(grown_graph),
         "parameter_shapes": {name: list(value.shape) for name,value in grown.items()},

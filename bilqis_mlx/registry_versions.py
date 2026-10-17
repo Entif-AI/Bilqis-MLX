@@ -60,12 +60,14 @@ def revision_row(p: ProposedRevision) -> list[str]:
 def _validate_rows(expected: list[list[str]], observed: list[list[object]]) -> list[list[str]]:
     if not isinstance(observed,list) or not observed:
         raise ValueError('REGISTRY_SNAPSHOT_EMPTY')
-    if tuple(str(x) for x in observed[0]) != COLUMNS:
+    header = tuple(str(x) for x in observed[0])
+    if len(header) != len(COLUMNS) or set(header) != set(COLUMNS):
         raise ValueError('REGISTRY_HEADER_INCOMPATIBLE')
     rows=[[str(x) for x in r] for r in observed[1:]]
     if any(len(r)!=len(COLUMNS) for r in rows):
         raise ValueError('REGISTRY_SHEET_MALFORMED')
-    return rows
+    order = tuple(header.index(name) for name in COLUMNS)
+    return [[row[index] for index in order] for row in rows]
 
 
 def reconcile_live_ledger(graph: dict, live_sheet_rows: list[list[object]], *,
