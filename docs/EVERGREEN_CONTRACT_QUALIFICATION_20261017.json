@@ -1,0 +1,91 @@
+{
+  "actual_neural_updates": 0,
+  "actual_student": {
+    "all_recorded_bytes_match": true,
+    "custody_sha256": {
+      "bundles/working-5457-dc95c8b23386/manifest.json": "46908474983b33b8ffee5e981e13a9a7e47842fa52180f8bf03520f8d54f083b",
+      "bundles/working-5457-dc95c8b23386/model-and-own-adamw.safetensors": "e65d62174b7c9681991d27e3e2a424358f38dceeb50c90544803bc94d7546585",
+      "bundles/working-5457-dc95c8b23386/semantic-catalog.json": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716",
+      "events.jsonl": "2812a23caf411c94fd80162721086e1eb817e1e20e59a4a0e1186c54ffa302a2",
+      "state.json": "5ec458dfc779629ec4256072be3f29c9d7d225291fd3b2e780510ecd9062a77e"
+    },
+    "generation": 6824,
+    "optimizer_step": 204072
+  },
+  "branch": "codex/336-evergreen-factory",
+  "date": "2026-10-17",
+  "disposable_proof_scope": [
+    "same-size and append-only native bundle readback",
+    "old FP32 rows and own AdamW moments preserved",
+    "100 GiB reserve and simulated disk stop",
+    "staging readback failure leaves parent authoritative",
+    "generation/pointer crash recovery through existing custodian",
+    "lost event acknowledgement and duplicate replay by immutable outbox"
+  ],
+  "historical_abi": {
+    "enforcement": "ADVISORY_UNCONFIGURED",
+    "external_expected_verified": false,
+    "local_check": "passed"
+  },
+  "hosted_ci": {
+    "conclusion": "success",
+    "head": "f14b90dc82153555b4d9d365f21580667368db0e",
+    "run_id": 39044710480,
+    "scope": "Pure source/review/construction/admission/contract checks; native MLX cutover tests ran locally."
+  },
+  "operator_preflight": {
+    "blockers": [
+      "GRADE_C_SELECTION_REVIEW_NOT_QUALIFIED",
+      "GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING"
+    ],
+    "grade": "B",
+    "optimizer_step": 204072,
+    "phase": "AWAITING_NEXT_GRADE",
+    "result": "PREFLIGHT_ONLY_NO_NEURAL_UPDATES",
+    "source_manifest_preflight": {
+      "exam_rubric_sha256": "7f351f93b81a1d08a45dd53d5f253ad34c238019015e84284d50ca40378a1370",
+      "grade_a_user_acceptance_is_separate": true,
+      "original_candidate_manifest_release_flag": false,
+      "status": "PINNED_HISTORICAL_SOURCE_VERIFIED",
+      "verified_items": 216
+    }
+  },
+  "python_version": "Python 3.14.3",
+  "receiver_handoff_head": "b941f2eb5749a07c02cf4b04aca51756ab78a1a3",
+  "runtime": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3",
+  "schema": "bilqis.contract-qualification/v1",
+  "semantic_boundaries": "SEMANTIC_BOUNDARIES_OK",
+  "skipped_scope": "Two tests require human-run JSON under the isolated worktree; actual saved-run preflight used its explicit path.",
+  "source_files_sha256": {
+    ".github/workflows/semantic-abi-integrity.yml": "43dcb1916aedd7d689178a15cecb08e86f91d337fff0f2a5512702aa955f9a3a",
+    "bilqis_mlx/curriculum_contracts.py": "3e9cbc4b207345c402cb2432e6be132738952873e9cd408a0d7aa7093a746cf7",
+    "bilqis_mlx/grade_release_plan.py": "fb959a8bb0e2b81aa1ce2cdac888701afaf5443cd4e13d67b2aaf4807f3c2fc2",
+    "bilqis_mlx/selection_outcomes.py": "8386953b92f0fcd1683bc7918b8d27a8de8145cbd5bc58043cb91d91d26536c9",
+    "bilqis_mlx/semantics/domains.py": "c417476c9d42ab1a820c17ffcbad7008e45655fb2d14d8e566dd9791d87ac64d",
+    "bilqis_mlx/verification/construction_contracts.py": "63a69f980e4d349ae2b2f5f9efad6a535c600b6f63a3998c864b90f9f8b21dae",
+    "bilqis_mlx/verification/curriculum.py": "f9c2a710aad511442378d44c1b4c9f09e9e31a63e3258a0adff488e5a2172571",
+    "bilqis_mlx/verification/review_evidence.py": "e4d5e06cb820eeac2de3e9b5c3ed93bba261d4c640f29e48d7bcb096d090db46",
+    "tests/support/contract_fixtures.py": "dca973f676ba80cbf70ab030d5527efb5f0db91891429fd274fb026d57a3c0af",
+    "tests/test_construction_contracts.py": "78af9e1db9efb6fe2e73786d11e8eee89d7df23ba1ca6ebe0f4282613d496507",
+    "tests/test_disposable_cutover_contracts.py": "9a54c3488b4d5a6a6a9edf88316afdf3b5994bab5d6a1855b6060533f43b7b20",
+    "tests/test_domain_contracts.py": "89790373c07f68ef06e1ffe0631aad1db91180ae110e31a1572d72b6b198501a",
+    "tests/test_release_outcome_contracts.py": "6fcd49b57d262a8110c53294f4c08b4ea5df6a8df171515ff11fbb1c243d68e2"
+  },
+  "source_qualified": false,
+  "tested_source_head": "f14b90dc82153555b4d9d365f21580667368db0e",
+  "tests": {
+    "errors": 0,
+    "failures": 0,
+    "passed": 466,
+    "skipped": 2,
+    "total": 468
+  },
+  "training_authorized": false,
+  "unresolved": [
+    "Authentic finite-domain completeness and native catalog source approval",
+    "Source-attested transformation implementations and non-equivalence/invalid-case families",
+    "Generic runtime cutover executor with authenticated admission and readback receipts",
+    "Independent causal outcome attestation and measured recursive curriculum benefit"
+  ],
+  "untested_scaffold_head": "b88b2fee165b0b76c2fbc74540d7a587cf57da98"
+}
