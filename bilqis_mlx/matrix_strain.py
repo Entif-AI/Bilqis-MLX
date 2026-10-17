@@ -6,22 +6,27 @@ import json
 from pathlib import Path
 
 from .backup import digest_file
+from .mlx_checkpoint import SCHEMA as BUNDLE_SCHEMA, _json_hash
 
 
 @lru_cache(maxsize=4)
-def _weights(path: str, sha: str):
+def _weights(path: str, sha: str, graph_sha: str):
     """Verify an immutable existing bundle, then cache weights only."""
     import mlx.core as mx
     from safetensors import safe_open
 
     folder = Path(path)
     manifest = json.loads((folder / "manifest.json").read_text())
-    names = manifest["parameter_names"]
+    names = manifest.get("parameter_names")
+    if (manifest.get("schema") != BUNDLE_SCHEMA or
+            not isinstance(names, list) or not names or len(set(names)) != len(names) or
+            manifest.get("name_order_sha256") != _json_hash(names)):
+        raise ValueError("MATRIX_STRAIN_REFERENCE_PARAMETER_IDENTITY_DRIFT")
+    if manifest.get("semantic_catalog", {}).get("digest") != graph_sha:
+        raise ValueError("MATRIX_STRAIN_REFERENCE_SEMANTIC_GRAPH_DRIFT")
     blob = folder / "model-and-own-adamw.safetensors"
-    if digest_file(blob) != manifest["safetensors_sha256"]:
+    if sha != manifest.get("safetensors_sha256") or digest_file(blob) != sha:
         raise ValueError("MATRIX_STRAIN_REFERENCE_BLOB_CHANGED")
-    if not isinstance(sha, str) or len(sha) != 64:
-        raise ValueError("MATRIX_STRAIN_REFERENCE_IDENTITY_MISSING")
     with safe_open(str(blob), framework="np", device="cpu") as tensors:
         result = {name: mx.array(tensors.get_tensor(f"p{index:04d}_weight"), dtype=mx.float32)
                   for index, name in enumerate(names)}
@@ -70,6 +75,9 @@ def observe(mx, run_dir: Path, receipt: dict, parent: dict, candidate: dict) -> 
     if reason:
         return {"status": "NOT_MEASURED", "reason": reason}
     origin, peak = pointers
+    graph_sha = receipt.get("semantic_graph_sha256")
+    if not isinstance(graph_sha, str) or len(graph_sha) != 64:
+        return {"status": "NOT_MEASURED", "reason": "MISSING_SEMANTIC_GRAPH_IDENTITY"}
     root = Path(run_dir).resolve()
     arrays = []
     try:
@@ -81,7 +89,7 @@ def observe(mx, run_dir: Path, receipt: dict, parent: dict, candidate: dict) -> 
             if (root not in path.resolve().parents or path.is_symlink()
                     or not path.is_dir()):
                 return {"status": "NOT_MEASURED", "reason": "UNSAFE_CHECKPOINT_PATH"}
-            arrays.append(_weights(str(path.resolve()), pointer["sha256"]))
+            arrays.append(_weights(str(path.resolve()), pointer["sha256"], graph_sha))
     except (OSError, KeyError, ValueError):
         return {"status": "NOT_MEASURED", "reason": "REFERENCE_UNAVAILABLE_OR_INVALID"}
     try:

@@ -59,6 +59,31 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
+    def test_saturated_visit_preserves_pending_history_without_persisting_ram_student(self):
+        from bilqis_mlx import grade_a_trainer as trainer
+
+        school = start_new(self.course, self.init)
+        prior = {"event": "PREVIOUS_PENDING_CANDIDATE", "optimizer_step": 105}
+        original = {"generation": 17, "run_id": "fixture-school",
+                    "school": asdict(school), "teacher": {"existing": True},
+                    "_pending_visit_events": [prior]}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)
+            updated = trainer._skip_perfect_target_visit(
+                path, original, school, self.course, "a.0", 12, 121)
+            self.assertFalse((path / "state.json").exists())
+            self.assertFalse((path / "events.jsonl").exists())
+        self.assertEqual(updated["school"]["current_student"], asdict(self.init))
+        self.assertEqual(updated["school"]["visits"], 1)
+        self.assertEqual(updated["generation"], 18)
+        self.assertEqual(updated["teacher"], original["teacher"])
+        self.assertEqual(updated["_pending_visit_events"][0], prior)
+        skipped = updated["_pending_visit_events"][1]
+        self.assertEqual(skipped["event"], "SCHOOL_PERFECT_TARGET_VISIT_SKIPPED")
+        self.assertEqual(skipped["optimizer_step"], 121)
+        self.assertEqual(skipped["retained_optimizer_updates"], 0)
+        self.assertEqual(skipped["target_probe_total"], 12)
+
     def test_weakest_three_uses_cumulative_pool_without_perfect_padding(self):
         pool = ("A.ONE", "A.TWO", "B.THREE", "C.FOUR", "C.FIVE")
         scores = {cap: Score(12, 12) for cap in pool}

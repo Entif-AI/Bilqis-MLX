@@ -1320,6 +1320,28 @@ def _learning_probe_rows(source_root, graph, receipt, course, school, capability
     return rows, selected, len(eligible)-len(sampled)
 
 
+def _skip_perfect_target_visit(run_dir, receipt, school, course, capability,
+                               probe_total, optimizer_step, *, teacher=None):
+    """Advance the in-memory schedule without checkpointing a provisional model."""
+    skipped_school = visit(course, school, capability, school.current_student)
+    result = _advance(run_dir, receipt, skipped_school, teacher=teacher, persist=False)
+    event = {
+        "event": "SCHOOL_PERFECT_TARGET_VISIT_SKIPPED",
+        "capability": capability,
+        "grade": capability.partition(".")[0],
+        "active_grade": skipped_school.grade,
+        "generation": result["generation"],
+        "optimizer_step": optimizer_step,
+        "target_probe_correct": probe_total,
+        "target_probe_total": probe_total,
+        "retained_optimizer_updates": 0,
+        "reason": "NO_POSSIBLE_STRICT_TARGET_GAIN",
+    }
+    result["_pending_visit_events"] = [
+        *receipt.get("_pending_visit_events", ()), event]
+    return result
+
+
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 params, optimizer, graph, *, steps_per_visit, batch_size, reserve_gib,
                 source_root=None, learning_settings: LearningSettings | None = None):
@@ -1384,23 +1406,12 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         if target_rows and all(parent_predictions[row["id"]] == row["gold"]
                                for row in target_rows):
             # A strict positive-gain gate cannot admit a trial whose fresh
-            # target panel already scores perfectly. Advance schedule only.
+            # target panel already scores perfectly. Preserve any accepted
+            # in-memory student updates until their normal checkpoint boundary.
             parent_optimizer.learning_rate = original_learning_rate
-            school = visit(course, school, cap, school.current_student)
-            skipped = _advance(run_dir, receipt, school, persist=False)
-            skipped = _with_delivery_outbox(skipped, ({
-                "event": "SCHOOL_PERFECT_TARGET_VISIT_SKIPPED",
-                "capability": cap, "grade": lesson_grade,
-                "active_grade": school.grade, "generation": skipped["generation"],
-                "optimizer_step": int(parent_optimizer.state["step"].item()),
-                "target_probe_correct": len(target_rows),
-                "target_probe_total": len(target_rows),
-                "retained_optimizer_updates": 0,
-                "reason": "NO_POSSIBLE_STRICT_TARGET_GAIN",
-            },))
-            skipped = _persist(run_dir, skipped)
-            _reconcile_delivery_outbox(run_dir, skipped)
-            return skipped
+            return _skip_perfect_target_visit(
+                run_dir, receipt, school, course, cap, len(target_rows),
+                int(parent_optimizer.state["step"].item()), teacher=teacher)
         params, optimizer = fork_student(mx, parent_parameters, parent_optimizer)
     last_loss = 0.0
     last_norm = 0.0
