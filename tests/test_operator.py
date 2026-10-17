@@ -12,6 +12,23 @@ from bilqis_mlx.grade_a_dashboard import build, ingest
 
 
 class OperatorTests(unittest.TestCase):
+    def test_worktree_preflight_uses_explicit_source_paths_without_global_mutation(self):
+        from bilqis_mlx import cli
+        original = cli.LEGACY_ROOT, cli.ORIGINAL_CHECKPOINT
+        with tempfile.TemporaryDirectory() as tmp:
+            donor = Path(tmp) / "explicit-donor"
+            out = io.StringIO()
+            with patch("bilqis_mlx.grade_a_manifest.verify_manifest", return_value={
+                    "verified_items": 216, "exam_rubric_sha256": "a" * 64}) as verify, \
+                    patch("bilqis_mlx.cli.assert_headroom", return_value={}), redirect_stdout(out):
+                self.assertEqual(main(["train", "--dry-run", "--verify-source", "--run-dir", tmp,
+                                       "--legacy-code-root", str(donor)]), 0)
+            self.assertEqual(verify.call_args.args[1], donor)
+            self.assertEqual(verify.call_args.args[2], donor / "runs" / "primitive-consolidation-v16-triplets" /
+                             ORIGINAL_CHECKPOINT.name)
+            self.assertEqual((cli.LEGACY_ROOT, cli.ORIGINAL_CHECKPOINT), original)
+            self.assertFalse(json.loads(out.getvalue())["neural_training_started_by_this_command"])
+
     def test_grade_c_preflight_reports_missing_approved_registry_as_blocker(self):
         with tempfile.TemporaryDirectory() as tmp:
             run = Path(tmp)

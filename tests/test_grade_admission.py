@@ -222,6 +222,32 @@ class GradeAdmissionTests(unittest.TestCase):
         self.assertIn("GRADE_ADMISSION_CANDIDATE_COVERAGE_INVALID", self._ready(
             candidate_package=truncated)["blockers"])
 
+    def test_unrelated_constructions_cannot_borrow_a_canonical_ast(self):
+        unrelated = Operation(999, "fixture.unrelated", Signature(("Boolean",), "Boolean"), "e" * 64)
+        ast = CurriculumAST(self.package.ast_version, tuple(
+            replace(node, roots=(unrelated.symbol,)) for node in self.package.ast_nodes))
+        template = TypedExpressionTemplate(unrelated, (FiniteTypedInput("Boolean", (False, True)),))
+        forged = compile_typed_candidate_package(
+            ast, operations={unrelated.symbol: unrelated},
+            templates={node.id: template for node in ast.nodes},
+            source=_Backend("source-fixture"), independent=_Backend("independent-fixture"))
+        forged = replace(forged, ast_nodes=self.package.ast_nodes, ast_sha256=self.package.ast_sha256)
+        result = self._ready(candidate_package=forged,
+                             source_operations={**self.operations, unrelated.symbol: unrelated})
+        self.assertIn("GRADE_ADMISSION_CANDIDATE_PROOF_INVALID", result["blockers"])
+
+    def test_unsupported_declared_answer_family_cannot_pass_with_binary_specimens(self):
+        grade = self.successor.grades[-1]
+        changed = replace(grade, capabilities=tuple(replace(cap, answer_families=(
+            *cap.answer_families, AnswerFamily("integer_0_3", ("0", "1", "2", "3"))))
+            for cap in grade.capabilities))
+        self.successor = replace(self.successor, grades=(*self.successor.grades[:-1], changed))
+        ast = CurriculumAST(self.package.ast_version, tuple(replace(
+            node, answers=("binary", "integer_0_3")) for node in self.package.ast_nodes))
+        forged = replace(self.package, ast_nodes=ast.nodes, ast_sha256=ast.digest())
+        self.assertIn("GRADE_ADMISSION_CANDIDATE_PROOF_INVALID", self._ready(
+            candidate_package=forged)["blockers"])
+
     def test_package_ast_digest_and_stage_cannot_be_forged(self):
         tampered = replace(self.package, ast_sha256="0" * 64)
         self.assertIn("GRADE_ADMISSION_CANDIDATE_AST_DRIFT", self._ready(

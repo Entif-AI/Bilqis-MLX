@@ -39,6 +39,8 @@ def candidate_package_problems(package, *, source: Backend | None,
     seen = set()
     for split, specimens in (("lesson", package.lessons), ("test", package.tests)):
         for node_id in targets:
+            if not templates[node_id].complete_boolean_inputs:
+                problems.append("GRADE_ADMISSION_CANDIDATE_COVERAGE_INVALID")
             try:
                 expected = {expression_digest(expr) for expr in
                             templates[node_id].finite_cases(package.construction_budget)}
@@ -65,6 +67,24 @@ def candidate_package_problems(package, *, source: Backend | None,
 
             if not bound(item.expression):
                 problems.append("GRADE_ADMISSION_SOURCE_BINDINGS_MISMATCH")
+            if item.capability in nodes:
+                node = nodes[item.capability]
+
+                def operations(expression):
+                    return (() if not isinstance(expression, Apply) else
+                            (expression.operator.symbol, *(symbol for child in expression.arguments
+                                                         for symbol in operations(child))))
+
+                symbols = operations(item.expression)
+                predecessors = (*node.requires, *node.composed_of)
+                prior_roots = {root for pre in predecessors if pre in nodes for root in nodes[pre].roots}
+                if (not symbols or symbols[0] not in node.roots or
+                        not set(node.roots) <= set(symbols) or
+                        any(symbol not in prior_roots for symbol in symbols[1:]) or
+                        any(pre not in nodes or not set(nodes[pre].roots).intersection(symbols[1:])
+                            for pre in node.composed_of) or
+                        item.type_name != "Boolean" or node.answers != ("binary",)):
+                    problems.append("GRADE_ADMISSION_CANDIDATE_PROOF_INVALID")
             if source is not None and independent is not None:
                 try:
                     proofs = verify_constituents(item.expression, source=source, independent=independent)

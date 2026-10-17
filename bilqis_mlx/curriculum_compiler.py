@@ -99,6 +99,12 @@ class TypedExpressionTemplate:
                       else len(argument.values))
         return count
 
+    @property
+    def complete_boolean_inputs(self) -> bool:
+        return all(argument.complete_boolean_inputs if isinstance(argument, TypedExpressionTemplate)
+                   else argument.type_name != "Boolean" or set(argument.values) == {False, True}
+                   for argument in self.arguments)
+
     def finite_cases(self, budget: int) -> tuple[Apply, ...]:
         """Enumerate the declared finite domain before any seeded draw."""
         if self.construction_count > budget:
@@ -244,17 +250,25 @@ def compile_typed_candidate_package(
                      key=lambda node: (len(node.grade), node.grade, node.stage, node.id))
     finite, coverage, debt = {}, [], []
     for node in ordered:
+        if not templates[node.id].complete_boolean_inputs:
+            debt.append("INCOMPLETE_BOOLEAN_DOMAIN:" + node.id)
         try:
             cases = templates[node.id].finite_cases(construction_budget)
             witnesses = []
             for expression in cases:
                 nested = _operations(expression)
+                if expression.operator.symbol not in node.roots:
+                    raise _coverage_debt("UNDECLARED_ROOT_OPERATOR", node.id, expression.operator.symbol)
                 if not set(node.roots) <= {operation.symbol for operation in nested}:
                     raise _coverage_debt("TEMPLATE_MISSING_DECLARED_ROOT", node.id)
                 for operation in nested:
                     if operations.get(operation.symbol) != operation:
                         raise _coverage_debt("UNBOUND_NESTED_OPERATION", node.id, operation.symbol)
                 prerequisites = (*node.requires, *node.composed_of)
+                nested_roots = {operation.symbol for operation in nested[1:]}
+                for constituent in node.composed_of:
+                    if not nested_roots.intersection(nodes[constituent].roots):
+                        raise _coverage_debt("MISSING_COMPOSED_CONSTITUENT", node.id, constituent)
                 for operation in nested[1:]:
                     if not any(operation.symbol in nodes[pre].roots for pre in prerequisites):
                         raise _coverage_debt("UNQUALIFIED_CONSTITUENT", node.id, operation.symbol)

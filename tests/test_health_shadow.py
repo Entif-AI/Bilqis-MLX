@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 
 from bilqis_mlx.diagnostics.health_shadow import (ShadowContext, ShadowHealthState,
     ShadowPhase, ShadowPolicy, replay_health_shadow)
+from bilqis_mlx.diagnostics import health_shadow
 from bilqis_mlx.diagnostics.observations import CapabilityObservation, ExamObservation
 
 
@@ -31,6 +33,36 @@ def replay(history, required=("B.CAP", "B.HEALTHY"), *, active="B", phase=Shadow
 
 
 class HealthShadowTests(unittest.TestCase):
+    def test_shadow_denominators_preserve_required_quarantined_capabilities(self):
+        result = replay([observation(i, score) for i, score in enumerate((10, 7, 7), 1)])
+        self.assertEqual(result.proposed_active_capabilities, ("B.HEALTHY",))
+        self.assertEqual(result.proposed_quarantine, ("B.CAP",))
+        self.assertEqual(result.required_capability_debt, ("B.CAP",))
+        self.assertEqual(result.excluded_from_mastery, ())
+
+    def test_alert_evidence_binds_observed_checkpoint_identities(self):
+        history = [observation(i, score) for i, score in enumerate((10, 7, 7), 1)]
+        before = replay(history)
+        after = replay([replace(obs, student_sha256=f"{obs.optimizer_step+100:064x}") for obs in history])
+        self.assertEqual(before.lineage_sha256, after.lineage_sha256)
+        self.assertNotEqual(before.end_of_run_alerts[0].evidence_sha256,
+                            after.end_of_run_alerts[0].evidence_sha256)
+
+    def test_repeated_warning_is_batched_once_until_a_state_or_policy_change(self):
+        old = replay([observation(i, score) for i, score in enumerate((10, 7, 7), 1)])
+        new = replay([observation(i, score) for i, score in enumerate((10, 7, 7, 7), 1)])
+        self.assertEqual(health_shadow.changed_shadow_alerts(old, new), ())
+        recovered = replay([observation(i, score) for i, score in enumerate((10, 7, 7, 8), 1)])
+        alerts = health_shadow.changed_shadow_alerts(new, recovered)
+        self.assertEqual(len(alerts), 1)
+        self.assertEqual(alerts[0].delivery, "END_OF_RUN_REVIEW")
+        self.assertEqual(alerts[0].state, ShadowHealthState.RECOVERY_RECOMMENDATION)
+        self.assertEqual(len(alerts[0].evidence_sha256), 64)
+        self.assertTrue(alerts[0].action)
+        self.assertTrue(alerts[0].consequence_if_deferred)
+        changed_policy = replace(new, policy_digest="0" * 64)
+        self.assertEqual(len(health_shadow.changed_shadow_alerts(old, changed_policy)), 1)
+
     def test_policy_requires_identity_and_output_carries_digest(self):
         with self.assertRaisesRegex(ValueError, "IDENTITY"):
             ShadowPolicy("", "", 3, 2, 2, 0, 1)
@@ -83,6 +115,15 @@ class HealthShadowTests(unittest.TestCase):
         result = replay((observation(1, 10), observation(2, 7, source="x" * 64)), required=("B.CAP",))
         self.assertTrue(result.lineage_gap)
         self.assertEqual(result.by_capability["B.CAP"].state, ShadowHealthState.NOT_MEASURED)
+
+    def test_missing_historical_lineage_does_not_erase_later_complete_evidence(self):
+        incomplete = replace(observation(1, 1), assessment_scope_sha256="")
+        result = replay((incomplete, observation(2, 10), observation(3, 10), observation(4, 10)))
+        self.assertTrue(result.lineage_gap)
+        self.assertEqual(result.by_capability["B.CAP"].state, ShadowHealthState.ACTIVE)
+        latest_missing = replay((observation(1, 10), replace(observation(2, 7), run_id="")))
+        self.assertTrue(latest_missing.lineage_gap)
+        self.assertEqual(latest_missing.by_capability["B.CAP"].state, ShadowHealthState.NOT_MEASURED)
 
 
 if __name__ == "__main__":

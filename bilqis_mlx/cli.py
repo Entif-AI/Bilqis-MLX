@@ -141,7 +141,17 @@ def status(run_dir: Path):
     return _print_status(_inspect(run_dir))
 
 
-def preflight(run_dir: Path, *, resume=False, verify_source=False):
+def _source_paths(legacy_code_root: Path | None, champion_checkpoint: Path | None):
+    legacy = legacy_code_root if legacy_code_root is not None else LEGACY_ROOT
+    checkpoint = champion_checkpoint if champion_checkpoint is not None else (
+        legacy / "runs" / "primitive-consolidation-v16-triplets" / AUDITED_PARENT.basename
+        if legacy_code_root is not None else ORIGINAL_CHECKPOINT)
+    return legacy, checkpoint
+
+
+def preflight(run_dir: Path, *, resume=False, verify_source=False,
+              legacy_code_root: Path | None = None, champion_checkpoint: Path | None = None):
+    legacy_root, original_checkpoint = _source_paths(legacy_code_root, champion_checkpoint)
     existing = (run_dir / "state.json").is_file()
     if resume and not existing:
         raise ValueError("RESUME_EXPLICIT_BUT_NO_SAVED_NEW_SCHOOL_RUN")
@@ -161,7 +171,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False):
         from .live_grade_a import live_course as admitted_a
         from .live_grade_b import live_course as admitted_b
         manifest = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
-        next_course = admitted_b(admitted_a(accepted_grade_a(manifest)),LEGACY_ROOT)
+        next_course = admitted_b(admitted_a(accepted_grade_a(manifest)),legacy_root)
         snapshot["start_behavior"] = "HUMAN_RESUME_ADMIT_B_FROM_MASTERY_A"
         snapshot["next_grade"] = "B"
         snapshot["next_grade_source_checked"] = next_course.executable
@@ -190,13 +200,13 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False):
             snapshot["blockers"].append("GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING")
         else:
             manifest = json.loads(GRADE_A_MANIFEST.read_text())
-            snapshot["next_grade_source"] = qualify(LEGACY_ROOT, manifest)
+            snapshot["next_grade_source"] = qualify(legacy_root, manifest)
             if integer_scope(registry_graph()) != REGISTRY_COUNTING_TARGET:
                 snapshot["blockers"].append("C_REQUIRES_BILQIS_INTEGER_MAX="+str(REGISTRY_COUNTING_TARGET))
     if verify_source:
         from .grade_a_manifest import verify_manifest
         source = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
-        receipt = verify_manifest(source, LEGACY_ROOT, ORIGINAL_CHECKPOINT)
+        receipt = verify_manifest(source, legacy_root, original_checkpoint)
         snapshot["source_manifest_preflight"] = {
             "status": "PINNED_HISTORICAL_SOURCE_VERIFIED",
             "verified_items": receipt["verified_items"],
@@ -257,6 +267,10 @@ def parse_args(argv=None):
         p=actions.add_parser(name)
         p.add_argument("--run-dir",type=Path,default=DEFAULT_RUN)
         if name=="train":
+            p.add_argument("--legacy-code-root", type=Path,
+                           help="Explicit pinned predecessor source for an independent worktree")
+            p.add_argument("--champion-checkpoint", type=Path,
+                           help="Explicit original checkpoint; the existing source fingerprint still applies")
             p.add_argument("--dry-run",action="store_true")
             p.add_argument("--verify-source",action="store_true",
                            help="Recheck all 216 candidate records against the pinned source (neural-inert)")
@@ -281,7 +295,9 @@ def main(argv=None):
         if args.action=="dashboard":return dashboard(args.run_dir)
         if args.action=="diagnostics":return diagnostics(args.run_dir)
         if args.dry_run:return preflight(args.run_dir,resume=args.resume,
-                                        verify_source=args.verify_source)
+                                        verify_source=args.verify_source,
+                                        legacy_code_root=args.legacy_code_root,
+                                        champion_checkpoint=args.champion_checkpoint)
         if args.verify_source:
             raise ValueError("VERIFY_SOURCE_REQUIRES_DRY_RUN")
         if not args.human_run:
@@ -312,8 +328,9 @@ def main(argv=None):
             system_rows.extend(previous)
             board.draw()
         with operator_view(on_event if visual else None):
+            legacy_root, original_checkpoint = _source_paths(args.legacy_code_root, args.champion_checkpoint)
             result = operate(
-                args.run_dir, LEGACY_ROOT, ORIGINAL_CHECKPOINT, GRADE_A_MANIFEST,
+                args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
                 resume=args.resume, minutes=args.minutes,
                 steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
                 batch_size=args.batch_size, reserve_gib=args.reserve_gib)

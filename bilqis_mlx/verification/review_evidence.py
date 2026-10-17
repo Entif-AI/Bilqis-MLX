@@ -15,7 +15,7 @@ import re
 SCHEMA = "bilqis.review-evidence/v1"
 
 VERIFIER_FILES = (
-    "curriculum.py", "curriculum_compiler.py", "grade_transition.py",
+    "cli.py", "curriculum.py", "curriculum_compiler.py", "grade_transition.py",
     "next_grade_review.py", "school.py", "semantics/core.py", "semantics/functions.py",
     "verification/cases.py", "verification/expressions.py",
     "verification/review_evidence.py", "verification/curriculum.py",

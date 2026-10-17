@@ -27,6 +27,20 @@ STATUS_STRINGS = frozenset(
     item.value for result_type in (ProofStatus, CoverageStatus, LawCheckStatus)
     for item in result_type
 )
+SHADOW_MODULES = frozenset({"health_shadow", "candidate_shadow"})
+
+
+def _imports_shadow_policy(node: ast.AST) -> bool:
+    if isinstance(node, ast.Import):
+        return any(entry.name.startswith("bilqis_mlx.diagnostics." + name)
+                   for entry in node.names for name in SHADOW_MODULES)
+    if isinstance(node, ast.ImportFrom):
+        parts = (node.module or "").split(".")
+        if "diagnostics" in parts:
+            tail = parts[parts.index("diagnostics") + 1:]
+            return (bool(tail) and tail[0] in SHADOW_MODULES or
+                    not tail and any(entry.name in SHADOW_MODULES for entry in node.names))
+    return False
 
 
 def inspect_semantic_boundaries(root: Path) -> tuple[str, ...]:
@@ -60,6 +74,13 @@ def inspect_semantic_boundaries(root: Path) -> tuple[str, ...]:
                     problems.append(f"{path.relative_to(root)}:{node.lineno} RAW_RESULT_STATUS {node.value}")
     for path in sorted((src / "composition").rglob("*.py")) if (src / "composition").exists() else ():
         problems.append(f"{path.relative_to(root)} OBSOLETE_COMPOSITION_MODULE")
+    for path in sorted(src.rglob("*.py")):
+        relative = path.relative_to(src)
+        if relative.parts[0] == "diagnostics" and path.name != "__init__.py":
+            continue
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if _imports_shadow_policy(node):
+                problems.append(f"{path.relative_to(root)}:{node.lineno} UNAPPROVED_SHADOW_POLICY_IMPORT")
     return tuple(problems)
 
 

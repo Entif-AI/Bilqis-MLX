@@ -74,6 +74,9 @@ class ShadowReviewAlert:
     delivery: str
     state: ShadowHealthState
     note: str
+    evidence_sha256: str
+    action: str
+    consequence_if_deferred: str
 
 
 @dataclass(frozen=True)
@@ -86,14 +89,41 @@ class ShadowReplay:
     lineage_gap: bool
     lineage_note: str
     excluded_from_mastery: tuple[str, ...] = ()
+    lineage_sha256: str = ""
+
+    @property
+    def proposed_quarantine(self) -> tuple[str, ...]:
+        return tuple(capability for capability, proposal in self.by_capability.items()
+                     if proposal.state is ShadowHealthState.QUARANTINE_RECOMMENDATION)
+
+    @property
+    def proposed_active_capabilities(self) -> tuple[str, ...]:
+        return tuple(capability for capability in self.by_capability
+                     if capability not in self.proposed_quarantine)
+
+
+def changed_shadow_alerts(previous: ShadowReplay | None,
+                         current: ShadowReplay) -> tuple[ShadowReviewAlert, ...]:
+    """Batch one notice per state change within one comparable experiment.
+
+    The caller may retain the previous report through its existing evidence
+    channel. No live teacher, run state or new warning ledger is written here.
+    """
+    comparable = (previous is not None and previous.policy_digest == current.policy_digest
+                  and previous.lineage_sha256 == current.lineage_sha256)
+    return tuple(alert for alert in current.end_of_run_alerts
+                 if not comparable or alert.capability not in previous.by_capability or
+                 alert.state != previous.by_capability[alert.capability].state)
+
+
+def _complete_lineage(observation: ExamObservation) -> bool:
+    return all((observation.run_id, observation.cohort_sha256, observation.student_sha256,
+                observation.rubric_sha256, observation.generator_version,
+                observation.source_manifest_sha256, observation.generator_code_sha256,
+                observation.assessment_scope_sha256))
 
 
 def _validate(observation: ExamObservation) -> None:
-    if not all((observation.run_id, observation.cohort_sha256, observation.student_sha256,
-                observation.rubric_sha256, observation.generator_version,
-                observation.source_manifest_sha256, observation.generator_code_sha256,
-                observation.assessment_scope_sha256)):
-        raise ValueError("SHADOW_LINEAGE_MISSING")
     identifiers = [cap.capability for cap in observation.capabilities]
     if len(identifiers) != len(set(identifiers)):
         raise ValueError("SHADOW_DUPLICATE_CAPABILITY_ID")
@@ -112,9 +142,11 @@ def _latest_segment(history: tuple[ExamObservation, ...]) -> tuple[tuple[ExamObs
         return (), False
     for observation in history:
         _validate(observation)
+    if not _complete_lineage(history[-1]):
+        return (), True
     latest = _lineage(history[-1])
     start = len(history) - 1
-    while start and _lineage(history[start - 1]) == latest:
+    while start and _complete_lineage(history[start - 1]) and _lineage(history[start - 1]) == latest:
         start -= 1
     return history[start:], start != 0
 
@@ -198,8 +230,18 @@ def replay_health_shadow(history: tuple[ExamObservation, ...], *, required_capab
                  if capability not in latest or latest[capability].correct != latest[capability].total)
     alert_states = {ShadowHealthState.WATCH, ShadowHealthState.QUARANTINE_RECOMMENDATION,
                     ShadowHealthState.RECOVERY_RECOMMENDATION, ShadowHealthState.REINTEGRATION_RECOMMENDATION}
-    alerts = tuple(ShadowReviewAlert(capability, "END_OF_RUN_REVIEW", proposal.state, proposal.note)
+    lineage = sha256(json.dumps(_lineage(segment[-1]) if segment else None,
+                               separators=(",", ":")).encode()).hexdigest()
+    alerts = tuple(ShadowReviewAlert(capability, "END_OF_RUN_REVIEW", proposal.state, proposal.note,
+                   sha256(json.dumps({"policy": policy.digest, "lineage": lineage,
+                       "checkpoints": [(obs.optimizer_step, obs.student_sha256, obs.event_outbox_verified)
+                                       for obs in segment],
+                       "proposal": asdict(proposal)}, sort_keys=True,
+                       separators=(",", ":")).encode()).hexdigest(),
+                   "Review the source-bound trajectory and qualify any proposed intervention before activation",
+                   "Live training is unchanged; unresolved required capability remains learning debt")
                    for capability, proposal in proposals.items() if proposal.state in alert_states)
     note = ("Latest contiguous source/exam/checkpoint lineage selected; earlier lineage drift excluded"
             if gap else "Entire supplied history is one comparable source/exam/checkpoint lineage")
-    return ShadowReplay(policy, policy.digest, proposals, alerts, debt, gap, note)
+    return ShadowReplay(policy, policy.digest, proposals, alerts, debt, gap, note,
+                        lineage_sha256=lineage)

@@ -7,6 +7,7 @@ from bilqis_mlx.curriculum_compiler import (
     compile_typed_candidate_package, invalidated_typed_packages,
 )
 from bilqis_mlx.semantics.core import Operation, Signature
+from bilqis_mlx.verification.curriculum import candidate_package_problems
 
 
 class SourceTable:
@@ -69,6 +70,30 @@ class FactoryConstructionTests(unittest.TestCase):
         package = self.compile(specimens_per_split=1)
         self.assertIn("INCOMPLETE_FINITE_COVERAGE:X.COMPOSE:lesson:1/4", package.coverage_debt)
         self.assertIn("INCOMPLETE_FINITE_COVERAGE:X.COMPOSE:test:1/4", package.coverage_debt)
+
+    def test_declaring_a_boolean_subdomain_cannot_erase_type_coverage_debt(self):
+        primitive_only = replace(self.ast, nodes=(self.primitive,))
+        template = TypedExpressionTemplate(self.flip, (FiniteTypedInput("Boolean", (False,)),))
+        package = self.compile(ast=primitive_only, qualified_prerequisites=(),
+                               templates={self.primitive.id: template})
+        self.assertIn("INCOMPLETE_BOOLEAN_DOMAIN:X.ATOM", package.coverage_debt)
+
+    def test_explicit_composition_edges_require_constituent_witnesses(self):
+        missing = replace(self.dependent, composed_of=(self.primitive.id,))
+        bit = FiniteTypedInput("Boolean", (False, True))
+        templates = {**self.templates, missing.id: TypedExpressionTemplate(self.both, (bit, bit))}
+        with self.assertRaisesRegex(ValueError, "MISSING_COMPOSED_CONSTITUENT:X.COMPOSE:X.ATOM"):
+            self.compile(ast=replace(self.ast, nodes=(self.primitive, missing)), templates=templates)
+
+    def test_an_undeclared_outer_operation_cannot_hide_behind_a_known_inner_root(self):
+        disguised = replace(self.dependent, roots=(self.flip.symbol,))
+        ast = replace(self.ast, nodes=(self.primitive, disguised))
+        with self.assertRaisesRegex(ValueError, "UNDECLARED_ROOT_OPERATOR:X.COMPOSE:fixture.both"):
+            self.compile(ast=ast)
+        package = self.compile()
+        relabeled = replace(package, ast_nodes=ast.nodes, ast_sha256=ast.digest())
+        self.assertIn("GRADE_ADMISSION_CANDIDATE_PROOF_INVALID", candidate_package_problems(
+            relabeled, source=SourceTable(), independent=IndependentRules()))
 
     def test_composed_constituent_requires_a_declared_qualified_predecessor(self):
         disguised = replace(self.dependent, roots=(self.both.symbol, self.flip.symbol), requires=())

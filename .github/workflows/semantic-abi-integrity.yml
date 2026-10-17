@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [codex/lettergrade-mlx-v1]
+    branches: ['codex/**']
   workflow_dispatch:
 
 permissions:
@@ -32,3 +32,10 @@ jobs:
             python3 -B scripts/check_historical_abi.py
           fi
           python3 -B scripts/check_semantic_boundaries.py
+      - name: Verify curriculum evidence, construction and shadow boundaries
+        run: >-
+          python3 -B -m unittest
+          tests.test_review_evidence tests.test_next_grade_review
+          tests.test_factory_construction tests.test_curriculum_compiler
+          tests.test_grade_admission tests.test_health_shadow
+          tests.test_candidate_shadow tests.test_semantic_module_boundaries -q
