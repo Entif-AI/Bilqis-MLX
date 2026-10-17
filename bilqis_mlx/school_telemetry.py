@@ -58,10 +58,16 @@ def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
         not_measured = sum(
             1 for finding in diagnostics.get("findings", ())
             if isinstance(finding, dict) and finding.get("status") == "NOT_MEASURED")
+        unavailable = diagnostics.get("history_usable") is False
         detail = ("active " + ", ".join(warning_labels)
-                  if warning_labels else "no active warnings")
+                  if warning_labels else "S3 unavailable" if unavailable else "no active warnings")
+        if unavailable and warning_labels:
+            detail += " | S3 unavailable"
         rows.append({"kind":"DIAGNOSTIC", "grade":grade,
                      "detail":detail + f" | {not_measured} NOT MEASURED"})
+        if unavailable and diagnostics.get("history_issue"):
+            rows.append({"kind": "HISTORY ISSUE", "grade": grade,
+                         "detail": str(diagnostics["history_issue"])})
     outcomes = event.get("teacher_outcomes")
     if isinstance(outcomes, list) and outcomes:
         rows.append({"kind":"TEACH OUTCOME", "grade":grade,

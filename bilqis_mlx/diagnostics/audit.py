@@ -7,7 +7,8 @@ import json
 from pathlib import Path
 from typing import Final
 
-from .observations import _require_evidence_file, load_archived_exam_history, load_saved_exam
+from .observations import (_require_evidence_file, distinct_checkpoint_history,
+                           load_archived_exam_history, load_saved_exam)
 from .event_evidence import (SHA256_HEX_LENGTH, load_verified_lesson_methodology,
                              latest_methodology_findings)
 from .signals import (DiagnosticStatus, DiagnosticTarget, LearningSignal,
@@ -49,7 +50,8 @@ def _exam_evidence(root: Path):
     if expected_latest != latest:
         raise ValueError("DIAGNOSTIC_LATEST_EXAM_NOT_IN_COMMITTED_HISTORY")
     latest = comparable[-1]
-    return latest, history, comparable, diagnose_exam(latest), diagnose_history(comparable)
+    return (latest, history, comparable, diagnose_exam(latest),
+            diagnose_history(distinct_checkpoint_history(comparable)))
 
 
 def _valid_teacher_decision(decision: object) -> bool:

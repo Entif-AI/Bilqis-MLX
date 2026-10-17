@@ -6,9 +6,13 @@ unobserved answer classes and absent prediction evidence remain NOT_MEASURED.
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
+from functools import lru_cache
+import hashlib
 from pathlib import Path
 import json
+import os
+import stat
 
 from ..generated_assessment import make_cohort
 
@@ -264,19 +268,83 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
         json.loads(cohort_file.read_text(encoding="utf-8")), exam), run_id=receipt["run_id"])
 
 
-def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B") -> tuple[ExamObservation, ...]:
-    """Read each committed exam through immutable event→state→cohort custody.
+@dataclass
+class _HistoryCache:
+    """In-process witness for already verified immutable source observations."""
+    offset: int = 0
+    ledger_hash: str = ""
+    ledger_inode: tuple[int, int] | None = None
+    last_generation: int = -1
+    observations: tuple[ExamObservation, ...] = ()
+    files: dict[Path, tuple[int, ...]] = field(default_factory=dict)
 
-    This is an audit of saved observations. It does not load, rescore, optimize
-    or reinterpret any neural weights, and makes no training-readiness claim.
-    """
-    root = Path(run_dir).resolve(strict=True)
-    observations = []
-    seen = set()
-    run_id = None
-    last_generation = last_step = -1
-    ledger = _require_evidence_file(root, root / "events.jsonl")
-    for line in ledger.read_text(encoding="utf-8").splitlines():
+
+@lru_cache(maxsize=2)
+def _cached_history_bucket(root: str, grade: str | None) -> _HistoryCache:
+    return _HistoryCache()
+
+
+def _file_signature(path: Path) -> tuple[int, ...]:
+    """Detect source replacement, in-place edits and archive retirement."""
+    info = path.lstat()
+    if not stat.S_ISREG(info.st_mode) or path.parent.is_symlink():
+        raise ValueError("DIAGNOSTIC_CACHED_EVIDENCE_UNSAFE_PATH")
+    return (info.st_dev, info.st_ino, info.st_mode, info.st_size,
+            info.st_mtime_ns, info.st_ctime_ns)
+
+
+def _history_evidence_files(root: Path, generation: int,
+                            observation: ExamObservation) -> tuple[Path, ...]:
+    stem = root / "states" / f"{generation:07d}.json"
+    archived = (stem.with_name(stem.name + ".gz"),
+                stem.with_name(stem.name + ".sha256"))
+    return (stem if stem.is_file() or stem.is_symlink() else archived[0],
+            *(() if stem.is_file() or stem.is_symlink() else (archived[1],)),
+            root / "cohorts" / f"{observation.cohort_sha256}.json")
+
+
+def _history_delta(ledger: Path, cache: _HistoryCache | None):
+    """Hash the complete ledger prefix, then parse only the newly appended tail."""
+    digest = hashlib.sha256()
+    with ledger.open("rb") as stream:
+        info = os.fstat(stream.fileno())
+        inode = (info.st_dev, info.st_ino)
+        offset = cache.offset if cache and cache.ledger_inode == inode else 0
+        remaining = offset
+        while remaining:
+            chunk = stream.read(min(1024 * 1024, remaining))
+            if not chunk:
+                return None
+            digest.update(chunk)
+            remaining -= len(chunk)
+        if cache and offset != cache.offset:
+            return None
+        if cache and digest.hexdigest() != cache.ledger_hash:
+            return None
+        tail = stream.read()
+    if tail and not tail.endswith(b"\n"):
+        raise ValueError("DIAGNOSTIC_EVENT_INCOMPLETE_LINE")
+    digest.update(tail)
+    return tail.splitlines(), offset + len(tail), digest.hexdigest(), inode
+
+
+def _require_checkpoint_progression(step: int, student_sha: str,
+                                    previous_step: int, previous_sha: str | None):
+    if step < previous_step:
+        raise ValueError("DIAGNOSTIC_NON_MONOTONIC_CHECKPOINT_HISTORY")
+    if step == previous_step and student_sha != previous_sha:
+        raise ValueError("DIAGNOSTIC_SAME_STEP_CHECKPOINT_CONFLICT")
+
+
+def _append_verified_exams(root: Path, lines, grade, observations, files,
+                           last_generation: int = -1):
+    run_id = observations[-1].run_id if observations else None
+    last_step = observations[-1].optimizer_step if observations else -1
+    last_student_sha = observations[-1].student_sha256 if observations else None
+    # Generation remains a separate event identity from student/checkpoint.
+    # A cache stores it independently because the most recent log events need
+    # not correspond to the most recent accepted optimizer step.
+    for line in lines:
         event = json.loads(line)
         if event.get("event") not in ("GRADE_A_LIVE_EXAM_COMMITTED",
                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED", "SCHOOL_LIVE_EXAM_COMMITTED"):
@@ -284,11 +352,10 @@ def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B") -> tup
         if grade is not None and event.get("grade") != grade:
             continue
         generation = event.get("generation")
-        if type(generation) is not int or generation < 0 or generation in seen:
+        if type(generation) is not int or generation < 0:
             raise ValueError("DIAGNOSTIC_EVENT_GENERATION_DRIFT")
         if generation <= last_generation:
             raise ValueError("DIAGNOSTIC_NON_MONOTONIC_EVENT_HISTORY")
-        seen.add(generation)
         saved = root / "states" / f"{generation:07d}.json"
         obs = load_saved_exam(root, state_file=saved)
         from ..state_archive import read_generation
@@ -318,8 +385,77 @@ def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B") -> tup
                 {cap.capability: {"correct": cap.correct, "total": cap.total}
                  for cap in obs.capabilities} != event.get("scores")):
             raise ValueError("DIAGNOSTIC_EVENT_STATE_CONFLICT")
-        if obs.optimizer_step <= last_step:
-            raise ValueError("DIAGNOSTIC_NON_MONOTONIC_CHECKPOINT_HISTORY")
+        _require_checkpoint_progression(
+            obs.optimizer_step, obs.student_sha256, last_step, last_student_sha)
         last_generation, last_step = generation, obs.optimizer_step
+        last_student_sha = obs.student_sha256
         observations.append(obs)
+        if files is not None:
+            for path in _history_evidence_files(root, generation, obs):
+                files[path] = _file_signature(path)
+    return last_generation
+
+
+def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B",
+                               incremental: bool = False) -> tuple[ExamObservation, ...]:
+    """Validate all saved exams; optionally reuse immutable verified history.
+
+    Standalone audits always reread full source evidence. The live observer may
+    reuse already verified events *only* while the complete log prefix matches
+    byte-for-byte by SHA and every referenced immutable file is unchanged.
+    """
+    root = Path(run_dir).resolve(strict=True)
+    ledger = _require_evidence_file(root, root / "events.jsonl")
+    bucket = _cached_history_bucket(str(root), grade) if incremental else None
+    valid = bool(bucket and bucket.ledger_hash)
+    if valid:
+        try:
+            valid = all(_file_signature(path) == signature
+                        for path, signature in bucket.files.items())
+        except (OSError, ValueError):
+            valid = False
+    previous = bucket if valid else None
+    delta = _history_delta(ledger, previous)
+    if delta is None:
+        previous = None
+        delta = _history_delta(ledger, None)
+    lines, size, fingerprint, inode = delta
+    observations = list(previous.observations) if previous else []
+    files = dict(previous.files) if previous else ({} if incremental else None)
+    # A source-backed audit validates the complete ledger and its provenance.
+    last_generation = _append_verified_exams(
+        root, lines, grade, observations, files,
+        previous.last_generation if previous else -1)
+    if bucket is not None:
+        bucket.offset = size
+        bucket.ledger_hash = fingerprint
+        bucket.ledger_inode = inode
+        bucket.last_generation = last_generation
+        bucket.observations = tuple(observations)
+        bucket.files = files
     return tuple(observations)
+
+
+def distinct_checkpoint_history(history: tuple[ExamObservation, ...]) -> tuple[ExamObservation, ...]:
+    """One comparable observation per intact student, retaining the latest exam.
+
+    Every archived event must already have passed full state/cohort/outbox
+    verification. This is only a projection for longitudinal analysis, never
+    the raw evidence inventory or a relaxation of `diagnose_history` itself.
+    """
+    distinct = []
+    indices = {}
+    previous = None
+    for observed in history:
+        if previous is not None:
+            _require_checkpoint_progression(
+                observed.optimizer_step, observed.student_sha256,
+                previous.optimizer_step, previous.student_sha256)
+        key = (observed.contract, observed.optimizer_step, observed.student_sha256)
+        if key in indices:
+            distinct[indices[key]] = observed
+        else:
+            indices[key] = len(distinct)
+            distinct.append(observed)
+        previous = observed
+    return tuple(distinct)

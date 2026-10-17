@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.cli import main
 from bilqis_mlx.diagnostics import DiagnosticStatus, LearningSignal
@@ -25,7 +26,11 @@ def save_exam(root, generation, seed, *, outbox=False,
               "last_exam": exam}
     (root / "cohorts").mkdir(exist_ok=True)
     (root / "states").mkdir(exist_ok=True)
-    (root / exam["cohort_file"]).write_text(json.dumps(cohort))
+    source_cohort = root / exam["cohort_file"]
+    if not source_cohort.exists():
+        source_cohort.write_text(json.dumps(cohort))
+    elif json.loads(source_cohort.read_text()) != cohort:
+        raise ValueError("DISPOSABLE_COHORT_IMMUTABILITY_CONFLICT")
     (root / "states" / f"{generation:07d}.json").write_text(json.dumps(record))
     (root / "state.json").write_text(json.dumps(record))
     event = {"event": "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED", "grade": "X",
@@ -155,6 +160,93 @@ class DiagnosticAuditTests(unittest.TestCase):
                              report["unmeasured_signals"])
             self.assertIn(LearningSignal.DISCONNECTED_PREREQUISITES,
                           report["unmeasured_signals"])
+
+    def test_repeated_unchanged_checkpoint_is_verified_but_not_a_new_learning_step(self):
+        from bilqis_mlx.diagnostics.audit import audit_saved_run
+        from bilqis_mlx.diagnostics.exam_events import summarize_completed_exam
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for generation, step, sha in (
+                (1, 107, "1" * 64), (2, 123, "2" * 64),
+                (3, 123, "2" * 64), (4, 139, "3" * 64)):
+                save_exam(root, generation, 7, outbox=True,
+                          optimizer_step=step, student_sha256=sha)
+            before = snapshot(root)
+            report = audit_saved_run(root)
+            self.assertEqual(report["archived_exam_count"], 4)
+            self.assertEqual(report["outbox_verified_exam_count"], 4)
+            self.assertEqual(report["comparable_exam_count"], 4)
+            durable = next(f for f in report["history_findings"]
+                           if f["capability"] == "X.NOT" and
+                           f["signal"] == LearningSignal.LACK_OF_DURABLE_GAIN)
+            self.assertEqual(durable["status"], DiagnosticStatus.OBSERVED_LONGITUDINALLY)
+            self.assertEqual(durable["trajectory"],
+                             ((107, 6, 12), (123, 6, 12), (139, 6, 12)))
+            state = json.loads((root / "state.json").read_text())
+            current = summarize_completed_exam(root, state, state["last_exam"])
+            self.assertTrue(current["history_usable"])
+            self.assertIsNone(current["history_issue"])
+            self.assertEqual(snapshot(root), before)
+
+    def test_equal_optimizer_step_with_changed_checkpoint_still_fails_closed(self):
+        from bilqis_mlx.diagnostics.audit import audit_saved_run
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            save_exam(root, 1, 7, outbox=True,
+                      optimizer_step=107, student_sha256="1" * 64)
+            save_exam(root, 2, 7, outbox=True,
+                      optimizer_step=107, student_sha256="2" * 64)
+            with self.assertRaisesRegex(ValueError, "SAME_STEP_CHECKPOINT_CONFLICT"):
+                audit_saved_run(root)
+
+    def test_live_history_cache_verifies_new_events_without_reloading_old_states(self):
+        from bilqis_mlx.diagnostics import observations
+        from bilqis_mlx.diagnostics.exam_events import summarize_completed_exam
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for generation, step, sha in (
+                    (1, 107, "1" * 64), (2, 123, "2" * 64),
+                    (3, 123, "2" * 64)):
+                save_exam(root, generation, 7, outbox=True,
+                          optimizer_step=step, student_sha256=sha)
+            receipt = json.loads((root / "state.json").read_text())
+            with patch.object(observations, "load_saved_exam",
+                              wraps=observations.load_saved_exam) as load:
+                first = summarize_completed_exam(root, receipt, receipt["last_exam"])
+                self.assertTrue(first["history_usable"])
+                self.assertEqual(load.call_count, 3)
+                second = summarize_completed_exam(root, receipt, receipt["last_exam"])
+                self.assertTrue(second["history_usable"])
+                self.assertEqual(load.call_count, 3)
+                save_exam(root, 4, 7, outbox=True,
+                          optimizer_step=139, student_sha256="3" * 64)
+                receipt = json.loads((root / "state.json").read_text())
+                third = summarize_completed_exam(root, receipt, receipt["last_exam"])
+                self.assertTrue(third["history_usable"])
+                self.assertEqual(load.call_count, 4)
+                durable = next(f for f in third["findings"]
+                               if f["capability"] == "X.NOT" and
+                               f["signal"] == LearningSignal.LACK_OF_DURABLE_GAIN)
+                self.assertEqual(durable["status"], DiagnosticStatus.OBSERVED_LONGITUDINALLY)
+
+    def test_live_history_cache_invalidates_if_prior_immutable_state_changes(self):
+        from bilqis_mlx.diagnostics.exam_events import summarize_completed_exam
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            save_exam(root, 1, 7, outbox=True,
+                      optimizer_step=107, student_sha256="1" * 64)
+            save_exam(root, 2, 8, outbox=True,
+                      optimizer_step=123, student_sha256="2" * 64)
+            receipt = json.loads((root / "state.json").read_text())
+            first = summarize_completed_exam(root, receipt, receipt["last_exam"])
+            self.assertTrue(first["history_usable"])
+            old = root / "states" / "0000001.json"
+            modified = json.loads(old.read_text())
+            modified["run_id"] = "malformed-historical-provenance"
+            old.write_text(json.dumps(modified))
+            second = summarize_completed_exam(root, receipt, receipt["last_exam"])
+            self.assertFalse(second["history_usable"])
+            self.assertIn("DIAGNOSTIC_EVENT_OUTBOX_CONFLICT", second["history_issue"])
     def test_regressing_history_is_rejected_instead_of_sorted(self):
         from bilqis_mlx.diagnostics.audit import audit_saved_run
         with tempfile.TemporaryDirectory() as temp:

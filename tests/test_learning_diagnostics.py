@@ -63,6 +63,22 @@ def rescore_fixed_exam(cohort, earlier, predicted, *, step, student_sha):
 
 
 class DiagnosticObservationTests(unittest.TestCase):
+    def test_already_perfect_fixed_exam_across_distinct_checkpoints_is_not_stalled(self):
+        cohort, first = constructed_exam(predicted=("FALSE", "TRUE") * 6)
+        gold = tuple(row["gold"] for row in cohort["rows"])
+        middle = rescore_fixed_exam(cohort, first, gold,
+                                    step=123, student_sha="a" * 64)
+        latest = rescore_fixed_exam(cohort, first, gold,
+                                    step=139, student_sha="b" * 64)
+        evidence = (observe_binary_exam(cohort, item)
+                    for item in (first, middle, latest))
+        durable = find_signal(diagnose_history(evidence),
+                              LearningSignal.LACK_OF_DURABLE_GAIN,
+                              DiagnosticTarget.CAPABILITY, "X.NOT")
+        self.assertEqual(durable.status, DiagnosticStatus.NOT_OBSERVED)
+        self.assertEqual(durable.trajectory,
+                         ((107, 12, 12), (123, 12, 12), (139, 12, 12)))
+
     def test_single_gold_class_does_not_make_perfect_answers_a_chance_alarm(self):
         cohort, last = constructed_exam(predicted=("TRUE",) * 12)
         for row in cohort["rows"]:

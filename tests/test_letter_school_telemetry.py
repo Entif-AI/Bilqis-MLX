@@ -20,6 +20,30 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_unavailable_longitudinal_history_names_the_actual_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {"event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "B",
+                "generation": 22, "rubric": "b" * 64,
+                "cohort_sha256": "c" * 64, "optimizer_step": 123,
+                "cohort_file": f"cohorts/{'c' * 64}.json",
+                "generator_version": "test-fixed-b-cohort/v1",
+                "student_sha256": "a" * 64,
+                "scores": {"B.OR": {"correct": 11, "total": 12}},
+                "learning_diagnostics": {
+                    "active_warnings": [], "history_usable": False,
+                    "history_issue": "DIAGNOSTIC_NON_MONOTONIC_CHECKPOINT_HISTORY",
+                    "findings": [{"status": "NOT_MEASURED", "signal": "LACK_OF_DURABLE_GAIN",
+                                  "capability": "B.OR"}]}})
+            system = board.rows["SYSTEM & QUALIFICATION"]
+            diagnostic = next(row for row in system if row["kind"] == "DIAGNOSTIC")
+            self.assertIn("S3 unavailable", diagnostic["detail"])
+            self.assertIn("1 NOT MEASURED", diagnostic["detail"])
+            self.assertNotIn("no active warnings", diagnostic["detail"])
+            history_error = next(row for row in system if row["kind"] == "HISTORY ISSUE")
+            self.assertEqual(history_error["detail"],
+                             "DIAGNOSTIC_NON_MONOTONIC_CHECKPOINT_HISTORY")
+
     def test_lesson_accuracy_is_not_labeled_as_cumulative_exam(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

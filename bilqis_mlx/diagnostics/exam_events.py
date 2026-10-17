@@ -10,7 +10,8 @@ import json
 from pathlib import Path
 from typing import Final
 
-from .observations import load_archived_exam_history, observe_binary_exam, observe_exam
+from .observations import (distinct_checkpoint_history, load_archived_exam_history,
+                           observe_binary_exam, observe_exam)
 from .signals import (DiagnosticFinding, DiagnosticStatus, DiagnosticTarget,
                       LearningSignal, ObservationScope, diagnose_exam,
                       diagnose_history)
@@ -77,7 +78,7 @@ def _comparable_history(root: Path, observed) -> tuple[tuple, str | None]:
     if not (root / "events.jsonl").exists():
         return (), None
     try:
-        history = load_archived_exam_history(root, grade=None)
+        history = load_archived_exam_history(root, grade=None, incremental=True)
         comparable = tuple(item for item in history if item.contract == observed.contract)
         if any(item.inventory != observed.inventory for item in comparable):
             raise ValueError("DIAGNOSTIC_INVENTORY_DRIFT")
@@ -90,7 +91,7 @@ def _history_findings(comparable: tuple, observed) -> tuple[tuple, str | None]:
     if not comparable:
         return (), None
     try:
-        return diagnose_history((*comparable, observed)), None
+        return diagnose_history(distinct_checkpoint_history((*comparable, observed))), None
     except ValueError as exc:
         return (), str(exc)
 

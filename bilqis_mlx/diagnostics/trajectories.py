@@ -32,7 +32,12 @@ class CohortTrajectory:
 
     @property
     def no_lasting_gain(self) -> bool:
-        return self.latest_correct <= self.first_correct
+        # A student already perfect at the first checkpoint cannot improve
+        # further. Sustaining that perfect score is retention, not stagnation.
+        # A later loss from perfection remains a measured warning.
+        return (self.latest_correct < self.first_correct or
+                (self.latest_correct == self.first_correct and
+                 self.first_correct < self.scores_by_step[0][2]))
 
     @property
     def regressed_from_peak(self) -> bool:
