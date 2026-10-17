@@ -1,0 +1,52 @@
+{
+  "after": {
+    "bundles/working-5457-dc95c8b23386/manifest.json": {
+      "bytes": 1912,
+      "sha256": "46908474983b33b8ffee5e981e13a9a7e47842fa52180f8bf03520f8d54f083b"
+    },
+    "bundles/working-5457-dc95c8b23386/model-and-own-adamw.safetensors": {
+      "bytes": 128936784,
+      "sha256": "e65d62174b7c9681991d27e3e2a424358f38dceeb50c90544803bc94d7546585"
+    },
+    "bundles/working-5457-dc95c8b23386/semantic-catalog.json": {
+      "bytes": 94300,
+      "sha256": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716"
+    },
+    "events.jsonl": {
+      "bytes": 66848658,
+      "sha256": "2812a23caf411c94fd80162721086e1eb817e1e20e59a4a0e1186c54ffa302a2"
+    },
+    "state.json": {
+      "bytes": 1060064,
+      "sha256": "5ec458dfc779629ec4256072be3f29c9d7d225291fd3b2e780510ecd9062a77e"
+    }
+  },
+  "all_recorded_bytes_match": true,
+  "before": {
+    "bundles/working-5457-dc95c8b23386/manifest.json": {
+      "bytes": 1912,
+      "sha256": "46908474983b33b8ffee5e981e13a9a7e47842fa52180f8bf03520f8d54f083b"
+    },
+    "bundles/working-5457-dc95c8b23386/model-and-own-adamw.safetensors": {
+      "bytes": 128936784,
+      "sha256": "e65d62174b7c9681991d27e3e2a424358f38dceeb50c90544803bc94d7546585"
+    },
+    "bundles/working-5457-dc95c8b23386/semantic-catalog.json": {
+      "bytes": 94300,
+      "sha256": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716"
+    },
+    "events.jsonl": {
+      "bytes": 66848658,
+      "sha256": "2812a23caf411c94fd80162721086e1eb817e1e20e59a4a0e1186c54ffa302a2"
+    },
+    "state.json": {
+      "bytes": 1060064,
+      "sha256": "5ec458dfc779629ec4256072be3f29c9d7d225291fd3b2e780510ecd9062a77e"
+    }
+  },
+  "date": "2026-10-17",
+  "generation": 6824,
+  "optimizer_step": 204072,
+  "schema": "bilqis.source-only-custody/v1",
+  "scope": "Current complete student/own AdamW, semantic catalog, model manifest, school/teacher state and event ledger. No agent neural training. Other historical archives were outside the mutation scope."
+}

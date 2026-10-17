@@ -1,0 +1,66 @@
+{
+  "actual_neural_updates": 0,
+  "actual_teacher_updates": 0,
+  "actual_vetoes": 0,
+  "causal_benefit": "NOT_MEASURED",
+  "event_ledger_sha256": "2812a23caf411c94fd80162721086e1eb817e1e20e59a4a0e1186c54ffa302a2",
+  "false_alerts_and_missed_failures": "NOT_MEASURED",
+  "first_optimizer_step": 153240,
+  "implementation_sha256": "58711caef8ce538faef8493c1efbac36b6392816f812f45f9e7684456a5a0735",
+  "last_optimizer_step": 204072,
+  "latest_student_sha256": "e65d62174b7c9681991d27e3e2a424358f38dceeb50c90544803bc94d7546585",
+  "observations": 750,
+  "procedure_sha256": "f5147493fbcf78ebf387ee90a57dee7a4d93988cb5f3726adc4fa02139726610",
+  "reports": [
+    {
+      "alert_evidence_sha256": [
+        "ad373fdf2196ca84a5e8b17d89a9ac6fdbdc1fc52ce78e71e8eb8a49da7fcd7f"
+      ],
+      "hysteresis": 2,
+      "lineage_gap": true,
+      "lineage_sha256": "c808ba96c5feb45385c367b2bcd327893a5c08abde42d1aabea154273866daba",
+      "policy_sha256": "201f323fc7afb90e8fe8dca051805890d64f784ffc9ee9e910f866e8e76a3cc2",
+      "proposed_quarantine": [],
+      "required_capability_debt": [],
+      "score_drop": 1,
+      "states": {
+        "ACTIVE": 11,
+        "REINTEGRATION_RECOMMENDATION": 1
+      }
+    },
+    {
+      "alert_evidence_sha256": [
+        "84d0faceda3763b9cb84a849e3b2723253b56bae7a741d72441d2f629aa2a1a7"
+      ],
+      "hysteresis": 2,
+      "lineage_gap": true,
+      "lineage_sha256": "c808ba96c5feb45385c367b2bcd327893a5c08abde42d1aabea154273866daba",
+      "policy_sha256": "f2f058dd262ac6d72c85dedb8037e243ba4c985e154d07685744c5abeb191c41",
+      "proposed_quarantine": [],
+      "required_capability_debt": [],
+      "score_drop": 2,
+      "states": {
+        "ACTIVE": 11,
+        "REINTEGRATION_RECOMMENDATION": 1
+      }
+    },
+    {
+      "alert_evidence_sha256": [
+        "ad3690bf9f657ce8b09d1d1e4d5d33645f0a0ed1f1e9dbe371002f200fc74405"
+      ],
+      "hysteresis": 3,
+      "lineage_gap": true,
+      "lineage_sha256": "c808ba96c5feb45385c367b2bcd327893a5c08abde42d1aabea154273866daba",
+      "policy_sha256": "9cd0791f7d82c6c9150f0371cbbc15632b366566fd34f7230696f14143b0aea9",
+      "proposed_quarantine": [],
+      "required_capability_debt": [],
+      "score_drop": 3,
+      "states": {
+        "ACTIVE": 11,
+        "REINTEGRATION_RECOMMENDATION": 1
+      }
+    }
+  ],
+  "status": "READ_ONLY_HISTORICAL_SHADOW_EXPERIMENT",
+  "thresholds": "EXPLORATORY_SENSITIVITY_ONLY_NOT_CALIBRATED_OR_RATIFIED"
+}
