@@ -9,6 +9,7 @@ from .live_grade_a import live_course as a_course
 from .live_grade_b import live_course as b_course
 from .live_grade_c import (PLANS, REGISTRY_COUNTING_TARGET, RELEASE, admissions,
                           draw, prepare_course)
+from .paths import LEGACY_SOURCE
 
 
 def qualify(legacy_root, manifest, *, previous=None):
@@ -34,7 +35,7 @@ def qualify(legacy_root, manifest, *, previous=None):
 def main():
     root = Path(__file__).resolve().parents[1]
     manifest = json.loads((root / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
-    print(json.dumps(qualify(root.parent / "bilqis-triplets-v16", manifest), indent=2))
+    print(json.dumps(qualify(LEGACY_SOURCE, manifest), indent=2))
 
 
 if __name__ == "__main__":

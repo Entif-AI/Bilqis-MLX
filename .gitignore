@@ -4,6 +4,10 @@ __pycache__/
 .venv/
 .env
 runs/
+vendor/legacy-v16/runs/
+data/
+.local/
+.bilqis-local.json
 artifacts/
 *.pt
 *.pth

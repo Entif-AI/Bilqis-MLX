@@ -26,7 +26,7 @@ from bilqis_mlx.school import start_new, visit
 from bilqis_mlx.capability_frontier import promote
 from bilqis_mlx.diagnostics import DiagnosticStatus
 
-ROOT = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+ROOT = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
 SOURCE = ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
 MANIFEST = Path(__file__).resolve().parents[1] / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
@@ -125,6 +125,30 @@ class GradeATrainerContractTests(unittest.TestCase):
             event = json.loads((root / "events.jsonl").read_text().splitlines()[-1])
             self.assertEqual(event["optimizer_step"], 101)
             self.assertEqual(event["prior_committed_optimizer_step"], 100)
+
+    def test_finder_metadata_cannot_block_bundle_custody_or_hide_unknown_files(self):
+        from bilqis_mlx.capability_frontier import retirement_plan, historical_frontier
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bundles = root / "bundles"
+            bundles.mkdir()
+            finder = bundles / ".DS_Store"
+            finder.write_bytes(b"Finder bookkeeping, not a student")
+            self.assertEqual(retirement_plan(root, set()), ())
+            self.assertEqual(historical_frontier(root), {})
+            self.assertEqual(_quarantine_newer_uncommitted_bundles(root, set(), 20), ())
+            self.assertFalse(finder.exists())
+            unknown = bundles / "unexplained.bin"
+            unknown.write_bytes(b"never silently ignore unknown files")
+            with self.assertRaisesRegex(ValueError, "UNCOMMITTED_BUNDLE_UNSAFE_PATH"):
+                _quarantine_newer_uncommitted_bundles(root, set(), 20)
+            with self.assertRaisesRegex(ValueError, "CUSTODY_UNRECOGNIZED_BUNDLE"):
+                retirement_plan(root, set())
+            unknown.unlink()
+            finder.symlink_to("/tmp/non-existent-unsafe-target")
+            with self.assertRaisesRegex(ValueError, "UNCOMMITTED_BUNDLE_UNSAFE_PATH"):
+                _quarantine_newer_uncommitted_bundles(root, set(), 20)
+            self.assertTrue(finder.is_symlink())
 
     def test_snapshots_are_immutable_generations_with_one_latest_pointer(self):
         course = accepted_grade_a(self.manifest)

@@ -16,7 +16,7 @@ from bilqis_mlx.live_grade_b import (GENERATOR, RELEASE, draw_connectives,
                                     live_course, constructor_digest, source_attestation)
 
 ROOT = Path(__file__).resolve().parents[1]
-LEGACY = ROOT.parent / "bilqis-triplets-v16"
+LEGACY = ROOT / "vendor" / "legacy-v16"
 MANIFEST = ROOT / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
 

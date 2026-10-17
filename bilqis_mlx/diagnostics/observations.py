@@ -223,10 +223,26 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
     """Read existing immutable run files without model import or writes."""
     root = Path(run_dir).resolve(strict=True)
     path = Path(state_file) if state_file is not None else root / "state.json"
-    if not path.resolve(strict=True).is_relative_to(root):
+    if not path.resolve().is_relative_to(root):
         raise ValueError("DIAGNOSTIC_STATE_OUTSIDE_RUN")
-    _require_evidence_file(root, path)
-    receipt = json.loads(path.read_text(encoding="utf-8"))
+    archived_generation = path.parent == root / "states" and path.suffix == ".json"
+    if archived_generation:
+        from ..state_archive import read_generation
+        if not path.stem.isdecimal():
+            raise ValueError("DIAGNOSTIC_STATE_GENERATION_DRIFT")
+        try:
+            receipt = read_generation(root, int(path.stem))
+        except ValueError as exc:
+            # Preserve the diagnostic contract when a generation is stored
+            # in the new verified compression format.
+            if str(exc).startswith("STATE_ARCHIVE_SYMLINK_FORBIDDEN"):
+                raise ValueError("DIAGNOSTIC_EVIDENCE_NOT_REGULAR") from exc
+            if str(exc) == "STATE_ARCHIVE_GENERATION_DRIFT":
+                raise ValueError("DIAGNOSTIC_STATE_GENERATION_DRIFT") from exc
+            raise
+    else:
+        _require_evidence_file(root, path)
+        receipt = json.loads(path.read_text(encoding="utf-8"))
     exam = receipt.get("last_exam")
     if not isinstance(exam, dict):
         raise ValueError("DIAGNOSTIC_EXAM_NOT_MEASURED")
@@ -275,7 +291,8 @@ def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B") -> tup
         seen.add(generation)
         saved = root / "states" / f"{generation:07d}.json"
         obs = load_saved_exam(root, state_file=saved)
-        receipt = json.loads(saved.read_text(encoding="utf-8"))
+        from ..state_archive import read_generation
+        receipt = read_generation(root, generation)
         if (not receipt.get("run_id") or
                 (run_id is not None and receipt["run_id"] != run_id)):
             raise ValueError("DIAGNOSTIC_EVENT_RUN_CONFLICT")

@@ -189,6 +189,11 @@ def retirement_plan(run_dir: Path, keep: set[str]) -> tuple[str, ...]:
     paths = list(root.iterdir())
     all_names = set()
     for folder in paths:
+        # Finder writes this regular metadata file when a macOS folder is
+        # opened. It is not a model bundle. Symlinks and every other unknown
+        # path still fail closed, including a symlink named .DS_Store.
+        if folder.name == ".DS_Store" and not folder.is_symlink() and folder.is_file():
+            continue
         if folder.is_symlink() or not folder.is_dir():
             raise ValueError("CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_BUNDLE")
         name = "bundles/" + folder.name
@@ -212,6 +217,8 @@ def historical_frontier(run_dir: Path, *, expected_rubric: str | None = None,
     run_dir = Path(run_dir)
     bundle_by_hash = {}
     for bundle in (run_dir / "bundles").iterdir():
+        if bundle.name == ".DS_Store" and not bundle.is_symlink() and bundle.is_file():
+            continue
         if bundle.is_symlink() or not bundle.is_dir():
             raise ValueError("CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_BUNDLE")
         meta = json.loads((bundle / "manifest.json").read_text())

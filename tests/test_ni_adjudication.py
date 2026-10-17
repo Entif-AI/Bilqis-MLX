@@ -11,7 +11,7 @@ from bilqis_mlx.token_atlas import read_historic_graph, rows_for_graph
 
 
 def _graph():
-    root = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+    root = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
     checkpoint = root / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
     if not checkpoint.is_file():
         raise unittest.SkipTest("Audited source checkpoint is not mounted")

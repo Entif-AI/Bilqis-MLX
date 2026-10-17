@@ -15,7 +15,7 @@ from bilqis_mlx.token_atlas import ORIGINAL_GRAPH_DIGEST
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_ROOT = ROOT.parent / "bilqis-triplets-v16"
+SOURCE_ROOT = ROOT / "vendor" / "legacy-v16"
 SNAPSHOT = ROOT / "docs/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json"
 ORIGINAL_OPERANDS = ("micro.compare.EQ", "micro.relation.PARENT",
                      "micro.relation.LINK")

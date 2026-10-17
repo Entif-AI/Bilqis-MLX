@@ -114,9 +114,8 @@ class _CommittedMethodologyIndex:
             raise ValueError("DIAGNOSTIC_METHOD_BOUNDARY_GENERATION_DRIFT")
         if generation in self.outboxes:
             return self.outboxes[generation]
-        path = _require_evidence_file(
-            self.root, self.root / "states" / f"{generation:07d}.json")
-        state = json.loads(path.read_text(encoding="utf-8"))
+        from ..state_archive import read_generation
+        state = read_generation(self.root, generation)
         outbox = state.get("delivery_outbox")
         if not isinstance(outbox, list):
             raise ValueError("DIAGNOSTIC_METHOD_BOUNDARY_OUTBOX_MISSING")

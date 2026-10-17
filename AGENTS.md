@@ -1,5 +1,9 @@
 # Bilqis MLX | Agent operating rules
 
+## Current canonical operator binding (2026-10-17)
+
+This repository's authoritative working root is `~/Code/bilqis-mlx`. The old codex and Chat-On-Steroids worktree paths are historical provenance, not current operator instructions. The active teacher/student code is `bilqis_mlx/`, the historical source-oracle and policy inputs are pinned under `vendor/legacy-v16/`, the actual student and its AdamW are under ignored `runs/school-mlx-v1/`, and all old experimental state is retained without making it an active runtime dependency. Human-run alone may update live neural state. See `README.md` and `docs/CANONICAL_REPOSITORY_AND_RELEASE_20261017.md` for the current tested command, storage and release procedures. Conflicting older location or command examples below are superseded; source-semantic identity, cumulative whole-student graduation and protection requirements remain binding.
+
 Authority: user's latest directives, protected `IPR-0220`, `ADR.md`, and approved issue #1. Implementation is **private**; public Bilqis #160/#162 receive screened summaries only.
 
 ## Current priority: prototype-first experimentation (ADR-041)

@@ -12,7 +12,7 @@ import json
 import tempfile
 
 
-ROOT = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+ROOT = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
 SOURCE = ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
 MANIFEST = Path(__file__).resolve().parents[1] / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 

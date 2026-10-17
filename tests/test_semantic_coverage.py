@@ -16,7 +16,7 @@ from bilqis_mlx.semantic_coverage import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-LEGACY = ROOT.parent / "bilqis-triplets-v16"
+LEGACY = ROOT / "vendor" / "legacy-v16"
 
 
 class SemanticCoverageTests(unittest.TestCase):

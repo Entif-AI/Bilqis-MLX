@@ -1,0 +1,31 @@
+name: Bilqis MLX portable verification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, 'codex/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout private source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Validate release manifests and changelog
+        run: python3 -B scripts/release_version.py --check
+      - name: Check historical semantic integrity and code ownership
+        run: |
+          python3 -B scripts/check_historical_abi.py
+          python3 -B scripts/check_semantic_boundaries.py
+      - name: Reject newly introduced code hygiene regressions
+        run: python3 -B scripts/code_smell_audit.py --check-baseline docs/development/code_smell_baseline.json
+      - name: Portable non-neural custody and release tests
+        run: python3 -B -m unittest -q tests.test_state_archive tests.test_whole_student_retention tests.test_release_version

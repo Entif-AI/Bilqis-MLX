@@ -146,7 +146,7 @@ class VocabularyTests(unittest.TestCase):
         # Source attestations above are synthetic fixture hashes, not real root admissions.
 
     def test_complete_historical_student_in_memory_growth_is_read_only(self):
-        legacy = Path(__file__).resolve().parents[2] / 'bilqis-triplets-v16'
+        legacy = Path(__file__).resolve().parents[1] / 'vendor' / 'legacy-v16'
         checkpoint = (legacy / 'runs/primitive-consolidation-v16-triplets' /
                       'student-116760-7e9af4651f28.pt')
         if not checkpoint.is_file():

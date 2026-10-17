@@ -10,7 +10,7 @@ from bilqis_mlx.integer_curriculum import IntegerScope, generate_integer_curricu
 from bilqis_mlx.pedagogical_parity import build_plan
 
 
-LEGACY = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+LEGACY = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
 
 
 class IntegerCurriculumTests(TestCase):

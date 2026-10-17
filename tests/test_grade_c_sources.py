@@ -16,7 +16,7 @@ import json
 from copy import deepcopy
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT.parent / "bilqis-triplets-v16"
+SOURCE = ROOT / "vendor" / "legacy-v16"
 
 
 class GradeCSourceTests(unittest.TestCase):

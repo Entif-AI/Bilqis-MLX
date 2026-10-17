@@ -1,3 +1,9 @@
+# Canonical checkout continuation (2026-10-17)
+
+The single active checkout is `~/Code/bilqis-mlx`, branch `codex/canonical-mlx-release-20261017` while the v0.2.0 release is prepared. The former experimental code through `2098458` and Finder metadata bug fix are incorporated. The 4,361-file current student clone from the experimental run was individually SHA-256 verified, promoted to `runs/school-mlx-v1/` at generation 8390, optimizer step 223256; the former run was retained as `runs/archive/pre-parity-school-20261017/`. This is no reset and no recreation of the source student. Subsequent live optimizer steps occur only in the human-launched canonical run and must be inspected directly. External inherited source dependencies are vendored under `vendor/legacy-v16/` with their source hashes preserved. The only mounted purported external drive was a read-only disk image, not an archive destination. There has been no deletion of old worktrees/checkpoints, no NAS copy and no tag/release verified at this writing. See `docs/CANONICAL_REPOSITORY_AND_RELEASE_20261017.md` for exact verification and outstanding tasks. **The instructions and stale paths below are retained as historical handoff provenance; the paragraph above and current README supersede their location and run-command assumptions.**
+
+---
+
 # Bilqis numeric staircase | continuation handoff
 
 **User reports immediate improvement after the change.** Keep working prototype-first: fail fast, thin vertical slices, incorporate feedback, defer research qualification/deconstruction. Observe this run before choosing another change. Do not restart learning or introduce new gates.

@@ -7,7 +7,7 @@ from bilqis_mlx.grade_a_evaluator import score_predictions
 from bilqis_mlx.grade_a_manifest import build_manifest
 from bilqis_mlx.grade_a_probe import candidate_course
 
-ROOT = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+ROOT = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
 SOURCE = ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
 
 

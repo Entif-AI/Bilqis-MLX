@@ -319,7 +319,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     project = Path(__file__).resolve().parents[1]
     parser.add_argument("--legacy-code-root", type=Path,
-                        default=project.parent / "bilqis-triplets-v16")
+                        default=project / "vendor" / "legacy-v16")
     parser.add_argument("--max-rounds", type=int, default=8)
     parser.add_argument("--seed", type=int, default=2026101601)
     parser.add_argument("--each", type=int, default=12)

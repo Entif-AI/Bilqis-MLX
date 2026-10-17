@@ -12,7 +12,7 @@ from bilqis_mlx.semantic_test_generation import (
     FAMILIES, ROOT, check_generated, regenerate, select_families, status,
 )
 
-LEGACY = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+LEGACY = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
 
 
 class TestOnDemandRegeneration(TestCase):

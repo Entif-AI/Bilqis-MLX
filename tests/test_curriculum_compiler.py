@@ -111,7 +111,7 @@ class CurriculumCompilerTests(unittest.TestCase):
             affected_dependency_closure(expanded, ('C.UNKNOWN',))
 
     def test_source_interpreters_materialize_actual_unreleased_probes(self):
-        root = Path(__file__).resolve().parents[2] / 'bilqis-triplets-v16'
+        root = Path(__file__).resolve().parents[1] / 'vendor' / 'legacy-v16'
         if not root.is_dir():
             self.skipTest('Pinned source absent')
         micro, development, graph, _, _ = read_sources(root)

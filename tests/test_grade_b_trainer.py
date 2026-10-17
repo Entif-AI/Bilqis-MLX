@@ -28,7 +28,7 @@ from bilqis_mlx.diagnostics import DiagnosticStatus, LearningSignal
 from bilqis_mlx.teacher_feedback import OutcomeAttribution, TeachingOpportunity
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_ROOT = ROOT.parent / "bilqis-triplets-v16"
+SOURCE_ROOT = ROOT / "vendor" / "legacy-v16"
 CHECKPOINT = (SOURCE_ROOT / "runs/primitive-consolidation-v16-triplets/"
               "student-116760-7e9af4651f28.pt")
 MANIFEST = ROOT / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"

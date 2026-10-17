@@ -13,16 +13,14 @@ from .live_grade_a import RELEASE as LIVE_GRADE_A_RELEASE
 from .live_grade_b import RELEASE as LIVE_GRADE_B_RELEASE
 from .live_grade_c import RELEASE as LIVE_GRADE_C_RELEASE
 from .numeric_staircase import RELEASE as STAIRCASE_RELEASE
+from .paths import REPO_ROOT, LEGACY_SOURCE, LEGACY_CHECKPOINTS, active_run_dir
 from .spiral_dashboard import Dashboard, TABLES
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_RUN = ROOT / "runs" / "school-mlx-v1"
+ROOT = REPO_ROOT
+DEFAULT_RUN = active_run_dir()
 GRADE_A_MANIFEST = ROOT / "docs" / "GRADE_A_CANDIDATE_MANIFEST_V2.json"
-LEGACY_ROOT = ROOT.parent / "bilqis-triplets-v16"
-ORIGINAL_CHECKPOINT = (
-    LEGACY_ROOT / "runs" / "primitive-consolidation-v16-triplets"
-    / AUDITED_PARENT.basename
-)
+LEGACY_ROOT = LEGACY_SOURCE
+ORIGINAL_CHECKPOINT = LEGACY_CHECKPOINTS / AUDITED_PARENT.basename
 
 
 def _qualification_scope() -> dict:
@@ -126,6 +124,7 @@ def _inspect(run_dir: Path) -> dict:
                 "human_live_grade_a_trainer_end_to_end_qualified": "A" in school["champions"],
                 "neural_training_started_by_this_command": False,
                 "run_dir": str(run_dir),
+                "repository_local_source": str(LEGACY_ROOT),
             }
         if saved.get("schema") != "bilqis.mlx.letter-grade/v1":
             raise ValueError("UNRECOGNIZED_SCHOOL_RUN_SCHEMA")
@@ -376,6 +375,9 @@ def main(argv=None):
                   "agents may run only --dry-run and tests. "
                   "Use npm run train -- --dry-run for preflight.",file=sys.stderr)
             return 2
+        if (args.legacy_code_root is not None and
+                not args.legacy_code_root.expanduser().resolve().is_relative_to(ROOT)):
+            raise ValueError("HUMAN_TRAINER_EXTERNAL_SOURCE_ROOT_FORBIDDEN")
         from .grade_a_trainer import operate, operator_view
         from .grade_a_dashboard import build, ingest
         # Interactive training owns the dashboard in its *own* terminal.

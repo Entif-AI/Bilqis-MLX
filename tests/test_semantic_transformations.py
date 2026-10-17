@@ -66,7 +66,7 @@ class SemanticTransformationsTests(unittest.TestCase):
 
     def test_source_oracles_materialize_transformations_as_candidates(self):
         from bilqis_mlx.grade_a_probe import read_sources
-        root = ROOT.parent / "bilqis-triplets-v16"
+        root = ROOT / "vendor" / "legacy-v16"
         if not root.exists():
             self.skipTest("Pinned original interpreters not mounted")
         micro, development, graph, _, _ = read_sources(root)
@@ -84,7 +84,7 @@ class SemanticTransformationsTests(unittest.TestCase):
 
     def test_sealed_exam_is_never_a_transformation_source(self):
         from bilqis_mlx.grade_a_probe import read_sources
-        root = ROOT.parent / "bilqis-triplets-v16"
+        root = ROOT / "vendor" / "legacy-v16"
         if not root.exists():
             self.skipTest("Pinned original interpreters not mounted")
         micro, development, graph, _, _ = read_sources(root)

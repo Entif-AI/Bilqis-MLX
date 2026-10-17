@@ -20,7 +20,7 @@ from bilqis_mlx.school import Assessment, Score, assess, next_capability, start_
 from bilqis_mlx.source import AUDITED_PARENT
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT.parent / "bilqis-triplets-v16"
+SOURCE = ROOT / "vendor" / "legacy-v16"
 PARENT = SOURCE / "runs/primitive-consolidation-v16-triplets" / AUDITED_PARENT.basename
 MANIFEST = ROOT / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 

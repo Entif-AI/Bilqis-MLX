@@ -34,7 +34,7 @@ class HistoricalAbiTests(unittest.TestCase):
                          "25be81dbb10fb5acc1a638e9f3226c927eb7ff733e2c06ec6ba070af8ebd7a46")
 
     def test_original_whole_student_checkpoint_matches_independent_index_receipt(self):
-        original = (ROOT.parent / "bilqis-triplets-v16" /
+        original = (ROOT / "vendor" / "legacy-v16" /
                     "runs/primitive-consolidation-v16-triplets" /
                     "student-116760-7e9af4651f28.pt")
         if not original.exists():
@@ -74,7 +74,7 @@ class HistoricalAbiTests(unittest.TestCase):
                     fingerprint_sheet_prefix(changed)
 
     def test_graph_name_must_match_node_name(self):
-        original = (ROOT.parent / "bilqis-triplets-v16" /
+        original = (ROOT / "vendor" / "legacy-v16" /
                     "runs/primitive-consolidation-v16-triplets" /
                     "student-116760-7e9af4651f28.pt")
         if not original.exists():

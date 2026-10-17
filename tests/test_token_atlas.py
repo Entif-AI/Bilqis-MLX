@@ -14,7 +14,7 @@ from tests.test_vocabulary_growth import admission, root_graph
 
 class TokenAtlasTests(unittest.TestCase):
     def test_legacy_full_student_has_222_unique_catalog_identities(self):
-        root=Path(__file__).resolve().parents[2]/'bilqis-triplets-v16'
+        root=Path(__file__).resolve().parents[1]/'vendor'/'legacy-v16'
         checkpoint=(root/'runs/primitive-consolidation-v16-triplets'/
                     'student-116760-7e9af4651f28.pt')
         if not checkpoint.is_file():

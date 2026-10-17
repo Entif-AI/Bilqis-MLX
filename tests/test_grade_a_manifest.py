@@ -7,7 +7,7 @@ import unittest
 from bilqis_mlx.grade_a_manifest import build_manifest, verify_manifest
 from bilqis_mlx.grade_a_oracle import evaluate
 
-ROOT = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+ROOT = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
 CHECKPOINT = ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
 
 

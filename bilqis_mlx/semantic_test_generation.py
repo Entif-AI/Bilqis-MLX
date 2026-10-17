@@ -22,7 +22,7 @@ from .pedagogical_parity import _source_stack, build_plan
 
 SCHEMA = "bilqis.semantic.generated-tests/v1"
 ROOT = Path(__file__).resolve().parents[1] / "artifacts" / "semantic-tests"
-LEGACY = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+LEGACY = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
 
 
 @dataclass(frozen=True)

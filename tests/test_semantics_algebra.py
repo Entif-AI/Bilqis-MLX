@@ -26,7 +26,7 @@ from tests.support.boolean_backends import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_ROOT = ROOT.parent / "bilqis-triplets-v16"
+SOURCE_ROOT = ROOT / "vendor" / "legacy-v16"
 SNAPSHOT = ROOT / "docs/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json"
 
 

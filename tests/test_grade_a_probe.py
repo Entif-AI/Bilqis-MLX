@@ -8,7 +8,7 @@ from bilqis_mlx.grade_a_probe import (FAMILIES, PINNED_GRAPH_SHA256,
   PINNED_SOURCES, PINNED_FULL_STUDENT_GRAPH_SHA256, candidate_course,
   make_record, probe, read_sources)
 
-LEGACY_ROOT = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+LEGACY_ROOT = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
 
 
 @unittest.skipUnless(LEGACY_ROOT.joinpath("bilqis_micro/kernel.py").is_file(),

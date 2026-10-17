@@ -1869,8 +1869,15 @@ def _quarantine_newer_uncommitted_bundles(run_dir: Path, retained: set[str],
     root = run_dir / "bundles"
     if not root.exists():
         return ()
+    if root.is_symlink() or not root.is_dir():
+        raise ValueError("HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH")
     quarantined = []
     for candidate in sorted(root.iterdir()):
+        if candidate.name == ".DS_Store" and not candidate.is_symlink() and candidate.is_file():
+            # Keep Finder's bookkeeping from aborting an otherwise valid
+            # human-run checkpoint transaction. Never touch model files.
+            candidate.unlink()
+            continue
         relative = "bundles/" + candidate.name
         if relative in retained:
             continue
@@ -2300,6 +2307,17 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "resume_required": school.stage != "AWAITING_NEXT_GRADE",
             **{k: budget[k] for k in ("free_bytes", "reserve_bytes", "estimated_write_bytes")},
         })
+        # Reclaim superseded JSON snapshot storage after the committed stop
+        # receipt. Lossless compression retains exact source bytes and SHA
+        # readback; all complete model/AdamW checkpoints remain untouched.
+        from .state_archive import compact_states
+        try:
+            maintenance = compact_states(run_dir, max_files=64)
+        except (OSError, ValueError) as exc:
+            maintenance = {"error": str(exc), "compressed_generations": 0}
+            _record(run_dir, {"event": "SCHOOL_STATE_ARCHIVE_BLOCKED",
+                              "generation": receipt["generation"],
+                              "reason": str(exc)})
         return {
             "status": receipt["result"],
             "stop_reason": reason,
@@ -2317,6 +2335,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "checkpoint_sha256": school.current_student.sha256,
             "latest_exam": receipt["last_exam"],
             "experimental_retention": learning_settings is not None,
+            "state_archive": maintenance,
             "safe_resume_command": (
                 "npm run train -- --human-run --resume --experimental-retention"
                 " --experiment-probe-each "+str(learning_settings.probe_each)+

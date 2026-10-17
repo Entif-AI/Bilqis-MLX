@@ -16,7 +16,7 @@ from .pedagogical_parity import build_plan
 from .typed_answer_training import evaluate_rows, predict_rows, typed_objective, typed_step
 
 
-LEGACY = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+LEGACY = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
 
 
 def _new_student(mx, optim, vocabulary):

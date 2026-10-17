@@ -29,7 +29,7 @@ class ConstructionCensusTests(unittest.TestCase):
         self.assertTrue(all(not e["token_learned"] for e in d["entries"]))
 
     def test_real_legacy_graph_still_assigns_these_exact_numeric_ids(self):
-        root = Path(__file__).resolve().parents[2] / "bilqis-triplets-v16"
+        root = Path(__file__).resolve().parents[1] / "vendor" / "legacy-v16"
         path = root / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"
         if not path.is_file():
             self.skipTest("Original full checkpoint not mounted")
