@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 import re
 
-SCHEMA = "bilqis.next-grade-review/v1"
+SCHEMA = "bilqis.next-grade-review/v2"
 AUTHORITY = "IPR-0220/grade-questions-20261017"
 QUESTION_IDS = tuple(f"Q{i:02d}" for i in range(1, 11))
 PHASES = ("selection", "construction", "admission", "operation", "retrospective")
@@ -20,13 +20,16 @@ TEXT_RELEVANCE = frozenset(("DIRECT_TEXT_SEMANTIC_TRANSFER",
                             "TEXT_SURFACE_CONSTRAINT_FOR_COMPOSITION"))
 DECISION_FIELDS = ("why_now", "why_not_alternatives", "what_changed_since_last_grade",
                    "expected_near_term_transfer", "smallest_staircase_step")
+INITIAL_FUNCTION_FAMILIES = ("association", "disambiguation", "identification")
+FUNCTION_POSTURES = frozenset(("DEFERRED", "FOUNDATIONAL",
+                             "REQUIRES_QUALIFIED_IMPLEMENTATION"))
 
 
 def subject_digest(record: dict) -> str:
     """Changing the grade decision or its dependencies invalidates older reviews."""
     body = {key: record.get(key) for key in (
         "schema", "authority", "grade", "parent_release", "modality", "selected",
-        "candidates", "decision", "run_outcome")}
+        "candidates", "decision", "semantic_function_families", "run_outcome")}
     payload = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
@@ -44,6 +47,33 @@ def _report(grade, phase, problems, *, selected=None, reviewed=()):
             "selected_candidate": selected, "question_ids": list(QUESTION_IDS),
             "reviewed_phases": list(reviewed),
             "training_authorized_by_this_report": False}
+
+
+def _check_semantic_function_plan(record: dict, errors: list[str]) -> None:
+    """Require forward-looking decisions, never pretend contextual code exists.
+
+    Initial families are a minimum review inventory, not an exhaustive ontology.
+    DEFERRED and FOUNDATIONAL make no implementation/mastery assertions.
+    """
+    plan = record.get("semantic_function_families")
+    if not isinstance(plan, dict):
+        plan = {}
+    for family in INITIAL_FUNCTION_FAMILIES:
+        if family not in plan:
+            errors.append("SEMANTIC_FUNCTION_NOT_CONSIDERED:" + family)
+    for family, item in plan.items():
+        if not isinstance(family, str) or not re.fullmatch(r"[a-z][a-z0-9_]*", family):
+            errors.append("SEMANTIC_FUNCTION_FAMILY_INVALID")
+            continue
+        posture = item.get("posture") if isinstance(item, dict) else None
+        if not isinstance(posture, str) or posture not in FUNCTION_POSTURES:
+            errors.append("SEMANTIC_FUNCTION_POSTURE_INVALID:" + family)
+            continue
+        if not _substantive(item.get("rationale")):
+            errors.append("SEMANTIC_FUNCTION_RATIONALE_MISSING:" + family)
+        if item["posture"] == "REQUIRES_QUALIFIED_IMPLEMENTATION":
+            # No string in a grade dossier can qualify a future interpreter.
+            errors.append("SEMANTIC_FUNCTION_QUALIFICATION_REQUIRED:" + family)
 
 
 def assess(record: dict, *, grade: str, parent_release: str,
@@ -125,6 +155,8 @@ def assess(record: dict, *, grade: str, parent_release: str,
                 errors.append("GRADE_COMPARISON_ALTERNATIVES_NOT_JUSTIFIED")
         elif not _substantive(value):
             errors.append("GRADE_DECISION_REASON_MISSING:" + key)
+
+    _check_semantic_function_plan(record, errors)
 
     reviews = record.get("reviews") or {}
     reviewed = []

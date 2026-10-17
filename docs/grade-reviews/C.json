@@ -1,5 +1,5 @@
 {
-  "schema": "bilqis.next-grade-review/v1",
+  "schema": "bilqis.next-grade-review/v2",
   "authority": "IPR-0220/grade-questions-20261017",
   "grade": "C",
   "parent_release": "bilqis.mlx.grade-a-b-live/20261015-v1",
@@ -53,6 +53,20 @@
     "what_changed_since_last_grade": "A and B passed cumulative revalidation together at generation 6824, optimizer step 204072",
     "expected_near_term_transfer": "Source-valid direct numeric answers on previously unseen finite constructions; unmeasured until human-run C",
     "smallest_staircase_step": "Count and bind numbers before introducing successor and composition, checking each stage before its dependent operations"
+  },
+  "semantic_function_families": {
+    "association": {
+      "posture": "DEFERRED",
+      "rationale": "The proposed finite mathematical constructions name typed operations directly; ambiguous English-to-root applicability is not a Grade C objective"
+    },
+    "disambiguation": {
+      "posture": "DEFERRED",
+      "rationale": "Grade C does not yet depend on selecting between competing senses from word, passage or corpus context"
+    },
+    "identification": {
+      "posture": "FOUNDATIONAL",
+      "rationale": "Positive source-typed number meanings and operation witnesses must be composed from earlier qualified constituents; contextual comparison against neighboring meanings is not part of each primitive's definition"
+    }
   },
   "reviews": {}
 }

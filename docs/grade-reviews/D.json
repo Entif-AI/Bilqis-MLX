@@ -1,5 +1,5 @@
 {
-  "schema": "bilqis.next-grade-review/v1",
+  "schema": "bilqis.next-grade-review/v2",
   "authority": "IPR-0220/grade-questions-20261017",
   "grade": "D",
   "parent_release": "NOT_YET_ADMITTED_GRADE_C",
@@ -33,6 +33,20 @@
     "what_changed_since_last_grade": "PENDING",
     "expected_near_term_transfer": "PENDING",
     "smallest_staircase_step": "PENDING"
+  },
+  "semantic_function_families": {
+    "association": {
+      "posture": "DEFERRED",
+      "rationale": "No D topic has been selected or shown to require lexical applicability retrieval; reassess its prerequisites when selecting D"
+    },
+    "disambiguation": {
+      "posture": "DEFERRED",
+      "rationale": "No D candidate has yet demonstrated that natural-language contextual sense resolution is its smallest justified next step"
+    },
+    "identification": {
+      "posture": "FOUNDATIONAL",
+      "rationale": "Any eventually selected D primitive must be positively defined using earlier independently qualified semantic prerequisites, without handwritten exclusions of competing primitive identities"
+    }
   },
   "reviews": {}
 }

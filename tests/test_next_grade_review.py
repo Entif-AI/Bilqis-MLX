@@ -25,7 +25,7 @@ def candidate(identifier, *, modality="DIRECT_TEXT_SEMANTIC_TRANSFER"):
 
 def proposal():
     item = {
-        "schema": "bilqis.next-grade-review/v1",
+        "schema": "bilqis.next-grade-review/v2",
         "authority": "IPR-0220/grade-questions-20261017",
         "grade": "D", "parent_release": "fixed-parent-v1",
         "modality": "TEXT_ONLY",
@@ -38,6 +38,12 @@ def proposal():
             "expected_near_term_transfer": "Composing predicates in unseen worlds",
             "smallest_staircase_step": "Reuse current types; introduce one binder",
         },
+        "semantic_function_families": {
+            "association": {"posture": "DEFERRED", "rationale": "No lexical sense retrieval in this grade"},
+            "disambiguation": {"posture": "DEFERRED", "rationale": "No context-varying natural language input"},
+            "identification": {"posture": "FOUNDATIONAL", "rationale":
+                               "Teach positive typed operations from mastered prerequisites"},
+        },
         "reviews": {name: {q: {"status": "EVIDENCED", "evidence": [
             "repo:source/qualification/" + name + "/" + q]}
             for q in QUESTION_IDS} for name in ("selection", "construction", "admission")},
@@ -48,6 +54,42 @@ def proposal():
 
 
 class NextGradeReviewTests(unittest.TestCase):
+    def test_semantic_function_families_are_considered_without_forcing_nlp(self):
+        record = proposal()
+        self.assertEqual(assess(record, grade="D", parent_release="fixed-parent-v1",
+                                phase="admission")["status"], "READY_FOR_INDEPENDENT_REVIEW")
+        del record["semantic_function_families"]["association"]
+        blockers = assess(record, grade="D", parent_release="fixed-parent-v1")["blockers"]
+        self.assertIn("SEMANTIC_FUNCTION_NOT_CONSIDERED:association", blockers)
+
+    def test_required_contextual_function_cannot_self_certify(self):
+        record = proposal()
+        record["semantic_function_families"]["disambiguation"] = {
+            "posture": "REQUIRES_QUALIFIED_IMPLEMENTATION",
+            "rationale": "This candidate calls for contextual sense resolution",
+            "evidence": "repo:proposed-not-validated",
+        }
+        blockers = assess(record, grade="D", parent_release="fixed-parent-v1")["blockers"]
+        self.assertIn("SEMANTIC_FUNCTION_QUALIFICATION_REQUIRED:disambiguation", blockers)
+        record["semantic_function_families"]["association"]["rationale"] = ""
+        self.assertIn("SEMANTIC_FUNCTION_RATIONALE_MISSING:association", assess(
+            record, grade="D", parent_release="fixed-parent-v1")["blockers"])
+
+    def test_malformed_function_posture_fails_closed(self):
+        record = proposal()
+        record["semantic_function_families"]["association"]["posture"] = ["invalid"]
+        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("SEMANTIC_FUNCTION_POSTURE_INVALID:association", result["blockers"])
+
+    def test_semantic_function_plan_changes_invalidate_completed_reviews(self):
+        record = proposal()
+        record["semantic_function_families"]["grounding"] = {
+            "posture": "FOUNDATIONAL", "rationale": "Future extension beyond initial three families"
+        }
+        self.assertIn("REVIEW_SCOPE_STALE:selection", assess(
+            record, grade="D", parent_release="fixed-parent-v1")["blockers"])
+
     def test_malformed_candidate_and_decision_fail_closed(self):
         record = proposal()
         record["candidates"] = [candidate("valid"), {"id": ["unhashable"]}]
