@@ -19,9 +19,11 @@ class NumericSemanticsTests(unittest.TestCase):
         self.assertEqual(evaluate(calculate("SUCC", number(3))), 4)
         self.assertEqual(evaluate(calculate("DIV", number(12), number(3))), 4)
         self.assertEqual(independent_value(calculate("DIV", number(0), number(3))), 0)
-        for a, b in ((3, 0), (3, 2)):
+        for a, b in ((0, 0), (3, 0), (3, 2)):
             with self.subTest(a=a, b=b), self.assertRaisesRegex(ValueError, "EXACT_DIVISION"):
                 evaluate(calculate("DIV", number(a), number(b)))
+            with self.subTest(independent=(a,b)), self.assertRaisesRegex(ValueError,"EXACT_DIVISION"):
+                independent_value(calculate("DIV", number(a), number(b)))
         with self.assertRaisesRegex(ValueError, "DUPLICATE"):
             number_set((1, 1))
 

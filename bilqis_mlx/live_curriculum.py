@@ -17,6 +17,9 @@ def cohort_contract(course):
     if grade.id not in releases:
         raise ValueError("HUMAN_TRAINER_UNADMITTED_GRADE_COHORT")
     release, generator, fingerprint = releases[grade.id]
+    from .numeric_staircase import RELEASE as STAIRCASE_RELEASE, constructor_digest as staircase_digest
+    if grade.id == 'C' and course.version == STAIRCASE_RELEASE:
+        release, fingerprint = STAIRCASE_RELEASE, staircase_digest
     source_sha = fingerprint()
     if grade.id == "A":
         from .historical_live_release import (

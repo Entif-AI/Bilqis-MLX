@@ -48,6 +48,7 @@ from .live_grade_b import (GENERATOR as B_GENERATOR, RELEASE as B_RELEASE,
                            constructor_digest as b_constructor_digest)
 from .live_curriculum import cohort_contract, draw_course_rows, lesson_contract, numeric_maximum
 from .live_grade_c import RELEASE as C_RELEASE
+from .numeric_staircase import RELEASE as STAIRCASE_RELEASE
 from .mlx_checkpoint import save_new_bundle, load_semantically_bound_bundle
 from .mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
@@ -709,7 +710,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, adm
     receipt = _recover_orphaned_commit(run_dir, receipt)
     saved_mode = receipt.get("curriculum_mode")
     old_mode = saved_mode is None
-    if saved_mode not in (None, LIVE_RELEASE, B_RELEASE, C_RELEASE):
+    if saved_mode not in (None, LIVE_RELEASE, B_RELEASE, C_RELEASE, STAIRCASE_RELEASE):
         raise ValueError("HUMAN_TRAINER_UNKNOWN_CURRICULUM_MODE")
     old_course = ((admitted_courses or {})[saved_mode] if saved_mode in (admitted_courses or {}) else
                   accepted_grade_a(manifest) if old_mode else
@@ -719,17 +720,21 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, adm
                                     old_course.version != B_RELEASE or
                                     receipt.get("grade_b_code_sha256") != b_constructor_digest()):
         raise ValueError("HUMAN_TRAINER_GRADE_B_COURSE_NOT_LOADED")
-    if saved_mode == C_RELEASE:
+    if saved_mode in (C_RELEASE, STAIRCASE_RELEASE):
         from .live_grade_c import constructor_digest
-        if (old_course.version != C_RELEASE or len(old_course.grades) != 3 or
+        if (old_course.version != saved_mode or len(old_course.grades) != 3 or
                 receipt.get("grade_c_code_sha256") != constructor_digest()):
             raise ValueError("HUMAN_TRAINER_GRADE_C_COURSE_NOT_LOADED")
+    if saved_mode == STAIRCASE_RELEASE:
+        from .numeric_staircase import constructor_digest as staircase_digest
+        if receipt.get('staircase_code_sha256') != staircase_digest():
+            raise ValueError('NUMERIC_STAIRCASE_SOURCE_DRIFT')
     school = _state_from_json(receipt["school"], old_course)
     directory = (run_dir / receipt["model_bundle"]).resolve(strict=True)
     if directory.parent != (run_dir / "bundles").resolve(strict=True):
         raise ValueError("HUMAN_TRAINER_BUNDLE_PATH_ESCAPES_RUN")
     parameters, optimizer, bundle, graph = load_semantically_bound_bundle(directory)
-    if saved_mode == C_RELEASE:
+    if saved_mode in (C_RELEASE, STAIRCASE_RELEASE):
         from .live_grade_c import registry_graph
         source_graph_ok = graph == registry_graph()
     else:
@@ -857,6 +862,9 @@ def _verify_best_custody(run_dir, receipt):
                             school["current_student"], school["champions"])
     for item in receipt.get("historical_grade_champions", {}).values():
         protected |= pinned({}, item, {})
+    if receipt.get('curriculum_parent'):
+        sources.append(receipt['curriculum_parent'])
+        protected |= pinned({}, receipt['curriculum_parent'], {})
     for name in sorted(protected):
         root = run_dir / name
         if root.is_symlink() or root.parent != run_dir / "bundles":
@@ -1107,6 +1115,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     # material once scoring has completed. No held-out embargo survives.
     priority = [r for r in receipt.get("teacher_misses", ())
                 if r["capability"] == cap]
+    deferred_misses = []
+    if receipt.get('curriculum_mode') == STAIRCASE_RELEASE:
+        from .numeric_staircase import row_in_scope
+        deferred_misses = [r for r in priority if not row_in_scope(r, receipt['numeric_maximum'])]
+        priority = [r for r in priority if row_in_scope(r, receipt['numeric_maximum'])]
     miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
     if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
         raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
@@ -1180,7 +1193,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     all_teacher_misses = [
         row for row in receipt.get("teacher_misses", ())
         if row["capability"] != cap
-    ] + remaining_priority
+    ] + deferred_misses + remaining_priority
     all_teacher_misses.sort(key=lambda row: (row["capability"], row["id"]))
     reward = after - before
     engine.observe(teacher, lesson_grade, policy_key, reward)
@@ -1228,6 +1241,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "lesson_source_sha256": manifest["manifest_sha256"],
         "lesson_seed": _seed(receipt, capability=cap),
         "prior_exam_misses_available": len(priority),
+        "prior_exam_misses_deferred_by_scope": len(deferred_misses),
         "prior_exam_misses_remaining": len(remaining_priority),
         "prior_grade_champion_votes": {},
         "champion_directed_examples_available": 0,
@@ -1489,6 +1503,8 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
     school = student_school
     retained = pinned(record.get("capability_best", {}), school["current_student"],
                       school["champions"])
+    if record.get('curriculum_parent'):
+        retained |= pinned({}, record['curriculum_parent'], {})
     retained |= pinned(record.get("graduation_perfect", {}),
                        school["current_student"], school["champions"])
     for item in record.get("historical_grade_champions", {}).values():
@@ -1736,7 +1752,8 @@ def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
 def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             manifest_path: Path, *, resume: bool = False, minutes: int = 90,
             max_visits: int = 0, steps_per_visit: int = 16,
-            batch_size: int = 32, reserve_gib: float = 100.) -> dict:
+            batch_size: int = 32, reserve_gib: float = 100.,
+            numeric_staircase: bool = False) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
             type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
@@ -1752,6 +1769,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
     # checkpoint is touched while preparing a future grade's course.
     course_b = None
     course_c = None
+    staircase_course = None
     course = course_a
     run_dir = Path(run_dir).expanduser().resolve()
     start = time.monotonic()
@@ -1769,27 +1787,36 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             # A trainer still acquiring A must never depend on readiness of a
             # *future* B release. Only a B run, graduated A, or prospective B
             # orphan needs B's source construction and version guard.
-            if (saved.get("curriculum_mode") in (B_RELEASE, C_RELEASE) or
-                    pending_mode in (B_RELEASE, C_RELEASE) or
+            if (saved.get("curriculum_mode") in (B_RELEASE, C_RELEASE, STAIRCASE_RELEASE) or
+                    pending_mode in (B_RELEASE, C_RELEASE, STAIRCASE_RELEASE) or
                     saved["school"]["stage"] == "AWAITING_NEXT_GRADE"):
                 if course_b is None:
                     course_b = live_b_course(course_a, source_root)
             if saved.get("curriculum_mode") == B_RELEASE:
                 course = course_b
-            if (saved.get("curriculum_mode") == C_RELEASE or pending_mode == C_RELEASE or
-                    (saved.get("curriculum_mode") == B_RELEASE and
-                     saved["school"]["stage"] == "AWAITING_NEXT_GRADE")):
-                from .live_grade_c import prepare_course
-                pinned_maximum = saved.get("numeric_maximum")
-                if pending_mode == C_RELEASE and pinned_maximum is None:
-                    pinned_maximum = json.loads(pending.read_text())["numeric_maximum"]
-                course_c, _ = prepare_course(course_b, maximum=pinned_maximum)
-                if saved.get("curriculum_mode") == C_RELEASE:
+            numeric_modes = (C_RELEASE, STAIRCASE_RELEASE)
+            if (saved.get('curriculum_mode') in numeric_modes or pending_mode in numeric_modes or
+                    (saved.get('curriculum_mode') == B_RELEASE and
+                     saved['school']['stage'] == 'AWAITING_NEXT_GRADE')):
+                from .live_grade_c import prepare_course, registry_graph
+                from .numeric_staircase import build_course
+                if saved.get('curriculum_mode') != STAIRCASE_RELEASE:
+                    pinned_maximum = saved.get('numeric_maximum')
+                    if pending_mode == C_RELEASE and pinned_maximum is None:
+                        pinned_maximum = json.loads(pending.read_text())['numeric_maximum']
+                    course_c, _ = prepare_course(course_b, maximum=pinned_maximum)
+                if saved.get('curriculum_mode') == STAIRCASE_RELEASE or pending_mode == STAIRCASE_RELEASE:
+                    active = json.loads(pending.read_text()) if pending_mode == STAIRCASE_RELEASE else saved
+                    staircase_course = build_course(course_b, registry_graph(),
+                                                     maximum=active['numeric_maximum'])
+                if saved.get('curriculum_mode') == C_RELEASE:
                     course = course_c
+                elif saved.get('curriculum_mode') == STAIRCASE_RELEASE:
+                    course = staircase_course
             params, optimizer, graph, receipt = _resume(
                 run_dir, manifest, course, teacher_sha,
                 successor_course=course_b,
-                admitted_courses={c.version: c for c in (course_a, course_b, course_c) if c is not None})
+                admitted_courses={c.version: c for c in (course_a, course_b, course_c, staircase_course) if c is not None})
             # A fully written B migration might have survived a crash before
             # publishing the latest state pointer. _resume recovers it under
             # operator_lock; do not interpret recovered B as an A-only run.
@@ -1797,6 +1824,11 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 course = course_b
             elif receipt.get("curriculum_mode") == C_RELEASE:
                 course = course_c
+            elif receipt.get('curriculum_mode') == STAIRCASE_RELEASE:
+                course = staircase_course
+            if numeric_staircase and receipt.get('curriculum_mode') != STAIRCASE_RELEASE:
+                from .numeric_staircase import enroll
+                course, receipt = enroll(run_dir, receipt, course, course_b, graph)
             # A previously graduated human student is the only admissible B
             # starter. Never reset its whole weights, AdamW or teacher policy.
             if (course == course_a and
@@ -1818,12 +1850,17 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     reserve_gib=reserve_gib)
                 course = course_c
         else:
+            if numeric_staircase:
+                raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
             params, optimizer, graph, receipt = _init(
                 run_dir, manifest, course, teacher_sha,
                 historical_teacher, provenance, source_checkpoint,
                 reserve_gib=reserve_gib)
         visits = 0
         while True:
+            from .numeric_staircase import scope_advance_due, advance_scope
+            if scope_advance_due(receipt, course):
+                course, receipt = advance_scope(run_dir, receipt, course, course_b, graph)
             school = _state_from_json(receipt["school"], course)
             reason = session_stop_reason(
                 stage=school.stage, elapsed_seconds=time.monotonic() - start,

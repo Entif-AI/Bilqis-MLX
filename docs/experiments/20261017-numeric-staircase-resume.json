@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-17",
+  "scope": "DISPOSABLE_COPY_NO_OPTIMIZER_UPDATES",
+  "source_generation": 7081,
+  "recovered_generation": 7082,
+  "optimizer_step": 206968,
+  "source_student_sha256": "f8d179c673eb04c9b79524a09fd6611c53a771155360007314c28e4898345470",
+  "integer_scope": [
+    3,
+    4,
+    5,
+    6
+  ],
+  "first_capability": [
+    "C.COUNT"
+  ],
+  "pointer_crash_recovered": true,
+  "repeat_resume_idempotent": true,
+  "all_parameters_and_AdamW_moments_preserved": true,
+  "teacher_champions_soups_and_bests_preserved": true,
+  "old_enrollment_retained": true,
+  "embedding_rows": 227,
+  "elapsed_seconds": 6.97,
+  "actual_saved_files_unchanged": true,
+  "actual_saved_file_sha256": {
+    "state.json": "c3ea02db89fede3b9e940d4722b94d91908645a2a3e755d9786bd9d266863f16",
+    "events.jsonl": "cc914269af931853a7d413e262cb7e4444ee3731375755865306e133d03d0a0d",
+    "bundles/best-5638-939ffb9a3395/manifest.json": "c17bca6fa8f0c0dc3bc3757cd2f0ed567f659a2027029e52c7a19f3312049dbd",
+    "bundles/best-5638-939ffb9a3395/semantic-catalog.json": "684bf44fcad14fa16f3206d2bf3cd3bc41cade5828b2365a4a55ffef2b6327d7",
+    "bundles/best-5638-939ffb9a3395/model-and-own-adamw.safetensors": "f8d179c673eb04c9b79524a09fd6611c53a771155360007314c28e4898345470"
+  }
+}

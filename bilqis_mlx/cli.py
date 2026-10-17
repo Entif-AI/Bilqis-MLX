@@ -12,6 +12,7 @@ from .grade_a_release import RELEASE as GRADE_A_RELEASE
 from .live_grade_a import RELEASE as LIVE_GRADE_A_RELEASE
 from .live_grade_b import RELEASE as LIVE_GRADE_B_RELEASE
 from .live_grade_c import RELEASE as LIVE_GRADE_C_RELEASE
+from .numeric_staircase import RELEASE as STAIRCASE_RELEASE
 from .spiral_dashboard import Dashboard, TABLES
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -93,8 +94,8 @@ def _inspect(run_dir: Path) -> dict:
                 "grade_a_curriculum_mode": (LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE
                                              else saved.get("curriculum_mode", "HISTORICAL_FIXED_72")),
                 "grade_b_curriculum_mode": LIVE_GRADE_B_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE else None,
-                "grade_b_source_admitted": saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_C_RELEASE),
-                "grade_c_curriculum_mode": LIVE_GRADE_C_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_C_RELEASE else None,
+                "grade_b_source_admitted": saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE),
+                "grade_c_curriculum_mode": saved.get("curriculum_mode") if saved.get("curriculum_mode") in (LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE) else None,
                 "introduction_stage": school.get("introduction_stage", 0),
                 "numeric_maximum": saved.get("numeric_maximum"),
                 "assessment_cohort_sha256": (saved.get("last_exam") or {}).get("cohort_sha256"),
@@ -150,7 +151,8 @@ def _source_paths(legacy_code_root: Path | None, champion_checkpoint: Path | Non
 
 
 def preflight(run_dir: Path, *, resume=False, verify_source=False,
-              legacy_code_root: Path | None = None, champion_checkpoint: Path | None = None):
+              legacy_code_root: Path | None = None, champion_checkpoint: Path | None = None,
+              numeric_staircase=False):
     legacy_root, original_checkpoint = _source_paths(legacy_code_root, champion_checkpoint)
     existing = (run_dir / "state.json").is_file()
     if resume and not existing:
@@ -204,6 +206,26 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
             snapshot["next_grade_source"] = qualify(legacy_root, manifest, previous=parent_b)
             if integer_scope(registry_graph()) != REGISTRY_COUNTING_TARGET:
                 snapshot["blockers"].append("C_REQUIRES_BILQIS_INTEGER_MAX="+str(REGISTRY_COUNTING_TARGET))
+    if numeric_staircase:
+        if not resume:
+            raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
+        from .live_grade_c import registry_graph
+        from .numeric_staircase import build_course, INITIAL_MAXIMUM, FINAL_MAXIMUM
+        from .grade_a_release import accepted_grade_a
+        from .historical_live_release import resume_grade_courses
+        from .live_grade_b import live_course as admitted_b
+        saved = json.loads((run_dir/'state.json').read_text())
+        if saved.get('curriculum_mode') not in (LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE):
+            raise ValueError('NUMERIC_STAIRCASE_REQUIRES_EXISTING_C')
+        parent_a, parent_b = resume_grade_courses(accepted_grade_a(
+            json.loads(GRADE_A_MANIFEST.read_text())), legacy_root, saved)
+        maximum = saved['numeric_maximum'] if saved['curriculum_mode'] == STAIRCASE_RELEASE else INITIAL_MAXIMUM
+        proposal = build_course(parent_b or admitted_b(parent_a, legacy_root),
+                                registry_graph(), maximum=maximum)
+        snapshot['numeric_staircase'] = {'release': proposal.version,
+            'initial_maximum': INITIAL_MAXIMUM, 'final_maximum': FINAL_MAXIMUM,
+            'resume_maximum': maximum, 'source_student_sha256': snapshot['checkpoint_sha256'],
+            'neural_updates': 0, 'next_capability': 'C.COUNT' if saved['curriculum_mode'] != STAIRCASE_RELEASE else None}
     if verify_source:
         from .grade_a_manifest import verify_manifest
         source = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
@@ -276,6 +298,8 @@ def parse_args(argv=None):
             p.add_argument("--verify-source",action="store_true",
                            help="Recheck all 216 candidate records against the pinned source (neural-inert)")
             p.add_argument("--resume",action="store_true")
+            p.add_argument('--numeric-staircase', action='store_true',
+                           help='Warm-start C at 0..3, grow to 6 before MUL/DIV')
             p.add_argument("--human-run",action="store_true",
                            help="Explicitly authorizes actual optimizer steps by the human operator")
             p.add_argument("--minutes",type=int,default=90)
@@ -298,7 +322,7 @@ def main(argv=None):
         if args.dry_run:return preflight(args.run_dir,resume=args.resume,
                                         verify_source=args.verify_source,
                                         legacy_code_root=args.legacy_code_root,
-                                        champion_checkpoint=args.champion_checkpoint)
+                                        champion_checkpoint=args.champion_checkpoint, numeric_staircase=args.numeric_staircase)
         if args.verify_source:
             raise ValueError("VERIFY_SOURCE_REQUIRES_DRY_RUN")
         if not args.human_run:
@@ -334,7 +358,8 @@ def main(argv=None):
                 args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
                 resume=args.resume, minutes=args.minutes,
                 steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
-                batch_size=args.batch_size, reserve_gib=args.reserve_gib)
+                batch_size=args.batch_size, reserve_gib=args.reserve_gib,
+                numeric_staircase=args.numeric_staircase)
         if board is not None:
             board = build(args.run_dir, reserve_gib=args.reserve_gib)
             board.mode = "STOPPED | " + result["stop_reason"]
