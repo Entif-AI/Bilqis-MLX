@@ -12,6 +12,34 @@ from bilqis_mlx.grade_a_dashboard import build, ingest
 
 
 class OperatorTests(unittest.TestCase):
+    def test_grade_c_preflight_reports_missing_approved_registry_as_blocker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            saved = {
+                "schema": "bilqis.mlx.human-grade-a-trainer/v1",
+                "generation": 3, "result": "GRADE_B_MASTERED_AWAITING_GRADE_C",
+                "school": {"active_grades": ["A", "B"], "grade_index": 1,
+                           "stage": "AWAITING_NEXT_GRADE", "visits": 4,
+                           "current_student": {"sha256": "a" * 64,
+                                               "optimizer_step": 204072},
+                           "champions": {"A": {}, "B": {}}},
+                "teacher": {"events": 10, "strategies": {}}, "last_exam": None,
+            }
+            (run / "state.json").write_text(json.dumps(saved))
+            out = io.StringIO()
+            with patch("bilqis_mlx.live_grade_c.REGISTRY_PATH", run / "missing.json"), \
+                    patch("bilqis_mlx.grade_c_preflight.qualify",
+                          side_effect=AssertionError("unverified C must not qualify")), \
+                    patch("bilqis_mlx.cli.assert_headroom", return_value={}), \
+                    redirect_stdout(out):
+                self.assertEqual(main(["train", "--dry-run", "--resume",
+                                       "--run-dir", tmp]), 0)
+            report = json.loads(out.getvalue())
+            self.assertEqual(report["next_grade"], "C")
+            self.assertEqual(report["blockers"], ["GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING"])
+            self.assertNotIn("next_grade_source", report)
+            self.assertTrue((run / "state.json").is_file())
+
     def test_resume_terminal_clears_previous_session_stop_before_training(self):
         class Terminal(io.StringIO):
             def isatty(self):

@@ -23,6 +23,7 @@ class CapabilityNode:
     answers: tuple[str, ...]
     oracle: str | None
     source: str
+    stage: int = 0
 
 
 @dataclass(frozen=True)
@@ -44,7 +45,9 @@ def compile_ast(course: Course) -> CurriculumAST:
         id=cap.id, grade=grade.id, roots=cap.taught_roots,
         requires=cap.prerequisites, composed_of=cap.composed_of,
         answers=tuple(a.kind for a in cap.answer_families),
-        oracle=cap.independent_oracle, source=cap.source_anchor)
+        oracle=cap.independent_oracle, source=cap.source_anchor,
+        stage=next((i for i, names in enumerate(grade.teaching_stages)
+                    if cap.id in names), 0))
         for grade in course.grades for cap in grade.capabilities)
     return CurriculumAST(course.version, nodes)
 
@@ -64,8 +67,11 @@ def dependency_coverage_plan(ast: CurriculumAST, supported_edges=()):
     for dependent, predecessor in declared:
         if dependent == predecessor or predecessor not in nodes:
             raise ValueError("CURRICULUM_UNRESOLVED_DEPENDENCY")
-        if nodes[predecessor].grade >= nodes[dependent].grade:
+        if nodes[predecessor].grade > nodes[dependent].grade:
             raise ValueError("CURRICULUM_DEPENDENCY_NOT_EARLIER_GRADE")
+        if (nodes[predecessor].grade == nodes[dependent].grade and
+                nodes[predecessor].stage >= nodes[dependent].stage):
+            raise ValueError("CURRICULUM_DEPENDENCY_NOT_EARLIER_STAGE")
     supported = set(supported_edges)
     if supported - declared:
         raise ValueError("CURRICULUM_UNDECLARED_SUPPORTED_EDGE")

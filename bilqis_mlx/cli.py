@@ -174,13 +174,19 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False):
     snapshot["grade_a_source_manifest"] = "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
     if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE" and snapshot.get("grade") == "B":
         from .grade_c_preflight import qualify
-        from .live_grade_c import integer_scope, registry_graph, REGISTRY_COUNTING_TARGET
-        manifest = json.loads(GRADE_A_MANIFEST.read_text())
-        snapshot["next_grade_source"] = qualify(LEGACY_ROOT, manifest)
+        from .live_grade_c import (REGISTRY_PATH, REGISTRY_COUNTING_TARGET,
+                                   integer_scope, registry_graph)
         snapshot["next_grade"] = "C"
         snapshot["start_behavior"] = "HUMAN_RESUME_ADMIT_C_AFTER_CUMULATIVE_A_B_PASS"
-        if integer_scope(registry_graph()) != REGISTRY_COUNTING_TARGET:
-            snapshot["blockers"].append("C_REQUIRES_BILQIS_INTEGER_MAX="+str(REGISTRY_COUNTING_TARGET))
+        if REGISTRY_PATH.is_symlink():
+            snapshot["blockers"].append("GRADE_C_NATIVE_REGISTRY_ARTIFACT_UNSAFE_PATH")
+        elif not REGISTRY_PATH.is_file():
+            snapshot["blockers"].append("GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING")
+        else:
+            manifest = json.loads(GRADE_A_MANIFEST.read_text())
+            snapshot["next_grade_source"] = qualify(LEGACY_ROOT, manifest)
+            if integer_scope(registry_graph()) != REGISTRY_COUNTING_TARGET:
+                snapshot["blockers"].append("C_REQUIRES_BILQIS_INTEGER_MAX="+str(REGISTRY_COUNTING_TARGET))
     if verify_source:
         from .grade_a_manifest import verify_manifest
         source = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))

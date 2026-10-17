@@ -67,6 +67,29 @@ class CurriculumCompilerTests(unittest.TestCase):
             dependency_coverage_plan(replace(ast, nodes=(*ast.nodes, replace(
                 prototype, requires=('A.UNKNOWN',)))))
 
+    def test_same_grade_prerequisites_require_an_earlier_teaching_stage(self):
+        staged = replace(self.course.grades[0], teaching_stages=tuple(
+            (cap.id,) for cap in self.course.grades[0].capabilities))
+        compiled = compile_ast(replace(self.course, grades=(staged,)))
+        self.assertEqual(tuple(node.stage for node in compiled.nodes),
+                         tuple(range(len(staged.capabilities))))
+        count = replace(compiled.nodes[0], id='C.COUNT', grade='C', stage=0)
+        number = replace(compiled.nodes[0], id='C.NUMBER', grade='C', stage=1,
+                         requires=('C.COUNT',))
+        add = replace(compiled.nodes[0], id='C.ADD', grade='C', stage=2,
+                      requires=('C.NUMBER', 'C.COUNT'))
+        candidate = replace(compiled, nodes=(*compiled.nodes, count, number, add))
+        edges = dependency_coverage_plan(candidate)
+        self.assertEqual({(x['capability'], x['predecessor']) for x in edges},
+                         {('C.NUMBER', 'C.COUNT'), ('C.ADD', 'C.NUMBER'),
+                          ('C.ADD', 'C.COUNT')})
+        self.assertEqual(affected_dependency_closure(candidate, ('C.COUNT',)),
+                         ('C.ADD', 'C.COUNT', 'C.NUMBER'))
+        illegal = replace(candidate, nodes=(*compiled.nodes, count, replace(
+            number, stage=0), add))
+        with self.assertRaisesRegex(ValueError, 'DEPENDENCY_NOT_EARLIER_STAGE'):
+            dependency_coverage_plan(illegal)
+
     def test_dependency_change_regenerates_transitive_dependents_only(self):
         ast = compile_ast(self.course)
         b = replace(ast.nodes[0], id='B.SYNTHETIC', grade='B',
