@@ -285,9 +285,19 @@ def main(argv=None):
         board = build(args.run_dir, reserve_gib=args.reserve_gib) if visual else None
         def on_event(event):
             ingest(board, event)
-            board.mode = "LIVE"
+            if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
+                board.mode = "LIVE"
+                board.state["stop"] = "RUNNING"
             board.draw()
         if board is not None:
+            # Replay is historical evidence, not the state of this invocation.
+            # The previous TIME_LIMIT_REACHED must not impersonate a new stop.
+            board.mode = "RESUMING" if args.resume else "STARTING"
+            board.state["stop"] = "PREPARING"
+            system_rows = board.rows["SYSTEM & QUALIFICATION"]
+            previous = [row for row in system_rows if row.get("kind") != "STOP"]
+            system_rows.clear()
+            system_rows.extend(previous)
             board.draw()
         with operator_view(on_event if visual else None):
             result = operate(
