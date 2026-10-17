@@ -1,0 +1,148 @@
+"""Source-bound disposable Grade C learning trial, parent ownership unchanged."""
+from contextlib import redirect_stdout
+import io
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+
+import numpy as np
+
+from bilqis_mlx import grade_a_trainer as storage
+from bilqis_mlx.learning_experiment import Settings, select_typed_lesson
+from tests import test_grade_c_trainer as fixtures
+from tests import test_numeric_staircase as staircase_fixtures
+
+
+class CausalTeacherIntegrationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        staircase_fixtures.NumericStaircaseTests.setUpClass()
+
+    def setUp(self):
+        self.fixture=staircase_fixtures.NumericStaircaseTests()
+        self.fixture.setUp()
+        self.addCleanup(self.fixture.doCleanups)
+        self.mx = self.fixture.mx
+        self.course, self.receipt = self.fixture.start()
+
+    def visit(self):
+        return storage._take_visit(
+            self.mx,self.fixture.root,self.receipt,self.fixture.fixture.manifest,
+            self.course,self.fixture.fixture.engine,
+            self.fixture.params,self.fixture.optimizer,self.fixture.graph,
+            steps_per_visit=1,batch_size=6,reserve_gib=0.,
+            source_root=fixtures.SOURCE,
+            learning_settings=Settings(probe_each=6,mature_max_loss=2,
+                                       introduction_extra_loss=2))
+
+    def test_experimental_operator_refuses_active_or_external_run_dir_before_gpu(self):
+        # operate is never entered by tests: this must fail at its first
+        # read-only pathname guard, before source loading or optimizer setup.
+        from unittest.mock import patch
+        with patch.object(storage, "prepare_source",
+                          side_effect=AssertionError("SOURCE_SHOULD_NOT_BE_LOADED")):
+            with self.assertRaisesRegex(
+                    ValueError, "LEARNING_EXPERIMENT_REQUIRES_ISOLATED_WORKTREE_RUN"):
+                storage.operate(
+                    self.fixture.root, fixtures.SOURCE, fixtures.PARENT,
+                    self.fixture.fixture.manifest, experimental_retention=True)
+
+    def test_first_staircase_visit_stop_and_resume_persists_context_and_own_adamw(self):
+        # Regression for a pre-existing ff64 bug: before its first Grade C
+        # exam, last_exam is legitimately None. A human stop must still
+        # publish the complete live model/optimizer and candidate receipts.
+        with redirect_stdout(io.StringIO()):
+            changed=self.visit()
+            saved=storage._flush_working_student(
+                self.mx,self.fixture.root,changed,self.fixture.fixture.manifest,
+                self.course,self.fixture.params,self.fixture.optimizer,
+                self.fixture.graph,reserve_gib=0.,source_root=fixtures.SOURCE)
+            parameters,own_adamw,graph,reloaded=storage._resume(
+                self.fixture.root,self.fixture.fixture.manifest,self.course,
+                self.fixture.fixture.policy_sha,
+                admitted_courses={self.course.version:self.course})
+        self.assertEqual(saved,reloaded)
+        self.assertEqual(reloaded["teacher"]["causal_experiment"]["events"],1)
+        self.assertEqual(reloaded["learning_experiment"]["version"],
+                         "bilqis.mlx.causal-teacher-experiment/v1")
+        self.assertEqual(int(own_adamw.state["step"].item()),
+                         int(self.fixture.optimizer.state["step"].item()))
+        self.assertEqual(set(parameters),set(self.fixture.params))
+        self.assertEqual(graph,self.fixture.graph)
+
+    def test_provisional_grade_c_candidate_has_context_and_real_old_rows(self):
+        with redirect_stdout(io.StringIO()):
+            result=self.visit()
+        event=result["_pending_visit_events"][-1]
+        self.assertEqual(event["candidate_retention"]["decision"],"PROVISIONAL")
+        self.assertEqual(event["retained_optimizer_updates"],1)
+        self.assertEqual(event["candidate_attempt_optimizer_step"],2)
+        self.assertEqual(int(self.fixture.optimizer.state["step"].item()),2)
+        self.assertEqual(result["teacher"]["causal_experiment"]["events"],1)
+        self.assertEqual(result["learning_experiment"]["settings"]["probe_each"],6)
+        self.assertEqual(event["typed_policy_controls"]["optimizer_batches_observed"],1)
+        self.assertGreaterEqual(event["typed_policy_controls"]["old_grade_examples_delivered"],1)
+        monitored=set(event["candidate_retention"]["deltas"])
+        eligible=set(storage.assessment_capabilities(self.course,
+                storage._state_from_json(self.receipt["school"],self.course))) | {"C.COUNT"}
+        self.assertTrue(monitored <= eligible)
+        self.assertIn("C.COUNT",monitored)
+        self.assertLessEqual(len(monitored),9)
+        self.assertTrue(any(k.startswith("A.") for k in monitored))
+        self.assertTrue(any(k.startswith("B.") for k in monitored))
+        self.assertEqual(len(eligible)-len(monitored),
+                         event["candidate_retention"]["unsampled_admitted_capabilities"])
+
+    def test_rejected_candidate_keeps_parent_and_adamw_byte_identical(self):
+        baseline={name:np.asarray(value).copy()
+                  for name,value in self.fixture.params.items()}
+        moments={name:{k:np.asarray(v).copy() for k,v in cell.items()}
+                 for name,cell in self.fixture.optimizer.state.items()
+                 if isinstance(cell,dict)}
+        before_step=int(self.fixture.optimizer.state["step"].item())
+        real_decider=storage.decide_learning_trial
+
+        def forced_rejection(*args,**kwargs):
+            decision=real_decider(*args,**kwargs)
+            # Test the transaction path, not invented regression evidence.
+            return {**decision,"decision":"REJECT",
+                    "reason":"FIXTURE_FORCED_TRANSACTION_REJECTION"}
+
+        with patch.object(storage,"decide_learning_trial",
+                          side_effect=forced_rejection),redirect_stdout(io.StringIO()):
+            result=self.visit()
+        event=result["_pending_visit_events"][-1]
+        self.assertEqual(event["candidate_retention"]["decision"],"REJECT")
+        self.assertEqual(event["retained_optimizer_updates"],0)
+        self.assertEqual(event["teacher_reward"],0.)
+        self.assertEqual(int(self.fixture.optimizer.state["step"].item()),before_step)
+        self.assertLess(event["context_teacher_credit"]["teacher_context_reward"],0)
+        for name,value in baseline.items():
+            np.testing.assert_array_equal(np.asarray(self.fixture.params[name]),value)
+            for kind,original in moments[name].items():
+                np.testing.assert_array_equal(
+                    np.asarray(self.fixture.optimizer.state[name][kind]),original)
+        self.assertGreater(result["teacher"]["causal_experiment"]["events"],0)
+
+    def test_typed_actions_have_actual_distinct_effect_on_selected_source_rows(self):
+        raw=storage._draw_live_rows(
+            fixtures.SOURCE,self.fixture.graph,capability="C.COUNT",
+            course=self.course,each=12,seed=109)
+        prior=storage._draw_live_rows(
+            fixtures.SOURCE,self.fixture.graph,capability="A.IDENTITY",
+            course=self.course,each=12,seed=29)
+        x,trace1=select_typed_lesson(raw,prior,
+            {"old":0,"contrast":0,"depth":1},seed=13,batch_size=6)
+        y,trace2=select_typed_lesson(raw,prior,
+            {"old":20,"contrast":1,"depth":3},seed=13,batch_size=6)
+        self.assertEqual(trace1["effective_old_grade_examples"],0)
+        self.assertGreater(trace2["effective_old_grade_examples"],0)
+        self.assertEqual({r["capability"] for r in x},{"C.COUNT"})
+        self.assertIn("A.IDENTITY",{r["capability"] for r in y})
+        self.assertNotEqual([r["id"] for r in x],[r["id"] for r in y])
+        self.assertEqual(trace2["preview_control"],"NOT_AVAILABLE_UNADMITTED_FUTURE_GRADE")
+
+
+if __name__=="__main__":
+    unittest.main()

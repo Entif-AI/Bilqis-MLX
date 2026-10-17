@@ -138,9 +138,12 @@ def _check_model_shape(weights, batches):
             raise ValueError("ANSWER_CASTE_MODEL_VOCAB_OR_CONTEXT_MISMATCH")
 
 
-def _objective(mx, weights, batches, config):
+def _objective(mx, weights, batches, config, *, champion_guidance=None):
     losses = []
-    for batch in batches.values():
+    champion_guidance = champion_guidance or {}
+    if set(champion_guidance) - set(batches):
+        raise ValueError("TYPED_CONFIDENCE_UNKNOWN_HEAD")
+    for kind, batch in batches.items():
         logits = forward_arrays(
             mx, weights, batch["ids"], batch["lengths"],
             heads=config["heads"], layers=config["layers"],
@@ -148,24 +151,42 @@ def _objective(mx, weights, batches, config):
         target_index = mx.array(np.asarray(batch["target_indices"],
                                            dtype=np.int32))[:, None]
         correct_logit = mx.take_along_axis(logits,target_index,axis=-1)[:,0]
-        losses.append(mx.mean(mx.logsumexp(logits, axis=-1) - correct_logit))
+        normalizer = mx.logsumexp(logits, axis=-1)
+        loss = mx.mean(normalizer - correct_logit)
+        if kind in champion_guidance:
+            target, strength = champion_guidance[kind]
+            target = np.asarray(target, dtype=np.float32)
+            strength = np.asarray(strength, dtype=np.float32)
+            if (target.shape != (len(batch["target_indices"]), len(batch["answer_ids"])) or
+                    strength.shape != (len(batch["target_indices"]),) or
+                    not np.isfinite(target).all() or not np.isfinite(strength).all() or
+                    (target < 0).any() or (strength < 0).any() or
+                    (strength > .08 + 1e-6).any() or
+                    not np.allclose(target.sum(axis=-1), 1., atol=1e-5)):
+                raise ValueError("TYPED_CONFIDENCE_INVALID_SOFT_TARGET")
+            loss = loss + mx.mean(mx.array(strength) *
+                (normalizer - mx.sum(logits * mx.array(target), axis=-1)))
+        losses.append(loss)
     # High-fidelity direct numeric supervision is not drowned out by the
     # two assertion/contrast examples accompanying every one direct answer.
     return sum(losses) / len(losses)
 
 
-def typed_objective(mx, weights, rows, heads, config):
+def typed_objective(mx, weights, rows, heads, config, *, champion_guidance=None):
     batches = prepare_typed_batches(rows, heads)
     _check_model_shape(weights, batches)
-    return _objective(mx, weights, batches, config)
+    return _objective(mx, weights, batches, config,
+                      champion_guidance=champion_guidance)
 
 
-def typed_step(mx, weights, optimizer, rows, heads, config):
+def typed_step(mx, weights, optimizer, rows, heads, config, *,
+               champion_guidance=None):
     """Operator adapter, exercised only against synthetic models in tests."""
     batches = prepare_typed_batches(rows, heads)
     _check_model_shape(weights, batches)
     loss, gradients = mx.value_and_grad(
-        lambda current: _objective(mx, current, batches, config))(weights)
+        lambda current: _objective(mx, current, batches, config,
+                                   champion_guidance=champion_guidance))(weights)
     pad_mask = mx.arange(weights["embedding.weight"].shape[0])[:, None] != 0
     gradients["embedding.weight"] = mx.where(
         pad_mask, gradients["embedding.weight"],

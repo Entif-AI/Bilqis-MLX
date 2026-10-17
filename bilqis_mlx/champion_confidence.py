@@ -41,18 +41,32 @@ def vote_targets(votes, labels, *, eligible_capabilities: int,
     at most MAX_INFLUENCE in total for any row. Wrong votes are ignored.
     Teacher-selected distillation strength remains authoritative.
     """
+    return vote_targets_typed(votes, labels, classes=2,
+                              eligible_capabilities=eligible_capabilities,
+                              teacher_distill=teacher_distill)
+
+
+def vote_targets_typed(votes, labels, *, classes: int,
+                       eligible_capabilities: int, teacher_distill: float):
+    """The same source-gold-agreeing bounded confidence for any admitted head.
+
+    Dense one-hot class targets are never allocated. A wrong mentor simply
+    contributes no advice; independent scorer logits remain untouched.
+    """
     labels = np.asarray(labels, dtype=np.int64)
-    if (labels.ndim != 1 or not np.isin(labels, [0, 1]).all() or
+    if (type(classes) is not int or classes < 2 or
+            labels.ndim != 1 or (labels < 0).any() or
+            (labels >= classes).any() or
             type(eligible_capabilities) is not int or eligible_capabilities < 1 or
             not np.isfinite(teacher_distill) or not 0 <= teacher_distill <= 1):
         raise ValueError("CHAMPION_CONFIDENCE_INVALID_INPUT")
-    target = np.zeros((len(labels), 2), dtype=np.float64)
+    target = np.zeros((len(labels), classes), dtype=np.float64)
     weight = np.zeros(len(labels), dtype=np.float64)
     for breadth, raw in votes:
         raw = np.asarray(raw, dtype=np.float64)
         if (type(breadth) not in (int, float) or
                 not np.isfinite(breadth) or not 0 < breadth <= eligible_capabilities or
-                raw.shape != (len(labels), 2) or not np.isfinite(raw).all()):
+                raw.shape != (len(labels), classes) or not np.isfinite(raw).all()):
             raise ValueError("CHAMPION_CONFIDENCE_INVALID_VOTE")
         accepted = np.argmax(raw, axis=-1) == labels
         if not accepted.any():
@@ -66,6 +80,6 @@ def vote_targets(votes, labels, *, eligible_capabilities: int,
         weight[accepted] += contribution
     active = weight > 0
     target[active] /= weight[active, None]
-    target[~active] = [0.5, 0.5]
+    target[~active] = 1.0 / classes
     weight = np.minimum(weight, MAX_INFLUENCE)
     return target.astype(np.float32), weight.astype(np.float32)

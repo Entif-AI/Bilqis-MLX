@@ -279,7 +279,10 @@ def human_stop_summary(result: dict) -> str:
                     "No checkpoint cleanup or reserve reduction was performed.")
     if reason not in ("GRADE_A_AWAITING_NEXT_GRADE", "GRADE_B_AWAITING_NEXT_GRADE",
                       "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
-        message += "\nTo continue: npm run train -- --human-run --resume --minutes 90"
+        message += ("\nTo continue: " +
+                    result.get("safe_resume_command",
+                               "npm run train -- --human-run --resume") +
+                    " --minutes 90")
     return message + "\nHistorical dashboard: npm run dashboard"
 
 
@@ -300,6 +303,16 @@ def parse_args(argv=None):
             p.add_argument("--resume",action="store_true")
             p.add_argument('--numeric-staircase', action='store_true',
                            help='Warm-start C at 0..3, grow to 6 before MUL/DIV')
+            p.add_argument('--experimental-retention', action='store_true',
+                           help='OPT-IN parity-size parent/challenger learning research only')
+            p.add_argument('--experiment-probe-each', type=int, default=6,
+                           help='Source-oracled same-cohort rows per admitted capability')
+            p.add_argument('--experiment-mature-max-loss', type=int, default=2,
+                           help='PROVISIONAL max new wrong answers on any protected capability')
+            p.add_argument('--experiment-introduction-extra-loss', type=int, default=2,
+                           help='Additional tolerable losses during first acquisition')
+            p.add_argument('--experiment-protected-cap-limit', type=int, default=8,
+                           help='Bounded grade-stratified sentinel panel per visit')
             p.add_argument("--human-run",action="store_true",
                            help="Explicitly authorizes actual optimizer steps by the human operator")
             p.add_argument("--minutes",type=int,default=90)
@@ -319,10 +332,21 @@ def main(argv=None):
         if args.action=="status":return status(args.run_dir)
         if args.action=="dashboard":return dashboard(args.run_dir)
         if args.action=="diagnostics":return diagnostics(args.run_dir)
-        if args.dry_run:return preflight(args.run_dir,resume=args.resume,
-                                        verify_source=args.verify_source,
-                                        legacy_code_root=args.legacy_code_root,
-                                        champion_checkpoint=args.champion_checkpoint, numeric_staircase=args.numeric_staircase)
+        if args.dry_run:
+            from .learning_experiment import Settings
+            if args.experimental_retention:
+                settings = Settings(
+                    probe_each=args.experiment_probe_each,
+                    mature_max_loss=args.experiment_mature_max_loss,
+                    introduction_extra_loss=args.experiment_introduction_extra_loss,
+                    protected_cap_limit=args.experiment_protected_cap_limit)
+                print("EXPERIMENTAL RETENTION PLAN, NO NEURAL UPDATES: "+str(settings),
+                      file=sys.stderr)
+            return preflight(args.run_dir,resume=args.resume,
+                             verify_source=args.verify_source,
+                             legacy_code_root=args.legacy_code_root,
+                             champion_checkpoint=args.champion_checkpoint,
+                             numeric_staircase=args.numeric_staircase)
         if args.verify_source:
             raise ValueError("VERIFY_SOURCE_REQUIRES_DRY_RUN")
         if not args.human_run:
@@ -359,7 +383,12 @@ def main(argv=None):
                 resume=args.resume, minutes=args.minutes,
                 steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
                 batch_size=args.batch_size, reserve_gib=args.reserve_gib,
-                numeric_staircase=args.numeric_staircase)
+                numeric_staircase=args.numeric_staircase,
+                experimental_retention=args.experimental_retention,
+                experiment_probe_each=args.experiment_probe_each,
+                experiment_mature_max_loss=args.experiment_mature_max_loss,
+                experiment_introduction_extra_loss=args.experiment_introduction_extra_loss,
+                experiment_protected_cap_limit=args.experiment_protected_cap_limit)
         if board is not None:
             board = build(args.run_dir, reserve_gib=args.reserve_gib)
             board.mode = "STOPPED | " + result["stop_reason"]
