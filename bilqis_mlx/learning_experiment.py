@@ -313,6 +313,23 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             "negative_archetype_count": len(channel["negative_archetypes"])}
 
 
+def selection_credit(lesson_reward: float, retention: dict | None,
+                     contextual: dict | None) -> float:
+    """Use source-paired admission feedback for forward-only bandit learning.
+
+    The old lesson delta still describes retained student accuracy. Under
+    retention it is zero on rejection, which must not mean a neutral teacher
+    experiment. The context channel has already scored that same attempt.
+    """
+    if retention is None:
+        return lesson_reward
+    reward = contextual.get("teacher_context_reward") if isinstance(contextual, dict) else None
+    if (not isinstance(reward, (float, int)) or not math.isfinite(reward) or
+            (retention.get("decision") == "REJECT" and reward >= 0)):
+        raise ValueError("LEARNING_EXPERIMENT_INVALID_SELECTION_CREDIT")
+    return float(reward)
+
+
 def fork_student(mx, parameters: dict, optimizer):
     """Copy all FP32 weights and native AdamW to a disposable trial in RAM."""
     import mlx.optimizers as optim

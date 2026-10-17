@@ -35,7 +35,7 @@ from .grade_soup import (grade_soup_recipe, partitioned_recipe,
 from .learning_experiment import (
     VERSION as LEARNING_EXPERIMENT_VERSION, Settings as LearningSettings,
     contextual_pick, paired_outcomes, decide as decide_learning_trial,
-    observe_context, fork_student, commit_trial, select_typed_lesson,
+    observe_context, selection_credit, fork_student, commit_trial, select_typed_lesson,
     sampled_protection,
 )
 from .whole_student_retention import advance_peaks
@@ -1565,7 +1565,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     ] + deferred_misses + remaining_priority
     all_teacher_misses.sort(key=lambda row: (row["capability"], row["id"]))
     reward = after - before
-    engine.observe(teacher, lesson_grade, policy_key, reward)
+    bandit_credit = selection_credit(reward, outcome, context_credit)
+    engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
     expected_retained = (step_before if outcome is not None and
                          outcome["decision"] == "REJECT" else attempted_step)
     if int(optimizer.state["step"].item()) != expected_retained:
@@ -1607,6 +1608,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "source_training_accuracy_before": before,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
+        "teacher_selection_reward": bandit_credit,
         **({"typed_policy_controls": {
             "optimizer_batches_observed": len(typed_control_receipts),
             "old_grade_examples_delivered": sum(

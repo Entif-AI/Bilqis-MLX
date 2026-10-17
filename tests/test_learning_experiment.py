@@ -6,7 +6,7 @@ import numpy as np
 
 from bilqis_mlx.learning_experiment import (
     Settings, paired_outcomes, decide, contextual_pick, observe_context,
-    fork_student, commit_trial, sampled_protection,
+    fork_student, commit_trial, sampled_protection, selection_credit,
 )
 
 
@@ -24,6 +24,17 @@ def predicted(rows_, wrong):
 
 
 class CausalTeacherExperimentTests(unittest.TestCase):
+    def test_primary_bandit_receives_negative_rejection_credit_instead_of_zero(self):
+        rejected = {"decision": "REJECT"}
+        credit = {"teacher_context_reward": -0.05}
+        self.assertEqual(selection_credit(0.0, rejected, credit), -0.05)
+        accepted = {"decision": "PROVISIONAL"}
+        self.assertEqual(selection_credit(0.0, accepted,
+                                          {"teacher_context_reward": 1/21}), 1/21)
+        self.assertEqual(selection_credit(0.125, None, None), 0.125)
+        with self.assertRaisesRegex(ValueError, "INVALID_SELECTION_CREDIT"):
+            selection_credit(0.0, rejected, {"teacher_context_reward": 0.0})
+
     def test_vulnerable_boolean_anchor_flip_vetoes_positive_c_trial_and_teaches_teacher(self):
         paired = {"C.SUCCESSOR": {"before": 20, "after": 21, "total": 21},
                   "B.XOR": {"before": 6, "after": 6, "total": 6}}
