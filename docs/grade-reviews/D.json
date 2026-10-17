@@ -1,5 +1,5 @@
 {
-  "schema": "bilqis.next-grade-review/v2",
+  "schema": "bilqis.next-grade-review/v3",
   "authority": "IPR-0220/grade-questions-20261017",
   "grade": "D",
   "parent_release": "NOT_YET_ADMITTED_GRADE_C",
@@ -48,5 +48,6 @@
       "rationale": "Any eventually selected D primitive must be positively defined using earlier independently qualified semantic prerequisites, without handwritten exclusions of competing primitive identities"
     }
   },
-  "reviews": {}
+  "reviews": {},
+  "semantic_release": null
 }

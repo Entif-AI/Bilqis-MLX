@@ -9,8 +9,12 @@ from dataclasses import dataclass
 import hashlib
 import json
 import random
+from typing import Mapping
 
 from .curriculum import Course, validate
+from .semantics.core import Apply, Expression, Operation, TypedError, literal
+from .semantics.functions import curry
+from .verification.expressions import Backend, Proof, verify
 
 
 @dataclass(frozen=True)
@@ -36,6 +40,213 @@ class CurriculumAST:
         from dataclasses import asdict
         value = json.dumps(asdict(self), sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(value.encode()).hexdigest()
+
+
+@dataclass(frozen=True)
+class FiniteTypedInput:
+    """A bounded typed leaf domain for declarative candidate construction."""
+
+    type_name: str
+    values: tuple[str | bool, ...]
+    world_contract: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.values:
+            raise ValueError("CURRICULUM_GENERIC_EMPTY_TYPED_DOMAIN")
+        for value in self.values:
+            literal(value, self.type_name, world_contract=self.world_contract)
+
+    def instantiate(self, rng: random.Random) -> Expression:
+        return literal(rng.choice(self.values), self.type_name,
+                       world_contract=self.world_contract)
+
+
+@dataclass(frozen=True)
+class TypedExpressionTemplate:
+    """Declarative composition over the existing immutable semantic AST."""
+
+    operation: Operation
+    arguments: tuple["TypedExpressionTemplate | FiniteTypedInput", ...]
+
+    def __post_init__(self) -> None:
+        if len(self.arguments) != len(self.operation.signature.inputs):
+            raise ValueError("CURRICULUM_GENERIC_TEMPLATE_ARITY_MISMATCH")
+        for argument, expected in zip(self.arguments, self.operation.signature.inputs):
+            actual = (argument.operation.signature.output
+                      if isinstance(argument, TypedExpressionTemplate)
+                      else argument.type_name if isinstance(argument, FiniteTypedInput)
+                      else None)
+            if actual != expected:
+                raise ValueError("CURRICULUM_GENERIC_TEMPLATE_TYPE_MISMATCH")
+
+    def instantiate(self, rng: random.Random) -> Apply:
+        arguments = tuple(argument.instantiate(rng) for argument in self.arguments)
+        expression = curry(self.operation)(*arguments)
+        if not isinstance(expression, Apply):
+            raise ValueError("CURRICULUM_GENERIC_TEMPLATE_NOT_FULLY_APPLIED")
+        return expression
+
+
+@dataclass(frozen=True)
+class TypedCandidateSpecimen:
+    capability: str
+    split: str
+    ordinal: int
+    seed: int
+    expression: Expression
+    proof: Proof
+    type_name: str
+    world_contract: str | None
+    admitted: bool = False
+
+
+@dataclass(frozen=True)
+class TypedCandidatePackage:
+    """Seeded, source-verified candidate lessons and tests for a typed AST.
+
+    This is deliberately a read-only proposal artifact.  Its receipts make a
+    semantic-contract edit observable, while leaving old candidate packages
+    inspectable and leaving every admission and neural action outside this
+    module.
+    """
+
+    ast_sha256: str
+    ast_version: str
+    ast_nodes: tuple[CapabilityNode, ...]
+    operation_bindings: tuple[Operation, ...]
+    lessons: tuple[TypedCandidateSpecimen, ...]
+    tests: tuple[TypedCandidateSpecimen, ...]
+    coverage_debt: tuple[str, ...] = ()
+    source_status: str = "SOURCE_ONLY_CANDIDATE"
+    training_authorized: bool = False
+
+
+def _coverage_debt(code: str, *parts: str) -> ValueError:
+    return ValueError("CURRICULUM_GENERIC_COVERAGE_DEBT:" + code + ":" + ":".join(parts))
+
+
+def _seeded_rng(seed: int, node_id: str, split: str, ordinal: int) -> random.Random:
+    material = f"{seed}:{node_id}:{split}:{ordinal}".encode()
+    return random.Random(int(hashlib.sha256(material).hexdigest()[:16], 16))
+
+
+def _operations(expression: Expression) -> tuple[Operation, ...]:
+    if not isinstance(expression, Apply):
+        return ()
+    return (expression.operator, *(
+        operation for argument in expression.arguments for operation in _operations(argument)))
+
+
+def _validate_answer_type(node: CapabilityNode, expression: Expression) -> None:
+    supported = {"binary": "Boolean"}
+    if not node.answers or any(answer not in supported for answer in node.answers):
+        raise _coverage_debt("UNSUPPORTED_ANSWER_TYPE", node.id)
+    if expression.type_name not in {supported[answer] for answer in node.answers}:
+        raise _coverage_debt("SOURCE_OUTPUT_ANSWER_TYPE_MISMATCH", node.id)
+
+
+def compile_typed_candidate_package(
+    ast: CurriculumAST, *, operations: Mapping[str, Operation],
+    templates: Mapping[str, TypedExpressionTemplate],
+    source: Backend, independent: Backend, qualified_prerequisites=(),
+    seed: int = 0, specimens_per_split: int = 2,
+) -> TypedCandidatePackage:
+    """Compile a bounded, source-only candidate package from existing typed ASTs.
+
+    Templates are declarative compositions over ``semantics.functions`` and
+    finite typed inputs, so seeded instantiation has no capability-specific
+    constructor dispatch. Qualification inputs are labels only: compilation
+    cannot prove source pinning, morphology, catalog admission, or mastery.
+    """
+    if type(seed) is not int or type(specimens_per_split) is not int or specimens_per_split < 1:
+        raise ValueError("CURRICULUM_GENERIC_INVALID_SEED_OR_SPECIMEN_COUNT")
+    if not isinstance(ast, CurriculumAST) or not isinstance(templates, Mapping):
+        raise ValueError("CURRICULUM_GENERIC_INVALID_COMPILATION_INPUT")
+    dependency_coverage_plan(ast)
+    if not getattr(source, "identity", None) or not getattr(independent, "identity", None):
+        raise _coverage_debt("MISSING_INDEPENDENT_ORACLE_IDENTITY")
+    known = {node.id for node in ast.nodes}
+    qualified = set(qualified_prerequisites)
+    unknown = qualified - known
+    if unknown:
+        raise _coverage_debt("UNKNOWN_QUALIFIED_PREREQUISITE", *sorted(unknown))
+    for node in ast.nodes:
+        if not node.source or not node.oracle:
+            raise _coverage_debt("MISSING_SOURCE_OR_ORACLE", node.id)
+        if not node.roots:
+            raise _coverage_debt("MISSING_TYPED_SOURCE_ROOT", node.id)
+        if node.id not in templates:
+            raise _coverage_debt("MISSING_DECLARATIVE_TEMPLATE", node.id)
+        if not isinstance(templates[node.id], TypedExpressionTemplate):
+            raise _coverage_debt("INVALID_DECLARATIVE_TEMPLATE", node.id)
+        for root in node.roots:
+            operation = operations.get(root)
+            if not isinstance(operation, Operation) or operation.symbol != root:
+                raise _coverage_debt("MISSING_TYPED_SOURCE_OPERATION", node.id, root)
+        for prerequisite in (*node.requires, *node.composed_of):
+            if prerequisite not in known:
+                raise _coverage_debt("MISSING_PREREQUISITE", node.id, prerequisite)
+            if prerequisite not in qualified:
+                raise _coverage_debt("MISSING_PREREQUISITE", node.id, prerequisite)
+
+    extra_templates = set(templates) - known
+    if extra_templates:
+        raise _coverage_debt("UNDECLARED_TEMPLATE", *sorted(extra_templates))
+
+    compiled = {"lesson": [], "test": []}
+    for split in ("lesson", "test"):
+        for node in ast.nodes:
+            for ordinal in range(specimens_per_split):
+                try:
+                    expression = templates[node.id].instantiate(
+                        _seeded_rng(seed, node.id, split, ordinal))
+                    nested = _operations(expression)
+                    bound_roots = {operation.symbol for operation in nested}
+                    if not set(node.roots) <= bound_roots:
+                        raise _coverage_debt("TEMPLATE_MISSING_DECLARED_ROOT", node.id)
+                    for operation in nested:
+                        if operations.get(operation.symbol) != operation:
+                            raise _coverage_debt("UNBOUND_NESTED_OPERATION", node.id,
+                                                 operation.symbol)
+                    _validate_answer_type(node, expression)
+                    proof = verify(expression, source=source, independent=independent)
+                except TypedError as exc:
+                    code = ("ORACLE_DISAGREEMENT" if str(exc) == "COMPOSITION_ORACLE_DISAGREEMENT"
+                            else "INVALID_TYPED_SOURCE_WITNESS")
+                    raise _coverage_debt(code, node.id) from exc
+                compiled[split].append(TypedCandidateSpecimen(
+                    node.id, split, ordinal, seed, expression, proof,
+                    expression.type_name, expression.world_contract))
+    bindings = {operation.symbol: operation
+                for template in templates.values()
+                for operation in _operations(template.instantiate(random.Random(0)))}
+    return TypedCandidatePackage(ast.digest(), ast.version, ast.nodes,
+                                 tuple(sorted(bindings.values(), key=lambda item: item.symbol)),
+                                 tuple(compiled["lesson"]), tuple(compiled["test"]))
+
+
+def invalidated_typed_packages(
+    package: TypedCandidatePackage, ast: CurriculumAST,
+    operations: Mapping[str, Operation],
+) -> tuple[str, ...]:
+    """Return affected nodes after a bound operation contract changes.
+
+    Package bytes are intentionally not rewritten: callers retain old receipts
+    and compile a fresh candidate package for the reported closure.
+    """
+    if not isinstance(package, TypedCandidatePackage):
+        raise ValueError("CURRICULUM_GENERIC_INVALID_CANDIDATE_PACKAGE")
+    dependency_coverage_plan(ast)
+    previous = {node.id: node for node in package.ast_nodes}
+    current = {node.id: node for node in ast.nodes}
+    changed = {identity for identity in set(previous) | set(current)
+               if previous.get(identity) != current.get(identity)}
+    for prior in package.operation_bindings:
+        if operations.get(prior.symbol) != prior:
+            changed.update(node.id for node in ast.nodes if prior.symbol in node.roots)
+    existing = tuple(sorted(changed & set(current)))
+    return tuple(sorted((changed - set(current)) |
+                        set(affected_dependency_closure(ast, existing))))
 
 
 def compile_ast(course: Course) -> CurriculumAST:

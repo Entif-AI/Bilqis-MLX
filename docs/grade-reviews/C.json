@@ -1,5 +1,5 @@
 {
-  "schema": "bilqis.next-grade-review/v2",
+  "schema": "bilqis.next-grade-review/v3",
   "authority": "IPR-0220/grade-questions-20261017",
   "grade": "C",
   "parent_release": "bilqis.mlx.grade-a-b-live/20261015-v1",
@@ -68,5 +68,6 @@
       "rationale": "Positive source-typed number meanings and operation witnesses must be composed from earlier qualified constituents; contextual comparison against neighboring meanings is not part of each primitive's definition"
     }
   },
-  "reviews": {}
+  "reviews": {},
+  "semantic_release": null
 }

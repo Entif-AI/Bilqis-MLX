@@ -2,21 +2,25 @@
 from __future__ import annotations
 
 from pathlib import Path
+import hashlib
+import json
 import tempfile
 import unittest
 
-from bilqis_mlx.next_grade_review import (QUESTION_IDS, assess, load_review, subject_digest)
+from bilqis_mlx.next_grade_review import (QUESTION_IDS, SCHEMA, assess, evidence_references,
+                                       load_review, subject_digest)
+from bilqis_mlx.verification.review_evidence import EvidenceContext
 
 
 def candidate(identifier, *, modality="DIRECT_TEXT_SEMANTIC_TRANSFER"):
     return {
         "id": identifier,
-        "source": "repo:source/verified/" + identifier,
+        "source": "receipt:source/" + identifier,
         "text_model_relevance": modality,
         "needs_neural_learning": "Independent retained transfer probe, not a codec lookup",
         "smallest_increment": "One independently tested semantic constituent",
         "prerequisites": [{"id": "A.IDENTITY", "state": "MASTERED",
-                           "evidence": "run:checkpoint/verified"}],
+                           "evidence": "receipt:checkpoint/verified"}],
         "frontloaded_foundations": [],
         "unlocks": [{"capability": "E.COMPOSE", "via": identifier,
                      "why": "Composes learned constituent with an unfamiliar relation"}],
@@ -25,9 +29,10 @@ def candidate(identifier, *, modality="DIRECT_TEXT_SEMANTIC_TRANSFER"):
 
 def proposal():
     item = {
-        "schema": "bilqis.next-grade-review/v2",
+        "schema": SCHEMA,
         "authority": "IPR-0220/grade-questions-20261017",
         "grade": "D", "parent_release": "fixed-parent-v1",
+        "semantic_release": "synthetic-semantics/v1",
         "modality": "TEXT_ONLY",
         "selected": "semantic-binding",
         "candidates": [candidate("semantic-binding"), candidate("phonology")],
@@ -45,7 +50,7 @@ def proposal():
                                "Teach positive typed operations from mastered prerequisites"},
         },
         "reviews": {name: {q: {"status": "EVIDENCED", "evidence": [
-            "repo:source/qualification/" + name + "/" + q]}
+            "receipt:qualification/" + name + "/" + q]}
             for q in QUESTION_IDS} for name in ("selection", "construction", "admission")},
     }
     for phase in item["reviews"].values():
@@ -53,13 +58,61 @@ def proposal():
     return item
 
 
+def evidence_fixture(record, root):
+    """Independent-issued synthetic attestations; never a production trust root."""
+    root = Path(root)
+    artifact = root / "witness.json"
+    artifact.write_text('{"synthetic_independent_fixture":true}')
+    claims = {}
+    for item in record.get("candidates", ()):
+        if not isinstance(item, dict):
+            continue
+        ref = item.get("source")
+        if isinstance(ref, str) and ref.startswith("receipt:"):
+            claims.setdefault(ref, []).append("candidate:" + str(item["id"]) + ":source")
+        for p in item.get("prerequisites", ()):
+            if isinstance(p, dict) and isinstance(p.get("evidence"), str) and p["evidence"].startswith("receipt:"):
+                claims.setdefault(p["evidence"], []).append("prerequisite:" + str(p["id"]) + ":" + str(p["state"]))
+    for phase, answers in record.get("reviews", {}).items():
+        for q in QUESTION_IDS:
+            answer = answers.get(q)
+            if not isinstance(answer, dict) or not isinstance(answer.get("evidence"), list):
+                continue
+            for ref in answer["evidence"]:
+                if isinstance(ref, str) and ref.startswith("receipt:"):
+                    claims.setdefault(ref, []).append("review:" + phase + ":" + q)
+    payload = {"schema": "bilqis.review-evidence/v1", "grade": record["grade"],
+               "parent_release": record["parent_release"],
+               "semantic_release": record["semantic_release"],
+               "subject_sha256": subject_digest(record), "receipts": [
+                   {"id": ref, "claims": values, "qualification": "INDEPENDENTLY_QUALIFIED",
+                    "producer": "fixture-author", "reviewer": "fixture-reviewer",
+                    "artifacts": [{"path": artifact.name, "sha256": hashlib.sha256(artifact.read_bytes()).hexdigest(),
+                                   "source": "synthetic:fixture-source", "revision": "fixture/v1"}]}
+                   for ref, values in claims.items()]}
+    path = root / "evidence.json"
+    path.write_text(json.dumps(payload))
+    expected = hashlib.sha256(path.read_bytes()).hexdigest()
+    context = EvidenceContext(path, expected, root)
+    inventory = context.inspect(grade=record["grade"], parent_release=record["parent_release"],
+                                semantic_release=record["semantic_release"], subject_sha256=subject_digest(record))
+    for name, phase in record["reviews"].items():
+        phase["evidence_sha256"] = inventory.digest_for(evidence_references(record, name))
+    return context
+
+
 class NextGradeReviewTests(unittest.TestCase):
+    def check(self, record, **kwargs):
+        with tempfile.TemporaryDirectory() as tmp:
+            evidence = evidence_fixture(record, tmp)
+            return assess(record, evidence=evidence, **kwargs)
+
     def test_semantic_function_families_are_considered_without_forcing_nlp(self):
         record = proposal()
-        self.assertEqual(assess(record, grade="D", parent_release="fixed-parent-v1",
+        self.assertEqual(self.check(record, grade="D", parent_release="fixed-parent-v1",
                                 phase="admission")["status"], "READY_FOR_INDEPENDENT_REVIEW")
         del record["semantic_function_families"]["association"]
-        blockers = assess(record, grade="D", parent_release="fixed-parent-v1")["blockers"]
+        blockers = self.check(record, grade="D", parent_release="fixed-parent-v1")["blockers"]
         self.assertIn("SEMANTIC_FUNCTION_NOT_CONSIDERED:association", blockers)
 
     def test_required_contextual_function_cannot_self_certify(self):
@@ -69,7 +122,7 @@ class NextGradeReviewTests(unittest.TestCase):
             "rationale": "This candidate calls for contextual sense resolution",
             "evidence": "repo:proposed-not-validated",
         }
-        blockers = assess(record, grade="D", parent_release="fixed-parent-v1")["blockers"]
+        blockers = self.check(record, grade="D", parent_release="fixed-parent-v1")["blockers"]
         self.assertIn("SEMANTIC_FUNCTION_QUALIFICATION_REQUIRED:disambiguation", blockers)
         record["semantic_function_families"]["association"]["rationale"] = ""
         self.assertIn("SEMANTIC_FUNCTION_RATIONALE_MISSING:association", assess(
@@ -78,7 +131,7 @@ class NextGradeReviewTests(unittest.TestCase):
     def test_malformed_function_posture_fails_closed(self):
         record = proposal()
         record["semantic_function_families"]["association"]["posture"] = ["invalid"]
-        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1")
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("SEMANTIC_FUNCTION_POSTURE_INVALID:association", result["blockers"])
 
@@ -93,13 +146,13 @@ class NextGradeReviewTests(unittest.TestCase):
     def test_malformed_candidate_and_decision_fail_closed(self):
         record = proposal()
         record["candidates"] = [candidate("valid"), {"id": ["unhashable"]}]
-        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1")
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("GRADE_CANDIDATE_IDENTITY_INVALID", result["blockers"])
 
         record = proposal()
         record["decision"] = ["not a decision object"]
-        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1")
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("GRADE_DECISION_REASON_MISSING:why_now", result["blockers"])
 
@@ -108,20 +161,20 @@ class NextGradeReviewTests(unittest.TestCase):
         record["candidates"][0]["text_model_relevance"] = ["unexpected-list"]
         record["candidates"][0]["source"] = ["not a source reference"]
         record["reviews"]["selection"]["Q01"]["evidence"] = [123]
-        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1")
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("SELECTED_TOPIC_SOURCE_NOT_INDEPENDENT", result["blockers"])
         self.assertIn("REVIEW_QUESTION_UNRESOLVED:selection:Q01", result["blockers"])
 
     def test_all_ten_questions_recur_at_each_phase(self):
         record = proposal()
-        result = assess(record, grade="D", parent_release="fixed-parent-v1", phase="admission")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1", phase="admission")
         self.assertEqual(result["status"], "READY_FOR_INDEPENDENT_REVIEW")
         self.assertEqual(result["question_ids"], list(QUESTION_IDS))
         for phase in ("selection", "construction", "admission"):
             assert phase in result["reviewed_phases"]
         del record["reviews"]["construction"]["Q09"]
-        result = assess(record, grade="D", parent_release="fixed-parent-v1", phase="admission")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1", phase="admission")
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("REVIEW_QUESTION_MISSING:construction:Q09", result["blockers"])
 
@@ -129,20 +182,20 @@ class NextGradeReviewTests(unittest.TestCase):
         record = proposal()
         record["selected"] = "phonology"
         record["candidates"][1]["text_model_relevance"] = "UNKNOWN"
-        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1")
         self.assertIn("SELECTED_TOPIC_TEXT_RELEVANCE_UNPROVEN", result["blockers"])
         record["candidates"][1]["text_model_relevance"] = "DETERMINISTIC_CODEC_SUFFICIENT"
-        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1")
         self.assertIn("SELECTED_TOPIC_TEXT_RELEVANCE_UNPROVEN", result["blockers"])
         record["selected"] = None
-        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1")
         self.assertIn("NEXT_GRADE_NOT_SELECTED", result["blockers"])
 
     def test_unsupported_prerequisite_or_unlinked_unlock_blocks(self):
         record = proposal()
         record["candidates"][0]["prerequisites"] = [
             {"id": "D.BIND", "state": "REQUIRED_NOT_TAUGHT", "evidence": ""}]
-        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1")
         self.assertIn("PREREQUISITE_NOT_DISCHARGED:D.BIND", result["blockers"])
         record["candidates"][0]["prerequisites"] = [{
             "id": "D.BIND", "state": "EARLIER_STAGE", "stage": 1,
@@ -156,13 +209,13 @@ class NextGradeReviewTests(unittest.TestCase):
 
     def test_parent_release_change_invalidates_old_review(self):
         record = proposal()
-        result = assess(record, grade="D", parent_release="next-release-v2")
+        result = self.check(record, grade="D", parent_release="next-release-v2")
         self.assertIn("NEXT_GRADE_REVIEW_STALE_PARENT", result["blockers"])
 
     def test_selection_changes_reopen_all_prior_review_phases(self):
         record = proposal()
         record["decision"]["why_now"] += " and a new prerequisite"
-        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1")
         self.assertIn("REVIEW_SCOPE_STALE:selection", result["blockers"])
 
     def test_missing_review_blocks_all_future_grades_without_fake_approval(self):
@@ -173,7 +226,7 @@ class NextGradeReviewTests(unittest.TestCase):
 
     def test_graduated_phase_does_not_reuse_admission_review_as_reflection(self):
         record = proposal()
-        result = assess(record, grade="D", parent_release="fixed-parent-v1",
+        result = self.check(record, grade="D", parent_release="fixed-parent-v1",
                         phase="retrospective")
         self.assertIn("REVIEW_PHASE_MISSING:retrospective", result["blockers"])
 
