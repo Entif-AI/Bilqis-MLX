@@ -1081,6 +1081,45 @@ def _reconcile_learning_settings(run_dir, receipt, course, settings, optimizer):
     return result
 
 
+def _seed_saved_whole_student_peak(run_dir, receipt, course, optimizer):
+    """Protect the already saved live exam before the next neural visit.
+
+    Only an exam belonging to the current, fully durable checkpoint qualifies.
+    Earlier rubric scores, orphan bundles and mismatched AdamW cannot seed it.
+    """
+    if receipt.get("whole_student_peaks"):
+        return receipt
+    school = _state_from_json(receipt["school"], course)
+    checkpoint = asdict(school.current_student)
+    prior = receipt.get("last_exam") or {}
+    if (not prior.get("scores") or
+            prior.get("student_sha256") != checkpoint["sha256"] or
+            prior.get("optimizer_step") != checkpoint["optimizer_step"]):
+        return receipt
+    if int(optimizer.state["step"].item()) != checkpoint["optimizer_step"]:
+        raise ValueError("WHOLE_STUDENT_PEAK_SEED_ADAMW_DRIFT")
+    peaks, outcome = advance_peaks(
+        [], curriculum_mode=receipt["curriculum_mode"],
+        numeric_maximum=receipt.get("numeric_maximum"),
+        rubric_sha256=prior["exam_rubric_sha256"],
+        cohort_sha256=prior["cohort_sha256"],
+        assessment_scope_sha256=prior["assessment_scope_sha256"],
+        scores=prior["scores"], checkpoint=checkpoint)
+    candidate = _advance(run_dir, {**receipt, "whole_student_peaks": peaks},
+                         school, persist=False)
+    event = {"event": "SCHOOL_EXISTING_WHOLE_STUDENT_PEAK_PRESERVED",
+             "generation": candidate["generation"],
+             "optimizer_step": checkpoint["optimizer_step"],
+             "student_sha256": checkpoint["sha256"],
+             "exam_correct": outcome["best_correct"],
+             "exam_total": outcome["best_total"],
+             "source_cohort_sha256": prior["cohort_sha256"],
+             "model_and_optimizer_unchanged": True}
+    result = _persist(run_dir, _with_delivery_outbox(candidate, (event,)))
+    _reconcile_delivery_outbox(run_dir, result)
+    return result
+
+
 def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None, course=None):
     """Draw A only or cumulative A+B with identical source-oracle standards."""
     if course is not None:
@@ -2205,6 +2244,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             if experimental_retention else None)
         receipt = _reconcile_learning_settings(
             run_dir, receipt, course, learning_settings, optimizer)
+        if learning_settings is not None:
+            receipt = _seed_saved_whole_student_peak(
+                run_dir, receipt, course, optimizer)
         visits = 0
         while True:
             from .numeric_staircase import scope_advance_due, advance_scope

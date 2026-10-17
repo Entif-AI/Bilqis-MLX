@@ -69,6 +69,26 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertEqual(reloaded, updated)
         self.assertEqual(int(own.state["step"].item()), student["optimizer_step"])
 
+    def test_existing_exam_peak_is_seeded_before_any_new_training(self):
+        school = storage._state_from_json(self.receipt["school"], self.course)
+        pointer = dict(self.receipt["school"]["current_student"])
+        prior = {"student_sha256": pointer["sha256"],
+                 "optimizer_step": pointer["optimizer_step"],
+                 "exam_rubric_sha256": "rubric", "cohort_sha256": "cohort",
+                 "assessment_scope_sha256": "scope",
+                 "scores": {"A.EDGE": {"correct": 11, "total": 12}}}
+        saved = storage._advance(self.fixture.root, self.receipt, school,
+                                 last_exam=prior, persist=True)
+        seeded = storage._seed_saved_whole_student_peak(
+            self.fixture.root, saved, self.course, self.fixture.optimizer)
+        self.assertEqual(seeded["generation"], saved["generation"] + 1)
+        self.assertEqual(seeded["school"]["current_student"], pointer)
+        self.assertEqual(seeded["whole_student_peaks"][0]["checkpoint"], pointer)
+        self.assertEqual(storage._seed_saved_whole_student_peak(
+            self.fixture.root, seeded, self.course, self.fixture.optimizer), seeded)
+        storage._verify_best_custody(self.fixture.root, seeded)
+        self.assertEqual(json.loads((self.fixture.root / "state.json").read_text()), seeded)
+
     def test_retention_peak_is_protected_at_retirement_boundary(self):
         pointer = dict(self.receipt["school"]["current_student"])
         protected = {**self.receipt, "whole_student_peaks": [{
