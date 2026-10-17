@@ -14,6 +14,26 @@ import re
 
 SCHEMA = "bilqis.review-evidence/v1"
 
+VERIFIER_FILES = (
+    "curriculum.py", "curriculum_compiler.py", "grade_transition.py",
+    "next_grade_review.py", "school.py", "semantics/core.py", "semantics/functions.py",
+    "verification/cases.py", "verification/expressions.py",
+    "verification/review_evidence.py",
+)
+
+
+def verifier_digest() -> str:
+    """Bind attestations to the source-only checks that consume them.
+
+    Source-specific adapter implementations belong in the receipt's artifacts.
+    The independently supplied manifest fingerprint governs both bindings.
+    """
+    root = Path(__file__).resolve().parents[1]
+    payload = {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+               for name in VERIFIER_FILES}
+    return hashlib.sha256(json.dumps(payload, sort_keys=True,
+                                     separators=(",", ":")).encode()).hexdigest()
+
 
 def _text(value):
     return isinstance(value, str) and bool(value.strip())
@@ -62,6 +82,11 @@ class EvidenceContext:
             return EvidenceInventory({}, ("REVIEW_EVIDENCE_MANIFEST_UNREADABLE",))
         if not isinstance(data, dict) or data.get("schema") != SCHEMA:
             return EvidenceInventory({}, ("REVIEW_EVIDENCE_SCHEMA_INVALID",))
+        try:
+            if data.get("verifier_sha256") != verifier_digest():
+                return EvidenceInventory({}, ("REVIEW_EVIDENCE_VERIFIER_DRIFT",))
+        except OSError:
+            return EvidenceInventory({}, ("REVIEW_EVIDENCE_VERIFIER_UNREADABLE",))
         for field, expected in (("grade", grade), ("parent_release", parent_release),
                                 ("semantic_release", semantic_release),
                                 ("subject_sha256", subject_sha256)):
@@ -113,7 +138,8 @@ class EvidenceContext:
                     receipt, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
             else:
                 receipt_errors[identity] = tuple(problems)
-        scope = {key: data[key] for key in ("grade", "parent_release", "semantic_release", "subject_sha256")}
+        scope = {key: data[key] for key in ("grade", "parent_release", "semantic_release",
+                                          "subject_sha256", "verifier_sha256")}
         return EvidenceInventory(verified, tuple(dict.fromkeys(errors)), self.expected_sha256,
                                  fingerprints, receipt_errors, scope)
 

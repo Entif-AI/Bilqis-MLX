@@ -9,7 +9,7 @@ import unittest
 
 from bilqis_mlx.next_grade_review import (QUESTION_IDS, SCHEMA, assess, evidence_references,
                                        load_review, subject_digest)
-from bilqis_mlx.verification.review_evidence import EvidenceContext
+from bilqis_mlx.verification.review_evidence import EvidenceContext, verifier_digest
 
 
 def candidate(identifier, *, modality="DIRECT_TEXT_SEMANTIC_TRANSFER"):
@@ -82,6 +82,7 @@ def evidence_fixture(record, root):
                 if isinstance(ref, str) and ref.startswith("receipt:"):
                     claims.setdefault(ref, []).append("review:" + phase + ":" + q)
     payload = {"schema": "bilqis.review-evidence/v1", "grade": record["grade"],
+               "verifier_sha256": verifier_digest(),
                "parent_release": record["parent_release"],
                "semantic_release": record["semantic_release"],
                "subject_sha256": subject_digest(record), "receipts": [

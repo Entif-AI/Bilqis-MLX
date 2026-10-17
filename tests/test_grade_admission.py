@@ -17,7 +17,7 @@ from bilqis_mlx.grade_transition import candidate_package_digest, next_grade_rea
 from bilqis_mlx.school import Assessment, Score, start_new
 from bilqis_mlx.semantics.core import Operation, Signature
 from bilqis_mlx.next_grade_review import QUESTION_IDS, SCHEMA, evidence_references, load_review, subject_digest
-from bilqis_mlx.verification.review_evidence import EvidenceContext
+from bilqis_mlx.verification.review_evidence import EvidenceContext, verifier_digest
 
 
 def _capability(grade, index, *, root):
@@ -118,12 +118,13 @@ class GradeAdmissionTests(unittest.TestCase):
             "receipt:prerequisite": ["prerequisite:A.0:MASTERED"],
             "receipt:release": [
                 "release:fixture-semantic/v1:package:" + candidate_package_digest(package) +
-                ":APPROVED_FOR_ADMISSION"],
+                ":APPROVED_FOR_ADMISSION"] if package is not None else [],
         }
         for phase in record["reviews"]:
             for question in QUESTION_IDS:
                 claims[f"receipt:{phase}:{question}"] = [f"review:{phase}:{question}"]
         manifest = {"schema": "bilqis.review-evidence/v1", "grade": "C",
+                    "verifier_sha256": verifier_digest(),
                     "parent_release": self.previous.version,
                     "semantic_release": "fixture-semantic/v1",
                     "subject_sha256": subject_digest(record), "receipts": [
@@ -181,7 +182,7 @@ class GradeAdmissionTests(unittest.TestCase):
         self.assertEqual(before, (self.previous, self.state, self.assessment))
 
     def test_missing_source_candidate_and_release_claim_block_only_future_grade(self):
-        result = self._ready(candidate_package=None, approved_release_claim=None)
+        result = self._ready(candidate_package=None, approved_release_receipt=None)
         self.assertEqual(result["status"], "BLOCKED")
         self.assertIn("GRADE_ADMISSION_SOURCE_CANDIDATE_MISSING", result["blockers"])
         self.assertIn("GRADE_ADMISSION_EXTERNAL_RELEASE_APPROVAL_MISSING", result["blockers"])

@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.next_grade_review import QUESTION_IDS, assess, load_review, subject_digest
 from bilqis_mlx.verification.review_evidence import EvidenceContext
@@ -14,6 +15,23 @@ from tests.test_next_grade_review import evidence_fixture, proposal
 
 
 class ReviewEvidenceTests(unittest.TestCase):
+    def test_changed_verification_code_invalidates_unchanged_review(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            record = proposal()
+            context = evidence_fixture(record, tmp)
+            with patch("bilqis_mlx.verification.review_evidence.verifier_digest",
+                       return_value="0" * 64, create=True):
+                result = self.check(record, context)
+            self.assertEqual(result["status"], "BLOCKED")
+            self.assertIn("REVIEW_EVIDENCE_VERIFIER_DRIFT", result["blockers"])
+
+    def test_pinned_manifest_without_checker_binding_is_insufficient(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            record = proposal()
+            context = evidence_fixture(record, tmp)
+            context = self.repin(context, lambda data: data.pop("verifier_sha256", None))
+            self.assertIn("REVIEW_EVIDENCE_VERIFIER_DRIFT", self.check(record, context)["blockers"])
+
     def check(self, record, context, phase="admission"):
         return assess(record, grade=record["grade"], parent_release=record["parent_release"],
                       phase=phase, evidence=context)
