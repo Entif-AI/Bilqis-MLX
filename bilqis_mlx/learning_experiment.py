@@ -1,4 +1,4 @@
-"""Opt-in, parent-relative candidate safety and contextual teacher evidence.
+"""Default-on parent-relative candidate safety and contextual teacher evidence.
 
 Neither historical teacher statistics nor frozen qualification receipts are
 rewritten. These experimentally learned outcomes use matched, source-oracled

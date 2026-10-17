@@ -139,7 +139,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
                     ValueError, "LEARNING_EXPERIMENT_REQUIRES_ISOLATED_WORKTREE_RUN"):
                 storage.operate(
                     self.fixture.root, fixtures.SOURCE, fixtures.PARENT,
-                    self.fixture.fixture.manifest, experimental_retention=True)
+                    self.fixture.fixture.manifest, retention_enabled=True)
 
     def test_first_staircase_visit_stop_and_resume_persists_context_and_own_adamw(self):
         # Regression for a pre-existing ff64 bug: before its first Grade C

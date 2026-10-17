@@ -1959,6 +1959,29 @@ def _quarantine_newer_uncommitted_bundles(run_dir: Path, retained: set[str],
     return tuple(quarantined)
 
 
+def _resume_command(run_dir: Path, source_root: Path,
+                    learning_settings: LearningSettings | None) -> str:
+    """Only name non-default options in the next human-owned shell command."""
+    from .paths import LEGACY_SOURCE, active_run_dir
+
+    command = "npm run train -- --human-run --resume"
+    if learning_settings is None:
+        command += " --no-retention"
+    elif learning_settings != LearningSettings():
+        command += (
+            " --retention-probe-each " + str(learning_settings.probe_each) +
+            " --retention-mature-max-loss " + str(learning_settings.mature_max_loss) +
+            " --retention-introduction-extra-loss " +
+                str(learning_settings.introduction_extra_loss) +
+            " --retention-protected-cap-limit " +
+                str(learning_settings.protected_cap_limit))
+    if learning_settings is None or Path(run_dir).resolve() != active_run_dir().resolve():
+        command += " --run-dir " + shlex.quote(str(run_dir))
+    if Path(source_root).resolve() != LEGACY_SOURCE.resolve():
+        command += " --legacy-code-root " + shlex.quote(str(source_root))
+    return command
+
+
 def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                source_checkpoint, parameters, optimizer, graph, *, reserve_gib):
     school = _state_from_json(receipt["school"], course)
@@ -2173,7 +2196,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             max_visits: int = 0, steps_per_visit: int = 16,
             batch_size: int = 32, reserve_gib: float = 100.,
             numeric_staircase: bool = False,
-            experimental_retention: bool = False,
+            retention_enabled: bool = True,
             experiment_probe_each: int = 6,
             experiment_mature_max_loss: int = 1,
             experiment_introduction_extra_loss: int = 2,
@@ -2184,13 +2207,20 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             type(max_visits) is not int or max_visits < 0 or
             type(batch_size) is not int or batch_size < 2 or batch_size % 2):
         raise ValueError("HUMAN_TRAINER_INVALID_OPERATOR_LIMITS")
-    if experimental_retention:
+    if retention_enabled:
         # Experiments never attach to the canonical run in another checkout.
         # The independent snapshot/copy step is a deliberate operator action.
         isolated_root = (Path(__file__).resolve().parents[1] / "runs").resolve()
         target = Path(run_dir).expanduser().resolve()
         if target == isolated_root or isolated_root not in target.parents:
             raise ValueError("LEARNING_EXPERIMENT_REQUIRES_ISOLATED_WORKTREE_RUN")
+    elif resume:
+        # Fail before GPU loading, orphan recovery, or any state mutation when
+        # a protected student's policy would otherwise be silently disabled.
+        saved_path = Path(run_dir).expanduser().resolve() / "state.json"
+        if (saved_path.is_file() and json.loads(saved_path.read_text()).get(
+                "learning_experiment") is not None):
+            raise ValueError("LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION")
     import mlx.core as mx
     mx.set_default_device(mx.gpu)
     manifest, historical_course, engine, teacher_sha, historical_teacher, provenance = prepare_source(
@@ -2294,7 +2324,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             mature_max_loss=experiment_mature_max_loss,
             introduction_extra_loss=experiment_introduction_extra_loss,
             protected_cap_limit=experiment_protected_cap_limit)
-            if experimental_retention else None)
+            if retention_enabled else None)
         receipt = _reconcile_learning_settings(
             run_dir, receipt, course, learning_settings, optimizer)
         if learning_settings is not None:
@@ -2381,18 +2411,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "checkpoint_sha256": school.current_student.sha256,
             "latest_exam": receipt["last_exam"],
             "experimental_retention": learning_settings is not None,
+            "retention_enabled": learning_settings is not None,
             "state_archive": maintenance,
-            "safe_resume_command": (
-                "npm run train -- --human-run --resume --experimental-retention"
-                " --experiment-probe-each "+str(learning_settings.probe_each)+
-                " --experiment-mature-max-loss "+str(learning_settings.mature_max_loss)+
-                " --experiment-introduction-extra-loss "+
-                    str(learning_settings.introduction_extra_loss)+
-                " --experiment-protected-cap-limit "+
-                    str(learning_settings.protected_cap_limit)+
-                " --run-dir "+shlex.quote(str(run_dir))+
-                " --legacy-code-root "+shlex.quote(str(source_root))
-                if learning_settings is not None else
-                "npm run train -- --human-run --resume"),
+            "safe_resume_command": _resume_command(run_dir, source_root, learning_settings),
             "original_source_checkpoint_modified": False,
         }

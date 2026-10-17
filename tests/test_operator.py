@@ -6,12 +6,97 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from bilqis_mlx.cli import main,DEFAULT_RUN,ORIGINAL_CHECKPOINT
+from bilqis_mlx.cli import main,parse_args,DEFAULT_RUN,ORIGINAL_CHECKPOINT
 from bilqis_mlx.spiral_dashboard import TABLES
 from bilqis_mlx.grade_a_dashboard import build, ingest
 
 
 class OperatorTests(unittest.TestCase):
+    def test_resume_instructions_are_flag_free_at_default_retention_policy(self):
+        from bilqis_mlx.grade_a_trainer import _resume_command
+        from bilqis_mlx.learning_experiment import Settings
+        from bilqis_mlx.paths import LEGACY_SOURCE, active_run_dir
+
+        self.assertEqual(_resume_command(active_run_dir(), LEGACY_SOURCE, Settings()),
+                         "npm run train -- --human-run --resume")
+        stricter = _resume_command(active_run_dir(), LEGACY_SOURCE,
+                                   Settings(mature_max_loss=0))
+        self.assertIn("--retention-mature-max-loss 0", stricter)
+        self.assertNotIn("--experimental-retention", stricter)
+        with tempfile.TemporaryDirectory() as tmp:
+            unprotected = _resume_command(Path(tmp), LEGACY_SOURCE, None)
+            self.assertIn("--no-retention", unprotected)
+            self.assertIn("--run-dir", unprotected)
+
+    def test_retention_defaults_on_and_explicit_independent_opt_out(self):
+        self.assertFalse(parse_args(["train", "--resume"]).no_retention)
+        with tempfile.TemporaryDirectory() as tmp:
+            out=io.StringIO()
+            with redirect_stdout(out), redirect_stderr(io.StringIO()):
+                self.assertEqual(main(["train", "--dry-run", "--run-dir", tmp]), 0)
+            self.assertEqual(json.loads(out.getvalue())["retention_mode"], "DEFAULT_PROTECTED")
+            out=io.StringIO()
+            with redirect_stdout(out), redirect_stderr(io.StringIO()):
+                self.assertEqual(main(["train", "--dry-run", "--no-retention",
+                                       "--run-dir", tmp]), 0)
+            self.assertEqual(json.loads(out.getvalue())["retention_mode"], "EXPLICIT_UNPROTECTED")
+            out=io.StringIO()
+            with redirect_stdout(out), redirect_stderr(io.StringIO()):
+                self.assertEqual(main(["train", "--dry-run", "--experimental-retention",
+                                       "--run-dir", tmp]), 0)
+            self.assertEqual(json.loads(out.getvalue())["retention_mode"], "DEFAULT_PROTECTED")
+            with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                parse_args(["train", "--experimental-retention", "--no-retention"])
+
+    def test_no_retention_cannot_target_default_run_or_protected_history(self):
+        with redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(main(["train", "--dry-run", "--no-retention"]), 2)
+        self.assertIn("NO_RETENTION_REQUIRES_INDEPENDENT_RUN_DIR", errors.getvalue())
+        with tempfile.TemporaryDirectory() as tmp:
+            saved={"learning_experiment":{"version":"existing-protected-policy"}}
+            path=Path(tmp)/"state.json"
+            original=json.dumps(saved).encode()
+            path.write_bytes(original)
+            with redirect_stderr(io.StringIO()) as errors:
+                self.assertEqual(main(["train", "--dry-run", "--resume",
+                                       "--no-retention", "--run-dir", tmp]), 2)
+            self.assertIn("LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN",
+                          errors.getvalue())
+            self.assertEqual(path.read_bytes(),original)
+
+    def test_direct_operator_refuses_protected_opt_out_before_source_or_gpu(self):
+        from bilqis_mlx import grade_a_trainer as trainer
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            state=root/"state.json"
+            payload=json.dumps({"learning_experiment":{"version":"protected"}}).encode()
+            state.write_bytes(payload)
+            with patch.object(trainer, "prepare_source", side_effect=AssertionError(
+                    "NO_SOURCE_OR_GPU_BEFORE_POLICY_REFUSAL")):
+                with self.assertRaisesRegex(
+                        ValueError, "LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION"):
+                    trainer.operate(root, root, root, root, resume=True,
+                                    retention_enabled=False)
+            self.assertEqual(state.read_bytes(),payload)
+
+    def test_human_operator_receives_default_protected_mode_without_opt_in(self):
+        from bilqis_mlx import grade_a_trainer as trainer
+        no_neural_work = "TEST_BLOCKS_ANY_NEURAL_WORK"
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(trainer, "operate", side_effect=ValueError(
+                    no_neural_work)) as operate, \
+                    redirect_stderr(io.StringIO()):
+                self.assertEqual(main(["train", "--human-run", "--resume",
+                                       "--run-dir", tmp]), 2)
+            self.assertTrue(operate.call_args.kwargs["retention_enabled"])
+            with patch.object(trainer, "operate", side_effect=ValueError(
+                    no_neural_work)) as operate, \
+                    redirect_stderr(io.StringIO()):
+                self.assertEqual(main(["train", "--human-run", "--no-retention",
+                                       "--run-dir", tmp]), 2)
+            self.assertFalse(operate.call_args.kwargs["retention_enabled"])
+
     def test_worktree_preflight_uses_explicit_source_paths_without_global_mutation(self):
         from bilqis_mlx import cli
         original = cli.LEGACY_ROOT, cli.ORIGINAL_CHECKPOINT

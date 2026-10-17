@@ -106,6 +106,7 @@ def _inspect(run_dir: Path) -> dict:
                     "checkpoint_sha256": peak["checkpoint"]["sha256"]}
                     for peak in saved.get("whole_student_peaks", ())],
                 "experimental_retention_settings": (saved.get("learning_experiment") or {}).get("settings"),
+                "retention_settings": (saved.get("learning_experiment") or {}).get("settings"),
                 "last_exam": saved["last_exam"],
                 "last_session_stop": _latest_session_stop(
                     run_dir, saved["generation"], student["optimizer_step"]),
@@ -173,7 +174,7 @@ def _source_paths(legacy_code_root: Path | None, champion_checkpoint: Path | Non
 
 def preflight(run_dir: Path, *, resume=False, verify_source=False,
               legacy_code_root: Path | None = None, champion_checkpoint: Path | None = None,
-              numeric_staircase=False):
+              numeric_staircase=False, retention_enabled=True):
     legacy_root, original_checkpoint = _source_paths(legacy_code_root, champion_checkpoint)
     existing = (run_dir / "state.json").is_file()
     if resume and not existing:
@@ -184,6 +185,8 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     snapshot.update({"result":"PREFLIGHT_ONLY_NO_NEURAL_UPDATES",
                      "start_behavior":"EXPLICIT_SAVED_STATE_RESUME" if resume else "GRADE_A_NEW_RUN",
                      "blockers":[],
+                     "retention_mode": ("DEFAULT_PROTECTED" if retention_enabled else
+                                        "EXPLICIT_UNPROTECTED"),
                      "experimental_risks":["FIRST_HUMAN_RUN_NOT_YET_OBSERVED",
                                            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"],
                      "operator_constraint":"HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES"})
@@ -324,15 +327,24 @@ def parse_args(argv=None):
             p.add_argument("--resume",action="store_true")
             p.add_argument('--numeric-staircase', action='store_true',
                            help='Warm-start C at 0..3, grow to 6 before MUL/DIV')
-            p.add_argument('--experimental-retention', action='store_true',
-                           help='OPT-IN parity-size parent/challenger learning research only')
-            p.add_argument('--experiment-probe-each', type=int, default=6,
+            retention = p.add_mutually_exclusive_group()
+            retention.add_argument('--no-retention', action='store_true',
+                                   help='Explicit unprotected legacy teaching (separate independent --run-dir only)')
+            # Existing terminal histories from human-run sessions can still
+            # be replayed without accidentally changing the retention mode.
+            retention.add_argument('--experimental-retention', action='store_true',
+                                   help=argparse.SUPPRESS)
+            p.add_argument('--retention-probe-each', '--experiment-probe-each',
+                           dest='experiment_probe_each', type=int, default=6,
                            help='Source-oracled same-cohort rows per admitted capability')
-            p.add_argument('--experiment-mature-max-loss', type=int, default=1,
+            p.add_argument('--retention-mature-max-loss', '--experiment-mature-max-loss',
+                           dest='experiment_mature_max_loss', type=int, default=1,
                            help='PROVISIONAL max new wrong answers on any protected capability')
-            p.add_argument('--experiment-introduction-extra-loss', type=int, default=2,
+            p.add_argument('--retention-introduction-extra-loss', '--experiment-introduction-extra-loss',
+                           dest='experiment_introduction_extra_loss', type=int, default=2,
                            help='Additional tolerable losses during first acquisition')
-            p.add_argument('--experiment-protected-cap-limit', type=int, default=8,
+            p.add_argument('--retention-protected-cap-limit', '--experiment-protected-cap-limit',
+                           dest='experiment_protected_cap_limit', type=int, default=8,
                            help='Bounded grade-stratified sentinel panel per visit')
             p.add_argument("--human-run",action="store_true",
                            help="Explicitly authorizes actual optimizer steps by the human operator")
@@ -347,27 +359,47 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
+def _guard_independent_no_retention(args):
+    if not args.no_retention:
+        return
+    target = args.run_dir.expanduser().resolve()
+    if target == DEFAULT_RUN.expanduser().resolve():
+        raise ValueError("NO_RETENTION_REQUIRES_INDEPENDENT_RUN_DIR")
+    saved_path = target / "state.json"
+    if (saved_path.is_symlink() or
+            (saved_path.is_file() and
+             json.loads(saved_path.read_text(encoding="utf-8")).get(
+                 "learning_experiment") is not None)):
+        raise ValueError("LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN")
+
+
+def _report_retention_plan(args):
+    if args.no_retention:
+        return
+    from .learning_experiment import Settings
+    settings = Settings(
+        probe_each=args.experiment_probe_each,
+        mature_max_loss=args.experiment_mature_max_loss,
+        introduction_extra_loss=args.experiment_introduction_extra_loss,
+        protected_cap_limit=args.experiment_protected_cap_limit)
+    print("DEFAULT RETENTION PLAN, NO NEURAL UPDATES: "+str(settings), file=sys.stderr)
+
+
 def main(argv=None):
     args=parse_args(argv)
     try:
         if args.action=="status":return status(args.run_dir)
         if args.action=="dashboard":return dashboard(args.run_dir)
         if args.action=="diagnostics":return diagnostics(args.run_dir)
+        _guard_independent_no_retention(args)
         if args.dry_run:
-            from .learning_experiment import Settings
-            if args.experimental_retention:
-                settings = Settings(
-                    probe_each=args.experiment_probe_each,
-                    mature_max_loss=args.experiment_mature_max_loss,
-                    introduction_extra_loss=args.experiment_introduction_extra_loss,
-                    protected_cap_limit=args.experiment_protected_cap_limit)
-                print("EXPERIMENTAL RETENTION PLAN, NO NEURAL UPDATES: "+str(settings),
-                      file=sys.stderr)
+            _report_retention_plan(args)
             return preflight(args.run_dir,resume=args.resume,
                              verify_source=args.verify_source,
                              legacy_code_root=args.legacy_code_root,
                              champion_checkpoint=args.champion_checkpoint,
-                             numeric_staircase=args.numeric_staircase)
+                             numeric_staircase=args.numeric_staircase,
+                             retention_enabled=not args.no_retention)
         if args.verify_source:
             raise ValueError("VERIFY_SOURCE_REQUIRES_DRY_RUN")
         if not args.human_run:
@@ -408,7 +440,7 @@ def main(argv=None):
                 steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
                 batch_size=args.batch_size, reserve_gib=args.reserve_gib,
                 numeric_staircase=args.numeric_staircase,
-                experimental_retention=args.experimental_retention,
+                retention_enabled=not args.no_retention,
                 experiment_probe_each=args.experiment_probe_each,
                 experiment_mature_max_loss=args.experiment_mature_max_loss,
                 experiment_introduction_extra_loss=args.experiment_introduction_extra_loss,
