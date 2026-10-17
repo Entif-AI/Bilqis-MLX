@@ -36,7 +36,10 @@ class OperatorTests(unittest.TestCase):
                                        "--run-dir", tmp]), 0)
             report = json.loads(out.getvalue())
             self.assertEqual(report["next_grade"], "C")
-            self.assertEqual(report["blockers"], ["GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING"])
+            self.assertEqual(report["blockers"], [
+                "GRADE_C_SELECTION_REVIEW_NOT_QUALIFIED",
+                "GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING"])
+            self.assertEqual(report["next_grade_selection_review"]["status"], "BLOCKED")
             self.assertNotIn("next_grade_source", report)
             self.assertTrue((run / "state.json").is_file())
 

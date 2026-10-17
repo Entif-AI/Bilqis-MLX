@@ -1,0 +1,38 @@
+{
+  "schema": "bilqis.next-grade-review/v1",
+  "authority": "IPR-0220/grade-questions-20261017",
+  "grade": "D",
+  "parent_release": "NOT_YET_ADMITTED_GRADE_C",
+  "modality": "TEXT_ONLY",
+  "selected": null,
+  "candidates": [
+    {
+      "id": "phonological-constraints",
+      "source": "https://ithkuil.net/newithkuil_01_phonology.htm",
+      "text_model_relevance": "UNPROVEN_NEURAL_ADVANTAGE",
+      "needs_neural_learning": "Not established: written legality, phonotactics and romanization may be served by deterministic codecs",
+      "smallest_increment": "Undetermined: isolate only text-represented distinctions necessary for immediate semantic composition",
+      "prerequisites": [],
+      "frontloaded_foundations": [],
+      "unlocks": []
+    },
+    {
+      "id": "typed-scope-and-binding",
+      "source": "repo:docs/architecture/05_BEHAVIORAL_CONTRACT_V1.md",
+      "text_model_relevance": "DIRECT_TEXT_SEMANTIC_TRANSFER",
+      "needs_neural_learning": "Proposed transfer: novel variable bindings, referential constraints, and well-scoped combinations of learned predicates",
+      "smallest_increment": "One verified binding operator and finite interpretation before quantifiers, clauses or morphology",
+      "prerequisites": [],
+      "frontloaded_foundations": [],
+      "unlocks": []
+    }
+  ],
+  "decision": {
+    "why_now": "PENDING",
+    "why_not_alternatives": {},
+    "what_changed_since_last_grade": "PENDING",
+    "expected_near_term_transfer": "PENDING",
+    "smallest_staircase_step": "PENDING"
+  },
+  "reviews": {}
+}

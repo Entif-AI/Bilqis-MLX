@@ -174,10 +174,16 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False):
     snapshot["grade_a_source_manifest"] = "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
     if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE" and snapshot.get("grade") == "B":
         from .grade_c_preflight import qualify
+        from .next_grade_review import load_review
         from .live_grade_c import (REGISTRY_PATH, REGISTRY_COUNTING_TARGET,
                                    integer_scope, registry_graph)
         snapshot["next_grade"] = "C"
         snapshot["start_behavior"] = "HUMAN_RESUME_ADMIT_C_AFTER_CUMULATIVE_A_B_PASS"
+        selection = load_review("C", parent_release=LIVE_GRADE_B_RELEASE,
+                                phase="admission")
+        snapshot["next_grade_selection_review"] = selection
+        if selection["status"] != "READY_FOR_INDEPENDENT_REVIEW":
+            snapshot["blockers"].append("GRADE_C_SELECTION_REVIEW_NOT_QUALIFIED")
         if REGISTRY_PATH.is_symlink():
             snapshot["blockers"].append("GRADE_C_NATIVE_REGISTRY_ARTIFACT_UNSAFE_PATH")
         elif not REGISTRY_PATH.is_file():

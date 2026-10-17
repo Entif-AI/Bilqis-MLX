@@ -90,6 +90,16 @@ class GradeCTrainerTests(unittest.TestCase):
                 activate_numeric_grade(mx, Path("/unused"), receipt, self.previous, self.course,
                     params,opt,self.parent_graph,reserve_gib=0.)
 
+    def test_c_requires_repeated_selection_review_before_model_growth(self):
+        mx, params, opt = self.toy()
+        pointer = Checkpoint("a"*64,"bundles/inert",1,True)
+        receipt = self.receipt(self.graduated(pointer), pointer, params)
+        with patch("bilqis_mlx.grade_transition.extend_mlx_student",
+                   side_effect=AssertionError("model growth happened")):
+            with self.assertRaisesRegex(ValueError, "NEXT_GRADE_REVIEW_BLOCKED"):
+                activate_numeric_grade(mx, Path("/unused"), receipt, self.previous,
+                    self.course, params, opt, self.parent_graph, reserve_gib=0.)
+
     def test_staged_c_real_toy_updates_fixed_exam_and_restart_preserve_custody(self):
         import numpy as np
         from bilqis_mlx.diagnostics.audit import audit_saved_run
@@ -100,7 +110,9 @@ class GradeCTrainerTests(unittest.TestCase):
             root = Path(temp)
             pointer = _bundle_pointer(root,"initial",params,opt,self.parent_graph,reserve_gib=0.)
             receipt = _persist(root,self.receipt(self.graduated(pointer),pointer,params))
-            with patch("bilqis_mlx.grade_transition.expanded_graph",return_value=self.graph):
+            with patch("bilqis_mlx.grade_transition.expanded_graph",return_value=self.graph), \
+                    patch("bilqis_mlx.next_grade_review.require_admission_review",
+                          return_value={"status":"READY_FOR_INDEPENDENT_REVIEW"}):
                 params,opt,graph,receipt = activate_numeric_grade(mx,root,receipt,self.previous,
                     self.course,params,opt,self.parent_graph,reserve_gib=0.)
             self.assertEqual(receipt["curriculum_mode"],C_RELEASE)
