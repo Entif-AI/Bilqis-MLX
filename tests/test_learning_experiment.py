@@ -82,6 +82,34 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         pick, _ = contextual_pick(Legacy, teacher, "C.ADD", "RECOVERY_2", random.Random(2))
         self.assertEqual(pick, "positive")
 
+    def test_provisional_protected_loss_becomes_typed_negative_evidence(self):
+        scores = paired_outcomes(self.rows, self.before,
+                                 predicted(self.rows, {"B.XOR0", "C.ADD0"}))
+        decision = decide(scores, active_capability="C.ADD", phase="RECOVERY_1",
+                          protected={"B.XOR"}, settings=Settings())
+        self.assertEqual(decision["decision"], "PROVISIONAL")
+        self.assertEqual(decision["worst_protected_loss"], 1)
+        teacher = {"strategies": {"p": {"lr": .0001}}}
+        observed = observe_context(teacher, capability="C.ADD", phase="RECOVERY_1",
+                                   policy_key="p", decision=decision, local_gain=0.)
+        self.assertLess(observed["teacher_context_reward"], 0.)
+        self.assertEqual(teacher["causal_experiment"]["negative_archetypes"][0]["outcome"],
+                         "ACCEPTED_WITH_MEASURED_PROTECTED_LOSS")
+        self.assertEqual(teacher["causal_experiment"]["contexts"]["C.ADD|RECOVERY_1|"]["p"]["unsafe"], 0)
+
+    def test_recovery_rejects_small_unproductive_cumulative_regression(self):
+        scores = paired_outcomes(self.rows, self.before,
+                                 predicted(self.rows, {"B.XOR0", "C.ADD0", "C.ADD1", "C.ADD2"}))
+        mature = decide(scores, active_capability="C.ADD", phase="RECOVERY_2",
+                        protected={"B.XOR"}, settings=Settings())
+        self.assertEqual(mature["worst_protected_loss"], 1)
+        self.assertEqual(mature["local_correct_delta"], 0)
+        self.assertEqual(mature["decision"], "REJECT")
+        self.assertEqual(mature["reason"], "UNPRODUCTIVE_RECOVERY_INTERFERENCE")
+        developmental = decide(scores, active_capability="C.ADD", phase="MAIN",
+                               protected={"B.XOR"}, settings=Settings())
+        self.assertEqual(developmental["decision"], "PROVISIONAL")
+
     def test_incomplete_or_duplicate_paired_cohort_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "INCOMPLETE"):
             paired_outcomes(self.rows, self.before, {})

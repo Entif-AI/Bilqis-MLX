@@ -24,7 +24,7 @@ MAX_FAILURE_ARCHETYPES = 24
 class Settings:
     """Provisional, operator-selected trial budgets, not graduation criteria."""
     probe_each: int = 6
-    mature_max_loss: int = 2
+    mature_max_loss: int = 1
     introduction_extra_loss: int = 2
     protected_cap_limit: int = 8
 
@@ -105,7 +105,7 @@ def paired_outcomes(rows, parent_predictions: Mapping[str, str],
 
 
 def _prototype_similarity(delta: dict[str, float], prototypes: list[dict]) -> float | None:
-    """Diagnostic cosine against actual rejected paired outcomes, not veto."""
+    """Diagnostic cosine against measured protected-loss patterns, not veto."""
     highest = None
     for prototype in prototypes:
         old = prototype.get("delta", {})
@@ -146,6 +146,13 @@ def decide(paired: dict, *, active_capability: str, phase: str,
     allowed = settings.mature_max_loss + (settings.introduction_extra_loss if introduction else 0)
     exceeded = {cap: loss for cap, loss in regressions.items() if loss > allowed}
     active = paired[active_capability]
+    active_gain = active["after"] - active["before"]
+    protected_net_gain = sum(paired[cap]["after"] - paired[cap]["before"]
+                             for cap in protected if cap != active_capability)
+    # Don't spend a recovery visit making other skills worse unless the
+    # targeted skill actually gains, even when each small loss is in budget.
+    unproductive_interference = (not introduction and active_gain <= 0 and
+                                 protected_net_gain < 0)
     fingerprint = json.dumps(paired, sort_keys=True, separators=(",", ":"))
     if (source_cohort_sha256 is not None and
             (len(source_cohort_sha256) != 64 or
@@ -153,14 +160,17 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         raise ValueError("LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID")
     return {
         "version": VERSION,
-        "decision": "REJECT" if exceeded else "PROVISIONAL",
-        "reason": "PROTECTED_CAPABILITY_REGRESSION" if exceeded else "PAIRED_SCREEN_WITHIN_BUDGET",
+        "decision": "REJECT" if exceeded or unproductive_interference else "PROVISIONAL",
+        "reason": ("PROTECTED_CAPABILITY_REGRESSION" if exceeded else
+                   "UNPRODUCTIVE_RECOVERY_INTERFERENCE" if unproductive_interference else
+                   "PAIRED_SCREEN_WITHIN_BUDGET"),
         "phase": phase, "active_capability": active_capability,
         "protected_capabilities": sorted(protected),
         "max_tolerated_wrong_answer_delta": allowed,
         "exceeded": exceeded,
         "worst_protected_loss": max(regressions.values(), default=0),
-        "local_correct_delta": active["after"]-active["before"],
+        "local_correct_delta": active_gain,
+        "protected_net_correct_delta": protected_net_gain,
         "paired_scores_sha256": hashlib.sha256(fingerprint.encode()).hexdigest(),
         "source_cohort_sha256": source_cohort_sha256,
         "deltas": deltas,
@@ -225,21 +235,29 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     # a substantial single-capability loss. Provisional experimental metric.
     relative_loss = max((max(0., -v) for k, v in decision["deltas"].items()
                          if k in decision["protected_capabilities"]), default=0.)
-    reward = local_gain - relative_loss
+    # Recovery is supposed to retain earlier foundations. Penalize measured
+    # interference more heavily there, while introduction can still trade
+    # controlled temporary forgetting for acquisition of something new.
+    reward = local_gain - relative_loss * (1 if phase == "MAIN" else 2)
     if decision["decision"] == "REJECT":
         reward = min(reward, -relative_loss, -0.05)
+    if decision["decision"] == "REJECT" or decision.get("worst_protected_loss", 0) >= 1:
         pattern = {"capability": capability, "phase": phase,
                    "curriculum_scope": curriculum_scope,
                    "policy": policy_key, "delta": decision["deltas"],
                    "paired_scores_sha256": decision["paired_scores_sha256"],
-                   "source_cohort_sha256": decision["source_cohort_sha256"]}
-        # Do not repeatedly store identical failure signatures.
+                   "source_cohort_sha256": decision["source_cohort_sha256"],
+                   "outcome": ("REJECTED_UPDATE" if decision["decision"] == "REJECT"
+                               else "ACCEPTED_WITH_MEASURED_PROTECTED_LOSS")}
+        # A provisional regression is observed interference, not proof of
+        # durable harm. Keep the distinction in each functional signature.
         entries = channel["negative_archetypes"]
         if not any(item["paired_scores_sha256"] == pattern["paired_scores_sha256"] and
                    item.get("source_cohort_sha256") == pattern["source_cohort_sha256"]
                    for item in entries):
             entries.append(pattern)
             del entries[:-MAX_FAILURE_ARCHETYPES]
+    if decision["decision"] == "REJECT":
         record["unsafe"] += 1
     record["trials"] += 1
     record["reward_sum"] += reward

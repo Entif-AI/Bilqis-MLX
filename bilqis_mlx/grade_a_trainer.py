@@ -38,6 +38,7 @@ from .learning_experiment import (
     observe_context, fork_student, commit_trial, select_typed_lesson,
     sampled_protection,
 )
+from .whole_student_retention import advance_peaks
 from .capability_frontier import (
     candidate_roles, graduation_perfect, historical_frontier, pinned, promote,
     recover_graduation_breadth, retire_bundles,
@@ -942,6 +943,12 @@ def _verify_best_custody(run_dir, receipt):
     if receipt.get('curriculum_parent'):
         sources.append(receipt['curriculum_parent'])
         protected |= pinned({}, receipt['curriculum_parent'], {})
+    for peak in receipt.get("whole_student_peaks", ()):
+        if peak.get("schema") != "bilqis.mlx.whole-student-retention/v1":
+            raise ValueError("WHOLE_STUDENT_PEAK_SCHEMA_DRIFT")
+        source = peak["checkpoint"]
+        sources.append(source)
+        protected |= pinned({}, source, {})
     for name in sorted(protected):
         root = run_dir / name
         if root.is_symlink() or root.parent != run_dir / "bundles":
@@ -1024,6 +1031,50 @@ def _reconcile_vocabulary_metadata(run_dir, receipt, course, parameters,
              "active_semantic_graph_vocab_size": actual,
              "student_sha256": school.current_student.sha256,
              "optimizer_step": school.current_student.optimizer_step,
+             "model_and_optimizer_unchanged": True}
+    result = _persist(run_dir, _with_delivery_outbox(candidate, (event,)))
+    _reconcile_delivery_outbox(run_dir, result)
+    return result
+
+
+def _reconcile_learning_settings(run_dir, receipt, course, settings, optimizer):
+    """Permit only narrower existing retention budgets on human resume.
+
+    Previously selected strategy outcomes keep their historic settings. The
+    full student and its AdamW are unchanged by this metadata-only boundary.
+    An attempted loosening or an unreviewed probe redesign still fails closed.
+    """
+    inherited = receipt.get("learning_experiment")
+    if inherited is None:
+        return receipt
+    if settings is None or inherited.get("version") != LEARNING_EXPERIMENT_VERSION:
+        raise ValueError("LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN")
+    new = asdict(settings)
+    previous = inherited.get("settings")
+    if previous == new:
+        return receipt
+    if not isinstance(previous, dict):
+        raise ValueError("LEARNING_EXPERIMENT_HISTORY_INVALID")
+    old = asdict(LearningSettings(**previous))
+    if (new["probe_each"] != old["probe_each"] or
+            new["protected_cap_limit"] != old["protected_cap_limit"] or
+            new["introduction_extra_loss"] != old["introduction_extra_loss"] or
+            new["mature_max_loss"] >= old["mature_max_loss"]):
+        raise ValueError("LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN")
+    school = _state_from_json(receipt["school"], course)
+    if int(optimizer.state["step"].item()) != school.current_student.optimizer_step:
+        raise ValueError("LEARNING_EXPERIMENT_POLICY_OWN_ADAMW_DRIFT")
+    prior = list(receipt.get("learning_policy_revisions", ()))
+    change = {"from": old, "to": new,
+              "from_generation": receipt["generation"],
+              "optimizer_step": school.current_student.optimizer_step,
+              "student_sha256": school.current_student.sha256}
+    candidate = _advance(run_dir, {**receipt,
+        "learning_experiment": {"version": LEARNING_EXPERIMENT_VERSION,
+                                "settings": new},
+        "learning_policy_revisions": [*prior, change]}, school, persist=False)
+    event = {"event": "SCHOOL_EXPERIMENTAL_RETENTION_POLICY_TIGHTENED",
+             "generation": candidate["generation"], **change,
              "model_and_optimizer_unchanged": True}
     result = _persist(run_dir, _with_delivery_outbox(candidate, (event,)))
     _reconcile_delivery_outbox(run_dir, result)
@@ -1750,6 +1801,8 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
                       school["champions"])
     if record.get('curriculum_parent'):
         retained |= pinned({}, record['curriculum_parent'], {})
+    for peak in record.get("whole_student_peaks", ()):
+        retained |= pinned({}, peak["checkpoint"], {})
     retained |= pinned(record.get("graduation_perfect", {}),
                        school["current_student"], school["champions"])
     for item in record.get("historical_grade_champions", {}).values():
@@ -1874,6 +1927,15 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "optimizer_step": assessment.optimizer_step,
         "scores": scores,
     }
+    peaks, retention_status = advance_peaks(
+        receipt.get("whole_student_peaks", []),
+        curriculum_mode=receipt["curriculum_mode"],
+        numeric_maximum=receipt.get("numeric_maximum"),
+        rubric_sha256=assessment.rubric_digest,
+        cohort_sha256=cohort.digest,
+        assessment_scope_sha256=last_exam["assessment_scope_sha256"],
+        scores=scores, checkpoint=asdict(school.current_student))
+    last_exam["whole_student_retention"] = retention_status
     pending = receipt.get("_pending_visit_events", ())
     exam_warnings = summarize_completed_exam_safely(run_dir, receipt, last_exam)
     last_exam["learning_diagnostics"] = exam_warnings
@@ -1893,6 +1955,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     for identity in unresolved_ids:
         miss_exposures.setdefault(identity, 0)
     migrated_receipt = {**receipt, "teacher_misses": priority,
+                        "whole_student_peaks": peaks,
                         "graduation_perfect": perfect,
                         "grade_soups": frozen_soups,
                         "qualification_cohort": qualification,
@@ -1929,6 +1992,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "teacher_miss_count": len(priority),
         "learning_diagnostics": exam_warnings,
         "teacher_outcomes": teacher_outcomes,
+        "whole_student_retention": retention_status,
     }
     result = _persist(run_dir, _with_delivery_outbox(
         result, _boundary_delivery_events(result, pending, roles, exam_event)))
@@ -1944,7 +2008,7 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
         return receipt
     school = _state_from_json(receipt["school"], course)
     rubric, release, generator, _ = _cohort_contract(course)
-    cohort, qualification = _grade_test_cohort(
+    exam_cohort, qualification = _grade_test_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
     cohort = _candidate_cohort(run_dir, receipt, manifest, course, source_root, graph)
     cohort, _ = _introduced_cohort(run_dir, manifest, course, school, cohort)
@@ -1953,7 +2017,24 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
     current, frontier, roles, compared = _commit_scored_student(
         mx, run_dir, receipt, manifest, course, school, cohort, guesses,
         parameters, optimizer, graph, reserve_gib=reserve_gib)
+    # The operator may stop between scheduled full exams. Score the same
+    # existing complete qualification cohort at this durable stop boundary;
+    # this records a recoverable peak without promoting curriculum mastery.
+    exam_cohort, _ = _introduced_cohort(
+        run_dir, manifest, course, school, exam_cohort)
+    exam_guesses = _predictions(
+        mx, parameters, list(exam_cohort.rows), receipt["config"], receipt["answer_ids"])
+    exam_scores = score_cohort(exam_cohort, exam_guesses,
+                               asdict(current.current_student))["scores"]
+    peaks, retention_status = advance_peaks(
+        receipt.get("whole_student_peaks", []),
+        curriculum_mode=receipt["curriculum_mode"],
+        numeric_maximum=receipt.get("numeric_maximum"),
+        rubric_sha256=rubric, cohort_sha256=exam_cohort.digest,
+        assessment_scope_sha256=_fingerprint(assessment_capabilities(course, school)),
+        scores=exam_scores, checkpoint=asdict(current.current_student))
     record = _advance(run_dir, {**receipt, "legacy_frontier_pending_replay": False,
+                                "whole_student_peaks": peaks,
                                 "qualification_cohort": qualification,
                                 "live_rubric_sha256": rubric},
                       current, frontier=frontier,
@@ -1968,6 +2049,7 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
         "student_sha256": current.current_student.sha256,
         "optimizer_step": current.current_student.optimizer_step,
         "incumbent_comparisons": compared}
+    comparison_event["whole_student_retention"] = retention_status
     record = _persist(run_dir, _with_delivery_outbox(
         record, _boundary_delivery_events(record, pending, roles, comparison_event)))
     _publish_boundary(run_dir, record, pending, roles, exam_event=comparison_event)
@@ -2001,7 +2083,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             numeric_staircase: bool = False,
             experimental_retention: bool = False,
             experiment_probe_each: int = 6,
-            experiment_mature_max_loss: int = 2,
+            experiment_mature_max_loss: int = 1,
             experiment_introduction_extra_loss: int = 2,
             experiment_protected_cap_limit: int = 8) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
@@ -2121,13 +2203,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             introduction_extra_loss=experiment_introduction_extra_loss,
             protected_cap_limit=experiment_protected_cap_limit)
             if experimental_retention else None)
-        inherited_experiment = receipt.get("learning_experiment")
-        if inherited_experiment is not None:
-            if (learning_settings is None or
-                    inherited_experiment != {
-                        "version": LEARNING_EXPERIMENT_VERSION,
-                        "settings": asdict(learning_settings)}):
-                raise ValueError("LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN")
+        receipt = _reconcile_learning_settings(
+            run_dir, receipt, course, learning_settings, optimizer)
         visits = 0
         while True:
             from .numeric_staircase import scope_advance_due, advance_scope

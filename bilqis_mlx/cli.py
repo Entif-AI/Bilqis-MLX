@@ -100,6 +100,14 @@ def _inspect(run_dir: Path) -> dict:
                     for item in saved.get("capability_best", {}).values()}),
                 "teacher_events": saved["teacher"]["events"],
                 "teacher_strategy_count": len(saved["teacher"]["strategies"]),
+                "whole_student_peaks": [{
+                    "scope_sha256": peak["scope_sha256"],
+                    "numeric_maximum": peak.get("numeric_maximum"),
+                    "correct": peak["correct"], "total": peak["total"],
+                    "optimizer_step": peak["checkpoint"]["optimizer_step"],
+                    "checkpoint_sha256": peak["checkpoint"]["sha256"]}
+                    for peak in saved.get("whole_student_peaks", ())],
+                "experimental_retention_settings": (saved.get("learning_experiment") or {}).get("settings"),
                 "last_exam": saved["last_exam"],
                 "last_session_stop": _latest_session_stop(
                     run_dir, saved["generation"], student["optimizer_step"]),
@@ -321,7 +329,7 @@ def parse_args(argv=None):
                            help='OPT-IN parity-size parent/challenger learning research only')
             p.add_argument('--experiment-probe-each', type=int, default=6,
                            help='Source-oracled same-cohort rows per admitted capability')
-            p.add_argument('--experiment-mature-max-loss', type=int, default=2,
+            p.add_argument('--experiment-mature-max-loss', type=int, default=1,
                            help='PROVISIONAL max new wrong answers on any protected capability')
             p.add_argument('--experiment-introduction-extra-loss', type=int, default=2,
                            help='Additional tolerable losses during first acquisition')

@@ -2,6 +2,7 @@
 from contextlib import redirect_stdout
 import io
 import json
+from dataclasses import asdict
 from pathlib import Path
 import tempfile
 import unittest
@@ -36,6 +37,47 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
             source_root=fixtures.SOURCE,
             learning_settings=Settings(probe_each=6,mature_max_loss=2,
                                        introduction_extra_loss=2))
+
+    def test_tighter_policy_resume_is_metadata_only_and_durable(self):
+        school = storage._state_from_json(self.receipt["school"], self.course)
+        old = asdict(Settings(mature_max_loss=2))
+        previous = storage._advance(self.fixture.root,
+            {**self.receipt, "learning_experiment": {
+                "version": storage.LEARNING_EXPERIMENT_VERSION, "settings": old}},
+            school, persist=False)
+        previous = storage._persist(self.fixture.root, storage._with_delivery_outbox(
+            previous, ({"event": "FIXTURE_PREVIOUS_POLICY",
+                        "generation": previous["generation"]},)))
+        student = dict(previous["school"]["current_student"])
+        updated = storage._reconcile_learning_settings(
+            self.fixture.root, previous, self.course, Settings(), self.fixture.optimizer)
+        self.assertEqual(updated["generation"], previous["generation"] + 1)
+        self.assertEqual(updated["school"]["current_student"], student)
+        self.assertEqual(updated["learning_experiment"]["settings"]["mature_max_loss"], 1)
+        self.assertEqual(updated["learning_policy_revisions"][0]["from"], old)
+        self.assertEqual(storage._reconcile_learning_settings(
+            self.fixture.root, updated, self.course, Settings(), self.fixture.optimizer), updated)
+        with self.assertRaisesRegex(ValueError, "IDENTICAL_OPT_IN"):
+            storage._reconcile_learning_settings(
+                self.fixture.root, updated, self.course,
+                Settings(mature_max_loss=2), self.fixture.optimizer)
+        with redirect_stdout(io.StringIO()):
+            _, own, _, reloaded = storage._resume(
+                self.fixture.root, self.fixture.fixture.manifest, self.course,
+                self.fixture.fixture.policy_sha,
+                admitted_courses={self.course.version:self.course})
+        self.assertEqual(reloaded, updated)
+        self.assertEqual(int(own.state["step"].item()), student["optimizer_step"])
+
+    def test_retention_peak_is_protected_at_retirement_boundary(self):
+        pointer = dict(self.receipt["school"]["current_student"])
+        protected = {**self.receipt, "whole_student_peaks": [{
+            "schema": "bilqis.mlx.whole-student-retention/v1",
+            "checkpoint": pointer, "scope_sha256": "fixture"}]}
+        storage._verify_best_custody(self.fixture.root, protected)
+        with patch.object(storage, "retire_bundles", return_value=()) as retired:
+            storage._publish_boundary(self.fixture.root, protected, (), ())
+        self.assertIn(pointer["filename"], retired.call_args.args[1])
 
     def test_experimental_operator_refuses_active_or_external_run_dir_before_gpu(self):
         # operate is never entered by tests: this must fail at its first
