@@ -1,5 +1,5 @@
 """Neural-inert generic next-grade admission readiness proof."""
-from dataclasses import replace
+from dataclasses import asdict, replace
 import hashlib
 import json
 from pathlib import Path
@@ -12,8 +12,10 @@ from bilqis_mlx.curriculum import AnswerFamily, Capability, Course, Grade
 from bilqis_mlx.curriculum_compiler import (
     CapabilityNode, CurriculumAST, FiniteTypedInput, TypedExpressionTemplate,
     compile_typed_candidate_package,
+    compile_ast,
 )
-from bilqis_mlx.grade_transition import candidate_package_digest, next_grade_readiness
+from bilqis_mlx.grade_transition import (candidate_package_digest, cumulative_exam_digest,
+                                       next_grade_readiness)
 from bilqis_mlx.school import Assessment, Score, start_new
 from bilqis_mlx.semantics.core import Operation, Signature
 from bilqis_mlx.next_grade_review import QUESTION_IDS, SCHEMA, evidence_references, load_review, subject_digest
@@ -72,7 +74,7 @@ class GradeAdmissionTests(unittest.TestCase):
             ast, operations=self.operations,
             templates={node.id: template for node in nodes},
             source=_Backend("source-fixture"), independent=_Backend("independent-fixture"),
-            seed=9, specimens_per_split=1)
+            seed=9, specimens_per_split=2)
 
     def _review_context(self, directory, package):
         directory = Path(directory)
@@ -116,10 +118,17 @@ class GradeAdmissionTests(unittest.TestCase):
             "receipt:candidate": ["candidate:semantic-binding:source"],
             "receipt:other": ["candidate:codec:source"],
             "receipt:prerequisite": ["prerequisite:A.0:MASTERED"],
+            "receipt:cumulative": ["cumulative_exam:" + cumulative_exam_digest(self.assessment)],
             "receipt:release": [
                 "release:fixture-semantic/v1:package:" + candidate_package_digest(package) +
                 ":APPROVED_FOR_ADMISSION"] if package is not None else [],
         }
+        if getattr(self, "stage_qualified", False):
+            prerequisite = next(node for node in package.ast_nodes if node.id == "C.0")
+            node_digest = hashlib.sha256(json.dumps(asdict(prerequisite), sort_keys=True,
+                                                     separators=(",", ":")).encode()).hexdigest()
+            claims["receipt:stages"] = ["stage_mastery:C.0:" + node_digest + ":" +
+                self.pointer.sha256 + ":" + str(self.pointer.optimizer_step)]
         for phase in record["reviews"]:
             for question in QUESTION_IDS:
                 claims[f"receipt:{phase}:{question}"] = [f"review:{phase}:{question}"]
@@ -153,7 +162,10 @@ class GradeAdmissionTests(unittest.TestCase):
                       candidate_semantic_release="fixture-semantic/v1",
                       semantic_release="fixture-semantic/v1",
                       approved_release_receipt="receipt:release",
-                      source_operations=self.operations)
+                      source_operations=self.operations,
+                      cumulative_exam_receipt="receipt:cumulative",
+                      source_backend=_Backend("source-fixture"),
+                      independent_backend=_Backend("independent-fixture"))
         values.update(changes)
         assessment = values.pop("assessment", self.assessment)
         with tempfile.TemporaryDirectory() as temp:
@@ -199,6 +211,69 @@ class GradeAdmissionTests(unittest.TestCase):
         mixed = self._ready(assessment=replace(self.assessment, optimizer_step=43))
         self.assertTrue(any("ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE" in blocker
                             for blocker in mixed["blockers"]))
+
+    def test_tampered_gold_and_incomplete_finite_coverage_are_blocked(self):
+        item = self.package.tests[0]
+        forged = replace(self.package, tests=(replace(
+            item, proof=replace(item.proof, result=not item.proof.result)), *self.package.tests[1:]))
+        self.assertIn("GRADE_ADMISSION_CANDIDATE_PROOF_INVALID", self._ready(
+            candidate_package=forged)["blockers"])
+        truncated = replace(self.package, tests=self.package.tests[::2])
+        self.assertIn("GRADE_ADMISSION_CANDIDATE_COVERAGE_INVALID", self._ready(
+            candidate_package=truncated)["blockers"])
+
+    def test_package_ast_digest_and_stage_cannot_be_forged(self):
+        tampered = replace(self.package, ast_sha256="0" * 64)
+        self.assertIn("GRADE_ADMISSION_CANDIDATE_AST_DRIFT", self._ready(
+            candidate_package=tampered)["blockers"])
+        staged = replace(self.package, ast_nodes=tuple(
+            replace(node, stage=9) for node in self.package.ast_nodes))
+        self.assertIn("GRADE_ADMISSION_CANDIDATE_BINDINGS_MISMATCH", self._ready(
+            candidate_package=staged)["blockers"])
+
+    def test_unattested_cumulative_scores_and_missing_oracles_fail_closed(self):
+        self.assertIn("GRADE_ADMISSION_CUMULATIVE_ATTESTATION_MISSING", self._ready(
+            cumulative_exam_receipt=None)["blockers"])
+        self.assertIn("GRADE_ADMISSION_INDEPENDENT_BACKENDS_MISSING", self._ready(
+            independent_backend=None)["blockers"])
+
+    def test_generic_target_retains_prior_grade_dependencies_without_regenerating_them(self):
+        grade = self.successor.grades[-1]
+        changed = replace(grade, capabilities=tuple(
+            replace(cap, prerequisites=("A.0",)) for cap in grade.capabilities))
+        self.successor = replace(self.successor, grades=(*self.successor.grades[:-1], changed))
+        ast = replace(compile_ast(self.successor), version="fixture-semantic/v1")
+        template = dict(self.package.construction_templates)["C.0"]
+        targets = tuple(cap.id for cap in changed.capabilities)
+        package = compile_typed_candidate_package(
+            ast, operations=self.operations, templates={identity: template for identity in targets},
+            source=_Backend("source-fixture"), independent=_Backend("independent-fixture"),
+            target_capabilities=targets, qualified_prerequisites=("A.0",), specimens_per_split=2)
+        result = self._ready(candidate_package=package)
+        self.assertEqual(result["status"], "READY_FOR_HUMAN_ADMISSION_REVIEW")
+        self.assertEqual({row.capability for row in package.lessons}, set(targets))
+        self.assertEqual(len(package.ast_nodes), 18)
+
+    def test_new_stage_must_demonstrate_mastery_before_dependent_admission(self):
+        grade = self.successor.grades[-1]
+        changed = replace(grade, capabilities=(grade.capabilities[0], *(
+            replace(cap, prerequisites=("C.0",)) for cap in grade.capabilities[1:])),
+            teaching_stages=(("C.0",), tuple(cap.id for cap in grade.capabilities[1:])))
+        self.successor = replace(self.successor, grades=(*self.successor.grades[:-1], changed))
+        ast = replace(compile_ast(self.successor), version="fixture-semantic/v1")
+        targets = tuple(cap.id for cap in changed.capabilities)
+        template = dict(self.package.construction_templates)["C.0"]
+        package = compile_typed_candidate_package(
+            ast, operations=self.operations, templates={identity: template for identity in targets},
+            source=_Backend("source-fixture"), independent=_Backend("independent-fixture"),
+            target_capabilities=targets, qualified_prerequisites=("C.0",), specimens_per_split=2)
+        self.assertIn("GRADE_ADMISSION_EARLIER_STAGE_MASTERY_REQUIRED:C.0", self._ready(
+            candidate_package=package)["blockers"])
+        self.assertIn("GRADE_ADMISSION_EARLIER_STAGE_MASTERY_REQUIRED:C.0", self._ready(
+            candidate_package=package, stage_mastery_receipts={"C.0": "receipt:stages"})["blockers"])
+        self.stage_qualified = True
+        qualified = self._ready(candidate_package=package, stage_mastery_receipts={"C.0": "receipt:stages"})
+        self.assertEqual(qualified["status"], "READY_FOR_HUMAN_ADMISSION_REVIEW")
 
 
 if __name__ == "__main__":

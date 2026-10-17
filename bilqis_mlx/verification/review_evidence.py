@@ -18,7 +18,7 @@ VERIFIER_FILES = (
     "curriculum.py", "curriculum_compiler.py", "grade_transition.py",
     "next_grade_review.py", "school.py", "semantics/core.py", "semantics/functions.py",
     "verification/cases.py", "verification/expressions.py",
-    "verification/review_evidence.py",
+    "verification/review_evidence.py", "verification/curriculum.py",
 )
 
 

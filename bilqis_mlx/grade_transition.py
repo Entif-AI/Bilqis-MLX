@@ -12,7 +12,9 @@ from .live_curriculum import numeric_maximum
 from .school import Assessment, SchoolState, append_next_grade, verify_state
 from .curriculum import Course
 from .semantics.core import Operation
-from .curriculum_compiler import TypedCandidatePackage
+from .curriculum_compiler import TypedCandidatePackage, compile_ast
+from .verification.curriculum import candidate_package_problems
+from .verification.expressions import Backend
 from .verification.review_evidence import EvidenceContext
 from .vocabulary_growth import extend_mlx_student
 
@@ -32,6 +34,12 @@ def candidate_package_digest(package: TypedCandidatePackage) -> str:
     payload = json.dumps(asdict(package), sort_keys=True, separators=(",", ":"),
                          ensure_ascii=False, default=default)
     return hashlib.sha256(payload.encode()).hexdigest()
+
+
+def cumulative_exam_digest(assessment: Assessment) -> str:
+    """Bind independent exam attestation to scores and one complete checkpoint."""
+    return hashlib.sha256(json.dumps(asdict(assessment), sort_keys=True,
+                                    separators=(",", ":")).encode()).hexdigest()
 
 
 def require_complete_cumulative_prior_exam(
@@ -55,6 +63,9 @@ def next_grade_readiness(
     candidate_semantic_release: str | None, semantic_release: str,
     approved_release_receipt: str | None, source_operations: Mapping[str, Operation],
     review_evidence: EvidenceContext | None = None,
+    source_backend: Backend | None = None, independent_backend: Backend | None = None,
+    cumulative_exam_receipt: str | None = None,
+    stage_mastery_receipts: Mapping[str, str] | None = None,
 ) -> dict:
     """Report a future-grade admission plan without growing or persisting anything.
 
@@ -80,6 +91,8 @@ def next_grade_readiness(
     if not isinstance(candidate_package, TypedCandidatePackage):
         blockers.append("GRADE_ADMISSION_SOURCE_CANDIDATE_MISSING")
     else:
+        blockers.extend(candidate_package_problems(candidate_package, source=source_backend,
+                                                    independent=independent_backend))
         if candidate_package.source_status != "SOURCE_ONLY_CANDIDATE":
             blockers.append("GRADE_ADMISSION_SOURCE_CANDIDATE_STATUS_INVALID")
         if candidate_package.coverage_debt:
@@ -89,13 +102,12 @@ def next_grade_readiness(
             blockers.append("GRADE_ADMISSION_SEMANTIC_RELEASE_MISMATCH")
         expected_capabilities = {cap.id for cap in added.capabilities} if added else set()
         package_nodes = {node.id: node for node in candidate_package.ast_nodes}
-        if set(package_nodes) != expected_capabilities:
+        expected_nodes = {node.id: node for node in compile_ast(successor).nodes}
+        if (set(candidate_package.target_capabilities) != expected_capabilities or
+                not expected_capabilities <= package_nodes.keys() or
+                set(package_nodes) - expected_nodes.keys()):
             blockers.append("GRADE_ADMISSION_CANDIDATE_CAPABILITIES_MISMATCH")
-        elif any((node.grade != added.id or node.roots != cap.taught_roots or
-                  node.requires != cap.prerequisites or node.composed_of != cap.composed_of or
-                  node.answers != tuple(answer.kind for answer in cap.answer_families) or
-                  node.oracle != cap.independent_oracle or node.source != cap.source_anchor)
-                 for cap in added.capabilities for node in (package_nodes[cap.id],)):
+        elif any(node != expected_nodes[identity] for identity, node in package_nodes.items()):
             blockers.append("GRADE_ADMISSION_CANDIDATE_BINDINGS_MISMATCH")
         if (not candidate_package.lessons or not candidate_package.tests or
                 any(not any(item.capability == cap.id for item in candidate_package.lessons) or
@@ -135,6 +147,21 @@ def next_grade_readiness(
         expected_claim = "release:" + semantic_release + ":package:" + package_digest + ":APPROVED_FOR_ADMISSION"
         if not inventory.supports([approved_release_receipt], expected_claim):
             blockers.append("GRADE_ADMISSION_EXTERNAL_RELEASE_APPROVAL_MISSING")
+        if not inventory.supports([cumulative_exam_receipt],
+                                  "cumulative_exam:" + cumulative_exam_digest(assessment)):
+            blockers.append("GRADE_ADMISSION_CUMULATIVE_ATTESTATION_MISSING")
+        for node in candidate_package.ast_nodes:
+            if node.id not in expected_capabilities:
+                continue
+            for prerequisite in (*node.requires, *node.composed_of):
+                if prerequisite not in previous.capability_map:
+                    prerequisite_node = package_nodes.get(prerequisite)
+                    node_digest = hashlib.sha256(json.dumps(asdict(prerequisite_node),
+                        sort_keys=True, separators=(",", ":")).encode()).hexdigest() if prerequisite_node else None
+                    claim = ("stage_mastery:" + prerequisite + ":" + str(node_digest) + ":" +
+                             state.current_student.sha256 + ":" + str(state.current_student.optimizer_step))
+                    if not inventory.supports([(stage_mastery_receipts or {}).get(prerequisite)], claim):
+                        blockers.append("GRADE_ADMISSION_EARLIER_STAGE_MASTERY_REQUIRED:" + prerequisite)
     review_binding = ({key: value for key, value in review_report.items()
                        if key in {"schema", "grade", "phase", "status", "subject_sha256",
                                   "evidence_sha256", "evidence_manifest_sha256",
