@@ -6,7 +6,7 @@ attestation and causal qualification remain separate unfinished boundaries.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from .semantics.domains import contract_digest, require_sha256
@@ -20,7 +20,8 @@ class CapabilityOutcome:
     total: int
 
     def __post_init__(self) -> None:
-        if (not self.capability or any(type(value) is not int for value in
+        if (not isinstance(self.capability, str) or not self.capability.strip()
+                or any(type(value) is not int for value in
                 (self.before_correct, self.after_correct, self.total)) or self.total < 1
                 or not 0 <= self.before_correct <= self.total
                 or not 0 <= self.after_correct <= self.total):
@@ -45,7 +46,8 @@ class SelectionTrial:
                       self.parent_bundle_sha256, self.final_bundle_sha256,
                       self.assessment_sha256):
             require_sha256(value)
-        if (not self.candidate or not isinstance(self.outcomes, tuple) or not self.outcomes
+        if (not isinstance(self.candidate, str) or not self.candidate.strip()
+                or not isinstance(self.outcomes, tuple) or not self.outcomes
                 or any(not isinstance(item, CapabilityOutcome) for item in self.outcomes)
                 or type(self.optimizer_steps) is not int or self.optimizer_steps < 0
                 or type(self.cumulative_replay_complete) is not bool
@@ -67,12 +69,14 @@ class SelectionComparison:
     frontier: tuple[str, ...]
     dominated: tuple[str, ...]
     evidence_gaps: tuple[str, ...]
-    selected_grade: None = None
+    selected_grade: None = field(default=None, init=False)
 
 
 def compare_selection_trials(trials: tuple[SelectionTrial, ...]) -> SelectionComparison:
     """Retain negative results and tradeoffs without inventing score weights."""
-    if not trials or len({trial.candidate for trial in trials}) != len(trials):
+    if (not isinstance(trials, tuple) or not trials or
+            any(not isinstance(trial, SelectionTrial) for trial in trials) or
+            len({trial.candidate for trial in trials}) != len(trials)):
         raise ValueError("SELECTION_DISTINCT_CANDIDATES_REQUIRED")
     digest = contract_digest(trials)
     first, gaps = trials[0], []

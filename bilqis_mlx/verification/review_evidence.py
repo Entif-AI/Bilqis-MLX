@@ -19,6 +19,9 @@ VERIFIER_FILES = (
     "next_grade_review.py", "school.py", "semantics/core.py", "semantics/functions.py",
     "verification/cases.py", "verification/expressions.py",
     "verification/review_evidence.py", "verification/curriculum.py",
+    "semantics/catalog.py", "semantics/domains.py", "semantics/laws.py",
+    "curriculum_contracts.py", "verification/construction_contracts.py",
+    "verification/laws.py", "grade_release_plan.py", "selection_outcomes.py",
 )
 
 

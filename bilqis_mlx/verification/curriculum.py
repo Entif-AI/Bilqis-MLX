@@ -6,9 +6,60 @@ with independently pinned source receipts.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+
+from ..curriculum_contracts import ConstructionContractPlan, plan_construction_contracts
+from ..semantics.domains import contract_digest, require_sha256
+from .construction_contracts import DomainWitness, verify_domain_witness
+
 from ..semantics.core import Apply, expression_digest
 from .cases import verify_constituents
 from .expressions import Backend
+
+
+@dataclass(frozen=True)
+class ContractWitnessReport:
+    package_sha256: str
+    plan: ConstructionContractPlan | None
+    witnesses: tuple[DomainWitness, ...]
+    mechanical_problems: tuple[str, ...]
+    qualification_gaps: tuple[str, ...] = (
+        "SOURCE_COMPLETENESS_ATTESTATION_REQUIRED", "FAMILY_SOURCE_QUALIFICATION_REQUIRED",
+        "STUDENT_PREREQUISITE_MASTERY_REQUIRED")
+    source_qualified: bool = field(default=False, init=False)
+    training_authorized: bool = field(default=False, init=False)
+
+
+def inspect_construction_contracts(package, *, contracts, expected_contracts_sha256,
+                                   catalog, source, independent, semantic_catalog=None) -> ContractWitnessReport:
+    """Opt-in mechanical inspection through the existing Boolean package gate.
+
+    Wider domain witnesses remain research-only. No existing answer-family,
+    canonical binding, independent-gold or prerequisite guard is relaxed.
+    """
+    from collections.abc import Mapping
+    from ..curriculum_compiler import CurriculumAST, TypedCandidatePackage
+    if not isinstance(package, TypedCandidatePackage) or not isinstance(contracts, Mapping):
+        raise ValueError("CONSTRUCTION_INVALID_PACKAGE_OR_CONTRACTS")
+    require_sha256(expected_contracts_sha256)
+    problems = list(candidate_package_problems(package, source=source, independent=independent))
+    plan, witnesses = None, []
+    if contract_digest(contracts) != expected_contracts_sha256:
+        problems.append("CONSTRUCTION_CONTRACT_PIN_MISMATCH")
+    else:
+        try:
+            plan = plan_construction_contracts(CurriculumAST(package.ast_version, package.ast_nodes),
+                templates=dict(package.construction_templates), contracts=contracts,
+                construction_budget=package.construction_budget)
+            for item in (() if source is None or independent is None else (*package.lessons, *package.tests)):
+                contract = contracts[item.capability]
+                witnesses.append(verify_domain_witness(item.expression, contract=contract,
+                    expected_contract_sha256=contract_digest(contract), catalog=catalog,
+                    source=source, independent=independent, semantic_catalog=semantic_catalog))
+        except (KeyError, TypeError, ValueError) as exc:
+            problems.append("CONSTRUCTION_CONTRACT_WITNESS_BLOCKED:" + str(exc))
+    return ContractWitnessReport(contract_digest(package), plan, tuple(witnesses),
+                                  tuple(dict.fromkeys(problems)))
 
 
 def candidate_package_problems(package, *, source: Backend | None,

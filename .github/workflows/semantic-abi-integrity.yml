@@ -38,4 +38,6 @@ jobs:
           tests.test_review_evidence tests.test_next_grade_review
           tests.test_factory_construction tests.test_curriculum_compiler
           tests.test_grade_admission tests.test_health_shadow
-          tests.test_candidate_shadow tests.test_semantic_module_boundaries -q
+          tests.test_candidate_shadow tests.test_semantic_module_boundaries
+          tests.test_domain_contracts tests.test_construction_contracts
+          tests.test_release_outcome_contracts -q

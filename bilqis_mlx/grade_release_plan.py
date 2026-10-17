@@ -45,7 +45,8 @@ class CutoverIntent:
 
     def __post_init__(self) -> None:
         if (type(self.parent_generation) is not int or self.parent_generation < 0
-                or not self.parent_release or not self.successor_release
+                or not isinstance(self.parent_release, str) or not self.parent_release.strip()
+                or not isinstance(self.successor_release, str) or not self.successor_release.strip()
                 or self.parent_release == self.successor_release
                 or not isinstance(self.parent, CompleteBundleRef)
                 or type(self.successor_vocabulary_size) is not int
@@ -129,7 +130,9 @@ def plan_disposable_cutover(intent: CutoverIntent,
             return DisposableCutoverPlan(identity, CutoverPlanStatus.BLOCKED, (), tuple(blockers))
         return DisposableCutoverPlan(
             identity, CutoverPlanStatus.OBSERVED_COMMIT_REQUIRES_EVENT_READBACK,
-            (CutoverAction.REPLAY_COMMITTED_EVENTS,), ())
+            (CutoverAction.VERIFY_INDEPENDENT_ADMISSION,
+             CutoverAction.READ_BACK_COMPLETE_BUNDLE, CutoverAction.REPLAY_COMMITTED_EVENTS),
+            ("EXECUTOR_AND_CRASH_PROOFS_NOT_IMPLEMENTED",))
     if observed.current_generation != intent.parent_generation or observed.current != intent.parent:
         blockers.append("PARENT_GENERATION_OR_BUNDLE_DRIFT")
     if observed.staged is not None:
