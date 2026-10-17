@@ -28,7 +28,8 @@ from .champion_confidence import MAX_INFLUENCE as MAX_CHAMPION_INFLUENCE
 from .champion_confidence import vote_targets_typed
 from .champion_confidence import POLICY as CHAMPION_CONFIDENCE_POLICY
 from .champion_confidence import champion_roster, vote_targets
-from .grade_soup import (grade_soup_recipe, needs_refresh, soup_vote_count,
+from .grade_soup import (grade_soup_recipe, partitioned_recipe,
+                         PARTITIONED_SCHEMA, soup_shards, needs_refresh, soup_vote_count,
                          weighted_average, save_frozen_soup, verify_frozen_soup,
                          retire_stale_soups)
 from .learning_experiment import (
@@ -322,7 +323,8 @@ def _cook_new_grade_soups(mx, run_dir, receipt, frontier, course, graph,
         if not needs_refresh(current.get(grade.id), plan):
             continue
         members = []
-        catalog = None
+        catalogs = {}
+        graph_digests = {}
         for item in plan["members"]:
             pointer = item["checkpoint"]
             path = run_dir / pointer["filename"]
@@ -334,23 +336,49 @@ def _cook_new_grade_soups(mx, run_dir, receipt, frontier, course, graph,
                     manifest["optimizer_step"] != pointer["optimizer_step"] or
                     not _compatible_graphs(original_graph, graph)):
                 raise ValueError("GRADE_SOUP_CHAMPION_CUSTODY_DRIFT")
-            if catalog is None:
-                catalog = original_graph
-            elif original_graph != catalog:
-                raise ValueError("GRADE_SOUP_INGREDIENT_GRAPH_DRIFT")
-            members.append((item["votes"], weights))
+            sha = pointer["sha256"]
+            graph_digest = _fingerprint(original_graph)
+            if (graph_digest in catalogs and
+                    original_graph != catalogs[graph_digest]):
+                raise ValueError("GRADE_SOUP_INGREDIENT_GRAPH_DIGEST_COLLISION")
+            catalogs[graph_digest] = original_graph
+            graph_digests[sha] = graph_digest
+            members.append((sha, item["votes"], weights))
             del own_adamw
-        combined = weighted_average(mx, members)
-        snapshot = save_frozen_soup(run_dir, plan, combined,
-                                    reserve_gib=reserve_gib,
-                                    token_count=len(catalog["tokens"]))
-        snapshot["source_graph_sha256"] = _fingerprint(catalog)
+        if len(catalogs) == 1:
+            graph_digest, catalog = next(iter(catalogs.items()))
+            combined = weighted_average(mx, [
+                (votes, weights) for _, votes, weights in members])
+            snapshot = save_frozen_soup(run_dir, plan, combined,
+                                        reserve_gib=reserve_gib,
+                                        token_count=len(catalog["tokens"]))
+            snapshot["source_graph_sha256"] = graph_digest
+        else:
+            # Each exact source graph owns its own frozen weight mixture.
+            # Append-only older prefixes may advise their supported tokens,
+            # but must never masquerade as expanded embedding matrices.
+            by_sha = {sha: (votes, weights) for sha, votes, weights in members}
+            shards = []
+            for shard_plan in partitioned_recipe(plan, graph_digests):
+                graph_digest = shard_plan["source_graph_sha256"]
+                combined = weighted_average(mx, [
+                    by_sha[item["checkpoint"]["sha256"]]
+                    for item in shard_plan["members"]])
+                frozen = save_frozen_soup(
+                    run_dir, shard_plan, combined, reserve_gib=reserve_gib,
+                    token_count=len(catalogs[graph_digest]["tokens"]))
+                frozen["source_graph_sha256"] = graph_digest
+                shards.append(frozen)
+            snapshot = {**plan, "schema": PARTITIONED_SCHEMA,
+                        "shards": shards,
+                        "partition_policy": "EXACT_SOURCE_GRAPH_NO_MIXED_PARAMETER_AVERAGE"}
         previous = current.get(grade.id)
         if previous is not None:
             snapshot["coverage_peak"] = max(
                 previous["coverage_peak"], snapshot["coverage_peak"])
-            snapshot["previous"] = {"filename": previous["filename"],
-                                    "sha256": previous["sha256"]}
+            snapshot["previous"] = [
+                {"filename": part["filename"], "sha256": part["sha256"]}
+                for part in soup_shards(previous)]
         current[grade.id] = snapshot
         refreshed.append(grade.id)
     return current, tuple(refreshed)
@@ -377,19 +405,23 @@ def _frozen_grade_soup_votes(run_dir, receipt, lesson_grade, school_grade_count)
     for grade, snapshot in sorted(receipt.get("grade_soups", {}).items()):
         if grade != snapshot.get("grade"):
             raise ValueError("GRADE_SOUP_GRADE_POINTER_DRIFT")
-        path = run_dir / snapshot["filename"]
-        if (path.parent != run_dir / "soups" or path.is_symlink()):
-            raise ValueError("GRADE_SOUP_UNSAFE_SAVED_PATH")
-        stat = path.stat()
-        weights = _cached_grade_soup(
-            str(path), snapshot["sha256"], snapshot["token_count"],
-            stat.st_size, stat.st_mtime_ns)
-        votes = soup_vote_count(snapshot, lesson_grade, school_grade_count)
-        mentors.append({"weights": weights, "vocab_size": snapshot["token_count"],
-                        "breadth": votes})
-        receipts.append({"soup_grade": grade, "recipe_sha256": snapshot["recipe_sha256"],
-                         "frozen_base_votes": snapshot["vote_count"],
-                         "effective_votes": votes})
+        for shard in soup_shards(snapshot):
+            path = run_dir / shard["filename"]
+            if (path.parent != run_dir / "soups" or path.is_symlink()):
+                raise ValueError("GRADE_SOUP_UNSAFE_SAVED_PATH")
+            stat = path.stat()
+            weights = _cached_grade_soup(
+                str(path), shard["sha256"], shard["token_count"],
+                stat.st_size, stat.st_mtime_ns)
+            votes = soup_vote_count(shard, lesson_grade, school_grade_count)
+            mentors.append({"weights": weights, "vocab_size": shard["token_count"],
+                            "breadth": votes})
+            receipts.append({"soup_grade": grade,
+                             "recipe_sha256": snapshot["recipe_sha256"],
+                             "ingredient_recipe_sha256": shard["recipe_sha256"],
+                             "frozen_base_votes": shard["vote_count"],
+                             "effective_votes": votes,
+                             "source_graph_sha256": shard.get("source_graph_sha256")})
     return tuple(mentors), tuple(receipts)
 
 
@@ -927,11 +959,12 @@ def _verify_best_custody(run_dir, receipt):
             raise ValueError("GRADE_SOUP_CUSTODY_GRADE_DRIFT")
         verify_frozen_soup(run_dir, soup)
         if soup.get("previous"):
-            old = soup["previous"]
-            previous = run_dir / old["filename"]
-            if (previous.parent != run_dir / "soups" or previous.is_symlink() or
-                    not previous.is_file() or digest_file(previous) != old["sha256"]):
-                raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
+            older = soup["previous"] if isinstance(soup["previous"], list) else [soup["previous"]]
+            for old in older:
+                previous = run_dir / old["filename"]
+                if (previous.parent != run_dir / "soups" or previous.is_symlink() or
+                        not previous.is_file() or digest_file(previous) != old["sha256"]):
+                    raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
 
 
 def _advance(run_dir, old: dict, school: SchoolState, *,
@@ -955,6 +988,46 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
         record.pop("_pending_visit_events", None)
         return _persist(run_dir, record)
     return json.loads(_canonical(record))
+
+
+def _reconcile_vocabulary_metadata(run_dir, receipt, course, parameters,
+                                   optimizer, graph):
+    """Repair historical stale size metadata by a NEW immutable generation.
+
+    A bound checkpoint's source-verified graph and embedding tensor, not the
+    initial inherited model config, own the current active vocabulary size.
+    Historical 222-token prefix evidence and previously saved states survive.
+    """
+    actual = len(graph["tokens"])
+    embedded = int(parameters["embedding.weight"].shape[0])
+    if actual != embedded or actual < 1:
+        raise ValueError("HUMAN_TRAINER_CURRENT_VOCAB_GRAPH_EMBEDDING_DRIFT")
+    native = receipt["config"].get("answer_heads", {}).get("semantic_token")
+    if native is not None and (
+            len(native["token_ids"]) != actual or
+            native["token_ids"] != list(range(actual))):
+        raise ValueError("HUMAN_TRAINER_CURRENT_VOCAB_ANSWER_HEAD_DRIFT")
+    previous = receipt["config"].get("vocab_size")
+    if previous == actual:
+        return receipt
+    if type(previous) is not int or previous < 1 or previous > actual:
+        raise ValueError("HUMAN_TRAINER_UNVERIFIED_VOCAB_METADATA_MIGRATION")
+    school = _state_from_json(receipt["school"], course)
+    if int(optimizer.state["step"].item()) != school.current_student.optimizer_step:
+        raise ValueError("HUMAN_TRAINER_VOCAB_RECONCILE_OWN_ADAMW_DRIFT")
+    candidate = _advance(
+        run_dir, {**receipt, "config": {**receipt["config"], "vocab_size": actual}},
+        school, persist=False)
+    event = {"event": "SCHOOL_CURRENT_VOCAB_METADATA_RECONCILED",
+             "generation": candidate["generation"],
+             "former_metadata_vocab_size": previous,
+             "active_semantic_graph_vocab_size": actual,
+             "student_sha256": school.current_student.sha256,
+             "optimizer_step": school.current_student.optimizer_step,
+             "model_and_optimizer_unchanged": True}
+    result = _persist(run_dir, _with_delivery_outbox(candidate, (event,)))
+    _reconcile_delivery_outbox(run_dir, result)
+    return result
 
 
 def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None, course=None):
@@ -1567,17 +1640,25 @@ def _boundary_delivery_events(record, pending, roles, exam_event):
         # grade examination. A stop-boundary candidate comparison is valid.
         for grade in (record.get("last_exam") or {}).get("grade_soups_refreshed", ()):
             snapshot = record["grade_soups"][grade]
-            events.append({
-                "event": "SCHOOL_GRADE_SOUP_FROZEN",
-                "generation": record["generation"], "grade": grade,
-                "filename": snapshot["filename"], "sha256": snapshot["sha256"],
-                "recipe_sha256": snapshot["recipe_sha256"],
-                "vote_count": snapshot["vote_count"],
-                "covered_capabilities": snapshot["perfect_capabilities"],
-                "source_champion_shas": [item["checkpoint"]["sha256"]
-                                          for item in snapshot["members"]],
-                "frozen_source_weights_only": True,
-            })
+            for shard in soup_shards(snapshot):
+                event = {
+                    "event": "SCHOOL_GRADE_SOUP_FROZEN",
+                    "generation": record["generation"], "grade": grade,
+                    "filename": shard["filename"], "sha256": shard["sha256"],
+                    "recipe_sha256": shard["recipe_sha256"],
+                    "vote_count": shard["vote_count"],
+                    "covered_capabilities": shard["perfect_capabilities"],
+                    "source_champion_shas": [item["checkpoint"]["sha256"]
+                                              for item in shard["members"]],
+                    "frozen_source_weights_only": True,
+                }
+                if snapshot.get("schema") == PARTITIONED_SCHEMA:
+                    event.update({
+                        "logical_grade_recipe_sha256": snapshot["recipe_sha256"],
+                        "logical_grade_vote_count": snapshot["vote_count"],
+                        "source_graph_sha256": shard["source_graph_sha256"],
+                    })
+                events.append(event)
         events.append(dict(exam_event))
     return tuple(events)
 
@@ -2032,6 +2113,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 run_dir, manifest, course, teacher_sha,
                 historical_teacher, provenance, source_checkpoint,
                 reserve_gib=reserve_gib)
+        receipt = _reconcile_vocabulary_metadata(
+            run_dir, receipt, course, params, optimizer, graph)
         learning_settings = (LearningSettings(
             probe_each=experiment_probe_each,
             mature_max_loss=experiment_mature_max_loss,

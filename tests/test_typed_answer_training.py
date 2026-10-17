@@ -1,4 +1,8 @@
-"""MLX typed-answer capability parity on a disposable 222-token toy model."""
+"""Disposable typed-answer fixtures with the original frozen historical prefix.
+
+The actual live Bilqis vocabulary is sourced from its evolving semantic graph,
+not the size of this deliberately synthetic, predecessor-compatible fixture.
+"""
 import math
 from copy import deepcopy
 from pathlib import Path

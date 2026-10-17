@@ -65,14 +65,17 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
                "frozen soups advise training only, never examination scoring"},
                redraw=False)
     if state and state.get("grade_soups"):
-        from .grade_soup import soup_vote_count
+        from .grade_soup import soup_vote_count, soup_shards
         for grade, soup in sorted(state["grade_soups"].items()):
             effective = soup_vote_count(soup, current_grade, len(active))
+            shards = soup_shards(soup)
+            active_catalogs = "/".join(str(shard["token_count"]) for shard in shards)
             board.push("system", {"kind": "GRADE SOUP", "grade": grade,
                        "detail": (f"Frozen {grade} recipe: "
                                   f"{soup['vote_count']} mastered capability votes; "
                                   f"{effective:.2f} votes for {current_grade} lessons | "
-                                  f"SHA {soup['sha256'][:12]}")}, redraw=False)
+                                  f"ingredient vocabularies {active_catalogs} | "
+                                  f"recipe {soup['recipe_sha256'][:12]}")}, redraw=False)
     if state and state.get("capability_best"):
         bests = state["capability_best"]
         for item in sorted(bests.values(), key=lambda x: x["capability"]):

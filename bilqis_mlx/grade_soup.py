@@ -18,6 +18,7 @@ from .disk import assert_headroom
 
 
 SCHEMA = "bilqis.mlx.frozen-grade-soup/v1"
+PARTITIONED_SCHEMA = "bilqis.mlx.partitioned-frozen-grade-soup/v2"
 
 
 def _digest(value):
@@ -73,11 +74,68 @@ def needs_refresh(existing: dict | None, recipe: dict | None) -> bool:
         return False
     if existing is None:
         return True
-    if existing.get("schema") != SCHEMA or existing.get("grade") != recipe["grade"]:
+    if (existing.get("schema") not in (SCHEMA, PARTITIONED_SCHEMA) or
+            existing.get("grade") != recipe["grade"]):
         raise ValueError("GRADE_SOUP_EXISTING_SCHEMA_DRIFT")
     if recipe["vote_count"] < existing.get("coverage_peak", 0):
         raise ValueError("GRADE_SOUP_COVERAGE_PEAK_REGRESSED")
     return recipe["recipe_sha256"] != existing.get("recipe_sha256")
+
+
+def partitioned_recipe(full_recipe: dict, member_graph_digests: dict[str, str]) -> tuple[dict, ...]:
+    """Partition existing capability votes by *exact* source-graph identity.
+
+    Historical semantic prefixes remain valid mentors; they are never
+    misrepresented as native owners of newly appended output token rows.
+    Each same-graph group gets its own immutable v1 weights-only snapshot.
+    The aggregate v2 receipt retains the full original vote recipe.
+    """
+    if full_recipe.get("schema") != SCHEMA:
+        raise ValueError("GRADE_SOUP_PARTITION_UNRECOGNIZED_RECIPE")
+    shards = {}
+    for member in full_recipe["members"]:
+        sha = member["checkpoint"]["sha256"]
+        graph = member_graph_digests.get(sha)
+        if (not isinstance(graph, str) or len(graph) != 64 or
+                any(c not in "0123456789abcdef" for c in graph)):
+            raise ValueError("GRADE_SOUP_PARTITION_GRAPH_UNVERIFIED")
+        shards.setdefault(graph, []).append(member)
+    output = []
+    for graph in sorted(shards):
+        members = sorted(shards[graph],
+                         key=lambda item: item["checkpoint"]["sha256"])
+        shas = {item["checkpoint"]["sha256"] for item in members}
+        roles = [role for role in full_recipe["roles"]
+                 if role["checkpoint_sha256"] in shas]
+        vote_count = sum(item["votes"] for item in members)
+        if len(roles) != vote_count:
+            raise ValueError("GRADE_SOUP_PARTITION_VOTE_DRIFT")
+        shard = {
+            "schema": SCHEMA, "grade": full_recipe["grade"],
+            "vote_count": vote_count, "coverage_peak": vote_count,
+            "perfect_capabilities": sorted(role["capability"] for role in roles),
+            "roles": roles, "members": members,
+        }
+        output.append({**shard, "recipe_sha256": _digest(shard),
+                       "source_graph_sha256": graph})
+    if sum(shard["vote_count"] for shard in output) != full_recipe["vote_count"]:
+        raise ValueError("GRADE_SOUP_PARTITION_LOST_VOTES")
+    return tuple(output)
+
+
+def soup_shards(snapshot: dict) -> tuple[dict, ...]:
+    """Expose physically eligible frozen teachers, never a mixed tensor blob."""
+    if snapshot.get("schema") == SCHEMA:
+        return (snapshot,)
+    if snapshot.get("schema") == PARTITIONED_SCHEMA:
+        shards = snapshot.get("shards")
+        if (not isinstance(shards, list) or len(shards) < 2 or
+                any(sh.get("schema") != SCHEMA or sh.get("grade") != snapshot["grade"]
+                    for sh in shards) or
+                sum(sh["vote_count"] for sh in shards) != snapshot["vote_count"]):
+            raise ValueError("GRADE_SOUP_PARTITIONED_SNAPSHOT_DRIFT")
+        return tuple(shards)
+    raise ValueError("GRADE_SOUP_SAVED_SCHEMA_DRIFT")
 
 
 def soup_vote_count(snapshot: dict, question_grade: str, total_grades: int) -> float:
@@ -164,6 +222,10 @@ def save_frozen_soup(run_dir: Path, recipe: dict, weights: dict,
 
 def verify_frozen_soup(run_dir: Path, snapshot: dict) -> Path:
     """Read-only custody proof for a currently referenced immutable soup."""
+    if snapshot.get("schema") == PARTITIONED_SCHEMA:
+        for shard in soup_shards(snapshot):
+            verify_frozen_soup(run_dir, shard)
+        return Path(run_dir) / "soups"
     if snapshot.get("schema") != SCHEMA or not snapshot.get("recipe_sha256"):
         raise ValueError("GRADE_SOUP_SAVED_SCHEMA_DRIFT")
     expected = f"soups/{snapshot['grade']}-{snapshot['recipe_sha256']}.safetensors"
@@ -189,14 +251,16 @@ def retire_stale_soups(run_dir: Path, active_soups: dict) -> tuple[str, ...]:
     keep = set()
     for entry in active_soups.values():
         verify_frozen_soup(run_dir, entry)
-        keep.add(entry["filename"])
+        keep.update(shard["filename"] for shard in soup_shards(entry))
         previous = entry.get("previous")
         if previous:
-            former = run_dir / previous["filename"]
-            if (former.parent != root or former.is_symlink() or not former.is_file() or
-                    digest_file(former) != previous["sha256"]):
-                raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
-            keep.add(previous["filename"])
+            backups = previous if isinstance(previous, list) else [previous]
+            for backup in backups:
+                former = run_dir / backup["filename"]
+                if (former.parent != root or former.is_symlink() or not former.is_file() or
+                        digest_file(former) != backup["sha256"]):
+                    raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
+                keep.add(backup["filename"])
     files = []
     for item in sorted(root.iterdir()):
         if not re.fullmatch(r"[A-Z]+-[0-9a-f]{64}\.safetensors", item.name):

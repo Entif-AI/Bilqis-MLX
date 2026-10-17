@@ -72,6 +72,12 @@ def _inspect(run_dir: Path) -> dict:
             active = school["active_grades"]
             grade = active[school["grade_index"]]
             student = school["current_student"]
+            # The historical ABI prefix is not the active student's size.
+            # Read the actual checkpoint-bound parameter geometry, and show
+            # stale pre-growth metadata without silently rewriting evidence.
+            saved_embedding_shape = saved.get("parameter_shapes", {}).get("embedding.weight")
+            actual_tokens = (saved_embedding_shape[0] if saved_embedding_shape else None)
+            reported_tokens = saved.get("config", {}).get("vocab_size")
             return {
                 "status": saved["result"],
                 "grade": grade, "phase": school["stage"],
@@ -79,6 +85,14 @@ def _inspect(run_dir: Path) -> dict:
                 "visits": school["visits"],
                 "optimizer_step": student["optimizer_step"],
                 "checkpoint_sha256": student["sha256"],
+                "vocabulary": {
+                    "active_checkpoint_token_count": actual_tokens,
+                    "declared_config_token_count": reported_tokens,
+                    "metadata_reconciliation_needed": (
+                        reported_tokens != actual_tokens
+                        if actual_tokens is not None and reported_tokens is not None
+                        else "NOT_MEASURED"),
+                },
                 "champion_pointer_count": len(school["champions"]),
                 "capability_best_pointer_count": len(saved.get("capability_best", {})),
                 "capability_best_bundle_count": len({

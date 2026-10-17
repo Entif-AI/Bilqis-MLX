@@ -68,9 +68,10 @@ def _source_stack(root: Path):
                              (numbers, "bilqis_school/numeric_answer_contract.py")):
         if Path(module.__file__).resolve() != root / relative:
             raise ValueError("PARITY_IMPORTED_PREDECESSOR_WRONG_ROOT")
-    # The live student uses the expanded 222-token catalog. Reconstructing it
-    # from source produces the same token IDs but a DIFFERENT node-contract
-    # hash; load the exact frozen original instead of treating that as parity.
+    # The *historical parent* retains its immutable original token prefix.
+    # The active student can subsequently grow beyond that prefix. Rebuilding
+    # the parent from source changes its node-contract hash, so load the
+    # pinned frozen original rather than treating reconstruction as parity.
     original = (root / "runs/primitive-consolidation-v16-triplets" /
                 AUDITED_PARENT.basename)
     if digest_file(original) != AUDITED_PARENT.sha256:

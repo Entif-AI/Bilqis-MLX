@@ -101,6 +101,96 @@ With `--experimental-retention`:
 
 ## Human-only parity experiment, after the current run finishes
 
+### Verified stopped-run handoff (2026-10-17)
+
+The operator's human run **stopped** after an approximately 78-minute session
+with `GRADE_SOUP_INGREDIENT_GRAPH_DRIFT`. This failure is reproduced as a
+source-code contract contradiction and recorded in the canonical private
+incident ledger as `PM-2026-10-17-006`, root cause `RC-098`, pattern
+`PAT-077`. The source `ff64` commit and main `~/Code/bilqis-mlx` checkout
+were **not edited** by the teacher/soup experimental work.
+
+The latest canonical saved checkpoint is generation **8129**, AdamW step
+**220008**, SHA
+`c29c28c55658e8de33859b19520cdd881bd84930c5cbe4f88330dccaa3c17793`.
+Its actual bound semantic graph and embedding have **227 tokens**, although
+the older saved `config.vocab_size` misleadingly says **222**. Those 222
+tokens describe an **immutable historical source prefix**, not a fixed neural
+vocabulary maximum. Existing A/B soup weight files correctly represent 222
+tokens; the existing Grade C soup correctly represents 227. A newer full
+bundle at step 220056 is **uncommitted**; never treat its mere existence as
+a new accepted student.
+
+The experimental branch now:
+
+* freezes **versioned, partitioned logical grade soups** when full-recipes
+  span different compatible semantic graph versions. Each physical v1 shard
+  contains only identically sourced/shape-compatible weights; the logical v2
+  group preserves all grade-capability votes and per-shard historical token
+  ceilings. There is no parameter tensor padding or mixed-vocabulary mean.
+  Non-prefix/incompatible semantic identities remain hard errors.
+* records a new immutable metadata-only generation when a human resumes an
+  otherwise valid expanded full-student checkpoint with stale historic
+  `config.vocab_size`. The actual graph, embedding, native typed heads, full
+  AdamW step, historical source receipts and old frozen soups remain intact.
+  Future admissions write the dynamic graph token count correctly.
+* shows current checkpoint, declared metadata, and whether reconciliation is
+  needed in read-only operator status; the dashboard distinguishes shard
+  vocabulary versions from the current student size.
+
+**Both control and experimental full-run copies have already been created and
+SHA-verified**, each with 4,170 files, total 6,378,399,996 bytes, identical
+teacher state and original student/own AdamW. Real-sized read-only checkpoint
+loading passed for both: 6 layers, width 384, 24 heads, 10,745,856
+parameters, 39 tensors, 227 model token rows, step 220008. Both remain
+neural-inert. The original `~/Code/bilqis-mlx/runs/school-mlx-v1` has not
+been edited or deleted.
+
+Since the copies exist, **do not rerun the `--confirm-clone` examples below**.
+That tool deliberately refuses to overwrite a destination.
+
+### Matched control and experimental trial commands
+
+Start with two fully read-only preflights:
+
+```sh
+cd ~/Code/.chat-on-steroids-worktrees/bilqis-teacher-soup-parity-20261017/bilqis-mlx
+
+npm run train -- --dry-run --resume \
+  --run-dir ./runs/teacher-soup-parity-control \
+  --legacy-code-root ~/Code/bilqis-triplets-v16
+
+npm run train -- --dry-run --resume --experimental-retention \
+  --run-dir ./runs/teacher-soup-parity-experiment \
+  --legacy-code-root ~/Code/bilqis-triplets-v16
+```
+
+Only the human operator may explicitly start neural updates, never an agent.
+For a first short, comparable time/visit budget (not an ML efficacy claim):
+
+```sh
+# Control: inherited pedagogy, with the common vocabulary/soup-custody repair.
+npm run train -- --human-run --resume \
+  --run-dir ./runs/teacher-soup-parity-control \
+  --legacy-code-root ~/Code/bilqis-triplets-v16 \
+  --minutes 10 --max-visits 12
+
+# Experiment: same baseline checkpoint, alternative teacher/retention and
+# typed-soup guidance, plus the identical common vocabulary/soup repair.
+npm run train -- --human-run --resume --experimental-retention \
+  --run-dir ./runs/teacher-soup-parity-experiment \
+  --legacy-code-root ~/Code/bilqis-triplets-v16 \
+  --minutes 10 --max-visits 12
+```
+
+The independent initial cohorts come from the same source state. After
+accepted/rejected trials and differing teacher decisions, further visit seeds
+and checkpoint generations may diverge. Judge outcomes on the normal source-
+oracled full A/B/C assessments, retained step counts, stop behavior, and
+measured wall time, not aggregate grade-champion bests from different models
+or an unrepresentative toy training run. Do not launch both together if they
+would compete for the same GPU capacity. Source runs remain human-owned.
+
 First read the **plan**, which does not write:
 
 ```sh

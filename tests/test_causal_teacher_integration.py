@@ -1,6 +1,7 @@
 """Source-bound disposable Grade C learning trial, parent ownership unchanged."""
 from contextlib import redirect_stdout
 import io
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -70,6 +71,44 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
                          int(self.fixture.optimizer.state["step"].item()))
         self.assertEqual(set(parameters),set(self.fixture.params))
         self.assertEqual(graph,self.fixture.graph)
+
+    def test_old_model_metadata_222_never_overrides_expanded_graph_vocabulary(self):
+        from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+        actual=len(self.fixture.graph["tokens"])
+        self.assertGreater(actual,HISTORICAL_PREFIX_SIZE)
+        # Deliberately reconstruct a historical pre-fix *receipt* in a
+        # disposable run. New numeric admissions already set the live size.
+        school=storage._state_from_json(self.receipt["school"],self.course)
+        stale=storage._advance(
+            self.fixture.root,
+            {**self.receipt,"config":{**self.receipt["config"],
+                         "vocab_size":HISTORICAL_PREFIX_SIZE}},
+            school,persist=False)
+        stale=storage._persist(self.fixture.root,storage._with_delivery_outbox(
+            stale,({"event":"SYNTHETIC_STALE_VOCAB_STATE",
+                    "generation":stale["generation"]},)))
+        self.assertEqual(stale["config"]["vocab_size"],HISTORICAL_PREFIX_SIZE)
+        before=(self.receipt["school"]["current_student"],
+                int(self.fixture.optimizer.state["step"].item()))
+        with redirect_stdout(io.StringIO()):
+            corrected=storage._reconcile_vocabulary_metadata(
+                self.fixture.root,stale,self.course,self.fixture.params,
+                self.fixture.optimizer,self.fixture.graph)
+            _,own,_,reloaded=storage._resume(
+                self.fixture.root,self.fixture.fixture.manifest,self.course,
+                self.fixture.fixture.policy_sha,
+                admitted_courses={self.course.version:self.course})
+        self.assertEqual(corrected,reloaded)
+        self.assertEqual(corrected["config"]["vocab_size"],actual)
+        self.assertEqual(corrected["school"]["current_student"],before[0])
+        self.assertEqual(int(own.state["step"].item()),before[1])
+        self.assertEqual(corrected["generation"],stale["generation"]+1)
+        self.assertEqual(json.loads((self.fixture.root/"states"/
+                          f"{stale['generation']:07d}.json").read_text())[
+                          "config"]["vocab_size"],HISTORICAL_PREFIX_SIZE)
+        self.assertEqual(storage._reconcile_vocabulary_metadata(
+            self.fixture.root,corrected,self.course,self.fixture.params,
+            self.fixture.optimizer,self.fixture.graph),corrected)
 
     def test_provisional_grade_c_candidate_has_context_and_real_old_rows(self):
         with redirect_stdout(io.StringIO()):

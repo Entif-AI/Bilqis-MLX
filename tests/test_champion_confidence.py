@@ -32,7 +32,8 @@ class ChampionConfidenceTests(unittest.TestCase):
             path = root / "soups" / "A-frozen.safetensors"
             path.parent.mkdir()
             path.write_bytes(b"synthetic immutable path")
-            soup = {"grade": "A", "filename": str(path.relative_to(root)),
+            soup = {"schema": "bilqis.mlx.frozen-grade-soup/v1",
+                    "grade": "A", "filename": str(path.relative_to(root)),
                     "sha256": "c" * 64, "token_count": 12,
                     "recipe_sha256": "d" * 64, "vote_count": 7}
             with patch("bilqis_mlx.grade_a_trainer._cached_grade_soup",

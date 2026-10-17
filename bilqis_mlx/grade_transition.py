@@ -221,7 +221,8 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         "numeric_maximum": maximum, "grade_c_code_sha256": constructor_digest(),
         "semantic_graph_sha256": _fingerprint(grown_graph),
         "parameter_shapes": {name: list(value.shape) for name,value in grown.items()},
-        "config": {**receipt["config"], "answer_heads": answer_heads(grown_graph, maximum)},
+        "config": {**receipt["config"], "vocab_size": len(grown_graph["tokens"]),
+                   "answer_heads": answer_heads(grown_graph, maximum)},
         "live_rubric_sha256": successor.grades[-1].assessment_sha256}
     record = _advance(run_dir, updated, next_state, model_bundle=pointer.filename,
                        result="ACTIVE_GRADE_C", persist=False)

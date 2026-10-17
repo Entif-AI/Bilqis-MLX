@@ -7,6 +7,7 @@ import tempfile
 from bilqis_mlx.grade_soup import (
     grade_soup_recipe, needs_refresh, soup_vote_count, weighted_average,
     save_frozen_soup, verify_frozen_soup, retire_stale_soups,
+    PARTITIONED_SCHEMA, partitioned_recipe, soup_shards,
 )
 
 
@@ -20,6 +21,78 @@ def perfect(cap, sha, breadth=1, *, rubric="a" * 64):
 
 
 class GradeSoupTests(unittest.TestCase):
+    def test_partitioned_mixed_source_catalogs_are_separate_frozen_teachers(self):
+        import mlx.core as mx
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from bilqis_mlx import grade_a_trainer as trainer
+        mx.set_default_device(mx.cpu)
+        old_graph={"tokens":[0,1],"nodes":[{"id":0},{"id":1}],
+                   "row_contract_sha256":{"a":"f"*64}}
+        new_graph={"tokens":[0,1,2],"nodes":[{"id":0},{"id":1},{"id":2}],
+                   "row_contract_sha256":{"a":"f"*64,"b":"e"*64}}
+        self.assertTrue(trainer._compatible_graphs(old_graph,new_graph))
+        old=perfect("A.OLD","1")
+        new=perfect("A.NEW","2")
+        roles={"old":old,"new":new}
+        course=SimpleNamespace(grades=[SimpleNamespace(id="A",capabilities=[
+            SimpleNamespace(id="A.OLD"),SimpleNamespace(id="A.NEW")])])
+        weights_by_sha={
+            old["checkpoint"]["sha256"]:(
+                {"embedding.weight":mx.ones((2,3)), "norm.weight":mx.ones((3,))},
+                old_graph),
+            new["checkpoint"]["sha256"]:(
+                {"embedding.weight":2*mx.ones((3,3)), "norm.weight":2*mx.ones((3,))},
+                new_graph),
+        }
+        def load_bundle(path):
+            sha = ("1" if path.name=="older" else "2")*64
+            weights,graph=weights_by_sha[sha]
+            return (weights,None,{"source_digest":trainer.AUDITED_PARENT.sha256,
+                    "safetensors_sha256":sha,"optimizer_step":5},graph)
+        roles["old"]["checkpoint"]["filename"]="bundles/older"
+        roles["new"]["checkpoint"]["filename"]="bundles/newer"
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            (root/"bundles/older").mkdir(parents=True)
+            (root/"bundles/newer").mkdir(parents=True)
+            with patch.object(trainer,"load_semantically_bound_bundle",
+                              side_effect=load_bundle):
+                frozen,refreshed=trainer._cook_new_grade_soups(
+                    mx,root,{"grade_soups":{}},roles,course,new_graph,
+                    reserve_gib=0.)
+            self.assertEqual(refreshed,("A",))
+            aggregate=frozen["A"]
+            self.assertEqual(aggregate["schema"],PARTITIONED_SCHEMA)
+            self.assertEqual(aggregate["vote_count"],2)
+            self.assertEqual([sh["token_count"] for sh in soup_shards(aggregate)],[2,3])
+            self.assertEqual(aggregate["partition_policy"],
+                             "EXACT_SOURCE_GRAPH_NO_MIXED_PARAMETER_AVERAGE")
+            for shard in soup_shards(aggregate):
+                self.assertTrue(verify_frozen_soup(root,shard).is_file())
+            mentors,receipts=trainer._frozen_grade_soup_votes(
+                root,{"grade_soups":frozen},"B",3)
+            self.assertEqual(len(mentors),2)
+            self.assertAlmostEqual(sum(item["breadth"] for item in mentors),2/3)
+            self.assertEqual({entry["frozen_base_votes"] for entry in receipts},{1})
+            self.assertEqual(retire_stale_soups(root,frozen),())
+            self.assertFalse(needs_refresh(aggregate,grade_soup_recipe(
+                roles,"A",("A.OLD","A.NEW"))))
+            with self.assertRaisesRegex(ValueError,"PARAMETER_GEOMETRY_DRIFT"):
+                weighted_average(mx,((1,weights_by_sha["1"*64][0]),
+                                     (1,weights_by_sha["2"*64][0])))
+
+    def test_partitioned_recipe_counts_roles_not_pretend_shared_vocab(self):
+        rows={"a":perfect("A.ONE","1"),"b":perfect("A.TWO","2")}
+        plan=grade_soup_recipe(rows,"A",("A.ONE","A.TWO"))
+        result=partitioned_recipe(plan,{"1"*64:"a"*64,"2"*64:"b"*64})
+        self.assertEqual(len(result),2)
+        self.assertEqual(sum(shard["vote_count"] for shard in result),2)
+        self.assertEqual({shard["source_graph_sha256"] for shard in result},
+                         {"a"*64,"b"*64})
+        with self.assertRaisesRegex(ValueError,"GRAPH_UNVERIFIED"):
+            partitioned_recipe(plan,{"1"*64:"a"*64})
+
     def test_recipe_counts_capabilities_not_distinct_checkpoints(self):
         rows = {"k1": perfect("A.3", "1", 2),
                 "k2": perfect("A.5", "1", 2),
