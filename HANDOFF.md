@@ -20,7 +20,7 @@ Verified 2026-10-17. Governing private issue [socr8s/private-ip #336](https://gi
 
 ## Verification and custody
 
-**442 tests passed, 2 skipped** on the M3. The two skipped tests expect human-run data relative to this isolated worktree; the explicit historical replay separately audited the actual saved run. Semantic boundaries and `git diff --check` passed. Historical ABI local checks passed with **independent expected enforcement still advisory** (`external_expected_verified=false`). Source commit 3b3fc257 was independently observed with hosted CI success.
+**440 tests passed, 2 skipped (442 total)** on the M3. The two skipped tests expect human-run data relative to this isolated worktree; the explicit historical replay separately audited the actual saved run. Semantic boundaries and `git diff --check` passed. Historical ABI local checks passed with **independent expected enforcement still advisory** (`external_expected_verified=false`). Source commit 3b3fc257 was independently observed with hosted CI success.
 
 Actual read-only `train --dry-run --resume --verify-source` with explicit predecessor path verified **216** pinned historical records and returned `PREFLIGHT_ONLY_NO_NEURAL_UPDATES`. Current state: generation **6824**, optimizer step **204072**, `AWAITING_NEXT_GRADE`; complete student plus matching native AdamW SHA **e65d62174b7c9681991d27e3e2a424358f38dceeb50c90544803bc94d7546585**. Recorded before/after byte hashes match for that bundle, semantic catalog/manifest, school+teacher state and event ledger; see `docs/EVERGREEN_SOURCE_ONLY_CUSTODY_20261017.json`. Actual replay inputs/procedure/implementation fingerprints are in `docs/EVERGREEN_HEALTH_SHADOW_REPLAY_20261017.json`.
 

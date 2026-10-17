@@ -31,7 +31,7 @@ The generic readiness API returns `READY_FOR_HUMAN_ADMISSION_REVIEW` only when t
 
 ## Verification
 
-- **442 tests passed, 2 skipped** on M3 Python 3.14.3. The skips are two tests looking for human-run evidence relative to the isolated worktree. The separate historical replay below read the actual saved run explicitly.
+- **440 tests passed, 2 skipped (442 total)** on M3 Python 3.14.3. The skips are two tests looking for human-run evidence relative to the isolated worktree. The separate historical replay below read the actual saved run explicitly.
 - [Hosted CI run 39040994376](https://github.com/Entif-AI/bilqis-mlx/actions/runs/39040994376) completed successfully at implementation commit `3b3fc257fdccf656ca2bee517c239c3439b1550f`.
 - Semantic boundary guard passed, including red/green rejection of explicit live imports of unratified shadow policy modules. This is a static import control, not a sandbox or general proof against dynamic activation.
 - Historical ABI guard passed its local checks; `external_expected_verified=false`. No enforced merge protection or independent ABI approval is claimed.
