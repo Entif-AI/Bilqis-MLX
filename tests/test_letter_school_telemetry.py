@@ -20,6 +20,43 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_retention_decision_not_instructional_note_controls_commit_claim(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            for cap, decision, reason, updates in (
+                ("C.NUMBER", "REJECT", "NO_MEASURABLE_TARGET_GAIN", 0),
+                ("C.MUL", "REJECT", "FRAGILE_COMPOSITION_REPLAY_REGRESSION", 0),
+                ("B.NOT", "PROVISIONAL", "PAIRED_SCREEN_WITHIN_BUDGET", 16),
+            ):
+                ingest(board, {
+                    "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                    "capability": cap, "grade": cap[0],
+                    "optimizer_step": 229512,
+                    "retained_optimizer_updates": updates,
+                    "candidate_retention": {"decision": decision, "reason": reason},
+                    "teacher_decision": {"selected": {"exam_mistake_replay": 1}},
+                })
+            c_number, c_mul, b_not = list(board.rows["CANDIDATES"])[-3:]
+            self.assertIn("REJECT", c_number["decision"])
+            self.assertIn("NO TARGET GAIN", c_number["decision"])
+            self.assertNotIn("LESSON COMMITTED", c_number["decision"])
+            self.assertIn("REJECT", c_mul["decision"])
+            self.assertIn("OR/XOR", c_mul["decision"])
+            self.assertIn("RETAIN 16", b_not["decision"])
+            self.assertIn("miss 1", b_not["decision"])
+            self.assertNotIn("LESSON COMMITTED", b_not["decision"])
+
+    def test_inconsistent_retention_metadata_does_not_claim_commit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {"event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                "grade": "C", "capability": "C.NUMBER",
+                "retained_optimizer_updates": 0,
+                "candidate_retention": {"decision": "PROVISIONAL",
+                                        "reason": "PAIRED_SCREEN_WITHIN_BUDGET"}})
+            self.assertIn("ADMISSION CONFLICT",
+                          board.rows["CANDIDATES"][-1]["decision"])
+
     def test_unavailable_longitudinal_history_names_the_actual_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

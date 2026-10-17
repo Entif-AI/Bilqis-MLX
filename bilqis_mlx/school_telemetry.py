@@ -46,6 +46,35 @@ def _teacher_decision_text(decision: object) -> str:
     return " | ".join(parts) + "; exam pending" if parts else "LESSON COMMITTED; exam pending"
 
 
+def _candidate_admission_text(event: dict) -> str:
+    """Distinguish an attempted lesson from student/AdamW promotion."""
+    candidate = event.get("candidate_retention")
+    steps = event.get("retained_optimizer_updates")
+    if candidate is None and steps is None:
+        return _teacher_decision_text(event.get("teacher_decision"))
+    if not isinstance(candidate, dict):
+        label = "ADMISSION UNKNOWN"
+    elif candidate.get("decision") == "PROVISIONAL" and type(steps) is int and steps > 0:
+        label = f"RETAIN {steps}"
+    elif candidate.get("decision") == "REJECT" and steps == 0:
+        reason = candidate.get("reason")
+        if reason == "NO_MEASURABLE_TARGET_GAIN":
+            label = "REJECT NO TARGET GAIN"
+        elif reason == "FRAGILE_COMPOSITION_REPLAY_REGRESSION":
+            label = "REJECT OR/XOR LOSS"
+        elif reason == "PROTECTED_CAPABILITY_REGRESSION":
+            label = "REJECT PROTECTED LOSS"
+        else:
+            label = "REJECT " + str(reason or "UNKNOWN")
+    else:
+        label = "ADMISSION CONFLICT"
+    instructional = _teacher_decision_text(event.get("teacher_decision"))
+    hint = instructional.removesuffix("; exam pending")
+    if hint != "LESSON COMMITTED":
+        label += " | " + hint
+    return label
+
+
 def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
     rows = []
     diagnostics = event.get("learning_diagnostics")
@@ -352,7 +381,7 @@ class SchoolTelemetry:
             "loss": _display(event.get("loss")),
             "gradient": (f"{event['gradient_norm']:.3g}" if type(event.get("gradient_norm")) in (float,int) else "-"),
             "old": _delta(event.get("earlier_grade_delta_pp"), pp=True),
-            "decision": _teacher_decision_text(event.get("teacher_decision")),
+            "decision": _candidate_admission_text(event),
         }
         self.board.rows["CANDIDATES"].append(row)
         teacher = {"grade": grade, "attempt": self.visits, "policy": policy[:10],
