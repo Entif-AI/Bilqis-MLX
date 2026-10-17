@@ -59,6 +59,14 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
+    def test_weakest_three_uses_cumulative_pool_without_perfect_padding(self):
+        pool = ("A.ONE", "A.TWO", "B.THREE", "C.FOUR", "C.FIVE")
+        scores = {cap: Score(12, 12) for cap in pool}
+        scores["A.TWO"] = Score(9, 12)
+        scores["C.FIVE"] = Score(11, 12)
+        self.assertEqual(weakest_three(scores, pool), ("A.TWO", "C.FIVE"))
+        self.assertEqual(weakest_three({cap: Score(12,12) for cap in pool}, pool), ())
+
     def test_still_weak_capabilities_remain_eligible_for_the_second_round(self):
         state = grade_loop(self.course, start_new(self.course, self.init), self.init)
         scores = {f"a.{i}": (i, 8) for i in range(6)}
@@ -100,7 +108,7 @@ class SchoolTests(unittest.TestCase):
         state=assess(course,state,snapshot(course,self.init,scores))
         self.assertEqual(state.stage,"MAIN")
         self.assertEqual(state.grade,"A")
-        self.assertEqual(state.queue,tuple(f"a.{i}" for i in range(6)))
+        self.assertEqual(state.queue,tuple(f"a.{i}" for i in range(1, 6)))
         self.assertEqual(state.visits,12)
 
     def test_current_grade_promotion_allows_prior_regression_and_requires_soup(self):

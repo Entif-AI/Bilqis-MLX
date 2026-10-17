@@ -279,6 +279,19 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     record["trials"] += 1
     record["reward_sum"] += reward
     record["latest"] = reward
+    strain = decision.get("matrix_strain") or {}
+    if strain.get("status") == "MEASURED":
+        # A bounded teacher-observable geometric feature; outcome rewards
+        # still come only from actual source-scored capability probes.
+        matrices = strain["matrices"]
+        record["latest_matrix_strain"] = {
+            "best_checkpoint_sha256": strain["best_checkpoint_sha256"],
+            "tensor_count": len(matrices),
+            "mean_delta_best": sum(item["delta_best_mean_sq"]
+                                   for item in matrices.values()) / len(matrices),
+            "mean_delta_start": sum(item["delta_start_mean_sq"]
+                                    for item in matrices.values()) / len(matrices),
+        }
     channel["events"] += 1
     return {"version": VERSION, "teacher_context_reward": reward,
             "legacy_reward_reinterpreted": False,

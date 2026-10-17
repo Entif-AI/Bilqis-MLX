@@ -1380,6 +1380,27 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             source_root, graph, receipt, course, school, cap, learning_settings)
         parent_predictions = _predictions(
             mx, parent_parameters, probe_rows, receipt["config"], receipt["answer_ids"])
+        target_rows = [row for row in probe_rows if row["capability"] == cap]
+        if target_rows and all(parent_predictions[row["id"]] == row["gold"]
+                               for row in target_rows):
+            # A strict positive-gain gate cannot admit a trial whose fresh
+            # target panel already scores perfectly. Advance schedule only.
+            parent_optimizer.learning_rate = original_learning_rate
+            school = visit(course, school, cap, school.current_student)
+            skipped = _advance(run_dir, receipt, school, persist=False)
+            skipped = _with_delivery_outbox(skipped, ({
+                "event": "SCHOOL_PERFECT_TARGET_VISIT_SKIPPED",
+                "capability": cap, "grade": lesson_grade,
+                "active_grade": school.grade, "generation": skipped["generation"],
+                "optimizer_step": int(parent_optimizer.state["step"].item()),
+                "target_probe_correct": len(target_rows),
+                "target_probe_total": len(target_rows),
+                "retained_optimizer_updates": 0,
+                "reason": "NO_POSSIBLE_STRICT_TARGET_GAIN",
+            },))
+            skipped = _persist(run_dir, skipped)
+            _reconcile_delivery_outbox(run_dir, skipped)
+            return skipped
         params, optimizer = fork_student(mx, parent_parameters, parent_optimizer)
     last_loss = 0.0
     last_norm = 0.0
@@ -1484,6 +1505,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
             source_cohort_sha256=_fingerprint([
                 (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows]))
+        from .matrix_strain import observe as observe_matrix_strain
+        outcome["matrix_strain"] = observe_matrix_strain(
+            mx, run_dir, receipt, parent_parameters, params)
         outcome["unsampled_admitted_capabilities"] = unsampled_caps
         context_credit = observe_context(
             teacher, capability=cap, phase=school.stage, policy_key=policy_key,

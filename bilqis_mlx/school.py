@@ -219,12 +219,11 @@ def visit(course: Course, state: SchoolState, capability: str,
 
 
 def weakest_three(scores: dict[str, Score], pool: tuple[str, ...]) -> tuple[str, ...]:
-    """Re-rank the complete introduced pool, including unresolved weaknesses."""
+    """Select up to three failures from the complete cumulative introduced pool."""
     if len(set(pool)) != len(pool) or not set(pool) <= set(scores):
         raise ValueError("WEAKEST_THREE_INCOMPLETE_POOL")
-    ranking = sorted(pool, key=lambda c: (scores[c].accuracy, c))
-    if len(ranking) < 3:
-        raise ValueError("WEAKEST_THREE_NOT_ENOUGH_REMAINING_CAPABILITIES")
+    ranking = sorted((c for c in pool if not scores[c].perfect),
+                     key=lambda c: (scores[c].accuracy, c))
     return tuple(ranking[:3])
 
 
@@ -340,8 +339,18 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
         trio = weakest_three(snapshot.scores, pool)
         return replace(state, stage="RECOVERY_2", queue=trio,
                        latest_rubric_digest=snapshot.rubric_digest)
-    return replace(state, stage="MAIN", queue=_main_queue(course, state),
-                   first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
+    # After two cumulative recovery rounds, do not teach already-perfect
+    # capabilities merely to refill a nominal main-grade pass. Preserve the
+    # full cumulative examination and keep old-grade misses eligible.
+    remaining_main = tuple(c for c in _main_queue(course, state)
+                           if not snapshot.scores[c].perfect)
+    if remaining_main:
+        return replace(state, stage="MAIN", queue=remaining_main,
+                       first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
+    remaining_cumulative = weakest_three(snapshot.scores, pool)
+    return replace(state, stage="RECOVERY_1", queue=remaining_cumulative,
+                   first_recovery=remaining_cumulative,
+                   latest_rubric_digest=snapshot.rubric_digest)
 
 
 def append_next_grade(previous: Course, successor: Course,
