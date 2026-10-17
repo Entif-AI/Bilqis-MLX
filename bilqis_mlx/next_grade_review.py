@@ -77,7 +77,8 @@ def assess(record: dict, *, grade: str, parent_release: str,
     else:
         # The Sheet is allowed to nominate candidates but cannot certify its
         # own claims. Text benefits, independent sources and alternatives matter.
-        if (chosen.get("text_model_relevance") not in TEXT_RELEVANCE or
+        relevance = chosen.get("text_model_relevance")
+        if (not isinstance(relevance, str) or relevance not in TEXT_RELEVANCE or
                 not _substantive(chosen.get("needs_neural_learning"))):
             errors.append("SELECTED_TOPIC_TEXT_RELEVANCE_UNPROVEN")
         if not _substantive(chosen.get("source")) or chosen["source"].startswith("sheet:"):

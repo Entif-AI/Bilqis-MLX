@@ -48,6 +48,29 @@ def proposal():
 
 
 class NextGradeReviewTests(unittest.TestCase):
+    def test_malformed_candidate_and_decision_fail_closed(self):
+        record = proposal()
+        record["candidates"] = [candidate("valid"), {"id": ["unhashable"]}]
+        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("GRADE_CANDIDATE_IDENTITY_INVALID", result["blockers"])
+
+        record = proposal()
+        record["decision"] = ["not a decision object"]
+        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("GRADE_DECISION_REASON_MISSING:why_now", result["blockers"])
+
+    def test_malformed_selected_source_and_review_hash_fail_closed(self):
+        record = proposal()
+        record["candidates"][0]["text_model_relevance"] = ["unexpected-list"]
+        record["candidates"][0]["source"] = ["not a source reference"]
+        record["reviews"]["selection"]["Q01"]["evidence"] = [123]
+        result = assess(record, grade="D", parent_release="fixed-parent-v1")
+        self.assertEqual(result["status"], "BLOCKED")
+        self.assertIn("SELECTED_TOPIC_SOURCE_NOT_INDEPENDENT", result["blockers"])
+        self.assertIn("REVIEW_QUESTION_UNRESOLVED:selection:Q01", result["blockers"])
+
     def test_all_ten_questions_recur_at_each_phase(self):
         record = proposal()
         result = assess(record, grade="D", parent_release="fixed-parent-v1", phase="admission")
