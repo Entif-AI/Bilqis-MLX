@@ -1299,11 +1299,21 @@ def _learning_probe_rows(source_root, graph, receipt, course, school, capability
         eligible, capability, scores,
         cap_limit=settings.protected_cap_limit, rotation=school.visits)
     sampled = selected | {capability}
+    # The target must show a positive change before a candidate is promoted.
+    # A six-item panel is too coarse near mastery. Draw enough *fresh* source
+    # questions to match the fixed examination's capability sample size,
+    # capped at the existing maximum; keep protected probes inexpensive.
+    exam_target_size = scores.get(capability, {}).get("total")
+    target_each = (
+        max(settings.probe_each, min(48, exam_target_size))
+        if type(exam_target_size) is int and exam_target_size > 0
+        else min(48, max(settings.probe_each, settings.probe_each * 2))
+    )
     rows = []
     for name in sorted(sampled):
         rows.extend(_draw_live_rows(
             source_root, graph, course=course, capability=name,
-            each=settings.probe_each,
+            each=target_each if name == capability else settings.probe_each,
             seed=_seed(receipt, capability="LEARNING_PROBE:"+name)))
     if {r["capability"] for r in rows} != sampled:
         raise ValueError("LEARNING_EXPERIMENT_PROBE_SCOPE_INCOMPLETE")
@@ -1470,6 +1480,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         outcome = decide_learning_trial(
             pair, active_capability=cap, phase=school.stage,
             protected=protected_caps, settings=learning_settings,
+            mature_grades=frozenset(school.champions),
             negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
             source_cohort_sha256=_fingerprint([
                 (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows]))

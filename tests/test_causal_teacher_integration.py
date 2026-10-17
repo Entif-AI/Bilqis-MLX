@@ -173,13 +173,25 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
             self.fixture.optimizer,self.fixture.graph),corrected)
 
     def test_provisional_grade_c_candidate_has_context_and_real_old_rows(self):
-        with redirect_stdout(io.StringIO()):
+        school = storage._state_from_json(self.receipt["school"],self.course)
+        with patch.object(storage,"decide_learning_trial",
+                          wraps=storage.decide_learning_trial) as gate,redirect_stdout(io.StringIO()):
             result=self.visit()
+        self.assertEqual(gate.call_args.kwargs["mature_grades"],frozenset(school.champions))
         event=result["_pending_visit_events"][-1]
-        self.assertEqual(event["candidate_retention"]["decision"],"PROVISIONAL")
-        self.assertEqual(event["retained_optimizer_updates"],1)
+        outcome=event["candidate_retention"]
+        # A real source-scored disposable update is promoted only on strictly
+        # positive target-probe gain; the exact outcome is model-dependent.
+        if outcome["decision"]=="PROVISIONAL":
+            self.assertGreater(outcome["local_correct_delta"],0)
+            self.assertEqual(event["retained_optimizer_updates"],1)
+        else:
+            self.assertEqual(outcome["decision"],"REJECT")
+            self.assertTrue(outcome["local_correct_delta"]<=0 or outcome["exceeded"])
+            self.assertEqual(event["retained_optimizer_updates"],0)
         self.assertEqual(event["candidate_attempt_optimizer_step"],2)
-        self.assertEqual(int(self.fixture.optimizer.state["step"].item()),2)
+        self.assertEqual(int(self.fixture.optimizer.state["step"].item()),
+                         1+event["retained_optimizer_updates"])
         self.assertEqual(result["teacher"]["causal_experiment"]["events"],1)
         self.assertEqual(result["learning_experiment"]["settings"]["probe_each"],6)
         self.assertEqual(event["typed_policy_controls"]["optimizer_batches_observed"],1)
@@ -190,10 +202,33 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertTrue(monitored <= eligible)
         self.assertIn("C.COUNT",monitored)
         self.assertLessEqual(len(monitored),9)
+        self.assertEqual(outcome["active_probe_total"],12)
+        self.assertEqual(outcome["local_correct_delta"],
+                         outcome["active_probe_after"]-outcome["active_probe_before"])
         self.assertTrue(any(k.startswith("A.") for k in monitored))
         self.assertTrue(any(k.startswith("B.") for k in monitored))
         self.assertEqual(len(eligible)-len(monitored),
                          event["candidate_retention"]["unsampled_admitted_capabilities"])
+
+    def test_protected_probes_remain_bounded_while_target_matches_exam_size(self):
+        from collections import Counter
+        from unittest.mock import patch
+        source = storage._draw_live_rows
+        requested = {}
+        school = storage._state_from_json(self.receipt["school"],self.course)
+        scores = {"C.COUNT": {"correct": 19, "total": 21}}
+        latest = {**self.receipt, "last_exam": {"scores": scores}}
+        def capture(*args,**kwargs):
+            requested[kwargs["capability"]]=kwargs["each"]
+            return source(*args,**kwargs)
+        with patch.object(storage,"_draw_live_rows",side_effect=capture):
+            rows,protected,_ = storage._learning_probe_rows(
+                fixtures.SOURCE,self.fixture.graph,latest,self.course,school,
+                "C.COUNT",Settings())
+        self.assertEqual(requested["C.COUNT"],21)
+        self.assertTrue(protected)
+        self.assertTrue(all(requested[cap]==6 for cap in protected))
+        self.assertEqual(Counter(row["capability"] for row in rows)["C.COUNT"],21)
 
     def test_rejected_candidate_keeps_parent_and_adamw_byte_identical(self):
         baseline={name:np.asarray(value).copy()

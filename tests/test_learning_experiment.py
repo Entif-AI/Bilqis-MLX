@@ -37,9 +37,15 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         settings = Settings(probe_each=6, mature_max_loss=2, introduction_extra_loss=2)
         provisional = decide(scores, active_capability="C.ADD", phase="MAIN",
                              protected={"A.EDGE", "B.XOR"}, settings=settings)
+        mature_main = decide(scores, active_capability="C.ADD", phase="MAIN",
+                             protected={"A.EDGE", "B.XOR"}, settings=settings,
+                             mature_grades=frozenset({"A", "B"}))
         rejected = decide(scores, active_capability="C.ADD", phase="RECOVERY_1",
                           protected={"A.EDGE", "B.XOR"}, settings=settings)
         self.assertEqual(provisional["decision"], "PROVISIONAL")
+        self.assertEqual(mature_main["decision"], "REJECT")
+        self.assertEqual(mature_main["exceeded"], {"B.XOR": 3})
+        self.assertEqual(mature_main["protected_tolerances"]["B.XOR"], 2)
         self.assertEqual(rejected["decision"], "REJECT")
         self.assertEqual(rejected["exceeded"], {"B.XOR": 3})
         self.assertFalse(rejected["exact_complete_exam_qualification"])
@@ -105,10 +111,84 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(mature["worst_protected_loss"], 1)
         self.assertEqual(mature["local_correct_delta"], 0)
         self.assertEqual(mature["decision"], "REJECT")
-        self.assertEqual(mature["reason"], "UNPRODUCTIVE_RECOVERY_INTERFERENCE")
+        self.assertEqual(mature["reason"], "NO_MEASURABLE_TARGET_GAIN")
         developmental = decide(scores, active_capability="C.ADD", phase="MAIN",
                                protected={"B.XOR"}, settings=Settings())
-        self.assertEqual(developmental["decision"], "PROVISIONAL")
+        self.assertEqual(developmental["decision"], "REJECT")
+        self.assertEqual(developmental["reason"], "NO_MEASURABLE_TARGET_GAIN")
+
+    def test_no_gain_must_reject_in_every_phase_even_if_older_skills_improve(self):
+        # C stays at 3/6; B improves. A global net-positive vote is not
+        # evidence that the targeted C capability learned anything.
+        scores = {
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+            "B.XOR": {"before": 4, "after": 5, "total": 6},
+        }
+        for phase in ("MAIN", "RECOVERY_1", "RECOVERY_2"):
+            with self.subTest(phase=phase):
+                outcome = decide(scores, active_capability="C.ADD",
+                                 phase=phase, protected={"B.XOR"},
+                                 settings=Settings(), mature_grades=frozenset({"B"}))
+                self.assertEqual(outcome["decision"], "REJECT")
+                self.assertEqual(outcome["reason"], "NO_MEASURABLE_TARGET_GAIN")
+                self.assertEqual(outcome["local_correct_delta"], 0)
+                self.assertEqual(outcome["active_probe_before"], 3)
+                self.assertEqual(outcome["active_probe_after"], 3)
+                self.assertEqual(outcome["active_probe_total"], 6)
+                self.assertEqual(outcome["protected_net_correct_delta"], 1)
+
+    def test_target_regression_rejected_even_with_positive_other_grade(self):
+        outcome = decide({
+            "C.ADD": {"before": 4, "after": 3, "total": 6},
+            "B.XOR": {"before": 4, "after": 6, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected={"B.XOR"},
+            settings=Settings(), mature_grades=frozenset({"B"}))
+        self.assertEqual(outcome["reason"], "NO_MEASURABLE_TARGET_GAIN")
+        self.assertEqual(outcome["local_correct_delta"], -1)
+        self.assertEqual(outcome["decision"], "REJECT")
+
+    def test_mature_grades_never_inherit_developmental_loss_budget(self):
+        rows = {
+            "C.ADD": {"before": 3, "after": 4, "total": 6},
+            "B.XOR": {"before": 6, "after": 4, "total": 6},
+            "C.SUB": {"before": 6, "after": 4, "total": 6},
+        }
+        settings = Settings(probe_each=6, mature_max_loss=1,
+                            introduction_extra_loss=2)
+        result = decide(rows, active_capability="C.ADD", phase="MAIN",
+                        protected={"B.XOR", "C.SUB"}, settings=settings,
+                        mature_grades=frozenset({"A", "B"}))
+        self.assertEqual(result["local_correct_delta"], 1)
+        self.assertEqual(result["decision"], "REJECT")
+        self.assertEqual(result["reason"], "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertEqual(result["exceeded"], {"B.XOR": 2})
+        self.assertEqual(result["protected_tolerances"], {"B.XOR": 1, "C.SUB": 3})
+        self.assertEqual(result["mature_protected_capabilities"], ["B.XOR"])
+        rows["B.XOR"] = {"before": 6, "after": 5, "total": 6}
+        passing = decide(rows, active_capability="C.ADD", phase="MAIN",
+                         protected={"B.XOR", "C.SUB"}, settings=settings,
+                         mature_grades=frozenset({"A", "B"}))
+        self.assertEqual(passing["decision"], "PROVISIONAL")
+
+    def test_teacher_learns_rejected_nonprogress_without_legacy_reward_rewrite(self):
+        from copy import deepcopy
+        decision = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+            "B.XOR": {"before": 6, "after": 6, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected={"B.XOR"},
+            settings=Settings(), mature_grades=frozenset({"B"}))
+        teacher = {"strategies": {"p": {"lr": .0001}},
+                   "global_stats": {"p": {"trials": 9, "reward_sum": 3.}}}
+        historic = deepcopy(teacher["global_stats"])
+        outcome = observe_context(teacher, capability="C.ADD", phase="MAIN",
+                                  policy_key="p", decision=decision,
+                                  local_gain=.75)
+        self.assertLess(outcome["teacher_context_reward"], 0.)
+        self.assertEqual(teacher["global_stats"], historic)
+        self.assertEqual(teacher["causal_experiment"]["events"], 1)
+        self.assertEqual(teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|"]["p"]["unsafe"], 1)
+        self.assertEqual(teacher["causal_experiment"]["negative_archetypes"][0]["outcome"],
+                         "REJECTED_UPDATE")
 
     def test_incomplete_or_duplicate_paired_cohort_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "INCOMPLETE"):

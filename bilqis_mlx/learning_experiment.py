@@ -123,9 +123,14 @@ def _prototype_similarity(delta: dict[str, float], prototypes: list[dict]) -> fl
 
 def decide(paired: dict, *, active_capability: str, phase: str,
            protected: set[str], settings: Settings,
+           mature_grades: frozenset[str] = frozenset(),
            negative_prototypes: list[dict] | None = None,
            source_cohort_sha256: str | None = None) -> dict:
-    """Fast candidate admission. No candidate/champion all-pairs inference."""
+    """Promote only measured targeted gains, protecting graduated grades.
+
+    The parent/student and native AdamW remain untouched on rejection.
+    A MAIN scheduler pass is not equivalent to introduction of a new skill.
+    """
     if active_capability not in paired or not phase:
         raise ValueError("LEARNING_EXPERIMENT_MISSING_ACTIVE_CAPABILITY")
     missing = protected - set(paired)
@@ -144,15 +149,21 @@ def decide(paired: dict, *, active_capability: str, phase: str,
             regressions[cap] = max(0, before-after)
     introduction = phase == "MAIN"
     allowed = settings.mature_max_loss + (settings.introduction_extra_loss if introduction else 0)
-    exceeded = {cap: loss for cap, loss in regressions.items() if loss > allowed}
+    # The extra developmental budget applies only to ungraduated skills.
+    # Older A/B champions remain mature even during a C MAIN pass.
+    tolerances = {
+        cap: (settings.mature_max_loss if cap.partition(".")[0] in mature_grades else allowed)
+        for cap in sorted(regressions)
+    }
+    exceeded = {cap: loss for cap, loss in regressions.items()
+                if loss > tolerances[cap]}
     active = paired[active_capability]
     active_gain = active["after"] - active["before"]
     protected_net_gain = sum(paired[cap]["after"] - paired[cap]["before"]
                              for cap in protected if cap != active_capability)
-    # Don't spend a recovery visit making other skills worse unless the
-    # targeted skill actually gains, even when each small loss is in budget.
-    unproductive_interference = (not introduction and active_gain <= 0 and
-                                 protected_net_gain < 0)
+    # Local lesson training reward is not evidence of improved capability.
+    # The same, source-oracled parent/challenger probe must improve strictly.
+    no_target_gain = active_gain <= 0
     fingerprint = json.dumps(paired, sort_keys=True, separators=(",", ":"))
     if (source_cohort_sha256 is not None and
             (len(source_cohort_sha256) != 64 or
@@ -160,13 +171,19 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         raise ValueError("LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID")
     return {
         "version": VERSION,
-        "decision": "REJECT" if exceeded or unproductive_interference else "PROVISIONAL",
-        "reason": ("PROTECTED_CAPABILITY_REGRESSION" if exceeded else
-                   "UNPRODUCTIVE_RECOVERY_INTERFERENCE" if unproductive_interference else
+        "decision": "REJECT" if no_target_gain or exceeded else "PROVISIONAL",
+        "reason": ("NO_MEASURABLE_TARGET_GAIN" if no_target_gain else
+                   "PROTECTED_CAPABILITY_REGRESSION" if exceeded else
                    "PAIRED_SCREEN_WITHIN_BUDGET"),
         "phase": phase, "active_capability": active_capability,
+        "active_probe_before": active["before"],
+        "active_probe_after": active["after"],
+        "active_probe_total": active["total"],
         "protected_capabilities": sorted(protected),
         "max_tolerated_wrong_answer_delta": allowed,
+        "protected_tolerances": tolerances,
+        "mature_protected_capabilities": sorted(cap for cap in regressions
+                                                 if cap.partition(".")[0] in mature_grades),
         "exceeded": exceeded,
         "worst_protected_loss": max(regressions.values(), default=0),
         "local_correct_delta": active_gain,
