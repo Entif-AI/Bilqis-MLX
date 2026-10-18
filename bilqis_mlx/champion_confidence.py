@@ -1,8 +1,9 @@
 """Small, source-gated confidence advice from frozen whole-student champions.
 
 Votes affect the causal student's supervised gradient, not independent exams,
-oracle golds, optimizer lineage, or student checkpoint selection. Unique
-checkpoints vote once; their weight scales with proven simultaneous mastery.
+oracle golds, optimizer lineage, or student checkpoint selection. Live adviser
+inference is deduplicated by checkpoint, but each active maxed capability role
+contributes one direct vote; a shared checkpoint is counted once per role.
 """
 from __future__ import annotations
 
@@ -62,6 +63,64 @@ def champion_roster(frontier: dict, grade: str, *, snapshot=None) -> tuple[dict,
         if sha not in unique or breadth > unique[sha]["breadth"]:
             unique[sha] = {"checkpoint": item["checkpoint"], "breadth": breadth}
     return tuple(unique[sha] for sha in sorted(unique))
+
+
+def perfect_role_roster(frontier: dict, grade_soups: dict) -> tuple[dict, ...]:
+    """One direct vote per active maxed capability role, across all grades.
+
+    Several capability roles may share one intact checkpoint. Inference may be
+    deduplicated by checkpoint, but voting weight remains the number of active
+    perfect roles that checkpoint owns, not its historical/global breadth.
+    """
+    if not isinstance(frontier, dict) or not isinstance(grade_soups, dict):
+        raise ValueError("CHAMPION_CONFIDENCE_ROLE_ROSTER_INVALID")
+    unique = {}
+    for grade, snapshot in sorted(grade_soups.items()):
+        if not isinstance(snapshot, dict):
+            raise ValueError("CHAMPION_CONFIDENCE_ACTIVE_GRADE_ROLE_DRIFT")
+        roles = snapshot.get("roles")
+        if (snapshot.get("grade") != grade or not isinstance(roles, list) or
+                len(roles) != snapshot.get("vote_count") or
+                len({role.get("capability") for role in roles}) != len(roles) or
+                any(not role.get("capability", "").startswith(grade + ".")
+                    for role in roles)):
+            raise ValueError("CHAMPION_CONFIDENCE_ACTIVE_GRADE_ROLE_DRIFT")
+        for role in roles:
+            capability = role["capability"]
+            key = role["rubric"] + ":" + capability
+            item = frontier.get(key)
+            if (item is None or item.get("capability") != capability or
+                    item.get("checkpoint", {}).get("sha256") != role.get(
+                        "checkpoint_sha256")):
+                raise ValueError("CHAMPION_CONFIDENCE_ACTIVE_ROLE_PROVENANCE_DRIFT")
+            correct, total = role.get("correct"), role.get("total")
+            if (type(correct) is not int or type(total) is not int or total < 1 or
+                    not 0 <= correct <= total):
+                raise ValueError("CHAMPION_CONFIDENCE_ACTIVE_ROLE_SCORE_DRIFT")
+            if correct != total:
+                continue
+            mastered = item.get("perfect_capabilities")
+            if (not isinstance(mastered, list) or capability not in mastered or
+                    item.get("correct") != item.get("total") or
+                    not item.get("checkpoint", {}).get("model_and_native_adamw")):
+                raise ValueError("CHAMPION_CONFIDENCE_PERFECT_ROLE_DRIFT")
+            pointer = item["checkpoint"]
+            sha = pointer["sha256"]
+            mentor = unique.setdefault(sha, {
+                "checkpoint": pointer,
+                "breadth": 0,
+                "source_grade_votes": {},
+                "capabilities": [],
+            })
+            mentor["breadth"] += 1
+            mentor["source_grade_votes"][grade] = (
+                mentor["source_grade_votes"].get(grade, 0) + 1)
+            mentor["capabilities"].append(capability)
+    return tuple({**unique[sha],
+                  "source_grade_votes": dict(sorted(
+                      unique[sha]["source_grade_votes"].items())),
+                  "capabilities": tuple(sorted(unique[sha]["capabilities"]))}
+                 for sha in sorted(unique))
 
 
 def vote_targets(votes, labels, *, eligible_capabilities: int,

@@ -666,6 +666,17 @@ Dashboard championship telemetry must also distinguish observed facts. A fresh s
 This ADR changes no neural optimizer authority. Only the human invokes `--human-run`; source/test work remains neural-inert.
 
 
+## ADR-062 | 2026-10-18 | Maxed capability champions advise across grades; soups add a reduced aggregate vote
+
+**Direct user correction of ADR-035:** active maxed capability champions are not confined to their own lesson grade. Each active capability role at 100% contributes one direct advisory vote to training examples in any admitted grade. A frozen grade soup remains a separate aggregate adviser. Same-grade soup advice keeps the soup's full frozen base vote count; foreign-grade soup advice divides that base count by the current number of admitted grades.
+
+Direct votes are capability-role votes, not checkpoint votes. If one intact checkpoint owns several qualifying maxed roles, inference may load and evaluate that checkpoint once, but its advisory weight equals the number of active maxed roles it owns. Historical or global simultaneous-perfect breadth does not create extra direct votes. Active best-score roles below 100% remain valid championship and soup ingredients under ADR-058, but they contribute zero direct capability votes until maxed.
+
+Current issue #340 state makes the intended arithmetic concrete. A owns six active roles and all six are maxed, so a B lesson receives six direct A capability votes. A's frozen soup has base vote count six and, with A/B/C admitted, contributes another `6/3 = 2` votes. C currently owns seven active roles, five maxed, so B receives five direct C capability votes plus the existing C soup weight `7/3`. B currently has no maxed active roles, so it contributes no direct B capability votes to itself, while its six-role soup remains available under the existing soup contract.
+
+Direct and soup advice enter the same independently source-gold-agreeing, teacher-`distill`-scaled, bounded confidence target. They do not change source gold, exam scoring, capability scheduling, championship ownership, the causal student's identity, or AdamW. A mentor that predicts an example incorrectly contributes no advice for that example. This ADR supersedes ADR-035 and Championship Lifecycle v1 only where they forbid direct cross-grade maxed-capability advice. The epoch reset, earned-only roster, soup construction, score comparison, and human-only optimizer boundaries remain unchanged.
+
+
 ## ADR-061 | 2026-10-18 | Two weakest-three bursts occur between full imperfect-grade sweeps, not after every grade
 
 **Direct user correction of ADR-059/060 cadence:** the user's intended note was that `weakest_three()` runs only twice **in between regular progression through all grades that do not yet have 100% mastery**. ADR-059 correctly bounded recovery to two fresh global rankings and correctly prohibited indefinite current-letter loops, but the implementation and its prose placed those two recovery bursts after every individual grade pass. That interpretation was too aggressive.

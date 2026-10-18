@@ -18,17 +18,32 @@ def record(cap, sha, perfect):
 
 
 class ChampionConfidenceTests(unittest.TestCase):
-    def test_only_frozen_soup_not_foreign_capability_champions_advises_grade_b(self):
+    def test_foreign_maxed_capability_champion_and_diluted_soup_both_advise_grade_b(self):
         from bilqis_mlx.grade_a_trainer import (
             _frozen_confidence_champions, _frozen_grade_soup_votes,
         )
         a_champ = record("A.3", "1", ("A.3", "A.5"))
         with TemporaryDirectory() as temp:
             root = Path(temp)
-            a_only = {"graduation_perfect": {"A.3": a_champ}}
-            # The grade-A champion bundle is deliberately absent. The B
-            # confidence reader must not even attempt to load it.
-            self.assertEqual(_frozen_confidence_champions(root, a_only, "B", {}), ())
+            soup_role = {"capability": "A.3", "rubric": "a" * 64,
+                         "correct": 12, "total": 12,
+                         "checkpoint_sha256": "1" * 64}
+            a_only = {"graduation_perfect": {"a" * 64 + ":A.3": a_champ},
+                      "grade_soups": {"A": {"grade": "A", "vote_count": 1,
+                                               "roles": [soup_role]}}}
+            graph = {"tokens": ["PAD", "TRUE", "FALSE"], "nodes": [],
+                     "row_contract_sha256": {}}
+            with (patch("pathlib.Path.stat") as stat,
+                  patch("bilqis_mlx.grade_a_trainer._cached_frozen_champion",
+                        return_value=({"embedding.weight": "synthetic"}, graph))):
+                stat.return_value.st_size = 1
+                stat.return_value.st_mtime_ns = 1
+                direct = _frozen_confidence_champions(root, a_only, "B", graph)
+            self.assertEqual(len(direct), 1)
+            # One active maxed capability role is one direct vote even though
+            # its checkpoint happens to have broader simultaneous perfection.
+            self.assertEqual(direct[0]["breadth"], 1)
+            self.assertEqual(direct[0]["source_grade_votes"], {"A": 1})
             path = root / "soups" / "A-frozen.safetensors"
             path.parent.mkdir()
             path.write_bytes(b"synthetic immutable path")
@@ -44,6 +59,57 @@ class ChampionConfidenceTests(unittest.TestCase):
             self.assertAlmostEqual(mentors[0]["breadth"], 7 / 3)
             self.assertEqual(receipts[0]["frozen_base_votes"], 7)
             self.assertAlmostEqual(receipts[0]["effective_votes"], 7 / 3)
+
+    def test_six_maxed_a_roles_equal_six_direct_votes_plus_two_foreign_soup_votes(self):
+        from bilqis_mlx.grade_a_trainer import _frozen_confidence_champions
+        from bilqis_mlx.grade_soup import soup_vote_count
+        grade = "A"
+        caps = tuple(f"A.{n}" for n in range(6))
+        frontier = {}
+        roles = []
+        for index, cap in enumerate(caps):
+            item = record(cap, str(index + 1), caps)
+            frontier[item["rubric"] + ":" + cap] = item
+            roles.append({"capability": cap, "rubric": item["rubric"],
+                          "correct": 12, "total": 12,
+                          "checkpoint_sha256": item["checkpoint"]["sha256"]})
+        snapshot = {"grade": grade, "vote_count": 6, "roles": roles}
+        graph = {"tokens": ["PAD", "TRUE", "FALSE"], "nodes": [],
+                 "row_contract_sha256": {}}
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            receipt = {"graduation_perfect": frontier,
+                       "grade_soups": {grade: snapshot}}
+            with (patch("pathlib.Path.stat") as stat,
+                  patch("bilqis_mlx.grade_a_trainer._cached_frozen_champion",
+                        return_value=({"embedding.weight": "synthetic"}, graph))):
+                stat.return_value.st_size = 1
+                stat.return_value.st_mtime_ns = 1
+                direct = _frozen_confidence_champions(root, receipt, "B", graph)
+        self.assertEqual(sum(mentor["breadth"] for mentor in direct), 6)
+        self.assertEqual(sum(mentor["source_grade_votes"]["A"] for mentor in direct), 6)
+        self.assertEqual(soup_vote_count(snapshot, "B", 3), 2.0)
+
+    def test_subperfect_roles_stay_soup_only_while_five_maxed_c_roles_vote_directly(self):
+        from bilqis_mlx.champion_confidence import perfect_role_roster
+        from bilqis_mlx.grade_soup import soup_vote_count
+        frontier, roles = {}, []
+        for index in range(7):
+            cap = f"C.{index}"
+            perfect = index < 5
+            item = record(cap, str(index + 1), (cap,) if perfect else ())
+            item["correct"], item["total"] = ((21, 21) if perfect else (20, 21))
+            item["breadth"] = 1 if perfect else 0
+            item["perfect_capabilities"] = [cap] if perfect else []
+            frontier[item["rubric"] + ":" + cap] = item
+            roles.append({"capability": cap, "rubric": item["rubric"],
+                          "correct": item["correct"], "total": item["total"],
+                          "checkpoint_sha256": item["checkpoint"]["sha256"]})
+        snapshot = {"grade": "C", "vote_count": 7, "roles": roles}
+        direct = perfect_role_roster(frontier, {"C": snapshot})
+        self.assertEqual(sum(mentor["breadth"] for mentor in direct), 5)
+        self.assertEqual(sum(mentor["source_grade_votes"]["C"] for mentor in direct), 5)
+        self.assertAlmostEqual(soup_vote_count(snapshot, "B", 3), 7 / 3)
 
     def test_mlx_supervised_step_absorbs_advice_without_modifying_exam_inference(self):
         import mlx.core as mx

@@ -518,8 +518,18 @@ class GradeBTrainerTests(unittest.TestCase):
                 "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED",
                 "GRADE_A_TEACHER_VISIT_COMMITTED")]
             self.assertTrue(teacher_visits)
+            # The first B pass precedes any newly earned epoch roles. Once the
+            # all-perfect A+B exam mints six active roles per grade, each maxed
+            # foreign capability contributes one direct advisory vote.
             self.assertTrue(all(event.get("prior_grade_champion_votes") == {}
-                                for event in teacher_visits))
+                                for event in teacher_visits[:6]))
+            self.assertTrue(all(event.get("prior_grade_champion_votes") == {"B": 6}
+                                for event in teacher_visits[6:12]))
+            self.assertTrue(all(event.get("prior_grade_champion_votes") == {"A": 6}
+                                for event in teacher_visits[12:18]))
+            self.assertTrue(all(event["champion_confidence"]["direct_capability_votes"] ==
+                                ({ } if index < 6 else {"A": 6, "B": 6})
+                                for index, event in enumerate(teacher_visits)))
             self.assertTrue(all(event.get("champion_directed_examples_available") == 0
                                 for event in teacher_visits))
             b_visits = [e for e in events if e.get("event") ==

@@ -27,7 +27,7 @@ from .champions import Checkpoint
 from .champion_confidence import MAX_INFLUENCE as MAX_CHAMPION_INFLUENCE
 from .champion_confidence import vote_targets_typed
 from .champion_confidence import POLICY as CHAMPION_CONFIDENCE_POLICY
-from .champion_confidence import champion_roster, vote_targets
+from .champion_confidence import perfect_role_roster, vote_targets
 from .grade_soup import (grade_soup_recipe, partitioned_recipe,
                          PARTITIONED_SCHEMA, soup_shards, needs_refresh, soup_vote_count,
                          weighted_average, save_frozen_soup, verify_frozen_soup,
@@ -321,15 +321,13 @@ def _cached_frozen_champion(path_string, sha, step, file_size, file_mtime_ns):
 
 
 def _frozen_confidence_champions(run_dir, receipt, grade, graph):
-    """Read each current-grade perfect champion once, without changing it."""
+    """Read active perfect capability specialists once across all grades."""
     mentors = []
-    snapshot = receipt.get("grade_soups", {}).get(grade)
-    if snapshot is None and any(
-            role.get("capability", "").startswith(grade + ".")
-            for role in receipt.get("graduation_perfect", {}).values()):
-        raise ValueError("CHAMPION_CONFIDENCE_GRADE_SOUP_MISSING_FOR_ACTIVE_ROLES")
-    for item in champion_roster(receipt.get("graduation_perfect", {}), grade,
-                               snapshot=snapshot):
+    frontier = receipt.get("graduation_perfect", {})
+    soups = receipt.get("grade_soups", {})
+    if frontier and not soups:
+        raise ValueError("CHAMPION_CONFIDENCE_GRADE_SOUPS_MISSING_FOR_ACTIVE_ROLES")
+    for item in perfect_role_roster(frontier, soups):
         pointer = item["checkpoint"]
         path = run_dir / pointer["filename"]
         if (path.is_symlink() or path.parent != run_dir / "bundles" or
@@ -342,7 +340,10 @@ def _frozen_confidence_champions(run_dir, receipt, grade, graph):
         if not _compatible_graphs(source_graph, graph):
             raise ValueError("CHAMPION_CONFIDENCE_BUNDLE_DRIFT")
         mentors.append({"weights": weights, "graph": source_graph,
-                        "breadth": item["breadth"]})
+                        "breadth": item["breadth"],
+                        "source_grade_votes": item["source_grade_votes"],
+                        "capabilities": item["capabilities"],
+                        "checkpoint_sha256": pointer["sha256"]})
     return tuple(mentors)
 
 
@@ -1909,14 +1910,21 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         rows = _draw_live_rows(source_root, graph,
                                seed=_seed(receipt, capability=cap),
                                capability=cap, each=max(32, batch_size), course=course)
-    # Champion influence across grades belongs exclusively to frozen soups.
-    # Individual capability champions advise only their own lesson grade.
+    # Every active maxed capability role gets one direct advisory vote across
+    # grades. Frozen grade soups add the separately diluted aggregate voice.
     with trace_span("MENTOR_SOURCES_LOAD", capability=cap):
         confidence_champions, frozen_soups, soup_vote_receipts = _mentor_sources_for_visit(
             run_dir, receipt, lesson_grade, graph, len(course.grades))
     confidence_examples = 0
     confidence_total_weight = 0.0
     confidence_applied_steps = 0
+    direct_capability_votes = {}
+    direct_capabilities = []
+    for mentor in confidence_champions:
+        for source_grade, votes in mentor.get("source_grade_votes", {}).items():
+            direct_capability_votes[source_grade] = (
+                direct_capability_votes.get(source_grade, 0) + votes)
+        direct_capabilities.extend(mentor.get("capabilities", ()))
     # Every unsuccessful examination construction can become direct teaching
     # material once scoring has completed. No held-out embargo survives.
     priority = [r for r in receipt.get("teacher_misses", ())
@@ -2255,11 +2263,15 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "prior_exam_misses_available": len(priority),
         "prior_exam_misses_deferred_by_scope": len(deferred_misses),
         "prior_exam_misses_remaining": len(remaining_priority),
-        "prior_grade_champion_votes": {},
+        "prior_grade_champion_votes": {
+            source_grade: votes for source_grade, votes in direct_capability_votes.items()
+            if source_grade != lesson_grade},
         "champion_directed_examples_available": 0,
         "champion_confidence": {
             "policy": CHAMPION_CONFIDENCE_POLICY,
             "frozen_unique_champions": len(confidence_champions),
+            "direct_capability_votes": dict(sorted(direct_capability_votes.items())),
+            "direct_capabilities": sorted(direct_capabilities),
             "frozen_grade_soups": list(soup_vote_receipts),
             "teacher_distill": float(policy.get("distill", 0.0)),
             "examples_with_gold_agreeing_advice": confidence_examples,
