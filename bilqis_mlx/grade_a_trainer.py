@@ -91,6 +91,7 @@ from .teacher_feedback import (
     select_fair_miss_window, summarize_teacher_decision,
     summarize_teacher_outcomes,
 )
+from .timing_trace import trace_mark, trace_span
 
 VERSION = "bilqis.mlx.human-grade-a-trainer/v1"
 LOCKFILE = ".grade-a-operator.lock"
@@ -1839,6 +1840,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     if cap is None:
         raise ValueError("HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY")
     stage_before = school.stage
+    trace_mark(
+        "VISIT_START", generation=receipt["generation"], capability=cap,
+        phase=stage_before, optimizer_step=int(optimizer.state["step"].item()))
     if cap in set(quarantined_capabilities(receipt.get("stagnation_session"))):
         return _skip_stagnant_target_visit(
             run_dir, receipt, school, course, cap,
@@ -1851,23 +1855,26 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     rng = random.Random(_seed(receipt, capability=cap))
     teacher_curriculum_scope = (str(receipt.get("curriculum_mode", "")) + "/" +
                                 str(receipt.get("numeric_maximum", "")))
-    if learning_settings is not None:
-        policy_key, policy = contextual_pick(
-            engine, teacher, cap, school.stage, rng,
-            curriculum_scope=teacher_curriculum_scope)
-    else:
-        policy_key, policy = engine.pick(teacher, lesson_grade, rng)
+    with trace_span("POLICY_SELECT", capability=cap):
+        if learning_settings is not None:
+            policy_key, policy = contextual_pick(
+                engine, teacher, cap, school.stage, rng,
+                curriculum_scope=teacher_curriculum_scope)
+        else:
+            policy_key, policy = engine.pick(teacher, lesson_grade, rng)
     original_learning_rate = optimizer.learning_rate
     optimizer.learning_rate = float(policy["lr"])
     if source_root is None:
         raise ValueError("HUMAN_TRAINER_LIVE_SOURCE_REQUIRED")
-    rows = _draw_live_rows(source_root, graph,
-                           seed=_seed(receipt, capability=cap),
-                           capability=cap, each=max(32, batch_size), course=course)
+    with trace_span("VISIT_SOURCE_DRAW", capability=cap):
+        rows = _draw_live_rows(source_root, graph,
+                               seed=_seed(receipt, capability=cap),
+                               capability=cap, each=max(32, batch_size), course=course)
     # Champion influence across grades belongs exclusively to frozen soups.
     # Individual capability champions advise only their own lesson grade.
-    confidence_champions, frozen_soups, soup_vote_receipts = _mentor_sources_for_visit(
-        run_dir, receipt, lesson_grade, graph, len(course.grades))
+    with trace_span("MENTOR_SOURCES_LOAD", capability=cap):
+        confidence_champions, frozen_soups, soup_vote_receipts = _mentor_sources_for_visit(
+            run_dir, receipt, lesson_grade, graph, len(course.grades))
     confidence_examples = 0
     confidence_total_weight = 0.0
     confidence_applied_steps = 0
@@ -1885,16 +1892,20 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
     selected_misses = set()
     rows.extend(priority)
-    before = _train_score(mx, params, rows, receipt["config"],
-                          receipt["answer_ids"])
+    with trace_span("TRAIN_SCORE_BEFORE", capability=cap, row_count=len(rows)):
+        before = _train_score(mx, params, rows, receipt["config"],
+                              receipt["answer_ids"])
     parent_parameters, parent_optimizer = params, optimizer
     probe_rows = protected_caps = parent_predictions = None
     if learning_settings is not None:
-        probe_rows, protected_caps, unsampled_caps = _learning_probe_rows(
-            source_root, graph, receipt, course, school, cap, learning_settings)
+        with trace_span("RETENTION_PROBE_BUILD", capability=cap):
+            probe_rows, protected_caps, unsampled_caps = _learning_probe_rows(
+                source_root, graph, receipt, course, school, cap, learning_settings)
         target_rows = [row for row in probe_rows if row["capability"] == cap]
-        parent_predictions = _predictions(
-            mx, parent_parameters, target_rows, receipt["config"], receipt["answer_ids"])
+        with trace_span("RETENTION_PARENT_PREDICT", capability=cap,
+                        row_count=len(target_rows)):
+            parent_predictions = _predictions(
+                mx, parent_parameters, target_rows, receipt["config"], receipt["answer_ids"])
         if target_rows and all(parent_predictions[row["id"]] == row["gold"]
                                for row in target_rows):
             # A strict positive-gain gate cannot admit a trial whose fresh
@@ -1904,7 +1915,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             return _skip_perfect_target_visit(
                 run_dir, receipt, school, course, cap, len(target_rows),
                 int(parent_optimizer.state["step"].item()), teacher=teacher)
-        params, optimizer = fork_student(mx, parent_parameters, parent_optimizer)
+        with trace_span("FORK_CANDIDATE", capability=cap):
+            params, optimizer = fork_student(mx, parent_parameters, parent_optimizer)
     last_loss = 0.0
     last_norm = 0.0
     methodology_steps = []
@@ -1915,57 +1927,66 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     fragile_fixed_rows = ()
     if learning_settings is not None:
         from .fragile_replay import load_replay_rows
-        fragile_fixed_rows = load_replay_rows(run_dir, receipt)
+        with trace_span("FRAGILE_REPLAY_LOAD", capability=cap):
+            fragile_fixed_rows = load_replay_rows(run_dir, receipt)
     for step in range(steps_per_visit):
+        trace_mark("OPTIMIZER_STEP_START", capability=cap, visit_step=step + 1,
+                   optimizer_step=int(optimizer.state["step"].item()))
         lesson_control = None
-        fresh = _draw_live_rows(source_root, graph,
-            seed=_seed(receipt, capability=cap, step=step+1),
-            capability=cap, each=max(32, batch_size), course=course)
+        with trace_span("STEP_SOURCE_DRAW", capability=cap, visit_step=step + 1):
+            fresh = _draw_live_rows(source_root, graph,
+                seed=_seed(receipt, capability=cap, step=step+1),
+                capability=cap, each=max(32, batch_size), course=course)
         fresh.extend(priority)
         lesson_seed = _seed(receipt, capability=cap, step=step+1)
-        if learning_settings is not None:
-            # The same source-bound old-grade policy applies to Boolean and
-            # typed lessons. Never label the target's own grade as old.
-            old_capabilities = earlier_grade_capabilities(
-                course, school.champions, cap)
-            prior = []
-            if int(policy.get("old", 0)) > 0 and old_capabilities:
-                selected = old_capabilities[(school.visits + step) % len(old_capabilities)]
-                prior = _draw_live_rows(source_root, graph, course=course,
-                    capability=selected, each=max(batch_size, 6),
-                    seed=_seed(receipt, capability="EXPERIMENT_OLD:"+selected, step=step))
-            picked, control = select_source_lesson(
-                fresh, prior, policy, seed=lesson_seed, batch_size=batch_size)
-            lesson_control = {**control, "eligible_prior_capabilities":
-                              len(old_capabilities)}
-        else:
-            picked = choose_lesson_batch(
-                fresh, policy, lesson_seed, batch_size=batch_size)
+        with trace_span("STEP_LESSON_SELECT", capability=cap, visit_step=step + 1):
+            if learning_settings is not None:
+                # The same source-bound old-grade policy applies to Boolean and
+                # typed lessons. Never label the target's own grade as old.
+                old_capabilities = earlier_grade_capabilities(
+                    course, school.champions, cap)
+                prior = []
+                if int(policy.get("old", 0)) > 0 and old_capabilities:
+                    selected = old_capabilities[(school.visits + step) % len(old_capabilities)]
+                    prior = _draw_live_rows(source_root, graph, course=course,
+                        capability=selected, each=max(batch_size, 6),
+                        seed=_seed(receipt, capability="EXPERIMENT_OLD:"+selected, step=step))
+                picked, control = select_source_lesson(
+                    fresh, prior, policy, seed=lesson_seed, batch_size=batch_size)
+                lesson_control = {**control, "eligible_prior_capabilities":
+                                  len(old_capabilities)}
+            else:
+                picked = choose_lesson_batch(
+                    fresh, policy, lesson_seed, batch_size=batch_size)
         preservation = ()
         delivered_preservation = ()
         if learning_settings is not None:
-            preservation = _fresh_fragile_preservation_rows(
-                run_dir, source_root, graph, receipt, course, school, cap,
-                step=step + 1, batch_size=batch_size,
-                fixed_rows=fragile_fixed_rows)
-            picked, delivered_preservation = _inject_preservation_rows(
-                picked, preservation)
+            with trace_span("STEP_FRAGILE_PRESERVATION", capability=cap,
+                            visit_step=step + 1):
+                preservation = _fresh_fragile_preservation_rows(
+                    run_dir, source_root, graph, receipt, course, school, cap,
+                    step=step + 1, batch_size=batch_size,
+                    fixed_rows=fragile_fixed_rows)
+                picked, delivered_preservation = _inject_preservation_rows(
+                    picked, preservation)
         preservation_ids = {row["id"] for row in delivered_preservation}
         gold_capacity = {
             gold: sum(row["gold"] == gold and row.get("id") not in preservation_ids
                       for row in picked)
             for gold in {row["gold"] for row in picked}
         }
-        window = select_fair_miss_window(
-            priority, FairMissRequest(
-                exposures=miss_exposures,
-                selected_this_visit=frozenset(selected_misses),
-                remaining_steps=steps_per_visit-step,
-                batch_size=batch_size,
-                gold_capacity=gold_capacity,
-            ))
-        picked = replay_missed_lessons(
-            picked, window, reserved_ids=preservation_ids)
+        with trace_span("STEP_MISS_REPLAY", capability=cap, visit_step=step + 1,
+                        available_misses=len(priority)):
+            window = select_fair_miss_window(
+                priority, FairMissRequest(
+                    exposures=miss_exposures,
+                    selected_this_visit=frozenset(selected_misses),
+                    remaining_steps=steps_per_visit-step,
+                    batch_size=batch_size,
+                    gold_capacity=gold_capacity,
+                ))
+            picked = replay_missed_lessons(
+                picked, window, reserved_ids=preservation_ids)
         if lesson_control is not None:
             lesson_control["planned_old_grade_examples"] = lesson_control[
                 "effective_old_grade_examples"]
@@ -1991,25 +2012,27 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             miss_exposures[identity] = miss_exposures.get(identity, 0) + 1
             selected_misses.add(identity)
         replayed_misses += len(window)
-        if methodology_unavailable is None:
-            try:
-                methodology_steps.append(inspect_lesson_step(
-                    course, cap, fresh, picked))
-            except ValueError as exc:
-                # A diagnostic implementation gap must not invent a new
-                # training gate or silently change the evolved teacher.
-                methodology_unavailable = str(exc)
-        typed_lesson = any(row.get("answer_kind", "binary") != "binary" for row in picked)
-        if learning_settings is not None and typed_lesson:
-            guidance = _typed_confidence_guidance(
-                mx, (*confidence_champions, *frozen_soups), picked, receipt["config"],
-                scope_size=len(course.capability_map),
-                teacher_distill=float(policy.get("distill", 0.0)))
-        else:
-            guidance = _confidence_guidance(
-                mx, (*confidence_champions, *frozen_soups), picked, receipt["config"],
-                receipt["answer_ids"], scope_size=len(course.capability_map),
-                teacher_distill=float(policy.get("distill", 0.0)))
+        with trace_span("STEP_DIAGNOSTIC_AND_GUIDANCE", capability=cap,
+                        visit_step=step + 1):
+            if methodology_unavailable is None:
+                try:
+                    methodology_steps.append(inspect_lesson_step(
+                        course, cap, fresh, picked))
+                except ValueError as exc:
+                    # A diagnostic implementation gap must not invent a new
+                    # training gate or silently change the evolved teacher.
+                    methodology_unavailable = str(exc)
+            typed_lesson = any(row.get("answer_kind", "binary") != "binary" for row in picked)
+            if learning_settings is not None and typed_lesson:
+                guidance = _typed_confidence_guidance(
+                    mx, (*confidence_champions, *frozen_soups), picked, receipt["config"],
+                    scope_size=len(course.capability_map),
+                    teacher_distill=float(policy.get("distill", 0.0)))
+            else:
+                guidance = _confidence_guidance(
+                    mx, (*confidence_champions, *frozen_soups), picked, receipt["config"],
+                    receipt["answer_ids"], scope_size=len(course.capability_map),
+                    teacher_distill=float(policy.get("distill", 0.0)))
         if guidance is not None:
             import numpy as np
             influences = ([item[1] for item in guidance.values()]
@@ -2017,60 +2040,71 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             confidence_examples += sum(int(np.count_nonzero(item)) for item in influences)
             confidence_total_weight += sum(float(np.sum(item)) for item in influences)
             confidence_applied_steps += 1
-        last_loss, last_norm = _train_step(
-            mx, params, optimizer, picked, receipt["config"],
-            receipt["answer_ids"], champion_guidance=guidance)
-    after = _train_score(mx, params, rows, receipt["config"],
-                         receipt["answer_ids"])
+        with trace_span("STEP_TRAIN", capability=cap, visit_step=step + 1,
+                        batch_size=len(picked)):
+            last_loss, last_norm = _train_step(
+                mx, params, optimizer, picked, receipt["config"],
+                receipt["answer_ids"], champion_guidance=guidance)
+        trace_mark("OPTIMIZER_STEP_END", capability=cap, visit_step=step + 1,
+                   optimizer_step=int(optimizer.state["step"].item()))
+    with trace_span("TRAIN_SCORE_AFTER", capability=cap, row_count=len(rows)):
+        after = _train_score(mx, params, rows, receipt["config"],
+                             receipt["answer_ids"])
     attempted_step = int(optimizer.state["step"].item())
     if attempted_step != step_before+steps_per_visit:
         raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
     candidate_gain = after-before
     outcome = context_credit = None
     if learning_settings is not None:
-        pair, probed, current_grade, fixed_grade_evidence, replay, frontier, stage = (
-            _candidate_grade_evidence(
-                mx, run_dir, receipt, course, school, cap,
-                parent_parameters, params, probe_rows,
-                parent_predictions, learning_settings))
-        outcome = decide_learning_trial(
-            pair, active_capability=cap, phase=school.stage,
-            protected=probed, settings=learning_settings,
-            same_grade_capabilities=current_grade,
-            fixed_grade_replay=fixed_grade_evidence,
-            fixed_frontier_replay=frontier,
-            active_school_grade=school.grade,
-            mature_grades=frozenset(school.champions),
-            negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
-            source_cohort_sha256=_fingerprint([
-                (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows
-                if r["capability"] in pair]),
-            fragile_replay=replay)
+        with trace_span("RETENTION_CANDIDATE_EVIDENCE", capability=cap):
+            pair, probed, current_grade, fixed_grade_evidence, replay, frontier, stage = (
+                _candidate_grade_evidence(
+                    mx, run_dir, receipt, course, school, cap,
+                    parent_parameters, params, probe_rows,
+                    parent_predictions, learning_settings))
+        with trace_span("RETENTION_DECIDE", capability=cap):
+            outcome = decide_learning_trial(
+                pair, active_capability=cap, phase=school.stage,
+                protected=probed, settings=learning_settings,
+                same_grade_capabilities=current_grade,
+                fixed_grade_replay=fixed_grade_evidence,
+                fixed_frontier_replay=frontier,
+                active_school_grade=school.grade,
+                mature_grades=frozenset(school.champions),
+                negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
+                source_cohort_sha256=_fingerprint([
+                    (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows
+                    if r["capability"] in pair]),
+                fragile_replay=replay)
         outcome["qualification_stage"] = stage
         from .matrix_strain import observe as observe_matrix_strain
-        outcome["matrix_strain"] = observe_matrix_strain(
-            mx, run_dir, receipt, parent_parameters, params)
+        with trace_span("MATRIX_STRAIN", capability=cap):
+            outcome["matrix_strain"] = observe_matrix_strain(
+                mx, run_dir, receipt, parent_parameters, params)
         outcome["unsampled_admitted_capabilities"] = (
             len(set(assessment_capabilities(course, school)) | {cap})-len(pair))
-        context_credit = observe_context(
-            teacher, capability=cap, phase=school.stage, policy_key=policy_key,
-            decision=outcome, local_gain=candidate_gain,
-            curriculum_scope=teacher_curriculum_scope)
-        if outcome["decision"] == "PROVISIONAL":
-            commit_trial(parent_parameters, parent_optimizer, params, optimizer)
-        else:
-            # The rejected candidate never owned the causal model, its
-            # optimizer or the unresolved miss queue.
-            parent_optimizer.learning_rate = original_learning_rate
-            miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
-            after = before
+        with trace_span("RETENTION_APPLY_DECISION", capability=cap,
+                        decision=outcome["decision"]):
+            context_credit = observe_context(
+                teacher, capability=cap, phase=school.stage, policy_key=policy_key,
+                decision=outcome, local_gain=candidate_gain,
+                curriculum_scope=teacher_curriculum_scope)
+            if outcome["decision"] == "PROVISIONAL":
+                commit_trial(parent_parameters, parent_optimizer, params, optimizer)
+            else:
+                # The rejected candidate never owned the causal model, its
+                # optimizer or the unresolved miss queue.
+                parent_optimizer.learning_rate = original_learning_rate
+                miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
+                after = before
         params, optimizer = parent_parameters, parent_optimizer
     remaining_priority = priority
     if priority and (outcome is None or outcome["decision"] == "PROVISIONAL"):
-        miss_guesses = _predictions(
-            mx, params, priority, receipt["config"], receipt["answer_ids"])
-        remaining_priority = reconcile_unresolved_misses(
-            priority, priority, miss_guesses)
+        with trace_span("MISS_RECONCILE", capability=cap, miss_count=len(priority)):
+            miss_guesses = _predictions(
+                mx, params, priority, receipt["config"], receipt["answer_ids"])
+            remaining_priority = reconcile_unresolved_misses(
+                priority, priority, miss_guesses)
     remaining_priority_ids = {row["id"] for row in remaining_priority}
     resolved_priority_ids = {row["id"] for row in priority} - remaining_priority_ids
     for identity in resolved_priority_ids:
@@ -2082,7 +2116,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     all_teacher_misses.sort(key=lambda row: (row["capability"], row["id"]))
     reward = after - before
     bandit_credit = selection_credit(reward, outcome, context_credit)
-    engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
+    with trace_span("TEACHER_OBSERVE", capability=cap):
+        engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
     expected_retained = (step_before if outcome is not None and
                          outcome["decision"] == "REJECT" else attempted_step)
     if int(optimizer.state["step"].item()) != expected_retained:
@@ -2184,7 +2219,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             generation=event["generation"])
     pending = list(receipt.get("_pending_visit_events", ()))
     pending.append(event)
-    result = _advance(run_dir, receipt, school, teacher=teacher, persist=False)
+    with trace_span("VISIT_ADVANCE_STATE", capability=cap):
+        result = _advance(run_dir, receipt, school, teacher=teacher, persist=False)
     if learning_settings is not None:
         result["learning_experiment"] = {
             "version": LEARNING_EXPERIMENT_VERSION,
@@ -2196,6 +2232,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         result["stagnation_session"] = stagnation
     result.pop("teacher_miss_cursor", None)
     result["_pending_visit_events"] = pending
+    trace_mark(
+        "VISIT_END", generation=result["generation"], capability=cap,
+        optimizer_step=int(optimizer.state["step"].item()),
+        decision=outcome.get("decision") if isinstance(outcome, dict) else None)
     return result
 
 
@@ -3260,6 +3300,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             stagnation_grace_grade: str | None = None,
             stagnation_grace_steps: int = 0) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
+    trace_mark(
+        "OPERATE_START", resume=resume, max_visits=max_visits,
+        steps_per_visit=steps_per_visit, batch_size=batch_size)
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
             type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
             type(max_visits) is not int or max_visits < 0 or
@@ -3287,8 +3330,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             raise ValueError("LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION")
     import mlx.core as mx
     mx.set_default_device(mx.gpu)
-    manifest, historical_course, engine, teacher_sha, historical_teacher, provenance = prepare_source(
-        source_root, source_checkpoint, manifest_path)
+    with trace_span("PREPARE_SOURCE"):
+        manifest, historical_course, engine, teacher_sha, historical_teacher, provenance = prepare_source(
+            source_root, source_checkpoint, manifest_path)
     course_a = live_course(historical_course)
     # Build only verified source-bound metadata; no student, optimizer or
     # checkpoint is touched while preparing a future grade's course.
@@ -3299,6 +3343,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
     run_dir = Path(run_dir).expanduser().resolve()
     start = time.monotonic()
     with operator_lock(run_dir):
+        trace_mark("OPERATOR_LOCK_ACQUIRED")
         if resume:
             saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
             from .historical_live_release import resume_grade_courses
@@ -3338,10 +3383,11 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     course = course_c
                 elif saved.get('curriculum_mode') == STAIRCASE_RELEASE:
                     course = staircase_course
-            params, optimizer, graph, receipt = _resume(
-                run_dir, manifest, course, teacher_sha,
-                successor_course=course_b,
-                admitted_courses={c.version: c for c in (course_a, course_b, course_c, staircase_course) if c is not None})
+            with trace_span("RESUME_STUDENT"):
+                params, optimizer, graph, receipt = _resume(
+                    run_dir, manifest, course, teacher_sha,
+                    successor_course=course_b,
+                    admitted_courses={c.version: c for c in (course_a, course_b, course_c, staircase_course) if c is not None})
             # A fully written B migration might have survived a crash before
             # publishing the latest state pointer. _resume recovers it under
             # operator_lock; do not interpret recovered B as an A-only run.
@@ -3381,19 +3427,22 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 run_dir, manifest, course, teacher_sha,
                 historical_teacher, provenance, source_checkpoint,
                 reserve_gib=reserve_gib)
-        receipt = _reconcile_vocabulary_metadata(
-            run_dir, receipt, course, params, optimizer, graph)
+        with trace_span("RECONCILE_VOCABULARY"):
+            receipt = _reconcile_vocabulary_metadata(
+                run_dir, receipt, course, params, optimizer, graph)
         learning_settings = (LearningSettings(
             probe_each=experiment_probe_each,
             mature_max_loss=experiment_mature_max_loss,
             introduction_extra_loss=experiment_introduction_extra_loss,
             protected_cap_limit=experiment_protected_cap_limit)
             if retention_enabled else None)
-        receipt = _reconcile_learning_settings(
-            run_dir, receipt, course, learning_settings, optimizer)
+        with trace_span("RECONCILE_LEARNING_SETTINGS"):
+            receipt = _reconcile_learning_settings(
+                run_dir, receipt, course, learning_settings, optimizer)
         if learning_settings is not None:
-            receipt = _seed_saved_whole_student_peak(
-                run_dir, receipt, course, optimizer)
+            with trace_span("SEED_WHOLE_STUDENT_PEAK"):
+                receipt = _seed_saved_whole_student_peak(
+                    run_dir, receipt, course, optimizer)
         school = _state_from_json(receipt["school"], course)
         if (stagnation_grace_grade is not None and
                 stagnation_grace_grade not in set(school.active_grades)):
@@ -3465,29 +3514,39 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             if reason is not None:
                 break
             if school.stage.startswith("ASSESS_"):
-                receipt = _take_exam(
-                    mx, run_dir, receipt, manifest, course, source_root,
-                    source_checkpoint, params, optimizer, graph,
-                    reserve_gib=reserve_gib)
+                with trace_span(
+                        "ASSESSMENT", generation=receipt["generation"],
+                        phase=school.stage, grade=school.grade):
+                    receipt = _take_exam(
+                        mx, run_dir, receipt, manifest, course, source_root,
+                        source_checkpoint, params, optimizer, graph,
+                        reserve_gib=reserve_gib)
                 continue
-            budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
-                                       reserve_gib=reserve_gib)
+            with trace_span("DISK_HEADROOM", visit_index=visits + 1):
+                budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
+                                           reserve_gib=reserve_gib)
             if not budget["sufficient"]:
                 reason = "DISK_RESERVE_REACHED"
                 break
             # Retain the original fail-closed checkpoint preflight against
             # disk changes between telemetry and the actual write boundary.
-            assert_headroom(run_dir, required_bytes=600_000_000,
-                            reserve_gib=reserve_gib)
-            receipt = _take_visit(
-                mx, run_dir, receipt, manifest, course, engine,
-                params, optimizer, graph, steps_per_visit=steps_per_visit,
-                batch_size=batch_size, reserve_gib=reserve_gib,
-                source_root=source_root, learning_settings=learning_settings)
+            with trace_span("DISK_HEADROOM_ASSERT", visit_index=visits + 1):
+                assert_headroom(run_dir, required_bytes=600_000_000,
+                                reserve_gib=reserve_gib)
+            with trace_span(
+                    "VISIT_TOTAL", visit_index=visits + 1,
+                    generation=receipt["generation"], phase=school.stage,
+                    grade=school.grade):
+                receipt = _take_visit(
+                    mx, run_dir, receipt, manifest, course, engine,
+                    params, optimizer, graph, steps_per_visit=steps_per_visit,
+                    batch_size=batch_size, reserve_gib=reserve_gib,
+                    source_root=source_root, learning_settings=learning_settings)
             visits += 1
-        receipt = _flush_working_student(
-            mx, run_dir, receipt, manifest, course, params, optimizer, graph,
-            reserve_gib=reserve_gib, source_root=source_root)
+        with trace_span("FLUSH_WORKING_STUDENT", visits=visits):
+            receipt = _flush_working_student(
+                mx, run_dir, receipt, manifest, course, params, optimizer, graph,
+                reserve_gib=reserve_gib, source_root=source_root)
         school = _state_from_json(receipt["school"], course)
         budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
                                    reserve_gib=reserve_gib)
@@ -3517,12 +3576,16 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         # readback; all complete model/AdamW checkpoints remain untouched.
         from .state_archive import compact_states
         try:
-            maintenance = compact_states(run_dir, max_files=64)
+            with trace_span("STATE_ARCHIVE_COMPACT"):
+                maintenance = compact_states(run_dir, max_files=64)
         except (OSError, ValueError) as exc:
             maintenance = {"error": str(exc), "compressed_generations": 0}
             _record(run_dir, {"event": "SCHOOL_STATE_ARCHIVE_BLOCKED",
                               "generation": receipt["generation"],
                               "reason": str(exc)})
+        trace_mark(
+            "OPERATE_END", stop_reason=reason, visits=visits,
+            optimizer_step=school.current_student.optimizer_step)
         return {
             "status": receipt["result"],
             "stop_reason": reason,

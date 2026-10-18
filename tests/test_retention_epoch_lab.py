@@ -1,6 +1,7 @@
 """Disposable production-path checks for retention teaching and mentor epochs."""
 from pathlib import Path
 from types import SimpleNamespace
+import json
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -10,6 +11,7 @@ from bilqis_mlx.learning_experiment import Settings, earlier_grade_capabilities
 from bilqis_mlx.mentor_epoch import (
     begin_epoch, qualify_candidate, active_adviser_checkpoints,
 )
+from bilqis_mlx.timing_trace import TimingTrace
 
 
 class _BatchCaptured(Exception):
@@ -82,6 +84,19 @@ class RetentionTeachingPathTests(unittest.TestCase):
 
     def test_binary_grade_b_visit_does_not_invent_old_examples_at_zero_policy(self):
         self.assertEqual(set(self._visit_selection(old=0)), {"B.XOR"})
+
+    def test_real_visit_path_emits_coarse_write_ahead_timing_markers(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "trace.jsonl"
+            with TimingTrace(path):
+                self._visit_selection(old=0)
+            rows = [json.loads(line) for line in path.read_text().splitlines()]
+
+        names = [row.get("name") for row in rows]
+        self.assertIn("VISIT_START", names)
+        self.assertIn("VISIT_SOURCE_DRAW", names)
+        self.assertIn("STEP_SOURCE_DRAW", names)
+        self.assertIn("STEP_TRAIN", names)
 
     def test_older_grade_pool_excludes_target_grade_and_future_grades(self):
         grades = [SimpleNamespace(id=grade, capabilities=[SimpleNamespace(id=cap)])

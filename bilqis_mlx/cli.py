@@ -394,9 +394,7 @@ def parse_args(argv=None):
             p.add_argument("--max-visits",type=int,default=0,
                            help="Optional complete visit cap (default 0: use --minutes and disk reserve)")
             p.add_argument("--timing-trace", action="store_true",
-                           help="Write a nanosecond host-function timing trace under runs/.timing-traces")
-            p.add_argument("--timing-trace-calls", action="store_true",
-                           help="Include C-call boundaries in --timing-trace (higher observer overhead)")
+                           help="Write low-overhead nanosecond timing markers under runs/.timing-traces")
             p.add_argument("--batch-size",type=int,default=32)
             p.add_argument("--reserve-gib",type=float,default=100.)
             p.add_argument("--stagnation-grace-grade",type=str,default=None,
@@ -440,8 +438,7 @@ def _timing_context(args):
     from .timing_trace import TimingTrace, default_trace_path
     path = default_trace_path(args.run_dir)
     context = TimingTrace(
-        path, package_root=Path(__file__).resolve().parent,
-        include_c_calls=args.timing_trace_calls,
+        path,
         metadata={
             "run_dir": str(args.run_dir),
             "max_visits": args.max_visits,
