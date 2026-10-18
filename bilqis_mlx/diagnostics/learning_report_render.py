@@ -254,4 +254,3 @@ section{{margin:34px 0}}.section-lead{{max-width:980px;color:var(--muted)}}.char
 </ul><p><strong>Input integrity flags:</strong></p><ul>{warnings}</ul></div></section>
 <footer class="footnote">Bilqis deterministic reporter · {SCHEMA} · static standalone HTML/SVG · print to PDF using your browser if desired.</footer>
 </main></body></html>'''
-
