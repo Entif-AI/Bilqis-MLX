@@ -80,6 +80,7 @@ from .school import (start_new, visit, assess, assess_withheld, next_capability,
 from .stagnation_control import (
     activate_sole_grade_rehabilitation,
     begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
+    grace_suppressed_capabilities, reconcile_optimizer_step_grace,
     quarantined_capabilities, record_visit as record_stagnation_visit,
     start_session as start_stagnation_session,
 )
@@ -1418,7 +1419,7 @@ def _rehabilitate_sole_grade_debt(
 def _advance_stagnation_after_routine(
         *, course, school, routine_assessment, routine_advanced,
         stagnation, blocked_before, active_scope, routine_measured,
-        routine_warnings, generation):
+        routine_warnings, generation, quarantine_suppressed=()):
     """Apply one completed routine boundary to the current session containment."""
     events = ()
     if stagnation is None:
@@ -1433,7 +1434,8 @@ def _advance_stagnation_after_routine(
             stagnation, weakest_tail=tail,
             scores=routine_measured["scores"],
             generation=generation,
-            active_warnings=tuple(routine_warnings.get("active_warnings", ())))
+            active_warnings=tuple(routine_warnings.get("active_warnings", ())),
+            quarantine_suppressed=tuple(quarantine_suppressed))
         blocked_after = quarantined_capabilities(stagnation)
         if set(blocked_after) != set(blocked_before):
             retained_scores = {
@@ -2916,6 +2918,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         current_step=school.current_student.optimizer_step,
         cohort_sha256=routine_cohort.digest,
         unavailable_reason=parent_routine_issue)
+    quarantine_suppressed = grace_suppressed_capabilities(
+        receipt.get("stagnation_grace"), required_capabilities=full_scope,
+        optimizer_step=routine_assessment.optimizer_step)
     stagnation, stagnation_events, routine_advanced, blocked_after = (
         _advance_stagnation_after_routine(
             course=course, school=school,
@@ -2924,7 +2929,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             stagnation=stagnation, blocked_before=blocked_before,
             active_scope=active_scope, routine_measured=routine_measured,
             routine_warnings=routine_warnings,
-            generation=receipt["generation"] + 1))
+            generation=receipt["generation"] + 1,
+            quarantine_suppressed=quarantine_suppressed))
 
     qualification = None
     exam_plane = "ROUTINE"
@@ -3243,13 +3249,21 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             experiment_probe_each: int = 6,
             experiment_mature_max_loss: int = 1,
             experiment_introduction_extra_loss: int = 2,
-            experiment_protected_cap_limit: int = 8) -> dict:
+            experiment_protected_cap_limit: int = 8,
+            stagnation_grace_grade: str | None = None,
+            stagnation_grace_steps: int = 0) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
             type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
             type(max_visits) is not int or max_visits < 0 or
             type(batch_size) is not int or batch_size < 2 or batch_size % 2):
         raise ValueError("HUMAN_TRAINER_INVALID_OPERATOR_LIMITS")
+    grace_requested = stagnation_grace_grade is not None or stagnation_grace_steps != 0
+    if grace_requested and (
+            not resume or not isinstance(stagnation_grace_grade, str) or
+            not stagnation_grace_grade or type(stagnation_grace_steps) is not int or
+            stagnation_grace_steps <= 0):
+        raise ValueError("STAGNATION_GRACE_REQUIRES_EXPLICIT_RESUME_REQUEST")
     if retention_enabled:
         # Experiments never attach to the canonical run in another checkout.
         # The independent snapshot/copy step is a deliberate operator action.
@@ -3373,6 +3387,30 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         if learning_settings is not None:
             receipt = _seed_saved_whole_student_peak(
                 run_dir, receipt, course, optimizer)
+        school = _state_from_json(receipt["school"], course)
+        if (stagnation_grace_grade is not None and
+                stagnation_grace_grade not in set(school.active_grades)):
+            raise ValueError("STAGNATION_GRACE_GRADE_NOT_ACTIVE")
+        grace, grace_created = reconcile_optimizer_step_grace(
+            receipt.get("stagnation_grace"),
+            requested_grade=stagnation_grace_grade,
+            requested_steps=stagnation_grace_steps,
+            optimizer_step=school.current_student.optimizer_step)
+        if grace != receipt.get("stagnation_grace"):
+            receipt = _advance(
+                run_dir, {**receipt, "stagnation_grace": grace}, school,
+                result=receipt["result"])
+            if grace_created:
+                _record(run_dir, {
+                    "event": "SCHOOL_STAGNATION_GRACE_CONFIGURED",
+                    "generation": receipt["generation"],
+                    "grade": grace["grade"],
+                    "started_optimizer_step": grace["started_optimizer_step"],
+                    "optimizer_step_budget": grace["optimizer_step_budget"],
+                    "until_optimizer_step": grace["until_optimizer_step"],
+                    "reason": grace["reason"],
+                    "model_and_optimizer_unchanged": True,
+                })
         previous_stagnation = receipt.get("stagnation_session")
         prior_debt = quarantined_capabilities(previous_stagnation)
         school = _state_from_json(receipt["school"], course)
@@ -3394,7 +3432,11 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             session_id=uuid.uuid4().hex, generation=receipt["generation"],
             required_capabilities=assessment_capabilities(course, school))
         debt_grades = {capability.partition(".")[0] for capability in prior_debt}
-        if prior_debt and deferred_before_reentry and len(debt_grades) == 1:
+        grace_reentry = grace_suppressed_capabilities(
+            receipt.get("stagnation_grace"), required_capabilities=tuple(prior_debt),
+            optimizer_step=school.current_student.optimizer_step)
+        if (prior_debt and deferred_before_reentry and len(debt_grades) == 1 and
+                set(grace_reentry) != set(prior_debt)):
             receipt["stagnation_session"], rehabilitation_event = (
                 activate_sole_grade_rehabilitation(
                     receipt["stagnation_session"],
@@ -3492,6 +3534,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "latest_exam": receipt["last_exam"],
             "stagnation_quarantined": list(stagnation_quarantined),
             "stagnation_alerts": list(stagnation_alerts),
+            "stagnation_grace": receipt.get("stagnation_grace"),
             "experimental_retention": learning_settings is not None,
             "retention_enabled": learning_settings is not None,
             "state_archive": maintenance,

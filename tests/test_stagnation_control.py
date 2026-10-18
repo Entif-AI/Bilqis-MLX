@@ -1,6 +1,8 @@
 from bilqis_mlx.stagnation_control import (
     begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
     quarantined_capabilities, record_visit, start_session,
+    create_optimizer_step_grace, grace_suppressed_capabilities,
+    reconcile_optimizer_step_grace,
 )
 import unittest
 
@@ -133,6 +135,70 @@ def test_rehabilitation_exemption_is_limited_to_recorded_debt_capabilities():
     assert events[0]["capability"] == "B.AND"
 
 
+def test_optimizer_step_grace_is_b_scoped_and_expires_at_absolute_deadline():
+    grace = create_optimizer_step_grace(
+        grade="B", optimizer_step=231_912, optimizer_steps=100_000)
+    required = ("A.IDENTITY", "B.AND", "B.NOT", "C.SUB")
+    assert grace["until_optimizer_step"] == 331_912
+    assert grace_suppressed_capabilities(
+        grace, required_capabilities=required,
+        optimizer_step=331_911) == ("B.AND", "B.NOT")
+    assert grace_suppressed_capabilities(
+        grace, required_capabilities=required,
+        optimizer_step=331_912) == ()
+
+
+def test_repeated_grace_request_does_not_reset_deadline():
+    first, created = reconcile_optimizer_step_grace(
+        None, requested_grade="B", requested_steps=100_000,
+        optimizer_step=231_912)
+    assert created is True
+    again, created = reconcile_optimizer_step_grace(
+        first, requested_grade="B", requested_steps=100_000,
+        optimizer_step=250_000)
+    assert created is False
+    assert again == first
+    assert again["until_optimizer_step"] == 331_912
+
+
+def test_grace_suppresses_quarantine_but_keeps_diagnostic_evidence():
+    state = begin_recovery_cycle(session(), first_recovery=("B.NOT",))
+    for phase, generation in (("RECOVERY_1", 11), ("RECOVERY_2", 12)):
+        state = record_visit(
+            state, capability="B.NOT", phase=phase, decision="REJECT",
+            retained_optimizer_updates=0, generation=generation)
+    state, events = complete_recovery_cycle(
+        state, weakest_tail=("B.NOT",),
+        scores={"B.NOT": {"correct": 5, "total": 12}}, generation=13,
+        quarantine_suppressed=("B.NOT",))
+    assert quarantined_capabilities(state) == ()
+    assert events[0]["event"] == "SCHOOL_CAPABILITY_STAGNATION_QUARANTINE_SUPPRESSED"
+    assert events[0]["would_quarantine"] is True
+    assert events[0]["diagnostic_only"] is True
+
+
+def test_b_grace_does_not_disable_other_grade_containment():
+    state = start_session(
+        session_id="human-command-3", generation=30,
+        required_capabilities=("B.NOT", "C.SUB"))
+    state = begin_recovery_cycle(state, first_recovery=("B.NOT", "C.SUB"))
+    for capability in ("B.NOT", "C.SUB"):
+        for phase, generation in (("RECOVERY_1", 31), ("RECOVERY_2", 32)):
+            state = record_visit(
+                state, capability=capability, phase=phase, decision="REJECT",
+                retained_optimizer_updates=0, generation=generation)
+    state, events = complete_recovery_cycle(
+        state, weakest_tail=("B.NOT", "C.SUB"),
+        scores={"B.NOT": {"correct": 5, "total": 12},
+                "C.SUB": {"correct": 17, "total": 21}},
+        generation=33, quarantine_suppressed=("B.NOT",))
+    assert quarantined_capabilities(state) == ("C.SUB",)
+    by_capability = {event["capability"]: event for event in events}
+    assert by_capability["B.NOT"]["event"] == (
+        "SCHOOL_CAPABILITY_STAGNATION_QUARANTINE_SUPPRESSED")
+    assert by_capability["C.SUB"]["event"] == "SCHOOL_CAPABILITY_STAGNATION_QUARANTINED"
+
+
 class StagnationControlUnittestCoverage(unittest.TestCase):
     """Keep the repository's unittest-based npm test command authoritative."""
 
@@ -153,3 +219,15 @@ class StagnationControlUnittestCoverage(unittest.TestCase):
 
     def test_rehabilitation_exemption_is_capability_scoped(self):
         test_rehabilitation_exemption_is_limited_to_recorded_debt_capabilities()
+
+    def test_optimizer_step_grace_expires(self):
+        test_optimizer_step_grace_is_b_scoped_and_expires_at_absolute_deadline()
+
+    def test_repeated_grace_request_does_not_reset_deadline(self):
+        test_repeated_grace_request_does_not_reset_deadline()
+
+    def test_grace_suppresses_quarantine_but_keeps_evidence(self):
+        test_grace_suppresses_quarantine_but_keeps_diagnostic_evidence()
+
+    def test_b_grace_preserves_other_grade_containment(self):
+        test_b_grace_does_not_disable_other_grade_containment()

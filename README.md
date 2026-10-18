@@ -24,6 +24,8 @@ The championship epoch began empty at the explicit baseline rebase, but it is no
 
 When that containment exhausts all healthy work and every remaining quarantined mastery debt belongs to one grade, the trainer enters an explicit sole-grade rehabilitation pass instead of stopping only to repeat the same recovery pattern on the next command. It re-admits only the recorded debt capabilities; no debt is passed, forgiven or assigned a synthetic score, and fixed-frontier preservation remains in force. Exams sampled while debt was withheld remain partial evidence for championship authority even if rehabilitation begins after scoring. Mixed-grade deferred debt still stops for review under the existing behavior.
 
+For the current issue #340 B recovery, repeated stagnation containment is itself obstructing rehabilitation after the long misinformed-teacher period. The next **human-owned** resume may therefore activate a persisted B-only grace window for 100,000 retained optimizer steps. During that window the system still detects and records stagnation, but does not quarantine B; all retention/preservation and mastery rules remain active, and other grades keep normal containment. The first command that creates the lease uses `--stagnation-grace-grade B --stagnation-grace-steps 100000`; later resumes inherit the recorded absolute deadline and must not reset it merely by omitting or repeating the options.
+
 ```bash
 cd ~/Code/bilqis-mlx-retention-lab
 npm run train -- --dry-run --resume --verify-source --run-dir ./runs/issue-340-mentor-epoch-trial

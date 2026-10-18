@@ -12,7 +12,85 @@ from copy import deepcopy
 
 
 SCHEMA = "bilqis.mlx.stagnation-session/v1"
+GRACE_SCHEMA = "bilqis.mlx.stagnation-grace/v1"
 RECOVERY_PHASES = ("RECOVERY_1", "RECOVERY_2")
+
+
+def _validate_grace(grace: dict | None) -> None:
+    if grace is None:
+        return
+    if (not isinstance(grace, dict) or grace.get("schema") != GRACE_SCHEMA or
+            not isinstance(grace.get("grade"), str) or not grace["grade"] or
+            type(grace.get("started_optimizer_step")) is not int or
+            grace["started_optimizer_step"] < 0 or
+            type(grace.get("optimizer_step_budget")) is not int or
+            grace["optimizer_step_budget"] <= 0 or
+            type(grace.get("until_optimizer_step")) is not int or
+            grace["until_optimizer_step"] !=
+            grace["started_optimizer_step"] + grace["optimizer_step_budget"]):
+        raise ValueError("STAGNATION_GRACE_STATE_DRIFT")
+
+
+def _require_optimizer_step(optimizer_step: int) -> None:
+    if type(optimizer_step) is not int or optimizer_step < 0:
+        raise ValueError("STAGNATION_GRACE_INVALID_OPTIMIZER_STEP")
+
+
+def create_optimizer_step_grace(*, grade: str, optimizer_step: int,
+                                optimizer_steps: int) -> dict:
+    """Create one absolute optimizer-step quarantine grace lease."""
+    if (not isinstance(grade, str) or not grade or
+            type(optimizer_step) is not int or optimizer_step < 0 or
+            type(optimizer_steps) is not int or optimizer_steps <= 0):
+        raise ValueError("STAGNATION_GRACE_INVALID_START")
+    return {
+        "schema": GRACE_SCHEMA,
+        "grade": grade,
+        "started_optimizer_step": optimizer_step,
+        "optimizer_step_budget": optimizer_steps,
+        "until_optimizer_step": optimizer_step + optimizer_steps,
+        "reason": "HUMAN_AUTHORIZED_DEEP_REHABILITATION",
+    }
+
+
+def reconcile_optimizer_step_grace(
+        existing: dict | None, *, requested_grade: str | None,
+        requested_steps: int, optimizer_step: int) -> tuple[dict | None, bool]:
+    """Persist an existing lease or explicitly create/renew one without drift."""
+    _validate_grace(existing)
+    _require_optimizer_step(optimizer_step)
+    requested = requested_grade is not None or requested_steps != 0
+    if not requested:
+        return deepcopy(existing), False
+    if (not isinstance(requested_grade, str) or not requested_grade or
+            type(requested_steps) is not int or requested_steps <= 0):
+        raise ValueError("STAGNATION_GRACE_INVALID_REQUEST")
+    if existing is not None and optimizer_step < existing["until_optimizer_step"]:
+        if (requested_grade != existing["grade"] or
+                requested_steps != existing["optimizer_step_budget"]):
+            raise ValueError("STAGNATION_GRACE_ACTIVE_CHANGE_FORBIDDEN")
+        return deepcopy(existing), False
+    return create_optimizer_step_grace(
+        grade=requested_grade, optimizer_step=optimizer_step,
+        optimizer_steps=requested_steps), True
+
+
+def grace_suppressed_capabilities(
+        grace: dict | None, *, required_capabilities: tuple[str, ...],
+        optimizer_step: int) -> tuple[str, ...]:
+    """Return capabilities whose quarantine actuator is disabled right now."""
+    _validate_grace(grace)
+    _require_optimizer_step(optimizer_step)
+    if grace is None or optimizer_step >= grace["until_optimizer_step"]:
+        return ()
+    if (len(set(required_capabilities)) != len(required_capabilities) or
+            any(not isinstance(capability, str) or not capability
+                for capability in required_capabilities)):
+        raise ValueError("STAGNATION_GRACE_REQUIRED_SCOPE_INVALID")
+    prefix = grace["grade"] + "."
+    return tuple(sorted(
+        capability for capability in required_capabilities
+        if capability.startswith(prefix)))
 
 
 def start_session(*, session_id: str, generation: int,
@@ -150,7 +228,8 @@ def _rejected_without_retention(control: dict, capability: str, phase: str) -> b
 
 def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
                             scores: dict[str, dict], generation: int,
-                            active_warnings: tuple[dict, ...] = ()) -> tuple[dict, tuple[dict, ...]]:
+                            active_warnings: tuple[dict, ...] = (),
+                            quarantine_suppressed: tuple[str, ...] = ()) -> tuple[dict, tuple[dict, ...]]:
     """Contain only repeated tail failures already proven by both recovery rounds.
 
     `weakest_tail` is the scheduler's source-scored weakest-three result on the
@@ -161,6 +240,9 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
     if (len(set(weakest_tail)) != len(weakest_tail) or
             type(generation) is not int or generation < 0):
         raise ValueError("STAGNATION_RECOVERY_RECEIPT_INVALID")
+    if (len(set(quarantine_suppressed)) != len(quarantine_suppressed) or
+            not set(quarantine_suppressed) <= set(control["required_capabilities"])):
+        raise ValueError("STAGNATION_GRACE_SUPPRESSION_SCOPE_INVALID")
     updated = deepcopy(control)
     warning_by_capability: dict[str, list[str]] = {}
     for warning in active_warnings:
@@ -198,6 +280,16 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
             "active_warning_signals": sorted(set(warning_by_capability.get(capability, ()))),
             "reason": "REPEATED_WEAKEST_TAIL_WITH_TWO_REJECTED_RECOVERY_VISITS",
         }
+        if capability in set(quarantine_suppressed):
+            events.append({
+                "event": "SCHOOL_CAPABILITY_STAGNATION_QUARANTINE_SUPPRESSED",
+                **evidence,
+                "required_mastery_debt": True,
+                "would_quarantine": True,
+                "diagnostic_only": True,
+                "quarantine_suppressed": True,
+            })
+            continue
         updated["quarantined"][capability] = evidence
         alert = {
             "capability": capability,

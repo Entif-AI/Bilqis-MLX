@@ -335,6 +335,12 @@ def human_stop_summary(result: dict) -> str:
                     ", ".join(quarantined) +
                     ". These capabilities still count against graduation and "
                     "will be eligible for measured re-entry on resume.")
+    grace = result.get("stagnation_grace")
+    if grace and result.get("optimizer_step", 0) < grace.get("until_optimizer_step", 0):
+        remaining = grace["until_optimizer_step"] - result["optimizer_step"]
+        message += ("\nStagnation grace: " + grace["grade"] +
+                    " quarantine actuator suppressed for " + str(remaining) +
+                    " more retained optimizer steps; diagnostics remain active.")
     if reason not in ("GRADE_A_AWAITING_NEXT_GRADE", "GRADE_B_AWAITING_NEXT_GRADE",
                       "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
         message += ("\nTo continue: " +
@@ -388,6 +394,10 @@ def parse_args(argv=None):
                            help="Optional complete visit cap (default 0: use --minutes and disk reserve)")
             p.add_argument("--batch-size",type=int,default=32)
             p.add_argument("--reserve-gib",type=float,default=100.)
+            p.add_argument("--stagnation-grace-grade",type=str,default=None,
+                           help="Human-authorized grade whose stagnation quarantine actuator is temporarily suppressed")
+            p.add_argument("--stagnation-grace-steps",type=int,default=0,
+                           help="Retained optimizer-step budget for the persisted stagnation grace")
             p.add_argument("--triplets","--triples",dest="triples",action="store_true",
                            help="Global weakest-three recovery is intrinsic to the new scheduler")
     return parser.parse_args(argv)
@@ -478,7 +488,9 @@ def main(argv=None):
                 experiment_probe_each=args.experiment_probe_each,
                 experiment_mature_max_loss=args.experiment_mature_max_loss,
                 experiment_introduction_extra_loss=args.experiment_introduction_extra_loss,
-                experiment_protected_cap_limit=args.experiment_protected_cap_limit)
+                experiment_protected_cap_limit=args.experiment_protected_cap_limit,
+                stagnation_grace_grade=args.stagnation_grace_grade,
+                stagnation_grace_steps=args.stagnation_grace_steps)
         if board is not None:
             board = build(args.run_dir, reserve_gib=args.reserve_gib)
             board.mode = "STOPPED | " + result["stop_reason"]

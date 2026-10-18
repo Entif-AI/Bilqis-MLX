@@ -30,6 +30,11 @@ class OperatorTests(unittest.TestCase):
 
     def test_retention_defaults_on_and_explicit_independent_opt_out(self):
         self.assertFalse(parse_args(["train", "--resume"]).no_retention)
+        grace = parse_args([
+            "train", "--resume", "--stagnation-grace-grade", "B",
+            "--stagnation-grace-steps", "100000"])
+        self.assertEqual(grace.stagnation_grace_grade, "B")
+        self.assertEqual(grace.stagnation_grace_steps, 100000)
         with tempfile.TemporaryDirectory() as tmp:
             out=io.StringIO()
             with redirect_stdout(out), redirect_stderr(io.StringIO()):
