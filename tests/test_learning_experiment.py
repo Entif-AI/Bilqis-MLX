@@ -411,6 +411,34 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(result["decision"], "REJECT")
         self.assertEqual(result["reason"], "ACTIVE_SCHOOL_GRADE_REGRESSION")
 
+    def test_late_stage_allows_frontier_without_fully_withheld_logical_grade(self):
+        paired = {
+            "C.MUL": {"before": 17, "after": 18, "total": 21},
+            "C.DIV": {"before": 18, "after": 18, "total": 21},
+        }
+        result = decide(
+            paired, active_capability="C.MUL", phase="RECOVERY_2",
+            protected={"C.DIV"}, settings=Settings(),
+            same_grade_capabilities=("C.MUL", "C.DIV"),
+            fixed_grade_replay={"status": "MEASURED", "grade": "C",
+                                "before": 139, "after": 140, "total": 147,
+                                "cohort_sha256": "a" * 64},
+            fixed_frontier_replay={
+                "status": "MEASURED", "cohort_sha256": "a" * 64,
+                "rows": 219, "before_correct": 209, "after_correct": 210,
+                "regressions": [],
+                "repaired": [{"id": "c1", "capability": "C.MUL"}],
+                "grades": {
+                    "A": {"before": 70, "after": 70, "total": 72,
+                          "net_correct_delta": 0},
+                    "C": {"before": 139, "after": 140, "total": 147,
+                          "net_correct_delta": 1},
+                },
+            },
+            active_school_grade="B")
+        self.assertEqual(result["decision"], "PROVISIONAL")
+        self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
+
     def test_all_target_grade_capabilities_must_be_measured(self):
         paired = {"B.XOR": {"before": 7, "after": 8, "total": 12}}
         with self.assertRaisesRegex(ValueError, "INCOMPLETE_SAME_GRADE_PROBE"):

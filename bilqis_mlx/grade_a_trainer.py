@@ -1399,25 +1399,6 @@ def _require_active_stagnation_scope(scope) -> None:
         raise ValueError("STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES")
 
 
-def _active_frontier_guard_grade(active_grade: str, assessment_scope,
-                                 withheld) -> str | None:
-    """Require an active-grade frontier only while that grade is measurable.
-
-    Session containment can intentionally remove every capability in the
-    logical school grade from ordinary evaluation.  In that state the fixed
-    frontier contains no rows for the withheld grade, so demanding a grade
-    slice would turn successful quarantine into an operator-blocking schema
-    error.  Partial withholding preserves the existing active-grade guard.
-    """
-    grade_caps = tuple(
-        capability for capability in assessment_scope
-        if capability.partition(".")[0] == active_grade)
-    blocked = set(withheld)
-    if grade_caps and all(capability in blocked for capability in grade_caps):
-        return None
-    return active_grade
-
-
 def _advance_stagnation_after_routine(
         *, course, school, routine_assessment, routine_advanced,
         stagnation, blocked_before, active_scope, routine_measured,
@@ -2022,9 +2003,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             same_grade_capabilities=current_grade,
             fixed_grade_replay=fixed_grade_evidence,
             fixed_frontier_replay=frontier,
-            active_school_grade=_active_frontier_guard_grade(
-                school.grade, assessment_capabilities(course, school),
-                quarantined_capabilities(receipt.get("stagnation_session"))),
+            active_school_grade=school.grade,
             mature_grades=frozenset(school.champions),
             negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
             source_cohort_sha256=_fingerprint([

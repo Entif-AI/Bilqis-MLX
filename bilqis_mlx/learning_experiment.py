@@ -230,16 +230,21 @@ def _fixed_frontier_retention_evidence(value, active_school_grade):
     active_grade_regression = False
     if active_school_grade is not None:
         grades = frontier.get("grades")
-        grade = grades.get(active_school_grade) if isinstance(grades, dict) else None
-        if (not isinstance(grade, dict) or
+        invalid = not isinstance(grades, dict)
+        grade = None if invalid else grades.get(active_school_grade)
+        if grade is not None:
+            invalid = (
+                not isinstance(grade, dict) or
                 any(type(grade.get(name)) is not int
                     for name in ("before", "after", "total")) or
                 not 0 < grade["total"] or
                 not 0 <= grade["before"] <= grade["total"] or
-                not 0 <= grade["after"] <= grade["total"]):
+                not 0 <= grade["after"] <= grade["total"])
+        if invalid:
             raise ValueError(
                 "LEARNING_EXPERIMENT_INVALID_ACTIVE_GRADE_FRONTIER")
-        active_grade_regression = grade["after"] < grade["before"]
+        if grade is not None:
+            active_grade_regression = grade["after"] < grade["before"]
     return frontier, after < before, active_grade_regression, after - before
 
 
