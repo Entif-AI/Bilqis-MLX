@@ -81,6 +81,31 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(history_error["detail"],
                              "DIAGNOSTIC_NON_MONOTONIC_CHECKPOINT_HISTORY")
 
+    def test_paired_s3_recovery_does_not_keep_unavailable_banner(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {"event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "B",
+                "generation": 23, "rubric": "b" * 64,
+                "cohort_sha256": "d" * 64, "optimizer_step": 139,
+                "cohort_file": f"cohorts/{'d' * 64}.json",
+                "generator_version": "fresh-b-cohort/v2",
+                "student_sha256": "e" * 64,
+                "scores": {"B.OR": {"correct": 10, "total": 12}},
+                "learning_diagnostics": {
+                    "active_warnings": [{"signal": "LACK_OF_DURABLE_GAIN",
+                                         "capability": "B.OR", "target": "CAPABILITY"}],
+                    "history_usable": False, "s3_usable": True,
+                    "history_issue": "DIAGNOSTIC_NON_MONOTONIC_CHECKPOINT_HISTORY",
+                    "findings": [{"status": "OBSERVED_LONGITUDINALLY",
+                                  "signal": "LACK_OF_DURABLE_GAIN",
+                                  "capability": "B.OR"}]}})
+            system = board.rows["SYSTEM & QUALIFICATION"]
+            diagnostic = next(row for row in system if row["kind"] == "DIAGNOSTIC")
+            self.assertIn("S3:B.OR", diagnostic["detail"])
+            self.assertNotIn("S3 unavailable", diagnostic["detail"])
+            history_error = next(row for row in system if row["kind"] == "HISTORY ISSUE")
+            self.assertIn("paired S3 recovered", history_error["detail"])
+
     def test_lesson_accuracy_is_not_labeled_as_cumulative_exam(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

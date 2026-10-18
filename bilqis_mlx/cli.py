@@ -315,6 +315,7 @@ def human_stop_summary(result: dict) -> str:
         "GRADE_B_AWAITING_NEXT_GRADE": "Grades A and B passed cumulative revalidation; awaiting Grade C admission.",
         "WHOLE_SCHOOL_MASTERED": "Every grade in the explicitly complete school program passed at one whole student.",
         "AWAITING_TEACHER_SOUP": "Whole-school consolidation requires a separately verified frozen teacher-soup continuation.",
+        "STAGNATION_REVIEW_REQUIRED": "The remaining required capabilities were withheld after repeated failed recovery rounds; they remain unqualified mastery debt for the next measured recovery run.",
         "DISK_RESERVE_REACHED": "Free space cannot cover the protected disk reserve plus another checkpoint.",
     }
     reason = result["stop_reason"]
@@ -328,6 +329,12 @@ def human_stop_summary(result: dict) -> str:
                     f"{result['disk_reserve_gib']:.1f} GiB reserve + "
                     f"{result['disk_next_visit_gib']:.2f} GiB estimated next checkpoint. "
                     "No checkpoint cleanup or reserve reduction was performed.")
+    quarantined = result.get("stagnation_quarantined") or ()
+    if quarantined:
+        message += ("\nStagnation review: withheld for this completed run: " +
+                    ", ".join(quarantined) +
+                    ". These capabilities still count against graduation and "
+                    "will be eligible for measured re-entry on resume.")
     if reason not in ("GRADE_A_AWAITING_NEXT_GRADE", "GRADE_B_AWAITING_NEXT_GRADE",
                       "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
         message += ("\nTo continue: " +

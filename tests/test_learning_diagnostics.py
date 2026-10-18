@@ -3,6 +3,7 @@
 These tests never load student model weights or mutate training state.
 """
 from copy import deepcopy
+from dataclasses import asdict, replace
 import hashlib
 import json
 from pathlib import Path
@@ -12,6 +13,7 @@ import unittest
 from bilqis_mlx.diagnostics import (DiagnosticStatus, DiagnosticTarget,
     LearningSignal, diagnose_exam, diagnose_history, load_archived_exam_history,
     load_saved_exam, observe_binary_exam)
+from bilqis_mlx.diagnostics.exam_events import apply_paired_checkpoint_s3
 from bilqis_mlx.generated_assessment import make_cohort, score
 
 
@@ -63,6 +65,81 @@ def rescore_fixed_exam(cohort, earlier, predicted, *, step, student_sha):
 
 
 class DiagnosticObservationTests(unittest.TestCase):
+    def test_explicit_lineage_rebase_does_not_poison_latest_branch_s3(self):
+        cohort, first = constructed_exam(predicted=("FALSE",) * 12)
+        old = replace(observe_binary_exam(cohort, rescore_fixed_exam(
+            cohort, first, ("FALSE",) * 12,
+            step=500, student_sha="f" * 64)),
+            run_id="run", lineage_id="run-root/run")
+        first_branch = replace(observe_binary_exam(cohort, rescore_fixed_exam(
+            cohort, first, ("FALSE",) * 12,
+            step=100, student_sha="a" * 64)),
+            run_id="run", lineage_id="experiment-rebase/branch")
+        gold = tuple(row["gold"] for row in cohort["rows"])
+        middle = replace(observe_binary_exam(cohort, rescore_fixed_exam(
+            cohort, first, gold[:9] + ("FALSE",) * 3,
+            step=116, student_sha="b" * 64)),
+            run_id="run", lineage_id="experiment-rebase/branch")
+        latest = replace(observe_binary_exam(cohort, rescore_fixed_exam(
+            cohort, first, ("FALSE",) * 12,
+            step=132, student_sha="c" * 64)),
+            run_id="run", lineage_id="experiment-rebase/branch")
+        finding = find_signal(
+            diagnose_history((old, first_branch, middle, latest)),
+            LearningSignal.LACK_OF_DURABLE_GAIN,
+            DiagnosticTarget.CAPABILITY, "X.NOT")
+        self.assertEqual(finding.status, DiagnosticStatus.OBSERVED_LONGITUDINALLY)
+        self.assertEqual(tuple(step for step, _, _ in finding.trajectory),
+                         (100, 116, 132))
+
+    def test_fresh_cohort_parent_pair_makes_s3_measurable_without_freezing_exam(self):
+        cohort, current_exam = constructed_exam(predicted=("FALSE",) * 12)
+        current = observe_binary_exam(cohort, current_exam)
+        summary = {
+            "findings": [asdict(finding) for finding in diagnose_exam(current)
+                         if finding.target in (DiagnosticTarget.CAPABILITY,
+                                               DiagnosticTarget.GRADE)],
+            "active_warnings": [],
+        }
+        updated = apply_paired_checkpoint_s3(
+            summary,
+            parent_scores={"X.NOT": {"correct": 6, "total": 12}},
+            current_scores={"X.NOT": {"correct": 6, "total": 12}},
+            parent_sha256="a" * 64, current_sha256="b" * 64,
+            parent_step=100, current_step=116,
+            cohort_sha256=cohort["cohort_sha256"])
+        s3 = next(item for item in updated["findings"]
+                  if item["signal"] == LearningSignal.LACK_OF_DURABLE_GAIN and
+                  item["target"] == DiagnosticTarget.CAPABILITY)
+        self.assertEqual(s3["status"], DiagnosticStatus.OBSERVED_LONGITUDINALLY.value)
+        self.assertEqual(s3["trajectory"], ((100, 6, 12), (116, 6, 12)))
+        self.assertTrue(updated["s3_usable"])
+        self.assertTrue(any(item["signal"] == LearningSignal.LACK_OF_DURABLE_GAIN
+                            for item in updated["active_warnings"]))
+
+    def test_paired_s3_does_not_call_stable_perfection_stagnation(self):
+        cohort, current_exam = constructed_exam(predicted=("FALSE", "TRUE") * 6)
+        current = observe_binary_exam(cohort, current_exam)
+        summary = {
+            "findings": [asdict(finding) for finding in diagnose_exam(current)
+                         if finding.target in (DiagnosticTarget.CAPABILITY,
+                                               DiagnosticTarget.GRADE)],
+            "active_warnings": [],
+        }
+        updated = apply_paired_checkpoint_s3(
+            summary,
+            parent_scores={"X.NOT": {"correct": 12, "total": 12}},
+            current_scores={"X.NOT": {"correct": 12, "total": 12}},
+            parent_sha256="a" * 64, current_sha256="b" * 64,
+            parent_step=100, current_step=116,
+            cohort_sha256=cohort["cohort_sha256"])
+        s3 = next(item for item in updated["findings"]
+                  if item["signal"] == LearningSignal.LACK_OF_DURABLE_GAIN and
+                  item["target"] == DiagnosticTarget.CAPABILITY)
+        self.assertEqual(s3["status"], DiagnosticStatus.NOT_OBSERVED.value)
+        self.assertFalse(any(item["signal"] == LearningSignal.LACK_OF_DURABLE_GAIN
+                             for item in updated["active_warnings"]))
+
     def test_already_perfect_fixed_exam_across_distinct_checkpoints_is_not_stalled(self):
         cohort, first = constructed_exam(predicted=("FALSE", "TRUE") * 6)
         gold = tuple(row["gold"] for row in cohort["rows"])

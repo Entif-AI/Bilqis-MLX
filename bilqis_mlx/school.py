@@ -19,7 +19,8 @@ from .disk import atomic_text
 
 STAGES = frozenset(("MAIN", "ASSESS_MAIN", "RECOVERY_1", "ASSESS_RECOVERY_1",
                     "RECOVERY_2", "ASSESS_RECOVERY_2", "AWAITING_TEACHER_SOUP",
-                    "AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED"))
+                    "AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED",
+                    "DEFERRED_STAGNATION"))
 
 
 @dataclass(frozen=True)
@@ -186,7 +187,8 @@ def verify_state(course: Course, state: SchoolState):
         if (state.revalidation_target_grade not in state.active_grades[1:] or
                 state.grade_index > state.active_grades.index(state.revalidation_target_grade) or
                 state.stage not in ("MAIN", "ASSESS_MAIN", "RECOVERY_1",
-                                    "ASSESS_RECOVERY_1", "RECOVERY_2", "ASSESS_RECOVERY_2") or
+                                    "ASSESS_RECOVERY_1", "RECOVERY_2", "ASSESS_RECOVERY_2",
+                                    "DEFERRED_STAGNATION") or
                 not set(state.active_grades[:state.active_grades.index(
                     state.revalidation_target_grade) + 1]) <= set(state.champions)):
             raise ValueError("INVALID_GRADE_REVALIDATION_STATE")
@@ -351,6 +353,95 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
     return replace(state, stage="RECOVERY_1", queue=remaining_cumulative,
                    first_recovery=remaining_cumulative,
                    latest_rubric_digest=snapshot.rubric_digest)
+
+
+def assess_withheld(course: Course, state: SchoolState, snapshot: Assessment,
+                    withheld: tuple[str, ...]) -> SchoolState:
+    """Advance ordinary school work while retaining quarantined mastery debt.
+
+    The snapshot contains only capabilities still eligible for this human
+    command's ordinary evaluation.  Withheld capabilities are never assigned a
+    synthetic/stale score and can never permit promotion.  When the remaining
+    eligible work is exhausted the command stops at `DEFERRED_STAGNATION` for
+    end-of-run review; a later command may explicitly re-enter that debt.
+    """
+    if not withheld:
+        return assess(course, state, snapshot)
+    verify_state(course, state)
+    if state.stage not in ("ASSESS_MAIN", "ASSESS_RECOVERY_1", "ASSESS_RECOVERY_2"):
+        raise ValueError("ASSESSMENT_NOT_SCHEDULED_AT_DURABLE_BOUNDARY")
+    pool = _score_pool(course, state)
+    blocked = tuple(dict.fromkeys(withheld))
+    if (len(blocked) != len(withheld) or not set(blocked) <= set(pool)):
+        raise ValueError("STAGNATION_WITHHELD_CAPABILITY_OUTSIDE_ACTIVE_POOL")
+    active_pool = tuple(cap for cap in pool if cap not in set(blocked))
+    if not active_pool:
+        return replace(state, stage="DEFERRED_STAGNATION", queue=(),
+                       first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
+    snapshot.verify(state.current_student, course, active_pool)
+    if (state.latest_rubric_digest is not None and
+            state.latest_rubric_digest != snapshot.rubric_digest):
+        raise ValueError("ASSESSMENT_RUBRIC_CHANGED_MID_COURSE")
+
+    grade = next(g for g in course.grades if g.id == state.grade)
+    current_caps = set(_caps(course, (state.grade,)))
+    blocked_current = current_caps & set(blocked)
+    if (grade.teaching_stages and state.introduction_stage < len(grade.teaching_stages)-1 and
+            not blocked_current):
+        own = tuple(c for c in _main_queue(course, state) if c in active_pool)
+        if own and all(snapshot.scores[c].perfect for c in own):
+            next_stage = state.introduction_stage + 1
+            entered = replace(state, introduction_stage=next_stage, stage="MAIN",
+                              first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
+            queue = tuple(c for c in grade.teaching_stages[next_stage]
+                          if c not in set(blocked))
+            if queue:
+                return replace(entered, queue=queue)
+
+    # Any withheld capability remains explicit graduation debt; never promote
+    # a grade or cumulative prefix from a partial ordinary assessment.
+    if state.stage == "ASSESS_MAIN":
+        trio = weakest_three(snapshot.scores, active_pool)
+        if trio:
+            return replace(state, stage="RECOVERY_1", queue=trio,
+                           first_recovery=trio,
+                           latest_rubric_digest=snapshot.rubric_digest)
+        return replace(state, stage="DEFERRED_STAGNATION", queue=(),
+                       first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
+    if state.stage == "ASSESS_RECOVERY_1":
+        trio = weakest_three(snapshot.scores, active_pool)
+        if trio:
+            return replace(state, stage="RECOVERY_2", queue=trio,
+                           latest_rubric_digest=snapshot.rubric_digest)
+        return replace(state, stage="DEFERRED_STAGNATION", queue=(),
+                       first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
+
+    remaining_main = tuple(
+        c for c in _main_queue(course, state)
+        if c in active_pool and not snapshot.scores[c].perfect)
+    if remaining_main:
+        return replace(state, stage="MAIN", queue=remaining_main,
+                       first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
+    remaining_cumulative = weakest_three(snapshot.scores, active_pool)
+    if remaining_cumulative:
+        return replace(state, stage="RECOVERY_1", queue=remaining_cumulative,
+                       first_recovery=remaining_cumulative,
+                       latest_rubric_digest=snapshot.rubric_digest)
+    return replace(state, stage="DEFERRED_STAGNATION", queue=(),
+                   first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
+
+
+def reactivate_stagnation_debt(course: Course, state: SchoolState,
+                               debt: tuple[str, ...]) -> SchoolState:
+    """Start a later human command by explicitly re-entering deferred debt."""
+    verify_state(course, state)
+    if state.stage != "DEFERRED_STAGNATION" or not debt or len(set(debt)) != len(debt):
+        raise ValueError("STAGNATION_REENTRY_INVALID")
+    pool = _score_pool(course, state)
+    if not set(debt) <= set(pool):
+        raise ValueError("STAGNATION_REENTRY_OUTSIDE_ACTIVE_POOL")
+    return replace(state, stage="RECOVERY_1", queue=tuple(debt),
+                   first_recovery=tuple(debt[:3]))
 
 
 def append_next_grade(previous: Course, successor: Course,

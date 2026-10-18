@@ -134,7 +134,7 @@ class GradeCTrainerTests(unittest.TestCase):
             np.testing.assert_array_equal(np.asarray(params["embedding.weight"])[:n],original_embedding)
             np.testing.assert_array_equal(np.asarray(opt.state["embedding.weight"]["m"])[:n],original_moments)
             self.assertFalse(np.asarray(opt.state["embedding.weight"]["m"])[n:].any())
-            fixed = None
+            routine_cohorts = []
             for stage, plan in enumerate(PLANS):
                 self.assertEqual(receipt["school"]["queue"],[plan.capability])
                 receipt = _take_visit(mx,root,receipt,self.manifest,self.course,self.engine,
@@ -144,9 +144,12 @@ class GradeCTrainerTests(unittest.TestCase):
                            lambda _m,_p,rows,*args: {r["id"]:r["gold"] for r in rows}):
                     receipt = _take_exam(mx,root,receipt,self.manifest,self.course,SOURCE,PARENT,
                                          params,opt,graph,reserve_gib=0.)
-                full = receipt["qualification_cohort"]["cohort_sha256"]
-                fixed = full if fixed is None else fixed
-                self.assertEqual(full,fixed)
+                routine = receipt["last_exam"]["routine_cohort_sha256"]
+                routine_cohorts.append(routine)
+                self.assertEqual(len(set(routine_cohorts)), len(routine_cohorts))
+                if "qualification_cohort" in receipt:
+                    self.assertNotEqual(
+                        receipt["qualification_cohort"]["cohort_sha256"], routine)
                 self.assertEqual(len(receipt["last_exam"]["scores"]),13+stage)
                 self.assertEqual(receipt["last_exam"]["learning_diagnostics"]["history_issue"],None)
                 params,opt,graph,reloaded = _resume(root,self.manifest,self.course,self.policy_sha,
@@ -154,6 +157,7 @@ class GradeCTrainerTests(unittest.TestCase):
                 self.assertEqual(reloaded,receipt)
             self.assertEqual(receipt["school"]["active_grades"][receipt["school"]["grade_index"]],"A")
             self.assertEqual(receipt["school"]["revalidation_target_grade"],"C")
+            self.assertEqual(len(set(routine_cohorts)), len(PLANS))
             self.assertEqual(int(opt.state["step"].item()),8)
             self.assertEqual(receipt["teacher"]["events"],self.teacher["events"]+7)
             report = audit_saved_run(root)

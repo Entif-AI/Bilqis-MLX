@@ -8,7 +8,8 @@ import unittest
 
 from bilqis_mlx.champions import Checkpoint, vote_counts, soup_weights
 from bilqis_mlx.school import (Assessment, SchoolState, Score, start_new, visit,
-    assess, next_capability, teacher_vote_weights, whole_school_soup_weights,
+    assess, assess_withheld, next_capability, reactivate_stagnation_debt,
+    teacher_vote_weights, whole_school_soup_weights,
     continue_after_soup, save_new_state, read_state, weakest_three,
     append_next_grade, verify_state)
 from test_curriculum import sample_course
@@ -59,6 +60,30 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
+    def test_withheld_capability_remains_mastery_debt_while_healthy_work_continues(self):
+        state = grade_loop(self.course, start_new(self.course, self.init), self.init)
+        active = {f"a.{i}": (8, 8) for i in range(1, 6)}
+        active["a.1"] = (7, 8)
+        reduced = assess_withheld(
+            self.course, state, snapshot(self.course, self.init, active),
+            ("a.0",))
+        self.assertEqual(reduced.stage, "RECOVERY_1")
+        self.assertEqual(reduced.queue, ("a.1",))
+        self.assertNotIn("A", reduced.champions)
+
+    def test_only_withheld_debt_stops_for_review_and_reenters_next_run(self):
+        state = grade_loop(self.course, start_new(self.course, self.init), self.init)
+        active = {f"a.{i}": (8, 8) for i in range(1, 6)}
+        deferred = assess_withheld(
+            self.course, state, snapshot(self.course, self.init, active),
+            ("a.0",))
+        self.assertEqual(deferred.stage, "DEFERRED_STAGNATION")
+        self.assertEqual(deferred.queue, ())
+        self.assertNotIn("A", deferred.champions)
+        reentered = reactivate_stagnation_debt(self.course, deferred, ("a.0",))
+        self.assertEqual(reentered.stage, "RECOVERY_1")
+        self.assertEqual(reentered.queue, ("a.0",))
+
     def test_saturated_visit_preserves_pending_history_without_persisting_ram_student(self):
         from bilqis_mlx import grade_a_trainer as trainer
 

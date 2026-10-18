@@ -52,8 +52,12 @@ from .capability_frontier import (
 )
 from .disk import assert_headroom, headroom_snapshot
 from .diagnostics.teaching import inspect_lesson_step, summarize_teaching_visit
-from .diagnostics.exam_events import summarize_completed_exam_safely
-from .generated_assessment import GRADE_TEST_LIFECYCLE, make_cohort, score as score_cohort
+from .diagnostics.exam_events import (apply_paired_checkpoint_s3,
+                                      summarize_completed_exam_safely)
+from .generated_assessment import (
+    GRADE_TEST_LIFECYCLE, PROMOTION_ATTEMPT_LIFECYCLE,
+    ROUTINE_EVAL_LIFECYCLE, make_cohort, score as score_cohort,
+)
 from .grade_a_manifest import verify_manifest
 from .grade_a_oracle import evaluate as grade_a_record_oracle
 from .grade_a_probe import read_sources
@@ -69,8 +73,15 @@ from .numeric_staircase import RELEASE as STAIRCASE_RELEASE
 from .mlx_checkpoint import save_new_bundle, load_semantically_bound_bundle
 from .mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
-from .school import (start_new, visit, assess, next_capability, append_next_grade,
-                     assessment_capabilities, SchoolState, Assessment, Score)
+from .school import (start_new, visit, assess, assess_withheld, next_capability,
+                     append_next_grade, assessment_capabilities,
+                     reactivate_stagnation_debt, weakest_three,
+                     SchoolState, Assessment, Score)
+from .stagnation_control import (
+    begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
+    quarantined_capabilities, record_visit as record_stagnation_visit,
+    start_session as start_stagnation_session,
+)
 from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .source import AUDITED_PARENT
 from .teacher_feedback import (
@@ -1297,48 +1308,47 @@ def _verify_saved_cohort(run_dir, receipt, course):
 
 
 def _grade_test_cohort(run_dir, receipt, manifest, course, source_root, graph):
-    """Reuse the enrolled grade's test until passed; generate anew on a return."""
+    """Draw a fresh routine school-evaluation cohort at every exam boundary.
+
+    Routine MAIN/RECOVERY evaluation is deliberately distinct from any
+    promotion/graduation qualification attempt. Persisting a prior
+    qualification_cohort must never freeze ordinary school evaluation.
+    """
     school = _state_from_json(receipt["school"], course)
     rubric, release, generator, _ = _cohort_contract(course)
-    pointer = receipt.get("qualification_cohort")
-    if pointer is not None:
-        if (not isinstance(pointer, dict) or pointer.get("policy") != GRADE_TEST_LIFECYCLE or
-                type(pointer.get("grade_exam_epoch")) is not int):
-            raise ValueError("HUMAN_TRAINER_GRADE_TEST_POLICY_DRIFT")
-        if (pointer.get("assessment_grade") == school.grade and
-                pointer["grade_exam_epoch"] == school.grade_exam_epoch):
-            cohort = _verify_saved_cohort(run_dir, {**receipt, "last_exam": pointer}, course)
-            if cohort is None:
-                raise ValueError("HUMAN_TRAINER_GRADE_TEST_MISSING")
-            return cohort, pointer
+    seed = _seed(
+        receipt,
+        capability=f"ROUTINE_GRADE_EVAL:{school.grade}:{school.grade_exam_epoch}",
+    )
+    rows = _draw_live_rows(source_root, graph, seed=seed, course=course)
+    cohort = make_cohort(
+        rows, generator_version=generator, seed=seed, rubric_version=release)
+    cohort_file = _persist_live_cohort(run_dir, manifest, course, cohort)
+    return cohort, {"policy": ROUTINE_EVAL_LIFECYCLE,
+                    "assessment_grade": school.grade,
+                    "grade_exam_epoch": school.grade_exam_epoch,
+                    "cohort_sha256": cohort.digest, "cohort_file": cohort_file,
+                    "cohort_seed": cohort.seed}
 
-    # Adopt a saved failed exam when upgrading the old rotating-test trainer.
-    # The original immutable state and questions remain unchanged.
-    previous = receipt.get("last_exam") or {}
-    previous_grade = previous.get("assessment_grade")
-    if previous_grade is None:
-        for event in receipt.get("delivery_outbox", ()):
-            if (event.get("cohort_sha256") == previous.get("cohort_sha256") and
-                    event.get("optimizer_step") == previous.get("optimizer_step")):
-                previous_grade = event.get("grade")
-        if previous_grade is None and len(course.grades) == 1:
-            previous_grade = course.grades[0].id
-    own_caps = next(g.capabilities for g in course.grades if g.id == school.grade)
-    scores = previous.get("scores", {})
-    failed_current = (all(c.id in scores for c in own_caps) and
-                      any(scores[c.id]["correct"] < scores[c.id]["total"] for c in own_caps))
-    if (pointer is None and previous.get("cohort_sha256") and failed_current and
-            previous_grade == school.grade and
-            previous.get("grade_exam_epoch", 0) == school.grade_exam_epoch and
-            previous.get("exam_rubric_sha256") == rubric):
-        cohort = _verify_saved_cohort(run_dir, receipt, course)
-        cohort_file = previous["cohort_file"]
-    else:
-        seed = _seed(receipt, capability=f"GRADE_TEST:{school.grade}:{school.grade_exam_epoch}")
-        rows = _draw_live_rows(source_root, graph, seed=seed, course=course)
-        cohort = make_cohort(rows, generator_version=generator, seed=seed, rubric_version=release)
-        cohort_file = _persist_live_cohort(run_dir, manifest, course, cohort)
-    return cohort, {"policy": GRADE_TEST_LIFECYCLE, "assessment_grade": school.grade,
+
+def _promotion_cohort(run_dir, receipt, manifest, course, source_root, graph):
+    """Materialize one distinct promotion-attempt cohort.
+
+    The attempt is deterministic and crash-retry safe within the same durable
+    generation, but a later promotion attempt receives a new seed and cohort.
+    """
+    school = _state_from_json(receipt["school"], course)
+    rubric, release, generator, _ = _cohort_contract(course)
+    seed = _seed(
+        receipt,
+        capability=f"PROMOTION_ATTEMPT:{school.grade}:{school.grade_exam_epoch}",
+    )
+    rows = _draw_live_rows(source_root, graph, seed=seed, course=course)
+    cohort = make_cohort(
+        rows, generator_version=generator, seed=seed, rubric_version=release)
+    cohort_file = _persist_live_cohort(run_dir, manifest, course, cohort)
+    return cohort, {"policy": PROMOTION_ATTEMPT_LIFECYCLE,
+                    "assessment_grade": school.grade,
                     "grade_exam_epoch": school.grade_exam_epoch,
                     "cohort_sha256": cohort.digest, "cohort_file": cohort_file,
                     "cohort_seed": cohort.seed}
@@ -1361,11 +1371,26 @@ def _seed(receipt: dict, *, capability: str, step: int = 0) -> int:
 
 
 def _introduced_cohort(run_dir, manifest, course, school, cohort):
-    """Activate taught portions of one fixed enrollment exam without redrawing."""
+    """Activate only already introduced concepts from this generated cohort."""
     eligible = set(assessment_capabilities(course, school))
     rows = tuple(row for row in cohort.rows if row["capability"] in eligible)
     selected = cohort if rows == cohort.rows else make_cohort(rows,
         generator_version=cohort.generator_version, seed=cohort.seed,
+        rubric_version=cohort.rubric_version)
+    return selected, _persist_live_cohort(run_dir, manifest, course, selected)
+
+
+def _without_stagnant_capabilities(run_dir, manifest, course, cohort,
+                                   control):
+    """Remove current-session containment debt from ordinary evaluation only."""
+    blocked = set(quarantined_capabilities(control))
+    if not blocked:
+        return cohort, _persist_live_cohort(run_dir, manifest, course, cohort)
+    rows = tuple(row for row in cohort.rows if row["capability"] not in blocked)
+    if not rows:
+        raise ValueError("STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES")
+    selected = make_cohort(
+        rows, generator_version=cohort.generator_version, seed=cohort.seed,
         rubric_version=cohort.rubric_version)
     return selected, _persist_live_cohort(run_dir, manifest, course, selected)
 
@@ -1703,6 +1728,28 @@ def _skip_perfect_target_visit(run_dir, receipt, school, course, capability,
     return result
 
 
+def _skip_stagnant_target_visit(run_dir, receipt, school, course, capability,
+                                optimizer_step):
+    """Advance past a current-session quarantined capability without teaching."""
+    skipped_school = visit(course, school, capability, school.current_student)
+    result = _advance(run_dir, receipt, skipped_school, persist=False)
+    event = {
+        "event": "SCHOOL_STAGNANT_CAPABILITY_VISIT_SKIPPED",
+        "capability": capability,
+        "grade": capability.partition(".")[0],
+        "active_grade": skipped_school.grade,
+        "generation": result["generation"],
+        "optimizer_step": optimizer_step,
+        "retained_optimizer_updates": 0,
+        "teacher_updated": False,
+        "reason": "CURRENT_SESSION_STAGNATION_QUARANTINE",
+        "required_mastery_debt": True,
+    }
+    result["_pending_visit_events"] = [
+        *receipt.get("_pending_visit_events", ()), event]
+    return result
+
+
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 params, optimizer, graph, *, steps_per_visit, batch_size, reserve_gib,
                 source_root=None, learning_settings: LearningSettings | None = None):
@@ -1710,6 +1757,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     cap = next_capability(school)
     if cap is None:
         raise ValueError("HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY")
+    stage_before = school.stage
+    if cap in set(quarantined_capabilities(receipt.get("stagnation_session"))):
+        return _skip_stagnant_target_visit(
+            run_dir, receipt, school, course, cap,
+            int(optimizer.state["step"].item()))
     introduction_pass = school.stage == "MAIN"
     lesson_grade = cap.split(".", 1)[0]
     if lesson_grade not in {grade.id for grade in course.grades}:
@@ -2035,6 +2087,16 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                                   for r in policy_control_receipts) else []) +
             ["preview"] + ([] if confidence_applied_steps else ["distill"])),
     }
+    stagnation = receipt.get("stagnation_session")
+    if stagnation is not None:
+        retained_updates = (
+            expected_retained - step_before if outcome is not None
+            else attempted_step - step_before)
+        stagnation = record_stagnation_visit(
+            stagnation, capability=cap, phase=stage_before,
+            decision=outcome.get("decision") if isinstance(outcome, dict) else None,
+            retained_optimizer_updates=retained_updates,
+            generation=event["generation"])
     pending = list(receipt.get("_pending_visit_events", ()))
     pending.append(event)
     result = _advance(run_dir, receipt, school, teacher=teacher, persist=False)
@@ -2045,6 +2107,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         }
     result["teacher_misses"] = all_teacher_misses
     result["teacher_miss_exposures"] = miss_exposures
+    if stagnation is not None:
+        result["stagnation_session"] = stagnation
     result.pop("teacher_miss_cursor", None)
     result["_pending_visit_events"] = pending
     return result
@@ -2104,6 +2168,32 @@ def _compare_incumbents(mx, run_dir, receipt, cohort, config, answer_ids, graph)
     return frontier, comparisons
 
 
+def _score_parent_for_paired_s3(mx, run_dir, receipt, parent, cohort, graph,
+                                current_scores):
+    """Read-only parent inference on this fresh cohort for S3 comparability."""
+    path = run_dir / parent.filename
+    try:
+        if (path.is_symlink() or path.parent != run_dir / "bundles" or
+                not parent.filename.startswith("bundles/")):
+            raise ValueError("DIAGNOSTIC_PAIRED_S3_UNSAFE_PARENT")
+        weights, own_adamw, meta, loaded_graph = load_semantically_bound_bundle(path)
+        if (meta["safetensors_sha256"] != parent.sha256 or
+                meta["optimizer_step"] != parent.optimizer_step or
+                loaded_graph != graph):
+            raise ValueError("DIAGNOSTIC_PAIRED_S3_PARENT_DRIFT")
+        del own_adamw
+        predictions = _predictions(
+            mx, weights, tuple(cohort.rows), receipt["config"],
+            receipt["answer_ids"])
+        measured = score_cohort(cohort, predictions, asdict(parent))["scores"]
+        del weights
+        if set(measured) != set(current_scores):
+            raise ValueError("DIAGNOSTIC_PAIRED_S3_SCOPE_DRIFT")
+        return measured, None
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return None, str(exc)
+
+
 def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
                                cohort, scores, graph):
     """Re-examine only potentially displaced epoch incumbents on these rows."""
@@ -2156,14 +2246,18 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
 
 def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
                            cohort, predictions, parameters, optimizer, graph, *,
-                           reserve_gib):
+                           reserve_gib, allowed_capabilities=None):
     """Only evaluated best scores mint permanent capability candidates.
 
     If none improve, the single live student still needs a replaceable
     recovery point. This is NOT a champion or an additional archive slot.
     """
     rubric, cohort_release, _, _ = _cohort_contract(course)
-    allowed = set(assessment_capabilities(course, school))
+    full_allowed = set(assessment_capabilities(course, school))
+    allowed = (set(allowed_capabilities) if allowed_capabilities is not None
+               else set(full_allowed))
+    if not allowed or not allowed <= full_allowed:
+        raise ValueError("HUMAN_TRAINER_PARTIAL_EVALUATION_SCOPE_DRIFT")
     expected = {cap: count for grade in course.grades
                 for cap, count in grade.exam_item_counts if cap in allowed}
     if (receipt.get("live_rubric_sha256", rubric) != rubric or
@@ -2179,10 +2273,20 @@ def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
                 {r["universe_size"] for r in cohort.rows if r["capability"] == cap}
                 != {3, 4} for cap in expected if not cap.startswith("C."))):
         raise ValueError("HUMAN_TRAINER_LIVE_EXAM_INCOMPLETE_FACTORS")
-    replay_receipt = {**receipt, "live_rubric_sha256": rubric}
-    frontier, incumbent_comparisons = _compare_incumbents(
-        mx, run_dir, replay_receipt, cohort, receipt["config"], receipt["answer_ids"], graph)
-    roles = candidate_roles(frontier, grades, rubric)
+    complete_scope = allowed == full_allowed
+    if complete_scope:
+        replay_receipt = {**receipt, "live_rubric_sha256": rubric}
+        frontier, incumbent_comparisons = _compare_incumbents(
+            mx, run_dir, replay_receipt, cohort, receipt["config"],
+            receipt["answer_ids"], graph)
+        roles = candidate_roles(frontier, grades, rubric)
+    else:
+        # A quarantined capability remains mandatory graduation debt. Partial
+        # ordinary scoring protects the causal student but cannot mint or move
+        # championship authority from an incomplete capability inventory.
+        frontier = dict(receipt.get("capability_best", {}))
+        incumbent_comparisons = []
+        roles = ()
     name = ("best-" if roles else "working-") + str(school.visits) + "-" + uuid.uuid4().hex[:12]
     candidate = _bundle_pointer(run_dir, name, parameters, optimizer, graph,
                                 reserve_gib=reserve_gib)
@@ -2633,47 +2737,185 @@ def _reuse_unchanged_exam_boundary(run_dir, receipt, course, school, cohort,
     return result
 
 
+def _promotion_due_after_routine(before, after) -> bool:
+    """Whether a perfect routine evaluation would advance the school state.
+
+    Passing an intermediate introduction tranche is not graduation. Moving to
+    another grade, beginning/advancing a cumulative revalidation sweep, or
+    reaching a curriculum boundary is.
+    """
+    return (
+        after.grade != before.grade
+        or after.revalidation_target_grade != before.revalidation_target_grade
+        or after.stage in {
+            "AWAITING_NEXT_GRADE", "AWAITING_TEACHER_SOUP",
+            "WHOLE_SCHOOL_MASTERED",
+        }
+    )
+
+
 def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                source_checkpoint, parameters, optimizer, graph, *, reserve_gib):
     school = _state_from_json(receipt["school"], course)
     if not school.stage.startswith("ASSESS_"):
         raise ValueError("HUMAN_TRAINER_EXAM_OUTSIDE_SCHEDULED_BOUNDARY")
+    stagnation = receipt.get("stagnation_session")
+    blocked_before = quarantined_capabilities(stagnation)
+    full_scope = assessment_capabilities(course, school)
+    active_scope = tuple(cap for cap in full_scope if cap not in set(blocked_before))
+    if not active_scope:
+        raise ValueError("STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES")
+    parent_checkpoint = school.current_student
     rubric, release, generator, _ = _cohort_contract(course)
-    cohort, qualification = _grade_test_cohort(
+    routine_cohort, _ = _grade_test_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
-    cohort, cohort_file = _introduced_cohort(run_dir, manifest, course, school, cohort)
-    seed, rows = cohort.seed, list(cohort.rows)
-    scope_sha = _fingerprint(assessment_capabilities(course, school))
-    reusable = _verified_reusable_exam(
-        run_dir, receipt, course, school, optimizer, graph, cohort,
-        rubric_sha256=rubric, assessment_scope_sha256=scope_sha)
-    if reusable is not None:
-        return _reuse_unchanged_exam_boundary(
-            run_dir, receipt, course, school, cohort, qualification,
-            reusable, graph)
+    routine_cohort, routine_file = _introduced_cohort(
+        run_dir, manifest, course, school, routine_cohort)
+    routine_cohort, routine_file = _without_stagnant_capabilities(
+        run_dir, manifest, course, routine_cohort, stagnation)
+    routine_rows = list(routine_cohort.rows)
+    scope_sha = _fingerprint(active_scope)
     candidate_cohort = _candidate_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
     candidate_cohort, _ = _introduced_cohort(
         run_dir, manifest, course, school, candidate_cohort)
+    candidate_cohort, _ = _without_stagnant_capabilities(
+        run_dir, manifest, course, candidate_cohort, stagnation)
     candidate_guesses = _predictions(
         mx, parameters, list(candidate_cohort.rows),
         receipt["config"], receipt["answer_ids"])
     school, frontier, roles, compared = _commit_scored_student(
         mx, run_dir, receipt, manifest, course, school,
         candidate_cohort, candidate_guesses,
-        parameters, optimizer, graph, reserve_gib=reserve_gib)
-    guesses = _predictions(mx, parameters, rows,
-                           receipt["config"], receipt["answer_ids"])
-    measured = score_cohort(cohort, guesses, asdict(school.current_student))
-    assessment = Assessment(
+        parameters, optimizer, graph, reserve_gib=reserve_gib,
+        allowed_capabilities=active_scope)
+    candidate_measured = score_cohort(
+        candidate_cohort, candidate_guesses, asdict(school.current_student))
+
+    routine_guesses = _predictions(
+        mx, parameters, routine_rows, receipt["config"], receipt["answer_ids"])
+    routine_measured = score_cohort(
+        routine_cohort, routine_guesses, asdict(school.current_student))
+    parent_routine_scores, parent_routine_issue = _score_parent_for_paired_s3(
+        mx, run_dir, receipt, parent_checkpoint, routine_cohort, graph,
+        routine_measured["scores"])
+    routine_assessment = Assessment(
         checkpoint_sha256=school.current_student.sha256,
         optimizer_step=school.current_student.optimizer_step,
         course_digest=course.digest(),
         rubric_digest=rubric,
-        scores={cap: Score(**entry) for cap, entry in measured["scores"].items()},
-        evaluation_id="source-oracled-live-cohort/" + cohort.digest + "/" +
+        scores={cap: Score(**entry)
+                for cap, entry in routine_measured["scores"].items()},
+        evaluation_id="source-oracled-routine-cohort/" + routine_cohort.digest + "/" +
                       school.current_student.sha256)
-    advanced = assess(course, school, assessment)
+    routine_advanced = (
+        assess_withheld(course, school, routine_assessment, blocked_before)
+        if blocked_before else assess(course, school, routine_assessment))
+
+    routine_last_exam = {
+        "assessment_grade": school.grade,
+        "grade_exam_epoch": school.grade_exam_epoch,
+        "exam_plane": "ROUTINE",
+        "grade_test_lifecycle": ROUTINE_EVAL_LIFECYCLE,
+        "assessment_scope_sha256": scope_sha,
+        "evaluation_id": routine_assessment.evaluation_id,
+        "exam_rubric_sha256": routine_assessment.rubric_digest,
+        "cohort_sha256": routine_cohort.digest,
+        "cohort_file": routine_file,
+        "cohort_seed": routine_cohort.seed,
+        "generator_version": generator,
+        "misses_for_teacher": list(routine_measured["misses_for_teacher"]),
+        "student_sha256": routine_assessment.checkpoint_sha256,
+        "optimizer_step": routine_assessment.optimizer_step,
+        "scores": routine_measured["scores"],
+    }
+    routine_warnings = summarize_completed_exam_safely(
+        run_dir, receipt, routine_last_exam)
+    routine_warnings = apply_paired_checkpoint_s3(
+        routine_warnings,
+        parent_scores=parent_routine_scores,
+        current_scores=routine_measured["scores"],
+        parent_sha256=parent_checkpoint.sha256,
+        current_sha256=school.current_student.sha256,
+        parent_step=parent_checkpoint.optimizer_step,
+        current_step=school.current_student.optimizer_step,
+        cohort_sha256=routine_cohort.digest,
+        unavailable_reason=parent_routine_issue)
+    stagnation_events = ()
+    if stagnation is not None:
+        if (school.stage == "ASSESS_MAIN" and
+                routine_advanced.stage == "RECOVERY_1"):
+            stagnation = begin_recovery_cycle(
+                stagnation, first_recovery=routine_advanced.first_recovery)
+        elif school.stage == "ASSESS_RECOVERY_2":
+            tail = weakest_three(routine_assessment.scores, active_scope)
+            stagnation, stagnation_events = complete_recovery_cycle(
+                stagnation, weakest_tail=tail,
+                scores=routine_measured["scores"],
+                generation=receipt["generation"] + 1,
+                active_warnings=tuple(routine_warnings.get("active_warnings", ())))
+            blocked_after = quarantined_capabilities(stagnation)
+            if set(blocked_after) != set(blocked_before):
+                retained_scores = {
+                    cap: score for cap, score in routine_assessment.scores.items()
+                    if cap not in set(blocked_after)}
+                if retained_scores:
+                    reduced = Assessment(
+                        checkpoint_sha256=routine_assessment.checkpoint_sha256,
+                        optimizer_step=routine_assessment.optimizer_step,
+                        course_digest=routine_assessment.course_digest,
+                        rubric_digest=routine_assessment.rubric_digest,
+                        scores=retained_scores,
+                        evaluation_id=routine_assessment.evaluation_id +
+                                      "/post-stagnation-filter")
+                    routine_advanced = assess_withheld(
+                        course, school, reduced, blocked_after)
+                else:
+                    routine_advanced = replace(
+                        school, stage="DEFERRED_STAGNATION", queue=(),
+                        first_recovery=(),
+                        latest_rubric_digest=routine_assessment.rubric_digest)
+    blocked_after = quarantined_capabilities(stagnation)
+
+    qualification = None
+    exam_plane = "ROUTINE"
+    cohort = routine_cohort
+    cohort_file = routine_file
+    rows = routine_rows
+    guesses = routine_guesses
+    measured = routine_measured
+    assessment = routine_assessment
+    advanced = routine_advanced
+    if _promotion_due_after_routine(school, routine_advanced):
+        promotion_cohort, qualification = _promotion_cohort(
+            run_dir, receipt, manifest, course, source_root, graph)
+        promotion_cohort, promotion_file = _introduced_cohort(
+            run_dir, manifest, course, school, promotion_cohort)
+        promotion_rows = list(promotion_cohort.rows)
+        promotion_guesses = _predictions(
+            mx, parameters, promotion_rows,
+            receipt["config"], receipt["answer_ids"])
+        promotion_measured = score_cohort(
+            promotion_cohort, promotion_guesses, asdict(school.current_student))
+        promotion_assessment = Assessment(
+            checkpoint_sha256=school.current_student.sha256,
+            optimizer_step=school.current_student.optimizer_step,
+            course_digest=course.digest(),
+            rubric_digest=rubric,
+            scores={cap: Score(**entry)
+                    for cap, entry in promotion_measured["scores"].items()},
+            evaluation_id="source-oracled-promotion-cohort/" +
+                          promotion_cohort.digest + "/" +
+                          school.current_student.sha256)
+        exam_plane = "PROMOTION"
+        cohort = promotion_cohort
+        cohort_file = promotion_file
+        rows = promotion_rows
+        guesses = promotion_guesses
+        measured = promotion_measured
+        assessment = promotion_assessment
+        advanced = assess(course, school, promotion_assessment)
+
     scores = {k: {"correct": v.correct, "total": v.total}
               for k, v in assessment.scores.items()}
     epoch = receipt.get("mentor_epoch")
@@ -2681,14 +2923,27 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     graduation_roles = ()
     championship_roles = ()
     if epoch is None:
-        perfect, graduation_roles = graduation_perfect(
-            receipt.get("graduation_perfect", {}), scores, rubric, cohort.digest,
-            asdict(school.current_student), assessment.evaluation_id)
-        frozen_soups, soup_changes = _cook_new_grade_soups(
-            mx, run_dir, receipt, perfect, course, graph, reserve_gib=reserve_gib)
+        perfect = receipt.get("graduation_perfect", {})
+        frozen_soups = receipt.get("grade_soups", {})
+        soup_changes = ()
+        if qualification is not None:
+            perfect, graduation_roles = graduation_perfect(
+                perfect, scores, rubric, cohort.digest,
+                asdict(school.current_student), assessment.evaluation_id)
+            frozen_soups, soup_changes = _cook_new_grade_soups(
+                mx, run_dir, receipt, perfect, course, graph,
+                reserve_gib=reserve_gib)
+    elif blocked_after:
+        # Capability containment is session-local teaching authority. Preserve
+        # all previously earned championship/soup evidence, but an incomplete
+        # ordinary school inventory cannot mint new mentor authority.
+        perfect = receipt.get("graduation_perfect", {})
+        frozen_soups = receipt.get("grade_soups", {})
+        soup_changes = ()
     else:
         grades, challenger, incumbents = _epoch_paired_examinations(
-            mx, run_dir, receipt, course, school, cohort, scores, graph)
+            mx, run_dir, receipt, course, school, candidate_cohort,
+            candidate_measured["scores"], graph)
         epoch, championship_roles, championship_decisions = advance_championship_epoch(
             epoch, grades=grades, challenger_exam=challenger,
             incumbent_exams=incumbents)
@@ -2703,13 +2958,20 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     last_exam = {
         "assessment_grade": school.grade,
         "grade_exam_epoch": school.grade_exam_epoch,
-        "grade_test_lifecycle": GRADE_TEST_LIFECYCLE,
+        "exam_plane": exam_plane,
+        "grade_test_lifecycle": (
+            PROMOTION_ATTEMPT_LIFECYCLE
+            if qualification is not None else ROUTINE_EVAL_LIFECYCLE),
         "assessment_scope_sha256": scope_sha,
         "evaluation_id": assessment.evaluation_id,
         "exam_rubric_sha256": assessment.rubric_digest,
         "cohort_sha256": cohort.digest,
         "cohort_file": cohort_file,
-        "cohort_seed": seed,
+        "cohort_seed": cohort.seed,
+        "routine_cohort_sha256": routine_cohort.digest,
+        "routine_cohort_file": routine_file,
+        "routine_cohort_seed": routine_cohort.seed,
+        "routine_scores": routine_measured["scores"],
         "candidate_cohort_sha256": candidate_cohort.digest,
         "graduation_perfect_roles": list(graduation_roles),
         "championship_roles": list(championship_roles),
@@ -2721,6 +2983,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "student_sha256": assessment.checkpoint_sha256,
         "optimizer_step": assessment.optimizer_step,
         "scores": scores,
+        "stagnation_quarantined": list(blocked_after),
+        "routine_learning_diagnostics": routine_warnings,
     }
     peaks, retention_status = advance_peaks(
         receipt.get("whole_student_peaks", []),
@@ -2731,8 +2995,24 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         assessment_scope_sha256=last_exam["assessment_scope_sha256"],
         scores=scores, checkpoint=asdict(school.current_student))
     last_exam["whole_student_retention"] = retention_status
-    pending = receipt.get("_pending_visit_events", ())
+    pending = (*receipt.get("_pending_visit_events", ()), *stagnation_events)
     exam_warnings = summarize_completed_exam_safely(run_dir, receipt, last_exam)
+    if cohort.digest == routine_cohort.digest:
+        paired_parent_scores = parent_routine_scores
+        paired_parent_issue = parent_routine_issue
+    else:
+        paired_parent_scores, paired_parent_issue = _score_parent_for_paired_s3(
+            mx, run_dir, receipt, parent_checkpoint, cohort, graph, scores)
+    exam_warnings = apply_paired_checkpoint_s3(
+        exam_warnings,
+        parent_scores=paired_parent_scores,
+        current_scores=scores,
+        parent_sha256=parent_checkpoint.sha256,
+        current_sha256=school.current_student.sha256,
+        parent_step=parent_checkpoint.optimizer_step,
+        current_step=school.current_student.optimizer_step,
+        cohort_sha256=cohort.digest,
+        unavailable_reason=paired_parent_issue)
     last_exam["learning_diagnostics"] = exam_warnings
     teacher_outcomes = summarize_teacher_outcomes(receipt.get("last_exam"), last_exam, pending)
     last_exam["teacher_outcomes"] = teacher_outcomes
@@ -2741,6 +3021,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     # directly on missed semantics, with no answer leakage during scoring.
     priority = reconcile_unresolved_misses(
         receipt.get("teacher_misses", ()), rows, guesses)
+    if blocked_after:
+        blocked_set = set(blocked_after)
+        priority = [row for row in priority if row["capability"] not in blocked_set]
     unresolved_ids = {row["id"] for row in priority}
     miss_exposures = {
         identity: count for identity, count in
@@ -2753,10 +3036,16 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                         "whole_student_peaks": peaks,
                         "graduation_perfect": perfect,
                         "grade_soups": frozen_soups,
-                        "qualification_cohort": qualification,
                         "teacher_miss_exposures": miss_exposures,
                         "legacy_frontier_pending_replay": False,
                         "live_rubric_sha256": assessment.rubric_digest}
+    if stagnation is not None:
+        migrated_receipt["stagnation_session"] = stagnation
+    if qualification is not None:
+        migrated_receipt["qualification_cohort"] = qualification
+        last_exam["promotion_cohort_sha256"] = qualification["cohort_sha256"]
+    else:
+        migrated_receipt.pop("qualification_cohort", None)
     if epoch is not None:
         migrated_receipt["mentor_epoch"] = epoch
     migrated_receipt.pop("teacher_miss_cursor", None)
@@ -2770,22 +3059,25 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                   else "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED"),
         "grade": school.grade, "generation": result["generation"],
         "grade_exam_epoch": school.grade_exam_epoch,
-        "grade_test_lifecycle": GRADE_TEST_LIFECYCLE,
+        "exam_plane": exam_plane,
+        "grade_test_lifecycle": last_exam["grade_test_lifecycle"],
         "assessment_scope_sha256": last_exam["assessment_scope_sha256"],
-        "qualification_cohort_sha256": qualification["cohort_sha256"],
         "introduction_stage": school.introduction_stage,
         "scores": scores, "phase": advanced.stage,
         "student_sha256": assessment.checkpoint_sha256,
         "optimizer_step": assessment.optimizer_step,
         "rubric": assessment.rubric_digest,
         "cohort_sha256": cohort.digest, "generator_version": generator,
-        "cohort_seed": seed, "cohort_file": last_exam["cohort_file"],
+        "cohort_seed": cohort.seed, "cohort_file": last_exam["cohort_file"],
+        "routine_cohort_sha256": routine_cohort.digest,
         "incumbent_comparisons": compared,
         "teacher_miss_count": len(priority),
         "learning_diagnostics": exam_warnings,
         "teacher_outcomes": teacher_outcomes,
         "whole_student_retention": retention_status,
     }
+    if qualification is not None:
+        exam_event["qualification_cohort_sha256"] = qualification["cohort_sha256"]
     if epoch is not None:
         exam_event["championship_epoch"] = {
             "baseline_sha256": epoch["baseline"]["sha256"],
@@ -2807,21 +3099,33 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
     if not pending:
         return receipt
     school = _state_from_json(receipt["school"], course)
+    stagnation = receipt.get("stagnation_session")
+    blocked = quarantined_capabilities(stagnation)
+    active_scope = tuple(
+        cap for cap in assessment_capabilities(course, school)
+        if cap not in set(blocked))
+    if not active_scope:
+        raise ValueError("STAGNATION_STOP_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES")
     rubric, release, generator, _ = _cohort_contract(course)
-    exam_cohort, qualification = _grade_test_cohort(
+    exam_cohort, _ = _grade_test_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
     cohort = _candidate_cohort(run_dir, receipt, manifest, course, source_root, graph)
     cohort, _ = _introduced_cohort(run_dir, manifest, course, school, cohort)
+    cohort, _ = _without_stagnant_capabilities(
+        run_dir, manifest, course, cohort, stagnation)
     rows = list(cohort.rows)
     guesses = _predictions(mx, parameters, rows, receipt["config"], receipt["answer_ids"])
     current, frontier, roles, compared = _commit_scored_student(
         mx, run_dir, receipt, manifest, course, school, cohort, guesses,
-        parameters, optimizer, graph, reserve_gib=reserve_gib)
-    # The operator may stop between scheduled full exams. Score the same
-    # existing complete qualification cohort at this durable stop boundary;
-    # this records a recoverable peak without promoting curriculum mastery.
+        parameters, optimizer, graph, reserve_gib=reserve_gib,
+        allowed_capabilities=active_scope)
+    # The operator may stop between scheduled full exams. Score one fresh
+    # routine cohort at this durable stop boundary; this records a recoverable
+    # peak without creating or extending a promotion attempt.
     exam_cohort, _ = _introduced_cohort(
         run_dir, manifest, course, school, exam_cohort)
+    exam_cohort, _ = _without_stagnant_capabilities(
+        run_dir, manifest, course, exam_cohort, stagnation)
     exam_guesses = _predictions(
         mx, parameters, list(exam_cohort.rows), receipt["config"], receipt["answer_ids"])
     exam_scores = score_cohort(exam_cohort, exam_guesses,
@@ -2831,12 +3135,13 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
         curriculum_mode=receipt["curriculum_mode"],
         numeric_maximum=receipt.get("numeric_maximum"),
         rubric_sha256=rubric, cohort_sha256=exam_cohort.digest,
-        assessment_scope_sha256=_fingerprint(assessment_capabilities(course, school)),
+        assessment_scope_sha256=_fingerprint(active_scope),
         scores=exam_scores, checkpoint=asdict(current.current_student))
-    record = _advance(run_dir, {**receipt, "legacy_frontier_pending_replay": False,
-                                "whole_student_peaks": peaks,
-                                "qualification_cohort": qualification,
-                                "live_rubric_sha256": rubric},
+    stop_receipt = {**receipt, "legacy_frontier_pending_replay": False,
+                    "whole_student_peaks": peaks,
+                    "live_rubric_sha256": rubric}
+    stop_receipt.pop("qualification_cohort", None)
+    record = _advance(run_dir, stop_receipt,
                       current, frontier=frontier,
                       model_bundle=current.current_student.filename, persist=False)
     comparison_event = {
@@ -2848,7 +3153,8 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
             asdict(current.current_student))["scores"],
         "student_sha256": current.current_student.sha256,
         "optimizer_step": current.current_student.optimizer_step,
-        "incumbent_comparisons": compared}
+        "incumbent_comparisons": compared,
+        "stagnation_quarantined": list(blocked)}
     comparison_event["whole_student_retention"] = retention_status
     record = _persist(run_dir, _with_delivery_outbox(
         record, _boundary_delivery_events(record, pending, roles, comparison_event)))
@@ -2867,6 +3173,8 @@ def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
         return "AWAITING_TEACHER_SOUP"
     if stage == "AWAITING_NEXT_GRADE":
         return "GRADE_" + grade + "_AWAITING_NEXT_GRADE"
+    if stage == "DEFERRED_STAGNATION":
+        return "STAGNATION_REVIEW_REQUIRED"
     if stage.startswith("ASSESS_"):
         return None
     if elapsed_seconds >= minutes * 60:
@@ -3015,6 +3323,25 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         if learning_settings is not None:
             receipt = _seed_saved_whole_student_peak(
                 run_dir, receipt, course, optimizer)
+        previous_stagnation = receipt.get("stagnation_session")
+        prior_debt = quarantined_capabilities(previous_stagnation)
+        school = _state_from_json(receipt["school"], course)
+        if prior_debt and school.stage == "DEFERRED_STAGNATION":
+            school = reactivate_stagnation_debt(course, school, prior_debt)
+            receipt = {**receipt, "school": asdict(school)}
+        history = list(receipt.get("stagnation_history", ()))
+        if previous_stagnation is not None:
+            history.append({
+                "session_id": previous_stagnation["session_id"],
+                "started_generation": previous_stagnation["started_generation"],
+                "ended_before_generation": receipt["generation"],
+                "quarantined": list(prior_debt),
+                "alerts": list(end_of_run_alerts(previous_stagnation)),
+            })
+        receipt["stagnation_history"] = history[-16:]
+        receipt["stagnation_session"] = start_stagnation_session(
+            session_id=uuid.uuid4().hex, generation=receipt["generation"],
+            required_capabilities=assessment_capabilities(course, school))
         visits = 0
         while True:
             from .numeric_staircase import scope_advance_due, advance_scope
@@ -3055,6 +3382,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
                                    reserve_gib=reserve_gib)
         elapsed_seconds = round(time.monotonic() - start, 3)
+        stagnation_alerts = end_of_run_alerts(receipt.get("stagnation_session"))
+        stagnation_quarantined = quarantined_capabilities(
+            receipt.get("stagnation_session"))
         _record(run_dir, {
             "event": "GRADE_A_SESSION_STOPPED" if len(course.grades) == 1
                      else "SCHOOL_SESSION_STOPPED", "stop_reason": reason,
@@ -3066,6 +3396,10 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "elapsed_seconds": elapsed_seconds,
             "grade_phase": school.stage, "grade": school.grade,
             "resume_required": school.stage != "AWAITING_NEXT_GRADE",
+            "stagnation_session_id": receipt.get("stagnation_session", {}).get(
+                "session_id"),
+            "stagnation_quarantined": list(stagnation_quarantined),
+            "stagnation_alerts": list(stagnation_alerts),
             **{k: budget[k] for k in ("free_bytes", "reserve_bytes", "estimated_write_bytes")},
         })
         # Reclaim superseded JSON snapshot storage after the committed stop
@@ -3095,6 +3429,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "optimizer_step": school.current_student.optimizer_step,
             "checkpoint_sha256": school.current_student.sha256,
             "latest_exam": receipt["last_exam"],
+            "stagnation_quarantined": list(stagnation_quarantined),
+            "stagnation_alerts": list(stagnation_alerts),
             "experimental_retention": learning_settings is not None,
             "retention_enabled": learning_settings is not None,
             "state_archive": maintenance,

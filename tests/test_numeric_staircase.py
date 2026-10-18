@@ -140,10 +140,10 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertIn(wide, changed['teacher_misses'])
         self.assertEqual(changed['teacher_miss_exposures'][wide['id']], 2)
 
-    def test_full_staircase_reuses_fixed_tests_within_each_scope(self):
+    def test_full_staircase_redraws_routine_test_at_every_evaluation(self):
         course, record = self.start()
         observed = []
-        cohorts = {}
+        cohorts = []
         with redirect_stdout(io.StringIO()):
             while record['school']['active_grades'][record['school']['grade_index']] == 'C':
                 maximum = record['numeric_maximum']
@@ -161,15 +161,14 @@ class NumericStaircaseTests(unittest.TestCase):
                     record = storage._take_exam(self.mx,self.root,record,
                         self.fixture.manifest,course,fixtures.SOURCE,fixtures.PARENT,
                         self.params,self.optimizer,self.graph,reserve_gib=0.)
-                cohort = record['qualification_cohort']['cohort_sha256']
-                if maximum in cohorts:
-                    self.assertEqual(cohort, cohorts[maximum])
-                cohorts[maximum] = cohort
+                cohort = record['last_exam']['routine_cohort_sha256']
+                self.assertNotIn(cohort, cohorts)
+                cohorts.append(cohort)
                 if scope_advance_due(record, course):
                     course, record = advance_scope(self.root,record,course,
                         self.fixture.previous,self.graph)
             self.assertEqual(record['school']['revalidation_target_grade'], 'C')
-            self.assertEqual(len(set(cohorts.values())), 4)
+            self.assertEqual(len(set(cohorts)), len(cohorts))
             self.assertEqual(observed, [(n,c) for n in (3,4,5,6) for c in
                 ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB')] +
                 [(6,'C.MUL'),(6,'C.DIV')])

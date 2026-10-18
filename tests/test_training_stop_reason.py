@@ -46,6 +46,9 @@ class HumanSessionStopTests(unittest.TestCase):
         self.assertEqual(session_stop_reason(stage="AWAITING_TEACHER_SOUP",
                          elapsed_seconds=0,minutes=90,visits=0,max_visits=0),
                          "AWAITING_TEACHER_SOUP")
+        self.assertEqual(session_stop_reason(stage="DEFERRED_STAGNATION",
+                         elapsed_seconds=0, minutes=90, visits=12, max_visits=0),
+                         "STAGNATION_REVIEW_REQUIRED")
 
     def test_durable_stop_event_appears_in_snapshot_after_exit(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -78,6 +81,10 @@ class HumanSessionStopTests(unittest.TestCase):
         result["stop_reason"] = "AWAITING_TEACHER_SOUP"
         self.assertIn("separately verified",human_stop_summary(result))
         self.assertNotIn("--human-run --resume",human_stop_summary(result))
+        result.update(stop_reason="STAGNATION_REVIEW_REQUIRED",
+                      stagnation_quarantined=["B.NOT"])
+        self.assertIn("B.NOT", human_stop_summary(result))
+        self.assertIn("still count against graduation", human_stop_summary(result))
 
     def test_disk_budget_breach_is_proven_without_writing_any_checkpoint(self):
         # 100.28 GiB free is insufficient for 100 GiB reserve + 600 MB.

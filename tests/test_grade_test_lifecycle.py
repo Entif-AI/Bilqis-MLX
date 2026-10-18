@@ -11,7 +11,8 @@ from bilqis_mlx.champions import Checkpoint
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_a_trainer import (
-    _candidate_cohort, _grade_test_cohort, choose_lesson_batch,
+    _candidate_cohort, _grade_test_cohort, _promotion_cohort,
+    choose_lesson_batch,
 )
 from bilqis_mlx.live_grade_a import live_course
 from bilqis_mlx.school import start_new
@@ -36,7 +37,7 @@ class GradeTestLifecycleTests(unittest.TestCase):
     def draw(self, root, receipt):
         return _grade_test_cohort(root, receipt, self.manifest, self.course, SOURCE, self.graph)
 
-    def test_failed_retries_and_reload_keep_questions_seed_and_criteria(self):
+    def test_routine_grade_evaluation_redraws_after_each_boundary(self):
         receipt = self.receipt()
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -44,30 +45,46 @@ class GradeTestLifecycleTests(unittest.TestCase):
             receipt["qualification_cohort"] = pointer
             receipt["generation"] += 30
             receipt = json.loads(json.dumps(receipt))
-            with patch("bilqis_mlx.grade_a_trainer._draw_live_rows",
-                       side_effect=AssertionError("Retry redrew its test")):
-                retry, saved = self.draw(root, receipt)
-            self.assertEqual(retry, original)
-            self.assertEqual(saved, pointer)
+            redraw, saved = self.draw(root, receipt)
+            self.assertNotEqual(redraw.digest, original.digest)
+            self.assertNotEqual(redraw.seed, original.seed)
+            self.assertNotEqual(saved["cohort_sha256"], pointer["cohort_sha256"])
 
-    def test_candidate_cohort_rotates_without_changing_graduation_exam(self):
+    def test_candidate_and_routine_cohorts_both_rotate_independently(self):
         receipt = self.receipt()
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            graduation, pointer = self.draw(root, receipt)
+            routine, pointer = self.draw(root, receipt)
             receipt["qualification_cohort"] = pointer
             first = _candidate_cohort(root, receipt, self.manifest,
                                       self.course, SOURCE, self.graph)
-            self.assertNotEqual(first.digest, graduation.digest)
+            self.assertNotEqual(first.digest, routine.digest)
             receipt["generation"] += 1
             second = _candidate_cohort(root, receipt, self.manifest,
                                        self.course, SOURCE, self.graph)
             self.assertNotEqual(first.digest, second.digest)
-            with patch("bilqis_mlx.grade_a_trainer._draw_live_rows",
-                       side_effect=AssertionError("Graduation exam was redrawn")):
-                stable, stable_pointer = self.draw(root, receipt)
-            self.assertEqual(stable.digest, graduation.digest)
-            self.assertEqual(stable_pointer, pointer)
+            redrawn, redrawn_pointer = self.draw(root, receipt)
+            self.assertNotEqual(redrawn.digest, routine.digest)
+            self.assertNotEqual(redrawn_pointer["cohort_sha256"], pointer["cohort_sha256"])
+
+    def test_promotion_attempt_is_distinct_and_next_attempt_redraws(self):
+        receipt = self.receipt()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            routine, _ = self.draw(root, receipt)
+            first, first_pointer = _promotion_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph)
+            self.assertNotEqual(first.digest, routine.digest)
+            again, again_pointer = _promotion_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph)
+            self.assertEqual(again.digest, first.digest)
+            self.assertEqual(again_pointer, first_pointer)
+            receipt["generation"] += 1
+            second, second_pointer = _promotion_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph)
+            self.assertNotEqual(second.digest, first.digest)
+            self.assertNotEqual(
+                second_pointer["cohort_sha256"], first_pointer["cohort_sha256"])
 
     def test_returning_to_the_same_grade_gets_new_questions(self):
         receipt = self.receipt()
@@ -81,7 +98,7 @@ class GradeTestLifecycleTests(unittest.TestCase):
             self.assertNotEqual(revisited.digest, original.digest)
             self.assertNotEqual(revisited.seed, original.seed)
 
-    def test_current_legacy_failed_exam_is_adopted_without_redraw(self):
+    def test_legacy_failed_exam_does_not_freeze_a_new_routine_boundary(self):
         receipt = self.receipt()
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -94,10 +111,8 @@ class GradeTestLifecycleTests(unittest.TestCase):
                 scores={c.id: {"correct": 0, "total": 12}
                         for c in self.course.grades[0].capabilities})
             receipt["generation"] += 1
-            with patch("bilqis_mlx.grade_a_trainer._draw_live_rows",
-                       side_effect=AssertionError("Existing failed grade test was discarded")):
-                adopted, _ = self.draw(root, receipt)
-            self.assertEqual(adopted, cohort)
+            redrawn, _ = self.draw(root, receipt)
+            self.assertNotEqual(redrawn.digest, cohort.digest)
 
     def test_exam_constructions_remain_eligible_for_teaching(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -117,7 +132,7 @@ class GradeTestLifecycleTests(unittest.TestCase):
             payload = json.loads(path.read_text())
             payload["rows"][0]["gold"] = "FALSE" if payload["rows"][0]["gold"] == "TRUE" else "TRUE"
             path.write_text(json.dumps(payload))
-            with self.assertRaisesRegex(ValueError, "COHORT_CONTENT_DRIFT"):
+            with self.assertRaisesRegex(ValueError, "COHORT_.*DRIFT"):
                 self.draw(root, receipt)
 
 

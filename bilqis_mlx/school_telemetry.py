@@ -87,7 +87,10 @@ def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
         not_measured = sum(
             1 for finding in diagnostics.get("findings", ())
             if isinstance(finding, dict) and finding.get("status") == "NOT_MEASURED")
-        unavailable = diagnostics.get("history_usable") is False
+        unavailable = (
+            diagnostics.get("s3_usable") is False
+            if "s3_usable" in diagnostics else
+            diagnostics.get("history_usable") is False)
         detail = ("active " + ", ".join(warning_labels)
                   if warning_labels else "S3 unavailable" if unavailable else "no active warnings")
         if unavailable and warning_labels:
@@ -97,6 +100,10 @@ def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
         if unavailable and diagnostics.get("history_issue"):
             rows.append({"kind": "HISTORY ISSUE", "grade": grade,
                          "detail": str(diagnostics["history_issue"])})
+        elif diagnostics.get("history_usable") is False and diagnostics.get("history_issue"):
+            rows.append({"kind": "HISTORY ISSUE", "grade": grade,
+                         "detail": str(diagnostics["history_issue"]) +
+                                   " | paired S3 recovered"})
     outcomes = event.get("teacher_outcomes")
     if isinstance(outcomes, list) and outcomes:
         rows.append({"kind":"TEACH OUTCOME", "grade":grade,
@@ -665,4 +672,9 @@ class SchoolTelemetry:
             "detail": f"{reason} | {event['visits_this_command']} visits | "
                       f"{event['elapsed_seconds']:.1f}s | step {event['optimizer_step']}"},
             redraw=False)
+        quarantined = event.get("stagnation_quarantined") or []
+        if quarantined:
+            self.board.push("system", {"kind": "STAGNATION", "grade": grade,
+                "detail": "WITHHELD THIS RUN | " + ", ".join(quarantined) +
+                          " | still required for graduation"}, redraw=False)
         self.board.state["stop"] = reason

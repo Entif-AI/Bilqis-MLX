@@ -3,6 +3,7 @@ from contextlib import redirect_stdout
 from copy import deepcopy
 from dataclasses import asdict
 import io
+import inspect
 import json
 import math
 from pathlib import Path
@@ -80,40 +81,10 @@ class GradeATrainerContractTests(unittest.TestCase):
             receipt, changed, rubric_sha256="b" * 64,
             assessment_scope_sha256="c" * 64))
 
-    def test_take_exam_routes_exact_reuse_before_candidate_scoring(self):
-        school = type("School", (), {
-            "stage": "ASSESS_MAIN",
-            "current_student": Checkpoint("a" * 64, "bundles/current", 123, True),
-        })()
-        cohort = type("Cohort", (), {
-            "seed": 9,
-            "rows": (),
-            "digest": "d" * 64,
-        })()
-        qualification = {"cohort_sha256": "d" * 64}
-        reused = ({"row": "TRUE"}, {"scores": {}, "misses_for_teacher": []})
-        marker = {"result": "REUSED"}
-        optimizer = type("Optimizer", (), {"state": {"step": type(
-            "Step", (), {"item": lambda self: 123})()}})()
-        with (patch.object(trainer, "_state_from_json", return_value=school),
-              patch.object(trainer, "_cohort_contract",
-                           return_value=("b" * 64, "release", "generator", "code")),
-              patch.object(trainer, "_grade_test_cohort",
-                           return_value=(cohort, qualification)),
-              patch.object(trainer, "_introduced_cohort",
-                           return_value=(cohort, "cohorts/" + "d" * 64 + ".json")),
-              patch.object(trainer, "assessment_capabilities", return_value=("A.X",)),
-              patch.object(trainer, "_verified_reusable_exam", return_value=reused),
-              patch.object(trainer, "_reuse_unchanged_exam_boundary",
-                           return_value=marker) as reuse_boundary,
-              patch.object(trainer, "_candidate_cohort",
-                           side_effect=AssertionError("candidate path must be skipped"))):
-            result = _take_exam(
-                None, Path("/unused"), {"school": {}}, {}, object(),
-                Path("/unused-source"), Path("/unused-checkpoint"), {},
-                optimizer, {}, reserve_gib=0.)
-        self.assertEqual(result, marker)
-        reuse_boundary.assert_called_once()
+    def test_routine_exam_reuse_shortcut_is_not_part_of_active_take_exam_path(self):
+        source = inspect.getsource(trainer._take_exam)
+        self.assertNotIn("_verified_reusable_exam(", source)
+        self.assertNotIn("_reuse_unchanged_exam_boundary(", source)
 
     def test_historical_manifest_partition_remains_unchanged_as_evidence(self):
         cap = "A.MEMBER"
@@ -407,14 +378,14 @@ class GradeATrainerContractTests(unittest.TestCase):
                     completed = _take_exam(
                         mx, run_dir, completed, manifest, course, ROOT, SOURCE,
                         params, opt, graph, reserve_gib=0.)
-                self.assertEqual(completed["last_exam"]["cohort_sha256"],
-                                 saved_cohort["cohort_sha256"])
+                self.assertNotEqual(completed["last_exam"]["cohort_sha256"],
+                                    saved_cohort["cohort_sha256"])
                 outcomes = completed["last_exam"]["teacher_outcomes"]
                 self.assertEqual(len(outcomes), 3)
                 # Three different optimizer-changing visits intervene. One
                 # visit per capability is not unique whole-student causality.
                 self.assertEqual({outcome["attribution"] for outcome in outcomes},
-                                 {"NOT_MEASURED_MULTIPLE_ACTIONS"})
+                                 {"NOT_MEASURED_CHANGED_EXAM"})
                 self.assertTrue(all(len(outcome["decision_ids"]) == 1
                                     for outcome in outcomes))
                 self.assertEqual(len(completed["last_exam"]["incumbent_comparisons"]), 1)
