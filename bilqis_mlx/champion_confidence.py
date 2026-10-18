@@ -14,10 +14,34 @@ MAX_INFLUENCE = 0.08
 TEMPERATURE = 1.5
 
 
-def champion_roster(frontier: dict, grade: str) -> tuple[dict, ...]:
-    """Only current-grade perfect role owners advise that grade's lessons."""
+def champion_roster(frontier: dict, grade: str, *, snapshot=None) -> tuple[dict, ...]:
+    """One active role per mastered capability, not every historical rubric.
+
+    A frozen grade soup snapshot identifies the *current* champion roles.
+    Historical examinations remain in the frontier for provenance, but an
+    earlier-rubric role is not another independently entitled mentor vote.
+    The optional unscoped form is retained for source-only legacy fixtures.
+    """
+    if snapshot is not None:
+        roles = snapshot.get("roles")
+        if (snapshot.get("grade") != grade or not isinstance(roles, list) or
+                len(roles) != snapshot.get("vote_count") or
+                len({r.get("capability") for r in roles}) != len(roles) or
+                any(not r.get("capability", "").startswith(grade + ".")
+                    for r in roles)):
+            raise ValueError("CHAMPION_CONFIDENCE_ACTIVE_GRADE_ROLE_DRIFT")
+        selected = []
+        for role in roles:
+            key = role["rubric"] + ":" + role["capability"]
+            item = frontier.get(key)
+            if (item is None or item["capability"] != role["capability"] or
+                    item["checkpoint"]["sha256"] != role["checkpoint_sha256"]):
+                raise ValueError("CHAMPION_CONFIDENCE_ACTIVE_ROLE_PROVENANCE_DRIFT")
+            selected.append(item)
+    else:
+        selected = frontier.values()
     unique = {}
-    for item in frontier.values():
+    for item in selected:
         if not item["capability"].startswith(grade + "."):
             continue
         breadth = item.get("breadth")

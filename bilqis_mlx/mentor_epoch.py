@@ -84,6 +84,8 @@ def begin_epoch(*, previous_graduate: dict, admitted_baseline: dict,
             "source_graph_sha256": source_graph_sha256,
             "previous_capabilities": list(caps),
             "previous_graduate": graduate, "baseline": baseline,
+            "baseline_roles": {cap: baseline["sha256"] for cap in sorted(caps)},
+            "earned_role_votes_at_reset": 0,
             "previous_graduation_exam_sha256": _digest(exam),
             "qualified": [], "historical_advisers_remain_archived": True}
 

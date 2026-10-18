@@ -296,7 +296,13 @@ def _cached_frozen_champion(path_string, sha, step, file_size, file_mtime_ns):
 def _frozen_confidence_champions(run_dir, receipt, grade, graph):
     """Read each current-grade perfect champion once, without changing it."""
     mentors = []
-    for item in champion_roster(receipt.get("graduation_perfect", {}), grade):
+    snapshot = receipt.get("grade_soups", {}).get(grade)
+    if snapshot is None and any(
+            role.get("capability", "").startswith(grade + ".")
+            for role in receipt.get("graduation_perfect", {}).values()):
+        raise ValueError("CHAMPION_CONFIDENCE_GRADE_SOUP_MISSING_FOR_ACTIVE_ROLES")
+    for item in champion_roster(receipt.get("graduation_perfect", {}), grade,
+                               snapshot=snapshot):
         pointer = item["checkpoint"]
         path = run_dir / pointer["filename"]
         if (path.is_symlink() or path.parent != run_dir / "bundles" or
