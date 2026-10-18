@@ -72,7 +72,24 @@ def _candidate_admission_text(event: dict) -> str:
     hint = instructional.removesuffix("; exam pending")
     if hint != "LESSON COMMITTED":
         label += " | " + hint
+    association = _association_text(event)
+    if association is not None:
+        label += " | " + association
     return label
+
+
+def _association_text(event: dict) -> str | None:
+    bridge = event.get("boolean_association_bridge")
+    if isinstance(bridge, dict) and bridge.get("active_for_visit") is True:
+        grades = bridge.get("borrowed_source_grades")
+        delivered = bridge.get("delivered_examples")
+        active = event.get("active_grade") or event.get("grade")
+        if (isinstance(grades, list) and grades and
+                all(isinstance(grade, str) and grade for grade in grades) and
+                type(delivered) is int and delivered > 0 and
+                isinstance(active, str) and active):
+            return "COMPOSE " + "+".join(grades) + "->" + active + f" x{delivered}"
+    return None
 
 
 def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
@@ -416,6 +433,12 @@ class SchoolTelemetry:
             "decision": _candidate_admission_text(event),
         }
         self.board.rows["CANDIDATES"].append(row)
+        association = _association_text(event)
+        if association is not None:
+            self.board.push("system", {
+                "kind": "COMPOSE", "grade": grade,
+                "detail": association + " | " + cap,
+            }, redraw=False)
         teacher = {"grade": grade, "attempt": self.visits, "policy": policy[:10],
                    "lr": _display(strategy.get("lr"), decimals=5),
                    "depth": strategy.get("depth", "-"),

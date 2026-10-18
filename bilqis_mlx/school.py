@@ -262,6 +262,53 @@ def _perfect_in_grade(course: Course, grade: str, scores: dict[str, Score]) -> b
     return all(scores[c].perfect for c in _caps(course, (grade,)))
 
 
+def _next_imperfect_grade_index(course: Course, state: SchoolState,
+                                scores: dict[str, Score], *,
+                                allowed_capabilities: tuple[str, ...] | None = None) -> int | None:
+    """Advance the ordinary spiral after the two bounded weakest-three rounds.
+
+    Start immediately after the current grade, wrap once through canonical
+    admitted order, skip grades already perfect on the latest cumulative
+    assessment, and treat the current still-imperfect grade as the final
+    fallback only after every other eligible grade has been considered.
+    """
+    allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
+    if not allowed <= set(scores):
+        raise ValueError("SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT")
+    count = len(state.active_grades)
+    for offset in range(1, count + 1):
+        index = (state.grade_index + offset) % count
+        grade_caps = _caps(course, (state.active_grades[index],))
+        eligible = tuple(cap for cap in grade_caps if cap in allowed)
+        if not eligible:
+            continue
+        # An ordinary pass is due when any currently eligible capability in the
+        # grade is imperfect. Missing/withheld capabilities are handled by the
+        # caller's explicit containment authority, never synthesized as perfect.
+        if any(not scores[cap].perfect for cap in eligible):
+            return index
+    return None
+
+
+def _resume_ordinary_spiral(course: Course, state: SchoolState,
+                            snapshot: Assessment, *,
+                            allowed_capabilities: tuple[str, ...] | None = None) -> SchoolState | None:
+    index = _next_imperfect_grade_index(
+        course, state, snapshot.scores, allowed_capabilities=allowed_capabilities)
+    if index is None:
+        return None
+    entered = _enter_grade(
+        course, state, index, stage="MAIN", first_recovery=(),
+        latest_rubric_digest=snapshot.rubric_digest)
+    if allowed_capabilities is None:
+        return entered
+    allowed = set(allowed_capabilities)
+    queue = tuple(cap for cap in entered.queue if cap in allowed)
+    if not queue:
+        return None
+    return replace(entered, queue=queue)
+
+
 def _finish_grade_series(course: Course, state: SchoolState, assessment: Assessment,
                          pointers: dict[str, Checkpoint]) -> SchoolState:
     """Advance to the next grade or stop at a verified course boundary."""
@@ -376,18 +423,14 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
         trio = weakest_three(snapshot.scores, pool)
         return replace(state, stage="RECOVERY_2", queue=trio,
                        latest_rubric_digest=snapshot.rubric_digest)
-    # After two cumulative recovery rounds, do not teach already-perfect
-    # capabilities merely to refill a nominal main-grade pass. Preserve the
-    # full cumulative examination and keep old-grade misses eligible.
-    remaining_main = tuple(c for c in _main_queue(course, state)
-                           if not snapshot.scores[c].perfect)
-    if remaining_main:
-        return replace(state, stage="MAIN", queue=remaining_main,
-                       first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
-    remaining_cumulative = weakest_three(snapshot.scores, pool)
-    return replace(state, stage="RECOVERY_1", queue=remaining_cumulative,
-                   first_recovery=remaining_cumulative,
-                   latest_rubric_digest=snapshot.rubric_digest)
+    # weakest_three is deliberately bounded to two rounds. After round two,
+    # resume ordinary sequential grade progression, skipping grades already
+    # perfect on this cumulative assessment. Never start a third recovery burst
+    # before another ordinary grade pass.
+    resumed = _resume_ordinary_spiral(course, state, snapshot)
+    if resumed is None:
+        raise ValueError("SPIRAL_RECOVERY_ENDED_WITHOUT_IMPERFECT_GRADE")
+    return resumed
 
 
 def assess_withheld(course: Course, state: SchoolState, snapshot: Assessment,
@@ -445,17 +488,10 @@ def assess_withheld(course: Course, state: SchoolState, snapshot: Assessment,
         return replace(state, stage="DEFERRED_STAGNATION", queue=(),
                        first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
 
-    remaining_main = tuple(
-        c for c in _main_queue(course, state)
-        if c in active_pool and not snapshot.scores[c].perfect)
-    if remaining_main:
-        return replace(state, stage="MAIN", queue=remaining_main,
-                       first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
-    remaining_cumulative = weakest_three(snapshot.scores, active_pool)
-    if remaining_cumulative:
-        return replace(state, stage="RECOVERY_1", queue=remaining_cumulative,
-                       first_recovery=remaining_cumulative,
-                       latest_rubric_digest=snapshot.rubric_digest)
+    resumed = _resume_ordinary_spiral(
+        course, state, snapshot, allowed_capabilities=active_pool)
+    if resumed is not None:
+        return resumed
     return replace(state, stage="DEFERRED_STAGNATION", queue=(),
                    first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
 

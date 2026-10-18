@@ -49,6 +49,38 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(len(board.rows["SOUP & TEACHER"]), 1)
         self.assertFalse(durable["_dashboard_redraw"])
 
+    def test_boolean_association_visit_is_visible_in_candidate_and_system_text(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True)
+        telemetry = SchoolTelemetry(board, active_grades=("A", "B", "C"))
+        telemetry.ingest({
+            "event": "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED",
+            "grade": "B",
+            "active_grade": "B",
+            "generation": 43,
+            "optimizer_step": 116,
+            "capability": "B.IMPLIES",
+            "retained_optimizer_updates": 0,
+            "candidate_retention": {
+                "decision": "REJECT",
+                "reason": "NO_MEASURABLE_TARGET_GAIN",
+            },
+            "boolean_association_bridge": {
+                "enabled": True,
+                "active_for_visit": True,
+                "borrowed_source_grades": ["A", "C"],
+                "delivered_examples": 128,
+            },
+        })
+
+        self.assertIn(
+            "COMPOSE A+C->B x128",
+            board.rows["CANDIDATES"][-1]["decision"],
+        )
+        compose = board.rows["SYSTEM & QUALIFICATION"][-1]
+        self.assertEqual(compose["kind"], "COMPOSE")
+        self.assertEqual(compose["grade"], "B")
+        self.assertEqual(compose["detail"], "COMPOSE A+C->B x128 | B.IMPLIES")
+
     def test_dashboard_top_right_shows_step_rate_and_all_grade_accuracy(self):
         now = [100.0]
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,

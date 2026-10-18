@@ -234,7 +234,7 @@ class SchoolTests(unittest.TestCase):
         state=assess(course,state,snapshot(course,self.init,scores))
         self.assertEqual(state.stage,"MAIN")
         self.assertEqual(state.grade,"A")
-        self.assertEqual(state.queue,tuple(f"a.{i}" for i in range(1, 6)))
+        self.assertEqual(state.queue,tuple(f"a.{i}" for i in range(6)))
         self.assertEqual(state.visits,12)
 
     def test_current_grade_promotion_allows_prior_regression_and_requires_soup(self):
@@ -541,6 +541,61 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(state.queue, state.first_recovery,
                          "Still-weak capabilities must remain eligible in round two")
         self.assertEqual(state.revalidation_target_grade, "B")
+
+    def test_after_two_recovery_rounds_main_advances_to_next_imperfect_grade(self):
+        course = three_grade_course()
+        student = self.init
+        base = start_new(course, student)
+        b = course.grades[1]
+        state = replace(
+            base,
+            grade_index=1,
+            introduction_stage=(len(b.teaching_stages) - 1 if b.teaching_stages else 0),
+            stage="ASSESS_RECOVERY_2",
+            queue=(),
+            first_recovery=("b.0",),
+            champions={grade: student for grade in ("A", "B", "C")},
+            revalidation_target_grade="C",
+        )
+        verify_state(course, state)
+        imperfect = all_scores(course, imperfect=("a.0", "b.0", "c.0"))
+
+        moved = assess(course, state, snapshot(course, student, imperfect))
+
+        self.assertEqual(moved.stage, "MAIN")
+        self.assertEqual(moved.grade, "C")
+        self.assertEqual(
+            moved.queue,
+            tuple(cap.id for cap in course.grades[2].capabilities),
+            "After the second weakest-three round, the next imperfect grade gets a full ordinary pass",
+        )
+
+    def test_after_two_recovery_rounds_skips_perfect_grades_and_wraps(self):
+        course = three_grade_course()
+        student = self.init
+        base = start_new(course, student)
+        b = course.grades[1]
+        state = replace(
+            base,
+            grade_index=1,
+            introduction_stage=(len(b.teaching_stages) - 1 if b.teaching_stages else 0),
+            stage="ASSESS_RECOVERY_2",
+            queue=(),
+            first_recovery=("b.0",),
+            champions={grade: student for grade in ("A", "B", "C")},
+            revalidation_target_grade="C",
+        )
+        verify_state(course, state)
+        imperfect = all_scores(course, imperfect=("a.0", "b.0"))
+
+        moved = assess(course, state, snapshot(course, student, imperfect))
+
+        self.assertEqual(moved.stage, "MAIN")
+        self.assertEqual(moved.grade, "A")
+        self.assertEqual(
+            moved.queue,
+            tuple(cap.id for cap in course.grades[0].capabilities),
+        )
 
     def test_admitted_grade_rejects_fabricated_one_question_perfect_score(self):
         grade = replace(self.course.grades[0],
