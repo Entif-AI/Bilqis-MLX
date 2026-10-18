@@ -15,11 +15,13 @@ TEMPERATURE = 1.5
 
 
 def champion_roster(frontier: dict, grade: str, *, snapshot=None) -> tuple[dict, ...]:
-    """One active role per mastered capability, not every historical rubric.
+    """One direct mentor per checkpoint with positive proven perfect breadth.
 
     A frozen grade soup snapshot identifies the *current* champion roles.
     Historical examinations remain in the frontier for provenance, but an
     earlier-rubric role is not another independently entitled mentor vote.
+    Best-score roles below perfection remain valid championship/soup evidence,
+    but contribute zero direct perfect-breadth mentor influence.
     The optional unscoped form is retained for source-only legacy fixtures.
     """
     if snapshot is not None:
@@ -46,11 +48,16 @@ def champion_roster(frontier: dict, grade: str, *, snapshot=None) -> tuple[dict,
             continue
         breadth = item.get("breadth")
         mastered = item.get("perfect_capabilities")
-        if (type(breadth) is not int or breadth < 1 or
+        if (type(breadth) is not int or breadth < 0 or
                 not isinstance(mastered, list) or len(mastered) != breadth or
-                item["capability"] not in mastered or
                 not item["checkpoint"].get("model_and_native_adamw")):
             raise ValueError("CHAMPION_CONFIDENCE_RANK_NOT_VERIFIED")
+        # Best-score championship is broader than perfect-witness status.
+        # A subperfect role stays valid for title/soup accounting but must not
+        # itself recruit direct perfect-breadth advice. If this same checkpoint
+        # owns another perfect role in the grade, that role will recruit it once.
+        if breadth == 0 or item["capability"] not in mastered:
+            continue
         sha = item["checkpoint"]["sha256"]
         if sha not in unique or breadth > unique[sha]["breadth"]:
             unique[sha] = {"checkpoint": item["checkpoint"], "breadth": breadth}

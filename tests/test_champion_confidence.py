@@ -111,6 +111,39 @@ class ChampionConfidenceTests(unittest.TestCase):
         self.assertEqual(champion_roster(roster, "B")[0]["breadth"], 1)
         self.assertEqual(champion_roster(roster, "C"), ())
 
+    def test_nonperfect_best_score_role_with_zero_perfect_breadth_is_valid_but_silent(self):
+        item = record("B.NOT", "3", ())
+        item["correct"] = 11
+        item["breadth"] = 0
+        item["perfect_capabilities"] = []
+        frontier = {"a" * 64 + ":B.NOT": item}
+        snapshot = {"grade": "B", "vote_count": 1,
+                    "roles": [{"capability": "B.NOT",
+                               "rubric": "a" * 64,
+                               "checkpoint_sha256": "3" * 64}]}
+        self.assertEqual(champion_roster(frontier, "B", snapshot=snapshot), ())
+
+    def test_nonperfect_role_does_not_invalidate_same_checkpoint_perfect_grade_role(self):
+        perfect = record("B.AND", "4", ("A.EDGE", "B.AND"))
+        nonperfect = record("B.NOT", "4", ("A.EDGE", "B.AND"))
+        nonperfect["correct"] = 10
+        nonperfect["breadth"] = 2
+        nonperfect["perfect_capabilities"] = ["A.EDGE", "B.AND"]
+        frontier = {
+            "a" * 64 + ":B.AND": perfect,
+            "a" * 64 + ":B.NOT": nonperfect,
+        }
+        snapshot = {"grade": "B", "vote_count": 2,
+                    "roles": [
+                        {"capability": "B.AND", "rubric": "a" * 64,
+                         "checkpoint_sha256": "4" * 64},
+                        {"capability": "B.NOT", "rubric": "a" * 64,
+                         "checkpoint_sha256": "4" * 64},
+                    ]}
+        self.assertEqual(
+            champion_roster(frontier, "B", snapshot=snapshot),
+            ({"checkpoint": perfect["checkpoint"], "breadth": 2},))
+
     def test_gold_agreeing_logits_vote_proportional_to_breadth(self):
         labels = np.array([1, 0], dtype=np.int64)
         correct_logits = np.array([[0., 2.], [2., 0.]], dtype=np.float32)
