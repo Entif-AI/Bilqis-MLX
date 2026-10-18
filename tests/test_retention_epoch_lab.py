@@ -157,6 +157,78 @@ class RetentionTeachingPathTests(unittest.TestCase):
              for bits in ((False, False), (False, True), (True, False), (True, True))},
         )
 
+    def test_fragile_preservation_reserves_batch_capacity_before_miss_replay(self):
+        policy = {"old": 0, "lr": 0.0001, "depth": 1,
+                  "contrast": 1., "distill": 0., "preview": 0}
+        teacher = {"strategies": {"p": policy}}
+        engine = SimpleNamespace(pick=lambda *_: ("p", policy))
+        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
+                                 champions={"A": {"optimizer_step": 1}})
+        grades = [SimpleNamespace(id=grade, capabilities=[SimpleNamespace(id=cap)])
+                  for grade, cap in (("A", "A.IDENTITY"), ("B", "B.XOR"))]
+        course = SimpleNamespace(grades=grades, capability_map={})
+        misses = [
+            {"id": f"miss:{index}", "source_id": f"miss:{index}",
+             "capability": "B.XOR", "answer_kind": "binary",
+             "gold": "TRUE" if index % 2 else "FALSE",
+             "tokens": [8, 9, index + 10]}
+            for index in range(30)
+        ]
+        preservation = tuple(
+            {"id": f"preserve:{index}", "capability": "B.XOR",
+             "answer_kind": "binary",
+             "gold": "TRUE" if index % 2 else "FALSE",
+             "operand_truths": [bool(index & 1), bool(index & 2)],
+             "tokens": [20, 21, index + 22]}
+            for index in range(8)
+        )
+        receipt = {"teacher": teacher, "generation": 1, "run_id": "capacity",
+                   "school": {}, "teacher_misses": misses, "config": {},
+                   "answer_ids": [6, 7], "curriculum_mode": "fixture-school"}
+        optimizer = SimpleNamespace(learning_rate=0.0001,
+                                    state={"step": SimpleNamespace(item=lambda: 1)})
+        captured = []
+
+        def source_rows(*_args, **kwargs):
+            return _rows(kwargs["capability"])
+
+        def inspect_batch(_mx, _parameters, _optimizer, rows, *_args, **_kwargs):
+            captured.extend(rows)
+            raise _BatchCaptured("STOP_BEFORE_ANY_OPTIMIZER")
+
+        def wrong_predictions(_mx, _params, rows, *_args):
+            return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
+                    for row in rows}
+
+        with (patch.object(trainer, "_state_from_json", return_value=school),
+              patch.object(trainer, "next_capability", return_value="B.XOR"),
+              patch.object(trainer, "_draw_live_rows", side_effect=source_rows),
+              patch.object(trainer, "_frozen_confidence_champions", return_value=()),
+              patch.object(trainer, "_frozen_grade_soup_votes", return_value=((), ())),
+              patch.object(trainer, "_train_score", return_value=0.5),
+              patch.object(trainer, "_learning_probe_rows",
+                           return_value=(_rows("B.XOR")[:6], set(), 0)),
+              patch.object(trainer, "_predictions", side_effect=wrong_predictions),
+              patch.object(trainer, "fork_student", return_value=({}, optimizer)),
+              patch("bilqis_mlx.fragile_replay.load_replay_rows",
+                    return_value=({"id": "fixed"},)),
+              patch.object(trainer, "_fresh_fragile_preservation_rows",
+                           return_value=preservation),
+              patch.object(trainer, "_train_step", side_effect=inspect_batch)):
+            with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
+                trainer._take_visit(None, Path("/never-opened"), receipt, {},
+                                    course, engine, {}, optimizer, {},
+                                    steps_per_visit=1, batch_size=32,
+                                    reserve_gib=0., source_root=Path("/not-used"),
+                                    learning_settings=Settings())
+
+        self.assertEqual(len(captured), 32)
+        self.assertEqual({row["id"] for row in preservation} &
+                         {row["id"] for row in captured},
+                         {row["id"] for row in preservation})
+        delivered_misses = {row["id"] for row in captured if row["id"].startswith("miss:")}
+        self.assertEqual(len(delivered_misses), 24)
+
 
 def _pointer(seed):
     return {"filename": "bundles/" + seed, "sha256": seed * 64,

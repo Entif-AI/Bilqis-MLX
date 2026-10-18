@@ -284,12 +284,15 @@ def choose_lesson_batch(rows: list[dict], policy: dict,
     return chosen
 
 
-def replay_missed_lessons(chosen: list[dict], missed: list[dict]) -> list[dict]:
+def replay_missed_lessons(chosen: list[dict], missed: list[dict], *,
+                          reserved_ids=()) -> list[dict]:
     """Guarantee every requested missed construction reaches this optimizer batch."""
     if len(missed) > len(chosen):
         raise ValueError("HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH")
     result = list(chosen)
-    consumed = set()
+    reserved = set(reserved_ids)
+    consumed = {index for index, row in enumerate(result)
+                if row.get("id") in reserved}
     for item in missed:
         replacement = next((i for i, row in enumerate(result)
                             if i not in consumed and row["gold"] == item["gold"]), None)
@@ -1938,18 +1941,6 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         else:
             picked = choose_lesson_batch(
                 fresh, policy, lesson_seed, batch_size=batch_size)
-        window = select_fair_miss_window(
-            priority, FairMissRequest(
-                exposures=miss_exposures,
-                selected_this_visit=frozenset(selected_misses),
-                remaining_steps=steps_per_visit-step,
-                batch_size=batch_size,
-                gold_capacity={
-                gold: sum(row["gold"] == gold for row in picked)
-                for gold in {row["gold"] for row in picked}
-                },
-            ))
-        picked = replay_missed_lessons(picked, window)
         preservation = ()
         delivered_preservation = ()
         if learning_settings is not None:
@@ -1958,7 +1949,23 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 step=step + 1, batch_size=batch_size,
                 fixed_rows=fragile_fixed_rows)
             picked, delivered_preservation = _inject_preservation_rows(
-                picked, preservation, reserved_ids={row["id"] for row in window})
+                picked, preservation)
+        preservation_ids = {row["id"] for row in delivered_preservation}
+        gold_capacity = {
+            gold: sum(row["gold"] == gold and row.get("id") not in preservation_ids
+                      for row in picked)
+            for gold in {row["gold"] for row in picked}
+        }
+        window = select_fair_miss_window(
+            priority, FairMissRequest(
+                exposures=miss_exposures,
+                selected_this_visit=frozenset(selected_misses),
+                remaining_steps=steps_per_visit-step,
+                batch_size=batch_size,
+                gold_capacity=gold_capacity,
+            ))
+        picked = replay_missed_lessons(
+            picked, window, reserved_ids=preservation_ids)
         if lesson_control is not None:
             lesson_control["planned_old_grade_examples"] = lesson_control[
                 "effective_old_grade_examples"]
