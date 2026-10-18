@@ -20,6 +20,10 @@ class HumanSessionStopTests(unittest.TestCase):
         self.assertEqual(args.minutes, 90)
         self.assertEqual(args.max_visits, 0)
         self.assertEqual(parse_args(["train", "--max-visits", "4"]).max_visits, 4)
+        self.assertTrue(parse_args(["train", "--timing-trace"]).timing_trace)
+        self.assertTrue(parse_args([
+            "train", "--timing-trace", "--timing-trace-calls"
+        ]).timing_trace_calls)
 
     def test_explicit_limit_and_time_limit_are_different_stop_reasons(self):
         ctx = dict(stage="MAIN", minutes=90, visits=48)

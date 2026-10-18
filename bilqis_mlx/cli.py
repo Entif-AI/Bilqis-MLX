@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 import json
 from pathlib import Path
 import sys
@@ -392,6 +393,10 @@ def parse_args(argv=None):
             p.add_argument("--steps-per-visit",type=int,default=16)
             p.add_argument("--max-visits",type=int,default=0,
                            help="Optional complete visit cap (default 0: use --minutes and disk reserve)")
+            p.add_argument("--timing-trace", action="store_true",
+                           help="Write a nanosecond host-function timing trace under runs/.timing-traces")
+            p.add_argument("--timing-trace-calls", action="store_true",
+                           help="Include C-call boundaries in --timing-trace (higher observer overhead)")
             p.add_argument("--batch-size",type=int,default=32)
             p.add_argument("--reserve-gib",type=float,default=100.)
             p.add_argument("--stagnation-grace-grade",type=str,default=None,
@@ -429,8 +434,51 @@ def _report_retention_plan(args):
     print("DEFAULT RETENTION PLAN, NO NEURAL UPDATES: "+str(settings), file=sys.stderr)
 
 
+def _timing_context(args):
+    if not args.timing_trace:
+        return None, nullcontext()
+    from .timing_trace import TimingTrace, default_trace_path
+    path = default_trace_path(args.run_dir)
+    context = TimingTrace(
+        path, package_root=Path(__file__).resolve().parent,
+        include_c_calls=args.timing_trace_calls,
+        metadata={
+            "run_dir": str(args.run_dir),
+            "max_visits": args.max_visits,
+            "steps_per_visit": args.steps_per_visit,
+            "batch_size": args.batch_size,
+        })
+    return path, context
+
+
+def _report_timing_trace(path, *, stream):
+    if path is not None and Path(path).exists():
+        print("Timing trace: " + str(path), file=stream, flush=True)
+
+
+def _prepare_live_board(args, build, ingest):
+    visual = sys.stdout.isatty()
+    board = build(args.run_dir, reserve_gib=args.reserve_gib) if visual else None
+    def on_event(event):
+        ingest(board, event)
+        if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
+            board.mode = "LIVE"
+            board.state["stop"] = "RUNNING"
+        board.draw()
+    if board is not None:
+        board.mode = "RESUMING" if args.resume else "STARTING"
+        board.state["stop"] = "PREPARING"
+        system_rows = board.rows["SYSTEM & QUALIFICATION"]
+        previous = [row for row in system_rows if row.get("kind") != "STOP"]
+        system_rows.clear()
+        system_rows.extend(previous)
+        board.draw()
+    return board, on_event if visual else None
+
+
 def main(argv=None):
     args=parse_args(argv)
+    trace_path = None
     try:
         if args.action=="status":return status(args.run_dir)
         if args.action=="dashboard":return dashboard(args.run_dir)
@@ -456,55 +504,43 @@ def main(argv=None):
             raise ValueError("HUMAN_TRAINER_EXTERNAL_SOURCE_ROOT_FORBIDDEN")
         from .grade_a_trainer import operate, operator_view
         from .grade_a_dashboard import build, ingest
-        # Interactive training owns the dashboard in its *own* terminal.
-        # Non-TTY operators continue to receive machine-readable events.
-        visual = sys.stdout.isatty()
-        board = build(args.run_dir, reserve_gib=args.reserve_gib) if visual else None
-        def on_event(event):
-            ingest(board, event)
-            if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
-                board.mode = "LIVE"
-                board.state["stop"] = "RUNNING"
-            board.draw()
-        if board is not None:
-            # Replay is historical evidence, not the state of this invocation.
-            # The previous TIME_LIMIT_REACHED must not impersonate a new stop.
-            board.mode = "RESUMING" if args.resume else "STARTING"
-            board.state["stop"] = "PREPARING"
-            system_rows = board.rows["SYSTEM & QUALIFICATION"]
-            previous = [row for row in system_rows if row.get("kind") != "STOP"]
-            system_rows.clear()
-            system_rows.extend(previous)
-            board.draw()
-        with operator_view(on_event if visual else None):
+        board, on_event = _prepare_live_board(args, build, ingest)
+        with operator_view(on_event):
             legacy_root, original_checkpoint = _source_paths(args.legacy_code_root, args.champion_checkpoint)
-            result = operate(
-                args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
-                resume=args.resume, minutes=args.minutes,
-                steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
-                batch_size=args.batch_size, reserve_gib=args.reserve_gib,
-                numeric_staircase=args.numeric_staircase,
-                retention_enabled=not args.no_retention,
-                experiment_probe_each=args.experiment_probe_each,
-                experiment_mature_max_loss=args.experiment_mature_max_loss,
-                experiment_introduction_extra_loss=args.experiment_introduction_extra_loss,
-                experiment_protected_cap_limit=args.experiment_protected_cap_limit,
-                stagnation_grace_grade=args.stagnation_grace_grade,
-                stagnation_grace_steps=args.stagnation_grace_steps)
+            trace_path, timing_context = _timing_context(args)
+            with timing_context:
+                result = operate(
+                    args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
+                    resume=args.resume, minutes=args.minutes,
+                    steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
+                    batch_size=args.batch_size, reserve_gib=args.reserve_gib,
+                    numeric_staircase=args.numeric_staircase,
+                    retention_enabled=not args.no_retention,
+                    experiment_probe_each=args.experiment_probe_each,
+                    experiment_mature_max_loss=args.experiment_mature_max_loss,
+                    experiment_introduction_extra_loss=args.experiment_introduction_extra_loss,
+                    experiment_protected_cap_limit=args.experiment_protected_cap_limit,
+                    stagnation_grace_grade=args.stagnation_grace_grade,
+                    stagnation_grace_steps=args.stagnation_grace_steps)
+            if trace_path is not None:
+                result["timing_trace_file"] = str(trace_path)
         if board is not None:
             board = build(args.run_dir, reserve_gib=args.reserve_gib)
             board.mode = "STOPPED | " + result["stop_reason"]
             board.draw()
             print("\n" + human_stop_summary(result), flush=True)
+            _report_timing_trace(result.get("timing_trace_file"), stream=sys.stdout)
             return 0
         return _print_status(result)
     except KeyboardInterrupt:
         print("HUMAN TRAINING INTERRUPTED: the last completed visit/checkpoint "
               "remains the resume point. Run npm run train -- --human-run --resume.",
               file=sys.stderr)
+        _report_timing_trace(trace_path, stream=sys.stderr)
         return 130
     except (ValueError,RuntimeError,OSError,KeyError,IndexError) as err:
         print("OPERATOR BLOCKED: "+str(err),file=sys.stderr)
+        _report_timing_trace(trace_path, stream=sys.stderr)
         if "HUMAN_TRAINER_NEW_RUN_HAS_EXISTING_CONTENT" in str(err):
             print("Saved school exists. To continue it, use: "
                   "npm run train -- --human-run --resume --minutes 90", file=sys.stderr)
