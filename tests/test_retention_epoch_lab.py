@@ -202,13 +202,15 @@ class MentorEpochTests(unittest.TestCase):
             receipt = {"mentor_epoch": epoch,
                        "grade_soups": {"B": {"vote_count": 6}}}
             with (patch.object(trainer, "_frozen_confidence_champions",
-                               side_effect=AssertionError("archived champion loaded")),
+                               return_value=()) as fresh_champs,
                   patch.object(trainer, "_frozen_grade_soup_votes",
-                               side_effect=AssertionError("archived soup loaded")),
+                               return_value=((), ())) as fresh_soups,
                   patch.object(trainer, "_cached_frozen_champion",
                                return_value=({"synthetic": "weights"}, graph))):
                 champions, soups, receipts = trainer._mentor_sources_for_visit(
                     root, receipt, "C", graph, 3)
+            self.assertEqual(fresh_champs.call_args.args[1]["graduation_perfect"], {})
+            self.assertEqual(fresh_soups.call_args.args[1]["grade_soups"], {})
         self.assertEqual(soups, ())
         self.assertEqual(receipts, ())
         self.assertEqual(len(champions), 1)

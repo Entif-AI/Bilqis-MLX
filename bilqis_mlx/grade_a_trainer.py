@@ -39,6 +39,11 @@ from .learning_experiment import (
     earlier_grade_capabilities, select_source_lesson, sampled_protection,
 )
 from .whole_student_retention import advance_peaks
+from .epoch_championships import (
+    active_frontier as epoch_active_frontier,
+    needed_incumbents as epoch_needed_incumbents,
+    advance_epoch as advance_championship_epoch,
+)
 from .capability_frontier import (
     candidate_roles, graduation_perfect, historical_frontier, pinned, promote,
     recover_graduation_breadth, retire_bundles,
@@ -320,26 +325,20 @@ def _frozen_confidence_champions(run_dir, receipt, grade, graph):
 
 
 def _mentor_sources_for_visit(run_dir, receipt, grade, graph, grade_count):
-    """Use historic advice normally; an explicit trial epoch uses qualified models.
-
-    Nothing retires the archived champions or soups. A newly admitted grade
-    may elect to use one frozen post-admission whole student instead of the
-    unqualified historical soup recipe. This opt-in is NOT installed on an
-    existing student merely because a newer source branch exists.
-    """
+    """Select only current-epoch champions and soups after curriculum reset."""
     epoch = receipt.get("mentor_epoch")
     if epoch is None:
         return (_frozen_confidence_champions(run_dir, receipt, grade, graph),
                 *_frozen_grade_soup_votes(run_dir, receipt, grade, grade_count))
-    from .mentor_epoch import active_adviser_checkpoints
     if epoch.get("source_graph_sha256") != _fingerprint(graph):
         raise ValueError("MENTOR_EPOCH_SOURCE_GRAPH_DRIFT")
-    mentors = []
-    exam = receipt.get("last_exam") or {}
-    for pointer in active_adviser_checkpoints(
-            epoch, cohort_sha256=exam.get("cohort_sha256"),
-            scope_sha256=exam.get("assessment_scope_sha256"),
-            rubric_sha256=exam.get("exam_rubric_sha256")):
+    active = {"graduation_perfect": epoch_active_frontier(epoch),
+              "grade_soups": epoch.get("active_grade_soups", {})}
+    mentors = list(_frozen_confidence_champions(run_dir, active, grade, graph))
+    # The one original baseline is initial scaffolding only. It cannot
+    # masquerade as several earned votes and yields to earned grade champions.
+    if not mentors:
+        pointer = epoch["baseline"]
         path = run_dir / pointer["filename"]
         if (path.parent != run_dir / "bundles" or path.is_symlink() or
                 not pointer["filename"].startswith("bundles/")):
@@ -352,13 +351,15 @@ def _mentor_sources_for_visit(run_dir, receipt, grade, graph, grade_count):
             raise ValueError("MENTOR_EPOCH_REFERENCE_GRAPH_DRIFT")
         mentors.append({"weights": weights, "graph": graph, "breadth": 1,
                         "checkpoint_sha256": pointer["sha256"]})
-    return tuple(mentors), (), ()
+    soups, receipts = _frozen_grade_soup_votes(
+        run_dir, active, grade, grade_count)
+    return tuple(mentors), soups, receipts
 
 
 def _cook_new_grade_soups(mx, run_dir, receipt, frontier, course, graph,
-                          *, reserve_gib):
+                          *, reserve_gib, existing=None):
     """Freeze newly broader or displaced grade-champion weight recipes."""
-    current = dict(receipt.get("grade_soups", {}))
+    current = dict(receipt.get("grade_soups", {}) if existing is None else existing)
     refreshed = []
     for grade in course.grades:
         plan = grade_soup_recipe(
@@ -944,9 +945,30 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor):
             receipt.get("curriculum_mode") != LIVE_RELEASE):
         raise ValueError("HUMAN_TRAINER_GRADE_B_ADMISSION_BOUNDARY_NOT_MET")
     next_state = append_next_grade(previous_course, successor, school)
+    from .mentor_epoch import begin_epoch
+    exam = receipt.get("last_exam") or {}
+    prior_caps = tuple(cap.id for grade in previous_course.grades
+                       for cap in grade.capabilities)
+    epoch = begin_epoch(
+        previous_graduate=asdict(school.current_student),
+        admitted_baseline=asdict(next_state.current_student),
+        introduced_grade=successor.grades[-1].id,
+        source_graph_sha256=receipt["semantic_graph_sha256"],
+        previous_capabilities=prior_caps,
+        previous_graduation_exam={
+            "checkpoint_sha256": exam.get("student_sha256"),
+            "rubric_sha256": exam.get("exam_rubric_sha256"),
+            "cohort_sha256": exam.get("cohort_sha256"),
+            "scores": exam.get("scores"),
+        })
+    history = list(receipt.get("championship_epoch_history", ()))
+    if receipt.get("mentor_epoch") is not None:
+        history.append(receipt["mentor_epoch"])
     candidate = {**receipt, "curriculum_mode": B_RELEASE,
                  "live_rubric_sha256": successor.grades[-1].assessment_sha256,
-                 "grade_b_code_sha256": b_constructor_digest()}
+                 "grade_b_code_sha256": b_constructor_digest(),
+                 "mentor_epoch": epoch,
+                 "championship_epoch_history": history}
     record = _advance(run_dir, candidate, next_state, result="ACTIVE_GRADE_B",
                       persist=False)
     admitted = {"event": "SCHOOL_GRADE_B_COURSE_ADMITTED",
@@ -956,6 +978,8 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor):
                       "student_sha256": school.current_student.sha256,
                       "optimizer_step": school.current_student.optimizer_step,
                       "teacher_events": record["teacher"]["events"],
+                      "championship_baseline_sha256": epoch["baseline"]["sha256"],
+                      "archived_championship_epochs": len(history),
                       "grade_b_rubric": successor.grades[-1].assessment_sha256,
                       "grade_b_generator": B_GENERATOR,
                       "model_and_own_adamw_unchanged": True}
@@ -968,7 +992,31 @@ def _mentor_epoch_references(receipt):
     if receipt.get("mentor_epoch") is None:
         return ()
     from .mentor_epoch import reference_checkpoints
-    return reference_checkpoints(receipt["mentor_epoch"])
+    epochs = (*receipt.get("championship_epoch_history", ()), receipt["mentor_epoch"])
+    return tuple(pointer for epoch in epochs
+                 for pointer in (
+                     *reference_checkpoints(epoch),
+                     *(item["checkpoint"] for item in epoch_active_frontier(epoch).values())))
+
+
+def _verify_frozen_soup_custody(run_dir, receipt):
+    """Verify both archived and earned soups without blending their rosters."""
+    epoch_soups = (entry.get("active_grade_soups", {})
+                   for entry in (*receipt.get("championship_epoch_history", ()),
+                                 receipt["mentor_epoch"])
+                   ) if receipt.get("mentor_epoch") is not None else ()
+    for grade, soup in (*receipt.get("grade_soups", {}).items(),
+                        *(pair for soups in epoch_soups for pair in soups.items())):
+        if grade != soup.get("grade"):
+            raise ValueError("GRADE_SOUP_CUSTODY_GRADE_DRIFT")
+        verify_frozen_soup(run_dir, soup)
+        if soup.get("previous"):
+            older = soup["previous"] if isinstance(soup["previous"], list) else [soup["previous"]]
+            for old in older:
+                previous = run_dir / old["filename"]
+                if (previous.parent != run_dir / "soups" or previous.is_symlink() or
+                        not previous.is_file() or digest_file(previous) != old["sha256"]):
+                    raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
 
 
 def _verify_best_custody(run_dir, receipt):
@@ -1013,17 +1061,7 @@ def _verify_best_custody(run_dir, receipt):
                     (manifest["safetensors_sha256"] != ref["sha256"] or
                      manifest["optimizer_step"] != ref["optimizer_step"])):
                 raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_REFERENCE_DRIFT")
-    for grade, soup in receipt.get("grade_soups", {}).items():
-        if grade != soup.get("grade"):
-            raise ValueError("GRADE_SOUP_CUSTODY_GRADE_DRIFT")
-        verify_frozen_soup(run_dir, soup)
-        if soup.get("previous"):
-            older = soup["previous"] if isinstance(soup["previous"], list) else [soup["previous"]]
-            for old in older:
-                previous = run_dir / old["filename"]
-                if (previous.parent != run_dir / "soups" or previous.is_symlink() or
-                        not previous.is_file() or digest_file(previous) != old["sha256"]):
-                    raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
+    _verify_frozen_soup_custody(run_dir, receipt)
 
 
 def _advance(run_dir, old: dict, school: SchoolState, *,
@@ -1777,6 +1815,55 @@ def _compare_incumbents(mx, run_dir, receipt, cohort, config, answer_ids, graph)
     return frontier, comparisons
 
 
+def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
+                               cohort, scores, graph):
+    """Re-examine only potentially displaced epoch incumbents on these rows."""
+    epoch = receipt["mentor_epoch"]
+    if epoch["source_graph_sha256"] != _fingerprint(graph):
+        raise ValueError("CHAMPIONSHIP_EPOCH_SOURCE_GRAPH_DRIFT")
+    grades = {grade.id: tuple(cap.id for cap in grade.capabilities)
+              for grade in course.grades}
+    requested = epoch_needed_incumbents(epoch, grades=grades, scores=scores)
+    scope = assessment_capabilities(course, school)
+    if set(scores) != set(scope):
+        raise ValueError("CHAMPIONSHIP_EPOCH_INCOMPLETE_EXAM")
+    rubric, _, _, _ = _cohort_contract(course)
+    context = {
+        "cohort_sha256": cohort.digest,
+        "rubric_sha256": rubric,
+        "assessment_scope_sha256": _fingerprint(scope),
+        "source_graph_sha256": _fingerprint(graph),
+        "source_oracle_sha256": receipt["source_manifest_sha256"],
+    }
+    challenger = {**context, "checkpoint": asdict(school.current_student),
+                  "scores": scores}
+    incumbents = {}
+    for sha, pointer in sorted(requested.items()):
+        if sha == school.current_student.sha256:
+            incumbents[sha] = challenger
+            continue
+        path = run_dir / pointer["filename"]
+        if (path.is_symlink() or path.parent != run_dir / "bundles" or
+                not pointer["filename"].startswith("bundles/")):
+            raise ValueError("CHAMPIONSHIP_EPOCH_UNSAFE_INCUMBENT")
+        weights, own_adamw, meta, loaded_graph = load_semantically_bound_bundle(path)
+        if (meta["safetensors_sha256"] != sha or
+                meta["optimizer_step"] != pointer["optimizer_step"] or
+                loaded_graph != graph):
+            raise ValueError("CHAMPIONSHIP_EPOCH_INCOMPARABLE_INCUMBENT_GRAPH")
+        del own_adamw
+        predictions = _predictions(
+            mx, weights, tuple(cohort.rows), receipt["config"],
+            receipt["answer_ids"])
+        measured = score_cohort(cohort, predictions, pointer)
+        if set(measured["scores"]) != set(scope):
+            raise ValueError("CHAMPIONSHIP_EPOCH_INCUMBENT_INCOMPLETE")
+        incumbents[sha] = {**context, "checkpoint": dict(pointer),
+                           "scores": measured["scores"]}
+        del weights
+    return grades, challenger, incumbents
+
+
 def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
                            cohort, predictions, parameters, optimizer, graph, *,
                            reserve_gib):
@@ -1854,8 +1941,11 @@ def _boundary_delivery_events(record, pending, roles, exam_event):
     if exam_event is not None:
         # A freshly enrolled numeric staircase intentionally has no prior
         # grade examination. A stop-boundary candidate comparison is valid.
+        active_soups = (record["mentor_epoch"].get("active_grade_soups", {})
+                        if record.get("mentor_epoch") is not None
+                        else record.get("grade_soups", {}))
         for grade in (record.get("last_exam") or {}).get("grade_soups_refreshed", ()):
-            snapshot = record["grade_soups"][grade]
+            snapshot = active_soups[grade]
             for shard in soup_shards(snapshot):
                 event = {
                     "event": "SCHOOL_GRADE_SOUP_FROZEN",
@@ -1984,7 +2074,10 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
         _record(run_dir, {"event": "SCHOOL_CHECKPOINTS_RETIRED", "grade": active_grade,
                           "generation": record["generation"],
                           "count": len(removed), "protected_count": len(retained)})
-    retired_soups = retire_stale_soups(run_dir, record.get("grade_soups", {}))
+    # The old frozen recipes are unique experiment evidence, not debris.
+    # Do not delete either historical or new-epoch soup bytes from this fork.
+    retired_soups = (retire_stale_soups(run_dir, record.get("grade_soups", {}))
+                     if record.get("mentor_epoch") is None else ())
     if retired_soups:
         _record(run_dir, {"event": "SCHOOL_OLD_GRADE_SOUPS_RETIRED",
                           "generation": record["generation"],
@@ -2099,11 +2192,28 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     advanced = assess(course, school, assessment)
     scores = {k: {"correct": v.correct, "total": v.total}
               for k, v in assessment.scores.items()}
-    perfect, perfect_roles = graduation_perfect(
-        receipt.get("graduation_perfect", {}), scores, rubric, cohort.digest,
-        asdict(school.current_student), assessment.evaluation_id)
-    frozen_soups, soup_changes = _cook_new_grade_soups(
-        mx, run_dir, receipt, perfect, course, graph, reserve_gib=reserve_gib)
+    epoch = receipt.get("mentor_epoch")
+    championship_decisions = ()
+    if epoch is None:
+        perfect, perfect_roles = graduation_perfect(
+            receipt.get("graduation_perfect", {}), scores, rubric, cohort.digest,
+            asdict(school.current_student), assessment.evaluation_id)
+        frozen_soups, soup_changes = _cook_new_grade_soups(
+            mx, run_dir, receipt, perfect, course, graph, reserve_gib=reserve_gib)
+    else:
+        grades, challenger, incumbents = _epoch_paired_examinations(
+            mx, run_dir, receipt, course, school, cohort, scores, graph)
+        epoch, perfect_roles, championship_decisions = advance_championship_epoch(
+            epoch, grades=grades, challenger_exam=challenger,
+            incumbent_exams=incumbents)
+        new_soups, soup_changes = _cook_new_grade_soups(
+            mx, run_dir, receipt, epoch_active_frontier(epoch), course, graph,
+            existing=epoch.get("active_grade_soups", {}), reserve_gib=reserve_gib)
+        epoch["active_grade_soups"] = new_soups
+        # Keep all original champion/grade-soup evidence immutable in the
+        # archival state fields. Only the epoch earns new active roles.
+        perfect = receipt.get("graduation_perfect", {})
+        frozen_soups = receipt.get("grade_soups", {})
     last_exam = {
         "assessment_grade": school.grade,
         "grade_exam_epoch": school.grade_exam_epoch,
@@ -2117,6 +2227,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "candidate_cohort_sha256": candidate_cohort.digest,
         "graduation_perfect_roles": list(perfect_roles),
         "grade_soups_refreshed": list(soup_changes),
+        "championship_decisions": list(championship_decisions),
         "generator_version": generator,
         "incumbent_comparisons": compared,
         "misses_for_teacher": list(measured["misses_for_teacher"]),
@@ -2159,6 +2270,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                         "teacher_miss_exposures": miss_exposures,
                         "legacy_frontier_pending_replay": False,
                         "live_rubric_sha256": assessment.rubric_digest}
+    if epoch is not None:
+        migrated_receipt["mentor_epoch"] = epoch
     migrated_receipt.pop("teacher_miss_cursor", None)
     result = _advance(
         run_dir, migrated_receipt, advanced, frontier=frontier,
@@ -2191,6 +2304,14 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "teacher_outcomes": teacher_outcomes,
         "whole_student_retention": retention_status,
     }
+    if epoch is not None:
+        exam_event["championship_epoch"] = {
+            "baseline_sha256": epoch["baseline"]["sha256"],
+            "earned_roles": list(perfect_roles),
+            "active_role_count": len(epoch.get("active_roles", {})),
+            "active_soup_grades": sorted(epoch.get("active_grade_soups", {})),
+            "cross_origin_decisions": list(championship_decisions),
+        }
     result = _persist(run_dir, _with_delivery_outbox(
         result, _boundary_delivery_events(result, pending, roles, exam_event)))
     _publish_boundary(run_dir, result, pending, roles, exam_event=exam_event)

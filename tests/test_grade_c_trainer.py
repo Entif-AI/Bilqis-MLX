@@ -78,6 +78,8 @@ class GradeCTrainerTests(unittest.TestCase):
             live_rubric_sha256=self.previous.grades[-1].assessment_sha256,
             teacher=json.loads(json.dumps(self.teacher)),capability_best={},
             last_exam=dict(student_sha256=pointer.sha256,optimizer_step=pointer.optimizer_step,
+                cohort_sha256="c"*64,
+                exam_rubric_sha256=self.previous.grades[-1].assessment_sha256,
                 scores={c.id: {"correct":12,"total":12} for g in self.previous.grades for c in g.capabilities}))
 
     def test_c_resume_selects_the_exact_historical_parent_release(self):

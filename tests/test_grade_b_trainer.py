@@ -75,6 +75,14 @@ class GradeBTrainerTests(unittest.TestCase):
         return school
 
     def _receipt(self, school, pointer, **extra):
+        graduate_exam = ({
+            "student_sha256": pointer.sha256,
+            "optimizer_step": pointer.optimizer_step,
+            "cohort_sha256": "c" * 64,
+            "exam_rubric_sha256": self.a_course.grades[0].assessment_sha256,
+            "scores": {cap.id: {"correct": 12, "total": 12}
+                       for cap in self.a_course.grades[0].capabilities},
+        } if school.stage == "AWAITING_NEXT_GRADE" else None)
         return {"schema": VERSION, "generation": 1, "run_id": "disposable-fixture",
                 "accepted_authority": AUTHORITY,
                 "source_manifest_sha256": self.manifest["manifest_sha256"],
@@ -82,8 +90,10 @@ class GradeBTrainerTests(unittest.TestCase):
                 "school": asdict(school), "model_bundle": pointer.filename,
                 "curriculum_mode": self.a_course.version,
                 "live_rubric_sha256": self.a_course.grades[0].assessment_sha256,
+                "semantic_graph_sha256":
+                    self.manifest["parent_student"]["full_student_graph_sha256"],
                 "teacher": json.loads(json.dumps(self.teacher)),
-                "capability_best": {}, "last_exam": None,
+                "capability_best": {}, "last_exam": graduate_exam,
                 "result": "GRADE_A_MASTERED_AWAITING_GRADE_B", **extra}
 
     def test_grade_b_transition_preserves_student_optimizer_teacher_and_generations(self):
@@ -212,6 +222,7 @@ class GradeBTrainerTests(unittest.TestCase):
             with (patch("bilqis_mlx.grade_a_trainer.load_semantically_bound_bundle",
                         return_value=(params,optimizer,fake_meta,graph)),
                   patch("bilqis_mlx.grade_a_trainer._verify_best_custody"),
+                  patch("bilqis_mlx.grade_a_trainer._verify_saved_cohort"),
                   patch("bilqis_mlx.grade_a_trainer._publish_boundary"),
                   redirect_stdout(io.StringIO())):
                 saved_params, saved_optimizer, saved_graph, recovered = _resume(
@@ -429,14 +440,18 @@ class GradeBTrainerTests(unittest.TestCase):
                 self.assertEqual(sum(s["total"] for s in exam["scores"].values()),144)
                 self.assertTrue(all(s["correct"] == s["total"] for s in exam["scores"].values()))
                 self.assertEqual(len(exam["cohort_sha256"]),64)
-                self.assertEqual(set(receipt["grade_soups"]), {"A", "B"})
+                # A's old champion resets to an unvoted baseline on B
+                # admission. An equal whole-school score cannot promote
+                # it as a newly earned cross-origin A soup.
+                active_soups = receipt["mentor_epoch"]["active_grade_soups"]
+                self.assertEqual(set(active_soups), {"B"})
                 soup_shas = {grade: entry["sha256"]
-                             for grade, entry in receipt["grade_soups"].items()}
+                             for grade, entry in active_soups.items()}
                 self.assertEqual({entry["vote_count"] for entry in
-                                  receipt["grade_soups"].values()}, {6})
+                                  active_soups.values()}, {6})
                 if first_grade_soups is None:
                     first_grade_soups = soup_shas
-                    self.assertEqual(set(exam["grade_soups_refreshed"]), {"A", "B"})
+                    self.assertEqual(set(exam["grade_soups_refreshed"]), {"B"})
                 else:
                     self.assertEqual(soup_shas, first_grade_soups)
                     self.assertEqual(exam["grade_soups_refreshed"], [])
@@ -465,12 +480,12 @@ class GradeBTrainerTests(unittest.TestCase):
             self.assertEqual(len(b_visits), 12)
             with_soups = [e for e in events if e.get("event") ==
                           "SCHOOL_GRADE_SOUP_FROZEN"]
-            self.assertEqual(len(with_soups), 2)
-            self.assertEqual({e["grade"] for e in with_soups}, {"A", "B"})
+            self.assertEqual(len(with_soups), 1)
+            self.assertEqual({e["grade"] for e in with_soups}, {"B"})
             for event in b_visits[6:]:
                 votes = {v["soup_grade"]: v["effective_votes"] for v in
                          event["champion_confidence"]["frozen_grade_soups"]}
-                self.assertEqual(votes, {"A": 3.0, "B": 6.0})
+                self.assertEqual(votes, {"B": 6.0})
             for event in b_visits:
                 evidence = event["lesson_methodology"]
                 decision = event["teacher_decision"]
@@ -503,9 +518,10 @@ class GradeBTrainerTests(unittest.TestCase):
                 self.assertTrue(any(f["signal"] == LearningSignal.CHANCE_LEVEL_OR_LAGGING and
                                     f["target"] == "GRADE" for f in warnings["findings"]))
                 self.assertEqual(len(event["teacher_outcomes"]), 6)
-                expected_attribution = (
-                    OutcomeAttribution.NOT_MEASURED_NO_FIXED_BASELINE if index == 0 else
-                    OutcomeAttribution.NOT_MEASURED_CHANGED_EXAM)
+                # The complete Grade A graduation proof is now bound to
+                # admission. Its older cohort cannot be scored as a B exam
+                # baseline, so even the first B visit reports changed exam.
+                expected_attribution = OutcomeAttribution.NOT_MEASURED_CHANGED_EXAM
                 self.assertEqual({outcome["attribution"] for outcome in event["teacher_outcomes"]},
                                  {expected_attribution})
             self.assertEqual(receipt["last_exam"]["learning_diagnostics"],

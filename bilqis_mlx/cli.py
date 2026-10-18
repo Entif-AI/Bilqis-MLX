@@ -92,6 +92,25 @@ def _inspect(run_dir: Path) -> dict:
                         else "NOT_MEASURED"),
                 },
                 "champion_pointer_count": len(school["champions"]),
+                "championship_epoch": ({
+                    "introduced_grade": saved["mentor_epoch"]["introduced_grade"],
+                    "baseline_sha256": saved["mentor_epoch"]["baseline"]["sha256"],
+                    "baseline_optimizer_step":
+                        saved["mentor_epoch"]["baseline"]["optimizer_step"],
+                    "earned_active_roles":
+                        len(saved["mentor_epoch"].get("active_roles", {})),
+                    "active_soup_votes": {
+                        grade: item["vote_count"]
+                        for grade, item in saved["mentor_epoch"].get(
+                            "active_grade_soups", {}).items()},
+                    "archived_champion_roles":
+                        len(saved.get("graduation_perfect", {})),
+                    "archived_soup_grades":
+                        sorted(saved.get("grade_soups", {})),
+                    "legacy_mid_grade_activation":
+                        saved["mentor_epoch"].get("experimental_refresh") ==
+                        "MID_GRADE_FROZEN_CURRENT_STUDENT",
+                } if saved.get("mentor_epoch") is not None else None),
                 "capability_best_pointer_count": len(saved.get("capability_best", {})),
                 "capability_best_bundle_count": len({
                     item["checkpoint"]["sha256"]

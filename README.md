@@ -16,6 +16,18 @@ npm run train -- --human-run --resume --minutes 90
 
 The first command is **read-only** and reports blockers. Only the second, explicitly run by the human, makes neural updates. Both use the default `runs/school-mlx-v1` and the internal historical oracle files. No `--legacy-code-root` flag, another checkout or checkpoint clone is needed. The actual progress and optimizer step always come from the latest `runs/school-mlx-v1/state.json`, not from dated documentation.
 
+## Resume the existing isolated championship experiment
+
+The issue #340 trial is already isolated under `~/Code/bilqis-mlx-retention-lab`. **Continue its existing complete student and own AdamW. Do not make another 8 GB fork or discard its earlier 80 optimizer steps.** The historical champion and soup checkpoints remain archived. The current-epoch baseline advises until current-grade champions are earned; only newly earned grade soups advise across grade boundaries. Cross-origin takeover requires a perfect entire target grade and strict same-cohort cumulative school superiority.
+
+```bash
+cd ~/Code/bilqis-mlx-retention-lab
+npm run train -- --dry-run --resume --verify-source --run-dir ./runs/issue-340-mentor-epoch-trial
+npm run train -- --human-run --resume --minutes 15 --run-dir ./runs/issue-340-mentor-epoch-trial
+```
+
+The human alone starts the second command. Run it only from the experiment branch after its tests pass and the first command reports no blockers. It resumes the saved optimizer, not a checkpoint at a lower step. The trial was first activated mid-Grade-C; **it tests forward learning with the corrected championship policy, not a replay of the historical B-to-C admission event**. Evaluate retained A/B mastery, newly earned C roles, cross-origin role eligibility, grade-soup ingredients, whole-school scores and teacher outcomes before deciding whether to keep or discard the trial. Keep the existing original and experimental runs intact until that decision.
+
 **Retention is the default for every training launch and resume.** The former `--experimental-retention` opt-in is no longer needed (older commands remain accepted for compatibility). Existing protected student/AdamW lineages keep their recorded policy and cannot be resumed without retention. To deliberately run the older, unprotected teaching path for an **independent** experiment, supply `--no-retention` with a distinct explicit `--run-dir`; this cannot turn off protection for `runs/school-mlx-v1/`. An opt-out is never inferred from an omitted flag. Retention rejects locally non-improving candidates and preserves matching AdamW; whole-student regressions can still occur.
 
 ```bash

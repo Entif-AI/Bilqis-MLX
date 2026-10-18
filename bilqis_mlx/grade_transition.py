@@ -214,6 +214,23 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
     import uuid
     pointer = _bundle_pointer(run_dir, "numeric-admission-"+uuid.uuid4().hex[:12],
         grown, own_optimizer, grown_graph, reserve_gib=reserve_gib)
+    from .mentor_epoch import begin_epoch
+    previous_caps = tuple(cap.id for grade in previous.grades
+                          for cap in grade.capabilities)
+    next_epoch = begin_epoch(
+        previous_graduate=asdict(school.current_student),
+        admitted_baseline=asdict(pointer), introduced_grade="C",
+        source_graph_sha256=_fingerprint(grown_graph),
+        previous_capabilities=previous_caps,
+        previous_graduation_exam={
+            "checkpoint_sha256": exam.get("student_sha256"),
+            "cohort_sha256": exam.get("cohort_sha256"),
+            "rubric_sha256": exam.get("exam_rubric_sha256"),
+            "scores": exam.get("scores"),
+        })
+    epoch_history = list(receipt.get("championship_epoch_history", ()))
+    if receipt.get("mentor_epoch") is not None:
+        epoch_history.append(receipt["mentor_epoch"])
     next_state = replace(next_state, current_student=pointer)
     maximum = numeric_maximum(successor)
     updated = {**receipt, "curriculum_mode": RELEASE,
@@ -224,12 +241,16 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         "config": {**receipt["config"], "vocab_size": len(grown_graph["tokens"]),
                    "answer_heads": answer_heads(grown_graph, maximum)},
         "live_rubric_sha256": successor.grades[-1].assessment_sha256}
+    updated["mentor_epoch"] = next_epoch
+    updated["championship_epoch_history"] = epoch_history
     record = _advance(run_dir, updated, next_state, model_bundle=pointer.filename,
                        result="ACTIVE_GRADE_C", persist=False)
     event = {"event": "SCHOOL_COURSE_ADMITTED", "grade": "C",
         "generation": record["generation"], "student_sha256": pointer.sha256,
         "optimizer_step": pointer.optimizer_step, "growth": growth,
         "previous_student_sha256": school.current_student.sha256,
+        "championship_baseline_sha256": pointer.sha256,
+        "archived_championship_epochs": len(epoch_history),
         "teacher_events": receipt["teacher"]["events"],
         "rubric": successor.grades[-1].assessment_sha256,
         "actual_neural_updates": 0}
