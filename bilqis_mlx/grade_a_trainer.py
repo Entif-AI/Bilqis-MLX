@@ -958,6 +958,13 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor):
     return record
 
 
+def _mentor_epoch_references(receipt):
+    if receipt.get("mentor_epoch") is None:
+        return ()
+    from .mentor_epoch import reference_checkpoints
+    return reference_checkpoints(receipt["mentor_epoch"])
+
+
 def _verify_best_custody(run_dir, receipt):
     school = receipt["school"]
     historical_pending = (receipt.get("historical_capability_best", {})
@@ -983,6 +990,9 @@ def _verify_best_custody(run_dir, receipt):
         if peak.get("schema") != "bilqis.mlx.whole-student-retention/v1":
             raise ValueError("WHOLE_STUDENT_PEAK_SCHEMA_DRIFT")
         source = peak["checkpoint"]
+        sources.append(source)
+        protected |= pinned({}, source, {})
+    for source in _mentor_epoch_references(receipt):
         sources.append(source)
         protected |= pinned({}, source, {})
     for name in sorted(protected):
@@ -1952,6 +1962,8 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
         retained |= pinned({}, record['curriculum_parent'], {})
     for peak in record.get("whole_student_peaks", ()):
         retained |= pinned({}, peak["checkpoint"], {})
+    for source in _mentor_epoch_references(record):
+        retained |= pinned({}, source, {})
     retained |= pinned(record.get("graduation_perfect", {}),
                        school["current_student"], school["champions"])
     for item in record.get("historical_grade_champions", {}).values():

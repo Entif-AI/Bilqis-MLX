@@ -28,6 +28,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 DESTINATION = ROOT / "runs" / "teacher-soup-parity-experiment"
 GiB = 1024**3
+APFS_PLATFORM_ERROR = "EXPERIMENT_APFS_CLONE_REQUIRES_MACOS"
 
 
 def digest(path: Path) -> str:
@@ -98,7 +99,7 @@ def source_operator_lock(source: Path):
 def clone_copy_on_write(source: Path, destination: Path):
     """Refuse unsupported clonefile, never fall back to an 8 GiB byte copy."""
     if sys.platform != "darwin":
-        raise ValueError("EXPERIMENT_APFS_CLONE_REQUIRES_MACOS")
+        raise ValueError(APFS_PLATFORM_ERROR)
     subprocess.run(["/bin/cp", "-cR", str(source), str(destination)], check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 
@@ -124,6 +125,7 @@ def disposition_plan(destination: Path) -> dict:
     return {"disposition": "AWAITING_HUMAN_KEEP_OR_DISCARD_DECISION",
             "fork": str(destination), "source": record["source"],
             "still_at_initial_checkpoint": unchanged,
+            "associated_experiment_assets": record.get("associated_experiment_assets", []),
             "initial_student_sha256": record["source_receipt"]["student_sha256"],
             "current_fork_student_sha256": fork["student_sha256"],
             "discard": "Retire the isolated fork only after confirming no unique trial evidence must survive",
@@ -150,7 +152,7 @@ def execute(source: Path, destination: Path, *, confirm=False, reserve_gib=100) 
     if not confirm:
         return report
     if sys.platform != "darwin":
-        raise ValueError("EXPERIMENT_APFS_CLONE_REQUIRES_MACOS")
+        raise ValueError(APFS_PLATFORM_ERROR)
     trainer_guard()
     with source_operator_lock(source):
         trainer_guard()

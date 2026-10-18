@@ -115,6 +115,23 @@ def active_adviser_checkpoints(epoch: dict, *, cohort_sha256: str | None = None,
     return (baseline,) if latest["sha256"] == baseline["sha256"] else (baseline, latest)
 
 
+def reference_checkpoints(epoch: dict) -> tuple[dict, ...]:
+    """Preserve *all* referenced whole models, not only the latest adviser.
+
+    A mentor can cease to qualify on a new cohort without becoming unowned
+    checkpoint data. Archive custody and active teaching eligibility differ.
+    """
+    active_adviser_checkpoints(epoch)
+    pointers = [_pointer(epoch["previous_graduate"]), _pointer(epoch["baseline"])]
+    pointers.extend(_pointer(item["checkpoint"]) for item in epoch["qualified"])
+    unique = {}
+    for pointer in pointers:
+        former = unique.setdefault(pointer["sha256"], pointer)
+        if former != pointer:
+            raise ValueError("MENTOR_EPOCH_CHECKPOINT_POINTER_CONFLICT")
+    return tuple(unique.values())
+
+
 def qualify_candidate(epoch: dict, candidate: dict, baseline_exam: dict,
                       candidate_exam: dict, *, mature_loss_budget: int) -> dict:
     """Trial-only mentor eligibility, not student admission or graduation.

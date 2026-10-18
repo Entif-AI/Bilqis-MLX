@@ -216,6 +216,20 @@ class MentorEpochTests(unittest.TestCase):
         self.assertEqual(champions[0]["checkpoint_sha256"],
                          self.extended_baseline["sha256"])
 
+    def test_epoch_references_survive_checkpoint_retirement(self):
+        record = {"generation": 4, "mentor_epoch": {**self.epoch,
+                  "qualified": [{"checkpoint": _pointer("f")}]},
+                  "school": {"active_grades": ["A", "B", "C"], "grade_index": 2,
+                             "current_student": _pointer("c"), "champions": {}},
+                  "capability_best": {}, "grade_soups": {}}
+        with (patch.object(trainer, "_boundary_delivery_events", return_value=()),
+              patch.object(trainer, "_quarantine_newer_uncommitted_bundles"),
+              patch.object(trainer, "retire_bundles", return_value=()) as retire,
+              patch.object(trainer, "retire_stale_soups", return_value=())):
+            trainer._publish_boundary(Path("/not-created"), record, (), ())
+        self.assertTrue({"bundles/a", "bundles/b", "bundles/f"} <=
+                        retire.call_args.args[1])
+
 
 if __name__ == "__main__":
     unittest.main()
