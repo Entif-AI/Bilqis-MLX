@@ -117,6 +117,83 @@ def _active_warnings(compact: list[dict]) -> list[dict]:
             for item in compact if item["status"] in active]
 
 
+def _paired_s3_score(target: str, capability: str,
+                     scores: dict) -> tuple[int, int] | None:
+    if target == DiagnosticTarget.CAPABILITY.value:
+        value = scores.get(capability)
+        if not isinstance(value, dict):
+            return None
+        return value.get("correct"), value.get("total")
+    if target != DiagnosticTarget.GRADE.value:
+        return None
+    members = [value for name, value in scores.items()
+               if name.split(".", 1)[0] == capability]
+    if not members:
+        return None
+    return (sum(value.get("correct", -1) for value in members),
+            sum(value.get("total", -1) for value in members))
+
+
+def _paired_s3_values_valid(parent: tuple[int, int] | None,
+                            current: tuple[int, int] | None) -> bool:
+    if parent is None or current is None:
+        return False
+    values = (*parent, *current)
+    return (all(type(value) is int and value >= 0 for value in values)
+            and parent[1] == current[1]
+            and 0 <= parent[0] <= parent[1]
+            and 0 <= current[0] <= current[1])
+
+
+def _mark_paired_s3_unavailable(finding: dict,
+                                current: tuple[int, int] | None,
+                                cohort_sha256: str, reason: str) -> None:
+    finding.update({
+        "status": DiagnosticStatus.NOT_MEASURED.value,
+        "scope": ObservationScope.SINGLE_COHORT.value,
+        "evidence_count": 0,
+        "observed_correct": current[0] if current else None,
+        "observed_total": current[1] if current else None,
+        "source_cohorts": (cohort_sha256,),
+        "trajectory": (),
+        "note": "Paired S3 unavailable: " + reason,
+    })
+
+
+def _paired_s3_note(delta: int, *, warning: bool,
+                    stable_perfect: bool) -> str:
+    if warning and delta == 0:
+        return "No positive retained gain versus immediate durable parent on this fresh shared cohort"
+    if warning:
+        return "Regression versus immediate durable parent on this fresh shared cohort"
+    if stable_perfect:
+        return "Perfect performance retained across distinct checkpoints on this fresh shared cohort"
+    return "Positive retained gain versus immediate durable parent on this fresh shared cohort"
+
+
+def _mark_paired_s3_measured(finding: dict, *,
+                             parent: tuple[int, int],
+                             current: tuple[int, int],
+                             parent_step: int, current_step: int,
+                             cohort_sha256: str) -> None:
+    delta = current[0] - parent[0]
+    stable_perfect = parent[0] == parent[1] and current[0] == current[1]
+    warning = current[0] < parent[0] or (delta == 0 and not stable_perfect)
+    finding.update({
+        "status": (DiagnosticStatus.OBSERVED_LONGITUDINALLY.value
+                   if warning else DiagnosticStatus.NOT_OBSERVED.value),
+        "scope": ObservationScope.FIXED_COHORT_CHECKPOINT_SERIES.value,
+        "evidence_count": 2,
+        "observed_correct": current[0],
+        "observed_total": current[1],
+        "source_cohorts": (cohort_sha256,),
+        "trajectory": ((parent_step, parent[0], parent[1]),
+                       (current_step, current[0], current[1])),
+        "note": _paired_s3_note(
+            delta, warning=warning, stable_perfect=stable_perfect),
+    })
+
+
 def apply_paired_checkpoint_s3(summary: dict, *, parent_scores: dict | None,
                                current_scores: dict, parent_sha256: str,
                                current_sha256: str, parent_step: int,
@@ -142,69 +219,27 @@ def apply_paired_checkpoint_s3(summary: dict, *, parent_scores: dict | None,
         unavailable_reason = "DIAGNOSTIC_PAIRED_S3_SAME_STEP_CHECKPOINT_CONFLICT"
         parent_scores = None
 
-    def score_for(target: str, capability: str, scores: dict) -> tuple[int, int] | None:
-        if target == DiagnosticTarget.CAPABILITY.value:
-            value = scores.get(capability)
-            if not isinstance(value, dict):
-                return None
-            return value.get("correct"), value.get("total")
-        if target == DiagnosticTarget.GRADE.value:
-            members = [value for name, value in scores.items()
-                       if name.split(".", 1)[0] == capability]
-            if not members:
-                return None
-            return (sum(value.get("correct", -1) for value in members),
-                    sum(value.get("total", -1) for value in members))
-        return None
-
     for finding in findings:
         if finding.get("signal") != LearningSignal.LACK_OF_DURABLE_GAIN.value:
             continue
-        current = score_for(finding.get("target"), finding.get("capability"), current_scores)
-        parent = (score_for(finding.get("target"), finding.get("capability"), parent_scores)
+        target, capability = finding.get("target"), finding.get("capability")
+        current = _paired_s3_score(target, capability, current_scores)
+        parent = (_paired_s3_score(target, capability, parent_scores)
                   if isinstance(parent_scores, dict) else None)
-        valid = (parent is not None and current is not None and
-                 all(type(value) is int and value >= 0 for value in (*parent, *current)) and
-                 parent[1] == current[1] and 0 <= parent[0] <= parent[1] and
-                 0 <= current[0] <= current[1])
+        valid = _paired_s3_values_valid(parent, current)
         if same_checkpoint:
             valid = False
             unavailable_reason = unavailable_reason or (
                 "Paired S3 needs two distinct complete student checkpoints")
         if not valid:
-            finding.update({
-                "status": DiagnosticStatus.NOT_MEASURED.value,
-                "scope": ObservationScope.SINGLE_COHORT.value,
-                "evidence_count": 0,
-                "observed_correct": current[0] if current else None,
-                "observed_total": current[1] if current else None,
-                "source_cohorts": (cohort_sha256,),
-                "trajectory": (),
-                "note": "Paired S3 unavailable: " + str(
-                    unavailable_reason or "parent checkpoint score evidence missing"),
-            })
+            _mark_paired_s3_unavailable(
+                finding, current, cohort_sha256,
+                str(unavailable_reason or "parent checkpoint score evidence missing"))
             continue
-        delta = current[0] - parent[0]
-        stable_perfect = (parent[0] == parent[1] and current[0] == current[1])
-        warning = current[0] < parent[0] or (delta == 0 and not stable_perfect)
-        finding.update({
-            "status": (DiagnosticStatus.OBSERVED_LONGITUDINALLY.value
-                       if warning else DiagnosticStatus.NOT_OBSERVED.value),
-            "scope": ObservationScope.FIXED_COHORT_CHECKPOINT_SERIES.value,
-            "evidence_count": 2,
-            "observed_correct": current[0],
-            "observed_total": current[1],
-            "source_cohorts": (cohort_sha256,),
-            "trajectory": ((parent_step, parent[0], parent[1]),
-                           (current_step, current[0], current[1])),
-            "note": ("No positive retained gain versus immediate durable parent on this fresh shared cohort"
-                     if warning and delta == 0 else
-                     "Regression versus immediate durable parent on this fresh shared cohort"
-                     if warning else
-                     "Perfect performance retained across distinct checkpoints on this fresh shared cohort"
-                     if stable_perfect else
-                     "Positive retained gain versus immediate durable parent on this fresh shared cohort"),
-        })
+        _mark_paired_s3_measured(
+            finding, parent=parent, current=current,
+            parent_step=parent_step, current_step=current_step,
+            cohort_sha256=cohort_sha256)
     updated = dict(summary)
     updated["findings"] = findings
     updated["active_warnings"] = _active_warnings(findings)

@@ -311,15 +311,21 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
     return _finish_grade_series(course, state, assessment, pointers)
 
 
-def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolState:
+def _verify_assessment_boundary(course: Course, state: SchoolState,
+                                snapshot: Assessment,
+                                pool: tuple[str, ...]) -> None:
     verify_state(course, state)
     if state.stage not in ("ASSESS_MAIN", "ASSESS_RECOVERY_1", "ASSESS_RECOVERY_2"):
         raise ValueError("ASSESSMENT_NOT_SCHEDULED_AT_DURABLE_BOUNDARY")
-    pool = _score_pool(course, state)
     snapshot.verify(state.current_student, course, pool)
     if (state.latest_rubric_digest is not None and
             state.latest_rubric_digest != snapshot.rubric_digest):
         raise ValueError("ASSESSMENT_RUBRIC_CHANGED_MID_COURSE")
+
+
+def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolState:
+    pool = _score_pool(course, state)
+    _verify_assessment_boundary(course, state, snapshot, pool)
     grade = next(g for g in course.grades if g.id == state.grade)
     if grade.teaching_stages and state.introduction_stage < len(grade.teaching_stages)-1:
         own = set(_main_queue(course, state))
@@ -367,9 +373,6 @@ def assess_withheld(course: Course, state: SchoolState, snapshot: Assessment,
     """
     if not withheld:
         return assess(course, state, snapshot)
-    verify_state(course, state)
-    if state.stage not in ("ASSESS_MAIN", "ASSESS_RECOVERY_1", "ASSESS_RECOVERY_2"):
-        raise ValueError("ASSESSMENT_NOT_SCHEDULED_AT_DURABLE_BOUNDARY")
     pool = _score_pool(course, state)
     blocked = tuple(dict.fromkeys(withheld))
     if (len(blocked) != len(withheld) or not set(blocked) <= set(pool)):
@@ -378,10 +381,7 @@ def assess_withheld(course: Course, state: SchoolState, snapshot: Assessment,
     if not active_pool:
         return replace(state, stage="DEFERRED_STAGNATION", queue=(),
                        first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
-    snapshot.verify(state.current_student, course, active_pool)
-    if (state.latest_rubric_digest is not None and
-            state.latest_rubric_digest != snapshot.rubric_digest):
-        raise ValueError("ASSESSMENT_RUBRIC_CHANGED_MID_COURSE")
+    _verify_assessment_boundary(course, state, snapshot, active_pool)
 
     grade = next(g for g in course.grades if g.id == state.grade)
     current_caps = set(_caps(course, (state.grade,)))

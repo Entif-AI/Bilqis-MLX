@@ -224,6 +224,13 @@ def observe_binary_exam(cohort: dict, last_exam: dict) -> ExamObservation:
     return observe_exam(cohort, last_exam)
 
 
+def _require_run_id(receipt: dict) -> str:
+    run_id = receipt.get("run_id")
+    if not isinstance(run_id, str) or not run_id:
+        raise ValueError("DIAGNOSTIC_STATE_RUN_ID_MISSING")
+    return run_id
+
+
 def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObservation:
     """Read existing immutable run files without model import or writes."""
     root = Path(run_dir).resolve(strict=True)
@@ -263,11 +270,10 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
         if (type(generation) is not int or generation < 0 or
                 path.name != f"{generation:07d}.json"):
             raise ValueError("DIAGNOSTIC_STATE_GENERATION_DRIFT")
-    if not isinstance(receipt.get("run_id"), str) or not receipt["run_id"]:
-        raise ValueError("DIAGNOSTIC_STATE_RUN_ID_MISSING")
+    run_id = _require_run_id(receipt)
     return replace(observe_exam(
         json.loads(cohort_file.read_text(encoding="utf-8")), exam),
-        run_id=receipt["run_id"], lineage_id=_receipt_lineage_id(receipt))
+        run_id=run_id, lineage_id=_receipt_lineage_id(receipt))
 
 
 def _receipt_lineage_id(receipt: dict) -> str:
@@ -279,9 +285,7 @@ def _receipt_lineage_id(receipt: dict) -> str:
     branch, but a lower optimizer step across a certified rebase is not data
     corruption and must not poison all later learning-history observations.
     """
-    run_id = receipt.get("run_id")
-    if not isinstance(run_id, str) or not run_id:
-        raise ValueError("DIAGNOSTIC_STATE_RUN_ID_MISSING")
+    run_id = _require_run_id(receipt)
     rebased = receipt.get("experimental_baseline_rebase")
     if rebased is None:
         return "run-root/" + run_id

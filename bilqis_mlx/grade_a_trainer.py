@@ -1387,12 +1387,61 @@ def _without_stagnant_capabilities(run_dir, manifest, course, cohort,
     if not blocked:
         return cohort, _persist_live_cohort(run_dir, manifest, course, cohort)
     rows = tuple(row for row in cohort.rows if row["capability"] not in blocked)
-    if not rows:
-        raise ValueError("STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES")
+    _require_active_stagnation_scope(rows)
     selected = make_cohort(
         rows, generator_version=cohort.generator_version, seed=cohort.seed,
         rubric_version=cohort.rubric_version)
     return selected, _persist_live_cohort(run_dir, manifest, course, selected)
+
+
+def _require_active_stagnation_scope(scope) -> None:
+    if not scope:
+        raise ValueError("STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES")
+
+
+def _advance_stagnation_after_routine(
+        *, course, school, routine_assessment, routine_advanced,
+        stagnation, blocked_before, active_scope, routine_measured,
+        routine_warnings, generation):
+    """Apply one completed routine boundary to the current session containment."""
+    events = ()
+    if stagnation is None:
+        return stagnation, events, routine_advanced, ()
+    if (school.stage == "ASSESS_MAIN" and
+            routine_advanced.stage == "RECOVERY_1"):
+        stagnation = begin_recovery_cycle(
+            stagnation, first_recovery=routine_advanced.first_recovery)
+    elif school.stage == "ASSESS_RECOVERY_2":
+        tail = weakest_three(routine_assessment.scores, active_scope)
+        stagnation, events = complete_recovery_cycle(
+            stagnation, weakest_tail=tail,
+            scores=routine_measured["scores"],
+            generation=generation,
+            active_warnings=tuple(routine_warnings.get("active_warnings", ())))
+        blocked_after = quarantined_capabilities(stagnation)
+        if set(blocked_after) != set(blocked_before):
+            retained_scores = {
+                cap: score for cap, score in routine_assessment.scores.items()
+                if cap not in set(blocked_after)}
+            if not retained_scores:
+                routine_advanced = replace(
+                    school, stage="DEFERRED_STAGNATION", queue=(),
+                    first_recovery=(),
+                    latest_rubric_digest=routine_assessment.rubric_digest)
+            else:
+                reduced = Assessment(
+                    checkpoint_sha256=routine_assessment.checkpoint_sha256,
+                    optimizer_step=routine_assessment.optimizer_step,
+                    course_digest=routine_assessment.course_digest,
+                    rubric_digest=routine_assessment.rubric_digest,
+                    scores=retained_scores,
+                    evaluation_id=routine_assessment.evaluation_id +
+                                  "/post-stagnation-filter")
+                routine_advanced = assess_withheld(
+                    course, school, reduced, blocked_after)
+    return (
+        stagnation, events, routine_advanced,
+        quarantined_capabilities(stagnation))
 
 
 def _learning_probe_rows(source_root, graph, receipt, course, school, capability,
@@ -2763,8 +2812,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     blocked_before = quarantined_capabilities(stagnation)
     full_scope = assessment_capabilities(course, school)
     active_scope = tuple(cap for cap in full_scope if cap not in set(blocked_before))
-    if not active_scope:
-        raise ValueError("STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES")
+    _require_active_stagnation_scope(active_scope)
     parent_checkpoint = school.current_student
     rubric, release, generator, _ = _cohort_contract(course)
     routine_cohort, _ = _grade_test_cohort(
@@ -2841,41 +2889,15 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         current_step=school.current_student.optimizer_step,
         cohort_sha256=routine_cohort.digest,
         unavailable_reason=parent_routine_issue)
-    stagnation_events = ()
-    if stagnation is not None:
-        if (school.stage == "ASSESS_MAIN" and
-                routine_advanced.stage == "RECOVERY_1"):
-            stagnation = begin_recovery_cycle(
-                stagnation, first_recovery=routine_advanced.first_recovery)
-        elif school.stage == "ASSESS_RECOVERY_2":
-            tail = weakest_three(routine_assessment.scores, active_scope)
-            stagnation, stagnation_events = complete_recovery_cycle(
-                stagnation, weakest_tail=tail,
-                scores=routine_measured["scores"],
-                generation=receipt["generation"] + 1,
-                active_warnings=tuple(routine_warnings.get("active_warnings", ())))
-            blocked_after = quarantined_capabilities(stagnation)
-            if set(blocked_after) != set(blocked_before):
-                retained_scores = {
-                    cap: score for cap, score in routine_assessment.scores.items()
-                    if cap not in set(blocked_after)}
-                if retained_scores:
-                    reduced = Assessment(
-                        checkpoint_sha256=routine_assessment.checkpoint_sha256,
-                        optimizer_step=routine_assessment.optimizer_step,
-                        course_digest=routine_assessment.course_digest,
-                        rubric_digest=routine_assessment.rubric_digest,
-                        scores=retained_scores,
-                        evaluation_id=routine_assessment.evaluation_id +
-                                      "/post-stagnation-filter")
-                    routine_advanced = assess_withheld(
-                        course, school, reduced, blocked_after)
-                else:
-                    routine_advanced = replace(
-                        school, stage="DEFERRED_STAGNATION", queue=(),
-                        first_recovery=(),
-                        latest_rubric_digest=routine_assessment.rubric_digest)
-    blocked_after = quarantined_capabilities(stagnation)
+    stagnation, stagnation_events, routine_advanced, blocked_after = (
+        _advance_stagnation_after_routine(
+            course=course, school=school,
+            routine_assessment=routine_assessment,
+            routine_advanced=routine_advanced,
+            stagnation=stagnation, blocked_before=blocked_before,
+            active_scope=active_scope, routine_measured=routine_measured,
+            routine_warnings=routine_warnings,
+            generation=receipt["generation"] + 1))
 
     qualification = None
     exam_plane = "ROUTINE"
