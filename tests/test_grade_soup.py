@@ -21,6 +21,16 @@ def perfect(cap, sha, breadth=1, *, rubric="a" * 64):
 
 
 class GradeSoupTests(unittest.TestCase):
+    def test_best_below_max_capability_champion_can_contribute_one_vote(self):
+        entry = perfect("A.3", "1")
+        entry["correct"] = 10
+        entry["breadth"] = 0
+        entry["perfect_capabilities"] = []
+        plan = grade_soup_recipe({"A.3": entry}, "A", ("A.3",))
+        self.assertEqual(plan["vote_count"], 1)
+        self.assertEqual(plan["members"][0]["votes"], 1)
+        self.assertEqual(plan["roles"][0]["capability"], "A.3")
+
     def test_partitioned_mixed_source_catalogs_are_separate_frozen_teachers(self):
         import mlx.core as mx
         from types import SimpleNamespace

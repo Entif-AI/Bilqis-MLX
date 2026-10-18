@@ -97,7 +97,7 @@ def begin_epoch(*, previous_graduate: dict, admitted_baseline: dict,
 def active_adviser_checkpoints(epoch: dict, *, cohort_sha256: str | None = None,
                                scope_sha256: str | None = None,
                                rubric_sha256: str | None = None) -> tuple[dict, ...]:
-    """Only newly earned perfect-role owners may advise, never the baseline.
+    """Only newly earned best-score role owners may advise, never the baseline.
 
     Qualified candidates from the early experiment are historical receipts,
     not championship title holders or sources of teacher gradients.

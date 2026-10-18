@@ -6,6 +6,7 @@ substitution, graduation scores, or writes to underlying champion bundles.
 from __future__ import annotations
 
 from collections import Counter
+from fractions import Fraction
 import hashlib
 import json
 import os
@@ -28,7 +29,7 @@ def _digest(value):
 
 def grade_soup_recipe(frontier: dict, grade: str,
                       admitted_capabilities: tuple[str, ...]) -> dict | None:
-    """One role per mastered capability; shared checkpoints get role multiplicity."""
+    """One vote per active capability champion, perfect or not yet perfect."""
     eligible = tuple(admitted_capabilities)
     if (not grade or not eligible or len(set(eligible)) != len(eligible) or
             any(not cap.startswith(grade + ".") for cap in eligible)):
@@ -40,21 +41,27 @@ def grade_soup_recipe(frontier: dict, grade: str,
             continue
         breadth, mastered = entry.get("breadth"), entry.get("perfect_capabilities")
         pointer = entry["checkpoint"]
-        if (entry["correct"] != entry["total"] or entry["total"] <= 0 or
-                type(breadth) is not int or breadth < 1 or
+        correct, total = entry.get("correct"), entry.get("total")
+        if (type(correct) is not int or type(total) is not int or
+                total <= 0 or not 0 <= correct <= total or
+                type(breadth) is not int or breadth < 0 or
                 not isinstance(mastered, list) or len(mastered) != breadth or
-                len(set(mastered)) != breadth or capability not in mastered or
+                len(set(mastered)) != breadth or
+                ((correct == total) != (capability in mastered)) or
                 not pointer.get("model_and_native_adamw") or
                 len(pointer["sha256"]) != 64):
             raise ValueError("GRADE_SOUP_UNVERIFIED_CHAMPION")
         prior = chosen.get(capability)
-        key = (-breadth, pointer["optimizer_step"], pointer["sha256"])
+        key = (-Fraction(correct, total), -breadth,
+               pointer["optimizer_step"], pointer["sha256"])
         if prior is None or key < prior[0]:
             chosen[capability] = (key, entry)
     if not chosen:
         return None
     roles = [{"capability": capability,
               "rubric": chosen[capability][1]["rubric"],
+              "correct": chosen[capability][1]["correct"],
+              "total": chosen[capability][1]["total"],
               "checkpoint_sha256": chosen[capability][1]["checkpoint"]["sha256"]}
              for capability in sorted(chosen)]
     counters = Counter(role["checkpoint_sha256"] for role in roles)
@@ -63,8 +70,11 @@ def grade_soup_recipe(frontier: dict, grade: str,
     members = [{"checkpoint": dict(pointers[sha]), "votes": counters[sha]}
                for sha in sorted(counters)]
     count = len(roles)
+    perfect = sorted(role["capability"] for role in roles
+                     if role["correct"] == role["total"])
     contract = {"schema": SCHEMA, "grade": grade, "vote_count": count,
-                "coverage_peak": count, "perfect_capabilities": sorted(chosen),
+                "coverage_peak": count, "covered_capabilities": sorted(chosen),
+                "perfect_capabilities": perfect,
                 "roles": roles, "members": members}
     return {**contract, "recipe_sha256": _digest(contract)}
 
@@ -113,7 +123,10 @@ def partitioned_recipe(full_recipe: dict, member_graph_digests: dict[str, str]) 
         shard = {
             "schema": SCHEMA, "grade": full_recipe["grade"],
             "vote_count": vote_count, "coverage_peak": vote_count,
-            "perfect_capabilities": sorted(role["capability"] for role in roles),
+            "covered_capabilities": sorted(role["capability"] for role in roles),
+            "perfect_capabilities": sorted(
+                role["capability"] for role in roles
+                if role["correct"] == role["total"]),
             "roles": roles, "members": members,
         }
         output.append({**shard, "recipe_sha256": _digest(shard),

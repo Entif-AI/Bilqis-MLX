@@ -1,7 +1,7 @@
-"""Active championship ownership within one admitted curriculum epoch.
+"""Active best-score championship ownership within one curriculum epoch.
 
 Historical champion and soup receipts stay in the old state fields. The
-epoch owns only fresh perfect winners and their frozen vote entitlements.
+epoch owns fresh best-score winners and their frozen vote entitlements.
 This module never reads tensors, trains a student, or changes an optimizer.
 """
 from __future__ import annotations
@@ -63,9 +63,9 @@ def rebase_active_championships(epoch: dict, *, prior_student: dict,
     """Replace an experiment's non-teaching baseline and clear earned authority.
 
     This is intentionally different from a routine idempotent reset: it is an
-    explicit experiment rebase. The former active epoch remains archived while
-    the replacement baseline must be strictly beaten on a comparable whole-
-    school exam before any new active title can be minted.
+    explicit experiment rebase. The former active epoch remains archived. The
+    replacement baseline is a non-teaching custody/reference checkpoint, not a
+    fictitious incumbent that globally blocks later best-score capability roles.
     """
     prior = _pointer(prior_student)
     replacement = _pointer(baseline)
@@ -98,7 +98,7 @@ def rebase_active_championships(epoch: dict, *, prior_student: dict,
     updated["earned_role_votes_at_reset"] = 0
     updated["guidance_policy"] = EARNED_ONLY_POLICY
     updated["championship_eligibility_after_step"] = replacement["optimizer_step"]
-    updated["baseline_challenge_required"] = True
+    updated["baseline_challenge_required"] = False
     updated["baseline_surpassed"] = None
     updated["active_championship_reset"] = {
         "policy": EARNED_ONLY_POLICY,
@@ -110,7 +110,7 @@ def rebase_active_championships(epoch: dict, *, prior_student: dict,
         "preexisting_championships_archived": True,
         "training_or_optimizer_updates": 0,
         "experiment_baseline_rebased": True,
-        "baseline_challenge_required": True,
+        "baseline_challenge_required": False,
     }
     return updated
 
@@ -140,118 +140,140 @@ def _incomplete_grade_decision(grade, capabilities, scores, sha, *, origin):
             "DEFER_ORIGIN_GRADE_INCOMPLETE" if origin else
             "DEFER_TARGET_GRADE_INCOMPLETE"),
             "missing_capabilities": missing, "candidate_sha256": sha}
-    if not origin and any(scores[cap]["correct"] != scores[cap]["total"]
-                          for cap in capabilities):
-        return {"grade": grade, "decision": "DENY_TARGET_GRADE_NOT_PERFECT",
-                "candidate_sha256": sha}
     return None
 
 
-def needed_incumbents(epoch: dict, *, grades: dict, scores: dict,
-                      challenger_checkpoint: dict | None = None) -> dict:
-    """Identify only checkpoints needed for a potential qualifying challenge."""
+def _role_matches_exam(role: dict, exam: dict) -> bool:
+    return (
+        role.get("cohort_sha256") == exam.get("cohort_sha256") and
+        role.get("rubric") == exam.get("rubric_sha256") and
+        role.get("assessment_scope_sha256") == exam.get("assessment_scope_sha256") and
+        role.get("source_graph_sha256") == exam.get("source_graph_sha256") and
+        role.get("source_oracle_sha256") == exam.get("source_oracle_sha256")
+    )
+
+
+def _exam_matches(challenger: dict, incumbent: dict) -> None:
+    common = ("cohort_sha256", "rubric_sha256", "assessment_scope_sha256",
+              "source_graph_sha256", "source_oracle_sha256")
+    if (not isinstance(incumbent, dict) or
+            any(incumbent.get(field) != challenger.get(field) for field in common) or
+            set(incumbent.get("scores", {})) != set(challenger.get("scores", {})) or
+            any(incumbent["scores"][cap].get("total") !=
+                challenger["scores"][cap].get("total")
+                for cap in challenger.get("scores", {}))):
+        raise ValueError("CHAMPIONSHIP_EPOCH_SAME_COHORT_REQUIRED")
+
+
+def needed_incumbents(epoch: dict, *, grades: dict,
+                      challenger_exam: dict) -> dict:
+    """Request only owners that lack enough bound evidence for this challenge."""
     roles = epoch.get("active_roles", {})
     origin = epoch["introduced_grade"]
-    mastered = sum(v["correct"] == v["total"] for v in scores.values())
+    scores = challenger_exam["scores"]
+    challenger = _pointer(challenger_exam["checkpoint"])
     needed = {}
     for grade in grades:
         caps = _grade_caps(grades, grade)
-        if grade == origin:
-            if not set(caps) <= set(scores):
+        if not set(caps) <= set(scores):
+            continue
+        grade_perfect = all(scores[cap]["correct"] == scores[cap]["total"]
+                            for cap in caps)
+        for cap in caps:
+            prior = roles.get(cap)
+            if prior is None:
                 continue
-            for cap in caps:
-                if cap not in scores or scores[cap]["correct"] != scores[cap]["total"]:
-                    continue
-                prior = roles.get(cap)
-                if prior is not None and mastered > prior["breadth"]:
-                    pointer = prior["checkpoint"]
-                    needed[pointer["sha256"]] = pointer
-        elif all(cap in scores and scores[cap]["correct"] == scores[cap]["total"]
-                 for cap in caps):
-            for cap in caps:
-                if cap in roles:
-                    pointer = roles[cap]["checkpoint"]
-                    needed[pointer["sha256"]] = pointer
-    if (epoch.get("baseline_challenge_required") and
-            epoch.get("baseline_surpassed") is None and
-            challenger_checkpoint is not None):
-        challenger = _pointer(challenger_checkpoint)
-        baseline = _pointer(epoch["baseline"])
-        if (challenger["sha256"] != baseline["sha256"] and
-                challenger["optimizer_step"] >
-                epoch.get("championship_eligibility_after_step", -1)):
-            needed[baseline["sha256"]] = baseline
+            pointer = _pointer(prior["checkpoint"])
+            if pointer["sha256"] == challenger["sha256"]:
+                continue
+            role_bound = _role_matches_exam(prior, challenger_exam)
+            max_takeover = (grade != origin and grade_perfect and
+                            prior.get("correct") == prior.get("total") and
+                            scores[cap]["correct"] == scores[cap]["total"])
+            if not role_bound or max_takeover:
+                needed[pointer["sha256"]] = pointer
     return needed
 
 
-def _external_takeovers(grades, origin, scores, pointer, roles,
-                        challenger_exam, incumbent_exams, record):
-    decisions = []
-    for grade in grades:
-        if grade == origin:
-            continue
-        caps = _grade_caps(grades, grade)
-        blocked = _incomplete_grade_decision(
-            grade, caps, scores, pointer["sha256"], origin=False)
-        if blocked:
-            decisions.append(blocked)
-            continue
-        owners = {cap: roles[cap]["checkpoint"]["sha256"]
-                  for cap in caps if cap in roles}
-        verdict = cross_origin_takeover(
-            grade_capabilities=caps, admitted_capabilities=tuple(scores),
-            active_role_owners=owners, challenger_exam=challenger_exam,
-            incumbent_exams={sha: incumbent_exams[sha] for sha in set(owners.values())})
-        decisions.append({"grade": grade, **verdict})
-        if verdict["decision"] in ("ELIGIBLE", "ELIGIBLE_UNCONTESTED_GRADE"):
-            for cap in caps:
-                record(cap)
-    return decisions
+def _incumbent_score(capability: str, prior: dict, challenger_exam: dict,
+                     incumbent_exams: dict) -> tuple[dict, int]:
+    prior_pointer = _pointer(prior["checkpoint"])
+    if _role_matches_exam(prior, challenger_exam):
+        return ({"correct": prior["correct"], "total": prior["total"]},
+                prior.get("breadth", 0))
+    incumbent = incumbent_exams.get(prior_pointer["sha256"])
+    if incumbent is None:
+        raise ValueError("CHAMPIONSHIP_EPOCH_INCUMBENT_EXAM_REQUIRED")
+    _exam_matches(challenger_exam, incumbent)
+    prior_score = incumbent["scores"][capability]
+    prior_breadth = sum(
+        value["correct"] == value["total"]
+        for value in incumbent["scores"].values())
+    return prior_score, prior_breadth
 
 
-def _apply_baseline_challenge(epoch, updated, challenger_exam, incumbent_exams):
-    """Gate title minting behind one strict whole-school baseline victory."""
-    if (not epoch.get("baseline_challenge_required") or
-            epoch.get("baseline_surpassed") is not None):
-        return updated, (), False
+def _role_action(*, capability: str, grade: str, origin: str, roles: dict,
+                 scores: dict, pointer: dict, breadth: int,
+                 challenger_exam: dict, incumbent_exams: dict) -> tuple[str, str | None]:
+    """Return RECORD, KEEP, or MAX_TIE for one completely scored capability."""
+    prior = roles.get(capability)
+    if prior is None:
+        return "RECORD", None
+    prior_pointer = _pointer(prior["checkpoint"])
+    if prior_pointer["sha256"] == pointer["sha256"]:
+        return "KEEP", None
+    previous, incumbent_breadth = _incumbent_score(
+        capability, prior, challenger_exam, incumbent_exams)
+    candidate = scores[capability]
+    if candidate["total"] != previous["total"]:
+        raise ValueError("CHAMPIONSHIP_EPOCH_SCORE_TOTAL_DRIFT")
+    if candidate["correct"] > previous["correct"]:
+        return "RECORD", None
+    equal_max = (candidate["correct"] == previous["correct"] ==
+                 candidate["total"])
+    if not equal_max:
+        return "KEEP", None
+    if grade == origin:
+        return ("RECORD", None) if breadth > incumbent_breadth else ("KEEP", None)
+    return "MAX_TIE", prior_pointer["sha256"]
+
+
+def _role_receipt(challenger_exam: dict, capability: str,
+                  mastered: tuple[str, ...]) -> dict:
     pointer = challenger_exam["checkpoint"]
-    scores = challenger_exam["scores"]
-    baseline = _pointer(epoch["baseline"])
-    incumbent = incumbent_exams.get(baseline["sha256"])
-    common = ("cohort_sha256", "rubric_sha256",
-              "assessment_scope_sha256", "source_graph_sha256")
-    if (incumbent is None or
-            any(incumbent.get(field) != challenger_exam.get(field)
-                for field in common) or
-            set(incumbent.get("scores", {})) != set(scores) or
-            any(incumbent["scores"][cap].get("total") != scores[cap].get("total")
-                for cap in scores)):
-        raise ValueError("CHAMPIONSHIP_BASELINE_SAME_COHORT_REQUIRED")
-    challenger_correct = sum(value["correct"] for value in scores.values())
-    baseline_correct = sum(value["correct"] for value in incumbent["scores"].values())
-    decision = {
-        "candidate_sha256": pointer["sha256"],
-        "baseline_sha256": baseline["sha256"],
-        "challenger_correct": challenger_correct,
-        "baseline_correct": baseline_correct,
-    }
-    if challenger_correct <= baseline_correct:
-        return updated, ({"decision": "DENY_BASELINE_NOT_BEATEN", **decision},), True
-    updated["baseline_surpassed"] = {
-        "checkpoint": dict(pointer),
-        "baseline_sha256": baseline["sha256"],
+    score = challenger_exam["scores"][capability]
+    return {
+        "rubric": challenger_exam["rubric_sha256"],
+        "capability": capability,
         "cohort_sha256": challenger_exam["cohort_sha256"],
-        "rubric_sha256": challenger_exam["rubric_sha256"],
         "assessment_scope_sha256": challenger_exam["assessment_scope_sha256"],
-        "challenger_correct": challenger_correct,
-        "baseline_correct": baseline_correct,
+        "source_graph_sha256": challenger_exam["source_graph_sha256"],
+        "source_oracle_sha256": challenger_exam["source_oracle_sha256"],
+        "correct": score["correct"], "total": score["total"],
+        "breadth": len(mastered), "perfect_capabilities": list(mastered),
+        "checkpoint": dict(pointer),
+        "evaluation_id": ("championship-epoch/" + challenger_exam["cohort_sha256"] +
+                          "/" + pointer["sha256"]),
     }
-    return updated, ({"decision": "BASELINE_STRICTLY_SURPASSED", **decision},), False
+
+
+def _max_takeover_decision(grade: str, owners: dict, grades: dict,
+                           challenger_exam: dict, incumbent_exams: dict) -> dict | None:
+    caps = _grade_caps(grades, grade)
+    scores = challenger_exam["scores"]
+    if not all(scores[cap]["correct"] == scores[cap]["total"] for cap in caps):
+        return None
+    required = {sha: incumbent_exams[sha] for sha in set(owners.values())}
+    verdict = cross_origin_takeover(
+        grade_capabilities=caps, admitted_capabilities=tuple(scores),
+        active_role_owners=owners, challenger_exam=challenger_exam,
+        incumbent_exams=required)
+    return {"grade": grade, **verdict}
 
 
 def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
                   incumbent_exams: dict) -> tuple[dict, tuple[str, ...], tuple[dict, ...]]:
-    """Apply earned changes only after source-comparable whole-student scoring."""
+    """Advance best-score roles; tighten replacement only at a score ceiling."""
     scores = challenger_exam["scores"]
     pointer = challenger_exam["checkpoint"]
     mastered = tuple(sorted(cap for cap, score in scores.items()
@@ -264,63 +286,44 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
     origin = epoch["introduced_grade"]
     if pointer["optimizer_step"] <= epoch.get("championship_eligibility_after_step", -1):
         return updated, (), ()
-    updated, baseline_decisions, blocked = _apply_baseline_challenge(
-        epoch, updated, challenger_exam, incumbent_exams)
-    if blocked:
-        return updated, (), baseline_decisions
-    decisions.extend(baseline_decisions)
-
-    def record(capability):
-        roles[capability] = {
-            "rubric": challenger_exam["rubric_sha256"],
-            "capability": capability,
-            "cohort_sha256": challenger_exam["cohort_sha256"],
-            "correct": scores[capability]["correct"],
-            "total": scores[capability]["total"],
-            "breadth": breadth,
-            "perfect_capabilities": list(mastered),
-            "checkpoint": dict(pointer),
-            "evaluation_id": (
-                "championship-epoch/" + challenger_exam["cohort_sha256"] +
-                "/" + pointer["sha256"]),
-        }
-        changes.append(capability)
-
-    # Current-origin roles keep ordinary strictly-greater simultaneous breadth.
-    current_grade = _grade_caps(grades, origin)
-    own_blocker = _incomplete_grade_decision(
-        origin, current_grade, scores, pointer["sha256"], origin=True)
-    if own_blocker:
-        decisions.append(own_blocker)
-    # Even an individual same-origin title is not awarded from a partially
-    # tested checkpoint. Unintroduced or unscored peers mean no promotion yet.
-    for cap in current_grade if own_blocker is None else ():
-        if cap not in scores or scores[cap]["correct"] != scores[cap]["total"]:
+    # Empty roles accept the first complete-grade measurement. Non-max roles
+    # are ordinary best-score competitions: only a strict capability gain
+    # displaces the incumbent. Ties preserve the incumbent.
+    cross_origin_max_owners = {}
+    for grade in grades:
+        caps = _grade_caps(grades, grade)
+        blocker = _incomplete_grade_decision(
+            grade, caps, scores, pointer["sha256"], origin=(grade == origin))
+        if blocker:
+            decisions.append(blocker)
             continue
-        prior = roles.get(cap)
-        if prior is not None:
-            if prior["checkpoint"]["sha256"] == pointer["sha256"] or (
-                    breadth <= prior["breadth"]):
-                continue
-            incumbent = incumbent_exams.get(prior["checkpoint"]["sha256"])
-            if incumbent is None or (
-                    incumbent["cohort_sha256"] != challenger_exam["cohort_sha256"] or
-                    incumbent["rubric_sha256"] != challenger_exam["rubric_sha256"] or
-                    incumbent["assessment_scope_sha256"] !=
-                    challenger_exam["assessment_scope_sha256"] or
-                    set(incumbent["scores"]) != set(scores) or
-                    any(incumbent["scores"][c]["total"] != scores[c]["total"]
-                        for c in scores)):
-                raise ValueError("CHAMPIONSHIP_EPOCH_SAME_COHORT_REQUIRED")
-            incumbent_breadth = sum(
-                v["correct"] == v["total"] for v in incumbent["scores"].values())
-            if breadth <= incumbent_breadth:
-                continue
-        record(cap)
+        max_owners = {}
+        for cap in caps:
+            action, owner = _role_action(
+                capability=cap, grade=grade, origin=origin, roles=roles,
+                scores=scores, pointer=pointer, breadth=breadth,
+                challenger_exam=challenger_exam, incumbent_exams=incumbent_exams)
+            if action == "RECORD":
+                roles[cap] = _role_receipt(challenger_exam, cap, mastered)
+                changes.append(cap)
+            elif action == "MAX_TIE":
+                max_owners[cap] = owner
+        if max_owners:
+            cross_origin_max_owners[grade] = max_owners
 
-    # Foreign-grade promotion is atomic: record only a complete all-perfect
-    # grade after any actual displaced owners have lost the school comparison.
-    decisions.extend(_external_takeovers(
-        grades, origin, scores, pointer, roles,
-        challenger_exam, incumbent_exams, record))
+    # Once a capability is already at its maximum, another equal-max score is
+    # no longer a numerical improvement. Cross-origin replacement therefore
+    # falls back to the stronger existing full-grade + strict-school rule for
+    # only those maxed incumbent roles. Non-max gains above have already moved.
+    for grade, owners in cross_origin_max_owners.items():
+        verdict = _max_takeover_decision(
+            grade, owners, grades, challenger_exam, incumbent_exams)
+        if verdict is None:
+            continue
+        decisions.append(verdict)
+        if verdict["decision"] == "ELIGIBLE":
+            for cap in owners:
+                roles[cap] = _role_receipt(challenger_exam, cap, mastered)
+                if cap not in changes:
+                    changes.append(cap)
     return updated, tuple(changes), tuple(decisions)

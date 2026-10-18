@@ -187,7 +187,7 @@ def _build_record(receipt: dict, historical: dict, source_bundle: Path) -> dict:
             "baseline_exam_total": total,
             "active_championship_roles_after": 0,
             "active_championship_soups_after": 0,
-            "baseline_challenge_required": True,
+            "baseline_challenge_required": False,
             "source_bundle_read_only": True,
             "neural_updates": 0,
         },
@@ -202,7 +202,7 @@ def _build_record(receipt: dict, historical: dict, source_bundle: Path) -> dict:
         "optimizer_step": baseline["optimizer_step"],
         "active_championship_roles": 0,
         "active_championship_soups": 0,
-        "baseline_challenge_required": True,
+        "baseline_challenge_required": False,
         "source_bundle_unchanged": True,
         "neural_updates": 0,
     }
@@ -233,7 +233,7 @@ def _preview(receipt, record, historical, source_bundle, source_state,
         "school_queue": list(record["school"]["queue"]),
         "active_championship_roles_after": 0,
         "active_championship_soups_after": 0,
-        "baseline_challenge_required": True,
+        "baseline_challenge_required": False,
         "neural_updates": 0,
     }
 

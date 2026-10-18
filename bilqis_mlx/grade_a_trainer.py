@@ -2112,9 +2112,6 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
         raise ValueError("CHAMPIONSHIP_EPOCH_SOURCE_GRAPH_DRIFT")
     grades = {grade.id: tuple(cap.id for cap in grade.capabilities)
               for grade in course.grades}
-    requested = epoch_needed_incumbents(
-        epoch, grades=grades, scores=scores,
-        challenger_checkpoint=asdict(school.current_student))
     scope = assessment_capabilities(course, school)
     if set(scores) != set(scope):
         raise ValueError("CHAMPIONSHIP_EPOCH_INCOMPLETE_EXAM")
@@ -2128,6 +2125,8 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
     }
     challenger = {**context, "checkpoint": asdict(school.current_student),
                   "scores": scores}
+    requested = epoch_needed_incumbents(
+        epoch, grades=grades, challenger_exam=challenger)
     incumbents = {}
     for sha, pointer in sorted(requested.items()):
         if sha == school.current_student.sha256:
@@ -2244,7 +2243,8 @@ def _boundary_delivery_events(record, pending, roles, exam_event):
                     "filename": shard["filename"], "sha256": shard["sha256"],
                     "recipe_sha256": shard["recipe_sha256"],
                     "vote_count": shard["vote_count"],
-                    "covered_capabilities": shard["perfect_capabilities"],
+                    "covered_capabilities": shard.get(
+                        "covered_capabilities", shard["perfect_capabilities"]),
                     "source_champion_shas": [item["checkpoint"]["sha256"]
                                               for item in shard["members"]],
                     "frozen_source_weights_only": True,
@@ -2678,8 +2678,10 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
               for k, v in assessment.scores.items()}
     epoch = receipt.get("mentor_epoch")
     championship_decisions = ()
+    graduation_roles = ()
+    championship_roles = ()
     if epoch is None:
-        perfect, perfect_roles = graduation_perfect(
+        perfect, graduation_roles = graduation_perfect(
             receipt.get("graduation_perfect", {}), scores, rubric, cohort.digest,
             asdict(school.current_student), assessment.evaluation_id)
         frozen_soups, soup_changes = _cook_new_grade_soups(
@@ -2687,7 +2689,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     else:
         grades, challenger, incumbents = _epoch_paired_examinations(
             mx, run_dir, receipt, course, school, cohort, scores, graph)
-        epoch, perfect_roles, championship_decisions = advance_championship_epoch(
+        epoch, championship_roles, championship_decisions = advance_championship_epoch(
             epoch, grades=grades, challenger_exam=challenger,
             incumbent_exams=incumbents)
         new_soups, soup_changes = _cook_new_grade_soups(
@@ -2709,7 +2711,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "cohort_file": cohort_file,
         "cohort_seed": seed,
         "candidate_cohort_sha256": candidate_cohort.digest,
-        "graduation_perfect_roles": list(perfect_roles),
+        "graduation_perfect_roles": list(graduation_roles),
+        "championship_roles": list(championship_roles),
         "grade_soups_refreshed": list(soup_changes),
         "championship_decisions": list(championship_decisions),
         "generator_version": generator,
@@ -2786,7 +2789,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     if epoch is not None:
         exam_event["championship_epoch"] = {
             "baseline_sha256": epoch["baseline"]["sha256"],
-            "earned_roles": list(perfect_roles),
+            "earned_roles": list(championship_roles),
             "active_role_count": len(epoch.get("active_roles", {})),
             "active_soup_grades": sorted(epoch.get("active_grade_soups", {})),
             "cross_origin_decisions": list(championship_decisions),
