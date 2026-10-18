@@ -11,7 +11,7 @@ from unittest.mock import patch
 import numpy as np
 
 from bilqis_mlx import grade_a_trainer as storage
-from bilqis_mlx.learning_experiment import Settings, select_typed_lesson
+from bilqis_mlx.learning_experiment import Settings, select_source_lesson
 from tests import test_grade_c_trainer as fixtures
 from tests import test_numeric_staircase as staircase_fixtures
 
@@ -298,9 +298,9 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         prior=storage._draw_live_rows(
             fixtures.SOURCE,self.fixture.graph,capability="A.IDENTITY",
             course=self.course,each=12,seed=29)
-        x,trace1=select_typed_lesson(raw,prior,
+        x,trace1=select_source_lesson(raw,prior,
             {"old":0,"contrast":0,"depth":1},seed=13,batch_size=6)
-        y,trace2=select_typed_lesson(raw,prior,
+        y,trace2=select_source_lesson(raw,prior,
             {"old":20,"contrast":1,"depth":3},seed=13,batch_size=6)
         self.assertEqual(trace1["effective_old_grade_examples"],0)
         self.assertGreater(trace2["effective_old_grade_examples"],0)

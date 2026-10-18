@@ -35,8 +35,8 @@ from .grade_soup import (grade_soup_recipe, partitioned_recipe,
 from .learning_experiment import (
     VERSION as LEARNING_EXPERIMENT_VERSION, Settings as LearningSettings,
     contextual_pick, paired_outcomes, decide as decide_learning_trial,
-    observe_context, selection_credit, fork_student, commit_trial, select_typed_lesson,
-    sampled_protection,
+    observe_context, selection_credit, fork_student, commit_trial,
+    earlier_grade_capabilities, select_source_lesson, sampled_protection,
 )
 from .whole_student_retention import advance_peaks
 from .capability_frontier import (
@@ -311,6 +311,42 @@ def _frozen_confidence_champions(run_dir, receipt, grade, graph):
         mentors.append({"weights": weights, "graph": source_graph,
                         "breadth": item["breadth"]})
     return tuple(mentors)
+
+
+def _mentor_sources_for_visit(run_dir, receipt, grade, graph, grade_count):
+    """Use historic advice normally; an explicit trial epoch uses qualified models.
+
+    Nothing retires the archived champions or soups. A newly admitted grade
+    may elect to use one frozen post-admission whole student instead of the
+    unqualified historical soup recipe. This opt-in is NOT installed on an
+    existing student merely because a newer source branch exists.
+    """
+    epoch = receipt.get("mentor_epoch")
+    if epoch is None:
+        return (_frozen_confidence_champions(run_dir, receipt, grade, graph),
+                *_frozen_grade_soup_votes(run_dir, receipt, grade, grade_count))
+    from .mentor_epoch import active_adviser_checkpoints
+    if epoch.get("source_graph_sha256") != _fingerprint(graph):
+        raise ValueError("MENTOR_EPOCH_SOURCE_GRAPH_DRIFT")
+    mentors = []
+    exam = receipt.get("last_exam") or {}
+    for pointer in active_adviser_checkpoints(
+            epoch, cohort_sha256=exam.get("cohort_sha256"),
+            scope_sha256=exam.get("assessment_scope_sha256"),
+            rubric_sha256=exam.get("exam_rubric_sha256")):
+        path = run_dir / pointer["filename"]
+        if (path.parent != run_dir / "bundles" or path.is_symlink() or
+                not pointer["filename"].startswith("bundles/")):
+            raise ValueError("MENTOR_EPOCH_UNSAFE_REFERENCE_BUNDLE")
+        blob = (path / "model-and-own-adamw.safetensors").stat()
+        weights, original_graph = _cached_frozen_champion(
+            str(path), pointer["sha256"], pointer["optimizer_step"],
+            blob.st_size, blob.st_mtime_ns)
+        if original_graph != graph:
+            raise ValueError("MENTOR_EPOCH_REFERENCE_GRAPH_DRIFT")
+        mentors.append({"weights": weights, "graph": graph, "breadth": 1,
+                        "checkpoint_sha256": pointer["sha256"]})
+    return tuple(mentors), (), ()
 
 
 def _cook_new_grade_soups(mx, run_dir, receipt, frontier, course, graph,
@@ -1372,10 +1408,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                            capability=cap, each=max(32, batch_size), course=course)
     # Champion influence across grades belongs exclusively to frozen soups.
     # Individual capability champions advise only their own lesson grade.
-    confidence_champions = _frozen_confidence_champions(
-        run_dir, receipt, lesson_grade, graph)
-    frozen_soups, soup_vote_receipts = _frozen_grade_soup_votes(
-        run_dir, receipt, lesson_grade, len(course.grades))
+    confidence_champions, frozen_soups, soup_vote_receipts = _mentor_sources_for_visit(
+        run_dir, receipt, lesson_grade, graph, len(course.grades))
     confidence_examples = 0
     confidence_total_weight = 0.0
     confidence_applied_steps = 0
@@ -1426,31 +1460,30 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     methodology_steps = []
     methodology_unavailable = None
     replayed_misses = 0
-    typed_control_receipts = []
+    policy_control_receipts = []
     step_before = int(optimizer.state["step"].item())
     for step in range(steps_per_visit):
-        typed_control = None
+        lesson_control = None
         fresh = _draw_live_rows(source_root, graph,
             seed=_seed(receipt, capability=cap, step=step+1),
             capability=cap, each=max(32, batch_size), course=course)
         fresh.extend(priority)
         lesson_seed = _seed(receipt, capability=cap, step=step+1)
-        if (learning_settings is not None and
-                any(row.get("answer_kind", "binary") != "binary" for row in fresh)):
-            # Earlier-grade examples are genuinely source/oracle bound, and
-            # the teacher's own 'old' knob allocates their share. An
-            # unadmitted future grade is never used for 'preview'.
-            old_capabilities = sorted(c.id for g in course.grades
-                if g.id in school.champions for c in g.capabilities)
+        if learning_settings is not None:
+            # The same source-bound old-grade policy applies to Boolean and
+            # typed lessons. Never label the target's own grade as old.
+            old_capabilities = earlier_grade_capabilities(
+                course, school.champions, cap)
             prior = []
             if int(policy.get("old", 0)) > 0 and old_capabilities:
                 selected = old_capabilities[(school.visits + step) % len(old_capabilities)]
                 prior = _draw_live_rows(source_root, graph, course=course,
                     capability=selected, each=max(batch_size, 6),
                     seed=_seed(receipt, capability="EXPERIMENT_OLD:"+selected, step=step))
-            picked, control = select_typed_lesson(
+            picked, control = select_source_lesson(
                 fresh, prior, policy, seed=lesson_seed, batch_size=batch_size)
-            typed_control = control
+            lesson_control = {**control, "eligible_prior_capabilities":
+                              len(old_capabilities)}
         else:
             picked = choose_lesson_batch(
                 fresh, policy, lesson_seed, batch_size=batch_size)
@@ -1466,12 +1499,15 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 },
             ))
         picked = replay_missed_lessons(picked, window)
-        if typed_control is not None:
-            typed_control["planned_old_grade_examples"] = typed_control[
+        if lesson_control is not None:
+            lesson_control["planned_old_grade_examples"] = lesson_control[
                 "effective_old_grade_examples"]
-            typed_control["effective_old_grade_examples"] = sum(
-                row["capability"].partition(".")[0] in school.champions for row in picked)
-            typed_control_receipts.append(typed_control)
+            earlier_grades = {item.partition(".")[0] for item in old_capabilities}
+            lesson_control["effective_old_grade_examples"] = sum(
+                row["capability"].partition(".")[0] in earlier_grades for row in picked)
+            lesson_control["selected_answer_kinds"] = sorted({
+                row.get("answer_kind", "binary") for row in picked})
+            policy_control_receipts.append(lesson_control)
         for row in window:
             identity = row["id"]
             miss_exposures[identity] = miss_exposures.get(identity, 0) + 1
@@ -1609,12 +1645,20 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
-        **({"typed_policy_controls": {
-            "optimizer_batches_observed": len(typed_control_receipts),
+        **({"lesson_policy_controls": {
+            "optimizer_batches_observed": len(policy_control_receipts),
             "old_grade_examples_delivered": sum(
-                r["effective_old_grade_examples"] for r in typed_control_receipts),
-            "last_batch_controls": typed_control_receipts[-1]}}
-           if typed_control_receipts else {}),
+                r["effective_old_grade_examples"] for r in policy_control_receipts),
+            "last_batch_controls": policy_control_receipts[-1]}}
+           if policy_control_receipts else {}),
+        **({"typed_policy_controls": {
+            "optimizer_batches_observed": len(policy_control_receipts),
+            "old_grade_examples_delivered": sum(
+                r["effective_old_grade_examples"] for r in policy_control_receipts),
+            "last_batch_controls": policy_control_receipts[-1]}}
+           if policy_control_receipts and any(
+               kind != "binary" for r in policy_control_receipts
+               for kind in r["selected_answer_kinds"]) else {}),
         **({"candidate_retention": outcome, "context_teacher_credit": context_credit,
             "candidate_source_training_gain": candidate_gain,
             "candidate_attempt_optimizer_step": attempted_step,
@@ -1643,8 +1687,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "optimizer_step": int(optimizer.state["step"].item()),
         "next_phase": school.stage,
         "checkpoint_status": "PROVISIONAL_UNTIL_NEXT_RECOVERY_BOUNDARY",
-        "unavailable_teacher_dimensions": (["old", "preview"] if
-            confidence_applied_steps else ["old", "preview", "distill"]),
+        "unavailable_teacher_dimensions": (
+            (["old"] if not any(r["eligible_prior_capabilities"]
+                                  for r in policy_control_receipts) else []) +
+            ["preview"] + ([] if confidence_applied_steps else ["distill"])),
     }
     pending = list(receipt.get("_pending_visit_events", ()))
     pending.append(event)

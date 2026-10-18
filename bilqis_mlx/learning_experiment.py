@@ -366,9 +366,24 @@ def commit_trial(parameters: dict, optimizer, trial_parameters: dict, trial_opti
     optimizer.learning_rate = trial_optimizer.learning_rate
 
 
-def select_typed_lesson(current: list[dict], prior: list[dict], policy: dict,
-                        *, seed: int, batch_size: int) -> tuple[list[dict], dict]:
-    """Make inherited old/contrast/depth knobs effective on source-valid rows.
+def earlier_grade_capabilities(course, graduated_grades, target: str) -> tuple[str, ...]:
+    """Only already-graduated grades preceding the target supply old lessons.
+
+    A champion for the active grade does not make its own rows earlier-grade
+    rehearsal; future grades must not leak into the pool during recovery.
+    """
+    grade_id = target.partition(".")[0]
+    ids = [grade.id for grade in course.grades]
+    if grade_id not in ids:
+        raise ValueError("LEARNING_EXPERIMENT_UNKNOWN_TARGET_GRADE")
+    earlier = set(ids[:ids.index(grade_id)]) & set(graduated_grades)
+    return tuple(sorted(cap.id for grade in course.grades if grade.id in earlier
+                        for cap in grade.capabilities))
+
+
+def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
+                         *, seed: int, batch_size: int) -> tuple[list[dict], dict]:
+    """Make inherited old/contrast/depth knobs effective for every answer type.
 
     'old' means actual examples originating in already-graduated grades, not
     embedded prerequisites or a source-unverified fixed teaching mix.
