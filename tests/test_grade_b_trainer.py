@@ -13,6 +13,7 @@ from bilqis_mlx.grade_a_release import accepted_grade_a, AUTHORITY
 from bilqis_mlx.grade_a_trainer import (
     VERSION, _activate_next_admitted_grade, _bundle_pointer,
     _draw_live_rows, _fingerprint, _persist,
+    _fixed_same_grade_rows, _learning_probe_rows,
     _persist_live_cohort, _recover_orphaned_commit, _seed, _state_from_json,
     _publish_boundary, _reconcile_delivery_outbox, _resume, _take_exam,
     _take_visit, _verify_saved_cohort, _with_delivery_outbox,
@@ -281,6 +282,52 @@ class GradeBTrainerTests(unittest.TestCase):
                 _verify_saved_cohort(root,{"source_manifest_sha256":self.manifest["manifest_sha256"],
                     "last_exam":{"cohort_sha256":b_cohort.digest,
                                  "cohort_seed":b_cohort.seed,"cohort_file":b_file}},self.b_course)
+
+    def test_fixed_grade_b_screen_covers_all_six_rubric_capabilities(self):
+        from bilqis_mlx.school import append_next_grade, next_capability
+        from bilqis_mlx.learning_experiment import Settings
+        import torch
+        graph = torch.load(CHECKPOINT, map_location="cpu", weights_only=True)["graph"]
+        rows = _draw_live_rows(SOURCE_ROOT, graph, seed=222, course=self.b_course)
+        cohort = make_cohort(rows, generator_version=B_GENERATOR,
+                             seed=222, rubric_version=B_RELEASE)
+        pointer = Checkpoint("a"*64, "bundles/not-loaded", 155, True)
+        school = append_next_grade(self.a_course, self.b_course,
+                                   self._graduated_a(pointer))
+        while next_capability(school):
+            school = visit(self.b_course, school, next_capability(school), pointer)
+        self.assertTrue(school.stage.startswith("ASSESS_"))
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            stored = _persist_live_cohort(root, self.manifest, self.b_course, cohort)
+            receipt = {"run_id": "grade-net-source-fixture", "generation": 1,
+                       "source_manifest_sha256": self.manifest["manifest_sha256"],
+                       "last_exam": {"assessment_grade": "B",
+                                     "grade_exam_epoch": school.grade_exam_epoch,
+                                     "cohort_sha256": cohort.digest,
+                                     "cohort_seed": cohort.seed,
+                                     "cohort_file": stored,
+                                     "scores": {cap.id: {"correct": 11, "total": 12}
+                                                for grade in self.b_course.grades
+                                                for cap in grade.capabilities}}}
+            selected = _fixed_same_grade_rows(
+                root, receipt, self.b_course, school, "B.XOR", Settings())
+            fresh, guarded, omitted = _learning_probe_rows(
+                SOURCE_ROOT, graph, receipt, self.b_course,
+                school, "B.XOR", Settings())
+        self.assertEqual(len(selected), 72)
+        self.assertEqual({cap: sum(r["capability"] == cap for r in selected)
+                          for cap in ("B.AND", "B.IFF", "B.IMPLIES",
+                                      "B.NOT", "B.OR", "B.XOR")},
+                         {cap: 12 for cap in ("B.AND", "B.IFF", "B.IMPLIES",
+                                              "B.NOT", "B.OR", "B.XOR")})
+        self.assertEqual({cap: sum(r["capability"] == cap for r in fresh)
+                          for cap in ("B.AND", "B.IFF", "B.IMPLIES",
+                                      "B.NOT", "B.OR", "B.XOR")},
+                         {cap: 12 for cap in ("B.AND", "B.IFF", "B.IMPLIES",
+                                              "B.NOT", "B.OR", "B.XOR")})
+        self.assertEqual(len(guarded), 8)
+        self.assertEqual(omitted, 3)
 
     def test_b_weakest_three_rehearsal_credits_actual_a_lesson_not_b(self):
         """An A predicate taught during B recovery must train A's policy stats."""

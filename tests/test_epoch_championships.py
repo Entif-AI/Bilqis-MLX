@@ -28,6 +28,37 @@ def _epoch():
 
 
 class EpochChampionshipTests(TestCase):
+    def test_own_grade_cannot_mint_titles_from_only_a_subset_of_its_capabilities(self):
+        candidate = _exam("c", 209)
+        candidate["scores"].pop("C.0")
+        result, changes, decisions = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=candidate,
+            incumbent_exams={})
+        self.assertFalse(any(cap.startswith("C.") for cap in changes))
+        self.assertFalse(any(cap.startswith("C.") for cap in result["active_roles"]))
+        self.assertEqual(next(d["missing_capabilities"] for d in decisions
+                              if d["decision"] == "DEFER_ORIGIN_GRADE_INCOMPLETE"),
+                         ["C.0"])
+
+    def test_cross_origin_mints_all_or_none_even_when_one_missing(self):
+        candidate = _exam("c", 209)
+        candidate["scores"].pop("B.XOR")
+        untouched, titles, decisions = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=candidate,
+            incumbent_exams={})
+        self.assertFalse(any(cap.startswith("B.") for cap in titles))
+        self.assertFalse(any(cap.startswith("B.") for cap in untouched["active_roles"]))
+        self.assertEqual(next(d["missing_capabilities"] for d in decisions
+                              if d["grade"] == "B"), ["B.XOR"])
+        candidate["scores"]["B.XOR"] = {"correct": 11, "total": 12}
+        unchanged, titles, decisions = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=candidate,
+            incumbent_exams={})
+        self.assertFalse(any(cap.startswith("B.") for cap in titles))
+        self.assertFalse(any(cap.startswith("B.") for cap in unchanged["active_roles"]))
+        self.assertEqual(next(d["decision"] for d in decisions if d["grade"] == "B"),
+                         "DENY_TARGET_GRADE_NOT_PERFECT")
+
     def test_new_grade_earns_roles_while_prior_soups_stay_archived(self):
         epoch = _epoch()
         candidate = _exam("c", 209)
@@ -74,7 +105,8 @@ class EpochChampionshipTests(TestCase):
         self.assertNotIn("B.XOR", roles)
         self.assertEqual(changed["active_roles"]["B.XOR"]["checkpoint"]["sha256"],
                          "b" * 64)
-        self.assertTrue(all(d["grade"] != "B" for d in decisions))
+        self.assertEqual(next(d["decision"] for d in decisions if d["grade"] == "B"),
+                         "DENY_TARGET_GRADE_NOT_PERFECT")
 
     def test_multi_incumbent_target_grade_must_beat_strongest(self):
         initial = _epoch()

@@ -84,6 +84,41 @@ def sampled_protection(admitted: set[str], current: str,
     return result | set(rest[:max(0,cap_limit-len(result))])
 
 
+def whole_grade_protection(admitted: set[str], current: str,
+                           scores: dict, *, cap_limit: int, rotation: int) -> set[str]:
+    """Always measure every admitted peer in the target grade.
+
+    Same-grade completeness is mandatory, not constrained by the unrelated
+    budget for optional rotating cross-grade sentinels. Keep two sentinel
+    slots when other grades exist, even for a large target grade, so the work
+    scales with the *target grade*, not the cumulative school.
+    """
+    own = {cap for cap in admitted if cap.partition(".")[0] ==
+           current.partition(".")[0]}
+    peers, other = own - {current}, admitted - own
+    if current not in own or cap_limit < 1:
+        raise ValueError("LEARNING_EXPERIMENT_FULL_GRADE_PROBE_SCOPE_INVALID")
+    remaining = max(min(2, cap_limit), cap_limit-len(peers)) if other else 0
+    sampled = (sampled_protection(other | {current}, current, scores,
+                                 cap_limit=remaining, rotation=rotation)
+               if remaining and other else set())
+    return peers | sampled
+
+
+def missing_grade_capabilities(grade_capabilities, scored_capabilities):
+    """Return only unscored peers for a single candidate's qualification.
+
+    The caller owns checkpoint and source-cohort provenance. A different
+    checkpoint's scores must never be passed in as if they were cached.
+    """
+    grade = tuple(grade_capabilities)
+    if (not grade or len(grade) != len(set(grade)) or
+            any(not isinstance(cap, str) or not cap for cap in grade) or
+            not isinstance(scored_capabilities, dict)):
+        raise ValueError("LEARNING_EXPERIMENT_INVALID_GRADE_COMPLETION_SCOPE")
+    return tuple(cap for cap in grade if cap not in scored_capabilities)
+
+
 def paired_outcomes(rows, parent_predictions: Mapping[str, str],
                     candidate_predictions: Mapping[str, str]) -> dict:
     """Scores only paired, stable source-gold rows, per capability."""
@@ -121,24 +156,44 @@ def _prototype_similarity(delta: dict[str, float], prototypes: list[dict]) -> fl
     return None if highest is None else round(highest, 6)
 
 
-def decide(paired: dict, *, active_capability: str, phase: str,
-           protected: set[str], settings: Settings,
-           mature_grades: frozenset[str] = frozenset(),
-           negative_prototypes: list[dict] | None = None,
-           source_cohort_sha256: str | None = None,
-           fragile_replay: dict | None = None) -> dict:
-    """Promote only measured targeted gains, protecting graduated grades.
+def _same_grade_retention_evidence(paired, active_capability,
+                                   same_grade_capabilities, fixed_grade_replay):
+    grade = active_capability.partition(".")[0]
+    required = (set(same_grade_capabilities) if same_grade_capabilities is not None
+                else {cap for cap in paired if cap.partition(".")[0] == grade})
+    if (not required or active_capability not in required or
+            any(cap.partition(".")[0] != grade for cap in required) or
+            not required <= set(paired) or
+            (same_grade_capabilities is not None and
+             len(set(same_grade_capabilities)) != len(same_grade_capabilities))):
+        raise ValueError("LEARNING_EXPERIMENT_INCOMPLETE_SAME_GRADE_PROBE")
+    net = sum(paired[cap]["after"] - paired[cap]["before"] for cap in required)
+    fixed = fixed_grade_replay or {
+        "status": "NOT_MEASURED",
+        "reason": "NO_COMPARABLE_COMPLETE_GRADE_EXAM",
+    }
+    if fixed.get("status") == "MEASURED":
+        before_grade, after_grade, total = (
+            fixed.get(name) for name in ("before", "after", "total"))
+        sha = fixed.get("cohort_sha256")
+        if (fixed.get("grade") != grade or
+                any(type(n) is not int for n in
+                    (before_grade, after_grade, total)) or
+                not 0 < total or not 0 <= before_grade <= total or
+                not 0 <= after_grade <= total or
+                not isinstance(sha, str) or len(sha) != 64 or
+                any(c not in "0123456789abcdef" for c in sha)):
+            raise ValueError("LEARNING_EXPERIMENT_INVALID_FIXED_GRADE_COHORT")
+        fixed = {**fixed, "net_correct_delta": after_grade-before_grade}
+    elif fixed.get("status") != "NOT_MEASURED":
+        raise ValueError("LEARNING_EXPERIMENT_INVALID_FIXED_GRADE_STATUS")
+    return required, net, fixed
 
-    The parent/student and native AdamW remain untouched on rejection.
-    A MAIN scheduler pass is not equivalent to introduction of a new skill.
-    """
-    if active_capability not in paired or not phase:
-        raise ValueError("LEARNING_EXPERIMENT_MISSING_ACTIVE_CAPABILITY")
-    missing = protected - set(paired)
-    if missing:
+
+def _paired_screen(paired, protected, active_capability):
+    if protected - set(paired):
         raise ValueError("LEARNING_EXPERIMENT_PROTECTED_CAPABILITY_NOT_MEASURED")
-    deltas = {}
-    regressions = {}
+    deltas, regressions = {}, {}
     for cap, counts in sorted(paired.items()):
         before, after, total = (counts[k] for k in ("before", "after", "total"))
         if (any(type(v) is not int for v in (before, after, total)) or
@@ -148,6 +203,25 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         deltas[cap] = round((after-before)/total, 7)
         if cap in protected and cap != active_capability:
             regressions[cap] = max(0, before-after)
+    return deltas, regressions
+
+
+def decide(paired: dict, *, active_capability: str, phase: str,
+           protected: set[str], settings: Settings,
+           mature_grades: frozenset[str] = frozenset(),
+           negative_prototypes: list[dict] | None = None,
+           source_cohort_sha256: str | None = None,
+           fragile_replay: dict | None = None,
+           same_grade_capabilities: tuple[str, ...] | None = None,
+           fixed_grade_replay: dict | None = None) -> dict:
+    """Retain only target gains that do not sacrifice their own grade.
+
+    The parent/student and native AdamW remain untouched on rejection.
+    A MAIN scheduler pass is not equivalent to introduction of a new skill.
+    """
+    if active_capability not in paired or not phase:
+        raise ValueError("LEARNING_EXPERIMENT_MISSING_ACTIVE_CAPABILITY")
+    deltas, regressions = _paired_screen(paired, protected, active_capability)
     introduction = phase == "MAIN"
     allowed = settings.mature_max_loss + (settings.introduction_extra_loss if introduction else 0)
     # The extra developmental budget applies only to ungraduated skills.
@@ -162,6 +236,10 @@ def decide(paired: dict, *, active_capability: str, phase: str,
     active_gain = active["after"] - active["before"]
     protected_net_gain = sum(paired[cap]["after"] - paired[cap]["before"]
                              for cap in protected if cap != active_capability)
+    required, same_grade_net_gain, fixed = _same_grade_retention_evidence(
+        paired, active_capability, same_grade_capabilities, fixed_grade_replay)
+    fixed_grade_regression = (fixed.get("status") == "MEASURED" and
+                              fixed["net_correct_delta"] < 0)
     # Local lesson training reward is not evidence of improved capability.
     # The same, source-oracled parent/challenger probe must improve strictly.
     no_target_gain = active_gain <= 0
@@ -176,12 +254,18 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         raise ValueError("LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID")
     return {
         "version": VERSION,
-        "decision": "REJECT" if no_target_gain or exceeded or fragile_losses else "PROVISIONAL",
+        "decision": ("REJECT" if no_target_gain or exceeded or fragile_losses or
+                     fixed_grade_regression or same_grade_net_gain <= 0
+                     else "PROVISIONAL"),
         "reason": ("NO_MEASURABLE_TARGET_GAIN" if no_target_gain else
                    "FRAGILE_COMPOSITION_REPLAY_REGRESSION" if fragile_losses else
                    "PROTECTED_CAPABILITY_REGRESSION" if exceeded else
+                   "FIXED_GRADE_COHORT_REGRESSION" if fixed_grade_regression else
+                   "SAME_GRADE_NET_REGRESSION" if same_grade_net_gain < 0 else
+                   "NO_POSITIVE_SAME_GRADE_GAIN" if same_grade_net_gain == 0 else
                    "PAIRED_SCREEN_WITHIN_BUDGET"),
         "fragile_replay": fragile_replay,
+        "fixed_grade_replay": fixed,
         "phase": phase, "active_capability": active_capability,
         "active_probe_before": active["before"],
         "active_probe_after": active["after"],
@@ -194,6 +278,8 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         "exceeded": exceeded,
         "worst_protected_loss": max(regressions.values(), default=0),
         "local_correct_delta": active_gain,
+        "same_grade_net_correct_delta": same_grade_net_gain,
+        "same_grade_probed_capabilities": sorted(required),
         "protected_net_correct_delta": protected_net_gain,
         "paired_scores_sha256": hashlib.sha256(fingerprint.encode()).hexdigest(),
         "source_cohort_sha256": source_cohort_sha256,

@@ -46,6 +46,22 @@ def _decision(challenger, *incumbents):
 
 
 class CrossOriginChampionshipContractTests(TestCase):
+    def test_uncontested_first_grade_uses_only_grade_evidence(self):
+        candidate = _exam("c", 209)
+        candidate["scores"] = {cap: candidate["scores"][cap] for cap in GRADE_B}
+        result = cross_origin_takeover(
+            grade_capabilities=GRADE_B, admitted_capabilities=SCHOOL,
+            active_role_owners={}, challenger_exam=candidate, incumbent_exams={})
+        self.assertEqual(result["decision"], "ELIGIBLE_UNCONTESTED_GRADE")
+        self.assertEqual(result["target_capabilities"], list(GRADE_B))
+        self.assertIsNone(result["school_correct"])
+        with self.assertRaisesRegex(ValueError, "INCOMPLETE_CUMULATIVE"):
+            cross_origin_takeover(
+                grade_capabilities=GRADE_B, admitted_capabilities=SCHOOL,
+                active_role_owners={"B.XOR": "a"*64},
+                challenger_exam=candidate,
+                incumbent_exams={"a"*64: _exam("a", 208)})
+
     def test_uncontested_grade_can_earn_first_roles_with_full_grade_perfection(self):
         candidate = _exam("c", 208)
         result = cross_origin_takeover(

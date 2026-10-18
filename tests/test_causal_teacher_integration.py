@@ -235,8 +235,16 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertEqual(outcome["active_probe_total"],12)
         self.assertEqual(outcome["local_correct_delta"],
                          outcome["active_probe_after"]-outcome["active_probe_before"])
-        self.assertTrue(any(k.startswith("A.") for k in monitored))
-        self.assertTrue(any(k.startswith("B.") for k in monitored))
+        if outcome["qualification_stage"] == "TARGET_ONLY_REJECTED":
+            self.assertEqual(monitored, {"C.COUNT"})
+            self.assertEqual(outcome["decision"], "REJECT")
+            self.assertEqual(outcome["fixed_grade_replay"]["status"], "NOT_MEASURED")
+            self.assertLessEqual(outcome["local_correct_delta"], 0)
+        else:
+            self.assertIn(outcome["qualification_stage"],
+                          ("COMPLETE_SAME_GRADE", "GRADE_NET_REJECTED"))
+            self.assertTrue(any(k.startswith("A.") for k in monitored))
+            self.assertTrue(any(k.startswith("B.") for k in monitored))
         self.assertEqual(len(eligible)-len(monitored),
                          event["candidate_retention"]["unsampled_admitted_capabilities"])
 

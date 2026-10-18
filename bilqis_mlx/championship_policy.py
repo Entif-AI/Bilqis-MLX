@@ -18,7 +18,7 @@ def _sha(value):
             all(char in "0123456789abcdef" for char in value))
 
 
-def _exam(exam, admitted):
+def _exam(exam, admitted, *, allow_grade_only=False, grade=()):
     if (not isinstance(exam, dict) or
             any(not _sha(exam.get(key)) for key in CONTEXT_KEYS)):
         raise ValueError("CHAMPIONSHIP_INCOMPARABLE_EXAM_CONTEXT")
@@ -31,7 +31,10 @@ def _exam(exam, admitted):
             pointer.get("model_and_native_adamw") is not True):
         raise ValueError("CHAMPIONSHIP_WHOLE_STUDENT_OWN_ADAMW_REQUIRED")
     scores = exam.get("scores")
-    if not isinstance(scores, dict) or set(scores) != admitted:
+    if (not isinstance(scores, dict) or
+            (not allow_grade_only and set(scores) != admitted) or
+            (allow_grade_only and
+             (not set(grade) <= set(scores) or not set(scores) <= admitted))):
         raise ValueError("CHAMPIONSHIP_INCOMPLETE_CUMULATIVE_SCHOOL")
     correct = total = 0
     for score in scores.values():
@@ -69,7 +72,13 @@ def cross_origin_takeover(*, grade_capabilities, admitted_capabilities,
             set(incumbent_exams) != set(active_role_owners.values())):
         raise ValueError("CHAMPIONSHIP_INCOMPLETE_TARGET_GRADE_OR_INCUMBENTS")
 
-    challenger_correct, challenger_total = _exam(challenger_exam, admitted)
+    # An uncontested title needs complete evidence only for the destination
+    # grade. Whole-school incumbent comparisons are required exclusively when
+    # actual championship owners would be displaced.
+    uncontested = not active_role_owners
+    challenger_correct, challenger_total = _exam(
+        challenger_exam, admitted, allow_grade_only=uncontested, grade=required)
+    complete_school = set(challenger_exam["scores"]) == admitted
     contender = challenger_exam["checkpoint"]["sha256"]
     comparisons = []
     for sha, exam in sorted(incumbent_exams.items()):
@@ -99,8 +108,8 @@ def cross_origin_takeover(*, grade_capabilities, admitted_capabilities,
     return {
         "schema": SCHEMA, "decision": decision,
         "target_capabilities": list(grade),
-        "school_correct": challenger_correct,
-        "school_total": challenger_total,
+        "school_correct": challenger_correct if complete_school else None,
+        "school_total": challenger_total if complete_school else None,
         "challenger_sha256": contender,
         "incumbents": comparisons,
         "cohort_sha256": challenger_exam["cohort_sha256"],

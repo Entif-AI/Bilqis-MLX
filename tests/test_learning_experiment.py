@@ -1,12 +1,15 @@
 """Read-only and disposable proof of parent-vs-trial teacher feedback."""
 import random
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
 from bilqis_mlx.learning_experiment import (
     Settings, paired_outcomes, decide, contextual_pick, observe_context,
-    fork_student, commit_trial, sampled_protection, selection_credit,
+    fork_student, commit_trial, sampled_protection, whole_grade_protection,
+    missing_grade_capabilities,
+    selection_credit,
 )
 
 
@@ -24,6 +27,193 @@ def predicted(rows_, wrong):
 
 
 class CausalTeacherExperimentTests(unittest.TestCase):
+    def test_trainer_defers_missing_peer_inference_until_candidate_target_passes(self):
+        from pathlib import Path
+        from bilqis_mlx import grade_a_trainer as trainer
+        grade = ("B.IFF", "B.NOT", "B.XOR")
+        rows = [{"id": cap + str(i), "capability": cap,
+                 "gold": "TRUE"} for cap in (*grade, "A.EDGE") for i in range(2)]
+        parent = predicted(rows, {"B.XOR0", "B.NOT0"})
+        candidate = dict(parent)
+        candidate["B.XOR0"] = "TRUE"
+        candidate["B.NOT0"] = "TRUE"
+        candidate["B.IFF0"] = "FALSE"
+        evaluated = []
+        def inference(_mx, identity, chosen, _config, _answers):
+            evaluated.append((identity, tuple(row["id"] for row in chosen)))
+            truth = parent if identity == "parent" else candidate
+            return {row["id"]: truth[row["id"]] for row in chosen}
+        with (patch.object(trainer, "assessment_capabilities",
+                           return_value=(*grade, "A.EDGE")),
+              patch.object(trainer, "_predictions", side_effect=inference),
+              patch.object(trainer, "_fixed_same_grade_rows",
+                           return_value=()) as fixed,
+              patch("bilqis_mlx.fragile_replay.load_replay_rows",
+                    return_value=())):
+            pair, protected, required, _, _, stage = trainer._candidate_grade_evidence(
+                None, Path("/not-used"), {"config": {}, "answer_ids": []},
+                object(), object(), "B.XOR", "parent", "candidate", rows,
+                {"B.XOR0": parent["B.XOR0"], "B.XOR1": parent["B.XOR1"]},
+                Settings())
+        self.assertEqual(stage, "COMPLETE_SAME_GRADE")
+        self.assertEqual(required, tuple(sorted(grade)))
+        self.assertEqual(pair["B.XOR"], {"before": 1, "after": 2, "total": 2})
+        self.assertEqual(pair["B.IFF"], {"before": 2, "after": 1, "total": 2})
+        self.assertEqual(pair["B.NOT"], {"before": 1, "after": 2, "total": 2})
+        self.assertEqual(protected, {"B.IFF", "B.NOT", "A.EDGE"})
+        self.assertEqual(len(evaluated), 3)
+        self.assertEqual(evaluated[0], ("candidate", ("B.XOR0", "B.XOR1")))
+        self.assertTrue(all("B.XOR0" not in call[1] and
+                            "B.XOR1" not in call[1] for call in evaluated[1:]))
+        fixed.assert_called_once()
+
+    def test_failed_target_and_grade_net_skip_expensive_fixed_replay(self):
+        from pathlib import Path
+        from bilqis_mlx import grade_a_trainer as trainer
+        grade = ("B.IFF", "B.NOT", "B.XOR")
+        rows = [{"id": cap + str(i), "capability": cap,
+                 "gold": "TRUE"} for cap in (*grade, "A.EDGE") for i in range(2)]
+        parent = predicted(rows, {"B.XOR0", "B.NOT0"})
+        candidate = dict(parent)
+        candidate["B.XOR0"] = "TRUE"
+        candidate["B.IFF0"] = "FALSE"
+
+        # With no target gain, neither peers nor a fixed full-grade exam are
+        # evaluated and the unchanged parent can be rejected immediately.
+        with (patch.object(trainer, "assessment_capabilities",
+                           return_value=(*grade, "A.EDGE")),
+              patch.object(trainer, "_predictions",
+                           side_effect=lambda _mx, _id, selected, *_:
+                           {row["id"]: parent[row["id"]] for row in selected}),
+              patch.object(trainer, "_fixed_same_grade_rows",
+                           side_effect=AssertionError("no extra grade test"))):
+            small, protected, required, fixed, replay, stage = (
+                trainer._candidate_grade_evidence(
+                    None, Path("/not-used"), {"config": {}, "answer_ids": []},
+                    object(), object(), "B.XOR", "parent", "candidate", rows,
+                    {"B.XOR0": parent["B.XOR0"], "B.XOR1": parent["B.XOR1"]},
+                    Settings()))
+        self.assertEqual(stage, "TARGET_ONLY_REJECTED")
+        self.assertEqual(set(small), {"B.XOR"})
+        self.assertEqual(protected, set())
+        self.assertEqual(required, ("B.XOR",))
+        self.assertEqual(fixed["status"], "NOT_MEASURED")
+        self.assertEqual(replay["status"], "NOT_MEASURED")
+
+        # A positive target with negative/tied grade net is also terminal:
+        # the full fixed examination must not run for an already-rejected
+        # candidate, and only the previously missing grade peers were scored.
+        degraded = dict(candidate)
+        degraded["B.NOT0"] = "FALSE"
+        degraded["B.NOT1"] = "FALSE"
+        with (patch.object(trainer, "assessment_capabilities",
+                           return_value=(*grade, "A.EDGE")),
+              patch.object(trainer, "_predictions",
+                           side_effect=lambda _mx, identity, selected, *_:
+                           {row["id"]: (parent if identity == "parent"
+                                        else degraded)[row["id"]]
+                            for row in selected}),
+              patch.object(trainer, "_fixed_same_grade_rows",
+                           side_effect=AssertionError("net grade loss must stop"))):
+            incomplete, controls, required, fixed, replay, stage = (
+                trainer._candidate_grade_evidence(
+                    None, Path("/not-used"), {"config": {}, "answer_ids": []},
+                    object(), object(), "B.XOR", "parent", "candidate", rows,
+                    {"B.XOR0": parent["B.XOR0"], "B.XOR1": parent["B.XOR1"]},
+                    Settings()))
+        self.assertEqual(stage, "GRADE_NET_REJECTED")
+        self.assertEqual(set(incomplete), {*grade, "A.EDGE"})
+        self.assertEqual(sum(incomplete[cap]["after"]-incomplete[cap]["before"]
+                             for cap in grade), -1)
+        self.assertEqual(controls, {"B.IFF", "B.NOT", "A.EDGE"})
+        self.assertEqual(fixed["status"], "NOT_MEASURED")
+
+    def test_missing_only_grade_completion_uses_checkpoint_existing_scores(self):
+        grade = ("B.AND", "B.IFF", "B.NOT", "B.XOR")
+        self.assertEqual(
+            missing_grade_capabilities(grade, {"B.XOR": {"before": 8,
+                                                       "after": 9, "total": 12},
+                                               "B.AND": {"before": 6,
+                                                       "after": 6, "total": 12}}),
+            ("B.IFF", "B.NOT"))
+        self.assertEqual(missing_grade_capabilities(
+            grade, {cap: {"before": 0, "after": 0, "total": 1}
+                    for cap in grade}), ())
+    def test_actual_b_xor_gain_does_not_justify_larger_b_grade_loss(self):
+        # Reproduces committed experiment generation 11566: B.XOR +1,
+        # B.IFF -1, B.IMPLIES -1, 16 steps incorrectly retained.
+        paired = {
+            "B.AND": {"before": 6, "after": 6, "total": 6},
+            "B.IFF": {"before": 6, "after": 5, "total": 6},
+            "B.IMPLIES": {"before": 6, "after": 5, "total": 6},
+            "B.NOT": {"before": 6, "after": 6, "total": 6},
+            "B.OR": {"before": 6, "after": 6, "total": 6},
+            "B.XOR": {"before": 7, "after": 8, "total": 12},
+        }
+        result = decide(paired, active_capability="B.XOR", phase="RECOVERY_2",
+                        protected=set(paired) - {"B.XOR"}, settings=Settings(),
+                        mature_grades=frozenset({"A", "B"}),
+                        same_grade_capabilities=tuple(paired))
+        self.assertEqual(result["decision"], "REJECT")
+        self.assertEqual(result["reason"], "SAME_GRADE_NET_REGRESSION")
+        self.assertEqual(result["local_correct_delta"], 1)
+        self.assertEqual(result["same_grade_net_correct_delta"], -1)
+
+    def test_target_only_gain_with_same_grade_tie_is_not_progress(self):
+        paired = {
+            "B.XOR": {"before": 7, "after": 8, "total": 12},
+            "B.IFF": {"before": 6, "after": 5, "total": 6},
+        }
+        result = decide(paired, active_capability="B.XOR", phase="RECOVERY_1",
+                        protected={"B.IFF"}, settings=Settings(),
+                        same_grade_capabilities=("B.IFF", "B.XOR"))
+        self.assertEqual(result["decision"], "REJECT")
+        self.assertEqual(result["reason"], "NO_POSITIVE_SAME_GRADE_GAIN")
+        self.assertEqual(result["same_grade_net_correct_delta"], 0)
+
+    def test_positive_fresh_grade_probe_cannot_hide_fixed_cohort_regression(self):
+        paired = {
+            "B.IFF": {"before": 8, "after": 9, "total": 12},
+            "B.AND": {"before": 6, "after": 6, "total": 6},
+        }
+        result = decide(
+            paired, active_capability="B.IFF", phase="RECOVERY_2",
+            protected={"B.AND"}, settings=Settings(),
+            same_grade_capabilities=("B.AND", "B.IFF"),
+            fixed_grade_replay={"status": "MEASURED", "grade": "B",
+                                "before": 59, "after": 56, "total": 72,
+                                "cohort_sha256": "a" * 64})
+        self.assertEqual(result["decision"], "REJECT")
+        self.assertEqual(result["reason"], "FIXED_GRADE_COHORT_REGRESSION")
+        self.assertEqual(result["fixed_grade_replay"]["net_correct_delta"], -3)
+
+    def test_all_target_grade_capabilities_must_be_measured(self):
+        paired = {"B.XOR": {"before": 7, "after": 8, "total": 12}}
+        with self.assertRaisesRegex(ValueError, "INCOMPLETE_SAME_GRADE_PROBE"):
+            decide(paired, active_capability="B.XOR", phase="MAIN",
+                   protected=set(), settings=Settings(),
+                   same_grade_capabilities=("B.IFF", "B.XOR"))
+
+    def test_six_b_capabilities_all_scored_with_bounded_cross_grade_probes(self):
+        admitted = {f"B.{name}" for name in (
+            "AND", "IFF", "IMPLIES", "NOT", "OR", "XOR")}
+        admitted.update({f"A.{i}" for i in range(6)})
+        admitted.update({f"C.{i}" for i in range(7)})
+        selected = whole_grade_protection(
+            admitted, "B.XOR", {}, cap_limit=8, rotation=11)
+        self.assertEqual(len(selected), 8)
+        self.assertEqual({cap for cap in selected if cap.startswith("B.")},
+                         admitted.intersection({cap for cap in admitted
+                                                if cap.startswith("B.")}) - {"B.XOR"})
+        self.assertEqual({cap.split(".")[0] for cap in selected}, {"A", "B", "C"})
+        too_many = {f"B.{i}" for i in range(10)}
+        too_many.update({f"A.{i}" for i in range(6)})
+        large_grade = whole_grade_protection(
+            too_many, "B.0", {}, cap_limit=8, rotation=0)
+        self.assertEqual({cap for cap in large_grade if cap.startswith("B.")},
+                         {f"B.{i}" for i in range(1, 10)})
+        self.assertEqual(len(large_grade), 11)
+
     def test_primary_bandit_receives_negative_rejection_credit_instead_of_zero(self):
         rejected = {"decision": "REJECT"}
         credit = {"teacher_context_reward": -0.05}
@@ -199,6 +389,13 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(result["protected_tolerances"], {"B.XOR": 1, "C.SUB": 3})
         self.assertEqual(result["mature_protected_capabilities"], ["B.XOR"])
         rows["B.XOR"] = {"before": 6, "after": 5, "total": 6}
+        passing = decide(rows, active_capability="C.ADD", phase="MAIN",
+                         protected={"B.XOR", "C.SUB"}, settings=settings,
+                         mature_grades=frozenset({"A", "B"}))
+        self.assertEqual(passing["decision"], "REJECT")
+        self.assertEqual(passing["reason"], "SAME_GRADE_NET_REGRESSION")
+        self.assertEqual(passing["same_grade_net_correct_delta"], -1)
+        rows["C.SUB"] = {"before": 6, "after": 6, "total": 6}
         passing = decide(rows, active_capability="C.ADD", phase="MAIN",
                          protected={"B.XOR", "C.SUB"}, settings=settings,
                          mature_grades=frozenset({"A", "B"}))

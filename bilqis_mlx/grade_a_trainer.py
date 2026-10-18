@@ -37,6 +37,7 @@ from .learning_experiment import (
     contextual_pick, paired_outcomes, decide as decide_learning_trial,
     observe_context, selection_credit, fork_student, commit_trial,
     earlier_grade_capabilities, select_source_lesson, sampled_protection,
+    missing_grade_capabilities,
 )
 from .whole_student_retention import advance_peaks
 from .epoch_championships import (
@@ -1371,10 +1372,11 @@ def _introduced_cohort(run_dir, manifest, course, school, cohort):
 
 def _learning_probe_rows(source_root, graph, receipt, course, school, capability,
                          settings):
-    """Small same-parent source-oracled panel, no champions or untaught caps."""
+    """Complete admitted target grade plus bounded cross-grade protection."""
     eligible = set(assessment_capabilities(course, school)) | {capability}
     scores = (receipt.get("last_exam") or {}).get("scores") or {}
-    selected = sampled_protection(
+    from .learning_experiment import whole_grade_protection
+    selected = whole_grade_protection(
         eligible, capability, scores,
         cap_limit=settings.protected_cap_limit, rotation=school.visits)
     sampled = selected | {capability}
@@ -1392,11 +1394,128 @@ def _learning_probe_rows(source_root, graph, receipt, course, school, capability
     for name in sorted(sampled):
         rows.extend(_draw_live_rows(
             source_root, graph, course=course, capability=name,
-            each=target_each if name == capability else settings.probe_each,
+            each=(target_each if name.partition(".")[0] ==
+                  capability.partition(".")[0] else settings.probe_each),
             seed=_seed(receipt, capability="LEARNING_PROBE:"+name)))
     if {r["capability"] for r in rows} != sampled:
         raise ValueError("LEARNING_EXPERIMENT_PROBE_SCOPE_INCOMPLETE")
     return rows, selected, len(eligible)-len(sampled)
+
+
+def _fixed_same_grade_rows(run_dir, receipt, course, school, capability, settings):
+    """Reuse the last independently scored full-grade cohort, if available.
+
+    No new test rows are generated here. The persisted cohort, rubric and
+    content hash must all verify before the parent/challenger screen can
+    claim a fixed-exam grade comparison.
+    """
+    own_grade = capability.partition(".")[0]
+    exam = receipt.get("last_exam") or {}
+    if (exam.get("assessment_grade") != own_grade or
+            exam.get("grade_exam_epoch") != school.grade_exam_epoch):
+        return ()
+    required = {cap for cap in assessment_capabilities(course, school)
+                if cap.partition(".")[0] == own_grade}
+    exam_scores = exam.get("scores") or {}
+    if not required <= set(exam_scores):
+        return ()
+    cohort = _verify_saved_cohort(run_dir, receipt, course)
+    if cohort is None:
+        raise ValueError("LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_MISSING")
+    rows = tuple(r for r in cohort.rows if r["capability"] in required)
+    if (len(rows) != len({r["id"] for r in rows}) or
+            len(rows) > len(required) * 48 or
+            any(type(exam_scores[cap].get("total")) is not int or
+                exam_scores[cap]["total"] < 1 or
+                sum(row["capability"] == cap for row in rows) !=
+                exam_scores[cap]["total"] for cap in required)):
+        raise ValueError("LEARNING_EXPERIMENT_FIXED_GRADE_COHORT_INCOMPLETE")
+    return rows
+
+
+def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
+                              parent, candidate, probe_rows, target_parent,
+                              settings):
+    """Complete missing candidate scores only after a target gain is observed.
+
+    Parent/candidate predictions are never reused across candidate weights,
+    AdamW steps, source questions or source-cohort identities. A target failure
+    is conclusive rejection without running redundant peer and exam inference.
+    """
+    config, answer_ids = receipt["config"], receipt["answer_ids"]
+    target_rows = [row for row in probe_rows if row["capability"] == capability]
+    target_candidate = _predictions(mx, candidate, target_rows, config, answer_ids)
+    target_pair = paired_outcomes(target_rows, target_parent, target_candidate)
+    required = tuple(sorted(
+        name for name in assessment_capabilities(course, school)
+        if name.partition(".")[0] == capability.partition(".")[0]))
+    if target_pair[capability]["after"] <= target_pair[capability]["before"]:
+        return (target_pair, set(), (capability,), {
+            "status": "NOT_MEASURED", "reason": "TARGET_DID_NOT_GAIN"},
+            {"status": "NOT_MEASURED", "reason": "TARGET_DID_NOT_GAIN"},
+            "TARGET_ONLY_REJECTED")
+
+    # This checkpoint has already been evaluated on its target. Score only
+    # missing grade peers and independently selected cross-grade sentinels.
+    missing = missing_grade_capabilities(required, target_pair)
+    remaining = [row for row in probe_rows
+                 if row["capability"] in missing or
+                 row["capability"].partition(".")[0] != capability.partition(".")[0]]
+    parent_scores = {**target_parent}
+    candidate_scores = {**target_candidate}
+    if remaining:
+        parent_scores.update(_predictions(mx, parent, remaining, config, answer_ids))
+        candidate_scores.update(_predictions(
+            mx, candidate, remaining, config, answer_ids))
+    pair = paired_outcomes(probe_rows, parent_scores, candidate_scores)
+    if missing_grade_capabilities(required, pair):
+        raise ValueError("LEARNING_EXPERIMENT_INCOMPLETE_SAME_GRADE_PROMOTION")
+    protected = set(pair)-set(required)
+    protected.update(name for name in required if name != capability)
+    grade_net = sum(pair[name]["after"]-pair[name]["before"] for name in required)
+    if grade_net <= 0:
+        return (pair, protected, required,
+                {"status": "NOT_MEASURED",
+                 "reason": "SAME_GRADE_NET_NOT_POSITIVE"},
+                {"status": "NOT_MEASURED",
+                 "reason": "SAME_GRADE_NET_NOT_POSITIVE"},
+                "GRADE_NET_REJECTED")
+
+    fixed = {"status": "NOT_MEASURED",
+             "reason": "NO_COMPARABLE_COMPLETE_GRADE_EXAM"}
+    fixed_rows = _fixed_same_grade_rows(
+        run_dir, receipt, course, school, capability, settings)
+    fixed_parent = fixed_candidate = {}
+    if fixed_rows:
+        fixed_parent = _predictions(mx, parent, list(fixed_rows), config, answer_ids)
+        fixed_candidate = _predictions(
+            mx, candidate, list(fixed_rows), config, answer_ids)
+        fixed_scores = paired_outcomes(fixed_rows, fixed_parent, fixed_candidate)
+        fixed = {"status": "MEASURED",
+                 "grade": capability.partition(".")[0],
+                 "cohort_sha256": receipt["last_exam"]["cohort_sha256"],
+                 "before": sum(v["before"] for v in fixed_scores.values()),
+                 "after": sum(v["after"] for v in fixed_scores.values()),
+                 "total": sum(v["total"] for v in fixed_scores.values())}
+
+    from .fragile_replay import load_replay_rows, screen_replay
+    replay_rows = load_replay_rows(run_dir, receipt)
+    replay = {"status": "NOT_MEASURED",
+              "reason": "B_OR_XOR_EXAM_NOT_YET_ADMITTED"}
+    if replay_rows:
+        ids = {row["id"] for row in replay_rows}
+        replay_parent = (dict((rid, fixed_parent[rid]) for rid in ids)
+                         if ids <= fixed_parent.keys() else
+                         _predictions(mx, parent, list(replay_rows),
+                                      config, answer_ids))
+        replay_candidate = (dict((rid, fixed_candidate[rid]) for rid in ids)
+                            if ids <= fixed_candidate.keys() else
+                            _predictions(mx, candidate, list(replay_rows),
+                                         config, answer_ids))
+        replay = screen_replay(
+            replay_rows, replay_parent, replay_candidate,
+            receipt["last_exam"]["cohort_sha256"])
+    return pair, protected, required, fixed, replay, "COMPLETE_SAME_GRADE"
 
 
 def _skip_perfect_target_visit(run_dir, receipt, school, course, capability,
@@ -1474,14 +1593,12 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                           receipt["answer_ids"])
     parent_parameters, parent_optimizer = params, optimizer
     probe_rows = protected_caps = parent_predictions = None
-    replay_rows = ()
-    replay_parent = {}
     if learning_settings is not None:
         probe_rows, protected_caps, unsampled_caps = _learning_probe_rows(
             source_root, graph, receipt, course, school, cap, learning_settings)
-        parent_predictions = _predictions(
-            mx, parent_parameters, probe_rows, receipt["config"], receipt["answer_ids"])
         target_rows = [row for row in probe_rows if row["capability"] == cap]
+        parent_predictions = _predictions(
+            mx, parent_parameters, target_rows, receipt["config"], receipt["answer_ids"])
         if target_rows and all(parent_predictions[row["id"]] == row["gold"]
                                for row in target_rows):
             # A strict positive-gain gate cannot admit a trial whose fresh
@@ -1491,12 +1608,6 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             return _skip_perfect_target_visit(
                 run_dir, receipt, school, course, cap, len(target_rows),
                 int(parent_optimizer.state["step"].item()), teacher=teacher)
-        from .fragile_replay import load_replay_rows
-        replay_rows = load_replay_rows(run_dir, receipt)
-        if replay_rows:
-            replay_parent = _predictions(
-                mx, parent_parameters, list(replay_rows),
-                receipt["config"], receipt["answer_ids"])
         params, optimizer = fork_student(mx, parent_parameters, parent_optimizer)
     last_loss = 0.0
     last_norm = 0.0
@@ -1593,28 +1704,28 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     candidate_gain = after-before
     outcome = context_credit = None
     if learning_settings is not None:
-        candidate_predictions = _predictions(
-            mx, params, probe_rows, receipt["config"], receipt["answer_ids"])
-        pair = paired_outcomes(probe_rows, parent_predictions, candidate_predictions)
-        from .fragile_replay import screen_replay
-        replay = (screen_replay(replay_rows, replay_parent,
-                  _predictions(mx, params, list(replay_rows), receipt["config"],
-                               receipt["answer_ids"]),
-                  receipt["last_exam"]["cohort_sha256"])
-                  if replay_rows else {"status": "NOT_MEASURED",
-                                       "reason": "B_OR_XOR_EXAM_NOT_YET_ADMITTED"})
+        pair, probed, current_grade, fixed_grade_evidence, replay, stage = (
+            _candidate_grade_evidence(
+                mx, run_dir, receipt, course, school, cap,
+                parent_parameters, params, probe_rows,
+                parent_predictions, learning_settings))
         outcome = decide_learning_trial(
             pair, active_capability=cap, phase=school.stage,
-            protected=protected_caps, settings=learning_settings,
+            protected=probed, settings=learning_settings,
+            same_grade_capabilities=current_grade,
+            fixed_grade_replay=fixed_grade_evidence,
             mature_grades=frozenset(school.champions),
             negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
             source_cohort_sha256=_fingerprint([
-                (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows]),
+                (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows
+                if r["capability"] in pair]),
             fragile_replay=replay)
+        outcome["qualification_stage"] = stage
         from .matrix_strain import observe as observe_matrix_strain
         outcome["matrix_strain"] = observe_matrix_strain(
             mx, run_dir, receipt, parent_parameters, params)
-        outcome["unsampled_admitted_capabilities"] = unsampled_caps
+        outcome["unsampled_admitted_capabilities"] = (
+            len(set(assessment_capabilities(course, school)) | {cap})-len(pair))
         context_credit = observe_context(
             teacher, capability=cap, phase=school.stage, policy_key=policy_key,
             decision=outcome, local_gain=candidate_gain,

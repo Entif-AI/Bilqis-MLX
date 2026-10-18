@@ -76,6 +76,20 @@ def _grade_caps(course_grades, grade):
     return result
 
 
+def _incomplete_grade_decision(grade, capabilities, scores, sha, *, origin):
+    missing = [cap for cap in capabilities if cap not in scores]
+    if missing:
+        return {"grade": grade, "decision": (
+            "DEFER_ORIGIN_GRADE_INCOMPLETE" if origin else
+            "DEFER_TARGET_GRADE_INCOMPLETE"),
+            "missing_capabilities": missing, "candidate_sha256": sha}
+    if not origin and any(scores[cap]["correct"] != scores[cap]["total"]
+                          for cap in capabilities):
+        return {"grade": grade, "decision": "DENY_TARGET_GRADE_NOT_PERFECT",
+                "candidate_sha256": sha}
+    return None
+
+
 def needed_incumbents(epoch: dict, *, grades: dict, scores: dict) -> dict:
     """Identify only checkpoints needed for a potential qualifying challenge."""
     roles = epoch.get("active_roles", {})
@@ -85,6 +99,8 @@ def needed_incumbents(epoch: dict, *, grades: dict, scores: dict) -> dict:
     for grade in grades:
         caps = _grade_caps(grades, grade)
         if grade == origin:
+            if not set(caps) <= set(scores):
+                continue
             for cap in caps:
                 if cap not in scores or scores[cap]["correct"] != scores[cap]["total"]:
                     continue
@@ -99,6 +115,31 @@ def needed_incumbents(epoch: dict, *, grades: dict, scores: dict) -> dict:
                     pointer = roles[cap]["checkpoint"]
                     needed[pointer["sha256"]] = pointer
     return needed
+
+
+def _external_takeovers(grades, origin, scores, pointer, roles,
+                        challenger_exam, incumbent_exams, record):
+    decisions = []
+    for grade in grades:
+        if grade == origin:
+            continue
+        caps = _grade_caps(grades, grade)
+        blocked = _incomplete_grade_decision(
+            grade, caps, scores, pointer["sha256"], origin=False)
+        if blocked:
+            decisions.append(blocked)
+            continue
+        owners = {cap: roles[cap]["checkpoint"]["sha256"]
+                  for cap in caps if cap in roles}
+        verdict = cross_origin_takeover(
+            grade_capabilities=caps, admitted_capabilities=tuple(scores),
+            active_role_owners=owners, challenger_exam=challenger_exam,
+            incumbent_exams={sha: incumbent_exams[sha] for sha in set(owners.values())})
+        decisions.append({"grade": grade, **verdict})
+        if verdict["decision"] in ("ELIGIBLE", "ELIGIBLE_UNCONTESTED_GRADE"):
+            for cap in caps:
+                record(cap)
+    return decisions
 
 
 def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
@@ -134,7 +175,14 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
         changes.append(capability)
 
     # Current-origin roles keep ordinary strictly-greater simultaneous breadth.
-    for cap in _grade_caps(grades, origin):
+    current_grade = _grade_caps(grades, origin)
+    own_blocker = _incomplete_grade_decision(
+        origin, current_grade, scores, pointer["sha256"], origin=True)
+    if own_blocker:
+        decisions.append(own_blocker)
+    # Even an individual same-origin title is not awarded from a partially
+    # tested checkpoint. Unintroduced or unscored peers mean no promotion yet.
+    for cap in current_grade if own_blocker is None else ():
         if cap not in scores or scores[cap]["correct"] != scores[cap]["total"]:
             continue
         prior = roles.get(cap)
@@ -158,23 +206,9 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
                 continue
         record(cap)
 
-    # Other grades cannot change one role at a time: require the entire
-    # target grade perfect and outrank every displaced role owner school-wide.
-    for grade in grades:
-        if grade == origin:
-            continue
-        caps = _grade_caps(grades, grade)
-        if not all(cap in scores and scores[cap]["correct"] == scores[cap]["total"]
-                   for cap in caps):
-            continue
-        owners = {cap: roles[cap]["checkpoint"]["sha256"]
-                  for cap in caps if cap in roles}
-        verdict = cross_origin_takeover(
-            grade_capabilities=caps, admitted_capabilities=tuple(scores),
-            active_role_owners=owners, challenger_exam=challenger_exam,
-            incumbent_exams={sha: incumbent_exams[sha] for sha in set(owners.values())})
-        decisions.append({"grade": grade, **verdict})
-        if verdict["decision"] in ("ELIGIBLE", "ELIGIBLE_UNCONTESTED_GRADE"):
-            for cap in caps:
-                record(cap)
+    # Foreign-grade promotion is atomic: record only a complete all-perfect
+    # grade after any actual displaced owners have lost the school comparison.
+    decisions.extend(_external_takeovers(
+        grades, origin, scores, pointer, roles,
+        challenger_exam, incumbent_exams, record))
     return updated, tuple(changes), tuple(decisions)
