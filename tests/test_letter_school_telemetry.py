@@ -20,6 +20,70 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_session_start_reanchors_start_score_without_erasing_historical_best(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, exam("A", 10, "rubric-a", {"A.IDENTITY": (7, 12)},
+                               step=100))
+            ingest(board, exam("A", 20, "rubric-a", {"A.IDENTITY": (10, 12)},
+                               step=120))
+            ingest(board, {"event": "SCHOOL_SESSION_STARTED", "grade": "A",
+                           "generation": 20, "optimizer_step": 120,
+                           "checkpoint_sha256": "a" * 64})
+            ingest(board, exam("A", 30, "rubric-a", {"A.IDENTITY": (8, 12)},
+                               step=136))
+
+            mastery = board._section_rows("GRADES & MASTERY")[-1]
+            self.assertEqual(mastery["start"], "10/12")
+            self.assertEqual(mastery["latest"], "8/12")
+            self.assertEqual(mastery["best"], "10/12")
+            display = board.render(width=180, height=42)
+            self.assertIn("START", display)
+            self.assertNotIn("FIRST", display)
+
+    def test_method_column_projects_actual_instruction_mechanism(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {
+                "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                "grade": "B", "active_grade": "C", "capability": "B.IFF",
+                "optimizer_step": 232472, "retained_optimizer_updates": 0,
+                "teacher_decision": {"selected": {
+                    "exam_mistake_replay": 128,
+                    "prerequisite_connections": [],
+                    "champion_priority": 0,
+                }},
+                "boolean_association_bridge": {
+                    "active_for_visit": True,
+                    "borrowed_source_grades": ["A", "C"],
+                    "delivered_examples": 128,
+                },
+            })
+            self.assertEqual(board.rows["CANDIDATES"][-1]["method"], "COMPOSE+MISS")
+
+    def test_candidate_retention_populates_retention_panel_with_real_decision(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {
+                "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                "grade": "B", "capability": "B.IFF", "optimizer_step": 232472,
+                "attempted_optimizer_updates": 16, "retained_optimizer_updates": 0,
+                "candidate_retention": {
+                    "active_probe_before": 10, "active_probe_after": 8,
+                    "active_probe_total": 12, "local_correct_delta": -2,
+                    "protected_net_correct_delta": 0, "worst_protected_loss": 0,
+                    "decision": "REJECT", "reason": "NO_MEASURABLE_TARGET_GAIN",
+                    "unsampled_admitted_capabilities": 18,
+                },
+            })
+            row = board.rows["SENTINEL & RETENTION"][-1]
+            self.assertEqual(row["target"], "10>8/12")
+            self.assertEqual(row["target_delta"], "-2")
+            self.assertEqual(row["protected"], "+0")
+            self.assertEqual(row["worst"], "0")
+            self.assertEqual(row["decision"], "REJECT")
+            self.assertIn("NO_MEASURABLE_TARGET_GAIN", row["evidence"])
+
     def test_retention_decision_not_instructional_note_controls_commit_claim(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())
@@ -130,7 +194,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             latest = board._section_rows("BRIDGE FAMILIES")[-1]
             self.assertEqual(latest["before"], "-")
             self.assertEqual(latest["gain"], "-")
-            self.assertIn("GENERATED COHORT", board._section_rows("SENTINEL & RETENTION")[-1]["evidence"])
+            self.assertFalse(board._section_rows("SENTINEL & RETENTION"))
             rendered = board.render(width=180, height=42)
             self.assertIn("BEST OBSERVED SAMPLE (not paired)", rendered)
             self.assertIn("fresh sampled cohort", rendered)
@@ -157,8 +221,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(set(mastery),{"A","B"})
             self.assertEqual(mastery["B"]["latest"],"5/24")
             self.assertEqual(board._section_rows("BRIDGE FAMILIES")[-1]["gain"],"-")
-            self.assertTrue(any("GENERATED COHORT" in event["evidence"] for event in
-                                board._section_rows("SENTINEL & RETENTION")))
+            self.assertFalse(board._section_rows("SENTINEL & RETENTION"))
 
     def test_independent_perfect_grade_bests_do_not_claim_cumulative_graduation(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -373,7 +436,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             rows = board._section_rows("BRIDGE FAMILIES")
             self.assertEqual(len(rows), 2)
             identity = next(r for r in rows if r["family"] == "A.IDENTITY")
-            self.assertEqual(identity["first"], "7/12")
+            self.assertEqual(identity["start"], "7/12")
             self.assertEqual(identity["before"], "10/12")
             self.assertEqual(identity["after"], "6/12")
             self.assertEqual(identity["gain"], "-4")
@@ -383,7 +446,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(mastery[0]["best"], "18/24")
             self.assertEqual(mastery[0]["to100"], "14")
             text = board.render(width=180, height=42)
-            self.assertIn("FIRST SEALED A 12/24", text)
+            self.assertIn("START SEALED A 12/24", text)
             self.assertIn("LATEST A 10/24", text)
             self.assertIn("BEST A 18/24", text)
             self.assertIn("TO100 14/24", text)
@@ -524,7 +587,8 @@ class SchoolTelemetryTests(unittest.TestCase):
             display = board.render(width=276, height=40)
             self.assertIn("LOSS", display)
             self.assertIn("GRAD", display)
-            self.assertIn("FIRST", display)
+            self.assertIn("START", display)
+            self.assertNotIn("FIRST", display)
             self.assertIn("LATEST", display)
             self.assertIn("BEST", display)
             self.assertIn("TO100", display)

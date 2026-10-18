@@ -110,6 +110,10 @@ class SchoolState:
     # A pass ends one enrollment. A return to the grade owns a fresh test.
     grade_exam_epoch: int = 0
     introduction_stage: int = 0
+    # Grades that already received their ordinary full MAIN pass in the
+    # current cross-grade sweep. Global weakest-three recovery is due only
+    # after every currently imperfect eligible grade has had that pass.
+    main_sweep_visited: tuple[str, ...] = ()
 
     @property
     def grade(self) -> str:
@@ -180,6 +184,9 @@ def verify_state(course: Course, state: SchoolState):
             type(state.grade_exam_epoch) is not int or state.grade_exam_epoch < 0 or
             type(state.introduction_stage) is not int or state.introduction_stage < 0):
         raise ValueError("INVALID_SCHOOL_COUNTER")
+    if (len(set(state.main_sweep_visited)) != len(state.main_sweep_visited) or
+            not set(state.main_sweep_visited) <= set(state.active_grades)):
+        raise ValueError("INVALID_MAIN_SWEEP_HISTORY")
     current = next(g for g in course.grades if g.id == state.grade)
     if state.introduction_stage >= max(1, len(current.teaching_stages)):
         raise ValueError("INVALID_INTRODUCTION_STAGE")
@@ -245,20 +252,26 @@ def _perfect_in_grade(course: Course, grade: str, scores: dict[str, Score]) -> b
 
 def _next_imperfect_grade_index(course: Course, state: SchoolState,
                                 scores: dict[str, Score], *,
-                                allowed_capabilities: tuple[str, ...] | None = None) -> int | None:
-    """Advance the ordinary spiral after the two bounded weakest-three rounds.
+                                allowed_capabilities: tuple[str, ...] | None = None,
+                                excluded_grades: tuple[str, ...] = ()) -> int | None:
+    """Find the next imperfect eligible grade in canonical wrapped order.
 
     Start immediately after the current grade, wrap once through canonical
     admitted order, skip grades already perfect on the latest cumulative
-    assessment, and treat the current still-imperfect grade as the final
-    fallback only after every other eligible grade has been considered.
+    assessment, and optionally skip grades already visited in the current
+    ordinary MAIN sweep.
     """
     allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
     if not allowed <= set(scores):
         raise ValueError("SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT")
+    excluded = set(excluded_grades)
+    if not excluded <= set(state.active_grades):
+        raise ValueError("SPIRAL_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM")
     count = len(state.active_grades)
     for offset in range(1, count + 1):
         index = (state.grade_index + offset) % count
+        if state.active_grades[index] in excluded:
+            continue
         grade_caps = _caps(course, (state.active_grades[index],))
         eligible = tuple(cap for cap in grade_caps if cap in allowed)
         if not eligible:
@@ -273,13 +286,52 @@ def _next_imperfect_grade_index(course: Course, state: SchoolState,
 
 def _resume_ordinary_spiral(course: Course, state: SchoolState,
                             snapshot: Assessment, *,
-                            allowed_capabilities: tuple[str, ...] | None = None) -> SchoolState | None:
+                            allowed_capabilities: tuple[str, ...] | None = None,
+                            reset_sweep: bool = True) -> SchoolState | None:
     index = _next_imperfect_grade_index(
         course, state, snapshot.scores, allowed_capabilities=allowed_capabilities)
     if index is None:
         return None
     entered = _enter_grade(
         course, state, index, stage="MAIN", first_recovery=(),
+        main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
+        latest_rubric_digest=snapshot.rubric_digest)
+    if allowed_capabilities is None:
+        return entered
+    allowed = set(allowed_capabilities)
+    queue = tuple(cap for cap in entered.queue if cap in allowed)
+    if not queue:
+        return None
+    return replace(entered, queue=queue)
+
+
+def _continue_main_sweep(course: Course, state: SchoolState,
+                         snapshot: Assessment, *,
+                         allowed_capabilities: tuple[str, ...] | None = None) -> SchoolState | None:
+    """Continue ordinary grade passes before scheduling global recovery.
+
+    A grade enters `main_sweep_visited` only after its complete currently
+    introduced MAIN queue has been assessed. Recovery therefore happens at
+    most twice *between* full multi-grade sweeps, not twice after every grade.
+    """
+    grade = next(g for g in course.grades if g.id == state.grade)
+    if (grade.teaching_stages and
+            state.introduction_stage < len(grade.teaching_stages) - 1):
+        # An incompletely introduced staged grade is not yet an ordinary
+        # cross-grade sweep member. Its current stage must pass/remediate first.
+        return None
+    visited = state.main_sweep_visited
+    if state.grade not in visited:
+        visited = visited + (state.grade,)
+    index = _next_imperfect_grade_index(
+        course, state, snapshot.scores,
+        allowed_capabilities=allowed_capabilities,
+        excluded_grades=visited)
+    if index is None:
+        return None
+    entered = _enter_grade(
+        course, state, index, stage="MAIN", first_recovery=(),
+        main_sweep_visited=visited,
         latest_rubric_digest=snapshot.rubric_digest)
     if allowed_capabilities is None:
         return entered
@@ -298,6 +350,7 @@ def _finish_grade_series(course: Course, state: SchoolState, assessment: Assessm
         next_grade = state.active_grades[next_index]
         return _enter_grade(course, state, next_index,
                        stage="MAIN", first_recovery=(), champions=pointers,
+                       main_sweep_visited=(),
                        revalidation_target_grade=None,
                        # The newly admitted grade owns the next cumulative seal.
                        latest_rubric_digest=None)
@@ -307,6 +360,7 @@ def _finish_grade_series(course: Course, state: SchoolState, assessment: Assessm
         # and wait for an explicitly versioned next-grade admission.
         return replace(state, queue=(), first_recovery=(), champions=pointers,
                        stage="AWAITING_NEXT_GRADE", pending_failures=(),
+                       main_sweep_visited=(),
                        revalidation_target_grade=None,
                        latest_rubric_digest=assessment.rubric_digest)
     # Whole-school result is *one* model's all-grade result. A collection of
@@ -318,6 +372,7 @@ def _finish_grade_series(course: Course, state: SchoolState, assessment: Assessm
                    if not _perfect_in_grade(course, g.id, assessment.scores))
     return replace(state, queue=(), first_recovery=(), champions=pointers,
                    stage="AWAITING_TEACHER_SOUP" if failed else "WHOLE_SCHOOL_MASTERED",
+                   main_sweep_visited=(),
                    revalidation_target_grade=None,
                    latest_rubric_digest=assessment.rubric_digest,
                    pending_failures=failed)
@@ -340,7 +395,8 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
             # weakest-three and same-checkpoint assessment schedule.
             next_index = state.grade_index + 1
             return _enter_grade(course, state, next_index,
-                           stage="MAIN", first_recovery=(), champions=pointers)
+                           stage="MAIN", first_recovery=(), champions=pointers,
+                           main_sweep_visited=())
         failed = tuple(g for g in state.active_grades[:target_index + 1]
                        if not _perfect_in_grade(course, g, assessment.scores))
         if failed:
@@ -349,12 +405,14 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
                 # only failed grades are revisited in that next school cycle.
                 return replace(state, queue=(), first_recovery=(), champions=pointers,
                                stage="AWAITING_TEACHER_SOUP", pending_failures=failed,
+                               main_sweep_visited=(),
                                revalidation_target_grade=None,
                                latest_rubric_digest=assessment.rubric_digest)
             # At a partial-program boundary, do not start C if the final B
             # checkpoint lost A. Repeat the ordered prefix until it sticks.
             return _enter_grade(course, state, 0, stage="MAIN",
-                           first_recovery=(), champions=pointers)
+                           first_recovery=(), champions=pointers,
+                           main_sweep_visited=())
         return _finish_grade_series(course, state, assessment, pointers)
 
     if state.grade_index > 0 and state.grade not in state.champions:
@@ -363,6 +421,7 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
         # fresh ordered revalidation pass before the next grade is entered.
         return _enter_grade(course, state, 0, stage="MAIN",
                        first_recovery=(), champions=pointers,
+                       main_sweep_visited=(),
                        revalidation_target_grade=state.grade,
                        latest_rubric_digest=assessment.rubric_digest)
     return _finish_grade_series(course, state, assessment, pointers)
@@ -395,9 +454,16 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
         return replace(_promote(course, state, snapshot),
                        grade_exam_epoch=state.grade_exam_epoch + 1)
     if state.stage == "ASSESS_MAIN":
+        continued = _continue_main_sweep(course, state, snapshot)
+        if continued is not None:
+            return continued
         trio = weakest_three(snapshot.scores, pool)
         return replace(state, stage="RECOVERY_1", queue=trio,
-                       first_recovery=trio, latest_rubric_digest=snapshot.rubric_digest)
+                       first_recovery=trio,
+                       main_sweep_visited=(state.main_sweep_visited + (state.grade,)
+                                           if state.grade not in state.main_sweep_visited
+                                           else state.main_sweep_visited),
+                       latest_rubric_digest=snapshot.rubric_digest)
     if state.stage == "ASSESS_RECOVERY_1":
         # The second ranking is fresh, not disjoint. An unresolved weakness
         # must not become ineligible merely because round one selected it.
@@ -408,7 +474,7 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
     # resume ordinary sequential grade progression, skipping grades already
     # perfect on this cumulative assessment. Never start a third recovery burst
     # before another ordinary grade pass.
-    resumed = _resume_ordinary_spiral(course, state, snapshot)
+    resumed = _resume_ordinary_spiral(course, state, snapshot, reset_sweep=True)
     if resumed is None:
         raise ValueError("SPIRAL_RECOVERY_ENDED_WITHOUT_IMPERFECT_GRADE")
     return resumed
@@ -435,7 +501,22 @@ def assess_flash(course: Course, state: SchoolState, snapshot: Assessment) -> Sc
                            latest_rubric_digest=snapshot.rubric_digest)
 
     if _perfect_in_grade(course, state.grade, snapshot.scores):
-        resumed = _resume_ordinary_spiral(course, state, snapshot)
+        if state.stage == "ASSESS_MAIN":
+            continued = _continue_main_sweep(course, state, snapshot)
+            if continued is not None:
+                return continued
+            # If another grade visited earlier in this sweep is still imperfect,
+            # the ordinary sweep is complete and the two global recovery rounds
+            # are due before regular progression resumes.
+            trio = weakest_three(snapshot.scores, pool)
+            if trio:
+                visited = state.main_sweep_visited
+                if state.grade not in visited:
+                    visited = visited + (state.grade,)
+                return replace(state, stage="RECOVERY_1", queue=trio,
+                               first_recovery=trio, main_sweep_visited=visited,
+                               latest_rubric_digest=snapshot.rubric_digest)
+        resumed = _resume_ordinary_spiral(course, state, snapshot, reset_sweep=True)
         if resumed is not None and resumed.grade != state.grade:
             return resumed
         # No remaining imperfect grade exists. Hold the exact assessment debt
@@ -443,14 +524,21 @@ def assess_flash(course: Course, state: SchoolState, snapshot: Assessment) -> Sc
         return replace(state, latest_rubric_digest=snapshot.rubric_digest)
 
     if state.stage == "ASSESS_MAIN":
+        continued = _continue_main_sweep(course, state, snapshot)
+        if continued is not None:
+            return continued
         trio = weakest_three(snapshot.scores, pool)
         return replace(state, stage="RECOVERY_1", queue=trio,
-                       first_recovery=trio, latest_rubric_digest=snapshot.rubric_digest)
+                       first_recovery=trio,
+                       main_sweep_visited=(state.main_sweep_visited + (state.grade,)
+                                           if state.grade not in state.main_sweep_visited
+                                           else state.main_sweep_visited),
+                       latest_rubric_digest=snapshot.rubric_digest)
     if state.stage == "ASSESS_RECOVERY_1":
         trio = weakest_three(snapshot.scores, pool)
         return replace(state, stage="RECOVERY_2", queue=trio,
                        latest_rubric_digest=snapshot.rubric_digest)
-    resumed = _resume_ordinary_spiral(course, state, snapshot)
+    resumed = _resume_ordinary_spiral(course, state, snapshot, reset_sweep=True)
     if resumed is None:
         return replace(state, latest_rubric_digest=snapshot.rubric_digest)
     return resumed
@@ -496,10 +584,18 @@ def assess_withheld(course: Course, state: SchoolState, snapshot: Assessment,
     # Any withheld capability remains explicit graduation debt; never promote
     # a grade or cumulative prefix from a partial ordinary assessment.
     if state.stage == "ASSESS_MAIN":
+        continued = _continue_main_sweep(
+            course, state, snapshot, allowed_capabilities=active_pool)
+        if continued is not None:
+            return continued
         trio = weakest_three(snapshot.scores, active_pool)
         if trio:
+            visited = state.main_sweep_visited
+            if state.grade not in visited:
+                visited = visited + (state.grade,)
             return replace(state, stage="RECOVERY_1", queue=trio,
                            first_recovery=trio,
+                           main_sweep_visited=visited,
                            latest_rubric_digest=snapshot.rubric_digest)
         return replace(state, stage="DEFERRED_STAGNATION", queue=(),
                        first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
@@ -512,7 +608,8 @@ def assess_withheld(course: Course, state: SchoolState, snapshot: Assessment,
                        first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
 
     resumed = _resume_ordinary_spiral(
-        course, state, snapshot, allowed_capabilities=active_pool)
+        course, state, snapshot, allowed_capabilities=active_pool,
+        reset_sweep=True)
     if resumed is not None:
         return resumed
     return replace(state, stage="DEFERRED_STAGNATION", queue=(),
@@ -561,6 +658,7 @@ def append_next_grade(previous: Course, successor: Course,
                    grade_exam_epoch=state.grade_exam_epoch + 1,
                    active_grades=successor_ids,
                    stage="MAIN", first_recovery=(),
+                   main_sweep_visited=(),
                    revalidation_target_grade=None,
                    latest_rubric_digest=None, pending_failures=(),
                    teacher_soup_digest=None)
@@ -579,6 +677,7 @@ def continue_after_soup(course: Course, state: SchoolState,
     restarted = replace(state, active_grades=state.pending_failures,
                    grade_exam_epoch=state.grade_exam_epoch + 1,
                    first_recovery=(), stage="MAIN",
+                   main_sweep_visited=(),
                    pending_failures=(), school_cycles=state.school_cycles+1,
                    revalidation_target_grade=None,
                    teacher_soup_digest=frozen_teacher_receipt)
@@ -614,6 +713,7 @@ def read_state(path: Path, course: Course) -> SchoolState:
     raw["queue"] = tuple(raw["queue"])
     raw["first_recovery"] = tuple(raw["first_recovery"])
     raw["pending_failures"] = tuple(raw["pending_failures"])
+    raw["main_sweep_visited"] = tuple(raw.get("main_sweep_visited", ()))
     raw["current_student"] = Checkpoint(**raw["current_student"])
     raw["champions"] = {grade: Checkpoint(**cp)
                         for grade, cp in raw["champions"].items()}

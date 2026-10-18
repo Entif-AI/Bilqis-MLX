@@ -611,7 +611,9 @@ def _train_step(mx, parameters, optimizer, rows, config, answer_ids,
 def _state_from_json(value: dict, course) -> SchoolState:
     from .school import verify_state
     school = dict(value)
-    for name in ("active_grades", "queue", "first_recovery", "pending_failures"):
+    school.setdefault("main_sweep_visited", ())
+    for name in ("active_grades", "queue", "first_recovery", "pending_failures",
+                 "main_sweep_visited"):
         school[name] = tuple(school[name])
     school["current_student"] = Checkpoint(**school["current_student"])
     school["champions"] = {key: Checkpoint(**item)
@@ -3647,6 +3649,19 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             pending = list(receipt.get("_pending_visit_events", ()))
             pending.append(rehabilitation_event)
             receipt["_pending_visit_events"] = pending
+        school = _state_from_json(receipt["school"], course)
+        _record(run_dir, {
+            "event": "SCHOOL_SESSION_STARTED",
+            "generation": receipt["generation"],
+            "run_id": receipt["run_id"],
+            "grade": school.grade,
+            "grade_phase": school.stage,
+            "optimizer_step": school.current_student.optimizer_step,
+            "checkpoint_sha256": school.current_student.sha256,
+            "committed_total_visits": school.visits,
+            "flash_mode": flash_mode,
+            "boolean_association_bridge": boolean_association_bridge,
+        })
         visits = 0
         while True:
             from .numeric_staircase import scope_advance_due, advance_scope

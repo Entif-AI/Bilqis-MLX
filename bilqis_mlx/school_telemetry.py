@@ -92,6 +92,63 @@ def _association_text(event: dict) -> str | None:
     return None
 
 
+def _instruction_method_text(event: dict) -> str:
+    """Project the lesson mechanism actually evidenced by the visit receipt."""
+    parts = []
+    if _association_text(event) is not None:
+        parts.append("COMPOSE")
+    decision = event.get("teacher_decision") or {}
+    selected = decision.get("selected") if isinstance(decision, dict) else {}
+    selected = selected if isinstance(selected, dict) else {}
+    if type(selected.get("exam_mistake_replay")) is int and selected["exam_mistake_replay"] > 0:
+        parts.append("MISS")
+    prerequisites = selected.get("prerequisite_connections")
+    if isinstance(prerequisites, (list, tuple)) and prerequisites:
+        parts.append("PREREQ")
+    if type(selected.get("champion_priority")) is int and selected["champion_priority"] > 0:
+        parts.append("CHAMP")
+    if parts:
+        return "+".join(parts)
+    methodology = event.get("lesson_methodology") or {}
+    if isinstance(methodology, dict) and type(methodology.get("delivered_examples")) is int:
+        if methodology["delivered_examples"] > 0:
+            return "SOURCE"
+    if type(selected.get("delivered_examples")) is int and selected["delivered_examples"] > 0:
+        return "DIRECT"
+    return "-"
+
+
+def _candidate_retention_row(event: dict, grade: str, attempt: int) -> dict | None:
+    retention = event.get("candidate_retention")
+    if not isinstance(retention, dict):
+        return None
+    before = retention.get("active_probe_before")
+    after = retention.get("active_probe_after")
+    total = retention.get("active_probe_total")
+    target = (f"{before}>{after}/{total}"
+              if all(type(value) is int for value in (before, after, total)) and total > 0
+              else "-")
+    local = retention.get("local_correct_delta")
+    protected = retention.get("protected_net_correct_delta")
+    worst = retention.get("worst_protected_loss")
+    reason = str(retention.get("reason") or "UNKNOWN")
+    unsampled = retention.get("unsampled_admitted_capabilities")
+    evidence = reason
+    if type(unsampled) is int:
+        evidence += f" | unsampled {unsampled}"
+    return {
+        "grade": grade,
+        "attempt": attempt,
+        "target": target,
+        "target_delta": f"{local:+d}" if type(local) is int else "-",
+        "protected": f"{protected:+d}" if type(protected) is int else "-",
+        "worst": ("0" if worst == 0 else f"-{worst}"
+                  if type(worst) is int and worst > 0 else "-"),
+        "decision": str(retention.get("decision") or "UNKNOWN"),
+        "evidence": evidence,
+    }
+
+
 def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
     rows = []
     diagnostics = event.get("learning_diagnostics")
@@ -163,21 +220,20 @@ LETTER_TABLES = (
         Column("LR", 8, "lr", optional=True),
         Column("LESSON% BFR>AFTER", 18, "train"),
         Column("REWARD", 8, "reward", right=True),
-        Column("LOSS", 8, "loss", optional=True),
-        Column("GRAD", 10, "gradient", optional=True),
-        Column("METHOD", 12, "method", optional=True),
+        Column("LOSS", 8, "loss"),
+        Column("GRAD", 10, "gradient"),
+        Column("METHOD", 12, "method"),
         Column("OLDpp", 8, "old", optional=True, right=True),
         Column("DECISION / REASON", 30, "decision"))),
     ("SENTINEL & RETENTION", (
         Column("GRADE", 6, "grade"),
-        Column("EXAM", 6, "attempt", right=True),
-        Column("EXAMpp", 9, "probe", right=True),
-        Column("WORSTpp", 9, "worst", right=True),
-        Column("SENTpp", 9, "sent", right=True),
-        Column("CEd", 9, "ce", optional=True, right=True),
-        Column("P(C)d", 9, "prob", optional=True, right=True),
-        Column("MARGd", 9, "margin", optional=True, right=True),
-        Column("EVIDENCE", 25, "evidence", optional=True))),
+        Column("VISIT", 6, "attempt", right=True),
+        Column("TARGET", 13, "target", right=True),
+        Column("DTGT", 6, "target_delta", right=True),
+        Column("PROT", 6, "protected", right=True),
+        Column("WORST", 6, "worst", right=True),
+        Column("RESULT", 12, "decision"),
+        Column("EVIDENCE", 28, "evidence", optional=True))),
     ("SOUP & TEACHER", (
         Column("GRADE", 5, "grade"),
         Column("VISIT", 5, "attempt", right=True),
@@ -197,7 +253,7 @@ LETTER_TABLES = (
     ("BRIDGE FAMILIES", (
         Column("GRADE", 5, "grade"),
         Column("FAMILY", 22, "family"),
-        Column("FIRST", 7, "first", right=True),
+        Column("START", 7, "start", right=True),
         Column("PREVIOUS", 8, "before", right=True),
         Column("LATEST", 8, "after", right=True),
         Column("GAIN", 6, "gain", right=True),
@@ -205,7 +261,7 @@ LETTER_TABLES = (
     ("GRADES & MASTERY", (
         Column("GRADE", 5, "grade"),
         Column("STEP", 9, "step", right=True),
-        Column("FIRST", 7, "first", right=True),
+        Column("START", 7, "start", right=True),
         Column("LATEST", 7, "latest", right=True),
         Column("BEST", 7, "best", right=True),
         Column("TO100", 6, "to100", right=True),
@@ -235,6 +291,7 @@ EVENT_KINDS = {
     "SCHOOL_VISIT_COMMITTED": "visit",
     "SCHOOL_EXAM_COMMITTED": "exam",
     "SCHOOL_SESSION_STOPPED": "stop",
+    "SCHOOL_SESSION_STARTED": "start",
     "SCHOOL_SENTINEL_COMMITTED": "sentinel",
     "SCHOOL_SOUP_COMMITTED": "soup",
     "SCHOOL_FAMILY_PROBE_COMMITTED": "family",
@@ -300,17 +357,17 @@ class ExamScore:
 
 
 class SchoolTelemetry:
-    """Incremental projection; all first/latest/best scores are from receipts."""
+    """Incremental projection; START/latest/best scores are receipt-backed."""
 
     def __init__(self, board, *, active_grades=("A",), champions=None):
         self.board = board
         self.grades = list(active_grades)
         self.champions = champions or {}
-        self.first = {}   # (grade, complete-rubric) -> ExamScore
+        self.start = {}   # (grade, complete-rubric, scope) -> execution-start ExamScore
         self.latest = {}
         self.best = {}
         self.last_cap = {}  # (capability, complete-rubric) -> (correct,total)
-        self.first_cap = {}
+        self.start_cap = {}
         self.last_source_training = {}  # capability -> (accuracy, optimizer_step)
         self.exam_cohorts = {}  # (grade, semantic rubric) -> last sampled cohort
         # Whole-student exam scores are distinct from separate per-grade bests.
@@ -340,6 +397,7 @@ class SchoolTelemetry:
             self._grade(grade)
         {
             "init": self._init,
+            "start": self._start,
             "visit": self._visit,
             "exam": self._exam,
             "stop": self._stop,
@@ -356,6 +414,49 @@ class SchoolTelemetry:
     def _init(self, grade, event):
         self.board.state["step"] = event.get("optimizer_step", self.board.state.get("step"))
         self.board.state["_rate_sample_eligible"] = True
+
+    def begin_execution(self, *, grade=None, step=None):
+        """Re-anchor START to the scores that exist when this command begins."""
+        self.start = dict(self.latest)
+        self.start_cap = dict(self.last_cap)
+        # Emit current snapshots immediately so START is truthful before the
+        # first new exam in this execution command.
+        latest_by_grade = {}
+        for key, report in self.latest.items():
+            existing = latest_by_grade.get(report.grade)
+            if existing is None or report.generation >= existing.generation:
+                latest_by_grade[report.grade] = report
+        for g, report in sorted(latest_by_grade.items()):
+            key = (g, report.rubric, report.assessment_scope)
+            best = self.best.get(key, report)
+            champion = self.champions.get(g)
+            self.board.rows["GRADES & MASTERY"].append({
+                "visit": self.visits, "grade": g, "step": report.step or "-",
+                "start": f"{report.correct}/{report.total}",
+                "latest": f"{report.correct}/{report.total}",
+                "best": f"{best.correct}/{best.total}",
+                "to100": str(report.total-report.correct),
+                "right_pct": f"{100*report.correct/report.total:.1f}%",
+                "outcome": "EXECUTION START", "mastered": bool(champion),
+            })
+        if latest_by_grade:
+            ordered = [g for g in self.grades if g in latest_by_grade]
+            summary = " | ".join(
+                f"{g} {latest_by_grade[g].correct}/{latest_by_grade[g].total}"
+                for g in ordered)
+            steps = {latest_by_grade[g].step for g in ordered}
+            suffix = f" @step {next(iter(steps))}" if len(steps) == 1 else ""
+            self.board.operator_lines = [
+                "START " + summary + suffix + " | execution baseline",
+                "LATEST begins equal to START; BEST remains historical receipt-backed evidence.",
+            ]
+        self.board.state.update(
+            step=step if type(step) is int else self.board.state.get("step"),
+            prefix=grade or self.board.state.get("prefix"),
+            _rate_sample_eligible=True)
+
+    def _start(self, grade, event):
+        self.begin_execution(grade=grade, step=event.get("optimizer_step"))
 
     def _progress(self, grade, event):
         """Ephemeral operator-only progress; never interpreted as qualification."""
@@ -429,7 +530,7 @@ class SchoolTelemetry:
         row = {
             "capability": cap, "attempt": self.visits,
             "strategy": policy[:10], "lr": _display(strategy.get("lr"), decimals=5),
-            "method": event.get("instruction_method", "-"),
+            "method": _instruction_method_text(event),
             "train": train, "reward": gain,
             "loss": _display(event.get("loss")),
             "gradient": (f"{event['gradient_norm']:.3g}" if type(event.get("gradient_norm")) in (float,int) else "-"),
@@ -437,6 +538,9 @@ class SchoolTelemetry:
             "decision": _candidate_admission_text(event),
         }
         self.board.rows["CANDIDATES"].append(row)
+        retention_row = _candidate_retention_row(event, grade, self.visits)
+        if retention_row is not None:
+            self.board.rows["SENTINEL & RETENTION"].append(retention_row)
         association = _association_text(event)
         if association is not None:
             self.board.push("system", {
@@ -526,7 +630,7 @@ class SchoolTelemetry:
                                event.get("generation", 0), caps, scope)
             key = (g, rubric, scope)
             prev = self.latest.get(key)
-            first = self.first.setdefault(key, report)
+            start = self.start.setdefault(key, report)
             best = self.best.get(key)
             if best is None or correct * best.total > best.correct * total:
                 self.best[key] = report
@@ -534,32 +638,17 @@ class SchoolTelemetry:
             self.latest[key] = report
             same_cohort = not live or self.exam_cohorts.get(key) == cohort_sha
             for cap, (score, count) in sorted(caps.items()):
-                baseline = self.first_cap.setdefault((cap, rubric, scope), (score, count))
+                baseline = self.start_cap.setdefault((cap, rubric, scope), (score, count))
                 earlier = self.last_cap.get((cap, rubric, scope))
                 gain = score - earlier[0] if earlier and same_cohort else None
                 self.board.rows["BRIDGE FAMILIES"].append({
                     "grade": g, "family": cap, "attempt": report.generation,
-                    "first": f"{baseline[0]}/{baseline[1]}",
+                    "start": f"{baseline[0]}/{baseline[1]}",
                     "before": f"{earlier[0]}/{earlier[1]}" if earlier and same_cohort else "-",
                     "after": f"{score}/{count}",
                     "gain": f"{gain:+d}" if gain is not None else "-",
                 })
                 self.last_cap[(cap, rubric, scope)] = (score, count)
-            # This is a sealed-exam-to-sealed-exam change. It is NOT the
-            # independent sentinel/held-out teacher reward channel.
-            if prev and same_cohort:
-                pp = 100 * (correct / total - prev.correct / prev.total)
-                worst = min(100 * (caps[c][0] / caps[c][1] -
-                         prev.capabilities[c][0] / prev.capabilities[c][1]) for c in caps)
-            else:
-                pp, worst = None, None
-            self.board.rows["SENTINEL & RETENTION"].append({
-                "grade": g, "attempt": report.generation,
-                "probe": _delta(pp, pp=True), "worst": _delta(worst, pp=True),
-                "sent": "-", "ce": "-", "prob": "-", "margin": "-",
-                "evidence": ("GENERATED COHORT; NO SENTINEL" if live else
-                             "SEALED EXAM; NO SENTINEL"),
-            })
             champion = self.champions.get(g)
             epoch = event.get("championship_epoch") or {}
             earned = tuple(
@@ -600,7 +689,7 @@ class SchoolTelemetry:
                 label = f"{'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | {event.get('phase', '?')}"
             self.board.rows["GRADES & MASTERY"].append({
                 "visit": self.visits, "grade": g, "step": step or "-",
-                "first": f"{first.correct}/{first.total}",
+                "start": f"{start.correct}/{start.total}",
                 "latest": f"{correct}/{total}", "best": f"{best.correct}/{best.total}",
                 "to100": str(total-correct), "right_pct": f"{100*correct/total:.1f}%",
                 "outcome": label, "mastered": bool(champion),
@@ -671,13 +760,13 @@ class SchoolTelemetry:
         if report is None:
             return
         key = (grade, report.rubric, report.assessment_scope)
-        first = self.first[key]
+        start = self.start[key]
         best = self.best[key]
         latest = report
         live = key in self.exam_cohorts
         category = "GENERATED SAMPLE" if live else "SEALED"
         self.board.operator_lines = [
-            f"FIRST {category} {grade} {first.correct}/{first.total} @step {first.step or '-'} | "
+            f"START {category} {grade} {start.correct}/{start.total} @step {start.step or '-'} | "
             f"LATEST {grade} {latest.correct}/{latest.total} @step {latest.step or '-'} | "
             f"{'BEST OBSERVED SAMPLE (not paired)' if live else 'BEST'} {grade} "
             f"{best.correct}/{best.total} @step {best.step or '-'}",
@@ -706,16 +795,24 @@ class SchoolTelemetry:
         if event.get("partition") != "independent_validation":
             raise ValueError("SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT")
         _source_provenance(event)
-        self.board.rows["SENTINEL & RETENTION"].append({
+        ce = _delta(event.get("cross_entropy_delta"))
+        prob = _delta(event.get("correct_probability_delta"))
+        margin = _delta(event.get("margin_delta"))
+        sent = _delta(event.get("sentinel_delta_pp"), pp=True)
+        row = {
             "grade": grade, "attempt": event.get("generation", "-"),
-            "probe": _delta(event.get("probe_delta_pp"), pp=True),
+            "target": "INDEP",
+            "target_delta": _delta(event.get("probe_delta_pp"), pp=True),
+            "protected": sent,
             "worst": _delta(event.get("worst_delta_pp"), pp=True),
-            "sent": _delta(event.get("sentinel_delta_pp"), pp=True),
-            "ce": _delta(event.get("cross_entropy_delta")),
-            "prob": _delta(event.get("correct_probability_delta")),
-            "margin": _delta(event.get("margin_delta")),
-            "evidence": f"INDEPENDENT {event.get('family_count', '?')} families",
-        })
+            "decision": "SENTINEL",
+            "evidence": (f"{event.get('family_count', '?')} families | "
+                         f"CE {ce} P(C) {prob} M {margin}"),
+            # Retain raw semantic aliases for programmatic consumers of v1.
+            "probe": _delta(event.get("probe_delta_pp"), pp=True),
+            "sent": sent, "ce": ce, "prob": prob, "margin": margin,
+        }
+        self.board.rows["SENTINEL & RETENTION"].append(row)
 
     def _soup(self, grade, event):
         if event.get("teacher_only") is not True:
@@ -756,7 +853,7 @@ class SchoolTelemetry:
             raise ValueError("SCHOOL_TELEMETRY_FAMILY_RUBRIC_COUNT_DRIFT")
         self.board.rows["BRIDGE FAMILIES"].append({
             "grade": grade, "family": family,
-            "first": "-", "before": f"{before['correct']}/{before['total']}",
+            "start": "-", "before": f"{before['correct']}/{before['total']}",
             "after": f"{after['correct']}/{after['total']}",
             "gain": f"{after['correct']-before['correct']:+d}",
             "attempt": event.get("generation", "-"),

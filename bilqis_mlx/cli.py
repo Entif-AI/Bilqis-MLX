@@ -496,6 +496,8 @@ def _prepare_live_board(args, build, ingest):
         if event.get("_dashboard_redraw", True):
             board.draw()
     if board is not None:
+        board.school_telemetry.begin_execution(
+            grade=board.state.get("prefix"), step=board.state.get("step"))
         board.mode = (("FLASH | " if args.flash_mode else "") +
                       ("RESUMING" if args.resume else "STARTING"))
         board.state["stop"] = "PREPARING"

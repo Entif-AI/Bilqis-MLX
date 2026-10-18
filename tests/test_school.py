@@ -60,6 +60,82 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
+    def test_full_imperfect_grade_sweep_precedes_global_two_round_recovery(self):
+        course = three_grade_course()
+        student = self.init
+        state = replace(
+            start_new(course, student),
+            champions={grade: student for grade in ("A", "B", "C")},
+            revalidation_target_grade="C",
+        )
+        imperfect = all_scores(course, imperfect=("a.0", "b.0", "c.0"))
+
+        state = grade_loop(course, state, student)
+        state = assess(course, state, snapshot(course, student, imperfect))
+        self.assertEqual((state.grade, state.stage), ("B", "MAIN"))
+
+        state = grade_loop(course, state, student)
+        state = assess(course, state, snapshot(course, student, imperfect))
+        self.assertEqual((state.grade, state.stage), ("C", "MAIN"))
+
+        state = grade_loop(course, state, student)
+        state = assess(course, state, snapshot(course, student, imperfect))
+        self.assertEqual(state.stage, "RECOVERY_1")
+        self.assertEqual(state.queue, ("a.0", "b.0", "c.0"))
+
+        state = grade_loop(course, state, student)
+        state = assess(course, state, snapshot(course, student, imperfect))
+        self.assertEqual(state.stage, "RECOVERY_2")
+        self.assertEqual(state.queue, ("a.0", "b.0", "c.0"))
+
+        state = grade_loop(course, state, student)
+        state = assess(course, state, snapshot(course, student, imperfect))
+        self.assertEqual((state.grade, state.stage), ("A", "MAIN"))
+
+    def test_flash_uses_same_full_grade_sweep_before_global_recovery(self):
+        course = three_grade_course()
+        student = self.init
+        state = replace(
+            start_new(course, student),
+            champions={grade: student for grade in ("A", "B", "C")},
+            revalidation_target_grade="C",
+        )
+        imperfect = all_scores(course, imperfect=("a.0", "b.0", "c.0"))
+
+        state = grade_loop(course, state, student)
+        state = assess_flash(course, state, snapshot(course, student, imperfect))
+        self.assertEqual((state.grade, state.stage), ("B", "MAIN"))
+
+        state = grade_loop(course, state, student)
+        state = assess_flash(course, state, snapshot(course, student, imperfect))
+        self.assertEqual((state.grade, state.stage), ("C", "MAIN"))
+
+        state = grade_loop(course, state, student)
+        state = assess_flash(course, state, snapshot(course, student, imperfect))
+        self.assertEqual(state.stage, "RECOVERY_1")
+
+    def test_perfect_a_is_skipped_while_b_and_c_sweep_before_recovery(self):
+        course = three_grade_course()
+        student = self.init
+        b = course.grades[1]
+        state = replace(
+            start_new(course, student),
+            grade_index=1,
+            introduction_stage=(len(b.teaching_stages) - 1 if b.teaching_stages else 0),
+            champions={grade: student for grade in ("A", "B", "C")},
+            revalidation_target_grade="C",
+        )
+        imperfect = all_scores(course, imperfect=("b.0", "c.0"))
+
+        state = grade_loop(course, state, student)
+        state = assess(course, state, snapshot(course, student, imperfect))
+        self.assertEqual((state.grade, state.stage), ("C", "MAIN"))
+
+        state = grade_loop(course, state, student)
+        state = assess(course, state, snapshot(course, student, imperfect))
+        self.assertEqual(state.stage, "RECOVERY_1")
+        self.assertEqual(state.queue, ("b.0", "c.0"))
+
     def test_flash_stop_restores_assessment_debt(self):
         state = start_new(self.course, self.init)
         partial = visit(self.course, state, state.queue[0], self.init)
