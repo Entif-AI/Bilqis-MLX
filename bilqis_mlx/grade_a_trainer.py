@@ -78,6 +78,7 @@ from .school import (start_new, visit, assess, assess_withheld, next_capability,
                      reactivate_stagnation_debt, weakest_three,
                      SchoolState, Assessment, Score)
 from .stagnation_control import (
+    activate_sole_grade_rehabilitation,
     begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
     quarantined_capabilities, record_visit as record_stagnation_visit,
     start_session as start_stagnation_session,
@@ -1399,6 +1400,21 @@ def _require_active_stagnation_scope(scope) -> None:
         raise ValueError("STAGNATION_ROUTINE_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES")
 
 
+def _rehabilitate_sole_grade_debt(
+        course, school, stagnation, debt, *, generation):
+    """Keep training when containment debt is the only work left in one grade."""
+    if (stagnation is None or school.stage != "DEFERRED_STAGNATION" or
+            not debt):
+        return stagnation, school, ()
+    grades = {capability.partition(".")[0] for capability in debt}
+    if len(grades) != 1:
+        return stagnation, school, ()
+    stagnation, event = activate_sole_grade_rehabilitation(
+        stagnation, capabilities=tuple(debt), generation=generation)
+    school = reactivate_stagnation_debt(course, school, tuple(debt))
+    return stagnation, school, (event,)
+
+
 def _advance_stagnation_after_routine(
         *, course, school, routine_assessment, routine_advanced,
         stagnation, blocked_before, active_scope, routine_measured,
@@ -1439,6 +1455,13 @@ def _advance_stagnation_after_routine(
                                   "/post-stagnation-filter")
                 routine_advanced = assess_withheld(
                     course, school, reduced, blocked_after)
+    if routine_advanced.stage == "DEFERRED_STAGNATION":
+        stagnation, routine_advanced, rehabilitation_events = (
+            _rehabilitate_sole_grade_debt(
+                course, routine_advanced, stagnation,
+                quarantined_capabilities(stagnation),
+                generation=generation))
+        events = (*events, *rehabilitation_events)
     return (
         stagnation, events, routine_advanced,
         quarantined_capabilities(stagnation))
@@ -2959,10 +2982,11 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             frozen_soups, soup_changes = _cook_new_grade_soups(
                 mx, run_dir, receipt, perfect, course, graph,
                 reserve_gib=reserve_gib)
-    elif blocked_after:
+    elif blocked_before or blocked_after:
         # Capability containment is session-local teaching authority. Preserve
-        # all previously earned championship/soup evidence, but an incomplete
-        # ordinary school inventory cannot mint new mentor authority.
+        # all previously earned championship/soup evidence, but a routine exam
+        # sampled under containment remains incomplete authority even if
+        # rehabilitation releases that debt after scoring.
         perfect = receipt.get("graduation_perfect", {})
         frozen_soups = receipt.get("grade_soups", {})
         soup_changes = ()
@@ -3352,7 +3376,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         previous_stagnation = receipt.get("stagnation_session")
         prior_debt = quarantined_capabilities(previous_stagnation)
         school = _state_from_json(receipt["school"], course)
-        if prior_debt and school.stage == "DEFERRED_STAGNATION":
+        deferred_before_reentry = school.stage == "DEFERRED_STAGNATION"
+        if prior_debt and deferred_before_reentry:
             school = reactivate_stagnation_debt(course, school, prior_debt)
             receipt = {**receipt, "school": asdict(school)}
         history = list(receipt.get("stagnation_history", ()))
@@ -3368,6 +3393,16 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         receipt["stagnation_session"] = start_stagnation_session(
             session_id=uuid.uuid4().hex, generation=receipt["generation"],
             required_capabilities=assessment_capabilities(course, school))
+        debt_grades = {capability.partition(".")[0] for capability in prior_debt}
+        if prior_debt and deferred_before_reentry and len(debt_grades) == 1:
+            receipt["stagnation_session"], rehabilitation_event = (
+                activate_sole_grade_rehabilitation(
+                    receipt["stagnation_session"],
+                    capabilities=tuple(prior_debt),
+                    generation=receipt["generation"]))
+            pending = list(receipt.get("_pending_visit_events", ()))
+            pending.append(rehabilitation_event)
+            receipt["_pending_visit_events"] = pending
         visits = 0
         while True:
             from .numeric_staircase import scope_advance_due, advance_scope

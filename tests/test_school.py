@@ -84,6 +84,56 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(reentered.stage, "RECOVERY_1")
         self.assertEqual(reentered.queue, ("a.0",))
 
+    def test_trainer_auto_rehabilitates_when_one_grade_is_the_only_debt_left(self):
+        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx.stagnation_control import (
+            quarantined_capabilities, start_session)
+
+        state = grade_loop(self.course, start_new(self.course, self.init), self.init)
+        active = {f"a.{i}": (8, 8) for i in range(1, 6)}
+        deferred = assess_withheld(
+            self.course, state, snapshot(self.course, self.init, active),
+            ("a.0",))
+        control = start_session(
+            session_id="fixture-command", generation=20,
+            required_capabilities=tuple(f"a.{i}" for i in range(6)))
+        control["quarantined"] = {
+            "a.0": {"capability": "a.0", "reason": "fixture"},
+        }
+
+        control, resumed, events = trainer._rehabilitate_sole_grade_debt(
+            self.course, deferred, control, ("a.0",), generation=21)
+        self.assertEqual(resumed.stage, "RECOVERY_1")
+        self.assertEqual(resumed.queue, ("a.0",))
+        self.assertEqual(quarantined_capabilities(control), ())
+        self.assertEqual(
+            events[0]["event"], "SCHOOL_STAGNATION_REHABILITATION_STARTED")
+
+    def test_trainer_does_not_auto_rehabilitate_mixed_grade_debt(self):
+        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx.stagnation_control import start_session
+
+        course = three_grade_course()
+        state = start_new(course, self.init)
+        state = replace(
+            state, stage="DEFERRED_STAGNATION", queue=(), first_recovery=())
+        debt = ("a.0", "b.0")
+        control = start_session(
+            session_id="fixture-command", generation=20,
+            required_capabilities=tuple(
+                cap.id for grade in course.grades for cap in grade.capabilities))
+        control["quarantined"] = {
+            capability: {"capability": capability, "reason": "fixture"}
+            for capability in debt
+        }
+
+        unchanged_control, unchanged_state, events = (
+            trainer._rehabilitate_sole_grade_debt(
+                course, state, control, debt, generation=21))
+        self.assertIs(unchanged_control, control)
+        self.assertIs(unchanged_state, state)
+        self.assertEqual(events, ())
+
     def test_saturated_visit_preserves_pending_history_without_persisting_ram_student(self):
         from bilqis_mlx import grade_a_trainer as trainer
 

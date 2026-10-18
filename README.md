@@ -22,6 +22,8 @@ The issue #340 trial is isolated under `~/Code/bilqis-mlx-retention-lab`. Its pr
 
 The championship epoch began empty at the explicit baseline rebase, but it is no longer empty: later intact source-scored evidence has earned 19 active capability-best roles and frozen A/B/C soup votes. The rebased baseline itself still has zero automatic teaching votes. Commit `a041b01` restores fresh source-oracled routine examinations at every MAIN/RECOVERY boundary while keeping promotion/graduation attempts separate, repairs S3 across explicit rebase lineages and fresh paired cohorts, and activates per-human-command stagnation containment without waiving graduation debt. Historical cohorts, champions, soups and checkpoint receipts remain immutable evidence; old fixed-cohort scores must not be treated as directly comparable to newly drawn routine cohorts.
 
+When that containment exhausts all healthy work and every remaining quarantined mastery debt belongs to one grade, the trainer enters an explicit sole-grade rehabilitation pass instead of stopping only to repeat the same recovery pattern on the next command. It re-admits only the recorded debt capabilities; no debt is passed, forgiven or assigned a synthetic score, and fixed-frontier preservation remains in force. Exams sampled while debt was withheld remain partial evidence for championship authority even if rehabilitation begins after scoring. Mixed-grade deferred debt still stops for review under the existing behavior.
+
 ```bash
 cd ~/Code/bilqis-mlx-retention-lab
 npm run train -- --dry-run --resume --verify-source --run-dir ./runs/issue-340-mentor-epoch-trial

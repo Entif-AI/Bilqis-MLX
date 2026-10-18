@@ -42,6 +42,17 @@ def _validate(control: dict) -> None:
             not isinstance(control.get("quarantined"), dict) or
             not isinstance(control.get("alerts"), list)):
         raise ValueError("STAGNATION_SESSION_STATE_DRIFT")
+    rehabilitation = control.get("rehabilitation")
+    if rehabilitation is not None and (
+            not isinstance(rehabilitation, dict) or
+            not isinstance(rehabilitation.get("grade"), str) or
+            not rehabilitation["grade"] or
+            not isinstance(rehabilitation.get("capabilities"), list) or
+            not rehabilitation["capabilities"] or
+            len(set(rehabilitation["capabilities"])) !=
+            len(rehabilitation["capabilities"]) or
+            type(rehabilitation.get("started_generation")) is not int):
+        raise ValueError("STAGNATION_REHABILITATION_STATE_DRIFT")
 
 
 def quarantined_capabilities(control: dict | None) -> tuple[str, ...]:
@@ -49,6 +60,53 @@ def quarantined_capabilities(control: dict | None) -> tuple[str, ...]:
         return ()
     _validate(control)
     return tuple(sorted(control["quarantined"]))
+
+
+def activate_sole_grade_rehabilitation(
+        control: dict, *, capabilities: tuple[str, ...],
+        generation: int) -> tuple[dict, dict]:
+    """Release one sole remaining grade from containment for active remediation."""
+    _validate(control)
+    if (not capabilities or len(set(capabilities)) != len(capabilities) or
+            any(not isinstance(capability, str) or not capability
+                for capability in capabilities) or
+            type(generation) is not int or generation < 0):
+        raise ValueError("STAGNATION_REHABILITATION_INVALID_START")
+    required = set(control["required_capabilities"])
+    if not set(capabilities) <= required:
+        raise ValueError("STAGNATION_REHABILITATION_OUTSIDE_REQUIRED_SCOPE")
+    grades = {capability.partition(".")[0] for capability in capabilities}
+    if len(grades) != 1:
+        raise ValueError("STAGNATION_REHABILITATION_REQUIRES_SOLE_GRADE")
+    grade = next(iter(grades))
+
+    updated = deepcopy(control)
+    rehabilitated = set(capabilities)
+    for capability in capabilities:
+        updated["quarantined"].pop(capability, None)
+    for alert in updated["alerts"]:
+        if (alert.get("capability") in rehabilitated and
+                alert.get("action") == "WITHHELD_FOR_REMAINDER_OF_SESSION"):
+            alert["action"] = "RELEASED_FOR_SOLE_GRADE_REHABILITATION"
+            alert["resolution_generation"] = generation
+            alert["resolution_reason"] = "SOLE_REMAINING_GRADE_MASTERY_DEBT"
+    updated["rehabilitation"] = {
+        "grade": grade,
+        "capabilities": list(capabilities),
+        "started_generation": generation,
+        "reason": "SOLE_REMAINING_GRADE_MASTERY_DEBT",
+    }
+    updated["cycle_first_recovery"] = []
+    updated["cycle_visits"] = {}
+    return updated, {
+        "event": "SCHOOL_STAGNATION_REHABILITATION_STARTED",
+        "generation": generation,
+        "grade": grade,
+        "capabilities": list(capabilities),
+        "reason": "SOLE_REMAINING_GRADE_MASTERY_DEBT",
+        "quarantine_override": True,
+        "required_mastery_debt": True,
+    }
 
 
 def record_visit(control: dict, *, capability: str, phase: str,
@@ -114,7 +172,11 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
             warning_by_capability.setdefault(capability, []).append(signal)
     candidates = set(updated["cycle_first_recovery"]) & set(weakest_tail)
     events = []
+    rehabilitation_capabilities = set(
+        (updated.get("rehabilitation") or {}).get("capabilities", ()))
     for capability in sorted(candidates):
+        if capability in rehabilitation_capabilities:
+            continue
         if capability in updated["quarantined"]:
             continue
         score = scores.get(capability)
