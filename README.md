@@ -6,6 +6,8 @@ The former Bilqis implementations are preserved as pinned, read-only source depe
 
 ## Keep training the existing student
 
+**Championship authority:** [Championship lifecycle specification](docs/specifications/CHAMPIONSHIP_LIFECYCLE_V1.md) governs curriculum-boundary resets, same-grade champions, cross-origin takeover and frozen soup eligibility. The opt-in mentor-epoch branch is experimental, not an automatic change to the human's canonical school.
+
 ```bash
 cd ~/Code/bilqis-mlx
 npm run train -- --dry-run --resume --verify-source
