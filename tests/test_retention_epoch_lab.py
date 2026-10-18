@@ -27,6 +27,89 @@ def _rows(capability):
 
 
 class RetentionTeachingPathTests(unittest.TestCase):
+    def test_visit_consumes_prefetched_source_packet_without_serial_step_redraw(self):
+        policy = {"old": 0, "lr": 0.0001, "depth": 1,
+                  "contrast": 1., "distill": 0., "preview": 0}
+        teacher = {"strategies": {"p": policy}}
+        engine = SimpleNamespace(pick=lambda *_: ("p", policy))
+        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
+                                 champions={"A": {"optimizer_step": 1}},
+                                 current_student=SimpleNamespace(sha256="e" * 64))
+        grades = [SimpleNamespace(id=grade, capabilities=[SimpleNamespace(id=cap)])
+                  for grade, cap in (("A", "A.IDENTITY"), ("B", "B.XOR"))]
+        course = SimpleNamespace(
+            grades=grades, capability_map={}, digest=lambda: "c" * 64)
+        receipt = {"teacher": teacher, "generation": 7, "run_id": "prefetch-fixture",
+                   "school": {}, "teacher_misses": [], "config": {},
+                   "answer_ids": [6, 7], "curriculum_mode": "fixture-school",
+                   "semantic_graph_sha256": "d" * 64}
+        optimizer = SimpleNamespace(learning_rate=0.0001,
+                                    state={"step": SimpleNamespace(item=lambda: 1)})
+        captured = []
+        serial_draws = []
+
+        def serial_source_rows(*_args, **kwargs):
+            serial_draws.append(kwargs["seed"])
+            if len(serial_draws) > 1:
+                raise AssertionError("STEP_SOURCE_REDRAW_BYPASSED_PREFETCH")
+            return _rows(kwargs["capability"])
+
+        class Ready:
+            def __init__(self, value):
+                self.value = value
+            def result(self):
+                return self.value
+
+        class InlineExecutor:
+            def submit(self, _fn, request):
+                fresh = [
+                    {"id": f"prefetch:{index}", "source_id": f"prefetch:{index}",
+                     "capability": "B.XOR", "answer_kind": "binary",
+                     "gold": "TRUE" if index % 2 else "FALSE", "tokens": [3, 4, index + 5]}
+                    for index in range(12)
+                ]
+                return Ready({
+                    "schema": "bilqis.mlx.source-prefetch/v1",
+                    "identity": request["identity"],
+                    "fresh": fresh,
+                    "prior": [],
+                    "preservation": [],
+                    "association_rows": [],
+                })
+
+        def inspect_batch(_mx, _parameters, _optimizer, rows, *_args, **_kwargs):
+            captured.extend(rows)
+            raise _BatchCaptured("STOP_BEFORE_ANY_OPTIMIZER")
+
+        def wrong_predictions(_mx, _params, rows, *_args):
+            return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
+                    for row in rows}
+
+        with (patch.object(trainer, "_state_from_json", return_value=school),
+              patch.object(trainer, "next_capability", return_value="B.XOR"),
+              patch.object(trainer, "_draw_live_rows", side_effect=serial_source_rows),
+              patch.object(trainer, "assessment_capabilities", return_value=("B.XOR",)),
+              patch.object(trainer, "_frozen_confidence_champions", return_value=()),
+              patch.object(trainer, "_frozen_grade_soup_votes", return_value=((), ())),
+              patch.object(trainer, "_train_score", return_value=0.5),
+              patch.object(trainer, "_learning_probe_rows",
+                           return_value=(_rows("B.XOR")[:6], set(), 0)),
+              patch.object(trainer, "_predictions", side_effect=wrong_predictions),
+              patch.object(trainer, "fork_student", return_value=({}, optimizer)),
+              patch("bilqis_mlx.fragile_replay.load_replay_rows", return_value=()),
+              patch.object(trainer, "_train_step", side_effect=inspect_batch)):
+            with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
+                trainer._take_visit(
+                    None, Path("/never-opened"), receipt, {}, course, engine, {},
+                    optimizer, {}, steps_per_visit=1, batch_size=8, reserve_gib=0.,
+                    source_root=Path("/not-used"), learning_settings=Settings(),
+                    source_prefetch_executor=InlineExecutor(), source_prefetch_workers=1)
+
+        self.assertEqual(len(serial_draws), 1,
+                         "Only the visit-level score draw should use the serial path")
+        self.assertEqual(len(captured), 8)
+        self.assertTrue(all(row["id"].startswith("prefetch:") for row in captured))
+
     def _visit_selection(self, old):
         policy = {"old": old, "lr": 0.0001, "depth": 1,
                   "contrast": 1., "distill": 0., "preview": 0}

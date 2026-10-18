@@ -19,6 +19,7 @@ class HumanSessionStopTests(unittest.TestCase):
         args = parse_args(["train", "--minutes", "90", "--resume"])
         self.assertEqual(args.minutes, 90)
         self.assertEqual(args.max_visits, 0)
+        self.assertEqual(args.source_prefetch_workers, 2)
         self.assertEqual(parse_args(["train", "--max-visits", "4"]).max_visits, 4)
         self.assertTrue(parse_args(["train", "--timing-trace"]).timing_trace)
 

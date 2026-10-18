@@ -225,6 +225,12 @@ class OperatorTests(unittest.TestCase):
             active_run_dir(), LEGACY_SOURCE, Settings(),
             boolean_association_bridge=True)
         self.assertIn("--boolean-association-bridge", bridged)
+        serial = _resume_command(
+            active_run_dir(), LEGACY_SOURCE, Settings(), source_prefetch_workers=0)
+        self.assertIn("--source-prefetch-workers 0", serial)
+        one_worker = _resume_command(
+            active_run_dir(), LEGACY_SOURCE, Settings(), source_prefetch_workers=1)
+        self.assertIn("--source-prefetch-workers 1", one_worker)
 
     def test_retention_defaults_on_and_explicit_independent_opt_out(self):
         self.assertFalse(parse_args(["train", "--resume"]).no_retention)
@@ -296,6 +302,14 @@ class OperatorTests(unittest.TestCase):
                 self.assertEqual(main(["train", "--human-run", "--resume",
                                        "--run-dir", tmp]), 2)
             self.assertTrue(operate.call_args.kwargs["retention_enabled"])
+            self.assertEqual(operate.call_args.kwargs["source_prefetch_workers"], 2)
+            with patch.object(trainer, "operate", side_effect=ValueError(
+                    no_neural_work)) as operate, \
+                    redirect_stderr(io.StringIO()):
+                self.assertEqual(main(["train", "--human-run", "--resume",
+                                       "--source-prefetch-workers", "0",
+                                       "--run-dir", tmp]), 2)
+            self.assertEqual(operate.call_args.kwargs["source_prefetch_workers"], 0)
             with patch.object(trainer, "operate", side_effect=ValueError(
                     no_neural_work)) as operate, \
                     redirect_stderr(io.StringIO()):

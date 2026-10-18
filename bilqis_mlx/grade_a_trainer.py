@@ -7,7 +7,7 @@ assessment and operator-stop boundaries; other routine visits are provisional.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict, replace
 from functools import lru_cache
@@ -1874,7 +1874,8 @@ def _skip_stagnant_target_visit(run_dir, receipt, school, course, capability,
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 params, optimizer, graph, *, steps_per_visit, batch_size, reserve_gib,
                 source_root=None, learning_settings: LearningSettings | None = None,
-                boolean_association_bridge: bool = False):
+                boolean_association_bridge: bool = False,
+                source_prefetch_executor=None, source_prefetch_workers: int = 0):
     school = _state_from_json(receipt["school"], course)
     cap = next_capability(school)
     if cap is None:
@@ -1977,24 +1978,117 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         from .fragile_replay import load_replay_rows
         with trace_span("FRAGILE_REPLAY_LOAD", capability=cap):
             fragile_fixed_rows = load_replay_rows(run_dir, receipt)
+    old_capabilities = (earlier_grade_capabilities(course, school.champions, cap)
+                        if learning_settings is not None else ())
+    prefetch_futures = {}
+    prefetch_enabled = bool(
+        learning_settings is not None and source_prefetch_executor is not None and
+        source_prefetch_workers > 0)
+    if prefetch_enabled:
+        from .fragile_replay import CAPABILITIES as FRAGILE_CAPABILITIES
+        from .source_prefetch import SCHEMA as SOURCE_PREFETCH_SCHEMA, prepare_step_sources
+        admitted = set(assessment_capabilities(course, school))
+        fragile_requested = tuple(name for name in FRAGILE_CAPABILITIES if name in admitted)
+        course_digest = course.digest()
+        graph_digest = receipt.get("semantic_graph_sha256") or _fingerprint(graph)
+
+        def source_request(step_index):
+            selected = None
+            if int(policy.get("old", 0)) > 0 and old_capabilities:
+                selected = old_capabilities[(school.visits + step_index) % len(old_capabilities)]
+            fresh_seed = _seed(receipt, capability=cap, step=step_index + 1)
+            prior_seed = (_seed(
+                receipt, capability="EXPERIMENT_OLD:" + selected, step=step_index)
+                if selected is not None else None)
+            fragile_seeds = {
+                name: tuple(_seed(
+                    receipt, capability=f"FRAGILE_PRESERVE:{name}:{attempt}",
+                    step=step_index + 1) for attempt in range(3))
+                for name in fragile_requested
+            }
+            association_seed = _seed(
+                receipt, capability="BOOLEAN_ASSOCIATION:" + lesson_grade,
+                step=step_index + 1)
+            identity = _fingerprint({
+                "schema": SOURCE_PREFETCH_SCHEMA,
+                "run_id": receipt["run_id"],
+                "generation": receipt["generation"],
+                "source_manifest_sha256": receipt.get("source_manifest_sha256"),
+                "course_digest": course_digest,
+                "graph_digest": graph_digest,
+                "durable_parent_sha256": school.current_student.sha256,
+                "parent_optimizer_step": step_before,
+                "capability": cap,
+                "visit_step": step_index + 1,
+                "policy": policy,
+                "prior_capability": selected,
+                "batch_size": batch_size,
+                "fresh_seed": fresh_seed,
+                "prior_seed": prior_seed,
+                "fragile_seeds": fragile_seeds,
+                "association_seed": association_seed,
+                "boolean_association_bridge": boolean_association_bridge,
+            })
+            return {
+                "identity": identity,
+                "source_root": str(Path(source_root).resolve()),
+                "graph": graph,
+                "course": course,
+                "capability": cap,
+                "lesson_grade": lesson_grade,
+                "batch_size": batch_size,
+                "fresh_seed": fresh_seed,
+                "prior_capability": selected,
+                "prior_seed": prior_seed,
+                "fragile_fixed_rows": tuple(fragile_fixed_rows),
+                "fragile_requested": fragile_requested,
+                "fragile_seeds": fragile_seeds,
+                "fragile_rotation": step_index * 4,
+                "association_seed": association_seed,
+                "boolean_association_bridge": boolean_association_bridge,
+            }
+
+        def submit_source_request(step_index):
+            request = source_request(step_index)
+            trace_mark(
+                "STEP_SOURCE_PREFETCH_SUBMIT", capability=cap,
+                visit_step=step_index + 1, identity=request["identity"])
+            prefetch_futures[step_index] = (
+                request, source_prefetch_executor.submit(prepare_step_sources, request))
+
+        for step_index in range(min(source_prefetch_workers, steps_per_visit)):
+            submit_source_request(step_index)
     for step in range(steps_per_visit):
         trace_mark("OPTIMIZER_STEP_START", capability=cap, visit_step=step + 1,
                    optimizer_step=int(optimizer.state["step"].item()))
         lesson_control = None
-        with trace_span("STEP_SOURCE_DRAW", capability=cap, visit_step=step + 1):
-            fresh = _draw_live_rows(source_root, graph,
-                seed=_seed(receipt, capability=cap, step=step+1),
-                capability=cap, each=max(32, batch_size), course=course)
+        prepared = None
+        if prefetch_enabled:
+            request, future = prefetch_futures.pop(step)
+            with trace_span(
+                    "STEP_SOURCE_PREFETCH_WAIT", capability=cap,
+                    visit_step=step + 1, identity=request["identity"]):
+                prepared = future.result()
+            if (prepared.get("schema") != SOURCE_PREFETCH_SCHEMA or
+                    prepared.get("identity") != request["identity"]):
+                raise ValueError("HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT")
+            next_step = step + source_prefetch_workers
+            if next_step < steps_per_visit:
+                submit_source_request(next_step)
+            fresh = list(prepared["fresh"])
+        else:
+            with trace_span("STEP_SOURCE_DRAW", capability=cap, visit_step=step + 1):
+                fresh = _draw_live_rows(source_root, graph,
+                    seed=_seed(receipt, capability=cap, step=step+1),
+                    capability=cap, each=max(32, batch_size), course=course)
         fresh.extend(priority)
         lesson_seed = _seed(receipt, capability=cap, step=step+1)
         with trace_span("STEP_LESSON_SELECT", capability=cap, visit_step=step + 1):
             if learning_settings is not None:
                 # The same source-bound old-grade policy applies to Boolean and
                 # typed lessons. Never label the target's own grade as old.
-                old_capabilities = earlier_grade_capabilities(
-                    course, school.champions, cap)
-                prior = []
-                if int(policy.get("old", 0)) > 0 and old_capabilities:
+                prior = list(prepared["prior"]) if prepared is not None else []
+                if prepared is None and int(policy.get("old", 0)) > 0 and old_capabilities:
                     selected = old_capabilities[(school.visits + step) % len(old_capabilities)]
                     prior = _draw_live_rows(source_root, graph, course=course,
                         capability=selected, each=max(batch_size, 6),
@@ -2009,12 +2103,17 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         preservation = ()
         delivered_preservation = ()
         if learning_settings is not None:
-            with trace_span("STEP_FRAGILE_PRESERVATION", capability=cap,
+            if prepared is not None:
+                preservation = tuple(prepared["preservation"])
+            else:
+                with trace_span("STEP_FRAGILE_PRESERVATION", capability=cap,
+                                visit_step=step + 1):
+                    preservation = _fresh_fragile_preservation_rows(
+                        run_dir, source_root, graph, receipt, course, school, cap,
+                        step=step + 1, batch_size=batch_size,
+                        fixed_rows=fragile_fixed_rows)
+            with trace_span("STEP_FRAGILE_PRESERVATION_INJECT", capability=cap,
                             visit_step=step + 1):
-                preservation = _fresh_fragile_preservation_rows(
-                    run_dir, source_root, graph, receipt, course, school, cap,
-                    step=step + 1, batch_size=batch_size,
-                    fixed_rows=fragile_fixed_rows)
                 picked, delivered_preservation = _inject_preservation_rows(
                     picked, preservation)
         preservation_ids = {row["id"] for row in delivered_preservation}
@@ -2035,12 +2134,15 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 ))
             picked = replay_missed_lessons(
                 picked, window, reserved_ids=preservation_ids)
-        with trace_span("STEP_BOOLEAN_ASSOCIATION", capability=cap, visit_step=step + 1):
-            association_rows = _association_rows_for_lesson(
-                source_root, graph, course, lesson_grade,
-                seed=_seed(receipt, capability="BOOLEAN_ASSOCIATION:" + lesson_grade,
-                           step=step + 1),
-                enabled=boolean_association_bridge)
+        if prepared is not None:
+            association_rows = tuple(prepared["association_rows"])
+        else:
+            with trace_span("STEP_BOOLEAN_ASSOCIATION", capability=cap, visit_step=step + 1):
+                association_rows = _association_rows_for_lesson(
+                    source_root, graph, course, lesson_grade,
+                    seed=_seed(receipt, capability="BOOLEAN_ASSOCIATION:" + lesson_grade,
+                               step=step + 1),
+                    enabled=boolean_association_bridge)
         association_examples += len(association_rows)
         if lesson_control is not None:
             lesson_control["planned_old_grade_examples"] = lesson_control[
@@ -2221,6 +2323,15 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
         "attempted_optimizer_updates": attempted_optimizer_updates,
+        "source_prefetch": {
+            "schema": "bilqis.mlx.source-prefetch/v1",
+            "mode": "PROCESS_POOL" if prefetch_enabled else "SERIAL",
+            "workers": source_prefetch_workers if prefetch_enabled else 0,
+            "prepared_steps": steps_per_visit if prefetch_enabled else 0,
+            "serial_steps": 0 if prefetch_enabled else steps_per_visit,
+            "packet_identity_verified": prefetch_enabled,
+            "neural_owner": "MAIN_LANE_ONLY",
+        },
         **({"boolean_association_bridge": {
             "enabled": True,
             "active_for_visit": lesson_grade == "B",
@@ -2737,7 +2848,8 @@ def _quarantine_newer_uncommitted_bundles(run_dir: Path, retained: set[str],
 
 def _resume_command(run_dir: Path, source_root: Path,
                     learning_settings: LearningSettings | None,
-                    boolean_association_bridge: bool = False) -> str:
+                    boolean_association_bridge: bool = False,
+                    source_prefetch_workers: int = 2) -> str:
     """Only name non-default options in the next human-owned shell command."""
     from .paths import LEGACY_SOURCE, active_run_dir
 
@@ -2758,6 +2870,8 @@ def _resume_command(run_dir: Path, source_root: Path,
         command += " --legacy-code-root " + shlex.quote(str(source_root))
     if boolean_association_bridge:
         command += " --boolean-association-bridge"
+    if source_prefetch_workers != 2:
+        command += " --source-prefetch-workers " + str(source_prefetch_workers)
     return command
 
 
@@ -3445,18 +3559,22 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             experiment_protected_cap_limit: int = 8,
             stagnation_grace_grade: str | None = None,
             stagnation_grace_steps: int = 0,
+            source_prefetch_workers: int = 2,
             flash_mode: bool = False,
             boolean_association_bridge: bool = False) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
     trace_mark(
         "OPERATE_START", resume=resume, max_visits=max_visits,
         steps_per_visit=steps_per_visit, batch_size=batch_size,
+        source_prefetch_workers=source_prefetch_workers,
         flash_mode=flash_mode,
         boolean_association_bridge=boolean_association_bridge)
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
             type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
             type(max_visits) is not int or max_visits < 0 or
-            type(batch_size) is not int or batch_size < 2 or batch_size % 2):
+            type(batch_size) is not int or batch_size < 2 or batch_size % 2 or
+            type(source_prefetch_workers) is not int or
+            not 0 <= source_prefetch_workers <= 2):
         raise ValueError("HUMAN_TRAINER_INVALID_OPERATOR_LIMITS")
     grace_requested = stagnation_grace_grade is not None or stagnation_grace_steps != 0
     if grace_requested and (
@@ -3502,7 +3620,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
     course = course_a
     run_dir = Path(run_dir).expanduser().resolve()
     start = time.monotonic()
-    with operator_lock(run_dir):
+    with operator_lock(run_dir), ExitStack() as resources:
         trace_mark("OPERATOR_LOCK_ACQUIRED")
         if resume:
             saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
@@ -3603,6 +3721,13 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             with trace_span("SEED_WHOLE_STUDENT_PEAK"):
                 receipt = _seed_saved_whole_student_peak(
                     run_dir, receipt, course, optimizer)
+        source_prefetch_executor = None
+        if learning_settings is not None and source_prefetch_workers:
+            from concurrent.futures import ProcessPoolExecutor
+            import multiprocessing
+            source_prefetch_executor = resources.enter_context(ProcessPoolExecutor(
+                max_workers=source_prefetch_workers,
+                mp_context=multiprocessing.get_context("spawn")))
         school = _state_from_json(receipt["school"], course)
         if (stagnation_grace_grade is not None and
                 stagnation_grace_grade not in set(school.active_grades)):
@@ -3671,6 +3796,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "optimizer_step": school.current_student.optimizer_step,
             "checkpoint_sha256": school.current_student.sha256,
             "committed_total_visits": school.visits,
+            "source_prefetch_workers": (source_prefetch_workers
+                                         if source_prefetch_executor is not None else 0),
             "flash_mode": flash_mode,
             "boolean_association_bridge": boolean_association_bridge,
         })
@@ -3735,7 +3862,10 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     params, optimizer, graph, steps_per_visit=steps_per_visit,
                     batch_size=batch_size, reserve_gib=reserve_gib,
                     source_root=source_root, learning_settings=learning_settings,
-                    boolean_association_bridge=boolean_association_bridge)
+                    boolean_association_bridge=boolean_association_bridge,
+                    source_prefetch_executor=source_prefetch_executor,
+                    source_prefetch_workers=(source_prefetch_workers
+                                             if source_prefetch_executor is not None else 0))
             visits += 1
             pending_visits = receipt.get("_pending_visit_events", ())
             if len(pending_visits) > pending_before:
@@ -3778,6 +3908,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "minutes": minutes, "max_visits": max_visits,
             "elapsed_seconds": elapsed_seconds,
             "grade_phase": school.stage, "grade": school.grade,
+            "source_prefetch_workers": (source_prefetch_workers
+                                         if source_prefetch_executor is not None else 0),
             "flash_mode": flash_mode,
             "boolean_association_bridge": boolean_association_bridge,
             "resume_required": school.stage != "AWAITING_NEXT_GRADE",
@@ -3823,11 +3955,14 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "stagnation_grace": receipt.get("stagnation_grace"),
             "experimental_retention": learning_settings is not None,
             "retention_enabled": learning_settings is not None,
+            "source_prefetch_workers": (source_prefetch_workers
+                                         if source_prefetch_executor is not None else 0),
             "flash_mode": flash_mode,
             "boolean_association_bridge": boolean_association_bridge,
             "state_archive": maintenance,
             "safe_resume_command": _resume_command(
                 run_dir, source_root, learning_settings,
-                boolean_association_bridge=boolean_association_bridge),
+                boolean_association_bridge=boolean_association_bridge,
+                source_prefetch_workers=source_prefetch_workers),
             "original_source_checkpoint_modified": False,
         }

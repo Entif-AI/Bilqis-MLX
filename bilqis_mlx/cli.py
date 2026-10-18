@@ -422,6 +422,8 @@ def parse_args(argv=None):
                            help="Optional complete visit cap (default 0: use --minutes and disk reserve)")
             p.add_argument("--timing-trace", action="store_true",
                            help="Write low-overhead nanosecond timing markers under runs/.timing-traces")
+            p.add_argument("--source-prefetch-workers", type=int, choices=(0, 1, 2), default=2,
+                           help="Pure host-side lesson prep workers; 2 workers + main MLX lane = 3 lanes")
             p.add_argument("--flash-mode", action="store_true",
                            help="Defer expensive assessments while training; stop owing a real assessment")
             p.add_argument("--boolean-association-bridge", action="store_true",
@@ -562,6 +564,7 @@ def main(argv=None):
                     experiment_protected_cap_limit=args.experiment_protected_cap_limit,
                     stagnation_grace_grade=args.stagnation_grace_grade,
                     stagnation_grace_steps=args.stagnation_grace_steps,
+                    source_prefetch_workers=args.source_prefetch_workers,
                     flash_mode=args.flash_mode,
                     boolean_association_bridge=args.boolean_association_bridge)
             if trace_path is not None:
