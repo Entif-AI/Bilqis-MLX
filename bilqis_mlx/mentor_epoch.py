@@ -135,6 +135,8 @@ def reference_checkpoints(epoch: dict) -> tuple[dict, ...]:
         pointers.extend(_pointer(item["checkpoint"])
                         for item in historic["active_roles"].values())
         pointers.append(_pointer(historic["starting_student"]))
+        if historic.get("prior_baseline") is not None:
+            pointers.append(_pointer(historic["prior_baseline"]))
     unique = {}
     for pointer in pointers:
         former = unique.setdefault(pointer["sha256"], pointer)

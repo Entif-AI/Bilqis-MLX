@@ -9,6 +9,60 @@ from .grade_b_oracle import evaluate as grade_b_gold, operand_truth
 
 
 CAPABILITIES = ("B.OR", "B.XOR")
+TRUTH_PATTERNS = (
+    (False, False),
+    (False, True),
+    (True, False),
+    (True, True),
+)
+
+
+def _pattern_gold(capability: str, pattern: tuple[bool, bool]) -> str:
+    if capability == "B.OR":
+        value = pattern[0] or pattern[1]
+    elif capability == "B.XOR":
+        value = pattern[0] != pattern[1]
+    else:
+        raise ValueError("FRAGILE_PRESERVATION_UNKNOWN_CAPABILITY")
+    return "TRUE" if value else "FALSE"
+
+
+def select_preservation_rows(rows, *, capabilities=CAPABILITIES,
+                             excluded_ids=frozenset()) -> tuple[dict, ...]:
+    """Pick fresh source siblings that cover each fragile truth-table cell once.
+
+    Fixed examination identities are explicitly excluded. The rehearsal signal
+    therefore teaches the same Boolean semantics without turning admission
+    questions into lesson material.
+    """
+    requested = tuple(capabilities)
+    if (not requested or len(requested) != len(set(requested)) or
+            any(capability not in CAPABILITIES for capability in requested)):
+        raise ValueError("FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET")
+    excluded = set(excluded_ids)
+    selected = {}
+    for row in rows:
+        capability = row.get("capability")
+        if capability not in requested or row.get("id") in excluded:
+            continue
+        raw = row.get("operand_truths")
+        if (not isinstance(raw, (list, tuple)) or len(raw) != 2 or
+                any(type(value) is not bool for value in raw)):
+            raise ValueError("FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID")
+        pattern = tuple(raw)
+        if pattern not in TRUTH_PATTERNS or row.get("gold") != _pattern_gold(
+                capability, pattern):
+            raise ValueError("FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT")
+        if not row.get("tokens"):
+            raise ValueError("FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING")
+        selected.setdefault((capability, pattern), row)
+    required = {(capability, pattern)
+                for capability in requested for pattern in TRUTH_PATTERNS}
+    missing = required - set(selected)
+    if missing:
+        raise ValueError("FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE")
+    return tuple(selected[key] for key in sorted(selected)
+                 if key in required)
 
 
 def load_replay_rows(run_dir: Path, receipt: dict) -> tuple[dict, ...]:

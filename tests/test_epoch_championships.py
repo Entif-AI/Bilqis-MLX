@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from bilqis_mlx.epoch_championships import (
     active_frontier, advance_epoch, needed_incumbents,
-    reset_active_championships)
+    rebase_active_championships, reset_active_championships)
 from bilqis_mlx.mentor_epoch import EARNED_ONLY_POLICY
 from bilqis_mlx.grade_soup import grade_soup_recipe
 from tests.test_championship_policy import GRADE_B, SCHOOL, _exam
@@ -28,6 +28,65 @@ def _epoch():
 
 
 class EpochChampionshipTests(TestCase):
+    def test_experiment_rebase_clears_active_titles_and_requires_baseline_victory(self):
+        epoch = _epoch()
+        first, _, _ = advance_epoch(
+            epoch, grades=GRADES, challenger_exam=_exam("c", 209),
+            incumbent_exams={})
+        first["active_grade_soups"] = {
+            "C": grade_soup_recipe(active_frontier(first), "C", GRADES["C"])}
+        old_student = _exam("d", 210)["checkpoint"]
+        baseline = _exam("e", 208)["checkpoint"]
+        rebased = rebase_active_championships(
+            first, prior_student=old_student, baseline=baseline,
+            generation=500)
+        self.assertEqual(rebased["active_roles"], {})
+        self.assertEqual(rebased["active_grade_soups"], {})
+        self.assertEqual(rebased["qualified"], [])
+        self.assertEqual(rebased["baseline"], baseline)
+        self.assertTrue(rebased["baseline_challenge_required"])
+        self.assertIsNone(rebased["baseline_surpassed"])
+        self.assertEqual(rebased["championship_eligibility_after_step"],
+                         baseline["optimizer_step"])
+
+    def test_baseline_challenge_blocks_titles_until_strict_same_cohort_victory(self):
+        epoch = _epoch()
+        epoch["baseline_challenge_required"] = True
+        epoch["baseline_surpassed"] = None
+        baseline_exam = _exam("b", 208)
+        contender = _exam("c", 208)
+        contender["checkpoint"]["optimizer_step"] = 11
+        unchanged, roles, decisions = advance_epoch(
+            epoch, grades=GRADES, challenger_exam=contender,
+            incumbent_exams={"b" * 64: baseline_exam})
+        self.assertEqual(roles, ())
+        self.assertEqual(unchanged["active_roles"], {})
+        self.assertIsNone(unchanged["baseline_surpassed"])
+        self.assertEqual(decisions[0]["decision"], "DENY_BASELINE_NOT_BEATEN")
+
+        winner = _exam("c", 209)
+        winner["checkpoint"]["optimizer_step"] = 11
+        upgraded, roles, decisions = advance_epoch(
+            epoch, grades=GRADES, challenger_exam=winner,
+            incumbent_exams={"b" * 64: baseline_exam})
+        self.assertTrue(roles)
+        self.assertEqual(upgraded["baseline_surpassed"]["checkpoint"]["sha256"],
+                         "c" * 64)
+        self.assertEqual(upgraded["baseline_surpassed"]["challenger_correct"], 209)
+        self.assertEqual(upgraded["baseline_surpassed"]["baseline_correct"], 208)
+        self.assertEqual(decisions[0]["decision"], "BASELINE_STRICTLY_SURPASSED")
+
+    def test_needed_incumbents_requests_non_teaching_baseline_until_surpassed(self):
+        epoch = _epoch()
+        epoch["baseline_challenge_required"] = True
+        epoch["baseline_surpassed"] = None
+        candidate = _exam("c", 209)
+        candidate["checkpoint"]["optimizer_step"] = 11
+        needed = needed_incumbents(
+            epoch, grades=GRADES, scores=candidate["scores"],
+            challenger_checkpoint=candidate["checkpoint"])
+        self.assertEqual(needed, {"b" * 64: epoch["baseline"]})
+
     def test_own_grade_cannot_mint_titles_from_only_a_subset_of_its_capabilities(self):
         candidate = _exam("c", 209)
         candidate["scores"].pop("C.0")

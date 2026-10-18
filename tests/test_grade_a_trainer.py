@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from bilqis_mlx import grade_a_trainer as trainer
 from bilqis_mlx.grade_a_release import accepted_grade_a, RELEASE, AUTHORITY
 from bilqis_mlx.live_grade_a import live_course, RELEASE as LIVE_RELEASE
 from bilqis_mlx.grade_a_trainer import (
@@ -47,6 +48,72 @@ class GradeATrainerContractTests(unittest.TestCase):
         tampered["exam_count"] = 12
         with self.assertRaisesRegex(ValueError, "SOURCE_INVENTORY_MISMATCH"):
             accepted_grade_a(tampered)
+
+    def test_exam_reuse_identity_requires_same_checkpoint_and_exam_contract(self):
+        school = type("School", (), {
+            "grade": "B",
+            "grade_exam_epoch": 7,
+            "current_student": Checkpoint("a" * 64, "bundles/current", 123, True),
+        })()
+        exam = {
+            "assessment_grade": "B",
+            "grade_exam_epoch": 7,
+            "student_sha256": "a" * 64,
+            "optimizer_step": 123,
+            "exam_rubric_sha256": "b" * 64,
+            "assessment_scope_sha256": "c" * 64,
+            "cohort_sha256": "d" * 64,
+        }
+        receipt = {"last_exam": exam}
+        self.assertEqual(
+            trainer._reusable_exam_identity(
+                receipt, school, rubric_sha256="b" * 64,
+                assessment_scope_sha256="c" * 64),
+            ("a" * 64, 123, "d" * 64, "b" * 64, "c" * 64),
+        )
+        changed = type("School", (), {
+            "grade": "B",
+            "grade_exam_epoch": 7,
+            "current_student": Checkpoint("e" * 64, "bundles/new", 124, True),
+        })()
+        self.assertIsNone(trainer._reusable_exam_identity(
+            receipt, changed, rubric_sha256="b" * 64,
+            assessment_scope_sha256="c" * 64))
+
+    def test_take_exam_routes_exact_reuse_before_candidate_scoring(self):
+        school = type("School", (), {
+            "stage": "ASSESS_MAIN",
+            "current_student": Checkpoint("a" * 64, "bundles/current", 123, True),
+        })()
+        cohort = type("Cohort", (), {
+            "seed": 9,
+            "rows": (),
+            "digest": "d" * 64,
+        })()
+        qualification = {"cohort_sha256": "d" * 64}
+        reused = ({"row": "TRUE"}, {"scores": {}, "misses_for_teacher": []})
+        marker = {"result": "REUSED"}
+        optimizer = type("Optimizer", (), {"state": {"step": type(
+            "Step", (), {"item": lambda self: 123})()}})()
+        with (patch.object(trainer, "_state_from_json", return_value=school),
+              patch.object(trainer, "_cohort_contract",
+                           return_value=("b" * 64, "release", "generator", "code")),
+              patch.object(trainer, "_grade_test_cohort",
+                           return_value=(cohort, qualification)),
+              patch.object(trainer, "_introduced_cohort",
+                           return_value=(cohort, "cohorts/" + "d" * 64 + ".json")),
+              patch.object(trainer, "assessment_capabilities", return_value=("A.X",)),
+              patch.object(trainer, "_verified_reusable_exam", return_value=reused),
+              patch.object(trainer, "_reuse_unchanged_exam_boundary",
+                           return_value=marker) as reuse_boundary,
+              patch.object(trainer, "_candidate_cohort",
+                           side_effect=AssertionError("candidate path must be skipped"))):
+            result = _take_exam(
+                None, Path("/unused"), {"school": {}}, {}, object(),
+                Path("/unused-source"), Path("/unused-checkpoint"), {},
+                optimizer, {}, reserve_gib=0.)
+        self.assertEqual(result, marker)
+        reuse_boundary.assert_called_once()
 
     def test_historical_manifest_partition_remains_unchanged_as_evidence(self):
         cap = "A.MEMBER"

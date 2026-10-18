@@ -99,6 +99,46 @@ class RetentionTeachingPathTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "UNKNOWN_TARGET_GRADE"):
             earlier_grade_capabilities(course, completed, "E.UNKNOWN")
 
+    def test_fresh_fragile_preservation_covers_truth_tables_without_exam_ids(self):
+        fixed = []
+        fresh_by_cap = {}
+        for capability in ("B.OR", "B.XOR"):
+            candidates = []
+            for index, bits in enumerate((
+                    (False, False), (False, True), (True, False), (True, True))):
+                gold = ("TRUE" if (any(bits) if capability == "B.OR"
+                                   else bits[0] != bits[1]) else "FALSE")
+                fixed.append({"id": f"exam:{capability}:{index}",
+                              "capability": capability, "gold": gold,
+                              "operand_truths": list(bits), "tokens": [1, 2, 3]})
+                candidates.append({"id": f"fresh:{capability}:{index}",
+                                   "capability": capability, "gold": gold,
+                                   "operand_truths": list(bits), "tokens": [4, 5, 6]})
+            fresh_by_cap[capability] = candidates
+
+        def draw(*_args, **kwargs):
+            return fresh_by_cap[kwargs["capability"]]
+
+        school = SimpleNamespace()
+        receipt = {"run_id": "preservation", "generation": 4}
+        with (patch("bilqis_mlx.fragile_replay.load_replay_rows",
+                    return_value=tuple(fixed)),
+              patch.object(trainer, "assessment_capabilities",
+                           return_value=("B.AND", "B.OR", "B.XOR")),
+              patch.object(trainer, "_draw_live_rows", side_effect=draw)):
+            selected = trainer._fresh_fragile_preservation_rows(
+                Path("/unused"), Path("/source"), {}, receipt, object(), school,
+                "B.AND", step=1, batch_size=32)
+        self.assertEqual(len(selected), 8)
+        self.assertFalse({row["id"] for row in selected} &
+                         {row["id"] for row in fixed})
+        self.assertEqual(
+            {(row["capability"], tuple(row["operand_truths"])) for row in selected},
+            {(capability, bits)
+             for capability in ("B.OR", "B.XOR")
+             for bits in ((False, False), (False, True), (True, False), (True, True))},
+        )
+
 
 def _pointer(seed):
     return {"filename": "bundles/" + seed, "sha256": seed * 64,

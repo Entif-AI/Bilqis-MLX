@@ -58,6 +58,63 @@ def reset_active_championships(epoch: dict, *, student: dict,
     return updated, True
 
 
+def rebase_active_championships(epoch: dict, *, prior_student: dict,
+                                baseline: dict, generation: int) -> dict:
+    """Replace an experiment's non-teaching baseline and clear earned authority.
+
+    This is intentionally different from a routine idempotent reset: it is an
+    explicit experiment rebase. The former active epoch remains archived while
+    the replacement baseline must be strictly beaten on a comparable whole-
+    school exam before any new active title can be minted.
+    """
+    prior = _pointer(prior_student)
+    replacement = _pointer(baseline)
+    previous_baseline = _pointer(epoch["baseline"])
+    previous_graduate = epoch.get("previous_graduate")
+    if previous_graduate is not None:
+        previous_graduate = _pointer(previous_graduate)
+        if replacement["optimizer_step"] < previous_graduate["optimizer_step"]:
+            raise ValueError("CHAMPIONSHIP_REBASE_PREDATES_PREVIOUS_GRADUATE")
+    if type(generation) is not int or generation < 1:
+        raise ValueError("CHAMPIONSHIP_REBASE_INVALID_GENERATION")
+    updated = deepcopy(epoch)
+    archive = {
+        "source_generation": generation,
+        "starting_student": prior,
+        "prior_baseline": previous_baseline,
+        "active_roles": updated.get("active_roles", {}),
+        "active_grade_soups": updated.get("active_grade_soups", {}),
+        "qualified": updated.get("qualified", []),
+        "baseline_roles": updated.get("baseline_roles", {}),
+        "active_championship_reset": updated.get("active_championship_reset"),
+    }
+    updated["superseded_active_championships"] = [
+        *updated.get("superseded_active_championships", []), archive]
+    updated["baseline"] = replacement
+    updated["active_roles"] = {}
+    updated["active_grade_soups"] = {}
+    updated["baseline_roles"] = {}
+    updated["qualified"] = []
+    updated["earned_role_votes_at_reset"] = 0
+    updated["guidance_policy"] = EARNED_ONLY_POLICY
+    updated["championship_eligibility_after_step"] = replacement["optimizer_step"]
+    updated["baseline_challenge_required"] = True
+    updated["baseline_surpassed"] = None
+    updated["active_championship_reset"] = {
+        "policy": EARNED_ONLY_POLICY,
+        "source_generation": generation,
+        "student_sha256": replacement["sha256"],
+        "optimizer_step": replacement["optimizer_step"],
+        "old_active_role_count": len(archive["active_roles"]),
+        "old_active_soup_grades": sorted(archive["active_grade_soups"]),
+        "preexisting_championships_archived": True,
+        "training_or_optimizer_updates": 0,
+        "experiment_baseline_rebased": True,
+        "baseline_challenge_required": True,
+    }
+    return updated
+
+
 def active_frontier(epoch: dict) -> dict:
     """Adapt one-owner-per-capability receipts to existing soup machinery."""
     roles = epoch.get("active_roles", {})
@@ -90,7 +147,8 @@ def _incomplete_grade_decision(grade, capabilities, scores, sha, *, origin):
     return None
 
 
-def needed_incumbents(epoch: dict, *, grades: dict, scores: dict) -> dict:
+def needed_incumbents(epoch: dict, *, grades: dict, scores: dict,
+                      challenger_checkpoint: dict | None = None) -> dict:
     """Identify only checkpoints needed for a potential qualifying challenge."""
     roles = epoch.get("active_roles", {})
     origin = epoch["introduced_grade"]
@@ -114,6 +172,15 @@ def needed_incumbents(epoch: dict, *, grades: dict, scores: dict) -> dict:
                 if cap in roles:
                     pointer = roles[cap]["checkpoint"]
                     needed[pointer["sha256"]] = pointer
+    if (epoch.get("baseline_challenge_required") and
+            epoch.get("baseline_surpassed") is None and
+            challenger_checkpoint is not None):
+        challenger = _pointer(challenger_checkpoint)
+        baseline = _pointer(epoch["baseline"])
+        if (challenger["sha256"] != baseline["sha256"] and
+                challenger["optimizer_step"] >
+                epoch.get("championship_eligibility_after_step", -1)):
+            needed[baseline["sha256"]] = baseline
     return needed
 
 
@@ -142,6 +209,46 @@ def _external_takeovers(grades, origin, scores, pointer, roles,
     return decisions
 
 
+def _apply_baseline_challenge(epoch, updated, challenger_exam, incumbent_exams):
+    """Gate title minting behind one strict whole-school baseline victory."""
+    if (not epoch.get("baseline_challenge_required") or
+            epoch.get("baseline_surpassed") is not None):
+        return updated, (), False
+    pointer = challenger_exam["checkpoint"]
+    scores = challenger_exam["scores"]
+    baseline = _pointer(epoch["baseline"])
+    incumbent = incumbent_exams.get(baseline["sha256"])
+    common = ("cohort_sha256", "rubric_sha256",
+              "assessment_scope_sha256", "source_graph_sha256")
+    if (incumbent is None or
+            any(incumbent.get(field) != challenger_exam.get(field)
+                for field in common) or
+            set(incumbent.get("scores", {})) != set(scores) or
+            any(incumbent["scores"][cap].get("total") != scores[cap].get("total")
+                for cap in scores)):
+        raise ValueError("CHAMPIONSHIP_BASELINE_SAME_COHORT_REQUIRED")
+    challenger_correct = sum(value["correct"] for value in scores.values())
+    baseline_correct = sum(value["correct"] for value in incumbent["scores"].values())
+    decision = {
+        "candidate_sha256": pointer["sha256"],
+        "baseline_sha256": baseline["sha256"],
+        "challenger_correct": challenger_correct,
+        "baseline_correct": baseline_correct,
+    }
+    if challenger_correct <= baseline_correct:
+        return updated, ({"decision": "DENY_BASELINE_NOT_BEATEN", **decision},), True
+    updated["baseline_surpassed"] = {
+        "checkpoint": dict(pointer),
+        "baseline_sha256": baseline["sha256"],
+        "cohort_sha256": challenger_exam["cohort_sha256"],
+        "rubric_sha256": challenger_exam["rubric_sha256"],
+        "assessment_scope_sha256": challenger_exam["assessment_scope_sha256"],
+        "challenger_correct": challenger_correct,
+        "baseline_correct": baseline_correct,
+    }
+    return updated, ({"decision": "BASELINE_STRICTLY_SURPASSED", **decision},), False
+
+
 def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
                   incumbent_exams: dict) -> tuple[dict, tuple[str, ...], tuple[dict, ...]]:
     """Apply earned changes only after source-comparable whole-student scoring."""
@@ -157,6 +264,11 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
     origin = epoch["introduced_grade"]
     if pointer["optimizer_step"] <= epoch.get("championship_eligibility_after_step", -1):
         return updated, (), ()
+    updated, baseline_decisions, blocked = _apply_baseline_challenge(
+        epoch, updated, challenger_exam, incumbent_exams)
+    if blocked:
+        return updated, (), baseline_decisions
+    decisions.extend(baseline_decisions)
 
     def record(capability):
         roles[capability] = {

@@ -1433,6 +1433,26 @@ def _fixed_same_grade_rows(run_dir, receipt, course, school, capability, setting
     return rows
 
 
+def _reusable_exam_identity(receipt, school, *, rubric_sha256,
+                            assessment_scope_sha256):
+    """Return the exact already-scored exam identity for an unchanged student."""
+    exam = receipt.get("last_exam") or {}
+    student = school.current_student
+    if (exam.get("assessment_grade") != school.grade or
+            exam.get("grade_exam_epoch") != school.grade_exam_epoch or
+            exam.get("student_sha256") != student.sha256 or
+            exam.get("optimizer_step") != student.optimizer_step or
+            exam.get("exam_rubric_sha256") != rubric_sha256 or
+            exam.get("assessment_scope_sha256") != assessment_scope_sha256):
+        return None
+    cohort_sha = exam.get("cohort_sha256")
+    if (not isinstance(cohort_sha, str) or len(cohort_sha) != 64 or
+            any(c not in "0123456789abcdef" for c in cohort_sha)):
+        raise ValueError("HUMAN_TRAINER_REUSABLE_EXAM_COHORT_IDENTITY_INVALID")
+    return (student.sha256, student.optimizer_step, cohort_sha,
+            rubric_sha256, assessment_scope_sha256)
+
+
 def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
                               parent, candidate, probe_rows, target_parent,
                               settings):
@@ -1516,6 +1536,66 @@ def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
             replay_rows, replay_parent, replay_candidate,
             receipt["last_exam"]["cohort_sha256"])
     return pair, protected, required, fixed, replay, "COMPLETE_SAME_GRADE"
+
+
+def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
+                                     course, school, capability, *, step,
+                                     batch_size, fixed_rows=None):
+    """Generate fresh semantic siblings for the fixed B.OR/B.XOR safety rows.
+
+    Rehearsal is active only after a source-verified B replay exam exists.
+    The fixed examination rows themselves are never delivered to the optimizer.
+    """
+    from .fragile_replay import (
+        CAPABILITIES, load_replay_rows, select_preservation_rows,
+    )
+    fixed = (tuple(fixed_rows) if fixed_rows is not None
+             else load_replay_rows(run_dir, receipt))
+    if not fixed:
+        return ()
+    admitted = set(assessment_capabilities(course, school))
+    requested = tuple(name for name in CAPABILITIES if name in admitted)
+    if not requested:
+        return ()
+    excluded = {row["id"] for row in fixed}
+    selected = []
+    for name in requested:
+        fresh = _draw_live_rows(
+            source_root, graph,
+            seed=_seed(receipt, capability="FRAGILE_PRESERVE:" + name,
+                       step=step),
+            capability=name, each=max(32, batch_size), course=course)
+        selected.extend(select_preservation_rows(
+            fresh, capabilities=(name,), excluded_ids=excluded))
+    if any(row["id"] in excluded for row in selected):
+        raise ValueError("FRAGILE_PRESERVATION_EXAM_ROW_LEAK")
+    return tuple(selected)
+
+
+def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):
+    """Reserve optimizer slots for preservation without displacing exam misses."""
+    result = list(chosen)
+    reserved = set(reserved_ids)
+    consumed = {index for index, row in enumerate(result)
+                if row.get("id") in reserved}
+    delivered = []
+    for item in preservation:
+        replacement = next((
+            index for index, row in enumerate(result)
+            if index not in consumed and row.get("gold") == item.get("gold")
+        ), None)
+        if replacement is None:
+            replacement = next((
+                index for index in range(len(result)) if index not in consumed
+            ), None)
+        if replacement is None:
+            break
+        result[replacement] = item
+        consumed.add(replacement)
+        delivered.append(item)
+    if len(delivered) != len(preservation):
+        raise ValueError("FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED")
+    return result, tuple(delivered)
 
 
 def _skip_perfect_target_visit(run_dir, receipt, school, course, capability,
@@ -1616,6 +1696,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     replayed_misses = 0
     policy_control_receipts = []
     step_before = int(optimizer.state["step"].item())
+    fragile_fixed_rows = ()
+    if learning_settings is not None:
+        from .fragile_replay import load_replay_rows
+        fragile_fixed_rows = load_replay_rows(run_dir, receipt)
     for step in range(steps_per_visit):
         lesson_control = None
         fresh = _draw_live_rows(source_root, graph,
@@ -1653,6 +1737,15 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 },
             ))
         picked = replay_missed_lessons(picked, window)
+        preservation = ()
+        delivered_preservation = ()
+        if learning_settings is not None:
+            preservation = _fresh_fragile_preservation_rows(
+                run_dir, source_root, graph, receipt, course, school, cap,
+                step=step + 1, batch_size=batch_size,
+                fixed_rows=fragile_fixed_rows)
+            picked, delivered_preservation = _inject_preservation_rows(
+                picked, preservation, reserved_ids={row["id"] for row in window})
         if lesson_control is not None:
             lesson_control["planned_old_grade_examples"] = lesson_control[
                 "effective_old_grade_examples"]
@@ -1661,6 +1754,17 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 row["capability"].partition(".")[0] in earlier_grades for row in picked)
             lesson_control["selected_answer_kinds"] = sorted({
                 row.get("answer_kind", "binary") for row in picked})
+            lesson_control["fragile_preservation_requested"] = len(preservation)
+            lesson_control["fragile_preservation_delivered"] = len(
+                delivered_preservation)
+            lesson_control["fragile_preservation_capabilities"] = sorted({
+                row["capability"] for row in delivered_preservation})
+            lesson_control["fragile_preservation_patterns"] = sorted({
+                row["capability"] + ":" +
+                "".join("1" if value else "0" for value in row["operand_truths"])
+                for row in delivered_preservation})
+            lesson_control["fragile_preservation_source"] = (
+                "FRESH_SOURCE_TRUTH_TABLE_SIBLINGS")
             policy_control_receipts.append(lesson_control)
         for row in window:
             identity = row["id"]
@@ -1923,7 +2027,9 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
         raise ValueError("CHAMPIONSHIP_EPOCH_SOURCE_GRAPH_DRIFT")
     grades = {grade.id: tuple(cap.id for cap in grade.capabilities)
               for grade in course.grades}
-    requested = epoch_needed_incumbents(epoch, grades=grades, scores=scores)
+    requested = epoch_needed_incumbents(
+        epoch, grades=grades, scores=scores,
+        challenger_checkpoint=asdict(school.current_student))
     scope = assessment_capabilities(course, school)
     if set(scores) != set(scope):
         raise ValueError("CHAMPIONSHIP_EPOCH_INCOMPLETE_EXAM")
@@ -2257,6 +2363,191 @@ def _resume_command(run_dir: Path, source_root: Path,
     return command
 
 
+def _verified_reusable_exam(run_dir, receipt, course, school, optimizer, graph,
+                            cohort, *, rubric_sha256, assessment_scope_sha256):
+    """Validate one prior exam for scheduler reuse without neural inference.
+
+    Reuse is legal only when the retained checkpoint, native AdamW step and
+    complete fixed examination identity are unchanged and every pending visit
+    retained zero optimizer updates. Saved wrong answers reconstruct the exact
+    prior prediction map so scores and teacher misses can be revalidated.
+    """
+    identity = _reusable_exam_identity(
+        receipt, school, rubric_sha256=rubric_sha256,
+        assessment_scope_sha256=assessment_scope_sha256)
+    if identity is None:
+        return None
+    live_step = int(optimizer.state["step"].item())
+    if live_step != school.current_student.optimizer_step:
+        return None
+    pending = tuple(receipt.get("_pending_visit_events", ()))
+    if any(event.get("retained_optimizer_updates", 0) != 0 for event in pending):
+        return None
+    recorded_graph = receipt.get("semantic_graph_sha256")
+    if recorded_graph is not None and recorded_graph != _fingerprint(graph):
+        raise ValueError("HUMAN_TRAINER_REUSABLE_EXAM_GRAPH_DRIFT")
+    if cohort.digest != identity[2]:
+        raise ValueError("HUMAN_TRAINER_REUSABLE_EXAM_COHORT_DRIFT")
+    prior = receipt["last_exam"]
+    by_id = {row["id"]: row for row in cohort.rows}
+    guesses = {identity: row["gold"] for identity, row in by_id.items()}
+    misses = list(prior.get("misses_for_teacher") or ())
+    for miss in misses:
+        row = by_id.get(miss.get("id"))
+        if (row is None or miss.get("capability") != row["capability"] or
+                miss.get("gold") != row["gold"] or
+                miss.get("predicted") == row["gold"]):
+            raise ValueError("HUMAN_TRAINER_REUSABLE_EXAM_MISS_DRIFT")
+        guesses[row["id"]] = miss["predicted"]
+    measured = score_cohort(cohort, guesses, asdict(school.current_student))
+    if (measured["scores"] != prior.get("scores") or
+            list(measured["misses_for_teacher"]) != misses):
+        raise ValueError("HUMAN_TRAINER_REUSABLE_EXAM_SCORE_DRIFT")
+    return guesses, measured
+
+
+def _school_result_label(school):
+    return (("GRADE_" + school.grade + "_MASTERED_AWAITING_GRADE_" +
+             chr(ord(school.grade) + 1))
+            if school.stage == "AWAITING_NEXT_GRADE" else
+            ("GRADE_" + school.revalidation_target_grade +
+             "_REVALIDATING_" + school.grade)
+            if school.revalidation_target_grade else
+            "ACTIVE_GRADE_" + school.grade)
+
+
+def _reused_exam_feedback(run_dir, receipt, prior, last_exam, cohort, guesses):
+    pending = receipt.get("_pending_visit_events", ())
+    warnings = summarize_completed_exam_safely(run_dir, receipt, last_exam)
+    last_exam["learning_diagnostics"] = warnings
+    outcomes = summarize_teacher_outcomes(prior, last_exam, pending)
+    last_exam["teacher_outcomes"] = outcomes
+    priority = reconcile_unresolved_misses(
+        receipt.get("teacher_misses", ()), list(cohort.rows), guesses)
+    unresolved = {row["id"] for row in priority}
+    exposures = {
+        identity: count for identity, count in
+        receipt.get("teacher_miss_exposures", {}).items()
+        if identity in unresolved and type(count) is int and count >= 0
+    }
+    for identity in unresolved:
+        exposures.setdefault(identity, 0)
+    return pending, warnings, outcomes, priority, exposures
+
+
+def _reused_exam_event(receipt, result, school, assessment, cohort, qualification,
+                       scope_sha, scores, priority, warnings, outcomes,
+                       retention_status, rubric, phase):
+    event = {
+        "event": "SCHOOL_LIVE_EXAM_REUSED_UNCHANGED_CHECKPOINT",
+        "grade": school.grade,
+        "generation": result["generation"],
+        "grade_exam_epoch": school.grade_exam_epoch,
+        "grade_test_lifecycle": GRADE_TEST_LIFECYCLE,
+        "assessment_scope_sha256": scope_sha,
+        "qualification_cohort_sha256": qualification["cohort_sha256"],
+        "introduction_stage": school.introduction_stage,
+        "scores": scores,
+        "phase": phase,
+        "student_sha256": assessment.checkpoint_sha256,
+        "optimizer_step": assessment.optimizer_step,
+        "rubric": rubric,
+        "cohort_sha256": cohort.digest,
+        "cohort_seed": cohort.seed,
+        "cohort_file": receipt["last_exam"]["cohort_file"],
+        "incumbent_comparisons": [],
+        "teacher_miss_count": len(priority),
+        "learning_diagnostics": warnings,
+        "teacher_outcomes": outcomes,
+        "whole_student_retention": retention_status,
+        "reused_from_evaluation_id": receipt["last_exam"]["evaluation_id"],
+        "neural_inference_reused": True,
+        "candidate_checkpoint_replayed": False,
+    }
+    epoch = receipt.get("mentor_epoch")
+    if epoch is not None:
+        event["championship_epoch"] = {
+            "baseline_sha256": epoch["baseline"]["sha256"],
+            "earned_roles": [],
+            "active_role_count": len(epoch.get("active_roles", {})),
+            "active_soup_grades": sorted(epoch.get("active_grade_soups", {})),
+            "cross_origin_decisions": [],
+        }
+    return event
+
+
+def _reuse_unchanged_exam_boundary(run_dir, receipt, course, school, cohort,
+                                   qualification, verified, graph):
+    """Advance a scheduled boundary from an already verified unchanged exam."""
+    guesses, measured = verified
+    prior = receipt["last_exam"]
+    rubric = prior["exam_rubric_sha256"]
+    assessment = Assessment(
+        checkpoint_sha256=school.current_student.sha256,
+        optimizer_step=school.current_student.optimizer_step,
+        course_digest=course.digest(),
+        rubric_digest=rubric,
+        scores={cap: Score(**entry) for cap, entry in measured["scores"].items()},
+        evaluation_id=prior["evaluation_id"])
+    advanced = assess(course, school, assessment)
+    scores = {cap: {"correct": value.correct, "total": value.total}
+              for cap, value in assessment.scores.items()}
+    scope_sha = _fingerprint(assessment_capabilities(course, school))
+    peaks, retention_status = advance_peaks(
+        receipt.get("whole_student_peaks", []),
+        curriculum_mode=receipt["curriculum_mode"],
+        numeric_maximum=receipt.get("numeric_maximum"),
+        rubric_sha256=rubric, cohort_sha256=cohort.digest,
+        assessment_scope_sha256=scope_sha, scores=scores,
+        checkpoint=asdict(school.current_student))
+    last_exam = json.loads(_canonical(prior))
+    last_exam.update({
+        "assessment_grade": school.grade,
+        "grade_exam_epoch": school.grade_exam_epoch,
+        "assessment_scope_sha256": scope_sha,
+        "cohort_sha256": cohort.digest,
+        "graduation_perfect_roles": [],
+        "grade_soups_refreshed": [],
+        "championship_decisions": [],
+        "incumbent_comparisons": [],
+        "misses_for_teacher": list(measured["misses_for_teacher"]),
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "scores": scores,
+        "reused_unchanged_checkpoint": True,
+        "reused_from_evaluation_id": prior["evaluation_id"],
+        "reuse_count": int(prior.get("reuse_count", 0)) + 1,
+        "whole_student_retention": retention_status,
+    })
+    pending, exam_warnings, teacher_outcomes, priority, miss_exposures = (
+        _reused_exam_feedback(
+            run_dir, receipt, prior, last_exam, cohort, guesses))
+    migrated = {
+        **receipt,
+        "teacher_misses": priority,
+        "whole_student_peaks": peaks,
+        "qualification_cohort": qualification,
+        "teacher_miss_exposures": miss_exposures,
+        "legacy_frontier_pending_replay": False,
+        "live_rubric_sha256": rubric,
+    }
+    migrated.pop("teacher_miss_cursor", None)
+    result = _advance(
+        run_dir, migrated, advanced,
+        frontier=receipt.get("capability_best", {}),
+        model_bundle=school.current_student.filename,
+        last_exam=last_exam, result=_school_result_label(advanced),
+        persist=False)
+    event = _reused_exam_event(
+        receipt, result, school, assessment, cohort, qualification, scope_sha,
+        scores, priority, exam_warnings, teacher_outcomes, retention_status,
+        rubric, advanced.stage)
+    result = _persist(run_dir, _with_delivery_outbox(
+        result, _boundary_delivery_events(result, pending, (), event)))
+    _publish_boundary(run_dir, result, pending, (), exam_event=event)
+    return result
+
+
 def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                source_checkpoint, parameters, optimizer, graph, *, reserve_gib):
     school = _state_from_json(receipt["school"], course)
@@ -2267,6 +2558,14 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         run_dir, receipt, manifest, course, source_root, graph)
     cohort, cohort_file = _introduced_cohort(run_dir, manifest, course, school, cohort)
     seed, rows = cohort.seed, list(cohort.rows)
+    scope_sha = _fingerprint(assessment_capabilities(course, school))
+    reusable = _verified_reusable_exam(
+        run_dir, receipt, course, school, optimizer, graph, cohort,
+        rubric_sha256=rubric, assessment_scope_sha256=scope_sha)
+    if reusable is not None:
+        return _reuse_unchanged_exam_boundary(
+            run_dir, receipt, course, school, cohort, qualification,
+            reusable, graph)
     candidate_cohort = _candidate_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
     candidate_cohort, _ = _introduced_cohort(
@@ -2318,7 +2617,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "assessment_grade": school.grade,
         "grade_exam_epoch": school.grade_exam_epoch,
         "grade_test_lifecycle": GRADE_TEST_LIFECYCLE,
-        "assessment_scope_sha256": _fingerprint(assessment_capabilities(course, school)),
+        "assessment_scope_sha256": scope_sha,
         "evaluation_id": assessment.evaluation_id,
         "exam_rubric_sha256": assessment.rubric_digest,
         "cohort_sha256": cohort.digest,
@@ -2376,12 +2675,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     result = _advance(
         run_dir, migrated_receipt, advanced, frontier=frontier,
         model_bundle=school.current_student.filename, last_exam=last_exam,
-        result=(("GRADE_"+advanced.grade+"_MASTERED_AWAITING_GRADE_"+chr(ord(advanced.grade)+1))
-                if advanced.stage == "AWAITING_NEXT_GRADE" else
-                ("GRADE_" + advanced.revalidation_target_grade +
-                 "_REVALIDATING_" + advanced.grade)
-                if advanced.revalidation_target_grade else
-                "ACTIVE_GRADE_" + advanced.grade), persist=False)
+        result=_school_result_label(advanced), persist=False)
     exam_event = {
         "event": ("SCHOOL_LIVE_EXAM_COMMITTED" if len(course.grades) > 2 else
                   "GRADE_A_LIVE_EXAM_COMMITTED" if len(course.grades) == 1

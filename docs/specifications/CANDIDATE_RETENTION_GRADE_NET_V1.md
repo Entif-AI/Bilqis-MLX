@@ -1,6 +1,6 @@
 # Bilqis retained-update grade-net safety specification
 
-**Status:** Normative for the isolated human-training experiment; 2026-10-17, ADR-054 as refined by ADR-055.
+**Status:** Normative for the isolated human-training experiment; 2026-10-18, ADR-054 as refined by ADR-055 and ADR-056.
 **Scope:** Candidate student + own AdamW admission during individual training visits. Separate from championship succession and whole-school graduation.
 
 ## Reproduced failure
@@ -15,6 +15,12 @@ The isolated run's immutable event generation **11566** accepted a B.XOR candida
 4. **Stage three: independently saved grade evidence.** Only once the target has gained **and the complete fresh same-grade panel has a strictly positive net**, use the last immutable fixed-grade exam if it is from the current active grade and grade-test epoch. A zero/negative grade net rejects the candidate without an unnecessary fixed replay. Evaluate the fixed cohort's grade capabilities on exactly the same questions for parent and candidate. The complete fixed grade score MUST NOT decline. A fixed grade tie is permitted only when the fresh complete same-grade panel improves strictly. Reuse already evaluated rows for this candidate and cohort; do not rescore them.
 5. All existing individual protected-capability tolerances, source-gold validation, B.OR/B.XOR fixed per-question composition replay, teacher feedback, student ownership, AdamW custody and graduation rules remain independent additional gates.
 
+## Fragile-semantic preservation during candidate construction
+
+The fixed B.OR/B.XOR replay remains an admission test, not lesson material. When that verified fixed replay exists, candidate construction MUST reserve fresh source-oracled rehearsal examples for each admitted fragile connective that collectively cover operand patterns `00`, `01`, `10` and `11`. These rows MUST be generated independently of the fixed exam and MUST NOT share any fixed replay row identity. Exact unresolved examination misses retain their reserved lesson slots. The purpose is to give AdamW a preservation gradient for the semantic boundary the admission gate already protects, without weakening the gate or teaching its held-out answers.
+
+A failure to source a complete, gold-valid fresh truth table is a construction error, not permission to substitute the fixed exam rows. The retention decision still runs the independent 24-row replay afterward and rejects any newly wrong parent-correct item.
+
 If there is no comparable complete fixed cohort (for example before the first exam or in a different grade epoch), report NOT_MEASURED rather than inventing a fixed grade score. A target-only rejection is marked TARGET_ONLY_REJECTED, not falsely described as a complete grade screen. Only a candidate that passed its target undergoes the remaining grade qualification. The independent whole-school assessment remains the authority for school-wide graduation and out-of-sample retention; it is not repeated on every provisional student.
 
 ## Bounded execution, provenance and custody
@@ -22,6 +28,8 @@ If there is no comparable complete fixed cohort (for example before the first ex
 The current curriculum has six Grade B capabilities (12 fixed exam questions each) and seven Grade C capabilities. The mandatory current-grade completion cost scales with **that grade only**, regardless of total school size. The configurable protection budget controls optional rotating cross-grade sentinels, with two available slots reserved when earlier/other grades exist. It does **not** cap same-grade completeness: a grade larger than eight capabilities must still test its unscored grade members after target improvement. Never extend the screen to every school capability merely because another grade has been admitted.
 
 Reuse the saved fixed-cohort file, including the parent/candidate B.OR/B.XOR predictions when part of the same full-grade replay. No new 8 GB model copy, optimizer reset, retrospective rollback, source-gold rewrite, unapproved teacher-policy change or agent-initiated neural update. A rejected candidate discards only its provisional in-RAM model and own trial AdamW, leaving parent untouched. The teacher receives the measured negative retention evidence.
+
+At a scheduled whole-school exam boundary, the trainer MAY reuse an already verified exam instead of rerunning neural inference only when the retained checkpoint SHA and native AdamW step, cohort digest, rubric, assessment scope and semantic graph are identical and all pending visits retained zero optimizer updates. Stored wrong predictions MUST reconstruct the same scores and teacher misses exactly before reuse. Reuse advances ordinary scheduler/teacher bookkeeping but MUST NOT create a candidate checkpoint, rescore incumbents, mint championships, refresh soups or claim new learning evidence. Any changed identity or accepted in-memory update requires the normal full exam.
 
 ## Executable acceptance examples
 

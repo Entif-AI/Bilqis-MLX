@@ -4,7 +4,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from bilqis_mlx.fragile_replay import load_replay_rows, screen_replay
+from bilqis_mlx.fragile_replay import (
+    load_replay_rows, screen_replay, select_preservation_rows,
+)
 from bilqis_mlx.generated_assessment import make_cohort
 
 
@@ -64,4 +66,28 @@ class FragileReplayTests(unittest.TestCase):
     def test_no_grade_b_exam_means_no_replay(self):
         self.assertEqual(load_replay_rows(Path("unused"), {"last_exam": {
             "scores": {"A.LINK": {"correct": 12, "total": 12}}}}), ())
+
+    def test_preservation_rows_cover_each_truth_pattern_without_exam_leakage(self):
+        rows = []
+        for capability in ("B.OR", "B.XOR"):
+            for index, bits in enumerate((
+                    (False, False), (False, True), (True, False), (True, True))):
+                gold = ("TRUE" if (any(bits) if capability == "B.OR"
+                                   else bits[0] != bits[1]) else "FALSE")
+                rows.extend([
+                    {"id": f"{capability}:{index}:exam", "capability": capability,
+                     "gold": gold, "operand_truths": list(bits), "tokens": [1, 2, 3]},
+                    {"id": f"{capability}:{index}:fresh", "capability": capability,
+                     "gold": gold, "operand_truths": list(bits), "tokens": [4, 5, 6]},
+                ])
+        excluded = {row["id"] for row in rows if row["id"].endswith(":exam")}
+        selected = select_preservation_rows(rows, excluded_ids=excluded)
+        self.assertEqual(len(selected), 8)
+        self.assertFalse({row["id"] for row in selected} & excluded)
+        self.assertEqual(
+            {(row["capability"], tuple(row["operand_truths"])) for row in selected},
+            {(capability, bits)
+             for capability in ("B.OR", "B.XOR")
+             for bits in ((False, False), (False, True), (True, False), (True, True))},
+        )
 

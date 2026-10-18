@@ -2,7 +2,7 @@
 
 **Status:** Normative user-directed contract, revision 1 (2026-10-17).
 **Scope:** Bilqis MLX human-run school; source-oracled grade exams, champion roles, cross-grade promotion, soups, curriculum epochs.
-**Authority:** User's 2026-10-17 corrections, refined by the explicit empty-championship reset and staged grade-completion instructions; ADR-032 through ADR-035, ADR-041, ADR-044, ADR-047, ADR-051 through ADR-055 and protected IPR-0220. This supersedes conflicting historical champion and active-mentor rules but never rewrites their evidence. Document approval is separate from runtime conformance.
+**Authority:** User's 2026-10-17 and 2026-10-18 corrections, refined by the explicit empty-championship reset, staged grade-completion instructions and experiment-baseline challenge; ADR-032 through ADR-035, ADR-041, ADR-044, ADR-047, ADR-051 through ADR-056 and protected IPR-0220. This supersedes conflicting historical champion and active-mentor rules but never rewrites their evidence. Document approval is separate from runtime conformance.
 
 ## 1. Definitions and state boundaries
 
@@ -35,6 +35,10 @@ Previously mastered grades can acquire new championship owners in this epoch onl
 **This is a simultaneous graduation-boundary reset to ZERO active championships**, not a gradual weighting schedule in which obsolete champions retain teaching influence while newer ones emerge.
 
 **Explicit one-time experimental exception:** The human may request an administrative empty-roster reset **mid-grade** on an already isolated trial run. It is a metadata-only atomic event, not a second graduation, new curriculum admission, optimizer rollback, or model copy. Archive the trial's then-active championship roles and soups, clear all active champion/soup/baseline guidance, retain the complete existing student and native AdamW, and require a **strictly later optimizer step** before fresh examinations may earn any new role. The reset operation is idempotent and must not race an active trainer process. An ordinary training resume never implicitly resets an already established new roster.
+
+**Explicit experiment-baseline rebase:** On direct human instruction for an already isolated trial, a previously verified complete student may replace the trial's active student as an **independent experiment-local clone**, while the canonical source bundle remains read-only. Restore only source-compatible scheduler/exam state belonging to that exact checkpoint, preserve the experiment's evolved teacher unless separately directed, archive the displaced epoch authority, and reset active roles/soups to empty. A rebase may point backward in optimizer-step history only when it remains later than the prior graduated checkpoint and is explicitly receipted as a rebase rather than an ordinary continuation.
+
+When such a rebase declares `baseline_challenge_required`, the replacement baseline remains non-teaching but becomes a mandatory comparison reference. Before **any** new active role can be minted, one later intact challenger MUST strictly exceed the baseline's complete whole-school correct-answer total on the identical cohort, rubric, assessment scope and source graph. A tie or worse score leaves every active role empty. Once that strict victory is recorded, ordinary same-origin and cross-origin rules in section 3 resume. No soup can exist before a role exists, so every post-rebase soup is necessarily downstream of a checkpoint that first beat the baseline.
 
 ## 3. Current-grade and cross-origin promotion
 
