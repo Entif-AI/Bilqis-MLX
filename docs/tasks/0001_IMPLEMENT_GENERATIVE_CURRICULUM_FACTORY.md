@@ -8,6 +8,8 @@ This is an implementation task. Do not stop at another proposal, RFC, source-onl
 
 The intended outcome is one functional, compositional, modular, reusable curriculum factory through which every executable grade is constructed, verified, released, admitted, taught, assessed, generalized, and reported.
 
+**Historical correction:** SPEC-0001 is not a newly invented architecture. It is a local enforcement/cutover consolidation of requirements that already existed across the Bilqis issue graph, roadmaps, execution checkpoints, registries, ledgers, protected authority, and governing specs. Do not describe this work as introducing the factory requirement. Describe it as finally making the existing requirement unavoidable in production code.
+
 ## User authority and non-negotiable intent
 
 The user has repeatedly required that new grades NOT be implemented by hand one at a time. Treat this as the controlling product/architecture requirement.
@@ -34,6 +36,23 @@ Read, in this order:
 8. the existing architecture/factory documents under `docs/architecture/`
 9. the current A/B/C source constructors, oracles, admission code, scheduler, teacher, evaluation, checkpoint, telemetry, and CLI paths
 10. relevant historical receipts before changing compatibility behavior
+
+Then close the historical authority loop before implementing. At minimum, inspect the live/current forms of:
+
+- `Entif-AI/Bilqis#5` program roadmap / coordination spine;
+- `Entif-AI/Bilqis#7` semantic ABI and canonical AST;
+- `Entif-AI/Bilqis#17` prerequisite graph and developmental stage contracts;
+- `Entif-AI/Bilqis#82` developmental curriculum gate;
+- `socr8s/private-ip#335` / IPR-0220 and `Entif-AI/bilqis-mlx#1` where access permits;
+- `Bilqis Roadmap - 20261006`;
+- `Bilqis ALPHA-01 to ALPHA-02 | Codex Execution Checkpoint - 20261011`;
+- `Bilqis Roadmap Supplement | Alpha Exit, Evidence Transfer, and Mainline Acceleration - 20261011`;
+- `Bilqis-MLX Specs and Failures Ledger - 20261011-20261017`;
+- `Bilqis Curriculum Registry - Version, Lessons, Prerequisites and Champion States`;
+- `Bilqis MLX | Champions, Soups, Golden Ancestors & Grade Advancement | Governing Specification v1.0 | 2026-10-18`;
+- `Bilqis New Ithkuil Semantic Bridge - Chapter 3 and Mathematical Root Seed v0.1`.
+
+The point of this read is not to reopen design. It is to preserve the full pre-existing contract and identify where implementation deviated from it. Record any genuine conflict instead of using later implementation as evidence that earlier requirements never existed.
 
 Where older architecture prose conflicts with SPEC-0001, SPEC-0001 is the desired-state authority. Preserve conflicting historical prose as evidence rather than rewriting history.
 
@@ -66,6 +85,8 @@ Identify:
 - documentation and test references that will move.
 
 Use this inventory to avoid building a second replacement beside the first replacement.
+
+Also produce a concise authority-to-implementation divergence map. For each material pre-existing curriculum/factory requirement, identify whether the current code: conforms, partially conforms, bypasses it, or has no enforcement. This is a failure-forensics aid, not permission to renegotiate the requirement.
 
 ### 2. Establish the canonical typed factory contracts
 

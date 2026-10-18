@@ -1,10 +1,30 @@
 # SPEC-0001: Bilqis generative curriculum factory and mandatory runtime cutover
 
-**Status:** Normative desired-state specification. User-directed, 2026-10-18.
+**Status:** Normative enforcement and runtime-cutover specification. Consolidates pre-existing Bilqis architecture authority; does not originate that architecture.
 **Change posture:** NORMATIVE.
 **Scope:** Bilqis curriculum semantics, grade construction, lesson generation, assessment, admission, promotion, generalization, teacher integration, runtime boundaries, repository structure, tests, and documentation organization.
-**Authority:** Direct user requirement that Bilqis use a functional, compositional, composable, modular, flexible, reusable factory instead of handwritten per-grade implementations. This specification consolidates the intended end state from the prior curriculum-factory work and makes the missing runtime cutover mandatory.
+**Authority:** Longstanding direct-user and project authority requires Bilqis to use a functional, compositional, composable, modular, flexible, reusable curriculum architecture instead of handwritten per-grade implementations. This specification does not create that requirement. It consolidates the already-existing contract into one local executable enforcement specification and makes the previously uncompleted runtime cutover mechanically mandatory.
 **Related specifications:** `0002_CHAMPIONSHIP_LIFECYCLE_V1.md` and `0003_CANDIDATE_RETENTION_GRADE_NET_V1.md` remain normative for their domains. They must be implemented through the factory contracts defined here. Conflicts must be surfaced and resolved explicitly, not silently reconciled.
+
+## 0. Pre-existing authority and historical correction
+
+SPEC-0001 is **not** the origin of the Bilqis curriculum-factory architecture. The architecture, its semantic substrate, its prerequisite-aware curriculum, its generated/source-grounded teaching and assessment boundaries, and its reuse expectations were already present across the project's governing issue graph, roadmaps, execution checkpoints, registries, ledgers, and successor contracts before this file was written.
+
+At minimum, implementation and review must treat the following as pre-existing authority/evidence to reconcile rather than material invented by SPEC-0001:
+
+- `Entif-AI/Bilqis` coordination issue #5, which defines the explicit developmental program and names the semantic ABI, deterministic compiler/codecs, generators/oracle, truth-bounded teacher, prerequisite graph/stage contracts, learner path, and curriculum gates as first-class program components;
+- `Entif-AI/Bilqis` issue #7, which defines the shared typed semantic ABI/AST consumed by generators, codecs, teachers, oracles, and students;
+- `Entif-AI/Bilqis` issue #17, which requires a machine-readable prerequisite graph and explicit developmental stage contracts rather than opaque curriculum order;
+- `Entif-AI/Bilqis` issue #82, which freezes the cognition-before-language developmental curriculum and deterministic promotion gates;
+- `Bilqis Roadmap - 20261006`, including its explicit, versioned, testable curriculum-order contract and issue hand-off/gate model;
+- `Bilqis ALPHA-01 to ALPHA-02 | Codex Execution Checkpoint - 20261011`, which explicitly states that the roadmap and pre-existing issues already specify the typed semantic ABI, T0-T4 logic kernel, semantic geometry, deterministic initialization, learner training, and M3 qualification and that the checkpoint does not invent those obligations;
+- `Bilqis Roadmap Supplement | Alpha Exit, Evidence Transfer, and Mainline Acceleration - 20261011`, which preserves the full #7/#79-#86/#17 foundation contracts outside the bounded alpha exception;
+- `Bilqis-MLX Specs and Failures Ledger - 20261011-20261017` and the Bilqis Curriculum Registry, which carry requirement, failure, lesson, prerequisite, version, and champion-state continuity;
+- protected Bilqis authority including IPR-0220 / `socr8s/private-ip#335`, plus successor `Entif-AI/bilqis-mlx` issue #1, which already requires source/prerequisite validation, taught-root-only evaluation, no premature composition, grade-linked voting, and continuation of the same student/optimizer lineage;
+- `Bilqis MLX | Champions, Soups, Golden Ancestors & Grade Advancement | Governing Specification v1.0 | 2026-10-18`, which continues source admission, prerequisite semantics, independent lesson/exam generation, grade advancement, and human-only optimizer authority;
+- `Bilqis New Ithkuil Semantic Bridge - Chapter 3 and Mathematical Root Seed v0.1`, which again describes deterministic source-semantic AST construction, prerequisite-bound lessons, held-out composition, counterbalanced generation, and reuse of the same continuing learner.
+
+The historical failure addressed here is therefore **not absence of specification**. It is repeated execution drift away from already-specified architecture, combined with insufficient structural enforcement to prevent bespoke grade-specific runtime work from bypassing those contracts.
 
 ## 1. Purpose
 
@@ -12,7 +32,7 @@ Bilqis must have one curriculum system. New grades and capabilities must be data
 
 The repository currently contains a partially generic semantic/compiler path beside a handwritten live-school path. Grade A accumulated dedicated probe, manifest, oracle, baseline, evaluator, release, live-constructor, compatibility, and trainer machinery. Grade B and Grade C then entered through narrower grade-specific paths. This split allowed different grades to receive different evidence, assessment, release, and generalization safeguards.
 
-That outcome violates the original design requirement. The end state defined here removes the split.
+That outcome violates the already-existing design requirement. The end state consolidated here removes the split and turns prior architectural authority into a runtime-enforced invariant.
 
 The governing rule is:
 
