@@ -88,8 +88,16 @@ class OperatorTests(unittest.TestCase):
             self.assertIn("--no-retention", unprotected)
             self.assertIn("--run-dir", unprotected)
 
+        bridged = _resume_command(
+            active_run_dir(), LEGACY_SOURCE, Settings(),
+            boolean_association_bridge=True)
+        self.assertIn("--boolean-association-bridge", bridged)
+
     def test_retention_defaults_on_and_explicit_independent_opt_out(self):
         self.assertFalse(parse_args(["train", "--resume"]).no_retention)
+        self.assertTrue(parse_args([
+            "train", "--resume", "--boolean-association-bridge"]
+        ).boolean_association_bridge)
         grace = parse_args([
             "train", "--resume", "--stagnation-grace-grade", "B",
             "--stagnation-grace-steps", "100000"])

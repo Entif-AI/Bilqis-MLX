@@ -202,13 +202,16 @@ def _source_paths(legacy_code_root: Path | None, champion_checkpoint: Path | Non
 
 def preflight(run_dir: Path, *, resume=False, verify_source=False,
               legacy_code_root: Path | None = None, champion_checkpoint: Path | None = None,
-              numeric_staircase=False, retention_enabled=True):
+              numeric_staircase=False, retention_enabled=True,
+              boolean_association_bridge=False):
     legacy_root, original_checkpoint = _source_paths(legacy_code_root, champion_checkpoint)
     existing = (run_dir / "state.json").is_file()
     if resume and not existing:
         raise ValueError("RESUME_EXPLICIT_BUT_NO_SAVED_NEW_SCHOOL_RUN")
     if not resume and existing:
         raise ValueError("NEW_RUN_WOULD_OVERWRITE_SAVED_SCHOOL_USE_RESUME")
+    if boolean_association_bridge and not resume:
+        raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME")
     snapshot = _inspect(run_dir)
     snapshot.update({"result":"PREFLIGHT_ONLY_NO_NEURAL_UPDATES",
                      "start_behavior":"EXPLICIT_SAVED_STATE_RESUME" if resume else "GRADE_A_NEW_RUN",
@@ -291,6 +294,24 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         }
     else:
         snapshot["source_manifest_preflight"] = "NOT_RERUN_USE_--verify-source"
+    if boolean_association_bridge:
+        from .boolean_association import VERSION, constructor_digest
+        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        if set(saved.get("school", {}).get("active_grades", ())) != {"A", "B", "C"}:
+            snapshot["blockers"].append("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_ADMITTED_A_B_C")
+        snapshot["boolean_association_bridge"] = {
+            "enabled_for_next_human_command": True,
+            "version": VERSION,
+            "generator_code_sha256": constructor_digest(),
+            "questions_per_eligible_optimizer_step": 8,
+            "questions_per_source_grade": 4,
+            "eligible_lesson_grades": ["B"],
+            "borrowed_source_grades": ["A", "C"],
+            "exam_rubric_changed": False,
+            "grade_a_pass_fail_changed": False,
+            "grade_c_pass_fail_changed": False,
+            "neural_updates": 0,
+        }
     # The source remains unchanged. This probes only current disk headroom.
     snapshot["disk"] = assert_headroom(ROOT, required_bytes=0)
     return _print_status(snapshot)
@@ -401,6 +422,8 @@ def parse_args(argv=None):
                            help="Write low-overhead nanosecond timing markers under runs/.timing-traces")
             p.add_argument("--flash-mode", action="store_true",
                            help="Defer expensive assessments while training; stop owing a real assessment")
+            p.add_argument("--boolean-association-bridge", action="store_true",
+                           help="Add 8 B-owned bridge questions per B step: 4 borrowing A assertions and 4 borrowing C assertions")
             p.add_argument("--batch-size",type=int,default=32)
             p.add_argument("--reserve-gib",type=float,default=100.)
             p.add_argument("--stagnation-grace-grade",type=str,default=None,
@@ -501,7 +524,8 @@ def main(argv=None):
                              legacy_code_root=args.legacy_code_root,
                              champion_checkpoint=args.champion_checkpoint,
                              numeric_staircase=args.numeric_staircase,
-                             retention_enabled=not args.no_retention)
+                             retention_enabled=not args.no_retention,
+                             boolean_association_bridge=args.boolean_association_bridge)
         if args.verify_source:
             raise ValueError("VERIFY_SOURCE_REQUIRES_DRY_RUN")
         if not args.human_run:
@@ -534,7 +558,8 @@ def main(argv=None):
                     experiment_protected_cap_limit=args.experiment_protected_cap_limit,
                     stagnation_grace_grade=args.stagnation_grace_grade,
                     stagnation_grace_steps=args.stagnation_grace_steps,
-                    flash_mode=args.flash_mode)
+                    flash_mode=args.flash_mode,
+                    boolean_association_bridge=args.boolean_association_bridge)
             if trace_path is not None:
                 result["timing_trace_file"] = str(trace_path)
         if board is not None:

@@ -96,6 +96,8 @@ from .timing_trace import trace_mark, trace_span
 
 VERSION = "bilqis.mlx.human-grade-a-trainer/v1"
 LOCKFILE = ".grade-a-operator.lock"
+BOOLEAN_ASSOCIATION_QUESTIONS_PER_SOURCE = 4
+BOOLEAN_ASSOCIATION_QUESTIONS_PER_STEP = 8
 _event_view = ContextVar("grade_a_event_view", default=None)
 
 
@@ -1255,6 +1257,32 @@ def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None, cou
     return list(rows)
 
 
+def _association_rows_for_lesson(source_root, graph, course, lesson_grade, *,
+                                 seed: int, enabled: bool):
+    if not enabled or lesson_grade != "B":
+        return ()
+    if {grade.id for grade in course.grades} != {"A", "B", "C"}:
+        raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_ADMITTED_A_B_C")
+    from .boolean_association import draw_b_grade_bridges
+    return draw_b_grade_bridges(
+        source_root, graph, seed=seed, maximum=numeric_maximum(course),
+        per_source=BOOLEAN_ASSOCIATION_QUESTIONS_PER_SOURCE)
+
+
+def _extend_binary_guidance(guidance, rows):
+    """Keep existing mentor advice on the selected lesson; add zero-weight bridge rows."""
+    if guidance is None or not rows:
+        return guidance
+    import numpy as np
+    soft_target, strength = guidance
+    extra_target = np.eye(2, dtype=np.float32)[
+        [1 if row["gold"] == "TRUE" else 0 for row in rows]]
+    return (
+        np.concatenate((np.asarray(soft_target, dtype=np.float32), extra_target), axis=0),
+        np.concatenate((np.asarray(strength, dtype=np.float32),
+                        np.zeros(len(rows), dtype=np.float32))))
+
+
 def _cohort_contract(course):
     return cohort_contract(course)
 
@@ -1842,7 +1870,8 @@ def _skip_stagnant_target_visit(run_dir, receipt, school, course, capability,
 
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 params, optimizer, graph, *, steps_per_visit, batch_size, reserve_gib,
-                source_root=None, learning_settings: LearningSettings | None = None):
+                source_root=None, learning_settings: LearningSettings | None = None,
+                boolean_association_bridge: bool = False):
     school = _state_from_json(receipt["school"], course)
     cap = next_capability(school)
     if cap is None:
@@ -1930,6 +1959,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     methodology_steps = []
     methodology_unavailable = None
     replayed_misses = 0
+    association_examples = 0
     policy_control_receipts = []
     step_before = int(optimizer.state["step"].item())
     fragile_fixed_rows = ()
@@ -1995,6 +2025,13 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 ))
             picked = replay_missed_lessons(
                 picked, window, reserved_ids=preservation_ids)
+        with trace_span("STEP_BOOLEAN_ASSOCIATION", capability=cap, visit_step=step + 1):
+            association_rows = _association_rows_for_lesson(
+                source_root, graph, course, lesson_grade,
+                seed=_seed(receipt, capability="BOOLEAN_ASSOCIATION:" + lesson_grade,
+                           step=step + 1),
+                enabled=boolean_association_bridge)
+        association_examples += len(association_rows)
         if lesson_control is not None:
             lesson_control["planned_old_grade_examples"] = lesson_control[
                 "effective_old_grade_examples"]
@@ -2048,11 +2085,13 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             confidence_examples += sum(int(np.count_nonzero(item)) for item in influences)
             confidence_total_weight += sum(float(np.sum(item)) for item in influences)
             confidence_applied_steps += 1
+        training_rows = [*picked, *association_rows]
+        training_guidance = _extend_binary_guidance(guidance, association_rows)
         with trace_span("STEP_TRAIN", capability=cap, visit_step=step + 1,
-                        batch_size=len(picked)):
+                        batch_size=len(training_rows)):
             last_loss, last_norm = _train_step(
-                mx, params, optimizer, picked, receipt["config"],
-                receipt["answer_ids"], champion_guidance=guidance)
+                mx, params, optimizer, training_rows, receipt["config"],
+                receipt["answer_ids"], champion_guidance=training_guidance)
         trace_mark("OPTIMIZER_STEP_END", capability=cap, visit_step=step + 1,
                    optimizer_step=int(optimizer.state["step"].item()))
     with trace_span("TRAIN_SCORE_AFTER", capability=cap, row_count=len(rows)):
@@ -2172,6 +2211,22 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
         "attempted_optimizer_updates": attempted_optimizer_updates,
+        **({"boolean_association_bridge": {
+            "enabled": True,
+            "active_for_visit": lesson_grade == "B",
+            "eligible_lesson_grades": ["B"],
+            "borrowed_source_grades": ["A", "C"],
+            "questions_per_eligible_optimizer_step": BOOLEAN_ASSOCIATION_QUESTIONS_PER_STEP,
+            "questions_per_source_grade": BOOLEAN_ASSOCIATION_QUESTIONS_PER_SOURCE,
+            "delivered_examples": association_examples,
+            "version": __import__("bilqis_mlx.boolean_association", fromlist=["VERSION"]).VERSION,
+            "generator_code_sha256": __import__(
+                "bilqis_mlx.boolean_association", fromlist=["constructor_digest"]
+                ).constructor_digest(),
+            "exam_rubric_changed": False,
+            "grade_a_pass_fail_changed": False,
+            "grade_c_pass_fail_changed": False,
+        }} if boolean_association_bridge else {}),
         **({"lesson_policy_controls": {
             "optimizer_batches_observed": len(policy_control_receipts),
             "old_grade_examples_delivered": sum(
@@ -2667,7 +2722,8 @@ def _quarantine_newer_uncommitted_bundles(run_dir: Path, retained: set[str],
 
 
 def _resume_command(run_dir: Path, source_root: Path,
-                    learning_settings: LearningSettings | None) -> str:
+                    learning_settings: LearningSettings | None,
+                    boolean_association_bridge: bool = False) -> str:
     """Only name non-default options in the next human-owned shell command."""
     from .paths import LEGACY_SOURCE, active_run_dir
 
@@ -2686,6 +2742,8 @@ def _resume_command(run_dir: Path, source_root: Path,
         command += " --run-dir " + shlex.quote(str(run_dir))
     if Path(source_root).resolve() != LEGACY_SOURCE.resolve():
         command += " --legacy-code-root " + shlex.quote(str(source_root))
+    if boolean_association_bridge:
+        command += " --boolean-association-bridge"
     return command
 
 
@@ -3367,12 +3425,14 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             experiment_protected_cap_limit: int = 8,
             stagnation_grace_grade: str | None = None,
             stagnation_grace_steps: int = 0,
-            flash_mode: bool = False) -> dict:
+            flash_mode: bool = False,
+            boolean_association_bridge: bool = False) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
     trace_mark(
         "OPERATE_START", resume=resume, max_visits=max_visits,
         steps_per_visit=steps_per_visit, batch_size=batch_size,
-        flash_mode=flash_mode)
+        flash_mode=flash_mode,
+        boolean_association_bridge=boolean_association_bridge)
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
             type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
             type(max_visits) is not int or max_visits < 0 or
@@ -3386,6 +3446,14 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         raise ValueError("STAGNATION_GRACE_REQUIRES_EXPLICIT_RESUME_REQUEST")
     if flash_mode and not resume:
         raise ValueError("FLASH_MODE_REQUIRES_RESUME")
+    if boolean_association_bridge and not resume:
+        raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME")
+    if boolean_association_bridge:
+        saved_path = Path(run_dir).expanduser().resolve() / "state.json"
+        if (not saved_path.is_file() or
+                set(json.loads(saved_path.read_text(encoding="utf-8")).get(
+                    "school", {}).get("active_grades", ())) != {"A", "B", "C"}):
+            raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_ADMITTED_A_B_C")
     if retention_enabled:
         # Experiments never attach to the canonical run in another checkout.
         # The independent snapshot/copy step is a deliberate operator action.
@@ -3635,7 +3703,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     mx, run_dir, receipt, manifest, course, engine,
                     params, optimizer, graph, steps_per_visit=steps_per_visit,
                     batch_size=batch_size, reserve_gib=reserve_gib,
-                    source_root=source_root, learning_settings=learning_settings)
+                    source_root=source_root, learning_settings=learning_settings,
+                    boolean_association_bridge=boolean_association_bridge)
             visits += 1
             pending_visits = receipt.get("_pending_visit_events", ())
             if len(pending_visits) > pending_before:
@@ -3683,6 +3752,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "elapsed_seconds": elapsed_seconds,
             "grade_phase": school.stage, "grade": school.grade,
             "flash_mode": flash_mode,
+            "boolean_association_bridge": boolean_association_bridge,
             "resume_required": school.stage != "AWAITING_NEXT_GRADE",
             "stagnation_session_id": receipt.get("stagnation_session", {}).get(
                 "session_id"),
@@ -3727,7 +3797,10 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "experimental_retention": learning_settings is not None,
             "retention_enabled": learning_settings is not None,
             "flash_mode": flash_mode,
+            "boolean_association_bridge": boolean_association_bridge,
             "state_archive": maintenance,
-            "safe_resume_command": _resume_command(run_dir, source_root, learning_settings),
+            "safe_resume_command": _resume_command(
+                run_dir, source_root, learning_settings,
+                boolean_association_bridge=boolean_association_bridge),
             "original_source_checkpoint_modified": False,
         }
