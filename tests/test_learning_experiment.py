@@ -50,9 +50,11 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                            return_value=()) as fixed,
               patch("bilqis_mlx.fragile_replay.load_replay_rows",
                     return_value=())):
+            school = type("School", (), {"current_student": type(
+                "Student", (), {"sha256": "a" * 64, "optimizer_step": 1})()})()
             pair, protected, required, _, _, _, stage = trainer._candidate_grade_evidence(
                 None, Path("/not-used"), {"config": {}, "answer_ids": []},
-                object(), object(), "B.XOR", "parent", "candidate", rows,
+                object(), school, "B.XOR", "parent", "candidate", rows,
                 {"B.XOR0": parent["B.XOR0"], "B.XOR1": parent["B.XOR1"]},
                 Settings())
         self.assertEqual(stage, "COMPLETE_SAME_GRADE")
@@ -128,6 +130,76 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(controls, {"B.IFF", "B.NOT", "A.EDGE"})
         self.assertEqual(fixed["status"], "NOT_MEASURED")
 
+    def test_b_recovery_uses_whole_school_frontier_even_when_scheduler_is_c(self):
+        from pathlib import Path
+        from bilqis_mlx import grade_a_trainer as trainer
+        probe = [
+            {"id": "probe:iff:0", "capability": "B.IFF", "gold": "TRUE"},
+            {"id": "probe:iff:1", "capability": "B.IFF", "gold": "TRUE"},
+            {"id": "probe:not:0", "capability": "B.NOT", "gold": "TRUE"},
+            {"id": "probe:not:1", "capability": "B.NOT", "gold": "TRUE"},
+            {"id": "probe:div:0", "capability": "C.DIV", "gold": "TRUE"},
+            {"id": "probe:div:1", "capability": "C.DIV", "gold": "TRUE"},
+        ]
+        probe_parent = {row["id"]: row["gold"] for row in probe}
+        probe_parent["probe:iff:0"] = "FALSE"
+        probe_candidate = dict(probe_parent)
+        probe_candidate["probe:iff:0"] = "TRUE"
+        frontier_rows = [
+            {"id": "fixed:iff", "capability": "B.IFF", "gold": "TRUE"},
+            {"id": "fixed:not", "capability": "B.NOT", "gold": "TRUE"},
+            {"id": "fixed:div", "capability": "C.DIV", "gold": "TRUE"},
+        ]
+        frontier_parent = {row["id"]: row["gold"] for row in frontier_rows}
+        frontier_candidate = dict(frontier_parent)
+        frontier_candidate["fixed:not"] = "FALSE"
+
+        def inference(_mx, identity, selected, *_args):
+            ids = {row["id"] for row in selected}
+            if ids <= set(frontier_parent):
+                truth = frontier_candidate if identity == "candidate" else frontier_parent
+            else:
+                truth = probe_candidate if identity == "candidate" else probe_parent
+            return {row["id"]: truth[row["id"]] for row in selected}
+
+        receipt = {
+            "config": {}, "answer_ids": [],
+            "last_exam": {"cohort_sha256": "a" * 64},
+        }
+        school = type("School", (), {
+            "grade": "C",
+            "current_student": type(
+                "Student", (), {"sha256": "a" * 64, "optimizer_step": 1})(),
+        })()
+        with (patch.object(trainer, "assessment_capabilities",
+                           return_value=("B.IFF", "B.NOT", "C.DIV")),
+              patch.object(trainer, "_predictions", side_effect=inference),
+              patch("bilqis_mlx.fixed_frontier.load_frontier",
+                    return_value=(tuple(frontier_rows), frontier_parent)),
+              patch("bilqis_mlx.fragile_replay.load_replay_rows",
+                    return_value=())):
+            pair, protected, required, fixed, _, frontier, stage = (
+                trainer._candidate_grade_evidence(
+                    None, Path("/unused"), receipt, object(), school,
+                    "B.IFF", "parent", "candidate", probe,
+                    {row["id"]: probe_parent[row["id"]]
+                     for row in probe if row["capability"] == "B.IFF"},
+                    Settings()))
+        self.assertEqual(stage, "COMPLETE_SAME_GRADE")
+        self.assertEqual(required, ("B.IFF", "B.NOT"))
+        self.assertEqual(fixed["status"], "MEASURED")
+        self.assertEqual(fixed["grade"], "B")
+        self.assertEqual(fixed["before"], 2)
+        self.assertEqual(fixed["after"], 1)
+        self.assertEqual(frontier["status"], "MEASURED")
+        result = decide(
+            pair, active_capability="B.IFF", phase="RECOVERY_1",
+            protected=protected, settings=Settings(),
+            same_grade_capabilities=required, fixed_grade_replay=fixed,
+            fixed_frontier_replay=frontier)
+        self.assertEqual(result["decision"], "REJECT")
+        self.assertEqual(result["reason"], "FIXED_LESSON_GRADE_REGRESSION")
+
     def test_missing_only_grade_completion_uses_checkpoint_existing_scores(self):
         grade = ("B.AND", "B.IFF", "B.NOT", "B.XOR")
         self.assertEqual(
@@ -187,34 +259,72 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(result["reason"], "FIXED_GRADE_COHORT_REGRESSION")
         self.assertEqual(result["fixed_grade_replay"]["net_correct_delta"], -3)
 
-    def test_fixed_frontier_rejects_item_trade_even_when_school_total_ties(self):
+    def test_fixed_frontier_allows_item_trade_when_grade_improves_and_school_ties(self):
         paired = {
             "C.DIV": {"before": 18, "after": 19, "total": 21},
             "C.MUL": {"before": 21, "after": 21, "total": 21},
+        }
+        frontier = {
+            "status": "MEASURED",
+            "cohort_sha256": "a" * 64,
+            "rows": 291,
+            "before_correct": 287,
+            "after_correct": 287,
+            "regressions": [{"id": "new_div_error", "capability": "C.DIV"}],
+            "repaired": [{"id": "old_div_error", "capability": "C.DIV"}],
+            "grades": {
+                "C": {"before": 146, "after": 147, "total": 147,
+                      "net_correct_delta": 1},
+                "B": {"before": 69, "after": 68, "total": 72,
+                      "net_correct_delta": -1},
+            },
         }
         result = decide(
             paired, active_capability="C.DIV", phase="RECOVERY_1",
             protected={"C.MUL"}, settings=Settings(),
             same_grade_capabilities=("C.DIV", "C.MUL"),
             fixed_grade_replay={"status": "MEASURED", "grade": "C",
-                                "before": 146, "after": 146, "total": 147,
+                                "before": 146, "after": 147, "total": 147,
+                                "cohort_sha256": "a" * 64},
+            fixed_frontier_replay=frontier)
+        self.assertEqual(result["decision"], "PROVISIONAL")
+        self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
+        self.assertEqual(result["fixed_frontier_replay"]["regressions"],
+                         frontier["regressions"])
+        self.assertEqual(result["fixed_whole_school_net_correct_delta"], 0)
+
+    def test_fixed_frontier_rejects_when_school_loses_more_than_grade_gains(self):
+        paired = {
+            "B.IFF": {"before": 8, "after": 9, "total": 12},
+            "B.NOT": {"before": 10, "after": 10, "total": 12},
+        }
+        result = decide(
+            paired, active_capability="B.IFF", phase="RECOVERY_2",
+            protected={"B.NOT"}, settings=Settings(),
+            same_grade_capabilities=("B.IFF", "B.NOT"),
+            fixed_grade_replay={"status": "MEASURED", "grade": "B",
+                                "before": 68, "after": 69, "total": 72,
                                 "cohort_sha256": "a" * 64},
             fixed_frontier_replay={
                 "status": "MEASURED", "cohort_sha256": "a" * 64,
-                "rows": 291, "before_correct": 287, "after_correct": 287,
-                "regressions": [{"id": "new_div_error", "capability": "C.DIV"}],
-                "repaired": [{"id": "old_div_error", "capability": "C.DIV"}],
+                "rows": 291, "before_correct": 287, "after_correct": 286,
+                "regressions": [
+                    {"id": "c1", "capability": "C.DIV"},
+                    {"id": "c2", "capability": "C.DIV"},
+                ],
+                "repaired": [{"id": "b1", "capability": "B.IFF"}],
                 "grades": {
-                    "B": {"before": 69, "after": 69, "total": 72,
-                          "net_correct_delta": 0},
-                    "C": {"before": 146, "after": 146, "total": 147,
-                          "net_correct_delta": 0},
+                    "B": {"before": 68, "after": 69, "total": 72,
+                          "net_correct_delta": 1},
+                    "C": {"before": 147, "after": 145, "total": 147,
+                          "net_correct_delta": -2},
                 },
             })
         self.assertEqual(result["decision"], "REJECT")
-        self.assertEqual(result["reason"], "FIXED_FRONTIER_ITEM_REGRESSION")
+        self.assertEqual(result["reason"], "WHOLE_SCHOOL_NET_REGRESSION")
+        self.assertEqual(result["fixed_whole_school_net_correct_delta"], -1)
 
-    def test_fixed_frontier_accepts_cross_grade_repair_when_origin_grade_ties(self):
+    def test_fixed_frontier_allows_other_grade_repair_when_current_grade_ties(self):
         paired = {
             "B.IFF": {"before": 8, "after": 9, "total": 12},
             "B.NOT": {"before": 10, "after": 10, "total": 12},
@@ -230,76 +340,76 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                 "status": "MEASURED", "cohort_sha256": "a" * 64,
                 "rows": 291, "before_correct": 287, "after_correct": 288,
                 "regressions": [],
-                "repaired": [{"id": "div_repair", "capability": "C.DIV"}],
+                "repaired": [{"id": "c1", "capability": "C.DIV"}],
                 "grades": {
                     "B": {"before": 68, "after": 68, "total": 72,
                           "net_correct_delta": 0},
                     "C": {"before": 146, "after": 147, "total": 147,
                           "net_correct_delta": 1},
                 },
-            })
+            },
+            active_school_grade="B")
         self.assertEqual(result["decision"], "PROVISIONAL")
         self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
-        self.assertEqual(result["fixed_whole_school_net_correct_delta"], 1)
 
-    def test_b_recovery_gets_fixed_b_slice_while_scheduler_is_c(self):
-        from pathlib import Path
-        from bilqis_mlx import grade_a_trainer as trainer
-        probe = [
-            {"id": "probe:iff:0", "capability": "B.IFF", "gold": "TRUE"},
-            {"id": "probe:iff:1", "capability": "B.IFF", "gold": "TRUE"},
-            {"id": "probe:not:0", "capability": "B.NOT", "gold": "TRUE"},
-            {"id": "probe:not:1", "capability": "B.NOT", "gold": "TRUE"},
-            {"id": "probe:div:0", "capability": "C.DIV", "gold": "TRUE"},
-        ]
-        probe_parent = {row["id"]: row["gold"] for row in probe}
-        probe_parent["probe:iff:0"] = "FALSE"
-        probe_candidate = dict(probe_parent)
-        probe_candidate["probe:iff:0"] = "TRUE"
-        fixed_rows = [
-            {"id": "fixed:iff", "capability": "B.IFF", "gold": "TRUE"},
-            {"id": "fixed:not", "capability": "B.NOT", "gold": "TRUE"},
-            {"id": "fixed:div", "capability": "C.DIV", "gold": "TRUE"},
-        ]
-        fixed_parent = {row["id"]: row["gold"] for row in fixed_rows}
-        fixed_candidate = dict(fixed_parent)
-        fixed_candidate["fixed:not"] = "FALSE"
-
-        def inference(_mx, identity, selected, *_args):
-            ids = {row["id"] for row in selected}
-            fixed_ids = set(fixed_parent)
-            if ids <= fixed_ids:
-                truth = fixed_candidate if identity == "candidate" else fixed_parent
-            else:
-                truth = probe_candidate if identity == "candidate" else probe_parent
-            return {row["id"]: truth[row["id"]] for row in selected}
-
-        receipt = {
-            "config": {}, "answer_ids": [],
-            "last_exam": {"cohort_sha256": "a" * 64},
+    def test_late_stage_allows_other_grade_gain_when_active_grade_is_flat(self):
+        paired = {
+            "B.IFF": {"before": 8, "after": 9, "total": 12},
+            "B.NOT": {"before": 10, "after": 9, "total": 12},
         }
-        school = type("School", (), {"grade": "C"})()
-        with (patch.object(trainer, "assessment_capabilities",
-                           return_value=("B.IFF", "B.NOT", "C.DIV")),
-              patch.object(trainer, "_predictions", side_effect=inference),
-              patch("bilqis_mlx.fixed_frontier.load_frontier",
-                    return_value=(tuple(fixed_rows), fixed_parent)),
-              patch("bilqis_mlx.fragile_replay.load_replay_rows",
-                    return_value=())):
-            pair, protected, required, fixed, _, frontier, stage = (
-                trainer._candidate_grade_evidence(
-                    None, Path("/unused"), receipt, object(), school,
-                    "B.IFF", "parent", "candidate", probe,
-                    {row["id"]: probe_parent[row["id"]]
-                     for row in probe if row["capability"] == "B.IFF"},
-                    Settings()))
-        self.assertEqual(stage, "COMPLETE_SAME_GRADE")
-        self.assertEqual(required, ("B.IFF", "B.NOT"))
-        self.assertEqual(fixed["grade"], "B")
-        self.assertEqual(fixed["before"], 2)
-        self.assertEqual(fixed["after"], 1)
-        self.assertEqual(frontier["regressions"], [{
-            "id": "fixed:not", "capability": "B.NOT"}])
+        result = decide(
+            paired, active_capability="B.IFF", phase="RECOVERY_2",
+            protected={"B.NOT"}, settings=Settings(),
+            same_grade_capabilities=("B.IFF", "B.NOT"),
+            fixed_grade_replay={"status": "MEASURED", "grade": "B",
+                                "before": 68, "after": 69, "total": 72,
+                                "cohort_sha256": "a" * 64},
+            fixed_frontier_replay={
+                "status": "MEASURED", "cohort_sha256": "a" * 64,
+                "rows": 291, "before_correct": 287, "after_correct": 288,
+                "regressions": [],
+                "repaired": [{"id": "b1", "capability": "B.IFF"}],
+                "grades": {
+                    "B": {"before": 68, "after": 69, "total": 72,
+                          "net_correct_delta": 1},
+                    "C": {"before": 146, "after": 146, "total": 147,
+                          "net_correct_delta": 0},
+                },
+            },
+            active_school_grade="C")
+        self.assertEqual(result["decision"], "PROVISIONAL")
+        self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
+
+    def test_late_stage_rejects_if_active_school_grade_regresses(self):
+        paired = {
+            "B.IFF": {"before": 8, "after": 9, "total": 12},
+            "B.NOT": {"before": 10, "after": 10, "total": 12},
+        }
+        result = decide(
+            paired, active_capability="B.IFF", phase="RECOVERY_2",
+            protected={"B.NOT"}, settings=Settings(),
+            same_grade_capabilities=("B.IFF", "B.NOT"),
+            fixed_grade_replay={"status": "MEASURED", "grade": "B",
+                                "before": 68, "after": 70, "total": 72,
+                                "cohort_sha256": "a" * 64},
+            fixed_frontier_replay={
+                "status": "MEASURED", "cohort_sha256": "a" * 64,
+                "rows": 291, "before_correct": 287, "after_correct": 288,
+                "regressions": [{"id": "c1", "capability": "C.DIV"}],
+                "repaired": [
+                    {"id": "b1", "capability": "B.IFF"},
+                    {"id": "b2", "capability": "B.NOT"},
+                ],
+                "grades": {
+                    "B": {"before": 68, "after": 70, "total": 72,
+                          "net_correct_delta": 2},
+                    "C": {"before": 146, "after": 145, "total": 147,
+                          "net_correct_delta": -1},
+                },
+            },
+            active_school_grade="C")
+        self.assertEqual(result["decision"], "REJECT")
+        self.assertEqual(result["reason"], "ACTIVE_SCHOOL_GRADE_REGRESSION")
 
     def test_all_target_grade_capabilities_must_be_measured(self):
         paired = {"B.XOR": {"before": 7, "after": 8, "total": 12}}
@@ -339,7 +449,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "INVALID_SELECTION_CREDIT"):
             selection_credit(0.0, rejected, {"teacher_context_reward": 0.0})
 
-    def test_vulnerable_boolean_anchor_flip_vetoes_positive_c_trial_and_teaches_teacher(self):
+    def test_vulnerable_boolean_anchor_flip_is_diagnostic_not_an_item_veto(self):
         paired = {"C.SUCCESSOR": {"before": 20, "after": 21, "total": 21},
                   "B.XOR": {"before": 6, "after": 6, "total": 6}}
         replay = {"status": "MEASURED", "cohort_sha256": "a" * 64,

@@ -102,14 +102,14 @@ class RetentionTeachingPathTests(unittest.TestCase):
     def test_fresh_fragile_preservation_covers_truth_tables_without_exam_ids(self):
         fixed = []
         fresh_by_cap = {}
-        def operand(kind, left="A", right="B"):
+        def operand(kind):
             if kind == "EQ":
                 return {"kind": "compare", "operator": "EQ", "args": [
-                    {"kind": "entity", "name": left},
-                    {"kind": "entity", "name": right}]}
+                    {"kind": "entity", "name": "A"},
+                    {"kind": "entity", "name": "B"}]}
             return {"kind": "relation", "name": kind, "args": [
-                {"kind": "entity", "name": left},
-                {"kind": "entity", "name": right}]}
+                {"kind": "entity", "name": "A"},
+                {"kind": "entity", "name": "B"}]}
         for capability in ("B.OR", "B.XOR"):
             candidates = []
             for index, bits in enumerate((

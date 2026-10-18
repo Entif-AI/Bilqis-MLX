@@ -1453,65 +1453,59 @@ def _reusable_exam_identity(receipt, school, *, rubric_sha256,
             rubric_sha256, assessment_scope_sha256)
 
 
-def _fixed_grade_from_frontier(frontier, capability):
-    grade = capability.partition(".")[0]
-    scores = frontier.get("grades", {}).get(grade)
-    if scores is None:
-        return {"status": "NOT_MEASURED",
-                "reason": "TARGET_GRADE_NOT_IN_FIXED_FRONTIER"}
-    return {
-        "status": "MEASURED", "grade": grade,
-        "cohort_sha256": frontier["cohort_sha256"],
-        "before": scores["before"], "after": scores["after"],
-        "total": scores["total"],
-    }
-
-
-def _candidate_replay_evidence(mx, run_dir, receipt, parent, candidate,
-                               frontier_parent, frontier_candidate):
-    from .fragile_replay import load_replay_rows, screen_replay
-    rows = load_replay_rows(run_dir, receipt)
-    if not rows:
-        return {"status": "NOT_MEASURED",
-                "reason": "B_OR_XOR_EXAM_NOT_YET_ADMITTED"}
-    ids = {row["id"] for row in rows}
-    config, answers = receipt["config"], receipt["answer_ids"]
-    before = (
-        {identity: frontier_parent[identity] for identity in ids}
-        if ids <= frontier_parent.keys() else
-        _predictions(mx, parent, list(rows), config, answers))
-    after = (
-        {identity: frontier_candidate[identity] for identity in ids}
-        if ids <= frontier_candidate.keys() else
-        _predictions(mx, candidate, list(rows), config, answers))
-    return screen_replay(
-        rows, before, after, receipt["last_exam"]["cohort_sha256"])
-
-
 def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
                               parent, candidate, settings):
-    from .fixed_frontier import load_frontier, screen_frontier
-    config, answers = receipt["config"], receipt["answer_ids"]
-    rows, parent_predictions = load_frontier(run_dir, receipt)
+    """Score only the fixed evidence needed after fresh grade gain is proven."""
+    config, answer_ids = receipt["config"], receipt["answer_ids"]
+    fixed = {"status": "NOT_MEASURED",
+             "reason": "NO_COMPARABLE_COMPLETE_GRADE_EXAM"}
     frontier = {"status": "NOT_MEASURED",
                 "reason": "NO_FIXED_WHOLE_SCHOOL_FRONTIER"}
-    candidate_predictions = {}
-    if rows:
-        candidate_predictions = _predictions(
-            mx, candidate, list(rows), config, answers)
+    frontier_parent = frontier_candidate = {}
+    from .fixed_frontier import load_frontier, screen_frontier
+    frontier_rows, frontier_parent = load_frontier(
+        run_dir, receipt,
+        parent_sha256=school.current_student.sha256,
+        parent_optimizer_step=school.current_student.optimizer_step)
+    if frontier_rows:
+        grade = capability.partition(".")[0]
+        grade_rows = tuple(
+            row for row in frontier_rows
+            if row["capability"].partition(".")[0] == grade)
+        if not grade_rows:
+            raise ValueError("LEARNING_EXPERIMENT_FIXED_FRONTIER_GRADE_MISSING")
+        grade_parent = {
+            row["id"]: frontier_parent[row["id"]] for row in grade_rows}
+        grade_candidate = _predictions(
+            mx, candidate, list(grade_rows), config, answer_ids)
+        grade_scores = paired_outcomes(
+            grade_rows, grade_parent, grade_candidate)
+        fixed = {
+            "status": "MEASURED", "grade": grade,
+            "cohort_sha256": receipt["last_exam"]["cohort_sha256"],
+            "before": sum(value["before"] for value in grade_scores.values()),
+            "after": sum(value["after"] for value in grade_scores.values()),
+            "total": sum(value["total"] for value in grade_scores.values()),
+        }
+        frontier_candidate = dict(grade_candidate)
+        other_rows = tuple(
+            row for row in frontier_rows if row not in grade_rows)
+        if other_rows:
+            frontier_candidate.update(_predictions(
+                mx, candidate, list(other_rows), config, answer_ids))
         frontier = screen_frontier(
-            rows, parent_predictions, candidate_predictions,
+            frontier_rows, frontier_parent, frontier_candidate,
             receipt["last_exam"]["cohort_sha256"])
-        fixed = _fixed_grade_from_frontier(frontier, capability)
     else:
-        fixed = {"status": "NOT_MEASURED",
-                 "reason": "NO_COMPARABLE_COMPLETE_GRADE_EXAM"}
-        grade_rows = _fixed_same_grade_rows(
+        fixed_rows = _fixed_same_grade_rows(
             run_dir, receipt, course, school, capability, settings)
-        if grade_rows:
-            before = _predictions(mx, parent, list(grade_rows), config, answers)
-            after = _predictions(mx, candidate, list(grade_rows), config, answers)
-            scores = paired_outcomes(grade_rows, before, after)
+        if fixed_rows:
+            parent_fixed = _predictions(
+                mx, parent, list(fixed_rows), config, answer_ids)
+            candidate_fixed = _predictions(
+                mx, candidate, list(fixed_rows), config, answer_ids)
+            scores = paired_outcomes(
+                fixed_rows, parent_fixed, candidate_fixed)
             fixed = {
                 "status": "MEASURED",
                 "grade": capability.partition(".")[0],
@@ -1520,9 +1514,24 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
                 "after": sum(value["after"] for value in scores.values()),
                 "total": sum(value["total"] for value in scores.values()),
             }
-    replay = _candidate_replay_evidence(
-        mx, run_dir, receipt, parent, candidate,
-        parent_predictions, candidate_predictions)
+
+    from .fragile_replay import load_replay_rows, screen_replay
+    replay_rows = load_replay_rows(run_dir, receipt)
+    replay = {"status": "NOT_MEASURED",
+              "reason": "B_OR_XOR_EXAM_NOT_YET_ADMITTED"}
+    if replay_rows:
+        ids = {row["id"] for row in replay_rows}
+        replay_parent = (
+            {rid: frontier_parent[rid] for rid in ids}
+            if ids <= frontier_parent.keys() else
+            _predictions(mx, parent, list(replay_rows), config, answer_ids))
+        replay_candidate = (
+            {rid: frontier_candidate[rid] for rid in ids}
+            if ids <= frontier_candidate.keys() else
+            _predictions(mx, candidate, list(replay_rows), config, answer_ids))
+        replay = screen_replay(
+            replay_rows, replay_parent, replay_candidate,
+            receipt["last_exam"]["cohort_sha256"])
     return fixed, replay, frontier
 
 
@@ -1567,14 +1576,14 @@ def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
     protected = set(pair)-set(required)
     protected.update(name for name in required if name != capability)
     grade_net = sum(pair[name]["after"]-pair[name]["before"] for name in required)
-    if grade_net <= 0:
+    if grade_net < 0:
         return (pair, protected, required,
                 {"status": "NOT_MEASURED",
-                 "reason": "SAME_GRADE_NET_NOT_POSITIVE"},
+                 "reason": "SAME_GRADE_NET_REGRESSION"},
                 {"status": "NOT_MEASURED",
-                 "reason": "SAME_GRADE_NET_NOT_POSITIVE"},
+                 "reason": "SAME_GRADE_NET_REGRESSION"},
                 {"status": "NOT_MEASURED",
-                 "reason": "SAME_GRADE_NET_NOT_POSITIVE"},
+                 "reason": "SAME_GRADE_NET_REGRESSION"},
                 "GRADE_NET_REJECTED")
 
     fixed, replay, frontier = _candidate_fixed_evidence(
@@ -1584,47 +1593,17 @@ def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
             "COMPLETE_SAME_GRADE")
 
 
-def _fragile_preservation_pool(source_root, graph, receipt, course, school,
-                               *, batch_size, fixed_rows):
-    """Generate one visit-scoped pool covering every fixed fragile structure."""
-    from .fragile_replay import CAPABILITIES, structural_signature
-    if not fixed_rows:
-        return ()
-    admitted = set(assessment_capabilities(course, school))
-    requested = tuple(name for name in CAPABILITIES if name in admitted)
-    pool = []
-    for name in requested:
-        target = {
-            structural_signature(row) for row in fixed_rows
-            if row["capability"] == name
-        }
-        fresh = []
-        for attempt in range(8):
-            fresh.extend(_draw_live_rows(
-                source_root, graph,
-                seed=_seed(
-                    receipt, capability=f"FRAGILE_POOL:{name}:{attempt}"),
-                capability=name, each=max(512, batch_size * 16), course=course))
-            have = {structural_signature(row) for row in fresh}
-            if target <= have:
-                break
-        else:
-            raise ValueError("FRAGILE_PRESERVATION_POOL_COVERAGE_EXHAUSTED")
-        pool.extend(fresh)
-    return tuple(pool)
-
-
 def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
                                      course, school, capability, *, step,
-                                     batch_size, fixed_rows=None,
-                                     fresh_pool=None):
+                                     batch_size, fixed_rows=None):
     """Generate fresh semantic siblings for the fixed B.OR/B.XOR safety rows.
 
     Rehearsal is active only after a source-verified B replay exam exists.
     The fixed examination rows themselves are never delivered to the optimizer.
     """
     from .fragile_replay import (
-        CAPABILITIES, load_replay_rows, select_structural_preservation_rows,
+        CAPABILITIES, load_replay_rows, select_preservation_rows,
+        select_structural_preservation_rows,
     )
     fixed = (tuple(fixed_rows) if fixed_rows is not None
              else load_replay_rows(run_dir, receipt))
@@ -1634,21 +1613,43 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
     requested = tuple(name for name in CAPABILITIES if name in admitted)
     if not requested:
         return ()
-    if fresh_pool is None:
-        fresh_pool = _fragile_preservation_pool(
-            source_root, graph, receipt, course, school,
-            batch_size=batch_size, fixed_rows=fixed)
     excluded = {row["id"] for row in fixed}
     selected = []
     for name in requested:
         fixed_capability = tuple(
             row for row in fixed if row["capability"] == name)
-        limit = 6 if name == "B.OR" else 4
-        matched = select_structural_preservation_rows(
-            [row for row in fresh_pool if row["capability"] == name],
-            fixed_capability, excluded_ids=excluded,
-            rotation=max(0, step - 1), limit=limit)
-        selected.extend(matched)
+        fresh = []
+        matched = ()
+        for attempt in range(3):
+            fresh.extend(_draw_live_rows(
+                source_root, graph,
+                seed=_seed(
+                    receipt,
+                    capability=f"FRAGILE_PRESERVE:{name}:{attempt}",
+                    step=step),
+                capability=name, each=max(96, batch_size * 3), course=course))
+            matched = select_structural_preservation_rows(
+                fresh, fixed_capability, excluded_ids=excluded,
+                rotation=max(0, step - 1) * 4, limit=4)
+            if len(matched) >= 4:
+                break
+        delivered = list(matched)
+        if len(delivered) < 4:
+            try:
+                fallback = select_preservation_rows(
+                    fresh, capabilities=(name,), excluded_ids=excluded)
+            except ValueError as exc:
+                if str(exc) != "FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE":
+                    raise
+                fallback = ()
+            used = {row["id"] for row in delivered}
+            for row in fallback:
+                if row["id"] not in used:
+                    delivered.append(row)
+                    used.add(row["id"])
+                if len(delivered) >= 4:
+                    break
+        selected.extend(delivered[:4])
     if any(row["id"] in excluded for row in selected):
         raise ValueError("FRAGILE_PRESERVATION_EXAM_ROW_LEAK")
     return tuple(selected)
@@ -1779,13 +1780,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     policy_control_receipts = []
     step_before = int(optimizer.state["step"].item())
     fragile_fixed_rows = ()
-    fragile_preservation_pool = ()
     if learning_settings is not None:
         from .fragile_replay import load_replay_rows
         fragile_fixed_rows = load_replay_rows(run_dir, receipt)
-        fragile_preservation_pool = _fragile_preservation_pool(
-            source_root, graph, receipt, course, school,
-            batch_size=batch_size, fixed_rows=fragile_fixed_rows)
     for step in range(steps_per_visit):
         lesson_control = None
         fresh = _draw_live_rows(source_root, graph,
@@ -1829,8 +1826,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             preservation = _fresh_fragile_preservation_rows(
                 run_dir, source_root, graph, receipt, course, school, cap,
                 step=step + 1, batch_size=batch_size,
-                fixed_rows=fragile_fixed_rows,
-                fresh_pool=fragile_preservation_pool)
+                fixed_rows=fragile_fixed_rows)
             picked, delivered_preservation = _inject_preservation_rows(
                 picked, preservation, reserved_ids={row["id"] for row in window})
         if lesson_control is not None:
@@ -1851,7 +1847,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 "".join("1" if value else "0" for value in row["operand_truths"])
                 for row in delivered_preservation})
             lesson_control["fragile_preservation_source"] = (
-                "FRESH_SOURCE_STRUCTURAL_SIBLINGS")
+                "FRESH_SOURCE_TRUTH_TABLE_SIBLINGS")
             policy_control_receipts.append(lesson_control)
         for row in window:
             identity = row["id"]
@@ -1906,6 +1902,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             same_grade_capabilities=current_grade,
             fixed_grade_replay=fixed_grade_evidence,
             fixed_frontier_replay=frontier,
+            active_school_grade=school.grade,
             mature_grades=frozenset(school.champions),
             negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
             source_cohort_sha256=_fingerprint([

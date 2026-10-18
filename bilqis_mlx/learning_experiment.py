@@ -206,7 +206,76 @@ def _paired_screen(paired, protected, active_capability):
     return deltas, regressions
 
 
-def _protected_loss_policy(regressions, phase, mature_grades, settings):
+def _fixed_frontier_retention_evidence(value, active_school_grade):
+    frontier = value or {
+        "status": "NOT_MEASURED",
+        "reason": "NO_FIXED_WHOLE_SCHOOL_FRONTIER",
+    }
+    status = frontier.get("status")
+    if status not in ("MEASURED", "NOT_MEASURED"):
+        raise ValueError("LEARNING_EXPERIMENT_INVALID_FIXED_FRONTIER_STATUS")
+    if status == "NOT_MEASURED":
+        return frontier, False, False, None
+    before, after, total = (
+        frontier.get("before_correct"), frontier.get("after_correct"),
+        frontier.get("rows"))
+    regressions = frontier.get("regressions")
+    repaired = frontier.get("repaired")
+    if (any(type(number) is not int for number in (before, after, total)) or
+            not 0 < total or not 0 <= before <= total or
+            not 0 <= after <= total or
+            not isinstance(regressions, list) or
+            not isinstance(repaired, list)):
+        raise ValueError("LEARNING_EXPERIMENT_INVALID_FIXED_FRONTIER_SCORE")
+    active_grade_regression = False
+    if active_school_grade is not None:
+        grades = frontier.get("grades")
+        grade = grades.get(active_school_grade) if isinstance(grades, dict) else None
+        if (not isinstance(grade, dict) or
+                any(type(grade.get(name)) is not int
+                    for name in ("before", "after", "total")) or
+                not 0 < grade["total"] or
+                not 0 <= grade["before"] <= grade["total"] or
+                not 0 <= grade["after"] <= grade["total"]):
+            raise ValueError(
+                "LEARNING_EXPERIMENT_INVALID_ACTIVE_GRADE_FRONTIER")
+        active_grade_regression = grade["after"] < grade["before"]
+    return frontier, after < before, active_grade_regression, after - before
+
+
+def _retention_reason(*, no_target_gain, same_grade_net_gain,
+                      fixed_grade_regression, active_grade_regression,
+                      whole_school_regression, frontier_measured,
+                      fragile_losses, exceeded):
+    if no_target_gain:
+        return "NO_MEASURABLE_TARGET_GAIN"
+    if not frontier_measured:
+        if fragile_losses:
+            return "FRAGILE_COMPOSITION_REPLAY_REGRESSION"
+        if exceeded:
+            return "PROTECTED_CAPABILITY_REGRESSION"
+        if same_grade_net_gain < 0:
+            return "SAME_GRADE_NET_REGRESSION"
+        if same_grade_net_gain == 0:
+            return "NO_POSITIVE_SAME_GRADE_GAIN"
+        if fixed_grade_regression:
+            return "FIXED_GRADE_COHORT_REGRESSION"
+        return "PAIRED_SCREEN_WITHIN_BUDGET"
+    if same_grade_net_gain < 0:
+        return "SAME_GRADE_NET_REGRESSION"
+    if fixed_grade_regression:
+        return "FIXED_LESSON_GRADE_REGRESSION"
+    if active_grade_regression:
+        return "ACTIVE_SCHOOL_GRADE_REGRESSION"
+    if whole_school_regression:
+        return "WHOLE_SCHOOL_NET_REGRESSION"
+    return "PAIRED_SCREEN_WITHIN_BUDGET"
+
+
+def _protected_diagnostics(paired, protected, active_capability, phase,
+                           settings, mature_grades):
+    deltas, regressions = _paired_screen(
+        paired, protected, active_capability)
     introduction = phase == "MAIN"
     allowed = settings.mature_max_loss + (
         settings.introduction_extra_loss if introduction else 0)
@@ -219,51 +288,18 @@ def _protected_loss_policy(regressions, phase, mature_grades, settings):
         cap: loss for cap, loss in regressions.items()
         if loss > tolerances[cap]
     }
-    return allowed, tolerances, exceeded
+    protected_net_gain = sum(
+        paired[cap]["after"] - paired[cap]["before"]
+        for cap in protected if cap != active_capability)
+    return (deltas, regressions, allowed, tolerances, exceeded,
+            protected_net_gain)
 
 
-def _fixed_frontier_evidence(value):
-    frontier = value or {
-        "status": "NOT_MEASURED",
-        "reason": "NO_FIXED_WHOLE_SCHOOL_FRONTIER",
-    }
-    status = frontier.get("status")
-    if status not in ("MEASURED", "NOT_MEASURED"):
-        raise ValueError("LEARNING_EXPERIMENT_INVALID_FIXED_FRONTIER_STATUS")
-    if status == "NOT_MEASURED":
-        return frontier, False, None
-    before, after, total = (
-        frontier.get("before_correct"), frontier.get("after_correct"),
-        frontier.get("rows"))
-    regressions = frontier.get("regressions")
-    repaired = frontier.get("repaired")
-    if (any(type(number) is not int for number in (before, after, total)) or
-            not 0 < total or not 0 <= before <= total or
-            not 0 <= after <= total or
-            not isinstance(regressions, list) or
-            not isinstance(repaired, list)):
-        raise ValueError("LEARNING_EXPERIMENT_INVALID_FIXED_FRONTIER_SCORE")
-    return frontier, bool(regressions), after - before
-
-
-def _retention_reason(*, no_target_gain, fragile_losses, frontier_losses,
-                      exceeded, same_grade_net_gain,
-                      fallback_fixed_grade_regression):
-    if no_target_gain:
-        return "NO_MEASURABLE_TARGET_GAIN"
-    if fragile_losses:
-        return "FRAGILE_COMPOSITION_REPLAY_REGRESSION"
-    if frontier_losses:
-        return "FIXED_FRONTIER_ITEM_REGRESSION"
-    if exceeded:
-        return "PROTECTED_CAPABILITY_REGRESSION"
-    if same_grade_net_gain < 0:
-        return "SAME_GRADE_NET_REGRESSION"
-    if same_grade_net_gain == 0:
-        return "NO_POSITIVE_SAME_GRADE_GAIN"
-    if fallback_fixed_grade_regression:
-        return "FIXED_GRADE_COHORT_REGRESSION"
-    return "PAIRED_SCREEN_WITHIN_BUDGET"
+def _validate_source_cohort_sha256(value):
+    if (value is not None and
+            (len(value) != 64 or
+             any(char not in "0123456789abcdef" for char in value))):
+        raise ValueError("LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID")
 
 
 def decide(paired: dict, *, active_capability: str, phase: str,
@@ -274,7 +310,8 @@ def decide(paired: dict, *, active_capability: str, phase: str,
            fragile_replay: dict | None = None,
            same_grade_capabilities: tuple[str, ...] | None = None,
            fixed_grade_replay: dict | None = None,
-           fixed_frontier_replay: dict | None = None) -> dict:
+           fixed_frontier_replay: dict | None = None,
+           active_school_grade: str | None = None) -> dict:
     """Retain only target gains that do not sacrifice their own grade.
 
     The parent/student and native AdamW remain untouched on rejection.
@@ -282,36 +319,40 @@ def decide(paired: dict, *, active_capability: str, phase: str,
     """
     if active_capability not in paired or not phase:
         raise ValueError("LEARNING_EXPERIMENT_MISSING_ACTIVE_CAPABILITY")
-    deltas, regressions = _paired_screen(paired, protected, active_capability)
-    allowed, tolerances, exceeded = _protected_loss_policy(
-        regressions, phase, mature_grades, settings)
+    (deltas, regressions, allowed, tolerances, exceeded,
+     protected_net_gain) = _protected_diagnostics(
+         paired, protected, active_capability, phase, settings,
+         mature_grades)
     active = paired[active_capability]
     active_gain = active["after"] - active["before"]
-    protected_net_gain = sum(paired[cap]["after"] - paired[cap]["before"]
-                             for cap in protected if cap != active_capability)
     required, same_grade_net_gain, fixed = _same_grade_retention_evidence(
         paired, active_capability, same_grade_capabilities, fixed_grade_replay)
+    # Local lesson training reward is not evidence of improved capability.
+    # The same, source-oracled parent/challenger probe must improve strictly.
     no_target_gain = active_gain <= 0
-    fragile_losses = bool(fragile_replay and fragile_replay.get("regressions"))
-    frontier, frontier_losses, frontier_net = _fixed_frontier_evidence(
-        fixed_frontier_replay)
-    fallback_fixed_grade_regression = (
-        frontier.get("status") != "MEASURED" and
+    frontier, whole_school_regression, active_grade_regression, frontier_net = (
+        _fixed_frontier_retention_evidence(
+            fixed_frontier_replay, active_school_grade))
+    frontier_measured = frontier.get("status") == "MEASURED"
+    fixed_grade_regression = (
         fixed.get("status") == "MEASURED" and
         fixed["net_correct_delta"] < 0)
+    fragile_losses = bool(
+        fragile_replay and fragile_replay.get("regressions"))
     if fragile_replay is not None and fragile_replay.get("status") not in (
             "MEASURED", "NOT_MEASURED"):
         raise ValueError("LEARNING_EXPERIMENT_INVALID_FRAGILE_REPLAY")
     fingerprint = json.dumps(paired, sort_keys=True, separators=(",", ":"))
-    if (source_cohort_sha256 is not None and
-            (len(source_cohort_sha256) != 64 or
-             any(c not in "0123456789abcdef" for c in source_cohort_sha256))):
-        raise ValueError("LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID")
+    _validate_source_cohort_sha256(source_cohort_sha256)
     reason = _retention_reason(
-        no_target_gain=no_target_gain, fragile_losses=fragile_losses,
-        frontier_losses=frontier_losses, exceeded=exceeded,
+        no_target_gain=no_target_gain,
         same_grade_net_gain=same_grade_net_gain,
-        fallback_fixed_grade_regression=fallback_fixed_grade_regression)
+        fixed_grade_regression=fixed_grade_regression,
+        active_grade_regression=active_grade_regression,
+        whole_school_regression=whole_school_regression,
+        frontier_measured=frontier_measured,
+        fragile_losses=fragile_losses,
+        exceeded=exceeded)
     return {
         "version": VERSION,
         "decision": ("REJECT" if reason != "PAIRED_SCREEN_WITHIN_BUDGET"

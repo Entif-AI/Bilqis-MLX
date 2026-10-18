@@ -30,92 +30,70 @@ def _operand_kind(node: dict) -> str:
     return value
 
 
-def _endpoint_topology(args: list[dict]) -> tuple[int, ...]:
-    endpoints = []
-    for arg in args:
-        values = arg.get("args")
-        if (not isinstance(values, list) or len(values) != 2 or
-                any(item.get("kind") != "entity" or
-                    not isinstance(item.get("name"), str)
-                    for item in values)):
-            raise ValueError("FRAGILE_PRESERVATION_ENDPOINT_TOPOLOGY_INVALID")
-        endpoints.extend(item["name"] for item in values)
-    aliases, pattern = {}, []
-    for name in endpoints:
-        aliases.setdefault(name, len(aliases))
-        pattern.append(aliases[name])
-    return tuple(pattern)
-
-
 def structural_signature(row: dict) -> tuple:
-    """Canonical compositional shape, independent of concrete entity names."""
+    """Describe the compositional shape that truth-pattern-only replay misses."""
     capability = row.get("capability")
-    truths = row.get("operand_truths")
-    query = (row.get("record") or {}).get("query") or {}
+    raw = row.get("operand_truths")
+    record = row.get("record") or {}
+    query = record.get("query") or {}
     args = query.get("args")
     universe = row.get("universe_size")
     if (capability not in CAPABILITIES or
-            not isinstance(truths, (list, tuple)) or len(truths) != 2 or
-            any(type(value) is not bool for value in truths) or
+            not isinstance(raw, (list, tuple)) or len(raw) != 2 or
+            any(type(value) is not bool for value in raw) or
             not isinstance(args, list) or len(args) != 2 or
             type(universe) is not int or universe < 1):
         raise ValueError("FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID")
-    return (
-        capability, tuple(truths),
-        tuple(_operand_kind(arg) for arg in args),
-        _endpoint_topology(args), universe,
-    )
-
-
-def _signature_schedule(fixed_rows, *, rotation: int, limit: int) -> tuple:
-    signatures = sorted({structural_signature(row) for row in fixed_rows})
-    if not signatures:
-        return ()
-    capabilities = {signature[0] for signature in signatures}
-    if len(capabilities) != 1:
-        raise ValueError("FRAGILE_PRESERVATION_MIXED_CAPABILITY_SIGNATURES")
-    capability = next(iter(capabilities))
-    quotas = (
-        {(False, False): 3, (False, True): 1,
-         (True, False): 1, (True, True): 1}
-        if capability == "B.OR" and limit >= 6 else
-        {pattern: 1 for pattern in TRUTH_PATTERNS}
-        if capability == "B.XOR" and limit >= 4 else None
-    )
-    if quotas is None:
-        shift = rotation % len(signatures)
-        return tuple((signatures[shift:] + signatures[:shift])[:limit])
-    scheduled = []
-    for pattern in TRUTH_PATTERNS:
-        group = [signature for signature in signatures if signature[1] == pattern]
-        if not group:
-            raise ValueError("FRAGILE_PRESERVATION_TRUTH_PATTERN_MISSING")
-        count = min(quotas[pattern], len(group))
-        shift = rotation % len(group)
-        ordered = group[shift:] + group[:shift]
-        scheduled.extend(ordered[:count])
-    return tuple(scheduled[:limit])
+    return (capability, tuple(raw), tuple(_operand_kind(arg) for arg in args),
+            universe)
 
 
 def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozenset(),
                                         rotation: int, limit: int) -> tuple[dict, ...]:
-    """Select fresh rows matching rotating fixed structural signatures."""
+    """Prefer fresh siblings nearest to rotated fixed structural signatures.
+
+    Structural rehearsal is guidance, not an admission gate. Prefer exact
+    signature matches, then same truth-pattern/operand-kind matches across
+    universe sizes, then the same truth pattern. Missing shapes simply yield
+    fewer rows so callers can fall back to generic truth-table rehearsal.
+    """
     if type(rotation) is not int or rotation < 0 or type(limit) is not int or limit < 1:
         raise ValueError("FRAGILE_PRESERVATION_ROTATION_INVALID")
-    desired = _signature_schedule(
-        fixed_rows, rotation=rotation, limit=limit)
     excluded = set(excluded_ids)
-    selected = {}
+    desired = sorted({structural_signature(row) for row in fixed_rows})
+    if not desired:
+        return ()
+    shift = rotation % len(desired)
+    desired = (desired[shift:] + desired[:shift])[:min(limit, len(desired))]
+    candidates = []
     for row in rows:
         if row.get("id") in excluded:
             continue
-        signature = structural_signature(row)
-        if signature in desired:
-            selected.setdefault(signature, row)
-    missing = [signature for signature in desired if signature not in selected]
-    if missing:
-        raise ValueError("FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_MISSING")
-    return tuple(selected[signature] for signature in desired)
+        try:
+            signature = structural_signature(row)
+        except ValueError:
+            continue
+        candidates.append((row, signature))
+    selected, used = [], set()
+    for wanted in desired:
+        chosen = next((
+            row for row, signature in candidates
+            if row["id"] not in used and signature == wanted
+        ), None)
+        if chosen is None:
+            chosen = next((
+                row for row, signature in candidates
+                if row["id"] not in used and signature[:3] == wanted[:3]
+            ), None)
+        if chosen is None:
+            chosen = next((
+                row for row, signature in candidates
+                if row["id"] not in used and signature[:2] == wanted[:2]
+            ), None)
+        if chosen is not None:
+            selected.append(chosen)
+            used.add(chosen["id"])
+    return tuple(selected)
 
 
 def _pattern_gold(capability: str, pattern: tuple[bool, bool]) -> str:
