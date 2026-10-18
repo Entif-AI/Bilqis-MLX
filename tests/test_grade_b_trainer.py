@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.grade_a_release import accepted_grade_a, AUTHORITY
-from bilqis_mlx.grade_a_trainer import (
+from bilqis_mlx.trainer import (
     VERSION, _activate_next_admitted_grade, _bundle_pointer,
     _draw_live_rows, _fingerprint, _persist,
     _fixed_same_grade_rows, _learning_probe_rows,
@@ -127,7 +127,7 @@ class GradeBTrainerTests(unittest.TestCase):
             self.assertEqual(json.loads((root/"states/0000001.json").read_text()),receipt)
             self.assertEqual(json.loads((root/"state.json").read_text()),updated)
             # Interrupt after immutable second generation, before current pointer.
-            from bilqis_mlx.grade_a_trainer import _durable_json
+            from bilqis_mlx.trainer import _durable_json
             _durable_json(root/"state.json",receipt,replace_existing=True)
             with redirect_stdout(io.StringIO()):
                 recovered = _recover_orphaned_commit(root,receipt)
@@ -141,7 +141,7 @@ class GradeBTrainerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             old = _persist(root,self._receipt(school,pointer))
-            with patch("bilqis_mlx.grade_a_trainer._record",
+            with patch("bilqis_mlx.trainer._record",
                        side_effect=RuntimeError("crash-after-state-commit")):
                 with self.assertRaisesRegex(RuntimeError,"crash-after-state-commit"):
                     _activate_next_admitted_grade(root,old,self.a_course,self.b_course)
@@ -167,7 +167,7 @@ class GradeBTrainerTests(unittest.TestCase):
         record = _with_delivery_outbox(record,events)
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            from bilqis_mlx.grade_a_trainer import _record
+            from bilqis_mlx.trainer import _record
             journal = root/"events.jsonl"
             old_record = _record
             delivered = []
@@ -176,7 +176,7 @@ class GradeBTrainerTests(unittest.TestCase):
                     raise OSError("disk-interrupted-event-publication")
                 delivered.append(event["event_id"])
                 return old_record(path,event)
-            with patch("bilqis_mlx.grade_a_trainer._record",side_effect=fail_on_second):
+            with patch("bilqis_mlx.trainer._record",side_effect=fail_on_second):
                 with self.assertRaisesRegex(OSError,"disk-interrupted"):
                     _reconcile_delivery_outbox(root,record)
             with redirect_stdout(io.StringIO()):
@@ -215,16 +215,16 @@ class GradeBTrainerTests(unittest.TestCase):
             with redirect_stdout(io.StringIO()):
                 successor = _activate_next_admitted_grade(
                     root,old,self.a_course,self.b_course)
-            from bilqis_mlx.grade_a_trainer import _durable_json
+            from bilqis_mlx.trainer import _durable_json
             _durable_json(root/"state.json",old,replace_existing=True)
             from bilqis_mlx.source import AUDITED_PARENT
             fake_meta = {"source_digest":AUDITED_PARENT.sha256,
                          "safetensors_sha256":sha,"optimizer_step":153144}
-            with (patch("bilqis_mlx.grade_a_trainer.load_semantically_bound_bundle",
+            with (patch("bilqis_mlx.trainer.load_semantically_bound_bundle",
                         return_value=(params,optimizer,fake_meta,graph)),
-                  patch("bilqis_mlx.grade_a_trainer._verify_best_custody"),
-                  patch("bilqis_mlx.grade_a_trainer._verify_saved_cohort"),
-                  patch("bilqis_mlx.grade_a_trainer._publish_boundary"),
+                  patch("bilqis_mlx.trainer._verify_best_custody"),
+                  patch("bilqis_mlx.trainer._verify_saved_cohort"),
+                  patch("bilqis_mlx.trainer._publish_boundary"),
                   redirect_stdout(io.StringIO())):
                 saved_params, saved_optimizer, saved_graph, recovered = _resume(
                     root,self.manifest,self.a_course,self.teacher_sha,
@@ -366,14 +366,14 @@ class GradeBTrainerTests(unittest.TestCase):
             optimizer.state["step"].count += 1
             return .25,.2
 
-        with (patch("bilqis_mlx.grade_a_trainer._draw_live_rows",
+        with (patch("bilqis_mlx.trainer._draw_live_rows",
                     return_value=examples),
-              patch("bilqis_mlx.grade_a_trainer.load_semantically_bound_bundle",
+              patch("bilqis_mlx.trainer.load_semantically_bound_bundle",
                     side_effect=AssertionError("prior grade master cannot nominate rows")),
-              patch("bilqis_mlx.grade_a_trainer._train_score",return_value=.5),
-              patch("bilqis_mlx.grade_a_trainer._predictions",
+              patch("bilqis_mlx.trainer._train_score",return_value=.5),
+              patch("bilqis_mlx.trainer._predictions",
                     return_value={"old-true":"TRUE","old-false":"TRUE"}),
-              patch("bilqis_mlx.grade_a_trainer._train_step",side_effect=toy_step)):
+              patch("bilqis_mlx.trainer._train_step",side_effect=toy_step)):
             updated = _take_visit(
                 None,Path("/unused-during-disposable-test"),receipt,self.manifest,
                 self.b_course,Teacher(),{},optimizer,{},steps_per_visit=1,
@@ -404,10 +404,10 @@ class GradeBTrainerTests(unittest.TestCase):
                       "capability":grade_b_role,"rubric":rubric,"checkpoint":pointer,
                       "correct":12,"total":12,"evaluation_id":"source-verified-test"}}}
         observed = []
-        with (patch("bilqis_mlx.grade_a_trainer._record",
+        with (patch("bilqis_mlx.trainer._record",
                     side_effect=lambda _,event:observed.append(event)),
-              patch("bilqis_mlx.grade_a_trainer._quarantine_newer_uncommitted_bundles"),
-              patch("bilqis_mlx.grade_a_trainer.retire_bundles",return_value=())):
+              patch("bilqis_mlx.trainer._quarantine_newer_uncommitted_bundles"),
+              patch("bilqis_mlx.trainer.retire_bundles",return_value=())):
             _publish_boundary(Path("/dummy"), record, (), (grade_b_role,),
                               exam_event={"event":"SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
                                           "grade":"B"})
@@ -475,7 +475,7 @@ class GradeBTrainerTests(unittest.TestCase):
                           side_effect=ValueError("INJECTED_DIAGNOSTIC_OBSERVER_FAILURE"))
                     if not qualification_cohorts else nullcontext()
                 )
-                with (patch("bilqis_mlx.grade_a_trainer._predictions",
+                with (patch("bilqis_mlx.trainer._predictions",
                             side_effect=perfect_oracle_predictions),
                       diagnostic_observer, redirect_stdout(io.StringIO())):
                     receipt = _take_exam(

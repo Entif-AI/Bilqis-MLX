@@ -9,7 +9,7 @@ from bilqis_mlx.live_grade_b import independent_truth
 from bilqis_mlx.live_grade_c import registry_graph
 from bilqis_mlx.boolean_association import draw_grade_associations, draw_b_grade_bridges
 from bilqis_mlx.boolean_association import constructor_digest, VERSION
-from bilqis_mlx.grade_a_trainer import (
+from bilqis_mlx.trainer import (
     _association_rows_for_lesson, _extend_binary_guidance,
 )
 
@@ -104,7 +104,7 @@ def test_trainer_exposes_bridge_only_during_b_lessons():
     course = SimpleNamespace(grades=tuple(
         SimpleNamespace(id=grade) for grade in ("A", "B", "C")))
     synthetic = tuple({"id": str(i)} for i in range(8))
-    with patch("bilqis_mlx.grade_a_trainer.numeric_maximum", return_value=6), \
+    with patch("bilqis_mlx.trainer.numeric_maximum", return_value=6), \
             patch("bilqis_mlx.boolean_association.draw_b_grade_bridges",
                   return_value=synthetic) as draw:
         assert _association_rows_for_lesson(None, {}, course, "A", "A.IDENTITY", seed=1,

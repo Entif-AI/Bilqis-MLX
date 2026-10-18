@@ -21,7 +21,7 @@ if str(ROOT) not in sys.path:
 from bilqis_mlx.backup import digest_file
 from bilqis_mlx.capability_frontier import promote
 from bilqis_mlx.epoch_championships import rebase_active_championships
-from bilqis_mlx.grade_a_trainer import (
+from bilqis_mlx.trainer import (
     _persist,
     _reconcile_delivery_outbox,
     _verify_best_custody,

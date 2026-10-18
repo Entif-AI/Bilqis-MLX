@@ -1,27 +1,30 @@
-"""Release-owned source dispatch for the concrete admitted school curriculum."""
+"""Factory-owned source and cohort contracts for the admitted school curriculum."""
 from __future__ import annotations
 
-from .live_grade_a import (GENERATOR as A_GENERATOR, RELEASE as A_RELEASE,
-    draw_predicates, generator_source_digest)
-from .live_grade_b import (GENERATOR as B_GENERATOR, RELEASE as B_RELEASE,
-    draw_connectives, constructor_digest as b_digest)
-from .live_grade_c import (GENERATOR as C_GENERATOR, RELEASE as C_RELEASE,
-    constructor_digest as c_digest, draw as draw_numbers)
+from .factory.adapters import live_source_registry
+from .factory.generation import draw_release_rows
+from .factory.release import compile_factory_release
 
 
-def cohort_contract(course):
-    releases = {"A": (A_RELEASE, A_GENERATOR, generator_source_digest),
-                "B": (B_RELEASE, B_GENERATOR, b_digest),
-                "C": (C_RELEASE, C_GENERATOR, c_digest)}
-    grade = course.grades[-1]
-    if grade.id not in releases:
-        raise ValueError("HUMAN_TRAINER_UNADMITTED_GRADE_COHORT")
-    release, generator, fingerprint = releases[grade.id]
-    from .numeric_staircase import RELEASE as STAIRCASE_RELEASE, constructor_digest as staircase_digest
-    if grade.id == 'C' and course.version == STAIRCASE_RELEASE:
-        release, fingerprint = STAIRCASE_RELEASE, staircase_digest
-    source_sha = fingerprint()
-    if grade.id == "A":
+def _grade_cohort_contract(course, grade):
+    registry = live_source_registry()
+    release = compile_factory_release(course, registry)
+    definitions = [item for item in release.capabilities if item.grade_id == grade.id]
+    if not definitions:
+        raise ValueError("FACTORY_COHORT_GRADE_NOT_RELEASED")
+    adapter_ids = {item.source_adapter_id for item in definitions}
+    if len(adapter_ids) != 1:
+        raise ValueError("FACTORY_COHORT_REQUIRES_ONE_SOURCE_ADAPTER_PER_GRADE")
+    adapter = release.source_adapter_map[next(iter(adapter_ids))]
+    known_releases = {name for name, _ in adapter.cohort_releases}
+    schema = course.version if (grade is course.grades[-1] and
+                                course.version in known_releases) else (
+        adapter.cohort_releases[0][0] if adapter.cohort_releases else course.version)
+    source_sha = adapter.cohort_code_sha256(schema)
+    # One narrow compatibility rule preserves the already-published Grade-A
+    # cohort identity after the semantic-ABI refactor. It does not participate
+    # in current/future grade dispatch.
+    if grade.assessment_sha256:
         from .historical_live_release import (
             ABI_REFACTORED_A_GENERATOR_SHA256,
             HISTORICAL_A_GENERATOR_SHA256,
@@ -31,7 +34,11 @@ def cohort_contract(course):
             if source_sha != ABI_REFACTORED_A_GENERATOR_SHA256:
                 raise ValueError("HISTORICAL_GRADE_A_SOURCE_COMPATIBILITY_NOT_PROVEN")
             source_sha = HISTORICAL_A_GENERATOR_SHA256
-    return grade.assessment_sha256, release, generator, source_sha
+    return grade.assessment_sha256, schema, adapter.cohort_generator, source_sha
+
+
+def cohort_contract(course):
+    return _grade_cohort_contract(course, course.grades[-1])
 
 
 def numeric_maximum(course):
@@ -41,34 +48,16 @@ def numeric_maximum(course):
 
 
 def lesson_contract(course, grade):
-    from dataclasses import replace
-    prefix = course.grades[:next(i+1 for i, g in enumerate(course.grades) if g.id == grade)]
-    return cohort_contract(replace(course, grades=prefix))
+    try:
+        selected = next(item for item in course.grades if item.id == grade)
+    except StopIteration as exc:
+        raise ValueError("FACTORY_LESSON_GRADE_NOT_RELEASED") from exc
+    return _grade_cohort_contract(course, selected)
 
 
 def draw_course_rows(source_root, graph, course, *, seed, capability=None, each=None):
-    scopes = {g.id for g in course.grades}
-    if not scopes <= {"A", "B", "C"}:
-        raise ValueError("HUMAN_TRAINER_UNADMITTED_GRADE_SOURCE")
-    selected = {capability.split(".", 1)[0]} if capability else scopes
-    if not selected <= scopes:
-        raise ValueError("HUMAN_TRAINER_CAPABILITY_NOT_IN_COURSE")
-    expected = {name: each if each is not None else count for grade in course.grades
-                for name, count in grade.exam_item_counts
-                if capability is None or name == capability}
-    rows = []
-    constructors = {"A": draw_predicates, "B": draw_connectives}
-    for grade in course.grades:
-        if grade.id not in selected:
-            continue
-        count = each if each is not None else grade.exam_item_counts[0][1]
-        if grade.id in constructors:
-            rows.extend(constructors[grade.id](source_root, graph, seed=seed,
-                                               capability=capability, each=count))
-        else:
-            rows.extend(draw_numbers(graph, seed=seed, maximum=numeric_maximum(course),
-                                     capability=capability, each=count))
-    actual = {cap: sum(r["capability"] == cap for r in rows) for cap in expected}
-    if not expected or actual != expected or len(rows) != sum(expected.values()):
-        raise ValueError("HUMAN_TRAINER_LIVE_GRADE_NOT_COMPREHENSIVE")
-    return list(rows)
+    registry = live_source_registry()
+    release = compile_factory_release(course, registry)
+    return draw_release_rows(
+        source_root, graph, release, registry, seed=seed,
+        capability=capability, each=each)

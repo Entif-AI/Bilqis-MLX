@@ -69,7 +69,7 @@ class SourcePrefetchTests(unittest.TestCase):
     @unittest.skipUnless(CHECKPOINT.is_file(), "Original source not mounted")
     def test_real_source_packet_survives_spawned_process_boundary(self):
         import torch
-        from bilqis_mlx.grade_a_trainer import prepare_source
+        from bilqis_mlx.trainer import prepare_source
         from bilqis_mlx.live_grade_a import live_course as a_live_course
         from bilqis_mlx.live_grade_b import live_course as b_live_course
 

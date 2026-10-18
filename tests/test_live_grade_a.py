@@ -5,7 +5,7 @@ import unittest
 from bilqis_mlx.live_grade_a import draw_predicates, live_course
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.generated_assessment import make_cohort
-from bilqis_mlx.grade_a_trainer import _persist_live_cohort, _verify_saved_cohort
+from bilqis_mlx.trainer import _persist_live_cohort, _verify_saved_cohort
 from bilqis_mlx.school import Assessment, Score, assess, start_new, visit
 from bilqis_mlx.champions import Checkpoint
 import json

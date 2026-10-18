@@ -12,10 +12,10 @@ import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
 
-from bilqis_mlx import grade_a_trainer as trainer
+from bilqis_mlx import trainer as trainer
 from bilqis_mlx.grade_a_release import accepted_grade_a, RELEASE, AUTHORITY
 from bilqis_mlx.live_grade_a import live_course, RELEASE as LIVE_RELEASE
-from bilqis_mlx.grade_a_trainer import (
+from bilqis_mlx.trainer import (
     _make_batch, _persist, _seed, _state_from_json, _train_step,
     _take_visit, _take_exam,
     choose_lesson_batch, replay_missed_lessons,
@@ -121,6 +121,11 @@ class GradeATrainerContractTests(unittest.TestCase):
         self.assertNotIn("_verified_reusable_exam(", source)
         self.assertNotIn("_reuse_unchanged_exam_boundary(", source)
 
+    def test_operator_stop_does_not_discard_fixed_promotion_attempt(self):
+        source = inspect.getsource(trainer._flush_working_student)
+        self.assertNotIn('pop("qualification_cohort"', source)
+        self.assertNotIn("pop('qualification_cohort'", source)
+
     def test_historical_manifest_partition_remains_unchanged_as_evidence(self):
         cap = "A.MEMBER"
         rows = [row for row in self.manifest["training_rows"]
@@ -160,7 +165,7 @@ class GradeATrainerContractTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            with patch("bilqis_mlx.grade_a_trainer.save_new_bundle",
+            with patch("bilqis_mlx.trainer.save_new_bundle",
                        side_effect=fail_after_partial_stage):
                 with self.assertRaisesRegex(OSError, "injected disk interruption"):
                     _bundle_pointer(root, "interrupted-unique", {}, None, {},
@@ -189,7 +194,7 @@ class GradeATrainerContractTests(unittest.TestCase):
             late.mkdir(parents=True)
             details = {"source_digest": AUDITED_PARENT.sha256,
                        "optimizer_step": 101, "safetensors_sha256": "f" * 64}
-            with patch("bilqis_mlx.grade_a_trainer.load_semantically_bound_bundle",
+            with patch("bilqis_mlx.trainer.load_semantically_bound_bundle",
                        return_value=({}, None, details, {})):
                 found = _quarantine_newer_uncommitted_bundles(root, set(), 100)
             self.assertEqual(found, ("candidate-after-crash",))
@@ -467,7 +472,7 @@ class GradeATrainerContractTests(unittest.TestCase):
                 "teacher_provenance": provenance, "config": config,
                 "parameter_shapes": {name: list(value.shape)
                                      for name, value in parameters.items()},
-                "semantic_graph_sha256": __import__("bilqis_mlx.grade_a_trainer",
+                "semantic_graph_sha256": __import__("bilqis_mlx.trainer",
                     fromlist=["_fingerprint"])._fingerprint(graph),
                 "answer_ids": answer_ids, "result": "ACTIVE_GRADE_A",
                 "last_exam": None,
@@ -485,7 +490,12 @@ class GradeATrainerContractTests(unittest.TestCase):
             self.assertEqual(resumed["school"]["course_digest"], course.digest())
             self.assertEqual(json.loads((run_dir/"states/0000001.json").read_text()),
                              json.loads(json.dumps(historical)))
-            # Fault injection: immutable generation 2 exists but the mutable
+            self.assertIn("factory_admission", resumed)
+            self.assertEqual(resumed["factory_release_sha256"],
+                             resumed["factory_admission"]["factory_release_sha256"])
+            # Fault injection: the live-course migration plus factory-admission
+            # generations exist, but the mutable latest pointer is rewound to
+            # the historical generation 1 receipt.
             # latest pointer still says generation 1 after interruption.
             _durable_json(run_dir / "state.json",
                           json.loads(json.dumps(historical)), replace_existing=True)
@@ -493,7 +503,7 @@ class GradeATrainerContractTests(unittest.TestCase):
                 restored_weights, restored_adamw, restored_graph, repaired = _resume(
                     run_dir, manifest, course, sha)
             self.assertEqual(repaired, resumed)
-            self.assertEqual(repaired["generation"], 2)
+            self.assertEqual(repaired["generation"], 3)
             self.assertEqual(int(restored_adamw.state["step"].item()),
                              base.optimizer_step)
             with redirect_stdout(io.StringIO()):

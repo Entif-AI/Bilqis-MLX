@@ -1,7 +1,7 @@
 """Warm-start numeric scope changes using the existing course and state owners."""
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 import hashlib
 from pathlib import Path
 
@@ -68,8 +68,9 @@ def scope_advance_due(receipt, course):
 
 
 def _rebind(run_dir, receipt, old_course, new_course, graph, *, introduction_stage, queue, event):
-    from .grade_a_trainer import (_advance, _persist, _state_from_json,
-                                  _with_delivery_outbox, _reconcile_delivery_outbox)
+    from .trainer import (_advance, _factory_admission, _persist,
+                                  _state_from_json, _with_delivery_outbox,
+                                  _reconcile_delivery_outbox)
     school = _state_from_json(receipt['school'], old_course)
     if school.grade != 'C' or school.revalidation_target_grade is not None:
         raise ValueError('NUMERIC_STAIRCASE_REQUIRES_ACTIVE_C')
@@ -88,12 +89,20 @@ def _rebind(run_dir, receipt, old_course, new_course, graph, *, introduction_sta
         'curriculum_parent': receipt.get('curriculum_parent', receipt['school']['current_student']),
         'config': {**receipt['config'], 'answer_heads': answer_heads(graph, maximum)},
         'live_rubric_sha256': new_course.grades[-1].assessment_sha256, 'last_exam': None}
+    release, release_file, admission = _factory_admission(
+        run_dir, new_course, school.current_student,
+        receipt['semantic_graph_sha256'])
+    updated.update(factory_release_sha256=release.release_sha256,
+                   factory_release_file=release_file,
+                   factory_admission=asdict(admission))
     updated.pop('qualification_cohort', None)
     record = _advance(run_dir, updated, changed, result='ACTIVE_GRADE_C', persist=False)
     delivery = {'event': event, 'grade': 'C', 'generation': record['generation'],
         'old_integer_max': receipt['numeric_maximum'], 'integer_max': maximum,
         'student_sha256': school.current_student.sha256,
-        'optimizer_step': school.current_student.optimizer_step, 'actual_neural_updates': 0}
+        'optimizer_step': school.current_student.optimizer_step,
+        'factory_release_sha256': release.release_sha256,
+        'actual_neural_updates': 0}
     record = _persist(run_dir, _with_delivery_outbox(record, (delivery,)))
     _reconcile_delivery_outbox(run_dir, record)
     return new_course, record

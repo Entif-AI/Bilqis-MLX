@@ -225,7 +225,7 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(reentered.queue, ("a.0",))
 
     def test_trainer_auto_rehabilitates_when_one_grade_is_the_only_debt_left(self):
-        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx import trainer as trainer
         from bilqis_mlx.stagnation_control import (
             quarantined_capabilities, start_session)
 
@@ -250,7 +250,7 @@ class SchoolTests(unittest.TestCase):
             events[0]["event"], "SCHOOL_STAGNATION_REHABILITATION_STARTED")
 
     def test_trainer_does_not_auto_rehabilitate_mixed_grade_debt(self):
-        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx import trainer as trainer
         from bilqis_mlx.stagnation_control import start_session
 
         course = three_grade_course()
@@ -275,7 +275,7 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(events, ())
 
     def test_saturated_visit_preserves_pending_history_without_persisting_ram_student(self):
-        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx import trainer as trainer
 
         school = start_new(self.course, self.init)
         prior = {"event": "PREVIOUS_PENDING_CANDIDATE", "optimizer_step": 105}

@@ -40,7 +40,7 @@ def save_exam(root, generation, seed, *, outbox=False,
                  "cohort_sha256", "student_sha256", "optimizer_step")}}
     event["generator_version"] = exam["generator_version"]
     if outbox:
-        from bilqis_mlx.grade_a_trainer import _with_delivery_outbox
+        from bilqis_mlx.trainer import _with_delivery_outbox
         record = _with_delivery_outbox(record, (event,))
         event = record["delivery_outbox"][0]
         (root / "states" / f"{generation:07d}.json").write_text(json.dumps(record))
@@ -57,7 +57,7 @@ def snapshot(root):
 class DiagnosticAuditTests(unittest.TestCase):
     def test_methodology_commit_survives_boundary_ledger_replay_window(self):
         from bilqis_mlx.diagnostics.event_evidence import load_verified_lesson_methodology
-        from bilqis_mlx.grade_a_trainer import _with_delivery_outbox
+        from bilqis_mlx.trainer import _with_delivery_outbox
 
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

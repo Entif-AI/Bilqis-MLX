@@ -100,6 +100,7 @@ def validate(course: Course) -> None:
     if not course.version or not course.grades:
         raise ValueError("COURSE_VERSION_OR_GRADES_MISSING")
     all_ids: set[str] = set()
+    grade_ids_seen: set[str] = set()
     past_roots: set[str] = set()
     for idx, grade in enumerate(course.grades):
         if grade.assessment_sha256 is not None and (
@@ -114,8 +115,9 @@ def validate(course: Course) -> None:
                     any(type(count) is not int or count < 1
                         for _, count in grade.exam_item_counts)):
                 raise ValueError("GRADE_ASSESSMENT_COUNTS_NOT_BOUND_TO_CAPABILITIES")
-        if idx >= len(GRADE_IDS) or grade.id != GRADE_IDS[idx]:
-            raise ValueError("NONSEQUENTIAL_LETTER_GRADE")
+        if grade.id not in GRADE_IDS or grade.id in grade_ids_seen:
+            raise ValueError("INVALID_OR_DUPLICATE_LETTER_GRADE")
+        grade_ids_seen.add(grade.id)
         if not 6 <= len(grade.capabilities) <= 9:
             raise ValueError("GRADE_CAPABILITY_COUNT_OUTSIDE_SIX_TO_NINE")
         difficulties = {cap.difficulty for cap in grade.capabilities}
@@ -192,7 +194,8 @@ def validate_exam_item(course: Course, active_grade: str, item: ExamItem,
     allowed = {f.kind: f.values for f in cap.answer_families}
     if item.answer_kind not in allowed or item.gold not in allowed[item.answer_kind]:
         raise ValueError("EXAM_ANSWER_OUTSIDE_CAPABILITY_ABI")
-    active_idx = GRADE_IDS.index(active_grade)
+    active_idx = next(index for index, grade in enumerate(course.grades)
+                      if grade.id == active_grade)
     earlier = {c.id: g.id for g in course.grades[:active_idx]
                for c in g.capabilities}
     staged = grades[active_grade].teaching_stages

@@ -197,8 +197,9 @@ def next_grade_readiness(
 def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
                            parameters, optimizer, graph, *, reserve_gib):
     # Import the existing custody writer at use time; it owns all state/outbox I/O.
-    from .grade_a_trainer import (_advance, _bundle_pointer, _fingerprint, _persist,
-        _reconcile_delivery_outbox, _state_from_json, _with_delivery_outbox)
+    from .trainer import (_advance, _bundle_pointer, _factory_admission,
+        _fingerprint, _persist, _reconcile_delivery_outbox, _state_from_json,
+        _with_delivery_outbox)
     school = _state_from_json(receipt["school"], previous)
     exam = receipt.get("last_exam") or {}
     counts = {cap: count for grade in previous.grades for cap, count in grade.exam_item_counts}
@@ -233,10 +234,15 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         epoch_history.append(receipt["mentor_epoch"])
     next_state = replace(next_state, current_student=pointer)
     maximum = numeric_maximum(successor)
+    release, release_file, admission = _factory_admission(
+        run_dir, successor, pointer, _fingerprint(grown_graph))
     updated = {**receipt, "curriculum_mode": RELEASE,
         "grade_c_parent_course_digest": previous.digest(),
         "numeric_maximum": maximum, "grade_c_code_sha256": constructor_digest(),
         "semantic_graph_sha256": _fingerprint(grown_graph),
+        "factory_release_sha256": release.release_sha256,
+        "factory_release_file": release_file,
+        "factory_admission": asdict(admission),
         "parameter_shapes": {name: list(value.shape) for name,value in grown.items()},
         "config": {**receipt["config"], "vocab_size": len(grown_graph["tokens"]),
                    "answer_heads": answer_heads(grown_graph, maximum)},
@@ -250,6 +256,7 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         "optimizer_step": pointer.optimizer_step, "growth": growth,
         "previous_student_sha256": school.current_student.sha256,
         "championship_baseline_sha256": pointer.sha256,
+        "factory_release_sha256": release.release_sha256,
         "archived_championship_epochs": len(epoch_history),
         "teacher_events": receipt["teacher"]["events"],
         "rubric": successor.grades[-1].assessment_sha256,

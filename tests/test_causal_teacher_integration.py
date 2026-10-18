@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-from bilqis_mlx import grade_a_trainer as storage
+from bilqis_mlx import trainer as storage
 from bilqis_mlx.learning_experiment import Settings, select_source_lesson
 from tests import test_grade_c_trainer as fixtures
 from tests import test_numeric_staircase as staircase_fixtures

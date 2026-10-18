@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 from bilqis_mlx.epoch_championships import reset_active_championships
-from bilqis_mlx.grade_a_trainer import (
+from bilqis_mlx.trainer import (
     _persist, _reconcile_delivery_outbox, _verify_best_custody,
     _with_delivery_outbox, operator_lock,
 )

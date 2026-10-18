@@ -35,7 +35,7 @@ class GradeSoupTests(unittest.TestCase):
         import mlx.core as mx
         from types import SimpleNamespace
         from unittest.mock import patch
-        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx import trainer as trainer
         mx.set_default_device(mx.cpu)
         old_graph={"tokens":[0,1],"nodes":[{"id":0},{"id":1}],
                    "row_contract_sha256":{"a":"f"*64}}

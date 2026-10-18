@@ -206,7 +206,7 @@ class OperatorTests(unittest.TestCase):
         self.assertIn("ALL 255/291 = 87.6% correct (last measured)", shown.splitlines()[1])
 
     def test_resume_instructions_are_flag_free_at_default_retention_policy(self):
-        from bilqis_mlx.grade_a_trainer import _resume_command
+        from bilqis_mlx.trainer import _resume_command
         from bilqis_mlx.learning_experiment import Settings
         from bilqis_mlx.paths import LEGACY_SOURCE, active_run_dir
 
@@ -277,7 +277,7 @@ class OperatorTests(unittest.TestCase):
             self.assertEqual(path.read_bytes(),original)
 
     def test_direct_operator_refuses_protected_opt_out_before_source_or_gpu(self):
-        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx import trainer as trainer
 
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)
@@ -293,7 +293,7 @@ class OperatorTests(unittest.TestCase):
             self.assertEqual(state.read_bytes(),payload)
 
     def test_human_operator_receives_default_protected_mode_without_opt_in(self):
-        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx import trainer as trainer
         no_neural_work = "TEST_BLOCKS_ANY_NEURAL_WORK"
         with tempfile.TemporaryDirectory() as tmp:
             with patch.object(trainer, "operate", side_effect=ValueError(
@@ -318,7 +318,7 @@ class OperatorTests(unittest.TestCase):
             self.assertFalse(operate.call_args.kwargs["retention_enabled"])
 
     def test_human_operator_passes_flash_mode_without_changing_retention(self):
-        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx import trainer as trainer
         with tempfile.TemporaryDirectory() as tmp, patch.object(
                 trainer, "operate", side_effect=ValueError(
                     "FLASH_TEST_NO_NEURAL_TRAINING")) as operate, \
@@ -394,7 +394,7 @@ class OperatorTests(unittest.TestCase):
 
             terminal = Terminal()
             with patch("bilqis_mlx.cli.sys.stdout", terminal), patch(
-                    "bilqis_mlx.grade_a_trainer.operate",
+                    "bilqis_mlx.trainer.operate",
                     side_effect=ValueError("DISPOSABLE_TEST_NO_NEURAL_TRAINING")), \
                     redirect_stderr(io.StringIO()):
                 result = main(["train", "--human-run", "--resume",

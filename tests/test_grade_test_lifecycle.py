@@ -10,8 +10,8 @@ from unittest.mock import patch
 from bilqis_mlx.champions import Checkpoint
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
-from bilqis_mlx.grade_a_trainer import (
-    _candidate_cohort, _grade_test_cohort, _promotion_cohort,
+from bilqis_mlx.trainer import (
+    _candidate_cohort, _generalization_cohort, _grade_test_cohort, _promotion_cohort,
     choose_lesson_batch,
 )
 from bilqis_mlx.live_grade_a import live_course
@@ -67,7 +67,7 @@ class GradeTestLifecycleTests(unittest.TestCase):
             self.assertNotEqual(redrawn.digest, routine.digest)
             self.assertNotEqual(redrawn_pointer["cohort_sha256"], pointer["cohort_sha256"])
 
-    def test_promotion_attempt_is_distinct_and_next_attempt_redraws(self):
+    def test_promotion_attempt_is_distinct_and_failed_attempt_remains_fixed(self):
         receipt = self.receipt()
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -79,12 +79,30 @@ class GradeTestLifecycleTests(unittest.TestCase):
                 root, receipt, self.manifest, self.course, SOURCE, self.graph)
             self.assertEqual(again.digest, first.digest)
             self.assertEqual(again_pointer, first_pointer)
+            receipt["qualification_cohort"] = first_pointer
             receipt["generation"] += 1
             second, second_pointer = _promotion_cohort(
                 root, receipt, self.manifest, self.course, SOURCE, self.graph)
+            self.assertEqual(second.digest, first.digest)
+            self.assertEqual(second_pointer, first_pointer)
+
+    def test_failed_generalization_cohort_is_burned_for_next_qualification(self):
+        receipt = self.receipt()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            promotion, pointer = _promotion_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph)
+            first, first_pointer = _generalization_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph,
+                promotion_sha256=promotion.digest)
+            self.assertNotEqual(first.digest, promotion.digest)
+            receipt["burned_generalization_cohorts"] = [first.digest]
+            receipt["generation"] += 1
+            second, second_pointer = _generalization_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph,
+                promotion_sha256=pointer["cohort_sha256"])
             self.assertNotEqual(second.digest, first.digest)
-            self.assertNotEqual(
-                second_pointer["cohort_sha256"], first_pointer["cohort_sha256"])
+            self.assertNotEqual(second_pointer["cohort_sha256"], first_pointer["cohort_sha256"])
 
     def test_returning_to_the_same_grade_gets_new_questions(self):
         receipt = self.receipt()

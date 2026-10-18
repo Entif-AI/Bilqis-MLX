@@ -544,7 +544,7 @@ def main(argv=None):
         if (args.legacy_code_root is not None and
                 not args.legacy_code_root.expanduser().resolve().is_relative_to(ROOT)):
             raise ValueError("HUMAN_TRAINER_EXTERNAL_SOURCE_ROOT_FORBIDDEN")
-        from .grade_a_trainer import operate, operator_view
+        from .trainer import operate, operator_view
         from .grade_a_dashboard import build, ingest
         board, on_event = _prepare_live_board(args, build, ingest)
         with operator_view(on_event):

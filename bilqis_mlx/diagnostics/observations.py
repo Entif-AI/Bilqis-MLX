@@ -409,7 +409,7 @@ def _append_verified_exams(root: Path, lines, grade, observations, files,
         if "delivery_outbox" in receipt:
             # The trainer owns generation event IDs. Reuse its pure serializer;
             # it imports no neural runtime and performs no checkpoint I/O.
-            from ..grade_a_trainer import _with_delivery_outbox
+            from ..trainer import _with_delivery_outbox
             outbox = receipt["delivery_outbox"]
             if not isinstance(outbox, list) or any(not isinstance(e, dict) for e in outbox):
                 raise ValueError("DIAGNOSTIC_EVENT_OUTBOX_CONFLICT")

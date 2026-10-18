@@ -11,7 +11,7 @@ from unittest.mock import patch
 from bilqis_mlx.cli import parse_args, human_stop_summary, _inspect
 from bilqis_mlx.disk import headroom_snapshot, assert_headroom
 from bilqis_mlx.grade_a_dashboard import build
-from bilqis_mlx.grade_a_trainer import session_stop_reason, _record
+from bilqis_mlx.trainer import session_stop_reason, _record
 
 
 class HumanSessionStopTests(unittest.TestCase):

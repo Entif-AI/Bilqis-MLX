@@ -29,7 +29,7 @@ def predicted(rows_, wrong):
 class CausalTeacherExperimentTests(unittest.TestCase):
     def test_trainer_defers_missing_peer_inference_until_candidate_target_passes(self):
         from pathlib import Path
-        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx import trainer as trainer
         grade = ("B.IFF", "B.NOT", "B.XOR")
         rows = [{"id": cap + str(i), "capability": cap,
                  "gold": "TRUE"} for cap in (*grade, "A.EDGE") for i in range(2)]
@@ -71,7 +71,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
 
     def test_failed_target_and_grade_net_skip_expensive_fixed_replay(self):
         from pathlib import Path
-        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx import trainer as trainer
         grade = ("B.IFF", "B.NOT", "B.XOR")
         rows = [{"id": cap + str(i), "capability": cap,
                  "gold": "TRUE"} for cap in (*grade, "A.EDGE") for i in range(2)]
@@ -132,7 +132,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
 
     def test_b_recovery_uses_whole_school_frontier_even_when_scheduler_is_c(self):
         from pathlib import Path
-        from bilqis_mlx import grade_a_trainer as trainer
+        from bilqis_mlx import trainer as trainer
         probe = [
             {"id": "probe:iff:0", "capability": "B.IFF", "gold": "TRUE"},
             {"id": "probe:iff:1", "capability": "B.IFF", "gold": "TRUE"},

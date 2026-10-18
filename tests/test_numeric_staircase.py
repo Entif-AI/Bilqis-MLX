@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from bilqis_mlx import grade_a_trainer as storage
+from bilqis_mlx import trainer as storage
 from bilqis_mlx.grade_transition import activate_numeric_grade
 from bilqis_mlx.live_grade_c import draw, RELEASE as OLD_RELEASE
 from bilqis_mlx.numeric_staircase import (

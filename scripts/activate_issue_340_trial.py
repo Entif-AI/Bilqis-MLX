@@ -11,7 +11,7 @@ import argparse
 import json
 from pathlib import Path
 
-from bilqis_mlx.grade_a_trainer import (
+from bilqis_mlx.trainer import (
     _fingerprint, _mentor_sources_for_visit, _persist, _reconcile_delivery_outbox,
     _verify_best_custody, _with_delivery_outbox, operator_lock,
 )

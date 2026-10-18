@@ -16,7 +16,7 @@ from unittest.mock import patch
 import mlx.core as mx
 import numpy as np
 
-from bilqis_mlx import grade_a_trainer as storage
+from bilqis_mlx import trainer as storage
 from bilqis_mlx.disk import headroom_snapshot
 from bilqis_mlx.mlx_checkpoint import load_semantically_bound_bundle
 from bilqis_mlx.vocabulary_growth import append_catalog, extend_mlx_student

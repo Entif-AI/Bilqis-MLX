@@ -6,7 +6,7 @@ import unittest
 
 from bilqis_mlx.curriculum import ExamItem, validate, validate_exam_item
 from bilqis_mlx.school import assess, assessment_capabilities, start_new, visit
-from bilqis_mlx.grade_a_trainer import _state_from_json
+from bilqis_mlx.trainer import _state_from_json
 from test_school import all_scores, cp, grade_loop, snapshot, three_grade_course
 
 

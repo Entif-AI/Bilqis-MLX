@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from bilqis_mlx.champions import Checkpoint
 from bilqis_mlx.grade_a_release import accepted_grade_a
-from bilqis_mlx.grade_a_trainer import (_bundle_pointer, _fingerprint, _persist,
+from bilqis_mlx.trainer import (_bundle_pointer, _fingerprint, _persist,
     _resume, _state_from_json, _take_exam, _take_visit, prepare_source)
 from bilqis_mlx.grade_transition import activate_numeric_grade
 from bilqis_mlx.live_grade_a import live_course as a_course
@@ -66,7 +66,7 @@ class GradeCTrainerTests(unittest.TestCase):
         return school
 
     def receipt(self, school, pointer, params):
-        from bilqis_mlx.grade_a_trainer import VERSION
+        from bilqis_mlx.trainer import VERSION
         from bilqis_mlx.grade_a_release import AUTHORITY
         return dict(schema=VERSION,run_id="disposable-c-only",generation=1,
             accepted_authority=AUTHORITY, source_manifest_sha256=self.manifest["manifest_sha256"],
@@ -140,7 +140,7 @@ class GradeCTrainerTests(unittest.TestCase):
                 receipt = _take_visit(mx,root,receipt,self.manifest,self.course,self.engine,
                     params,opt,graph,steps_per_visit=1,batch_size=6,reserve_gib=0.,source_root=SOURCE)
                 # Oracle fixture validates graduation mechanics; these scores are not neural mastery.
-                with patch("bilqis_mlx.grade_a_trainer._predictions",side_effect=
+                with patch("bilqis_mlx.trainer._predictions",side_effect=
                            lambda _m,_p,rows,*args: {r["id"]:r["gold"] for r in rows}):
                     receipt = _take_exam(mx,root,receipt,self.manifest,self.course,SOURCE,PARENT,
                                          params,opt,graph,reserve_gib=0.)

@@ -197,7 +197,7 @@ class CapabilityFrontierTests(unittest.TestCase):
     def test_custody_verifies_all_retained_student_and_champion_hashes(self):
         import hashlib
         import json
-        from bilqis_mlx.grade_a_trainer import _verify_best_custody
+        from bilqis_mlx.trainer import _verify_best_custody
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

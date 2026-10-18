@@ -44,13 +44,16 @@ Then close the historical authority loop before implementing. At minimum, inspec
 - `Entif-AI/Bilqis#17` prerequisite graph and developmental stage contracts;
 - `Entif-AI/Bilqis#82` developmental curriculum gate;
 - `socr8s/private-ip#335` / IPR-0220 and `Entif-AI/bilqis-mlx#1` where access permits;
-- `Bilqis Roadmap - 20261006`;
-- `Bilqis ALPHA-01 to ALPHA-02 | Codex Execution Checkpoint - 20261011`;
-- `Bilqis Roadmap Supplement | Alpha Exit, Evidence Transfer, and Mainline Acceleration - 20261011`;
-- `Bilqis-MLX Specs and Failures Ledger - 20261011-20261017`;
-- `Bilqis Curriculum Registry - Version, Lessons, Prerequisites and Champion States`;
-- `Bilqis MLX | Champions, Soups, Golden Ancestors & Grade Advancement | Governing Specification v1.0 | 2026-10-18`;
-- `Bilqis New Ithkuil Semantic Bridge - Chapter 3 and Mathematical Root Seed v0.1`.
+- [https://github.com/Entif-AI/Bilqis/issues](https://github.com/Entif-AI/Bilqis/issues)
+- [https://github.com/socr8s/private-ip/issues?q=is%3Aissue+state%3Aopen+%22bilqis%22+in%3Atitle](https://github.com/socr8s/private-ip/issues?q=is%3Aissue+state%3Aopen+%22bilqis%22+in%3Atitle)
+- [Bilqis-MLX Specs and Failures Ledger - 20261011-20261017](https://docs.google.com/spreadsheets/d/1KhKLENPnP0f3db7g8_gOBzeOTFJkzeX0LsnHsCazQxQ/edit)
+- [https://github.com/Entif-AI/bilqis-mlx/issues/1](https://github.com/Entif-AI/bilqis-mlx/issues/1)
+- [Bilqis Roadmap - 20261006](https://docs.google.com/document/d/19mUp81fRDxBVwc6gX7xNRo6rIeIgMJqyVYo_UQPM5xw/edit)
+- [Bilqis ALPHA-01 to ALPHA-02 | Codex Execution Checkpoint - 20261011](https://docs.google.com/document/d/1JIiyP2-4bJVWWHqYYt3TJmmY5FYwc2h-8n41TzIgydY/edit)
+- [Bilqis Roadmap Supplement | Alpha Exit, Evidence Transfer, and Mainline Acceleration - 20261011](https://docs.google.com/document/d/1x1jtvd1KCfcu7nkz3sLgbaPCBBTEd8NvDeZFaBR-67I/edit)
+- [Bilqis MLX | Champions, Soups, Golden Ancestors & Grade Advancement | Governing Specification v1.0 | 2026-10-18](https://docs.google.com/document/d/1UURzJNes-tB7AZU2pSjB9-q-aWholnjtGbbUJcLTgXI/edit)
+- [Bilqis Curriculum Registry - Version, Lessons, Prerequisites and Champion States](https://docs.google.com/spreadsheets/d/1xtOjO0jGCxjU2bgcg0TKpVruJ4Z5O3vW9ixu6oMQ-so/edit)
+- [Bilqis New Ithkuil Semantic Bridge - Chapter 3 and Mathematical Root Seed v0.1](https://docs.google.com/document/d/1Ti7gSwSWQdHB7W2Qpxtm_I6zylXBcrmFAjhEsTrDJv4/edit)
 
 The point of this read is not to reopen design. It is to preserve the full pre-existing contract and identify where implementation deviated from it. Record any genuine conflict instead of using later implementation as evidence that earlier requirements never existed.
 

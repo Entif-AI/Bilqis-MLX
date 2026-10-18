@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch
 
-from bilqis_mlx import grade_a_trainer as trainer
+from bilqis_mlx import trainer as trainer
 from bilqis_mlx.champion_confidence import champion_roster
 
 

@@ -19,7 +19,7 @@ def record(cap, sha, perfect):
 
 class ChampionConfidenceTests(unittest.TestCase):
     def test_foreign_maxed_capability_champion_and_diluted_soup_both_advise_grade_b(self):
-        from bilqis_mlx.grade_a_trainer import (
+        from bilqis_mlx.trainer import (
             _frozen_confidence_champions, _frozen_grade_soup_votes,
         )
         a_champ = record("A.3", "1", ("A.3", "A.5"))
@@ -34,7 +34,7 @@ class ChampionConfidenceTests(unittest.TestCase):
             graph = {"tokens": ["PAD", "TRUE", "FALSE"], "nodes": [],
                      "row_contract_sha256": {}}
             with (patch("pathlib.Path.stat") as stat,
-                  patch("bilqis_mlx.grade_a_trainer._cached_frozen_champion",
+                  patch("bilqis_mlx.trainer._cached_frozen_champion",
                         return_value=({"embedding.weight": "synthetic"}, graph))):
                 stat.return_value.st_size = 1
                 stat.return_value.st_mtime_ns = 1
@@ -51,7 +51,7 @@ class ChampionConfidenceTests(unittest.TestCase):
                     "grade": "A", "filename": str(path.relative_to(root)),
                     "sha256": "c" * 64, "token_count": 12,
                     "recipe_sha256": "d" * 64, "vote_count": 7}
-            with patch("bilqis_mlx.grade_a_trainer._cached_grade_soup",
+            with patch("bilqis_mlx.trainer._cached_grade_soup",
                        return_value={"embedding.weight": "synthetic"}):
                 mentors, receipts = _frozen_grade_soup_votes(
                     root, {"grade_soups": {"A": soup}}, "B", 3)
@@ -61,7 +61,7 @@ class ChampionConfidenceTests(unittest.TestCase):
             self.assertAlmostEqual(receipts[0]["effective_votes"], 7 / 3)
 
     def test_six_maxed_a_roles_equal_six_direct_votes_plus_two_foreign_soup_votes(self):
-        from bilqis_mlx.grade_a_trainer import _frozen_confidence_champions
+        from bilqis_mlx.trainer import _frozen_confidence_champions
         from bilqis_mlx.grade_soup import soup_vote_count
         grade = "A"
         caps = tuple(f"A.{n}" for n in range(6))
@@ -81,7 +81,7 @@ class ChampionConfidenceTests(unittest.TestCase):
             receipt = {"graduation_perfect": frontier,
                        "grade_soups": {grade: snapshot}}
             with (patch("pathlib.Path.stat") as stat,
-                  patch("bilqis_mlx.grade_a_trainer._cached_frozen_champion",
+                  patch("bilqis_mlx.trainer._cached_frozen_champion",
                         return_value=({"embedding.weight": "synthetic"}, graph))):
                 stat.return_value.st_size = 1
                 stat.return_value.st_mtime_ns = 1
@@ -114,7 +114,7 @@ class ChampionConfidenceTests(unittest.TestCase):
     def test_mlx_supervised_step_absorbs_advice_without_modifying_exam_inference(self):
         import mlx.core as mx
         import mlx.optimizers as optim
-        from bilqis_mlx.grade_a_trainer import (
+        from bilqis_mlx.trainer import (
             _confidence_guidance, _predictions, _train_step,
         )
         mx.set_default_device(mx.cpu)

@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from bilqis_mlx import grade_a_trainer as trainer
+from bilqis_mlx import trainer as trainer
 from bilqis_mlx.learning_experiment import Settings, earlier_grade_capabilities
 from bilqis_mlx.mentor_epoch import (
     begin_epoch, qualify_candidate, active_adviser_checkpoints,
