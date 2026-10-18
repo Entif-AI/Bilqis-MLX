@@ -338,6 +338,31 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertIn("1 NOT MEASURED", diagnostic["detail"])
             self.assertIn("B.NOT +2", outcome["detail"])
 
+    def test_exam_without_logical_target_grade_remains_renderable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {
+                "event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "B",
+                "generation": 13008, "rubric": "b" * 64,
+                "assessment_scope_sha256": "s" * 64,
+                "cohort_sha256": "c" * 64,
+                "generator_version": "grade-live/v2",
+                "cohort_file": f"cohorts/{'c' * 64}.json",
+                "optimizer_step": 230344, "student_sha256": "d" * 64,
+                "phase": "RECOVERY_1",
+                "scores": {
+                    "A.LINK": {"correct": 11, "total": 12},
+                    "C.MUL": {"correct": 19, "total": 21},
+                },
+            })
+            scope = next(
+                row for row in board.rows["SYSTEM & QUALIFICATION"]
+                if row["kind"] == "EXAM SCOPE")
+            self.assertEqual(scope["grade"], "B")
+            self.assertIn("B NOT EVALUATED", scope["detail"])
+            self.assertIn("A+C", scope["detail"])
+            self.assertIn("B NOT EVALUATED", board.operator_lines[0])
+
     def test_first_latest_best_and_regression_use_same_sealed_rubric(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

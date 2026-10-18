@@ -432,8 +432,7 @@ class SchoolTelemetry:
                     total <= 0 or not 0 <= correct <= total):
                 raise ValueError("SCHOOL_TELEMETRY_SCORE_INVALID")
             cohort[score_grade][cap] = (correct, total)
-        if grade not in cohort:
-            raise ValueError("SCHOOL_TELEMETRY_EXAM_TARGET_GRADE_NOT_EVALUATED")
+        target_evaluated = grade in cohort
 
         # Validate the full exam before emitting any dashboard rows.
         for g, caps in cohort.items():
@@ -503,12 +502,26 @@ class SchoolTelemetry:
         # The A+B cohort reports both rows, but the operator summary must
         # identify the grade whose scheduled exam just completed, especially
         # during the Billy Madison backward A replay.
-        self.last_exam_grade = grade
+        self.last_exam_grade = grade if target_evaluated else None
         self.board.state.update(phase=event.get("phase", self.board.state.get("phase")),
                                 prefix=grade, step=step)
+        if not target_evaluated:
+            observed = "+".join(sorted(cohort))
+            detail = (
+                f"{grade} NOT EVALUATED IN THIS SAMPLE | observed {observed} | "
+                f"{event.get('phase', '?')}")
+            self.board.push("system", {
+                "kind": "EXAM SCOPE", "grade": grade, "detail": detail,
+            }, redraw=False)
+            self.board.operator_lines = [
+                f"{grade} NOT EVALUATED IN THIS SAMPLE | observed {observed} "
+                f"@step {step or '-'}",
+                "Dashboard remains available; no score is inferred for the omitted grade.",
+            ]
         for system_row in _diagnostic_system_rows(event, grade):
             self.board.push("system", system_row, redraw=False)
-        self._summary()
+        if target_evaluated:
+            self._summary()
 
     def _cumulative_exam(self, cohort, rubric, scope, step, phase):
         """Show one checkpoint's complete grade-prefix exam, never summed bests."""
