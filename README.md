@@ -18,15 +18,17 @@ The first command is **read-only** and reports blockers. Only the second, explic
 
 ## Resume the existing isolated championship experiment
 
-The issue #340 trial is already isolated under `~/Code/bilqis-mlx-retention-lab`. **Continue its existing complete student and own AdamW. Do not make another 8 GB fork or discard its earlier 80 optimizer steps.** The historical champion and soup checkpoints remain archived. The current-epoch baseline advises until current-grade champions are earned; only newly earned grade soups advise across grade boundaries. Cross-origin takeover requires a perfect entire target grade and strict same-cohort cumulative school superiority.
+The issue #340 trial is already isolated under `~/Code/bilqis-mlx-retention-lab`. **Continue its existing complete student and own AdamW. Do not make another 8 GB fork or discard any earlier optimizer steps.** Historical champion and soup checkpoints remain archived. After the explicit one-time championship reset, **no baseline or old champion advises at all** until fresh post-reset checkpoints earn championship roles. Only newly earned grade soups advise across grade boundaries. Cross-origin takeover requires a perfect entire target grade and, when incumbents exist, strict same-cohort cumulative school superiority over each incumbent.
 
 ```bash
 cd ~/Code/bilqis-mlx-retention-lab
+python3 -B -m scripts.reset_epoch_championships --run-dir ./runs/issue-340-mentor-epoch-trial
+python3 -B -m scripts.reset_epoch_championships --run-dir ./runs/issue-340-mentor-epoch-trial --apply
 npm run train -- --dry-run --resume --verify-source --run-dir ./runs/issue-340-mentor-epoch-trial
 npm run train -- --human-run --resume --minutes 15 --run-dir ./runs/issue-340-mentor-epoch-trial
 ```
 
-The human alone starts the second command. Run it only from the experiment branch after its tests pass and the first command reports no blockers. It resumes the saved optimizer, not a checkpoint at a lower step. The trial was first activated mid-Grade-C; **it tests forward learning with the corrected championship policy, not a replay of the historical B-to-C admission event**. Evaluate retained A/B mastery, newly earned C roles, cross-origin role eligibility, grade-soup ingredients, whole-school scores and teacher outcomes before deciding whether to keep or discard the trial. Keep the existing original and experimental runs intact until that decision.
+The reset script's first invocation previews; `--apply` commits **one metadata generation**, not a neural update or model copy. Use it only when no human trainer is running; a process lock prevents concurrent writes. The human alone starts the **last** command after the dry-run reports no blockers. It resumes the latest intact optimizer, never a lower-step checkpoint. The trial was first activated mid-Grade-C; **it tests forward learning with the corrected championship policy, not a replay of historical B-to-C admission**. Evaluate retained A/B mastery, new C roles, cross-origin eligibility, grade-soup ingredients, whole-school scores and teacher outcomes before deciding whether to keep or discard the trial. Preserve both original and experimental runs until that decision.
 
 **Retention is the default for every training launch and resume.** The former `--experimental-retention` opt-in is no longer needed (older commands remain accepted for compatibility). Existing protected student/AdamW lineages keep their recorded policy and cannot be resumed without retention. To deliberately run the older, unprotected teaching path for an **independent** experiment, supply `--no-retention` with a distinct explicit `--run-dir`; this cannot turn off protection for `runs/school-mlx-v1/`. An opt-out is never inferred from an omitted flag. Retention rejects locally non-improving candidates and preserves matching AdamW; whole-student regressions can still occur.
 

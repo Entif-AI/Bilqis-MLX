@@ -440,18 +440,18 @@ class GradeBTrainerTests(unittest.TestCase):
                 self.assertEqual(sum(s["total"] for s in exam["scores"].values()),144)
                 self.assertTrue(all(s["correct"] == s["total"] for s in exam["scores"].values()))
                 self.assertEqual(len(exam["cohort_sha256"]),64)
-                # A's old champion resets to an unvoted baseline on B
-                # admission. An equal whole-school score cannot promote
-                # it as a newly earned cross-origin A soup.
+                # A's historical champion resets without votes. A newly
+                # trained whole student can earn an UNCONTESTED A title
+                # after the baseline step, separately from the old archive.
                 active_soups = receipt["mentor_epoch"]["active_grade_soups"]
-                self.assertEqual(set(active_soups), {"B"})
+                self.assertEqual(set(active_soups), {"A", "B"})
                 soup_shas = {grade: entry["sha256"]
                              for grade, entry in active_soups.items()}
                 self.assertEqual({entry["vote_count"] for entry in
                                   active_soups.values()}, {6})
                 if first_grade_soups is None:
                     first_grade_soups = soup_shas
-                    self.assertEqual(set(exam["grade_soups_refreshed"]), {"B"})
+                    self.assertEqual(set(exam["grade_soups_refreshed"]), {"A", "B"})
                 else:
                     self.assertEqual(soup_shas, first_grade_soups)
                     self.assertEqual(exam["grade_soups_refreshed"], [])
@@ -480,12 +480,12 @@ class GradeBTrainerTests(unittest.TestCase):
             self.assertEqual(len(b_visits), 12)
             with_soups = [e for e in events if e.get("event") ==
                           "SCHOOL_GRADE_SOUP_FROZEN"]
-            self.assertEqual(len(with_soups), 1)
-            self.assertEqual({e["grade"] for e in with_soups}, {"B"})
+            self.assertEqual(len(with_soups), 2)
+            self.assertEqual({e["grade"] for e in with_soups}, {"A", "B"})
             for event in b_visits[6:]:
                 votes = {v["soup_grade"]: v["effective_votes"] for v in
                          event["champion_confidence"]["frozen_grade_soups"]}
-                self.assertEqual(votes, {"B": 6.0})
+                self.assertEqual(votes, {"A": 3.0, "B": 6.0})
             for event in b_visits:
                 evidence = event["lesson_methodology"]
                 decision = event["teacher_decision"]

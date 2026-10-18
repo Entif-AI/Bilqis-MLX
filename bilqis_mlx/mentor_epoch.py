@@ -13,6 +13,7 @@ import json
 
 
 SCHEMA = "bilqis.mlx.mentor-epoch-trial/v1"
+EARNED_ONLY_POLICY = "bilqis.mlx.earned-champions-only/v1"
 
 
 def _digest(value):
@@ -84,7 +85,10 @@ def begin_epoch(*, previous_graduate: dict, admitted_baseline: dict,
             "source_graph_sha256": source_graph_sha256,
             "previous_capabilities": list(caps),
             "previous_graduate": graduate, "baseline": baseline,
-            "baseline_roles": {cap: baseline["sha256"] for cap in sorted(caps)},
+            "baseline_roles": {},
+            "active_roles": {}, "active_grade_soups": {},
+            "guidance_policy": EARNED_ONLY_POLICY,
+            "championship_eligibility_after_step": baseline["optimizer_step"],
             "earned_role_votes_at_reset": 0,
             "previous_graduation_exam_sha256": _digest(exam),
             "qualified": [], "historical_advisers_remain_archived": True}
@@ -93,28 +97,29 @@ def begin_epoch(*, previous_graduate: dict, admitted_baseline: dict,
 def active_adviser_checkpoints(epoch: dict, *, cohort_sha256: str | None = None,
                                scope_sha256: str | None = None,
                                rubric_sha256: str | None = None) -> tuple[dict, ...]:
-    """One baseline plus at most one latest qualified new active adviser.
+    """Only newly earned perfect-role owners may advise, never the baseline.
 
-    Never multiply a checkpoint because it once owned several roles. This is
-    an experimental roster; original soup recipes and votes are not rewritten.
+    Qualified candidates from the early experiment are historical receipts,
+    not championship title holders or sources of teacher gradients.
     """
     if epoch.get("schema") != SCHEMA:
         raise ValueError("MENTOR_EPOCH_UNKNOWN_SCHEMA")
-    baseline = _pointer(epoch["baseline"])
-    qualified = epoch.get("qualified", [])
-    if not isinstance(qualified, list):
-        raise ValueError("MENTOR_EPOCH_INVALID_QUALIFIED_HISTORY")
+    _pointer(epoch["baseline"])
     if any(value is not None and not _sha(value)
            for value in (cohort_sha256, scope_sha256, rubric_sha256)):
         raise ValueError("MENTOR_EPOCH_INVALID_ADVISER_SCOPE")
-    eligible = [entry for entry in qualified
-                if (cohort_sha256 is None or entry["cohort_sha256"] == cohort_sha256)
-                and (scope_sha256 is None or entry["scope_sha256"] == scope_sha256)
-                and (rubric_sha256 is None or entry["rubric_sha256"] == rubric_sha256)]
-    if not eligible:
-        return (baseline,)
-    latest = _pointer(eligible[-1]["checkpoint"])
-    return (baseline,) if latest["sha256"] == baseline["sha256"] else (baseline, latest)
+    if epoch.get("guidance_policy") != EARNED_ONLY_POLICY:
+        raise ValueError("MENTOR_EPOCH_FRESH_CHAMPIONS_RESET_REQUIRED")
+    unique = {}
+    for entry in epoch.get("active_roles", {}).values():
+        if (cohort_sha256 is not None and entry.get("cohort_sha256") != cohort_sha256
+                or rubric_sha256 is not None and entry.get("rubric") != rubric_sha256
+                or scope_sha256 is not None and
+                epoch.get("active_role_scope_sha256") != scope_sha256):
+            continue
+        pointer = _pointer(entry["checkpoint"])
+        unique[pointer["sha256"]] = pointer
+    return tuple(unique[sha] for sha in sorted(unique))
 
 
 def reference_checkpoints(epoch: dict) -> tuple[dict, ...]:
@@ -126,6 +131,10 @@ def reference_checkpoints(epoch: dict) -> tuple[dict, ...]:
     active_adviser_checkpoints(epoch)
     pointers = [_pointer(epoch["previous_graduate"]), _pointer(epoch["baseline"])]
     pointers.extend(_pointer(item["checkpoint"]) for item in epoch["qualified"])
+    for historic in epoch.get("superseded_active_championships", ()):
+        pointers.extend(_pointer(item["checkpoint"])
+                        for item in historic["active_roles"].values())
+        pointers.append(_pointer(historic["starting_student"]))
     unique = {}
     for pointer in pointers:
         former = unique.setdefault(pointer["sha256"], pointer)

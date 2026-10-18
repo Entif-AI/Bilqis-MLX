@@ -77,12 +77,12 @@ def prepare(run_dir: Path, *, graduation_step: int, activate: bool) -> dict:
         trial = {**receipt, "mentor_epoch": epoch}
         mentors, soups, _ = _mentor_sources_for_visit(
             run_dir, trial, "C", graph, len(receipt["school"]["active_grades"]))
-        if len(mentors) != 1 or soups:
+        if mentors or soups:
             raise ValueError("MENTOR_TRIAL_UNEXPECTED_ACTIVE_ADVISERS")
         result = {"mode": "FORK_ONLY_MENTOR_POLICY_TRIAL",
                   "previous_AB_graduate": previous,
                   "frozen_baseline": student,
-                  "active_advisers": len(mentors), "active_historical_soups": 0,
+                  "active_advisers": 0, "active_historical_soups": 0,
                   "source_generation": receipt["generation"],
                   "neural_updates": 0, "activated": False}
         if not activate:

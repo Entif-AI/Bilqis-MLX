@@ -63,7 +63,7 @@ def cross_origin_takeover(*, grade_capabilities, admitted_capabilities,
             any(not isinstance(cap, str) or not cap for cap in school) or
             not required <= admitted or
             not isinstance(active_role_owners, dict) or
-            set(active_role_owners) != required or
+            not set(active_role_owners) <= required or
             any(not _sha(sha) for sha in active_role_owners.values()) or
             not isinstance(incumbent_exams, dict) or
             set(incumbent_exams) != set(active_role_owners.values())):
@@ -88,6 +88,8 @@ def cross_origin_takeover(*, grade_capabilities, admitted_capabilities,
                         for cap in required)
     if not grade_perfect:
         decision = "DENY_TARGET_GRADE_NOT_PERFECT"
+    elif not comparisons:
+        decision = "ELIGIBLE_UNCONTESTED_GRADE"
     elif contender in incumbent_exams:
         decision = "DENY_EXISTING_OWNER"
     elif any(challenger_correct <= row["correct"] for row in comparisons):

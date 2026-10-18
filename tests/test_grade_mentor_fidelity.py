@@ -78,7 +78,7 @@ class GradeMentorFidelityTests(TestCase):
             "f" * 64 + ":C.COUNT"})
         self.assertEqual(set(soups.call_args.args[1]["grade_soups"]), {"C"})
 
-    def test_graduation_resets_every_old_role_to_one_unvoted_reference(self):
+    def test_graduation_resets_every_old_role_to_no_active_champions(self):
         from bilqis_mlx.mentor_epoch import begin_epoch
         graph = {"tokens": ["PAD", "TRUE", "FALSE"]}
         older, baseline = _pointer("a"), _pointer("b")
@@ -92,11 +92,12 @@ class GradeMentorFidelityTests(TestCase):
                             source_graph_sha256=trainer._fingerprint(graph),
                             previous_capabilities=prior,
                             previous_graduation_exam=exam)
-        self.assertEqual(set(epoch["baseline_roles"]), set(prior))
-        self.assertEqual(set(epoch["baseline_roles"].values()),
-                         {baseline["sha256"]})
+        self.assertEqual(epoch["baseline_roles"], {})
+        self.assertEqual(epoch["active_roles"], {})
+        self.assertEqual(epoch["active_grade_soups"], {})
         self.assertEqual(epoch["earned_role_votes_at_reset"], 0)
-        self.assertNotIn("C.COUNT", epoch["baseline_roles"])
+        self.assertEqual(epoch["championship_eligibility_after_step"],
+                         baseline["optimizer_step"])
 
     def test_grade_b_has_six_roles_and_not_extra_historical_votes(self):
         frontier, snapshot = _grade_b_frontier()
@@ -108,7 +109,7 @@ class GradeMentorFidelityTests(TestCase):
         self.assertNotIn(_pointer("d")["sha256"],
                          {m["checkpoint"]["sha256"] for m in active})
 
-    def test_new_grade_epoch_uses_graduation_baseline_and_suppresses_old_mentors(self):
+    def test_new_grade_epoch_suppresses_all_unearned_and_old_mentors(self):
         from bilqis_mlx.mentor_epoch import active_adviser_checkpoints, begin_epoch
         graph = {"tokens": ["PAD", "TRUE", "FALSE"]}
         graduated, baseline = _pointer("a"), _pointer("b")
@@ -120,10 +121,9 @@ class GradeMentorFidelityTests(TestCase):
                             source_graph_sha256=trainer._fingerprint(graph),
                             previous_capabilities=("A.IDENTITY",),
                             previous_graduation_exam=exam)
-        self.assertEqual(epoch["baseline_roles"],
-                         {"A.IDENTITY": baseline["sha256"]})
+        self.assertEqual(epoch["baseline_roles"], {})
         self.assertEqual(epoch["earned_role_votes_at_reset"], 0)
-        self.assertEqual(active_adviser_checkpoints(epoch), (baseline,))
+        self.assertEqual(active_adviser_checkpoints(epoch), ())
         current = {"mentor_epoch": epoch, "graduation_perfect": {},
                    "grade_soups": {}}
         with (patch.object(trainer, "_frozen_confidence_champions", return_value=()) as champions,
@@ -135,10 +135,8 @@ class GradeMentorFidelityTests(TestCase):
             stat.return_value.st_mtime_ns = 1
             roster, soups_roster, receipts = trainer._mentor_sources_for_visit(
                 Path("/nonexistent"), current, "B", graph, 2)
-        self.assertEqual([member["checkpoint_sha256"] for member in roster],
-                         [baseline["sha256"]])
+        self.assertEqual(roster, ())
         self.assertEqual(soups_roster, ())
         self.assertEqual(receipts, ())
-        self.assertEqual(champions.call_args.args[1]["graduation_perfect"], {})
-        self.assertEqual(champions.call_args.args[1]["grade_soups"], {})
-        self.assertEqual(soups.call_args.args[1]["grade_soups"], {})
+        champions.assert_not_called()
+        soups.assert_not_called()

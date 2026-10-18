@@ -107,6 +107,14 @@ def _inspect(run_dir: Path) -> dict:
                         len(saved.get("graduation_perfect", {})),
                     "archived_soup_grades":
                         sorted(saved.get("grade_soups", {})),
+                    "active_baseline_advisers": 0 if saved["mentor_epoch"].get(
+                        "guidance_policy") == "bilqis.mlx.earned-champions-only/v1"
+                        else "LEGACY_POLICY_REQUIRES_RESET",
+                    "championship_eligibility_after_step":
+                        saved["mentor_epoch"].get(
+                            "championship_eligibility_after_step"),
+                    "administrative_empty_reset":
+                        saved["mentor_epoch"].get("active_championship_reset"),
                     "legacy_mid_grade_activation":
                         saved["mentor_epoch"].get("experimental_refresh") ==
                         "MID_GRADE_FROZEN_CURRENT_STUDENT",

@@ -9,6 +9,53 @@ from __future__ import annotations
 from copy import deepcopy
 
 from .championship_policy import cross_origin_takeover
+from .mentor_epoch import EARNED_ONLY_POLICY, _pointer
+
+
+def reset_active_championships(epoch: dict, *, student: dict,
+                               generation: int) -> tuple[dict, bool]:
+    """Metadata-only reset with lossless historical role/soup evidence.
+
+    The current causal student becomes a *non-teaching* reset reference.
+    Its optimizer step must be surpassed before future exams can award roles.
+    An already reset epoch is returned unchanged, for idempotent preparation.
+    """
+    candidate = _pointer(student)
+    previous = _pointer(epoch["baseline"])
+    if (type(generation) is not int or generation < 1 or
+            candidate["optimizer_step"] < previous["optimizer_step"]):
+        raise ValueError("CHAMPIONSHIP_RESET_INVALID_STUDENT_OR_GENERATION")
+    if epoch.get("active_championship_reset") is not None:
+        return deepcopy(epoch), False
+    updated = deepcopy(epoch)
+    archived = {
+        "source_generation": generation,
+        "starting_student": candidate,
+        "active_roles": updated.get("active_roles", {}),
+        "active_grade_soups": updated.get("active_grade_soups", {}),
+        "qualified": updated.get("qualified", []),
+        "baseline_roles": updated.get("baseline_roles", {}),
+    }
+    updated["superseded_active_championships"] = [
+        *updated.get("superseded_active_championships", []), archived]
+    updated["active_roles"] = {}
+    updated["active_grade_soups"] = {}
+    updated["baseline_roles"] = {}
+    updated["qualified"] = []
+    updated["earned_role_votes_at_reset"] = 0
+    updated["guidance_policy"] = EARNED_ONLY_POLICY
+    updated["championship_eligibility_after_step"] = candidate["optimizer_step"]
+    updated["active_championship_reset"] = {
+        "policy": EARNED_ONLY_POLICY,
+        "source_generation": generation,
+        "student_sha256": candidate["sha256"],
+        "optimizer_step": candidate["optimizer_step"],
+        "old_active_role_count": len(archived["active_roles"]),
+        "old_active_soup_grades": sorted(archived["active_grade_soups"]),
+        "preexisting_championships_archived": True,
+        "training_or_optimizer_updates": 0,
+    }
+    return updated, True
 
 
 def active_frontier(epoch: dict) -> dict:
@@ -33,7 +80,6 @@ def needed_incumbents(epoch: dict, *, grades: dict, scores: dict) -> dict:
     """Identify only checkpoints needed for a potential qualifying challenge."""
     roles = epoch.get("active_roles", {})
     origin = epoch["introduced_grade"]
-    baseline = epoch["baseline"]
     mastered = sum(v["correct"] == v["total"] for v in scores.values())
     needed = {}
     for grade in grades:
@@ -49,8 +95,9 @@ def needed_incumbents(epoch: dict, *, grades: dict, scores: dict) -> dict:
         elif all(cap in scores and scores[cap]["correct"] == scores[cap]["total"]
                  for cap in caps):
             for cap in caps:
-                pointer = roles.get(cap, {}).get("checkpoint", baseline)
-                needed[pointer["sha256"]] = pointer
+                if cap in roles:
+                    pointer = roles[cap]["checkpoint"]
+                    needed[pointer["sha256"]] = pointer
     return needed
 
 
@@ -67,6 +114,8 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
     updated.setdefault("active_grade_soups", {})
     changes, decisions = [], []
     origin = epoch["introduced_grade"]
+    if pointer["optimizer_step"] <= epoch.get("championship_eligibility_after_step", -1):
+        return updated, (), ()
 
     def record(capability):
         roles[capability] = {
@@ -118,14 +167,14 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
         if not all(cap in scores and scores[cap]["correct"] == scores[cap]["total"]
                    for cap in caps):
             continue
-        owners = {cap: roles.get(cap, {}).get(
-            "checkpoint", epoch["baseline"])["sha256"] for cap in caps}
+        owners = {cap: roles[cap]["checkpoint"]["sha256"]
+                  for cap in caps if cap in roles}
         verdict = cross_origin_takeover(
             grade_capabilities=caps, admitted_capabilities=tuple(scores),
             active_role_owners=owners, challenger_exam=challenger_exam,
             incumbent_exams={sha: incumbent_exams[sha] for sha in set(owners.values())})
         decisions.append({"grade": grade, **verdict})
-        if verdict["decision"] == "ELIGIBLE":
+        if verdict["decision"] in ("ELIGIBLE", "ELIGIBLE_UNCONTESTED_GRADE"):
             for cap in caps:
                 record(cap)
     return updated, tuple(changes), tuple(decisions)

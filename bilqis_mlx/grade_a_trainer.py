@@ -44,6 +44,7 @@ from .epoch_championships import (
     needed_incumbents as epoch_needed_incumbents,
     advance_epoch as advance_championship_epoch,
 )
+from .mentor_epoch import EARNED_ONLY_POLICY
 from .capability_frontier import (
     candidate_roles, graduation_perfect, historical_frontier, pinned, promote,
     recover_graduation_breadth, retire_bundles,
@@ -332,25 +333,13 @@ def _mentor_sources_for_visit(run_dir, receipt, grade, graph, grade_count):
                 *_frozen_grade_soup_votes(run_dir, receipt, grade, grade_count))
     if epoch.get("source_graph_sha256") != _fingerprint(graph):
         raise ValueError("MENTOR_EPOCH_SOURCE_GRAPH_DRIFT")
+    if epoch.get("guidance_policy") != EARNED_ONLY_POLICY:
+        raise ValueError("MENTOR_EPOCH_FRESH_CHAMPIONS_RESET_REQUIRED")
     active = {"graduation_perfect": epoch_active_frontier(epoch),
               "grade_soups": epoch.get("active_grade_soups", {})}
+    if not active["graduation_perfect"] and not active["grade_soups"]:
+        return (), (), ()
     mentors = list(_frozen_confidence_champions(run_dir, active, grade, graph))
-    # The one original baseline is initial scaffolding only. It cannot
-    # masquerade as several earned votes and yields to earned grade champions.
-    if not mentors:
-        pointer = epoch["baseline"]
-        path = run_dir / pointer["filename"]
-        if (path.parent != run_dir / "bundles" or path.is_symlink() or
-                not pointer["filename"].startswith("bundles/")):
-            raise ValueError("MENTOR_EPOCH_UNSAFE_REFERENCE_BUNDLE")
-        blob = (path / "model-and-own-adamw.safetensors").stat()
-        weights, original_graph = _cached_frozen_champion(
-            str(path), pointer["sha256"], pointer["optimizer_step"],
-            blob.st_size, blob.st_mtime_ns)
-        if original_graph != graph:
-            raise ValueError("MENTOR_EPOCH_REFERENCE_GRAPH_DRIFT")
-        mentors.append({"weights": weights, "graph": graph, "breadth": 1,
-                        "checkpoint_sha256": pointer["sha256"]})
     soups, receipts = _frozen_grade_soup_votes(
         run_dir, active, grade, grade_count)
     return tuple(mentors), soups, receipts

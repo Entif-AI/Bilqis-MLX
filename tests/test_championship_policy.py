@@ -46,6 +46,19 @@ def _decision(challenger, *incumbents):
 
 
 class CrossOriginChampionshipContractTests(TestCase):
+    def test_uncontested_grade_can_earn_first_roles_with_full_grade_perfection(self):
+        candidate = _exam("c", 208)
+        result = cross_origin_takeover(
+            grade_capabilities=GRADE_B, admitted_capabilities=SCHOOL,
+            active_role_owners={}, challenger_exam=candidate,
+            incumbent_exams={})
+        self.assertEqual(result["decision"], "ELIGIBLE_UNCONTESTED_GRADE")
+        candidate["scores"]["B.XOR"]["correct"] = 11
+        result = cross_origin_takeover(
+            grade_capabilities=GRADE_B, admitted_capabilities=SCHOOL,
+            active_role_owners={}, challenger_exam=candidate,
+            incumbent_exams={})
+        self.assertEqual(result["decision"], "DENY_TARGET_GRADE_NOT_PERFECT")
     def test_complete_grade_and_superior_school_beats_every_role_owner(self):
         challenger = _exam("c", 209)
         incumbents = _exam("a", 207), _exam("b", 208)
@@ -90,12 +103,12 @@ class CrossOriginChampionshipContractTests(TestCase):
         with self.assertRaisesRegex(ValueError, "INVALID_SOURCE_SCORES|INCOMPARABLE"):
             _decision(candidate, a, b)
 
-    def test_missing_incumbent_and_missing_grade_role_cannot_succeed(self):
+    def test_extra_role_and_missing_incumbent_cannot_succeed(self):
         with self.assertRaisesRegex(ValueError, "INCOMPLETE_TARGET"):
             cross_origin_takeover(
                 grade_capabilities=GRADE_B,
                 admitted_capabilities=SCHOOL,
-                active_role_owners={"B.AND": "a" * 64},
+                active_role_owners={"A.0": "a" * 64},
                 challenger_exam=_exam("c", 209),
                 incumbent_exams={"a" * 64: _exam("a", 208)},
             )

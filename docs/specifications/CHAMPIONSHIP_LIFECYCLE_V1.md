@@ -2,7 +2,7 @@
 
 **Status:** Normative user-directed contract, revision 1 (2026-10-17).
 **Scope:** Bilqis MLX human-run school; source-oracled grade exams, champion roles, cross-grade promotion, soups, curriculum epochs.
-**Authority:** User's 2026-10-17 corrections; ADR-032 through ADR-035, ADR-041, ADR-044, ADR-047, ADR-051 and protected IPR-0220. This supersedes conflicting historical champion and active-mentor rules but never rewrites their evidence. Document approval is separate from runtime conformance.
+**Authority:** User's 2026-10-17 corrections, refined by the explicit empty-championship reset instruction; ADR-032 through ADR-035, ADR-041, ADR-044, ADR-047, ADR-051 through ADR-053 and protected IPR-0220. This supersedes conflicting historical champion and active-mentor rules but never rewrites their evidence. Document approval is separate from runtime conformance.
 
 ## 1. Definitions and state boundaries
 
@@ -12,7 +12,7 @@ The **causal student** is one complete FP32 neural checkpoint with **its own mat
 - **Capability champion:** One active owner of a perfect-score capability role on a complete student. One checkpoint may hold many roles.
 - **Grade championship:** The active collection of the grade's individual capability roles. One student that scores perfectly on all of that grade's capabilities can contend for a complete-grade takeover under section 3.
 - **School score:** Correct answers across **every admitted capability in the cumulative school assessment scope** on one complete checkpoint. Record numerator and denominator, never a bare percentage.
-- **Epoch baseline:** The one complete graduation checkpoint, or its exact geometry-compatible post-admission clone, used to reset active championship references when new curriculum semantics are admitted. It is not proof of new-grade mastery.
+- **Epoch baseline:** The one complete graduation checkpoint, or its exact geometry-compatible post-admission clone, retained as a provenance, custody, and progress reference when new curriculum semantics are admitted. **It holds zero active championship roles and casts zero teacher votes.** It must not become a fallback adviser when no new champion has yet been earned.
 - **Frozen grade soup:** Separate immutable weights-only teacher formed from **active, earned** grade roles. It is neither the causal student nor the epoch baseline.
 - **Provenance archive:** Old championship pointers, soups, rubrics, exams, roles, checkpoints and receipts. Supersession does not authorize deletion.
 
@@ -25,14 +25,16 @@ Graduation requires **one intact causal student with its own AdamW scoring 100% 
 At the ensuing new-curriculum admission boundary:
 
 1. Verify the graduating checkpoint, own AdamW, complete cumulative exam receipt, old and new semantic graphs and admitted grade.
-2. Set **every preexisting active capability championship role** to the **same graduation-derived baseline** in the new epoch, regardless of its former champion. Save an explicit, versioned reset receipt. A post-admission clone binds exactly to that graduate and preserves existing parameter and optimizer state.
-3. Remove all prior-epoch champions and frozen soups from **active teaching guidance**, regardless of historical breadth, source scores or votes. Preserve the original pointers, files and signed/scored evidence for history and recovery.
-4. Do not fabricate perfect roles, mastery or voting entitlements for a newly introduced, unmastered capability. One baseline must never masquerade as several independently earned new-grade champions.
+2. Set **all active championship roles and all active grade soups to empty** at the new epoch boundary; save an explicit, versioned reset receipt and the single graduation-derived baseline **as a non-teaching reference only**. A post-admission clone binds exactly to that graduate and preserves existing parameter and optimizer state.
+3. Remove all prior-epoch champions and frozen soups from **active teaching guidance**, regardless of historical breadth, source scores or votes. Preserve the original pointers, files and signed/scored evidence for history and recovery. Until a new complete checkpoint earns a role, **no champion and no soup offers advice**. Do not load the baseline as a fallback teacher.
+4. Do not fabricate perfect roles, mastery or voting entitlements for any previously mastered or newly introduced capability. A baseline must never masquerade as one or several earned champions.
 5. Continue the **causal student** from its latest legitimate committed model/AdamW lineage. Resetting active championship *references* MUST NOT change student weights, overwrite its AdamW, substitute an archive, or make optimizer updates.
 
 Previously mastered grades can acquire new championship owners in this epoch only through section 3. New-epoch soups are rebuilt from newly earned active roles. Source-graph drift, absent graduation evidence or broken custody MUST fail closed, never revert silently to historical mentors.
 
-**This is a simultaneous graduation-boundary reset**, not a gradual weighting schedule in which obsolete champions retain teaching influence while newer ones emerge.
+**This is a simultaneous graduation-boundary reset to ZERO active championships**, not a gradual weighting schedule in which obsolete champions retain teaching influence while newer ones emerge.
+
+**Explicit one-time experimental exception:** The human may request an administrative empty-roster reset **mid-grade** on an already isolated trial run. It is a metadata-only atomic event, not a second graduation, new curriculum admission, optimizer rollback, or model copy. Archive the trial's then-active championship roles and soups, clear all active champion/soup/baseline guidance, retain the complete existing student and native AdamW, and require a **strictly later optimizer step** before fresh examinations may earn any new role. The reset operation is idempotent and must not race an active trainer process. An ordinary training resume never implicitly resets an already established new roster.
 
 ## 3. Current-grade and cross-origin promotion
 
@@ -45,7 +47,7 @@ All contenders are complete students, never ensembles or soups. A contender MUST
 1. **Perfect entire target grade:** It scores **100% on every capability in the target grade**, on one intact checkpoint and the complete current grade rubric. Perfect results on individual scattered capabilities do not qualify.
 2. **Strict whole-school victory:** Its cumulative correct count across **all currently admitted school capabilities** is **strictly greater** than that of **each incumbent checkpoint whose target-grade roles it would replace**. All challengers and displaced incumbents MUST be independently evaluated against the **identical full, source-oracled cumulative school cohort**, rubric, semantic graph and assessment scope.
 
-The challenger must satisfy the remaining ordinary role validity, source, custody and admission criteria. Its origin grade supplies no priority or exemption. If the incumbent grade is already saturated (for example B=6/6), breadth cannot exceed perfection; full target-grade perfection **and** strictly greater comparable cumulative school score are the means of displacing a saturated incumbent. A tie, worse cumulative score, missing incumbent, missing old geometry or incomplete current-cohort comparison MUST NOT promote the challenger.
+The challenger must satisfy the remaining ordinary role validity, source, custody and admission criteria. Its origin grade supplies no priority or exemption. A grade with **no active incumbent roles** can award its first new-epoch roles on fresh complete target-grade perfection, after the baseline step has been surpassed. There is no fictitious incumbent to outperform. For subsequent takeovers, including saturated grades (for example B=6/6), the full target-grade perfection and strictly greater comparable cumulative school score are mandatory. A tie, worse cumulative score, missing evidence for an **actual** incumbent, missing old geometry or incomplete current-cohort comparison MUST NOT transfer existing roles.
 
 **Example:** Assume the whole school has 216 questions, and Grade B has six capabilities totaling 72 questions.
 
@@ -77,7 +79,7 @@ A soup's base vote count is frozen with its recipe. Same-grade advice uses the f
 
 Direct and soup advice are restricted to independently source-gold-agreeing training examples, admitted answer types and the teacher's selected distillation strength with the bounded influence policy. Advice may not alter gold, exam answers, graduation, the causal student's parameters or AdamW identity, or the teacher's selected lesson strategy. Never average AdamW moments, blend incompatible embedding geometries, or impose an assistant-selected prior-grade lesson proportion.
 
-After an epoch reset, **old soups remain archived but inactive**. A single baseline is not an earned multi-vote soup. Later newly earned roles can form new-epoch soups. A tie or refused takeover neither replaces an old incumbent in the active epoch nor silently triggers soup reconstruction.
+After an epoch reset, **old soups remain archived but inactive**. The baseline casts **zero votes and no direct advice**. Later newly earned roles can form new-epoch soups. A tie or refused takeover neither replaces an old incumbent in the active epoch nor silently triggers soup reconstruction.
 
 ## 6. Custody and human trial boundaries
 
@@ -87,19 +89,19 @@ Agents MAY run source checks, read-only current-run preflights, isolated disposa
 
 ## 7. Mandatory conformance tests
 
-1. Reject false graduation assembled from mixed checkpoints or 99%-complete school scores. Successful graduation plus new admission resets **all** older active championship roles to **one** graduation-linked baseline, without inventing newly introduced capability mastery or deleting history.
+1. Reject false graduation assembled from mixed checkpoints or 99%-complete school scores. Successful graduation plus new admission resets **all active championships and grade soups to empty**, while retaining a single graduation-linked baseline as a **non-teaching** reference, without inventing mastery or deleting history.
 2. Routine exams, candidate rejection and poor results **do not** reset the championship epoch.
 3. Full B=72/72 plus strictly better comparable cumulative school score permits cross-origin takeover. B=71/72, a cumulative tie, lower cumulative score or missing incumbent result leaves **every B role unchanged**.
 4. A candidate must beat **each** incumbent holding a role in the target grade, including the strongest incumbent. The soup's mean or an archived out-of-scope score cannot substitute.
 5. Cohort, scope, rubric or graph mismatch rejects cross-origin promotion. New or stale cohort scores never get compared as raw numbers.
 6. A legitimate takeover updates exact individual roles and rebuilds the affected soup with correct vote multiplicity. A failed/tied candidate preserves role pointers and soup bytes.
-7. Historic champions and soups become inactive at curriculum admission; baseline guidance never receives fabricated mastered-grade votes. Newly earned same-grade champions advise only their grade; only newly earned soups advise across grades.
+7. Historic champions and soups become inactive at curriculum admission; **the baseline supplies zero adviser models and zero votes**. Newly earned same-grade champions advise only their grade; only newly earned soups advise across grades. A non-training reset also clears then-active experimental titles and soups and leaves old artifacts archived.
 8. The complete student, matching AdamW, teacher history and optimizer step remain unchanged by role reset, promotion or soup creation. Interrupted outbox delivery replays the same event without duplicate promotion.
-9. A disposable fork passes read-only resume and source-bound inference before the human receives a test command. Fixture checks cannot establish real neural retention.
+9. The existing isolated fork passes read-only resume and source-bound inference before the human receives a test command. A locked atomic mid-grade empty-roster reset preserves native AdamW and all prior generations. No extra 8 GB copy is required. Fixture checks cannot establish real neural retention.
 
 ## 8. Runtime implementation and test-readiness rule
 
-The historical `capability_frontier.graduation_perfect` retains its original breadth-only record format. The **active post-reset championship** is governed by `epoch_championships`, using the full-cohort gate in `championship_policy`. In `grade_a_trainer._take_exam`, only independently earned epoch roles and their newly frozen soups enter active advice. Old `graduation_perfect` and `grade_soups` stay archived and protected from retirement. A-to-B and B-to-C admission now initialize the baseline from the prior complete graduation assessment. The committed event identifies winners and denied cross-origin comparisons. The teacher and single causal student still own their original policy, parameters and AdamW.
+The historical `capability_frontier.graduation_perfect` retains its original breadth-only record format. The **active post-reset championship** is governed by `epoch_championships`, using the full-cohort gate in `championship_policy`. In `grade_a_trainer._take_exam`, only independently earned epoch roles and their newly frozen soups enter active advice. Old `graduation_perfect` and `grade_soups` stay archived and protected from retirement. A-to-B and B-to-C admission initialize a **non-teaching** graduation baseline with no titles. An explicit administrative reset uses `scripts/reset_epoch_championships.py --apply` on the existing isolated run, archives any current-epoch roles, and starts empty. The committed events identify winners, denied cross-origin comparisons, and the exact zero-vote reset. The teacher and single causal student still own their original policy, parameters and AdamW.
 
 The existing isolated issue #340 run was **previously activated mid-Grade-C** and had already advanced to optimizer step 230440 before this source correction. Its 80 trial steps and complete native AdamW MUST be preserved. A resume of that existing run tests forward learning with corrected active championship rules. It is **not** a new, historically pure B-to-C boundary experiment, and no second full-model fork is required to learn whether the corrected behavior helps from the current checkpoint.
 

@@ -4,7 +4,9 @@ from types import MappingProxyType
 from unittest import TestCase
 
 from bilqis_mlx.epoch_championships import (
-    active_frontier, advance_epoch, needed_incumbents)
+    active_frontier, advance_epoch, needed_incumbents,
+    reset_active_championships)
+from bilqis_mlx.mentor_epoch import EARNED_ONLY_POLICY
 from bilqis_mlx.grade_soup import grade_soup_recipe
 from tests.test_championship_policy import GRADE_B, SCHOOL, _exam
 
@@ -32,16 +34,16 @@ class EpochChampionshipTests(TestCase):
         before = deepcopy(epoch)
         needed = needed_incumbents(epoch, grades=GRADES,
                                    scores=candidate["scores"])
-        self.assertEqual(set(needed), {epoch["baseline"]["sha256"]})
+        self.assertEqual(needed, {})
         upgraded, changes, decisions = advance_epoch(
             epoch, grades=GRADES, challenger_exam=candidate,
-            incumbent_exams={epoch["baseline"]["sha256"]: _exam("b", 208)})
+            incumbent_exams={})
         self.assertEqual(epoch, before)
         self.assertTrue(set(GRADES["B"]) <= set(changes))
         self.assertTrue(set(GRADES["A"]) <= set(changes))
         self.assertTrue(set(GRADES["C"]) & set(changes))
         self.assertEqual({decision["decision"] for decision in decisions},
-                         {"ELIGIBLE"})
+                         {"ELIGIBLE_UNCONTESTED_GRADE"})
         self.assertEqual(set(upgraded["active_roles"]["B.XOR"]["perfect_capabilities"]),
                          {cap for cap in SCHOOL
                           if candidate["scores"][cap]["correct"] ==
@@ -51,13 +53,16 @@ class EpochChampionshipTests(TestCase):
         self.assertEqual(soup["members"][0]["votes"], 6)
         self.assertEqual(upgraded["historical_advisers_remain_archived"], True)
 
-    def test_cross_origin_tie_or_imperfect_grade_keeps_baseline(self):
-        epoch = _epoch()
+    def test_cross_origin_tie_or_imperfect_grade_preserves_incumbent(self):
+        epoch, _, _ = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=_exam("b", 208),
+            incumbent_exams={})
         challenger = _exam("c", 208)
         changed, _, decisions = advance_epoch(
             epoch, grades=GRADES, challenger_exam=challenger,
             incumbent_exams={epoch["baseline"]["sha256"]: _exam("b", 208)})
-        self.assertNotIn("B.XOR", changed["active_roles"])
+        self.assertEqual(changed["active_roles"]["B.XOR"]["checkpoint"]["sha256"],
+                         "b" * 64)
         self.assertEqual({d["decision"] for d in decisions},
                          {"DENY_NO_STRICT_SCHOOL_VICTORY"})
         challenger = _exam("c", 209)
@@ -67,14 +72,15 @@ class EpochChampionshipTests(TestCase):
             epoch, grades=GRADES, challenger_exam=challenger,
             incumbent_exams={epoch["baseline"]["sha256"]: _exam("b", 208)})
         self.assertNotIn("B.XOR", roles)
-        self.assertNotIn("B.XOR", changed["active_roles"])
+        self.assertEqual(changed["active_roles"]["B.XOR"]["checkpoint"]["sha256"],
+                         "b" * 64)
         self.assertTrue(all(d["grade"] != "B" for d in decisions))
 
     def test_multi_incumbent_target_grade_must_beat_strongest(self):
         initial = _epoch()
         early, _, _ = advance_epoch(
             initial, grades=GRADES, challenger_exam=_exam("a", 207),
-            incumbent_exams={initial["baseline"]["sha256"]: _exam("b", 206)})
+            incumbent_exams={})
         # Distinct winner takes one role in a later exam, simulating a roster
         # with multiple independently qualified checkpoints.
         early["active_roles"]["B.XOR"] = {
@@ -109,3 +115,54 @@ class EpochChampionshipTests(TestCase):
             challenger_exam=other, incumbent_exams={})
         self.assertEqual(changes, ())
         self.assertEqual(after["active_roles"], before["active_roles"])
+
+    def test_reset_archives_earned_roles_and_soups_without_new_teacher(self):
+        first = _exam("c", 209)
+        original, _, _ = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=first,
+            incumbent_exams={})
+        original["active_grade_soups"] = {
+            "C": grade_soup_recipe(active_frontier(original), "C", GRADES["C"])}
+        original["baseline_roles"] = {"A.0": "b" * 64}
+        old = deepcopy(original)
+        student = _exam("d", 210)["checkpoint"]
+        result, changed = reset_active_championships(
+            original, student=student, generation=400)
+        self.assertTrue(changed)
+        self.assertEqual(original, old)
+        self.assertEqual(result["active_roles"], {})
+        self.assertEqual(result["active_grade_soups"], {})
+        self.assertEqual(result["baseline_roles"], {})
+        self.assertEqual(result["qualified"], [])
+        self.assertEqual(result["guidance_policy"], EARNED_ONLY_POLICY)
+        self.assertEqual(result["championship_eligibility_after_step"], 10)
+        historic = result["superseded_active_championships"][-1]
+        self.assertEqual(historic["active_roles"], original["active_roles"])
+        self.assertEqual(historic["active_grade_soups"], original["active_grade_soups"])
+        self.assertEqual(historic["starting_student"], student)
+        replay, changed = reset_active_championships(
+            result, student=student, generation=401)
+        self.assertFalse(changed)
+        self.assertEqual(replay, result)
+
+    def test_reset_baseline_cannot_immediately_reclaim_championships(self):
+        original = _epoch()
+        current = _exam("c", 209)["checkpoint"]
+        cleared, _ = reset_active_championships(
+            original, student=current, generation=400)
+        same_step, roles, decisions = advance_epoch(
+            cleared, grades=GRADES, challenger_exam=_exam("c", 209),
+            incumbent_exams={})
+        self.assertEqual(roles, ())
+        self.assertEqual(decisions, ())
+        self.assertEqual(same_step["active_roles"], {})
+        later = _exam("d", 209)
+        later["checkpoint"]["optimizer_step"] = 11
+        grown, roles, decisions = advance_epoch(
+            cleared, grades=GRADES, challenger_exam=later,
+            incumbent_exams={})
+        self.assertTrue(roles)
+        self.assertEqual({d["decision"] for d in decisions},
+                         {"ELIGIBLE_UNCONTESTED_GRADE"})
+        self.assertEqual(len(grown["active_roles"]["B.XOR"]["perfect_capabilities"]),
+                         17)

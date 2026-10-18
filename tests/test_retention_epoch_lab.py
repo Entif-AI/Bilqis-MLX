@@ -133,8 +133,7 @@ class MentorEpochTests(unittest.TestCase):
     def test_epoch_archives_history_without_historical_adviser_votes(self):
         self.assertEqual(self.epoch["previous_graduate"], self.graduated)
         self.assertEqual(self.epoch["baseline"], self.extended_baseline)
-        self.assertEqual(active_adviser_checkpoints(self.epoch),
-                         (self.extended_baseline,))
+        self.assertEqual(active_adviser_checkpoints(self.epoch), ())
         self.assertEqual(self.epoch["qualified"], [])
 
     def test_epoch_does_not_start_from_separately_mastered_grade_best_scores(self):
@@ -157,11 +156,11 @@ class MentorEpochTests(unittest.TestCase):
         trial = qualify_candidate(self.epoch, candidate, baseline, modest,
                                   mature_loss_budget=1)
         self.assertEqual(trial["decision"], "QUALIFIED")
-        self.assertEqual(active_adviser_checkpoints(trial["epoch"]),
-                         (self.extended_baseline, candidate))
+        # Paired improvement is historical evidence, not a championship.
+        self.assertEqual(active_adviser_checkpoints(trial["epoch"]), ())
         self.assertEqual(active_adviser_checkpoints(
             trial["epoch"], cohort_sha256="f" * 64),
-            (self.extended_baseline,))
+            ())
         tied = qualify_candidate(trial["epoch"], _pointer("9"), baseline,
                                  _exam(_pointer("9"),
                                        {"A.ONE": 11, "B.XOR": 12, "C.COUNT": 6}),
@@ -171,8 +170,7 @@ class MentorEpochTests(unittest.TestCase):
         rejected = qualify_candidate(self.epoch, candidate, baseline, harmful,
                                      mature_loss_budget=1)
         self.assertEqual(rejected["decision"], "HOLD_MATURE_LOSS")
-        self.assertEqual(active_adviser_checkpoints(rejected["epoch"]),
-                         (self.extended_baseline,))
+        self.assertEqual(active_adviser_checkpoints(rejected["epoch"]), ())
         changed = _exam(candidate, {"A.ONE": 12, "B.XOR": 12, "C.COUNT": 3})
         no_gain = qualify_candidate(self.epoch, candidate, baseline, changed,
                                     mature_loss_budget=1)
@@ -189,7 +187,7 @@ class MentorEpochTests(unittest.TestCase):
                               mature_loss_budget=1)
         self.assertEqual(self.epoch["qualified"], [])
 
-    def test_opted_in_epoch_uses_one_verified_baseline_not_archived_soup_votes(self):
+    def test_opted_in_epoch_uses_no_unearned_baseline_or_archived_soup_votes(self):
         graph = {"tokens": ["PAD", "A"], "nodes": [],
                  "row_contract_sha256": {}}
         epoch = {**self.epoch,
@@ -209,14 +207,11 @@ class MentorEpochTests(unittest.TestCase):
                                return_value=({"synthetic": "weights"}, graph))):
                 champions, soups, receipts = trainer._mentor_sources_for_visit(
                     root, receipt, "C", graph, 3)
-            self.assertEqual(fresh_champs.call_args.args[1]["graduation_perfect"], {})
-            self.assertEqual(fresh_soups.call_args.args[1]["grade_soups"], {})
+            fresh_champs.assert_not_called()
+            fresh_soups.assert_not_called()
         self.assertEqual(soups, ())
         self.assertEqual(receipts, ())
-        self.assertEqual(len(champions), 1)
-        self.assertEqual(champions[0]["breadth"], 1)
-        self.assertEqual(champions[0]["checkpoint_sha256"],
-                         self.extended_baseline["sha256"])
+        self.assertEqual(champions, ())
 
     def test_epoch_references_survive_checkpoint_retirement(self):
         record = {"generation": 4, "mentor_epoch": {**self.epoch,
