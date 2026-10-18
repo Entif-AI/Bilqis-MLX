@@ -6,6 +6,7 @@ import unittest
 
 from bilqis_mlx.fragile_replay import (
     load_replay_rows, screen_replay, select_preservation_rows,
+    select_structural_preservation_rows, structural_signature,
 )
 from bilqis_mlx.generated_assessment import make_cohort
 
@@ -90,4 +91,38 @@ class FragileReplayTests(unittest.TestCase):
              for capability in ("B.OR", "B.XOR")
              for bits in ((False, False), (False, True), (True, False), (True, True))},
         )
+
+    def test_structural_preservation_matches_endpoint_topology_not_only_truth_bits(self):
+        def operand(kind, left, right):
+            if kind == "EQ":
+                return {"kind": "compare", "operator": "EQ", "args": [
+                    {"kind": "entity", "name": left},
+                    {"kind": "entity", "name": right}]}
+            return {"kind": "relation", "name": kind, "args": [
+                {"kind": "entity", "name": left},
+                {"kind": "entity", "name": right}]}
+
+        def row(identity, args, *, universe=4):
+            return {
+                "id": identity, "capability": "B.XOR", "gold": "TRUE",
+                "operand_truths": [True, False], "universe_size": universe,
+                "tokens": [1, 2, 3], "record": {"query": {
+                    "kind": "apply", "operator": "XOR", "args": args}},
+            }
+
+        fixed = [row("exam", [
+            operand("LINK", "D", "E"), operand("EQ", "D", "E")])]
+        fresh = [
+            row("wrong-order", [
+                operand("EQ", "D", "E"), operand("LINK", "D", "E")]),
+            row("wrong-topology", [
+                operand("LINK", "D", "E"), operand("EQ", "E", "D")]),
+            row("match", [
+                operand("LINK", "A", "B"), operand("EQ", "A", "B")]),
+        ]
+        selected = select_structural_preservation_rows(
+            fresh, fixed, excluded_ids={"exam"}, rotation=0, limit=1)
+        self.assertEqual([item["id"] for item in selected], ["match"])
+        self.assertEqual(structural_signature(selected[0]),
+                         structural_signature(fixed[0]))
 
