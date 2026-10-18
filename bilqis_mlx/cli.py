@@ -475,6 +475,8 @@ def _prepare_live_board(args, build, ingest):
                       ("RESUMING" if args.resume else "STARTING"))
         board.state["stop"] = "PREPARING"
         board.state["attempted_steps"] = 0
+        board.state["retained_steps"] = 0
+        board.state["retained_visits"] = 0
         board.state["_rate_sample_eligible"] = True
         system_rows = board.rows["SYSTEM & QUALIFICATION"]
         previous = [row for row in system_rows if row.get("kind") != "STOP"]

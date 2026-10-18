@@ -3640,15 +3640,14 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             pending_visits = receipt.get("_pending_visit_events", ())
             if len(pending_visits) > pending_before:
                 latest_visit = pending_visits[-1]
-                attempted = latest_visit.get("attempted_optimizer_updates")
-                if type(attempted) is int:
+                if type(latest_visit.get("attempted_optimizer_updates")) is int:
+                    # Project the complete visit into the live dashboard now,
+                    # but preserve the durable checkpoint-gated event ledger.
+                    # The telemetry layer deduplicates this exact generation
+                    # when the real receipt is published at the boundary.
                     _notify_viewer({
-                        "event": "SCHOOL_LIVE_VISIT_PROGRESS",
-                        "grade": latest_visit.get("grade", school.grade),
-                        "generation": latest_visit.get("generation"),
-                        "optimizer_step": int(optimizer.state["step"].item()),
-                        "phase": latest_visit.get("next_phase", school.stage),
-                        "attempted_optimizer_updates": attempted,
+                        **latest_visit,
+                        "_live_ephemeral": True,
                         "_dashboard_redraw": False,
                     })
             after_visit = _state_from_json(receipt["school"], course)

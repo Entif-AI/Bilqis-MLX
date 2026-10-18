@@ -13,32 +13,47 @@ from bilqis_mlx.school_telemetry import SchoolTelemetry
 
 
 class OperatorTests(unittest.TestCase):
-    def test_live_attempted_progress_counts_once_before_durable_replay(self):
+    def test_live_visit_projects_rows_once_before_durable_replay(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True)
         board.state["attempted_steps"] = 0
         telemetry = SchoolTelemetry(board, active_grades=("B",))
-        telemetry.ingest({
-            "event": "SCHOOL_LIVE_VISIT_PROGRESS", "grade": "B",
-            "generation": 42, "optimizer_step": 100,
-            "phase": "RECOVERY_1", "attempted_optimizer_updates": 16})
-        self.assertEqual(board.state["attempted_steps"], 16)
-
-        telemetry.ingest({
+        visit = {
             "event": "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED", "grade": "B",
-            "generation": 42, "optimizer_step": 100, "capability": "B.OR",
+            "generation": 42, "optimizer_step": 100,
+            "capability": "B.OR",
             "source_training_accuracy_before": 0.5,
             "source_training_accuracy_after": 0.5,
             "teacher_reward": 0.0, "teacher_policy": "test",
             "strategy": {}, "loss": 0.1, "gradient_norm": 0.1,
             "attempted_optimizer_updates": 16,
-            "checkpoint_status": "RECORDED_AT_BOUNDARY"})
+            "retained_optimizer_updates": 16,
+            "checkpoint_status": "PROVISIONAL_UNTIL_NEXT_RECOVERY_BOUNDARY",
+            "next_phase": "RECOVERY_1",
+        }
+        telemetry.ingest({**visit, "_live_ephemeral": True,
+                          "_dashboard_redraw": False})
         self.assertEqual(board.state["attempted_steps"], 16)
+        self.assertEqual(board.state["retained_steps"], 16)
+        self.assertEqual(board.state["retained_visits"], 1)
+        self.assertEqual(telemetry.visits, 1)
+        self.assertEqual(len(board.rows["CANDIDATES"]), 1)
+        self.assertEqual(len(board.rows["SOUP & TEACHER"]), 1)
+
+        durable = {**visit, "checkpoint_status": "RECORDED_AT_BOUNDARY"}
+        telemetry.ingest(durable)
+        self.assertEqual(board.state["attempted_steps"], 16)
+        self.assertEqual(board.state["retained_steps"], 16)
+        self.assertEqual(board.state["retained_visits"], 1)
+        self.assertEqual(telemetry.visits, 1)
+        self.assertEqual(len(board.rows["CANDIDATES"]), 1)
+        self.assertEqual(len(board.rows["SOUP & TEACHER"]), 1)
+        self.assertFalse(durable["_dashboard_redraw"])
 
     def test_dashboard_top_right_shows_step_rate_and_all_grade_accuracy(self):
         now = [100.0]
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                           clock=lambda: now[0])
-        board.state.update(step=100, attempted_steps=0, visits=12)
+        board.state.update(step=100, attempted_steps=0, retained_visits=1, visits=12)
         board.rows["GRADES & MASTERY"].extend([
             {"grade": "A", "latest": "71/72", "right_pct": "98.6%"},
             {"grade": "B", "latest": "47/72", "right_pct": "65.3%"},
@@ -54,7 +69,7 @@ class OperatorTests(unittest.TestCase):
         board.draw()
         shown = board.render(width=150, height=38)
 
-        self.assertIn("1,440 attempted steps/min", shown.splitlines()[0])
+        self.assertIn("1,440 attempted steps/min (1 retained)", shown.splitlines()[0])
         self.assertIn("ALL 255/291 = 87.6% correct (last measured)", shown.splitlines()[1])
 
     def test_resume_instructions_are_flag_free_at_default_retention_policy(self):

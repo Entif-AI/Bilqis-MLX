@@ -605,7 +605,9 @@ class Dashboard:
                 f"| visits {state.get('visits','-')} "
                 f"| T {state.get('teacher','-')}")
         footer=f"{state.get('stop','RUNNING')} {state.get('halt','')} | raw log: {self.log_hint or 'read-only'}"
-        speed=(f"{round(self._steps_per_min):,} attempted steps/min"
+        retained=state.get("retained_visits",0)
+        retained_suffix=(f" ({retained:,} retained)" if type(retained) is int else "")
+        speed=(f"{round(self._steps_per_min):,} attempted steps/min{retained_suffix}"
                if isinstance(self._steps_per_min,(int,float)) else "")
         correct,total=self._latest_all_grade_score()
         accuracy=(f"ALL {correct}/{total} = {100*correct/total:.1f}% correct (last measured)"
