@@ -3630,12 +3630,27 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     "VISIT_TOTAL", visit_index=visits + 1,
                     generation=receipt["generation"], phase=school.stage,
                     grade=school.grade):
+                pending_before = len(receipt.get("_pending_visit_events", ()))
                 receipt = _take_visit(
                     mx, run_dir, receipt, manifest, course, engine,
                     params, optimizer, graph, steps_per_visit=steps_per_visit,
                     batch_size=batch_size, reserve_gib=reserve_gib,
                     source_root=source_root, learning_settings=learning_settings)
             visits += 1
+            pending_visits = receipt.get("_pending_visit_events", ())
+            if len(pending_visits) > pending_before:
+                latest_visit = pending_visits[-1]
+                attempted = latest_visit.get("attempted_optimizer_updates")
+                if type(attempted) is int:
+                    _notify_viewer({
+                        "event": "SCHOOL_LIVE_VISIT_PROGRESS",
+                        "grade": latest_visit.get("grade", school.grade),
+                        "generation": latest_visit.get("generation"),
+                        "optimizer_step": int(optimizer.state["step"].item()),
+                        "phase": latest_visit.get("next_phase", school.stage),
+                        "attempted_optimizer_updates": attempted,
+                        "_dashboard_redraw": False,
+                    })
             after_visit = _state_from_json(receipt["school"], course)
             if (flash_mode and after_visit.stage in ("MAIN", "RECOVERY_1", "RECOVERY_2") and
                     after_visit.stage != flash_cycle_stage):

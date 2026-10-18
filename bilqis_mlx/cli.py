@@ -468,7 +468,8 @@ def _prepare_live_board(args, build, ingest):
         if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
             board.mode = live_mode
             board.state["stop"] = "RUNNING"
-        board.draw()
+        if event.get("_dashboard_redraw", True):
+            board.draw()
     if board is not None:
         board.mode = (("FLASH | " if args.flash_mode else "") +
                       ("RESUMING" if args.resume else "STARTING"))

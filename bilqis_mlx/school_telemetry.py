@@ -225,6 +225,7 @@ EVENT_KINDS = {
     "SCHOOL_LIVE_CANDIDATE_COMPARED": "candidate",
     "SCHOOL_QUALIFICATION_COMMITTED": "qualification",
     "SCHOOL_FLASH_ASSESSMENT_DEFERRED": "progress",
+    "SCHOOL_LIVE_VISIT_PROGRESS": "live_visit",
 }
 
 
@@ -300,6 +301,7 @@ class SchoolTelemetry:
         self.cumulative_latest = None  # (key, correct, total, step, status)
         self.visits = 0
         self.last_exam_grade = None
+        self.live_attempted_generations = set()
         self.board.grade_program = tuple(self.grades)
 
     def _grade(self, name):
@@ -332,6 +334,7 @@ class SchoolTelemetry:
             "candidate": self._candidate,
             "qualification": self._qualification,
             "progress": self._progress,
+            "live_visit": self._live_visit,
         }[kind](grade, event)
 
     def _init(self, grade, event):
@@ -345,6 +348,24 @@ class SchoolTelemetry:
             prefix=grade,
             phase=event.get("phase", self.board.state.get("phase")),
             _rate_sample_eligible=True)
+
+    def _live_visit(self, grade, event):
+        """Count attempted work now; durable visit replay must not count it twice."""
+        generation = event.get("generation")
+        attempted = event.get("attempted_optimizer_updates")
+        if type(generation) is not int or type(attempted) is not int or attempted < 0:
+            raise ValueError("SCHOOL_TELEMETRY_LIVE_VISIT_PROGRESS_INVALID")
+        if generation in self.live_attempted_generations:
+            return
+        attempted_total = self.board.state.get("attempted_steps", 0)
+        if type(attempted_total) is not int or attempted_total < 0:
+            attempted_total = 0
+        self.live_attempted_generations.add(generation)
+        self.board.state.update(
+            attempted_steps=attempted_total + attempted,
+            step=event.get("optimizer_step", self.board.state.get("step")),
+            prefix=grade,
+            phase=event.get("phase", self.board.state.get("phase")))
 
     def _candidate(self, grade, event):
         digest = event.get("cohort_sha256")
@@ -413,11 +434,15 @@ class SchoolTelemetry:
         attempted = event.get("attempted_optimizer_updates", 0)
         if type(attempted) is not int or attempted < 0:
             raise ValueError("SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID")
+        generation = event.get("generation")
+        already_counted = generation in self.live_attempted_generations
+        if already_counted:
+            self.live_attempted_generations.remove(generation)
         attempted_total = self.board.state.get("attempted_steps", 0)
         if type(attempted_total) is not int or attempted_total < 0:
             attempted_total = 0
         self.board.state.update(step=event.get("optimizer_step", self.board.state.get("step")),
-                                attempted_steps=attempted_total + attempted,
+                                attempted_steps=attempted_total + (0 if already_counted else attempted),
                                 visits=self.visits, prefix=grade,
                                 phase=event.get("next_phase", self.board.state.get("phase")),
                                 _rate_sample_eligible=(

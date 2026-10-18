@@ -9,9 +9,31 @@ from unittest.mock import patch
 from bilqis_mlx.cli import main,parse_args,DEFAULT_RUN,ORIGINAL_CHECKPOINT
 from bilqis_mlx.spiral_dashboard import TABLES, Dashboard
 from bilqis_mlx.grade_a_dashboard import build, ingest
+from bilqis_mlx.school_telemetry import SchoolTelemetry
 
 
 class OperatorTests(unittest.TestCase):
+    def test_live_attempted_progress_counts_once_before_durable_replay(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True)
+        board.state["attempted_steps"] = 0
+        telemetry = SchoolTelemetry(board, active_grades=("B",))
+        telemetry.ingest({
+            "event": "SCHOOL_LIVE_VISIT_PROGRESS", "grade": "B",
+            "generation": 42, "optimizer_step": 100,
+            "phase": "RECOVERY_1", "attempted_optimizer_updates": 16})
+        self.assertEqual(board.state["attempted_steps"], 16)
+
+        telemetry.ingest({
+            "event": "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED", "grade": "B",
+            "generation": 42, "optimizer_step": 100, "capability": "B.OR",
+            "source_training_accuracy_before": 0.5,
+            "source_training_accuracy_after": 0.5,
+            "teacher_reward": 0.0, "teacher_policy": "test",
+            "strategy": {}, "loss": 0.1, "gradient_norm": 0.1,
+            "attempted_optimizer_updates": 16,
+            "checkpoint_status": "RECORDED_AT_BOUNDARY"})
+        self.assertEqual(board.state["attempted_steps"], 16)
+
     def test_dashboard_top_right_shows_step_rate_and_all_grade_accuracy(self):
         now = [100.0]
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
