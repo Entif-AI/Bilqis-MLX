@@ -11,7 +11,8 @@ from bilqis_mlx.school import (Assessment, SchoolState, Score, start_new, visit,
     assess, assess_withheld, next_capability, reactivate_stagnation_debt,
     teacher_vote_weights, whole_school_soup_weights,
     continue_after_soup, save_new_state, read_state, weakest_three,
-    append_next_grade, verify_state)
+    append_next_grade, verify_state, defer_assessment_for_flash,
+    require_assessment_after_flash)
 from test_curriculum import sample_course
 
 
@@ -60,6 +61,31 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
+    def test_flash_defers_assessment_without_minting_authority(self):
+        state = start_new(self.course, self.init)
+        cycle = state.queue
+        state = grade_loop(self.course, state, self.init)
+        self.assertEqual(state.stage, "ASSESS_MAIN")
+
+        reopened = defer_assessment_for_flash(self.course, state, cycle)
+
+        self.assertEqual(reopened.stage, "MAIN")
+        self.assertEqual(reopened.queue, cycle)
+        self.assertEqual(reopened.champions, state.champions)
+        self.assertEqual(reopened.grade_exam_epoch, state.grade_exam_epoch)
+        self.assertEqual(reopened.latest_rubric_digest, state.latest_rubric_digest)
+
+    def test_flash_stop_restores_assessment_debt(self):
+        state = start_new(self.course, self.init)
+        partial = visit(self.course, state, state.queue[0], self.init)
+
+        due = require_assessment_after_flash(self.course, partial)
+
+        self.assertEqual(due.stage, "ASSESS_MAIN")
+        self.assertEqual(due.queue, ())
+        self.assertEqual(due.champions, partial.champions)
+        self.assertEqual(due.grade_exam_epoch, partial.grade_exam_epoch)
+
     def test_withheld_capability_remains_mastery_debt_while_healthy_work_continues(self):
         state = grade_loop(self.course, start_new(self.course, self.init), self.init)
         active = {f"a.{i}": (8, 8) for i in range(1, 6)}

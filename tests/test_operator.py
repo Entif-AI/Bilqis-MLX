@@ -7,11 +7,35 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from bilqis_mlx.cli import main,parse_args,DEFAULT_RUN,ORIGINAL_CHECKPOINT
-from bilqis_mlx.spiral_dashboard import TABLES
+from bilqis_mlx.spiral_dashboard import TABLES, Dashboard
 from bilqis_mlx.grade_a_dashboard import build, ingest
 
 
 class OperatorTests(unittest.TestCase):
+    def test_dashboard_top_right_shows_step_rate_and_all_grade_accuracy(self):
+        now = [100.0]
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                          clock=lambda: now[0])
+        board.state.update(step=100, visits=12)
+        board.rows["GRADES & MASTERY"].extend([
+            {"grade": "A", "latest": "71/72", "right_pct": "98.6%"},
+            {"grade": "B", "latest": "47/72", "right_pct": "65.3%"},
+            {"grade": "C", "latest": "137/147", "right_pct": "93.2%"},
+        ])
+
+        board.draw()
+        board.state.update(step=200, _rate_sample_eligible=False)
+        now[0] = 101.0
+        board.draw()  # Buffered boundary replay must not fake throughput.
+        board.state["step"] = 448
+        board.state["_rate_sample_eligible"] = True
+        now[0] = 102.0
+        board.draw()
+        shown = board.render(width=150, height=38)
+
+        self.assertIn("174 steps/sec", shown.splitlines()[0])
+        self.assertIn("ALL 255/291 = 87.6% correct (last measured)", shown.splitlines()[1])
+
     def test_resume_instructions_are_flag_free_at_default_retention_policy(self):
         from bilqis_mlx.grade_a_trainer import _resume_command
         from bilqis_mlx.learning_experiment import Settings
@@ -101,6 +125,18 @@ class OperatorTests(unittest.TestCase):
                 self.assertEqual(main(["train", "--human-run", "--no-retention",
                                        "--run-dir", tmp]), 2)
             self.assertFalse(operate.call_args.kwargs["retention_enabled"])
+
+    def test_human_operator_passes_flash_mode_without_changing_retention(self):
+        from bilqis_mlx import grade_a_trainer as trainer
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+                trainer, "operate", side_effect=ValueError(
+                    "FLASH_TEST_NO_NEURAL_TRAINING")) as operate, \
+                redirect_stderr(io.StringIO()):
+            self.assertEqual(main([
+                "train", "--human-run", "--resume", "--flash-mode",
+                "--run-dir", tmp]), 2)
+        self.assertTrue(operate.call_args.kwargs["flash_mode"])
+        self.assertTrue(operate.call_args.kwargs["retention_enabled"])
 
     def test_worktree_preflight_uses_explicit_source_paths_without_global_mutation(self):
         from bilqis_mlx import cli

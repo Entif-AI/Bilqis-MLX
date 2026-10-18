@@ -224,6 +224,7 @@ EVENT_KINDS = {
     "SCHOOL_CAPABILITY_BEST_COMMITTED": "capability_best",
     "SCHOOL_LIVE_CANDIDATE_COMPARED": "candidate",
     "SCHOOL_QUALIFICATION_COMMITTED": "qualification",
+    "SCHOOL_FLASH_ASSESSMENT_DEFERRED": "progress",
 }
 
 
@@ -330,10 +331,20 @@ class SchoolTelemetry:
             "capability_best": self._capability_best,
             "candidate": self._candidate,
             "qualification": self._qualification,
+            "progress": self._progress,
         }[kind](grade, event)
 
     def _init(self, grade, event):
         self.board.state["step"] = event.get("optimizer_step", self.board.state.get("step"))
+        self.board.state["_rate_sample_eligible"] = True
+
+    def _progress(self, grade, event):
+        """Ephemeral operator-only progress; never interpreted as qualification."""
+        self.board.state.update(
+            step=event.get("optimizer_step", self.board.state.get("step")),
+            prefix=grade,
+            phase=event.get("phase", self.board.state.get("phase")),
+            _rate_sample_eligible=True)
 
     def _candidate(self, grade, event):
         digest = event.get("cohort_sha256")
@@ -401,7 +412,9 @@ class SchoolTelemetry:
         self.board.rows["SOUP & TEACHER"].append(teacher)
         self.board.state.update(step=event.get("optimizer_step", self.board.state.get("step")),
                                 visits=self.visits, prefix=grade,
-                                phase=event.get("next_phase", self.board.state.get("phase")))
+                                phase=event.get("next_phase", self.board.state.get("phase")),
+                                _rate_sample_eligible=(
+                                    event.get("checkpoint_status") != "RECORDED_AT_BOUNDARY"))
 
     def _exam(self, grade, event):
         rubric = event.get("rubric") or event.get("exam_rubric_sha256")
@@ -504,7 +517,8 @@ class SchoolTelemetry:
         # during the Billy Madison backward A replay.
         self.last_exam_grade = grade if target_evaluated else None
         self.board.state.update(phase=event.get("phase", self.board.state.get("phase")),
-                                prefix=grade, step=step)
+                                prefix=grade, step=step,
+                                _rate_sample_eligible=True)
         if not target_evaluated:
             observed = "+".join(sorted(cohort))
             detail = (
@@ -530,6 +544,8 @@ class SchoolTelemetry:
         key = (tuple(sorted(cohort)), rubric, scope)
         correct = sum(score for caps in cohort.values() for score, _ in caps.values())
         total = sum(count for caps in cohort.values() for _, count in caps.values())
+        self.board.state["_all_grade_correct"] = correct
+        self.board.state["_all_grade_total"] = total
         best = self.cumulative_best.get(key)
         if best is None or correct * best[1] > best[0] * total:
             best = (correct, total, step)
@@ -690,4 +706,7 @@ class SchoolTelemetry:
             self.board.push("system", {"kind": "STAGNATION", "grade": grade,
                 "detail": "WITHHELD THIS RUN | " + ", ".join(quarantined) +
                           " | still required for graduation"}, redraw=False)
-        self.board.state["stop"] = reason
+        self.board.state.update(
+            stop=reason,
+            step=event.get("optimizer_step", self.board.state.get("step")),
+            _rate_sample_eligible=True)

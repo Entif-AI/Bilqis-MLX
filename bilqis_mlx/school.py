@@ -220,6 +220,35 @@ def visit(course: Course, state: SchoolState, capability: str,
                    current_student=student_after_visit)
 
 
+def defer_assessment_for_flash(course: Course, state: SchoolState,
+                               repeat_queue: tuple[str, ...]) -> SchoolState:
+    """Resume admitted training without treating a skipped exam as evidence.
+
+    Flash mode is deliberately non-authoritative: it can repeat an already
+    admitted training cycle, but it cannot promote a grade, move champion
+    pointers, increment the exam epoch, or infer a new recovery ranking.
+    """
+    verify_state(course, state)
+    if state.stage not in ("ASSESS_MAIN", "ASSESS_RECOVERY_1", "ASSESS_RECOVERY_2"):
+        raise ValueError("FLASH_MODE_ASSESSMENT_NOT_DUE")
+    queue = tuple(repeat_queue)
+    pool = set(_score_pool(course, state))
+    if (not queue or len(queue) != len(set(queue)) or
+            not set(queue) <= pool):
+        raise ValueError("FLASH_MODE_REPEAT_QUEUE_INVALID")
+    return replace(state, stage=state.stage.removeprefix("ASSESS_"), queue=queue)
+
+
+def require_assessment_after_flash(course: Course, state: SchoolState) -> SchoolState:
+    """End flash mode owing a real assessment before normal scheduling resumes."""
+    verify_state(course, state)
+    if state.stage in ("ASSESS_MAIN", "ASSESS_RECOVERY_1", "ASSESS_RECOVERY_2"):
+        return state
+    if state.stage not in ("MAIN", "RECOVERY_1", "RECOVERY_2"):
+        raise ValueError("FLASH_MODE_CANNOT_REQUIRE_ASSESSMENT_FROM_STAGE")
+    return replace(state, stage="ASSESS_" + state.stage, queue=())
+
+
 def weakest_three(scores: dict[str, Score], pool: tuple[str, ...]) -> tuple[str, ...]:
     """Select up to three failures from the complete cumulative introduced pool."""
     if len(set(pool)) != len(pool) or not set(pool) <= set(scores):

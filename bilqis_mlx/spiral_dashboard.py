@@ -298,6 +298,9 @@ class Dashboard:
         self.current_course={}
         self.current_graduation_line=None
         self.operator_lines=[]
+        self._rate_step=None
+        self._rate_time=None
+        self._steps_per_sec=None
 
     def _refresh_champions(self):
         """Read canonical champion inventory if a grade checkpoint changed."""
@@ -602,7 +605,13 @@ class Dashboard:
                 f"| visits {state.get('visits','-')} "
                 f"| T {state.get('teacher','-')}")
         footer=f"{state.get('stop','RUNNING')} {state.get('halt','')} | raw log: {self.log_hint or 'read-only'}"
-        headers=[headline,status]
+        speed=(f"{round(self._steps_per_sec):,} steps/sec"
+               if isinstance(self._steps_per_sec,(int,float)) else "")
+        correct,total=self._latest_all_grade_score()
+        accuracy=(f"ALL {correct}/{total} = {100*correct/total:.1f}% correct (last measured)"
+                  if total else "")
+        headers=[_right_header(headline,speed,width) if speed else headline,
+                 _right_header(status,accuracy,width) if accuracy else status]
         if self.progress is not None:
             headers=[headline,_right_header(status,
                         _score_summary(self.progress,'START',width),width),
@@ -680,6 +689,7 @@ class Dashboard:
     def draw(self):
         self.dirty=False
         try:
+            self._sample_step_rate()
             if self.stream.isatty():
                 self.stream.write("\x1b[H\x1b[2J"+self.render()+"\x1b[J")
             else:
@@ -688,6 +698,45 @@ class Dashboard:
         except (OSError,ValueError):
             # Display failures must never change neural training policy.
             self.dirty=True
+
+    def _sample_step_rate(self):
+        """Measure optimizer throughput only when a real dashboard draw occurs."""
+        if self.state.get("_rate_sample_eligible", True) is False:
+            return
+        step=self.state.get("step")
+        now=self.clock()
+        if type(step) is not int:
+            return
+        if self._rate_step is None:
+            self._rate_step,self._rate_time=step,now
+            return
+        elapsed=now-self._rate_time
+        if elapsed>0 and step!=self._rate_step:
+            self._steps_per_sec=(step-self._rate_step)/elapsed
+            self._rate_step,self._rate_time=step,now
+
+    def _latest_all_grade_score(self):
+        """Aggregate each grade's latest measured numerator/denominator once."""
+        current_correct=self.state.get("_all_grade_correct")
+        current_total=self.state.get("_all_grade_total")
+        if (type(current_correct) is int and type(current_total) is int and
+                current_total>0 and 0<=current_correct<=current_total):
+            return current_correct,current_total
+        latest={}
+        for row in self.rows.get("GRADES & MASTERY", ()):
+            grade=row.get("grade")
+            value=row.get("latest")
+            if not grade or not isinstance(value,str) or "/" not in value:
+                continue
+            left,right=value.split("/",1)
+            try:
+                correct,total=int(left),int(right)
+            except ValueError:
+                continue
+            if 0<=correct<=total and total>0:
+                latest[grade]=(correct,total)
+        return (sum(v[0] for v in latest.values()),
+                sum(v[1] for v in latest.values()))
 
 
 def _next_grade(stage):

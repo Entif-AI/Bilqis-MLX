@@ -22,6 +22,21 @@ class HumanSessionStopTests(unittest.TestCase):
         self.assertEqual(parse_args(["train", "--max-visits", "4"]).max_visits, 4)
         self.assertTrue(parse_args(["train", "--timing-trace"]).timing_trace)
 
+    def test_flash_mode_can_stop_at_due_assessment_without_running_it(self):
+        self.assertEqual(
+            session_stop_reason(
+                stage="ASSESS_RECOVERY_1", elapsed_seconds=12, minutes=90,
+                visits=12, max_visits=12, grade="B", flash_mode=True),
+            "VISIT_LIMIT_REACHED")
+        self.assertIsNone(session_stop_reason(
+            stage="ASSESS_RECOVERY_1", elapsed_seconds=12, minutes=90,
+            visits=12, max_visits=12, grade="B", flash_mode=False))
+
+    def test_cli_parses_flash_mode_without_a_polling_interval(self):
+        args = parse_args(["train", "--resume", "--flash-mode"])
+        self.assertTrue(args.flash_mode)
+        self.assertFalse(hasattr(args, "dashboard_redraw_seconds"))
+
     def test_explicit_limit_and_time_limit_are_different_stop_reasons(self):
         ctx = dict(stage="MAIN", minutes=90, visits=48)
         self.assertEqual(session_stop_reason(**ctx, elapsed_seconds=150, max_visits=48),

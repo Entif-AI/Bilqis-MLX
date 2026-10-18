@@ -76,6 +76,7 @@ from .mlx_parity import (clip_gradients, forward_arrays,
 from .school import (start_new, visit, assess, assess_withheld, next_capability,
                      append_next_grade, assessment_capabilities,
                      reactivate_stagnation_debt, weakest_three,
+                     defer_assessment_for_flash, require_assessment_after_flash,
                      SchoolState, Assessment, Score)
 from .stagnation_control import (
     activate_sole_grade_rehabilitation,
@@ -676,14 +677,21 @@ def _record(run_dir: Path, event: dict):
         stream.write(_canonical(event) + "\n")
         stream.flush()
         os.fsync(stream.fileno())
-    viewer = _event_view.get()
-    if viewer is None:
+    if _event_view.get() is None:
         print(json.dumps(event, sort_keys=True), flush=True)
     else:
-        try:
-            viewer(event)
-        except Exception as exc:
-            print("DASHBOARD UNAVAILABLE: " + str(exc), file=sys.stderr, flush=True)
+        _notify_viewer(event)
+
+
+def _notify_viewer(event: dict):
+    """Send ephemeral operator telemetry without making it training evidence."""
+    viewer = _event_view.get()
+    if viewer is None:
+        return
+    try:
+        viewer(event)
+    except Exception as exc:
+        print("DASHBOARD UNAVAILABLE: " + str(exc), file=sys.stderr, flush=True)
 
 
 def _bundle_pointer(run_dir: Path, name: str, parameters, optimizer, graph,
@@ -3265,8 +3273,64 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
     return record
 
 
+def _flash_repeat_queue(course, school, receipt, prior_cycle=()):
+    """Repeat only already-admitted work when flash mode defers an assessment."""
+    blocked = set(quarantined_capabilities(receipt.get("stagnation_session")))
+    if prior_cycle:
+        queue = tuple(cap for cap in prior_cycle if cap not in blocked)
+    elif school.stage in ("ASSESS_RECOVERY_1", "ASSESS_RECOVERY_2"):
+        queue = tuple(cap for cap in school.first_recovery if cap not in blocked)
+    else:
+        grade = next(g for g in course.grades if g.id == school.grade)
+        own = {cap.id for cap in grade.capabilities}
+        queue = tuple(cap for cap in assessment_capabilities(course, school)
+                      if cap in own and cap not in blocked)
+    if not queue:
+        raise ValueError("FLASH_MODE_HAS_NO_ADMITTED_TRAINING_QUEUE")
+    return queue
+
+
+def _flush_flash_student(run_dir, receipt, course, parameters, optimizer, graph,
+                         *, reserve_gib):
+    """Persist the causal student without performing qualification work."""
+    pending = tuple(receipt.get("_pending_visit_events", ()))
+    if not pending:
+        return receipt
+    school = _state_from_json(receipt["school"], course)
+    due = require_assessment_after_flash(course, school)
+    optimizer_step = int(optimizer.state["step"].item())
+    if optimizer_step == school.current_student.optimizer_step:
+        candidate = school.current_student
+    else:
+        name = "flash-working-" + str(school.visits) + "-" + uuid.uuid4().hex[:12]
+        candidate = _bundle_pointer(
+            run_dir, name, parameters, optimizer, graph, reserve_gib=reserve_gib)
+    due = replace(due, current_student=candidate)
+    record = _advance(
+        run_dir, receipt, due, model_bundle=candidate.filename,
+        result=_school_result_label(due), persist=False)
+    flash_event = {
+        "event": "SCHOOL_FLASH_CHECKPOINT_COMMITTED",
+        "grade": due.grade,
+        "generation": record["generation"],
+        "optimizer_step": candidate.optimizer_step,
+        "student_sha256": candidate.sha256,
+        "phase": due.stage,
+        "assessment_deferred": True,
+        "qualification_authority_changed": False,
+        "champions_changed": False,
+        "pending_visit_count": len(pending),
+    }
+    boundary_pending = (*pending, flash_event)
+    record = _persist(run_dir, _with_delivery_outbox(
+        record, _boundary_delivery_events(record, boundary_pending, (), None)))
+    _publish_boundary(run_dir, record, boundary_pending, (), exam_event=None)
+    return record
+
+
 def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
-                        visits: int, max_visits: int, grade: str = "A") -> str | None:
+                        visits: int, max_visits: int, grade: str = "A",
+                        flash_mode: bool = False) -> str | None:
     """State-machine stop condition; a due exam must not be silently skipped."""
     if stage == "WHOLE_SCHOOL_MASTERED":
         return "WHOLE_SCHOOL_MASTERED"
@@ -3278,7 +3342,7 @@ def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
         return "GRADE_" + grade + "_AWAITING_NEXT_GRADE"
     if stage == "DEFERRED_STAGNATION":
         return "STAGNATION_REVIEW_REQUIRED"
-    if stage.startswith("ASSESS_"):
+    if stage.startswith("ASSESS_") and not flash_mode:
         return None
     if elapsed_seconds >= minutes * 60:
         return "TIME_LIMIT_REACHED"
@@ -3298,11 +3362,13 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             experiment_introduction_extra_loss: int = 2,
             experiment_protected_cap_limit: int = 8,
             stagnation_grace_grade: str | None = None,
-            stagnation_grace_steps: int = 0) -> dict:
+            stagnation_grace_steps: int = 0,
+            flash_mode: bool = False) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
     trace_mark(
         "OPERATE_START", resume=resume, max_visits=max_visits,
-        steps_per_visit=steps_per_visit, batch_size=batch_size)
+        steps_per_visit=steps_per_visit, batch_size=batch_size,
+        flash_mode=flash_mode)
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
             type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
             type(max_visits) is not int or max_visits < 0 or
@@ -3314,6 +3380,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             not stagnation_grace_grade or type(stagnation_grace_steps) is not int or
             stagnation_grace_steps <= 0):
         raise ValueError("STAGNATION_GRACE_REQUIRES_EXPLICIT_RESUME_REQUEST")
+    if flash_mode and not resume:
+        raise ValueError("FLASH_MODE_REQUIRES_RESUME")
     if retention_enabled:
         # Experiments never attach to the canonical run in another checkout.
         # The independent snapshot/copy step is a deliberate operator action.
@@ -3502,6 +3570,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             pending.append(rehabilitation_event)
             receipt["_pending_visit_events"] = pending
         visits = 0
+        flash_cycle_stage = school.stage if school.stage in (
+            "MAIN", "RECOVERY_1", "RECOVERY_2") else None
+        flash_cycle_queue = tuple(school.queue) if flash_cycle_stage else ()
         while True:
             from .numeric_staircase import scope_advance_due, advance_scope
             if scope_advance_due(receipt, course):
@@ -3510,10 +3581,28 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             reason = session_stop_reason(
                 stage=school.stage, elapsed_seconds=time.monotonic() - start,
                 minutes=minutes, visits=visits, max_visits=max_visits,
-                grade=school.grade)
+                grade=school.grade, flash_mode=flash_mode)
             if reason is not None:
                 break
             if school.stage.startswith("ASSESS_"):
+                if flash_mode:
+                    repeat = _flash_repeat_queue(
+                        course, school, receipt, flash_cycle_queue)
+                    deferred_stage = school.stage
+                    school = defer_assessment_for_flash(course, school, repeat)
+                    receipt = {**receipt, "school": asdict(school)}
+                    flash_cycle_stage = school.stage
+                    flash_cycle_queue = repeat
+                    _notify_viewer({
+                        "event": "SCHOOL_FLASH_ASSESSMENT_DEFERRED",
+                        "grade": school.grade,
+                        "optimizer_step": int(optimizer.state["step"].item()),
+                        "phase": school.stage,
+                        "deferred_phase": deferred_stage,
+                        "repeat_capability_count": len(repeat),
+                        "qualification_authority_changed": False,
+                    })
+                    continue
                 with trace_span(
                         "ASSESSMENT", generation=receipt["generation"],
                         phase=school.stage, grade=school.grade):
@@ -3543,10 +3632,21 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     batch_size=batch_size, reserve_gib=reserve_gib,
                     source_root=source_root, learning_settings=learning_settings)
             visits += 1
-        with trace_span("FLUSH_WORKING_STUDENT", visits=visits):
-            receipt = _flush_working_student(
-                mx, run_dir, receipt, manifest, course, params, optimizer, graph,
-                reserve_gib=reserve_gib, source_root=source_root)
+            after_visit = _state_from_json(receipt["school"], course)
+            if (flash_mode and after_visit.stage in ("MAIN", "RECOVERY_1", "RECOVERY_2") and
+                    after_visit.stage != flash_cycle_stage):
+                flash_cycle_stage = after_visit.stage
+                flash_cycle_queue = tuple(after_visit.queue)
+        with trace_span("FLUSH_FLASH_STUDENT" if flash_mode else "FLUSH_WORKING_STUDENT",
+                        visits=visits):
+            if flash_mode:
+                receipt = _flush_flash_student(
+                    run_dir, receipt, course, params, optimizer, graph,
+                    reserve_gib=reserve_gib)
+            else:
+                receipt = _flush_working_student(
+                    mx, run_dir, receipt, manifest, course, params, optimizer, graph,
+                    reserve_gib=reserve_gib, source_root=source_root)
         school = _state_from_json(receipt["school"], course)
         budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
                                    reserve_gib=reserve_gib)
@@ -3564,6 +3664,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "minutes": minutes, "max_visits": max_visits,
             "elapsed_seconds": elapsed_seconds,
             "grade_phase": school.stage, "grade": school.grade,
+            "flash_mode": flash_mode,
             "resume_required": school.stage != "AWAITING_NEXT_GRADE",
             "stagnation_session_id": receipt.get("stagnation_session", {}).get(
                 "session_id"),
@@ -3607,6 +3708,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "stagnation_grace": receipt.get("stagnation_grace"),
             "experimental_retention": learning_settings is not None,
             "retention_enabled": learning_settings is not None,
+            "flash_mode": flash_mode,
             "state_archive": maintenance,
             "safe_resume_command": _resume_command(run_dir, source_root, learning_settings),
             "original_source_checkpoint_modified": False,

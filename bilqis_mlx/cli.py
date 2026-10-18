@@ -342,6 +342,10 @@ def human_stop_summary(result: dict) -> str:
         message += ("\nStagnation grace: " + grace["grade"] +
                     " quarantine actuator suppressed for " + str(remaining) +
                     " more retained optimizer steps; diagnostics remain active.")
+    if result.get("flash_mode"):
+        message += ("\nFlash mode: expensive school assessment/championship work was deferred. "
+                    "The saved student is parked at a real ASSESS_* boundary; a normal "
+                    "resume must qualify it before ordinary scheduling continues.")
     if reason not in ("GRADE_A_AWAITING_NEXT_GRADE", "GRADE_B_AWAITING_NEXT_GRADE",
                       "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
         message += ("\nTo continue: " +
@@ -395,6 +399,8 @@ def parse_args(argv=None):
                            help="Optional complete visit cap (default 0: use --minutes and disk reserve)")
             p.add_argument("--timing-trace", action="store_true",
                            help="Write low-overhead nanosecond timing markers under runs/.timing-traces")
+            p.add_argument("--flash-mode", action="store_true",
+                           help="Defer expensive assessments while training; stop owing a real assessment")
             p.add_argument("--batch-size",type=int,default=32)
             p.add_argument("--reserve-gib",type=float,default=100.)
             p.add_argument("--stagnation-grace-grade",type=str,default=None,
@@ -456,15 +462,18 @@ def _report_timing_trace(path, *, stream):
 def _prepare_live_board(args, build, ingest):
     visual = sys.stdout.isatty()
     board = build(args.run_dir, reserve_gib=args.reserve_gib) if visual else None
+    live_mode = "FLASH" if args.flash_mode else "LIVE"
     def on_event(event):
         ingest(board, event)
         if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
-            board.mode = "LIVE"
+            board.mode = live_mode
             board.state["stop"] = "RUNNING"
         board.draw()
     if board is not None:
-        board.mode = "RESUMING" if args.resume else "STARTING"
+        board.mode = (("FLASH | " if args.flash_mode else "") +
+                      ("RESUMING" if args.resume else "STARTING"))
         board.state["stop"] = "PREPARING"
+        board.state["_rate_sample_eligible"] = True
         system_rows = board.rows["SYSTEM & QUALIFICATION"]
         previous = [row for row in system_rows if row.get("kind") != "STOP"]
         system_rows.clear()
@@ -496,6 +505,8 @@ def main(argv=None):
                   "agents may run only --dry-run and tests. "
                   "Use npm run train -- --dry-run for preflight.",file=sys.stderr)
             return 2
+        if args.flash_mode and not args.resume:
+            raise ValueError("FLASH_MODE_REQUIRES_RESUME")
         if (args.legacy_code_root is not None and
                 not args.legacy_code_root.expanduser().resolve().is_relative_to(ROOT)):
             raise ValueError("HUMAN_TRAINER_EXTERNAL_SOURCE_ROOT_FORBIDDEN")
@@ -518,7 +529,8 @@ def main(argv=None):
                     experiment_introduction_extra_loss=args.experiment_introduction_extra_loss,
                     experiment_protected_cap_limit=args.experiment_protected_cap_limit,
                     stagnation_grace_grade=args.stagnation_grace_grade,
-                    stagnation_grace_steps=args.stagnation_grace_steps)
+                    stagnation_grace_steps=args.stagnation_grace_steps,
+                    flash_mode=args.flash_mode)
             if trace_path is not None:
                 result["timing_trace_file"] = str(trace_path)
         if board is not None:
