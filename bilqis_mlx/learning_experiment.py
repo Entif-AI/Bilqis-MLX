@@ -583,14 +583,63 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
     requested_old = int(policy.get("old", 0))
     if not 0 <= requested_old <= 32:
         raise ValueError("LEARNING_EXPERIMENT_INVALID_OLD_POLICY")
-    old_count = min(batch_size-2, round(requested_old*batch_size/32)) if prior else 0
+    semantic_patterns = sorted({
+        tuple(row["operand_truths"]) for row in current
+        if isinstance(row.get("operand_truths"), list)
+    })
+    structured_binary = bool(semantic_patterns) and all(
+        isinstance(row.get("operand_truths"), list) for row in current)
+    minimum_current = len(semantic_patterns) if structured_binary else 2
+    old_count = min(batch_size-minimum_current,
+                    round(requested_old*batch_size/32)) if prior else 0
     present_count = batch_size-old_count
 
-    def choose(source, count):
+    def choose(source, count, *, require_patterns=False):
         if count == 0:
             return []
         if not source:
             raise ValueError("LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS")
+        if require_patterns:
+            groups = {}
+            for row in source:
+                groups.setdefault(tuple(row["operand_truths"]), []).append(row)
+            if count < len(groups):
+                raise ValueError("LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY")
+            chosen = []
+            for pattern in sorted(groups):
+                options = list(groups[pattern])
+                if policy.get("depth", 1) >= 3:
+                    options.sort(key=lambda row: (-len(row["tokens"]), row["id"]))
+                    chosen.append(options[0])
+                else:
+                    chosen.append(rng.choice(options))
+
+            remaining = count-len(chosen)
+            pools = {gold: [row for row in source if row["gold"] == gold]
+                     for gold in ("FALSE", "TRUE")}
+            if any(not pool for pool in pools.values()):
+                raise ValueError("LEARNING_EXPERIMENT_BINARY_CLASS_MISSING")
+            if policy.get("depth", 1) >= 3:
+                for pool in pools.values():
+                    pool.sort(key=lambda row: (-len(row["tokens"]), row["id"]))
+            else:
+                for pool in pools.values():
+                    rng.shuffle(pool)
+            used = {row["id"] for row in chosen}
+            counts = {gold: sum(row["gold"] == gold for row in chosen)
+                      for gold in pools}
+            while remaining:
+                gold = min(pools, key=lambda item: (counts[item], item))
+                options = [row for row in pools[gold] if row["id"] not in used]
+                if not options:
+                    options = pools[gold]
+                row = options[0] if policy.get("depth", 1) >= 3 else rng.choice(options)
+                chosen.append(row)
+                used.add(row["id"])
+                counts[gold] += 1
+                remaining -= 1
+            rng.shuffle(chosen)
+            return chosen
         groups = {}
         for row in source:
             groups.setdefault(row.get("source_id", row["id"]), []).append(row)
@@ -618,12 +667,18 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
             result.extend(rng.choice(chunks))
         return result[:count]
 
-    result = choose(current, present_count) + choose(prior, old_count)
+    result = choose(current, present_count, require_patterns=structured_binary) + choose(
+        prior, old_count)
     rng.shuffle(result)
+    delivered_patterns = ({tuple(row["operand_truths"]) for row in result
+                           if isinstance(row.get("operand_truths"), list)}
+                          if structured_binary else set())
     return ([{**row, "answer_kind": row.get("answer_kind", "binary")}
              for row in result],
             {"effective_old_grade_examples": old_count,
              "requested_old_per_32": requested_old,
+             "current_semantic_patterns_required": len(semantic_patterns),
+             "current_semantic_patterns_delivered": len(delivered_patterns),
              "depth_control": "SOURCE_TOKEN_LENGTH_PROXY" if policy.get("depth", 1) >= 3
                               else "UNBIASED_SOURCE_GROUPS",
              "contrast_control": "SOURCE_GROUP_DIVERSITY" if policy.get("contrast", 0.) >= .5

@@ -317,6 +317,35 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertNotEqual([r["id"] for r in x],[r["id"] for r in y])
         self.assertEqual(trace2["preview_control"],"NOT_AVAILABLE_UNADMITTED_FUTURE_GRADE")
 
+    def test_binary_lesson_keeps_every_operand_truth_pattern_with_old_rehearsal(self):
+        patterns=((False,False),(False,True),(True,False),(True,True))
+        current=[]
+        for bits in patterns:
+            for index in range(8):
+                current.append({
+                    "id":f"current-{bits}-{index}",
+                    "source_id":f"current-{bits}-{index}",
+                    "capability":"B.IFF",
+                    "gold":"TRUE" if bits[0]==bits[1] else "FALSE",
+                    "operand_truths":list(bits),
+                    "tokens":[1,2,3+index],
+                })
+        prior=[{
+            "id":f"prior-{index}","source_id":f"prior-{index}",
+            "capability":"A.IDENTITY",
+            "gold":"TRUE" if index%2 else "FALSE","tokens":[1,2],
+        } for index in range(32)]
+        picked,trace=select_source_lesson(
+            current,prior,
+            {"old":20,"depth":3,"contrast":0.0,
+             "distill":0.15,"lr":0.0003,"preview":4},
+            seed=0,batch_size=32)
+        target=[row for row in picked if row["capability"]=="B.IFF"]
+        self.assertEqual({tuple(row["operand_truths"]) for row in target},set(patterns))
+        self.assertGreaterEqual(len(target),len(patterns))
+        self.assertEqual(trace["current_semantic_patterns_required"],4)
+        self.assertEqual(trace["current_semantic_patterns_delivered"],4)
+
 
 if __name__=="__main__":
     unittest.main()

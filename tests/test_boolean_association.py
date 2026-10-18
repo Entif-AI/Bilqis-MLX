@@ -79,6 +79,27 @@ def test_b_grade_bridge_borrows_four_a_and_four_c_without_relabeling_sources():
                for row in rows)
 
 
+def test_b_grade_bridge_targets_the_capability_currently_being_taught():
+    graph = registry_graph()
+    rows = draw_b_grade_bridges(
+        LEGACY, graph, seed=2026101802, maximum=6, per_source=4,
+        capability="B.IFF")
+    assert len(rows) == 8
+    assert {row["capability"] for row in rows} == {"B.IFF"}
+    assert {row["record"]["operator"] for row in rows} == {"IFF"}
+
+
+def test_b_grade_bridge_can_target_unary_not():
+    graph = registry_graph()
+    rows = draw_b_grade_bridges(
+        LEGACY, graph, seed=2026101803, maximum=6, per_source=4,
+        capability="B.NOT")
+    assert len(rows) == 8
+    assert {row["capability"] for row in rows} == {"B.NOT"}
+    assert {row["record"]["operator"] for row in rows} == {"NOT"}
+    assert all(len(row["operand_truths"]) == 1 for row in rows)
+
+
 def test_trainer_exposes_bridge_only_during_b_lessons():
     course = SimpleNamespace(grades=tuple(
         SimpleNamespace(id=grade) for grade in ("A", "B", "C")))
@@ -86,13 +107,14 @@ def test_trainer_exposes_bridge_only_during_b_lessons():
     with patch("bilqis_mlx.grade_a_trainer.numeric_maximum", return_value=6), \
             patch("bilqis_mlx.boolean_association.draw_b_grade_bridges",
                   return_value=synthetic) as draw:
-        assert _association_rows_for_lesson(None, {}, course, "A", seed=1,
+        assert _association_rows_for_lesson(None, {}, course, "A", "A.IDENTITY", seed=1,
                                             enabled=True) == ()
-        assert _association_rows_for_lesson(None, {}, course, "C", seed=1,
+        assert _association_rows_for_lesson(None, {}, course, "C", "C.ADD", seed=1,
                                             enabled=True) == ()
-        assert _association_rows_for_lesson(None, {}, course, "B", seed=1,
+        assert _association_rows_for_lesson(None, {}, course, "B", "B.IFF", seed=1,
                                             enabled=True) == synthetic
-        draw.assert_called_once_with(None, {}, seed=1, maximum=6, per_source=4)
+        draw.assert_called_once_with(
+            None, {}, seed=1, maximum=6, per_source=4, capability="B.IFF")
 
 
 def test_bridge_rows_receive_no_mentor_weight_when_appended_to_b_lesson():

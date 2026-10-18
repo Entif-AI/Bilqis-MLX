@@ -1260,7 +1260,7 @@ def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None, cou
     return list(rows)
 
 
-def _association_rows_for_lesson(source_root, graph, course, lesson_grade, *,
+def _association_rows_for_lesson(source_root, graph, course, lesson_grade, capability, *,
                                  seed: int, enabled: bool):
     if not enabled or lesson_grade != "B":
         return ()
@@ -1269,7 +1269,7 @@ def _association_rows_for_lesson(source_root, graph, course, lesson_grade, *,
     from .boolean_association import draw_b_grade_bridges
     return draw_b_grade_bridges(
         source_root, graph, seed=seed, maximum=numeric_maximum(course),
-        per_source=BOOLEAN_ASSOCIATION_QUESTIONS_PER_SOURCE)
+        per_source=BOOLEAN_ASSOCIATION_QUESTIONS_PER_SOURCE, capability=capability)
 
 
 def _extend_binary_guidance(guidance, rows):
@@ -2139,7 +2139,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         else:
             with trace_span("STEP_BOOLEAN_ASSOCIATION", capability=cap, visit_step=step + 1):
                 association_rows = _association_rows_for_lesson(
-                    source_root, graph, course, lesson_grade,
+                    source_root, graph, course, lesson_grade, cap,
                     seed=_seed(receipt, capability="BOOLEAN_ASSOCIATION:" + lesson_grade,
                                step=step + 1),
                     enabled=boolean_association_bridge)

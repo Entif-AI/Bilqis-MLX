@@ -81,7 +81,7 @@ def _association_rows(request: dict):
     return tuple(draw_b_grade_bridges(
         Path(request["source_root"]), request["graph"],
         seed=request["association_seed"], maximum=numeric_maximum(request["course"]),
-        per_source=4))
+        per_source=4, capability=request["capability"]))
 
 
 def prepare_step_sources(request: dict) -> dict:
