@@ -76,8 +76,8 @@ from .mlx_parity import (clip_gradients, forward_arrays,
 from .school import (start_new, visit, assess, assess_withheld, next_capability,
                      append_next_grade, assessment_capabilities,
                      reactivate_stagnation_debt, weakest_three,
-                     defer_assessment_for_flash, require_assessment_after_flash,
-                     SchoolState, Assessment, Score)
+                     require_assessment_after_flash,
+                     assess_flash, SchoolState, Assessment, Score)
 from .stagnation_control import (
     activate_sole_grade_rehabilitation,
     begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
@@ -2950,7 +2950,8 @@ def _promotion_due_after_routine(before, after) -> bool:
 
 
 def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
-               source_checkpoint, parameters, optimizer, graph, *, reserve_gib):
+               source_checkpoint, parameters, optimizer, graph, *, reserve_gib,
+               scheduler_only: bool = False):
     school = _state_from_json(receipt["school"], course)
     if not school.stage.startswith("ASSESS_"):
         raise ValueError("HUMAN_TRAINER_EXAM_OUTSIDE_SCHEDULED_BOUNDARY")
@@ -2969,22 +2970,31 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         run_dir, manifest, course, routine_cohort, stagnation)
     routine_rows = list(routine_cohort.rows)
     scope_sha = _fingerprint(active_scope)
-    candidate_cohort = _candidate_cohort(
-        run_dir, receipt, manifest, course, source_root, graph)
-    candidate_cohort, _ = _introduced_cohort(
-        run_dir, manifest, course, school, candidate_cohort)
-    candidate_cohort, _ = _without_stagnant_capabilities(
-        run_dir, manifest, course, candidate_cohort, stagnation)
-    candidate_guesses = _predictions(
-        mx, parameters, list(candidate_cohort.rows),
-        receipt["config"], receipt["answer_ids"])
-    school, frontier, roles, compared = _commit_scored_student(
-        mx, run_dir, receipt, manifest, course, school,
-        candidate_cohort, candidate_guesses,
-        parameters, optimizer, graph, reserve_gib=reserve_gib,
-        allowed_capabilities=active_scope)
-    candidate_measured = score_cohort(
-        candidate_cohort, candidate_guesses, asdict(school.current_student))
+    candidate_cohort = None
+    candidate_measured = None
+    frontier = dict(receipt.get("capability_best", {}))
+    roles = ()
+    compared = []
+    if scheduler_only:
+        if int(optimizer.state["step"].item()) != school.current_student.optimizer_step:
+            raise ValueError("FLASH_SCHEDULER_EXAM_REQUIRES_CHECKPOINTED_STUDENT")
+    else:
+        candidate_cohort = _candidate_cohort(
+            run_dir, receipt, manifest, course, source_root, graph)
+        candidate_cohort, _ = _introduced_cohort(
+            run_dir, manifest, course, school, candidate_cohort)
+        candidate_cohort, _ = _without_stagnant_capabilities(
+            run_dir, manifest, course, candidate_cohort, stagnation)
+        candidate_guesses = _predictions(
+            mx, parameters, list(candidate_cohort.rows),
+            receipt["config"], receipt["answer_ids"])
+        school, frontier, roles, compared = _commit_scored_student(
+            mx, run_dir, receipt, manifest, course, school,
+            candidate_cohort, candidate_guesses,
+            parameters, optimizer, graph, reserve_gib=reserve_gib,
+            allowed_capabilities=active_scope)
+        candidate_measured = score_cohort(
+            candidate_cohort, candidate_guesses, asdict(school.current_student))
 
     routine_guesses = _predictions(
         mx, parameters, routine_rows, receipt["config"], receipt["answer_ids"])
@@ -3004,7 +3014,10 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                       school.current_student.sha256)
     routine_advanced = (
         assess_withheld(course, school, routine_assessment, blocked_before)
-        if blocked_before else assess(course, school, routine_assessment))
+        if blocked_before else
+        assess_flash(course, school, routine_assessment)
+        if scheduler_only else
+        assess(course, school, routine_assessment))
 
     routine_last_exam = {
         "assessment_grade": school.grade,
@@ -3058,7 +3071,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     measured = routine_measured
     assessment = routine_assessment
     advanced = routine_advanced
-    if _promotion_due_after_routine(school, routine_advanced):
+    if not scheduler_only and _promotion_due_after_routine(school, routine_advanced):
         promotion_cohort, qualification = _promotion_cohort(
             run_dir, receipt, manifest, course, source_root, graph)
         promotion_cohort, promotion_file = _introduced_cohort(
@@ -3094,7 +3107,11 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     championship_decisions = ()
     graduation_roles = ()
     championship_roles = ()
-    if epoch is None:
+    if scheduler_only:
+        perfect = receipt.get("graduation_perfect", {})
+        frozen_soups = receipt.get("grade_soups", {})
+        soup_changes = ()
+    elif epoch is None:
         perfect = receipt.get("graduation_perfect", {})
         frozen_soups = receipt.get("grade_soups", {})
         soup_changes = ()
@@ -3145,7 +3162,6 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "routine_cohort_file": routine_file,
         "routine_cohort_seed": routine_cohort.seed,
         "routine_scores": routine_measured["scores"],
-        "candidate_cohort_sha256": candidate_cohort.digest,
         "graduation_perfect_roles": list(graduation_roles),
         "championship_roles": list(championship_roles),
         "grade_soups_refreshed": list(soup_changes),
@@ -3158,7 +3174,10 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "scores": scores,
         "stagnation_quarantined": list(blocked_after),
         "routine_learning_diagnostics": routine_warnings,
+        "flash_scheduler_only": scheduler_only,
     }
+    if candidate_cohort is not None:
+        last_exam["candidate_cohort_sha256"] = candidate_cohort.digest
     peaks, retention_status = advance_peaks(
         receipt.get("whole_student_peaks", []),
         curriculum_mode=receipt["curriculum_mode"],
@@ -3227,7 +3246,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         model_bundle=school.current_student.filename, last_exam=last_exam,
         result=_school_result_label(advanced), persist=False)
     exam_event = {
-        "event": ("SCHOOL_LIVE_EXAM_COMMITTED" if len(course.grades) > 2 else
+        "event": ("SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED" if scheduler_only else
+                  "SCHOOL_LIVE_EXAM_COMMITTED" if len(course.grades) > 2 else
                   "GRADE_A_LIVE_EXAM_COMMITTED" if len(course.grades) == 1
                   else "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED"),
         "grade": school.grade, "generation": result["generation"],
@@ -3248,16 +3268,19 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "learning_diagnostics": exam_warnings,
         "teacher_outcomes": teacher_outcomes,
         "whole_student_retention": retention_status,
+        "flash_scheduler_only": scheduler_only,
+        "qualification_authority_changed": False if scheduler_only else None,
+        "champions_changed": False if scheduler_only else None,
     }
     if qualification is not None:
         exam_event["qualification_cohort_sha256"] = qualification["cohort_sha256"]
     if epoch is not None:
         exam_event["championship_epoch"] = {
             "baseline_sha256": epoch["baseline"]["sha256"],
-            "earned_roles": list(championship_roles),
+            "earned_roles": [] if scheduler_only else list(championship_roles),
             "active_role_count": len(epoch.get("active_roles", {})),
             "active_soup_grades": sorted(epoch.get("active_grade_soups", {})),
-            "cross_origin_decisions": list(championship_decisions),
+            "cross_origin_decisions": [] if scheduler_only else list(championship_decisions),
         }
     result = _persist(run_dir, _with_delivery_outbox(
         result, _boundary_delivery_events(result, pending, roles, exam_event)))
@@ -3333,23 +3356,6 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
         record, _boundary_delivery_events(record, pending, roles, comparison_event)))
     _publish_boundary(run_dir, record, pending, roles, exam_event=comparison_event)
     return record
-
-
-def _flash_repeat_queue(course, school, receipt, prior_cycle=()):
-    """Repeat only already-admitted work when flash mode defers an assessment."""
-    blocked = set(quarantined_capabilities(receipt.get("stagnation_session")))
-    if prior_cycle:
-        queue = tuple(cap for cap in prior_cycle if cap not in blocked)
-    elif school.stage in ("ASSESS_RECOVERY_1", "ASSESS_RECOVERY_2"):
-        queue = tuple(cap for cap in school.first_recovery if cap not in blocked)
-    else:
-        grade = next(g for g in course.grades if g.id == school.grade)
-        own = {cap.id for cap in grade.capabilities}
-        queue = tuple(cap for cap in assessment_capabilities(course, school)
-                      if cap in own and cap not in blocked)
-    if not queue:
-        raise ValueError("FLASH_MODE_HAS_NO_ADMITTED_TRAINING_QUEUE")
-    return queue
 
 
 def _flush_flash_student(run_dir, receipt, course, parameters, optimizer, graph,
@@ -3642,9 +3648,6 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             pending.append(rehabilitation_event)
             receipt["_pending_visit_events"] = pending
         visits = 0
-        flash_cycle_stage = school.stage if school.stage in (
-            "MAIN", "RECOVERY_1", "RECOVERY_2") else None
-        flash_cycle_queue = tuple(school.queue) if flash_cycle_stage else ()
         while True:
             from .numeric_staircase import scope_advance_due, advance_scope
             if scope_advance_due(receipt, course):
@@ -3658,22 +3661,23 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 break
             if school.stage.startswith("ASSESS_"):
                 if flash_mode:
-                    repeat = _flash_repeat_queue(
-                        course, school, receipt, flash_cycle_queue)
-                    deferred_stage = school.stage
-                    school = defer_assessment_for_flash(course, school, repeat)
-                    receipt = {**receipt, "school": asdict(school)}
-                    flash_cycle_stage = school.stage
-                    flash_cycle_queue = repeat
-                    _notify_viewer({
-                        "event": "SCHOOL_FLASH_ASSESSMENT_DEFERRED",
-                        "grade": school.grade,
-                        "optimizer_step": int(optimizer.state["step"].item()),
-                        "phase": school.stage,
-                        "deferred_phase": deferred_stage,
-                        "repeat_capability_count": len(repeat),
-                        "qualification_authority_changed": False,
-                    })
+                    # Flash may skip expensive championship/promotion work, but
+                    # it may not skip the fresh cumulative evidence needed to
+                    # choose recovery work or advance the cross-grade spiral.
+                    receipt = _flush_flash_student(
+                        run_dir, receipt, course, params, optimizer, graph,
+                        reserve_gib=reserve_gib)
+                    receipt = _take_exam(
+                        mx, run_dir, receipt, manifest, course, source_root,
+                        source_checkpoint, params, optimizer, graph,
+                        reserve_gib=reserve_gib, scheduler_only=True)
+                    school = _state_from_json(receipt["school"], course)
+                    if school.stage.startswith("ASSESS_"):
+                        # Scheduler-only evidence found no remaining imperfect
+                        # grade. Preserve the qualification debt for a full
+                        # authoritative exam rather than minting mastery in flash.
+                        reason = "FLASH_QUALIFICATION_REQUIRED"
+                        break
                     continue
                 with trace_span(
                         "ASSESSMENT", generation=receipt["generation"],
@@ -3720,10 +3724,6 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         "_dashboard_redraw": False,
                     })
             after_visit = _state_from_json(receipt["school"], course)
-            if (flash_mode and after_visit.stage in ("MAIN", "RECOVERY_1", "RECOVERY_2") and
-                    after_visit.stage != flash_cycle_stage):
-                flash_cycle_stage = after_visit.stage
-                flash_cycle_queue = tuple(after_visit.queue)
         with trace_span("FLUSH_FLASH_STUDENT" if flash_mode else "FLUSH_WORKING_STUDENT",
                         visits=visits):
             if flash_mode:

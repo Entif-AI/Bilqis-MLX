@@ -220,25 +220,6 @@ def visit(course: Course, state: SchoolState, capability: str,
                    current_student=student_after_visit)
 
 
-def defer_assessment_for_flash(course: Course, state: SchoolState,
-                               repeat_queue: tuple[str, ...]) -> SchoolState:
-    """Resume admitted training without treating a skipped exam as evidence.
-
-    Flash mode is deliberately non-authoritative: it can repeat an already
-    admitted training cycle, but it cannot promote a grade, move champion
-    pointers, increment the exam epoch, or infer a new recovery ranking.
-    """
-    verify_state(course, state)
-    if state.stage not in ("ASSESS_MAIN", "ASSESS_RECOVERY_1", "ASSESS_RECOVERY_2"):
-        raise ValueError("FLASH_MODE_ASSESSMENT_NOT_DUE")
-    queue = tuple(repeat_queue)
-    pool = set(_score_pool(course, state))
-    if (not queue or len(queue) != len(set(queue)) or
-            not set(queue) <= pool):
-        raise ValueError("FLASH_MODE_REPEAT_QUEUE_INVALID")
-    return replace(state, stage=state.stage.removeprefix("ASSESS_"), queue=queue)
-
-
 def require_assessment_after_flash(course: Course, state: SchoolState) -> SchoolState:
     """End flash mode owing a real assessment before normal scheduling resumes."""
     verify_state(course, state)
@@ -430,6 +411,48 @@ def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolSt
     resumed = _resume_ordinary_spiral(course, state, snapshot)
     if resumed is None:
         raise ValueError("SPIRAL_RECOVERY_ENDED_WITHOUT_IMPERFECT_GRADE")
+    return resumed
+
+
+def assess_flash(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolState:
+    """Use fresh routine evidence for scheduling without minting qualification authority.
+
+    Flash mode may decide what should be taught next, including crossing grade
+    boundaries, but it must not promote a grade, move champion pointers, or
+    increment the authoritative grade-exam epoch. If every currently eligible
+    grade is perfect, leave the assessment debt in place so a later full exam
+    can establish qualification on the authoritative path.
+    """
+    pool = _score_pool(course, state)
+    _verify_assessment_boundary(course, state, snapshot, pool)
+    grade = next(g for g in course.grades if g.id == state.grade)
+    if grade.teaching_stages and state.introduction_stage < len(grade.teaching_stages)-1:
+        own = set(_main_queue(course, state))
+        if all(snapshot.scores[c].perfect for c in own):
+            next_stage = state.introduction_stage + 1
+            return replace(state, introduction_stage=next_stage, stage="MAIN",
+                           queue=grade.teaching_stages[next_stage], first_recovery=(),
+                           latest_rubric_digest=snapshot.rubric_digest)
+
+    if _perfect_in_grade(course, state.grade, snapshot.scores):
+        resumed = _resume_ordinary_spiral(course, state, snapshot)
+        if resumed is not None and resumed.grade != state.grade:
+            return resumed
+        # No remaining imperfect grade exists. Hold the exact assessment debt
+        # for a non-flash qualification exam instead of manufacturing a pass.
+        return replace(state, latest_rubric_digest=snapshot.rubric_digest)
+
+    if state.stage == "ASSESS_MAIN":
+        trio = weakest_three(snapshot.scores, pool)
+        return replace(state, stage="RECOVERY_1", queue=trio,
+                       first_recovery=trio, latest_rubric_digest=snapshot.rubric_digest)
+    if state.stage == "ASSESS_RECOVERY_1":
+        trio = weakest_three(snapshot.scores, pool)
+        return replace(state, stage="RECOVERY_2", queue=trio,
+                       latest_rubric_digest=snapshot.rubric_digest)
+    resumed = _resume_ordinary_spiral(course, state, snapshot)
+    if resumed is None:
+        return replace(state, latest_rubric_digest=snapshot.rubric_digest)
     return resumed
 
 

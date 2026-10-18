@@ -364,9 +364,11 @@ def human_stop_summary(result: dict) -> str:
                     " quarantine actuator suppressed for " + str(remaining) +
                     " more retained optimizer steps; diagnostics remain active.")
     if result.get("flash_mode"):
-        message += ("\nFlash mode: expensive school assessment/championship work was deferred. "
-                    "The saved student is parked at a real ASSESS_* boundary; a normal "
-                    "resume must qualify it before ordinary scheduling continues.")
+        message += ("\nFlash mode: fresh routine scheduling assessments remained active; "
+                    "championship and promotion qualification work was deferred. "
+                    "A saved ASSESS_* boundary remains real debt and will be evaluated on resume. "
+                    "If flash reaches an all-perfect curriculum, a non-flash authoritative exam "
+                    "is still required before qualification can advance.")
     if reason not in ("GRADE_A_AWAITING_NEXT_GRADE", "GRADE_B_AWAITING_NEXT_GRADE",
                       "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
         message += ("\nTo continue: " +

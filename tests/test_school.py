@@ -11,8 +11,7 @@ from bilqis_mlx.school import (Assessment, SchoolState, Score, start_new, visit,
     assess, assess_withheld, next_capability, reactivate_stagnation_debt,
     teacher_vote_weights, whole_school_soup_weights,
     continue_after_soup, save_new_state, read_state, weakest_three,
-    append_next_grade, verify_state, defer_assessment_for_flash,
-    require_assessment_after_flash)
+    append_next_grade, verify_state, require_assessment_after_flash, assess_flash)
 from test_curriculum import sample_course
 
 
@@ -61,20 +60,6 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
-    def test_flash_defers_assessment_without_minting_authority(self):
-        state = start_new(self.course, self.init)
-        cycle = state.queue
-        state = grade_loop(self.course, state, self.init)
-        self.assertEqual(state.stage, "ASSESS_MAIN")
-
-        reopened = defer_assessment_for_flash(self.course, state, cycle)
-
-        self.assertEqual(reopened.stage, "MAIN")
-        self.assertEqual(reopened.queue, cycle)
-        self.assertEqual(reopened.champions, state.champions)
-        self.assertEqual(reopened.grade_exam_epoch, state.grade_exam_epoch)
-        self.assertEqual(reopened.latest_rubric_digest, state.latest_rubric_digest)
-
     def test_flash_stop_restores_assessment_debt(self):
         state = start_new(self.course, self.init)
         partial = visit(self.course, state, state.queue[0], self.init)
@@ -85,6 +70,59 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(due.queue, ())
         self.assertEqual(due.champions, partial.champions)
         self.assertEqual(due.grade_exam_epoch, partial.grade_exam_epoch)
+
+    def test_flash_scheduler_assessment_advances_after_second_recovery_without_authority(self):
+        course = three_grade_course()
+        student = self.init
+        base = start_new(course, student)
+        b = course.grades[1]
+        state = replace(
+            base,
+            grade_index=1,
+            introduction_stage=(len(b.teaching_stages) - 1 if b.teaching_stages else 0),
+            stage="ASSESS_RECOVERY_2",
+            queue=(),
+            first_recovery=("b.0",),
+            champions={grade: student for grade in ("A", "B", "C")},
+            revalidation_target_grade="C",
+        )
+        verify_state(course, state)
+        imperfect = all_scores(course, imperfect=("b.0", "c.0"))
+        before_champions = dict(state.champions)
+        before_epoch = state.grade_exam_epoch
+
+        moved = assess_flash(course, state, snapshot(course, student, imperfect))
+
+        self.assertEqual(moved.grade, "C")
+        self.assertEqual(moved.stage, "MAIN")
+        self.assertEqual(moved.queue, tuple(cap.id for cap in course.grades[2].capabilities))
+        self.assertEqual(moved.champions, before_champions)
+        self.assertEqual(moved.grade_exam_epoch, before_epoch)
+
+    def test_flash_scheduler_holds_all_perfect_checkpoint_for_authoritative_exam(self):
+        course = three_grade_course()
+        student = self.init
+        base = start_new(course, student)
+        b = course.grades[1]
+        state = replace(
+            base,
+            grade_index=1,
+            introduction_stage=(len(b.teaching_stages) - 1 if b.teaching_stages else 0),
+            stage="ASSESS_RECOVERY_2",
+            queue=(),
+            first_recovery=("b.0",),
+            champions={grade: student for grade in ("A", "B", "C")},
+            revalidation_target_grade="C",
+        )
+        perfect = all_scores(course)
+
+        held = assess_flash(course, state, snapshot(course, student, perfect))
+
+        self.assertEqual(held.grade, "B")
+        self.assertEqual(held.stage, "ASSESS_RECOVERY_2")
+        self.assertEqual(held.queue, ())
+        self.assertEqual(held.champions, state.champions)
+        self.assertEqual(held.grade_exam_epoch, state.grade_exam_epoch)
 
     def test_withheld_capability_remains_mastery_debt_while_healthy_work_continues(self):
         state = grade_loop(self.course, start_new(self.course, self.init), self.init)

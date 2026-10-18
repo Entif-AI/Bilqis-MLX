@@ -228,6 +228,7 @@ EVENT_KINDS = {
     "SCHOOL_GRADE_B_COURSE_ADMITTED": "init",
     "SCHOOL_TEACHER_VISIT_COMMITTED": "visit",
     "SCHOOL_LIVE_EXAM_COMMITTED": "exam",
+    "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED": "exam",
     "SCHOOL_COURSE_ADMITTED": "init",
     "GRADE_A_SESSION_STOPPED": "stop",
     "SCHOOL_RUN_INITIALIZED": "init",
@@ -390,8 +391,11 @@ class SchoolTelemetry:
                     not 0 <= scores[cap]["correct"] <= scores[cap]["total"]
                     for cap in caps)):
             raise ValueError("SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED")
+        scored = ", ".join(
+            f"{cap} {scores[cap]['correct']}/{scores[cap]['total']}"
+            for cap in sorted(caps))
         self.board.push("system", {"kind": "CAP BEST", "grade": grade,
-                        "detail": (f"Best slots: {', '.join(sorted(caps))} "
+                        "detail": (f"Best slots: {scored} "
                                    f"at step {step} | NOT grade mastery")},
                         redraw=False)
 
@@ -483,8 +487,13 @@ class SchoolTelemetry:
         if not checkpoint:
             raise ValueError("SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED")
         live = event.get("event") in ("GRADE_A_LIVE_EXAM_COMMITTED",
-                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED", "SCHOOL_LIVE_EXAM_COMMITTED")
-        scope = event.get("assessment_scope_sha256", "") if event.get("event") == "SCHOOL_LIVE_EXAM_COMMITTED" else ""
+                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+                                       "SCHOOL_LIVE_EXAM_COMMITTED",
+                                       "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED")
+        scope = (event.get("assessment_scope_sha256", "")
+                 if event.get("event") in (
+                     "SCHOOL_LIVE_EXAM_COMMITTED",
+                     "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED") else "")
         cohort_sha = event.get("cohort_sha256") if live else None
         if live and (not isinstance(cohort_sha, str) or len(cohort_sha) != 64 or
                      not event.get("cohort_file") or not event.get("generator_version")):
@@ -552,11 +561,43 @@ class SchoolTelemetry:
                              "SEALED EXAM; NO SENTINEL"),
             })
             champion = self.champions.get(g)
-            label = ("CHAMPION SAVED; FRESH SAMPLE" if live and champion else
-                     "CHAMPION SAVED; CURRENT REGRESSION" if champion and correct < total else
-                     "CHAMPION RECORDED; CURRENT PASS" if champion else
-                     "100% EXAM; GATE PENDING" if correct == total else
-                     f"{'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | {event.get('phase', '?')}")
+            epoch = event.get("championship_epoch") or {}
+            earned = tuple(
+                cap for cap in epoch.get("earned_roles", ())
+                if isinstance(cap, str) and _grade_from_capability(cap, grade) == g)
+            title_decisions = tuple(
+                decision for decision in epoch.get("cross_origin_decisions", ())
+                if isinstance(decision, dict) and decision.get("grade") == g)
+            if event.get("flash_scheduler_only") is True:
+                label = f"FLASH SAMPLE {correct}/{total} | NO TITLES"
+            elif earned:
+                label = f"TITLE MOVED {len(earned)} | SAMPLE {correct}/{total}"
+                detail = ", ".join(
+                    f"{cap} {caps[cap][0]}/{caps[cap][1]}"
+                    for cap in earned if cap in caps)
+                self.board.push("system", {
+                    "kind": "CHAMPION", "grade": g,
+                    "detail": f"Titles moved: {detail} | step {step}",
+                }, redraw=False)
+            elif live and isinstance(event.get("championship_epoch"), dict):
+                label = f"NO TITLE CHANGE | SAMPLE {correct}/{total}"
+                if title_decisions:
+                    reasons = ", ".join(sorted({
+                        str(decision.get("decision", "UNKNOWN"))
+                        for decision in title_decisions
+                    }))
+                    self.board.push("system", {
+                        "kind": "CHAMPION", "grade": g,
+                        "detail": f"No title change: {reasons} | step {step}",
+                    }, redraw=False)
+            elif champion and correct < total:
+                label = f"CURRENT REGRESSION | SAMPLE {correct}/{total}"
+            elif champion:
+                label = f"GRADE CHAMPION EXISTS | PASS {correct}/{total}"
+            elif correct == total:
+                label = "100% EXAM; GATE PENDING"
+            else:
+                label = f"{'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | {event.get('phase', '?')}"
             self.board.rows["GRADES & MASTERY"].append({
                 "visit": self.visits, "grade": g, "step": step or "-",
                 "first": f"{first.correct}/{first.total}",

@@ -81,6 +81,107 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(compose["grade"], "B")
         self.assertEqual(compose["detail"], "COMPOSE A+C->B x128 | B.IMPLIES")
 
+    def test_live_exam_reports_actual_champion_title_movement_not_generic_saved_label(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True)
+        telemetry = SchoolTelemetry(
+            board, active_grades=("B",), champions={"B": {"sha256": "f" * 64}})
+        telemetry.ingest({
+            "event": "SCHOOL_LIVE_EXAM_COMMITTED",
+            "grade": "B",
+            "generation": 51,
+            "optimizer_step": 232392,
+            "student_sha256": "a" * 64,
+            "rubric": "b" * 64,
+            "assessment_scope_sha256": "c" * 64,
+            "cohort_sha256": "d" * 64,
+            "cohort_file": "cohorts/d.json",
+            "generator_version": "test/live-v1",
+            "phase": "RECOVERY_1",
+            "scores": {"B.OR": {"correct": 9, "total": 12}},
+            "championship_epoch": {
+                "earned_roles": ["B.OR"],
+                "active_role_count": 1,
+                "active_soup_grades": ["B"],
+            },
+        })
+
+        mastery = board.rows["GRADES & MASTERY"][-1]
+        self.assertIn("TITLE MOVED 1", mastery["outcome"])
+        self.assertNotIn("CHAMPION SAVED", mastery["outcome"])
+        champion = board.rows["SYSTEM & QUALIFICATION"][-1]
+        self.assertEqual(champion["kind"], "CHAMPION")
+        self.assertEqual(champion["grade"], "B")
+        self.assertIn("B.OR 9/12", champion["detail"])
+        self.assertIn("step 232392", champion["detail"])
+
+    def test_live_exam_with_existing_champion_but_no_title_change_says_so(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True)
+        telemetry = SchoolTelemetry(
+            board, active_grades=("B",), champions={"B": {"sha256": "f" * 64}})
+        telemetry.ingest({
+            "event": "SCHOOL_LIVE_EXAM_COMMITTED",
+            "grade": "B",
+            "generation": 52,
+            "optimizer_step": 232392,
+            "student_sha256": "a" * 64,
+            "rubric": "b" * 64,
+            "assessment_scope_sha256": "c" * 64,
+            "cohort_sha256": "e" * 64,
+            "cohort_file": "cohorts/e.json",
+            "generator_version": "test/live-v1",
+            "phase": "RECOVERY_1",
+            "scores": {"B.OR": {"correct": 8, "total": 12}},
+            "championship_epoch": {
+                "earned_roles": [],
+                "active_role_count": 1,
+                "active_soup_grades": ["B"],
+                "cross_origin_decisions": [{
+                    "grade": "B",
+                    "decision": "DENY_NO_STRICT_SCHOOL_VICTORY",
+                }],
+            },
+        })
+
+        mastery = board.rows["GRADES & MASTERY"][-1]
+        self.assertIn("NO TITLE CHANGE", mastery["outcome"])
+        self.assertNotIn("CHAMPION SAVED", mastery["outcome"])
+        champion = board.rows["SYSTEM & QUALIFICATION"][-1]
+        self.assertEqual(champion["kind"], "CHAMPION")
+        self.assertIn("DENY_NO_STRICT_SCHOOL_VICTORY", champion["detail"])
+
+    def test_flash_scheduler_exam_is_scope_bound_and_explicitly_non_title(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True)
+        telemetry = SchoolTelemetry(board, active_grades=("A", "B", "C"))
+        telemetry.ingest({
+            "event": "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED",
+            "grade": "C",
+            "generation": 53,
+            "optimizer_step": 232472,
+            "student_sha256": "a" * 64,
+            "rubric": "b" * 64,
+            "assessment_scope_sha256": "c" * 64,
+            "cohort_sha256": "d" * 64,
+            "cohort_file": "cohorts/d.json",
+            "generator_version": "test/live-v1",
+            "phase": "RECOVERY_1",
+            "flash_scheduler_only": True,
+            "scores": {
+                "A.IDENTITY": {"correct": 12, "total": 12},
+                "B.OR": {"correct": 8, "total": 12},
+                "C.ADD": {"correct": 20, "total": 21},
+            },
+            "championship_epoch": {
+                "earned_roles": [], "active_role_count": 19,
+                "active_soup_grades": ["A", "B", "C"],
+                "cross_origin_decisions": [],
+            },
+        })
+
+        rows = list(board.rows["GRADES & MASTERY"])[-3:]
+        self.assertTrue(all("FLASH SAMPLE" in row["outcome"] for row in rows))
+        self.assertTrue(all("NO TITLES" in row["outcome"] for row in rows))
+        self.assertTrue(all(key[2] == "c" * 64 for key in telemetry.latest))
+
     def test_dashboard_top_right_shows_step_rate_and_all_grade_accuracy(self):
         now = [100.0]
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
