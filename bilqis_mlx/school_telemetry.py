@@ -410,7 +410,14 @@ class SchoolTelemetry:
         for field in ("old", "preview", "distill"):
             teacher[field] = "OFF" if field in unavailable else _display(strategy.get(field))
         self.board.rows["SOUP & TEACHER"].append(teacher)
+        attempted = event.get("attempted_optimizer_updates", 0)
+        if type(attempted) is not int or attempted < 0:
+            raise ValueError("SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID")
+        attempted_total = self.board.state.get("attempted_steps", 0)
+        if type(attempted_total) is not int or attempted_total < 0:
+            attempted_total = 0
         self.board.state.update(step=event.get("optimizer_step", self.board.state.get("step")),
+                                attempted_steps=attempted_total + attempted,
                                 visits=self.visits, prefix=grade,
                                 phase=event.get("next_phase", self.board.state.get("phase")),
                                 _rate_sample_eligible=(

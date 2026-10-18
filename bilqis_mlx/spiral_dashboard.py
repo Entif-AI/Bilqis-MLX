@@ -300,7 +300,7 @@ class Dashboard:
         self.operator_lines=[]
         self._rate_step=None
         self._rate_time=None
-        self._steps_per_sec=None
+        self._steps_per_min=None
 
     def _refresh_champions(self):
         """Read canonical champion inventory if a grade checkpoint changed."""
@@ -605,8 +605,8 @@ class Dashboard:
                 f"| visits {state.get('visits','-')} "
                 f"| T {state.get('teacher','-')}")
         footer=f"{state.get('stop','RUNNING')} {state.get('halt','')} | raw log: {self.log_hint or 'read-only'}"
-        speed=(f"{round(self._steps_per_sec):,} steps/sec"
-               if isinstance(self._steps_per_sec,(int,float)) else "")
+        speed=(f"{round(self._steps_per_min):,} attempted steps/min"
+               if isinstance(self._steps_per_min,(int,float)) else "")
         correct,total=self._latest_all_grade_score()
         accuracy=(f"ALL {correct}/{total} = {100*correct/total:.1f}% correct (last measured)"
                   if total else "")
@@ -700,10 +700,10 @@ class Dashboard:
             self.dirty=True
 
     def _sample_step_rate(self):
-        """Measure optimizer throughput only when a real dashboard draw occurs."""
+        """Measure attempted optimizer throughput only at real dashboard draws."""
         if self.state.get("_rate_sample_eligible", True) is False:
             return
-        step=self.state.get("step")
+        step=self.state.get("attempted_steps")
         now=self.clock()
         if type(step) is not int:
             return
@@ -712,7 +712,7 @@ class Dashboard:
             return
         elapsed=now-self._rate_time
         if elapsed>0 and step!=self._rate_step:
-            self._steps_per_sec=(step-self._rate_step)/elapsed
+            self._steps_per_min=(step-self._rate_step)/elapsed*60
             self._rate_step,self._rate_time=step,now
 
     def _latest_all_grade_score(self):

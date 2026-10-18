@@ -16,7 +16,7 @@ class OperatorTests(unittest.TestCase):
         now = [100.0]
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                           clock=lambda: now[0])
-        board.state.update(step=100, visits=12)
+        board.state.update(step=100, attempted_steps=0, visits=12)
         board.rows["GRADES & MASTERY"].extend([
             {"grade": "A", "latest": "71/72", "right_pct": "98.6%"},
             {"grade": "B", "latest": "47/72", "right_pct": "65.3%"},
@@ -24,16 +24,15 @@ class OperatorTests(unittest.TestCase):
         ])
 
         board.draw()
-        board.state.update(step=200, _rate_sample_eligible=False)
+        board.state.update(attempted_steps=48, _rate_sample_eligible=False)
         now[0] = 101.0
         board.draw()  # Buffered boundary replay must not fake throughput.
-        board.state["step"] = 448
         board.state["_rate_sample_eligible"] = True
         now[0] = 102.0
         board.draw()
         shown = board.render(width=150, height=38)
 
-        self.assertIn("174 steps/sec", shown.splitlines()[0])
+        self.assertIn("1,440 attempted steps/min", shown.splitlines()[0])
         self.assertIn("ALL 255/291 = 87.6% correct (last measured)", shown.splitlines()[1])
 
     def test_resume_instructions_are_flag_free_at_default_retention_policy(self):

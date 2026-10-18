@@ -473,6 +473,7 @@ def _prepare_live_board(args, build, ingest):
         board.mode = (("FLASH | " if args.flash_mode else "") +
                       ("RESUMING" if args.resume else "STARTING"))
         board.state["stop"] = "PREPARING"
+        board.state["attempted_steps"] = 0
         board.state["_rate_sample_eligible"] = True
         system_rows = board.rows["SYSTEM & QUALIFICATION"]
         previous = [row for row in system_rows if row.get("kind") != "STOP"]

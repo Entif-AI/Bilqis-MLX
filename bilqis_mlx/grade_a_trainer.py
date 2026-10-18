@@ -2128,6 +2128,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
     expected_retained = (step_before if outcome is not None and
                          outcome["decision"] == "REJECT" else attempted_step)
+    attempted_optimizer_updates = attempted_step - step_before
+    if attempted_optimizer_updates < 0:
+        raise ValueError("HUMAN_TRAINER_ATTEMPTED_OPTIMIZER_STEP_REGRESSION")
     if int(optimizer.state["step"].item()) != expected_retained:
         raise ValueError("LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT")
     # No new archive exists yet. The retained checkpoint is the last complete
@@ -2168,6 +2171,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
+        "attempted_optimizer_updates": attempted_optimizer_updates,
         **({"lesson_policy_controls": {
             "optimizer_batches_observed": len(policy_control_receipts),
             "old_grade_examples_delivered": sum(
