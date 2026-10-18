@@ -600,3 +600,28 @@ At the user's direction, isolated run `runs/issue-340-mentor-epoch-trial` is reb
 For this explicit experiment rebase, a later checkpoint cannot mint any active championship role or derivative soup merely by being later. Until one intact challenger scores **strictly more whole-school correct answers than the non-teaching best-8355 baseline on the same cohort/rubric/scope/graph**, `baseline_surpassed` remains unset and all active titles remain empty. The baseline casts zero teaching votes. Historical roles, soups and prior baselines remain archived and custody-protected. This experiment-only baseline challenge refines ADR-053's ordinary later-step eligibility without changing normal graduation-reset semantics elsewhere.
 
 No assistant operation in this ADR performs neural optimizer updates. The human remains the sole starter of `--human-run`.
+
+
+## ADR-057 | 2026-10-18 | Late-stage retention uses aggregate grade and school non-regression, not item monotonicity
+
+The first human run after ADR-056 made genuine progress but exposed a second retention blind spot. Retained candidates moved the fixed error set rather than monotonically shrinking it: one C.DIV candidate repaired the prior DIV miss while creating a different DIV miss at the same 20/21 total; a later B recovery candidate improved B.IMPLIES/B.NOT but moved error mass into B.IFF/C.DIV; finally a retained B.IFF candidate passed the fresh B panel yet the next immutable whole-school exam fell from **287/291 to 284/291**, with B.AND, B.IMPLIES and B.NOT all worse and no compensating fixed gain. The human stopped the run at generation 12836, optimizer step 230232. This proves that sampled candidate evidence alone is insufficient late in training.
+
+The human also rejected the opposite overcorrection: individual fixed questions and capabilities MUST remain free to trade errors during learning. A retained candidate is not required to preserve every previously-correct item, and an OR/XOR replay flip is not by itself a late-stage veto. What matters is aggregate progress/non-regression at the appropriate scopes.
+
+When a complete immutable whole-school fixed frontier exists for the exact retained parent, late-stage admission now requires:
+
+1. the target capability's fresh paired probe improves strictly;
+2. the complete fresh lesson-grade paired panel has net correct-answer change **>= 0**;
+3. the fixed **lesson grade** has net correct-answer change **>= 0**;
+4. the fixed **active school grade** has net correct-answer change **>= 0**; and
+5. the fixed **whole school** has net correct-answer change **>= 0**.
+
+Individual rows and individual capabilities may regress if those aggregate bounds hold. Thus a B lesson may be retained when B improves and active Grade C is unchanged; a B lesson may also leave B fixed-flat while another grade improves, provided its target fresh probe improved and the active grade and whole school do not decline. A B +1 / C -1 trade with active Grade C is rejected because the active school grade fell even if the whole-school total ties or improves elsewhere. The fresh target gain remains the causal evidence that the attempted lesson did something useful; fixed aggregate screens prevent that gain from being purchased by larger school damage.
+
+This aggregate regime is enabled **only when the complete fixed whole-school frontier is measurable**. Before such a frontier exists, preserve the earlier stricter safeguards: strictly positive fresh same-grade net, individual protected-capability tolerances, B.OR/B.XOR parent-correct item replay veto, and any comparable fixed-grade non-regression. This keeps early curriculum runs from silently inheriting a policy that depends on evidence they do not yet possess.
+
+The fixed frontier is reconstructed from the immutable cohort plus the retained parent's saved wrong predictions: every non-miss row is correct by definition, and reconstructed capability totals must exactly match the saved exam before comparison. Only the candidate requires new fixed-cohort inference. B recovery therefore receives a real fixed B aggregate even while the school scheduler is on Grade C, and the same candidate predictions provide the active-grade and whole-school totals without splicing checkpoints or cohorts.
+
+Fragile B.OR/B.XOR replay remains valuable diagnostic evidence and candidate-construction guidance. Fresh preservation rehearsal now prefers rotating structural siblings matching truth pattern, ordered operand kinds and universe size, then gracefully falls back to the same operand shape across universe sizes and finally the same truth pattern. Fixed exam row identities remain excluded. Failure to sample one exact structural sibling does not block training.
+
+This ADR supersedes ADR-054/055/056 only for **late-stage candidate admission when a complete fixed frontier exists**. Championship and graduation rules are unchanged. The stopped 284/291 student is preserved as forensic evidence; this decision does not itself roll back or start neural training.

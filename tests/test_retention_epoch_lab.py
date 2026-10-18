@@ -102,18 +102,36 @@ class RetentionTeachingPathTests(unittest.TestCase):
     def test_fresh_fragile_preservation_covers_truth_tables_without_exam_ids(self):
         fixed = []
         fresh_by_cap = {}
+        def operand(kind):
+            if kind == "EQ":
+                return {"kind": "compare", "operator": "EQ", "args": [
+                    {"kind": "entity", "name": "A"},
+                    {"kind": "entity", "name": "B"}]}
+            return {"kind": "relation", "name": kind, "args": [
+                {"kind": "entity", "name": "A"},
+                {"kind": "entity", "name": "B"}]}
         for capability in ("B.OR", "B.XOR"):
             candidates = []
             for index, bits in enumerate((
                     (False, False), (False, True), (True, False), (True, True))):
                 gold = ("TRUE" if (any(bits) if capability == "B.OR"
                                    else bits[0] != bits[1]) else "FALSE")
+                kinds = (("PARENT", "EQ") if index % 2 == 0
+                         else ("LINK", "PARENT"))
+                shape = {
+                    "universe_size": 3 + index % 2,
+                    "record": {"query": {
+                        "kind": "apply", "operator": capability[2:],
+                        "args": [operand(kind) for kind in kinds]}},
+                }
                 fixed.append({"id": f"exam:{capability}:{index}",
                               "capability": capability, "gold": gold,
-                              "operand_truths": list(bits), "tokens": [1, 2, 3]})
+                              "operand_truths": list(bits), "tokens": [1, 2, 3],
+                              **shape})
                 candidates.append({"id": f"fresh:{capability}:{index}",
                                    "capability": capability, "gold": gold,
-                                   "operand_truths": list(bits), "tokens": [4, 5, 6]})
+                                   "operand_truths": list(bits), "tokens": [4, 5, 6],
+                                   **shape})
             fresh_by_cap[capability] = candidates
 
         def draw(*_args, **kwargs):

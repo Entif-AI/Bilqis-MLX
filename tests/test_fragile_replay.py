@@ -6,6 +6,7 @@ import unittest
 
 from bilqis_mlx.fragile_replay import (
     load_replay_rows, screen_replay, select_preservation_rows,
+    select_structural_preservation_rows, structural_signature,
 )
 from bilqis_mlx.generated_assessment import make_cohort
 
@@ -90,4 +91,84 @@ class FragileReplayTests(unittest.TestCase):
              for capability in ("B.OR", "B.XOR")
              for bits in ((False, False), (False, True), (True, False), (True, True))},
         )
+
+    def test_structural_preservation_matches_operand_kinds_and_universe_size(self):
+        def operand(kind, left="A", right="B"):
+            if kind == "EQ":
+                return {"kind": "compare", "operator": "EQ", "args": [
+                    {"kind": "entity", "name": left},
+                    {"kind": "entity", "name": right}]}
+            return {"kind": "relation", "name": kind, "args": [
+                {"kind": "entity", "name": left},
+                {"kind": "entity", "name": right}]}
+
+        def row(identity, *, capability, bits, kinds, universe):
+            gold = ("TRUE" if (any(bits) if capability == "B.OR"
+                               else bits[0] != bits[1]) else "FALSE")
+            return {
+                "id": identity, "capability": capability, "gold": gold,
+                "operand_truths": list(bits), "universe_size": universe,
+                "tokens": [1, 2, 3], "record": {"query": {
+                    "kind": "apply", "operator": capability[2:],
+                    "args": [operand(kind) for kind in kinds]}},
+            }
+
+        fixed = [
+            row("exam:xor", capability="B.XOR", bits=(True, False),
+                kinds=("LINK", "EQ"), universe=4),
+            row("exam:or", capability="B.OR", bits=(False, False),
+                kinds=("PARENT", "PARENT"), universe=4),
+        ]
+        fresh = [
+            # Same truth cells, but structurally wrong.
+            row("fresh:xor-wrong", capability="B.XOR", bits=(True, False),
+                kinds=("EQ", "LINK"), universe=4),
+            row("fresh:or-wrong", capability="B.OR", bits=(False, False),
+                kinds=("PARENT", "PARENT"), universe=3),
+            # Exact structural siblings.
+            row("fresh:xor", capability="B.XOR", bits=(True, False),
+                kinds=("LINK", "EQ"), universe=4),
+            row("fresh:or", capability="B.OR", bits=(False, False),
+                kinds=("PARENT", "PARENT"), universe=4),
+        ]
+        selected = select_structural_preservation_rows(
+            fresh, fixed, excluded_ids={row["id"] for row in fixed},
+            rotation=0, limit=2)
+        self.assertEqual([row["id"] for row in selected],
+                         ["fresh:or", "fresh:xor"])
+        self.assertEqual(
+            {structural_signature(row) for row in selected},
+            {structural_signature(row) for row in fixed})
+
+    def test_structural_preservation_falls_back_without_becoming_a_gate(self):
+        def operand(kind):
+            if kind == "EQ":
+                return {"kind": "compare", "operator": "EQ", "args": [
+                    {"kind": "entity", "name": "A"},
+                    {"kind": "entity", "name": "B"}]}
+            return {"kind": "relation", "name": kind, "args": [
+                {"kind": "entity", "name": "A"},
+                {"kind": "entity", "name": "B"}]}
+
+        def row(identity, kinds, universe):
+            return {
+                "id": identity, "capability": "B.XOR", "gold": "TRUE",
+                "operand_truths": [True, False], "universe_size": universe,
+                "tokens": [1, 2, 3], "record": {"query": {
+                    "kind": "apply", "operator": "XOR",
+                    "args": [operand(kind) for kind in kinds]}},
+            }
+
+        fixed = [row("exam", ("LINK", "EQ"), 4)]
+        same_kinds_other_universe = row("fresh:kinds", ("LINK", "EQ"), 3)
+        same_truth_other_shape = row("fresh:truth", ("EQ", "LINK"), 5)
+        selected = select_structural_preservation_rows(
+            [same_truth_other_shape, same_kinds_other_universe], fixed,
+            excluded_ids={"exam"}, rotation=0, limit=1)
+        self.assertEqual([row["id"] for row in selected], ["fresh:kinds"])
+
+        selected = select_structural_preservation_rows(
+            [same_truth_other_shape], fixed, excluded_ids={"exam"},
+            rotation=0, limit=1)
+        self.assertEqual([row["id"] for row in selected], ["fresh:truth"])
 

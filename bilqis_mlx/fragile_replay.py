@@ -17,6 +17,85 @@ TRUTH_PATTERNS = (
 )
 
 
+def _operand_kind(node: dict) -> str:
+    kind = node.get("kind")
+    if kind == "compare":
+        value = node.get("operator")
+    elif kind == "relation":
+        value = node.get("name")
+    else:
+        value = kind
+    if not isinstance(value, str) or not value:
+        raise ValueError("FRAGILE_PRESERVATION_OPERAND_KIND_INVALID")
+    return value
+
+
+def structural_signature(row: dict) -> tuple:
+    """Describe the compositional shape that truth-pattern-only replay misses."""
+    capability = row.get("capability")
+    raw = row.get("operand_truths")
+    record = row.get("record") or {}
+    query = record.get("query") or {}
+    args = query.get("args")
+    universe = row.get("universe_size")
+    if (capability not in CAPABILITIES or
+            not isinstance(raw, (list, tuple)) or len(raw) != 2 or
+            any(type(value) is not bool for value in raw) or
+            not isinstance(args, list) or len(args) != 2 or
+            type(universe) is not int or universe < 1):
+        raise ValueError("FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID")
+    return (capability, tuple(raw), tuple(_operand_kind(arg) for arg in args),
+            universe)
+
+
+def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozenset(),
+                                        rotation: int, limit: int) -> tuple[dict, ...]:
+    """Prefer fresh siblings nearest to rotated fixed structural signatures.
+
+    Structural rehearsal is guidance, not an admission gate. Prefer exact
+    signature matches, then same truth-pattern/operand-kind matches across
+    universe sizes, then the same truth pattern. Missing shapes simply yield
+    fewer rows so callers can fall back to generic truth-table rehearsal.
+    """
+    if type(rotation) is not int or rotation < 0 or type(limit) is not int or limit < 1:
+        raise ValueError("FRAGILE_PRESERVATION_ROTATION_INVALID")
+    excluded = set(excluded_ids)
+    desired = sorted({structural_signature(row) for row in fixed_rows})
+    if not desired:
+        return ()
+    shift = rotation % len(desired)
+    desired = (desired[shift:] + desired[:shift])[:min(limit, len(desired))]
+    candidates = []
+    for row in rows:
+        if row.get("id") in excluded:
+            continue
+        try:
+            signature = structural_signature(row)
+        except ValueError:
+            continue
+        candidates.append((row, signature))
+    selected, used = [], set()
+    for wanted in desired:
+        chosen = next((
+            row for row, signature in candidates
+            if row["id"] not in used and signature == wanted
+        ), None)
+        if chosen is None:
+            chosen = next((
+                row for row, signature in candidates
+                if row["id"] not in used and signature[:3] == wanted[:3]
+            ), None)
+        if chosen is None:
+            chosen = next((
+                row for row, signature in candidates
+                if row["id"] not in used and signature[:2] == wanted[:2]
+            ), None)
+        if chosen is not None:
+            selected.append(chosen)
+            used.add(chosen["id"])
+    return tuple(selected)
+
+
 def _pattern_gold(capability: str, pattern: tuple[bool, bool]) -> str:
     if capability == "B.OR":
         value = pattern[0] or pattern[1]
