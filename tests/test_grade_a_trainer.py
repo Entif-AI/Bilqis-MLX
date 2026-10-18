@@ -10,6 +10,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from bilqis_mlx import grade_a_trainer as trainer
 from bilqis_mlx.grade_a_release import accepted_grade_a, RELEASE, AUTHORITY
@@ -34,6 +35,40 @@ MANIFEST = Path(__file__).resolve().parents[1] / "docs/GRADE_A_CANDIDATE_MANIFES
 
 
 class GradeATrainerContractTests(unittest.TestCase):
+    def test_candidate_frontier_protects_other_grades_when_active_grade_absent(self):
+        rows = (
+            {"id": "A.LINK:0", "capability": "A.LINK", "gold": "TRUE"},
+            {"id": "C.MUL:0", "capability": "C.MUL", "gold": "FALSE"},
+        )
+        parent_predictions = {row["id"]: row["gold"] for row in rows}
+        receipt = {
+            "config": {}, "answer_ids": {},
+            "last_exam": {"cohort_sha256": "a" * 64},
+        }
+        school = SimpleNamespace(current_student=SimpleNamespace(
+            sha256="b" * 64, optimizer_step=123))
+        with (
+            patch("bilqis_mlx.fixed_frontier.load_frontier",
+                  return_value=(rows, parent_predictions)),
+            patch.object(
+                trainer, "_predictions",
+                side_effect=lambda _mx, _bundle, selected, _config, _answers: {
+                    row["id"]: row["gold"] for row in selected}),
+            patch("bilqis_mlx.fragile_replay.load_replay_rows",
+                  return_value=()),
+        ):
+            fixed, replay, frontier = trainer._candidate_fixed_evidence(
+                None, Path("."), receipt, None, school, "B.NOT",
+                object(), object(), SimpleNamespace())
+        self.assertEqual(fixed, {
+            "status": "NOT_MEASURED",
+            "reason": "ACTIVE_GRADE_ABSENT_FROM_FIXED_FRONTIER",
+        })
+        self.assertEqual(replay["status"], "NOT_MEASURED")
+        self.assertEqual(frontier["status"], "MEASURED")
+        self.assertEqual(frontier["before_correct"], 2)
+        self.assertEqual(frontier["after_correct"], 2)
+
     @classmethod
     def setUpClass(cls):
         cls.manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))

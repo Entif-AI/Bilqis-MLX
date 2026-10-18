@@ -1546,22 +1546,26 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
         grade_rows = tuple(
             row for row in frontier_rows
             if row["capability"].partition(".")[0] == grade)
-        if not grade_rows:
-            raise ValueError("LEARNING_EXPERIMENT_FIXED_FRONTIER_GRADE_MISSING")
-        grade_parent = {
-            row["id"]: frontier_parent[row["id"]] for row in grade_rows}
-        grade_candidate = _predictions(
-            mx, candidate, list(grade_rows), config, answer_ids)
-        grade_scores = paired_outcomes(
-            grade_rows, grade_parent, grade_candidate)
-        fixed = {
-            "status": "MEASURED", "grade": grade,
-            "cohort_sha256": receipt["last_exam"]["cohort_sha256"],
-            "before": sum(value["before"] for value in grade_scores.values()),
-            "after": sum(value["after"] for value in grade_scores.values()),
-            "total": sum(value["total"] for value in grade_scores.values()),
-        }
-        frontier_candidate = dict(grade_candidate)
+        if grade_rows:
+            grade_parent = {
+                row["id"]: frontier_parent[row["id"]] for row in grade_rows}
+            grade_candidate = _predictions(
+                mx, candidate, list(grade_rows), config, answer_ids)
+            grade_scores = paired_outcomes(
+                grade_rows, grade_parent, grade_candidate)
+            fixed = {
+                "status": "MEASURED", "grade": grade,
+                "cohort_sha256": receipt["last_exam"]["cohort_sha256"],
+                "before": sum(value["before"] for value in grade_scores.values()),
+                "after": sum(value["after"] for value in grade_scores.values()),
+                "total": sum(value["total"] for value in grade_scores.values()),
+            }
+            frontier_candidate = dict(grade_candidate)
+        else:
+            fixed = {
+                "status": "NOT_MEASURED",
+                "reason": "ACTIVE_GRADE_ABSENT_FROM_FIXED_FRONTIER",
+            }
         other_rows = tuple(
             row for row in frontier_rows if row not in grade_rows)
         if other_rows:

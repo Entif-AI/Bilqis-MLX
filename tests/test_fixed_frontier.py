@@ -9,6 +9,44 @@ from bilqis_mlx.generated_assessment import make_cohort
 
 
 class FixedFrontierTests(unittest.TestCase):
+    def test_perfect_saved_exam_accepts_empty_miss_list(self):
+        rows = [
+            {"id": "A.LINK:0", "capability": "A.LINK", "gold": "TRUE"},
+            {"id": "C.MUL:0", "capability": "C.MUL", "gold": "FALSE"},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            (run / "cohorts").mkdir()
+            cohort = make_cohort(
+                rows, generator_version="test-generator", seed=7,
+                rubric_version="test-rubric")
+            (run / "cohorts" / f"{cohort.digest}.json").write_text(json.dumps({
+                "schema": "test-rubric",
+                "generator_version": "test-generator",
+                "seed": 7,
+                "cohort_sha256": cohort.digest,
+                "rows": rows,
+            }))
+            receipt = {"last_exam": {
+                "student_sha256": "b" * 64,
+                "optimizer_step": 123,
+                "cohort_sha256": cohort.digest,
+                "cohort_file": f"cohorts/{cohort.digest}.json",
+                "scores": {
+                    "A.LINK": {"correct": 1, "total": 1},
+                    "C.MUL": {"correct": 1, "total": 1},
+                },
+                "misses_for_teacher": [],
+            }}
+            fixed_rows, parent = load_frontier(
+                run, receipt, parent_sha256="b" * 64,
+                parent_optimizer_step=123)
+        self.assertEqual(fixed_rows, tuple(cohort.rows))
+        self.assertEqual(parent, {
+            "A.LINK:0": "TRUE",
+            "C.MUL:0": "FALSE",
+        })
+
     def test_saved_misses_reconstruct_parent_and_new_error_cannot_be_offset(self):
         rows = [
             {"id": "B.NOT:0", "capability": "B.NOT", "gold": "TRUE"},

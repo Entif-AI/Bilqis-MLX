@@ -49,7 +49,9 @@ def load_frontier(run_dir: Path, receipt: dict, *, parent_sha256: str,
     if len({row["id"] for row in rows}) != len(rows):
         raise ValueError("FIXED_FRONTIER_DUPLICATE_ROW")
     by_id = {row["id"]: row for row in rows}
-    misses = exam.get("misses_for_teacher") or ()
+    misses = exam.get("misses_for_teacher")
+    if misses is None:
+        misses = []
     if not isinstance(misses, list):
         raise ValueError("FIXED_FRONTIER_MISSES_INVALID")
     miss_predictions = {}
