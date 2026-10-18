@@ -50,6 +50,15 @@ class GradeATrainerContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "SOURCE_INVENTORY_MISMATCH"):
             accepted_grade_a(tampered)
 
+    def test_fully_withheld_school_grade_is_not_required_in_active_frontier(self):
+        scope = ("A.LINK", "B.NOT", "B.AND", "B.XOR", "C.ADD")
+        self.assertIsNone(trainer._active_frontier_guard_grade(
+            "B", scope, ("B.NOT", "B.AND", "B.XOR")))
+        self.assertEqual(
+            trainer._active_frontier_guard_grade(
+                "B", scope, ("B.NOT", "B.AND")),
+            "B")
+
     def test_exam_reuse_identity_requires_same_checkpoint_and_exam_contract(self):
         school = type("School", (), {
             "grade": "B",
