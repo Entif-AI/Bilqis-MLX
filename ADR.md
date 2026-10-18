@@ -553,7 +553,7 @@ The user corrected two repeated misinterpretations of champion succession. First
 
 Second, a checkpoint from another grade can only contend for a grade's championship **after earning 100% on every capability of that target grade**. It must also score **strictly higher across the complete cumulative school** than each incumbent checkpoint it would replace, with all candidates and incumbents evaluated on the same current source-oracled cohort, rubric, graph and school scope. An aggregate tie, partial grade perfection or incomparable source cohort cannot transfer the roles. A saturated perfect grade may be superseded through the stricter cumulative-performance rule even where breadth cannot grow beyond the grade's total capability count. Per-capability rank from ADR-033 still governs other compatible within-grade succession. Every legitimate change in active role ownership refreshes the affected frozen soup, with vote multiplicity preserved and no model/AdamW substitution.
 
-**Canonical rule and conformance suite:** `docs/specifications/CHAMPIONSHIP_LIFECYCLE_V1.md`. This accepted specification supersedes contrary clauses in ADR-033 through ADR-035 and older AGENTS text, while preserving those documents as historical evidence. Implementation, integration and a human learning trial require separate verified results. No agent may launch the real optimizer.
+**Canonical rule and conformance suite:** `docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md`. This accepted specification supersedes contrary clauses in ADR-033 through ADR-035 and older AGENTS text, while preserving those documents as historical evidence. Implementation, integration and a human learning trial require separate verified results. No agent may launch the real optimizer.
 
 
 ## ADR-053 | 2026-10-17 | Empty championship roster, no baseline mentor, preserve student lineage
@@ -562,7 +562,7 @@ The user refined ADR-052's championship reset because stale champions, including
 
 On explicit human request, the existing isolated #340 mid-Grade-C trial can receive a **one-time, generation-bound, operator-locked, metadata-only administrative championship reset**. It must archive the trial's already-earned active roles/soups, retain the current student and its own AdamW at the actual last committed step, and admit fresh championship contenders only from strictly later optimizer steps. Normal grade admission resets to the same empty roster automatically after intact whole-school graduation, but ordinary resumes and weaker training attempts do not cause repeated resets. The first perfect entire-target-grade checkpoint may earn uncontested roles when there are no active incumbents; subsequent cross-origin replacements still require perfect target-grade mastery **and strictly superior comparable whole-school performance against every displaced incumbent**. Same-grade breadth ranking continues to govern compatible role succession. Only post-reset earned champions/soups advise in training. No model copy, rollback, archive deletion, arbitrary teacher-policy override, or agent-run neural updates.
 
-**Current normative contract:** `docs/specifications/CHAMPIONSHIP_LIFECYCLE_V1.md` as amended for zero-active-champion initialization. ADR-052's description of reassigning all active roles to the graduation baseline is historical and superseded by this ADR.
+**Current normative contract:** `docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md` as amended for zero-active-champion initialization. ADR-052's description of reassigning all active roles to the graduation baseline is historical and superseded by this ADR.
 
 
 ## ADR-054 | 2026-10-17 | Never retain a targeted gain at a larger same-grade cost
@@ -571,7 +571,7 @@ The human observed a B-grade update retained despite one capability gain and gre
 
 Candidate retention now requires complete fresh same-grade paired capability coverage, strictly positive aggregate same-grade correct-answer gain, and a nonregressing complete current-grade fixed-cohort screen whenever that source-bound exam belongs to the same grade and grade-test epoch. Existing cross-grade tolerances and the OR/XOR per-item replay remain separate stricter gates. Do not compare different cohorts or mistake a missing fixed test for an observed pass. Reuse persisted exam rows and model inference where possible; a rejected in-RAM candidate and its native trial AdamW never replace the parent. Preserve earlier student history and feed measured rejection evidence to the existing teacher.
 
-Normative contract: docs/specifications/CANDIDATE_RETENTION_GRADE_NET_V1.md. This is a forward-only change for the existing private human-training fork, without new full-model cloning or agent-run neural updates.
+Normative contract: docs/specifications/0003_CANDIDATE_RETENTION_GRADE_NET_V1.md. This is a forward-only change for the existing private human-training fork, without new full-model cloning or agent-run neural updates.
 
 
 ## ADR-055 | 2026-10-17 | Checkpoint-bound, staged grade qualification; atomic external-grade takeover
@@ -584,7 +584,7 @@ For championships, even a single same-origin perfect-capability title requires c
 
 Do not conflate this bounded championship proof with ordinary scheduled independent cumulative school examinations needed for graduation. Preserve the teacher, student, FP32 parameters, native AdamW, history and zero-baseline championship policy. Neither the assistant nor a source-only test starts real neural optimizer updates.
 
-Normative contracts: docs/specifications/CANDIDATE_RETENTION_GRADE_NET_V1.md and docs/specifications/CHAMPIONSHIP_LIFECYCLE_V1.md, refined in place; ADR-054's eager testing interpretation is superseded here without discarding the earlier reproduced regression evidence.
+Normative contracts: docs/specifications/0003_CANDIDATE_RETENTION_GRADE_NET_V1.md and docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md, refined in place; ADR-054's eager testing interpretation is superseded here without discarding the earlier reproduced regression evidence.
 
 
 ## ADR-056 | 2026-10-18 | Rehearse fragile semantics before admission; reuse unchanged exams; rebase #340 on best-8355
@@ -732,3 +732,16 @@ Before changing the live trainer, disposable experiments were run against an in-
 The repository's preserved historical micro-universe experiment independently corroborates the user's point. That scratch transformer used an explicit staged composition curriculum with focus/composition/contrast/rehearsal and one continuous AdamW for 8,400 updates / 268,800 example exposures. Its archived final report explicitly concludes "partial task acquisition, not robust compositional transfer." Final Boolean held-composite performance was 66/128; final varied Boolean was 71/128. Thus the present Grade-B difficulty is **not** a recent regression caused by removing a previously successful neural composition mechanism, and reintroducing AST language or intermediate truth supervision without new evidence would repeat a falsified direction.
 
 The current evidence instead establishes a narrower negative result: literal Boolean gates are trivially learnable by the exact present model (disposable current-checkpoint AND/OR reach 100% within 32 direct truth-table updates), top-level Grade-A negative relation/equality semantics remain essentially perfect on fresh rows, but the current transformer family/pedagogy has repeatedly failed to turn those capabilities into robust nested compositional transfer. Do not claim another lesson-shaping tweak fixes this unless a disposable held-out experiment first beats the native baseline materially. Preserve ADR-064's ternary-from-scratch fallback as the next major experiment once the human meaningful-growth gate is deemed failed; do not silently copy the same failed compositional pedagogy into a new lineage and call bit-width the only changed variable without recording that limitation.
+
+
+## ADR-067 | 2026-10-18 | The curriculum factory is mandatory runtime architecture, not a parallel source-only prototype
+
+**Direct user correction and restatement of original architecture intent:** Bilqis curriculum growth must be implemented as a functional, compositional, composable, modular, flexible, reusable factory. New grades must not be handwritten as separate trainer/evaluator/admission implementations. The prior repository violated this requirement by building typed AST/compiler/factory work beside the live handwritten school, then admitting Grade B and Grade C through bespoke runtime paths before the generic runtime cutover was complete.
+
+The governing desired state is now `docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md` (**SPEC-0001**). Its runtime invariant is **no factory release, no grade**. Every executable grade must use the same typed factory contracts for semantic identity, source binding, construction, coverage, teaching options, routine assessment, promotion, fresh generalization, release, admission, telemetry and historical compatibility. A source-only compiler beside a grade-specific trainer does not conform.
+
+The implementation packet is `docs/tasks/0001_IMPLEMENT_GENERATIVE_CURRICULUM_FACTORY.md` (**TASK-0001**). It requires A/B/C migration through one factory path, deletion of canonical grade-specific runtime bypasses after verified caller migration, static anti-bypass checks, a synthetic Grade Z extension proof, colocated focused tests, and a structured documentation migration. Existing user-directed championship and candidate-retention specifications are renumbered as SPEC-0002 and SPEC-0003 and remain governing within their domains.
+
+Assessment lifetime must preserve the user's existing no-holdout rule: failed fixed promotion questions and gold remain teachable after scoring, and that promotion attempt may be retried. Promotion success is not treated as out-of-sample proof. SPEC-0001 adds a separate fresh generalization gate so a familiar qualification cohort cannot by itself certify broad mastery. Routine MAIN/RECOVERY assessments remain fresh and dynamic under the earlier direct correction.
+
+Failure intelligence records this architecture defect as `PM-2026-10-18-007` / `RC-105`: the factory remained advisory while a writable legacy grade runtime stayed authoritative. The remediation is structural enforcement, not another instruction asking future agents to remember the intended architecture. Human-only neural optimizer authority, existing student/AdamW custody, historical ABI, receipts and evidence remain unchanged by this ADR.

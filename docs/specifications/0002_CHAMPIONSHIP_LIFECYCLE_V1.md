@@ -1,4 +1,4 @@
-# Bilqis championship, graduation reset, and frozen-mentor specification
+# SPEC-0002: Bilqis championship, graduation reset, and frozen-mentor specification
 
 **Status:** Normative user-directed contract, revision 2 (2026-10-18).
 **Scope:** Bilqis MLX human-run school; source-oracled grade exams, champion roles, cross-grade promotion, soups, curriculum epochs.

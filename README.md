@@ -6,7 +6,9 @@ The former Bilqis implementations are preserved as pinned, read-only source depe
 
 ## Keep training the existing student
 
-**Championship authority:** [Championship lifecycle specification](docs/specifications/CHAMPIONSHIP_LIFECYCLE_V1.md) governs curriculum-boundary resets, same-grade champions, cross-origin takeover and frozen soup eligibility. The opt-in mentor-epoch branch is experimental, not an automatic change to the human's canonical school.
+**Curriculum factory authority:** [`SPEC-0001`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) defines the mandatory end state for semantics-to-grade compilation, release, admission, assessment, generalization, repository structure and extension. The production rule is **no factory release, no grade**. New grades are declarative factory instances; handwritten grade-specific runtime paths are nonconforming. The execution packet is [`TASK-0001`](docs/tasks/0001_IMPLEMENT_GENERATIVE_CURRICULUM_FACTORY.md).
+
+**Championship authority:** [Championship lifecycle specification](docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md) governs curriculum-boundary resets, same-grade champions, cross-origin takeover and frozen soup eligibility. The opt-in mentor-epoch branch is experimental, not an automatic change to the human's canonical school.
 
 ```bash
 cd ~/Code/bilqis-mlx
@@ -42,7 +44,7 @@ npm run dashboard
 npm run diagnostics -- --run-dir ./runs/school-mlx-v1
 ```
 
-**Candidate retention net-grade correction (ADR-054):** A target gain never justifies a larger within-grade loss. Every admitted capability in that grade is checked on a complete equal-size fresh paired panel, which must improve strictly in aggregate. When the current grade has a saved matching whole-grade exam cohort, its fixed score must not regress either. For example, B.XOR +1 versus B.IFF -1 and B.IMPLIES -1 is a rejection, not a retained improvement. See docs/specifications/CANDIDATE_RETENTION_GRADE_NET_V1.md. No previous student optimizer steps are rolled back by this prospective rule.
+**Candidate retention net-grade correction (ADR-054):** A target gain never justifies a larger within-grade loss. Every admitted capability in that grade is checked on a complete equal-size fresh paired panel, which must improve strictly in aggregate. When the current grade has a saved matching whole-grade exam cohort, its fixed score must not regress either. For example, B.XOR +1 versus B.IFF -1 and B.IMPLIES -1 is a rejection, not a retained improvement. See docs/specifications/0003_CANDIDATE_RETENTION_GRADE_NET_V1.md. No previous student optimizer steps are rolled back by this prospective rule.
 
 **Staged scoring refinement (ADR-055/057):** Check the candidate's target first and reject immediately if it makes no gain. Fill only still-missing fresh capabilities in its lesson grade next. Before a complete fixed school frontier exists, keep the original stricter positive-grade/protected-item guards. Once a complete fixed frontier exists, late-stage retention becomes aggregate: the fresh lesson grade, fixed lesson grade, active school grade and whole-school fixed total may tie but must not regress; individual rows/capabilities may trade errors. The saved frontier must belong to the exact current retained parent SHA and native AdamW step; stale-parent frontier evidence fails closed. Protected and OR/XOR item regressions remain diagnostics rather than late-stage vetoes. Champion scoring is separate and unchanged.
 

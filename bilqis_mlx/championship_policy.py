@@ -1,7 +1,7 @@
 """Source-bound, neural-inert cross-origin grade championship eligibility.
 
 This module decides eligibility, not checkpoint ownership or soup materialization.
-See docs/specifications/CHAMPIONSHIP_LIFECYCLE_V1.md.
+See docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md.
 """
 from __future__ import annotations
 

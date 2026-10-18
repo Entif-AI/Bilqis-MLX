@@ -1,4 +1,4 @@
-# Bilqis retained-update grade-net safety specification
+# SPEC-0003: Bilqis retained-update grade-net safety specification
 
 **Status:** Normative for the isolated human-training experiment; 2026-10-18, ADR-054 as refined by ADR-055 through ADR-057.
 **Scope:** Candidate student + own AdamW admission during individual training visits. Separate from championship succession and whole-school graduation.
