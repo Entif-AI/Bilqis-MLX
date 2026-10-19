@@ -1,0 +1,411 @@
+# Executable curriculum closure
+
+## Problem
+
+SPEC-0001 requires one declarative curriculum architecture in which new grades and capability changes flow through a common factory without edits to generic trainer, scheduler, evaluation, promotion, dashboard, checkpoint, or teacher runtime. The present implementation does not satisfy that contract. `FactoryRelease` is compiled and admission-gated, but much of live execution still reconstructs behavior from `Course`, concrete provider modules, release-name switches, CLI flags, and subsystem-local state assumptions. The reduced-Boolean experiment exposed the consequence: changing the active B roster required follow-up repairs in assessment rubric selection, championship source identity, dashboard replay, and stagnation scope.
+
+The architecture therefore has two authorities in practice:
+
+1. the declarative course/factory artifact; and
+2. handwritten runtime/provider knowledge that independently interprets the current release.
+
+The second authority must disappear from canonical execution. Historical compatibility may decode old receipts, but it must not remain an alternative live architecture.
+
+## Usage
+
+The caller should choose a canonical curriculum plus an optional declarative execution profile. It should not choose trainer branches.
+
+```python
+catalog = provider_catalog()
+
+canonical = load_course("bilqis.school/core-v1")
+profile = CurriculumProfile(
+    id="boolean-kernel/and-iff",
+    grades=(
+        GradeProfile(
+            grade_id="B",
+            enabled_capabilities=(
+                "B.AND",
+                "B.IFF",
+                "B.COMPOSITE",
+                "B.IDBOOLOPS",
+            ),
+            capability_constraints=(
+                CapabilityConstraint("B.COMPOSITE", dimensions={
+                    "operators": ("AND", "IFF"),
+                }),
+                CapabilityConstraint("B.IDBOOLOPS", dimensions={
+                    "operators": ("AND", "IFF"),
+                    "answer_values": ("AND", "IFF"),
+                }),
+            ),
+        ),
+    ),
+)
+
+release = compile_executable_curriculum(canonical, profile, catalog)
+runtime = SchoolRuntime.from_release(release, provider_catalog=catalog)
+runtime.resume(run_dir)
+```
+
+The same runtime call must work for an unfamiliar synthetic grade:
+
+```python
+release = compile_executable_curriculum(
+    synthetic_course_z,
+    CurriculumProfile.full(),
+    synthetic_provider_catalog,
+)
+SchoolRuntime.from_release(
+    release,
+    provider_catalog=synthetic_provider_catalog,
+).run_disposable(disposable_student)
+```
+
+No new grade/capability/release name may be added to generic runtime source for either call.
+
+Changing the active Boolean kernel must be a profile-data edit:
+
+```python
+profile = replace(
+    profile,
+    grades=(
+        replace(
+            profile.grades[0],
+            enabled_capabilities=("B.AND", "B.IFF"),
+        ),
+    ),
+)
+```
+
+Compiling that profile must automatically alter every derived runtime projection that depends on the roster. The caller must not edit assessment, stagnation, championship, telemetry, answer-head, or migration code.
+
+## Shape
+
+### Canonical course and executable profile are different things
+
+`Course` remains the canonical semantic curriculum. It answers what Bilqis knows how to teach and how those capabilities relate.
+
+`CurriculumProfile` answers what subset/constraints are active for one executable release. A profile may disable capabilities or narrow declared construction dimensions, but it may not invent semantics, source adapters, answer values, prerequisites, or operations that the canonical course does not authorize.
+
+This removes the current special case where a temporary four-capability B kernel is represented as a different canonical Grade B plus a validator exemption.
+
+```python
+@dataclass(frozen=True)
+class CapabilityConstraint:
+    capability_id: str
+    dimensions: tuple[tuple[str, tuple[str, ...]], ...] = ()
+
+
+@dataclass(frozen=True)
+class GradeProfile:
+    grade_id: str
+    enabled_capabilities: tuple[str, ...] | None = None
+    capability_constraints: tuple[CapabilityConstraint, ...] = ()
+
+
+@dataclass(frozen=True)
+class CurriculumProfile:
+    id: str
+    grades: tuple[GradeProfile, ...] = ()
+```
+
+### The compiler produces the sole live execution contract
+
+`FactoryRelease` must stop being only a certificate over `Course`. It must carry one compiled `ExecutionPlan`.
+
+```python
+@dataclass(frozen=True)
+class CapabilityExecution:
+    capability_id: str
+    grade_id: str
+    stage: int
+    prerequisites: tuple[str, ...]
+    provider_id: str
+    oracle_id: str
+    construction_program_id: str
+    construction_constraints: tuple[tuple[str, tuple[str, ...]], ...]
+    answer_families: tuple[AnswerFamily, ...]
+    exam_item_count: int
+
+
+@dataclass(frozen=True)
+class GradeExecution:
+    grade_id: str
+    capabilities: tuple[str, ...]
+    teaching_stages: tuple[tuple[str, ...], ...]
+    cumulative_scope: tuple[str, ...]
+    assessment_sha256: str
+
+
+@dataclass(frozen=True)
+class ProjectionDigests:
+    roster: str
+    schedule: str
+    assessment: str
+    source: str
+    answer_schema: str
+
+
+@dataclass(frozen=True)
+class ExecutionPlan:
+    profile_id: str
+    grades: tuple[GradeExecution, ...]
+    capabilities: tuple[CapabilityExecution, ...]
+    projection_digests: ProjectionDigests
+```
+
+Generic runtime receives `ExecutionPlan`, not a release-name switchboard. `Course` remains available as release provenance and for historical/source verification, but it is not independently reinterpreted by each runtime subsystem.
+
+### Source specialization is a provider boundary, not a grade boundary
+
+Concrete Boolean/numeric/etc. code is legitimate when it implements a real source-domain constructor or oracle. It belongs behind a provider catalog keyed by declared provider IDs.
+
+The provider interface receives compiled constraints:
+
+```python
+class SourceProvider(Protocol):
+    descriptor: SourceAdapter
+
+    def draw(
+        self,
+        *,
+        capability: CapabilityExecution,
+        seed: int,
+        each: int,
+        source: SourceContext,
+    ) -> tuple[Specimen, ...]: ...
+
+    def check(
+        self,
+        specimen: Specimen,
+        *,
+        capability: CapabilityExecution,
+        source: SourceContext,
+    ) -> bool: ...
+```
+
+There is no `minimal_boolean` provider. The normal Boolean providers receive the `operators=("AND", "IFF")` constraint from the compiled execution plan.
+
+### Release transitions are diffs, not version switches
+
+The compiler compares two releases and derives the transition.
+
+```python
+class SemanticGeometryChange(Enum):
+    UNCHANGED = "UNCHANGED"
+    EXPANDED = "EXPANDED"
+
+
+@dataclass(frozen=True)
+class CurriculumDelta:
+    previous_release_sha256: str
+    next_release_sha256: str
+    added_grades: tuple[str, ...]
+    removed_grades: tuple[str, ...]
+    revised_grades: tuple[str, ...]
+    added_capabilities: tuple[str, ...]
+    removed_capabilities: tuple[str, ...]
+    changed_capabilities: tuple[str, ...]
+    projection_changes: tuple[str, ...]
+    semantic_geometry: SemanticGeometryChange
+```
+
+No generic code asks whether the version is `MINIMAL_BOOLEAN_RELEASE`, `BOOLEAN_IDENTIFICATION_RELEASE`, or `NUMERIC_STAIRCASE_RELEASE`.
+
+The transition executor has exactly two neural-state cases:
+
+1. semantic geometry unchanged: preserve model/AdamW exactly and swap the admitted execution plan;
+2. semantic geometry expanded: invoke the one model-ABI vocabulary expansion boundary, then admit the new execution plan.
+
+Same-grade revision vs appended grade is derived from the delta, not hard-coded by release name.
+
+### Persistent subsystem state is bound to compiler projections
+
+Every durable control-plane structure that depends on curriculum geometry carries the digest of the projection it consumed.
+
+Examples:
+
+- scheduler state binds `schedule`;
+- stagnation state binds `schedule`;
+- assessment/cohort evidence binds `assessment` + `source`;
+- championship title evidence binds `assessment` + `source`;
+- typed answer-head metadata binds `answer_schema`;
+- dashboard active inventory binds `roster`.
+
+On resume or release transition, generic runtime compares stored projection digests with the newly admitted plan.
+
+If a dependency is unchanged, the state remains valid.
+
+If a dependency changed, the generic policy is fail-closed invalidation. A subsystem may define a pure reconciliation function when preservation is semantically safe, such as retaining quarantined capabilities that remain in the new required scope. Reconciliation is keyed by projection kind, never by grade/release/capability names.
+
+This is the structural mechanism that replaces the recent sequence of rubric, championship, dashboard, and stagnation repair patches.
+
+### Telemetry consumes inventory, not historical assumptions
+
+Every curriculum admission/revision event carries the exact executable inventory and projection digests.
+
+The dashboard starts from the currently admitted inventory and overlays historical events only when those events' release/projection identity is compatible with the view being rendered. It does not reconstruct "current B" by replaying every historical B event.
+
+Event names describe event class, not a grade-specific implementation path:
+
+- `SCHOOL_CURRICULUM_ADMITTED`
+- `SCHOOL_CURRICULUM_REVISED`
+- `SCHOOL_EXAM_COMMITTED`
+- `SCHOOL_VISIT_COMMITTED`
+- `SCHOOL_CHAMPIONSHIP_UPDATED`
+
+Grade and capability remain typed event fields.
+
+### Tests compile from declarations
+
+The core conformance proof is mutation-driven.
+
+One synthetic canonical course is compiled under multiple profiles. Tests mutate:
+
+- enabled capability roster;
+- stage membership;
+- prerequisite edge;
+- source/provider binding;
+- answer-family domain;
+- construction constraint.
+
+Each mutation must regenerate exactly the affected projection digests and runtime inventory.
+
+A full synthetic Grade Z disposable system proof must run through the same generic runtime boundary used by the human shell, including:
+
+- admission;
+- teaching schedule;
+- routine assessment;
+- promotion/generalization lifecycle;
+- championship evidence;
+- stagnation containment;
+- telemetry projection;
+- crash/recovery.
+
+The present Grade Z tests are insufficient because they directly exercise generation/admission/scheduler fragments and never prove the actual `operate()` path is grade-neutral.
+
+### Architecture enforcement matches the real invariant
+
+Static conformance must reject more than literal `if grade == "B"`.
+
+Generic runtime modules must reject:
+
+- control decisions on concrete release constants;
+- imports of concrete grade/capability provider modules;
+- capability-ID control dispatch;
+- release-specific answer-head builders;
+- release-specific successor selection;
+- new grade-specific event classes;
+- live provider registries that encode a release/profile as a separate source domain when it is only a constraint over an existing source domain.
+
+Compatibility readers may contain historical identities under `compatibility/`, but canonical live execution cannot import them for policy.
+
+## Synthesis decision
+
+Two shapes were considered.
+
+The selected base is a compiled `ExecutionPlan` inside `FactoryRelease`, plus declarative `CurriculumProfile` overlays and projection-digest-bound runtime state. It directly addresses the observed failure mode while preserving the existing scheduler, source providers, model custody, and immutable historical receipts.
+
+The competing shape was a full event/program interpreter in which the curriculum compiler emits an executable command language and all school behavior becomes a reducer over those commands. That shape is cleaner in the abstract and could eventually subsume the scheduler, but it requires replacing too much verified behavior at once. It increases migration risk without being necessary to eliminate the current split authority.
+
+The selected design borrows the interpreter candidate's most important property: runtime behavior is data-driven and content-addressed, and subsystem state derives validity from the compiled program rather than duplicated handwritten assumptions.
+
+Rejected: a callback/plugin registry for every runtime subsystem. That would merely turn the current grade/release conditionals into registered callbacks and preserve information leakage across scheduler, telemetry, championships, and stagnation.
+
+## Tradeoffs accepted
+
+- We accept compiling a richer immutable release artifact in exchange for removing parallel runtime interpretation of `Course`.
+- We accept invalidating some curriculum-bound evidence after a profile change in exchange for default-safe transition semantics and eliminating bespoke migration repair code.
+- We accept keeping historical release readers under compatibility boundaries in exchange for preserving old receipts without letting history dictate new runtime architecture.
+- We accept one explicit model-ABI graph-expansion boundary in exchange for keeping neural-shape mutation out of the curriculum compiler.
+
+## Alternatives considered
+
+**Full event/program interpreter.** Strongest theoretical closure, because the compiler emits all commands the runtime can execute. It lost for the first migration because it replaces the scheduler and event machinery simultaneously, expanding blast radius while the current experiment still depends on them.
+
+**Registry of per-release/per-grade callbacks.** Small implementation diff, but shallow. Callers would still need to know which callback family applies, and policy would remain duplicated across callback registries. It would hide conditionals without removing them.
+
+**Continue extending `FactoryRelease` as an admission certificate while patching consumers.** Rejected. This is the current architecture and is the demonstrated failure mode.
+
+## Open questions and risks
+
+- Can every current source provider accept declarative construction constraints, or do one or more encode capability/release choices so deeply that they need a one-time provider refactor?
+- Which current persisted evidence can safely reconcile across a profile change, and which should be invalidated by default?
+- Should typed answer-head compilation live directly in the execution-plan compiler or in the model-ABI boundary consuming the plan?
+- Can the current `Course` cardinality rule remain a canonical-authoring constraint once executable profiles are allowed to expose a smaller subset?
+- Which historical release IDs must remain directly resumable, and which can be decoded into an equivalent canonical course + profile only at compatibility load time?
+
+## Next implementation step
+
+Implement `CurriculumProfile`, `ExecutionPlan`, deterministic projection digests, and mutation-closure tests first; do not migrate live runtime callers until that proof can express the reduced-B kernel without any named Boolean/minimal special case.
+
+## Migration sequence
+
+This redesign is an architectural cutover, not permission to maintain both execution paths indefinitely.
+
+### Wave 0: prove the compiled dependency graph
+
+Build `CurriculumProfile`, `ExecutionPlan`, projection digests, and `CurriculumDelta` with synthetic mutation tests. The reduced Boolean kernel must compile from a full canonical A+B declaration without importing or naming a minimal-B release/provider.
+
+Exit gate: mutation tests distinguish roster, schedule, assessment, source, and answer-schema dependencies, and `scripts/check_factory_closure.py` records the complete current split-authority baseline.
+
+### Wave 1: make FactoryRelease carry the executable plan
+
+Persist the profile identity and compiled execution plan in the immutable factory-release artifact. Runtime admission reads the plan from that artifact instead of recompiling policy from `Course` and release constants.
+
+Historical factory-release manifests remain readable through a compatibility decoder that projects them to a full-profile execution plan. The compatibility decoder is not callable as a live successor selector.
+
+Exit gate: a fresh release has one content-addressed artifact containing semantic provenance plus its complete executable projections.
+
+### Wave 2: cut runtime consumers over by projection
+
+Migrate consumers in dependency order:
+
+1. source specimen generation and answer schema;
+2. scheduler/assessment scope;
+3. stagnation and retention scope;
+4. championship evidence identity;
+5. telemetry/current inventory;
+6. CLI preflight/status.
+
+Each consumer accepts the execution plan or its typed projection. It must not accept a release-name flag or rebuild a roster from concrete provider modules.
+
+Exit gate: changing only `CurriculumProfile` changes the live disposable runtime behavior without edits to these consumers.
+
+### Wave 3: replace release-name transitions with release diffs
+
+Move successor lineage and runtime compatibility into typed release metadata. Generic transition execution consumes `CurriculumDelta` plus a semantic-geometry transition contract. Same-grade revision, appended grade, profile revision, and graph growth are derived facts.
+
+Exit gate: `next_successor_plan`, resume reconstruction, and preflight contain no concrete current release IDs.
+
+### Wave 4: delete the parallel architecture
+
+Remove canonical-use paths for:
+
+- minimal-B release/provider identity;
+- exact compact-B validator exception;
+- trainer Boolean-composite/IDBOOLOPS/numeric-staircase transition branches;
+- release-name graph-policy dispatch;
+- grade-specific current event classes;
+- grade/capability-specific generic preservation policy.
+
+Move only immutable historical decoding that remains necessary under `compatibility/`.
+
+Exit gate: current training cannot reach an old live provider path except through explicit historical decoding.
+
+### Wave 5: prove Grade Z through the real runtime
+
+A test-only canonical course, profile, and source provider must run through the same disposable top-level orchestration as the human shell, exercising admission, visit scheduling, routine assessment, recovery, promotion/generalization, championship, stagnation, telemetry, checkpoint/recovery, and stop handling.
+
+No generic source file may change when the test grade is introduced.
+
+Exit gate: SPEC-0001 §11.1 is satisfied in the actual runtime rather than in isolated generation/admission/scheduler unit tests.
+
+### Wave 6: close the checker to zero
+
+`python3 scripts/check_factory_closure.py` must print `FACTORY_CLOSURE_OK`.
+
+The existing weaker architecture checker remains useful for its original checks, but the closure checker becomes the acceptance gate for split curriculum authority.
+
+Only after this gate reaches zero should the factory be described as ready for additional semantic grades or materially more complex curriculum composition.
