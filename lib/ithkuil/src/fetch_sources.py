@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "_raw"
-MANIFEST = ROOT / "sources" / "source_manifest.csv"
+MANIFEST = ROOT / "_data" / "csv" / "sources" / "source_manifest.csv"
 
 BASE = "https://www.ithkuil.net/"
 SOURCES = [

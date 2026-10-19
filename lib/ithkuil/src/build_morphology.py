@@ -21,8 +21,8 @@ from lxml import html
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "_raw"
-DATA = ROOT / "data"
-MANIFEST = ROOT / "sources" / "source_manifest.csv"
+DATA = ROOT / "_data" / "csv"
+MANIFEST = DATA / "sources" / "source_manifest.csv"
 
 
 def clean(value: str | None) -> str:

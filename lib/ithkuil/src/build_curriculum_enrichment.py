@@ -18,9 +18,9 @@ from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WORK = ROOT / "_work" / "curriculum"
-DATA = ROOT / "data"
-SOURCES = ROOT / "sources"
+WORK = ROOT / "_private" / "curriculum"
+DATA = ROOT / "_data" / "csv"
+SOURCES = DATA / "sources"
 WORKBOOK_ID = "1xtOjO0jGCxjU2bgcg0TKpVruJ4Z5O3vW9ixu6oMQ-so"
 WORKBOOK_TITLE = "Bilqis Curriculum Registry - Version, Lessons, Prerequisites and Champion States"
 WORKBOOK_URL = f"https://docs.google.com/spreadsheets/d/{WORKBOOK_ID}/edit"

@@ -8,12 +8,12 @@ The experiment builds a source-traceable relational CSV representation of the cu
 
 The user-required primary tables are:
 
-- `data/morphemes_atomic.csv`: singular morphemes, allomorphs, or atomic grammatical exponents;
-- `data/morpheme_compositions.csv`: constructions, templates, or attested forms containing more than one morpheme.
+- `csv/morphemes_atomic.csv`: singular morphemes, allomorphs, or atomic grammatical exponents;
+- `csv/morpheme_compositions.csv`: constructions, templates, or attested forms containing more than one morpheme.
 
 Supporting relational tables may preserve information that would be lossy in those two flat tables, including source hierarchy, grammatical categories, paradigms/examples, typed entity relationships, and Bilqis crosswalk/provenance.
 
-The current schema is documented in [`SCHEMA.md`](SCHEMA.md). The present snapshot contains 772 atomic surface records and 1,917 composition/template records, plus 3,855 component edges, 200 root-sense rows, 19 explicit C_A allomorph rules, normalized source/category/degree tables, and Bilqis enrichment.
+The current schema is documented in [`../SCHEMA.md`](../SCHEMA.md). The present snapshot contains 772 atomic surface records and 1,917 composition/template records, plus 3,855 component edges, 200 root-sense rows, 19 explicit C_A allomorph rules, normalized source/category/degree tables, and Bilqis enrichment.
 
 ## Ordering boundary
 
@@ -23,23 +23,25 @@ Curriculum teaching order does not belong in the data. Spreadsheet row order, gr
 
 ## Source snapshot
 
-Run:
+From `lib/ithkuil`, run:
 
 ```bash
-python3 scripts/fetch_sources.py
+python3 src/fetch_sources.py
 ```
 
-Raw downloaded source files are written to ignored `_raw/`. `sources/source_manifest.csv` is tracked and records source URLs, content hashes, response metadata, and snapshot time. This keeps the experiment reproducible without vendoring the complete copyrighted source pages into Git.
+Raw downloaded source files are written to ignored `_raw/`. `csv/sources/source_manifest.csv` is tracked and records source URLs, content hashes, response metadata, and snapshot time. This keeps the experiment reproducible without vendoring the complete copyrighted source pages into Git.
+
+The grammar HTML is parsed into the tracked relational tables. The two lexicon PDFs and affix-reference PDF are currently fetched and SHA-pinned as provenance inputs, but their PDF contents are not yet systematically parsed into canonical lexical records. Lexicon references present in the Bilqis enrichment tables therefore remain source-linked registry/adjudication evidence, not proof that the full lexicon has been ingested.
 
 The live Curriculum Registry is exported separately through authenticated Google Drive access. Its workbook bytes are not committed. Derived enrichment rows must retain tab/range provenance and source-state labels.
 
-After the authenticated tab snapshots have been written under ignored `_work/curriculum/`, rebuild the tracked relational data with:
+After the authenticated tab snapshots have been written under ignored `_private/curriculum/`, rebuild the tracked relational data with:
 
 ```bash
-python3 scripts/build_structure.py
-python3 scripts/build_curriculum_enrichment.py
-python3 scripts/build_morphology.py
-python3 scripts/validate_dataset.py
+python3 src/build_structure.py
+python3 src/build_curriculum_enrichment.py
+python3 src/build_morphology.py
+python3 src/validate_dataset.py
 ```
 
 ## Data fidelity

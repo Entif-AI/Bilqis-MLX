@@ -13,8 +13,8 @@ from lxml import html
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data"
-SOURCES = ROOT / "sources"
+DATA = ROOT / "_data" / "csv"
+SOURCES = DATA / "sources"
 
 
 class ValidationError(RuntimeError):
@@ -289,7 +289,7 @@ def main() -> None:
         capture_output=True,
         text=True,
     ).stdout.splitlines()
-    require(not any("/_raw/" in path or "/_work/" in path for path in tracked), "raw or authenticated work cache is tracked by Git")
+    require(not any("/_raw/" in path or "/_private/" in path for path in tracked), "raw or authenticated private cache is tracked by Git")
 
     print(
         "validation=PASS "

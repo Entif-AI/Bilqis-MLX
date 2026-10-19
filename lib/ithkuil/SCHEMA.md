@@ -4,7 +4,7 @@ This experiment separates linguistic entities from source assertions. Stable IDs
 
 ## Primary tables
 
-### `data/morphemes_atomic.csv`
+### `_data/csv/morphemes_atomic.csv`
 
 One row per singular surface exponent, root, or explicitly conditioned allomorph.
 
@@ -18,7 +18,7 @@ Key fields:
 - `derivation`: direct source table, source rule plus table, or another explicit source-backed derivation.
 - `primary_source_*`: one canonical source locus; additional attestations live in `source_assertions.csv`.
 
-### `data/morpheme_compositions.csv`
+### `_data/csv/morpheme_compositions.csv`
 
 One row per source-declared multi-morpheme template or source-derived composition.
 
@@ -55,21 +55,23 @@ The enrichment tables preserve qualified, partial, adapter, compositional, nativ
 
 ## Source manifests
 
-- `sources/source_manifest.csv`: 18 official source identities with URL, byte length, hash, HTTP metadata, and snapshot time.
-- `sources/curriculum_manifest.csv`: authenticated workbook tab/range/hash receipts for the eight tabs used by the experiment.
+- `_data/csv/sources/source_manifest.csv`: 18 official source identities with URL, byte length, hash, HTTP metadata, and snapshot time.
+- `_data/csv/sources/curriculum_manifest.csv`: authenticated workbook tab/range/hash receipts for the eight tabs used by the experiment.
 
 The lower-case grammar-site lexicon and the capitalized lexicon URL used in the Curriculum Registry are separate source identities because their bytes and SHA-256 hashes differ.
 
+The current extractor parses the official grammar HTML. The lexicon and affix-reference PDFs are fetched and hash-pinned in the source manifest, but PDF contents are not yet parsed into the primary relational tables. Any lexicon citation in the Bilqis enrichment tables is therefore a provenance link from the registry/adjudication snapshot, not a canonical full-lexicon extraction.
+
 ## Rebuild and validation
 
-With the authenticated curriculum JSON cache already present in ignored `_work/curriculum/`:
+With the authenticated curriculum JSON cache already present in ignored `_private/curriculum/`, run from `lib/ithkuil`:
 
 ```bash
-python3 scripts/fetch_sources.py
-python3 scripts/build_structure.py
-python3 scripts/build_curriculum_enrichment.py
-python3 scripts/build_morphology.py
-python3 scripts/validate_dataset.py
+python3 src/fetch_sources.py
+python3 src/build_structure.py
+python3 src/build_curriculum_enrichment.py
+python3 src/build_morphology.py
+python3 src/validate_dataset.py
 ```
 
 `validate_dataset.py` checks source and entity cardinalities, foreign keys, composition component counts, core grammar inventory counts, Slot-IV V_R and register/suppletive coverage, exact C_A substitution rules and triggers, explicit root-paradigm coverage, current-vs-historical crosswalk resolution, exclusion of curriculum-order columns across every derived data table, protected URL leakage, LF line endings, and raw/work-cache Git exclusion.
