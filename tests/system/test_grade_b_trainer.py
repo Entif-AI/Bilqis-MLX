@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from bilqis_mlx.grade_a_release import accepted_grade_a, AUTHORITY
 from bilqis_mlx.trainer import (
-    VERSION, _activate_next_admitted_grade, _bundle_pointer,
+    VERSION, _activate_next_admitted_grade, _activate_revised_admitted_grade, _bundle_pointer,
     _draw_live_rows, _fingerprint, _persist,
     _fixed_same_grade_rows, _learning_probe_rows,
     _persist_live_cohort, _recover_orphaned_commit, _seed, _state_from_json,
@@ -23,6 +23,10 @@ from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.live_grade_a import live_course as a_live_course
 from bilqis_mlx.live_grade_b import (GENERATOR as B_GENERATOR, RELEASE as B_RELEASE,
                                     live_course as b_live_course)
+from bilqis_mlx.boolean_composite import (
+    CAPABILITY as B_COMPOSITE, RELEASE as B_COMPOSITE_RELEASE,
+    build_course as composite_b_course,
+)
 from bilqis_mlx.curriculum.scheduler import (Assessment, Score, assess, start_new, visit)
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.diagnostics import DiagnosticStatus, LearningSignal
@@ -140,6 +144,49 @@ class GradeBTrainerTests(unittest.TestCase):
                 recovered = _recover_orphaned_commit(root,receipt)
             self.assertEqual(recovered,updated)
             self.assertEqual(json.loads((root/"state.json").read_text()),updated)
+
+    def test_boolean_composite_revision_preserves_student_and_reopens_b_mastery(self):
+        weights = b"synthetic-composite-migration-model"
+        sha = hashlib.sha256(weights).hexdigest()
+        pointer = Checkpoint(sha, "bundles/student-composite", 153144, True)
+        school = self._graduated_a(pointer)
+        composite = composite_b_course(self.b_course, SOURCE_ROOT)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / pointer.filename
+            bundle.mkdir(parents=True)
+            (bundle / "model-and-own-adamw.safetensors").write_bytes(weights)
+            (bundle / "manifest.json").write_text(json.dumps({
+                "safetensors_sha256": sha, "optimizer_step": pointer.optimizer_step}))
+            receipt = _persist(root, self._receipt(school, pointer))
+            with redirect_stdout(io.StringIO()):
+                admitted = _activate_next_admitted_grade(
+                    root, receipt, self.a_course, self.b_course)
+            old_school = dict(admitted["school"])
+            old_school["champions"] = {
+                **old_school["champions"], "B": asdict(pointer)}
+            old_school["queue"] = [cap.id for cap in self.b_course.grades[-1].capabilities]
+            admitted = {**admitted, "school": old_school,
+                        "last_exam": {"cohort_sha256": "d" * 64},
+                        "qualification_cohort": {"cohort_sha256": "e" * 64}}
+            teacher = json.loads(json.dumps(admitted["teacher"]))
+            with redirect_stdout(io.StringIO()):
+                revised = _activate_revised_admitted_grade(
+                    root, admitted, self.b_course, composite)
+        self.assertEqual(revised["curriculum_mode"], B_COMPOSITE_RELEASE)
+        self.assertEqual(revised["model_bundle"], admitted["model_bundle"])
+        self.assertEqual(revised["teacher"], teacher)
+        self.assertEqual(revised["school"]["current_student"], admitted["school"]["current_student"])
+        self.assertEqual(set(revised["school"]["champions"]), {"A"})
+        self.assertIn(B_COMPOSITE, revised["school"]["queue"])
+        self.assertEqual(len(revised["school"]["queue"]), 7)
+        self.assertIsNone(revised["last_exam"])
+        self.assertNotIn("qualification_cohort", revised)
+        self.assertEqual(revised["curriculum_history"][-1]["revised_grade"], "B")
+        self.assertEqual(revised["curriculum_history"][-1]["retired_grade_champion"],
+                         asdict(pointer))
+        self.assertEqual(revised["mentor_epoch"]["active_roles"], {})
+        self.assertEqual(revised["mentor_epoch"]["active_grade_soups"], {})
 
     def test_grade_b_transition_carries_permanent_settled_match_history_only(self):
         from bilqis_mlx.learning.mentor_epoch import begin_initial_epoch

@@ -18,6 +18,14 @@ def check_connective(row, *, source_root, **_):
             list(micro.encode(row["record"])) == row["tokens"])
 
 
+def check_boolean_composite(row, *, source_root, **_):
+    from ..boolean_composite_oracle import evaluate
+    from ..grade_a_probe import read_sources
+    micro, *_ = read_sources(source_root)
+    return (evaluate(row["record"], row["capability"]) == row["gold"] and
+            list(micro.encode(row["record"])) == row["tokens"])
+
+
 def check_numeric(row, *, graph, **_):
     from ..source_adapters.numeric import decode
     from ..verification.numeric import independent_value

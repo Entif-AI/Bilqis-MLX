@@ -23,6 +23,12 @@ from ..live_grade_b import (
     constructor_digest as _boolean_digest,
     live_course as _boolean_course,
 )
+from ..boolean_composite import (
+    GENERATOR as _BOOLEAN_COMPOSITE_GENERATOR,
+    RELEASE as BOOLEAN_COMPOSITE_RELEASE,
+    build_course as _boolean_composite_course,
+    constructor_digest as _boolean_composite_digest,
+)
 from ..live_grade_c import (
     RELEASE as NUMERIC_RELEASE,
     answer_heads as numeric_answer_heads,
@@ -40,6 +46,7 @@ from ..numeric_staircase import (
 KNOWN_RELEASES = (
     INITIAL_RELEASE,
     BOOLEAN_RELEASE,
+    BOOLEAN_COMPOSITE_RELEASE,
     NUMERIC_RELEASE,
     NUMERIC_STAIRCASE_RELEASE,
 )
@@ -52,6 +59,7 @@ class SuccessorPlan:
 
 
 SAME_GRAPH_TRANSITION = "SAME_GRAPH"
+SAME_GRADE_TRANSITION = "SAME_GRADE"
 GRAPH_GROWTH_TRANSITION = "GRAPH_GROWTH"
 
 
@@ -61,6 +69,10 @@ def initial_course(accepted):
 
 def boolean_successor(previous, source_root):
     return _boolean_course(previous, source_root)
+
+
+def boolean_composite_successor(previous, source_root):
+    return _boolean_composite_course(previous, source_root)
 
 
 def numeric_successor(previous, *, maximum=None):
@@ -76,7 +88,7 @@ def graph_matches_release(version: str | None, graph: dict, manifest: dict,
     """Release-owned graph policy; generic runtime never keys this by grade."""
     if version in (NUMERIC_RELEASE, NUMERIC_STAIRCASE_RELEASE):
         return graph == numeric_registry_graph()
-    if version in (None, INITIAL_RELEASE, BOOLEAN_RELEASE):
+    if version in (None, INITIAL_RELEASE, BOOLEAN_RELEASE, BOOLEAN_COMPOSITE_RELEASE):
         from ..semantics.abi import HISTORICAL_PREFIX_SIZE
         return (len(graph["tokens"]) == HISTORICAL_PREFIX_SIZE and
                 fingerprint(graph) == manifest["parent_student"]["full_student_graph_sha256"])
@@ -94,19 +106,36 @@ def resolve_admitted_courses(historical_course, source_root, saved: dict,
     modes = {saved.get("curriculum_mode")}
     if pending is not None:
         modes.add(pending.get("curriculum_mode"))
-    if (BOOLEAN_RELEASE in modes or NUMERIC_RELEASE in modes or
+    if (BOOLEAN_RELEASE in modes or BOOLEAN_COMPOSITE_RELEASE in modes or
+            NUMERIC_RELEASE in modes or
             NUMERIC_STAIRCASE_RELEASE in modes or
             (include_prospective and
              saved.get("school", {}).get("stage") == "AWAITING_NEXT_GRADE")):
         course_b = course_b or boolean_successor(course_a, source_root)
         courses[course_b.version] = course_b
+    composite_b = None
+    if (BOOLEAN_COMPOSITE_RELEASE in modes or
+            saved.get("grade_c_parent_course_digest") is not None or
+            (include_prospective and saved.get("curriculum_mode") == BOOLEAN_RELEASE)):
+        course_b = course_b or boolean_successor(course_a, source_root)
+        composite_b = boolean_composite_successor(course_b, source_root)
+        courses[composite_b.version] = composite_b
     if (NUMERIC_RELEASE in modes or NUMERIC_STAIRCASE_RELEASE in modes or
-            (include_prospective and saved.get("curriculum_mode") == BOOLEAN_RELEASE and
+            (include_prospective and saved.get("curriculum_mode") == BOOLEAN_COMPOSITE_RELEASE and
              saved.get("school", {}).get("stage") == "AWAITING_NEXT_GRADE")):
+        parent_b = course_b
+        parent_digest = saved.get("grade_c_parent_course_digest")
+        if composite_b is None and parent_digest is not None:
+            composite_b = boolean_composite_successor(course_b, source_root)
+            courses[composite_b.version] = composite_b
+        if composite_b is not None and parent_digest == composite_b.digest():
+            parent_b = composite_b
+        elif saved.get("curriculum_mode") == BOOLEAN_COMPOSITE_RELEASE:
+            parent_b = composite_b
         pinned_maximum = saved.get("numeric_maximum")
         if (pending or {}).get("curriculum_mode") == NUMERIC_RELEASE and pinned_maximum is None:
             pinned_maximum = pending.get("numeric_maximum")
-        course_c, _ = numeric_successor(course_b, maximum=pinned_maximum)
+        course_c, _ = numeric_successor(parent_b, maximum=pinned_maximum)
         courses[course_c.version] = course_c
         if NUMERIC_STAIRCASE_RELEASE in modes:
             active = pending if (pending or {}).get("curriculum_mode") == NUMERIC_STAIRCASE_RELEASE else saved
@@ -142,6 +171,10 @@ def next_successor_plan(current_course, source_root) -> SuccessorPlan | None:
     if current_course.version == INITIAL_RELEASE:
         return SuccessorPlan(boolean_successor(current_course, source_root), SAME_GRAPH_TRANSITION)
     if current_course.version == BOOLEAN_RELEASE:
+        return SuccessorPlan(
+            boolean_composite_successor(current_course, source_root),
+            SAME_GRADE_TRANSITION)
+    if current_course.version == BOOLEAN_COMPOSITE_RELEASE:
         successor, _ = numeric_successor(current_course)
         return SuccessorPlan(successor, GRAPH_GROWTH_TRANSITION)
     return None
@@ -164,6 +197,18 @@ def preflight_successor(current_course, source_root, manifest: dict,
         })
         return {"details": details, "blockers": blockers}
     if current_course.version == BOOLEAN_RELEASE:
+        successor = boolean_composite_successor(current_course, source_root)
+        details.update({
+            "start_behavior": "HUMAN_RESUME_REBIND_CURRENT_GRADE",
+            "next_grade": "B",
+            "next_capability": "B.COMPOSITE",
+            "next_grade_source_checked": successor.executable,
+            "next_grade_rubric_sha256": successor.grades[-1].assessment_sha256,
+            "next_grade_complete_assessment_items": sum(
+                count for grade in successor.grades for _, count in grade.exam_item_counts),
+        })
+        return {"details": details, "blockers": blockers}
+    if current_course.version == BOOLEAN_COMPOSITE_RELEASE:
         from ..grade_c_preflight import qualify
         from ..live_grade_c import (
             REGISTRY_COUNTING_TARGET,
@@ -200,6 +245,8 @@ def release_generator(version: str) -> str:
         return _INITIAL_GENERATOR
     if version == BOOLEAN_RELEASE:
         return _BOOLEAN_GENERATOR
+    if version == BOOLEAN_COMPOSITE_RELEASE:
+        return _BOOLEAN_COMPOSITE_GENERATOR
     # Numeric source identity is carried by the factory SourceAdapter. Runtime
     # telemetry only needs the historical A/B generator labels.
     raise ValueError("FACTORY_RELEASE_HAS_NO_LEGACY_GENERATOR_LABEL:" + str(version))
@@ -209,6 +256,7 @@ def release_code_digest(version: str) -> str:
     providers = {
         INITIAL_RELEASE: _initial_digest,
         BOOLEAN_RELEASE: _boolean_digest,
+        BOOLEAN_COMPOSITE_RELEASE: _boolean_composite_digest,
         NUMERIC_RELEASE: _numeric_digest,
         NUMERIC_STAIRCASE_RELEASE: _staircase_digest,
     }
@@ -230,6 +278,11 @@ def legacy_receipt_fields(version: str) -> dict[str, str]:
             "grade_b_code_sha256": release_code_digest(version),
             "grade_b_generator": release_generator(version),
         }
+    if version == BOOLEAN_COMPOSITE_RELEASE:
+        return {
+            "boolean_composite_code_sha256": release_code_digest(version),
+            "grade_b_generator": release_generator(version),
+        }
     if version == NUMERIC_RELEASE:
         return {"grade_c_code_sha256": release_code_digest(version)}
     if version == NUMERIC_STAIRCASE_RELEASE:
@@ -246,6 +299,7 @@ def verify_release_receipt(receipt: dict, course) -> None:
         return
     field_by_release = {
         BOOLEAN_RELEASE: "grade_b_code_sha256",
+        BOOLEAN_COMPOSITE_RELEASE: "boolean_composite_code_sha256",
         NUMERIC_RELEASE: "grade_c_code_sha256",
         NUMERIC_STAIRCASE_RELEASE: "staircase_code_sha256",
     }

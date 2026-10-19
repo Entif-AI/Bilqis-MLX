@@ -1,9 +1,15 @@
 import json
+import os
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.factory.generation import draw_release_rows
+from bilqis_mlx.factory.live_releases import (
+    BOOLEAN_COMPOSITE_RELEASE, GRAPH_GROWTH_TRANSITION, SAME_GRADE_TRANSITION,
+    boolean_composite_successor, next_successor_plan,
+)
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
@@ -62,6 +68,23 @@ class LiveFactoryReleaseTests(unittest.TestCase):
         actual = draw_release_rows(SOURCE, self.graph, release, self.registry,
                                    seed=47, capability="C.ADD", each=12)
         self.assertEqual(actual, expected)
+
+    def test_composite_release_preserves_b_identity_and_precedes_c(self):
+        self.assertEqual(self.b.digest(),
+                         "fde5e7e3be6d3903fc46dedcc7c1d23907c713d64ce75b3fefd4d8c9a36aa5e2")
+        old_release = compile_factory_release(self.b, self.registry)
+        self.assertEqual(old_release.release_sha256,
+                         "fa02b5de588a47692da54ab542f33df56fd9a5e9e00c0c64a2f447ba8730f8d4")
+        plan = next_successor_plan(self.b, SOURCE)
+        self.assertEqual(plan.transition, SAME_GRADE_TRANSITION)
+        composite = plan.successor
+        self.assertEqual(composite.version, BOOLEAN_COMPOSITE_RELEASE)
+        self.assertEqual(composite, boolean_composite_successor(self.b, SOURCE))
+        with patch.dict(os.environ, {"BILQIS_INTEGER_MAX": "10"}):
+            c_plan = next_successor_plan(composite, SOURCE)
+        self.assertEqual(c_plan.transition, GRAPH_GROWTH_TRANSITION)
+        self.assertEqual(tuple(grade.id for grade in c_plan.successor.grades),
+                         ("A", "B", "C"))
 
 
 if __name__ == "__main__":

@@ -52,13 +52,16 @@ from bilqis_mlx.learning.championship_identity import (
 from .source_adapters.school import live_source_registry
 from .factory.assessment import qualification_complete
 from .factory.live_releases import (
+    BOOLEAN_COMPOSITE_RELEASE,
     BOOLEAN_RELEASE,
     GRAPH_GROWTH_TRANSITION,
     INITIAL_RELEASE,
     KNOWN_RELEASES,
     NUMERIC_RELEASE,
     NUMERIC_STAIRCASE_RELEASE,
+    SAME_GRADE_TRANSITION,
     SAME_GRAPH_TRANSITION,
+    boolean_composite_successor,
     boolean_successor,
     course_for_mode,
     graph_matches_release,
@@ -99,6 +102,7 @@ from bilqis_mlx.runtime.mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
 from bilqis_mlx.curriculum.scheduler import (start_new, visit, assess, assess_withheld, next_capability,
                      append_next_grade, assessment_capabilities,
+                     revise_admitted_grade,
                      reactivate_stagnation_debt, weakest_three,
                      require_assessment_after_flash,
                      assess_flash, SchoolState, Assessment, Score)
@@ -1234,6 +1238,67 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor):
                       **compatibility,
                       "model_and_own_adamw_unchanged": True}
     record = _persist(run_dir, _with_delivery_outbox(record, (admitted,)))
+    _reconcile_delivery_outbox(run_dir, record)
+    return record
+
+
+def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successor):
+    """Persist one neural-inert same-grade capability-inventory revision."""
+    school = _state_from_json(receipt["school"], previous_course)
+    next_state, revised_grade = revise_admitted_grade(
+        previous_course, successor, school)
+    release, release_file, admission = _factory_admission(
+        run_dir, successor, next_state.current_student,
+        receipt["semantic_graph_sha256"])
+    identity = build_school_identity(
+        course_sha256=successor.digest(),
+        semantic_graph_sha256=receipt["semantic_graph_sha256"],
+        parameter_shapes=receipt["parameter_shapes"],
+        factory_release_sha256=release.release_sha256)
+    history = [*receipt.get("curriculum_history", ()), {
+        "release": previous_course.version,
+        "course_digest": previous_course.digest(),
+        "generation": receipt["generation"],
+        "state_file": f"states/{receipt['generation']:07d}.json",
+        "revised_grade": revised_grade,
+        "retired_grade_champion": (
+            asdict(school.champions[revised_grade])
+            if revised_grade in school.champions else None),
+    }]
+    updated = {
+        **receipt, **legacy_receipt_fields(successor.version),
+        "curriculum_mode": successor.version,
+        "curriculum_history": history,
+        "curriculum_parent": receipt.get("curriculum_parent", asdict(school.current_student)),
+        "live_rubric_sha256": successor.grades[-1].assessment_sha256,
+        "factory_release_sha256": release.release_sha256,
+        "factory_release_file": release_file,
+        "factory_admission": asdict(admission),
+        "championship_school_identity": identity,
+        "last_exam": None,
+    }
+    updated.pop("qualification_cohort", None)
+    if updated.get("mentor_epoch") is not None:
+        epoch, _ = enforce_school_identity(
+            updated["mentor_epoch"], identity,
+            generation=receipt["generation"] + 1,
+            student=asdict(school.current_student))
+        updated["mentor_epoch"] = epoch
+    record = _advance(
+        run_dir, updated, next_state,
+        result="ACTIVE_GRADE_" + next_state.grade, persist=False)
+    event = {
+        "event": "SCHOOL_GRADE_RELEASE_REVISED",
+        "generation": record["generation"],
+        "grade": revised_grade,
+        "previous_release": previous_course.version,
+        "release": successor.version,
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "factory_release_sha256": release.release_sha256,
+        "actual_neural_updates": 0,
+    }
+    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
     _reconcile_delivery_outbox(run_dir, record)
     return record
 
@@ -3753,6 +3818,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             max_visits: int = 0, steps_per_visit: int = 16,
             batch_size: int = 32, reserve_gib: float = 100.,
             numeric_staircase: bool = False,
+            boolean_composite: bool = False,
             retention_enabled: bool = True,
             experiment_probe_each: int = 6,
             experiment_mature_max_loss: int = 1,
@@ -3769,7 +3835,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         steps_per_visit=steps_per_visit, batch_size=batch_size,
         source_prefetch_workers=source_prefetch_workers,
         flash_mode=flash_mode,
-        boolean_association_bridge=boolean_association_bridge)
+        boolean_association_bridge=boolean_association_bridge,
+        boolean_composite=boolean_composite)
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
             type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
             type(max_visits) is not int or max_visits < 0 or
@@ -3785,6 +3852,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         raise ValueError("STAGNATION_GRACE_REQUIRES_EXPLICIT_RESUME_REQUEST")
     if flash_mode and not resume:
         raise ValueError("FLASH_MODE_REQUIRES_RESUME")
+    if boolean_composite and not resume:
+        raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_RESUME")
     if boolean_association_bridge and not resume:
         raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME")
     if boolean_association_bridge:
@@ -3844,6 +3913,13 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     admitted_courses=admitted_courses)
             course = course_for_mode(
                 admitted_courses, receipt.get("curriculum_mode"), course)
+            if boolean_composite and receipt.get("curriculum_mode") != BOOLEAN_COMPOSITE_RELEASE:
+                if receipt.get("curriculum_mode") != BOOLEAN_RELEASE:
+                    raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_EXISTING_GRADE_B")
+                successor = boolean_composite_successor(course, source_root)
+                receipt = _activate_revised_admitted_grade(
+                    run_dir, receipt, course, successor)
+                course = successor
             if numeric_staircase and receipt.get('curriculum_mode') != NUMERIC_STAIRCASE_RELEASE:
                 from .numeric_staircase import enroll
                 course, receipt = enroll(
@@ -3854,6 +3930,10 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 if plan is not None:
                     if plan.transition == SAME_GRAPH_TRANSITION:
                         receipt = _activate_next_admitted_grade(
+                            run_dir, receipt, course, plan.successor)
+                        course = plan.successor
+                    elif plan.transition == SAME_GRADE_TRANSITION:
+                        receipt = _activate_revised_admitted_grade(
                             run_dir, receipt, course, plan.successor)
                         course = plan.successor
                     elif plan.transition == GRAPH_GROWTH_TRANSITION:
