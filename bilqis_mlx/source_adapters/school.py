@@ -56,6 +56,7 @@ from ..numeric_staircase import RELEASE as STAIRCASE_RELEASE, constructor_digest
 
 from ..minimal_grade_b import (
     GENERATOR as B_MINIMAL_GENERATOR,
+    OPERATORS as B_MINIMAL_OPERATORS,
     RELEASE as B_MINIMAL_RELEASE,
     constructor_digest as b_minimal_digest,
     draw_minimal,
@@ -319,6 +320,22 @@ def boolean_evidence_dependencies(*, course, capability):
     return ()
 
 
+def minimal_boolean_evidence_dependencies(*, course, capability):
+    """Require composition proof only for operators admitted by reduced Grade B."""
+    del course
+    if capability != B_COMPOSITE_CAPABILITY:
+        return ()
+    return tuple(
+        SupplementalEvidenceSpec(
+            capability_id=capability,
+            kind="COMPOSITION",
+            key="B." + operator,
+            requires_capabilities=("B." + operator,),
+        )
+        for operator in B_MINIMAL_OPERATORS
+    )
+
+
 def live_source_registry() -> SourceAdapterRegistry:
     return SourceAdapterRegistry((
         RegisteredSourceAdapter(SourceAdapter(
@@ -359,7 +376,9 @@ def live_source_registry() -> SourceAdapterRegistry:
             variation_axes=("source-valid", "fresh-seed", "balanced-gold",
                             "and-iff-only", "operator-composition"),
             cohort_releases=((B_MINIMAL_RELEASE, b_minimal_digest()),)),
-            draw_b_minimal_release, check_b_minimal_release),
+            draw_b_minimal_release, check_b_minimal_release,
+            witness=witness_micro_obligation,
+            dependencies=minimal_boolean_evidence_dependencies),
         RegisteredSourceAdapter(SourceAdapter(
             "source.finite-numeric/v1", "bilqis_mlx.numeric_curriculum.draw_numeric",
             (C_ORACLE,), c_digest(), cohort_generator_id=C_COHORT_GENERATOR,

@@ -320,6 +320,11 @@ EVENT_KINDS = {
     "SCHOOL_QUALIFICATION_COMMITTED": "qualification",
     "SCHOOL_FLASH_ASSESSMENT_DEFERRED": "progress",
     "SCHOOL_GRADE_RELEASE_REPLACED": "curriculum",
+    "SCHOOL_AUTONOMY_SOURCE_COVERAGE_BLOCKED": "autonomy",
+    "SCHOOL_AUTONOMY_EVIDENCE_RECORDED": "autonomy",
+    "SCHOOL_AUTONOMY_EVIDENCE_VISIT_COMPLETED": "autonomy",
+    "SCHOOL_AUTONOMY_QUALIFIED_VISIT_COMPLETED": "autonomy",
+    "SCHOOL_AUTONOMY_TEACHING_RECORDED": "autonomy",
 }
 
 
@@ -471,6 +476,7 @@ class SchoolTelemetry:
             "candidate": self._candidate,
             "qualification": self._qualification,
             "progress": self._progress,
+            "autonomy": self._autonomy,
         }[kind](grade, event)
 
     def _init(self, grade, event):
@@ -1068,6 +1074,58 @@ class SchoolTelemetry:
         self.board.push("system", {"kind": "QUALIFICATION", "grade": grade,
             "detail": f"{event.get('status', 'UNKNOWN')}: {event.get('details', '-')}"},
             redraw=False)
+
+    def _autonomy(self, grade, event):
+        """Render receipt-backed autonomous curriculum progress without scoring it."""
+        name = event["event"]
+        capability = event.get("capability")
+        obligation = event.get("obligation")
+
+        if name == "SCHOOL_AUTONOMY_SOURCE_COVERAGE_BLOCKED":
+            debt = event.get("debt")
+            if (not isinstance(debt, (list, tuple)) or not debt or
+                    any(not isinstance(item, str) or not item for item in debt) or
+                    event.get("model_and_optimizer_unchanged") is not True):
+                raise ValueError("SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID")
+            detail = "SOURCE COVERAGE BLOCKED | " + ", ".join(debt)
+        elif name == "SCHOOL_AUTONOMY_EVIDENCE_RECORDED":
+            if (not isinstance(capability, str) or not capability or
+                    not isinstance(obligation, str) or not obligation or
+                    type(event.get("passed")) is not bool or
+                    type(event.get("optimizer_step")) is not int or
+                    any(not isinstance(event.get(field), str) or len(event[field]) != 64
+                        for field in ("cohort_sha256", "student_sha256"))):
+                raise ValueError("SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID")
+            outcome = "PASS" if event["passed"] else "FAIL"
+            detail = (f"{outcome} {capability} | {obligation} | "
+                      f"cohort {event['cohort_sha256'][:12]} | "
+                      f"step {event['optimizer_step']}")
+        elif name == "SCHOOL_AUTONOMY_TEACHING_RECORDED":
+            if (not isinstance(capability, str) or not capability or
+                    not isinstance(obligation, str) or not obligation or
+                    type(event.get("optimizer_step")) is not int or
+                    any(not isinstance(event.get(field), str) or len(event[field]) != 64
+                        for field in ("parent_student_sha256", "student_sha256"))):
+                raise ValueError("SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID")
+            detail = (f"TEACH {capability} | {obligation} | "
+                      f"{event['parent_student_sha256'][:10]} > "
+                      f"{event['student_sha256'][:10]} | step {event['optimizer_step']}")
+        else:
+            if (not isinstance(capability, str) or not capability or
+                    type(event.get("optimizer_step")) is not int or
+                    not isinstance(event.get("student_sha256"), str) or
+                    len(event["student_sha256"]) != 64 or
+                    event.get("retained_optimizer_updates") != 0):
+                raise ValueError("SCHOOL_AUTONOMY_VISIT_RECEIPT_INVALID")
+            action = ("EVIDENCE COMPLETE" if
+                      name == "SCHOOL_AUTONOMY_EVIDENCE_VISIT_COMPLETED"
+                      else "QUALIFIED")
+            detail = (f"{action} {capability} | zero-update scheduler advance | "
+                      f"step {event['optimizer_step']}")
+
+        self.board.push("system", {
+            "kind": "AUTONOMY", "grade": grade, "detail": detail,
+        }, redraw=False)
 
     def _resource(self, grade, event):
         for field in ("free_bytes", "reserve_bytes", "estimated_write_bytes"):

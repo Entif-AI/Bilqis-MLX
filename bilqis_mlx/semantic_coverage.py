@@ -276,9 +276,11 @@ def audit_pinned_micro_generator(plan: dict, source_root, *,
     collected = {}
     report = plan
     rounds = 0
+    in_scope = set(plan.get("capabilities", ()))
     for index in range(max_rounds):
         sample = draw_connectives(source_root, graph, seed=seed + index, each=each)
-        collected.update((row["id"], row) for row in sample)
+        collected.update((row["id"], row) for row in sample
+                         if row.get("capability") in in_scope)
         report = verify_micro_composition_witnesses(
             plan, tuple(collected.values()), micro=micro, graph=graph)
         rounds += 1

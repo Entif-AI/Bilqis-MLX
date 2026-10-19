@@ -1195,6 +1195,49 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertFalse(board.rows["SENTINEL & RETENTION"])
             self.assertFalse(board.rows["SOUP & TEACHER"])
 
+    def test_autonomy_events_are_visible_in_system_telemetry(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {
+                "event": "SCHOOL_AUTONOMY_EVIDENCE_RECORDED",
+                "grade": "B",
+                "generation": 60,
+                "capability": "B.IDBOOLOPS",
+                "obligation": "B.IDBOOLOPS/prerequisite/B.XOR",
+                "passed": False,
+                "cohort_sha256": "a" * 64,
+                "student_sha256": "b" * 64,
+                "optimizer_step": 140000,
+            })
+            ingest(board, {
+                "event": "SCHOOL_AUTONOMY_TEACHING_RECORDED",
+                "grade": "B",
+                "generation": 61,
+                "capability": "B.IDBOOLOPS",
+                "obligation": "B.IDBOOLOPS/prerequisite/B.XOR",
+                "parent_student_sha256": "b" * 64,
+                "student_sha256": "c" * 64,
+                "optimizer_step": 140016,
+            })
+            ingest(board, {
+                "event": "SCHOOL_AUTONOMY_SOURCE_COVERAGE_BLOCKED",
+                "grade": "B",
+                "generation": 62,
+                "debt": ["B.IDBOOLOPS:TRANSFER:SOURCE_PROJECTION_UNSUPPORTED"],
+                "model_and_optimizer_unchanged": True,
+            })
+
+            autonomy = [
+                row for row in board.rows["SYSTEM & QUALIFICATION"]
+                if row.get("kind") == "AUTONOMY"
+            ]
+            self.assertEqual(len(autonomy), 3)
+            self.assertIn("FAIL B.IDBOOLOPS", autonomy[0]["detail"])
+            self.assertIn("B.IDBOOLOPS/prerequisite/B.XOR", autonomy[0]["detail"])
+            self.assertIn("TEACH B.IDBOOLOPS", autonomy[1]["detail"])
+            self.assertIn("SOURCE COVERAGE BLOCKED", autonomy[2]["detail"])
+            self.assertIn("SOURCE_PROJECTION_UNSUPPORTED", autonomy[2]["detail"])
+
     def test_future_schema_version_must_not_silently_reinterpret_events(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())
