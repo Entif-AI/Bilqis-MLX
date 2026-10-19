@@ -1,4 +1,46 @@
-# Championship repair installed (2026-10-18)
+# CURRENT: championship conformance repair queued after durable authority capture (2026-10-19)
+
+**Read this section first. It supersedes conflicting championship instructions below while preserving them as history.**
+
+Current worktree: `/Users/emilie/Code/bilqis-mlx-retention-lab` / `/code/bilqis-mlx-retention-lab`. Branch: `codex/0001-factory-cutover-20261018`. Active human run lineage: `runs/codex-0001-prometheus`. Only the human may start/resume real neural optimizer work. Before any source mutation, re-check for an active human trainer and refuse to hot-edit a running process.
+
+Current governing repository specification is `docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md` **revision 7**, pushed at **`82d3823d7ce5a5e6a5626a28928b75d71b2d3b36`**. The implementation for the 2026-10-19 corrections is **NOT YET COMPLETE**. Do not infer conformance from the older defended-title implementation commit `e75ebb7240b6253229142050d28eefba026a607c`.
+
+Protected work units were created before implementation:
+
+- `socr8s/private-ip#343`: permanent `(capability, unordered checkpoint pair)` title-match idempotence plus strict same-grade champion provenance.
+- `socr8s/private-ip#344`: global archive+clear of **all** active champions and **all** active soups whenever holistic school identity changes.
+- `socr8s/private-ip#345`: quarantine must not suppress complete valid championship contenders; replay the live silent-`12/12` cases.
+
+The same authority has been written and read back in the canonical external records: Specs/Failures Ledger **S095-S098**, **ADR-A58/A59**, **F024-F027**; Curriculum Registry **Decisions 2026-10-19** plus new **Champion Lifecycle** rows; and the governing Google Doc amendment **CA-049 through CA-052 / OBS-16**. Old ledger rule S092 is explicitly marked superseded rather than deleted.
+
+## Exact current championship rules
+
+1. **One fight, period.** For one capability, two checkpoint SHAs may settle exactly one title fight in either direction for the lifetime of the run. Nothing changes that. Duplicate pairing is skipped before championship inference and cannot mutate owner, current score, surviving battery, or evidence. A different capability is a separate title and may have its own first-ever fight. Same-grade fan-out is one-hop, non-recursive, and skips settled pairs.
+2. **Titles are grade-isolated.** Champion and contender checkpoint retained-update origin grade must equal the capability/title grade. Evaluation elsewhere does not relabel origin. Legacy cross-grade live owners are archived/inactivated, not grandfathered. Missing origin provenance fails closed. Individual champion advice is same-grade only; soups are the championship-derived cross-grade influence mechanism while geometry remains compatible.
+3. **Quarantine is not a tournament-wide embargo.** A blocked capability may be withheld, but complete source-valid measurements for other same-grade capabilities still enter championship processing. A valid same-grade `12/12` must be able to open its first-ever pairwise title fight even if some unrelated capability is quarantined.
+4. **Holistic school change clears everything active.** Active roles and soups are valid only under one exact championship school identity, bound at minimum to `course.digest()` / school-wide question inventory, semantic graph, parameter shapes/model geometry, and factory release. Any mismatch archives and clears **all** active roles and soups before advice/defense. Keep the causal student+own AdamW, immutable historical evidence, and permanent settled-match ledger. Do not selectively salvage or automatically re-score old active advisers.
+
+## Live evidence explaining the apparently immortal step-125096 checkpoint
+
+Read-only event reconstruction proves step **125096**, SHA prefix `60d3731d5435`, is **Grade-B origin**, not Grade-A origin. Grade A ended at step 125080; B teaching produced 125096. Under superseded cross-grade rules, a Grade-B MAIN/GENERALIZATION exam then minted all twelve A+B titles at once. Six current A slots were therefore legacy cross-grade contamination.
+
+The old checkpoint also looked superhuman because the same step-125096 incumbent and step-127512 challenger were allowed to fight repeatedly. Each successful defense could refresh/grow the incumbent's surviving battery, creating an incumbent-selected ratchet with observed defense batteries such as A.EDGE 187/187 and A.LINK 227/227. Separately, genuinely new A-origin checkpoints later hit source-valid `12/12` capability-best scores but sometimes received **no championship decision at all**. Root cause is the current `_take_exam()` blanket championship bypass when `blocked_before` or `blocked_after` stagnation quarantine is active. Thus the old champ's apparent immortality is a mixture of real retained A knowledge and three policy defects: cross-grade incumbent contamination, duplicate-pair battery ratcheting, and suppression of valid contenders.
+
+## Next safe execution sequence
+
+1. Commit/push/read back this documentation/governance checkpoint, including ADR-069/070, this HANDOFF, and the scoped AGENTS/README amendments. Do **not** include unrelated or premature implementation edits merely to make the tree clean.
+2. Re-check active trainer/process custody immediately before implementation source mutation.
+3. Add/finish focused failing regressions for settled-pair idempotence, same-grade origin, global school-identity reset, and quarantine-independent contender admission.
+4. Implement a durable settled-match ledger, checkpoint-origin provenance, deterministic championship school identity, lossless global role/soup reset, and capability-local quarantine/title routing.
+5. Backfill/migrate from durable run events fail-closed. Read-only replay against Prometheus must show that legacy B-origin A authority is inactive and prior settled pairs cannot rematch without modifying neural state.
+6. Run focused and widened suites, commit only intended files, push non-force, verify exact remote SHA, update external ledgers/issues and protected session minutes with actual proof.
+
+There are currently uncommitted TDD scaffolds in `bilqis_mlx/learning/tests/test_epoch_championships.py` begun before the user's durability interruption. They are **not implementation proof** and must be reviewed against the now-durable revision-7 contract before continuation. Root `AGENTS.md` and `README.md` also contain uncommitted policy edits and still need the holistic-reset clause integrated before the documentation checkpoint.
+
+---
+
+# HISTORICAL: Championship repair installed (2026-10-18)
 
 Governing private authority: **https://github.com/socr8s/private-ip/issues/336 (#336), verified OPEN**, IPR-0220. Source implementation **`7d879a9920df9fc3d987c485580c0e2885f8f7ea`**, developed on `codex/champion-ownership-20261018` and installed by local fast-forward on **`codex/0001-factory-cutover-20261018`**. This handoff is its documentation successor; use `git rev-parse HEAD` for that successor's identity. No push, main merge, release or issue closure occurred.
 
