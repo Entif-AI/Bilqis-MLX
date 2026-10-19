@@ -9,6 +9,7 @@ from bilqis_mlx.factory.execution import (
     CapabilityProfile, CurriculumProfile, GradeProfile,
     compile_execution_plan, diff_execution_plans,
 )
+from bilqis_mlx.factory.generation import draw_execution_rows
 from bilqis_mlx.factory.model import SourceAdapter
 
 
@@ -22,6 +23,38 @@ def _fixture_rows(*, capability, seed, each, **_):
 
 def _fixture_check(row, **_):
     return row["gold"] in BINARY
+
+
+def _boolean_fixture_rows(*, capability, seed, each,
+                          profile_parameters=None, **_):
+    operators = tuple(
+        (profile_parameters or {}).get("operators", BOOLEAN_OPERATORS))
+    rows = []
+    for index in range(each):
+        operator = operators[index % len(operators)]
+        if capability == "B.IDBOOLOPS":
+            rows.append({
+                "id": f"{capability}:{seed}:{index}",
+                "capability": capability,
+                "answer_kind": "boolean_operator",
+                "operator": operator,
+                "gold": operator,
+            })
+        else:
+            rows.append({
+                "id": f"{capability}:{seed}:{index}",
+                "capability": capability,
+                "answer_kind": "binary",
+                "operator": operator,
+                "gold": "TRUE" if index % 2 else "FALSE",
+            })
+    return tuple(rows)
+
+
+def _boolean_fixture_check(row, **_):
+    if row.get("answer_kind") == "boolean_operator":
+        return row.get("gold") in BOOLEAN_OPERATORS
+    return row.get("gold") in BINARY
 
 
 def _synthetic_course(count=7):
@@ -89,7 +122,9 @@ def _synthetic_boolean_course():
             ("fixture.a-oracle/v1",), "4" * 64), _fixture_rows, _fixture_check),
         RegisteredSourceAdapter(SourceAdapter(
             "fixture.b-adapter/v1", "fixture.b-generator/v1",
-            ("fixture.b-oracle/v1",), "5" * 64), _fixture_rows, _fixture_check),
+            ("fixture.b-oracle/v1",), "5" * 64,
+            profile_dimensions=(("operators", BOOLEAN_OPERATORS),)),
+            _boolean_fixture_rows, _boolean_fixture_check),
     ))
     return course, registry
 
@@ -170,6 +205,15 @@ class ExecutionPlanTests(unittest.TestCase):
         self.assertEqual(
             kernel.grade_map["B"].cumulative_scope,
             tuple(cap.capability_id for cap in kernel.capabilities))
+        rows = draw_execution_rows(
+            None, {}, course, kernel, registry, seed=41)
+        b_rows = [row for row in rows if row["capability"].startswith("B.")]
+        self.assertEqual(len(b_rows), 48)
+        composite = [row for row in b_rows if row["capability"] == "B.COMPOSITE"]
+        identified = [row for row in b_rows if row["capability"] == "B.IDBOOLOPS"]
+        self.assertEqual({row["operator"] for row in composite}, {"AND", "IFF"})
+        self.assertEqual({row["operator"] for row in identified}, {"AND", "IFF"})
+        self.assertEqual({row["gold"] for row in identified}, {"AND", "IFF"})
 
         delta = diff_execution_plans(full, kernel)
         self.assertEqual(
@@ -189,6 +233,30 @@ class ExecutionPlanTests(unittest.TestCase):
                 course,
                 CurriculumProfile("bad", grades=(GradeProfile(
                     "Z", enabled_capabilities=("Z.C0", "Z.MADE_UP"),
+                ),)),
+                registry,
+            )
+
+    def test_profile_cannot_invent_provider_dimension_or_values(self):
+        course, registry = _synthetic_boolean_course()
+        with self.assertRaisesRegex(ValueError, "PROVIDER_DIMENSION_UNDECLARED"):
+            compile_execution_plan(
+                course,
+                CurriculumProfile("bad-dimension", grades=(GradeProfile(
+                    "B", capabilities=(CapabilityProfile(
+                        "B.COMPOSITE",
+                        provider_parameters=(("made_up", ("x",)),)),),
+                ),)),
+                registry,
+            )
+        with self.assertRaisesRegex(
+                ValueError, "PROVIDER_VALUES_NOT_CANONICAL_SUBSET"):
+            compile_execution_plan(
+                course,
+                CurriculumProfile("bad-values", grades=(GradeProfile(
+                    "B", capabilities=(CapabilityProfile(
+                        "B.COMPOSITE",
+                        provider_parameters=(("operators", ("IFF", "AND")),)),),
                 ),)),
                 registry,
             )

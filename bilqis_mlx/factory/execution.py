@@ -224,6 +224,8 @@ def _profiled_grade(course: Course, grade, grade_profile: GradeProfile | None,
             raise ValueError("FACTORY_PROFILE_PREREQUISITE_UNKNOWN:" + cap.id)
         override = cap_profiles.get(cap.id)
         adapter = registry.require(cap.lesson_generator, cap.independent_oracle).descriptor
+        provider_parameters = override.provider_parameters if override else ()
+        adapter.validate_profile_parameters(provider_parameters)
         executions.append(CapabilityExecution(
             capability_id=cap.id,
             grade_id=grade.id,
@@ -232,7 +234,7 @@ def _profiled_grade(course: Course, grade, grade_profile: GradeProfile | None,
             provider_id=adapter.adapter_id,
             oracle_id=cap.independent_oracle,
             construction_program_id=cap.id,
-            provider_parameters=(override.provider_parameters if override else ()),
+            provider_parameters=provider_parameters,
             answer_families=_answer_families(cap, override),
             exam_item_count=counts[cap.id],
         ))
