@@ -906,6 +906,9 @@ class SchoolTelemetryTests(unittest.TestCase):
             message = board.rows["SYSTEM & QUALIFICATION"][-1]["detail"]
             self.assertIn("A.IDENTITY", message)
             self.assertIn("A.LINK", message)
+            self.assertIn("CAPABILITY BEST SAVED", message)
+            self.assertIn("eeeeeeeeee", message)
+            self.assertIn("TITLE SEPARATE", message)
             self.assertIn("NOT grade mastery", message)
             self.assertFalse(board.rows["SENTINEL & RETENTION"])
 

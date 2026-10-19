@@ -618,9 +618,10 @@ class SchoolTelemetry:
             f"{cap} {scores[cap]['correct']}/{scores[cap]['total']}"
             for cap in sorted(caps))
         self.board.push("system", {"kind": "CAP BEST", "grade": grade,
-                        "detail": (f"Best slots: {scored} "
-                                   f"at step {step} | NOT grade mastery")},
-                        redraw=False)
+                        "detail": (f"CAPABILITY BEST SAVED: {scored} at step {step} | "
+                                   f"checkpoint {sha[:10]} | TITLE SEPARATE | "
+                                   f"NOT grade mastery")},
+                        redraw=True)
 
     def _title_correct(self, capability: str, total: int) -> int | None:
         for row in getattr(self.board, "_champion_rows", ()):
