@@ -56,6 +56,12 @@ from .understanding import (
     contract_for_target,
     plan_understanding_evidence,
 )
+from .development_binding import (
+    DevelopmentalBinding,
+    DevelopmentalFrontierItem,
+    DevelopmentalReleasePlan,
+    bind_developmental_release,
+)
 from .release import (
     admit_factory_release,
     compile_factory_release,
@@ -112,4 +118,8 @@ __all__ = (
     "autonomy_projection_inputs",
     "contract_for_target",
     "plan_understanding_evidence",
+    "DevelopmentalBinding",
+    "DevelopmentalFrontierItem",
+    "DevelopmentalReleasePlan",
+    "bind_developmental_release",
 )
