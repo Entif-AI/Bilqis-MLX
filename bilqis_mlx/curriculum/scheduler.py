@@ -726,6 +726,52 @@ def revise_admitted_grade(previous: Course, successor: Course,
     return revised, old_grade.id
 
 
+def replace_admitted_grade(previous: Course, successor: Course,
+                           state: SchoolState) -> tuple[SchoolState, str]:
+    """Neural-inert replacement of the latest admitted grade's capability contract.
+
+    This is intentionally stricter than ordinary revision: it is for a deliberate
+    curriculum winnowing/replacement where the current causal student continues,
+    but the changed grade must re-earn mastery under the new course identity.
+    """
+    verify_state(previous, state)
+    validate(successor)
+    if (previous.program_complete or successor.program_complete or
+            tuple(grade.id for grade in previous.grades) !=
+            tuple(grade.id for grade in successor.grades)):
+        raise ValueError("GRADE_REPLACEMENT_REQUIRES_SAME_PARTIAL_GRADE_PROGRAM")
+    changed = [(old, new) for old, new in zip(previous.grades, successor.grades)
+               if old != new]
+    if len(changed) != 1:
+        raise ValueError("GRADE_REPLACEMENT_REQUIRES_EXACTLY_ONE_CHANGED_GRADE")
+    old_grade, new_grade = changed[0]
+    if old_grade.id != previous.grades[-1].id:
+        raise ValueError("GRADE_REPLACEMENT_REQUIRES_LATEST_ADMITTED_GRADE")
+    if len(new_grade.capabilities) >= len(old_grade.capabilities):
+        raise ValueError("GRADE_REPLACEMENT_MUST_REDUCE_CAPABILITY_INVENTORY")
+
+    champions = dict(state.champions)
+    champions.pop(old_grade.id, None)
+    rebound = replace(
+        state,
+        course_digest=successor.digest(),
+        stage="MAIN",
+        queue=(),
+        first_recovery=(),
+        champions=champions,
+        grade_exam_epoch=state.grade_exam_epoch + 1,
+        introduction_stage=0,
+        main_sweep_visited=(),
+        revalidation_target_grade=None,
+        latest_rubric_digest=None,
+        pending_failures=(),
+        teacher_soup_digest=None,
+    )
+    rebound = _enter_grade(successor, rebound, state.grade_index)
+    verify_state(successor, rebound)
+    return rebound, old_grade.id
+
+
 def continue_after_soup(course: Course, state: SchoolState,
                         *, frozen_teacher_receipt: str) -> SchoolState:
     """Start a new *grade cycle*. The causal student and AdamW are untouched."""

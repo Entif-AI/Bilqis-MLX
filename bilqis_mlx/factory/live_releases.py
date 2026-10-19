@@ -68,6 +68,12 @@ KNOWN_RELEASES = (
     NUMERIC_STAIRCASE_RELEASE,
 )
 
+FULL_BOOLEAN_RELEASES = (
+    BOOLEAN_RELEASE,
+    BOOLEAN_COMPOSITE_RELEASE,
+    BOOLEAN_IDENTIFICATION_RELEASE,
+)
+
 
 @dataclass(frozen=True)
 class SuccessorPlan:
@@ -90,6 +96,19 @@ def boolean_successor(previous, source_root):
 
 def minimal_boolean_successor(previous, source_root):
     return _minimal_boolean_course(previous, source_root)
+
+
+def default_resume_replacement(current_course, grade_a_course, source_root,
+                               *, full_grade_b: bool = False):
+    """Return the default neural-inert profile replacement for an existing run."""
+    if full_grade_b or current_course.version == MINIMAL_BOOLEAN_RELEASE:
+        return None
+    if current_course.version in FULL_BOOLEAN_RELEASES:
+        if (len(current_course.grades) != len(grade_a_course.grades) + 1 or
+                current_course.grades[:-1] != grade_a_course.grades):
+            raise ValueError("MINIMAL_GRADE_B_REPLACEMENT_REQUIRES_DIRECT_SUCCESSOR")
+        return minimal_boolean_successor(grade_a_course, source_root)
+    return None
 
 
 def boolean_composite_successor(previous, source_root):

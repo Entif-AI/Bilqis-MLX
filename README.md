@@ -24,7 +24,7 @@ npm run train -- --human-run --resume --minutes 90
 
 The first command is **read-only** and reports blockers. Only the second, explicitly run by the human, makes neural updates. Both use the default `runs/school-mlx-v1` and the internal historical oracle files. No `--legacy-code-root` flag, another checkout or checkpoint clone is needed. The actual progress and optimizer step always come from the latest `runs/school-mlx-v1/state.json`, not from dated documentation.
 
-**Default Grade B is reduced.** New A→B admission now exposes only `B.AND`, `B.IFF`, an AND/IFF-only `B.COMPOSITE`, and a two-choice AND/IFF `B.IDBOOLOPS`. The preserved six-operator Grade-B lineage is still available with `--full-grade-b` at A→B admission. Existing saved runs always resume their recorded release and are never silently switched between the reduced and full profiles.
+**Default Grade B is reduced.** New A→B admission now exposes only `B.AND`, `B.IFF`, an AND/IFF-only `B.COMPOSITE`, and a two-choice AND/IFF `B.IDBOOLOPS`. Existing A/B-only runs saved on the former full Grade-B releases are neural-inertly winnowed to that same four-capability profile on resume; the exact student + native AdamW are preserved while incompatible active championship/soup authority and stale old-rubric operational evidence are reset. Supply `--full-grade-b` to retain or select the preserved full Boolean lineage explicitly. Old `--boolean-composite` / `--boolean-idboolops` flags do not re-expand minimal B.
 
 ## Resume the isolated issue #340 experiment
 

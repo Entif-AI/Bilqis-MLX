@@ -341,8 +341,67 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
                 count for grade in proposal.grades for _, count in grade.exam_item_counts)}
     snapshot.update(_boolean_revision_preflight(
         run_dir, legacy_root, resume=resume,
-        boolean_composite=boolean_composite, boolean_idboolops=boolean_idboolops,
+        boolean_composite=(boolean_composite if full_grade_b else False),
+        boolean_idboolops=(boolean_idboolops if full_grade_b else False),
         checkpoint_sha256=snapshot.get("checkpoint_sha256")))
+    if resume:
+        from .factory.live_releases import (
+            FULL_BOOLEAN_RELEASES, MINIMAL_BOOLEAN_RELEASE,
+            course_for_mode, default_resume_replacement, initial_course,
+            resolve_admitted_courses,
+        )
+        from .grade_a_release import accepted_grade_a
+        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        accepted = accepted_grade_a(json.loads(GRADE_A_MANIFEST.read_text()))
+        initial = initial_course(accepted)
+        admitted = resolve_admitted_courses(
+            accepted, legacy_root, saved, include_prospective=False)
+        current = course_for_mode(admitted, saved.get("curriculum_mode"), initial)
+        replacement = default_resume_replacement(
+            current, initial, legacy_root, full_grade_b=full_grade_b)
+        if replacement is not None:
+            old_caps = tuple(cap.id for cap in current.grades[-1].capabilities)
+            new_caps = tuple(cap.id for cap in replacement.grades[-1].capabilities)
+            snapshot["grade_b_profile"] = {
+                "profile": "MINIMAL_DEFAULT",
+                "migration_required": True,
+                "previous_release": current.version,
+                "release": replacement.version,
+                "active_capabilities": list(new_caps),
+                "withheld_capabilities": [
+                    cap for cap in old_caps if cap not in set(new_caps)],
+                "grade_b_exam_items": sum(
+                    count for _, count in replacement.grades[-1].exam_item_counts),
+                "source_student_sha256": snapshot.get("checkpoint_sha256"),
+                "championship_field_reset_required": True,
+                "stale_geometry_evidence_deactivated": True,
+                "neural_updates": 0,
+            }
+        elif current.version == MINIMAL_BOOLEAN_RELEASE:
+            snapshot["grade_b_profile"] = {
+                "profile": "MINIMAL_DEFAULT",
+                "migration_required": False,
+                "release": current.version,
+                "active_capabilities": [
+                    cap.id for cap in current.grades[-1].capabilities],
+                "grade_b_exam_items": sum(
+                    count for _, count in current.grades[-1].exam_item_counts),
+                "neural_updates": 0,
+            }
+        elif full_grade_b and current.version in FULL_BOOLEAN_RELEASES:
+            snapshot["grade_b_profile"] = {
+                "profile": "FULL_OPT_IN",
+                "migration_required": False,
+                "release": current.version,
+                "active_capabilities": [
+                    cap.id for cap in current.grades[-1].capabilities],
+                "neural_updates": 0,
+            }
+        if (not full_grade_b and (boolean_composite or boolean_idboolops)):
+            snapshot["legacy_boolean_revision_flags"] = {
+                "ignored": True,
+                "reason": "MINIMAL_GRADE_B_ALREADY_INCLUDES_SIMPLIFIED_COMPOSITE_AND_IDBOOLOPS",
+            }
     if verify_source:
         from .grade_a_manifest import verify_manifest
         source = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
@@ -460,7 +519,7 @@ def parse_args(argv=None):
             p.add_argument('--boolean-idboolops', action='store_true',
                            help='Neural-inertly enroll inverse Boolean primitive identification into Grade B')
             p.add_argument('--full-grade-b', action='store_true',
-                           help='Opt into the legacy/full six-operator Grade B at A-to-B admission; default is reduced AND/IFF B')
+                           help='Opt into/retain the legacy full six-operator Grade B; default admission and existing A/B resume use reduced AND/IFF B')
             retention = p.add_mutually_exclusive_group()
             retention.add_argument('--no-retention', action='store_true',
                                    help='Explicit unprotected legacy teaching (separate independent --run-dir only)')

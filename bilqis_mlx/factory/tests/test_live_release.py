@@ -12,7 +12,7 @@ from bilqis_mlx.factory.live_releases import (
     MINIMAL_BOOLEAN_RELEASE,
     boolean_composite_successor, boolean_identification_successor,
     minimal_boolean_answer_heads, next_successor_plan, numeric_answer_heads,
-    minimal_boolean_successor,
+    minimal_boolean_successor, default_resume_replacement,
 )
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.grade_a_probe import read_sources
@@ -134,6 +134,19 @@ class LiveFactoryReleaseTests(unittest.TestCase):
             self.graph, 10, prior_heads=prior_heads)
         self.assertEqual(
             grown_heads["boolean_operator"]["values"], ["AND", "IFF"])
+
+    def test_existing_full_b_defaults_to_neural_inert_minimal_replacement(self):
+        composite = boolean_composite_successor(self.full_b, SOURCE)
+        identified = boolean_identification_successor(composite, SOURCE)
+        replacement = default_resume_replacement(
+            identified, self.a, SOURCE, full_grade_b=False)
+        self.assertIsNotNone(replacement)
+        self.assertEqual(replacement.version, MINIMAL_BOOLEAN_RELEASE)
+        self.assertEqual(
+            tuple(cap.id for cap in replacement.grades[-1].capabilities),
+            ("B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS"))
+        self.assertIsNone(default_resume_replacement(
+            identified, self.a, SOURCE, full_grade_b=True))
 
 
 if __name__ == "__main__":
