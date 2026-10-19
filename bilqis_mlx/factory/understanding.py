@@ -107,11 +107,16 @@ class UnderstandingEvidencePlan:
         return not self.coverage_debt
 
 
-def contract_for_target(target: DevelopmentalTarget) -> UnderstandingContract:
+def contract_for_target(
+    target: DevelopmentalTarget, *, capability_id: str | None = None,
+) -> UnderstandingContract:
     if not isinstance(target, DevelopmentalTarget):
         raise TypeError("UNDERSTANDING_TARGET_REQUIRED")
+    identity = target.capability_id if capability_id is None else capability_id
+    if not isinstance(identity, str) or not identity:
+        raise ValueError("UNDERSTANDING_CAPABILITY_ID_INVALID")
     return UnderstandingContract(
-        target.capability_id,
+        identity,
         tuple(PROJECTION_SPECS[item] for item in target.projections),
     )
 
