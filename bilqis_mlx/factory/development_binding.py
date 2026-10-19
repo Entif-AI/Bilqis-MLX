@@ -147,7 +147,7 @@ def bind_developmental_release(
             raise ValueError(
                 "DEVELOPMENT_BINDING_PREREQUISITE_TARGET_UNBOUND:" +
                 binding.target_id + ":" + ",".join(sorted(unresolved)))
-        if not expected_prerequisites <= set(definition.prerequisites):
+        if expected_prerequisites != set(definition.prerequisites):
             raise ValueError(
                 "DEVELOPMENT_BINDING_PREREQUISITE_MISMATCH:" +
                 binding.target_id)

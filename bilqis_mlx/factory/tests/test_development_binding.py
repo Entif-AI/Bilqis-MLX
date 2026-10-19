@@ -135,6 +135,56 @@ class DevelopmentalReleaseBindingTests(unittest.TestCase):
                 understanding_plans=(understanding,),
             )
 
+    def test_binding_cannot_silently_add_extra_prerequisites(self):
+        release, staircase, target = fixture()
+        altered = tuple(
+            Capability(
+                **{
+                    **cap.__dict__,
+                    "prerequisites": (
+                        ("A.BASE", "A.OTHER", "A.F3")
+                        if cap.id == "A.STEP" else cap.prerequisites),
+                }
+            )
+            for cap in release.course.grades[0].capabilities
+        )
+        # Rebuild a valid staged course where the extra prerequisite is earlier.
+        reordered = (
+            altered[0], altered[1], altered[3],
+            altered[2], altered[4], altered[5],
+        )
+        grade = Grade(
+            "A", reordered, assessment_sha256="f" * 64,
+            exam_item_counts=tuple((cap.id, 4) for cap in reordered),
+            teaching_stages=(
+                ("A.BASE", "A.OTHER", "A.F3"),
+                ("A.STEP", "A.F4", "A.F5"),
+            ),
+        )
+        course = Course(
+            (grade,), "fixture.development-extra/v1",
+            "b" * 64, "c" * 64)
+        adapter = SourceAdapter(
+            "fixture.development-extra-adapter/v1",
+            "fixture.development/v1",
+            ("fixture.development-oracle/v1",), "d" * 64,
+        )
+        registry = SourceAdapterRegistry((RegisteredSourceAdapter(
+            adapter, lambda **_: (), lambda row, **_: True),))
+        extra_release = compile_factory_release(course, registry)
+        understanding = plan_understanding_evidence(
+            contract_for_target(target, capability_id="A.STEP"),
+            generation_axes=("source-valid",),
+            supported_projections=tuple(target.projections),
+        )
+        with self.assertRaisesRegex(
+                ValueError, "PREREQUISITE_MISMATCH"):
+            bind_developmental_release(
+                staircase, extra_release,
+                bindings=(DevelopmentalBinding("DEV.STEP", "A.STEP"),),
+                understanding_plans=(understanding,),
+            )
+
     def test_binding_projects_exact_understanding_contract_into_autonomy(self):
         release, staircase, target = fixture()
         understanding = plan_understanding_evidence(
