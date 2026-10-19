@@ -154,11 +154,13 @@ def build_course(previous: Course, legacy_root: Path) -> Course:
     _, _, graph, _, _ = read_sources(legacy_root)
     witness = draw_composite(legacy_root, graph, seed=2026101901)
     roots = tuple("cogal.operator." + op for op in CONNECTIVES)
+    atomic_ids = tuple("B." + op for op in CONNECTIVES)
     cap = Capability(
         id=CAPABILITY, difficulty=previous.grades[-1].capabilities[0].difficulty,
         source_anchor="repo:bilqis_micro/kernel.py::_operation+_table",
-        taught_roots=roots, examined_roots=roots, prerequisites=PREREQUISITES,
-        composed_of=(), answer_families=(AnswerFamily("binary", BINARY),),
+        taught_roots=roots, examined_roots=roots,
+        prerequisites=(*PREREQUISITES, *atomic_ids),
+        composed_of=atomic_ids, answer_families=(AnswerFamily("binary", BINARY),),
         lesson_generator=GENERATOR, independent_oracle=ORACLE,
     )
     atomic = tuple(replace(item, lesson_generator=GENERATOR)
@@ -173,7 +175,7 @@ def build_course(previous: Course, legacy_root: Path) -> Course:
     })
     grade = replace(previous.grades[-1], capabilities=(*atomic, cap),
                     assessment_sha256=seal, exam_item_counts=counts,
-                    teaching_stages=())
+                    teaching_stages=(atomic_ids, (CAPABILITY,)))
     course = replace(previous, grades=(*previous.grades[:-1], grade),
                      version=RELEASE, assessment_manifest_sha256=seal)
     if not course.executable:

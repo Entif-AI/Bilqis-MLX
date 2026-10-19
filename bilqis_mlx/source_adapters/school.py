@@ -222,6 +222,15 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
 
     if kind == "COMPOSITION":
         key = getattr(obligation, "key", "")
+        if "@" not in key:
+            if key != producer.id:
+                raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
+            if record.get("task") == "identify_boolean_operator":
+                shape = inspect_boolean_identification(record, row.get("root"))
+            else:
+                shape = inspect_source_query(record.get("query"))
+            return any(root in shape.rooted_operators
+                       for root in producer.examined_roots)
         try:
             producer_id, slot_raw = key.rsplit("@", 1)
             slot = int(slot_raw)

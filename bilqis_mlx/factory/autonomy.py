@@ -102,8 +102,11 @@ def compile_autonomy_plan(
         failure = unresolved.get("failure") if isinstance(unresolved, dict) else None
         if not capability or capability not in capability_ids or not failure:
             raise ValueError("AUTONOMY_COMPOSITION_REPORT_UNRESOLVED_INVALID")
-        debt.append(f"{capability}:UNRESOLVED:{failure}")
-        blocked.add(capability)
+        # Typed discovery is advisory.  Multi-root, inverse, and domain-level
+        # capabilities may have explicit factory dependencies that the generic
+        # signature projection cannot represent.  Preserve that diagnostic
+        # without turning parser incompleteness into learner debt.
+        deferred.append(f"{capability}:UNRESOLVED:{failure}")
 
     for raw in composition_report.get("obligations", ()):
         if not isinstance(raw, dict):
@@ -340,6 +343,15 @@ def obligations_for_capability(
         generation_axes=axes,
         requires_capabilities=(predecessor,),
     ) for predecessor in definition.prerequisites)
+    obligations.extend(EvidenceObligation(
+        obligation_id=f"{capability_id}/composition/{constituent}",
+        capability_id=capability_id,
+        kind=EvidenceKind.COMPOSITION,
+        key=constituent,
+        minimum_specimens=1,
+        generation_axes=axes,
+        requires_capabilities=(constituent,),
+    ) for constituent in declared.composed_of)
     if resolved_plan.source_composition_audited:
         obligations.extend(EvidenceObligation(
             obligation_id=(f"{capability_id}/typed-composition/{edge.producer}/"
@@ -352,16 +364,6 @@ def obligations_for_capability(
             requires_capabilities=(edge.producer,),
         ) for edge in resolved_plan.source_composition_edges
           if edge.consumer == capability_id)
-    else:
-        obligations.extend(EvidenceObligation(
-            obligation_id=f"{capability_id}/composition/{constituent}",
-            capability_id=capability_id,
-            kind=EvidenceKind.COMPOSITION,
-            key=constituent,
-            minimum_specimens=1,
-            generation_axes=axes,
-            requires_capabilities=(constituent,),
-        ) for constituent in declared.composed_of)
 
     identities = tuple(item.obligation_id for item in obligations)
     if len(set(identities)) != len(identities):
