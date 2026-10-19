@@ -34,7 +34,10 @@ class SchoolTelemetryTests(unittest.TestCase):
             ingest(board, exam("A", 30, "rubric-a", {"A.IDENTITY": (8, 12)},
                                step=136))
 
-            mastery = board._section_rows("GRADES & MASTERY")[-1]
+            mastery = next(
+                row for row in board._section_rows("GRADES & MASTERY")
+                if row.get("row_type") == "summary"
+            )
             self.assertEqual(mastery["start"], "10/12")
             self.assertEqual(mastery["latest"], "8/12")
             self.assertEqual(mastery["best"], "10/12")
@@ -124,24 +127,36 @@ class SchoolTelemetryTests(unittest.TestCase):
                  "best": "51/72", "to100": "22", "right_pct": "69.4%",
                  "outcome": "SUMMARY"},
             ])
+            for capability, item in roles.items():
+                board.rows["BRIDGE FAMILIES"].append({
+                    "grade": capability.split(".", 1)[0],
+                    "family": capability,
+                    "step": 200,
+                    "attempt": 9,
+                    "start": f"{item['correct']}/{item['total']}",
+                    "before": "-",
+                    "after": f"{item['correct']}/{item['total']}",
+                    "gain": "-",
+                })
             board.attach_champion_source(root)
 
             rows = board._section_rows("GRADES & MASTERY")
             a_rows = [row for row in rows
                       if row.get("row_type") == "champion" and row["grade"] == "A"]
             self.assertEqual(len(a_rows), 6)
-            self.assertEqual([row["capability"] for row in a_rows[:2]],
-                             ["A.THREE", "A.TWO"])
-            self.assertNotIn("A.SEVEN", {row["capability"] for row in a_rows})
-            self.assertEqual(a_rows[0]["latest"], "-")
-            self.assertEqual(a_rows[0]["best"], "12/12")
-            self.assertIn("CHAMP A.THREE", a_rows[0]["outcome"])
             self.assertEqual(
-                [row["row_type"] for row in rows[:7]],
-                ["summary", "champion", "champion", "champion",
-                 "champion", "champion", "champion"])
-            self.assertEqual(rows[7]["grade"], "B")
-            self.assertEqual(rows[7]["row_type"], "summary")
+                {row["capability"] for row in a_rows},
+                {"A.ONE", "A.TWO", "A.THREE", "A.FOUR", "A.FIVE", "A.SIX"},
+            )
+            seven = next(row for row in rows if row.get("capability") == "A.SEVEN")
+            self.assertEqual(seven["row_type"], "family")
+            three = next(row for row in a_rows if row["capability"] == "A.THREE")
+            self.assertEqual(three["latest"], "12/12")
+            self.assertEqual(three["best"], "12/12")
+            self.assertIn("CHAMP @102", three["outcome"])
+            self.assertEqual(rows[0]["row_type"], "summary")
+            self.assertEqual(rows[8]["grade"], "B")
+            self.assertEqual(rows[8]["row_type"], "summary")
 
             # Champion child rows must not replace grade summaries in the
             # dashboard's whole-school latest score calculation.
@@ -202,6 +217,60 @@ class SchoolTelemetryTests(unittest.TestCase):
                 55,
             )
             self.assertTrue(all(row["best"] == "12/12" for row in champions))
+
+    def test_mastery_panel_folds_family_rows_into_compact_columns(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "state.json").write_text(json.dumps({
+                "mentor_epoch": {"active_roles": {
+                    "B.OR": {
+                        "capability": "B.OR",
+                        "correct": 7,
+                        "total": 12,
+                        "breadth": 5,
+                        "checkpoint": {
+                            "sha256": "a" * 64,
+                            "optimizer_step": 125096,
+                        },
+                    },
+                }},
+            }))
+            board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                              tables=LETTER_TABLES)
+            board.rows["GRADES & MASTERY"].append({
+                "grade": "B", "step": 125656, "attempt": 5463,
+                "start": "30/72", "latest": "39/72", "best": "47/72",
+                "to100": "33", "right_pct": "54.2%",
+                "outcome": "NO TITLE CHANGE | SAMPLE 39/72",
+            })
+            board.rows["BRIDGE FAMILIES"].append({
+                "grade": "B", "family": "B.OR", "step": 125656,
+                "attempt": 5463, "start": "5/12", "before": "6/12",
+                "after": "8/12", "gain": "+2",
+            })
+            board.attach_champion_source(root)
+
+            table_names = [name for name, _ in LETTER_TABLES]
+            self.assertNotIn("BRIDGE FAMILIES", table_names)
+            rows = board._section_rows("GRADES & MASTERY")
+            summary, family = rows
+            self.assertEqual(summary["subject"], "B")
+            self.assertEqual(summary["step_exam"], "125656/5463")
+            self.assertEqual(summary["score_line"], " 30/ 47/ 39/ 72")
+            self.assertEqual(summary["right_grew"], "54% [+13%]")
+            self.assertEqual(summary["outcome"], "NO TITLE CHANGE")
+            self.assertEqual(family["subject"], "B.OR")
+            self.assertEqual(family["step_exam"], "125656/5463")
+            self.assertEqual(family["score_line"], "  5/  7/  8/ 12")
+            self.assertEqual(family["right_grew"], "67% [+25%]")
+            self.assertEqual(family["outcome"], "CHAMP @125096 | br5")
+
+            columns = dict(LETTER_TABLES)["GRADES & MASTERY"]
+            self.assertEqual(
+                [column.name for column in columns],
+                ["FAMILY", "STEP/EXAM", "WAS/TOP/NOW/ALL",
+                 "RIGHT[GREW]%", "OUTCOME"],
+            )
 
     def test_header_latest_uses_newest_generation_across_assessment_scopes(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -360,7 +429,8 @@ class SchoolTelemetryTests(unittest.TestCase):
                         "B.AND":{"correct":b_score//12,"total":12}},
                 })
             mastery = {row["grade"]:row for row in
-                       board._section_rows("GRADES & MASTERY")}
+                       board._section_rows("GRADES & MASTERY")
+                       if row.get("row_type") == "summary"}
             self.assertEqual(set(mastery),{"A","B"})
             self.assertEqual(mastery["B"]["latest"],"5/24")
             self.assertEqual(board._section_rows("BRIDGE FAMILIES")[-1]["gain"],"-")
@@ -383,7 +453,8 @@ class SchoolTelemetryTests(unittest.TestCase):
                                "B.NOT": {"correct": b, "total": 12}},
                 })
             grades = {row["grade"]: row for row in
-                      board._section_rows("GRADES & MASTERY")}
+                      board._section_rows("GRADES & MASTERY")
+                      if row.get("row_type") == "summary"}
             self.assertEqual(grades["A"]["best"], "12/12")
             self.assertEqual(grades["B"]["best"], "12/12")
             rows = [row for row in board.rows["SYSTEM & QUALIFICATION"]
@@ -651,7 +722,8 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(identity["before"], "10/12")
             self.assertEqual(identity["after"], "6/12")
             self.assertEqual(identity["gain"], "-4")
-            mastery = board._section_rows("GRADES & MASTERY")
+            mastery = [row for row in board._section_rows("GRADES & MASTERY")
+                       if row.get("row_type") == "summary"]
             self.assertEqual(len(mastery), 1)
             self.assertEqual(mastery[0]["latest"], "10/24")
             self.assertEqual(mastery[0]["best"], "18/24")
@@ -799,13 +871,10 @@ class SchoolTelemetryTests(unittest.TestCase):
             display = board.render(width=276, height=40)
             self.assertIn("LOSS", display)
             self.assertIn("GRAD", display)
-            self.assertIn("START", display)
-            self.assertNotIn("FIRST", display)
-            self.assertIn("LATEST", display)
-            self.assertIn("BEST", display)
-            self.assertIn("TO100", display)
-            self.assertIn("GAIN", display)
-            self.assertIn("+2", display)
+            self.assertIn("WAS/TOP/NOW/ALL", display)
+            self.assertIn("RIGHT[GREW]%", display)
+            self.assertIn("67% [+17%]", display)
+            self.assertNotIn("BRIDGE FAMILIES", display)
             self.assertIn("1.2e-10", display)
 
     def test_generalization_gap_is_observational_not_an_optimizer_decision(self):

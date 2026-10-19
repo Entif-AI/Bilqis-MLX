@@ -253,23 +253,12 @@ LETTER_TABLES = (
         Column("SUP_CE", 9, "sup", optional=True, right=True),
         Column("PAR_KL", 9, "parent", optional=True, right=True),
         Column("BRG_CE", 9, "bridge_ce", optional=True, right=True))),
-    ("BRIDGE FAMILIES", (
-        Column("GRADE", 5, "grade"),
-        Column("FAMILY", 22, "family"),
-        Column("START", 7, "start", right=True),
-        Column("PREVIOUS", 8, "before", right=True),
-        Column("LATEST", 8, "after", right=True),
-        Column("GAIN", 6, "gain", right=True),
-        Column("EXAM", 5, "attempt", optional=True, right=True))),
     ("GRADES & MASTERY", (
-        Column("GRADE", 5, "grade"),
-        Column("STEP", 9, "step", right=True),
-        Column("START", 7, "start", right=True),
-        Column("LATEST", 7, "latest", right=True),
-        Column("BEST", 7, "best", right=True),
-        Column("TO100", 6, "to100", right=True),
-        Column("RIGHT%", 7, "right_pct", right=True),
-        Column("OUTCOME", 20, "outcome"))),
+        Column("FAMILY", 16, "subject"),
+        Column("STEP/EXAM", 13, "step_exam", right=True),
+        Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
+        Column("RIGHT[GREW]%", 14, "right_grew", right=True),
+        Column("OUTCOME", 26, "outcome"))),
     ("SYSTEM & QUALIFICATION", (
         Column("TYPE", 15, "kind"),
         Column("GRADE", 6, "grade", optional=True),
@@ -436,6 +425,7 @@ class SchoolTelemetry:
             champion = self.champions.get(g)
             self.board.rows["GRADES & MASTERY"].append({
                 "visit": self.visits, "grade": g, "step": report.step or "-",
+                "attempt": report.generation,
                 "start": f"{report.correct}/{report.total}",
                 "latest": f"{report.correct}/{report.total}",
                 "best": f"{best.correct}/{best.total}",
@@ -691,6 +681,7 @@ class SchoolTelemetry:
                 label = f"{'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | {event.get('phase', '?')}"
             self.board.rows["GRADES & MASTERY"].append({
                 "visit": self.visits, "grade": g, "step": step or "-",
+                "attempt": report.generation,
                 "start": f"{start.correct}/{start.total}",
                 "latest": f"{correct}/{total}", "best": f"{best.correct}/{best.total}",
                 "to100": str(total-correct), "right_pct": f"{100*correct/total:.1f}%",

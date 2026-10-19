@@ -96,6 +96,7 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
                                    f"Invalid telemetry event ignored: {str(exc)[:62]}"}, redraw=False)
     if active and not board.rows["GRADES & MASTERY"]:
         board.rows["GRADES & MASTERY"].append({"grade": current_grade, "step": step,
+                 "attempt": "-",
                  "start": "-", "latest": "-", "best": "-", "to100": "-",
                  "right_pct": "-", "outcome": phase})
     return board

@@ -14,6 +14,7 @@ from contextlib import redirect_stdout
 from dataclasses import dataclass
 from fractions import Fraction
 import json
+import re
 from pathlib import Path
 import shutil
 import signal
@@ -103,6 +104,64 @@ def _clean(value):
         "ascii", "replace").decode("ascii")
 
 
+def _score_tuple(value):
+    if not isinstance(value,str) or "/" not in value:
+        return None
+    left,right=value.split("/",1)
+    try:
+        correct,total=int(left),int(right)
+    except ValueError:
+        return None
+    if total<=0 or not 0<=correct<=total:
+        return None
+    return correct,total
+
+
+def _nearest_percent(numerator,denominator):
+    if type(numerator) is not int or type(denominator) is not int or denominator<=0:
+        return None
+    return (numerator*200+denominator)//(2*denominator)
+
+
+def _compact_score_line(start,best,latest):
+    first=_score_tuple(start)
+    top=_score_tuple(best)
+    now=_score_tuple(latest)
+    total=(now or first or top)
+    if total is None:
+        return "-"
+    def value(pair):
+        return f"{pair[0]:>3}" if pair is not None else "  -"
+    return f"{value(first)}/{value(top)}/{value(now)}/{total[1]:>3}"
+
+
+def _right_grew(start,latest):
+    first=_score_tuple(start)
+    now=_score_tuple(latest)
+    if now is None:
+        return "-"
+    right=_nearest_percent(now[0],now[1])
+    if first is None:
+        return f"{right}% [-]"
+    delta=now[0]-first[0]
+    grew=_nearest_percent(abs(delta),now[1])
+    signed=(f"+{grew}%" if delta>0 else f"-{grew}%" if delta<0 else "0%")
+    return f"{right}% [{signed}]"
+
+
+def _step_exam(step,attempt):
+    return f"{_clean(step)}/{_clean(attempt)}"
+
+
+def _compact_summary_outcome(value):
+    text=_clean(value)
+    text=re.sub(r"\s*\|\s*SAMPLE\s+\d+/\d+\b","",text)
+    text=re.sub(r"\s*\|\s*PASS\s+\d+/\d+\b","",text)
+    text=re.sub(r"^(FLASH)\s+SAMPLE\s+\d+/\d+\b",r"\1",text)
+    text=re.sub(r"^((?:GENERATED|SEALED) EXAM)\s+\d+/\d+\b",r"\1",text)
+    return text.strip() or "-"
+
+
 def _cell(value, width, *, right=False):
     text = _clean(value)
     if len(text) > width:
@@ -124,7 +183,8 @@ def _columns(specs, width):
         if drop is None:
             drop = next((c for c in reversed(chosen) if c.key not in
                          ("grade", "decision", "outcome", "detail",
-                          "right_pct")),None)
+                          "right_pct", "subject", "step_exam",
+                          "score_line", "right_grew")),None)
         if drop is None:break
         chosen.remove(drop)
     if sum(s.width for s in chosen) + len(chosen) - 1 > width:
@@ -283,6 +343,10 @@ class Dashboard:
         self.started=self.clock()
         self.tables=tables
         self.rows={name:deque(maxlen=max_records) for name,_ in self.tables}
+        # Some dashboards fold this evidence into another rendered section.
+        # Preserve the bounded read-only source buffer even when it has no
+        # standalone table.
+        self.rows.setdefault("BRIDGE FAMILIES",deque(maxlen=max_records))
         self.state={}
         self.mode="LIVE"
         self.log_hint=""
@@ -338,13 +402,10 @@ class Dashboard:
                         'best':f'{correct}/{total}',
                         'to100':'-',
                         'right_pct':'-',
-                        'outcome':(
-                            f'CHAMP {capability} | title {correct}/{total} '
-                            f'@{checkpoint.get("optimizer_step","-")} | '
-                            f'br{role.get("breadth","-")}'
-                        ),
+                        'outcome':'CHAMP',
                         'checkpoint':str(checkpoint.get('sha256',''))[:10],
-                        '_title_step':checkpoint.get('optimizer_step','-'),
+                        'title_step':checkpoint.get('optimizer_step','-'),
+                        'breadth':role.get('breadth','-'),
                         '_score':Fraction(correct,total),
                         '_breadth':role.get('breadth',0)
                             if type(role.get('breadth')) is int else 0,
@@ -355,7 +416,8 @@ class Dashboard:
                     ranked=sorted(
                         ranked,
                         key=lambda row:(row['_score'],row['_breadth'],
-                                        row['step'] if type(row['step']) is int else -1),
+                                        row['title_step']
+                                        if type(row['title_step']) is int else -1),
                         reverse=True)
                     for row in ranked[:6]:
                         row.pop('_score',None)
@@ -575,19 +637,20 @@ class Dashboard:
             total=len(self.bridge_families) if self.bridge_families else len(available)
             return f'{shown}/{total} families'
         elif name=='GRADES & MASTERY':
-            full=self.grade_program or tuple(row['grade'] for row in available)
+            summaries=[row for row in available if row.get('row_type')=='summary']
+            full=self.grade_program or tuple(row['grade'] for row in summaries)
             total=len(full)
-            champion_shown=sum(row.get('row_type')=='champion' for row in recent)
-            summary_shown=sum(row.get('row_type')!='champion' for row in recent)
+            family_shown=sum(row.get('row_type')!='summary' for row in recent)
+            summary_shown=sum(row.get('row_type')=='summary' for row in recent)
             gtotal=sum(grade.startswith('G') for grade in full)
             btotal=sum(grade.startswith('B') for grade in full)
             gshown=sum(row['grade'].startswith('G') for row in recent
-                       if row.get('row_type')!='champion')
+                       if row.get('row_type')=='summary')
             bshown=sum(row['grade'].startswith('B') for row in recent
-                       if row.get('row_type')!='champion')
+                       if row.get('row_type')=='summary')
             if full and all(len(str(g)) == 1 and str(g).isalpha() for g in full):
-                return f'{summary_shown}/{total} letter grades + {champion_shown} champs'
-            return (f'{summary_shown}/{total} grades + {champion_shown} champs; '
+                return f'{summary_shown}/{total} letter grades + {family_shown} families'
+            return (f'{summary_shown}/{total} grades + {family_shown} families; '
                     f'G{gshown}/{gtotal} B{bshown}/{btotal}')
         return f'{shown}/{len(available)} visible'
 
@@ -610,46 +673,65 @@ class Dashboard:
                 seen.add(identity)
                 distinct.append({**row,'row_type':row.get('row_type','summary')})
         distinct=list(reversed(distinct))
-        if name!='GRADES & MASTERY' or not self._champion_rows:
+        if name!='GRADES & MASTERY':
             return distinct
-        latest_family={}
-        for family_row in self.rows.get('BRIDGE FAMILIES',()):
-            family=family_row.get('family')
-            if family:
-                latest_family[family]=family_row
-        champions={}
-        for row in self._champion_rows:
-            projected=dict(row)
-            observed=latest_family.get(row['capability'])
-            if observed is not None and observed.get('grade')==row['grade']:
-                latest=observed.get('after')
-                if isinstance(latest,str) and '/' in latest:
-                    left,right=latest.split('/',1)
-                    try:
-                        correct,total=int(left),int(right)
-                    except ValueError:
-                        pass
-                    else:
-                        if total>0 and 0<=correct<=total:
-                            projected.update(
-                                step=observed.get('step','-'),
-                                start=observed.get('start','-'),
-                                latest=latest,
-                                to100=str(total-correct),
-                                right_pct=f'{100*correct/total:.1f}%',
-                            )
-            projected.pop('_title_step',None)
-            champions.setdefault(row['grade'],[]).append(projected)
+        champion_by_cap={row['capability']:row for row in self._champion_rows}
+        latest_families=self._section_rows('BRIDGE FAMILIES')
+        families={}
+        for observed in latest_families:
+            family=observed.get('family')
+            grade=observed.get('grade')
+            if not family or not grade:
+                continue
+            title=champion_by_cap.get(family)
+            start=observed.get('start','-')
+            latest=observed.get('after','-')
+            best=title.get('best','-') if title is not None else '-'
+            parsed=_score_tuple(latest)
+            family_row={
+                **observed,
+                'row_type':'champion' if title is not None else 'family',
+                'capability':family,
+                'subject':family,
+                'start':start,
+                'latest':latest,
+                'best':best,
+                'step_exam':_step_exam(observed.get('step','-'),
+                                       observed.get('attempt','-')),
+                'score_line':_compact_score_line(start,best,latest),
+                'right_grew':_right_grew(start,latest),
+                'right_pct':(
+                    f'{100*parsed[0]/parsed[1]:.1f}%' if parsed is not None else '-'),
+                'to100':(
+                    str(parsed[1]-parsed[0]) if parsed is not None else '-'),
+                'outcome':(
+                    f'CHAMP @{title.get("title_step","-")} | '
+                    f'br{title.get("breadth","-")}'
+                    if title is not None else '-'),
+            }
+            families.setdefault(grade,[]).append(family_row)
         combined=[]
         for row in distinct:
-            combined.append(row)
-            combined.extend(champions.pop(row['grade'],()))
-        for grade in sorted(champions):
-            combined.extend(champions[grade])
+            summary={
+                **row,
+                'row_type':'summary',
+                'subject':row.get('grade','-'),
+                'step_exam':_step_exam(row.get('step','-'),row.get('attempt','-')),
+                'score_line':_compact_score_line(
+                    row.get('start','-'),row.get('best','-'),row.get('latest','-')),
+                'right_grew':_right_grew(row.get('start','-'),row.get('latest','-')),
+                'outcome':_compact_summary_outcome(row.get('outcome','-')),
+            }
+            combined.append(summary)
+            combined.extend(families.pop(row['grade'],()))
+        for grade in sorted(families):
+            combined.extend(families[grade])
         return combined
 
     def _wide_pane(self,names,width,body_height,height):
         """Stack each pane's sections without borrowing another pane's rows."""
+        if not names:
+            return [""]*body_height
         if len(names)==1:
             quotas={names[0]:min(len(self.rows[names[0]]),body_height-2)}
         elif names[0]=='BRIDGE FAMILIES':
@@ -680,7 +762,10 @@ class Dashboard:
     def _render_wide(self,headers,footer,*,width,height):
         widths=_pane_widths(width)
         body_height=height-len(headers)-(3 if self.champion_line else 2)
-        panes=[self._wide_pane(names,pane_width,body_height,height)
+        available=set(dict(self.tables))
+        panes=[self._wide_pane(
+                   tuple(name for name in names if name in available),
+                   pane_width,body_height,height)
                for names,pane_width in zip(WIDE_PANES,widths)]
         lines=[_clean(header)[:width] for header in headers]
         for row in zip(*panes):

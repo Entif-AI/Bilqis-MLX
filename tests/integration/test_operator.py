@@ -9,7 +9,7 @@ from unittest.mock import patch
 from bilqis_mlx.cli import main,parse_args,DEFAULT_RUN,ORIGINAL_CHECKPOINT
 from bilqis_mlx.presentation.spiral_dashboard import TABLES, Dashboard
 from bilqis_mlx.presentation.dashboard import build, ingest
-from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry
+from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TABLES
 
 
 class OperatorTests(unittest.TestCase):
@@ -428,7 +428,9 @@ class OperatorTests(unittest.TestCase):
                 }}) + "\n")
             board = build(run, stream=io.StringIO())
             output = board.render(width=115, height=38)
-            self.assertIn("SEALED EXAM 36/72", output)
+            self.assertIn("SEALED EXAM | RECOVERY_1", output)
+            self.assertIn("36/ 36/ 36/ 72", output)
+            self.assertIn("50% [0%]", output)
             self.assertIn("50.0%", output)
             self.assertIn("RECOVERY_1", output)
             self.assertFalse((run / "state.json").exists())
@@ -447,17 +449,21 @@ class OperatorTests(unittest.TestCase):
             self.assertIn("116776", shown)
             self.assertIn("exam pending", shown)
 
-    def test_six_panel_renderer_still_has_same_names_and_rows(self):
+    def test_letter_renderer_folds_bridge_families_into_mastery(self):
         self.assertEqual([name for name,_ in TABLES],[
             "CANDIDATES","SENTINEL & RETENTION","SOUP & TEACHER",
             "BRIDGE FAMILIES","GRADES & MASTERY","SYSTEM & QUALIFICATION"])
+        self.assertEqual([name for name,_ in LETTER_TABLES],[
+            "CANDIDATES","SENTINEL & RETENTION","SOUP & TEACHER",
+            "GRADES & MASTERY","SYSTEM & QUALIFICATION"])
         with tempfile.TemporaryDirectory() as tmp:
             out=io.StringIO()
             with redirect_stdout(out):
                 result=main(["dashboard","--run-dir",tmp])
             self.assertEqual(result,0)
-            for name,_ in TABLES:
+            for name,_ in LETTER_TABLES:
                 self.assertIn(name,out.getvalue())
+            self.assertNotIn("BRIDGE FAMILIES",out.getvalue())
             self.assertIn("READY_FOR_HUMAN_START",out.getvalue())
 
     def test_explicit_resume_only_and_training_is_hard_blocked(self):
