@@ -170,11 +170,9 @@ def load_replay_rows(run_dir: Path, receipt: dict) -> tuple[dict, ...]:
         raise ValueError("FRAGILE_REPLAY_INCOMPLETE_B_COHORT")
     for name in CAPABILITIES:
         group = [row for row in rows if row["capability"] == name]
-        if (len(group) != 12 or
-                scores[name].get("total") != 12 or
-                sum(row["gold"] == "TRUE" for row in group) != 6 or
-                sum(row["gold"] == "FALSE" for row in group) != 6):
-            raise ValueError("FRAGILE_REPLAY_UNBALANCED_B_COHORT")
+        if len(group) != 12 or scores[name].get("total") != 12:
+            raise ValueError("FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY")
+        observed_patterns = set()
         for row in group:
             args = row["record"]["query"]["args"]
             pattern = [operand_truth(row["record"]["world"], arg) for arg in args]
@@ -182,6 +180,9 @@ def load_replay_rows(run_dir: Path, receipt: dict) -> tuple[dict, ...]:
                     grade_b_gold(row["record"], name) != row["gold"] or
                     not row.get("tokens")):
                 raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
+            observed_patterns.add(tuple(pattern))
+        if observed_patterns != set(TRUTH_PATTERNS):
+            raise ValueError("FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE")
     return rows
 
 
