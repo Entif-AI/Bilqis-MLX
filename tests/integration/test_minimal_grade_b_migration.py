@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.boolean_composite import build_course as build_composite
 from bilqis_mlx.boolean_identification import build_course as build_identification
@@ -18,7 +19,10 @@ from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.state import _fingerprint
-from bilqis_mlx.trainer import VERSION, _activate_replaced_admitted_grade
+from bilqis_mlx.runtime.assessment import _candidate_cohort, _introduced_cohort
+from bilqis_mlx.trainer import (
+    VERSION, _activate_replaced_admitted_grade, _commit_scored_student,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -91,6 +95,7 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
                 root / "events.jsonl").read_text().splitlines()]
 
         self.assertEqual(revised["curriculum_mode"], MINIMAL_BOOLEAN_RELEASE)
+        self.assertEqual(revised["live_rubric_sha256"], self.new.grades[0].assessment_sha256)
         self.assertEqual(revised["model_bundle"], receipt["model_bundle"])
         self.assertEqual(
             revised["school"]["current_student"],
@@ -121,6 +126,43 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
         self.assertEqual(
             set(events[-1]["withheld_capabilities"]),
             {"B.NOT", "B.OR", "B.XOR", "B.IMPLIES"})
+
+
+    def test_a_candidate_after_minimal_b_migration_uses_a_scope_rubric(self):
+        student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
+        school = start_new(self.new, student)
+        receipt = {
+            "school": asdict(school),
+            "generation": 1,
+            "run_id": "minimal-b-a-scope",
+            "source_manifest_sha256": self.manifest["manifest_sha256"],
+            "live_rubric_sha256": self.new.grades[0].assessment_sha256,
+            "config": {},
+            "answer_ids": [],
+            "capability_best": {},
+            "graduation_perfect": {},
+        }
+        class Step:
+            def item(self):
+                return student.optimizer_step
+        class Optimizer:
+            state = {"step": Step()}
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            cohort = _candidate_cohort(
+                root, receipt, self.manifest, self.new, SOURCE, self.graph)
+            cohort, _ = _introduced_cohort(
+                root, self.manifest, self.new, school, cohort)
+            predictions = {row["id"]: row["gold"] for row in cohort.rows}
+            with patch("bilqis_mlx.trainer._bundle_pointer", return_value=student):
+                _, frontier, roles, _ = _commit_scored_student(
+                    None, root, receipt, self.manifest, self.new, school,
+                    cohort, predictions, {}, Optimizer(), self.graph, reserve_gib=1)
+        self.assertTrue(roles)
+        self.assertTrue(frontier)
+        self.assertEqual(
+            {item["rubric"] for item in frontier.values()},
+            {self.new.grades[0].assessment_sha256})
 
 
 if __name__ == "__main__":

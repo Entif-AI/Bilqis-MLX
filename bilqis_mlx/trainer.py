@@ -1241,7 +1241,8 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor,
             successor.version, receipt["config"], graph)
     candidate = {**receipt, **compatibility, "curriculum_mode": successor.version,
                  **config_update,
-                 "live_rubric_sha256": successor.grades[-1].assessment_sha256,
+                 "live_rubric_sha256": assessment_rubric_for_scope(
+                     successor, assessment_capabilities(successor, next_state)),
                  "factory_release_sha256": release.release_sha256,
                  "factory_release_file": release_file,
                  "factory_admission": asdict(admission),
@@ -1308,7 +1309,8 @@ def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successo
         "curriculum_mode": successor.version,
         "curriculum_history": history,
         "curriculum_parent": receipt.get("curriculum_parent", asdict(school.current_student)),
-        "live_rubric_sha256": successor.grades[-1].assessment_sha256,
+        "live_rubric_sha256": assessment_rubric_for_scope(
+            successor, assessment_capabilities(successor, next_state)),
         "factory_release_sha256": release.release_sha256,
         "factory_release_file": release_file,
         "factory_admission": asdict(admission),
@@ -1382,7 +1384,8 @@ def _activate_replaced_admitted_grade(run_dir, receipt, previous_course, success
             successor.version, receipt["config"], graph),
         "curriculum_mode": successor.version,
         "curriculum_history": history,
-        "live_rubric_sha256": successor.grades[-1].assessment_sha256,
+        "live_rubric_sha256": assessment_rubric_for_scope(
+            successor, assessment_capabilities(successor, next_state)),
         "factory_release_sha256": release.release_sha256,
         "factory_release_file": release_file,
         "factory_admission": asdict(admission),
@@ -2755,7 +2758,7 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
             not set(materialized) <= set(allowed_scope)):
         raise ValueError("CHAMPIONSHIP_EPOCH_INCOMPLETE_EXAM")
     scope = tuple(cap for cap in allowed_scope if cap in set(materialized))
-    rubric, _, _, _ = _cohort_contract(course)
+    rubric = assessment_rubric_for_scope(course, scope)
     checkpoint_origin_grade = receipt.get(
         "championship_checkpoint_origins", {}).get(school.current_student.sha256)
     context = {
@@ -3098,16 +3101,20 @@ def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
     If none improve, the single live student still needs a replaceable
     recovery point. This is NOT a champion or an additional archive slot.
     """
-    rubric, cohort_release, _, _ = _cohort_contract(course)
+    _, cohort_release, _, _ = _cohort_contract(course)
     full_allowed = set(assessment_capabilities(course, school))
     allowed = (set(allowed_capabilities) if allowed_capabilities is not None
                else set(full_allowed))
     if not allowed or not allowed <= full_allowed:
         raise ValueError("HUMAN_TRAINER_PARTIAL_EVALUATION_SCOPE_DRIFT")
+    rubric = assessment_rubric_for_scope(course, allowed)
+    known_rubrics = {grade.assessment_sha256 for grade in course.grades}
+    live_rubric = receipt.get("live_rubric_sha256")
+    if live_rubric is not None and live_rubric not in known_rubrics:
+        raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_IDENTITY_DRIFT")
     expected = {cap: count for grade in course.grades
                 for cap, count in grade.exam_item_counts if cap in allowed}
-    if (receipt.get("live_rubric_sha256", rubric) != rubric or
-            cohort.rubric_version != cohort_release or
+    if (cohort.rubric_version != cohort_release or
             len(cohort.rows) != sum(expected.values())):
         raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_SCOPE_DRIFT")
     grades = score_cohort(cohort, predictions, {
@@ -3453,7 +3460,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     _require_active_stagnation_scope(active_scope)
     parent_checkpoint = school.current_student
     _, release, generator, _ = _cohort_contract(course)
-    rubric = assessment_rubric_for_scope(course, full_scope)
+    rubric = assessment_rubric_for_scope(course, active_scope)
     routine_cohort, _ = _grade_test_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
     routine_cohort, routine_file = _introduced_cohort(
@@ -3864,7 +3871,8 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
         if cap not in set(blocked))
     if not active_scope:
         raise ValueError("STAGNATION_STOP_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES")
-    rubric, release, generator, _ = _cohort_contract(course)
+    _, release, generator, _ = _cohort_contract(course)
+    rubric = assessment_rubric_for_scope(course, active_scope)
     exam_cohort, _ = _grade_test_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
     cohort = _candidate_cohort(run_dir, receipt, manifest, course, source_root, graph)

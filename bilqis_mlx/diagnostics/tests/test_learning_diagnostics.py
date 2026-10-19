@@ -264,6 +264,13 @@ class DiagnosticObservationTests(unittest.TestCase):
         self.assertEqual(finding.status, DiagnosticStatus.OBSERVED_LONGITUDINALLY)
         self.assertEqual(finding.evidence_count, 2)
 
+    def test_exam_observation_separates_cohort_provenance_from_assessment_rubric(self):
+        cohort, last = constructed_exam(predicted=("FALSE",) * 12)
+        cohort["rubric_sha256"] = "c" * 64
+        last["exam_rubric_sha256"] = "d" * 64
+        observed = observe_binary_exam(cohort, last)
+        self.assertEqual(observed.rubric_sha256, "d" * 64)
+
     def test_extra_score_capability_and_negative_step_are_rejected(self):
         cohort, last = constructed_exam(predicted=("FALSE",) * 12)
         bad = deepcopy(last)

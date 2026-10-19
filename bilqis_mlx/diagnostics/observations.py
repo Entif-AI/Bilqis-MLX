@@ -146,7 +146,6 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
             cohort.get("cohort_sha256") != last_exam.get("cohort_sha256") or
             cohort.get("seed") != last_exam.get("cohort_seed") or
             cohort.get("generator_version") != last_exam.get("generator_version") or
-            cohort.get("rubric_sha256") != last_exam.get("exam_rubric_sha256") or
             type(last_exam.get("optimizer_step")) is not int or
             last_exam["optimizer_step"] < 0):
         raise ValueError("DIAGNOSTIC_EXAM_CUSTODY_MISMATCH")
@@ -215,7 +214,7 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
             prediction_counts=tuple(sorted(prediction_counts.items())),
         ))
     return ExamObservation(cohort["cohort_sha256"], last_exam["student_sha256"],
-                           last_exam["optimizer_step"], cohort["rubric_sha256"],
+                           last_exam["optimizer_step"], last_exam["exam_rubric_sha256"],
                            cohort["generator_version"], tuple(capabilities),
                            cohort.get("source_manifest_sha256", ""),
                            cohort.get("generator_code_sha256", ""),
