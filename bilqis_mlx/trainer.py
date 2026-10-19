@@ -2912,7 +2912,8 @@ def _score_parent_for_paired_s3(mx, run_dir, receipt, parent, cohort, graph,
 
 
 def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
-                               cohort, scores, predictions, graph):
+                               cohort, scores, predictions, graph, *,
+                               challenge_grade=None):
     """Re-examine only potentially displaced epoch incumbents on these rows."""
     epoch = receipt["mentor_epoch"]
     if epoch["source_graph_sha256"] != _fingerprint(graph):
@@ -2932,6 +2933,13 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
     cohort_rubric, _, _, _ = _cohort_contract(course)
     checkpoint_origin_grade = receipt.get(
         "championship_checkpoint_origins", {}).get(school.current_student.sha256)
+    title_grade = challenge_grade or checkpoint_origin_grade or school.grade
+    if title_grade not in grades:
+        raise ValueError("CHAMPIONSHIP_EPOCH_CHALLENGE_GRADE_INVALID")
+    if checkpoint_origin_grade not in grades:
+        raise ValueError("CHAMPIONSHIP_CHECKPOINT_ORIGIN_PROVENANCE_INVALID")
+    if not any(capability in scores for capability in grades[title_grade]):
+        raise ValueError("CHAMPIONSHIP_EPOCH_CHALLENGE_GRADE_UNMEASURED")
     context = {
         "cohort_sha256": cohort.digest,
         "rubric_sha256": rubric,
@@ -2939,9 +2947,10 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
         "assessment_scope_sha256": _fingerprint(scope),
         "source_graph_sha256": _fingerprint(graph),
         "source_oracle_sha256": receipt["source_manifest_sha256"],
-        # Titles follow the checkpoint's retained-update origin, not whichever
-        # scheduler grade happened to request the cumulative examination.
-        "challenge_grade": checkpoint_origin_grade or school.grade,
+        # Title jurisdiction follows the capability grade being adjudicated.
+        # The optimizer visit that produced this intact checkpoint remains
+        # separate provenance and must never suppress valid capability evidence.
+        "challenge_grade": title_grade,
         "checkpoint_origin_grade": checkpoint_origin_grade,
     }
     challenger = {**context, "checkpoint": asdict(school.current_student),
@@ -2965,7 +2974,7 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
                 not _compatible_graphs(loaded_graph, graph)):
             raise ValueError("CHAMPIONSHIP_EPOCH_INCOMPARABLE_INCUMBENT_GRAPH")
         del own_adamw
-        challenge_caps = set(grades[challenger["challenge_grade"]])
+        challenge_caps = set(grades[title_grade])
         grade_rows = tuple(row for row in cohort.rows
                            if row["capability"] in challenge_caps)
         grade_cohort = make_cohort(
@@ -3198,11 +3207,13 @@ def _fresh_fanout_screen(mx, run_dir, receipt, epoch, cohort, challenger,
     return result
 
 
-def _advance_exam_championships(mx, run_dir, receipt, epoch, course, school,
-                                cohort, measured, predictions, parameters, graph):
+def _advance_exam_championship_grade(mx, run_dir, receipt, epoch, course, school,
+                                     cohort, measured, predictions, parameters, graph,
+                                     *, challenge_grade):
     current = {**receipt, "mentor_epoch": epoch}
     grades, challenger, incumbents = _epoch_paired_examinations(
-        mx, run_dir, current, course, school, cohort, measured["scores"], predictions, graph)
+        mx, run_dir, current, course, school, cohort, measured["scores"], predictions,
+        graph, challenge_grade=challenge_grade)
     title_matches = {}
     fanout_screen = None
     proposed = epoch
@@ -3237,6 +3248,27 @@ def _advance_exam_championships(mx, run_dir, receipt, epoch, course, school,
                 mx, run_dir, receipt, epoch, cohort, challenger,
                 parameters, graph, cap)
     raise AssertionError("unreachable")
+
+
+def _advance_exam_championships(mx, run_dir, receipt, epoch, course, school,
+                                cohort, measured, predictions, parameters, graph):
+    """Adjudicate every measured capability grade for the intact checkpoint."""
+    scores = measured["scores"]
+    represented = [
+        grade.id for grade in course.grades
+        if any(cap.id in scores for cap in grade.capabilities)
+    ]
+    if not represented:
+        raise ValueError("CHAMPIONSHIP_EPOCH_NO_MEASURED_TITLE_GRADE")
+    updated = epoch
+    changed_roles, decisions = set(), []
+    for grade in represented:
+        updated, changed, verdicts = _advance_exam_championship_grade(
+            mx, run_dir, receipt, updated, course, school, cohort, measured,
+            predictions, parameters, graph, challenge_grade=grade)
+        changed_roles.update(changed)
+        decisions.extend(verdicts)
+    return updated, tuple(sorted(changed_roles)), tuple(decisions)
 
 
 def _live_exam_factors_complete(course, cohort, expected) -> bool:

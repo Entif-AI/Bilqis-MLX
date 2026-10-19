@@ -363,6 +363,36 @@ class EpochChampionshipTests(TestCase):
             incumbent_exams={"b" * 64: incumbent})
         self.assertEqual(result["active_roles"]["A.0"], epoch["active_roles"]["A.0"])
 
+    def test_cross_grade_update_can_win_a_capability_local_title(self):
+        incumbent = _panel("a", 11, "B.XOR", 8, grade="B")
+        epoch, _, _ = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=incumbent,
+            incumbent_exams={})
+        role = epoch["active_roles"]["B.XOR"]
+
+        challenger = _panel("c", 12, "B.XOR", 12, cohort="6", grade="B")
+        challenger["checkpoint_origin_grade"] = "A"
+        requested = needed_incumbents(
+            epoch, grades=GRADES, challenger_exam=challenger)
+        self.assertEqual(set(requested), {"a" * 64})
+
+        incumbent_current = _panel("a", 11, "B.XOR", 8, cohort="6", grade="B")
+        challenger_current = _panel("c", 12, "B.XOR", 12, cohort="6", grade="B")
+        challenger_current["checkpoint_origin_grade"] = "A"
+        result, changes, decisions = advance_epoch(
+            epoch, grades=GRADES, challenger_exam=challenger,
+            incumbent_exams={"a" * 64: incumbent_current},
+            title_matches={"B.XOR": _match(
+                role, incumbent_current, challenger_current,
+                incumbent_battery=_battery_answers(role, drop=2),
+                challenger_battery=_battery_answers(role, drop=0))})
+        self.assertIn("B.XOR", changes)
+        winner = result["active_roles"]["B.XOR"]
+        self.assertEqual(winner["checkpoint"]["sha256"], "c" * 64)
+        self.assertEqual(winner["origin_grade"], "B")
+        self.assertEqual(winner["checkpoint_origin_grade"], "A")
+        self.assertTrue(any(d["decision"] == "TITLE_WON" for d in decisions))
+
     def _fanout_fixture(self):
         first = _panel("a", 11, "B.AND", 8)
         epoch, _, _ = advance_epoch(

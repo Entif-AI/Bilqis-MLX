@@ -205,8 +205,12 @@ class ChampionshipExamTests(TestCase):
                 SimpleNamespace(state={}), graph, reserve_gib=0)
         self.assertIn(identity_cap, completed["mentor_epoch"]["active_roles"])
         self.assertNotIn(blocked, completed["mentor_epoch"]["active_roles"])
-        self.assertTrue(all(cap.startswith("A.")
-                            for cap in completed["mentor_epoch"]["active_roles"]))
+        b_roles = [role for cap, role in completed["mentor_epoch"]["active_roles"].items()
+                   if cap.startswith("B.") and cap != blocked]
+        self.assertTrue(b_roles)
+        protected = {item["sha256"] for item in trainer._mentor_epoch_references(completed)}
+        self.assertTrue(all(role["checkpoint"]["sha256"] in protected
+                            for role in b_roles))
         self.assertIn(blocked, completed["last_exam"]["withheld_capabilities"])
 
     def test_quarantining_entire_later_grade_keeps_cumulative_grade_rubric(self):
@@ -382,7 +386,8 @@ class ChampionshipExamTests(TestCase):
                    "optimizer_step": 10, "model_and_native_adamw": True}
         current = Checkpoint("b" * 64, "bundles/current", 20, True)
         course = SimpleNamespace(grades=[
-            SimpleNamespace(id=g, capabilities=[SimpleNamespace(id=c)])
+            SimpleNamespace(id=g, assessment_sha256="d" * 64,
+                            capabilities=[SimpleNamespace(id=c)])
             for g, c in (("A", "A.X"), ("C", "C.NEW"))])
         cohort = make_cohort([
             {"id": f"{cap}:{i}", "capability": cap, "gold": "TRUE", "tokens": [token]}
@@ -413,15 +418,17 @@ class ChampionshipExamTests(TestCase):
         self.assertEqual(set(incumbents["a" * 64]["scores"]), {"A.X"})
         self.assertEqual({r["capability"] for r in inference.call_args.args[2]}, {"A.X"})
 
-    def test_checkpoint_origin_grade_selects_incumbent_panel_during_cross_grade_replay(self):
+    def test_title_grade_selects_incumbent_panel_independent_of_checkpoint_origin(self):
         old = {"tokens": ["PAD", "TRUE"], "nodes": [0, 1], "row_contract_sha256": {}}
         graph = {"tokens": ["PAD", "TRUE"], "nodes": [0, 1], "row_contract_sha256": {}}
         incumbent = {"filename": "bundles/old", "sha256": "a" * 64,
                      "optimizer_step": 10, "model_and_native_adamw": True}
         current = Checkpoint("b" * 64, "bundles/current", 20, True)
         course = SimpleNamespace(grades=[
-            SimpleNamespace(id="A", capabilities=[SimpleNamespace(id="A.X")]),
-            SimpleNamespace(id="B", capabilities=[SimpleNamespace(id="B.X")]),
+            SimpleNamespace(id="A", assessment_sha256="d" * 64,
+                            capabilities=[SimpleNamespace(id="A.X")]),
+            SimpleNamespace(id="B", assessment_sha256="d" * 64,
+                            capabilities=[SimpleNamespace(id="B.X")]),
         ])
         cohort = make_cohort([
             {"id": f"{cap}:{i}", "capability": cap, "gold": "TRUE", "tokens": [1]}
@@ -430,7 +437,7 @@ class ChampionshipExamTests(TestCase):
         receipt = {
             "config": {}, "answer_ids": [1], "source_manifest_sha256": "c" * 64,
             "championship_school_identity": {"sha256": "f" * 64},
-            "championship_checkpoint_origins": {"b" * 64: "B"},
+            "championship_checkpoint_origins": {"b" * 64: "A"},
             "mentor_epoch": {
                 "introduced_grade": "B",
                 "source_graph_sha256": trainer._fingerprint(graph),
@@ -455,8 +462,10 @@ class ChampionshipExamTests(TestCase):
             _, challenger, incumbents = trainer._epoch_paired_examinations(
                 None, Path(temp), receipt, course,
                 SimpleNamespace(current_student=current, grade="A"),
-                cohort, scores, {r["id"]: r["gold"] for r in cohort.rows}, graph)
+                cohort, scores, {r["id"]: r["gold"] for r in cohort.rows}, graph,
+                challenge_grade="B")
         self.assertEqual(challenger["challenge_grade"], "B")
+        self.assertEqual(challenger["checkpoint_origin_grade"], "A")
         self.assertEqual(set(incumbents["a" * 64]["scores"]), {"B.X"})
         self.assertEqual({r["capability"] for r in inference.call_args.args[2]}, {"B.X"})
 
@@ -517,6 +526,7 @@ class ChampionshipExamTests(TestCase):
                               "optimizer_step": 11, "model_and_native_adamw": True}
         context = {
             "cohort_sha256": cohort.digest, "rubric_sha256": "d" * 64,
+            "cohort_rubric_sha256": "d" * 64,
             "assessment_scope_sha256": "e" * 64,
             "source_graph_sha256": trainer._fingerprint(graph),
             "source_oracle_sha256": "c" * 64,

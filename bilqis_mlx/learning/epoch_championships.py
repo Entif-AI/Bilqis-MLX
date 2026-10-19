@@ -40,7 +40,7 @@ def _archive_invalid_role(updated: dict, capability: str, role: dict,
 
 
 def _sanitize_role_origins(updated: dict, grades: dict) -> None:
-    """Fail closed on missing/cross-grade title provenance before any defense."""
+    """Keep title jurisdiction distinct from checkpoint-training provenance."""
     roles = updated.setdefault("active_roles", {})
     invalid = []
     for capability, role in list(roles.items()):
@@ -52,6 +52,20 @@ def _sanitize_role_origins(updated: dict, grades: dict) -> None:
             reason = ("TITLE_ORIGIN_PROVENANCE_MISSING" if origin is None else
                       "CROSS_GRADE_TITLE_OWNER")
             _archive_invalid_role(updated, capability, role, reason)
+            del roles[capability]
+            invalid.append(capability)
+            continue
+        # Historical receipts predate the explicit separation between the
+        # capability's title grade and the grade whose retained optimizer update
+        # produced the whole-student checkpoint.  At that time they were forced
+        # to be identical, so the legacy field is sufficient migration proof.
+        checkpoint_origin = role.get("checkpoint_origin_grade")
+        if checkpoint_origin is None:
+            role["checkpoint_origin_grade"] = origin
+        elif checkpoint_origin not in grades:
+            _archive_invalid_role(
+                updated, capability, role,
+                "CHECKPOINT_ORIGIN_PROVENANCE_INVALID")
             del roles[capability]
             invalid.append(capability)
     if invalid:
@@ -220,13 +234,11 @@ def _exam_matches_capability(challenger: dict, incumbent: dict,
 
 def needed_incumbents(epoch: dict, *, grades: dict,
                       challenger_exam: dict) -> dict:
-    """Load only same-grade owners needed for primary and one-hop fan-out screens."""
+    """Load only title-grade owners needed for primary and one-hop fan-out screens."""
     roles = epoch.get("active_roles", {})
     scores = challenger_exam["scores"]
     challenger = _pointer(challenger_exam["checkpoint"])
     grade = _challenge_grade(epoch, grades, challenger_exam)
-    if challenger_exam.get("checkpoint_origin_grade") != grade:
-        return {}
     needed = {}
     for cap in _grade_caps(grades, grade):
         if cap not in scores:
@@ -306,7 +318,8 @@ def _fanout_scores(capability: str, prior: dict, challenger: dict,
 def _role_receipt(challenger_exam: dict, capability: str,
                   mastered: tuple[str, ...], *, prior=None, scope=None,
                   surviving_battery=None, owner_maxed=None,
-                  archive_exams=(), origin_grade=None) -> dict:
+                  archive_exams=(), origin_grade=None,
+                  checkpoint_origin_grade=None) -> dict:
     pointer = challenger_exam["checkpoint"]
     score = challenger_exam["scores"][capability]
     scope = tuple(scope or (capability,))
@@ -343,8 +356,14 @@ def _role_receipt(challenger_exam: dict, capability: str,
         "correct": score["correct"], "total": score["total"],
         "breadth": len(mastered), "perfect_capabilities": list(mastered),
         "maxed": bool(owner_maxed),
-        "origin_grade": (challenger_exam["checkpoint_origin_grade"]
+        # `origin_grade` remains the stable title-jurisdiction field used by
+        # soups/mentor routing.  The optimizer visit that created the intact
+        # whole-student checkpoint is separate provenance and may differ.
+        "origin_grade": (capability.partition(".")[0]
                          if origin_grade is None else origin_grade),
+        "checkpoint_origin_grade": (
+            challenger_exam.get("checkpoint_origin_grade")
+            if checkpoint_origin_grade is None else checkpoint_origin_grade),
         "qualification_witnesses": list(proofs.values()),
         "surviving_battery": list(surviving_battery),
         "checkpoint": dict(pointer),
@@ -434,8 +453,11 @@ def _resolve_title_match(*, capability: str, prior: dict, challenger_exam: dict,
         winner_exam, capability, mastered, prior=prior,
         scope=qualification_scope, surviving_battery=battery,
         owner_maxed=owner_maxed, archive_exams=(gate_exam,),
-        origin_grade=(challenger_exam["checkpoint_origin_grade"]
-                      if challenger_wins else prior["origin_grade"]))
+        origin_grade=capability.partition(".")[0],
+        checkpoint_origin_grade=(
+            challenger_exam.get("checkpoint_origin_grade")
+            if challenger_wins else
+            prior.get("checkpoint_origin_grade", prior.get("origin_grade"))))
     return receipt, challenger_wins, {
         "capability": capability,
         "decision": "TITLE_WON" if challenger_wins else "TITLE_DEFENDED",
@@ -467,14 +489,9 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
         return updated, (), ()
 
     grade = _challenge_grade(epoch, grades, challenger_exam)
-    origin_grade = challenger_exam.get("checkpoint_origin_grade")
-    if origin_grade != grade:
-        return updated, (), ({
-            "grade": grade,
-            "decision": "CHECKPOINT_ORIGIN_GRADE_INELIGIBLE",
-            "challenger_sha256": pointer["sha256"],
-            "checkpoint_origin_grade": origin_grade,
-        },)
+    checkpoint_origin_grade = challenger_exam.get("checkpoint_origin_grade")
+    if checkpoint_origin_grade not in grades:
+        raise ValueError("CHAMPIONSHIP_CHECKPOINT_ORIGIN_PROVENANCE_INVALID")
     caps = _grade_caps(grades, grade)
     mastered = tuple(sorted(
         cap for cap in caps if cap in scores and
