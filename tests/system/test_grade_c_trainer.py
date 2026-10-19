@@ -115,6 +115,34 @@ class GradeCTrainerTests(unittest.TestCase):
                 activate_numeric_grade(mx, Path("/unused"), receipt, self.previous,
                     self.course, params, opt, self.parent_graph, reserve_gib=0.)
 
+    def test_c_graph_growth_starts_empty_authority_and_carries_settled_history(self):
+        from bilqis_mlx.learning.mentor_epoch import begin_initial_epoch
+        mx, params, opt = self.toy()
+        with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
+            root = Path(temp)
+            pointer = _bundle_pointer(root, "initial", params, opt,
+                                      self.parent_graph, reserve_gib=0.)
+            receipt = self.receipt(self.graduated(pointer), pointer, params)
+            epoch = begin_initial_epoch(
+                student=asdict(pointer), introduced_grade="B",
+                source_graph_sha256=_fingerprint(self.parent_graph),
+                frontier={}, soups={})
+            key = "B.AND|" + "a" * 64 + "|" + "b" * 64
+            epoch["settled_matchups"] = {
+                key: {"decision": "TITLE_DEFENDED", "winner_sha256": "a" * 64}}
+            receipt["mentor_epoch"] = epoch
+            receipt = _persist(root, receipt)
+            grown, own, graph, changed = activate_numeric_grade(
+                mx, root, receipt, self.previous, self.course,
+                params, opt, self.parent_graph, reserve_gib=0.)
+        self.assertEqual(changed["mentor_epoch"]["active_roles"], {})
+        self.assertEqual(changed["mentor_epoch"]["active_grade_soups"], {})
+        self.assertEqual(changed["mentor_epoch"]["settled_matchups"],
+                         epoch["settled_matchups"])
+        self.assertEqual(changed["mentor_epoch"]["championship_school_identity"],
+                         changed["championship_school_identity"])
+        self.assertEqual(int(own.state["step"].item()), int(opt.state["step"].item()))
+
     def test_staged_c_real_toy_updates_fixed_exam_and_restart_preserve_custody(self):
         import numpy as np
         from bilqis_mlx.diagnostics.audit import audit_saved_run

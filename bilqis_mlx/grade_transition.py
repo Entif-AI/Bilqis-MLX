@@ -1,6 +1,7 @@
 """Atomic numerical transition plus neural-inert generic admission readiness."""
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import asdict, is_dataclass, replace
 from enum import Enum
 import hashlib
@@ -236,6 +237,16 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
     maximum = numeric_maximum(successor)
     release, release_file, admission = _factory_admission(
         run_dir, successor, pointer, _fingerprint(grown_graph))
+    from bilqis_mlx.learning.championship_identity import build_school_identity
+    parameter_shapes = {name: list(value.shape) for name,value in grown.items()}
+    championship_identity = build_school_identity(
+        course_sha256=successor.digest(),
+        semantic_graph_sha256=_fingerprint(grown_graph),
+        parameter_shapes=parameter_shapes,
+        factory_release_sha256=release.release_sha256)
+    next_epoch["settled_matchups"] = deepcopy(
+        (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
+    next_epoch["championship_school_identity"] = championship_identity
     updated = {**receipt, "curriculum_mode": RELEASE,
         "grade_c_parent_course_digest": previous.digest(),
         "numeric_maximum": maximum, "grade_c_code_sha256": constructor_digest(),
@@ -243,7 +254,8 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         "factory_release_sha256": release.release_sha256,
         "factory_release_file": release_file,
         "factory_admission": asdict(admission),
-        "parameter_shapes": {name: list(value.shape) for name,value in grown.items()},
+        "parameter_shapes": parameter_shapes,
+        "championship_school_identity": championship_identity,
         "config": {**receipt["config"], "vocab_size": len(grown_graph["tokens"]),
                    "answer_heads": answer_heads(grown_graph, maximum)},
         "live_rubric_sha256": successor.grades[-1].assessment_sha256}

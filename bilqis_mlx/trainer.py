@@ -45,7 +45,10 @@ from bilqis_mlx.learning.epoch_championships import (
     active_frontier as epoch_active_frontier,
     needed_incumbents as epoch_needed_incumbents,
     advance_epoch as advance_championship_epoch,
+    sanitize_role_origins as sanitize_championship_role_origins,
 )
+from bilqis_mlx.learning.championship_identity import (
+    build_school_identity, enforce_school_identity)
 from .source_adapters.school import live_source_registry
 from .factory.assessment import qualification_complete
 from .factory.live_releases import (
@@ -164,6 +167,182 @@ def _ensure_factory_admission(run_dir, receipt, course, graph):
     _reconcile_delivery_outbox(run_dir, record)
     _require_factory_admission(run_dir, record, course)
     return record
+
+
+def _championship_identity(receipt, course):
+    return build_school_identity(
+        course_sha256=course.digest(),
+        semantic_graph_sha256=receipt["semantic_graph_sha256"],
+        parameter_shapes=receipt["parameter_shapes"],
+        factory_release_sha256=receipt["factory_release_sha256"])
+
+
+def _live_championship_identity(receipt, course, graph, parameters):
+    return build_school_identity(
+        course_sha256=course.digest(),
+        semantic_graph_sha256=_fingerprint(graph),
+        parameter_shapes={name: list(value.shape) for name, value in parameters.items()},
+        factory_release_sha256=receipt["factory_release_sha256"])
+
+
+def _championship_pair_key(capability, left_sha256, right_sha256):
+    return capability + "|" + "|".join(sorted((left_sha256, right_sha256)))
+
+
+def _historical_championship_authority(run_dir):
+    """Recover immutable matchup and checkpoint-origin facts from durable events."""
+    origins = {}
+    settled = {}
+    duplicate_settlements = 0
+    path = run_dir / "events.jsonl"
+    if not path.is_file():
+        return {}, {}, {}, 0
+    with path.open(encoding="utf-8") as stream:
+        for line in stream:
+            if not line.strip():
+                continue
+            event = json.loads(line)
+            if (event.get("event") == "SCHOOL_TEACHER_VISIT_COMMITTED" and
+                    type(event.get("retained_optimizer_updates")) is int and
+                    event["retained_optimizer_updates"] > 0 and
+                    isinstance(event.get("recovered_at_student_sha256"), str) and
+                    isinstance(event.get("grade"), str) and event["grade"]):
+                origins.setdefault(event["recovered_at_student_sha256"], set()).add(
+                    event["grade"])
+            epoch = event.get("championship_epoch")
+            if not isinstance(epoch, dict):
+                continue
+            for decision in epoch.get("cross_origin_decisions", ()):
+                if (not isinstance(decision, dict) or
+                        decision.get("decision") not in ("TITLE_WON", "TITLE_DEFENDED")):
+                    continue
+                capability = decision.get("capability")
+                incumbent = decision.get("incumbent_sha256")
+                challenger = decision.get("challenger_sha256")
+                if not all(isinstance(value, str) and value for value in
+                           (capability, incumbent, challenger)):
+                    raise ValueError("CHAMPIONSHIP_HISTORICAL_SETTLEMENT_INVALID")
+                key = _championship_pair_key(capability, incumbent, challenger)
+                record = {**decision,
+                          "source_generation": event.get("generation"),
+                          "historical_backfill": True}
+                if key in settled:
+                    duplicate_settlements += 1
+                else:
+                    settled[key] = record
+    proven = {sha: next(iter(grades)) for sha, grades in origins.items()
+              if len(grades) == 1}
+    ambiguous = {sha: sorted(grades) for sha, grades in origins.items()
+                 if len(grades) > 1}
+    return proven, ambiguous, settled, duplicate_settlements
+
+
+def _migrate_championship_governance(run_dir, receipt, course):
+    """Neural-inert rev7 migration from durable run evidence."""
+    identity = _championship_identity(receipt, course)
+    proven, ambiguous, historical_settled, duplicate_count = (
+        _historical_championship_authority(run_dir))
+    updated = deepcopy(receipt)
+    changed = updated.get("championship_school_identity") != identity
+    updated["championship_school_identity"] = identity
+
+    origin_map = dict(updated.get("championship_checkpoint_origins", {}))
+    for sha, grade in proven.items():
+        existing = origin_map.get(sha)
+        if existing is not None and existing != grade:
+            raise ValueError("CHAMPIONSHIP_CHECKPOINT_ORIGIN_PROVENANCE_CONFLICT")
+        if existing is None:
+            origin_map[sha] = grade
+            changed = True
+    if updated.get("championship_checkpoint_origins") != origin_map:
+        updated["championship_checkpoint_origins"] = origin_map
+    if ambiguous:
+        if updated.get("championship_checkpoint_origin_ambiguities") != ambiguous:
+            changed = True
+        updated["championship_checkpoint_origin_ambiguities"] = ambiguous
+    else:
+        if "championship_checkpoint_origin_ambiguities" in updated:
+            changed = True
+        updated.pop("championship_checkpoint_origin_ambiguities", None)
+
+    school = _state_from_json(updated["school"], course)
+    current_origin = origin_map.get(school.current_student.sha256)
+    if current_origin is not None:
+        if updated.get("last_retained_update_grade") != current_origin:
+            changed = True
+        updated["last_retained_update_grade"] = current_origin
+    elif school.current_student.sha256 in ambiguous:
+        if "last_retained_update_grade" in updated:
+            changed = True
+        updated.pop("last_retained_update_grade", None)
+
+    epoch = updated.get("mentor_epoch")
+    reset = False
+    origins_invalidated = False
+    if epoch is not None:
+        epoch = deepcopy(epoch)
+        ledger = epoch.setdefault("settled_matchups", {})
+        if not isinstance(ledger, dict):
+            raise ValueError("CHAMPIONSHIP_SETTLED_MATCH_LEDGER_INVALID")
+        for key, settlement in historical_settled.items():
+            if key not in ledger:
+                ledger[key] = settlement
+                changed = True
+        for role in epoch.get("active_roles", {}).values():
+            if role.get("origin_grade") is None:
+                grade = origin_map.get(role.get("checkpoint", {}).get("sha256"))
+                if grade is not None:
+                    role["origin_grade"] = grade
+                    changed = True
+        epoch, reset = enforce_school_identity(
+            epoch, identity, generation=updated["generation"] + 1,
+            student=asdict(school.current_student))
+        if reset:
+            changed = True
+        else:
+            epoch, origins_invalidated = sanitize_championship_role_origins(
+                epoch, grades={grade.id: tuple(cap.id for cap in grade.capabilities)
+                               for grade in course.grades})
+            if origins_invalidated:
+                changed = True
+        updated["mentor_epoch"] = epoch
+
+    if not changed:
+        return receipt
+    record = _advance(run_dir, updated, school, persist=False)
+    migration = {
+        "event": "SCHOOL_CHAMPIONSHIP_GOVERNANCE_MIGRATED",
+        "generation": record["generation"],
+        "grade": school.grade,
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "championship_school_identity_sha256": identity["sha256"],
+        "checkpoint_origins_proven": len(origin_map),
+        "checkpoint_origins_ambiguous": len(ambiguous),
+        "settled_matchups_backfilled": len(historical_settled),
+        "duplicate_historical_settlements_ignored": duplicate_count,
+        "holistic_authority_reset": reset,
+        "invalid_origin_roles_archived": origins_invalidated,
+        "actual_neural_updates": 0,
+    }
+    record = _persist(run_dir, _with_delivery_outbox(record, (migration,)))
+    _reconcile_delivery_outbox(run_dir, record)
+    return record
+
+
+def _bind_checkpoint_origin(receipt, checkpoint):
+    """Attach the last proven retained-update grade to a newly sealed checkpoint."""
+    grade = receipt.get("last_retained_update_grade")
+    if grade is None:
+        return receipt
+    if not isinstance(grade, str) or not grade:
+        raise ValueError("CHAMPIONSHIP_LAST_RETAINED_GRADE_INVALID")
+    origins = dict(receipt.get("championship_checkpoint_origins", {}))
+    existing = origins.get(checkpoint.sha256)
+    if existing is not None and existing != grade:
+        raise ValueError("CHAMPIONSHIP_CHECKPOINT_ORIGIN_PROVENANCE_CONFLICT")
+    origins[checkpoint.sha256] = grade
+    return {**receipt, "championship_checkpoint_origins": origins}
 
 
 @contextmanager
@@ -384,6 +563,12 @@ def _mentor_sources_for_visit(run_dir, receipt, grade, graph, grade_count):
                 *_frozen_grade_soup_votes(run_dir, receipt, grade, grade_count))
     if epoch.get("source_graph_sha256") != _fingerprint(graph):
         raise ValueError("MENTOR_EPOCH_SOURCE_GRAPH_DRIFT")
+    if (epoch.get("championship_school_identity") !=
+            receipt.get("championship_school_identity")):
+        raise ValueError("MENTOR_EPOCH_SCHOOL_IDENTITY_RESET_REQUIRED")
+    for capability, role in epoch.get("active_roles", {}).items():
+        if role.get("origin_grade") != capability.partition(".")[0]:
+            raise ValueError("MENTOR_EPOCH_TITLE_ORIGIN_PROVENANCE_INVALID")
     if epoch.get("guidance_policy") != EARNED_ONLY_POLICY:
         raise ValueError("MENTOR_EPOCH_FRESH_CHAMPIONS_RESET_REQUIRED")
     active = {"graduation_perfect": epoch_active_frontier(epoch),
@@ -813,6 +998,11 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
     state = start_new(course, initial_pointer)
     release, release_file, admission = _factory_admission(
         run_dir, course, initial_pointer, _fingerprint(graph))
+    parameter_shapes = {name: list(param.shape) for name, param in parameters.items()}
+    championship_identity = build_school_identity(
+        course_sha256=course.digest(), semantic_graph_sha256=_fingerprint(graph),
+        parameter_shapes=parameter_shapes,
+        factory_release_sha256=release.release_sha256)
     receipt = {
         "schema": VERSION,
         "generation": 1,
@@ -827,12 +1017,13 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
         "teacher": json.loads(_canonical(historical_teacher)),
         "teacher_provenance": teacher_provenance,
         "config": config,
-        "parameter_shapes": {name: list(param.shape)
-                             for name, param in parameters.items()},
+        "parameter_shapes": parameter_shapes,
         "semantic_graph_sha256": _fingerprint(graph),
         "factory_release_sha256": release.release_sha256,
         "factory_release_file": release_file,
         "factory_admission": asdict(admission),
+        "championship_school_identity": championship_identity,
+        "championship_checkpoint_origins": {},
         "answer_ids": answer_ids,
         "result": "ACTIVE_GRADE_A",
         "last_exam": None,
@@ -961,6 +1152,11 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, adm
                 (json.loads(line) for line in history if line.strip()))
         # Original immutable generations stay untouched until a new boundary.
         receipt = {**receipt, "graduation_perfect": ranked}
+    receipt = _migrate_championship_governance(run_dir, receipt, active_course)
+    # Governance migration can archive formerly active champion references.
+    # Re-run custody verification against that enlarged immutable reference set
+    # before this resumed state is allowed to proceed to any lesson or exam.
+    _verify_best_custody(run_dir, receipt)
     return parameters, optimizer, graph, receipt
 
 
@@ -998,12 +1194,21 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor):
     release, release_file, admission = _factory_admission(
         run_dir, successor, next_state.current_student,
         receipt["semantic_graph_sha256"])
+    settled = deepcopy((receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
+    identity = build_school_identity(
+        course_sha256=successor.digest(),
+        semantic_graph_sha256=receipt["semantic_graph_sha256"],
+        parameter_shapes=receipt["parameter_shapes"],
+        factory_release_sha256=release.release_sha256)
+    epoch["settled_matchups"] = settled
+    epoch["championship_school_identity"] = identity
     compatibility = legacy_receipt_fields(successor.version)
     candidate = {**receipt, **compatibility, "curriculum_mode": successor.version,
                  "live_rubric_sha256": successor.grades[-1].assessment_sha256,
                  "factory_release_sha256": release.release_sha256,
                  "factory_release_file": release_file,
                  "factory_admission": asdict(admission),
+                 "championship_school_identity": identity,
                  "mentor_epoch": epoch,
                  "championship_epoch_history": history}
     introduced_grade = successor.grades[-1].id
@@ -1707,6 +1912,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 boolean_association_bridge: bool = False,
                 source_prefetch_executor=None, source_prefetch_workers: int = 0):
     school = _state_from_json(receipt["school"], course)
+    if (receipt.get("mentor_epoch") is not None and
+            receipt.get("championship_school_identity") !=
+            _live_championship_identity(receipt, course, graph, params)):
+        raise ValueError("CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_REQUIRED")
     cap = next_capability(school)
     if cap is None:
         raise ValueError("HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY")
@@ -2109,8 +2318,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     expected_retained = (step_before if outcome is not None and
                          outcome["decision"] == "REJECT" else attempted_step)
     attempted_optimizer_updates = attempted_step - step_before
+    retained_optimizer_updates = expected_retained - step_before
     if attempted_optimizer_updates < 0:
         raise ValueError("HUMAN_TRAINER_ATTEMPTED_OPTIMIZER_STEP_REGRESSION")
+    if retained_optimizer_updates < 0:
+        raise ValueError("HUMAN_TRAINER_RETAINED_OPTIMIZER_STEP_REGRESSION")
     if int(optimizer.state["step"].item()) != expected_retained:
         raise ValueError("LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT")
     # No new archive exists yet. The retained checkpoint is the last complete
@@ -2183,7 +2395,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         **({"candidate_retention": outcome, "context_teacher_credit": context_credit,
             "candidate_source_training_gain": candidate_gain,
             "candidate_attempt_optimizer_step": attempted_step,
-            "retained_optimizer_updates": expected_retained-step_before}
+            "retained_optimizer_updates": retained_optimizer_updates}
            if outcome is not None else {}),
         "generator_version": lesson_contract(course, lesson_grade)[2],
         "generator_code_sha256": lesson_contract(course, lesson_grade)[3],
@@ -2219,18 +2431,17 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     }
     stagnation = receipt.get("stagnation_session")
     if stagnation is not None:
-        retained_updates = (
-            expected_retained - step_before if outcome is not None
-            else attempted_step - step_before)
         stagnation = record_stagnation_visit(
             stagnation, capability=cap, phase=stage_before,
             decision=outcome.get("decision") if isinstance(outcome, dict) else None,
-            retained_optimizer_updates=retained_updates,
+            retained_optimizer_updates=retained_optimizer_updates,
             generation=event["generation"])
     pending = list(receipt.get("_pending_visit_events", ()))
     pending.append(event)
     with trace_span("VISIT_ADVANCE_STATE", capability=cap):
         result = _advance(run_dir, receipt, school, teacher=teacher, persist=False)
+    if retained_optimizer_updates > 0:
+        result["last_retained_update_grade"] = lesson_grade
     if learning_settings is not None:
         result["learning_experiment"] = {
             "version": LEARNING_EXPERIMENT_VERSION,
@@ -2335,19 +2546,30 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
     epoch = receipt["mentor_epoch"]
     if epoch["source_graph_sha256"] != _fingerprint(graph):
         raise ValueError("CHAMPIONSHIP_EPOCH_SOURCE_GRAPH_DRIFT")
+    if (epoch.get("championship_school_identity") !=
+            receipt.get("championship_school_identity")):
+        raise ValueError("CHAMPIONSHIP_EPOCH_SCHOOL_IDENTITY_RESET_REQUIRED")
     grades = {grade.id: tuple(cap.id for cap in grade.capabilities)
               for grade in course.grades}
-    scope = assessment_capabilities(course, school)
-    if set(scores) != set(scope):
+    allowed_scope = assessment_capabilities(course, school)
+    materialized = tuple(dict.fromkeys(row["capability"] for row in cohort.rows))
+    if (not materialized or set(scores) != set(materialized) or
+            not set(materialized) <= set(allowed_scope)):
         raise ValueError("CHAMPIONSHIP_EPOCH_INCOMPLETE_EXAM")
+    scope = tuple(cap for cap in allowed_scope if cap in set(materialized))
     rubric, _, _, _ = _cohort_contract(course)
+    checkpoint_origin_grade = receipt.get(
+        "championship_checkpoint_origins", {}).get(school.current_student.sha256)
     context = {
         "cohort_sha256": cohort.digest,
         "rubric_sha256": rubric,
         "assessment_scope_sha256": _fingerprint(scope),
         "source_graph_sha256": _fingerprint(graph),
         "source_oracle_sha256": receipt["source_manifest_sha256"],
-        "challenge_grade": school.grade,
+        # Titles follow the checkpoint's retained-update origin, not whichever
+        # scheduler grade happened to request the cumulative examination.
+        "challenge_grade": checkpoint_origin_grade or school.grade,
+        "checkpoint_origin_grade": checkpoint_origin_grade,
     }
     challenger = {**context, "checkpoint": asdict(school.current_student),
                   "scores": scores,
@@ -2987,6 +3209,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     school = _state_from_json(receipt["school"], course)
     if not school.stage.startswith("ASSESS_"):
         raise ValueError("HUMAN_TRAINER_EXAM_OUTSIDE_SCHEDULED_BOUNDARY")
+    if (receipt.get("championship_school_identity") !=
+            _live_championship_identity(receipt, course, graph, parameters)):
+        raise ValueError("CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_REQUIRED")
     stagnation = receipt.get("stagnation_session")
     blocked_before = quarantined_capabilities(stagnation)
     full_scope = assessment_capabilities(course, school)
@@ -3025,6 +3250,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             candidate_cohort, candidate_guesses,
             parameters, optimizer, graph, reserve_gib=reserve_gib,
             allowed_capabilities=active_scope)
+        receipt = _bind_checkpoint_origin(receipt, school.current_student)
         candidate_measured = score_cohort(
             candidate_cohort, candidate_guesses, asdict(school.current_student))
 
@@ -3206,15 +3432,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             source_graph_sha256=_fingerprint(graph),
             frontier=receipt.get("graduation_perfect", {}),
             soups=receipt.get("grade_soups", {}))
+        epoch["settled_matchups"] = {}
+        epoch["championship_school_identity"] = receipt["championship_school_identity"]
     if scheduler_only:
-        perfect = receipt.get("graduation_perfect", {})
-        frozen_soups = receipt.get("grade_soups", {})
-        soup_changes = ()
-    elif blocked_before or blocked_after:
-        # Capability containment is session-local teaching authority. Preserve
-        # all previously earned championship/soup evidence, but a routine exam
-        # sampled under containment remains incomplete authority even if
-        # rehabilitation releases that debt after scoring.
         perfect = receipt.get("graduation_perfect", {})
         frozen_soups = receipt.get("grade_soups", {})
         soup_changes = ()
@@ -3265,6 +3485,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "student_sha256": assessment.checkpoint_sha256,
         "optimizer_step": assessment.optimizer_step,
         "scores": scores,
+        "withheld_capabilities": list(blocked_before),
         "stagnation_quarantined": list(blocked_after),
         "routine_learning_diagnostics": routine_warnings,
         "flash_scheduler_only": scheduler_only,
@@ -3372,6 +3593,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "teacher_outcomes": teacher_outcomes,
         "whole_student_retention": retention_status,
         "flash_scheduler_only": scheduler_only,
+        "withheld_capabilities": list(blocked_before),
         "qualification_authority_changed": False if scheduler_only else None,
         "champions_changed": False if scheduler_only else None,
     }
@@ -3439,6 +3661,7 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
     stop_receipt = {**receipt, "legacy_frontier_pending_replay": False,
                     "whole_student_peaks": peaks,
                     "live_rubric_sha256": rubric}
+    stop_receipt = _bind_checkpoint_origin(stop_receipt, current.current_student)
     record = _advance(run_dir, stop_receipt,
                       current, frontier=frontier,
                       model_bundle=current.current_student.filename, persist=False)
@@ -3476,6 +3699,7 @@ def _flush_flash_student(run_dir, receipt, course, parameters, optimizer, graph,
         candidate = _bundle_pointer(
             run_dir, name, parameters, optimizer, graph, reserve_gib=reserve_gib)
     due = replace(due, current_student=candidate)
+    receipt = _bind_checkpoint_origin(receipt, candidate)
     record = _advance(
         run_dir, receipt, due, model_bundle=candidate.filename,
         result=_school_result_label(due), persist=False)

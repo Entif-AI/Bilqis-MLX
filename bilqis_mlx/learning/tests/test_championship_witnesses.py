@@ -38,6 +38,26 @@ class ChampionshipWitnessTests(TestCase):
         self.assertLess(epoch["championship_eligibility_after_step"], 10)
         self.assertEqual(reference_checkpoints(epoch), (student,))
 
+    def test_archived_same_sha_bundle_aliases_are_all_pinned(self):
+        from bilqis_mlx.learning.mentor_epoch import begin_initial_epoch, reference_checkpoints
+        student = {"filename": "bundles/inert", "sha256": "a" * 64,
+                   "optimizer_step": 10, "model_and_native_adamw": True}
+        epoch = begin_initial_epoch(student=student, introduced_grade="A",
+                                    source_graph_sha256="b" * 64, frontier={}, soups={})
+        first = {**student, "filename": "bundles/first"}
+        second = {**student, "filename": "bundles/second"}
+        epoch["superseded_active_championships"] = [{
+            "starting_student": student,
+            "active_roles": {
+                "A.X": {"checkpoint": first},
+                "A.Y": {"checkpoint": second},
+            },
+            "active_grade_soups": {},
+        }]
+        pointers = reference_checkpoints(epoch)
+        self.assertIn(first, pointers)
+        self.assertIn(second, pointers)
+
     def test_all_influencing_questions_become_obligations_including_misses(self):
         measured = exam()
         proof = earning_witness(measured, ("A.X", "B.Y"))

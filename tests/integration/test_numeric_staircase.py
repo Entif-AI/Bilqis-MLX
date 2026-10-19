@@ -3,6 +3,7 @@ from contextlib import redirect_stdout
 from dataclasses import asdict, replace
 import io
 import json
+from copy import deepcopy
 from pathlib import Path
 import tempfile
 import unittest
@@ -13,7 +14,7 @@ from bilqis_mlx.grade_transition import activate_numeric_grade
 from bilqis_mlx.live_grade_c import draw, RELEASE as OLD_RELEASE
 from bilqis_mlx.numeric_staircase import (
     RELEASE, build_course, enroll, advance_scope, scope_advance_due, row_in_scope)
-from tests import test_grade_c_trainer as fixtures
+from tests.system import test_grade_c_trainer as fixtures
 
 
 class NumericStaircaseTests(unittest.TestCase):
@@ -60,6 +61,35 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertEqual(again, record)
         self.assertEqual(own.state['step'].item(), 1)
         self.assertEqual(graph, self.graph)
+
+    def test_question_inventory_change_globally_resets_live_champions_and_soups(self):
+        seeded = deepcopy(self.old)
+        epoch = seeded["mentor_epoch"]
+        pointer = seeded["school"]["current_student"]
+        epoch["active_roles"] = {
+            "C.COUNT": {
+                "capability": "C.COUNT", "origin_grade": "C",
+                "checkpoint": pointer, "correct": 12, "total": 12,
+            }}
+        epoch["active_grade_soups"] = {"C": {"grade": "C", "vote_count": 1}}
+        match_key = "C.COUNT|" + "a" * 64 + "|" + "b" * 64
+        epoch["settled_matchups"] = {
+            match_key: {"decision": "TITLE_DEFENDED", "winner_sha256": "a" * 64}}
+        self.old = seeded
+        prior_identity = epoch["championship_school_identity"]["sha256"]
+        prior_step = self.optimizer.state["step"].item()
+
+        course, record = self.start()
+        successor = record["mentor_epoch"]
+        self.assertNotEqual(record["championship_school_identity"]["sha256"], prior_identity)
+        self.assertEqual(successor["active_roles"], {})
+        self.assertEqual(successor["active_grade_soups"], {})
+        self.assertEqual(successor["settled_matchups"], epoch["settled_matchups"])
+        self.assertEqual(successor["administrative_empty_reset"]["old_active_role_count"], 1)
+        self.assertEqual(successor["administrative_empty_reset"]["old_active_soup_grades"], ["C"])
+        self.assertEqual(successor["administrative_empty_reset"]["training_or_optimizer_updates"], 0)
+        self.assertEqual(record["school"]["current_student"], seeded["school"]["current_student"])
+        self.assertEqual(self.optimizer.state["step"].item(), prior_step)
 
     def test_opt_in_preview_and_repeated_preview_do_not_enroll_or_train(self):
         from bilqis_mlx.cli import main

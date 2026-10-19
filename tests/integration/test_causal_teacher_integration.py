@@ -12,8 +12,8 @@ import numpy as np
 
 from bilqis_mlx import trainer as storage
 from bilqis_mlx.learning.learning_experiment import Settings, select_source_lesson
-from tests import test_grade_c_trainer as fixtures
-from tests import test_numeric_staircase as staircase_fixtures
+from tests.system import test_grade_c_trainer as fixtures
+from tests.integration import test_numeric_staircase as staircase_fixtures
 
 
 class CausalTeacherIntegrationTests(unittest.TestCase):

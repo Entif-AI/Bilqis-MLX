@@ -14,6 +14,67 @@ from bilqis_mlx.learning.championship_witnesses import (
 from bilqis_mlx.learning.mentor_epoch import EARNED_ONLY_POLICY, _pointer
 
 
+def _pair_key(capability: str, left_sha256: str, right_sha256: str) -> str:
+    """Canonical lifetime identity for one capability title matchup."""
+    first, second = sorted((left_sha256, right_sha256))
+    return f"{capability}|{first}|{second}"
+
+
+def _settled_match(epoch: dict, capability: str, left_sha256: str,
+                   right_sha256: str) -> dict | None:
+    ledger = epoch.get("settled_matchups", {})
+    if not isinstance(ledger, dict):
+        raise ValueError("CHAMPIONSHIP_SETTLED_MATCH_LEDGER_INVALID")
+    return ledger.get(_pair_key(capability, left_sha256, right_sha256))
+
+
+def _archive_invalid_role(updated: dict, capability: str, role: dict,
+                          reason: str) -> None:
+    archive = updated.setdefault("invalidated_active_roles", [])
+    archive.append({
+        "capability": capability,
+        "origin_grade": role.get("origin_grade"),
+        "reason": reason,
+        "role": deepcopy(role),
+    })
+
+
+def _sanitize_role_origins(updated: dict, grades: dict) -> None:
+    """Fail closed on missing/cross-grade title provenance before any defense."""
+    roles = updated.setdefault("active_roles", {})
+    invalid = []
+    for capability, role in list(roles.items()):
+        title_grade = capability.partition(".")[0]
+        if title_grade not in grades or capability not in _grade_caps(grades, title_grade):
+            raise ValueError("CHAMPIONSHIP_ACTIVE_ROLE_CAPABILITY_UNKNOWN")
+        origin = role.get("origin_grade") if isinstance(role, dict) else None
+        if origin != title_grade:
+            reason = ("TITLE_ORIGIN_PROVENANCE_MISSING" if origin is None else
+                      "CROSS_GRADE_TITLE_OWNER")
+            _archive_invalid_role(updated, capability, role, reason)
+            del roles[capability]
+            invalid.append(capability)
+    if invalid:
+        soups = updated.get("active_grade_soups", {})
+        if soups:
+            updated.setdefault("invalidated_active_soups", []).append({
+                "reason": "ACTIVE_ROLE_PROVENANCE_INVALIDATED",
+                "capabilities": sorted(invalid),
+                "active_grade_soups": deepcopy(soups),
+            })
+        updated["active_grade_soups"] = {}
+
+
+def sanitize_role_origins(epoch: dict, *, grades: dict) -> tuple[dict, bool]:
+    """Public neural-inert migration gate for active title provenance."""
+    updated = deepcopy(epoch)
+    before_roles = deepcopy(updated.get("active_roles", {}))
+    before_soups = deepcopy(updated.get("active_grade_soups", {}))
+    _sanitize_role_origins(updated, grades)
+    return updated, (before_roles != updated.get("active_roles", {}) or
+                     before_soups != updated.get("active_grade_soups", {}))
+
+
 def reset_active_championships(epoch: dict, *, student: dict,
                                generation: int) -> tuple[dict, bool]:
     """Metadata-only reset with lossless historical role/soup evidence.
@@ -162,6 +223,8 @@ def needed_incumbents(epoch: dict, *, grades: dict,
     scores = challenger_exam["scores"]
     challenger = _pointer(challenger_exam["checkpoint"])
     grade = _challenge_grade(epoch, grades, challenger_exam)
+    if challenger_exam.get("checkpoint_origin_grade") != grade:
+        return {}
     needed = {}
     for cap in _grade_caps(grades, grade):
         if cap not in scores:
@@ -169,8 +232,12 @@ def needed_incumbents(epoch: dict, *, grades: dict,
         prior = roles.get(cap)
         if prior is None:
             continue
+        if prior.get("origin_grade") != grade:
+            continue
         pointer = _pointer(prior["checkpoint"])
         if pointer["sha256"] == challenger["sha256"]:
+            continue
+        if _settled_match(epoch, cap, pointer["sha256"], challenger["sha256"]):
             continue
         needed[pointer["sha256"]] = pointer
     return needed
@@ -228,7 +295,7 @@ def _fanout_scores(capability: str, prior: dict, challenger: dict,
 def _role_receipt(challenger_exam: dict, capability: str,
                   mastered: tuple[str, ...], *, prior=None, scope=None,
                   surviving_battery=None, owner_maxed=None,
-                  archive_exams=()) -> dict:
+                  archive_exams=(), origin_grade=None) -> dict:
     pointer = challenger_exam["checkpoint"]
     score = challenger_exam["scores"][capability]
     scope = tuple(scope or (capability,))
@@ -263,6 +330,8 @@ def _role_receipt(challenger_exam: dict, capability: str,
         "correct": score["correct"], "total": score["total"],
         "breadth": len(mastered), "perfect_capabilities": list(mastered),
         "maxed": bool(owner_maxed),
+        "origin_grade": (challenger_exam["checkpoint_origin_grade"]
+                         if origin_grade is None else origin_grade),
         "qualification_witnesses": list(proofs.values()),
         "surviving_battery": list(surviving_battery),
         "checkpoint": dict(pointer),
@@ -349,7 +418,9 @@ def _resolve_title_match(*, capability: str, prior: dict, challenger_exam: dict,
     receipt = _role_receipt(
         winner_exam, capability, mastered, prior=prior,
         scope=qualification_scope, surviving_battery=battery,
-        owner_maxed=owner_maxed, archive_exams=(gate_exam,))
+        owner_maxed=owner_maxed, archive_exams=(gate_exam,),
+        origin_grade=(challenger_exam["checkpoint_origin_grade"]
+                      if challenger_wins else prior["origin_grade"]))
     return receipt, challenger_wins, {
         "capability": capability,
         "decision": "TITLE_WON" if challenger_wins else "TITLE_DEFENDED",
@@ -370,6 +441,8 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
     scores = challenger_exam["scores"]
     pointer = _pointer(challenger_exam["checkpoint"])
     updated = deepcopy(epoch)
+    updated.setdefault("settled_matchups", {})
+    _sanitize_role_origins(updated, grades)
     roles = updated.setdefault("active_roles", {})
     original_roles = deepcopy(roles)
     updated.setdefault("active_grade_soups", {})
@@ -379,6 +452,14 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
         return updated, (), ()
 
     grade = _challenge_grade(epoch, grades, challenger_exam)
+    origin_grade = challenger_exam.get("checkpoint_origin_grade")
+    if origin_grade != grade:
+        return updated, (), ({
+            "grade": grade,
+            "decision": "CHECKPOINT_ORIGIN_GRADE_INELIGIBLE",
+            "challenger_sha256": pointer["sha256"],
+            "checkpoint_origin_grade": origin_grade,
+        },)
     caps = _grade_caps(grades, grade)
     mastered = tuple(sorted(
         cap for cap in caps if cap in scores and
@@ -403,6 +484,17 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
                     surviving_battery=verified_battery(prior),
                     owner_maxed=bool(prior.get("maxed", maxed_role(prior))) or
                     scores[cap]["correct"] == scores[cap]["total"])
+            continue
+        settled = _settled_match(
+            updated, cap, prior_pointer["sha256"], pointer["sha256"])
+        if settled is not None:
+            decisions.append({
+                "grade": grade, "capability": cap,
+                "decision": "TITLE_MATCH_ALREADY_SETTLED",
+                "incumbent_sha256": prior_pointer["sha256"],
+                "challenger_sha256": pointer["sha256"],
+                "settled_winner_sha256": settled.get("winner_sha256"),
+            })
             continue
         incumbent_score = _incumbent_score(
             cap, prior, challenger_exam, incumbent_exams)
@@ -431,6 +523,12 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
             incumbent_exam=gate_incumbent, match=match,
             qualification_scope=(cap,), grade_caps=caps)
         roles[cap] = receipt
+        updated["settled_matchups"][_pair_key(
+            cap, verdict["incumbent_sha256"], verdict["challenger_sha256"])] = {
+                **verdict,
+                "grade": grade,
+                "qualification": qualification,
+            }
         decisions.append({"grade": grade, **verdict, "qualification": qualification})
         if won:
             primary_won = True
@@ -443,7 +541,9 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
         siblings = [
             cap for cap in caps if cap not in primary and
             (prior := original_roles.get(cap)) is not None and
-            _pointer(prior["checkpoint"])["sha256"] != pointer["sha256"]]
+            _pointer(prior["checkpoint"])["sha256"] != pointer["sha256"] and
+            _settled_match(updated, cap, _pointer(prior["checkpoint"])["sha256"],
+                           pointer["sha256"]) is None]
         if siblings and fanout_screen is None:
             decisions.append({
                 "grade": grade,
@@ -478,6 +578,12 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
                 incumbent_exam=fanout_screen[cap]["incumbent_exam"], match=match,
                 qualification_scope=(cap,), grade_caps=caps)
             roles[cap] = receipt
+            updated["settled_matchups"][_pair_key(
+                cap, verdict["incumbent_sha256"], verdict["challenger_sha256"])] = {
+                    **verdict,
+                    "grade": grade,
+                    "qualification": "FANOUT_MATCH_OR_BEAT",
+                }
             decisions.append({"grade": grade, **verdict,
                               "qualification": "FANOUT_MATCH_OR_BEAT"})
             if won and cap not in changes:

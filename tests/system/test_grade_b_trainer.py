@@ -93,6 +93,9 @@ class GradeBTrainerTests(unittest.TestCase):
                 "live_rubric_sha256": self.a_course.grades[0].assessment_sha256,
                 "semantic_graph_sha256":
                     self.manifest["parent_student"]["full_student_graph_sha256"],
+                "parameter_shapes": {"fixture.weight": [1]},
+                "factory_release_sha256": "f" * 64,
+                "championship_checkpoint_origins": {},
                 "teacher": json.loads(json.dumps(self.teacher)),
                 "capability_best": {}, "last_exam": graduate_exam,
                 "result": "GRADE_A_MASTERED_AWAITING_GRADE_B", **extra}
@@ -121,6 +124,10 @@ class GradeBTrainerTests(unittest.TestCase):
                              receipt["school"]["current_student"])
             self.assertEqual(updated["school"]["champions"],
                              receipt["school"]["champions"])
+            self.assertEqual(updated["mentor_epoch"]["active_roles"], {})
+            self.assertEqual(updated["mentor_epoch"]["active_grade_soups"], {})
+            self.assertEqual(updated["mentor_epoch"]["championship_school_identity"],
+                             updated["championship_school_identity"])
             self.assertEqual((updated["school"]["grade_index"],
                               updated["school"]["active_grades"]), (1,["A","B"]))
             self.assertEqual(_state_from_json(updated["school"],self.b_course).grade,"B")
@@ -133,6 +140,28 @@ class GradeBTrainerTests(unittest.TestCase):
                 recovered = _recover_orphaned_commit(root,receipt)
             self.assertEqual(recovered,updated)
             self.assertEqual(json.loads((root/"state.json").read_text()),updated)
+
+    def test_grade_b_transition_carries_permanent_settled_match_history_only(self):
+        from bilqis_mlx.learning.mentor_epoch import begin_initial_epoch
+        pointer = Checkpoint("a"*64,"bundles/inert",153144,True)
+        school = self._graduated_a(pointer)
+        epoch = begin_initial_epoch(
+            student=asdict(pointer), introduced_grade="A",
+            source_graph_sha256=self.manifest["parent_student"]["full_student_graph_sha256"],
+            frontier={}, soups={})
+        key = "A.IDENTITY|" + "a" * 64 + "|" + "b" * 64
+        epoch["settled_matchups"] = {
+            key: {"decision": "TITLE_DEFENDED", "winner_sha256": "a" * 64}}
+        receipt = self._receipt(school, pointer, mentor_epoch=epoch)
+        with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
+            root = Path(temp)
+            saved = _persist(root, receipt)
+            updated = _activate_next_admitted_grade(
+                root, saved, self.a_course, self.b_course)
+        self.assertEqual(updated["mentor_epoch"]["settled_matchups"],
+                         epoch["settled_matchups"])
+        self.assertEqual(updated["mentor_epoch"]["active_roles"], {})
+        self.assertEqual(updated["mentor_epoch"]["active_grade_soups"], {})
 
     def test_admission_interrupt_after_immutable_state_replays_once_not_student(self):
         """A lost publication acknowledgment never repeats A->B mutation."""

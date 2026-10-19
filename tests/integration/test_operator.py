@@ -174,6 +174,31 @@ class OperatorTests(unittest.TestCase):
         self.assertEqual(champion["kind"], "CHAMPION")
         self.assertIn("DENY_NO_STRICT_SCHOOL_VICTORY", champion["detail"])
 
+    def test_live_exam_reports_settled_pair_as_no_rematch_not_new_measurement(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True)
+        telemetry = SchoolTelemetry(board, active_grades=("A",))
+        telemetry.ingest({
+            "event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "A",
+            "generation": 53, "optimizer_step": 300,
+            "student_sha256": "a" * 64, "rubric": "b" * 64,
+            "assessment_scope_sha256": "c" * 64,
+            "cohort_sha256": "d" * 64, "cohort_file": "cohorts/d.json",
+            "generator_version": "test/live-v1", "phase": "MAIN",
+            "scores": {"A.IDENTITY": {"correct": 12, "total": 12}},
+            "championship_epoch": {
+                "earned_roles": [], "active_role_count": 1,
+                "active_soup_grades": ["A"],
+                "cross_origin_decisions": [{
+                    "grade": "A", "capability": "A.IDENTITY",
+                    "decision": "TITLE_MATCH_ALREADY_SETTLED",
+                }],
+            },
+        })
+        mastery = board.rows["GRADES & MASTERY"][-1]
+        self.assertIn("PAIR ALREADY SETTLED", mastery["outcome"])
+        champion = board.rows["SYSTEM & QUALIFICATION"][-1]
+        self.assertIn("TITLE_MATCH_ALREADY_SETTLED", champion["detail"])
+
     def test_flash_scheduler_exam_is_scope_bound_and_explicitly_non_title(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True)
         telemetry = SchoolTelemetry(board, active_grades=("A", "B", "C"))

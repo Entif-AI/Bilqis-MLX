@@ -729,6 +729,9 @@ class SchoolTelemetry:
             title_decisions = tuple(
                 decision for decision in epoch.get("cross_origin_decisions", ())
                 if isinstance(decision, dict) and decision.get("grade") == g)
+            withheld = tuple(
+                cap for cap in event.get("withheld_capabilities", ())
+                if isinstance(cap, str))
             if event.get("flash_scheduler_only") is True:
                 label = f"FLASH SAMPLE {correct}/{total} | NO TITLES"
             elif earned:
@@ -741,7 +744,12 @@ class SchoolTelemetry:
                     "detail": f"Titles moved: {detail} | step {step}",
                 }, redraw=False)
             elif live and isinstance(event.get("championship_epoch"), dict):
-                label = f"NO TITLE CHANGE | SAMPLE {correct}/{total}"
+                settled = tuple(
+                    decision for decision in title_decisions
+                    if decision.get("decision") == "TITLE_MATCH_ALREADY_SETTLED")
+                label = (f"PAIR ALREADY SETTLED | SAMPLE {correct}/{total}"
+                         if settled and len(settled) == len(title_decisions)
+                         else f"NO TITLE CHANGE | SAMPLE {correct}/{total}")
                 if title_decisions:
                     reasons = ", ".join(sorted({
                         str(decision.get("decision", "UNKNOWN"))
@@ -750,6 +758,12 @@ class SchoolTelemetry:
                     self.board.push("system", {
                         "kind": "CHAMPION", "grade": g,
                         "detail": f"No title change: {reasons} | step {step}",
+                    }, redraw=False)
+                elif withheld:
+                    self.board.push("system", {
+                        "kind": "CHAMPION", "grade": g,
+                        "detail": ("No title decision; withheld NOT_MEASURED: " +
+                                   ", ".join(sorted(withheld)) + f" | step {step}"),
                     }, redraw=False)
             elif champion and correct < total:
                 label = f"CURRENT REGRESSION | SAMPLE {correct}/{total}"

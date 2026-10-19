@@ -95,6 +95,20 @@ def _rebind(run_dir, receipt, old_course, new_course, graph, *, introduction_sta
     updated.update(factory_release_sha256=release.release_sha256,
                    factory_release_file=release_file,
                    factory_admission=asdict(admission))
+    from bilqis_mlx.learning.championship_identity import (
+        build_school_identity, enforce_school_identity)
+    identity = build_school_identity(
+        course_sha256=new_course.digest(),
+        semantic_graph_sha256=receipt['semantic_graph_sha256'],
+        parameter_shapes=receipt['parameter_shapes'],
+        factory_release_sha256=release.release_sha256)
+    updated['championship_school_identity'] = identity
+    if updated.get('mentor_epoch') is not None:
+        epoch, _ = enforce_school_identity(
+            updated['mentor_epoch'], identity,
+            generation=receipt['generation'] + 1,
+            student=asdict(school.current_student))
+        updated['mentor_epoch'] = epoch
     updated.pop('qualification_cohort', None)
     record = _advance(run_dir, updated, changed, result='ACTIVE_GRADE_C', persist=False)
     delivery = {'event': event, 'grade': 'C', 'generation': record['generation'],
