@@ -1029,6 +1029,41 @@ class SchoolTelemetryTests(unittest.TestCase):
                     },
                 })
 
+    def test_withheld_scope_receipt_bug_separates_partial_and_full_exams(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            common = {
+                "event": "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+                "grade": "B", "rubric": "b" * 64,
+                "assessment_scope_sha256": "1" * 64,
+                "generator_version": "grade-b-live/v1",
+                "optimizer_step": 200, "student_sha256": "d" * 64,
+                "withheld_capabilities": ["B.IFF"],
+            }
+            ingest(board, {
+                **common, "generation": 1, "exam_plane": "ROUTINE",
+                "cohort_sha256": "2" * 64,
+                "cohort_file": f"cohorts/{'2' * 64}.json",
+                "scores": {
+                    "B.AND": {"correct": 5, "total": 12},
+                    "B.NOT": {"correct": 7, "total": 12},
+                },
+            })
+            ingest(board, {
+                **common, "generation": 2, "exam_plane": "GENERALIZATION",
+                "cohort_sha256": "3" * 64,
+                "cohort_file": f"cohorts/{'3' * 64}.json",
+                "scores": {
+                    "B.AND": {"correct": 6, "total": 12},
+                    "B.IFF": {"correct": 8, "total": 12},
+                    "B.NOT": {"correct": 8, "total": 12},
+                },
+            })
+            reports = [report for (grade, _, _), report in
+                       board.school_telemetry.latest.items() if grade == "B"]
+            self.assertEqual(len(reports), 2)
+            self.assertEqual({report.total for report in reports}, {24, 36})
+
     def test_first_latest_best_and_regression_use_same_sealed_rubric(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

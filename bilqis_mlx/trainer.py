@@ -3271,6 +3271,15 @@ def _promotion_due_after_routine(before, after) -> bool:
     )
 
 
+def _assessment_scope_sha256(full_scope, scores) -> str:
+    """Bind an assessment scope to the capabilities actually represented."""
+    score_ids = set(scores)
+    selected = tuple(cap for cap in full_scope if cap in score_ids)
+    if not selected or set(selected) != score_ids:
+        raise ValueError("HUMAN_TRAINER_EXAM_SCORE_SCOPE_DRIFT")
+    return _fingerprint(selected)
+
+
 def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                source_checkpoint, parameters, optimizer, graph, *, reserve_gib,
                scheduler_only: bool = False):
@@ -3294,7 +3303,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     routine_cohort, routine_file = _without_stagnant_capabilities(
         run_dir, manifest, course, routine_cohort, stagnation)
     routine_rows = list(routine_cohort.rows)
-    scope_sha = _fingerprint(active_scope)
+    routine_scope_sha = _assessment_scope_sha256(
+        full_scope, {cap: None for cap in active_scope})
     candidate_cohort = None
     candidate_measured = None
     frontier = dict(receipt.get("capability_best", {}))
@@ -3353,7 +3363,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "grade_exam_epoch": school.grade_exam_epoch,
         "exam_plane": "ROUTINE",
         "grade_test_lifecycle": ROUTINE_EVAL_LIFECYCLE,
-        "assessment_scope_sha256": scope_sha,
+        "assessment_scope_sha256": routine_scope_sha,
         "evaluation_id": routine_assessment.evaluation_id,
         "exam_rubric_sha256": routine_assessment.rubric_digest,
         "cohort_sha256": routine_cohort.digest,
@@ -3490,6 +3500,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
 
     scores = {k: {"correct": v.correct, "total": v.total}
               for k, v in assessment.scores.items()}
+    final_scope_sha = _assessment_scope_sha256(full_scope, scores)
     epoch = receipt.get("mentor_epoch")
     championship_decisions = ()
     graduation_roles = ()
@@ -3533,7 +3544,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             GENERALIZATION_LIFECYCLE if generalization is not None else
             PROMOTION_ATTEMPT_LIFECYCLE if qualification is not None else
             ROUTINE_EVAL_LIFECYCLE),
-        "assessment_scope_sha256": scope_sha,
+        "assessment_scope_sha256": final_scope_sha,
         "evaluation_id": assessment.evaluation_id,
         "exam_rubric_sha256": assessment.rubric_digest,
         "cohort_sha256": cohort.digest,

@@ -330,6 +330,26 @@ def _display(value: Any, *, decimals: int = 3) -> str:
     return "-"
 
 
+def _inventory_scope(scope: str, caps: dict) -> str:
+    """Internal comparison identity for the capability inventory actually scored."""
+    return scope + "|inventory:" + ",".join(sorted(caps))
+
+
+def _withheld_inventory_change_explains(event: dict, grade: str,
+                                        previous, current) -> bool:
+    """Recognize the historical scope-receipt bug caused by withholding."""
+    withheld = {
+        cap for cap in event.get("withheld_capabilities", ())
+        if isinstance(cap, str) and _grade_from_capability(cap, grade) == grade
+    }
+    if not withheld:
+        return False
+    before, after = dict(previous), dict(current)
+    changed = set(before) ^ set(after)
+    return (bool(changed) and changed <= withheld and
+            all(before[cap] == after[cap] for cap in set(before) & set(after)))
+
+
 def _scaled_lr(value: Any) -> str:
     if type(value) not in (float, int):
         return "-"
@@ -408,6 +428,8 @@ class SchoolTelemetry:
         self.start_cap = {}
         self.last_source_training = {}  # capability -> (accuracy, optimizer_step)
         self.exam_cohorts = {}  # (grade, semantic rubric) -> last sampled cohort
+        self.reported_scope_inventory = {}
+        self.scope_variants = {}
         # Whole-student exam scores are distinct from separate per-grade bests.
         self.cumulative_best = {}  # (grades, rubric, scope) -> (correct, total, step)
         self.cumulative_latest = None  # (key, correct, total, step, status)
@@ -686,20 +708,37 @@ class SchoolTelemetry:
             cohort[score_grade][cap] = (correct, total)
         target_evaluated = grade in cohort
 
-        # Validate the full exam before emitting any dashboard rows.
+        # Validate the full exam before emitting any dashboard rows. Historical
+        # retained runs briefly reused one scope receipt while stagnation
+        # withholding changed the actually scored inventory. Keep the receipt
+        # visible, but never compare unlike inventories as if they were one exam.
+        effective_scopes = {}
         for g, caps in cohort.items():
-            previous = self.latest.get((g, rubric, scope))
-            if previous is not None and (set(previous.capabilities) != set(caps) or
-                any(previous.capabilities[k][1] != caps[k][1] for k in caps)):
-                raise ValueError("SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT")
+            shape = tuple(sorted((cap, total) for cap, (_, total) in caps.items()))
+            reported_key = (g, rubric, scope)
+            shape_key = (g, rubric, scope, shape)
+            previous_shape = self.reported_scope_inventory.get(reported_key)
+            effective_scope = self.scope_variants.get(shape_key)
+            if effective_scope is None:
+                if previous_shape is None or previous_shape == shape:
+                    effective_scope = scope
+                elif _withheld_inventory_change_explains(
+                        event, g, previous_shape, shape):
+                    effective_scope = _inventory_scope(scope, caps)
+                else:
+                    raise ValueError("SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT")
+                self.scope_variants[shape_key] = effective_scope
+            effective_scopes[g] = effective_scope
+            self.reported_scope_inventory[reported_key] = shape
 
         for g, caps in sorted(cohort.items()):
             self._grade(g)
+            effective_scope = effective_scopes[g]
             total = sum(x[1] for x in caps.values())
             correct = sum(x[0] for x in caps.values())
             report = ExamScore(g, rubric, correct, total, step, checkpoint,
-                               event.get("generation", 0), caps, scope)
-            key = (g, rubric, scope)
+                               event.get("generation", 0), caps, effective_scope)
+            key = (g, rubric, effective_scope)
             prev = self.latest.get(key)
             start = self.start.setdefault(key, report)
             best = self.best.get(key)
@@ -709,8 +748,9 @@ class SchoolTelemetry:
             self.latest[key] = report
             same_cohort = not live or self.exam_cohorts.get(key) == cohort_sha
             for cap, (score, count) in sorted(caps.items()):
-                baseline = self.start_cap.setdefault((cap, rubric, scope), (score, count))
-                earlier = self.last_cap.get((cap, rubric, scope))
+                cap_key = (cap, rubric, effective_scope)
+                baseline = self.start_cap.setdefault(cap_key, (score, count))
+                earlier = self.last_cap.get(cap_key)
                 gain = score - earlier[0] if earlier and same_cohort else None
                 self.board.rows["BRIDGE FAMILIES"].append({
                     "grade": g, "family": cap, "attempt": report.generation,
@@ -720,7 +760,7 @@ class SchoolTelemetry:
                     "after": f"{score}/{count}",
                     "gain": f"{gain:+d}" if gain is not None else "-",
                 })
-                self.last_cap[(cap, rubric, scope)] = (score, count)
+                self.last_cap[cap_key] = (score, count)
             champion = self.champions.get(g)
             epoch = event.get("championship_epoch") or {}
             earned = tuple(
@@ -783,7 +823,18 @@ class SchoolTelemetry:
             })
             if live:
                 self.exam_cohorts[key] = cohort_sha
-        self._cumulative_exam(cohort, rubric, scope, step, event.get("phase"))
+        cumulative_caps = {
+            cap: score for grade_caps in cohort.values()
+            for cap, score in grade_caps.items()
+        }
+        cumulative_scope = (
+            _inventory_scope(scope, cumulative_caps)
+            if any(value != scope for value in effective_scopes.values())
+            else scope
+        )
+        self._cumulative_exam(
+            cohort, rubric, cumulative_scope,
+            step, event.get("phase"))
         # The A+B cohort reports both rows, but the operator summary must
         # identify the grade whose scheduled exam just completed, especially
         # during the Billy Madison backward A replay.

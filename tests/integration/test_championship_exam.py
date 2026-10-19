@@ -22,6 +22,20 @@ from bilqis_mlx.learning.championship_witnesses import battery_from_exam, verifi
 
 
 class ChampionshipExamTests(TestCase):
+    def test_assessment_scope_hash_tracks_actual_scored_capabilities(self):
+        full = ("A.IDENTITY", "A.LINK", "B.AND", "B.IFF")
+        partial = {"A.IDENTITY": {}, "A.LINK": {}, "B.AND": {}}
+        complete = {cap: {} for cap in full}
+        self.assertEqual(
+            trainer._assessment_scope_sha256(full, partial),
+            trainer._fingerprint(("A.IDENTITY", "A.LINK", "B.AND")))
+        self.assertEqual(
+            trainer._assessment_scope_sha256(full, complete),
+            trainer._fingerprint(full))
+        self.assertNotEqual(
+            trainer._assessment_scope_sha256(full, partial),
+            trainer._assessment_scope_sha256(full, complete))
+
     def test_quarantine_b_and_does_not_suppress_complete_a_identity_title(self):
         root = Path(__file__).resolve().parents[2]
         manifest = json.loads((root / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
