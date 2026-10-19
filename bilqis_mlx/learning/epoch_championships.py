@@ -263,6 +263,15 @@ def _primary_qualification(candidate: dict, incumbent: dict) -> str | None:
     return None
 
 
+def _initial_title_threshold_met(score: dict) -> bool:
+    """Require at least 66% proficiency before an empty title can be claimed."""
+    if (not isinstance(score, dict) or type(score.get("correct")) is not int or
+            type(score.get("total")) is not int or score["total"] < 1 or
+            not 0 <= score["correct"] <= score["total"]):
+        raise ValueError("CHAMPIONSHIP_INITIAL_TITLE_SCORE_INVALID")
+    return score["correct"] * 100 >= score["total"] * 66
+
+
 def _fanout_scores(capability: str, prior: dict, challenger: dict,
                    screen: dict) -> tuple[dict, dict]:
     incumbent = _pointer(prior["checkpoint"])
@@ -471,6 +480,16 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
             continue
         prior = original_roles.get(cap)
         if prior is None:
+            if not _initial_title_threshold_met(scores[cap]):
+                decisions.append({
+                    "grade": grade, "capability": cap,
+                    "decision": "INITIAL_TITLE_THRESHOLD_NOT_MET",
+                    "correct": scores[cap]["correct"],
+                    "total": scores[cap]["total"],
+                    "minimum_percent": 66,
+                    "challenger_sha256": pointer["sha256"],
+                })
+                continue
             roles[cap] = _role_receipt(
                 challenger_exam, cap, mastered, scope=(cap,),
                 owner_maxed=(scores[cap]["correct"] == scores[cap]["total"]))

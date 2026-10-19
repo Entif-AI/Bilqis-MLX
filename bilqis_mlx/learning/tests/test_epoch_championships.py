@@ -142,14 +142,40 @@ class EpochChampionshipTests(TestCase):
         self.assertEqual(result["invalidated_active_roles"][-1]["reason"],
                          "TITLE_ORIGIN_PROVENANCE_MISSING")
 
-    def test_empty_role_can_mint_from_one_capability_panel(self):
-        candidate = _panel("a", 11, "B.XOR", 8, grade="B")
+    def test_empty_role_requires_at_least_sixty_six_percent(self):
+        below = _panel("a", 11, "B.XOR", 7, grade="B")
+        result, changes, decisions = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=below, incumbent_exams={})
+        self.assertEqual(changes, ())
+        self.assertNotIn("B.XOR", result.get("active_roles", {}))
+        self.assertEqual(decisions[0]["decision"], "INITIAL_TITLE_THRESHOLD_NOT_MET")
+
+        candidate = _panel("c", 12, "B.XOR", 8, grade="B")
         result, changes, decisions = advance_epoch(
             _epoch(), grades=GRADES, challenger_exam=candidate, incumbent_exams={})
         self.assertEqual(changes, ("B.XOR",))
         self.assertEqual(decisions, ())
         self.assertEqual(set(result["active_roles"]), {"B.XOR"})
         self.assertEqual(result["active_roles"]["B.XOR"]["correct"], 8)
+
+    def test_initial_title_battery_is_exactly_first_threshold_passes(self):
+        candidate = _panel("a", 11, "B.XOR", 8, grade="B")
+        result, changes, decisions = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=candidate, incumbent_exams={})
+        self.assertEqual(changes, ("B.XOR",))
+        self.assertEqual(decisions, ())
+        role = result["active_roles"]["B.XOR"]
+        battery = [question for segment in role["surviving_battery"]
+                   for question in segment["questions"]]
+        expected = [
+            {**question, "capability": "B.XOR"}
+            for question in candidate["correct_questions"]["B.XOR"]
+        ]
+        self.assertEqual(
+            {question["id"] for question in battery},
+            {question["id"] for question in expected})
+        self.assertEqual(len(battery), 8)
+        self.assertEqual({question["capability"] for question in battery}, {"B.XOR"})
 
     def test_empty_roles_get_per_capability_batteries(self):
         candidate = _multi_panel("a", 11, {"B.AND": 12, "B.XOR": 12})

@@ -782,3 +782,23 @@ Before any active champion or soup may advise, defend, qualify, or participate i
 The causal whole student and its own native AdamW continue unchanged across this metadata reset unless a separate training/admission rule says otherwise. Immutable champion/soup provenance also remains historical evidence, and the permanent settled-match ledger remains run history; neither grants live teaching or title authority in the new geometry. This rule is intentionally global rather than capability-local because the comparison system itself has changed. It supersedes narrower historical wording that preserved prior live advisers across curriculum/version transitions, including the active-voter implications of ADR-062 and any older golden-baseline interpretation that repopulated active titles automatically.
 
 Protected implementation owner is **socr8s/private-ip #344**. Governing desired state is `docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md` revision 7. The canonical Specs/Failures Ledger records this as S098 / ADR-A59 / F027; the Curriculum Registry records the same reset in Decisions and Champion Lifecycle. No agent neural optimizer update is authorized by this ADR.
+
+
+## ADR-071 | 2026-10-19 | Empty capability titles require 66% proficiency and begin with only their first passed questions
+
+**Direct user decision:** after a championship field has been cleared, an empty capability title MUST remain vacant until one same-grade checkpoint reaches at least **66% proficiency on that capability**. On the current twelve-question capability exams this means **8/12 or better**. A checkpoint below that floor may be measured but cannot become the first owner merely because the slot is empty.
+
+When a checkpoint first crosses that threshold and claims the empty title, its initial title-defense battery is exactly the set of questions for that capability that the checkpoint answered correctly on that threshold-crossing examination. No missed questions, sibling-capability questions, broader grade panel, historical battery, synthetic padding, or other evidence is added to the initial battery. Later valid contenders face the normal championship comparison against that battery under the existing one-lifetime-fight and same-grade rules.
+
+This changes empty-slot admission and initial battery construction only. It does not change title ownership after an incumbent exists, grade soups, school-identity resets, scheduler authority, source gold, graduation, or the human-only optimizer boundary.
+
+
+## ADR-072 | 2026-10-19 | Default Grade B is a reduced AND/IFF kernel; the full Boolean grade is explicit opt-in
+
+**Direct user decision:** new Grade-B admission defaults to a reduced four-capability release containing only **B.AND**, **B.IFF**, **B.COMPOSITE**, and **B.IDBOOLOPS**. The latter two are simplified to use only AND and IFF. Every other existing Grade-B Boolean semantic remains implemented but withheld from the default admitted course. No legacy Boolean implementation is deleted.
+
+The reduced grade teaches AND and IFF first, then the AND/IFF-only COMPOSITE capability, then the two-way AND/IFF IDBOOLOPS capability. IDBOOLOPS therefore exposes only the existing AND and IFF semantic-token answers. COMPOSITE may compose only those two operators. New A→B admission uses this reduced release unless the human explicitly supplies `--full-grade-b`, which selects the preserved legacy six-operator lineage. A saved run resumes its recorded release identity and does not silently switch profiles.
+
+Legacy/full Grade-B-specific unit, source-adapter, migration, and trainer tests are retained as opt-in compatibility tests under `BILQIS_FULL_GRADE_B_TESTS=1`; they are not the default current-grade contract. The default suite owns separate reduced-B coverage. Downstream vocabulary growth into Grade C must preserve whichever Boolean-operator answer head the admitted B lineage actually owns; a reduced two-way head must not silently expand back to six operators.
+
+This is a reversible curriculum/admission change, not a semantic deletion. Existing source identities, old run receipts, historical full-B release digests, student/AdamW custody, championship governance, and human-only optimizer authority remain intact.

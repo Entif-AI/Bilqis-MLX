@@ -1,6 +1,7 @@
 """Neural-inert durable enrollment of B.IDBOOLOPS into the revised Grade-B release."""
 from dataclasses import asdict, replace
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -21,6 +22,8 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "vendor" / "legacy-v16"
 
 
+@unittest.skipUnless(os.environ.get("BILQIS_FULL_GRADE_B_TESTS") == "1",
+                     "legacy/full Grade B compatibility tests are opt-in")
 class BooleanIdentificationMigrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -9,7 +9,6 @@ import json
 from typing import Mapping
 
 from .live_grade_c import RELEASE, answer_heads, constructor_digest, expanded_graph
-from .boolean_identification import answer_heads as boolean_identification_answer_heads
 from .live_curriculum import numeric_maximum
 from bilqis_mlx.curriculum.scheduler import Assessment, SchoolState, append_next_grade, verify_state
 from .curriculum import Course
@@ -250,8 +249,11 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
     next_epoch["championship_school_identity"] = championship_identity
     heads = answer_heads(grown_graph, maximum)
     if "boolean_operator" in receipt["config"].get("answer_heads", {}):
-        heads["boolean_operator"] = boolean_identification_answer_heads(grown_graph)[
-            "boolean_operator"]
+        prior = receipt["config"]["answer_heads"]["boolean_operator"]
+        heads["boolean_operator"] = {
+            "values": list(prior["values"]),
+            "token_ids": list(prior["token_ids"]),
+        }
     updated = {**receipt, "curriculum_mode": RELEASE,
         "grade_c_parent_course_digest": previous.digest(),
         "numeric_maximum": maximum, "grade_c_code_sha256": constructor_digest(),

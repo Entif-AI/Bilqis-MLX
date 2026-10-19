@@ -119,7 +119,12 @@ def validate(course: Course) -> None:
         if grade.id not in GRADE_IDS or grade.id in grade_ids_seen:
             raise ValueError("INVALID_OR_DUPLICATE_LETTER_GRADE")
         grade_ids_seen.add(grade.id)
-        if not 6 <= len(grade.capabilities) <= 9:
+        compact_boolean = (
+            grade.id == "B" and
+            tuple(cap.id for cap in grade.capabilities) ==
+            ("B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS")
+        )
+        if not compact_boolean and not 6 <= len(grade.capabilities) <= 9:
             raise ValueError("GRADE_CAPABILITY_COUNT_OUTSIDE_SIX_TO_NINE")
         difficulties = {cap.difficulty for cap in grade.capabilities}
         if len(difficulties) != 1:
@@ -163,9 +168,13 @@ def validate(course: Course) -> None:
                     raise ValueError("INVALID_BINARY_ANSWER_LABELS")
                 if family.kind == "integer_0_3" and family.values != INT_0_3:
                     raise ValueError("INVALID_INTEGER_0_3_ANSWER_LABELS")
-                if (family.kind == "boolean_operator" and
-                        family.values != BOOLEAN_OPERATORS):
-                    raise ValueError("INVALID_BOOLEAN_OPERATOR_ANSWER_LABELS")
+                if family.kind == "boolean_operator":
+                    if (len(family.values) < 2 or
+                            any(value not in BOOLEAN_OPERATORS for value in family.values) or
+                            family.values != tuple(
+                                value for value in BOOLEAN_OPERATORS
+                                if value in family.values)):
+                        raise ValueError("INVALID_BOOLEAN_OPERATOR_ANSWER_LABELS")
             grade_ids.add(cap.id)
             seen_roots_in_grade.update(cap.taught_roots)
         all_ids.update(grade_ids)

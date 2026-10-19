@@ -60,6 +60,7 @@ from .factory.live_releases import (
     KNOWN_RELEASES,
     NUMERIC_RELEASE,
     NUMERIC_STAIRCASE_RELEASE,
+    MINIMAL_BOOLEAN_RELEASE,
     SAME_GRADE_TRANSITION,
     SAME_GRAPH_TRANSITION,
     boolean_composite_successor,
@@ -1184,7 +1185,8 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, adm
     return parameters, optimizer, graph, receipt
 
 
-def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor):
+def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor,
+                                  graph=None):
     """Preserve the mastered student/AdamW across a same-graph grade boundary."""
     school = _state_from_json(receipt["school"], previous_course)
     current_grade = previous_course.grades[-1].id
@@ -1227,7 +1229,14 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor):
     epoch["settled_matchups"] = settled
     epoch["championship_school_identity"] = identity
     compatibility = legacy_receipt_fields(successor.version)
+    config_update = {}
+    if successor.version == MINIMAL_BOOLEAN_RELEASE:
+        if not isinstance(graph, dict):
+            raise ValueError("HUMAN_TRAINER_MINIMAL_GRADE_B_REQUIRES_GRAPH")
+        config_update["config"] = rebind_same_grade_config(
+            successor.version, receipt["config"], graph)
     candidate = {**receipt, **compatibility, "curriculum_mode": successor.version,
+                 **config_update,
                  "live_rubric_sha256": successor.grades[-1].assessment_sha256,
                  "factory_release_sha256": release.release_sha256,
                  "factory_release_file": release_file,
@@ -3883,6 +3892,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             numeric_staircase: bool = False,
             boolean_composite: bool = False,
             boolean_idboolops: bool = False,
+            full_grade_b: bool = False,
             retention_enabled: bool = True,
             experiment_probe_each: int = 6,
             experiment_mature_max_loss: int = 1,
@@ -3901,7 +3911,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         flash_mode=flash_mode,
         boolean_association_bridge=boolean_association_bridge,
         boolean_composite=boolean_composite,
-        boolean_idboolops=boolean_idboolops)
+        boolean_idboolops=boolean_idboolops,
+        full_grade_b=full_grade_b)
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
             type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
             type(max_visits) is not int or max_visits < 0 or
@@ -4000,11 +4011,12 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     run_dir, receipt, course,
                     predecessor_course(admitted_courses, course), graph)
             if receipt["school"]["stage"] == "AWAITING_NEXT_GRADE":
-                plan = next_successor_plan(course, source_root)
+                plan = next_successor_plan(
+                    course, source_root, full_grade_b=full_grade_b)
                 if plan is not None:
                     if plan.transition == SAME_GRAPH_TRANSITION:
                         receipt = _activate_next_admitted_grade(
-                            run_dir, receipt, course, plan.successor)
+                            run_dir, receipt, course, plan.successor, graph)
                         course = plan.successor
                     elif plan.transition == SAME_GRADE_TRANSITION:
                         receipt = _activate_revised_admitted_grade(

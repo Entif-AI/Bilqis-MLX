@@ -52,6 +52,15 @@ from ..numeric_curriculum import ORACLE as C_ORACLE, draw_numeric
 
 from ..numeric_staircase import RELEASE as STAIRCASE_RELEASE, constructor_digest as staircase_digest
 
+from ..minimal_grade_b import (
+    GENERATOR as B_MINIMAL_GENERATOR,
+    RELEASE as B_MINIMAL_RELEASE,
+    constructor_digest as b_minimal_digest,
+    draw_minimal,
+)
+from ..minimal_boolean_identification_oracle import (
+    VERSION as B_MINIMAL_IDBOOLOPS_ORACLE,
+)
 
 from ..boolean_association import (
     VERSION as BOOLEAN_ASSOCIATION_OPTION,
@@ -166,6 +175,23 @@ def check_b_idboolops_release(row, **kwargs):
     return check_connective(row, **kwargs)
 
 
+def draw_b_minimal_release(*, source_root, graph, course, capability, seed, each):
+    return draw_minimal(
+        source_root, graph, seed=seed, capability=capability, each=each)
+
+
+def check_b_minimal_release(row, **kwargs):
+    if row.get("capability") == B_IDBOOLOPS_CAPABILITY:
+        from ..minimal_boolean_identification_oracle import evaluate
+        from ..boolean_identification import encode_record
+        return (evaluate(row["record"], row["capability"]) == row["gold"] and
+                encode_record(row["record"], kwargs["source_root"], kwargs["graph"]) ==
+                row["tokens"])
+    if row.get("capability") == B_COMPOSITE_CAPABILITY:
+        return check_boolean_composite(row, **kwargs)
+    return check_connective(row, **kwargs)
+
+
 def draw_c(*, source_root, graph, course, capability, seed, each):
     cap = course.capability_map[capability]
     numeric = next((family for family in cap.answer_families
@@ -225,6 +251,14 @@ def live_source_registry() -> SourceAdapterRegistry:
                             "balanced-operator-targets", "masked-operator-input"),
             cohort_releases=((B_IDBOOLOPS_RELEASE, b_idboolops_digest()),)),
             draw_b_idboolops_release, check_b_idboolops_release),
+        RegisteredSourceAdapter(SourceAdapter(
+            "source.micro.boolean-minimal/v1", B_MINIMAL_GENERATOR,
+            (B_ORACLE, B_COMPOSITE_ORACLE, B_MINIMAL_IDBOOLOPS_ORACLE),
+            b_minimal_digest(), cohort_generator_id=B_MINIMAL_GENERATOR,
+            variation_axes=("source-valid", "fresh-seed", "balanced-gold",
+                            "and-iff-only", "operator-composition"),
+            cohort_releases=((B_MINIMAL_RELEASE, b_minimal_digest()),)),
+            draw_b_minimal_release, check_b_minimal_release),
         RegisteredSourceAdapter(SourceAdapter(
             "source.finite-numeric/v1", "bilqis_mlx.numeric_curriculum.draw_numeric",
             (C_ORACLE,), c_digest(), cohort_generator_id=C_COHORT_GENERATOR,

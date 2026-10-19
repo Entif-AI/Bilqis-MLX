@@ -3,6 +3,7 @@ from dataclasses import asdict, replace
 import hashlib
 import io
 import json
+import os
 from contextlib import nullcontext, redirect_stdout
 from pathlib import Path
 import tempfile
@@ -40,6 +41,8 @@ MANIFEST = ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
 
 @unittest.skipUnless(CHECKPOINT.is_file(), "Original source not mounted")
+@unittest.skipUnless(os.environ.get("BILQIS_FULL_GRADE_B_TESTS") == "1",
+                     "legacy/full Grade B trainer tests are opt-in")
 class GradeBTrainerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

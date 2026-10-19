@@ -37,7 +37,7 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
         labels = head.get("values") or []
         answer_ids = head.get("token_ids") or []
         sizes = {"numeric_0_3":4, "numeric_full_101":101, "evidence":5,
-                 "binary":2, "boolean_operator":len(BOOLEAN_OPERATORS)}
+                 "binary":2}
         if (len(labels) != len(answer_ids) or
                 len(set(labels)) != len(labels) or
                 any(type(i) is not int or not 0 <= i < len(vocabulary) for i in answer_ids) or
@@ -48,7 +48,10 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
                 len(set(answer_ids)) != len(answer_ids) or
                 kind == "numeric_0_3" and labels != ["0", "1", "2", "3"] or
                 kind == "numeric_full_101" and labels != [str(i) for i in range(101)] or
-                kind == "boolean_operator" and labels != list(BOOLEAN_OPERATORS) or
+                kind == "boolean_operator" and (
+                    len(labels) < 2 or
+                    any(label not in BOOLEAN_OPERATORS for label in labels) or
+                    labels != [label for label in BOOLEAN_OPERATORS if label in labels]) or
                 kind in ("evidence", "binary") and labels[:2] != ["FALSE", "TRUE"]):
             raise ValueError("ANSWER_CASTE_UNTRUSTED_HEAD_ABI")
         if row.get("gold") not in labels:

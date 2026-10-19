@@ -16,6 +16,7 @@ from .factory.live_releases import (
     BOOLEAN_RELEASE as LIVE_GRADE_B_RELEASE,
     BOOLEAN_COMPOSITE_RELEASE as LIVE_GRADE_B_COMPOSITE_RELEASE,
     BOOLEAN_IDENTIFICATION_RELEASE as LIVE_GRADE_B_IDBOOLOPS_RELEASE,
+    MINIMAL_BOOLEAN_RELEASE as LIVE_GRADE_B_MINIMAL_RELEASE,
     NUMERIC_RELEASE as LIVE_GRADE_C_RELEASE,
 )
 from .numeric_staircase import RELEASE as STAIRCASE_RELEASE
@@ -143,12 +144,12 @@ def _inspect(run_dir: Path) -> dict:
                 "last_exam": saved["last_exam"],
                 "last_session_stop": _latest_session_stop(
                     run_dir, saved["generation"], student["optimizer_step"]),
-                "grade_a_release": LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE) else saved.get("curriculum_mode") or GRADE_A_RELEASE,
+                "grade_a_release": LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE) else saved.get("curriculum_mode") or GRADE_A_RELEASE,
                 "historical_source_release": GRADE_A_RELEASE,
-                "grade_a_curriculum_mode": (LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE)
+                "grade_a_curriculum_mode": (LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE)
                                              else saved.get("curriculum_mode", "HISTORICAL_FIXED_72")),
-                "grade_b_curriculum_mode": saved.get("curriculum_mode") if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE) else None,
-                "grade_b_source_admitted": saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE),
+                "grade_b_curriculum_mode": saved.get("curriculum_mode") if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE) else None,
+                "grade_b_source_admitted": saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE, LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE),
                 "grade_c_curriculum_mode": saved.get("curriculum_mode") if saved.get("curriculum_mode") in (LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE) else None,
                 "introduction_stage": school.get("introduction_stage", 0),
                 "numeric_maximum": saved.get("numeric_maximum"),
@@ -270,6 +271,7 @@ def _boolean_revision_preflight(run_dir: Path, legacy_root: Path, *, resume: boo
 def preflight(run_dir: Path, *, resume=False, verify_source=False,
               legacy_code_root: Path | None = None, champion_checkpoint: Path | None = None,
               numeric_staircase=False, boolean_composite=False, boolean_idboolops=False,
+              full_grade_b=False,
               retention_enabled=True,
               boolean_association_bridge=False):
     legacy_root, original_checkpoint = _source_paths(legacy_code_root, champion_checkpoint)
@@ -304,7 +306,8 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         admitted = resolve_admitted_courses(
             accepted, legacy_root, saved, include_prospective=False)
         current = course_for_mode(admitted, saved.get("curriculum_mode"), initial)
-        successor = preflight_successor(current, legacy_root, manifest, saved)
+        successor = preflight_successor(
+            current, legacy_root, manifest, saved, full_grade_b=full_grade_b)
         snapshot.update(successor["details"])
         snapshot["blockers"].extend(successor["blockers"])
     snapshot["grade_a_source_manifest"] = "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
@@ -456,6 +459,8 @@ def parse_args(argv=None):
                            help='Neural-inertly enroll B.COMPOSITE into the current Grade-B release')
             p.add_argument('--boolean-idboolops', action='store_true',
                            help='Neural-inertly enroll inverse Boolean primitive identification into Grade B')
+            p.add_argument('--full-grade-b', action='store_true',
+                           help='Opt into the legacy/full six-operator Grade B at A-to-B admission; default is reduced AND/IFF B')
             retention = p.add_mutually_exclusive_group()
             retention.add_argument('--no-retention', action='store_true',
                                    help='Explicit unprotected legacy teaching (separate independent --run-dir only)')
@@ -616,6 +621,7 @@ def _main(args):
                              numeric_staircase=args.numeric_staircase,
                              boolean_composite=args.boolean_composite,
                              boolean_idboolops=args.boolean_idboolops,
+                             full_grade_b=args.full_grade_b,
                              retention_enabled=not args.no_retention,
                              boolean_association_bridge=args.boolean_association_bridge)
         if args.verify_source:
@@ -645,6 +651,7 @@ def _main(args):
                     numeric_staircase=args.numeric_staircase,
                     boolean_composite=args.boolean_composite,
                     boolean_idboolops=args.boolean_idboolops,
+                    full_grade_b=args.full_grade_b,
                     retention_enabled=not args.no_retention,
                     experiment_probe_each=args.experiment_probe_each,
                     experiment_mature_max_loss=args.experiment_mature_max_loss,

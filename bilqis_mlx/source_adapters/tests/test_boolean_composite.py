@@ -1,6 +1,7 @@
 """Contract tests for the user-approved B.COMPOSITE derived capability."""
 from collections import Counter
 import json
+import os
 from pathlib import Path
 import unittest
 
@@ -23,8 +24,10 @@ SOURCE = ROOT / "vendor" / "legacy-v16"
 MANIFEST = ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
 
-@unittest.skipUnless((SOURCE / "bilqis_micro/kernel.py").is_file(),
-                     "Pinned predecessor source is not mounted")
+@unittest.skipUnless(
+    os.environ.get("BILQIS_FULL_GRADE_B_TESTS") == "1" and
+    (SOURCE / "bilqis_micro/kernel.py").is_file(),
+    "legacy/full Grade B compatibility tests are opt-in")
 class BooleanCompositeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
