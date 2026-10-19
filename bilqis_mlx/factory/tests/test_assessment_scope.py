@@ -44,6 +44,8 @@ class AssessmentScopeContractTests(unittest.TestCase):
         self.assertEqual(after.capabilities, a_scope)
         self.assertEqual(before.rubric_sha256, after.rubric_sha256)
         self.assertEqual(before.source_sha256, after.source_sha256)
+        self.assertEqual(before.generator_version, before.source_sha256)
+        self.assertEqual(after.generator_version, after.source_sha256)
         self.assertNotEqual(
             before.factory_release_sha256, after.factory_release_sha256)
 

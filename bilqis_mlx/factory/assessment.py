@@ -79,7 +79,7 @@ def assessment_scope_contract(
         source_sha256=source_sha256,
         factory_release_sha256=release.release_sha256,
         semantic_catalog_sha256=release.semantic_catalog_sha256,
-        generator_version=release.release_sha256,
+        generator_version=source_sha256,
     )
 
 

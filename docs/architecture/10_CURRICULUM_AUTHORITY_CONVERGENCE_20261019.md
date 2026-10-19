@@ -351,6 +351,8 @@ Changing only a profile must change disposable live behavior without editing tho
 
 Exact assessment scope now has a grade-neutral v2 contract. The rubric identity hashes only the selected capabilities' assessment projections. The source identity hashes only their source projections plus verified source receipts. The enclosing factory-release SHA and semantic-catalog SHA remain separate identities. This prevents the prior scope/rubric conflation where a broader admitted course could relabel evidence for a narrower scored scope.
 
+Parallel v2 assessment custody now implements the governing lifetime distinctions without grade/release switches: fresh routine measurement, fixed-within-attempt promotion, and fresh/burnable generalization all receive the exact active capability scope explicitly. Persisted cohort evidence keeps scope rubric/source identities separate from holistic release identity. Existing human/live assessment callers still use the historical path; the next cutover must migrate callers rather than leave both paths canonical.
+
 ### Wave 3: typed release transitions
 
 Replace named successor switches with structural plan/release diffs:
