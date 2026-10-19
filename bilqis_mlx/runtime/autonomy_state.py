@@ -11,6 +11,7 @@ from ..factory.autonomy import (
     EvidenceReceipt,
     ProjectionEvidenceSpec,
     SourceCompositionEdge,
+    SupplementalEvidenceSpec,
     TeachingReceipt,
     compile_autonomy_plan,
     next_action,
@@ -58,6 +59,16 @@ def _plan_from_json(value: dict) -> AutonomyPlan:
                     proof_axes=tuple(item["proof_axes"]),
                 )
                 for item in value.get("projection_evidence", ())),
+            supplemental_evidence=tuple(
+                SupplementalEvidenceSpec(
+                    capability_id=item["capability_id"],
+                    kind=item["kind"],
+                    key=item["key"],
+                    requires_capabilities=tuple(
+                        item["requires_capabilities"]),
+                    minimum_specimens=item.get("minimum_specimens", 1),
+                )
+                for item in value.get("supplemental_evidence", ())),
         )
     except (KeyError, TypeError) as exc:
         raise ValueError("AUTONOMY_STATE_PLAN_INVALID") from exc

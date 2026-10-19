@@ -52,6 +52,7 @@ def build_live_autonomy_plan(
     """Compile the strongest currently source-proven autonomy plan."""
     release.verify()
     registry = load_registry(REGISTRY_SNAPSHOT)
+    source_registry = live_source_registry()
     discovered = discover_composition_obligations(
         compile_ast(release.course), registry)
     if any(
@@ -59,7 +60,11 @@ def build_live_autonomy_plan(
             for edge in discovered["obligations"]):
         discovered = audit_pinned_micro_generator(
             discovered, Path(source_root), max_rounds=8, each=24)
-    return compile_autonomy_plan(release, discovered)
+    return compile_autonomy_plan(
+        release, discovered,
+        supplemental_evidence=source_registry.evidence_dependencies(
+            release.course),
+    )
 
 
 def reconcile_live_autonomy_state(

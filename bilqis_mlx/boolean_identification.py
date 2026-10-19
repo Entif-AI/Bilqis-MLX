@@ -221,12 +221,10 @@ def build_course(previous: Course, legacy_root: Path) -> Course:
     _, _, graph, _, _ = read_sources(legacy_root)
     witness = draw_identification(legacy_root, graph, seed=2026101902)
     roots = tuple("cogal.operator." + operator for operator in BOOLEAN_OPERATORS)
-    atomic_ids = tuple("B." + operator for operator in BOOLEAN_OPERATORS)
     cap = Capability(
         id=CAPABILITY, difficulty=previous.grades[-1].capabilities[0].difficulty,
         source_anchor="repo:bilqis_logic/kernel.py::TABLES+_operation",
-        taught_roots=roots, examined_roots=roots,
-        prerequisites=(*PREREQUISITES, *atomic_ids),
+        taught_roots=roots, examined_roots=roots, prerequisites=PREREQUISITES,
         composed_of=(),
         answer_families=(AnswerFamily(ANSWER_KIND, BOOLEAN_OPERATORS),),
         lesson_generator=GENERATOR, independent_oracle=ORACLE,
@@ -244,7 +242,7 @@ def build_course(previous: Course, legacy_root: Path) -> Course:
     })
     grade = replace(previous.grades[-1], capabilities=(*existing, cap),
                     assessment_sha256=seal, exam_item_counts=counts,
-                    teaching_stages=(atomic_ids, ("B.COMPOSITE",), (CAPABILITY,)))
+                    teaching_stages=())
     course = replace(previous, grades=(*previous.grades[:-1], grade),
                      version=RELEASE, assessment_manifest_sha256=seal)
     if not course.executable:

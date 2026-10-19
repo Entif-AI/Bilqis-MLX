@@ -62,6 +62,30 @@ class ProjectionEvidenceSpec:
 
 
 @dataclass(frozen=True)
+class SupplementalEvidenceSpec:
+    """Provider-owned proof dependency that does not rewrite Course semantics."""
+
+    capability_id: str
+    kind: str
+    key: str
+    requires_capabilities: tuple[str, ...]
+    minimum_specimens: int = 1
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.capability_id, str) or not self.capability_id or
+                self.kind not in {"PREREQUISITE", "COMPOSITION"} or
+                not isinstance(self.key, str) or not self.key or
+                not self.requires_capabilities or
+                len(set(self.requires_capabilities)) !=
+                len(self.requires_capabilities) or
+                any(not isinstance(item, str) or not item
+                    for item in self.requires_capabilities) or
+                type(self.minimum_specimens) is not int or
+                self.minimum_specimens < 1):
+            raise ValueError("AUTONOMY_SUPPLEMENTAL_EVIDENCE_SPEC_INVALID")
+
+
+@dataclass(frozen=True)
 class AutonomyPlan:
     factory_release_sha256: str
     source_composition_audited: bool
@@ -70,6 +94,7 @@ class AutonomyPlan:
     blocked_capabilities: tuple[str, ...] = ()
     deferred_composition_candidates: tuple[str, ...] = ()
     projection_evidence: tuple[ProjectionEvidenceSpec, ...] = ()
+    supplemental_evidence: tuple[SupplementalEvidenceSpec, ...] = ()
 
     def __post_init__(self) -> None:
         if (not isinstance(self.factory_release_sha256, str) or
@@ -91,7 +116,12 @@ class AutonomyPlan:
                     for item in self.projection_evidence) or
                 len({(item.capability_id, item.projection_id)
                      for item in self.projection_evidence}) !=
-                len(self.projection_evidence)):
+                len(self.projection_evidence) or
+                any(not isinstance(item, SupplementalEvidenceSpec)
+                    for item in self.supplemental_evidence) or
+                len({(item.capability_id, item.kind, item.key)
+                     for item in self.supplemental_evidence}) !=
+                len(self.supplemental_evidence)):
             raise ValueError("AUTONOMY_PLAN_INVALID")
 
     def digest(self) -> str:
@@ -102,6 +132,8 @@ class AutonomyPlan:
         # was added.
         if not self.projection_evidence:
             payload.pop("projection_evidence", None)
+        if not self.supplemental_evidence:
+            payload.pop("supplemental_evidence", None)
         return _digest(payload)
 
 
@@ -109,6 +141,7 @@ def compile_autonomy_plan(
     release: FactoryRelease, composition_report: dict | None = None,
     *, projection_evidence: tuple[ProjectionEvidenceSpec, ...] = (),
     projection_coverage_debt: tuple[str, ...] = (),
+    supplemental_evidence: tuple[SupplementalEvidenceSpec, ...] = (),
 ) -> AutonomyPlan:
     """Bind learner planning to verified typed composition coverage when present.
 
@@ -128,6 +161,15 @@ def compile_autonomy_plan(
             any(not isinstance(item, str) or not item
                 for item in projection_coverage_debt)):
         raise ValueError("AUTONOMY_PROJECTION_EVIDENCE_SCOPE_INVALID")
+    if (any(not isinstance(item, SupplementalEvidenceSpec)
+            for item in supplemental_evidence) or
+            len({(item.capability_id, item.kind, item.key)
+                 for item in supplemental_evidence}) !=
+            len(supplemental_evidence) or
+            any(item.capability_id not in capability_ids or
+                not set(item.requires_capabilities) <= set(capability_ids)
+                for item in supplemental_evidence)):
+        raise ValueError("AUTONOMY_SUPPLEMENTAL_EVIDENCE_SCOPE_INVALID")
     projection_blocked = set()
     for item in projection_coverage_debt:
         capability = item.split(":", 1)[0]
@@ -142,6 +184,7 @@ def compile_autonomy_plan(
             blocked_capabilities=tuple(
                 item for item in capability_ids if item in projection_blocked),
             projection_evidence=projection_evidence,
+            supplemental_evidence=supplemental_evidence,
         )
     from ..curriculum_compiler import compile_ast
     from ..semantic_coverage import SCHEMA
@@ -199,6 +242,7 @@ def compile_autonomy_plan(
         tuple(item for item in capability_ids if item in blocked),
         tuple(deferred),
         projection_evidence,
+        supplemental_evidence,
     )
 
 
@@ -413,6 +457,19 @@ def obligations_for_capability(
         proof_axes=projection.proof_axes,
     ) for projection in resolved_plan.projection_evidence
       if projection.capability_id == capability_id)
+    obligations.extend(EvidenceObligation(
+        obligation_id=(
+            f"{capability_id}/supplemental/{item.kind.lower()}/{item.key}"),
+        capability_id=capability_id,
+        kind=(EvidenceKind.PREREQUISITE
+              if item.kind == "PREREQUISITE"
+              else EvidenceKind.COMPOSITION),
+        key=item.key,
+        minimum_specimens=item.minimum_specimens,
+        generation_axes=axes,
+        requires_capabilities=item.requires_capabilities,
+    ) for item in resolved_plan.supplemental_evidence
+      if item.capability_id == capability_id)
     obligations.extend(EvidenceObligation(
         obligation_id=f"{capability_id}/prerequisite/{predecessor}",
         capability_id=capability_id,

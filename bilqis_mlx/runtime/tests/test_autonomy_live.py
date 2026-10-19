@@ -81,6 +81,22 @@ class LiveAutonomyBridgeTests(unittest.TestCase):
             )
             self.assertEqual(ledger_next.receipts, ())
 
+    def test_composite_restart_preserves_provider_owned_dependency_plan(self):
+        release = compile_live_release(self.composite)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            opened = LiveAutonomySession.open(root, LEGACY, release)
+            supplemental = tuple(
+                item for item in opened.plan.supplemental_evidence
+                if item.capability_id == "B.COMPOSITE")
+            self.assertEqual(
+                {item.key for item in supplemental},
+                {"B.NOT", "B.AND", "B.OR", "B.XOR", "B.IMPLIES", "B.IFF"},
+            )
+            reopened = LiveAutonomySession.open(root, LEGACY, release)
+            self.assertEqual(reopened.plan, opened.plan)
+            self.assertEqual(reopened.ledger, opened.ledger)
+
     def test_scheduler_alignment_never_jumps_queue(self):
         release = compile_live_release(self.a)
         plan = build_live_autonomy_plan(release, LEGACY)
