@@ -61,6 +61,7 @@ class AutonomousRuntimeLoopTests(unittest.TestCase):
             "obligations": ({
                 "consumer": "A.F3", "producer": "A.BASE", "operand_slot": 0,
                 "operand_type": "Boolean", "status": status,
+                "declared_prerequisite": True,
                 "coverage_debt": not covered,
                 "witness_ids": ("witness-1",) if covered else (),
             },),

@@ -47,6 +47,8 @@ def _plan_from_json(value: dict) -> AutonomyPlan:
                 ) for item in value.get("source_composition_edges", ())),
             coverage_debt=tuple(value.get("coverage_debt", ())),
             blocked_capabilities=tuple(value.get("blocked_capabilities", ())),
+            deferred_composition_candidates=tuple(
+                value.get("deferred_composition_candidates", ())),
         )
     except (KeyError, TypeError) as exc:
         raise ValueError("AUTONOMY_STATE_PLAN_INVALID") from exc

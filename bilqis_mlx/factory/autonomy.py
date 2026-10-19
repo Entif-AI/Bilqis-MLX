@@ -48,6 +48,7 @@ class AutonomyPlan:
     source_composition_edges: tuple[SourceCompositionEdge, ...] = ()
     coverage_debt: tuple[str, ...] = ()
     blocked_capabilities: tuple[str, ...] = ()
+    deferred_composition_candidates: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if (not isinstance(self.factory_release_sha256, str) or
@@ -60,7 +61,11 @@ class AutonomyPlan:
                 any(not isinstance(item, str) or not item for item in self.coverage_debt) or
                 len(set(self.blocked_capabilities)) != len(self.blocked_capabilities) or
                 any(not isinstance(item, str) or not item
-                    for item in self.blocked_capabilities)):
+                    for item in self.blocked_capabilities) or
+                len(set(self.deferred_composition_candidates)) !=
+                len(self.deferred_composition_candidates) or
+                any(not isinstance(item, str) or not item
+                    for item in self.deferred_composition_candidates)):
             raise ValueError("AUTONOMY_PLAN_INVALID")
 
     def digest(self) -> str:
@@ -91,7 +96,7 @@ def compile_autonomy_plan(
         raise ValueError("AUTONOMY_COMPOSITION_REPORT_SCOPE_INVALID")
 
     source_cohort = composition_report.get("source_witness_cohort_sha256")
-    edges, debt, blocked = [], [], set()
+    edges, debt, blocked, deferred = [], [], set(), []
     for unresolved in composition_report.get("unresolved", ()):
         capability = unresolved.get("capability") if isinstance(unresolved, dict) else None
         failure = unresolved.get("failure") if isinstance(unresolved, dict) else None
@@ -115,6 +120,11 @@ def compile_autonomy_plan(
                 witness_ids=tuple(raw.get("witness_ids", ())),
                 source_cohort_sha256=source_cohort,
             ))
+        elif not raw.get("declared_prerequisite", False):
+            # Type compatibility is only a candidate composition edge.  Until
+            # source evidence or an explicit semantic declaration elevates it,
+            # keep it visible but do not block the learner on speculative debt.
+            deferred.append(f"{consumer}:{producer}:{slot}:{status}")
         else:
             debt.append(f"{consumer}:{producer}:{slot}:{status}")
             blocked.add(consumer)
@@ -122,6 +132,7 @@ def compile_autonomy_plan(
     return AutonomyPlan(
         release.release_sha256, True, tuple(edges), tuple(debt),
         tuple(item for item in capability_ids if item in blocked),
+        tuple(deferred),
     )
 
 
