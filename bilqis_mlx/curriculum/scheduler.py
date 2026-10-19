@@ -53,7 +53,8 @@ class Assessment:
     evaluation_id: str
 
     def verify(self, checkpoint: Checkpoint, course: Course,
-               required_capabilities: tuple[str, ...]) -> None:
+               required_capabilities: tuple[str, ...], *,
+               rubric_capabilities: tuple[str, ...] | None = None) -> None:
         if (self.checkpoint_sha256 != checkpoint.sha256 or
                 self.optimizer_step != checkpoint.optimizer_step or
                 self.course_digest != course.digest()):
@@ -62,8 +63,12 @@ class Assessment:
                 any(c not in "0123456789abcdef" for c in self.rubric_digest) or
                 not self.evaluation_id):
             raise ValueError("ASSESSMENT_RUBRIC_IDENTITY_MISSING")
+        rubric_scope = (required_capabilities if rubric_capabilities is None
+                        else rubric_capabilities)
+        if not set(required_capabilities) <= set(rubric_scope):
+            raise ValueError("ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL")
         represented = [grade for grade in course.grades if
-                       any(cap.id in required_capabilities
+                       any(cap.id in rubric_scope
                            for cap in grade.capabilities)]
         if not represented:
             raise ValueError("ASSESSMENT_HAS_NO_REPRESENTED_GRADE")
@@ -73,7 +78,7 @@ class Assessment:
         if grade_seal is not None and self.rubric_digest != grade_seal:
             raise ValueError("ASSESSMENT_NOT_GRADE_SEALED_RUBRIC")
         all_caps = _caps(course, tuple(g.id for g in course.grades))
-        if (set(required_capabilities) == set(all_caps) and
+        if (set(rubric_scope) == set(all_caps) and
                 course.assessment_manifest_sha256 is not None and
                 self.rubric_digest != course.assessment_manifest_sha256):
             raise ValueError("ASSESSMENT_NOT_COURSE_SEALED_RUBRIC")
@@ -438,11 +443,15 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
 
 def _verify_assessment_boundary(course: Course, state: SchoolState,
                                 snapshot: Assessment,
-                                pool: tuple[str, ...]) -> None:
+                                pool: tuple[str, ...], *,
+                                rubric_pool: tuple[str, ...] | None = None) -> None:
     verify_state(course, state)
     if state.stage not in ("ASSESS_MAIN", "ASSESS_RECOVERY_1", "ASSESS_RECOVERY_2"):
         raise ValueError("ASSESSMENT_NOT_SCHEDULED_AT_DURABLE_BOUNDARY")
-    snapshot.verify(state.current_student, course, pool)
+    snapshot.verify(
+        state.current_student, course, pool,
+        rubric_capabilities=rubric_pool,
+    )
     if (state.latest_rubric_digest is not None and
             state.latest_rubric_digest != snapshot.rubric_digest):
         raise ValueError("ASSESSMENT_RUBRIC_CHANGED_MID_COURSE")
@@ -573,7 +582,10 @@ def assess_withheld(course: Course, state: SchoolState, snapshot: Assessment,
     if not active_pool:
         return replace(state, stage="DEFERRED_STAGNATION", queue=(),
                        first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
-    _verify_assessment_boundary(course, state, snapshot, active_pool)
+    _verify_assessment_boundary(
+        course, state, snapshot, active_pool,
+        rubric_pool=pool,
+    )
 
     grade = next(g for g in course.grades if g.id == state.grade)
     current_caps = set(_caps(course, (state.grade,)))

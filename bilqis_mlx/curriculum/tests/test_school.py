@@ -212,6 +212,37 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(reduced.queue, ("a.1",))
         self.assertNotIn("A", reduced.champions)
 
+    def test_withheld_entire_later_grade_keeps_cumulative_rubric_authority(self):
+        a, b = self.course.grades
+        course = replace(
+            self.course,
+            grades=(replace(a, assessment_sha256="a" * 64),
+                    replace(b, assessment_sha256="b" * 64)),
+            assessment_manifest_sha256="b" * 64,
+        )
+        student = self.init
+        state = replace(
+            start_new(course, student),
+            stage="ASSESS_RECOVERY_2",
+            champions={"A": student},
+            latest_rubric_digest="b" * 64,
+            main_sweep_visited=("B", "A"),
+        )
+        self.assertEqual(
+            set(assessment_capabilities(course, state)),
+            {*(f"a.{i}" for i in range(6)), *(f"b.{i}" for i in range(6))},
+        )
+        active = {f"a.{i}": (8, 8) for i in range(6)}
+        deferred = assess_withheld(
+            course,
+            state,
+            snapshot(course, student, active, from_rubric="b" * 64),
+            tuple(f"b.{i}" for i in range(6)),
+        )
+        self.assertEqual(deferred.stage, "DEFERRED_STAGNATION")
+        self.assertEqual(deferred.latest_rubric_digest, "b" * 64)
+        self.assertEqual(deferred.champions, {"A": student})
+
     def test_only_withheld_debt_stops_for_review_and_reenters_next_run(self):
         state = grade_loop(self.course, start_new(self.course, self.init), self.init)
         active = {f"a.{i}": (8, 8) for i in range(1, 6)}
