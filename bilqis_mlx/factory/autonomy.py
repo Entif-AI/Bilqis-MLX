@@ -8,10 +8,136 @@ release.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import Enum
+import hashlib
+import json
 
 from .model import FactoryRelease
+
+
+def _digest(value) -> str:
+    return hashlib.sha256(json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+        allow_nan=False).encode()).hexdigest()
+
+
+@dataclass(frozen=True)
+class SourceCompositionEdge:
+    consumer: str
+    producer: str
+    operand_slot: int
+    witness_ids: tuple[str, ...]
+    source_cohort_sha256: str
+
+    def __post_init__(self) -> None:
+        if (not self.consumer or not self.producer or
+                type(self.operand_slot) is not int or self.operand_slot < 0 or
+                not self.witness_ids or len(set(self.witness_ids)) != len(self.witness_ids) or
+                any(not isinstance(item, str) or not item for item in self.witness_ids) or
+                not isinstance(self.source_cohort_sha256, str) or
+                len(self.source_cohort_sha256) != 64 or
+                any(char not in "0123456789abcdef" for char in self.source_cohort_sha256)):
+            raise ValueError("AUTONOMY_SOURCE_COMPOSITION_EDGE_INVALID")
+
+
+@dataclass(frozen=True)
+class AutonomyPlan:
+    factory_release_sha256: str
+    source_composition_audited: bool
+    source_composition_edges: tuple[SourceCompositionEdge, ...] = ()
+    coverage_debt: tuple[str, ...] = ()
+    blocked_capabilities: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.factory_release_sha256, str) or
+                len(self.factory_release_sha256) != 64 or
+                any(char not in "0123456789abcdef" for char in self.factory_release_sha256) or
+                type(self.source_composition_audited) is not bool or
+                any(not isinstance(item, SourceCompositionEdge)
+                    for item in self.source_composition_edges) or
+                len(set(self.coverage_debt)) != len(self.coverage_debt) or
+                any(not isinstance(item, str) or not item for item in self.coverage_debt) or
+                len(set(self.blocked_capabilities)) != len(self.blocked_capabilities) or
+                any(not isinstance(item, str) or not item
+                    for item in self.blocked_capabilities)):
+            raise ValueError("AUTONOMY_PLAN_INVALID")
+
+    def digest(self) -> str:
+        return _digest(asdict(self))
+
+
+def compile_autonomy_plan(
+    release: FactoryRelease, composition_report: dict | None = None,
+) -> AutonomyPlan:
+    """Bind learner planning to verified typed composition coverage when present.
+
+    Type-compatible edges are not learner work until a source adapter has
+    discharged the semantic-coverage debt.  Unresolved or partially witnessed
+    consumers remain explicitly blocked instead of being silently omitted.
+    """
+    release.verify()
+    if composition_report is None:
+        return AutonomyPlan(release.release_sha256, False)
+    from ..curriculum_compiler import compile_ast
+    from ..semantic_coverage import SCHEMA
+
+    if (not isinstance(composition_report, dict) or
+            composition_report.get("schema") != SCHEMA or
+            composition_report.get("ast_sha256") != compile_ast(release.course).digest()):
+        raise ValueError("AUTONOMY_COMPOSITION_REPORT_BINDING_INVALID")
+    capability_ids = tuple(item.capability_id for item in release.capabilities)
+    if set(composition_report.get("capabilities", ())) != set(capability_ids):
+        raise ValueError("AUTONOMY_COMPOSITION_REPORT_SCOPE_INVALID")
+
+    source_cohort = composition_report.get("source_witness_cohort_sha256")
+    edges, debt, blocked = [], [], set()
+    for unresolved in composition_report.get("unresolved", ()):
+        capability = unresolved.get("capability") if isinstance(unresolved, dict) else None
+        failure = unresolved.get("failure") if isinstance(unresolved, dict) else None
+        if not capability or capability not in capability_ids or not failure:
+            raise ValueError("AUTONOMY_COMPOSITION_REPORT_UNRESOLVED_INVALID")
+        debt.append(f"{capability}:UNRESOLVED:{failure}")
+        blocked.add(capability)
+
+    for raw in composition_report.get("obligations", ()):
+        if not isinstance(raw, dict):
+            raise ValueError("AUTONOMY_COMPOSITION_REPORT_EDGE_INVALID")
+        consumer, producer = raw.get("consumer"), raw.get("producer")
+        slot, status = raw.get("operand_slot"), raw.get("status")
+        if (consumer not in capability_ids or producer not in capability_ids or
+                type(slot) is not int or slot < 0 or not status):
+            raise ValueError("AUTONOMY_COMPOSITION_REPORT_EDGE_INVALID")
+        covered = status == "SOURCE_CONTRAST_COVERED" and not raw.get("coverage_debt", True)
+        if covered:
+            edges.append(SourceCompositionEdge(
+                consumer=consumer, producer=producer, operand_slot=slot,
+                witness_ids=tuple(raw.get("witness_ids", ())),
+                source_cohort_sha256=source_cohort,
+            ))
+        else:
+            debt.append(f"{consumer}:{producer}:{slot}:{status}")
+            blocked.add(consumer)
+    edges = sorted(edges, key=lambda item: (item.consumer, item.producer, item.operand_slot))
+    return AutonomyPlan(
+        release.release_sha256, True, tuple(edges), tuple(debt),
+        tuple(item for item in capability_ids if item in blocked),
+    )
+
+
+def next_source_coverage_debt(plan: AutonomyPlan) -> str | None:
+    if not isinstance(plan, AutonomyPlan):
+        raise TypeError("AUTONOMY_INVALID_PLAN")
+    return plan.coverage_debt[0] if plan.coverage_debt else None
+
+
+def _resolve_plan(release: FactoryRelease, plan: AutonomyPlan | None) -> AutonomyPlan:
+    resolved = compile_autonomy_plan(release) if plan is None else plan
+    if not isinstance(resolved, AutonomyPlan):
+        raise TypeError("AUTONOMY_INVALID_PLAN")
+    if resolved.factory_release_sha256 != release.release_sha256:
+        raise ValueError("AUTONOMY_PLAN_RELEASE_MISMATCH")
+    return resolved
 
 
 class EvidenceKind(str, Enum):
@@ -74,9 +200,10 @@ class EvidenceReceipt:
 
 @dataclass(frozen=True)
 class EvidenceLedger:
-    """Append-only evidence history bound to one immutable FactoryRelease."""
+    """Append-only evidence history bound to one release and autonomy plan."""
 
     factory_release_sha256: str
+    autonomy_plan_sha256: str
     receipts: tuple[EvidenceReceipt, ...] = ()
 
     def __post_init__(self) -> None:
@@ -84,6 +211,10 @@ class EvidenceLedger:
                 len(self.factory_release_sha256) != 64 or
                 any(char not in "0123456789abcdef"
                     for char in self.factory_release_sha256) or
+                not isinstance(self.autonomy_plan_sha256, str) or
+                len(self.autonomy_plan_sha256) != 64 or
+                any(char not in "0123456789abcdef"
+                    for char in self.autonomy_plan_sha256) or
                 any(not isinstance(item, EvidenceReceipt) for item in self.receipts) or
                 len({item.evidence_id for item in self.receipts}) != len(self.receipts)):
             raise ValueError("AUTONOMY_EVIDENCE_LEDGER_INVALID")
@@ -116,7 +247,7 @@ def _coverage_by_capability(release: FactoryRelease):
 
 
 def obligations_for_capability(
-    release: FactoryRelease, capability_id: str,
+    release: FactoryRelease, capability_id: str, *, plan: AutonomyPlan | None = None,
 ) -> tuple[EvidenceObligation, ...]:
     """Derive learner evidence obligations from immutable semantic structure.
 
@@ -125,6 +256,7 @@ def obligations_for_capability(
     the learner has to master.
     """
     release.verify()
+    resolved_plan = _resolve_plan(release, plan)
     definition = _capability_definitions(release).get(capability_id)
     if definition is None:
         raise ValueError("AUTONOMY_UNKNOWN_CAPABILITY")
@@ -149,15 +281,28 @@ def obligations_for_capability(
         generation_axes=axes,
         requires_capabilities=(predecessor,),
     ) for predecessor in definition.prerequisites)
-    obligations.extend(EvidenceObligation(
-        obligation_id=f"{capability_id}/composition/{constituent}",
-        capability_id=capability_id,
-        kind=EvidenceKind.COMPOSITION,
-        key=constituent,
-        minimum_specimens=1,
-        generation_axes=axes,
-        requires_capabilities=(constituent,),
-    ) for constituent in declared.composed_of)
+    if resolved_plan.source_composition_audited:
+        obligations.extend(EvidenceObligation(
+            obligation_id=(f"{capability_id}/typed-composition/{edge.producer}/"
+                           f"slot/{edge.operand_slot}"),
+            capability_id=capability_id,
+            kind=EvidenceKind.COMPOSITION,
+            key=f"{edge.producer}@{edge.operand_slot}",
+            minimum_specimens=1,
+            generation_axes=axes,
+            requires_capabilities=(edge.producer,),
+        ) for edge in resolved_plan.source_composition_edges
+          if edge.consumer == capability_id)
+    else:
+        obligations.extend(EvidenceObligation(
+            obligation_id=f"{capability_id}/composition/{constituent}",
+            capability_id=capability_id,
+            kind=EvidenceKind.COMPOSITION,
+            key=constituent,
+            minimum_specimens=1,
+            generation_axes=axes,
+            requires_capabilities=(constituent,),
+        ) for constituent in declared.composed_of)
 
     identities = tuple(item.obligation_id for item in obligations)
     if len(set(identities)) != len(identities):
@@ -165,11 +310,14 @@ def obligations_for_capability(
     return tuple(obligations)
 
 
-def _obligation_map(release: FactoryRelease) -> dict[str, EvidenceObligation]:
+def _obligation_map(
+    release: FactoryRelease, plan: AutonomyPlan | None = None,
+) -> dict[str, EvidenceObligation]:
     obligations = tuple(
         obligation
         for capability in release.capabilities
-        for obligation in obligations_for_capability(release, capability.capability_id)
+        for obligation in obligations_for_capability(
+            release, capability.capability_id, plan=plan)
     )
     mapping = {item.obligation_id: item for item in obligations}
     if len(mapping) != len(obligations):
@@ -177,20 +325,26 @@ def _obligation_map(release: FactoryRelease) -> dict[str, EvidenceObligation]:
     return mapping
 
 
-def initial_evidence_ledger(release: FactoryRelease) -> EvidenceLedger:
+def initial_evidence_ledger(
+    release: FactoryRelease, *, plan: AutonomyPlan | None = None,
+) -> EvidenceLedger:
     release.verify()
-    return EvidenceLedger(release.release_sha256)
+    resolved_plan = _resolve_plan(release, plan)
+    return EvidenceLedger(release.release_sha256, resolved_plan.digest())
 
 
 def _validate_ledger(
-    release: FactoryRelease, ledger: EvidenceLedger,
+    release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
 ) -> dict[str, EvidenceObligation]:
     if not isinstance(release, FactoryRelease) or not isinstance(ledger, EvidenceLedger):
         raise TypeError("AUTONOMY_INVALID_INPUT")
     if ledger.factory_release_sha256 != release.release_sha256:
         raise ValueError("AUTONOMY_RELEASE_MISMATCH")
+    resolved_plan = _resolve_plan(release, plan)
+    if ledger.autonomy_plan_sha256 != resolved_plan.digest():
+        raise ValueError("AUTONOMY_PLAN_MISMATCH")
     release.verify()
-    obligations = _obligation_map(release)
+    obligations = _obligation_map(release, resolved_plan)
     if any(item.obligation_id not in obligations for item in ledger.receipts):
         raise ValueError("AUTONOMY_UNKNOWN_EVIDENCE_OBLIGATION")
     return obligations
@@ -204,9 +358,9 @@ def _latest_receipts(ledger: EvidenceLedger) -> dict[str, EvidenceReceipt]:
 
 
 def closed_obligations(
-    release: FactoryRelease, ledger: EvidenceLedger,
+    release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
 ) -> tuple[str, ...]:
-    obligations = _validate_ledger(release, ledger)
+    obligations = _validate_ledger(release, ledger, plan=plan)
     latest = _latest_receipts(ledger)
     return tuple(
         identity for identity in obligations
@@ -216,13 +370,17 @@ def closed_obligations(
 
 
 def evidence_complete_capabilities(
-    release: FactoryRelease, ledger: EvidenceLedger,
+    release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
 ) -> tuple[str, ...]:
-    obligations = _validate_ledger(release, ledger)
-    closed = set(closed_obligations(release, ledger))
+    resolved_plan = _resolve_plan(release, plan)
+    obligations = _validate_ledger(release, ledger, plan=resolved_plan)
+    closed = set(closed_obligations(release, ledger, plan=resolved_plan))
+    blocked = set(resolved_plan.blocked_capabilities)
     mastered: list[str] = []
     mastered_set: set[str] = set()
     for definition in release.capabilities:
+        if definition.capability_id in blocked:
+            continue
         if not set(definition.prerequisites) <= mastered_set:
             continue
         required = {
@@ -236,9 +394,10 @@ def evidence_complete_capabilities(
 
 
 def record_evidence(
-    release: FactoryRelease, ledger: EvidenceLedger, receipt: EvidenceReceipt,
+    release: FactoryRelease, ledger: EvidenceLedger, receipt: EvidenceReceipt, *,
+    plan: AutonomyPlan | None = None,
 ) -> EvidenceLedger:
-    obligations = _validate_ledger(release, ledger)
+    obligations = _validate_ledger(release, ledger, plan=plan)
     if not isinstance(receipt, EvidenceReceipt):
         raise TypeError("AUTONOMY_INVALID_EVIDENCE_RECEIPT")
     obligation = obligations.get(receipt.obligation_id)
@@ -248,7 +407,8 @@ def record_evidence(
         raise ValueError("AUTONOMY_INSUFFICIENT_EVIDENCE_SPECIMENS")
     if receipt.evidence_id in {item.evidence_id for item in ledger.receipts}:
         raise ValueError("AUTONOMY_DUPLICATE_EVIDENCE_RECEIPT")
-    return EvidenceLedger(ledger.factory_release_sha256, (*ledger.receipts, receipt))
+    return EvidenceLedger(ledger.factory_release_sha256, ledger.autonomy_plan_sha256,
+                          (*ledger.receipts, receipt))
 
 
 def _work_item(
@@ -268,13 +428,14 @@ def _work_item(
 
 
 def next_work(
-    release: FactoryRelease, ledger: EvidenceLedger,
+    release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
 ) -> CurriculumWorkItem | None:
     """Return the next legal semantic proof target, never a training command."""
-    obligations = _validate_ledger(release, ledger)
+    obligations = _validate_ledger(release, ledger, plan=plan)
+    resolved_plan = _resolve_plan(release, plan)
     latest = _latest_receipts(ledger)
-    closed = set(closed_obligations(release, ledger))
-    mastered = evidence_complete_capabilities(release, ledger)
+    closed = set(closed_obligations(release, ledger, plan=resolved_plan))
+    mastered = evidence_complete_capabilities(release, ledger, plan=resolved_plan)
     mastered_set = set(mastered)
     definitions = _capability_definitions(release)
 
@@ -292,12 +453,16 @@ def next_work(
         if latest[receipt.obligation_id] == receipt and eligible(obligation):
             return _work_item(release, obligation, mastered)
 
+    blocked = set(resolved_plan.blocked_capabilities)
     for definition in release.capabilities:
+        if definition.capability_id in blocked:
+            continue
         if definition.capability_id in mastered_set:
             continue
         if not set(definition.prerequisites) <= mastered_set:
             continue
-        for obligation in obligations_for_capability(release, definition.capability_id):
+        for obligation in obligations_for_capability(
+                release, definition.capability_id, plan=resolved_plan):
             if eligible(obligation):
                 return _work_item(release, obligation, mastered)
     return None
