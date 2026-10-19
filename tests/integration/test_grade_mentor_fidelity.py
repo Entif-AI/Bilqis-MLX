@@ -54,11 +54,15 @@ class GradeMentorFidelityTests(TestCase):
             })
         epoch["active_roles"] = {
             "C.COUNT": {"capability": "C.COUNT", "rubric": "f" * 64,
-                        "checkpoint": earned, "breadth": 5,
+                        "checkpoint": earned, "origin_grade": "C", "breadth": 5,
                         "perfect_capabilities": ["C.COUNT"] + [
                             "A." + str(n) for n in range(4)]}}
         epoch["active_grade_soups"] = {"C": {"grade": "C", "vote_count": 1}}
+        identity = {"schema": "bilqis.mlx.championship-school-identity/v1",
+                    "sha256": "9" * 64}
+        epoch["championship_school_identity"] = identity
         receipt = {"mentor_epoch": epoch,
+                   "championship_school_identity": identity,
                    "graduation_perfect": {"historic": {"checkpoint": graduate}},
                    "grade_soups": {"A": {"grade": "A", "vote_count": 6}}}
         with (patch.object(trainer, "_frozen_confidence_champions",
@@ -77,6 +81,17 @@ class GradeMentorFidelityTests(TestCase):
         self.assertEqual(set(selected["graduation_perfect"]), {
             "f" * 64 + ":C.COUNT"})
         self.assertEqual(set(soups.call_args.args[1]["grade_soups"]), {"C"})
+
+    def test_missing_school_identity_fails_closed_before_loading_mentors(self):
+        from bilqis_mlx.learning.mentor_epoch import begin_initial_epoch
+        graph = {"tokens": ["PAD", "TRUE", "FALSE"]}
+        epoch = begin_initial_epoch(
+            student=_pointer("a"), introduced_grade="A",
+            source_graph_sha256=trainer._fingerprint(graph), frontier={}, soups={})
+        receipt = {"mentor_epoch": epoch}
+        with self.assertRaisesRegex(
+                ValueError, "MENTOR_EPOCH_SCHOOL_IDENTITY_RESET_REQUIRED"):
+            trainer._mentor_sources_for_visit(Path("/unused"), receipt, "A", graph, 1)
 
     def test_graduation_resets_every_old_role_to_no_active_champions(self):
         from bilqis_mlx.learning.mentor_epoch import begin_epoch
@@ -124,7 +139,11 @@ class GradeMentorFidelityTests(TestCase):
         self.assertEqual(epoch["baseline_roles"], {})
         self.assertEqual(epoch["earned_role_votes_at_reset"], 0)
         self.assertEqual(active_adviser_checkpoints(epoch), ())
-        current = {"mentor_epoch": epoch, "graduation_perfect": {},
+        identity = {"schema": "bilqis.mlx.championship-school-identity/v1",
+                    "sha256": "9" * 64}
+        epoch["championship_school_identity"] = identity
+        current = {"mentor_epoch": epoch, "championship_school_identity": identity,
+                   "graduation_perfect": {},
                    "grade_soups": {}}
         with (patch.object(trainer, "_frozen_confidence_champions", return_value=()) as champions,
               patch.object(trainer, "_frozen_grade_soup_votes", return_value=((), ())) as soups,

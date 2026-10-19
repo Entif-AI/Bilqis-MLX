@@ -107,6 +107,87 @@ class ChampionshipExamTests(TestCase):
                             for cap in completed["mentor_epoch"]["active_roles"]))
         self.assertIn(blocked, completed["last_exam"]["withheld_capabilities"])
 
+    def test_newly_quarantined_after_measurement_is_not_retroactively_unmeasured(self):
+        root = Path(__file__).resolve().parents[2]
+        manifest = json.loads((root / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
+        course_a = initial_course(accepted_grade_a(manifest))
+        course = boolean_successor(course_a, root / "vendor/legacy-v16")
+        student = Checkpoint("a" * 64, "bundles/disposable", 10, True)
+        school = replace(
+            start_new(course, student), grade_index=1, stage="ASSESS_MAIN", queue=(),
+            champions={"A": student})
+        rubric, release, generator, _ = trainer._cohort_contract(course)
+        caps = tuple(cap.id for grade in course.grades for cap in grade.capabilities)
+        blocked_after = "A.LINK"
+
+        def cohort(seed):
+            return make_cohort([
+                {"id": f"{seed}:{cap}:{i}", "capability": cap,
+                 "gold": "TRUE" if i % 2 else "FALSE", "tokens": [1, 2]}
+                for cap in caps for i in range(12)],
+                generator_version=generator, seed=seed, rubric_version=release)
+
+        candidate, routine = cohort(21), cohort(22)
+
+        def predict(_mx, _parameters, rows, *_):
+            return {row["id"]: row["gold"] for row in rows}
+
+        def advance_after(**kwargs):
+            return (kwargs["stagnation"], [], kwargs["routine_advanced"],
+                    (blocked_after,))
+
+        graph = {"tokens": ["PAD"]}
+        parameter_shapes = {"embedding.weight": [1, 1]}
+        release_sha = "f" * 64
+        identity = trainer.build_school_identity(
+            course_sha256=course.digest(), semantic_graph_sha256=trainer._fingerprint(graph),
+            parameter_shapes=parameter_shapes, factory_release_sha256=release_sha)
+        receipt = {
+            "school": asdict(school), "generation": 1, "run_id": "inert-blocked-after",
+            "curriculum_mode": release, "source_manifest_sha256": manifest["manifest_sha256"],
+            "config": {}, "answer_ids": [6, 7], "teacher_misses": [],
+            "semantic_graph_sha256": trainer._fingerprint(graph),
+            "parameter_shapes": parameter_shapes, "factory_release_sha256": release_sha,
+            "championship_school_identity": identity,
+            "championship_checkpoint_origins": {student.sha256: "A"},
+            "last_retained_update_grade": "A",
+        }
+        with TemporaryDirectory() as temp, ExitStack() as stack:
+            for source_cohort in (candidate, routine):
+                trainer._persist_live_cohort(Path(temp), manifest, course, source_cohort)
+            patches = {
+                "_grade_test_cohort": lambda *_: (routine, {}),
+                "_candidate_cohort": lambda *_: candidate,
+                "_introduced_cohort": lambda *a: (a[-1], "unused"),
+                "_without_stagnant_capabilities": lambda *_a: (_a[-2], "unused"),
+                "quarantined_capabilities": lambda *_: (),
+                "_advance_stagnation_after_routine": advance_after,
+                "_promotion_due_after_routine": lambda *_: False,
+                "_predictions": predict,
+                "_commit_scored_student": lambda *_a, **_k: (school, {}, (), []),
+                "_score_parent_for_paired_s3": lambda *_: (None, "INERT_FIXTURE"),
+                "summarize_completed_exam_safely": lambda *_: {"findings": [], "active_warnings": []},
+                "apply_paired_checkpoint_s3": lambda warning, **_: warning,
+                "advance_peaks": lambda *_a, **_k: ([], {}),
+                "_cook_new_grade_soups": lambda *_a, **_k: ({}, ()),
+                "_advance": lambda _run, saved, advanced, **extra: {
+                    **saved, "school": asdict(advanced), "last_exam": extra["last_exam"]},
+                "_with_delivery_outbox": lambda saved, *_: saved,
+                "_boundary_delivery_events": lambda *_: [],
+                "_persist": lambda _run, saved: saved,
+                "_publish_boundary": lambda *_a, **_k: None,
+            }
+            for name, function in patches.items():
+                stack.enter_context(patch.object(trainer, name, side_effect=function))
+            completed = trainer._take_exam(
+                None, Path(temp), receipt, manifest, course, root, root,
+                {"embedding.weight": SimpleNamespace(shape=(1, 1))},
+                SimpleNamespace(state={}), graph, reserve_gib=0)
+
+        self.assertIn(blocked_after, completed["mentor_epoch"]["active_roles"])
+        self.assertNotIn(blocked_after, completed["last_exam"]["withheld_capabilities"])
+        self.assertIn(blocked_after, completed["last_exam"]["stagnation_quarantined"])
+
     def test_older_incumbent_competes_on_complete_readable_grade_without_claiming_school_score(self):
         old = {"tokens": ["PAD", "TRUE"], "nodes": [0, 1], "row_contract_sha256": {}}
         graph = {"tokens": ["PAD", "TRUE", "NEW"], "nodes": [0, 1, 2], "row_contract_sha256": {}}

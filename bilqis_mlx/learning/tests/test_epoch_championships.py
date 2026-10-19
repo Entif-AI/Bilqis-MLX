@@ -86,6 +86,24 @@ def _match(role, incumbent_current, challenger_current, *,
 
 
 class EpochChampionshipTests(TestCase):
+    def test_explicit_reset_floor_blocks_same_step_authority_but_allows_newer_checkpoint(self):
+        epoch = _epoch()
+        epoch["championship_eligibility_after_step"] = 12
+        stale = _panel("a", 12, "A.0", 12, grade="A")
+        unchanged, changes, decisions = advance_epoch(
+            epoch, grades=GRADES, challenger_exam=stale, incumbent_exams={})
+        self.assertEqual(changes, ())
+        self.assertEqual(decisions, ())
+        self.assertEqual(unchanged.get("active_roles", {}), {})
+
+        fresh = _panel("c", 13, "A.0", 12, grade="A")
+        admitted, changes, decisions = advance_epoch(
+            unchanged, grades=GRADES, challenger_exam=fresh, incumbent_exams={})
+        self.assertEqual(changes, ("A.0",))
+        self.assertEqual(decisions, ())
+        self.assertEqual(admitted["active_roles"]["A.0"]["checkpoint"]["sha256"],
+                         "c" * 64)
+
     def test_role_persists_same_grade_checkpoint_origin(self):
         result, _, _ = advance_epoch(
             _epoch(), grades=GRADES,

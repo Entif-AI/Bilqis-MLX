@@ -418,14 +418,18 @@ class MentorEpochTests(unittest.TestCase):
     def test_opted_in_epoch_uses_no_unearned_baseline_or_archived_soup_votes(self):
         graph = {"tokens": ["PAD", "A"], "nodes": [],
                  "row_contract_sha256": {}}
+        identity = {"schema": "bilqis.mlx.championship-school-identity/v1",
+                    "sha256": "9" * 64}
         epoch = {**self.epoch,
-                 "source_graph_sha256": trainer._fingerprint(graph)}
+                 "source_graph_sha256": trainer._fingerprint(graph),
+                 "championship_school_identity": identity}
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             blob = root / "bundles" / "b" / "model-and-own-adamw.safetensors"
             blob.parent.mkdir(parents=True)
             blob.write_bytes(b"inert-mentor-test-blob")
             receipt = {"mentor_epoch": epoch,
+                       "championship_school_identity": identity,
                        "grade_soups": {"B": {"vote_count": 6}}}
             with (patch.object(trainer, "_frozen_confidence_champions",
                                return_value=()) as fresh_champs,

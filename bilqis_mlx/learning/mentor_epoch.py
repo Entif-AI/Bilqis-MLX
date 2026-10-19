@@ -165,12 +165,17 @@ def reference_checkpoints(epoch: dict) -> tuple[dict, ...]:
         if historic.get("prior_baseline") is not None:
             pointers.append(_pointer(historic["prior_baseline"]))
     unique = {}
+    identity_by_sha = {}
     for pointer in pointers:
         # Distinct bundle paths can legitimately custody the same model SHA at
-        # the same optimizer step. Archive every referenced full bundle rather
-        # than collapsing those aliases by model SHA alone.
-        key = (pointer["sha256"], pointer["optimizer_step"], pointer["filename"],
-               pointer["model_and_native_adamw"])
+        # the same optimizer step. Preserve every referenced full-bundle alias,
+        # but still fail closed if one model SHA is attributed to contradictory
+        # optimizer/native-AdamW identity.
+        identity = (pointer["optimizer_step"], pointer["model_and_native_adamw"])
+        prior_identity = identity_by_sha.setdefault(pointer["sha256"], identity)
+        if prior_identity != identity:
+            raise ValueError("MENTOR_EPOCH_CHECKPOINT_POINTER_CONFLICT")
+        key = (pointer["sha256"], pointer["filename"])
         unique.setdefault(key, pointer)
     return tuple(unique.values())
 

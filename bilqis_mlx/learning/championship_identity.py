@@ -67,7 +67,6 @@ def enforce_school_identity(epoch: dict, identity: dict, *, generation: int,
     updated["active_roles"] = {}
     updated["active_grade_soups"] = {}
     updated["championship_school_identity"] = deepcopy(identity)
-    updated["championship_eligibility_after_step"] = student["optimizer_step"]
     updated["administrative_empty_reset"] = {
         "reason": "HOLISTIC_SCHOOL_IDENTITY_CHANGED",
         "source_generation": generation,

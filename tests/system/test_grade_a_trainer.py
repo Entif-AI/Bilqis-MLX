@@ -361,6 +361,21 @@ class GradeATrainerContractTests(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as tmp:
             run_dir = Path(tmp)
+            release, release_file, admission = trainer._factory_admission(
+                run_dir, course, initial, trainer._fingerprint(graph))
+            parameter_shapes = {name: list(value.shape) for name, value in params.items()}
+            control.update({
+                "parameter_shapes": parameter_shapes,
+                "semantic_graph_sha256": trainer._fingerprint(graph),
+                "factory_release_sha256": release.release_sha256,
+                "factory_release_file": release_file,
+                "factory_admission": asdict(admission),
+                "championship_school_identity": trainer.build_school_identity(
+                    course_sha256=course.digest(),
+                    semantic_graph_sha256=trainer._fingerprint(graph),
+                    parameter_shapes=parameter_shapes,
+                    factory_release_sha256=release.release_sha256),
+            })
             with redirect_stdout(io.StringIO()):
                 for i in range(6):
                     control = _take_visit(
@@ -503,7 +518,7 @@ class GradeATrainerContractTests(unittest.TestCase):
                 restored_weights, restored_adamw, restored_graph, repaired = _resume(
                     run_dir, manifest, course, sha)
             self.assertEqual(repaired, resumed)
-            self.assertEqual(repaired["generation"], 3)
+            self.assertEqual(repaired["generation"], 4)
             self.assertEqual(int(restored_adamw.state["step"].item()),
                              base.optimizer_step)
             with redirect_stdout(io.StringIO()):

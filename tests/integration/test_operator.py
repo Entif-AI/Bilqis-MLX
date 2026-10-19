@@ -199,6 +199,27 @@ class OperatorTests(unittest.TestCase):
         champion = board.rows["SYSTEM & QUALIFICATION"][-1]
         self.assertIn("TITLE_MATCH_ALREADY_SETTLED", champion["detail"])
 
+    def test_live_exam_reports_explicit_withheld_capability_as_not_measured(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True)
+        telemetry = SchoolTelemetry(board, active_grades=("A",))
+        telemetry.ingest({
+            "event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "A",
+            "generation": 54, "optimizer_step": 301,
+            "student_sha256": "a" * 64, "rubric": "b" * 64,
+            "assessment_scope_sha256": "c" * 64,
+            "cohort_sha256": "d" * 64, "cohort_file": "cohorts/d.json",
+            "generator_version": "test/live-v1", "phase": "MAIN",
+            "scores": {"A.IDENTITY": {"correct": 12, "total": 12}},
+            "withheld_capabilities": ["A.EDGE"],
+            "championship_epoch": {
+                "earned_roles": [], "active_role_count": 0,
+                "active_soup_grades": [], "cross_origin_decisions": [],
+            },
+        })
+        champion = board.rows["SYSTEM & QUALIFICATION"][-1]
+        self.assertEqual(champion["kind"], "CHAMPION")
+        self.assertIn("withheld NOT_MEASURED: A.EDGE", champion["detail"])
+
     def test_flash_scheduler_exam_is_scope_bound_and_explicitly_non_title(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True)
         telemetry = SchoolTelemetry(board, active_grades=("A", "B", "C"))

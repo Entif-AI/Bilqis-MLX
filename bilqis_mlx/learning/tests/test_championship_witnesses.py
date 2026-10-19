@@ -58,6 +58,25 @@ class ChampionshipWitnessTests(TestCase):
         self.assertIn(first, pointers)
         self.assertIn(second, pointers)
 
+    def test_archived_same_sha_with_conflicting_optimizer_step_fails_closed(self):
+        from bilqis_mlx.learning.mentor_epoch import begin_initial_epoch, reference_checkpoints
+        student = {"filename": "bundles/inert", "sha256": "a" * 64,
+                   "optimizer_step": 10, "model_and_native_adamw": True}
+        epoch = begin_initial_epoch(student=student, introduced_grade="A",
+                                    source_graph_sha256="b" * 64, frontier={}, soups={})
+        first = {**student, "filename": "bundles/first"}
+        conflicting = {**student, "filename": "bundles/second", "optimizer_step": 11}
+        epoch["superseded_active_championships"] = [{
+            "starting_student": student,
+            "active_roles": {
+                "A.X": {"checkpoint": first},
+                "A.Y": {"checkpoint": conflicting},
+            },
+            "active_grade_soups": {},
+        }]
+        with self.assertRaisesRegex(ValueError, "MENTOR_EPOCH_CHECKPOINT_POINTER_CONFLICT"):
+            reference_checkpoints(epoch)
+
     def test_all_influencing_questions_become_obligations_including_misses(self):
         measured = exam()
         proof = earning_witness(measured, ("A.X", "B.Y"))

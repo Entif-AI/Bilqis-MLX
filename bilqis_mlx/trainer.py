@@ -563,8 +563,11 @@ def _mentor_sources_for_visit(run_dir, receipt, grade, graph, grade_count):
                 *_frozen_grade_soup_votes(run_dir, receipt, grade, grade_count))
     if epoch.get("source_graph_sha256") != _fingerprint(graph):
         raise ValueError("MENTOR_EPOCH_SOURCE_GRAPH_DRIFT")
-    if (epoch.get("championship_school_identity") !=
-            receipt.get("championship_school_identity")):
+    epoch_identity = epoch.get("championship_school_identity")
+    receipt_identity = receipt.get("championship_school_identity")
+    if (not isinstance(epoch_identity, dict) or
+            not isinstance(receipt_identity, dict) or
+            epoch_identity != receipt_identity):
         raise ValueError("MENTOR_EPOCH_SCHOOL_IDENTITY_RESET_REQUIRED")
     for capability, role in epoch.get("active_roles", {}).items():
         if role.get("origin_grade") != capability.partition(".")[0]:
