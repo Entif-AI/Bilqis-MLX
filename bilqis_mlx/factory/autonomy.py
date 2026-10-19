@@ -161,6 +161,7 @@ class EvidenceKind(str, Enum):
     DIRECT = "DIRECT"
     PREREQUISITE = "PREREQUISITE"
     COMPOSITION = "COMPOSITION"
+    PROJECTION = "PROJECTION"
 
 
 @dataclass(frozen=True)
@@ -172,6 +173,7 @@ class EvidenceObligation:
     minimum_specimens: int
     generation_axes: tuple[str, ...]
     requires_capabilities: tuple[str, ...] = ()
+    proof_axes: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if (not self.obligation_id or not self.capability_id or not self.key or
@@ -182,7 +184,10 @@ class EvidenceObligation:
                 any(not isinstance(item, str) or not item for item in self.generation_axes) or
                 len(set(self.requires_capabilities)) != len(self.requires_capabilities) or
                 any(not isinstance(item, str) or not item
-                    for item in self.requires_capabilities)):
+                    for item in self.requires_capabilities) or
+                len(set(self.proof_axes)) != len(self.proof_axes) or
+                any(not isinstance(item, str) or not item
+                    for item in self.proof_axes)):
             raise ValueError("AUTONOMY_EVIDENCE_OBLIGATION_INVALID")
 
 
