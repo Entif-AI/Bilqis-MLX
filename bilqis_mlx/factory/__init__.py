@@ -1,5 +1,18 @@
 """Canonical curriculum-factory contracts and grade-neutral runtime adapters."""
 
+from .autonomy import (
+    CurriculumWorkItem,
+    EvidenceKind,
+    EvidenceLedger,
+    EvidenceObligation,
+    EvidenceReceipt,
+    closed_obligations,
+    initial_evidence_ledger,
+    evidence_complete_capabilities,
+    next_work,
+    obligations_for_capability,
+    record_evidence,
+)
 from .model import (
     AdmissionReceipt,
     AssessmentClass,
@@ -21,6 +34,17 @@ from .release import (
 )
 
 __all__ = (
+    "CurriculumWorkItem",
+    "EvidenceKind",
+    "EvidenceLedger",
+    "EvidenceObligation",
+    "EvidenceReceipt",
+    "closed_obligations",
+    "initial_evidence_ledger",
+    "evidence_complete_capabilities",
+    "next_work",
+    "obligations_for_capability",
+    "record_evidence",
     "AdmissionReceipt",
     "AssessmentClass",
     "AssessmentPlan",
