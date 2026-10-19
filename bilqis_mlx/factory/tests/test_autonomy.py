@@ -184,6 +184,7 @@ class TypedCompositionAutonomyTests(AutonomousCurriculumPlannerTests):
                 "producer": "A.BASE",
                 "operand_slot": 0,
                 "operand_type": "Boolean",
+                "declared_prerequisite": True,
                 "status": status,
                 "coverage_debt": debt,
                 "witness_ids": ("witness-1",) if not debt else (),
@@ -211,6 +212,20 @@ class TypedCompositionAutonomyTests(AutonomousCurriculumPlannerTests):
         self.assertFalse(any(item.kind is EvidenceKind.COMPOSITION for item in obligations))
         self.assertIn("A.F3:A.BASE:0:AWAITING_SOURCE_WITNESS",
                       next_source_coverage_debt(plan))
+
+    def test_undeclared_unverified_candidate_is_deferred_not_blocking(self):
+        from bilqis_mlx.factory.autonomy import compile_autonomy_plan, next_source_coverage_debt
+        report = self.coverage_report(
+            status="CROSS_SOURCE_AST_BRIDGE_UNVERIFIED", debt=True)
+        report["obligations"][0]["declared_prerequisite"] = False
+        plan = compile_autonomy_plan(self.release, report)
+        self.assertEqual(plan.coverage_debt, ())
+        self.assertEqual(plan.blocked_capabilities, ())
+        self.assertEqual(
+            plan.deferred_composition_candidates,
+            ("A.F3:A.BASE:0:CROSS_SOURCE_AST_BRIDGE_UNVERIFIED",),
+        )
+        self.assertIsNone(next_source_coverage_debt(plan))
 
     def test_evidence_ledger_is_bound_to_exact_autonomy_plan(self):
         from bilqis_mlx.factory.autonomy import compile_autonomy_plan
