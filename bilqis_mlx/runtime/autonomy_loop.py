@@ -12,9 +12,12 @@ from ..factory.autonomy import (
     CurriculumWorkItem,
     EvidenceLedger,
     EvidenceReceipt,
+    TeachingReceipt,
+    TeachingWorkItem,
     next_action,
     rebind_evidence_ledger,
     record_evidence,
+    record_teaching_intervention,
 )
 from ..factory.model import FactoryRelease
 from .autonomy_state import persist_autonomy_state
@@ -22,6 +25,7 @@ from .autonomy_state import persist_autonomy_state
 
 SourceCoverageExecutor = Callable[[str, AutonomyPlan], AutonomyPlan]
 LearningEvidenceExecutor = Callable[[CurriculumWorkItem], EvidenceReceipt]
+TeachingExecutor = Callable[[TeachingWorkItem], TeachingReceipt]
 
 
 @dataclass(frozen=True)
@@ -47,6 +51,7 @@ def run_until_qualification(
     ledger: EvidenceLedger,
     source_coverage_executor: SourceCoverageExecutor,
     learning_evidence_executor: LearningEvidenceExecutor,
+    teaching_executor: TeachingExecutor | None = None,
     max_steps: int = 256,
 ) -> AutonomyRunResult:
     """Execute bounded neural-inert curriculum work until qualification is due.
@@ -91,6 +96,14 @@ def run_until_qualification(
             if not isinstance(receipt, EvidenceReceipt):
                 raise TypeError("AUTONOMY_EVIDENCE_EXECUTOR_RESULT_INVALID")
             current_ledger = record_evidence(
+                release, current_ledger, receipt, plan=current_plan)
+        elif action.kind is AutonomyActionKind.TEACHING:
+            if teaching_executor is None:
+                raise ValueError("AUTONOMY_TEACHING_EXECUTOR_REQUIRED")
+            receipt = teaching_executor(action.teaching_work)
+            if not isinstance(receipt, TeachingReceipt):
+                raise TypeError("AUTONOMY_TEACHING_EXECUTOR_RESULT_INVALID")
+            current_ledger = record_teaching_intervention(
                 release, current_ledger, receipt, plan=current_plan)
         else:
             raise ValueError("AUTONOMY_ACTION_UNHANDLED")

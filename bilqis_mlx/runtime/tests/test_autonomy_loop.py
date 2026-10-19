@@ -8,7 +8,7 @@ from bilqis_mlx.curriculum import AnswerFamily, BINARY, Capability, Course, Grad
 from bilqis_mlx.curriculum_compiler import compile_ast
 from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from bilqis_mlx.factory.autonomy import (
-    AutonomyActionKind, EvidenceReceipt, compile_autonomy_plan,
+    AutonomyActionKind, EvidenceReceipt, TeachingReceipt, compile_autonomy_plan,
     initial_evidence_ledger,
 )
 from bilqis_mlx.factory.model import SourceAdapter
@@ -127,6 +127,56 @@ class AutonomousRuntimeLoopTests(unittest.TestCase):
                     learning_evidence_executor=self.evidence,
                     max_steps=1,
                 )
+
+    def test_failed_evidence_triggers_teaching_then_remeasurement(self):
+        with tempfile.TemporaryDirectory() as temp:
+            plan = compile_autonomy_plan(self.release)
+            ledger = initial_evidence_ledger(self.release, plan=plan)
+            checkpoint = {"sha256": "e" * 64, "optimizer_step": 0}
+            evidence_calls = {}
+            teaching_calls = []
+
+            def evidence_executor(work):
+                key = work.obligation.obligation_id
+                evidence_calls[key] = evidence_calls.get(key, 0) + 1
+                passed = not (key == "A.BASE/direct" and evidence_calls[key] == 1)
+                self.receipt_index += 1
+                return EvidenceReceipt(
+                    obligation_id=key,
+                    evidence_id=f"runtime-evidence-{self.receipt_index}",
+                    checkpoint_sha256=checkpoint["sha256"],
+                    optimizer_step=checkpoint["optimizer_step"],
+                    cohort_sha256=sha(f"runtime-cohort-{self.receipt_index}"),
+                    specimen_count=work.obligation.minimum_specimens,
+                    passed=passed,
+                )
+
+            def teaching_executor(work):
+                teaching_calls.append(work.obligation.obligation_id)
+                parent = dict(checkpoint)
+                checkpoint["sha256"] = "f" * 64
+                checkpoint["optimizer_step"] += 1
+                return TeachingReceipt(
+                    obligation_id=work.obligation.obligation_id,
+                    intervention_id="runtime-teach-1",
+                    teaching_option_id=work.teaching_option_ids[0],
+                    parent_checkpoint_sha256=parent["sha256"],
+                    parent_optimizer_step=parent["optimizer_step"],
+                    checkpoint_sha256=checkpoint["sha256"],
+                    optimizer_step=checkpoint["optimizer_step"],
+                )
+
+            result = run_until_qualification(
+                Path(temp), self.release, plan=plan, ledger=ledger,
+                source_coverage_executor=lambda debt, current: current,
+                learning_evidence_executor=evidence_executor,
+                teaching_executor=teaching_executor,
+                max_steps=64,
+            )
+            self.assertEqual(result.action.kind, AutonomyActionKind.QUALIFICATION)
+            self.assertEqual(teaching_calls, ["A.BASE/direct"])
+            self.assertEqual(evidence_calls["A.BASE/direct"], 2)
+            self.assertEqual(len(result.ledger.interventions), 1)
 
 
 if __name__ == "__main__":

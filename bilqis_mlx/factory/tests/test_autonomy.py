@@ -309,3 +309,84 @@ class AutonomyPlanRebindTests(TypedCompositionAutonomyTests):
         with self.assertRaisesRegex(ValueError, "PLAN_REBIND_INVALIDATES_EVIDENCE"):
             rebind_evidence_ledger(
                 self.release, ledger, old_plan=old, new_plan=new)
+
+
+class TeachingInterventionTests(AutonomousCurriculumPlannerTests):
+    def test_failed_evidence_requires_teaching_before_remeasurement(self):
+        from bilqis_mlx.factory.autonomy import (
+            AutonomyActionKind, TeachingReceipt, next_action,
+            record_teaching_intervention,
+        )
+        ledger = initial_evidence_ledger(self.release)
+        work = next_work(self.release, ledger)
+        failed = self.receipt(work.obligation, passed=False)
+        ledger = record_evidence(self.release, ledger, failed)
+
+        action = next_action(self.release, ledger)
+        self.assertEqual(action.kind, AutonomyActionKind.TEACHING)
+        self.assertEqual(action.teaching_work.failed_evidence, failed)
+        self.assertEqual(action.teaching_work.capability_id, "A.BASE")
+
+        intervention = TeachingReceipt(
+            obligation_id=failed.obligation_id,
+            intervention_id="teach-1",
+            teaching_option_id=action.teaching_work.teaching_option_ids[0],
+            parent_checkpoint_sha256=failed.checkpoint_sha256,
+            parent_optimizer_step=failed.optimizer_step,
+            checkpoint_sha256="f" * 64,
+            optimizer_step=failed.optimizer_step + 1,
+        )
+        ledger = record_teaching_intervention(
+            self.release, ledger, intervention)
+        action = next_action(self.release, ledger)
+        self.assertEqual(action.kind, AutonomyActionKind.LEARNING_EVIDENCE)
+        self.assertEqual(action.evidence_work.obligation, work.obligation)
+
+        passed = EvidenceReceipt(
+            obligation_id=work.obligation.obligation_id,
+            evidence_id="evidence-after-teaching",
+            checkpoint_sha256="f" * 64,
+            optimizer_step=failed.optimizer_step + 1,
+            cohort_sha256="7" * 64,
+            specimen_count=work.obligation.minimum_specimens,
+            passed=True,
+        )
+        ledger = record_evidence(self.release, ledger, passed)
+        self.assertNotEqual(
+            next_action(self.release, ledger).kind,
+            AutonomyActionKind.TEACHING,
+        )
+
+    def test_teaching_receipt_must_prove_checkpoint_progress(self):
+        from bilqis_mlx.factory.autonomy import TeachingReceipt
+        with self.assertRaisesRegex(ValueError, "NO_CHECKPOINT_PROGRESS"):
+            TeachingReceipt(
+                obligation_id="A.BASE/direct",
+                intervention_id="teach-stale",
+                teaching_option_id="source.direct/A.BASE",
+                parent_checkpoint_sha256="e" * 64,
+                parent_optimizer_step=9,
+                checkpoint_sha256="e" * 64,
+                optimizer_step=9,
+            )
+
+    def test_unreleased_teaching_option_is_rejected(self):
+        from bilqis_mlx.factory.autonomy import (
+            TeachingReceipt, next_action, record_teaching_intervention,
+        )
+        ledger = initial_evidence_ledger(self.release)
+        work = next_work(self.release, ledger)
+        failed = self.receipt(work.obligation, passed=False)
+        ledger = record_evidence(self.release, ledger, failed)
+        action = next_action(self.release, ledger)
+        receipt = TeachingReceipt(
+            obligation_id=failed.obligation_id,
+            intervention_id="teach-unreleased",
+            teaching_option_id="fixture.not-released",
+            parent_checkpoint_sha256=failed.checkpoint_sha256,
+            parent_optimizer_step=failed.optimizer_step,
+            checkpoint_sha256="f" * 64,
+            optimizer_step=failed.optimizer_step + 1,
+        )
+        with self.assertRaisesRegex(ValueError, "TEACHING_OPTION_NOT_RELEASED"):
+            record_teaching_intervention(self.release, ledger, receipt)

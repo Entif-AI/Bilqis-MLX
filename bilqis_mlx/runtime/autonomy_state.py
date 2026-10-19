@@ -10,6 +10,7 @@ from ..factory.autonomy import (
     EvidenceLedger,
     EvidenceReceipt,
     SourceCompositionEdge,
+    TeachingReceipt,
     compile_autonomy_plan,
     next_action,
 )
@@ -56,10 +57,13 @@ def _ledger_from_json(value: dict) -> EvidenceLedger:
         raise ValueError("AUTONOMY_STATE_LEDGER_INVALID")
     try:
         receipts = tuple(EvidenceReceipt(**item) for item in value.get("receipts", ()))
+        interventions = tuple(
+            TeachingReceipt(**item) for item in value.get("interventions", ()))
         return EvidenceLedger(
             factory_release_sha256=value["factory_release_sha256"],
             autonomy_plan_sha256=value["autonomy_plan_sha256"],
             receipts=receipts,
+            interventions=interventions,
         )
     except (KeyError, TypeError) as exc:
         raise ValueError("AUTONOMY_STATE_LEDGER_INVALID") from exc
@@ -86,8 +90,9 @@ def persist_autonomy_state(
     # Normalize tuple/list container differences before hashing or readback.
     payload = json.loads(_canonical(payload))
     state_sha256 = _fingerprint(payload)
+    sequence = len(ledger.receipts) + len(ledger.interventions)
     relative = Path("autonomy") / "states" / (
-        f"{len(ledger.receipts):07d}-{state_sha256[:16]}.json")
+        f"{sequence:07d}-{state_sha256[:16]}.json")
     state_path = Path(run_dir) / relative
     if states.is_symlink() or state_path.is_symlink():
         raise ValueError("AUTONOMY_UNSAFE_ARTIFACT_DIRECTORY")
@@ -106,6 +111,7 @@ def persist_autonomy_state(
         "state_file": relative.as_posix(),
         "state_sha256": state_sha256,
         "receipt_count": len(ledger.receipts),
+        "intervention_count": len(ledger.interventions),
     }
     current = autonomy / "current.json"
     if current.is_symlink():
@@ -157,7 +163,8 @@ def read_autonomy_state(
     ledger = _ledger_from_json(payload.get("ledger"))
     if (payload.get("autonomy_plan_sha256") != plan.digest() or
             pointer.get("autonomy_plan_sha256") != plan.digest() or
-            pointer.get("receipt_count") != len(ledger.receipts)):
+            pointer.get("receipt_count") != len(ledger.receipts) or
+            pointer.get("intervention_count", 0) != len(ledger.interventions)):
         raise ValueError("AUTONOMY_STATE_PLAN_OR_SEQUENCE_DRIFT")
     next_action(release, ledger, plan=plan)
     return plan, ledger
