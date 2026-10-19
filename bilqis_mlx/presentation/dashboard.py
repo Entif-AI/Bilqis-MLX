@@ -20,6 +20,7 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
     board = Dashboard(stream=stream, redraw=False,
                       title="BILQIS", compact_header=True,
                       show_all_panels=True, tables=LETTER_TABLES)
+    board.run_name = run_dir.name
     board.mode = "READ-ONLY"
     state_path = run_dir / "state.json"
     state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else None

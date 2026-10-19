@@ -41,8 +41,9 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(mastery["start"], "10/12")
             self.assertEqual(mastery["latest"], "8/12")
             self.assertEqual(mastery["best"], "10/12")
+            self.assertIn("START", " ".join(board.operator_lines))
             display = board.render(width=180, height=42)
-            self.assertIn("START", display)
+            self.assertNotIn("START", display)
             self.assertNotIn("FIRST", display)
 
     def test_method_column_projects_actual_instruction_mechanism(self):
@@ -273,13 +274,15 @@ class SchoolTelemetryTests(unittest.TestCase):
     def test_letter_school_uses_single_cockpit_header_and_blank_spacer(self):
         board = Dashboard(
             stream=io.StringIO(),
-            clock=lambda: 161.0,
+            clock=lambda: 136045.0,
             show_all_panels=True,
             tables=LETTER_TABLES,
             title="BILQIS",
             compact_header=True,
         )
         board.started = 0.0
+        board.time_budget_seconds = 288000
+        board.run_name = "codex-0001-prometheus"
         board.mode = "LIVE"
         board.state.update(
             phase="MAIN",
@@ -328,13 +331,24 @@ class SchoolTelemetryTests(unittest.TestCase):
 
         rendered = board.render(width=210, height=40)
         lines = rendered.splitlines()
-        self.assertEqual(
-            lines[0],
-            "BILQIS | LIVE 161s | A:MAIN | S 126136 X 5833 V 3221 T 7480 | "
-            "G 2 C 12 | STUDENT LATEST 109/144@126120 / BEST 109/144@126120 | "
-            "186 steps/min | 5 retained",
-        )
-        self.assertEqual(lines[1], "")
+        headings, values = lines[:2]
+        for heading in (
+                "BILQIS", "RUNTIME", "MAX TIME", "STEPS", "EXAM", "VISITS",
+                "TEACHER", "GRADES", "CAPS", "STUDENT LATEST", "STUDENT BEST",
+                "STEPS/MIN", "RETAINED", "RUN"):
+            self.assertIn(heading, headings)
+        self.assertIn("A:MAIN", values)
+        self.assertIn("1d 13h 47m 25s", values)
+        self.assertIn("47% / 3d 8h max", values)
+        self.assertIn("126136", values)
+        self.assertIn("5833", values)
+        self.assertIn("3221", values)
+        self.assertIn("7480", values)
+        self.assertIn("109/144 @126120", values)
+        self.assertIn("codex-0001-prometheus", values)
+        self.assertEqual(lines[2], "")
+        self.assertNotIn("RUNNING", rendered)
+        self.assertNotIn("raw log:", rendered)
         self.assertNotIn("SCHOOL50", rendered)
         self.assertNotIn("START GENERATED SAMPLE", rendered)
         self.assertNotIn("TO100 34/72", rendered)

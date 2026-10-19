@@ -434,7 +434,8 @@ class OperatorTests(unittest.TestCase):
                 result = main(["train", "--human-run", "--resume",
                                "--minutes", "90", "--run-dir", tmp])
             self.assertEqual(result, 2)  # Stub prevents any training call.
-            self.assertIn("RESUMING", terminal.getvalue())
+            self.assertIn("RUNTIME", terminal.getvalue())
+            self.assertIn("MAX TIME", terminal.getvalue())
             self.assertNotIn("TIME_LIMIT_REACHED", terminal.getvalue())
             self.assertEqual((run / "events.jsonl").read_text(), original)
             # Historical dashboard continues to report the actual old stop.
@@ -487,14 +488,22 @@ class OperatorTests(unittest.TestCase):
                 result=main(["dashboard","--run-dir",tmp])
             self.assertEqual(result,0)
             rendered_lines = out.getvalue().splitlines()
-            self.assertTrue(rendered_lines[0].startswith("BILQIS | READ-ONLY"))
-            self.assertEqual(rendered_lines[1], "")
+            self.assertTrue(rendered_lines[0].startswith("BILQIS"))
+            self.assertIn("RUNTIME", rendered_lines[0])
+            self.assertIn("RUN", rendered_lines[0])
+            self.assertIn(Path(tmp).name, rendered_lines[1])
+            self.assertEqual(rendered_lines[2], "")
             self.assertNotIn("SCHOOL50", rendered_lines[0])
             for name,_ in LETTER_TABLES:
                 if name == "GRADES & MASTERY":
                     continue
                 self.assertIn(name,out.getvalue())
-            self.assertIn("G 0 C 0", rendered_lines[0])
+            wide_lines = build(Path(tmp), stream=io.StringIO()).render(
+                width=210, height=38).splitlines()
+            grades_at = wide_lines[0].index("GRADES")
+            caps_at = wide_lines[0].index("CAPS")
+            self.assertEqual(wide_lines[1][grades_at:grades_at + 6].strip(), "0")
+            self.assertEqual(wide_lines[1][caps_at:caps_at + 5].strip(), "0")
             self.assertIn("CURRICULUM [0/0 visible]", out.getvalue())
             self.assertNotIn("BRIDGE FAMILIES",out.getvalue())
             self.assertIn("READY_FOR_HUMAN_START",out.getvalue())

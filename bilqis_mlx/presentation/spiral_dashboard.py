@@ -257,6 +257,32 @@ def _cell(value, width, *, right=False):
     return text.rjust(width) if right else text.ljust(width)
 
 
+def _human_duration(seconds):
+    value=max(0,int(seconds))
+    days,value=divmod(value,86400)
+    hours,value=divmod(value,3600)
+    minutes,seconds=divmod(value,60)
+    parts=[]
+    if days:
+        parts.append(f"{days}d")
+    if hours:
+        parts.append(f"{hours}h")
+    if minutes:
+        parts.append(f"{minutes}m")
+    if seconds or not parts:
+        parts.append(f"{seconds}s")
+    return " ".join(parts)
+
+
+def _header_table(fields):
+    headings=" ".join(
+        _cell(label,width) for label,_value,width,_right in fields).rstrip()
+    values=" ".join(
+        _cell(value,width,right=right)
+        for _label,value,width,right in fields).rstrip()
+    return headings,values
+
+
 def _columns(specs, width):
     """Choose and shrink columns without wrapping or erasing core semantics."""
     chosen = [s for s in specs if not s.optional]
@@ -444,6 +470,8 @@ class Dashboard:
         self.state={}
         self.mode="LIVE"
         self.log_hint=""
+        self.run_name=""
+        self.time_budget_seconds=None
         self.title=title
         self.compact_header=compact_header
         self.show_all_panels=show_all_panels
@@ -867,7 +895,8 @@ class Dashboard:
 
     def _render_wide(self,headers,footer,*,width,height):
         widths=_pane_widths(width)
-        body_height=height-len(headers)-(3 if self.champion_line else 2)
+        tail=(1 if self.champion_line else 0)+(2 if footer is not None else 0)
+        body_height=height-len(headers)-tail
         available=set(dict(self.tables))
         panes=[self._wide_pane(
                    tuple(name for name in names if name in available),
@@ -880,8 +909,9 @@ class Dashboard:
             lines.append(line.rstrip())
         if self.champion_line:
             lines.append(_clean(self.champion_line)[:width])
-        lines.append("-"*width)
-        lines.append(_clean(footer)[:width])
+        if footer is not None:
+            lines.append("-"*width)
+            lines.append(_clean(footer)[:width])
         return "\n".join(lines)
 
     def render(self,*,width=None,height=None):
@@ -904,45 +934,62 @@ class Dashboard:
         speed=(f"{round(self._steps_per_min):,} attempted steps/min{retained_suffix}"
                if isinstance(self._steps_per_min,(int,float)) else "")
         if self.compact_header:
-            elapsed=f"{self.clock()-self.started:.0f}s"
-            parts=[self.title,f"{self.mode} {elapsed}"]
+            elapsed=max(0,self.clock()-self.started)
             phase=state.get('phase','INIT')
             prefix=state.get('prefix','-')
             if prefix not in (None,'','-','?','NOT_ADMITTED'):
-                parts.append(f"{prefix}:{phase}")
+                school=f"{prefix}:{phase}"
             elif phase not in (None,'','-','?'):
-                parts.append(str(phase))
+                school=str(phase)
+            else:
+                school="-"
             curriculum=self._curriculum_snapshot()
-            coordinates=[]
             step=state.get('step')
-            if step not in (None,'','-','?'):
-                coordinates.append(f"S {step}")
             exam=curriculum['exam']
-            if exam not in (None,'','-','?'):
-                coordinates.append(f"X {exam}")
             visits=state.get('visits')
-            if visits not in (None,'','-','?'):
-                coordinates.append(f"V {visits}")
             teacher=state.get('teacher')
-            if teacher not in (None,'','-','?'):
-                coordinates.append(f"T {teacher}")
-            if coordinates:
-                parts.append(" ".join(coordinates))
-            parts.append(f"G {curriculum['grades']} C {curriculum['capabilities']}")
             student=self._same_student_snapshot()
+            latest="-"
+            best="-"
             if student is not None:
-                latest,best=student
-                parts.append(
-                    f"STUDENT LATEST {latest[0]}/{latest[1]}@{latest[2]} / "
-                    f"BEST {best[0]}/{best[1]}@{best[2]}")
-            if isinstance(self._steps_per_min,(int,float)):
-                parts.append(f"{round(self._steps_per_min):,} steps/min")
-            if type(retained) is int:
-                parts.append(f"{retained:,} retained")
+                latest_score,best_score=student
+                latest=f"{latest_score[0]}/{latest_score[1]} @{latest_score[2]}"
+                best=f"{best_score[0]}/{best_score[1]} @{best_score[2]}"
+            fields=[
+                ("BILQIS",school,22,False),
+                ("RUNTIME",_human_duration(elapsed),15,False),
+            ]
+            budget=self.time_budget_seconds
+            if isinstance(budget,(int,float)) and budget>0:
+                percent=int(elapsed*100/budget+.5)
+                fields.append((
+                    "MAX TIME",
+                    f"{percent}% / {_human_duration(budget)} max",
+                    16,
+                    False,
+                ))
+            fields.extend([
+                ("RUN",self.run_name or "-",23,False),
+                ("STEPS",step if step not in (None,'','?') else "-",7,True),
+                ("EXAM",exam if exam not in (None,'','?') else "-",6,True),
+                ("VISITS",visits if visits not in (None,'','?') else "-",7,True),
+                ("TEACHER",teacher if teacher not in (None,'','?') else "-",7,True),
+                ("GRADES",curriculum['grades'],6,True),
+                ("CAPS",curriculum['capabilities'],5,True),
+                ("STUDENT LATEST",latest,18,False),
+                ("STUDENT BEST",best,18,False),
+                ("STEPS/MIN",
+                 round(self._steps_per_min)
+                 if isinstance(self._steps_per_min,(int,float)) else "-",
+                 9,True),
+                ("RETAINED",retained if type(retained) is int else "-",8,True),
+            ])
             halt=state.get('halt')
             if halt:
-                parts.append(f"HALT {halt}")
-            headers=[" | ".join(parts),""]
+                fields.append(("HALT",halt,24,False))
+            headings,values=_header_table(fields)
+            headers=[headings,values,""]
+            footer=None
         else:
             headers=[_right_header(headline,speed,width) if speed else headline,
                      status]
@@ -979,11 +1026,12 @@ class Dashboard:
         priority=("CANDIDATES","GRADES & MASTERY","BRIDGE FAMILIES",
                   "SOUP & TEACHER","SENTINEL & RETENTION",
                   "SYSTEM & QUALIFICATION")
-        if len(groups)*2 + len(headers)+1+(1 if self.champion_line else 0) > height:
+        footer_rows=1 if footer is not None else 0
+        if len(groups)*2 + len(headers)+footer_rows+(1 if self.champion_line else 0) > height:
             groups=sorted(groups,key=lambda group:priority.index(group[0]))
-            groups=groups[:max(0,(height-len(headers)-1-
+            groups=groups[:max(0,(height-len(headers)-footer_rows-
                          (1 if self.champion_line else 0))//2)]
-        fixed=len(headers)+1+len(groups)*2+(1 if self.champion_line else 0)
+        fixed=len(headers)+footer_rows+len(groups)*2+(1 if self.champion_line else 0)
         budget=max(0,height-fixed)
         counts={name:0 for name,_ in groups}
         # Fair allocation: each existing group gets visible space; additional
@@ -1016,7 +1064,8 @@ class Dashboard:
                 lines.extend(_table_line(row,fitted)[:width]
                              for row in recent)
         if self.champion_line:lines.append(_clean(self.champion_line)[:width])
-        lines.append(_clean(footer)[:width])
+        if footer is not None:
+            lines.append(_clean(footer)[:width])
         # No hidden terminal wrapping, including at small terminal heights.
         return "\n".join(lines[:height])
 

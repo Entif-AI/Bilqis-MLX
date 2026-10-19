@@ -478,6 +478,10 @@ def _prepare_live_board(args, build, ingest):
         if event.get("_dashboard_redraw", True):
             board.draw()
     if board is not None:
+        board.time_budget_seconds = (
+            args.minutes * 60 if type(args.minutes) is int and args.minutes > 0
+            else None
+        )
         board.school_telemetry.begin_execution(
             grade=board.state.get("prefix"), step=board.state.get("step"))
         board.mode = (("FLASH | " if args.flash_mode else "") +
@@ -570,6 +574,13 @@ def _main(args):
                 result["timing_trace_file"] = str(trace_path)
         if board is not None:
             board = build(args.run_dir, reserve_gib=args.reserve_gib)
+            board.time_budget_seconds = (
+                args.minutes * 60 if type(args.minutes) is int and args.minutes > 0
+                else None
+            )
+            elapsed = result.get("elapsed_seconds")
+            if isinstance(elapsed, (int, float)) and elapsed >= 0:
+                board.started = board.clock() - elapsed
             board.mode = "STOPPED | " + result["stop_reason"]
             board.draw()
             print("\n" + human_stop_summary(result), flush=True)
