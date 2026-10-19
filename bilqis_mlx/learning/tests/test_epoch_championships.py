@@ -244,7 +244,7 @@ class EpochChampionshipTests(TestCase):
         self.assertFalse(champion["maxed"])
         self.assertTrue(any(d["decision"] == "TITLE_WON" for d in decisions))
 
-    def test_battery_tie_defends_title_and_refreshes_current_score_downward(self):
+    def test_battery_tie_transfers_title_to_challenger(self):
         first = _panel("a", 11, "B.XOR", 12)
         epoch, _, _ = advance_epoch(
             _epoch(), grades=GRADES, challenger_exam=first, incumbent_exams={})
@@ -260,11 +260,11 @@ class EpochChampionshipTests(TestCase):
             title_matches={"B.XOR": _match(
                 role, incumbent_fresh, challenger_fresh,
                 incumbent_battery=tied, challenger_battery=tied)})
-        self.assertNotIn("B.XOR", changes)
+        self.assertIn("B.XOR", changes)
         champion = result["active_roles"]["B.XOR"]
-        self.assertEqual(champion["checkpoint"]["sha256"], "a" * 64)
-        self.assertEqual(champion["correct"], 7)
-        self.assertTrue(any(d["decision"] == "TITLE_DEFENDED" for d in decisions))
+        self.assertEqual(champion["checkpoint"]["sha256"], "c" * 64)
+        self.assertEqual(champion["correct"], 6)
+        self.assertTrue(any(d["decision"] == "TITLE_WON" for d in decisions))
 
     def test_settled_pair_never_rematches_or_mutates_role_again(self):
         first = _panel("a", 11, "B.XOR", 12)
@@ -273,14 +273,16 @@ class EpochChampionshipTests(TestCase):
         role = epoch["active_roles"]["B.XOR"]
         challenger = _panel("c", 12, "B.XOR", 12, cohort="6")
         incumbent = _panel("a", 11, "B.XOR", 12, cohort="6")
-        tied = _battery_answers(role, drop=1)
+        incumbent_battery = _battery_answers(role, drop=0)
+        challenger_battery = _battery_answers(role, drop=1)
         defended, _, _ = advance_epoch(
             epoch, grades=GRADES, challenger_exam=challenger,
             incumbent_exams={"a" * 64: incumbent},
             title_matches={"B.XOR": _match(
                 role, _panel("a", 11, "B.XOR", 11, cohort="6"),
                 _panel("c", 12, "B.XOR", 11, cohort="6"),
-                incumbent_battery=tied, challenger_battery=tied)})
+                incumbent_battery=incumbent_battery,
+                challenger_battery=challenger_battery)})
         frozen_role = deepcopy(defended["active_roles"]["B.XOR"])
         self.assertEqual(len(defended["settled_matchups"]), 1)
 
@@ -337,7 +339,7 @@ class EpochChampionshipTests(TestCase):
             title_matches={"B.XOR": _match(
                 role, incumbent_fresh, challenger_fresh,
                 incumbent_battery=_battery_answers(role, drop=4),
-                challenger_battery=_battery_answers(role, drop=4))})
+                challenger_battery=_battery_answers(role, drop=5))})
         refreshed = result["active_roles"]["B.XOR"]["surviving_battery"]
         active_ids = {q["id"] for segment in refreshed for q in segment["questions"]}
         old_ids = {q["id"] for segment in role["surviving_battery"]
@@ -439,12 +441,14 @@ class EpochChampionshipTests(TestCase):
     def test_defended_primary_title_does_not_open_fanout(self):
         epoch, challenger, incumbents = self._fanout_fixture()
         and_role = epoch["active_roles"]["B.AND"]
-        tied = _battery_answers(and_role, drop=1)
+        incumbent_battery = _battery_answers(and_role, drop=0)
+        challenger_battery = _battery_answers(and_role, drop=1)
         primary = _match(
             and_role,
             _panel("a", 11, "B.AND", 7, cohort="6"),
             _panel("c", 13, "B.AND", 9, cohort="6"),
-            incumbent_battery=tied, challenger_battery=tied)
+            incumbent_battery=incumbent_battery,
+            challenger_battery=challenger_battery)
         _, changes, decisions = advance_epoch(
             epoch, grades=GRADES, challenger_exam=challenger,
             incumbent_exams=incumbents, title_matches={"B.AND": primary})

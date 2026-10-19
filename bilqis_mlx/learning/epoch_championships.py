@@ -426,7 +426,9 @@ def _resolve_title_match(*, capability: str, prior: dict, challenger_exam: dict,
         prior, results[challenger["sha256"]])
     if challenger_total != total:
         raise ValueError("CHAMPIONSHIP_TITLE_MATCH_TOTAL_DRIFT")
-    challenger_wins = total == 0 or challenger_correct > incumbent_correct
+    # The incumbent must strictly outperform the challenger to defend.
+    # A battery tie transfers the title to the qualified challenger.
+    challenger_wins = total == 0 or challenger_correct >= incumbent_correct
     winner_exam = fresh_challenger if challenger_wins else fresh_incumbent
     gate_exam = challenger_exam if challenger_wins else incumbent_exam
     winner_results = results[challenger["sha256"] if challenger_wins else incumbent["sha256"]]
