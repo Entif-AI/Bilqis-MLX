@@ -644,6 +644,7 @@ class SchoolTelemetry:
                 gain = score - earlier[0] if earlier and same_cohort else None
                 self.board.rows["BRIDGE FAMILIES"].append({
                     "grade": g, "family": cap, "attempt": report.generation,
+                    "step": step or "-",
                     "start": f"{baseline[0]}/{baseline[1]}",
                     "before": f"{earlier[0]}/{earlier[1]}" if earlier and same_cohort else "-",
                     "after": f"{score}/{count}",
@@ -757,7 +758,15 @@ class SchoolTelemetry:
         grade = self.last_exam_grade
         if grade is None:
             return
-        report = next((v for (g, _, _), v in reversed(tuple(self.latest.items())) if g == grade), None)
+        reports = [v for (g, _, _), v in self.latest.items() if g == grade]
+        report = max(
+            reports,
+            key=lambda item: (
+                item.generation if type(item.generation) is int else -1,
+                item.step if type(item.step) is int else -1,
+            ),
+            default=None,
+        )
         if report is None:
             return
         key = (grade, report.rubric, report.assessment_scope)

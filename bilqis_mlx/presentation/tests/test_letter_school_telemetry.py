@@ -133,7 +133,8 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual([row["capability"] for row in a_rows[:2]],
                              ["A.THREE", "A.TWO"])
             self.assertNotIn("A.SEVEN", {row["capability"] for row in a_rows})
-            self.assertEqual(a_rows[0]["latest"], "12/12")
+            self.assertEqual(a_rows[0]["latest"], "-")
+            self.assertEqual(a_rows[0]["best"], "12/12")
             self.assertIn("CHAMP A.THREE", a_rows[0]["outcome"])
             self.assertEqual(
                 [row["row_type"] for row in rows[:7]],
@@ -145,6 +146,86 @@ class SchoolTelemetryTests(unittest.TestCase):
             # Champion child rows must not replace grade summaries in the
             # dashboard's whole-school latest score calculation.
             self.assertEqual(board._latest_all_grade_score(), (120, 144))
+
+    def test_champion_child_latest_scores_match_latest_family_cohort(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            roles = {}
+            current = {
+                "A.ONE": (10, 12),
+                "A.TWO": (11, 12),
+                "A.THREE": (8, 12),
+                "A.FOUR": (9, 12),
+                "A.FIVE": (7, 12),
+                "A.SIX": (10, 12),
+            }
+            for index, capability in enumerate(current):
+                roles[capability] = {
+                    "capability": capability,
+                    "correct": 12,
+                    "total": 12,
+                    "breadth": 6 - index,
+                    "checkpoint": {
+                        "sha256": f"{index + 1:064x}",
+                        "optimizer_step": 100 + index,
+                    },
+                }
+            (root / "state.json").write_text(json.dumps({
+                "mentor_epoch": {"active_roles": roles},
+            }))
+
+            board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                              tables=LETTER_TABLES)
+            board.rows["GRADES & MASTERY"].append({
+                "grade": "A", "step": 300, "start": "60/72", "latest": "55/72",
+                "best": "72/72", "to100": "17", "right_pct": "76.4%",
+                "outcome": "SUMMARY",
+            })
+            for capability, (correct, total) in current.items():
+                board.rows["BRIDGE FAMILIES"].append({
+                    "grade": "A", "family": capability,
+                    "start": "12/12", "before": "-", "after": f"{correct}/{total}",
+                    "gain": "-", "attempt": 300, "step": 300,
+                })
+            board.attach_champion_source(root)
+
+            rows = board._section_rows("GRADES & MASTERY")
+            champions = [row for row in rows if row.get("row_type") == "champion"]
+            bridge = {row["family"]: row["after"]
+                      for row in board._section_rows("BRIDGE FAMILIES")}
+            self.assertEqual(
+                {row["capability"]: row["latest"] for row in champions},
+                bridge,
+            )
+            self.assertEqual(
+                sum(int(row["latest"].split("/", 1)[0]) for row in champions),
+                55,
+            )
+            self.assertTrue(all(row["best"] == "12/12" for row in champions))
+
+    def test_header_latest_uses_newest_generation_across_assessment_scopes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            for generation, scope, correct, step in (
+                (1, "1" * 64, 4, 100),
+                (2, "2" * 64, 5, 110),
+                (3, "1" * 64, 9, 120),
+            ):
+                event = exam(
+                    "B", generation, "rubric-b",
+                    {"B.FOCUS": (correct, 12)}, step=step)
+                event["assessment_scope_sha256"] = scope
+                ingest(board, event)
+
+            self.assertIn("LATEST B 9/12 @step 120", board.operator_lines[0])
+            mastery = next(
+                row for row in board._section_rows("GRADES & MASTERY")
+                if row["grade"] == "B" and row.get("row_type") == "summary")
+            family = next(
+                row for row in board._section_rows("BRIDGE FAMILIES")
+                if row["family"] == "B.FOCUS")
+            self.assertEqual(mastery["latest"], "9/12")
+            self.assertEqual(family["after"], "9/12")
 
     def test_retention_decision_not_instructional_note_controls_commit_claim(self):
         with tempfile.TemporaryDirectory() as tmp:

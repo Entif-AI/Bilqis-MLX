@@ -332,14 +332,19 @@ class Dashboard:
                         'row_type':'champion',
                         'grade':grade,
                         'capability':capability,
-                        'step':checkpoint.get('optimizer_step','-'),
+                        'step':'-',
                         'start':'-',
-                        'latest':f'{correct}/{total}',
-                        'best':'-',
-                        'to100':str(total-correct),
-                        'right_pct':f'{100*correct/total:.1f}%',
-                        'outcome':f'CHAMP {capability} | br{role.get("breadth","-")}',
+                        'latest':'-',
+                        'best':f'{correct}/{total}',
+                        'to100':'-',
+                        'right_pct':'-',
+                        'outcome':(
+                            f'CHAMP {capability} | title {correct}/{total} '
+                            f'@{checkpoint.get("optimizer_step","-")} | '
+                            f'br{role.get("breadth","-")}'
+                        ),
                         'checkpoint':str(checkpoint.get('sha256',''))[:10],
+                        '_title_step':checkpoint.get('optimizer_step','-'),
                         '_score':Fraction(correct,total),
                         '_breadth':role.get('breadth',0)
                             if type(role.get('breadth')) is int else 0,
@@ -607,9 +612,34 @@ class Dashboard:
         distinct=list(reversed(distinct))
         if name!='GRADES & MASTERY' or not self._champion_rows:
             return distinct
+        latest_family={}
+        for family_row in self.rows.get('BRIDGE FAMILIES',()):
+            family=family_row.get('family')
+            if family:
+                latest_family[family]=family_row
         champions={}
         for row in self._champion_rows:
-            champions.setdefault(row['grade'],[]).append(row)
+            projected=dict(row)
+            observed=latest_family.get(row['capability'])
+            if observed is not None and observed.get('grade')==row['grade']:
+                latest=observed.get('after')
+                if isinstance(latest,str) and '/' in latest:
+                    left,right=latest.split('/',1)
+                    try:
+                        correct,total=int(left),int(right)
+                    except ValueError:
+                        pass
+                    else:
+                        if total>0 and 0<=correct<=total:
+                            projected.update(
+                                step=observed.get('step','-'),
+                                start=observed.get('start','-'),
+                                latest=latest,
+                                to100=str(total-correct),
+                                right_pct=f'{100*correct/total:.1f}%',
+                            )
+            projected.pop('_title_step',None)
+            champions.setdefault(row['grade'],[]).append(projected)
         combined=[]
         for row in distinct:
             combined.append(row)
