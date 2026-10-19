@@ -11,7 +11,8 @@ from bilqis_mlx.curriculum.scheduler import (Assessment, SchoolState, Score, sta
     assess, assess_withheld, next_capability, reactivate_stagnation_debt,
     teacher_vote_weights, whole_school_soup_weights,
     continue_after_soup, save_new_state, read_state, weakest_three,
-    append_next_grade, verify_state, require_assessment_after_flash, assess_flash)
+    append_next_grade, verify_state, require_assessment_after_flash, assess_flash,
+    assessment_capabilities)
 from bilqis_mlx.curriculum.tests.test_curriculum import sample_course
 
 
@@ -492,6 +493,46 @@ class SchoolTests(unittest.TestCase):
         state = assess(course, state, snapshot(course, student, scores,
                                                from_rubric="b"*64))
         self.assertEqual(state.stage, "WHOLE_SCHOOL_MASTERED")
+
+    def test_backward_spiral_keeps_introduced_b_in_cumulative_assessment_pool(self):
+        a, b = self.course.grades
+        course = replace(
+            self.course,
+            grades=(replace(a, assessment_sha256="a" * 64),
+                    replace(b, assessment_sha256="b" * 64)),
+            assessment_manifest_sha256="b" * 64,
+        )
+        student = self.init
+        state = grade_loop(course, start_new(course, student), student)
+        state = assess(
+            course, state,
+            snapshot(course, student, {f"a.{i}": (8, 8) for i in range(6)},
+                     from_rubric="a" * 64),
+        )
+        self.assertEqual(state.grade, "B")
+
+        state = grade_loop(course, state, student)
+        mixed = {
+            **{f"a.{i}": (7 if i == 0 else 8, 8) for i in range(6)},
+            **{f"b.{i}": (7, 8) for i in range(6)},
+        }
+        state = assess(
+            course, state,
+            snapshot(course, student, mixed, from_rubric="b" * 64),
+        )
+        self.assertEqual((state.grade, state.stage), ("A", "MAIN"))
+        self.assertEqual(state.main_sweep_visited, ("B",))
+
+        self.assertEqual(
+            set(assessment_capabilities(course, state)),
+            set(mixed),
+        )
+        state = grade_loop(course, state, student)
+        state = assess(
+            course, state,
+            snapshot(course, student, mixed, from_rubric="b" * 64),
+        )
+        self.assertNotEqual(state.stage, "MAIN")
 
     def test_b_graduation_revalidates_a_then_b_before_starting_c(self):
         course = three_grade_course()

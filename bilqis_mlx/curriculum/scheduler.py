@@ -126,8 +126,17 @@ def _caps(course: Course, grade_ids: tuple[str, ...]) -> tuple[str, ...]:
 
 
 def _score_pool(course: Course, state: SchoolState) -> tuple[str, ...]:
-    seen = tuple(g.id for g in course.grades
-                 if g.id in state.champions or g.id == state.grade)
+    represented = set(state.champions) | {state.grade}
+    if state.latest_rubric_digest is not None:
+        sealed = [index for index, grade in enumerate(course.grades)
+                  if grade.id in state.active_grades and
+                  grade.assessment_sha256 == state.latest_rubric_digest]
+        if sealed:
+            cutoff = max(sealed)
+            represented.update(
+                grade.id for grade in course.grades[:cutoff + 1]
+                if grade.id in state.active_grades)
+    seen = tuple(g.id for g in course.grades if g.id in represented)
     current = {g.id: g for g in course.grades}[state.grade]
     introduced = (set(c for stage in current.teaching_stages[:state.introduction_stage+1]
                       for c in stage) if current.teaching_stages else
