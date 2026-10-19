@@ -41,6 +41,16 @@ def cohort_contract(course):
     return _grade_cohort_contract(course, course.grades[-1])
 
 
+def assessment_rubric_for_scope(course, capabilities):
+    """Return the grade seal for the highest grade represented in one score scope."""
+    scope = set(capabilities)
+    represented = [grade for grade in course.grades
+                   if any(cap.id in scope for cap in grade.capabilities)]
+    if not represented:
+        raise ValueError("FACTORY_ASSESSMENT_SCOPE_EMPTY")
+    return represented[-1].assessment_sha256
+
+
 def numeric_maximum(course):
     family = next(f for c in course.grades[-1].capabilities
                   for f in c.answer_families if f.kind == "numeric_active")

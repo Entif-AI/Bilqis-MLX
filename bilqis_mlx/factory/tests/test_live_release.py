@@ -17,6 +17,7 @@ from bilqis_mlx.factory.live_releases import (
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
+from bilqis_mlx.live_curriculum import assessment_rubric_for_scope
 from bilqis_mlx.live_grade_a import draw_predicates, live_course as grade_a_course
 from bilqis_mlx.live_grade_b import draw_connectives, live_course as grade_b_course
 from bilqis_mlx.live_grade_c import draw as draw_numbers, live_course as grade_c_course, registry_graph
@@ -147,6 +148,15 @@ class LiveFactoryReleaseTests(unittest.TestCase):
             ("B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS"))
         self.assertIsNone(default_resume_replacement(
             identified, self.a, SOURCE, full_grade_b=True))
+
+    def test_assessment_rubric_tracks_highest_grade_represented_in_scope(self):
+        minimal = minimal_boolean_successor(self.a, SOURCE)
+        a_scope = tuple(cap.id for cap in minimal.grades[0].capabilities)
+        b_scope = tuple(cap.id for cap in minimal.grades[-1].capabilities)
+        self.assertEqual(assessment_rubric_for_scope(minimal, a_scope),
+                         minimal.grades[0].assessment_sha256)
+        self.assertEqual(assessment_rubric_for_scope(minimal, a_scope + b_scope),
+                         minimal.grades[-1].assessment_sha256)
 
 
 if __name__ == "__main__":

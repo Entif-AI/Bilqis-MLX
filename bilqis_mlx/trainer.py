@@ -102,7 +102,10 @@ from .generated_assessment import (
 )
 from .grade_a_manifest import verify_manifest
 from .grade_a_release import AUTHORITY, accepted_grade_a
-from .live_curriculum import cohort_contract as _cohort_contract, lesson_contract, numeric_maximum
+from .live_curriculum import (
+    assessment_rubric_for_scope, cohort_contract as _cohort_contract,
+    lesson_contract, numeric_maximum,
+)
 from bilqis_mlx.runtime.mlx_checkpoint import save_new_bundle, load_semantically_bound_bundle
 from bilqis_mlx.runtime.mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
@@ -3449,7 +3452,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     active_scope = tuple(cap for cap in full_scope if cap not in set(blocked_before))
     _require_active_stagnation_scope(active_scope)
     parent_checkpoint = school.current_student
-    rubric, release, generator, _ = _cohort_contract(course)
+    _, release, generator, _ = _cohort_contract(course)
+    rubric = assessment_rubric_for_scope(course, full_scope)
     routine_cohort, _ = _grade_test_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
     routine_cohort, routine_file = _introduced_cohort(
