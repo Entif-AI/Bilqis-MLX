@@ -204,6 +204,7 @@ class ExecutableFactoryRelease:
     source_bindings: SourceBindingSet
     profile: CurriculumProfile
     execution_plan: ExecutionPlan
+    semantic_catalog: tuple[str, ...]
     semantic_catalog_sha256: str
     source_adapters: tuple[SourceAdapter, ...]
     answer_modalities: tuple[AnswerModality, ...]
@@ -220,6 +221,11 @@ class ExecutableFactoryRelease:
             _require_sha256(
                 self.predecessor_release_sha256,
                 "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID")
+        if (not self.semantic_catalog or
+                len(set(self.semantic_catalog)) != len(self.semantic_catalog) or
+                any(not isinstance(item, str) or not item
+                    for item in self.semantic_catalog)):
+            raise ValueError("FACTORY_EXECUTABLE_RELEASE_CATALOG_INVALID")
         _require_sha256(
             self.semantic_catalog_sha256,
             "FACTORY_EXECUTABLE_RELEASE_CATALOG_INVALID")
@@ -233,6 +239,7 @@ class ExecutableFactoryRelease:
             "source_bindings": asdict(self.source_bindings),
             "profile": asdict(self.profile),
             "execution_plan": asdict(self.execution_plan),
+            "semantic_catalog": self.semantic_catalog,
             "semantic_catalog_sha256": self.semantic_catalog_sha256,
             "source_adapters": [asdict(item) for item in self.source_adapters],
             "answer_modalities": [asdict(item) for item in self.answer_modalities],
@@ -297,7 +304,8 @@ class ExecutableFactoryRelease:
                 raise ValueError("FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_DRIFT")
 
         verification = self.verification
-        if verification.semantic_catalog_sha256 != self.semantic_catalog_sha256:
+        if (_digest(self.semantic_catalog) != self.semantic_catalog_sha256 or
+                verification.semantic_catalog_sha256 != self.semantic_catalog_sha256):
             raise ValueError("FACTORY_EXECUTABLE_RELEASE_CATALOG_DRIFT")
         if (verification.execution_plan_sha256 != self.execution_plan.digest() or
                 verification.source_binding_sha256 != self.source_bindings.digest() or
@@ -367,7 +375,8 @@ class ExecutableFactoryRelease:
                 len(set(names)) != len(names) or
                 any(not isinstance(name, str) or not name for name in names)):
             raise ValueError("FACTORY_EXECUTABLE_RELEASE_CATALOG_INVALID")
-        if _digest(tuple(names)) != self.semantic_catalog_sha256:
+        if (tuple(names) != self.semantic_catalog or
+                _digest(tuple(names)) != self.semantic_catalog_sha256):
             raise ValueError("FACTORY_EXECUTABLE_RELEASE_CATALOG_DRIFT")
         for head in self.answer_heads:
             if any(
@@ -377,6 +386,33 @@ class ExecutableFactoryRelease:
                         head.semantic_identities, head.token_ids)):
                 raise ValueError(
                     "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT")
+
+    def verify_successor_of(self, predecessor: "ExecutableFactoryRelease") -> None:
+        """Verify persisted lineage against the actual predecessor artifact."""
+        if not isinstance(predecessor, ExecutableFactoryRelease):
+            raise TypeError("FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_REQUIRED")
+        predecessor.verify()
+        self.verify()
+        if (self.predecessor_release_sha256 != predecessor.release_sha256 or
+                self.transition is None or
+                self.transition.previous_plan_sha256 !=
+                predecessor.execution_plan.digest() or
+                self.transition.previous_curriculum_sha256 !=
+                predecessor.execution_plan.curriculum_sha256 or
+                self.transition.previous_source_binding_sha256 !=
+                predecessor.execution_plan.source_binding_sha256):
+            raise ValueError("FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT")
+        previous = predecessor.semantic_catalog
+        current = self.semantic_catalog
+        if current == previous:
+            expected = SemanticGeometryChange.UNCHANGED.value
+        elif current[:len(previous)] == previous:
+            expected = SemanticGeometryChange.APPEND_ONLY_EXPANSION.value
+        else:
+            expected = SemanticGeometryChange.INCOMPATIBLE.value
+        if (expected == SemanticGeometryChange.INCOMPATIBLE.value or
+                self.transition.semantic_geometry != expected):
+            raise ValueError("FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT")
 
     @classmethod
     def from_manifest(
@@ -397,6 +433,7 @@ class ExecutableFactoryRelease:
                 source_bindings=bindings,
                 profile=profile,
                 execution_plan=plan,
+                semantic_catalog=_tuples(payload["semantic_catalog"]),
                 semantic_catalog_sha256=payload["semantic_catalog_sha256"],
                 source_adapters=tuple(
                     SourceAdapter(**_tuples(item))
@@ -625,6 +662,13 @@ def compile_executable_factory_release(
     answer_heads = _answer_head_bindings(plan, graph, answer_registry)
     source_adapters = _provider_descriptors(
         plan, source_bindings, source_registry)
+    semantic_catalog = tuple(
+        graph.get("tokens") if isinstance(graph, dict) else ())
+    if (not semantic_catalog or
+            len(set(semantic_catalog)) != len(semantic_catalog) or
+            any(not isinstance(item, str) or not item
+                for item in semantic_catalog)):
+        raise ValueError("FACTORY_EXECUTABLE_RELEASE_SEMANTIC_CATALOG_REQUIRED")
     verification = _verification_receipt(
         curriculum, source_bindings, plan, source_registry,
         answer_modalities, answer_heads, source_root=source_root, graph=graph,
@@ -636,6 +680,12 @@ def compile_executable_factory_release(
         if not isinstance(predecessor, ExecutableFactoryRelease):
             raise TypeError("FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID")
         predecessor.verify()
+        derived_lineage = PlanLineage.from_semantic_catalogs(
+            predecessor.execution_plan, plan,
+            predecessor.semantic_catalog, semantic_catalog)
+        if lineage is not None and lineage != derived_lineage:
+            raise ValueError("FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT")
+        lineage = derived_lineage
         transition = diff_execution_plans(
             predecessor.execution_plan, plan, lineage=lineage)
         if transition.semantic_geometry == SemanticGeometryChange.INCOMPATIBLE.value:
@@ -650,6 +700,7 @@ def compile_executable_factory_release(
         source_bindings=source_bindings,
         profile=profile,
         execution_plan=plan,
+        semantic_catalog=semantic_catalog,
         semantic_catalog_sha256=verification.semantic_catalog_sha256,
         source_adapters=source_adapters,
         answer_modalities=answer_modalities,
@@ -662,6 +713,8 @@ def compile_executable_factory_release(
     release = replace(release, release_sha256=release.expected_digest())
     release.verify()
     release.verify_semantic_catalog(graph)
+    if predecessor is not None:
+        release.verify_successor_of(predecessor)
     return release
 
 

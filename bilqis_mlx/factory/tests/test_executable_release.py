@@ -235,22 +235,21 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
                 capabilities=(*grade.capabilities[:-1], changed_capability)),),
         )
         curriculum, bindings = from_legacy_course(changed_course)
-        candidate_plan = compile_executable_factory_release(
-            curriculum, bindings, CurriculumProfile.full(),
-            self.registry, self.answers,
-            source_root=None, graph=self.graph,
-            verification_seed=20261019, legacy_course=changed_course)
-        incompatible = PlanLineage.from_semantic_catalogs(
-            predecessor.execution_plan, candidate_plan.execution_plan,
-            ("a", "b"), ("b", "a"))
+        incompatible_graph = {
+            "tokens": [
+                "fixture.padding",
+                "cogal.value.true",
+                "cogal.value.false",
+            ],
+        }
         with self.assertRaisesRegex(
                 ValueError, "INCOMPATIBLE_GEOMETRY"):
             compile_executable_factory_release(
                 curriculum, bindings, CurriculumProfile.full(),
                 self.registry, self.answers,
-                source_root=None, graph=self.graph,
+                source_root=None, graph=incompatible_graph,
                 verification_seed=20261019, legacy_course=changed_course,
-                predecessor=predecessor, lineage=incompatible)
+                predecessor=predecessor)
 
     def test_append_only_semantic_geometry_is_carried_by_successor_release(self):
         predecessor = self.compile()
@@ -266,20 +265,15 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
             exam_item_counts=(*grade.exam_item_counts, ("Z.C6", 4)))
         expanded_course = replace(self.course, grades=(expanded_grade,))
         curriculum, bindings = from_legacy_course(expanded_course)
-        candidate = compile_executable_factory_release(
-            curriculum, bindings, CurriculumProfile.full(),
-            self.registry, self.answers,
-            source_root=None, graph=self.graph,
-            verification_seed=20261019, legacy_course=expanded_course)
-        lineage = PlanLineage.from_semantic_catalogs(
-            predecessor.execution_plan, candidate.execution_plan,
-            ("a", "b"), ("a", "b", "c"))
+        expanded_graph = {
+            "tokens": [*self.graph["tokens"], "fixture.appended.identity"],
+        }
         successor = compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(),
             self.registry, self.answers,
-            source_root=None, graph=self.graph,
+            source_root=None, graph=expanded_graph,
             verification_seed=20261019, legacy_course=expanded_course,
-            predecessor=predecessor, lineage=lineage)
+            predecessor=predecessor)
 
         self.assertEqual(
             successor.transition.semantic_geometry,
