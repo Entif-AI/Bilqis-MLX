@@ -152,6 +152,9 @@ def validate(course: Course) -> None:
             kinds = {family.kind for family in cap.answer_families}
             if not kinds or len(kinds) != len(cap.answer_families):
                 raise ValueError("MISSING_OR_DUPLICATE_ANSWER_FAMILY")
+            if not kinds <= {"binary", "integer_0_3", "numeric_active",
+                             "boolean_operator"}:
+                raise ValueError("UNKNOWN_CAPABILITY_ANSWER_FAMILY")
             for family in cap.answer_families:
                 if (not family.kind or not 2 <= len(family.values) <= 32 or
                         len(set(family.values)) != len(family.values)):

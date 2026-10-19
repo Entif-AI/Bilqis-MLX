@@ -311,23 +311,31 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     if numeric_staircase:
         if not resume:
             raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
-        from .factory.live_releases import numeric_registry_graph as registry_graph
+        from .factory.live_releases import (
+            course_for_mode, initial_course, numeric_registry_graph as registry_graph,
+            predecessor_course, resolve_admitted_courses,
+        )
         from .numeric_staircase import build_course, INITIAL_MAXIMUM, FINAL_MAXIMUM
         from .grade_a_release import accepted_grade_a
-        from .compatibility.historical_live_release import resume_grade_courses
-        from .factory.live_releases import boolean_successor as admitted_b
         saved = json.loads((run_dir/'state.json').read_text())
         if saved.get('curriculum_mode') not in (LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE):
             raise ValueError('NUMERIC_STAIRCASE_REQUIRES_EXISTING_C')
-        parent_a, parent_b = resume_grade_courses(accepted_grade_a(
-            json.loads(GRADE_A_MANIFEST.read_text())), legacy_root, saved)
+        accepted = accepted_grade_a(json.loads(GRADE_A_MANIFEST.read_text()))
+        initial = initial_course(accepted)
+        admitted = resolve_admitted_courses(
+            accepted, legacy_root, saved, include_prospective=False)
+        current = course_for_mode(admitted, saved.get('curriculum_mode'), initial)
+        parent_b = predecessor_course(admitted, current)
         maximum = saved['numeric_maximum'] if saved['curriculum_mode'] == STAIRCASE_RELEASE else INITIAL_MAXIMUM
-        proposal = build_course(parent_b or admitted_b(parent_a, legacy_root),
-                                registry_graph(), maximum=maximum)
+        proposal = build_course(parent_b, registry_graph(), maximum=maximum)
         snapshot['numeric_staircase'] = {'release': proposal.version,
             'initial_maximum': INITIAL_MAXIMUM, 'final_maximum': FINAL_MAXIMUM,
             'resume_maximum': maximum, 'source_student_sha256': snapshot['checkpoint_sha256'],
-            'neural_updates': 0, 'next_capability': 'C.COUNT' if saved['curriculum_mode'] != STAIRCASE_RELEASE else None}
+            'neural_updates': 0, 'next_capability': 'C.COUNT' if saved['curriculum_mode'] != STAIRCASE_RELEASE else None,
+            'parent_course_sha256': parent_b.digest(),
+            'grade_b_capabilities': [cap.id for cap in parent_b.grades[-1].capabilities],
+            'cumulative_exam_items': sum(
+                count for grade in proposal.grades for _, count in grade.exam_item_counts)}
     snapshot.update(_boolean_revision_preflight(
         run_dir, legacy_root, resume=resume,
         boolean_composite=boolean_composite, boolean_idboolops=boolean_idboolops,

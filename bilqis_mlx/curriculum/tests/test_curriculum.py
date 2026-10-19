@@ -73,6 +73,15 @@ class CourseTests(unittest.TestCase):
                 replace(a, capabilities=(malformed, *a.capabilities[1:])),
                 course.grades[1],
             )))
+        unknown = replace(
+            identified,
+            answer_families=(AnswerFamily("mystery_operator", ("A", "B")),),
+        )
+        with self.assertRaisesRegex(ValueError, "UNKNOWN_CAPABILITY_ANSWER_FAMILY"):
+            validate(replace(course, grades=(
+                replace(a, capabilities=(unknown, *a.capabilities[1:])),
+                course.grades[1],
+            )))
 
     def test_composed_exam_requires_previously_mastered_grade(self):
         course = sample_course()

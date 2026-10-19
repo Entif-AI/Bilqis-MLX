@@ -37,6 +37,7 @@ from ..boolean_identification import (
     constructor_digest as _boolean_identification_digest,
 )
 from ..live_grade_c import (
+    REGISTRY_COUNTING_TARGET,
     RELEASE as NUMERIC_RELEASE,
     answer_heads as _numeric_answer_heads,
     constructor_digest as _numeric_digest,
@@ -184,7 +185,9 @@ def resolve_admitted_courses(historical_course, source_root, saved: dict,
             parent_b = composite_b
         elif saved.get("curriculum_mode") == BOOLEAN_COMPOSITE_RELEASE:
             parent_b = composite_b
-        pinned_maximum = saved.get("numeric_maximum")
+        pinned_maximum = (REGISTRY_COUNTING_TARGET
+                          if NUMERIC_STAIRCASE_RELEASE in modes
+                          else saved.get("numeric_maximum"))
         if (pending or {}).get("curriculum_mode") == NUMERIC_RELEASE and pinned_maximum is None:
             pinned_maximum = pending.get("numeric_maximum")
         course_c, _ = numeric_successor(parent_b, maximum=pinned_maximum)

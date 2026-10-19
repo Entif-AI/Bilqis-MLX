@@ -17,6 +17,7 @@ from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_b_oracle import operand_truth
+from bilqis_mlx.grade_c_preflight import qualify as qualify_grade_c
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.diagnostics.teaching import inspect_lesson_step
 from bilqis_mlx.typed_answer_training import prepare_typed_batches
@@ -147,6 +148,15 @@ class BooleanIdentificationTests(unittest.TestCase):
         self.assertEqual(evidence.delivered_count, 4)
         self.assertTrue(set(evidence.prerequisite_capabilities) <= {
             "A.IDENTITY", "A.PARENT", "A.LINK"})
+
+    def test_grade_c_preflight_requires_full_168_item_idboolops_parent(self):
+        manifest = json.loads(MANIFEST.read_text())
+        report = qualify_grade_c(SOURCE, manifest, previous=self.course)
+        self.assertEqual(report["pre_c_cumulative_items"], 168)
+        self.assertEqual(
+            report["runtime_admission"],
+            "ONE_COMPLETE_CUMULATIVE_A_B_168_OF_168_CHECKPOINT_THEN_HUMAN_RESUME",
+        )
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 from bilqis_mlx import trainer as storage
 from bilqis_mlx.grade_transition import activate_numeric_grade
-from bilqis_mlx.live_grade_c import draw, RELEASE as OLD_RELEASE
+from bilqis_mlx.live_grade_c import draw, prepare_course, RELEASE as OLD_RELEASE
 from bilqis_mlx.numeric_staircase import (
     RELEASE, build_course, enroll, advance_scope, scope_advance_due, row_in_scope)
 from tests.system import test_grade_c_trainer as fixtures
@@ -41,6 +41,66 @@ class NumericStaircaseTests(unittest.TestCase):
         with redirect_stdout(io.StringIO()):
             return enroll(self.root, self.old, self.fixture.course,
                           self.fixture.previous, self.graph)
+
+    def _id_parent_fixture(self, root):
+        from bilqis_mlx.boolean_composite import build_course as build_composite
+        from bilqis_mlx.boolean_identification import (
+            RELEASE as ID_RELEASE, answer_heads as id_answer_heads,
+            build_course as build_id,
+        )
+        from bilqis_mlx.curriculum.scheduler import (
+            Assessment, Score, assess, next_capability, start_new, visit,
+        )
+
+        identified = build_id(
+            build_composite(self.fixture.previous, fixtures.SOURCE), fixtures.SOURCE)
+        successor, _ = prepare_course(identified, maximum=10)
+        mx, params, opt = self.fixture.toy()
+        pointer = storage._bundle_pointer(
+            root, 'id-parent', params, opt, self.fixture.parent_graph, reserve_gib=0.)
+        school = start_new(identified, pointer)
+        for grade in ('A', 'B', 'A', 'B'):
+            while next_capability(school):
+                school = visit(identified, school, next_capability(school), pointer)
+            scores = {
+                cap.id: Score(12, 12)
+                for admitted in identified.grades
+                if admitted.id in school.champions or admitted.id == grade
+                for cap in admitted.capabilities
+            }
+            rubric = identified.grades[
+                1 if any(cap.startswith('B.') for cap in scores) else 0
+            ].assessment_sha256
+            school = assess(identified, school, Assessment(
+                pointer.sha256, pointer.optimizer_step, identified.digest(),
+                rubric, scores, 'id-parent-pass'))
+        receipt = self.fixture.receipt(school, pointer, params)
+        receipt['curriculum_mode'] = ID_RELEASE
+        receipt['config']['answer_heads'] = id_answer_heads(self.fixture.parent_graph)
+        receipt['live_rubric_sha256'] = identified.grades[-1].assessment_sha256
+        receipt['last_exam'] = {
+            'student_sha256': pointer.sha256,
+            'optimizer_step': pointer.optimizer_step,
+            'cohort_sha256': 'd' * 64,
+            'exam_rubric_sha256': identified.grades[-1].assessment_sha256,
+            'scores': {
+                cap.id: {'correct': count, 'total': count}
+                for admitted in identified.grades
+                for cap in admitted.capabilities
+                for count in (dict(admitted.exam_item_counts)[cap.id],)
+            },
+        }
+        return identified, successor, id_answer_heads, mx, params, opt, receipt
+
+    def _numeric_staircase_preview(self, root):
+        from bilqis_mlx.cli import main
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main([
+                'train', '--dry-run', '--resume', '--numeric-staircase',
+                '--run-dir', str(root), '--legacy-code-root', str(fixtures.SOURCE),
+            ]), 0)
+        return json.loads(output.getvalue())['numeric_staircase']
 
     def test_enrollment_reuses_latest_bundle_optimizer_teacher_and_catalog(self):
         course, record = self.start()
@@ -108,6 +168,36 @@ class NumericStaircaseTests(unittest.TestCase):
             self.assertEqual(report['numeric_staircase']['final_maximum'], 6)
             self.assertFalse(report['neural_training_started_by_this_command'])
             self.assertEqual((self.root/'state.json').read_bytes(), original)
+
+    def test_id_parent_preview_and_answer_head_custody_survive_c_and_staircase(self):
+        with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
+            root = Path(temp)
+            identified, successor, id_answer_heads, mx, params, opt, receipt = (
+                self._id_parent_fixture(root))
+            receipt = storage._persist(root, receipt)
+            grown, own, graph, c_record = activate_numeric_grade(
+                mx, root, receipt, identified, successor,
+                params, opt, self.fixture.parent_graph, reserve_gib=0.)
+
+            operator_head = id_answer_heads(graph)['boolean_operator']
+            self.assertEqual(c_record['config']['answer_heads']['boolean_operator'],
+                             operator_head)
+            self.assertEqual(int(own.state['step'].item()), int(opt.state['step'].item()))
+            preview = self._numeric_staircase_preview(root)
+            self.assertEqual(preview['parent_course_sha256'], identified.digest())
+            self.assertEqual(preview['grade_b_capabilities'], [
+                'B.NOT', 'B.AND', 'B.OR', 'B.XOR', 'B.IMPLIES', 'B.IFF',
+                'B.COMPOSITE', 'B.IDBOOLOPS',
+            ])
+
+            staircase, staircase_record = enroll(
+                root, c_record, successor, identified, graph)
+            self.assertEqual(
+                staircase_record['config']['answer_heads']['boolean_operator'],
+                operator_head)
+            self.assertEqual(
+                [cap.id for cap in staircase.grades[1].capabilities],
+                preview['grade_b_capabilities'])
 
     def test_missing_or_old_checkpoint_scores_cannot_advance_scope(self):
         course, record = self.start()
