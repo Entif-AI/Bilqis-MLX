@@ -199,12 +199,41 @@ class EvidenceReceipt:
 
 
 @dataclass(frozen=True)
+class TeachingReceipt:
+    """One bounded teaching intervention after one failed evidence receipt."""
+
+    obligation_id: str
+    intervention_id: str
+    teaching_option_id: str
+    parent_checkpoint_sha256: str
+    parent_optimizer_step: int
+    checkpoint_sha256: str
+    optimizer_step: int
+
+    def __post_init__(self) -> None:
+        if (not self.obligation_id or not self.intervention_id or
+                not self.teaching_option_id):
+            raise ValueError("AUTONOMY_TEACHING_RECEIPT_IDENTITY_INVALID")
+        for value in (self.parent_checkpoint_sha256, self.checkpoint_sha256):
+            if (not isinstance(value, str) or len(value) != 64 or
+                    any(char not in "0123456789abcdef" for char in value)):
+                raise ValueError("AUTONOMY_TEACHING_RECEIPT_CHECKPOINT_INVALID")
+        if (type(self.parent_optimizer_step) is not int or
+                type(self.optimizer_step) is not int or
+                self.parent_optimizer_step < 0 or
+                self.optimizer_step <= self.parent_optimizer_step or
+                self.checkpoint_sha256 == self.parent_checkpoint_sha256):
+            raise ValueError("AUTONOMY_TEACHING_RECEIPT_NO_CHECKPOINT_PROGRESS")
+
+
+@dataclass(frozen=True)
 class EvidenceLedger:
     """Append-only evidence history bound to one release and autonomy plan."""
 
     factory_release_sha256: str
     autonomy_plan_sha256: str
     receipts: tuple[EvidenceReceipt, ...] = ()
+    interventions: tuple[TeachingReceipt, ...] = ()
 
     def __post_init__(self) -> None:
         if (not isinstance(self.factory_release_sha256, str) or
@@ -216,7 +245,10 @@ class EvidenceLedger:
                 any(char not in "0123456789abcdef"
                     for char in self.autonomy_plan_sha256) or
                 any(not isinstance(item, EvidenceReceipt) for item in self.receipts) or
-                len({item.evidence_id for item in self.receipts}) != len(self.receipts)):
+                len({item.evidence_id for item in self.receipts}) != len(self.receipts) or
+                any(not isinstance(item, TeachingReceipt) for item in self.interventions) or
+                len({item.intervention_id for item in self.interventions}) !=
+                len(self.interventions)):
             raise ValueError("AUTONOMY_EVIDENCE_LEDGER_INVALID")
 
 
@@ -232,6 +264,22 @@ class CurriculumWorkItem:
                 not self.teaching_option_ids or
                 len(set(self.teaching_option_ids)) != len(self.teaching_option_ids)):
             raise ValueError("AUTONOMY_WORK_ITEM_INVALID")
+
+
+@dataclass(frozen=True)
+class TeachingWorkItem:
+    capability_id: str
+    obligation: EvidenceObligation
+    teaching_option_ids: tuple[str, ...]
+    failed_evidence: EvidenceReceipt
+
+    def __post_init__(self) -> None:
+        if (not self.capability_id or
+                self.obligation.capability_id != self.capability_id or
+                self.failed_evidence.obligation_id != self.obligation.obligation_id or
+                not self.teaching_option_ids or
+                len(set(self.teaching_option_ids)) != len(self.teaching_option_ids)):
+            raise ValueError("AUTONOMY_TEACHING_WORK_ITEM_INVALID")
 
 
 def _capability_definitions(release: FactoryRelease):
@@ -357,6 +405,13 @@ def _latest_receipts(ledger: EvidenceLedger) -> dict[str, EvidenceReceipt]:
     return latest
 
 
+def _latest_interventions(ledger: EvidenceLedger) -> dict[str, TeachingReceipt]:
+    latest: dict[str, TeachingReceipt] = {}
+    for receipt in ledger.interventions:
+        latest[receipt.obligation_id] = receipt
+    return latest
+
+
 def closed_obligations(
     release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
 ) -> tuple[str, ...]:
@@ -407,8 +462,38 @@ def record_evidence(
         raise ValueError("AUTONOMY_INSUFFICIENT_EVIDENCE_SPECIMENS")
     if receipt.evidence_id in {item.evidence_id for item in ledger.receipts}:
         raise ValueError("AUTONOMY_DUPLICATE_EVIDENCE_RECEIPT")
-    return EvidenceLedger(ledger.factory_release_sha256, ledger.autonomy_plan_sha256,
-                          (*ledger.receipts, receipt))
+    return EvidenceLedger(
+        ledger.factory_release_sha256, ledger.autonomy_plan_sha256,
+        (*ledger.receipts, receipt), ledger.interventions)
+
+
+def record_teaching_intervention(
+    release: FactoryRelease, ledger: EvidenceLedger, receipt: TeachingReceipt, *,
+    plan: AutonomyPlan | None = None,
+) -> EvidenceLedger:
+    obligations = _validate_ledger(release, ledger, plan=plan)
+    if not isinstance(receipt, TeachingReceipt):
+        raise TypeError("AUTONOMY_INVALID_TEACHING_RECEIPT")
+    obligation = obligations.get(receipt.obligation_id)
+    if obligation is None:
+        raise ValueError("AUTONOMY_UNKNOWN_EVIDENCE_OBLIGATION")
+    latest = _latest_receipts(ledger).get(receipt.obligation_id)
+    if latest is None or latest.passed:
+        raise ValueError("AUTONOMY_TEACHING_REQUIRES_FAILED_EVIDENCE")
+    if (receipt.parent_checkpoint_sha256 != latest.checkpoint_sha256 or
+            receipt.parent_optimizer_step != latest.optimizer_step):
+        raise ValueError("AUTONOMY_TEACHING_PARENT_EVIDENCE_MISMATCH")
+    work = _work_item(
+        release, obligation,
+        evidence_complete_capabilities(release, ledger, plan=plan))
+    if receipt.teaching_option_id not in work.teaching_option_ids:
+        raise ValueError("AUTONOMY_TEACHING_OPTION_NOT_RELEASED")
+    if receipt.intervention_id in {
+            item.intervention_id for item in ledger.interventions}:
+        raise ValueError("AUTONOMY_DUPLICATE_TEACHING_RECEIPT")
+    return EvidenceLedger(
+        ledger.factory_release_sha256, ledger.autonomy_plan_sha256,
+        ledger.receipts, (*ledger.interventions, receipt))
 
 
 def _work_item(
@@ -469,6 +554,7 @@ def next_work(
 
 class AutonomyActionKind(str, Enum):
     SOURCE_COVERAGE = "SOURCE_COVERAGE"
+    TEACHING = "TEACHING"
     LEARNING_EVIDENCE = "LEARNING_EVIDENCE"
     QUALIFICATION = "QUALIFICATION"
 
@@ -478,17 +564,25 @@ class AutonomyAction:
     kind: AutonomyActionKind
     source_coverage_debt: str | None = None
     evidence_work: CurriculumWorkItem | None = None
+    teaching_work: TeachingWorkItem | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.kind, AutonomyActionKind):
             raise ValueError("AUTONOMY_ACTION_KIND_INVALID")
         if self.kind is AutonomyActionKind.SOURCE_COVERAGE:
-            if not self.source_coverage_debt or self.evidence_work is not None:
+            if (not self.source_coverage_debt or self.evidence_work is not None or
+                    self.teaching_work is not None):
                 raise ValueError("AUTONOMY_SOURCE_ACTION_INVALID")
+        elif self.kind is AutonomyActionKind.TEACHING:
+            if (self.source_coverage_debt is not None or self.evidence_work is not None or
+                    self.teaching_work is None):
+                raise ValueError("AUTONOMY_TEACHING_ACTION_INVALID")
         elif self.kind is AutonomyActionKind.LEARNING_EVIDENCE:
-            if self.source_coverage_debt is not None or self.evidence_work is None:
+            if (self.source_coverage_debt is not None or self.evidence_work is None or
+                    self.teaching_work is not None):
                 raise ValueError("AUTONOMY_LEARNING_ACTION_INVALID")
-        elif self.source_coverage_debt is not None or self.evidence_work is not None:
+        elif (self.source_coverage_debt is not None or self.evidence_work is not None or
+              self.teaching_work is not None):
             raise ValueError("AUTONOMY_QUALIFICATION_ACTION_INVALID")
 
 
@@ -504,6 +598,20 @@ def next_action(
                               source_coverage_debt=debt)
     work = next_work(release, ledger, plan=resolved_plan)
     if work is not None:
+        latest_failed = _latest_receipts(ledger).get(work.obligation.obligation_id)
+        if latest_failed is not None and not latest_failed.passed:
+            latest_intervention = _latest_interventions(ledger).get(
+                work.obligation.obligation_id)
+            if (latest_intervention is None or
+                    latest_intervention.parent_checkpoint_sha256 !=
+                    latest_failed.checkpoint_sha256 or
+                    latest_intervention.parent_optimizer_step !=
+                    latest_failed.optimizer_step):
+                return AutonomyAction(
+                    AutonomyActionKind.TEACHING,
+                    teaching_work=TeachingWorkItem(
+                        work.capability_id, work.obligation,
+                        work.teaching_option_ids, latest_failed))
         return AutonomyAction(AutonomyActionKind.LEARNING_EVIDENCE,
                               evidence_work=work)
     return AutonomyAction(AutonomyActionKind.QUALIFICATION)
@@ -527,6 +635,7 @@ def rebind_evidence_ledger(
             raise ValueError(
                 "AUTONOMY_PLAN_REBIND_INVALIDATES_EVIDENCE:" + receipt.obligation_id)
     rebound = EvidenceLedger(
-        release.release_sha256, new_plan.digest(), ledger.receipts)
+        release.release_sha256, new_plan.digest(),
+        ledger.receipts, ledger.interventions)
     _validate_ledger(release, rebound, plan=new_plan)
     return rebound

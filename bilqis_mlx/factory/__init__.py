@@ -10,6 +10,8 @@ from .autonomy import (
     EvidenceLedger,
     EvidenceObligation,
     EvidenceReceipt,
+    TeachingReceipt,
+    TeachingWorkItem,
     closed_obligations,
     compile_autonomy_plan,
     initial_evidence_ledger,
@@ -19,6 +21,7 @@ from .autonomy import (
     next_work,
     obligations_for_capability,
     record_evidence,
+    record_teaching_intervention,
     rebind_evidence_ledger,
 )
 from .model import (
@@ -51,6 +54,8 @@ __all__ = (
     "EvidenceLedger",
     "EvidenceObligation",
     "EvidenceReceipt",
+    "TeachingReceipt",
+    "TeachingWorkItem",
     "closed_obligations",
     "compile_autonomy_plan",
     "initial_evidence_ledger",
@@ -60,6 +65,7 @@ __all__ = (
     "next_work",
     "obligations_for_capability",
     "record_evidence",
+    "record_teaching_intervention",
     "rebind_evidence_ledger",
     "AdmissionReceipt",
     "AssessmentClass",
