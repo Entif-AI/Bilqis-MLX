@@ -262,3 +262,50 @@ class AutonomyRouterTests(TypedCompositionAutonomyTests):
         self.assertEqual(action.kind, AutonomyActionKind.QUALIFICATION)
         self.assertIsNone(action.evidence_work)
         self.assertIsNone(action.source_coverage_debt)
+
+class AutonomyPlanRebindTests(TypedCompositionAutonomyTests):
+    def test_source_debt_resolution_can_preserve_unaffected_evidence(self):
+        from bilqis_mlx.factory.autonomy import (
+            compile_autonomy_plan, rebind_evidence_ledger,
+        )
+        blocked = compile_autonomy_plan(
+            self.release,
+            self.coverage_report(status="AWAITING_SOURCE_WITNESS", debt=True),
+        )
+        ledger = initial_evidence_ledger(self.release, plan=blocked)
+        work = next_work(self.release, ledger, plan=blocked)
+        self.assertEqual(work.capability_id, "A.BASE")
+        ledger = record_evidence(
+            self.release, ledger, self.receipt(work.obligation), plan=blocked)
+
+        covered = compile_autonomy_plan(self.release, self.coverage_report())
+        rebound = rebind_evidence_ledger(
+            self.release, ledger, old_plan=blocked, new_plan=covered)
+        self.assertEqual(rebound.receipts, ledger.receipts)
+        self.assertEqual(rebound.autonomy_plan_sha256, covered.digest())
+        self.assertEqual(
+            next_work(self.release, rebound, plan=covered).capability_id,
+            "A.OTHER",
+        )
+
+    def test_plan_rebind_rejects_receipts_for_changed_obligation_contract(self):
+        from bilqis_mlx.factory.autonomy import (
+            AutonomyPlan, compile_autonomy_plan, rebind_evidence_ledger,
+        )
+        old = compile_autonomy_plan(self.release)
+        ledger = initial_evidence_ledger(self.release, plan=old)
+        ledger = self.close_current_capability(ledger)
+        # Auditing composition changes A.COMPOSITE's composition obligation IDs.
+        new = compile_autonomy_plan(self.release, self.coverage_report())
+        # Evidence only exists for A.BASE here and remains compatible.
+        compatible = rebind_evidence_ledger(
+            self.release, ledger, old_plan=old, new_plan=new)
+        self.assertEqual(compatible.receipts, ledger.receipts)
+
+        # Now close through the old-plan composite and prove those receipts cannot
+        # be relabeled under the new typed-composition contract.
+        ledger = self.close_current_capability(ledger)
+        ledger = self.close_current_capability(ledger)
+        with self.assertRaisesRegex(ValueError, "PLAN_REBIND_INVALIDATES_EVIDENCE"):
+            rebind_evidence_ledger(
+                self.release, ledger, old_plan=old, new_plan=new)

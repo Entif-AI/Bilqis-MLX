@@ -19,6 +19,7 @@ from .autonomy import (
     next_work,
     obligations_for_capability,
     record_evidence,
+    rebind_evidence_ledger,
 )
 from .model import (
     AdmissionReceipt,
@@ -59,6 +60,7 @@ __all__ = (
     "next_work",
     "obligations_for_capability",
     "record_evidence",
+    "rebind_evidence_ledger",
     "AdmissionReceipt",
     "AssessmentClass",
     "AssessmentPlan",
