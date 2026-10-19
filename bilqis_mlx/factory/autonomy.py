@@ -42,6 +42,26 @@ class SourceCompositionEdge:
 
 
 @dataclass(frozen=True)
+class ProjectionEvidenceSpec:
+    """One source-supported learner-proof projection bound into a plan."""
+
+    capability_id: str
+    projection_id: str
+    minimum_specimens: int
+    proof_axes: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if (not isinstance(self.capability_id, str) or not self.capability_id or
+                not isinstance(self.projection_id, str) or not self.projection_id or
+                type(self.minimum_specimens) is not int or
+                self.minimum_specimens < 1 or not self.proof_axes or
+                len(set(self.proof_axes)) != len(self.proof_axes) or
+                any(not isinstance(item, str) or not item
+                    for item in self.proof_axes)):
+            raise ValueError("AUTONOMY_PROJECTION_EVIDENCE_SPEC_INVALID")
+
+
+@dataclass(frozen=True)
 class AutonomyPlan:
     factory_release_sha256: str
     source_composition_audited: bool
@@ -49,6 +69,7 @@ class AutonomyPlan:
     coverage_debt: tuple[str, ...] = ()
     blocked_capabilities: tuple[str, ...] = ()
     deferred_composition_candidates: tuple[str, ...] = ()
+    projection_evidence: tuple[ProjectionEvidenceSpec, ...] = ()
 
     def __post_init__(self) -> None:
         if (not isinstance(self.factory_release_sha256, str) or
@@ -65,15 +86,29 @@ class AutonomyPlan:
                 len(set(self.deferred_composition_candidates)) !=
                 len(self.deferred_composition_candidates) or
                 any(not isinstance(item, str) or not item
-                    for item in self.deferred_composition_candidates)):
+                    for item in self.deferred_composition_candidates) or
+                any(not isinstance(item, ProjectionEvidenceSpec)
+                    for item in self.projection_evidence) or
+                len({(item.capability_id, item.projection_id)
+                     for item in self.projection_evidence}) !=
+                len(self.projection_evidence)):
             raise ValueError("AUTONOMY_PLAN_INVALID")
 
     def digest(self) -> str:
-        return _digest(asdict(self))
+        payload = asdict(self)
+        # Preserve all existing v1 plan identities when no projection contract
+        # has been attached. Old durable autonomy snapshots therefore remain
+        # readable without a state migration merely because this capability
+        # was added.
+        if not self.projection_evidence:
+            payload.pop("projection_evidence", None)
+        return _digest(payload)
 
 
 def compile_autonomy_plan(
     release: FactoryRelease, composition_report: dict | None = None,
+    *, projection_evidence: tuple[ProjectionEvidenceSpec, ...] = (),
+    projection_coverage_debt: tuple[str, ...] = (),
 ) -> AutonomyPlan:
     """Bind learner planning to verified typed composition coverage when present.
 
@@ -82,8 +117,32 @@ def compile_autonomy_plan(
     consumers remain explicitly blocked instead of being silently omitted.
     """
     release.verify()
+    capability_ids = tuple(item.capability_id for item in release.capabilities)
+    if (any(not isinstance(item, ProjectionEvidenceSpec)
+            for item in projection_evidence) or
+            len({(item.capability_id, item.projection_id)
+                 for item in projection_evidence}) != len(projection_evidence) or
+            any(item.capability_id not in capability_ids
+                for item in projection_evidence) or
+            len(set(projection_coverage_debt)) != len(projection_coverage_debt) or
+            any(not isinstance(item, str) or not item
+                for item in projection_coverage_debt)):
+        raise ValueError("AUTONOMY_PROJECTION_EVIDENCE_SCOPE_INVALID")
+    projection_blocked = set()
+    for item in projection_coverage_debt:
+        capability = item.split(":", 1)[0]
+        if capability not in capability_ids:
+            raise ValueError("AUTONOMY_PROJECTION_COVERAGE_DEBT_SCOPE_INVALID")
+        projection_blocked.add(capability)
     if composition_report is None:
-        return AutonomyPlan(release.release_sha256, False)
+        return AutonomyPlan(
+            release.release_sha256,
+            False,
+            coverage_debt=projection_coverage_debt,
+            blocked_capabilities=tuple(
+                item for item in capability_ids if item in projection_blocked),
+            projection_evidence=projection_evidence,
+        )
     from ..curriculum_compiler import compile_ast
     from ..semantic_coverage import SCHEMA
 
@@ -91,12 +150,14 @@ def compile_autonomy_plan(
             composition_report.get("schema") != SCHEMA or
             composition_report.get("ast_sha256") != compile_ast(release.course).digest()):
         raise ValueError("AUTONOMY_COMPOSITION_REPORT_BINDING_INVALID")
-    capability_ids = tuple(item.capability_id for item in release.capabilities)
     if set(composition_report.get("capabilities", ())) != set(capability_ids):
         raise ValueError("AUTONOMY_COMPOSITION_REPORT_SCOPE_INVALID")
 
     source_cohort = composition_report.get("source_witness_cohort_sha256")
-    edges, debt, blocked, deferred = [], [], set(), []
+    edges = []
+    debt = list(projection_coverage_debt)
+    blocked = set(projection_blocked)
+    deferred = []
     for unresolved in composition_report.get("unresolved", ()):
         capability = unresolved.get("capability") if isinstance(unresolved, dict) else None
         failure = unresolved.get("failure") if isinstance(unresolved, dict) else None
@@ -137,6 +198,7 @@ def compile_autonomy_plan(
         release.release_sha256, True, tuple(edges), tuple(debt),
         tuple(item for item in capability_ids if item in blocked),
         tuple(deferred),
+        projection_evidence,
     )
 
 
@@ -340,6 +402,17 @@ def obligations_for_capability(
         minimum_specimens=coverage.minimum_specimens,
         generation_axes=axes,
     )]
+    obligations.extend(EvidenceObligation(
+        obligation_id=(
+            f"{capability_id}/projection/{projection.projection_id}"),
+        capability_id=capability_id,
+        kind=EvidenceKind.PROJECTION,
+        key=projection.projection_id,
+        minimum_specimens=projection.minimum_specimens,
+        generation_axes=axes,
+        proof_axes=projection.proof_axes,
+    ) for projection in resolved_plan.projection_evidence
+      if projection.capability_id == capability_id)
     obligations.extend(EvidenceObligation(
         obligation_id=f"{capability_id}/prerequisite/{predecessor}",
         capability_id=capability_id,

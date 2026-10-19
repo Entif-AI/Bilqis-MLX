@@ -4,7 +4,8 @@ import tempfile
 import unittest
 
 from bilqis_mlx.factory.autonomy import (
-    EvidenceReceipt, initial_evidence_ledger, next_work, record_evidence,
+    EvidenceKind, EvidenceReceipt, ProjectionEvidenceSpec,
+    compile_autonomy_plan, initial_evidence_ledger, next_work, record_evidence,
 )
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.factory.tests.support import synthetic_release_inputs
@@ -67,6 +68,35 @@ class DurableAutonomyStateTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "AUTONOMY_UNSAFE_ARTIFACT_DIRECTORY"):
                 persist_autonomy_state(root, self.release,
                                        ledger=initial_evidence_ledger(self.release))
+
+    def test_projection_plan_survives_restart_with_same_next_work(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            plan = compile_autonomy_plan(
+                self.release,
+                projection_evidence=(
+                    ProjectionEvidenceSpec(
+                        "A.C0", "TRANSFER", 2,
+                        ("nonce-symbol-renaming",)),
+                ),
+            )
+            ledger = initial_evidence_ledger(self.release, plan=plan)
+            direct = next_work(self.release, ledger, plan=plan)
+            ledger = record_evidence(
+                self.release, ledger, self.receipt(direct.obligation), plan=plan)
+            expected = next_work(self.release, ledger, plan=plan)
+            self.assertEqual(expected.obligation.kind, EvidenceKind.PROJECTION)
+            persist_autonomy_state(
+                root, self.release, plan=plan, ledger=ledger)
+            restored_plan, restored_ledger = read_autonomy_state(
+                root, self.release)
+            self.assertEqual(restored_plan, plan)
+            self.assertEqual(restored_ledger, ledger)
+            self.assertEqual(
+                next_work(
+                    self.release, restored_ledger, plan=restored_plan),
+                expected,
+            )
 
 
 if __name__ == "__main__":

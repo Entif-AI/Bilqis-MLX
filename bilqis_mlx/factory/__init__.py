@@ -5,6 +5,7 @@ from .autonomy import (
     AutonomyActionKind,
     AutonomyPlan,
     CurriculumWorkItem,
+    ProjectionEvidenceSpec,
     SourceCompositionEdge,
     EvidenceKind,
     EvidenceLedger,
@@ -51,6 +52,7 @@ from .understanding import (
     ProjectionSpec,
     UnderstandingContract,
     UnderstandingEvidencePlan,
+    autonomy_projection_inputs,
     contract_for_target,
     plan_understanding_evidence,
 )
@@ -64,6 +66,7 @@ __all__ = (
     "AutonomyActionKind",
     "AutonomyPlan",
     "CurriculumWorkItem",
+    "ProjectionEvidenceSpec",
     "SourceCompositionEdge",
     "EvidenceKind",
     "EvidenceLedger",
@@ -106,6 +109,7 @@ __all__ = (
     "ProjectionSpec",
     "UnderstandingContract",
     "UnderstandingEvidencePlan",
+    "autonomy_projection_inputs",
     "contract_for_target",
     "plan_understanding_evidence",
 )

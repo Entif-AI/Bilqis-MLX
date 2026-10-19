@@ -7,6 +7,7 @@ from bilqis_mlx.factory.development import (
 from bilqis_mlx.factory.understanding import (
     PROJECTION_SPECS,
     ProofAxis,
+    autonomy_projection_inputs,
     contract_for_target,
     plan_understanding_evidence,
 )
@@ -120,6 +121,31 @@ class UnderstandingProjectionTests(unittest.TestCase):
                     UnderstandingProjection.EXPLAIN,
                 ),
             )
+
+    def test_source_evidence_plan_projects_into_autonomy_inputs_without_reinterpretation(self):
+        target = self.staircase.target_map["DEV.LAW_SCHEMA"]
+        contract = contract_for_target(target)
+        plan = plan_understanding_evidence(
+            contract,
+            generation_axes=("source-valid", "fresh-seed"),
+            supported_projections=(
+                UnderstandingProjection.TRANSFER,
+                UnderstandingProjection.INVERT,
+            ),
+        )
+        specs, debt = autonomy_projection_inputs((plan,))
+        self.assertEqual(
+            tuple(item.projection_id for item in specs),
+            ("TRANSFER", "INVERT"),
+        )
+        self.assertEqual(
+            tuple(item.proof_axes for item in specs),
+            (("nonce-symbol-renaming",), ("reverse-mapping",)),
+        )
+        self.assertIn(
+            "DEV.LAW_SCHEMA:COUNTERFACTUAL:SOURCE_PROJECTION_UNSUPPORTED",
+            debt,
+        )
 
 
 if __name__ == "__main__":
