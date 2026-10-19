@@ -1,7 +1,7 @@
 """Source/assessed-root and prerequisite admission contract."""
 from dataclasses import replace
 import unittest
-from bilqis_mlx.curriculum import (AnswerFamily, BINARY, INT_0_3,
+from bilqis_mlx.curriculum import (AnswerFamily, BINARY, BOOLEAN_OPERATORS, INT_0_3,
     Capability, Grade, Course, ExamItem, validate, validate_exam_item)
 
 
@@ -44,6 +44,35 @@ class CourseTests(unittest.TestCase):
             validate_exam_item(course, "A", replace(item, roots=("root.not.taught",)))
         with self.assertRaisesRegex(ValueError, "ANSWER"):
             validate_exam_item(course, "A", replace(item, gold="4"))
+
+    def test_capability_may_use_bounded_operator_identity_without_fake_binary_family(self):
+        course = sample_course()
+        a = course.grades[0]
+        identified = replace(
+            a.capabilities[0],
+            answer_families=(AnswerFamily("boolean_operator", BOOLEAN_OPERATORS),),
+        )
+        course = replace(course, grades=(
+            replace(a, capabilities=(identified, *a.capabilities[1:])),
+            course.grades[1],
+        ))
+        validate(course)
+        item = ExamItem(
+            "a.0", "boolean_operator", "AND", ("root.a.0",), (),
+            "synthetic-oracle", "exam:operator",
+        )
+        validate_exam_item(course, "A", item)
+        with self.assertRaisesRegex(ValueError, "ANSWER"):
+            validate_exam_item(course, "A", replace(item, gold="XNOR"))
+        malformed = replace(
+            identified,
+            answer_families=(AnswerFamily("boolean_operator", (*BOOLEAN_OPERATORS[:-1], "XNOR")),),
+        )
+        with self.assertRaisesRegex(ValueError, "BOOLEAN_OPERATOR"):
+            validate(replace(course, grades=(
+                replace(a, capabilities=(malformed, *a.capabilities[1:])),
+                course.grades[1],
+            )))
 
     def test_composed_exam_requires_previously_mastered_grade(self):
         course = sample_course()

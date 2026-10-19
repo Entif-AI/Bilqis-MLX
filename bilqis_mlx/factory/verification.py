@@ -26,6 +26,13 @@ def check_boolean_composite(row, *, source_root, **_):
             list(micro.encode(row["record"])) == row["tokens"])
 
 
+def check_boolean_identification(row, *, source_root, graph, **_):
+    from ..boolean_identification import encode_record
+    from ..boolean_identification_oracle import evaluate
+    return (evaluate(row["record"], row["capability"]) == row["gold"] and
+            encode_record(row["record"], source_root, graph) == row["tokens"])
+
+
 def check_numeric(row, *, graph, **_):
     from ..source_adapters.numeric import decode
     from ..verification.numeric import independent_value

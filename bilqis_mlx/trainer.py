@@ -53,6 +53,7 @@ from .source_adapters.school import live_source_registry
 from .factory.assessment import qualification_complete
 from .factory.live_releases import (
     BOOLEAN_COMPOSITE_RELEASE,
+    BOOLEAN_IDENTIFICATION_RELEASE,
     BOOLEAN_RELEASE,
     GRAPH_GROWTH_TRANSITION,
     INITIAL_RELEASE,
@@ -62,6 +63,8 @@ from .factory.live_releases import (
     SAME_GRADE_TRANSITION,
     SAME_GRAPH_TRANSITION,
     boolean_composite_successor,
+    boolean_identification_answer_heads,
+    boolean_identification_successor,
     boolean_successor,
     course_for_mode,
     graph_matches_release,
@@ -75,6 +78,7 @@ from .factory.live_releases import (
     legacy_receipt_fields,
     release_code_digest,
     release_generator,
+    rebind_same_grade_config,
     staircase_successor,
     verify_release_receipt,
 )
@@ -776,8 +780,15 @@ def _compatible_graphs(earlier, current):
 def _compatible_answer_config(config, graph):
     if "answer_heads" not in config:
         return config
-    maximum = len(config["answer_heads"]["numeric_active"]["values"])-1
-    return {**config, "answer_heads": numeric_answer_heads(graph, maximum)}
+    heads = config["answer_heads"]
+    if "numeric_active" in heads:
+        maximum = len(heads["numeric_active"]["values"])-1
+        compatible = numeric_answer_heads(graph, maximum, prior_heads=heads)
+    elif "boolean_operator" in heads:
+        compatible = boolean_identification_answer_heads(graph)
+    else:
+        raise ValueError("HUMAN_TRAINER_UNKNOWN_TYPED_ANSWER_CONFIG")
+    return {**config, "answer_heads": compatible}
 
 
 def _train_step(mx, parameters, optimizer, rows, config, answer_ids,
@@ -1242,7 +1253,8 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor):
     return record
 
 
-def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successor):
+def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successor,
+                                     graph=None):
     """Persist one neural-inert same-grade capability-inventory revision."""
     school = _state_from_json(receipt["school"], previous_course)
     next_state, revised_grade = revise_admitted_grade(
@@ -1265,8 +1277,15 @@ def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successo
             asdict(school.champions[revised_grade])
             if revised_grade in school.champions else None),
     }]
+    config_update = {}
+    if "config" in receipt or successor.version == BOOLEAN_IDENTIFICATION_RELEASE:
+        if "config" not in receipt:
+            raise ValueError("HUMAN_TRAINER_TYPED_GRADE_REVISION_CONFIG_MISSING")
+        config_update["config"] = rebind_same_grade_config(
+            successor.version, receipt["config"], graph)
     updated = {
         **receipt, **legacy_receipt_fields(successor.version),
+        **config_update,
         "curriculum_mode": successor.version,
         "curriculum_history": history,
         "curriculum_parent": receipt.get("curriculum_parent", asdict(school.current_student)),
@@ -3830,6 +3849,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             batch_size: int = 32, reserve_gib: float = 100.,
             numeric_staircase: bool = False,
             boolean_composite: bool = False,
+            boolean_idboolops: bool = False,
             retention_enabled: bool = True,
             experiment_probe_each: int = 6,
             experiment_mature_max_loss: int = 1,
@@ -3847,7 +3867,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         source_prefetch_workers=source_prefetch_workers,
         flash_mode=flash_mode,
         boolean_association_bridge=boolean_association_bridge,
-        boolean_composite=boolean_composite)
+        boolean_composite=boolean_composite,
+        boolean_idboolops=boolean_idboolops)
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
             type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
             type(max_visits) is not int or max_visits < 0 or
@@ -3865,6 +3886,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         raise ValueError("FLASH_MODE_REQUIRES_RESUME")
     if boolean_composite and not resume:
         raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_RESUME")
+    if boolean_idboolops and not resume:
+        raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_RESUME")
     if boolean_association_bridge and not resume:
         raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME")
     if boolean_association_bridge:
@@ -3929,7 +3952,14 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_EXISTING_GRADE_B")
                 successor = boolean_composite_successor(course, source_root)
                 receipt = _activate_revised_admitted_grade(
-                    run_dir, receipt, course, successor)
+                    run_dir, receipt, course, successor, graph)
+                course = successor
+            if boolean_idboolops and receipt.get("curriculum_mode") != BOOLEAN_IDENTIFICATION_RELEASE:
+                if receipt.get("curriculum_mode") != BOOLEAN_COMPOSITE_RELEASE:
+                    raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_COMPOSITE_GRADE_B")
+                successor = boolean_identification_successor(course, source_root)
+                receipt = _activate_revised_admitted_grade(
+                    run_dir, receipt, course, successor, graph)
                 course = successor
             if numeric_staircase and receipt.get('curriculum_mode') != NUMERIC_STAIRCASE_RELEASE:
                 from .numeric_staircase import enroll
@@ -3945,7 +3975,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         course = plan.successor
                     elif plan.transition == SAME_GRADE_TRANSITION:
                         receipt = _activate_revised_admitted_grade(
-                            run_dir, receipt, course, plan.successor)
+                            run_dir, receipt, course, plan.successor, graph)
                         course = plan.successor
                     elif plan.transition == GRAPH_GROWTH_TRANSITION:
                         from .grade_transition import activate_numeric_grade

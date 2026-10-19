@@ -9,6 +9,9 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
+from bilqis_mlx.boolean_identification import answer_heads as boolean_answer_heads
+from bilqis_mlx.curriculum import BOOLEAN_OPERATORS
+from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.pedagogical_parity import build_plan, predecessor_teaching_batch
 from bilqis_mlx.typed_answer_training import (
     evaluate_rows, prepare_typed_batches, typed_objective, typed_step,
@@ -158,6 +161,33 @@ class TypedAnswerTests(unittest.TestCase):
         forged["native_output"]["token_id"]=7
         with self.assertRaisesRegex(ValueError,"ANSWER_CASTE_NATIVE_SEMANTIC"):
             prepare_typed_batches([forged],self.plan["heads"])
+
+    def test_boolean_operator_identity_uses_six_existing_embedding_rows(self):
+        _, _, graph, _, _ = read_sources(ROOT)
+        heads = boolean_answer_heads(graph)
+        row = {
+            "id": "fixture-idboolops",
+            "source_id": "fixture-idboolops",
+            "tokens": [17, 18, 74, 24, 66, 6, 67, 7, 5],
+            "answer_kind": "boolean_operator",
+            "gold": "AND",
+        }
+        batches = prepare_typed_batches([row], heads)
+        self.assertEqual(set(batches), {"boolean_operator"})
+        batch = batches["boolean_operator"]
+        self.assertEqual(len(batch["answer_ids"]), 6)
+        self.assertEqual(batch["gold_labels"], ["AND"])
+        self.assertEqual(batch["target_indices"], [BOOLEAN_OPERATORS.index("AND")])
+        self.assertEqual(batch["answer_ids"], [
+            graph["tokens"].index("cogal.operator." + op) for op in BOOLEAN_OPERATORS
+        ])
+        report = evaluate_rows(
+            self.mx, self.parameters, [row], heads, {"heads": 3, "layers": 1})
+        self.assertEqual(report["boolean_operator"]["answer_classes"], 6)
+        broken = deepcopy(heads)
+        broken["boolean_operator"]["values"][-1] = "XNOR"
+        with self.assertRaisesRegex(ValueError, "ANSWER_CASTE_UNTRUSTED_HEAD_ABI"):
+            prepare_typed_batches([row], broken)
 
     def test_wrong_answer_caste_fails_before_optimizer_mutation(self):
         from copy import deepcopy

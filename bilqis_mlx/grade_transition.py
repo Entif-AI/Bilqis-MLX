@@ -9,6 +9,7 @@ import json
 from typing import Mapping
 
 from .live_grade_c import RELEASE, answer_heads, constructor_digest, expanded_graph
+from .boolean_identification import answer_heads as boolean_identification_answer_heads
 from .live_curriculum import numeric_maximum
 from bilqis_mlx.curriculum.scheduler import Assessment, SchoolState, append_next_grade, verify_state
 from .curriculum import Course
@@ -247,6 +248,10 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
     next_epoch["settled_matchups"] = deepcopy(
         (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
     next_epoch["championship_school_identity"] = championship_identity
+    heads = answer_heads(grown_graph, maximum)
+    if "boolean_operator" in receipt["config"].get("answer_heads", {}):
+        heads["boolean_operator"] = boolean_identification_answer_heads(grown_graph)[
+            "boolean_operator"]
     updated = {**receipt, "curriculum_mode": RELEASE,
         "grade_c_parent_course_digest": previous.digest(),
         "numeric_maximum": maximum, "grade_c_code_sha256": constructor_digest(),
@@ -257,7 +262,7 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         "parameter_shapes": parameter_shapes,
         "championship_school_identity": championship_identity,
         "config": {**receipt["config"], "vocab_size": len(grown_graph["tokens"]),
-                   "answer_heads": answer_heads(grown_graph, maximum)},
+                   "answer_heads": heads},
         "live_rubric_sha256": successor.grades[-1].assessment_sha256}
     updated["mentor_epoch"] = next_epoch
     updated["championship_epoch_history"] = epoch_history

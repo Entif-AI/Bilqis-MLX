@@ -9,7 +9,9 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 from ..curriculum import Course
-from ..source_adapters.structure import inspect_source_query
+from ..source_adapters.structure import (
+    inspect_boolean_identification, inspect_source_query,
+)
 from .signals import (DiagnosticFinding, DiagnosticStatus, DiagnosticTarget,
                       LearningSignal, ObservationScope)
 
@@ -46,7 +48,10 @@ def inspect_lesson_step(course: Course, capability: str, offered: list[dict],
             from ..source_adapters.numeric import inspect_record
             shape = inspect_record(row["record"])
         else:
-            shape = inspect_source_query(row["record"].get("query"))
+            from ..boolean_identification_oracle import TASK as BOOLEAN_IDENTIFICATION_TASK
+            shape = (inspect_boolean_identification(row["record"], row.get("root"))
+                     if row["record"].get("task") == BOOLEAN_IDENTIFICATION_TASK else
+                     inspect_source_query(row["record"].get("query")))
         if shape.root not in own.taught_roots:
             raise ValueError("LESSON_EVIDENCE_WRONG_ROOT")
         involved = set()

@@ -7,8 +7,10 @@ from unittest.mock import patch
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.factory.generation import draw_release_rows
 from bilqis_mlx.factory.live_releases import (
-    BOOLEAN_COMPOSITE_RELEASE, GRAPH_GROWTH_TRANSITION, SAME_GRADE_TRANSITION,
-    boolean_composite_successor, next_successor_plan,
+    BOOLEAN_COMPOSITE_RELEASE, BOOLEAN_IDENTIFICATION_RELEASE,
+    GRAPH_GROWTH_TRANSITION, SAME_GRADE_TRANSITION,
+    boolean_composite_successor, boolean_identification_successor,
+    next_successor_plan,
 )
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.grade_a_probe import read_sources
@@ -69,7 +71,7 @@ class LiveFactoryReleaseTests(unittest.TestCase):
                                    seed=47, capability="C.ADD", each=12)
         self.assertEqual(actual, expected)
 
-    def test_composite_release_preserves_b_identity_and_precedes_c(self):
+    def test_same_grade_b_releases_preserve_history_and_precede_c(self):
         self.assertEqual(self.b.digest(),
                          "fde5e7e3be6d3903fc46dedcc7c1d23907c713d64ce75b3fefd4d8c9a36aa5e2")
         old_release = compile_factory_release(self.b, self.registry)
@@ -80,8 +82,14 @@ class LiveFactoryReleaseTests(unittest.TestCase):
         composite = plan.successor
         self.assertEqual(composite.version, BOOLEAN_COMPOSITE_RELEASE)
         self.assertEqual(composite, boolean_composite_successor(self.b, SOURCE))
+        id_plan = next_successor_plan(composite, SOURCE)
+        self.assertEqual(id_plan.transition, SAME_GRADE_TRANSITION)
+        identified = id_plan.successor
+        self.assertEqual(identified.version, BOOLEAN_IDENTIFICATION_RELEASE)
+        self.assertEqual(identified, boolean_identification_successor(composite, SOURCE))
+        self.assertEqual(len(identified.grades[-1].capabilities), 8)
         with patch.dict(os.environ, {"BILQIS_INTEGER_MAX": "10"}):
-            c_plan = next_successor_plan(composite, SOURCE)
+            c_plan = next_successor_plan(identified, SOURCE)
         self.assertEqual(c_plan.transition, GRAPH_GROWTH_TRANSITION)
         self.assertEqual(tuple(grade.id for grade in c_plan.successor.grades),
                          ("A", "B", "C"))

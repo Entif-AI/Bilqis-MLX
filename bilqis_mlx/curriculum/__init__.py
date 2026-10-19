@@ -17,6 +17,7 @@ import re
 
 BINARY = ("FALSE", "TRUE")
 INT_0_3 = ("0", "1", "2", "3")
+BOOLEAN_OPERATORS = ("NOT", "AND", "OR", "XOR", "IMPLIES", "IFF")
 GRADE_IDS = tuple(chr(i) for i in range(ord("A"), ord("Z") + 1))
 
 
@@ -149,8 +150,8 @@ def validate(course: Course) -> None:
                 if len(cap.composed_of) < 2 or not set(cap.composed_of) <= set(cap.prerequisites):
                     raise ValueError("COMPOSITION_CONSTITUENTS_NOT_PREVIOUSLY_MASTERED")
             kinds = {family.kind for family in cap.answer_families}
-            if "binary" not in kinds or len(kinds) != len(cap.answer_families):
-                raise ValueError("MISSING_OR_DUPLICATE_BINARY_ANSWER_FAMILY")
+            if not kinds or len(kinds) != len(cap.answer_families):
+                raise ValueError("MISSING_OR_DUPLICATE_ANSWER_FAMILY")
             for family in cap.answer_families:
                 if (not family.kind or not 2 <= len(family.values) <= 32 or
                         len(set(family.values)) != len(family.values)):
@@ -159,6 +160,9 @@ def validate(course: Course) -> None:
                     raise ValueError("INVALID_BINARY_ANSWER_LABELS")
                 if family.kind == "integer_0_3" and family.values != INT_0_3:
                     raise ValueError("INVALID_INTEGER_0_3_ANSWER_LABELS")
+                if (family.kind == "boolean_operator" and
+                        family.values != BOOLEAN_OPERATORS):
+                    raise ValueError("INVALID_BOOLEAN_OPERATOR_ANSWER_LABELS")
             grade_ids.add(cap.id)
             seen_roots_in_grade.update(cap.taught_roots)
         all_ids.update(grade_ids)

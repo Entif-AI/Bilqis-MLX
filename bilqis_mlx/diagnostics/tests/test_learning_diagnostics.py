@@ -13,6 +13,7 @@ import unittest
 from bilqis_mlx.diagnostics import (DiagnosticStatus, DiagnosticTarget,
     LearningSignal, diagnose_exam, diagnose_history, load_archived_exam_history,
     load_saved_exam, observe_binary_exam)
+from bilqis_mlx.diagnostics.observations import observe_exam
 from bilqis_mlx.diagnostics.exam_events import apply_paired_checkpoint_s3
 from bilqis_mlx.generated_assessment import make_cohort, score
 
@@ -65,6 +66,52 @@ def rescore_fixed_exam(cohort, earlier, predicted, *, step, student_sha):
 
 
 class DiagnosticObservationTests(unittest.TestCase):
+    def test_six_way_operator_identity_uses_two_of_twelve_majority_baseline(self):
+        operators = ("NOT", "AND", "OR", "XOR", "IMPLIES", "IFF")
+        rows = [
+            {"id": f"id-op-{i}", "source_id": f"id-op-{i}",
+             "capability": "B.IDBOOLOPS", "answer_kind": "boolean_operator",
+             "gold": operators[i % len(operators)]}
+            for i in range(12)
+        ]
+        cohort = make_cohort(rows, generator_version="idboolops-fixture", seed=71,
+                             rubric_version="idboolops-rubric")
+        payload = {
+            "schema": cohort.rubric_version,
+            "rubric_sha256": "c" * 64,
+            "generator_version": cohort.generator_version,
+            "seed": cohort.seed,
+            "cohort_sha256": cohort.digest,
+            "rows": rows,
+        }
+        predictions = {row["id"]: "AND" for row in rows}
+        measured = score(cohort, predictions, {
+            "sha256": "a" * 64,
+            "optimizer_step": 500,
+            "model_and_native_adamw": True,
+        })
+        exam = {
+            "cohort_sha256": cohort.digest,
+            "cohort_seed": cohort.seed,
+            "generator_version": cohort.generator_version,
+            "exam_rubric_sha256": payload["rubric_sha256"],
+            "student_sha256": "a" * 64,
+            "optimizer_step": 500,
+            "scores": measured["scores"],
+            "misses_for_teacher": list(measured["misses_for_teacher"]),
+        }
+        observed = observe_exam(payload, exam)
+        cap = observed.capabilities[0]
+        self.assertEqual(cap.correct, 2)
+        self.assertEqual(cap.majority_baseline, 2)
+        self.assertTrue(cap.constant_prediction)
+        self.assertEqual(dict(cap.gold_counts), {operator: 2 for operator in operators})
+        chance = find_signal(
+            diagnose_exam(observed), LearningSignal.CHANCE_LEVEL_OR_LAGGING,
+            DiagnosticTarget.CAPABILITY, "B.IDBOOLOPS")
+        self.assertEqual(chance.majority_baseline, 2)
+        self.assertEqual(chance.status, DiagnosticStatus.OBSERVED_IN_COHORT)
+
     def test_explicit_lineage_rebase_does_not_poison_latest_branch_s3(self):
         cohort, first = constructed_exam(predicted=("FALSE",) * 12)
         old = replace(observe_binary_exam(cohort, rescore_fixed_exam(

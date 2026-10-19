@@ -55,3 +55,27 @@ def inspect_source_query(query: dict) -> SourceExpressionShape:
     if not operators:
         raise ValueError("LESSON_SOURCE_NO_SEMANTIC_OPERATOR")
     return SourceExpressionShape(operators[0], operators, len(operators), deepest)
+
+
+def inspect_boolean_identification(record: dict, root: str) -> SourceExpressionShape:
+    """Project inverse-Boolean evidence without placing its hidden operator in tokens."""
+    from ..boolean_identification_oracle import TASK
+    if (not isinstance(record, dict) or record.get("task") != TASK or
+            not isinstance(root, str) or not root.startswith("cogal.operator.")):
+        raise ValueError("LESSON_SOURCE_IDENTIFICATION_STRUCTURE_INVALID")
+    observations = record.get("observations")
+    if not isinstance(observations, list) or not observations:
+        raise ValueError("LESSON_SOURCE_IDENTIFICATION_OBSERVATIONS_MISSING")
+    rooted = [root]
+    operations = 1
+    deepest = 1
+    for observation in observations:
+        operands = observation.get("operands") if isinstance(observation, dict) else None
+        if not isinstance(operands, list) or not operands:
+            raise ValueError("LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING")
+        for operand in operands:
+            shape = inspect_source_query(operand)
+            rooted.extend(shape.rooted_operators)
+            operations += shape.semantic_operations
+            deepest = max(deepest, shape.operator_depth + 1)
+    return SourceExpressionShape(root, tuple(rooted), operations, deepest)

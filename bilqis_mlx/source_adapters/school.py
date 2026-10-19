@@ -7,7 +7,8 @@ import random
 from ..factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from ..factory.model import SourceAdapter
 from ..factory.verification import (
-    check_boolean_composite, check_connective, check_numeric, check_predicate,
+    check_boolean_composite, check_boolean_identification, check_connective,
+    check_numeric, check_predicate,
 )
 
 from ..grade_a_oracle import VERSION as A_ORACLE
@@ -26,6 +27,15 @@ from ..boolean_composite import (
     RELEASE as B_COMPOSITE_RELEASE,
     constructor_digest as b_composite_digest,
     draw_composite,
+)
+
+from ..boolean_identification import (
+    CAPABILITY as B_IDBOOLOPS_CAPABILITY,
+    GENERATOR as B_IDBOOLOPS_GENERATOR,
+    ORACLE as B_IDBOOLOPS_ORACLE,
+    RELEASE as B_IDBOOLOPS_RELEASE,
+    constructor_digest as b_idboolops_digest,
+    draw_identification,
 )
 
 
@@ -137,6 +147,25 @@ def check_b_composite_release(row, **kwargs):
     return check_connective(row, **kwargs)
 
 
+def draw_b_idboolops_release(*, source_root, graph, course, capability, seed, each):
+    if capability == B_IDBOOLOPS_CAPABILITY:
+        return draw_identification(source_root, graph, seed=seed,
+                                   capability=capability, each=each)
+    if capability == B_COMPOSITE_CAPABILITY:
+        return draw_composite(source_root, graph, seed=seed,
+                              capability=capability, each=each)
+    return draw_b(source_root=source_root, graph=graph, course=course,
+                  capability=capability, seed=seed, each=each)
+
+
+def check_b_idboolops_release(row, **kwargs):
+    if row.get("capability") == B_IDBOOLOPS_CAPABILITY:
+        return check_boolean_identification(row, **kwargs)
+    if row.get("capability") == B_COMPOSITE_CAPABILITY:
+        return check_boolean_composite(row, **kwargs)
+    return check_connective(row, **kwargs)
+
+
 def draw_c(*, source_root, graph, course, capability, seed, each):
     cap = course.capability_map[capability]
     numeric = next((family for family in cap.answer_families
@@ -188,6 +217,14 @@ def live_source_registry() -> SourceAdapterRegistry:
                             "runtime-answer-balance"),
             cohort_releases=((B_COMPOSITE_RELEASE, b_composite_digest()),)),
             draw_b_composite_release, check_b_composite_release),
+        RegisteredSourceAdapter(SourceAdapter(
+            "source.micro.boolean-identification/v1", B_IDBOOLOPS_GENERATOR,
+            (B_ORACLE, B_COMPOSITE_ORACLE, B_IDBOOLOPS_ORACLE), b_idboolops_digest(),
+            cohort_generator_id=B_IDBOOLOPS_GENERATOR,
+            variation_axes=("source-valid", "fresh-seed", "inverse-operator-identification",
+                            "balanced-operator-targets", "masked-operator-input"),
+            cohort_releases=((B_IDBOOLOPS_RELEASE, b_idboolops_digest()),)),
+            draw_b_idboolops_release, check_b_idboolops_release),
         RegisteredSourceAdapter(SourceAdapter(
             "source.finite-numeric/v1", "bilqis_mlx.numeric_curriculum.draw_numeric",
             (C_ORACLE,), c_digest(), cohort_generator_id=C_COHORT_GENERATOR,

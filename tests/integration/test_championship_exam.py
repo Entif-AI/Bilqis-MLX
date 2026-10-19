@@ -9,7 +9,14 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from bilqis_mlx import trainer
+from bilqis_mlx.boolean_composite import build_course as build_composite
+from bilqis_mlx.boolean_identification import (
+    answer_heads as idboolops_answer_heads,
+    build_course as build_idboolops,
+    draw_identification,
+)
 from bilqis_mlx.generated_assessment import make_cohort
+from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.factory.live_releases import initial_course
 from bilqis_mlx.factory.live_releases import boolean_successor
@@ -22,6 +29,28 @@ from bilqis_mlx.learning.championship_witnesses import battery_from_exam, verifi
 
 
 class ChampionshipExamTests(TestCase):
+    def test_idboolops_panel_is_readable_by_compatible_historical_graph(self):
+        root = Path(__file__).resolve().parents[2]
+        source = root / "vendor/legacy-v16"
+        manifest = json.loads((
+            root / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
+        a = initial_course(accepted_grade_a(manifest))
+        b = boolean_successor(a, source)
+        course = build_idboolops(build_composite(b, source), source)
+        _, _, graph, _, _ = read_sources(source)
+        rows = draw_identification(source, graph, seed=113)
+        cohort = make_cohort(
+            rows, generator_version=course.grades[-1].capabilities[-1].lesson_generator,
+            seed=113, rubric_version=course.grades[-1].assessment_sha256)
+        receipt = {
+            "answer_ids": [6, 7],
+            "config": {"answer_heads": idboolops_answer_heads(graph)},
+        }
+        readable = trainer._readable_championship_rows(cohort, graph, receipt)
+        self.assertEqual(readable, cohort.rows)
+        self.assertEqual({row["answer_kind"] for row in readable}, {"boolean_operator"})
+        self.assertEqual({row["capability"] for row in readable}, {"B.IDBOOLOPS"})
+
     def test_assessment_scope_hash_tracks_actual_scored_capabilities(self):
         full = ("A.IDENTITY", "A.LINK", "B.AND", "B.IFF")
         partial = {"A.IDENTITY": {}, "A.LINK": {}, "B.AND": {}}

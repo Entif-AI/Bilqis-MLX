@@ -14,6 +14,7 @@ import json
 import os
 import stat
 
+from ..curriculum import BOOLEAN_OPERATORS
 from ..generated_assessment import make_cohort
 
 
@@ -158,7 +159,9 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
         raise ValueError("DIAGNOSTIC_COHORT_CONTENT_DRIFT")
     if any(not ((r.get("answer_kind") == "binary" and r.get("gold") in ("TRUE", "FALSE")) or
                (r.get("answer_kind") == "numeric_active" and isinstance(r.get("gold"), str)
-                and r["gold"].isascii() and r["gold"].isdecimal())) for r in rows):
+                and r["gold"].isascii() and r["gold"].isdecimal()) or
+               (r.get("answer_kind") == "boolean_operator" and
+                r.get("gold") in BOOLEAN_OPERATORS)) for r in rows):
         raise ValueError("DIAGNOSTIC_UNSUPPORTED_PREDICTION_CASTE")
     ordered = {r["id"]: r for r in rows}
     failures = last_exam.get("misses_for_teacher")
@@ -175,6 +178,8 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
                 failed.get("gold") != source_row["gold"] or
                 not isinstance(failed.get("predicted"), str) or not failed["predicted"] or
                 (source_row["answer_kind"] == "binary" and failed["predicted"] not in ("TRUE", "FALSE")) or
+                (source_row["answer_kind"] == "boolean_operator" and
+                 failed["predicted"] not in BOOLEAN_OPERATORS) or
                 failed["predicted"] == failed["gold"]):
             raise ValueError("DIAGNOSTIC_MISS_EVIDENCE_DRIFT")
         by_miss[failed["id"]] = failed["predicted"]

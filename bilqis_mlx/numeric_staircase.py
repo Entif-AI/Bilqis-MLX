@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .generated_assessment import digest
 from .live_grade_c import answer_heads, live_course
+from .boolean_identification import answer_heads as boolean_identification_answer_heads
 from .semantics.core import Literal
 from .semantics.numeric import evaluate
 from .source_adapters.numeric import decode
@@ -84,10 +85,14 @@ def _rebind(run_dir, receipt, old_course, new_course, graph, *, introduction_sta
         'release': old_course.version, 'course_digest': old_course.digest(),
         'integer_max': receipt['numeric_maximum'], 'generation': receipt['generation'],
         'state_file': f"states/{receipt['generation']:07d}.json"}]
+    heads = answer_heads(graph, maximum)
+    if 'boolean_operator' in receipt['config'].get('answer_heads', {}):
+        heads['boolean_operator'] = boolean_identification_answer_heads(graph)[
+            'boolean_operator']
     updated = {**receipt, 'curriculum_mode': RELEASE, 'numeric_maximum': maximum,
         'staircase_code_sha256': constructor_digest(), 'curriculum_history': history,
         'curriculum_parent': receipt.get('curriculum_parent', receipt['school']['current_student']),
-        'config': {**receipt['config'], 'answer_heads': answer_heads(graph, maximum)},
+        'config': {**receipt['config'], 'answer_heads': heads},
         'live_rubric_sha256': new_course.grades[-1].assessment_sha256, 'last_exam': None}
     release, release_file, admission = _factory_admission(
         run_dir, new_course, school.current_student,
