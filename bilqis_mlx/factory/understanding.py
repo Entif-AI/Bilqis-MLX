@@ -4,7 +4,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from .autonomy import EvidenceKind, EvidenceObligation
+from .autonomy import (
+    EvidenceKind, EvidenceObligation, ProjectionEvidenceSpec,
+)
 from .development import DevelopmentalTarget, UnderstandingProjection
 
 
@@ -153,3 +155,27 @@ def plan_understanding_evidence(
         if spec.projection not in supported
     )
     return UnderstandingEvidencePlan(contract.capability_id, obligations, debt)
+
+
+def autonomy_projection_inputs(
+    plans: tuple[UnderstandingEvidencePlan, ...],
+) -> tuple[tuple[ProjectionEvidenceSpec, ...], tuple[str, ...]]:
+    """Project source-qualified understanding plans into AutonomyPlan inputs."""
+    if (len({item.capability_id for item in plans}) != len(plans) or
+            any(not isinstance(item, UnderstandingEvidencePlan)
+                for item in plans)):
+        raise ValueError("UNDERSTANDING_AUTONOMY_INPUT_INVALID")
+    specs = tuple(
+        ProjectionEvidenceSpec(
+            capability_id=obligation.capability_id,
+            projection_id=obligation.key,
+            minimum_specimens=obligation.minimum_specimens,
+            proof_axes=obligation.proof_axes,
+        )
+        for plan in plans for obligation in plan.obligations
+    )
+    debt = tuple(item for plan in plans for item in plan.coverage_debt)
+    if (len({(item.capability_id, item.projection_id) for item in specs}) !=
+            len(specs) or len(set(debt)) != len(debt)):
+        raise ValueError("UNDERSTANDING_AUTONOMY_INPUT_INVALID")
+    return specs, debt
