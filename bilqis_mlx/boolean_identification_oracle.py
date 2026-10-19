@@ -37,9 +37,11 @@ def _primitive_truth(world: dict, node: dict) -> bool:
 
 
 def _apply(operator: str, values: tuple[bool, ...]) -> bool:
-    expected = 1 if operator == "NOT" else 2
-    if len(values) != expected:
-        raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_OPERATOR_ARITY")
+    # IDBOOLOPS normalizes every candidate to the same two-slot experimental
+    # surface. Unary NOT acts on the first proposition; the second proposition
+    # is controlled irrelevant context. This keeps arity from leaking identity.
+    if len(values) != 2:
+        raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_PROBE_ARITY")
     if operator == "NOT":
         return not values[0]
     left, right = values
@@ -64,32 +66,23 @@ def evaluate(record: dict, capability: str = CAPABILITY) -> str:
     observations = record["observations"]
     if not isinstance(observations, list) or not observations:
         raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_OBSERVATIONS_MISSING")
-    arities = set()
     truth_patterns = set()
     parsed = []
     for observation in observations:
         if (not isinstance(observation, dict) or set(observation) != {"operands", "result"} or
                 not isinstance(observation["operands"], list) or
-                len(observation["operands"]) not in (1, 2) or
+                len(observation["operands"]) != 2 or
                 type(observation["result"]) is not bool):
             raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_OBSERVATION_SHAPE")
         values = tuple(_primitive_truth(record["world"], operand)
                        for operand in observation["operands"])
-        arities.add(len(values))
         truth_patterns.add(values)
         parsed.append((values, observation["result"]))
-    if len(arities) != 1:
-        raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_MIXED_ARITY")
-    arity = next(iter(arities))
-    required = ({(False,), (True,)} if arity == 1 else
-                {(False, False), (False, True), (True, False), (True, True)})
+    required = {(False, False), (False, True), (True, False), (True, True)}
     if truth_patterns != required or len(observations) != len(required):
         raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_SIGNATURE_INCOMPLETE")
     matches = []
     for operator in options:
-        expected_arity = 1 if operator == "NOT" else 2
-        if expected_arity != arity:
-            continue
         if all(_apply(operator, values) == result for values, result in parsed):
             matches.append(operator)
     if len(matches) != 1:

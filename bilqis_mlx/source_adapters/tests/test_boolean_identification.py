@@ -77,19 +77,34 @@ class BooleanIdentificationTests(unittest.TestCase):
                 )
                 self.assertTrue(1 <= len(row["tokens"]) <= 96)
 
-    def test_each_question_exposes_complete_truth_signature_for_its_arity(self):
+    def test_each_question_exposes_same_shape_complete_truth_signature(self):
         rows = draw_identification(SOURCE, self.graph, seed=41)
         for row in rows:
             observations = row["record"]["observations"]
+            self.assertEqual({len(observation["operands"])
+                              for observation in observations}, {2})
             patterns = {
                 tuple(operand_truth(row["record"]["world"], operand)
                       for operand in observation["operands"])
                 for observation in observations
             }
-            expected = ({(False,), (True,)} if row["gold"] == "NOT" else
-                        {(False, False), (False, True), (True, False), (True, True)})
+            expected = {(False, False), (False, True), (True, False), (True, True)}
             self.assertEqual(patterns, expected)
             self.assertEqual(len(observations), len(expected))
+
+    def test_all_six_operator_signatures_are_unique_without_arity_signal(self):
+        rows = draw_identification(SOURCE, self.graph, seed=73)
+        signatures = {}
+        for row in rows:
+            if row["gold"] in signatures:
+                continue
+            ordered = sorted(
+                (tuple(operand_truth(row["record"]["world"], operand)
+                       for operand in observation["operands"]), observation["result"])
+                for observation in row["record"]["observations"])
+            signatures[row["gold"]] = tuple(result for _, result in ordered)
+        self.assertEqual(set(signatures), set(BOOLEAN_OPERATORS))
+        self.assertEqual(len(set(signatures.values())), len(BOOLEAN_OPERATORS))
 
     def test_factory_uses_one_adapter_and_generates_ninety_six_b_rows(self):
         registry = live_source_registry()

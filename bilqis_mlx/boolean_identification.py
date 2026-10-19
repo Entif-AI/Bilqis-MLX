@@ -150,8 +150,10 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int) -> tuple[di
         raise ValueError("GRADE_B_IDBOOLOPS_OPERATOR_BALANCE_DRIFT")
     rows = []
     for target in schedule:
-        patterns = ([(False,), (True,)] if target == "NOT" else
-                    [(False, False), (False, True), (True, False), (True, True)])
+        # Keep the experimental surface arity-neutral. NOT uses the first
+        # proposition and ignores the controlled second proposition; all six
+        # primitives therefore expose a unique four-bit FF/FT/TF/TT signature.
+        patterns = [(False, False), (False, True), (True, False), (True, True)]
         rng.shuffle(patterns)
         for _ in range(5000):
             world = _random_world(micro, rng, rng.choice((3, 4)))
@@ -159,7 +161,9 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int) -> tuple[di
             for pattern in patterns:
                 operands = [_operand_with_truth(micro, rng, world, bit) for bit in pattern]
                 generator_truth = _apply(target, pattern)
-                source_expr = logic.apply(target, *(logic.literal(bit) for bit in pattern))
+                source_values = ((pattern[0],) if target == "NOT" else pattern)
+                source_expr = logic.apply(
+                    target, *(logic.literal(bit) for bit in source_values))
                 if (logic.evaluate(source_expr, {}) != generator_truth or
                         logic.independent_evaluate(source_expr, {}) != generator_truth):
                     raise ValueError("GRADE_B_IDBOOLOPS_SOURCE_TRUTH_DISAGREEMENT")
