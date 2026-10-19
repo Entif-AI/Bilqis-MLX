@@ -104,6 +104,88 @@ class GradeTestLifecycleTests(unittest.TestCase):
             self.assertNotEqual(second.digest, first.digest)
             self.assertNotEqual(second_pointer["cohort_sha256"], first_pointer["cohort_sha256"])
 
+    def test_burned_generalization_does_not_permanently_embargo_untrained_rows(self):
+        receipt = self.receipt()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            promotion, _ = _promotion_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph)
+            first, _ = _generalization_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph,
+                promotion_sha256=promotion.digest)
+            receipt["burned_generalization_cohorts"] = [first.digest]
+            receipt["generation"] += 1
+
+            replacement = deepcopy(first.rows[0])
+            replacement["id"] = "f" * 64
+            replacement["source_id"] = replacement["id"]
+            overlapping = (replacement, *deepcopy(first.rows[1:]))
+
+            with patch(
+                    "bilqis_mlx.runtime.assessment._draw_live_rows",
+                    return_value=overlapping):
+                second, _ = _generalization_cohort(
+                    root, receipt, self.manifest, self.course, SOURCE, self.graph,
+                    promotion_sha256=promotion.digest)
+
+            self.assertNotEqual(second.digest, first.digest)
+            self.assertNotEqual({row["id"] for row in second.rows},
+                                {row["id"] for row in first.rows})
+            self.assertGreater(
+                len({row["id"] for row in second.rows} &
+                    {row["id"] for row in first.rows}),
+                0,
+            )
+
+    def test_burned_generalization_cannot_repeat_same_specimen_set_under_new_seed(self):
+        receipt = self.receipt()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            promotion, _ = _promotion_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph)
+            first, _ = _generalization_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph,
+                promotion_sha256=promotion.digest)
+            receipt["burned_generalization_cohorts"] = [first.digest]
+            receipt["generation"] += 1
+
+            with patch(
+                    "bilqis_mlx.runtime.assessment._draw_live_rows",
+                    return_value=deepcopy(first.rows)):
+                with self.assertRaisesRegex(
+                        ValueError, "FRESH_GENERALIZATION_COHORT_EXHAUSTED"):
+                    _generalization_cohort(
+                        root, receipt, self.manifest, self.course, SOURCE, self.graph,
+                        promotion_sha256=promotion.digest)
+
+    def test_teacher_exposed_generalization_miss_stays_out_of_later_cohort(self):
+        receipt = self.receipt()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            promotion, _ = _promotion_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph)
+            first, _ = _generalization_cohort(
+                root, receipt, self.manifest, self.course, SOURCE, self.graph,
+                promotion_sha256=promotion.digest)
+            receipt["burned_generalization_cohorts"] = [first.digest]
+            taught = deepcopy(first.rows[0])
+            receipt["teacher_misses"] = [taught]
+            receipt["generation"] += 1
+
+            replacement = deepcopy(taught)
+            replacement["id"] = "e" * 64
+            replacement["source_id"] = replacement["id"]
+            candidate = (replacement, *deepcopy(first.rows[1:]))
+
+            with patch(
+                    "bilqis_mlx.runtime.assessment._draw_live_rows",
+                    return_value=candidate):
+                second, _ = _generalization_cohort(
+                    root, receipt, self.manifest, self.course, SOURCE, self.graph,
+                    promotion_sha256=promotion.digest)
+
+            self.assertNotIn(taught["id"], {row["id"] for row in second.rows})
+
     def test_generalization_does_not_repeat_promotion_specimen_identities(self):
         receipt = self.receipt()
         receipt["run_id"] = "review-repro"

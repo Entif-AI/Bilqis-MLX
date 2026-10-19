@@ -195,6 +195,10 @@ def _generalization_cohort(run_dir, receipt, manifest, course, source_root, grap
                 any(char not in "0123456789abcdef" for char in item) for item in burned)):
         raise ValueError("HUMAN_TRAINER_GENERALIZATION_BURN_LEDGER_INVALID")
     excluded = set(exposed_specimen_ids)
+    # A burn invalidates the prior *measurement instrument*, not every
+    # correctly answered specimen forever. Training-exposed misses remain
+    # excluded below, while an exact prior specimen set may never recur.
+    burned_specimen_sets = set()
     for digest in (promotion_sha256, *burned):
         path = run_dir / "cohorts" / (digest + ".json")
         if path.is_symlink() or not path.is_file():
@@ -205,7 +209,11 @@ def _generalization_cohort(run_dir, receipt, manifest, course, source_root, grap
                                rubric_version=payload["schema"])
         if previous.digest != digest or payload.get("cohort_sha256") != digest:
             raise ValueError("HUMAN_TRAINER_GENERALIZATION_EXPOSURE_CONTENT_DRIFT")
-        excluded.update(row["id"] for row in previous.rows)
+        specimen_ids = frozenset(row["id"] for row in previous.rows)
+        if digest == promotion_sha256:
+            excluded.update(specimen_ids)
+        else:
+            burned_specimen_sets.add(specimen_ids)
     excluded.update(row["id"] for row in receipt.get("teacher_misses", ()))
     required = None
     selected = {}
@@ -228,7 +236,8 @@ def _generalization_cohort(run_dir, receipt, manifest, course, source_root, grap
         cohort = make_cohort(
             [row for key in required for row in selected[key]],
             generator_version=generator, seed=seed, rubric_version=release)
-        if cohort.digest == promotion_sha256 or cohort.digest in burned:
+        if (cohort.digest == promotion_sha256 or cohort.digest in burned or
+                frozenset(row["id"] for row in cohort.rows) in burned_specimen_sets):
             continue
         cohort_file = _persist_live_cohort(run_dir, manifest, course, cohort)
         return cohort, {"policy": GENERALIZATION_LIFECYCLE,
