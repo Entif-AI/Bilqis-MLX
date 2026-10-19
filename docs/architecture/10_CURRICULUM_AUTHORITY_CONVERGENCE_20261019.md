@@ -349,6 +349,8 @@ Changing only a profile must change disposable live behavior without editing tho
 
 **Current checkpoint:** generation and answer-schema consumers are release-driven and profile-neutral in the factory layer. Full Boolean versus AND/IFF behavior changes by swapping the admitted v2 release, with no consumer branch or minimal-B provider. The real pinned provider path also passes the resulting v2 answer heads into the generic typed batch adapter. Scheduler/assessment cohort lifetime and the existing human/live admission path remain unchanged pending the next migration slice.
 
+Exact assessment scope now has a grade-neutral v2 contract. The rubric identity hashes only the selected capabilities' assessment projections. The source identity hashes only their source projections plus verified source receipts. The enclosing factory-release SHA and semantic-catalog SHA remain separate identities. This prevents the prior scope/rubric conflation where a broader admitted course could relabel evidence for a narrower scored scope.
+
 ### Wave 3: typed release transitions
 
 Replace named successor switches with structural plan/release diffs:

@@ -14,7 +14,11 @@ from .model import (
     SourceAdapter,
     TeachingOption,
 )
-from .assessment import qualification_complete
+from .assessment import (
+    AssessmentScopeContract,
+    assessment_scope_contract,
+    qualification_complete,
+)
 from .answers import (
     AnswerModality,
     AnswerModalityRegistry,
@@ -67,6 +71,7 @@ __all__ = (
     "AnswerHeadBinding",
     "AssessmentClass",
     "AssessmentPlan",
+    "AssessmentScopeContract",
     "AnswerModality",
     "AnswerModalityRegistry",
     "CapabilityDefinition",
@@ -102,6 +107,7 @@ __all__ = (
     "VerifiedAssessmentSeal",
     "admit_executable_factory_release",
     "admit_factory_release",
+    "assessment_scope_contract",
     "answer_heads_from_executable_release",
     "compile_answer_heads",
     "compile_executable_factory_release",
