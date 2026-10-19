@@ -258,18 +258,18 @@ LETTER_TABLES = (
         Column("LOSS", 5, "loss"),
         Column("GRAD", 5, "gradient", right=True),
         Column("METHOD", 6, "method"),
-        Column("OLDpp", 8, "old", optional=True, right=True),
+        Column("OLD pp", 6, "old", optional=True, right=True),
         Column("RESULT", 6, "result"),
-        Column("REASON", 24, "reason"),
-        Column("WARNINGS", 10, "warnings"))),
+        Column("REASON", 27, "reason"),
+        Column("WARNINGS", 12, "warnings"))),
     ("SENTINEL & RETENTION", (
         Column("CAPABILITY", 10, "capability"),
         Column("VISIT", 5, "attempt", right=True),
         Column("TARGET", 8, "target", right=True),
-        Column("DTGT", 4, "target_delta", right=True),
-        Column("PROT", 4, "protected", right=True),
-        Column("WRST", 4, "worst", right=True),
-        Column("RESULT", 6, "result"),
+        Column("DTG", 3, "target_delta", right=True),
+        Column("PRT", 3, "protected", right=True),
+        Column("WRS", 3, "worst", right=True),
+        Column("RSULT", 5, "result"),
         Column("EVIDENCE", 20, "evidence", optional=True))),
     ("SOUP & TEACHER", (
         Column("CAPABILITY", 10, "capability"),
@@ -284,11 +284,11 @@ LETTER_TABLES = (
     ("GRADES & MASTERY", (
         Column("CAPABILITY", 10, "subject"),
         Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
-        Column("RIGHT[GREW]%", 12, "right_grew", right=True),
+        Column("GOOD [GREW]", 11, "right_grew", right=True),
         Column("OUTCOME", 26, "outcome"))),
     ("SYSTEM & QUALIFICATION", (
         Column("TYPE", 7, "kind"),
-        Column("DETAILS", 38, "detail"))),
+        Column("DETAILS", 32, "detail"))),
 )
 
 
