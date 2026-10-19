@@ -132,6 +132,7 @@ def compile_autonomy_plan(
             debt.append(f"{consumer}:{producer}:{slot}:{status}")
             blocked.add(consumer)
     edges = sorted(edges, key=lambda item: (item.consumer, item.producer, item.operand_slot))
+    deferred = list(dict.fromkeys(deferred))
     return AutonomyPlan(
         release.release_sha256, True, tuple(edges), tuple(debt),
         tuple(item for item in capability_ids if item in blocked),

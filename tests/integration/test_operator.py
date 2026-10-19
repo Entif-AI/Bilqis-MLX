@@ -296,6 +296,10 @@ class OperatorTests(unittest.TestCase):
             active_run_dir(), LEGACY_SOURCE, Settings(),
             boolean_association_bridge=True)
         self.assertIn("--boolean-association-bridge", bridged)
+        autonomous = _resume_command(
+            active_run_dir(), LEGACY_SOURCE, Settings(),
+            autonomous_curriculum=True)
+        self.assertIn("--autonomous-curriculum", autonomous)
         serial = _resume_command(
             active_run_dir(), LEGACY_SOURCE, Settings(), source_prefetch_workers=0)
         self.assertIn("--source-prefetch-workers 0", serial)
@@ -387,6 +391,47 @@ class OperatorTests(unittest.TestCase):
                 self.assertEqual(main(["train", "--human-run", "--no-retention",
                                        "--run-dir", tmp]), 2)
             self.assertFalse(operate.call_args.kwargs["retention_enabled"])
+
+    def test_human_operator_explicitly_passes_autonomous_curriculum_mode(self):
+        from bilqis_mlx import trainer as trainer
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+                trainer, "operate", side_effect=ValueError(
+                    "AUTONOMY_TEST_NO_NEURAL_TRAINING")) as operate, \
+                redirect_stderr(io.StringIO()):
+            self.assertEqual(main([
+                "train", "--human-run", "--resume",
+                "--autonomous-curriculum", "--run-dir", tmp]), 2)
+        self.assertTrue(operate.call_args.kwargs["autonomous_curriculum"])
+        self.assertTrue(operate.call_args.kwargs["retention_enabled"])
+
+    def test_autonomous_curriculum_flag_cannot_start_optimizer_without_human_run(self):
+        from bilqis_mlx import trainer as trainer
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+                trainer, "operate",
+                side_effect=AssertionError("AUTONOMY_MUST_NOT_REACH_OPERATE")) as operate, \
+                redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(main([
+                "train", "--autonomous-curriculum", "--resume",
+                "--run-dir", tmp]), 2)
+        operate.assert_not_called()
+        self.assertIn(
+            "TRAINING REQUIRES EXPLICIT HUMAN OPERATOR",
+            errors.getvalue(),
+        )
+
+    def test_autonomous_curriculum_cannot_disable_retention_before_source_or_gpu(self):
+        from bilqis_mlx import trainer as trainer
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch.object(
+                    trainer, "prepare_source",
+                    side_effect=AssertionError("NO_SOURCE_OR_GPU_BEFORE_AUTONOMY_GUARD")):
+                with self.assertRaisesRegex(
+                        ValueError, "AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION"):
+                    trainer.operate(
+                        root, root, root, root,
+                        autonomous_curriculum=True,
+                        retention_enabled=False)
 
     def test_human_operator_passes_flash_mode_without_changing_retention(self):
         from bilqis_mlx import trainer as trainer
