@@ -16,6 +16,7 @@ import uuid
 
 from bilqis_mlx.backup import digest_file
 from bilqis_mlx.runtime.disk import assert_headroom
+from .championship_witnesses import maxed_role
 
 
 SCHEMA = "bilqis.mlx.frozen-grade-soup/v1"
@@ -62,6 +63,7 @@ def grade_soup_recipe(frontier: dict, grade: str,
               "rubric": chosen[capability][1]["rubric"],
               "correct": chosen[capability][1]["correct"],
               "total": chosen[capability][1]["total"],
+              "maxed": maxed_role(chosen[capability][1]),
               "checkpoint_sha256": chosen[capability][1]["checkpoint"]["sha256"]}
              for capability in sorted(chosen)]
     counters = Counter(role["checkpoint_sha256"] for role in roles)
@@ -71,7 +73,7 @@ def grade_soup_recipe(frontier: dict, grade: str,
                for sha in sorted(counters)]
     count = len(roles)
     perfect = sorted(role["capability"] for role in roles
-                     if role["correct"] == role["total"])
+                     if role["maxed"])
     contract = {"schema": SCHEMA, "grade": grade, "vote_count": count,
                 "coverage_peak": count, "covered_capabilities": sorted(chosen),
                 "perfect_capabilities": perfect,
@@ -126,7 +128,7 @@ def partitioned_recipe(full_recipe: dict, member_graph_digests: dict[str, str]) 
             "covered_capabilities": sorted(role["capability"] for role in roles),
             "perfect_capabilities": sorted(
                 role["capability"] for role in roles
-                if role["correct"] == role["total"]),
+                if role.get("maxed", role["correct"] == role["total"])),
             "roles": roles, "members": members,
         }
         output.append({**shard, "recipe_sha256": _digest(shard),

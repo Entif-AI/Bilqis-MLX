@@ -94,6 +94,31 @@ def begin_epoch(*, previous_graduate: dict, admitted_baseline: dict,
             "qualified": [], "historical_advisers_remain_archived": True}
 
 
+def begin_initial_epoch(*, student: dict, introduced_grade: str,
+                        source_graph_sha256: str, frontier: dict, soups: dict) -> dict:
+    """Start earned roles before graduation; preserve existing active titles."""
+    baseline = _pointer(student)
+    if not introduced_grade or not _sha(source_graph_sha256):
+        raise ValueError("CHAMPIONSHIP_INITIAL_EPOCH_IDENTITY_REQUIRED")
+    roles = {}
+    if frontier and not soups:
+        raise ValueError("CHAMPIONSHIP_INITIAL_EPOCH_SOUPS_REQUIRED")
+    for soup in soups.values():
+        for role in soup["roles"]:
+            item = frontier[role["rubric"] + ":" + role["capability"]]
+            if item["checkpoint"]["sha256"] != role["checkpoint_sha256"]:
+                raise ValueError("CHAMPIONSHIP_INITIAL_EPOCH_ROLE_DRIFT")
+            roles[role["capability"]] = deepcopy(item)
+    return {"schema": SCHEMA, "introduced_grade": introduced_grade,
+            "source_graph_sha256": source_graph_sha256,
+            "previous_capabilities": [], "previous_graduate": None,
+            "baseline": baseline, "baseline_roles": {},
+            "active_roles": roles, "active_grade_soups": deepcopy(soups),
+            "guidance_policy": EARNED_ONLY_POLICY,
+            "championship_eligibility_after_step": -1,
+            "qualified": [], "historical_advisers_remain_archived": True}
+
+
 def active_adviser_checkpoints(epoch: dict, *, cohort_sha256: str | None = None,
                                scope_sha256: str | None = None,
                                rubric_sha256: str | None = None) -> tuple[dict, ...]:
@@ -129,7 +154,9 @@ def reference_checkpoints(epoch: dict) -> tuple[dict, ...]:
     checkpoint data. Archive custody and active teaching eligibility differ.
     """
     active_adviser_checkpoints(epoch)
-    pointers = [_pointer(epoch["previous_graduate"]), _pointer(epoch["baseline"])]
+    pointers = [_pointer(epoch["baseline"])]
+    if epoch.get("previous_graduate") is not None:
+        pointers.append(_pointer(epoch["previous_graduate"]))
     pointers.extend(_pointer(item["checkpoint"]) for item in epoch["qualified"])
     for historic in epoch.get("superseded_active_championships", ()):
         pointers.extend(_pointer(item["checkpoint"])

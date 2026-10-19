@@ -4,7 +4,7 @@ from types import MappingProxyType
 from unittest import TestCase
 
 from bilqis_mlx.learning.epoch_championships import (
-    active_frontier, advance_epoch, needed_incumbents,
+    active_frontier, advance_epoch as _advance_epoch, needed_incumbents,
     rebase_active_championships, reset_active_championships)
 from bilqis_mlx.learning.mentor_epoch import EARNED_ONLY_POLICY
 from bilqis_mlx.learning.grade_soup import grade_soup_recipe
@@ -27,7 +27,180 @@ def _epoch():
     }
 
 
+def _with_question_evidence(exam):
+    result = deepcopy(exam)
+    result["correct_questions"] = {
+        cap: [{"id": result["cohort_sha256"] + cap + str(i), "gold": "TRUE"}
+              for i in range(score["correct"])]
+        for cap, score in result["scores"].items()}
+    result["questions"] = {
+        cap: [{"id": result["cohort_sha256"] + cap + str(i), "gold": "TRUE"}
+              for i in range(score["total"])]
+        for cap, score in result["scores"].items()}
+    return result
+
+
+def advance_epoch(epoch, *, grades, challenger_exam, incumbent_exams):
+    """Policy fixtures assume the candidate preserves earlier correct questions."""
+    candidate = _with_question_evidence(challenger_exam)
+    candidate["witness_scores"] = {
+        witness["sha256"]: [q["id"] for q in witness["questions"]]
+        for role in epoch.get("active_roles", {}).values()
+        for witness in role.get("qualification_witnesses", ())}
+    return _advance_epoch(epoch, grades=grades, challenger_exam=candidate,
+                          incumbent_exams=incumbent_exams)
+
+
 class EpochChampionshipTests(TestCase):
+    def test_grade_complete_replay_can_improve_a_role_without_inventing_school_evidence(self):
+        original = _exam("a", 208)
+        original["scores"]["B.XOR"]["correct"] = 10
+        epoch, _, _ = advance_epoch(_epoch(), grades=GRADES,
+                                    challenger_exam=original, incumbent_exams={})
+        candidate = _exam("b", 209)
+        candidate["scores"]["B.XOR"]["correct"] = 11
+        candidate["cohort_sha256"] = "6" * 64
+        partial = {**original, "cohort_sha256": "6" * 64,
+                   "scores": {cap: original["scores"][cap] for cap in GRADE_B}}
+        _, changed, _ = advance_epoch(epoch, grades=GRADES,
+                                      challenger_exam=candidate, incumbent_exams={"a" * 64: partial})
+        self.assertIn("B.XOR", changed)
+
+    def test_grade_only_replay_cannot_certify_a_whole_school_takeover(self):
+        original = _exam("a", 208)
+        epoch, _, _ = advance_epoch(_epoch(), grades=GRADES,
+                                    challenger_exam=original, incumbent_exams={})
+        candidate = _exam("b", 209)
+        candidate["cohort_sha256"] = "6" * 64
+        partial = {**original, "cohort_sha256": "6" * 64,
+                   "scores": {cap: original["scores"][cap] for cap in GRADE_B}}
+        _, changed, decisions = advance_epoch(epoch, grades=GRADES,
+                                              challenger_exam=candidate,
+                                              incumbent_exams={"a" * 64: partial})
+        self.assertFalse(set(GRADE_B) & set(changed))
+        self.assertTrue(any(d["decision"] == "DEFER_INCUMBENT_SCHOOL_INCOMPARABLE" for d in decisions))
+
+    def test_grade_wide_tie_takeover_requires_every_displaced_branch_atomically(self):
+        left_exam, right_exam = _exam("a", 207), _exam("b", 208)
+        right_exam["cohort_sha256"] = "6" * 64
+        left, _, _ = advance_epoch(_epoch(), grades=GRADES,
+                                   challenger_exam=left_exam, incumbent_exams={})
+        right, _, _ = advance_epoch(_epoch(), grades=GRADES,
+                                    challenger_exam=right_exam, incumbent_exams={})
+        left["active_roles"]["B.XOR"] = right["active_roles"]["B.XOR"]
+        candidate = _with_question_evidence(_exam("c", 209))
+        candidate["cohort_sha256"] = "7" * 64
+        candidate = _with_question_evidence(candidate)
+        candidate["witness_scores"] = {
+            w["sha256"]: [q["id"] for q in w["questions"]]
+            for role in left["active_roles"].values() for w in role["qualification_witnesses"]}
+        proof = right["active_roles"]["B.XOR"]["qualification_witnesses"][0]
+        candidate["witness_scores"][proof["sha256"]].pop()
+        _, changed, _ = _advance_epoch(
+            left, grades=GRADES, challenger_exam=candidate,
+            incumbent_exams={"a" * 64: {**left_exam, "cohort_sha256": "7" * 64},
+                             "b" * 64: {**right_exam, "cohort_sha256": "7" * 64}})
+        self.assertFalse(set(GRADE_B) & set(changed))
+
+    def test_grade_takeover_absorbs_every_branch_and_preserves_it_for_successors(self):
+        first = _exam("a", 208)
+        left, _, _ = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=first, incumbent_exams={})
+        second = _exam("b", 209)
+        second["cohort_sha256"] = "6" * 64
+        right, _, _ = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=second, incumbent_exams={})
+        left["active_roles"]["B.XOR"] = right["active_roles"]["B.XOR"]
+        inherited = {w["sha256"] for role in left["active_roles"].values()
+                     for w in role["qualification_witnesses"]}
+        contender = _exam("c", 210)
+        contender["cohort_sha256"] = "7" * 64
+        paired = {seed * 64: {**source, "cohort_sha256": "7" * 64}
+                  for seed, source in (("a", first), ("b", second))}
+        taken, changed, _ = advance_epoch(
+            left, grades=GRADES, challenger_exam=contender, incumbent_exams=paired)
+        self.assertTrue(set(GRADE_B) <= set(changed))
+        for cap in GRADE_B:
+            role = taken["active_roles"][cap]
+            self.assertTrue(inherited <= {w["sha256"] for w in role["qualification_witnesses"]})
+            self.assertEqual(set(role["ancestor_checkpoint_sha256s"]), {"a" * 64, "b" * 64})
+
+        successor = _with_question_evidence(_exam("d", 211))
+        successor["witness_scores"] = {
+            w["sha256"]: [q["id"] for q in w["questions"]]
+            for role in taken["active_roles"].values() for w in role["qualification_witnesses"]}
+        ancestor_proof = next(w for w in right["active_roles"]["B.XOR"]["qualification_witnesses"]
+                              if w["questions"])
+        successor["witness_scores"][ancestor_proof["sha256"]].pop()
+        current = {**contender, "cohort_sha256": successor["cohort_sha256"]}
+        kept, changed, _ = _advance_epoch(
+            taken, grades=GRADES, challenger_exam=successor,
+            incumbent_exams={"c" * 64: current})
+        self.assertFalse(set(GRADE_B) & set(changed))
+        self.assertEqual(kept["active_roles"]["B.XOR"], taken["active_roles"]["B.XOR"])
+
+    def test_current_paired_score_can_be_beaten_after_a_historical_max(self):
+        first = _exam("a", 208)
+        epoch, _, _ = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=first, incumbent_exams={})
+        replay = deepcopy(first)
+        replay["cohort_sha256"] = "6" * 64
+        replay["scores"]["B.XOR"]["correct"] = 8
+        contender = deepcopy(replay)
+        contender["checkpoint"] = _exam("c", 209)["checkpoint"]
+        contender["scores"]["B.XOR"]["correct"] = 11
+        after, changed, _ = advance_epoch(
+            epoch, grades=GRADES, challenger_exam=contender,
+            incumbent_exams={"a" * 64: replay})
+        self.assertIn("B.XOR", changed)
+        self.assertEqual(after["active_roles"]["B.XOR"]["correct"], 11)
+        from bilqis_mlx.learning.championship_witnesses import maxed_role
+        self.assertTrue(maxed_role(after["active_roles"]["B.XOR"]))
+
+    def test_fresh_winner_must_preserve_every_original_earning_question(self):
+        epoch, _, _ = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=_exam("a", 208), incumbent_exams={})
+        replay = _exam("a", 208)
+        replay["cohort_sha256"] = "6" * 64
+        replay["scores"]["B.XOR"]["correct"] = 8
+        contender = _with_question_evidence(replay)
+        contender["checkpoint"] = _exam("c", 209)["checkpoint"]
+        contender["scores"]["B.XOR"]["correct"] = 11
+        contender = _with_question_evidence(contender)
+        original = deepcopy(epoch["active_roles"]["B.XOR"])
+        after, changed, decisions = _advance_epoch(
+            epoch, grades=GRADES, challenger_exam=contender,
+            incumbent_exams={"a" * 64: replay})
+        self.assertNotIn("B.XOR", changed)
+        self.assertEqual(after["active_roles"]["B.XOR"], original)
+        self.assertTrue(any(d["decision"] == "DENY_EARNING_QUESTION_REGRESSION"
+                            for d in decisions))
+
+    def test_perfect_breadth_counts_only_the_champions_grade(self):
+        first = _exam("a", 208)
+        first["scores"]["C.0"]["correct"] = first["scores"]["C.1"]["correct"] = 12
+        epoch, _, _ = advance_epoch(
+            _epoch(), grades=GRADES, challenger_exam=first, incumbent_exams={})
+        contender = _exam("c", 215)
+        contender["scores"]["C.1"]["correct"] = 11
+        after, changed, _ = advance_epoch(
+            epoch, grades=GRADES, challenger_exam=contender,
+            incumbent_exams={"a" * 64: first})
+        self.assertNotIn("C.0", changed)
+
+    def test_fully_perfect_origin_grade_uses_strict_school_takeover(self):
+        first = _exam("a", 208)
+        epoch, _, _ = advance_epoch(
+            {**_epoch(), "introduced_grade": "B"}, grades=GRADES,
+            challenger_exam=first, incumbent_exams={})
+        contender = _exam("c", 209)
+        self.assertIn("a" * 64, needed_incumbents(
+            epoch, grades=GRADES, challenger_exam=contender))
+        after, changed, _ = advance_epoch(
+            epoch, grades=GRADES, challenger_exam=contender,
+            incumbent_exams={"a" * 64: first})
+        self.assertTrue(set(GRADE_B) <= set(changed))
+
     def test_experiment_rebase_clears_active_titles_without_making_baseline_a_champ(self):
         epoch = _epoch()
         first, _, _ = advance_epoch(

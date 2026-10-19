@@ -73,6 +73,27 @@ def _load_current_cohort(run_dir, manifest, course, pointer):
     return cohort
 
 
+def load_championship_cohort(run_dir, witness):
+    """Verify an immutable earning cohort against its own admitted source identity."""
+    sha = witness.get("cohort_sha256")
+    if (not isinstance(sha, str) or len(sha) != 64 or
+            any(char not in "0123456789abcdef" for char in sha)):
+        raise ValueError("CHAMPIONSHIP_EARNING_COHORT_IDENTITY_REQUIRED")
+    path = run_dir / "cohorts" / (sha + ".json")
+    if path.parent.is_symlink() or path.is_symlink() or not path.is_file():
+        raise ValueError("CHAMPIONSHIP_EARNING_COHORT_MISSING")
+    stored = json.loads(path.read_text())
+    if (stored.get("cohort_sha256") != sha or
+            stored.get("rubric_sha256") != witness["rubric_sha256"] or
+            stored.get("source_manifest_sha256") != witness["source_oracle_sha256"]):
+        raise ValueError("CHAMPIONSHIP_EARNING_COHORT_SOURCE_DRIFT")
+    cohort = make_cohort(stored["rows"], generator_version=stored["generator_version"],
+                         seed=stored["seed"], rubric_version=stored["schema"])
+    if cohort.digest != sha:
+        raise ValueError("CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT")
+    return cohort
+
+
 def _verify_saved_cohort(run_dir, receipt, course):
     exam = receipt.get("last_exam") or {}
     sha = exam.get("cohort_sha256")

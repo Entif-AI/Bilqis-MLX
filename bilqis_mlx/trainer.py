@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
+from copy import deepcopy
 from dataclasses import asdict, replace
 from functools import lru_cache
 import fcntl
@@ -72,9 +73,10 @@ from .factory.live_releases import (
     verify_release_receipt,
 )
 from .factory.model import AssessmentClass, LearningEvidence
-from bilqis_mlx.learning.mentor_epoch import EARNED_ONLY_POLICY
+from bilqis_mlx.learning.mentor_epoch import EARNED_ONLY_POLICY, begin_initial_epoch
+from bilqis_mlx.learning.championship_witnesses import earning_witness, verified_witnesses
 from bilqis_mlx.learning.capability_frontier import (
-    candidate_roles, graduation_perfect, historical_frontier, pinned, promote,
+    candidate_roles, historical_frontier, pinned, promote,
     recover_graduation_breadth, retire_bundles,
 )
 from bilqis_mlx.runtime.disk import assert_headroom, headroom_snapshot
@@ -119,6 +121,7 @@ from .runtime.admission import (
     _factory_release, _persist_factory_release, _factory_admission, _require_factory_admission,
 )
 from .runtime.assessment import (
+    load_championship_cohort,
     _draw_live_rows, _persist_live_cohort, _load_current_cohort, _verify_saved_cohort, _grade_test_cohort, _promotion_cohort, _generalization_cohort, _candidate_cohort, _introduced_cohort, _without_stagnant_capabilities, _require_active_stagnation_scope,
 )
 
@@ -2321,7 +2324,7 @@ def _score_parent_for_paired_s3(mx, run_dir, receipt, parent, cohort, graph,
 
 
 def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
-                               cohort, scores, graph):
+                               cohort, scores, predictions, graph):
     """Re-examine only potentially displaced epoch incumbents on these rows."""
     epoch = receipt["mentor_epoch"]
     if epoch["source_graph_sha256"] != _fingerprint(graph):
@@ -2340,7 +2343,9 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
         "source_oracle_sha256": receipt["source_manifest_sha256"],
     }
     challenger = {**context, "checkpoint": asdict(school.current_student),
-                  "scores": scores}
+                  "scores": scores,
+                  "questions": _championship_questions(cohort),
+                  "correct_questions": _championship_correct_questions(cohort, predictions)}
     requested = epoch_needed_incumbents(
         epoch, grades=grades, challenger_exam=challenger)
     incumbents = {}
@@ -2355,19 +2360,142 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
         weights, own_adamw, meta, loaded_graph = load_semantically_bound_bundle(path)
         if (meta["safetensors_sha256"] != sha or
                 meta["optimizer_step"] != pointer["optimizer_step"] or
-                loaded_graph != graph):
+                not _compatible_graphs(loaded_graph, graph)):
             raise ValueError("CHAMPIONSHIP_EPOCH_INCOMPARABLE_INCUMBENT_GRAPH")
         del own_adamw
-        predictions = _predictions(
-            mx, weights, tuple(cohort.rows), receipt["config"],
-            receipt["answer_ids"])
-        measured = score_cohort(cohort, predictions, pointer)
-        if set(measured["scores"]) != set(scope):
-            raise ValueError("CHAMPIONSHIP_EPOCH_INCUMBENT_INCOMPLETE")
+        readable = _readable_championship_rows(cohort, loaded_graph, receipt)
+        subset = make_cohort(readable, generator_version=cohort.generator_version,
+                             seed=cohort.seed, rubric_version=cohort.rubric_version) if readable else None
+        config = (_compatible_answer_config(receipt["config"], loaded_graph)
+                  if any(row.get("answer_kind", "binary") != "binary" for row in readable)
+                  else receipt["config"])
+        predictions = (_predictions(mx, weights, readable, config, receipt["answer_ids"])
+                       if readable else {})
+        measured = score_cohort(subset, predictions, pointer) if subset else {"scores": {}}
         incumbents[sha] = {**context, "checkpoint": dict(pointer),
+                           "checkpoint_graph_sha256": _fingerprint(loaded_graph),
+                           "scored_subset_sha256": subset.digest if subset else None,
                            "scores": measured["scores"]}
         del weights
     return grades, challenger, incumbents
+
+
+def _readable_championship_rows(cohort, graph, receipt):
+    """A prefix incumbent must answer each entire comparable capability panel."""
+    vocabulary = len(graph["tokens"])
+    unsupported = set()
+    for row in cohort.rows:
+        kind = row.get("answer_kind", "binary")
+        answers = (receipt["answer_ids"] if kind == "binary" else
+                   receipt["config"].get("answer_heads", {}).get(kind, {}).get("token_ids", ()))
+        if max(row["tokens"]) >= vocabulary or not answers or max(answers) >= vocabulary:
+            unsupported.add(row["capability"])
+    return tuple(row for row in cohort.rows if row["capability"] not in unsupported)
+
+
+def _championship_correct_questions(cohort, predictions):
+    return {cap: [{"id": row["id"], "gold": row["gold"]}
+                  for row in cohort.rows
+                  if row["capability"] == cap and predictions[row["id"]] == row["gold"]]
+            for cap in {row["capability"] for row in cohort.rows}}
+
+
+def _championship_questions(cohort):
+    return {cap: [{"id": row["id"], "gold": row["gold"]}
+                  for row in cohort.rows if row["capability"] == cap]
+            for cap in {row["capability"] for row in cohort.rows}}
+
+
+def _hydrate_championship_witnesses(mx, run_dir, receipt, epoch, graph):
+    """Recover legacy earning questions from their immutable cohort and owner."""
+    updated = deepcopy(epoch)
+    recovered = {}
+    for role in updated.get("active_roles", {}).values():
+        if verified_witnesses(role):
+            continue
+        context = {
+            "cohort_sha256": role["cohort_sha256"], "rubric_sha256": role["rubric"],
+            "source_oracle_sha256": receipt["source_manifest_sha256"],
+        }
+        pointer = role["checkpoint"]
+        identity = (pointer["sha256"], context["cohort_sha256"])
+        if identity not in recovered:
+            cohort = load_championship_cohort(run_dir, context)
+            context["assessment_scope_sha256"] = role.get(
+                "assessment_scope_sha256", _fingerprint(tuple(dict.fromkeys(
+                    row["capability"] for row in cohort.rows))))
+            path = run_dir / pointer["filename"]
+            if path.is_symlink() or path.parent != run_dir / "bundles":
+                raise ValueError("CHAMPIONSHIP_EARNING_CHECKPOINT_UNSAFE")
+            content = (path / "model-and-own-adamw.safetensors").stat()
+            weights, source_graph = _cached_frozen_champion(
+                str(path), pointer["sha256"], pointer["optimizer_step"],
+                content.st_size, content.st_mtime_ns)
+            if not _compatible_graphs(source_graph, graph):
+                raise ValueError("CHAMPIONSHIP_EARNING_GRAPH_DRIFT")
+            context["source_graph_sha256"] = _fingerprint(source_graph)
+            config = (_compatible_answer_config(receipt["config"], source_graph)
+                      if any(row.get("answer_kind", "binary") != "binary" for row in cohort.rows)
+                      else receipt["config"])
+            guesses = _predictions(mx, weights, list(cohort.rows),
+                                   config, receipt["answer_ids"])
+            measured = score_cohort(cohort, guesses, pointer)
+            recovered[identity] = {
+                **context, "scores": measured["scores"],
+                "questions": _championship_questions(cohort),
+                "correct_questions": _championship_correct_questions(cohort, guesses)}
+        earned = recovered[identity]
+        if earned["scores"][role["capability"]] != {
+                "correct": role["correct"], "total": role["total"]}:
+            raise ValueError("CHAMPIONSHIP_EARNING_SCORE_DRIFT")
+        role["qualification_witnesses"] = [earning_witness(earned, tuple(earned["scores"]))]
+    return updated
+
+
+def _championship_witness_scores(mx, run_dir, receipt, roles, parameters, prediction_cache):
+    """Infer only missing saved earning questions; never send their gold to inference."""
+    results = {}
+    for role in roles:
+        for witness in verified_witnesses(role):
+            if witness["sha256"] in results:
+                continue
+            cohort = load_championship_cohort(run_dir, witness)
+            rows = {row["id"]: row for row in cohort.rows}
+            for question in witness["questions"]:
+                row = rows.get(question["id"])
+                if (row is None or row["gold"] != question["gold"] or
+                        row["capability"] != question["capability"]):
+                    raise ValueError("CHAMPIONSHIP_EARNING_QUESTION_DRIFT")
+            guesses = prediction_cache.setdefault(cohort.digest, {})
+            missing = [rows[q["id"]] for q in witness["questions"] if q["id"] not in guesses]
+            if missing:
+                guesses.update(_predictions(
+                    mx, parameters, missing, receipt["config"], receipt["answer_ids"]))
+            results[witness["sha256"]] = [q["id"] for q in witness["questions"]
+                                          if guesses[q["id"]] == q["gold"]]
+    return results
+
+
+def _advance_exam_championships(mx, run_dir, receipt, epoch, course, school,
+                                cohort, measured, predictions, parameters, graph,
+                                prediction_cache):
+    current = {**receipt, "mentor_epoch": epoch}
+    grades, challenger, incumbents = _epoch_paired_examinations(
+        mx, run_dir, current, course, school, cohort, measured["scores"], predictions, graph)
+    proposed, changes, decisions = advance_championship_epoch(
+        epoch, grades=grades, challenger_exam=challenger, incumbent_exams=incumbents)
+    pending = {decision["capability"] for decision in decisions
+               if decision["decision"] == "DENY_EARNING_QUESTION_REGRESSION"}
+    if not pending:
+        return proposed, changes, decisions
+    prediction_cache[cohort.digest] = dict(predictions)
+    owners = {epoch["active_roles"][cap]["checkpoint"]["sha256"] for cap in pending}
+    challenger["witness_scores"] = _championship_witness_scores(
+        mx, run_dir, receipt, [role for role in epoch["active_roles"].values()
+                              if role["checkpoint"]["sha256"] in owners],
+        parameters, prediction_cache)
+    return advance_championship_epoch(
+        epoch, grades=grades, challenger_exam=challenger, incumbent_exams=incumbents)
 
 
 def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
@@ -2762,6 +2890,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         mx, parameters, routine_rows, receipt["config"], receipt["answer_ids"])
     routine_measured = score_cohort(
         routine_cohort, routine_guesses, asdict(school.current_student))
+    championship_exams = ([] if scheduler_only else [
+        (candidate_cohort, candidate_measured, candidate_guesses),
+        (routine_cohort, routine_measured, routine_guesses)])
     parent_routine_scores, parent_routine_issue = _score_parent_for_paired_s3(
         mx, run_dir, receipt, parent_checkpoint, routine_cohort, graph,
         routine_measured["scores"])
@@ -2847,6 +2978,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             receipt["config"], receipt["answer_ids"])
         promotion_measured = score_cohort(
             promotion_cohort, promotion_guesses, asdict(school.current_student))
+        championship_exams.append((promotion_cohort, promotion_measured, promotion_guesses))
         promotion_assessment = Assessment(
             checkpoint_sha256=school.current_student.sha256,
             optimizer_step=school.current_student.optimizer_step,
@@ -2887,6 +3019,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             generalization_measured = score_cohort(
                 generalization_cohort, generalization_guesses,
                 asdict(school.current_student))
+            championship_exams.append((generalization_cohort, generalization_measured,
+                                        generalization_guesses))
             generalization_assessment = Assessment(
                 checkpoint_sha256=school.current_student.sha256,
                 optimizer_step=school.current_student.optimizer_step,
@@ -2924,21 +3058,16 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     championship_decisions = ()
     graduation_roles = ()
     championship_roles = ()
+    if epoch is None and not scheduler_only:
+        epoch = begin_initial_epoch(
+            student=asdict(school.current_student), introduced_grade=school.grade,
+            source_graph_sha256=_fingerprint(graph),
+            frontier=receipt.get("graduation_perfect", {}),
+            soups=receipt.get("grade_soups", {}))
     if scheduler_only:
         perfect = receipt.get("graduation_perfect", {})
         frozen_soups = receipt.get("grade_soups", {})
         soup_changes = ()
-    elif epoch is None:
-        perfect = receipt.get("graduation_perfect", {})
-        frozen_soups = receipt.get("grade_soups", {})
-        soup_changes = ()
-        if generalization_passed:
-            perfect, graduation_roles = graduation_perfect(
-                perfect, scores, rubric, cohort.digest,
-                asdict(school.current_student), assessment.evaluation_id)
-            frozen_soups, soup_changes = _cook_new_grade_soups(
-                mx, run_dir, receipt, perfect, course, graph,
-                reserve_gib=reserve_gib)
     elif blocked_before or blocked_after:
         # Capability containment is session-local teaching authority. Preserve
         # all previously earned championship/soup evidence, but a routine exam
@@ -2948,12 +3077,16 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         frozen_soups = receipt.get("grade_soups", {})
         soup_changes = ()
     else:
-        grades, challenger, incumbents = _epoch_paired_examinations(
-            mx, run_dir, receipt, course, school, candidate_cohort,
-            candidate_measured["scores"], graph)
-        epoch, championship_roles, championship_decisions = advance_championship_epoch(
-            epoch, grades=grades, challenger_exam=challenger,
-            incumbent_exams=incumbents)
+        epoch = _hydrate_championship_witnesses(mx, run_dir, receipt, epoch, graph)
+        changed_roles, decisions, prediction_cache = set(), [], {}
+        for examined, result, predicted in championship_exams:
+            epoch, changed, verdicts = _advance_exam_championships(
+                mx, run_dir, receipt, epoch, course, school,
+                examined, result, predicted, parameters, graph, prediction_cache)
+            changed_roles.update(changed)
+            decisions.extend(verdicts)
+        championship_roles = tuple(sorted(changed_roles))
+        championship_decisions = tuple(decisions)
         new_soups, soup_changes = _cook_new_grade_soups(
             mx, run_dir, receipt, epoch_active_frontier(epoch), course, graph,
             existing=epoch.get("active_grade_soups", {}), reserve_gib=reserve_gib)

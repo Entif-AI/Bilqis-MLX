@@ -8,6 +8,7 @@ contributes one direct vote; a shared checkpoint is counted once per role.
 from __future__ import annotations
 
 import numpy as np
+from .championship_witnesses import maxed_role
 
 
 POLICY = "bilqis.mlx.champion-confidence/v1"
@@ -92,12 +93,12 @@ def perfect_role_roster(frontier: dict, grade_soups: dict) -> tuple[dict, ...]:
             if (type(correct) is not int or type(total) is not int or total < 1 or
                     not 0 <= correct <= total):
                 raise ValueError("CHAMPION_CONFIDENCE_ACTIVE_ROLE_SCORE_DRIFT")
-            if correct != total:
+            entitled = maxed_role(item)
+            if role.get("maxed", correct == total) != entitled:
+                raise ValueError("CHAMPION_CONFIDENCE_ACTIVE_ROLE_ENTITLEMENT_DRIFT")
+            if not entitled:
                 continue
-            mastered = item.get("perfect_capabilities")
-            if (not isinstance(mastered, list) or capability not in mastered or
-                    item.get("correct") != item.get("total") or
-                    not item.get("checkpoint", {}).get("model_and_native_adamw")):
+            if not item.get("checkpoint", {}).get("model_and_native_adamw"):
                 raise ValueError("CHAMPION_CONFIDENCE_PERFECT_ROLE_DRIFT")
             pointer = item["checkpoint"]
             sha = pointer["sha256"]
