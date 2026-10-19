@@ -541,6 +541,8 @@ def parse_args(argv=None):
                            help='Bounded grade-stratified sentinel panel per visit')
             p.add_argument("--human-run",action="store_true",
                            help="Explicitly authorizes actual optimizer steps by the human operator")
+            p.add_argument("--autonomous-curriculum", action="store_true",
+                           help="After --human-run authorization, autonomously measure, teach, and remeasure factory evidence while preserving the school scheduler")
             p.add_argument("--minutes",type=int,default=90)
             p.add_argument("--steps-per-visit",type=int,default=16)
             p.add_argument("--max-visits",type=int,default=0,
@@ -720,7 +722,8 @@ def _main(args):
                     stagnation_grace_steps=args.stagnation_grace_steps,
                     source_prefetch_workers=args.source_prefetch_workers,
                     flash_mode=args.flash_mode,
-                    boolean_association_bridge=args.boolean_association_bridge)
+                    boolean_association_bridge=args.boolean_association_bridge,
+                    autonomous_curriculum=args.autonomous_curriculum)
             if trace_path is not None:
                 result["timing_trace_file"] = str(trace_path)
         if board is not None:

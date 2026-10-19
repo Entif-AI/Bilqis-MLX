@@ -275,6 +275,23 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
     raise ValueError("FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED")
 
 
+def witness_numeric_obligation(row, obligation, *, source_root, graph, course):
+    """Certify finite-numeric dependency transfer from the source lesson plan."""
+    del source_root, graph
+    capability = row.get("capability")
+    plan = next((item for item in PLANS if item.capability == capability), None)
+    if (plan is None or row.get("lesson_id") != plan.lesson_id or
+            capability not in course.capability_map):
+        raise ValueError("FACTORY_NUMERIC_EVIDENCE_PLAN_DRIFT")
+    kind = getattr(getattr(obligation, "kind", None), "value", None)
+    if kind == "PREREQUISITE":
+        return getattr(obligation, "key", None) in plan.prerequisites
+    if kind == "COMPOSITION":
+        return getattr(obligation, "key", None) in course.capability_map[
+            capability].composed_of
+    raise ValueError("FACTORY_NUMERIC_EVIDENCE_KIND_UNSUPPORTED")
+
+
 def live_source_registry() -> SourceAdapterRegistry:
     return SourceAdapterRegistry((
         RegisteredSourceAdapter(SourceAdapter(
@@ -320,6 +337,7 @@ def live_source_registry() -> SourceAdapterRegistry:
             variation_axes=("source-valid", "fresh-seed", "typed-answer",
                             "numeric-scope", "construction-shape"),
             cohort_releases=((C_RELEASE, c_digest()),
-                             (STAIRCASE_RELEASE, staircase_digest()))), draw_c, check_numeric),
+                             (STAIRCASE_RELEASE, staircase_digest()))), draw_c, check_numeric,
+            witness=witness_numeric_obligation),
     ))
 

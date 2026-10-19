@@ -3558,7 +3558,8 @@ def _quarantine_newer_uncommitted_bundles(run_dir: Path, retained: set[str],
 def _resume_command(run_dir: Path, source_root: Path,
                     learning_settings: LearningSettings | None,
                     boolean_association_bridge: bool = False,
-                    source_prefetch_workers: int = 2) -> str:
+                    source_prefetch_workers: int = 2,
+                    autonomous_curriculum: bool = False) -> str:
     """Only name non-default options in the next human-owned shell command."""
     from .paths import LEGACY_SOURCE, active_run_dir
 
@@ -3579,6 +3580,8 @@ def _resume_command(run_dir: Path, source_root: Path,
         command += " --legacy-code-root " + shlex.quote(str(source_root))
     if boolean_association_bridge:
         command += " --boolean-association-bridge"
+    if autonomous_curriculum:
+        command += " --autonomous-curriculum"
     if source_prefetch_workers != 2:
         command += " --source-prefetch-workers " + str(source_prefetch_workers)
     return command
@@ -4182,7 +4185,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             stagnation_grace_steps: int = 0,
             source_prefetch_workers: int = 2,
             flash_mode: bool = False,
-            boolean_association_bridge: bool = False) -> dict:
+            boolean_association_bridge: bool = False,
+            autonomous_curriculum: bool = False) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
     trace_mark(
         "OPERATE_START", resume=resume, max_visits=max_visits,
@@ -4190,6 +4194,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         source_prefetch_workers=source_prefetch_workers,
         flash_mode=flash_mode,
         boolean_association_bridge=boolean_association_bridge,
+        autonomous_curriculum=autonomous_curriculum,
         boolean_composite=boolean_composite,
         boolean_idboolops=boolean_idboolops,
         full_grade_b=full_grade_b)
@@ -4214,6 +4219,10 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_RESUME")
     if boolean_association_bridge and not resume:
         raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME")
+    if autonomous_curriculum and not retention_enabled:
+        raise ValueError("AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION")
+    if autonomous_curriculum and flash_mode:
+        raise ValueError("AUTONOMOUS_CURRICULUM_INCOMPATIBLE_WITH_FLASH_MODE")
     if boolean_association_bridge:
         saved_path = Path(run_dir).expanduser().resolve() / "state.json"
         if not saved_path.is_file():
@@ -4327,7 +4336,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 run_dir, manifest, course, teacher_sha,
                 historical_teacher, provenance, source_checkpoint,
                 reserve_gib=reserve_gib)
-        _require_factory_admission(run_dir, receipt, course)
+        admitted_release = _require_factory_admission(run_dir, receipt, course)
         with trace_span("RECONCILE_VOCABULARY"):
             receipt = _reconcile_vocabulary_metadata(
                 run_dir, receipt, course, params, optimizer, graph)
@@ -4344,6 +4353,11 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             with trace_span("SEED_WHOLE_STUDENT_PEAK"):
                 receipt = _seed_saved_whole_student_peak(
                     run_dir, receipt, course, optimizer)
+        autonomy_session = None
+        if autonomous_curriculum:
+            from .runtime.autonomy_live import LiveAutonomySession
+            autonomy_session = LiveAutonomySession.open(
+                run_dir, source_root, admitted_release)
         source_prefetch_executor = None
         if learning_settings is not None and source_prefetch_workers:
             from bilqis_mlx.runtime.source_prefetch import (
@@ -4423,6 +4437,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                                          if source_prefetch_executor is not None else 0),
             "flash_mode": flash_mode,
             "boolean_association_bridge": boolean_association_bridge,
+            "autonomous_curriculum": autonomous_curriculum,
         })
         visits = 0
         while True:
@@ -4433,6 +4448,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             receipt = _reconcile_stagnation_scope(
                 run_dir, receipt, course, school)
             school = _state_from_json(receipt["school"], course)
+            autonomy_teaching_work = None
             reason = session_stop_reason(
                 stage=school.stage, elapsed_seconds=time.monotonic() - start,
                 minutes=minutes, visits=visits, max_visits=max_visits,
@@ -4467,6 +4483,105 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         source_checkpoint, params, optimizer, graph,
                         reserve_gib=reserve_gib)
                 continue
+            if autonomous_curriculum:
+                from .factory.autonomy import (
+                    AutonomyActionKind, TeachingReceipt)
+                from .runtime.autonomy_live import scheduled_teaching_matches
+
+                current_release = _factory_release(course)
+                autonomy_session.refresh_release(current_release)
+                action = autonomy_session.action()
+                if action.kind is AutonomyActionKind.SOURCE_COVERAGE:
+                    reason = "AUTONOMY_SOURCE_COVERAGE_REQUIRED"
+                    _record(run_dir, {
+                        "event": "SCHOOL_AUTONOMY_SOURCE_COVERAGE_BLOCKED",
+                        "generation": receipt["generation"],
+                        "grade": school.grade,
+                        "debt": action.source_coverage_debt,
+                        "model_and_optimizer_unchanged": True,
+                    })
+                    break
+                if action.kind is AutonomyActionKind.LEARNING_EVIDENCE:
+                    optimizer_step = int(optimizer.state["step"].item())
+                    if optimizer_step != school.current_student.optimizer_step:
+                        raise ValueError(
+                            "AUTONOMY_EVIDENCE_REQUIRES_DURABLE_CHECKPOINT")
+                    work = action.evidence_work
+                    evidence = autonomy_session.measure(
+                        graph, work,
+                        checkpoint={
+                            **asdict(school.current_student),
+                            "model_and_native_adamw": True,
+                        },
+                        seed=_seed(
+                            receipt,
+                            capability="AUTONOMY_EVIDENCE:" +
+                            work.obligation.obligation_id,
+                            step=len(autonomy_session.ledger.receipts) + 1),
+                        predictor=lambda rows: _predictions(
+                            mx, params, list(rows), receipt["config"],
+                            receipt["answer_ids"]),
+                    )
+                    _record(run_dir, {
+                        "event": "SCHOOL_AUTONOMY_EVIDENCE_RECORDED",
+                        "generation": receipt["generation"],
+                        "grade": school.grade,
+                        "capability": work.capability_id,
+                        "obligation": work.obligation.obligation_id,
+                        "passed": evidence.passed,
+                        "cohort_sha256": evidence.cohort_sha256,
+                        "student_sha256": evidence.checkpoint_sha256,
+                        "optimizer_step": evidence.optimizer_step,
+                    })
+                    if evidence.passed:
+                        advanced = autonomy_session.advance_if_complete(
+                            school, work.capability_id)
+                        if advanced != school:
+                            receipt = _advance(
+                                run_dir, receipt, advanced,
+                                result=_school_result_label(advanced))
+                            visits += 1
+                            _record(run_dir, {
+                                "event":
+                                    "SCHOOL_AUTONOMY_EVIDENCE_VISIT_COMPLETED",
+                                "generation": receipt["generation"],
+                                "grade": advanced.grade,
+                                "capability": work.capability_id,
+                                "optimizer_step":
+                                    advanced.current_student.optimizer_step,
+                                "student_sha256":
+                                    advanced.current_student.sha256,
+                                "retained_optimizer_updates": 0,
+                            })
+                    continue
+                if action.kind is AutonomyActionKind.QUALIFICATION:
+                    scheduled = next_capability(school)
+                    if (scheduled is not None and
+                            scheduled in set(autonomy_session.evidence_complete())):
+                        advanced = visit(
+                            course, school, scheduled,
+                            school.current_student)
+                        receipt = _advance(
+                            run_dir, receipt, advanced,
+                            result=_school_result_label(advanced))
+                        visits += 1
+                        _record(run_dir, {
+                            "event":
+                                "SCHOOL_AUTONOMY_QUALIFIED_VISIT_COMPLETED",
+                            "generation": receipt["generation"],
+                            "grade": advanced.grade,
+                            "capability": scheduled,
+                            "optimizer_step":
+                                advanced.current_student.optimizer_step,
+                            "student_sha256":
+                                advanced.current_student.sha256,
+                            "retained_optimizer_updates": 0,
+                        })
+                        continue
+                elif action.kind is AutonomyActionKind.TEACHING:
+                    if scheduled_teaching_matches(
+                            school, action.teaching_work.capability_id):
+                        autonomy_teaching_work = action.teaching_work
             with trace_span("DISK_HEADROOM", visit_index=visits + 1):
                 budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
                                            reserve_gib=reserve_gib)
@@ -4493,6 +4608,52 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     source_prefetch_workers=(source_prefetch_workers
                                              if source_prefetch_executor is not None else 0))
             visits += 1
+            if autonomous_curriculum:
+                # Autonomy evidence may only refer to a complete, read-back
+                # verified model+AdamW checkpoint. Publish every autonomous
+                # teaching visit immediately instead of carrying RAM-only state.
+                receipt = _flush_working_student(
+                    mx, run_dir, receipt, manifest, course,
+                    params, optimizer, graph, reserve_gib=reserve_gib,
+                    source_root=source_root)
+                school_after_flush = _state_from_json(receipt["school"], course)
+                if autonomy_teaching_work is not None:
+                    failed = autonomy_teaching_work.failed_evidence
+                    current = school_after_flush.current_student
+                    if (current.sha256 != failed.checkpoint_sha256 and
+                            current.optimizer_step > failed.optimizer_step):
+                        intervention = TeachingReceipt(
+                            obligation_id=failed.obligation_id,
+                            intervention_id=_fingerprint({
+                                "run_id": receipt["run_id"],
+                                "generation": receipt["generation"],
+                                "obligation": failed.obligation_id,
+                                "parent": failed.checkpoint_sha256,
+                                "student": current.sha256,
+                                "optimizer_step": current.optimizer_step,
+                            }),
+                            teaching_option_id=
+                                autonomy_teaching_work.teaching_option_ids[0],
+                            parent_checkpoint_sha256=
+                                failed.checkpoint_sha256,
+                            parent_optimizer_step=failed.optimizer_step,
+                            checkpoint_sha256=current.sha256,
+                            optimizer_step=current.optimizer_step,
+                        )
+                        autonomy_session.record_teaching(intervention)
+                        _record(run_dir, {
+                            "event":
+                                "SCHOOL_AUTONOMY_TEACHING_RECORDED",
+                            "generation": receipt["generation"],
+                            "grade": school_after_flush.grade,
+                            "capability":
+                                autonomy_teaching_work.capability_id,
+                            "obligation": failed.obligation_id,
+                            "parent_student_sha256":
+                                failed.checkpoint_sha256,
+                            "student_sha256": current.sha256,
+                            "optimizer_step": current.optimizer_step,
+                        })
             pending_visits = receipt.get("_pending_visit_events", ())
             if len(pending_visits) > pending_before:
                 latest_visit = pending_visits[-1]
@@ -4538,6 +4699,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                                          if source_prefetch_executor is not None else 0),
             "flash_mode": flash_mode,
             "boolean_association_bridge": boolean_association_bridge,
+            "autonomous_curriculum": autonomous_curriculum,
             "resume_required": school.stage != "AWAITING_NEXT_GRADE",
             "stagnation_session_id": receipt.get("stagnation_session", {}).get(
                 "session_id"),
@@ -4589,6 +4751,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "safe_resume_command": _resume_command(
                 run_dir, source_root, learning_settings,
                 boolean_association_bridge=boolean_association_bridge,
+                autonomous_curriculum=autonomous_curriculum,
                 source_prefetch_workers=source_prefetch_workers),
             "original_source_checkpoint_modified": False,
         }
