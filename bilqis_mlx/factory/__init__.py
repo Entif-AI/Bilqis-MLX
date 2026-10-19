@@ -1,6 +1,8 @@
 """Canonical curriculum-factory contracts and grade-neutral runtime adapters."""
 
 from .autonomy import (
+    AutonomyAction,
+    AutonomyActionKind,
     AutonomyPlan,
     CurriculumWorkItem,
     SourceCompositionEdge,
@@ -12,6 +14,7 @@ from .autonomy import (
     compile_autonomy_plan,
     initial_evidence_ledger,
     evidence_complete_capabilities,
+    next_action,
     next_source_coverage_debt,
     next_work,
     obligations_for_capability,
@@ -38,6 +41,8 @@ from .release import (
 )
 
 __all__ = (
+    "AutonomyAction",
+    "AutonomyActionKind",
     "AutonomyPlan",
     "CurriculumWorkItem",
     "SourceCompositionEdge",
@@ -49,6 +54,7 @@ __all__ = (
     "compile_autonomy_plan",
     "initial_evidence_ledger",
     "evidence_complete_capabilities",
+    "next_action",
     "next_source_coverage_debt",
     "next_work",
     "obligations_for_capability",
