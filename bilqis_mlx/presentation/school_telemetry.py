@@ -122,6 +122,7 @@ def _candidate_retention_row(event: dict, grade: str, attempt: int) -> dict | No
     retention = event.get("candidate_retention")
     if not isinstance(retention, dict):
         return None
+    capability = retention.get("active_capability") or event.get("capability") or "-"
     before = retention.get("active_probe_before")
     after = retention.get("active_probe_after")
     total = retention.get("active_probe_total")
@@ -138,6 +139,7 @@ def _candidate_retention_row(event: dict, grade: str, attempt: int) -> dict | No
         evidence += f" | unsampled {unsampled}"
     return {
         "grade": grade,
+        "capability": capability,
         "attempt": attempt,
         "target": target,
         "target_delta": f"{local:+d}" if type(local) is int else "-",
@@ -227,6 +229,7 @@ LETTER_TABLES = (
         Column("DECISION / REASON", 30, "decision"))),
     ("SENTINEL & RETENTION", (
         Column("GRADE", 6, "grade"),
+        Column("CAPABILITY", 13, "capability"),
         Column("VISIT", 6, "attempt", right=True),
         Column("TARGET", 13, "target", right=True),
         Column("DTGT", 6, "target_delta", right=True),
@@ -799,6 +802,7 @@ class SchoolTelemetry:
         sent = _delta(event.get("sentinel_delta_pp"), pp=True)
         row = {
             "grade": grade, "attempt": event.get("generation", "-"),
+            "capability": event.get("capability") or event.get("family") or "GRADE",
             "target": "INDEP",
             "target_delta": _delta(event.get("probe_delta_pp"), pp=True),
             "protected": sent,

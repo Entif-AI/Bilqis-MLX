@@ -12,6 +12,7 @@ import argparse
 from collections import deque
 from contextlib import redirect_stdout
 from dataclasses import dataclass
+from fractions import Fraction
 import json
 from pathlib import Path
 import shutil
@@ -294,6 +295,7 @@ class Dashboard:
         self.grade_program=None
         self.bridge_families=None
         self.champion_line=None
+        self._champion_rows=[]
         self._champion_source=None
         self._champion_start_step=None
         self._champion_mtime_ns=None
@@ -308,11 +310,57 @@ class Dashboard:
         """Read canonical champion inventory if a grade checkpoint changed."""
         source=self._champion_source
         if source is None:return
-        from bilqis_mlx import school50_champions
         try:
             stamp=source.stat().st_mtime_ns
             if stamp==self._champion_mtime_ns:return
             state=json.loads(source.read_text(encoding='utf-8'))
+            epoch=state.get('mentor_epoch')
+            if isinstance(epoch,dict) and isinstance(epoch.get('active_roles'),dict):
+                grouped={}
+                for capability,role in epoch['active_roles'].items():
+                    if not isinstance(role,dict):
+                        continue
+                    correct,total=role.get('correct'),role.get('total')
+                    checkpoint=role.get('checkpoint') or {}
+                    if (not isinstance(capability,str) or '.' not in capability or
+                            type(correct) is not int or type(total) is not int or
+                            total<=0 or not 0<=correct<=total or
+                            not isinstance(checkpoint,dict)):
+                        continue
+                    grade=capability.split('.',1)[0]
+                    grouped.setdefault(grade,[]).append({
+                        'row_type':'champion',
+                        'grade':grade,
+                        'capability':capability,
+                        'step':checkpoint.get('optimizer_step','-'),
+                        'start':'-',
+                        'latest':f'{correct}/{total}',
+                        'best':'-',
+                        'to100':str(total-correct),
+                        'right_pct':f'{100*correct/total:.1f}%',
+                        'outcome':f'CHAMP {capability} | br{role.get("breadth","-")}',
+                        'checkpoint':str(checkpoint.get('sha256',''))[:10],
+                        '_score':Fraction(correct,total),
+                        '_breadth':role.get('breadth',0)
+                            if type(role.get('breadth')) is int else 0,
+                    })
+                rows=[]
+                for grade in sorted(grouped):
+                    ranked=sorted(grouped[grade],key=lambda row:row['capability'])
+                    ranked=sorted(
+                        ranked,
+                        key=lambda row:(row['_score'],row['_breadth'],
+                                        row['step'] if type(row['step']) is int else -1),
+                        reverse=True)
+                    for row in ranked[:6]:
+                        row.pop('_score',None)
+                        row.pop('_breadth',None)
+                        rows.append(row)
+                self._champion_rows=rows
+                self.champion_line=None
+                self._champion_mtime_ns=stamp
+                return
+            from bilqis_mlx import school50_champions
             if state.get('mode')=='--triplets':
                 self.champion_line=(
                     'CHAMPIONS inherited frozen v15 teacher | '
@@ -346,6 +394,12 @@ class Dashboard:
         except (OSError,ValueError,TypeError,KeyError):
             # An absent or unavailable optional report is not a train error.
             return
+
+    def attach_champion_source(self,run_dir):
+        """Attach the read-only modern championship inventory for live refresh."""
+        self._champion_source=Path(run_dir).expanduser()/'state.json'
+        self._champion_mtime_ns=None
+        self._refresh_champions()
 
     def attach_school50(self,run_dir,*,cutoff_visit=None,state=None):
         """One run-independent G/B/N progress adapter for every School50 UI.
@@ -518,13 +572,18 @@ class Dashboard:
         elif name=='GRADES & MASTERY':
             full=self.grade_program or tuple(row['grade'] for row in available)
             total=len(full)
+            champion_shown=sum(row.get('row_type')=='champion' for row in recent)
+            summary_shown=sum(row.get('row_type')!='champion' for row in recent)
             gtotal=sum(grade.startswith('G') for grade in full)
             btotal=sum(grade.startswith('B') for grade in full)
-            gshown=sum(row['grade'].startswith('G') for row in recent)
-            bshown=sum(row['grade'].startswith('B') for row in recent)
+            gshown=sum(row['grade'].startswith('G') for row in recent
+                       if row.get('row_type')!='champion')
+            bshown=sum(row['grade'].startswith('B') for row in recent
+                       if row.get('row_type')!='champion')
             if full and all(len(str(g)) == 1 and str(g).isalpha() for g in full):
-                return f'{shown}/{total} letter grades'
-            return f'{shown}/{total} grades; G{gshown}/{gtotal} B{bshown}/{btotal}'
+                return f'{summary_shown}/{total} letter grades + {champion_shown} champs'
+            return (f'{summary_shown}/{total} grades + {champion_shown} champs; '
+                    f'G{gshown}/{gtotal} B{bshown}/{btotal}')
         return f'{shown}/{len(available)} visible'
 
     def _section_rows(self,name):
@@ -544,8 +603,20 @@ class Dashboard:
             identity=row[key]
             if identity not in seen:
                 seen.add(identity)
-                distinct.append(row)
-        return list(reversed(distinct))
+                distinct.append({**row,'row_type':row.get('row_type','summary')})
+        distinct=list(reversed(distinct))
+        if name!='GRADES & MASTERY' or not self._champion_rows:
+            return distinct
+        champions={}
+        for row in self._champion_rows:
+            champions.setdefault(row['grade'],[]).append(row)
+        combined=[]
+        for row in distinct:
+            combined.append(row)
+            combined.extend(champions.pop(row['grade'],()))
+        for grade in sorted(champions):
+            combined.extend(champions[grade])
+        return combined
 
     def _wide_pane(self,names,width,body_height,height):
         """Stack each pane's sections without borrowing another pane's rows."""

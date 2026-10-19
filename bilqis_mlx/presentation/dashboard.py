@@ -37,6 +37,8 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
                redraw=False)
     board.school_telemetry = SchoolTelemetry(board, active_grades=active,
                                               champions=school.get("champions"))
+    if state_path.exists() and isinstance((state or {}).get("mentor_epoch"), dict):
+        board.attach_champion_source(run_dir)
     budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
                                reserve_gib=reserve_gib)
     ingest(board, {"event": "SCHOOL_RESOURCE_OBSERVED",

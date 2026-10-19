@@ -8,6 +8,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from bilqis_mlx.presentation.dashboard import build, ingest
+from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard, TABLES
 
 
@@ -77,12 +78,73 @@ class SchoolTelemetryTests(unittest.TestCase):
                 },
             })
             row = board.rows["SENTINEL & RETENTION"][-1]
+            self.assertEqual(row["capability"], "B.IFF")
             self.assertEqual(row["target"], "10>8/12")
             self.assertEqual(row["target_delta"], "-2")
             self.assertEqual(row["protected"], "+0")
             self.assertEqual(row["worst"], "0")
             self.assertEqual(row["decision"], "REJECT")
             self.assertIn("NO_MEASURABLE_TARGET_GAIN", row["evidence"])
+
+    def test_mastery_panel_lists_up_to_six_highest_scoring_champions_per_grade(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            roles = {}
+            for index, (capability, correct, total, breadth, step) in enumerate((
+                ("A.ONE", 11, 12, 1, 100),
+                ("A.TWO", 12, 12, 2, 101),
+                ("A.THREE", 12, 12, 5, 102),
+                ("A.FOUR", 10, 12, 4, 103),
+                ("A.FIVE", 9, 12, 3, 104),
+                ("A.SIX", 8, 12, 2, 105),
+                ("A.SEVEN", 7, 12, 1, 106),
+                ("B.ONE", 9, 12, 1, 107),
+            )):
+                roles[capability] = {
+                    "capability": capability,
+                    "correct": correct,
+                    "total": total,
+                    "breadth": breadth,
+                    "checkpoint": {
+                        "sha256": f"{index + 1:064x}",
+                        "optimizer_step": step,
+                    },
+                }
+            (root / "state.json").write_text(json.dumps({
+                "mentor_epoch": {"active_roles": roles},
+            }))
+
+            board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                              tables=LETTER_TABLES)
+            board.rows["GRADES & MASTERY"].extend([
+                {"grade": "A", "step": 200, "start": "60/72", "latest": "70/72",
+                 "best": "71/72", "to100": "2", "right_pct": "97.2%",
+                 "outcome": "SUMMARY"},
+                {"grade": "B", "step": 200, "start": "40/72", "latest": "50/72",
+                 "best": "51/72", "to100": "22", "right_pct": "69.4%",
+                 "outcome": "SUMMARY"},
+            ])
+            board.attach_champion_source(root)
+
+            rows = board._section_rows("GRADES & MASTERY")
+            a_rows = [row for row in rows
+                      if row.get("row_type") == "champion" and row["grade"] == "A"]
+            self.assertEqual(len(a_rows), 6)
+            self.assertEqual([row["capability"] for row in a_rows[:2]],
+                             ["A.THREE", "A.TWO"])
+            self.assertNotIn("A.SEVEN", {row["capability"] for row in a_rows})
+            self.assertEqual(a_rows[0]["latest"], "12/12")
+            self.assertIn("CHAMP A.THREE", a_rows[0]["outcome"])
+            self.assertEqual(
+                [row["row_type"] for row in rows[:7]],
+                ["summary", "champion", "champion", "champion",
+                 "champion", "champion", "champion"])
+            self.assertEqual(rows[7]["grade"], "B")
+            self.assertEqual(rows[7]["row_type"], "summary")
+
+            # Champion child rows must not replace grade summaries in the
+            # dashboard's whole-school latest score calculation.
+            self.assertEqual(board._latest_all_grade_score(), (120, 144))
 
     def test_retention_decision_not_instructional_note_controls_commit_claim(self):
         with tempfile.TemporaryDirectory() as tmp:
