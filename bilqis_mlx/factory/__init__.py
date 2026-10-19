@@ -39,6 +39,21 @@ from .model import (
     TeachingOption,
 )
 from .assessment import qualification_complete
+from .development import (
+    DevelopmentalStaircase,
+    DevelopmentalTarget,
+    RepresentationLayer,
+    UnderstandingProjection,
+    post_boolean_staircase,
+)
+from .understanding import (
+    ProofAxis,
+    ProjectionSpec,
+    UnderstandingContract,
+    UnderstandingEvidencePlan,
+    contract_for_target,
+    plan_understanding_evidence,
+)
 from .release import (
     admit_factory_release,
     compile_factory_release,
@@ -82,4 +97,15 @@ __all__ = (
     "admit_factory_release",
     "compile_factory_release",
     "qualification_complete",
+    "DevelopmentalStaircase",
+    "DevelopmentalTarget",
+    "RepresentationLayer",
+    "UnderstandingProjection",
+    "post_boolean_staircase",
+    "ProofAxis",
+    "ProjectionSpec",
+    "UnderstandingContract",
+    "UnderstandingEvidencePlan",
+    "contract_for_target",
+    "plan_understanding_evidence",
 )
