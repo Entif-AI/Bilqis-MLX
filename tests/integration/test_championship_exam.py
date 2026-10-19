@@ -78,6 +78,38 @@ class ChampionshipExamTests(TestCase):
         self.assertEqual({row["answer_kind"] for row in readable}, {"boolean_operator"})
         self.assertEqual({row["capability"] for row in readable}, {"B.IDBOOLOPS"})
 
+    def test_idboolops_live_exam_factor_guard_accepts_balanced_operator_family(self):
+        root = Path(__file__).resolve().parents[2]
+        source = root / "vendor/legacy-v16"
+        manifest = json.loads((
+            root / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
+        course = build_idboolops(
+            build_composite(boolean_successor(
+                initial_course(accepted_grade_a(manifest)), source), source), source)
+        _, _, graph, _, _ = read_sources(source)
+        rows = draw_identification(source, graph, seed=117)
+        cohort = make_cohort(
+            rows, generator_version=course.grades[-1].capabilities[-1].lesson_generator,
+            seed=117, rubric_version=course.grades[-1].assessment_sha256)
+        idboolops = course.grades[-1].capabilities[-1]
+        family = idboolops.answer_families[0]
+        self.assertEqual(family.kind, "boolean_operator")
+        self.assertEqual({row["gold"] for row in cohort.rows}, set(family.values))
+        self.assertEqual(
+            {value: sum(row["gold"] == value for row in cohort.rows)
+             for value in family.values},
+            {value: 2 for value in family.values})
+        self.assertTrue(trainer._live_exam_factors_complete(
+            course, cohort, {"B.IDBOOLOPS": 12}))
+
+        broken_rows = list(cohort.rows)
+        broken_rows[-1] = {**broken_rows[-1], "gold": broken_rows[0]["gold"]}
+        broken = make_cohort(
+            broken_rows, generator_version=cohort.generator_version,
+            seed=cohort.seed, rubric_version=cohort.rubric_version)
+        self.assertFalse(trainer._live_exam_factors_complete(
+            course, broken, {"B.IDBOOLOPS": 12}))
+
     def test_assessment_scope_hash_tracks_actual_scored_capabilities(self):
         full = ("A.IDENTITY", "A.LINK", "B.AND", "B.IFF")
         partial = {"A.IDENTITY": {}, "A.LINK": {}, "B.AND": {}}

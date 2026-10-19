@@ -2955,6 +2955,36 @@ def _advance_exam_championships(mx, run_dir, receipt, epoch, course, school,
     raise AssertionError("unreachable")
 
 
+def _live_exam_factors_complete(course, cohort, expected) -> bool:
+    """Validate factor coverage against each capability's typed answer family."""
+    capability_map = course.capability_map
+    for cap, total in expected.items():
+        rows = [row for row in cohort.rows if row["capability"] == cap]
+        if cap.startswith("C."):
+            continue
+        families = capability_map[cap].answer_families
+        if len(families) != 1:
+            return False
+        family = families[0]
+        if any(row.get("answer_kind", family.kind) != family.kind for row in rows):
+            return False
+        if family.kind == "binary":
+            if ({row["gold"] for row in rows} != set(family.values) or
+                    {row.get("universe_size") for row in rows} != {3, 4}):
+                return False
+        elif family.kind == "boolean_operator":
+            counts = {value: sum(row["gold"] == value for row in rows)
+                      for value in family.values}
+            balanced = total % len(family.values) == 0
+            each = total // len(family.values) if balanced else -1
+            if (not balanced or set(row["gold"] for row in rows) != set(family.values) or
+                    any(count != each for count in counts.values())):
+                return False
+        else:
+            return False
+    return True
+
+
 def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
                            cohort, predictions, parameters, optimizer, graph, *,
                            reserve_gib, allowed_capabilities=None):
@@ -2979,10 +3009,7 @@ def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
         "sha256": "IN_MEMORY_CANDIDATE", "optimizer_step": int(optimizer.state["step"].item()),
         "model_and_native_adamw": True})["scores"]
     if ({cap: row["total"] for cap, row in grades.items()} != expected or
-            any({r["gold"] for r in cohort.rows if r["capability"] == cap} !=
-                {"TRUE", "FALSE"} or
-                {r["universe_size"] for r in cohort.rows if r["capability"] == cap}
-                != {3, 4} for cap in expected if not cap.startswith("C."))):
+            not _live_exam_factors_complete(course, cohort, expected)):
         raise ValueError("HUMAN_TRAINER_LIVE_EXAM_INCOMPLETE_FACTORS")
     complete_scope = allowed == full_allowed
     if complete_scope:
