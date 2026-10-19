@@ -15,6 +15,7 @@ from .model import SourceAdapter
 Draw = Callable[..., tuple[dict, ...]]
 Enrich = Callable[..., tuple[dict, ...]]
 Check = Callable[..., bool]
+Witness = Callable[..., bool]
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,7 @@ class RegisteredSourceAdapter:
     draw: Draw
     check: Check
     enrich: Enrich | None = None
+    witness: Witness | None = None
 
 
 class SourceAdapterRegistry:
@@ -101,3 +103,27 @@ class SourceAdapterRegistry:
             raise ValueError("FACTORY_TEACHING_UNKNOWN_CAPABILITY:" + str(capability))
         return self.require(
             cap.lesson_generator, cap.independent_oracle).descriptor.teaching_option_ids
+
+    def obligation_witness(self, course, *, capability: str, row: dict,
+                           obligation, source_root, graph) -> bool:
+        """Ask the source dialect whether one row proves a semantic obligation.
+
+        Direct evidence needs no dialect-specific interpretation. Structural
+        obligations do: the source adapter must certify that the row actually
+        exercises the requested prerequisite/composition edge.
+        """
+        cap = course.capability_map.get(capability)
+        if cap is None:
+            raise ValueError("FACTORY_EVIDENCE_UNKNOWN_CAPABILITY:" + str(capability))
+        adapter = self.require(cap.lesson_generator, cap.independent_oracle)
+        kind = getattr(getattr(obligation, "kind", None), "value", None)
+        if kind == "DIRECT":
+            return True
+        if adapter.witness is None:
+            raise ValueError("FACTORY_EVIDENCE_WITNESS_ADAPTER_REQUIRED")
+        result = adapter.witness(
+            row, obligation,
+            source_root=source_root, graph=graph, course=course)
+        if type(result) is not bool:
+            raise ValueError("FACTORY_EVIDENCE_WITNESS_RESULT_INVALID")
+        return result
