@@ -507,3 +507,26 @@ def next_action(
         return AutonomyAction(AutonomyActionKind.LEARNING_EVIDENCE,
                               evidence_work=work)
     return AutonomyAction(AutonomyActionKind.QUALIFICATION)
+
+
+def rebind_evidence_ledger(
+    release: FactoryRelease, ledger: EvidenceLedger, *,
+    old_plan: AutonomyPlan, new_plan: AutonomyPlan,
+) -> EvidenceLedger:
+    """Carry forward only receipts whose semantic obligation is unchanged."""
+    _validate_ledger(release, ledger, plan=old_plan)
+    if (old_plan.factory_release_sha256 != release.release_sha256 or
+            new_plan.factory_release_sha256 != release.release_sha256):
+        raise ValueError("AUTONOMY_PLAN_RELEASE_MISMATCH")
+    old_obligations = _obligation_map(release, old_plan)
+    new_obligations = _obligation_map(release, new_plan)
+    for receipt in ledger.receipts:
+        old = old_obligations.get(receipt.obligation_id)
+        new = new_obligations.get(receipt.obligation_id)
+        if old is None or new is None or old != new:
+            raise ValueError(
+                "AUTONOMY_PLAN_REBIND_INVALIDATES_EVIDENCE:" + receipt.obligation_id)
+    rebound = EvidenceLedger(
+        release.release_sha256, new_plan.digest(), ledger.receipts)
+    _validate_ledger(release, rebound, plan=new_plan)
+    return rebound
