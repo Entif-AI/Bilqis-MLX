@@ -46,6 +46,38 @@ def _teacher_decision_text(decision: object) -> str:
     return " | ".join(parts) + "; exam pending" if parts else "LESSON COMMITTED; exam pending"
 
 
+_REASON_LABELS = {
+    "NO_MEASURABLE_TARGET_GAIN": "NO TARGET GAIN",
+    "FRAGILE_COMPOSITION_REPLAY_REGRESSION": "OR/XOR LOSS",
+    "PROTECTED_CAPABILITY_REGRESSION": "PROTECTED LOSS",
+    "PAIRED_SCREEN_WITHIN_BUDGET": "WITHIN BUDGET",
+}
+
+
+def _warning_text(event: dict) -> str:
+    decision = event.get("teacher_decision")
+    if not isinstance(decision, dict):
+        return "-"
+    warnings = [_signal_label(signal) for signal in decision.get("warning_signals", ())]
+    return ",".join(warnings) if warnings else "-"
+
+
+def _candidate_result_reason(event: dict) -> tuple[str, str]:
+    candidate = event.get("candidate_retention")
+    steps = event.get("retained_optimizer_updates")
+    if candidate is None and steps is None:
+        return "PEND", "EXAM PENDING"
+    if not isinstance(candidate, dict):
+        return "UNK", "ADMISSION UNKNOWN"
+    reason = str(candidate.get("reason") or "UNKNOWN")
+    reason = _REASON_LABELS.get(reason, reason)
+    if candidate.get("decision") == "PROVISIONAL" and type(steps) is int and steps > 0:
+        return "RETAIN", reason
+    if candidate.get("decision") == "REJECT" and steps == 0:
+        return "REJECT", reason
+    return "CONFLT", "ADMISSION CONFLICT"
+
+
 def _candidate_admission_text(event: dict) -> str:
     """Distinguish an attempted lesson from student/AdamW promotion."""
     candidate = event.get("candidate_retention")
@@ -147,6 +179,7 @@ def _candidate_retention_row(event: dict, grade: str, attempt: int) -> dict | No
         "worst": ("0" if worst == 0 else f"-{worst}"
                   if type(worst) is int and worst > 0 else "-"),
         "decision": str(retention.get("decision") or "UNKNOWN"),
+        "result": str(retention.get("decision") or "UNKNOWN"),
         "evidence": evidence,
     }
 
@@ -216,37 +249,38 @@ def _unmeasured_outcome_counts(outcomes: list[dict]) -> str:
 # the data actually measures. The old School50 TABLES constant is untouched.
 LETTER_TABLES = (
     ("CANDIDATES", (
-        Column("CAPABILITY", 13, "capability"),
+        Column("CAPABILITY", 10, "capability"),
         Column("VISIT", 5, "attempt", right=True),
         Column("POLICY", 10, "strategy", optional=True),
-        Column("LR", 8, "lr", optional=True),
-        Column("LESSON% BFR>AFTER", 18, "train"),
+        Column("LR", 2, "lr", optional=True, right=True),
+        Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
         Column("REWARD", 8, "reward", right=True),
-        Column("LOSS", 8, "loss"),
-        Column("GRAD", 10, "gradient"),
-        Column("METHOD", 12, "method"),
+        Column("LOSS", 5, "loss"),
+        Column("GRAD", 5, "gradient", right=True),
+        Column("METHOD", 6, "method"),
         Column("OLDpp", 8, "old", optional=True, right=True),
-        Column("DECISION / REASON", 30, "decision"))),
+        Column("RESULT", 6, "result"),
+        Column("REASON", 24, "reason"),
+        Column("WARNINGS", 12, "warnings"))),
     ("SENTINEL & RETENTION", (
-        Column("GRADE", 6, "grade"),
-        Column("CAPABILITY", 13, "capability"),
+        Column("CAPABILITY", 10, "capability"),
         Column("VISIT", 6, "attempt", right=True),
         Column("TARGET", 13, "target", right=True),
         Column("DTGT", 6, "target_delta", right=True),
         Column("PROT", 6, "protected", right=True),
         Column("WORST", 6, "worst", right=True),
-        Column("RESULT", 12, "decision"),
+        Column("RESULT", 6, "result"),
         Column("EVIDENCE", 28, "evidence", optional=True))),
     ("SOUP & TEACHER", (
-        Column("GRADE", 5, "grade"),
+        Column("CAPABILITY", 10, "capability"),
         Column("VISIT", 5, "attempt", right=True),
         Column("POLICY", 10, "policy", optional=True),
-        Column("LR", 8, "lr"),
-        Column("DEPTH", 5, "depth", right=True),
-        Column("CONTRAST", 8, "contrast", right=True),
+        Column("LR", 2, "lr", right=True),
+        Column("D", 1, "depth", right=True),
+        Column("C", 1, "contrast", right=True),
         Column("SOUP_KL", 8, "soup", optional=True, right=True),
         Column("COVER", 7, "cover", optional=True, right=True),
-        Column("OLD", 7, "old", optional=True),
+        Column("OLD", 3, "old", optional=True, right=True),
         Column("PREVIEW", 8, "preview", optional=True),
         Column("DISTILL", 8, "distill", optional=True),
         Column("CREDIT", 7, "credit", right=True),
@@ -254,7 +288,7 @@ LETTER_TABLES = (
         Column("PAR_KL", 9, "parent", optional=True, right=True),
         Column("BRG_CE", 9, "bridge_ce", optional=True, right=True))),
     ("GRADES & MASTERY", (
-        Column("FAMILY", 16, "subject"),
+        Column("CAPABILITY", 10, "subject"),
         Column("STEP/EXAM", 13, "step_exam", right=True),
         Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
         Column("RIGHT[GREW]%", 14, "right_grew", right=True),
@@ -302,6 +336,25 @@ def _display(value: Any, *, decimals: int = 3) -> str:
             return f"{value:.2e}"
         return f"{value:.{decimals}f}"
     return "-"
+
+
+def _scaled_lr(value: Any) -> str:
+    if type(value) not in (float, int):
+        return "-"
+    return str(int(value * 100000 + 0.5))
+
+
+def _whole(value: Any) -> str:
+    if type(value) not in (float, int):
+        return "-"
+    return str(int(value + 0.5))
+
+
+def _score_quad(before: Any, top: Any, after: Any, total: Any) -> str:
+    if not all(type(value) is int for value in (before, after, total)) or total <= 0:
+        return "-"
+    top_text = f"{top:>3}" if type(top) is int else "  -"
+    return f"{before:>3}/{top_text}/{after:>3}/{total:>3}"
 
 
 def _delta(value: Any, *, pp: bool = False) -> str:
@@ -494,6 +547,22 @@ class SchoolTelemetry:
                                    f"at step {step} | NOT grade mastery")},
                         redraw=False)
 
+    def _title_correct(self, capability: str, total: int) -> int | None:
+        for row in getattr(self.board, "_champion_rows", ()):
+            if row.get("capability") != capability:
+                continue
+            best = row.get("best")
+            if not isinstance(best, str) or "/" not in best:
+                return None
+            left, right = best.split("/", 1)
+            try:
+                correct, recorded_total = int(left), int(right)
+            except ValueError:
+                return None
+            if recorded_total == total and 0 <= correct <= recorded_total:
+                return correct
+        return None
+
     def _visit(self, grade, event):
         generation = event.get("generation")
         live_ephemeral = event.get("_live_ephemeral") is True
@@ -519,17 +588,32 @@ class SchoolTelemetry:
         strategy = event.get("strategy") or {}
         unavailable = set(event.get("unavailable_teacher_dimensions") or ())
         policy = event.get("teacher_policy", "-")
-        train = (_percent(before) + ">" + _percent(after))
         gain = _delta(event.get("teacher_reward"))
+        retention = event.get("candidate_retention")
+        if isinstance(retention, dict):
+            probe_before = retention.get("active_probe_before")
+            probe_after = retention.get("active_probe_after")
+            probe_total = retention.get("active_probe_total")
+        else:
+            probe_before = probe_after = probe_total = None
+        top = (self._title_correct(cap, probe_total)
+               if type(probe_total) is int and probe_total > 0 else None)
+        result, reason = _candidate_result_reason(event)
         row = {
             "capability": cap, "attempt": self.visits,
-            "strategy": policy[:10], "lr": _display(strategy.get("lr"), decimals=5),
+            "strategy": policy[:10], "lr": _scaled_lr(strategy.get("lr")),
             "method": _instruction_method_text(event),
-            "train": train, "reward": gain,
+            "train": (_percent(before) + ">" + _percent(after)),
+            "score_line": _score_quad(probe_before, top, probe_after, probe_total),
+            "reward": gain,
             "loss": _display(event.get("loss")),
-            "gradient": (f"{event['gradient_norm']:.3g}" if type(event.get("gradient_norm")) in (float,int) else "-"),
+            "gradient": (f"{event['gradient_norm']:.2f}"
+                         if type(event.get("gradient_norm")) in (float, int) else "-"),
             "old": _delta(event.get("earlier_grade_delta_pp"), pp=True),
             "decision": _candidate_admission_text(event),
+            "result": result,
+            "reason": reason,
+            "warnings": _warning_text(event),
         }
         self.board.rows["CANDIDATES"].append(row)
         retention_row = _candidate_retention_row(event, grade, self.visits)
@@ -541,13 +625,17 @@ class SchoolTelemetry:
                 "kind": "COMPOSE", "grade": grade,
                 "detail": association + " | " + cap,
             }, redraw=False)
-        teacher = {"grade": grade, "attempt": self.visits, "policy": policy[:10],
-                   "lr": _display(strategy.get("lr"), decimals=5),
-                   "depth": strategy.get("depth", "-"),
-                   "contrast": _display(strategy.get("contrast")),
+        teacher = {"grade": grade, "capability": cap,
+                   "attempt": self.visits, "policy": policy[:10],
+                   "lr": _scaled_lr(strategy.get("lr")),
+                   "depth": _whole(strategy.get("depth")),
+                   "contrast": _whole(strategy.get("contrast")),
                    "credit": gain, "soup": "-", "cover": "-", "parent": "-"}
         for field in ("old", "preview", "distill"):
-            teacher[field] = "OFF" if field in unavailable else _display(strategy.get(field))
+            if field == "old":
+                teacher[field] = "OFF" if field in unavailable else _whole(strategy.get(field))
+            else:
+                teacher[field] = "OFF" if field in unavailable else _display(strategy.get(field))
         self.board.rows["SOUP & TEACHER"].append(teacher)
         attempted = event.get("attempted_optimizer_updates", 0)
         if type(attempted) is not int or attempted < 0:
@@ -808,6 +896,7 @@ class SchoolTelemetry:
             "protected": sent,
             "worst": _delta(event.get("worst_delta_pp"), pp=True),
             "decision": "SENTINEL",
+            "result": "SENTINEL",
             "evidence": (f"{event.get('family_count', '?')} families | "
                          f"CE {ce} P(C) {prob} M {margin}"),
             # Retain raw semantic aliases for programmatic consumers of v1.
@@ -824,7 +913,9 @@ class SchoolTelemetry:
                 any(ch not in string.hexdigits for ch in digest)):
             raise ValueError("SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED")
         self.board.rows["SOUP & TEACHER"].append({
-            "grade": grade, "attempt": event.get("generation", "-"),
+            "grade": grade,
+            "capability": event.get("capability") or event.get("family") or grade,
+            "attempt": event.get("generation", "-"),
             "policy": "TEACHER SOUP", "lr": "-", "depth": "-", "contrast": "-",
             "old": "-", "preview": "-", "distill": "-",
             "credit": _delta(event.get("teacher_credit")),

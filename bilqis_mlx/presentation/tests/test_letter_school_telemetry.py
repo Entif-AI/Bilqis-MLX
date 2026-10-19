@@ -8,7 +8,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from bilqis_mlx.presentation.dashboard import build, ingest
-from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES
+from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES, SchoolTelemetry
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard, TABLES
 
 
@@ -64,6 +64,112 @@ class SchoolTelemetryTests(unittest.TestCase):
                 },
             })
             self.assertEqual(board.rows["CANDIDATES"][-1]["method"], "COMPOSE+MISS")
+
+    def test_compact_visit_panels_share_capability_and_numeric_width_contract(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            capability = "B.VERYLONGCAPABILITY"
+            (root / "state.json").write_text(json.dumps({
+                "mentor_epoch": {"active_roles": {
+                    capability: {
+                        "capability": capability,
+                        "correct": 9,
+                        "total": 12,
+                        "breadth": 4,
+                        "checkpoint": {
+                            "sha256": "a" * 64,
+                            "optimizer_step": 125000,
+                        },
+                    },
+                }},
+            }))
+            board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                              tables=LETTER_TABLES)
+            board.school_telemetry = SchoolTelemetry(board, active_grades=("B",))
+            board.attach_champion_source(root)
+            ingest(board, {
+                "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                "grade": "B", "capability": capability,
+                "optimizer_step": 125016,
+                "attempted_optimizer_updates": 16,
+                "retained_optimizer_updates": 0,
+                "strategy": {
+                    "lr": 0.00013, "depth": 2, "contrast": 1.4,
+                    "old": 16.2, "preview": 2, "distill": 0.35,
+                },
+                "loss": 0.5583400726,
+                "gradient_norm": 14.004,
+                "teacher_decision": {
+                    "warning_signals": [
+                        "CHANCE_LEVEL_OR_LAGGING",
+                        "LACK_OF_DURABLE_GAIN",
+                    ],
+                    "selected": {"exam_mistake_replay": 3},
+                },
+                "candidate_retention": {
+                    "active_capability": capability,
+                    "active_probe_before": 10,
+                    "active_probe_after": 8,
+                    "active_probe_total": 12,
+                    "local_correct_delta": -2,
+                    "protected_net_correct_delta": 0,
+                    "worst_protected_loss": 0,
+                    "decision": "REJECT",
+                    "reason": "NO_MEASURABLE_TARGET_GAIN",
+                },
+            })
+
+            tables = dict(LETTER_TABLES)
+            self.assertEqual(
+                [(c.name, c.width) for c in tables["CANDIDATES"]],
+                [
+                    ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
+                    ("LR", 2), ("WAS/TOP/NOW/ALL", 15), ("REWARD", 8),
+                    ("LOSS", 5), ("GRAD", 5), ("METHOD", 6),
+                    ("OLDpp", 8), ("RESULT", 6), ("REASON", 24),
+                    ("WARNINGS", 12),
+                ],
+            )
+            self.assertEqual(
+                [(c.name, c.width) for c in tables["SENTINEL & RETENTION"]],
+                [
+                    ("CAPABILITY", 10), ("VISIT", 6), ("TARGET", 13),
+                    ("DTGT", 6), ("PROT", 6), ("WORST", 6),
+                    ("RESULT", 6), ("EVIDENCE", 28),
+                ],
+            )
+            self.assertEqual(
+                [(c.name, c.width) for c in tables["SOUP & TEACHER"][:7]],
+                [
+                    ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
+                    ("LR", 2), ("D", 1), ("C", 1), ("SOUP_KL", 8),
+                ],
+            )
+            self.assertEqual(tables["GRADES & MASTERY"][0].name, "CAPABILITY")
+            self.assertEqual(tables["GRADES & MASTERY"][0].width, 10)
+
+            candidate = board.rows["CANDIDATES"][-1]
+            self.assertEqual(candidate["lr"], "13")
+            self.assertEqual(candidate["score_line"], " 10/  9/  8/ 12")
+            self.assertEqual(candidate["gradient"], "14.00")
+            self.assertEqual(candidate["result"], "REJECT")
+            self.assertEqual(candidate["reason"], "NO TARGET GAIN")
+            self.assertEqual(candidate["warnings"], "S2,S3")
+
+            retention = board.rows["SENTINEL & RETENTION"][-1]
+            self.assertEqual(retention["capability"], capability)
+            self.assertEqual(retention["decision"], "REJECT")
+
+            soup = board.rows["SOUP & TEACHER"][-1]
+            self.assertEqual(soup["capability"], capability)
+            self.assertEqual(soup["lr"], "13")
+            self.assertEqual(soup["depth"], "2")
+            self.assertEqual(soup["contrast"], "1")
+            self.assertEqual(soup["old"], "16")
+
+            rendered = board.render(width=180, height=44)
+            self.assertNotIn(capability, rendered)
+            self.assertIn("B.VERYLON~", rendered)
 
     def test_candidate_retention_populates_retention_panel_with_real_decision(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -268,7 +374,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             columns = dict(LETTER_TABLES)["GRADES & MASTERY"]
             self.assertEqual(
                 [column.name for column in columns],
-                ["FAMILY", "STEP/EXAM", "WAS/TOP/NOW/ALL",
+                ["CAPABILITY", "STEP/EXAM", "WAS/TOP/NOW/ALL",
                  "RIGHT[GREW]%", "OUTCOME"],
             )
 
@@ -382,11 +488,12 @@ class SchoolTelemetryTests(unittest.TestCase):
             history_error = next(row for row in system if row["kind"] == "HISTORY ISSUE")
             self.assertIn("paired S3 recovered", history_error["detail"])
 
-    def test_lesson_accuracy_is_not_labeled_as_cumulative_exam(self):
+    def test_candidate_probe_score_uses_same_compact_score_shape_as_mastery(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())
             labels = [column.name for column in dict(board.tables)["CANDIDATES"]]
-            self.assertIn("LESSON% BFR>AFTER", labels)
+            self.assertIn("WAS/TOP/NOW/ALL", labels)
+            self.assertNotIn("LESSON% BFR>AFTER", labels)
             self.assertNotIn("TRAIN BEFORE>AFTER", labels)
 
     def test_rotating_live_cohort_exams_never_report_cross_sample_gain(self):
@@ -875,7 +982,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertIn("RIGHT[GREW]%", display)
             self.assertIn("67% [+17%]", display)
             self.assertNotIn("BRIDGE FAMILIES", display)
-            self.assertIn("1.2e-10", display)
+            self.assertIn("0.00", display)
 
     def test_generalization_gap_is_observational_not_an_optimizer_decision(self):
         with tempfile.TemporaryDirectory() as tmp:

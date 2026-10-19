@@ -445,9 +445,9 @@ class OperatorTests(unittest.TestCase):
                            "source_training_accuracy_after": .75,
                            "teacher_reward": .25, "next_phase": "MAIN"})
             shown = board.render(width=115, height=38)
-            self.assertIn("LESSON COMMITTED", shown)
+            self.assertIn("PEND", shown)
+            self.assertIn("EXAM PENDING", shown)
             self.assertIn("116776", shown)
-            self.assertIn("exam pending", shown)
 
     def test_letter_renderer_folds_bridge_families_into_mastery(self):
         self.assertEqual([name for name,_ in TABLES],[
