@@ -455,7 +455,7 @@ class OperatorTests(unittest.TestCase):
             output = board.render(width=115, height=38)
             self.assertIn("SEALED EXAM | RECOVERY_1", output)
             self.assertIn("36/ 36/ 36/ 72", output)
-            self.assertIn("50% [0%]", output)
+            self.assertIn(" 50% [  0%]", output)
             self.assertIn("50.0%", output)
             self.assertIn("RECOVERY_1", output)
             self.assertFalse((run / "state.json").exists())

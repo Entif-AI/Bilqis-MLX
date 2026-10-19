@@ -124,18 +124,18 @@ class SchoolTelemetryTests(unittest.TestCase):
                 [(c.name, c.width) for c in tables["CANDIDATES"]],
                 [
                     ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
-                    ("LR", 2), ("WAS/TOP/NOW/ALL", 15), ("REWARD", 8),
+                    ("LR", 2), ("WAS/TOP/NOW/ALL", 15), ("REWARD", 6),
                     ("LOSS", 5), ("GRAD", 5), ("METHOD", 6),
                     ("OLDpp", 8), ("RESULT", 6), ("REASON", 24),
-                    ("WARNINGS", 12),
+                    ("WARNINGS", 10),
                 ],
             )
             self.assertEqual(
                 [(c.name, c.width) for c in tables["SENTINEL & RETENTION"]],
                 [
-                    ("CAPABILITY", 10), ("VISIT", 6), ("TARGET", 13),
-                    ("DTGT", 6), ("PROT", 6), ("WORST", 6),
-                    ("RESULT", 6), ("EVIDENCE", 28),
+                    ("CAPABILITY", 10), ("VISIT", 5), ("TARGET", 8),
+                    ("DTGT", 4), ("PROT", 4), ("WRST", 4),
+                    ("RESULT", 6), ("EVIDENCE", 20),
                 ],
             )
             self.assertEqual(
@@ -181,13 +181,13 @@ class SchoolTelemetryTests(unittest.TestCase):
                 [
                     ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
                     ("LR", 2), ("D", 1), ("C", 1), ("OLD", 3),
-                    ("DISTILL", 7), ("CREDIT", 7),
+                    ("DSTIL", 5), ("CREDIT", 7),
                 ],
             )
             self.assertEqual(
                 [(column.name, column.width)
                  for column in tables["SYSTEM & QUALIFICATION"]],
-                [("TYPE", 13), ("DETAILS", 41)],
+                [("TYPE", 7), ("DETAILS", 38)],
             )
 
             board.rows["SYSTEM & QUALIFICATION"].append({
@@ -197,7 +197,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             system = board._section_rows("SYSTEM & QUALIFICATION")[-1]
             self.assertEqual(
                 system["detail"],
-                "B: active S2:B.OR | 14 NOT MEASURED",
+                "S2[OR] 14 NM",
             )
 
             rendered = board.render(width=210, height=40)
@@ -209,6 +209,52 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertNotIn("PREVIEW", rendered)
             self.assertNotIn("PAR_KL", rendered)
             self.assertNotIn("BRG_CE", rendered)
+
+    def test_mastery_growth_keeps_right_and_grew_subcolumns_aligned(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                          tables=LETTER_TABLES)
+        board.rows["GRADES & MASTERY"].extend([
+            {"grade": "A", "step": 1, "attempt": 1, "start": "12/12",
+             "latest": "12/12", "best": "12/12", "outcome": "PASS"},
+            {"grade": "B", "step": 1, "attempt": 1, "start": "12/12",
+             "latest": "9/12", "best": "12/12", "outcome": "REGRESSED"},
+        ])
+        rows = [row for row in board._section_rows("GRADES & MASTERY")
+                if row.get("row_type") == "summary"]
+        self.assertEqual(rows[0]["right_grew"], "100% [  0%]")
+        self.assertEqual(rows[1]["right_grew"], " 75% [-25%]")
+        self.assertEqual(
+            rows[0]["right_grew"].index("["),
+            rows[1]["right_grew"].index("["),
+        )
+
+    def test_system_feed_compacts_known_rows_and_keeps_latest_state_per_kind_and_grade(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                          tables=LETTER_TABLES)
+        system = board.rows["SYSTEM & QUALIFICATION"]
+        system.extend([
+            {"kind": "DIAGNOSTIC", "grade": "B",
+             "detail": "active S1:B.AND, S2:B.IFF | S3 unavailable | 14 NOT MEASURED"},
+            {"kind": "TEACH OUTCOME", "grade": "B",
+             "detail": "NOT_MEASURED_CHANGED_EXAM x3"},
+            {"kind": "CAP BEST", "grade": "B",
+             "detail": ("Best slots: A.LINK 12/12, A.PARENT 12/12, "
+                        "B.IFF 8/12, B.OR 7/12 at step 125944 | NOT grade mastery")},
+            {"kind": "CHAMPION", "grade": "B",
+             "detail": "No title change: DENY_EARNING_QUESTION_REGRESSION | step 125944"},
+            {"kind": "DIAGNOSTIC", "grade": "B",
+             "detail": ("active S2:B.IFF, S2:B.NOT, S2:B.OR | "
+                        "S3 unavailable | 14 NOT MEASURED")},
+        ])
+
+        rows = board._section_rows("SYSTEM & QUALIFICATION")
+        self.assertEqual(
+            [row["kind"] for row in rows],
+            ["B:TEACH", "B:CHAMP", "B:DIAG"],
+        )
+        self.assertEqual(rows[0]["detail"], "NM CHANGED EXAM x3")
+        self.assertEqual(rows[1]["detail"], "NO TITLE: DENY QUESTION REG @125944")
+        self.assertEqual(rows[2]["detail"], "S2[IFF,NOT,OR] S3 OFF 14 NM")
 
     def test_candidate_retention_populates_retention_panel_with_real_decision(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -402,12 +448,12 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(summary["subject"], "B")
             self.assertEqual(summary["step_exam"], "125656/5463")
             self.assertEqual(summary["score_line"], " 30/ 47/ 39/ 72")
-            self.assertEqual(summary["right_grew"], "54% [+13%]")
+            self.assertEqual(summary["right_grew"], " 54% [+13%]")
             self.assertEqual(summary["outcome"], "NO TITLE CHANGE")
             self.assertEqual(family["subject"], "B.OR")
             self.assertEqual(family["step_exam"], "125656/5463")
             self.assertEqual(family["score_line"], "  5/  7/  8/ 12")
-            self.assertEqual(family["right_grew"], "67% [+25%]")
+            self.assertEqual(family["right_grew"], " 67% [+25%]")
             self.assertEqual(family["outcome"], "CHAMP @125096 | br5")
 
             columns = dict(LETTER_TABLES)["GRADES & MASTERY"]
