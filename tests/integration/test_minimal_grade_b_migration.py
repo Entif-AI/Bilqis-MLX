@@ -22,6 +22,7 @@ from bilqis_mlx.runtime.state import _fingerprint
 from bilqis_mlx.runtime.assessment import _candidate_cohort, _introduced_cohort
 from bilqis_mlx.trainer import (
     VERSION, _activate_replaced_admitted_grade, _commit_scored_student,
+    _repair_scope_rubric_evidence,
 )
 
 
@@ -163,6 +164,73 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
         self.assertEqual(
             {item["rubric"] for item in frontier.values()},
             {self.new.grades[0].assessment_sha256})
+
+    def test_resume_repairs_mislabeled_scope_evidence_without_neural_update(self):
+        student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
+        school = start_new(self.new, student)
+        a_rubric = self.new.grades[0].assessment_sha256
+        b_rubric = self.new.grades[-1].assessment_sha256
+        receipt = {
+            "schema": VERSION,
+            "generation": 7,
+            "run_id": "scope-repair-fixture",
+            "school": asdict(school),
+            "model_bundle": student.filename,
+            "curriculum_mode": self.new.version,
+            "result": "ACTIVE_GRADE_A",
+            "semantic_graph_sha256": _fingerprint(self.graph),
+            "championship_school_identity": {"fixture": True},
+            "live_rubric_sha256": a_rubric,
+            "capability_best": {
+                b_rubric + ":A.IDENTITY": {
+                    "capability": "A.IDENTITY",
+                    "rubric": b_rubric,
+                    "correct": 12,
+                    "total": 12,
+                    "checkpoint": asdict(student),
+                    "evaluation_id": "capability-evaluation/bad",
+                },
+            },
+            "championship_epoch_history": [],
+            "mentor_epoch": {
+                "schema": "fixture",
+                "active_roles": {
+                    "A.IDENTITY": {
+                        "capability": "A.IDENTITY",
+                        "rubric": b_rubric,
+                        "cohort_sha256": "c" * 64,
+                        "checkpoint": asdict(student),
+                    },
+                },
+                "active_grade_soups": {"A": {"grade": "A"}},
+            },
+            "last_exam": {
+                "student_sha256": student.sha256,
+                "optimizer_step": student.optimizer_step,
+                "exam_rubric_sha256": a_rubric,
+                "scores": {
+                    cap.id: {"correct": 12, "total": 12}
+                    for cap in self.new.grades[0].capabilities
+                },
+            },
+        }
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            repaired = _repair_scope_rubric_evidence(root, receipt, self.new)
+            events = [
+                json.loads(line)
+                for line in (root / "events.jsonl").read_text().splitlines()
+            ]
+        self.assertEqual(repaired["generation"], 8)
+        self.assertEqual(repaired["school"]["current_student"], asdict(student))
+        self.assertEqual(repaired["capability_best"], {})
+        self.assertEqual(repaired["mentor_epoch"]["active_roles"], {})
+        self.assertEqual(repaired["mentor_epoch"]["active_grade_soups"], {})
+        self.assertEqual(len(repaired["championship_epoch_history"]), 1)
+        self.assertEqual(
+            events[-1]["event"], "SCHOOL_SCOPE_RUBRIC_EVIDENCE_REPAIRED")
+        self.assertEqual(events[-1]["actual_neural_updates"], 0)
+        self.assertTrue(events[-1]["model_and_own_adamw_unchanged"])
 
 
 if __name__ == "__main__":

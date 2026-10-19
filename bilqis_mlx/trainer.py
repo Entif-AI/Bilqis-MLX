@@ -1535,6 +1535,66 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
     return json.loads(_canonical(record))
 
 
+def _repair_scope_rubric_evidence(run_dir, receipt, course):
+    """Repair evidence minted by the historical course-rubric/scope-rubric conflation."""
+    exam = receipt.get("last_exam") or {}
+    exam_rubric = exam.get("exam_rubric_sha256")
+    scores = exam.get("scores") or {}
+    epoch = receipt.get("mentor_epoch")
+    frontier = receipt.get("capability_best") or {}
+    if (not isinstance(exam_rubric, str) or len(exam_rubric) != 64 or
+            not scores or not isinstance(epoch, dict) or not frontier):
+        return receipt
+    scored = set(scores)
+    wrong_frontier = {
+        key: item for key, item in frontier.items()
+        if item.get("capability") in scored and item.get("rubric") != exam_rubric
+    }
+    wrong_roles = {
+        cap: item for cap, item in epoch.get("active_roles", {}).items()
+        if cap in scored and item.get("rubric") != exam_rubric
+    }
+    if not wrong_frontier and not wrong_roles:
+        return receipt
+    school = _state_from_json(receipt["school"], course)
+    history = [*receipt.get("championship_epoch_history", ()), deepcopy(epoch)]
+    reset = begin_initial_epoch(
+        student=asdict(school.current_student),
+        introduced_grade=school.grade,
+        source_graph_sha256=receipt["semantic_graph_sha256"],
+        frontier={}, soups={})
+    reset["settled_matchups"] = {}
+    reset["championship_school_identity"] = receipt["championship_school_identity"]
+    kept = {key: item for key, item in frontier.items() if key not in wrong_frontier}
+    repaired = {
+        **receipt,
+        "capability_best": kept,
+        "mentor_epoch": reset,
+        "championship_epoch_history": history,
+        "live_rubric_sha256": exam_rubric,
+    }
+    record = _advance(
+        run_dir, repaired, school, frontier=kept,
+        result=receipt.get("result"), persist=False)
+    event = {
+        "event": "SCHOOL_SCOPE_RUBRIC_EVIDENCE_REPAIRED",
+        "generation": record["generation"],
+        "source_generation": receipt["generation"],
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "assessment_rubric_sha256": exam_rubric,
+        "invalidated_frontier_capabilities":
+            sorted(item["capability"] for item in wrong_frontier.values()),
+        "invalidated_championship_roles": sorted(wrong_roles),
+        "archived_bad_epoch": True,
+        "actual_neural_updates": 0,
+        "model_and_own_adamw_unchanged": True,
+    }
+    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
+    _reconcile_delivery_outbox(run_dir, record)
+    return record
+
+
 def _reconcile_vocabulary_metadata(run_dir, receipt, course, parameters,
                                    optimizer, graph):
     """Repair historical stale size metadata by a NEW immutable generation.
@@ -4143,6 +4203,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         course = plan.successor
                     else:
                         raise ValueError("FACTORY_UNKNOWN_SUCCESSOR_TRANSITION")
+            receipt = _repair_scope_rubric_evidence(run_dir, receipt, course)
         else:
             if numeric_staircase:
                 raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
