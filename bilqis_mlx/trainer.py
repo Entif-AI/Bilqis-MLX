@@ -2592,7 +2592,7 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
                 not _compatible_graphs(loaded_graph, graph)):
             raise ValueError("CHAMPIONSHIP_EPOCH_INCOMPARABLE_INCUMBENT_GRAPH")
         del own_adamw
-        challenge_caps = set(grades[school.grade])
+        challenge_caps = set(grades[challenger["challenge_grade"]])
         grade_rows = tuple(row for row in cohort.rows
                            if row["capability"] in challenge_caps)
         grade_cohort = make_cohort(

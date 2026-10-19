@@ -145,6 +145,53 @@ class ChampionshipExamTests(TestCase):
         self.assertEqual(set(incumbents["a" * 64]["scores"]), {"A.X"})
         self.assertEqual({r["capability"] for r in inference.call_args.args[2]}, {"A.X"})
 
+    def test_checkpoint_origin_grade_selects_incumbent_panel_during_cross_grade_replay(self):
+        old = {"tokens": ["PAD", "TRUE"], "nodes": [0, 1], "row_contract_sha256": {}}
+        graph = {"tokens": ["PAD", "TRUE"], "nodes": [0, 1], "row_contract_sha256": {}}
+        incumbent = {"filename": "bundles/old", "sha256": "a" * 64,
+                     "optimizer_step": 10, "model_and_native_adamw": True}
+        current = Checkpoint("b" * 64, "bundles/current", 20, True)
+        course = SimpleNamespace(grades=[
+            SimpleNamespace(id="A", capabilities=[SimpleNamespace(id="A.X")]),
+            SimpleNamespace(id="B", capabilities=[SimpleNamespace(id="B.X")]),
+        ])
+        cohort = make_cohort([
+            {"id": f"{cap}:{i}", "capability": cap, "gold": "TRUE", "tokens": [1]}
+            for cap in ("A.X", "B.X") for i in range(2)],
+            generator_version="fixture", seed=8, rubric_version="fixture")
+        receipt = {
+            "config": {}, "answer_ids": [1], "source_manifest_sha256": "c" * 64,
+            "championship_school_identity": {"sha256": "f" * 64},
+            "championship_checkpoint_origins": {"b" * 64: "B"},
+            "mentor_epoch": {
+                "introduced_grade": "B",
+                "source_graph_sha256": trainer._fingerprint(graph),
+                "championship_school_identity": {"sha256": "f" * 64},
+                "active_roles": {
+                    "B.X": {"capability": "B.X", "correct": 1, "total": 2,
+                            "origin_grade": "B", "checkpoint": incumbent},
+                },
+            },
+        }
+        scores = {cap: {"correct": 2, "total": 2} for cap in ("A.X", "B.X")}
+        with (
+            TemporaryDirectory() as temp,
+            patch.object(trainer, "assessment_capabilities", return_value=tuple(scores)),
+            patch.object(trainer, "_cohort_contract",
+                         return_value=("d" * 64, "fixture", "fixture", "e" * 64)),
+            patch.object(trainer, "load_semantically_bound_bundle", return_value=(
+                {}, None, {"safetensors_sha256": "a" * 64, "optimizer_step": 10}, old)),
+            patch.object(trainer, "_predictions", side_effect=lambda _m, _w, rows, *_: {
+                row["id"]: row["gold"] for row in rows}) as inference,
+        ):
+            _, challenger, incumbents = trainer._epoch_paired_examinations(
+                None, Path(temp), receipt, course,
+                SimpleNamespace(current_student=current, grade="A"),
+                cohort, scores, {r["id"]: r["gold"] for r in cohort.rows}, graph)
+        self.assertEqual(challenger["challenge_grade"], "B")
+        self.assertEqual(set(incumbents["a" * 64]["scores"]), {"B.X"})
+        self.assertEqual({r["capability"] for r in inference.call_args.args[2]}, {"B.X"})
+
     def test_legacy_earning_witness_preserves_compatible_historical_graph(self):
         old = {"tokens": ["PAD", "TRUE"], "nodes": [0, 1],
                "row_contract_sha256": {"PAD": "p", "TRUE": "t"}}
