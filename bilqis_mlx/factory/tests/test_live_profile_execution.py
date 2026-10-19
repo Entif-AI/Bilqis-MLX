@@ -33,6 +33,9 @@ class LiveProfileExecutionTests(unittest.TestCase):
                 CapabilityProfile, CurriculumProfile, GradeProfile,
                 compile_execution_plan,
             )
+            from bilqis_mlx.factory.executable_release import (
+                ExecutableFactoryRelease, compile_executable_factory_release,
+            )
             from bilqis_mlx.factory.generation import draw_execution_rows
             from bilqis_mlx.factory.live_releases import boolean_successor, initial_course
             from bilqis_mlx.grade_a_probe import read_sources
@@ -80,9 +83,7 @@ class LiveProfileExecutionTests(unittest.TestCase):
                     fixed_domain(("NOT", "AND", "OR", "XOR", "IMPLIES", "IFF")),
                     lambda value: "cogal.operator." + value),
             ))
-            plan = compile_execution_plan(
-                curriculum,
-                CurriculumProfile(
+            profile = CurriculumProfile(
                     "boolean-kernel/and-iff",
                     grades=(GradeProfile(
                         "B",
@@ -99,7 +100,10 @@ class LiveProfileExecutionTests(unittest.TestCase):
                                     ("boolean_operator", ("AND", "IFF")),)),
                         ),
                     ),),
-                ),
+                )
+            plan = compile_execution_plan(
+                curriculum,
+                profile,
                 registry,
                 source_bindings=bindings,
                 answer_registry=answers,
@@ -125,6 +129,23 @@ class LiveProfileExecutionTests(unittest.TestCase):
             assert {row["gold"] for row in identified} == {"AND", "IFF"}
             assert all(tuple(row["operator_options"]) == ("AND", "IFF")
                        for row in identified)
+
+            release = compile_executable_factory_release(
+                curriculum, bindings, profile, registry, answers,
+                source_root=source, graph=graph, verification_seed=2026101903,
+                legacy_course=course)
+            assert release.execution_plan == plan
+            assert "source.micro.boolean-minimal/v1" not in {
+                cap.provider_id for cap in release.execution_plan.capabilities}
+            assert release.verification.assessments[-1].cumulative_scope == (
+                *tuple(cap.id for cap in course.grades[0].capabilities),
+                "B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS")
+            assert release.verification.assessments[-1].seal_sha256 != (
+                plan.grade_map["B"].assessment_blueprint_sha256)
+            restored = ExecutableFactoryRelease.from_manifest(
+                json.loads(json.dumps(release.manifest())),
+                release.release_sha256)
+            assert restored == release
             print("LIVE_PROFILE_EXECUTION_OK")
         ''')
         result = subprocess.run(

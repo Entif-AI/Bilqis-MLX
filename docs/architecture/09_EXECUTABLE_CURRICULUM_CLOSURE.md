@@ -333,11 +333,13 @@ Rejected: a callback/plugin registry for every runtime subsystem. That would mer
 - `typed_answer_training.py` still contains modality-specific runtime validation. It must move behind the typed answer-modality registry without weakening ABI checks.
 - Persisted evidence needs an explicit dependency map before runtime cutover so reconciliation is scoped rather than global.
 - Historical release IDs must decode into semantic curriculum + source bindings + full profile under `compatibility/`; they must not remain live successor policy.
-- `FactoryRelease` has not yet been migrated to carry the new execution plan, answer-modality descriptors, sealed profile assessments, and predecessor lineage. Runtime cutover is blocked until that is complete.
+- The target executable release artifact now exists as schema `bilqis.mlx.factory-release/v2`. It binds the canonical curriculum, source bindings, profile, compiled plan, provider implementation descriptors, answer-modality descriptors and semantic-token head bindings, semantic catalog digest, source-verified admission specimens, cumulative verified assessment seals, and optional predecessor delta. The historical v1 `Course`-based release hash/decoder remains byte-stable compatibility evidence and is not the target live authority.
+- V2 admission specimens prove that the configured provider/oracle/answer contract can generate the required minimum verified sample under the compiled plan. Their hashes bind the declared coverage projection; they do **not** claim exhaustive semantic-axis saturation or become the routine exam cohort.
+- Runtime admission still consumes v1. No trainer, scheduler, championship, telemetry or CLI consumer may be moved to v2 until the v2 artifact and transition tests are checkpointed and the admission boundary is migrated explicitly.
 
 ## Next implementation step
 
-Wave 0.5 is a proof scaffold, not a live cutover. Finish the stronger closure baseline and commit the review-corrected semantic/source/profile split. Then implement Wave 1: make `FactoryRelease` the immutable carrier of the compiled execution plan and final sealed assessment authority before migrating any live runtime consumer.
+Wave 0.5 is committed and Wave 1 now has an isolated v2 artifact proof. Finish and checkpoint v2 compatibility, tamper, real-provider, source-verification and transition evidence before migrating the runtime admission boundary. Live consumers remain blocked.
 
 ## Migration sequence
 
@@ -351,11 +353,13 @@ Exit gate: mutation tests distinguish roster, schedule, assessment, source, answ
 
 ### Wave 1: make FactoryRelease carry the executable plan
 
-Persist the profile identity and compiled execution plan in the immutable factory-release artifact. Runtime admission reads the plan from that artifact instead of recompiling policy from `Course` and release constants.
+Persist the profile identity and compiled execution plan in the immutable factory-release artifact. The v2 artifact also binds semantic catalog identity, exact provider/modality implementation descriptors, compiled answer-head identity, source-verified admission specimens and cumulative verified assessment seals. Runtime admission will read the plan from that artifact instead of recompiling policy from `Course` and release constants.
 
-Historical factory-release manifests remain readable through a compatibility decoder that projects them to a full-profile execution plan. The compatibility decoder is not callable as a live successor selector.
+Historical v1 factory-release manifests and hashes remain byte-stable. Their decoder is a compatibility boundary only. It must not become a live successor selector or a second canonical factory path.
 
-Exit gate: a fresh release has one content-addressed artifact containing semantic provenance plus its complete executable projections.
+The verified assessment seal is not a frozen routine question bank. It proves that release compilation generated and independently source-checked the admitted minimum specimen set for every capability in the cumulative grade scope and binds those receipts to the assessment blueprint. Routine assessment still follows its own fresh-cohort lifetime contract.
+
+Exit gate: a fresh v2 release has one content-addressed artifact containing semantic provenance, executable projections, implementation identities, semantic-catalog binding, source-verification receipts, assessment seals and predecessor transition metadata; v1 hashes remain unchanged.
 
 ### Wave 2: cut runtime consumers over by projection
 

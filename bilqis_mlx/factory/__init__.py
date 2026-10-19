@@ -45,6 +45,14 @@ from .execution import (
     compile_execution_plan,
     diff_execution_plans,
 )
+from .executable_release import (
+    AnswerHeadBinding,
+    CapabilityVerificationReceipt,
+    ExecutableFactoryRelease,
+    ExecutableVerificationReceipt,
+    VerifiedAssessmentSeal,
+    compile_executable_factory_release,
+)
 from .release import (
     admit_factory_release,
     compile_factory_release,
@@ -52,12 +60,14 @@ from .release import (
 
 __all__ = (
     "AdmissionReceipt",
+    "AnswerHeadBinding",
     "AssessmentClass",
     "AssessmentPlan",
     "AnswerModality",
     "AnswerModalityRegistry",
     "CapabilityDefinition",
     "CapabilityExecution",
+    "CapabilityVerificationReceipt",
     "CapabilityProjectionDigests",
     "CapabilityProfile",
     "CapabilitySourceBinding",
@@ -68,6 +78,8 @@ __all__ = (
     "CurriculumDefinition",
     "CurriculumProfile",
     "ExecutionPlan",
+    "ExecutableFactoryRelease",
+    "ExecutableVerificationReceipt",
     "FactoryRelease",
     "GradeDefinition",
     "GradeExecution",
@@ -82,8 +94,10 @@ __all__ = (
     "SourceBindingSet",
     "SourceAdapter",
     "TeachingOption",
+    "VerifiedAssessmentSeal",
     "admit_factory_release",
     "compile_answer_heads",
+    "compile_executable_factory_release",
     "compile_execution_plan",
     "compile_factory_release",
     "diff_execution_plans",

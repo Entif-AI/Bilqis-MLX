@@ -328,6 +328,10 @@ Make `FactoryRelease` carry the compiled execution plan and final source-verifie
 
 Historical manifests decode through compatibility projection. Compatibility decoding must not select live successors.
 
+**Current checkpoint:** schema `bilqis.mlx.factory-release/v2` is implemented as the target executable artifact while historical v1 remains byte-stable compatibility. V2 binds `CurriculumDefinition`, `SourceBindingSet`, `CurriculumProfile`, `ExecutionPlan`, semantic catalog identity, provider and answer-modality implementation descriptors, compiled semantic-token answer heads, source-verified capability specimen receipts, cumulative verified assessment seals, and predecessor transition metadata. Runtime admission still consumes v1 and has not been cut over.
+
+The v2 admission specimens are verification evidence, not a permanent test bank. They prove minimum source/oracle/answer-contract generation under the compiled release and bind the coverage projection. They do not claim exhaustive semantic-axis coverage or replace fresh routine cohorts.
+
 ### Wave 2: runtime consumers
 
 Migrate consumers by dependency:
