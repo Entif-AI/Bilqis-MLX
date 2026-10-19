@@ -62,6 +62,12 @@ from .executable_release import (
 )
 from .generation import draw_executable_release_rows
 from .live_answers import live_answer_registry
+from .schedule import (
+    ScheduleCapability,
+    ScheduleGrade,
+    ScheduleProgram,
+    schedule_program_from_executable_release,
+)
 from .release import (
     admit_factory_release,
     compile_factory_release,
@@ -100,6 +106,9 @@ __all__ = (
     "PlanLineage",
     "ProjectionDigests",
     "RegisteredAnswerModality",
+    "ScheduleCapability",
+    "ScheduleGrade",
+    "ScheduleProgram",
     "SemanticRelease",
     "SemanticGeometryChange",
     "SourceBindingSet",
@@ -117,6 +126,7 @@ __all__ = (
     "diff_execution_plans",
     "draw_executable_release_rows",
     "live_answer_registry",
+    "schedule_program_from_executable_release",
     "fixed_domain",
     "from_legacy_course",
     "qualification_complete",
