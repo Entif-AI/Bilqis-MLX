@@ -24,6 +24,9 @@ class LiveProfileExecutionTests(unittest.TestCase):
                 answer_heads as boolean_answer_heads,
                 build_course as build_identification,
                 draw_identification)
+            from bilqis_mlx.compatibility.executable_projection import (
+                project_legacy_course,
+            )
             from bilqis_mlx.factory.answers import (
                 AnswerModality, AnswerModalityRegistry, RegisteredAnswerModality,
                 fixed_domain,
@@ -41,7 +44,9 @@ class LiveProfileExecutionTests(unittest.TestCase):
             from bilqis_mlx.factory.generation import (
                 draw_executable_release_rows, draw_execution_rows,
             )
-            from bilqis_mlx.factory.live_releases import boolean_successor, initial_course
+            from bilqis_mlx.factory.live_releases import (
+                boolean_successor, initial_course, minimal_boolean_successor,
+            )
             from bilqis_mlx.grade_a_probe import read_sources
             from bilqis_mlx.grade_a_release import accepted_grade_a
             from bilqis_mlx.source_adapters.school import live_source_registry
@@ -51,7 +56,8 @@ class LiveProfileExecutionTests(unittest.TestCase):
             source = root.parent / "bilqis-mlx-retention-lab" / "vendor" / "legacy-v16"
             manifest = json.loads((
                 root / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
-            course = initial_course(accepted_grade_a(manifest))
+            grade_a = initial_course(accepted_grade_a(manifest))
+            course = grade_a
             course = boolean_successor(course, source)
             course = build_composite(course, source)
             course = build_identification(course, source)
@@ -169,6 +175,35 @@ class LiveProfileExecutionTests(unittest.TestCase):
             assert typed["boolean_operator"]["gold_labels"]
             assert set(typed["boolean_operator"]["gold_labels"]) == {
                 "AND", "IFF"}
+
+            historical_minimal = minimal_boolean_successor(grade_a, source)
+            projected_curriculum, projected_bindings, projected_profile, projected_course = (
+                project_legacy_course(
+                    historical_minimal, grade_a, source,
+                    answer_kinds=answers.kinds))
+            assert tuple(
+                cap.capability_id
+                for cap in projected_curriculum.grades[-1].capabilities
+            ) == (
+                "B.NOT", "B.AND", "B.OR", "B.XOR",
+                "B.IMPLIES", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS")
+            assert projected_profile.grades[0].enabled_capabilities == (
+                "B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS")
+            projected_plan = compile_execution_plan(
+                projected_curriculum, projected_profile, registry,
+                source_bindings=projected_bindings,
+                answer_registry=answers)
+            assert tuple(
+                projected_plan.grade_map["B"].capabilities
+            ) == ("B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS")
+            assert "source.micro.boolean-minimal/v1" not in {
+                cap.provider_id for cap in projected_plan.capabilities}
+            projected_release = compile_executable_factory_release(
+                projected_curriculum, projected_bindings, projected_profile,
+                registry, answers, source_root=source, graph=graph,
+                verification_seed=2026101904,
+                legacy_course=projected_course)
+            assert projected_release.execution_plan == projected_plan
             print("LIVE_PROFILE_EXECUTION_OK")
         ''')
         result = subprocess.run(
