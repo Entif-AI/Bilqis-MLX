@@ -595,10 +595,7 @@ class SchoolTelemetry:
                                        "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
                                        "SCHOOL_LIVE_EXAM_COMMITTED",
                                        "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED")
-        scope = (event.get("assessment_scope_sha256", "")
-                 if event.get("event") in (
-                     "SCHOOL_LIVE_EXAM_COMMITTED",
-                     "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED") else "")
+        scope = event.get("assessment_scope_sha256", "")
         cohort_sha = event.get("cohort_sha256") if live else None
         if live and (not isinstance(cohort_sha, str) or len(cohort_sha) != 64 or
                      not event.get("cohort_file") or not event.get("generator_version")):

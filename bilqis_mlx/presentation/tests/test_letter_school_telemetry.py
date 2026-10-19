@@ -426,6 +426,74 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertIn("A+C", scope["detail"])
             self.assertIn("B NOT EVALUATED", board.operator_lines[0])
 
+    def test_grade_a_live_exam_scope_separates_different_capability_inventory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            common = {
+                "event": "GRADE_A_LIVE_EXAM_COMMITTED",
+                "grade": "A",
+                "rubric": "a" * 64,
+                "generator_version": "grade-a-live/v1",
+                "optimizer_step": 200,
+                "student_sha256": "d" * 64,
+            }
+            ingest(board, {
+                **common,
+                "generation": 1,
+                "assessment_scope_sha256": "1" * 64,
+                "cohort_sha256": "2" * 64,
+                "cohort_file": f"cohorts/{'2' * 64}.json",
+                "scores": {
+                    "A.IDENTITY": {"correct": 12, "total": 12},
+                    "A.LINK": {"correct": 11, "total": 12},
+                },
+            })
+            ingest(board, {
+                **common,
+                "generation": 2,
+                "assessment_scope_sha256": "3" * 64,
+                "cohort_sha256": "4" * 64,
+                "cohort_file": f"cohorts/{'4' * 64}.json",
+                "scores": {
+                    "A.IDENTITY": {"correct": 12, "total": 12},
+                },
+            })
+
+            self.assertEqual(len(board.school_telemetry.latest), 2)
+
+    def test_grade_a_live_exam_same_scope_rejects_capability_inventory_drift(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            common = {
+                "event": "GRADE_A_LIVE_EXAM_COMMITTED",
+                "grade": "A",
+                "rubric": "a" * 64,
+                "assessment_scope_sha256": "1" * 64,
+                "generator_version": "grade-a-live/v1",
+                "optimizer_step": 200,
+                "student_sha256": "d" * 64,
+            }
+            ingest(board, {
+                **common,
+                "generation": 1,
+                "cohort_sha256": "2" * 64,
+                "cohort_file": f"cohorts/{'2' * 64}.json",
+                "scores": {
+                    "A.IDENTITY": {"correct": 12, "total": 12},
+                    "A.LINK": {"correct": 11, "total": 12},
+                },
+            })
+            with self.assertRaisesRegex(ValueError, "RUBRIC_ITEMS_DRIFT"):
+                ingest(board, {
+                    **common,
+                    "generation": 2,
+                    "cohort_sha256": "3" * 64,
+                    "cohort_file": f"cohorts/{'3' * 64}.json",
+                    "scores": {
+                        "A.IDENTITY": {"correct": 12, "total": 12},
+                    },
+                })
+
     def test_first_latest_best_and_regression_use_same_sealed_rubric(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())
