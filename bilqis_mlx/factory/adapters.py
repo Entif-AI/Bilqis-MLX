@@ -13,12 +13,16 @@ from .model import SourceAdapter
 
 
 Draw = Callable[..., tuple[dict, ...]]
+Enrich = Callable[..., tuple[dict, ...]]
+Check = Callable[..., bool]
 
 
 @dataclass(frozen=True)
 class RegisteredSourceAdapter:
     descriptor: SourceAdapter
     draw: Draw
+    check: Check
+    enrich: Enrich | None = None
 
 
 class SourceAdapterRegistry:
@@ -30,6 +34,8 @@ class SourceAdapterRegistry:
     def register(self, adapter: RegisteredSourceAdapter) -> None:
         if not isinstance(adapter, RegisteredSourceAdapter):
             raise TypeError("FACTORY_INVALID_REGISTERED_SOURCE_ADAPTER")
+        if not callable(adapter.draw) or not callable(adapter.check):
+            raise ValueError("FACTORY_SOURCE_CONSTRUCTOR_AND_CHECKER_REQUIRED")
         key = adapter.descriptor.generator_id
         if key in self._by_generator:
             raise ValueError("FACTORY_DUPLICATE_GENERATOR_ADAPTER:" + key)
@@ -55,56 +61,43 @@ class SourceAdapterRegistry:
                     result.append(item)
         return tuple(result)
 
+    def teaching_rows(self, course, *, capability: str, option_id: str,
+                      source_root, graph, seed: int) -> tuple[dict, ...]:
+        cap = course.capability_map.get(capability)
+        if cap is None:
+            raise ValueError("FACTORY_TEACHING_UNKNOWN_CAPABILITY:" + str(capability))
+        adapter = self.require(cap.lesson_generator, cap.independent_oracle)
+        if option_id not in adapter.descriptor.teaching_option_ids:
+            return ()
+        if adapter.enrich is None:
+            raise ValueError("FACTORY_TEACHING_OPTION_HAS_NO_IMPLEMENTATION:" + option_id)
+        rows = adapter.enrich(
+            source_root=source_root, graph=graph, course=course,
+            capability=capability, seed=seed, option_id=option_id)
+        if any(row.get("capability") != capability for row in rows):
+            raise ValueError("FACTORY_TEACHING_ENRICHMENT_SCOPE_DRIFT:" + capability)
+        return tuple(rows)
 
-def live_source_registry() -> SourceAdapterRegistry:
-    """Compatibility bindings for the currently admitted source domains.
+    def optional_teaching_rows(self, course, *, capability: str,
+                               source_root, graph, seed: int,
+                               enabled: bool) -> tuple[dict, ...]:
+        """Run every adapter-declared optional enrichment for one capability."""
+        if not enabled:
+            return ()
+        cap = course.capability_map.get(capability)
+        if cap is None:
+            raise ValueError("FACTORY_TEACHING_UNKNOWN_CAPABILITY:" + str(capability))
+        adapter = self.require(cap.lesson_generator, cap.independent_oracle)
+        rows = []
+        for option_id in adapter.descriptor.teaching_option_ids:
+            rows.extend(self.teaching_rows(
+                course, capability=capability, option_id=option_id,
+                source_root=source_root, graph=graph, seed=seed))
+        return tuple(rows)
 
-    All grade-neutral runtime callers consume this registry. These imports stay
-    isolated here until the underlying source functions are moved into their
-    final source-adapter packages.
-    """
-    from ..grade_a_oracle import VERSION as A_ORACLE
-    from ..live_grade_a import (GENERATOR as A_COHORT_GENERATOR, RELEASE as A_RELEASE,
-                                draw_predicates, generator_source_digest)
-    from ..grade_b_oracle import VERSION as B_ORACLE
-    from ..live_grade_b import (GENERATOR as B_COHORT_GENERATOR, RELEASE as B_RELEASE,
-                                draw_connectives, constructor_digest as b_digest)
-    from ..live_grade_c import (GENERATOR as C_COHORT_GENERATOR, RELEASE as C_RELEASE,
-                                PLANS, constructor_digest as c_digest)
-    from ..numeric_curriculum import ORACLE as C_ORACLE, draw_numeric
-    from ..numeric_staircase import RELEASE as STAIRCASE_RELEASE, constructor_digest as staircase_digest
-
-    def draw_a(*, source_root, graph, course, capability, seed, each):
-        return draw_predicates(source_root, graph, seed=seed,
-                               capability=capability, each=each)
-
-    def draw_b(*, source_root, graph, course, capability, seed, each):
-        return draw_connectives(source_root, graph, seed=seed,
-                                capability=capability, each=each)
-
-    def draw_c(*, source_root, graph, course, capability, seed, each):
-        cap = course.capability_map[capability]
-        numeric = next((family for family in cap.answer_families
-                        if family.kind == "numeric_active"), None)
-        if numeric is None:
-            raise ValueError("FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN")
-        maximum = len(numeric.values) - 1
-        return draw_numeric(PLANS, graph, seed=seed, maximum=maximum,
-                            capability=capability, each=each)
-
-    return SourceAdapterRegistry((
-        RegisteredSourceAdapter(SourceAdapter(
-            "source.micro.predicates/v1", "bilqis_mlx.grade_a_probe.make_record",
-            (A_ORACLE,), generator_source_digest(),
-            cohort_generator_id=A_COHORT_GENERATOR,
-            cohort_releases=((A_RELEASE, generator_source_digest()),)), draw_a),
-        RegisteredSourceAdapter(SourceAdapter(
-            "source.micro.boolean-connectives/v1", "bilqis_mlx.live_grade_b.draw_connectives",
-            (B_ORACLE,), b_digest(), cohort_generator_id=B_COHORT_GENERATOR,
-            cohort_releases=((B_RELEASE, b_digest()),)), draw_b),
-        RegisteredSourceAdapter(SourceAdapter(
-            "source.finite-numeric/v1", "bilqis_mlx.numeric_curriculum.draw_numeric",
-            (C_ORACLE,), c_digest(), cohort_generator_id=C_COHORT_GENERATOR,
-            cohort_releases=((C_RELEASE, c_digest()),
-                             (STAIRCASE_RELEASE, staircase_digest()))), draw_c),
-    ))
+    def teaching_option_ids(self, course, capability: str) -> tuple[str, ...]:
+        cap = course.capability_map.get(capability)
+        if cap is None:
+            raise ValueError("FACTORY_TEACHING_UNKNOWN_CAPABILITY:" + str(capability))
+        return self.require(
+            cap.lesson_generator, cap.independent_oracle).descriptor.teaching_option_ids

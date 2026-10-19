@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict, replace
 import hashlib
 import json
+from pathlib import Path
 
 from ..curriculum import Course, validate
 from ..curriculum_compiler import compile_ast
@@ -17,6 +18,7 @@ from .model import (
     AdmissionReceipt, AssessmentClass, AssessmentPlan, CapabilityDefinition,
     ConstructionProgram, CoveragePlan, FactoryRelease, GradeDefinition,
     SemanticRelease, TeachingOption,
+    assessment_plans,
 )
 
 
@@ -73,23 +75,11 @@ def compile_factory_release(course: Course, registry: SourceAdapterRegistry) -> 
         capability_id=cap.capability_id,
         variation_axes=adapters_by_id[cap.source_adapter_id].variation_axes,
         minimum_specimens=count_by_capability[cap.capability_id],
+        require_counterbalanced_gold="balanced-gold" in
+            adapters_by_id[cap.source_adapter_id].variation_axes,
     ) for cap in capabilities)
-    teaching_options = tuple(TeachingOption(
-        option_id="source.direct/" + cap.capability_id,
-        capability_id=cap.capability_id,
-        construction_program_id=cap.capability_id,
-        source_grounded=True,
-        supervised_gold_allowed=True,
-    ) for cap in capabilities)
-    assessments = tuple(
-        AssessmentPlan(grade.id, kind, lifecycle, fresh, reusable, burn)
-        for grade in course.grades
-        for kind, lifecycle, fresh, reusable, burn in (
-            (AssessmentClass.ROUTINE, ROUTINE_EVAL_LIFECYCLE, True, False, False),
-            (AssessmentClass.PROMOTION, PROMOTION_ATTEMPT_LIFECYCLE, False, True, False),
-            (AssessmentClass.GENERALIZATION, GENERALIZATION_LIFECYCLE, True, False, True),
-        )
-    )
+    teaching_options = _teaching_options(capabilities, adapters_by_id)
+    assessments = assessment_plans(grade.id for grade in course.grades)
     release = FactoryRelease(
         semantic_release=semantic,
         course=course,
@@ -105,6 +95,30 @@ def compile_factory_release(course: Course, registry: SourceAdapterRegistry) -> 
     release = replace(release, release_sha256=release.expected_digest())
     release.verify()
     return release
+
+
+def _teaching_options(capabilities, adapters_by_id):
+    return tuple(
+        option
+        for cap in capabilities
+        for option in (
+            TeachingOption(
+                option_id="source.direct/" + cap.capability_id,
+                capability_id=cap.capability_id,
+                construction_program_id=cap.capability_id,
+                source_grounded=True,
+                supervised_gold_allowed=True,
+            ),
+            *(TeachingOption(
+                option_id=option_id,
+                capability_id=cap.capability_id,
+                construction_program_id=cap.capability_id,
+                source_grounded=True,
+                supervised_gold_allowed=True,
+            ) for option_id in adapters_by_id[
+                cap.source_adapter_id].teaching_option_ids),
+        )
+    )
 
 
 def admit_factory_release(release: FactoryRelease, *, student_sha256: str,

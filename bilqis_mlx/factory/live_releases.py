@@ -6,9 +6,11 @@ modules remain source-domain implementations while their callers are migrated.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from .model import FactoryRelease
 from .release import compile_factory_release
-from .adapters import live_source_registry
+from ..source_adapters.school import live_source_registry
 from ..live_grade_a import (
     GENERATOR as _INITIAL_GENERATOR,
     RELEASE as INITIAL_RELEASE,
@@ -43,6 +45,16 @@ KNOWN_RELEASES = (
 )
 
 
+@dataclass(frozen=True)
+class SuccessorPlan:
+    successor: object
+    transition: str
+
+
+SAME_GRAPH_TRANSITION = "SAME_GRAPH"
+GRAPH_GROWTH_TRANSITION = "GRAPH_GROWTH"
+
+
 def initial_course(accepted):
     return _initial_course(accepted)
 
@@ -57,6 +69,130 @@ def numeric_successor(previous, *, maximum=None):
 
 def staircase_successor(previous, *, maximum):
     return _build_staircase_course(previous, numeric_registry_graph(), maximum=maximum)
+
+
+def graph_matches_release(version: str | None, graph: dict, manifest: dict,
+                          fingerprint) -> bool:
+    """Release-owned graph policy; generic runtime never keys this by grade."""
+    if version in (NUMERIC_RELEASE, NUMERIC_STAIRCASE_RELEASE):
+        return graph == numeric_registry_graph()
+    if version in (None, INITIAL_RELEASE, BOOLEAN_RELEASE):
+        from ..semantics.abi import HISTORICAL_PREFIX_SIZE
+        return (len(graph["tokens"]) == HISTORICAL_PREFIX_SIZE and
+                fingerprint(graph) == manifest["parent_student"]["full_student_graph_sha256"])
+    raise ValueError("FACTORY_UNKNOWN_RELEASE:" + str(version))
+
+
+def resolve_admitted_courses(historical_course, source_root, saved: dict,
+                             *, pending: dict | None = None,
+                             include_prospective: bool = True) -> dict[str, object]:
+    """Reconstruct every release that may be referenced by saved/pending state."""
+    from ..compatibility.historical_live_release import resume_grade_courses
+
+    course_a, course_b = resume_grade_courses(historical_course, source_root, saved)
+    courses = {course_a.version: course_a}
+    modes = {saved.get("curriculum_mode")}
+    if pending is not None:
+        modes.add(pending.get("curriculum_mode"))
+    if (BOOLEAN_RELEASE in modes or NUMERIC_RELEASE in modes or
+            NUMERIC_STAIRCASE_RELEASE in modes or
+            (include_prospective and
+             saved.get("school", {}).get("stage") == "AWAITING_NEXT_GRADE")):
+        course_b = course_b or boolean_successor(course_a, source_root)
+        courses[course_b.version] = course_b
+    if (NUMERIC_RELEASE in modes or NUMERIC_STAIRCASE_RELEASE in modes or
+            (include_prospective and saved.get("curriculum_mode") == BOOLEAN_RELEASE and
+             saved.get("school", {}).get("stage") == "AWAITING_NEXT_GRADE")):
+        pinned_maximum = saved.get("numeric_maximum")
+        if (pending or {}).get("curriculum_mode") == NUMERIC_RELEASE and pinned_maximum is None:
+            pinned_maximum = pending.get("numeric_maximum")
+        course_c, _ = numeric_successor(course_b, maximum=pinned_maximum)
+        courses[course_c.version] = course_c
+        if NUMERIC_STAIRCASE_RELEASE in modes:
+            active = pending if (pending or {}).get("curriculum_mode") == NUMERIC_STAIRCASE_RELEASE else saved
+            staircase = staircase_successor(course_b, maximum=active["numeric_maximum"])
+            courses[staircase.version] = staircase
+    return courses
+
+
+def course_for_mode(courses: dict[str, object], mode: str | None, historical_course):
+    if mode is None:
+        return historical_course
+    try:
+        return courses[mode]
+    except KeyError as exc:
+        raise ValueError("FACTORY_RELEASE_COURSE_NOT_LOADED:" + str(mode)) from exc
+
+
+def predecessor_course(courses: dict[str, object], current_course):
+    """Find the unique admitted release whose grade prefix owns current_course."""
+    if len(current_course.grades) < 2:
+        raise ValueError("FACTORY_RELEASE_HAS_NO_PREDECESSOR")
+    prefix = current_course.grades[:-1]
+    matches = [course for course in courses.values()
+               if course.grades == prefix]
+    unique = {course.digest(): course for course in matches}
+    if len(unique) != 1:
+        raise ValueError("FACTORY_RELEASE_PREDECESSOR_AMBIGUOUS")
+    return next(iter(unique.values()))
+
+
+def next_successor_plan(current_course, source_root) -> SuccessorPlan | None:
+    """Provider-owned successor declaration for the current admitted release."""
+    if current_course.version == INITIAL_RELEASE:
+        return SuccessorPlan(boolean_successor(current_course, source_root), SAME_GRAPH_TRANSITION)
+    if current_course.version == BOOLEAN_RELEASE:
+        successor, _ = numeric_successor(current_course)
+        return SuccessorPlan(successor, GRAPH_GROWTH_TRANSITION)
+    return None
+
+
+def preflight_successor(current_course, source_root, manifest: dict,
+                        saved: dict) -> dict:
+    """Provider-owned, neural-inert next-release preflight for the operator CLI."""
+    blockers: list[str] = []
+    details: dict = {}
+    if current_course.version == INITIAL_RELEASE:
+        successor = boolean_successor(current_course, source_root)
+        details.update({
+            "start_behavior": "HUMAN_RESUME_ADMIT_NEXT_GRADE_FROM_MASTERY",
+            "next_grade": successor.grades[-1].id,
+            "next_grade_source_checked": successor.executable,
+            "next_grade_rubric_sha256": successor.grades[-1].assessment_sha256,
+            "next_grade_complete_assessment_items": sum(
+                count for grade in successor.grades for _, count in grade.exam_item_counts),
+        })
+        return {"details": details, "blockers": blockers}
+    if current_course.version == BOOLEAN_RELEASE:
+        from ..grade_c_preflight import qualify
+        from ..live_grade_c import (
+            REGISTRY_COUNTING_TARGET,
+            REGISTRY_PATH,
+            integer_scope,
+            registry_graph,
+        )
+        next_grade = "C"
+        details.update({
+            "start_behavior": "HUMAN_RESUME_ADMIT_NEXT_GRADE_FROM_MASTERY",
+            "next_grade": next_grade,
+            "next_grade_policy": "SOURCE_AND_CUSTODY_CHECKS",
+        })
+        if REGISTRY_PATH.is_symlink():
+            blockers.append("NEXT_GRADE_NATIVE_REGISTRY_ARTIFACT_UNSAFE_PATH")
+            return {"details": details, "blockers": blockers}
+        if not REGISTRY_PATH.is_file():
+            blockers.append("NEXT_GRADE_NATIVE_REGISTRY_ARTIFACT_MISSING")
+            return {"details": details, "blockers": blockers}
+        details["next_grade_source"] = qualify(
+            source_root, manifest, previous=current_course)
+        if integer_scope(registry_graph()) != REGISTRY_COUNTING_TARGET:
+            blockers.append(
+                "NEXT_GRADE_REQUIRES_INTEGER_MAX=" + str(REGISTRY_COUNTING_TARGET))
+        successor, _ = numeric_successor(current_course)
+        details["next_grade_rubric_sha256"] = successor.grades[-1].assessment_sha256
+        details["next_grade_source_checked"] = successor.executable
+        return {"details": details, "blockers": blockers}
+    return {"details": details, "blockers": blockers}
 
 
 def release_generator(version: str) -> str:
@@ -80,6 +216,27 @@ def release_code_digest(version: str) -> str:
         return providers[version]()
     except KeyError as exc:
         raise ValueError("FACTORY_UNKNOWN_RELEASE:" + str(version)) from exc
+
+
+def legacy_receipt_fields(version: str) -> dict[str, str]:
+    """Return compatibility-only receipt metadata for historical readers.
+
+    These fields MUST NOT be used by generic runtime to choose pedagogy or
+    admission behavior. They exist solely so older state readers can verify
+    the exact provider bytes they historically recorded.
+    """
+    if version == BOOLEAN_RELEASE:
+        return {
+            "grade_b_code_sha256": release_code_digest(version),
+            "grade_b_generator": release_generator(version),
+        }
+    if version == NUMERIC_RELEASE:
+        return {"grade_c_code_sha256": release_code_digest(version)}
+    if version == NUMERIC_STAIRCASE_RELEASE:
+        return {"staircase_code_sha256": release_code_digest(version)}
+    if version == INITIAL_RELEASE:
+        return {}
+    raise ValueError("FACTORY_UNKNOWN_RELEASE:" + str(version))
 
 
 def verify_release_receipt(receipt: dict, course) -> None:

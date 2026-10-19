@@ -13,10 +13,15 @@ import re
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-FUTURE_GRADE_FILE = re.compile(r"^(?:live_grade_|grade_)([d-z])(?:_trainer)?\.py$", re.I)
+FUTURE_GRADE_FILE = re.compile(r"^(?:live_grade_|grade_)([d-z])(?:_(?:trainer|evaluator|admission|dashboard))?\.py$", re.I)
 GENERIC_RUNTIME = (
     "bilqis_mlx/factory",
+    "bilqis_mlx/runtime",
+    "bilqis_mlx/curriculum",
+    "bilqis_mlx/presentation",
     "bilqis_mlx/live_curriculum.py",
+    "bilqis_mlx/trainer.py",
+    "bilqis_mlx/cli.py",
 )
 GRADE_LITERAL = frozenset(chr(value) for value in range(ord("A"), ord("Z") + 1))
 
@@ -48,9 +53,13 @@ def _grade_literal_dispatch(path: Path, root: Path) -> tuple[str, ...]:
     problems = []
     tree = ast.parse(_source(path), filename=str(path))
     for node in ast.walk(tree):
-        if not isinstance(node, (ast.If, ast.IfExp, ast.Match, ast.While)):
+        if isinstance(node, (ast.If, ast.IfExp, ast.While)):
+            decision = node.test
+        elif isinstance(node, ast.Match):
+            decision = ast.Tuple(elts=[case.pattern for case in node.cases])
+        else:
             continue
-        values = {item.value for item in ast.walk(node)
+        values = {item.value for item in ast.walk(decision)
                   if isinstance(item, ast.Constant) and isinstance(item.value, str)}
         used = sorted(values & GRADE_LITERAL)
         if used:
@@ -68,7 +77,9 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
 
     # A/B/C remain compatibility/provider modules during migration. There is no
     # permission to repeat the pattern for D or any later grade.
-    for path in sorted(src.glob("*.py")):
+    for path in sorted(src.rglob("*.py")):
+        if set(path.relative_to(src).parts) & {"tests", "compatibility", "research"}:
+            continue
         match = FUTURE_GRADE_FILE.match(path.name)
         if match:
             problems.append(
@@ -78,7 +89,7 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
         path = root / relative
         paths = sorted(path.rglob("*.py")) if path.is_dir() else [path]
         for candidate in paths:
-            if candidate.name.startswith("test_") or not candidate.is_file():
+            if "tests" in candidate.relative_to(src).parts or not candidate.is_file():
                 continue
             problems.extend(_grade_literal_dispatch(candidate, root))
 
@@ -104,17 +115,24 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
     if "_factory_admission" not in _function_calls(staircase, "_rebind"):
         problems.append("bilqis_mlx/numeric_staircase.py SCOPE_RELEASE_BYPASSES_FACTORY_RELEASE")
 
+    problems.extend(_research_imports(src, root))
+    return tuple(problems)
+
+
+def _research_imports(src, root):
+    problems = []
     # Research/prototype packages cannot become dependencies of the canonical
     # released runtime. Keep this generic even before such a package exists.
     for path in sorted(src.rglob("*.py")):
         relative = path.relative_to(src)
-        if relative.parts and relative.parts[0] in {"research", "compatibility"}:
+        if set(relative.parts) & {"research", "compatibility", "tests"}:
             continue
         tree = ast.parse(_source(path), filename=str(path))
         for node in ast.walk(tree):
             target = None
             if isinstance(node, ast.ImportFrom):
-                target = node.module or ""
+                module = ("bilqis_mlx", *relative.with_suffix("").parts)
+                target = ".".join((*module[:-node.level], *(node.module or "").split("."))) if node.level else node.module or ""
             elif isinstance(node, ast.Import):
                 for item in node.names:
                     if item.name.startswith("bilqis_mlx.research"):
@@ -126,7 +144,7 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
                     target.startswith(".research")):
                 problems.append(
                     f"{path.relative_to(root)}:{node.lineno} RUNTIME_IMPORTS_RESEARCH")
-    return tuple(problems)
+    return problems
 
 
 if __name__ == "__main__":

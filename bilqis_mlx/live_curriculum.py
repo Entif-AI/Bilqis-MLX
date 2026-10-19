@@ -1,7 +1,7 @@
 """Factory-owned source and cohort contracts for the admitted school curriculum."""
 from __future__ import annotations
 
-from .factory.adapters import live_source_registry
+from .source_adapters.school import live_source_registry
 from .factory.generation import draw_release_rows
 from .factory.release import compile_factory_release
 
@@ -25,7 +25,7 @@ def _grade_cohort_contract(course, grade):
     # cohort identity after the semantic-ABI refactor. It does not participate
     # in current/future grade dispatch.
     if grade.assessment_sha256:
-        from .historical_live_release import (
+        from .compatibility.historical_live_release import (
             ABI_REFACTORED_A_GENERATOR_SHA256,
             HISTORICAL_A_GENERATOR_SHA256,
             HISTORICAL_A_RUBRIC_SHA256,

@@ -15,7 +15,10 @@ from .model import (
     TeachingOption,
 )
 from .assessment import qualification_complete
-from .release import admit_factory_release, compile_factory_release
+from .release import (
+    admit_factory_release,
+    compile_factory_release,
+)
 
 __all__ = (
     "AdmissionReceipt",

@@ -13,11 +13,11 @@ from pathlib import Path
 import sys
 
 from .backup import digest_file
-from .champions import Checkpoint
+from bilqis_mlx.learning.champions import Checkpoint
 from .grade_a_evaluator import score_predictions
 from .grade_a_manifest import verify_manifest
 from .grade_a_probe import candidate_course
-from .mlx_parity import forward
+from bilqis_mlx.runtime.mlx_parity import forward
 from .source import AUDITED_PARENT
 from .semantics.abi import HISTORICAL_PREFIX_SIZE
 

@@ -15,8 +15,8 @@ from bilqis_mlx.trainer import (
     _fingerprint, _mentor_sources_for_visit, _persist, _reconcile_delivery_outbox,
     _verify_best_custody, _with_delivery_outbox, operator_lock,
 )
-from bilqis_mlx.mentor_epoch import begin_epoch
-from bilqis_mlx.mlx_checkpoint import load_semantically_bound_bundle
+from bilqis_mlx.learning.mentor_epoch import begin_epoch
+from bilqis_mlx.runtime.mlx_checkpoint import load_semantically_bound_bundle
 
 
 def _graduation(run_dir, step):

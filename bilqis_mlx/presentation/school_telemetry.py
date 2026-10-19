@@ -1,0 +1,906 @@
+"""Grade-independent, read-only School50 telemetry projection.
+
+Legacy Grade A events adapt to this contract. New grades can emit SCHOOL_*
+events without teaching the dashboard their particular lesson vocabulary.
+No scoring here is passed back to a teacher, model, or curriculum admission.
+"""
+from __future__ import annotations
+
+from collections import defaultdict
+from dataclasses import dataclass
+from typing import Any
+import string
+
+from bilqis_mlx.presentation.spiral_dashboard import Column
+
+
+TELEMETRY_VERSION = "bilqis.school50.telemetry/v1"
+_SIGNAL_LABELS = {
+    "REPETITIVE_ANSWERS": "S1",
+    "CHANCE_LEVEL_OR_LAGGING": "S2",
+    "LACK_OF_DURABLE_GAIN": "S3",
+    "DISCONNECTED_PREREQUISITES": "S4",
+    "EXCESSIVE_INTRODUCTORY_COMPLEXITY": "S5",
+}
+
+
+def _signal_label(signal) -> str:
+    return _SIGNAL_LABELS.get(str(signal), str(signal))
+
+
+def _teacher_decision_text(decision: object) -> str:
+    if not isinstance(decision, dict):
+        return "LESSON COMMITTED; exam pending"
+    warnings = [_signal_label(signal) for signal in decision.get("warning_signals", ())]
+    selected = decision.get("selected") or {}
+    selection = decision.get("policy_selection") or {}
+    warning_prefix = ("warn " if selection.get("diagnostic_context_consumed") else
+                      "warn-context ")
+    parts = [warning_prefix + ",".join(warnings)] if warnings else []
+    replayed = selected.get("exam_mistake_replay")
+    champion = selected.get("champion_priority")
+    if type(replayed) is int and replayed:
+        parts.append(f"miss {replayed}")
+    if type(champion) is int and champion:
+        parts.append(f"champ {champion}")
+    return " | ".join(parts) + "; exam pending" if parts else "LESSON COMMITTED; exam pending"
+
+
+def _candidate_admission_text(event: dict) -> str:
+    """Distinguish an attempted lesson from student/AdamW promotion."""
+    candidate = event.get("candidate_retention")
+    steps = event.get("retained_optimizer_updates")
+    if candidate is None and steps is None:
+        return _teacher_decision_text(event.get("teacher_decision"))
+    if not isinstance(candidate, dict):
+        label = "ADMISSION UNKNOWN"
+    elif candidate.get("decision") == "PROVISIONAL" and type(steps) is int and steps > 0:
+        label = f"RETAIN {steps}"
+    elif candidate.get("decision") == "REJECT" and steps == 0:
+        reason = candidate.get("reason")
+        if reason == "NO_MEASURABLE_TARGET_GAIN":
+            label = "REJECT NO TARGET GAIN"
+        elif reason == "FRAGILE_COMPOSITION_REPLAY_REGRESSION":
+            label = "REJECT OR/XOR LOSS"
+        elif reason == "PROTECTED_CAPABILITY_REGRESSION":
+            label = "REJECT PROTECTED LOSS"
+        else:
+            label = "REJECT " + str(reason or "UNKNOWN")
+    else:
+        label = "ADMISSION CONFLICT"
+    instructional = _teacher_decision_text(event.get("teacher_decision"))
+    hint = instructional.removesuffix("; exam pending")
+    if hint != "LESSON COMMITTED":
+        label += " | " + hint
+    association = _association_text(event)
+    if association is not None:
+        label += " | " + association
+    return label
+
+
+def _association_text(event: dict) -> str | None:
+    bridge = event.get("boolean_association_bridge")
+    if isinstance(bridge, dict) and bridge.get("active_for_visit") is True:
+        grades = bridge.get("borrowed_source_grades")
+        delivered = bridge.get("delivered_examples")
+        active = event.get("active_grade") or event.get("grade")
+        if (isinstance(grades, list) and grades and
+                all(isinstance(grade, str) and grade for grade in grades) and
+                type(delivered) is int and delivered > 0 and
+                isinstance(active, str) and active):
+            return "COMPOSE " + "+".join(grades) + "->" + active + f" x{delivered}"
+    return None
+
+
+def _instruction_method_text(event: dict) -> str:
+    """Project the lesson mechanism actually evidenced by the visit receipt."""
+    parts = []
+    if _association_text(event) is not None:
+        parts.append("COMPOSE")
+    decision = event.get("teacher_decision") or {}
+    selected = decision.get("selected") if isinstance(decision, dict) else {}
+    selected = selected if isinstance(selected, dict) else {}
+    if type(selected.get("exam_mistake_replay")) is int and selected["exam_mistake_replay"] > 0:
+        parts.append("MISS")
+    prerequisites = selected.get("prerequisite_connections")
+    if isinstance(prerequisites, (list, tuple)) and prerequisites:
+        parts.append("PREREQ")
+    if type(selected.get("champion_priority")) is int and selected["champion_priority"] > 0:
+        parts.append("CHAMP")
+    if parts:
+        return "+".join(parts)
+    methodology = event.get("lesson_methodology") or {}
+    if isinstance(methodology, dict) and type(methodology.get("delivered_examples")) is int:
+        if methodology["delivered_examples"] > 0:
+            return "SOURCE"
+    if type(selected.get("delivered_examples")) is int and selected["delivered_examples"] > 0:
+        return "DIRECT"
+    return "-"
+
+
+def _candidate_retention_row(event: dict, grade: str, attempt: int) -> dict | None:
+    retention = event.get("candidate_retention")
+    if not isinstance(retention, dict):
+        return None
+    before = retention.get("active_probe_before")
+    after = retention.get("active_probe_after")
+    total = retention.get("active_probe_total")
+    target = (f"{before}>{after}/{total}"
+              if all(type(value) is int for value in (before, after, total)) and total > 0
+              else "-")
+    local = retention.get("local_correct_delta")
+    protected = retention.get("protected_net_correct_delta")
+    worst = retention.get("worst_protected_loss")
+    reason = str(retention.get("reason") or "UNKNOWN")
+    unsampled = retention.get("unsampled_admitted_capabilities")
+    evidence = reason
+    if type(unsampled) is int:
+        evidence += f" | unsampled {unsampled}"
+    return {
+        "grade": grade,
+        "attempt": attempt,
+        "target": target,
+        "target_delta": f"{local:+d}" if type(local) is int else "-",
+        "protected": f"{protected:+d}" if type(protected) is int else "-",
+        "worst": ("0" if worst == 0 else f"-{worst}"
+                  if type(worst) is int and worst > 0 else "-"),
+        "decision": str(retention.get("decision") or "UNKNOWN"),
+        "evidence": evidence,
+    }
+
+
+def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
+    rows = []
+    diagnostics = event.get("learning_diagnostics")
+    if isinstance(diagnostics, dict):
+        warning_labels = [
+            f"{_signal_label(warning.get('signal'))}:{warning.get('capability', '?')}"
+            for warning in diagnostics.get("active_warnings", ())
+            if isinstance(warning, dict)
+        ]
+        not_measured = sum(
+            1 for finding in diagnostics.get("findings", ())
+            if isinstance(finding, dict) and finding.get("status") == "NOT_MEASURED")
+        unavailable = (
+            diagnostics.get("s3_usable") is False
+            if "s3_usable" in diagnostics else
+            diagnostics.get("history_usable") is False)
+        detail = ("active " + ", ".join(warning_labels)
+                  if warning_labels else "S3 unavailable" if unavailable else "no active warnings")
+        if unavailable and warning_labels:
+            detail += " | S3 unavailable"
+        rows.append({"kind":"DIAGNOSTIC", "grade":grade,
+                     "detail":detail + f" | {not_measured} NOT MEASURED"})
+        if unavailable and diagnostics.get("history_issue"):
+            rows.append({"kind": "HISTORY ISSUE", "grade": grade,
+                         "detail": str(diagnostics["history_issue"])})
+        elif diagnostics.get("history_usable") is False and diagnostics.get("history_issue"):
+            rows.append({"kind": "HISTORY ISSUE", "grade": grade,
+                         "detail": str(diagnostics["history_issue"]) +
+                                   " | paired S3 recovered"})
+    outcomes = event.get("teacher_outcomes")
+    if isinstance(outcomes, list) and outcomes:
+        rows.append({"kind":"TEACH OUTCOME", "grade":grade,
+                     "detail":_teacher_outcome_text(outcomes)})
+    return tuple(rows)
+
+
+def _teacher_outcome_text(outcomes: list[dict]) -> str:
+    measured = _measured_teacher_outcomes(outcomes)
+    if measured:
+        return "fixed-exam action outcome " + (_measured_outcome_changes(measured) or "measured")
+    return _unmeasured_outcome_counts(outcomes)
+
+
+def _measured_teacher_outcomes(outcomes: list[dict]) -> list[dict]:
+    return [item for item in outcomes if isinstance(item, dict) and
+            item.get("attribution") == "MEASURED_FIXED_EXAM_UNIQUE_ACTION"]
+
+
+def _measured_outcome_changes(measured: list[dict]) -> str:
+    return ", ".join(
+        f"{item.get('capability', '?')} {item.get('delta_correct', 0):+d}"
+        for item in measured if type(item.get("delta_correct")) is int)
+
+
+def _unmeasured_outcome_counts(outcomes: list[dict]) -> str:
+    counts = defaultdict(int)
+    for item in outcomes:
+        if isinstance(item, dict):
+            counts[str(item.get("attribution", "UNKNOWN"))] += 1
+    return " | ".join(f"{key} x{count}" for key, count in sorted(counts.items()))
+
+# Same six historical panel identities, new-school labels that describe what
+# the data actually measures. The old School50 TABLES constant is untouched.
+LETTER_TABLES = (
+    ("CANDIDATES", (
+        Column("CAPABILITY", 13, "capability"),
+        Column("VISIT", 5, "attempt", right=True),
+        Column("POLICY", 10, "strategy", optional=True),
+        Column("LR", 8, "lr", optional=True),
+        Column("LESSON% BFR>AFTER", 18, "train"),
+        Column("REWARD", 8, "reward", right=True),
+        Column("LOSS", 8, "loss"),
+        Column("GRAD", 10, "gradient"),
+        Column("METHOD", 12, "method"),
+        Column("OLDpp", 8, "old", optional=True, right=True),
+        Column("DECISION / REASON", 30, "decision"))),
+    ("SENTINEL & RETENTION", (
+        Column("GRADE", 6, "grade"),
+        Column("VISIT", 6, "attempt", right=True),
+        Column("TARGET", 13, "target", right=True),
+        Column("DTGT", 6, "target_delta", right=True),
+        Column("PROT", 6, "protected", right=True),
+        Column("WORST", 6, "worst", right=True),
+        Column("RESULT", 12, "decision"),
+        Column("EVIDENCE", 28, "evidence", optional=True))),
+    ("SOUP & TEACHER", (
+        Column("GRADE", 5, "grade"),
+        Column("VISIT", 5, "attempt", right=True),
+        Column("POLICY", 10, "policy", optional=True),
+        Column("LR", 8, "lr"),
+        Column("DEPTH", 5, "depth", right=True),
+        Column("CONTRAST", 8, "contrast", right=True),
+        Column("SOUP_KL", 8, "soup", optional=True, right=True),
+        Column("COVER", 7, "cover", optional=True, right=True),
+        Column("OLD", 7, "old", optional=True),
+        Column("PREVIEW", 8, "preview", optional=True),
+        Column("DISTILL", 8, "distill", optional=True),
+        Column("CREDIT", 7, "credit", right=True),
+        Column("SUP_CE", 9, "sup", optional=True, right=True),
+        Column("PAR_KL", 9, "parent", optional=True, right=True),
+        Column("BRG_CE", 9, "bridge_ce", optional=True, right=True))),
+    ("BRIDGE FAMILIES", (
+        Column("GRADE", 5, "grade"),
+        Column("FAMILY", 22, "family"),
+        Column("START", 7, "start", right=True),
+        Column("PREVIOUS", 8, "before", right=True),
+        Column("LATEST", 8, "after", right=True),
+        Column("GAIN", 6, "gain", right=True),
+        Column("EXAM", 5, "attempt", optional=True, right=True))),
+    ("GRADES & MASTERY", (
+        Column("GRADE", 5, "grade"),
+        Column("STEP", 9, "step", right=True),
+        Column("START", 7, "start", right=True),
+        Column("LATEST", 7, "latest", right=True),
+        Column("BEST", 7, "best", right=True),
+        Column("TO100", 6, "to100", right=True),
+        Column("RIGHT%", 7, "right_pct", right=True),
+        Column("OUTCOME", 20, "outcome"))),
+    ("SYSTEM & QUALIFICATION", (
+        Column("TYPE", 15, "kind"),
+        Column("GRADE", 6, "grade", optional=True),
+        Column("DETAILS", 65, "detail"))),
+)
+
+
+EVENT_KINDS = {
+    "GRADE_A_NEW_RUN_INITIALIZED": "init",
+    "GRADE_A_TEACHER_VISIT_COMMITTED": "visit",
+    "GRADE_A_EXAM_COMMITTED": "exam",
+    "GRADE_A_LIVE_EXAM_COMMITTED": "exam",
+    "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED": "visit",
+    "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED": "exam",
+    "SCHOOL_GRADE_B_COURSE_ADMITTED": "init",
+    "SCHOOL_NEXT_GRADE_COURSE_ADMITTED": "init",
+    "SCHOOL_TEACHER_VISIT_COMMITTED": "visit",
+    "SCHOOL_LIVE_EXAM_COMMITTED": "exam",
+    "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED": "exam",
+    "SCHOOL_COURSE_ADMITTED": "init",
+    "GRADE_A_SESSION_STOPPED": "stop",
+    "SCHOOL_RUN_INITIALIZED": "init",
+    "SCHOOL_VISIT_COMMITTED": "visit",
+    "SCHOOL_EXAM_COMMITTED": "exam",
+    "SCHOOL_SESSION_STOPPED": "stop",
+    "SCHOOL_SESSION_STARTED": "start",
+    "SCHOOL_SENTINEL_COMMITTED": "sentinel",
+    "SCHOOL_SOUP_COMMITTED": "soup",
+    "SCHOOL_FAMILY_PROBE_COMMITTED": "family",
+    "SCHOOL_RESOURCE_OBSERVED": "resource",
+    "SCHOOL_CAPABILITY_BEST_COMMITTED": "capability_best",
+    "SCHOOL_LIVE_CANDIDATE_COMPARED": "candidate",
+    "SCHOOL_QUALIFICATION_COMMITTED": "qualification",
+    "SCHOOL_FLASH_ASSESSMENT_DEFERRED": "progress",
+}
+
+
+def _display(value: Any, *, decimals: int = 3) -> str:
+    if type(value) in (float, int):
+        if value and abs(value) < 0.5 * 10 ** (-decimals):
+            return f"{value:.2e}"
+        return f"{value:.{decimals}f}"
+    return "-"
+
+
+def _delta(value: Any, *, pp: bool = False) -> str:
+    if type(value) not in (float, int):
+        return "-"
+    if pp:
+        return f"{value:+.1f}pp"
+    return f"{value:+.3f}"
+
+
+def _percent(value: Any) -> str:
+    return f"{value:.1%}" if type(value) in (float, int) else "-"
+
+
+def _count(value: Any) -> str:
+    return f"{value:,}" if type(value) is int else "-"
+
+
+def _grade_from_capability(name: str, event_grade: str) -> str:
+    prefix = name.split(".", 1)[0]
+    return prefix if len(prefix) == 1 and prefix.isalpha() else event_grade
+
+
+def _source_provenance(event: dict):
+    """Independent metrics must identify their validation set and whole student."""
+    for key in ("dataset_sha256", "student_sha256"):
+        value = event.get(key)
+        if (not isinstance(value, str) or len(value) != 64 or
+                any(ch not in string.hexdigits for ch in value)):
+            raise ValueError("SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:" + key)
+    if type(event.get("optimizer_step")) is not int:
+        raise ValueError("SCHOOL_TELEMETRY_SOURCE_PROVENANCE_REQUIRED:optimizer_step")
+
+
+@dataclass(frozen=True)
+class ExamScore:
+    grade: str
+    rubric: str
+    correct: int
+    total: int
+    step: int | None
+    checkpoint_sha256: str
+    generation: int
+    capabilities: dict[str, tuple[int, int]]
+    assessment_scope: str = ""
+
+
+class SchoolTelemetry:
+    """Incremental projection; START/latest/best scores are receipt-backed."""
+
+    def __init__(self, board, *, active_grades=(), champions=None):
+        self.board = board
+        self.grades = list(active_grades)
+        self.champions = champions or {}
+        self.start = {}   # (grade, complete-rubric, scope) -> execution-start ExamScore
+        self.latest = {}
+        self.best = {}
+        self.last_cap = {}  # (capability, complete-rubric) -> (correct,total)
+        self.start_cap = {}
+        self.last_source_training = {}  # capability -> (accuracy, optimizer_step)
+        self.exam_cohorts = {}  # (grade, semantic rubric) -> last sampled cohort
+        # Whole-student exam scores are distinct from separate per-grade bests.
+        self.cumulative_best = {}  # (grades, rubric, scope) -> (correct, total, step)
+        self.cumulative_latest = None  # (key, correct, total, step, status)
+        self.visits = 0
+        self.last_exam_grade = None
+        self.live_projected_generations = set()
+        self.board.grade_program = tuple(self.grades)
+
+    def _grade(self, name):
+        if name not in self.grades:
+            self.grades.append(name)
+            self.board.grade_program = tuple(self.grades)
+
+    def ingest(self, event: dict):
+        if (event.get("event", "").startswith("SCHOOL_") and
+                event.get("telemetry_schema", TELEMETRY_VERSION) != TELEMETRY_VERSION):
+            raise ValueError("SCHOOL_TELEMETRY_UNSUPPORTED_SCHEMA")
+        kind = EVENT_KINDS.get(event.get("event"))
+        if kind is None:
+            return
+        grade = event.get("grade") or ("A" if event["event"].startswith("GRADE_A_") else None)
+        if kind not in {"init", "resource"} and not grade:
+            raise ValueError("SCHOOL_TELEMETRY_GRADE_REQUIRED")
+        if grade:
+            self._grade(grade)
+        {
+            "init": self._init,
+            "start": self._start,
+            "visit": self._visit,
+            "exam": self._exam,
+            "stop": self._stop,
+            "sentinel": self._sentinel,
+            "soup": self._soup,
+            "family": self._family,
+            "resource": self._resource,
+            "capability_best": self._capability_best,
+            "candidate": self._candidate,
+            "qualification": self._qualification,
+            "progress": self._progress,
+        }[kind](grade, event)
+
+    def _init(self, grade, event):
+        self.board.state["step"] = event.get("optimizer_step", self.board.state.get("step"))
+        self.board.state["_rate_sample_eligible"] = True
+
+    def begin_execution(self, *, grade=None, step=None):
+        """Re-anchor START to the scores that exist when this command begins."""
+        self.start = dict(self.latest)
+        self.start_cap = dict(self.last_cap)
+        # Emit current snapshots immediately so START is truthful before the
+        # first new exam in this execution command.
+        latest_by_grade = {}
+        for key, report in self.latest.items():
+            existing = latest_by_grade.get(report.grade)
+            if existing is None or report.generation >= existing.generation:
+                latest_by_grade[report.grade] = report
+        for g, report in sorted(latest_by_grade.items()):
+            key = (g, report.rubric, report.assessment_scope)
+            best = self.best.get(key, report)
+            champion = self.champions.get(g)
+            self.board.rows["GRADES & MASTERY"].append({
+                "visit": self.visits, "grade": g, "step": report.step or "-",
+                "start": f"{report.correct}/{report.total}",
+                "latest": f"{report.correct}/{report.total}",
+                "best": f"{best.correct}/{best.total}",
+                "to100": str(report.total-report.correct),
+                "right_pct": f"{100*report.correct/report.total:.1f}%",
+                "outcome": "EXECUTION START", "mastered": bool(champion),
+            })
+        if latest_by_grade:
+            ordered = [g for g in self.grades if g in latest_by_grade]
+            summary = " | ".join(
+                f"{g} {latest_by_grade[g].correct}/{latest_by_grade[g].total}"
+                for g in ordered)
+            steps = {latest_by_grade[g].step for g in ordered}
+            suffix = f" @step {next(iter(steps))}" if len(steps) == 1 else ""
+            self.board.operator_lines = [
+                "START " + summary + suffix + " | execution baseline",
+                "LATEST begins equal to START; BEST remains historical receipt-backed evidence.",
+            ]
+        self.board.state.update(
+            step=step if type(step) is int else self.board.state.get("step"),
+            prefix=grade or self.board.state.get("prefix"),
+            _rate_sample_eligible=True)
+
+    def _start(self, grade, event):
+        self.begin_execution(grade=grade, step=event.get("optimizer_step"))
+
+    def _progress(self, grade, event):
+        """Ephemeral operator-only progress; never interpreted as qualification."""
+        self.board.state.update(
+            step=event.get("optimizer_step", self.board.state.get("step")),
+            prefix=grade,
+            phase=event.get("phase", self.board.state.get("phase")),
+            _rate_sample_eligible=True)
+
+    def _candidate(self, grade, event):
+        digest = event.get("cohort_sha256")
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise ValueError("SCHOOL_TELEMETRY_CANDIDATE_COHORT_REQUIRED")
+        self.board.push("system", {"kind": "COMPARATOR", "grade": grade,
+            "detail": ("Same-cohort incumbent replay " + digest[:12] +
+                       f" | {len(event.get('incumbent_comparisons', []))} complete incumbents")},
+            redraw=False)
+
+    def _capability_best(self, grade, event):
+        """One student's best capability slots do not mean grade mastery."""
+        step, caps = event.get("optimizer_step"), event.get("capabilities")
+        rubric, scores = event.get("rubric"), event.get("scores") or {}
+        sha = event.get("student_sha256")
+        if (type(step) is not int or not caps or
+                not isinstance(sha, str) or len(sha) != 64 or
+                not isinstance(rubric, str) or len(rubric) != 64 or
+                not isinstance(scores, dict) or
+                set(caps) != set(scores) or
+                any(not isinstance(scores[cap], dict) or
+                    type(scores[cap].get("correct")) is not int or
+                    type(scores[cap].get("total")) is not int or
+                    scores[cap]["total"] <= 0 or
+                    not 0 <= scores[cap]["correct"] <= scores[cap]["total"]
+                    for cap in caps)):
+            raise ValueError("SCHOOL_CAPABILITY_BEST_PROVENANCE_REQUIRED")
+        scored = ", ".join(
+            f"{cap} {scores[cap]['correct']}/{scores[cap]['total']}"
+            for cap in sorted(caps))
+        self.board.push("system", {"kind": "CAP BEST", "grade": grade,
+                        "detail": (f"Best slots: {scored} "
+                                   f"at step {step} | NOT grade mastery")},
+                        redraw=False)
+
+    def _visit(self, grade, event):
+        generation = event.get("generation")
+        live_ephemeral = event.get("_live_ephemeral") is True
+        if (not live_ephemeral and type(generation) is int and
+                generation in self.live_projected_generations):
+            self.live_projected_generations.remove(generation)
+            event["_dashboard_redraw"] = False
+            return
+        if live_ephemeral:
+            if type(generation) is not int:
+                raise ValueError("SCHOOL_TELEMETRY_LIVE_VISIT_GENERATION_REQUIRED")
+            if generation in self.live_projected_generations:
+                return
+            self.live_projected_generations.add(generation)
+        self.visits += 1
+        cap = event.get("capability")
+        if not cap:
+            raise ValueError("SCHOOL_TELEMETRY_CAPABILITY_REQUIRED")
+        before = event.get("source_training_accuracy_before")
+        after = event.get("source_training_accuracy_after")
+        if type(after) in (int, float) and 0 <= after <= 1:
+            self.last_source_training[cap] = (after, event.get("optimizer_step"))
+        strategy = event.get("strategy") or {}
+        unavailable = set(event.get("unavailable_teacher_dimensions") or ())
+        policy = event.get("teacher_policy", "-")
+        train = (_percent(before) + ">" + _percent(after))
+        gain = _delta(event.get("teacher_reward"))
+        row = {
+            "capability": cap, "attempt": self.visits,
+            "strategy": policy[:10], "lr": _display(strategy.get("lr"), decimals=5),
+            "method": _instruction_method_text(event),
+            "train": train, "reward": gain,
+            "loss": _display(event.get("loss")),
+            "gradient": (f"{event['gradient_norm']:.3g}" if type(event.get("gradient_norm")) in (float,int) else "-"),
+            "old": _delta(event.get("earlier_grade_delta_pp"), pp=True),
+            "decision": _candidate_admission_text(event),
+        }
+        self.board.rows["CANDIDATES"].append(row)
+        retention_row = _candidate_retention_row(event, grade, self.visits)
+        if retention_row is not None:
+            self.board.rows["SENTINEL & RETENTION"].append(retention_row)
+        association = _association_text(event)
+        if association is not None:
+            self.board.push("system", {
+                "kind": "COMPOSE", "grade": grade,
+                "detail": association + " | " + cap,
+            }, redraw=False)
+        teacher = {"grade": grade, "attempt": self.visits, "policy": policy[:10],
+                   "lr": _display(strategy.get("lr"), decimals=5),
+                   "depth": strategy.get("depth", "-"),
+                   "contrast": _display(strategy.get("contrast")),
+                   "credit": gain, "soup": "-", "cover": "-", "parent": "-"}
+        for field in ("old", "preview", "distill"):
+            teacher[field] = "OFF" if field in unavailable else _display(strategy.get(field))
+        self.board.rows["SOUP & TEACHER"].append(teacher)
+        attempted = event.get("attempted_optimizer_updates", 0)
+        if type(attempted) is not int or attempted < 0:
+            raise ValueError("SCHOOL_TELEMETRY_ATTEMPTED_OPTIMIZER_UPDATES_INVALID")
+        retained = event.get("retained_optimizer_updates", 0)
+        if type(retained) is not int or retained < 0:
+            raise ValueError("SCHOOL_TELEMETRY_RETAINED_OPTIMIZER_UPDATES_INVALID")
+        attempted_total = self.board.state.get("attempted_steps", 0)
+        if type(attempted_total) is not int or attempted_total < 0:
+            attempted_total = 0
+        retained_total = self.board.state.get("retained_steps", 0)
+        if type(retained_total) is not int or retained_total < 0:
+            retained_total = 0
+        retained_visits = self.board.state.get("retained_visits", 0)
+        if type(retained_visits) is not int or retained_visits < 0:
+            retained_visits = 0
+        self.board.state.update(step=event.get("optimizer_step", self.board.state.get("step")),
+                                attempted_steps=attempted_total + attempted,
+                                retained_steps=retained_total + retained,
+                                retained_visits=retained_visits + (1 if retained > 0 else 0),
+                                visits=self.visits, prefix=grade,
+                                phase=event.get("next_phase", self.board.state.get("phase")),
+                                _rate_sample_eligible=(
+                                    event.get("checkpoint_status") != "RECORDED_AT_BOUNDARY"))
+
+    def _exam(self, grade, event):
+        rubric = event.get("rubric") or event.get("exam_rubric_sha256")
+        if not rubric:
+            raise ValueError("SCHOOL_TELEMETRY_EXAM_RUBRIC_REQUIRED")
+        scores = event.get("scores") or {}
+        if not scores:
+            raise ValueError("SCHOOL_TELEMETRY_EXAM_SCORES_REQUIRED")
+        step = event.get("optimizer_step", self.board.state.get("step"))
+        checkpoint = event.get("student_sha256")
+        if not checkpoint:
+            raise ValueError("SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED")
+        live = event.get("event") in ("GRADE_A_LIVE_EXAM_COMMITTED",
+                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+                                       "SCHOOL_LIVE_EXAM_COMMITTED",
+                                       "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED")
+        scope = (event.get("assessment_scope_sha256", "")
+                 if event.get("event") in (
+                     "SCHOOL_LIVE_EXAM_COMMITTED",
+                     "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED") else "")
+        cohort_sha = event.get("cohort_sha256") if live else None
+        if live and (not isinstance(cohort_sha, str) or len(cohort_sha) != 64 or
+                     not event.get("cohort_file") or not event.get("generator_version")):
+            raise ValueError("SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED")
+        cohort = defaultdict(dict)
+        for cap, raw in scores.items():
+            score_grade = raw.get("grade") or _grade_from_capability(cap, grade)
+            if (raw.get("checkpoint_sha256", checkpoint) != checkpoint or
+                    raw.get("optimizer_step", step) != step):
+                raise ValueError("SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH")
+            correct, total = raw.get("correct"), raw.get("total")
+            if (type(correct) is not int or type(total) is not int or
+                    total <= 0 or not 0 <= correct <= total):
+                raise ValueError("SCHOOL_TELEMETRY_SCORE_INVALID")
+            cohort[score_grade][cap] = (correct, total)
+        target_evaluated = grade in cohort
+
+        # Validate the full exam before emitting any dashboard rows.
+        for g, caps in cohort.items():
+            previous = self.latest.get((g, rubric, scope))
+            if previous is not None and (set(previous.capabilities) != set(caps) or
+                any(previous.capabilities[k][1] != caps[k][1] for k in caps)):
+                raise ValueError("SCHOOL_TELEMETRY_EXAM_RUBRIC_ITEMS_DRIFT")
+
+        for g, caps in sorted(cohort.items()):
+            self._grade(g)
+            total = sum(x[1] for x in caps.values())
+            correct = sum(x[0] for x in caps.values())
+            report = ExamScore(g, rubric, correct, total, step, checkpoint,
+                               event.get("generation", 0), caps, scope)
+            key = (g, rubric, scope)
+            prev = self.latest.get(key)
+            start = self.start.setdefault(key, report)
+            best = self.best.get(key)
+            if best is None or correct * best.total > best.correct * total:
+                self.best[key] = report
+            best = self.best[key]
+            self.latest[key] = report
+            same_cohort = not live or self.exam_cohorts.get(key) == cohort_sha
+            for cap, (score, count) in sorted(caps.items()):
+                baseline = self.start_cap.setdefault((cap, rubric, scope), (score, count))
+                earlier = self.last_cap.get((cap, rubric, scope))
+                gain = score - earlier[0] if earlier and same_cohort else None
+                self.board.rows["BRIDGE FAMILIES"].append({
+                    "grade": g, "family": cap, "attempt": report.generation,
+                    "start": f"{baseline[0]}/{baseline[1]}",
+                    "before": f"{earlier[0]}/{earlier[1]}" if earlier and same_cohort else "-",
+                    "after": f"{score}/{count}",
+                    "gain": f"{gain:+d}" if gain is not None else "-",
+                })
+                self.last_cap[(cap, rubric, scope)] = (score, count)
+            champion = self.champions.get(g)
+            epoch = event.get("championship_epoch") or {}
+            earned = tuple(
+                cap for cap in epoch.get("earned_roles", ())
+                if isinstance(cap, str) and _grade_from_capability(cap, grade) == g)
+            title_decisions = tuple(
+                decision for decision in epoch.get("cross_origin_decisions", ())
+                if isinstance(decision, dict) and decision.get("grade") == g)
+            if event.get("flash_scheduler_only") is True:
+                label = f"FLASH SAMPLE {correct}/{total} | NO TITLES"
+            elif earned:
+                label = f"TITLE MOVED {len(earned)} | SAMPLE {correct}/{total}"
+                detail = ", ".join(
+                    f"{cap} {caps[cap][0]}/{caps[cap][1]}"
+                    for cap in earned if cap in caps)
+                self.board.push("system", {
+                    "kind": "CHAMPION", "grade": g,
+                    "detail": f"Titles moved: {detail} | step {step}",
+                }, redraw=False)
+            elif live and isinstance(event.get("championship_epoch"), dict):
+                label = f"NO TITLE CHANGE | SAMPLE {correct}/{total}"
+                if title_decisions:
+                    reasons = ", ".join(sorted({
+                        str(decision.get("decision", "UNKNOWN"))
+                        for decision in title_decisions
+                    }))
+                    self.board.push("system", {
+                        "kind": "CHAMPION", "grade": g,
+                        "detail": f"No title change: {reasons} | step {step}",
+                    }, redraw=False)
+            elif champion and correct < total:
+                label = f"CURRENT REGRESSION | SAMPLE {correct}/{total}"
+            elif champion:
+                label = f"GRADE CHAMPION EXISTS | PASS {correct}/{total}"
+            elif correct == total:
+                label = "100% EXAM; GATE PENDING"
+            else:
+                label = f"{'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | {event.get('phase', '?')}"
+            self.board.rows["GRADES & MASTERY"].append({
+                "visit": self.visits, "grade": g, "step": step or "-",
+                "start": f"{start.correct}/{start.total}",
+                "latest": f"{correct}/{total}", "best": f"{best.correct}/{best.total}",
+                "to100": str(total-correct), "right_pct": f"{100*correct/total:.1f}%",
+                "outcome": label, "mastered": bool(champion),
+            })
+            if live:
+                self.exam_cohorts[key] = cohort_sha
+        self._cumulative_exam(cohort, rubric, scope, step, event.get("phase"))
+        # The A+B cohort reports both rows, but the operator summary must
+        # identify the grade whose scheduled exam just completed, especially
+        # during the Billy Madison backward A replay.
+        self.last_exam_grade = grade if target_evaluated else None
+        self.board.state.update(phase=event.get("phase", self.board.state.get("phase")),
+                                prefix=grade, step=step,
+                                _rate_sample_eligible=True)
+        if not target_evaluated:
+            observed = "+".join(sorted(cohort))
+            detail = (
+                f"{grade} NOT EVALUATED IN THIS SAMPLE | observed {observed} | "
+                f"{event.get('phase', '?')}")
+            self.board.push("system", {
+                "kind": "EXAM SCOPE", "grade": grade, "detail": detail,
+            }, redraw=False)
+            self.board.operator_lines = [
+                f"{grade} NOT EVALUATED IN THIS SAMPLE | observed {observed} "
+                f"@step {step or '-'}",
+                "Dashboard remains available; no score is inferred for the omitted grade.",
+            ]
+        for system_row in _diagnostic_system_rows(event, grade):
+            self.board.push("system", system_row, redraw=False)
+        if target_evaluated:
+            self._summary()
+
+    def _cumulative_exam(self, cohort, rubric, scope, step, phase):
+        """Show one checkpoint's complete grade-prefix exam, never summed bests."""
+        if len(cohort) < 2 or set(cohort) != set(self.grades):
+            return
+        key = (tuple(sorted(cohort)), rubric, scope)
+        correct = sum(score for caps in cohort.values() for score, _ in caps.values())
+        total = sum(count for caps in cohort.values() for _, count in caps.values())
+        self.board.state["_all_grade_correct"] = correct
+        self.board.state["_all_grade_total"] = total
+        best = self.cumulative_best.get(key)
+        if best is None or correct * best[1] > best[0] * total:
+            best = (correct, total, step)
+            self.cumulative_best[key] = best
+        status = ("GATE MET" if correct == total and phase in
+                  ("AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED") else
+                  "REVALIDATION PENDING" if correct == total else
+                  f"{total}/{total} REQUIRED")
+        self.cumulative_latest = (key, correct, total, step, status)
+        label = "+".join(key[0])
+        detail = (f"{status} | latest {correct}/{total} | "
+                  f"best same student {best[0]}/{best[1]}")
+        rows = self.board.rows["SYSTEM & QUALIFICATION"]
+        new_row = {"kind": "CUMULATIVE", "grade": label, "detail": detail}
+        for index, existing in enumerate(rows):
+            if existing["kind"] == "CUMULATIVE":
+                rows[index] = new_row
+                break
+        else:
+            rows.append(new_row)
+
+    def _summary(self):
+        grade = self.last_exam_grade
+        if grade is None:
+            return
+        report = next((v for (g, _, _), v in reversed(tuple(self.latest.items())) if g == grade), None)
+        if report is None:
+            return
+        key = (grade, report.rubric, report.assessment_scope)
+        start = self.start[key]
+        best = self.best[key]
+        latest = report
+        live = key in self.exam_cohorts
+        category = "GENERATED SAMPLE" if live else "SEALED"
+        self.board.operator_lines = [
+            f"START {category} {grade} {start.correct}/{start.total} @step {start.step or '-'} | "
+            f"LATEST {grade} {latest.correct}/{latest.total} @step {latest.step or '-'} | "
+            f"{'BEST OBSERVED SAMPLE (not paired)' if live else 'BEST'} {grade} "
+            f"{best.correct}/{best.total} @step {best.step or '-'}",
+            f"TO100 {latest.total-latest.correct}/{latest.total} wrong ({'fresh sampled cohort' if live else 'sealed rubric'}) | "
+            f"Source-train rewards are in-sample; independent sentinel NOT MEASURED",
+        ]
+        if self.cumulative_latest is not None:
+            key, correct, total, step, status = self.cumulative_latest
+            best = self.cumulative_best[key]
+            self.board.operator_lines.append(
+                f"CUMULATIVE {'+'.join(key[0])}: {status}; latest {correct}/{total} @step {step}; "
+                f"best SAME STUDENT {best[0]}/{best[1]} @step {best[2]}. "
+                "Individual grade champions are not additive.")
+        # A diagnostic observation, not an optimizer signal. Individual
+        # source-training measurements may come from different checkpoints.
+        families = tuple(latest.capabilities)
+        if (not live and latest.correct < latest.total and families and
+                all(cap in self.last_source_training and
+                    self.last_source_training[cap][0] >= .99 for cap in families)):
+            self.board.operator_lines.append(
+                f"GENERALIZATION GAP OBSERVED: recent source-train accuracy >=99% "
+                f"for {len(families)}/{len(families)} capabilities (different steps); "
+                f"{'generated' if live else 'sealed'} {latest.correct}/{latest.total} at one checkpoint")
+
+    def _sentinel(self, grade, event):
+        if event.get("partition") != "independent_validation":
+            raise ValueError("SCHOOL_TELEMETRY_SENTINEL_PARTITION_NOT_INDEPENDENT")
+        _source_provenance(event)
+        ce = _delta(event.get("cross_entropy_delta"))
+        prob = _delta(event.get("correct_probability_delta"))
+        margin = _delta(event.get("margin_delta"))
+        sent = _delta(event.get("sentinel_delta_pp"), pp=True)
+        row = {
+            "grade": grade, "attempt": event.get("generation", "-"),
+            "target": "INDEP",
+            "target_delta": _delta(event.get("probe_delta_pp"), pp=True),
+            "protected": sent,
+            "worst": _delta(event.get("worst_delta_pp"), pp=True),
+            "decision": "SENTINEL",
+            "evidence": (f"{event.get('family_count', '?')} families | "
+                         f"CE {ce} P(C) {prob} M {margin}"),
+            # Retain raw semantic aliases for programmatic consumers of v1.
+            "probe": _delta(event.get("probe_delta_pp"), pp=True),
+            "sent": sent, "ce": ce, "prob": prob, "margin": margin,
+        }
+        self.board.rows["SENTINEL & RETENTION"].append(row)
+
+    def _soup(self, grade, event):
+        if event.get("teacher_only") is not True:
+            raise ValueError("SCHOOL_TELEMETRY_SOUP_TEACHER_ONLY_REQUIRED")
+        digest = event.get("teacher_digest")
+        if (not isinstance(digest, str) or len(digest) != 64 or
+                any(ch not in string.hexdigits for ch in digest)):
+            raise ValueError("SCHOOL_TELEMETRY_SOUP_SOURCE_PROVENANCE_REQUIRED")
+        self.board.rows["SOUP & TEACHER"].append({
+            "grade": grade, "attempt": event.get("generation", "-"),
+            "policy": "TEACHER SOUP", "lr": "-", "depth": "-", "contrast": "-",
+            "old": "-", "preview": "-", "distill": "-",
+            "credit": _delta(event.get("teacher_credit")),
+            "soup": _display(event.get("soup_kl")),
+            "cover": _percent(event.get("coverage")),
+            "sup": _display(event.get("supervised_loss")),
+            "parent": _display(event.get("parent_kl")),
+            "bridge_ce": _display(event.get("bridge_ce")),
+        })
+        self.board.push("system", {"kind": "SOUP", "grade": grade,
+            "detail": f"Measured sup={_display(event.get('supervised_loss'))} "
+                      f"bridge CE={_display(event.get('bridge_ce'))}; teacher only"}, redraw=False)
+
+    def _family(self, grade, event):
+        """Future source/NI constructor family probes, never grade mastery."""
+        _source_provenance(event)
+        if event.get("partition") not in ("independent_validation", "source_train"):
+            raise ValueError("SCHOOL_TELEMETRY_FAMILY_UNKNOWN_PARTITION")
+        family = event.get("family")
+        before, after = event.get("before"), event.get("after")
+        if not family or not isinstance(before, dict) or not isinstance(after, dict):
+            raise ValueError("SCHOOL_TELEMETRY_FAMILY_SCORE_REQUIRED")
+        for score in (before, after):
+            if (type(score.get("correct")) is not int or type(score.get("total")) is not int or
+                    score["total"] <= 0 or not 0 <= score["correct"] <= score["total"]):
+                raise ValueError("SCHOOL_TELEMETRY_FAMILY_SCORE_INVALID")
+        if before["total"] != after["total"]:
+            raise ValueError("SCHOOL_TELEMETRY_FAMILY_RUBRIC_COUNT_DRIFT")
+        self.board.rows["BRIDGE FAMILIES"].append({
+            "grade": grade, "family": family,
+            "start": "-", "before": f"{before['correct']}/{before['total']}",
+            "after": f"{after['correct']}/{after['total']}",
+            "gain": f"{after['correct']-before['correct']:+d}",
+            "attempt": event.get("generation", "-"),
+        })
+
+    def _qualification(self, grade, event):
+        self.board.push("system", {"kind": "QUALIFICATION", "grade": grade,
+            "detail": f"{event.get('status', 'UNKNOWN')}: {event.get('details', '-')}"},
+            redraw=False)
+
+    def _resource(self, grade, event):
+        for field in ("free_bytes", "reserve_bytes", "estimated_write_bytes"):
+            if type(event.get(field)) is not int or event[field] < 0:
+                raise ValueError("SCHOOL_TELEMETRY_DISK_BUDGET_INVALID:" + field)
+        free, reserve, estimate = (event[field] for field in
+                                   ("free_bytes", "reserve_bytes", "estimated_write_bytes"))
+        ready = free >= reserve + estimate
+        detail = (f"{'READY' if ready else 'BLOCKED'} | free {free/1024**3:.2f} GiB | "
+                  f"reserve {reserve/1024**3:.1f} GiB + "
+                  f"next write {estimate/1024**3:.2f} GiB")
+        records = self.board.rows["SYSTEM & QUALIFICATION"]
+        new_row = {"kind": "DISK", "grade": grade, "detail": detail}
+        for i, existing in enumerate(records):
+            if existing["kind"] == "DISK":
+                records[i] = new_row
+                break
+        else:
+            records.append(new_row)
+        self.board.state["disk_ready"] = ready
+
+    def _stop(self, grade, event):
+        reason = event["stop_reason"]
+        if all(field in event for field in
+               ("free_bytes", "reserve_bytes", "estimated_write_bytes")):
+            self._resource(grade, event)
+        self.board.mode = "STOPPED | " + reason
+        self.board.push("system", {"kind": "STOP", "grade": grade,
+            "detail": f"{reason} | {event['visits_this_command']} visits | "
+                      f"{event['elapsed_seconds']:.1f}s | step {event['optimizer_step']}"},
+            redraw=False)
+        quarantined = event.get("stagnation_quarantined") or []
+        if quarantined:
+            self.board.push("system", {"kind": "STAGNATION", "grade": grade,
+                "detail": "WITHHELD THIS RUN | " + ", ".join(quarantined) +
+                          " | still required for graduation"}, redraw=False)
+        self.board.state.update(
+            stop=reason,
+            step=event.get("optimizer_step", self.board.state.get("step")),
+            _rate_sample_eligible=True)

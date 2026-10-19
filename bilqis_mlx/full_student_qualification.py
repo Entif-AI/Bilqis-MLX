@@ -14,7 +14,7 @@ import sys
 import tempfile
 
 from .backup import digest_file
-from .mlx_parity import (clip_gradients, forward_arrays,
+from bilqis_mlx.runtime.mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
 from .source import AUDITED_PARENT
 
@@ -142,7 +142,7 @@ def probe(checkpoint: Path, legacy_root: Path, *, tolerance=2e-3,
     mlx_step = int(mlx_optimizer.state["step"].item())
     restart = None
     if verify_restart:
-        from .mlx_checkpoint import (save_new_bundle,
+        from bilqis_mlx.runtime.mlx_checkpoint import (save_new_bundle,
                                      load_semantically_bound_bundle)
         # A throwaway bundle occupies only a private temporary directory;
         # the pinned source model/checkpoint and actual school runs are never

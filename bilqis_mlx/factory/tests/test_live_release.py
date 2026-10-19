@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import unittest
 
-from bilqis_mlx.factory.adapters import live_source_registry
+from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.factory.generation import draw_release_rows
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.grade_a_probe import read_sources
@@ -19,7 +19,7 @@ SOURCE = ROOT / "vendor" / "legacy-v16"
 class LiveFactoryReleaseTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        manifest = json.loads((ROOT / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
+        manifest = json.loads((ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
         cls.a = grade_a_course(accepted_grade_a(manifest))
         cls.b = grade_b_course(cls.a, SOURCE)
         cls.graph = registry_graph()

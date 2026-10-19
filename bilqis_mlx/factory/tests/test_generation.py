@@ -1,12 +1,14 @@
+from dataclasses import replace
 import unittest
 
-from bilqis_mlx.champions import Checkpoint
+from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.curriculum import AnswerFamily, BINARY, Capability, Course, Grade
 from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from bilqis_mlx.factory.generation import draw_release_rows
 from bilqis_mlx.factory.model import SourceAdapter
 from bilqis_mlx.factory.release import compile_factory_release
-from bilqis_mlx.school import Assessment, Score, assess, start_new, visit
+from bilqis_mlx.factory.tests.support import synthetic_release_inputs
+from bilqis_mlx.curriculum.scheduler import Assessment, Score, assess, start_new, visit
 
 
 def _rows(*, capability, seed, each, **_):
@@ -15,7 +17,36 @@ def _rows(*, capability, seed, each, **_):
                  for i in range(each))
 
 
+def _check(row, **_):
+    return row["gold"] == ("TRUE" if int(row["id"].rsplit(":", 1)[1]) % 2 else "FALSE")
+
+
 class GenericGenerationTests(unittest.TestCase):
+    def test_generation_refuses_registry_implementation_drift(self):
+        course, registered = synthetic_release_inputs()
+        release = compile_factory_release(course, registered)
+        descriptor = replace(release.source_adapters[0], implementation_sha256="f" * 64)
+        called = []
+        registry = SourceAdapterRegistry((RegisteredSourceAdapter(
+            descriptor, lambda **kwargs: called.append(kwargs), _check),))
+        with self.assertRaisesRegex(ValueError, "FACTORY_GENERATION_ADAPTER_DRIFT"):
+            draw_release_rows(None, {}, release, registry, seed=1)
+        self.assertEqual(called, [])
+
+    def test_unchanged_descriptor_cannot_hide_wrong_source_gold(self):
+        course, registered = synthetic_release_inputs()
+        release = compile_factory_release(course, registered)
+
+        def corrupted(**kwargs):
+            rows = list(_rows(**kwargs))
+            rows[0]["gold"] = "TRUE"  # index zero independently means FALSE.
+            return tuple(rows)
+
+        registry = SourceAdapterRegistry((RegisteredSourceAdapter(
+            release.source_adapters[0], corrupted, _check),))
+        with self.assertRaisesRegex(ValueError, "SOURCE_ORACLE_DISAGREEMENT"):
+            draw_release_rows(None, {}, release, registry, seed=1)
+
     def test_synthetic_grade_uses_only_declarative_adapter_registration(self):
         caps = tuple(Capability(
             id=f"Z.C{i}", difficulty="fixture", source_anchor="repo:fixture/z",
@@ -29,7 +60,7 @@ class GenericGenerationTests(unittest.TestCase):
         course = Course((grade,), "fixture.z/v1", "b" * 64, "a" * 64)
         adapter = SourceAdapter("fixture.z-adapter/v1", "fixture.z-generator/v1",
                                 ("fixture.z-oracle/v1",), "d" * 64)
-        registry = SourceAdapterRegistry((RegisteredSourceAdapter(adapter, _rows),))
+        registry = SourceAdapterRegistry((RegisteredSourceAdapter(adapter, _rows, _check),))
         release = compile_factory_release(course, registry)
         rows = draw_release_rows(None, {}, release, registry, seed=17)
         self.assertEqual(len(rows), 24)

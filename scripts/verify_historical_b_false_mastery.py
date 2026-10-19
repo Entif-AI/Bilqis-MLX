@@ -16,7 +16,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from bilqis_mlx.trainer import _predictions
-from bilqis_mlx.mlx_checkpoint import load_semantically_bound_bundle
+from bilqis_mlx.runtime.mlx_checkpoint import load_semantically_bound_bundle
 
 
 PROMOTION = "1888c7d27ddfe7f7a8679d84328fc7b0a180e7b942963998e9c6c42784403da7"

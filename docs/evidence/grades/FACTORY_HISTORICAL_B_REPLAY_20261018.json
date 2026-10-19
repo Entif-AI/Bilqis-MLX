@@ -1,0 +1,143 @@
+{
+  "actual_neural_updates": 0,
+  "checkpoint": {
+    "bundle": "runs/issue-340-mentor-epoch-trial/bundles/working-5457-dc95c8b23386",
+    "optimizer_step": 204072,
+    "sha256": "e65d62174b7c9681991d27e3e2a424358f38dceeb50c90544803bc94d7546585"
+  },
+  "factory_qualification_passed": false,
+  "native_adamw_unchanged": true,
+  "observations": {
+    "fresh_generalization": {
+      "capabilities": {
+        "A.EDGE": {
+          "correct": 12,
+          "total": 12
+        },
+        "A.IDENTITY": {
+          "correct": 12,
+          "total": 12
+        },
+        "A.LINK": {
+          "correct": 12,
+          "total": 12
+        },
+        "A.MAPS": {
+          "correct": 12,
+          "total": 12
+        },
+        "A.MEMBER": {
+          "correct": 12,
+          "total": 12
+        },
+        "A.PARENT": {
+          "correct": 11,
+          "total": 12
+        },
+        "B.AND": {
+          "correct": 5,
+          "total": 12
+        },
+        "B.IFF": {
+          "correct": 10,
+          "total": 12
+        },
+        "B.IMPLIES": {
+          "correct": 7,
+          "total": 12
+        },
+        "B.NOT": {
+          "correct": 8,
+          "total": 12
+        },
+        "B.OR": {
+          "correct": 9,
+          "total": 12
+        },
+        "B.XOR": {
+          "correct": 8,
+          "total": 12
+        }
+      },
+      "cohort_sha256": "1659529d0f178da8a72d8efa2fa2f123b017be16da1b84201b6f51b0c9f54a21",
+      "evaluated_scope": "A+B",
+      "grades": {
+        "A": {
+          "correct": 71,
+          "total": 72
+        },
+        "B": {
+          "correct": 47,
+          "total": 72
+        }
+      },
+      "original_cohort_sha256": "e2550b8b950f57b7ff60d08e897e1506119571dd5018cc052075ec53aa2dbeae"
+    },
+    "promotion": {
+      "capabilities": {
+        "A.EDGE": {
+          "correct": 12,
+          "total": 12
+        },
+        "A.IDENTITY": {
+          "correct": 12,
+          "total": 12
+        },
+        "A.LINK": {
+          "correct": 12,
+          "total": 12
+        },
+        "A.MAPS": {
+          "correct": 12,
+          "total": 12
+        },
+        "A.MEMBER": {
+          "correct": 12,
+          "total": 12
+        },
+        "A.PARENT": {
+          "correct": 12,
+          "total": 12
+        },
+        "B.AND": {
+          "correct": 12,
+          "total": 12
+        },
+        "B.IFF": {
+          "correct": 12,
+          "total": 12
+        },
+        "B.IMPLIES": {
+          "correct": 12,
+          "total": 12
+        },
+        "B.NOT": {
+          "correct": 12,
+          "total": 12
+        },
+        "B.OR": {
+          "correct": 12,
+          "total": 12
+        },
+        "B.XOR": {
+          "correct": 12,
+          "total": 12
+        }
+      },
+      "cohort_sha256": "1888c7d27ddfe7f7a8679d84328fc7b0a180e7b942963998e9c6c42784403da7",
+      "evaluated_scope": "A+B",
+      "grades": {
+        "A": {
+          "correct": 72,
+          "total": 72
+        },
+        "B": {
+          "correct": 72,
+          "total": 72
+        }
+      },
+      "original_cohort_sha256": "1888c7d27ddfe7f7a8679d84328fc7b0a180e7b942963998e9c6c42784403da7"
+    }
+  },
+  "schema": "bilqis.mlx.factory-historical-neural-replay/v1"
+}

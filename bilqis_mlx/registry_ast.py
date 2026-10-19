@@ -404,7 +404,7 @@ def compiler_report(snapshot: Path, *, grade: str = "C",
 
     registry = load_registry(snapshot)
     manifest = json.loads((Path(__file__).resolve().parents[1] /
-                           "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
+                           "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
     active = compile_ast(accepted_grade_a(manifest))
     bound = bind_course_tokens(active, registry)
     stage = stage_plan(registry, grade)
@@ -440,7 +440,7 @@ def main(argv=None):
     import argparse
     parser = argparse.ArgumentParser(description="Neural-inert Registry AST construction planning")
     parser.add_argument("--snapshot", type=Path, default=(
-        Path(__file__).resolve().parents[1] / "docs/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json"))
+        Path(__file__).resolve().parents[1] / "docs/provenance/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json"))
     parser.add_argument("--grade", default="C")
     parser.add_argument("--assume-mastered", nargs="*", default=(),
                         help="WHAT-IF grade assumptions only, never mastery/admission receipts")

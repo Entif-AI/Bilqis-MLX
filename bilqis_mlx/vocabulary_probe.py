@@ -14,7 +14,7 @@ from pathlib import Path
 import sys
 
 from .backup import digest_file
-from .mlx_parity import forward, native_optimizer_to_mlx
+from bilqis_mlx.runtime.mlx_parity import forward, native_optimizer_to_mlx
 from .source import AUDITED_PARENT
 from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .vocabulary_growth import AdmittedToken, append_catalog, extend_mlx_student

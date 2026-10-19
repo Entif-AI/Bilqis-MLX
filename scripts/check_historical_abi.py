@@ -60,7 +60,7 @@ def check_abi(snapshot_path: Path, *, expected: str | None,
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot", type=Path,
-                        default=ROOT / "docs/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json")
+                        default=ROOT / "docs/provenance/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json")
     parser.add_argument("--require-external", action="store_true",
                         help="Fail when BILQIS_EXPECTED_INDEX_SHA256 is absent")
     args = parser.parse_args(argv)

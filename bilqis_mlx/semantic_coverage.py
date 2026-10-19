@@ -325,10 +325,10 @@ def main(argv=None) -> int:
     parser.add_argument("--each", type=int, default=12)
     parser.add_argument("--details", action="store_true")
     args = parser.parse_args(argv)
-    manifest = json.loads((project / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
+    manifest = json.loads((project / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
     approved = live_course(accepted_grade_a(manifest), args.legacy_code_root)
     ast = compile_ast(approved)
-    registry = load_registry(project / "docs/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json")
+    registry = load_registry(project / "docs/provenance/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json")
     plan = discover_composition_obligations(ast, registry)
     verified = audit_pinned_micro_generator(
         plan, args.legacy_code_root, seed=args.seed,

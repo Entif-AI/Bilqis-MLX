@@ -10,10 +10,10 @@ import hashlib
 import json
 from pathlib import Path
 
-from .champions import Checkpoint
+from bilqis_mlx.learning.champions import Checkpoint
 from .curriculum import Course
 from .grade_a_manifest import verify_manifest
-from .school import Assessment, Score
+from bilqis_mlx.curriculum.scheduler import Assessment, Score
 
 
 def capability_scores(manifest: dict, course: Course,

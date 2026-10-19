@@ -12,8 +12,8 @@ import json
 from pathlib import Path
 
 from bilqis_mlx.trainer import _predictions, _fingerprint, _compatible_graphs
-from bilqis_mlx.grade_soup import soup_shards, verify_frozen_soup
-from bilqis_mlx.mlx_checkpoint import load_semantically_bound_bundle
+from bilqis_mlx.learning.grade_soup import soup_shards, verify_frozen_soup
+from bilqis_mlx.runtime.mlx_checkpoint import load_semantically_bound_bundle
 
 
 def sha(path):

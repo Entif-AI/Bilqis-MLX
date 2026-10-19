@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .mlx_parity import clip_gradients, forward_arrays
+from bilqis_mlx.runtime.mlx_parity import clip_gradients, forward_arrays
 
 
 TRAIN_CASTES = ("numeric_0_3", "numeric_active", "numeric_full_101",

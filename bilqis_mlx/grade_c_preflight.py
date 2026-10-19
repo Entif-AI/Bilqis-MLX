@@ -34,7 +34,7 @@ def qualify(legacy_root, manifest, *, previous=None):
 
 def main():
     root = Path(__file__).resolve().parents[1]
-    manifest = json.loads((root / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
+    manifest = json.loads((root / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
     print(json.dumps(qualify(LEGACY_SOURCE, manifest), indent=2))
 
 

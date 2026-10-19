@@ -28,12 +28,21 @@ def draw_release_rows(source_root, graph, release: FactoryRelease,
         if type(count) is not int or count < 1:
             raise ValueError("FACTORY_GENERATION_INVALID_COUNT")
         adapter = registry.require(cap.lesson_generator, cap.independent_oracle)
+        if adapter.descriptor != release.source_adapter_map.get(adapter.descriptor.adapter_id):
+            raise ValueError("FACTORY_GENERATION_ADAPTER_DRIFT:" + cap.id)
         batch = adapter.draw(
             source_root=source_root, graph=graph, course=course,
             capability=cap.id, seed=seed, each=count)
         if (len(batch) != count or
                 any(row.get("capability") != cap.id for row in batch)):
             raise ValueError("FACTORY_GENERATION_ADAPTER_SCOPE_DRIFT:" + cap.id)
+        answers = {family.kind: family.values for family in cap.answer_families}
+        for row in batch:
+            if (not isinstance(row.get("id"), str) or not row["id"] or
+                    row.get("gold") not in answers.get(row.get("answer_kind", "binary"), ())):
+                raise ValueError("FACTORY_GENERATION_ANSWER_CONTRACT_DRIFT:" + cap.id)
+            if adapter.check(row, source_root=source_root, graph=graph, course=course) is not True:
+                raise ValueError("FACTORY_GENERATION_SOURCE_ORACLE_DISAGREEMENT:" + cap.id)
         rows.extend(batch)
     expected = {cap.id: (each if each is not None else count)
                 for _, cap, count in selected}

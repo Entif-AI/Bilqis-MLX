@@ -9,7 +9,7 @@ from typing import Mapping
 
 from .live_grade_c import RELEASE, answer_heads, constructor_digest, expanded_graph
 from .live_curriculum import numeric_maximum
-from .school import Assessment, SchoolState, append_next_grade, verify_state
+from bilqis_mlx.curriculum.scheduler import Assessment, SchoolState, append_next_grade, verify_state
 from .curriculum import Course
 from .semantics.core import Operation
 from .curriculum_compiler import TypedCandidatePackage, compile_ast
@@ -215,7 +215,7 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
     import uuid
     pointer = _bundle_pointer(run_dir, "numeric-admission-"+uuid.uuid4().hex[:12],
         grown, own_optimizer, grown_graph, reserve_gib=reserve_gib)
-    from .mentor_epoch import begin_epoch
+    from bilqis_mlx.learning.mentor_epoch import begin_epoch
     previous_caps = tuple(cap.id for grade in previous.grades
                           for cap in grade.capabilities)
     next_epoch = begin_epoch(

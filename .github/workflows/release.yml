@@ -26,7 +26,7 @@ jobs:
           python3 -B scripts/check_semantic_boundaries.py
           python3 -B scripts/check_factory_architecture.py
           python3 -B -m unittest -q tests.test_state_archive tests.test_whole_student_retention tests.test_release_version
-          python3 -B scripts/code_smell_audit.py --check-baseline docs/development/code_smell_baseline.json
+          python3 -B scripts/code_smell_audit.py --check-baseline docs/evidence/development/code_smell_baseline.json
 
   publish:
     needs: verify

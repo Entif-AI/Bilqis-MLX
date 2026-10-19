@@ -7,19 +7,21 @@ import json
 from pathlib import Path
 import sys
 
-from .disk import assert_headroom
+from bilqis_mlx.runtime.disk import assert_headroom
 from .source import AUDITED_PARENT
 from .grade_a_release import RELEASE as GRADE_A_RELEASE
-from .live_grade_a import RELEASE as LIVE_GRADE_A_RELEASE
-from .live_grade_b import RELEASE as LIVE_GRADE_B_RELEASE
-from .live_grade_c import RELEASE as LIVE_GRADE_C_RELEASE
+from .factory.live_releases import (
+    INITIAL_RELEASE as LIVE_GRADE_A_RELEASE,
+    BOOLEAN_RELEASE as LIVE_GRADE_B_RELEASE,
+    NUMERIC_RELEASE as LIVE_GRADE_C_RELEASE,
+)
 from .numeric_staircase import RELEASE as STAIRCASE_RELEASE
 from .paths import REPO_ROOT, LEGACY_SOURCE, LEGACY_CHECKPOINTS, active_run_dir
-from .spiral_dashboard import Dashboard, TABLES
+from bilqis_mlx.presentation.spiral_dashboard import Dashboard, TABLES
 
 ROOT = REPO_ROOT
 DEFAULT_RUN = active_run_dir()
-GRADE_A_MANIFEST = ROOT / "docs" / "GRADE_A_CANDIDATE_MANIFEST_V2.json"
+GRADE_A_MANIFEST = ROOT / "docs" / "provenance" / "GRADE_A_CANDIDATE_MANIFEST_V2.json"
 LEGACY_ROOT = LEGACY_SOURCE
 ORIGINAL_CHECKPOINT = LEGACY_CHECKPOINTS / AUDITED_PARENT.basename
 
@@ -30,7 +32,7 @@ def _qualification_scope() -> dict:
         "disposable_full_student_optimizer_continuation": {
             "status": "PREVIOUSLY_VERIFIED_CPU_AND_APPLE_GPU",
             "scope": "ONE_DETACHED_STEP_AND_COMPLETE_39_TENSOR_ADAMW_RESTART",
-            "evidence": "docs/GRADE_A_REPAIR_AND_BACKEND_20261015.md",
+            "evidence": "docs/evidence/grades/GRADE_A_REPAIR_AND_BACKEND_20261015.md",
             "recheck": "npm run mlx:qualify",
             "freshly_rerun_by_this_command": False,
         },
@@ -221,54 +223,33 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
                      "experimental_risks":["FIRST_HUMAN_RUN_NOT_YET_OBSERVED",
                                            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"],
                      "operator_constraint":"HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES"})
-    if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE" and snapshot.get("grade") == "A":
-        # Announce the actual next semantic release before the human operates.
-        # This compiles/verifies source only; no checkpoint is opened for edits.
+    if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE":
+        # Source-only preflight is release/provider driven. The CLI never picks
+        # a successor from a hard-coded grade letter.
+        from .factory.live_releases import (
+            course_for_mode, initial_course, preflight_successor,
+            resolve_admitted_courses,
+        )
         from .grade_a_release import accepted_grade_a
-        from .live_grade_a import live_course as admitted_a
-        from .live_grade_b import live_course as admitted_b
         manifest = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
-        next_course = admitted_b(admitted_a(accepted_grade_a(manifest)),legacy_root)
-        snapshot["start_behavior"] = "HUMAN_RESUME_ADMIT_B_FROM_MASTERY_A"
-        snapshot["next_grade"] = "B"
-        snapshot["next_grade_source_checked"] = next_course.executable
-        snapshot["next_grade_rubric_sha256"] = next_course.grades[-1].assessment_sha256
-        snapshot["next_grade_complete_assessment_items"] = sum(
-            count for grade in next_course.grades for _, count in grade.exam_item_counts)
-        snapshot["experimental_risks"] = [
-            "GRADE_B_REAL_STUDENT_CONVERGENCE_NOT_YET_OBSERVED",
-            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"]
-    snapshot["grade_a_source_manifest"] = "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
-    if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE" and snapshot.get("grade") == "B":
-        from .grade_c_preflight import qualify
-        from .live_grade_c import (REGISTRY_PATH, REGISTRY_COUNTING_TARGET,
-                                   integer_scope, registry_graph)
-        snapshot["next_grade"] = "C"
-        snapshot["start_behavior"] = "HUMAN_RESUME_ADMIT_C_AFTER_CUMULATIVE_A_B_PASS"
-        snapshot["next_grade_policy"] = "PROTOTYPE_SOURCE_AND_CUSTODY_CHECKS"
-        if REGISTRY_PATH.is_symlink():
-            snapshot["blockers"].append("GRADE_C_NATIVE_REGISTRY_ARTIFACT_UNSAFE_PATH")
-        elif not REGISTRY_PATH.is_file():
-            snapshot["blockers"].append("GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING")
-        else:
-            manifest = json.loads(GRADE_A_MANIFEST.read_text())
-            from .grade_a_release import accepted_grade_a
-            from .historical_live_release import resume_grade_courses
-            from .live_grade_b import live_course as admitted_b
-            parent_a, parent_b = resume_grade_courses(accepted_grade_a(manifest),
-                legacy_root, json.loads((run_dir / "state.json").read_text()))
-            parent_b = parent_b or admitted_b(parent_a, legacy_root)
-            snapshot["next_grade_source"] = qualify(legacy_root, manifest, previous=parent_b)
-            if integer_scope(registry_graph()) != REGISTRY_COUNTING_TARGET:
-                snapshot["blockers"].append("C_REQUIRES_BILQIS_INTEGER_MAX="+str(REGISTRY_COUNTING_TARGET))
+        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        accepted = accepted_grade_a(manifest)
+        initial = initial_course(accepted)
+        admitted = resolve_admitted_courses(
+            accepted, legacy_root, saved, include_prospective=False)
+        current = course_for_mode(admitted, saved.get("curriculum_mode"), initial)
+        successor = preflight_successor(current, legacy_root, manifest, saved)
+        snapshot.update(successor["details"])
+        snapshot["blockers"].extend(successor["blockers"])
+    snapshot["grade_a_source_manifest"] = "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
     if numeric_staircase:
         if not resume:
             raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
-        from .live_grade_c import registry_graph
+        from .factory.live_releases import numeric_registry_graph as registry_graph
         from .numeric_staircase import build_course, INITIAL_MAXIMUM, FINAL_MAXIMUM
         from .grade_a_release import accepted_grade_a
-        from .historical_live_release import resume_grade_courses
-        from .live_grade_b import live_course as admitted_b
+        from .compatibility.historical_live_release import resume_grade_courses
+        from .factory.live_releases import boolean_successor as admitted_b
         saved = json.loads((run_dir/'state.json').read_text())
         if saved.get('curriculum_mode') not in (LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE):
             raise ValueError('NUMERIC_STAIRCASE_REQUIRES_EXISTING_C')
@@ -296,17 +277,15 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         snapshot["source_manifest_preflight"] = "NOT_RERUN_USE_--verify-source"
     if boolean_association_bridge:
         from .boolean_association import VERSION, constructor_digest
+        from .runtime.admission import admitted_release_supports_teaching_option
         saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
-        if set(saved.get("school", {}).get("active_grades", ())) != {"A", "B", "C"}:
-            snapshot["blockers"].append("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_ADMITTED_A_B_C")
+        if not admitted_release_supports_teaching_option(run_dir, saved, VERSION):
+            snapshot["blockers"].append("TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE")
         snapshot["boolean_association_bridge"] = {
             "enabled_for_next_human_command": True,
             "version": VERSION,
             "generator_code_sha256": constructor_digest(),
-            "questions_per_eligible_optimizer_step": 8,
-            "questions_per_source_grade": 4,
-            "eligible_lesson_grades": ["B"],
-            "borrowed_source_grades": ["A", "C"],
+            "authority": "FACTORY_RELEASE_TEACHING_OPTION",
             "exam_rubric_changed": False,
             "grade_a_pass_fail_changed": False,
             "grade_c_pass_fail_changed": False,
@@ -318,7 +297,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
 
 
 def dashboard(run_dir: Path):
-    from .grade_a_dashboard import render
+    from bilqis_mlx.presentation.dashboard import render
     render(run_dir)
     return 0
 
@@ -456,7 +435,7 @@ def _guard_independent_no_retention(args):
 def _report_retention_plan(args):
     if args.no_retention:
         return
-    from .learning_experiment import Settings
+    from bilqis_mlx.learning.learning_experiment import Settings
     settings = Settings(
         probe_each=args.experiment_probe_each,
         mature_max_loss=args.experiment_mature_max_loss,
@@ -468,7 +447,7 @@ def _report_retention_plan(args):
 def _timing_context(args):
     if not args.timing_trace:
         return None, nullcontext()
-    from .timing_trace import TimingTrace, default_trace_path
+    from bilqis_mlx.runtime.timing_trace import TimingTrace, default_trace_path
     path = default_trace_path(args.run_dir)
     context = TimingTrace(
         path,
@@ -545,7 +524,7 @@ def main(argv=None):
                 not args.legacy_code_root.expanduser().resolve().is_relative_to(ROOT)):
             raise ValueError("HUMAN_TRAINER_EXTERNAL_SOURCE_ROOT_FORBIDDEN")
         from .trainer import operate, operator_view
-        from .grade_a_dashboard import build, ingest
+        from bilqis_mlx.presentation.dashboard import build, ingest
         board, on_event = _prepare_live_board(args, build, ingest)
         with operator_view(on_event):
             legacy_root, original_checkpoint = _source_paths(args.legacy_code_root, args.champion_checkpoint)

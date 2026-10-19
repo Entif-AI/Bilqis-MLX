@@ -51,6 +51,8 @@ def inspect_semantic_boundaries(root: Path) -> tuple[str, ...]:
         return ("MISSING_SEMANTIC_DOMAIN_PACKAGE",)
     for owner in sorted(OWNERS):
         for path in sorted((src / owner).rglob("*.py")):
+            if "tests" in path.relative_to(src).parts:
+                continue
             module = ("bilqis_mlx", *path.relative_to(src).with_suffix("").parts)
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
             for node in ast.walk(tree):
