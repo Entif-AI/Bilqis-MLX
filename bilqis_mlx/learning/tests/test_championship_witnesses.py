@@ -3,7 +3,8 @@ from copy import deepcopy
 from unittest import TestCase
 
 from bilqis_mlx.learning.championship_witnesses import (
-    earning_witness, maxed_role, preserves_witnesses,
+    battery_from_exam, earning_witness, maxed_role, refresh_battery,
+    verified_battery, verified_witnesses,
 )
 
 
@@ -44,13 +45,65 @@ class ChampionshipWitnessTests(TestCase):
         self.assertEqual(proof["perfect_capabilities"], ["A.X"])
         self.assertEqual(measured, exam())
 
-    def test_every_influencing_question_must_survive_across_grades(self):
-        proof = earning_witness(exam(), ("A.X", "B.Y"))
-        role = {"capability": "A.X", "qualification_witnesses": [proof]}
-        self.assertFalse(preserves_witnesses(role, {}))
-        self.assertFalse(preserves_witnesses(role, {proof["sha256"]: ["a0", "a1"]}))
-        self.assertFalse(preserves_witnesses(role, {proof["sha256"]: ["a0", "a1", "b0"]}))
-        self.assertTrue(preserves_witnesses(role, {proof["sha256"]: ["a0", "a1", "b0", "b1"]}))
+    def test_surviving_battery_can_shrink_to_latest_winning_answers(self):
+        original = exam()
+        role = {"capability": "A.X",
+                "surviving_battery": list(battery_from_exam(original, ("A.X",)))}
+        segment = verified_battery(role)[0]
+        gate = deepcopy(original)
+        fresh = deepcopy(original)
+        gate["correct_questions"]["A.X"] = [gate["correct_questions"]["A.X"][0]]
+        fresh["correct_questions"]["A.X"] = [fresh["correct_questions"]["A.X"][0]]
+        refreshed = refresh_battery(
+            role, gate_exam=gate, fresh_exam=fresh,
+            qualification_scope=("A.X",),
+            battery_correct={segment["sha256"]: ["a0"]})
+        self.assertEqual({q["id"] for s in refreshed for q in s["questions"]}, {"a0"})
+
+    def test_initial_and_fresh_current_wins_are_both_carried_forward(self):
+        original = exam()
+        role = {"capability": "A.X",
+                "surviving_battery": list(battery_from_exam(original, ("A.X",)))}
+        segment = verified_battery(role)[0]
+        gate = deepcopy(original)
+        fresh = deepcopy(original)
+        gate["correct_questions"]["A.X"] = [gate["correct_questions"]["A.X"][0]]
+        fresh["correct_questions"]["A.X"] = [fresh["correct_questions"]["A.X"][1]]
+        refreshed = refresh_battery(
+            role, gate_exam=gate, fresh_exam=fresh,
+            qualification_scope=("A.X",), battery_correct={segment["sha256"]: []})
+        self.assertEqual({q["id"] for s in refreshed for q in s["questions"]}, {"a0", "a1"})
+
+    def test_surviving_battery_deduplicates_question_identity_across_historic_segments(self):
+        first = exam()
+        second = deepcopy(first)
+        second["cohort_sha256"] = "f" * 64
+        role = {
+            "capability": "A.X",
+            "surviving_battery": [
+                *battery_from_exam(first, ("A.X",)),
+                *battery_from_exam(second, ("A.X",)),
+            ],
+        }
+        battery = verified_battery(role)
+        self.assertEqual(
+            {q["id"] for segment in battery for q in segment["questions"]},
+            {"a0", "a1"})
+        self.assertEqual(sum(len(segment["questions"]) for segment in battery), 2)
+
+    def test_latest_winning_occurrence_owns_duplicate_question_context(self):
+        prior_exam = exam()
+        current = deepcopy(prior_exam)
+        current["cohort_sha256"] = "f" * 64
+        role = {"capability": "A.X",
+                "surviving_battery": list(battery_from_exam(prior_exam, ("A.X",)))}
+        prior_segment = verified_battery(role)[0]
+        refreshed = refresh_battery(
+            role, gate_exam=current, fresh_exam=current,
+            qualification_scope=("A.X",),
+            battery_correct={prior_segment["sha256"]: ["a0", "a1"]})
+        self.assertEqual(len(refreshed), 1)
+        self.assertEqual(refreshed[0]["cohort_sha256"], "f" * 64)
 
     def test_max_vote_entitlement_uses_saved_proof_even_if_fresh_score_is_lower(self):
         proof = earning_witness(exam(), ("A.X",))
@@ -67,4 +120,4 @@ class ChampionshipWitnessTests(TestCase):
         damaged = deepcopy(proof)
         damaged["questions"][0]["gold"] = "FALSE"
         with self.assertRaises(ValueError):
-            preserves_witnesses({"qualification_witnesses": [damaged]}, {})
+            verified_witnesses({"qualification_witnesses": [damaged]})

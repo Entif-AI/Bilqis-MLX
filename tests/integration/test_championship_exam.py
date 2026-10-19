@@ -17,6 +17,7 @@ from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.learning.champion_confidence import perfect_role_roster
 from bilqis_mlx.learning.epoch_championships import active_frontier
 from bilqis_mlx.learning.grade_soup import grade_soup_recipe
+from bilqis_mlx.learning.championship_witnesses import battery_from_exam, verified_battery
 
 
 class ChampionshipExamTests(TestCase):
@@ -48,7 +49,8 @@ class ChampionshipExamTests(TestCase):
                 row["id"]: row["gold"] for row in rows}) as inference,
         ):
             _, _, incumbents = trainer._epoch_paired_examinations(
-                None, Path(temp), receipt, course, SimpleNamespace(current_student=current),
+                None, Path(temp), receipt, course,
+                SimpleNamespace(current_student=current, grade="A"),
                 cohort, scores, {r["id"]: r["gold"] for r in cohort.rows}, graph)
         self.assertEqual(set(incumbents["a" * 64]["scores"]), {"A.X"})
         self.assertEqual({r["capability"] for r in inference.call_args.args[2]}, {"A.X"})
@@ -85,11 +87,80 @@ class ChampionshipExamTests(TestCase):
             self.assertEqual(proof["source_graph_sha256"], trainer._fingerprint(old))
             self.assertEqual({q["id"] for q in proof["questions"]}, {"x0", "x1"})
             self.assertNotIn("qualification_witnesses", role)
-            with patch.object(trainer, "_predictions", return_value={"x0": "TRUE", "x1": "FALSE"}) as infer:
-                scores = trainer._championship_witness_scores(
-                    None, root, receipt, [hydrated["active_roles"]["A.X"]] * 2, {}, {})
-            self.assertEqual(set(scores[proof["sha256"]]), {"x0", "x1"})
-            self.assertEqual(infer.call_count, 1)
+            role = hydrated["active_roles"]["A.X"]
+            battery = verified_battery(role)
+            self.assertEqual({q["id"] for segment in battery for q in segment["questions"]},
+                             {"x0", "x1"})
+            with patch.object(trainer, "_predictions", side_effect=[
+                    {"x0": "TRUE", "x1": "FALSE"},
+                    {"x0": "WRONG", "x1": "FALSE"}]) as infer:
+                first = trainer._fresh_battery_results(None, root, receipt, role, {}, old)
+                second = trainer._fresh_battery_results(None, root, receipt, role, {}, old)
+            self.assertEqual(infer.call_count, 2)
+            self.assertNotEqual(first, second)
+
+    def test_title_match_reinfers_both_models_for_current_panel_and_battery(self):
+        graph = {"tokens": ["PAD", "TRUE"], "nodes": [0, 1],
+                 "row_contract_sha256": {}}
+        rows = [{"id": "x0", "capability": "A.X", "gold": "TRUE", "tokens": [1]},
+                {"id": "x1", "capability": "A.X", "gold": "FALSE", "tokens": [1]}]
+        cohort = make_cohort(rows, generator_version="fixture", seed=1,
+                             rubric_version="fixture")
+        incumbent = {"filename": "bundles/old", "sha256": "a" * 64,
+                     "optimizer_step": 10, "model_and_native_adamw": True}
+        challenger_pointer = {"filename": "bundles/new", "sha256": "b" * 64,
+                              "optimizer_step": 11, "model_and_native_adamw": True}
+        context = {
+            "cohort_sha256": cohort.digest, "rubric_sha256": "d" * 64,
+            "assessment_scope_sha256": "e" * 64,
+            "source_graph_sha256": trainer._fingerprint(graph),
+            "source_oracle_sha256": "c" * 64,
+        }
+        earning = {
+            **context, "checkpoint": incumbent,
+            "scores": {"A.X": {"correct": 2, "total": 2}},
+            "questions": {"A.X": [{"id": r["id"], "gold": r["gold"]} for r in rows]},
+            "correct_questions": {
+                "A.X": [{"id": r["id"], "gold": r["gold"]} for r in rows]},
+        }
+        role = {
+            "capability": "A.X", "checkpoint": incumbent,
+            "surviving_battery": list(battery_from_exam(earning, ("A.X",))),
+        }
+        epoch = {"active_roles": {"A.X": role}}
+        challenger = {
+            **context, "checkpoint": challenger_pointer,
+            "scores": {"A.X": {"correct": 2, "total": 2}},
+            "questions": earning["questions"],
+            "correct_questions": earning["correct_questions"],
+        }
+        receipt = {"source_manifest_sha256": "c" * 64,
+                   "config": {}, "answer_ids": [1]}
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "cohorts").mkdir()
+            (root / "cohorts" / (cohort.digest + ".json")).write_text(json.dumps({
+                "cohort_sha256": cohort.digest, "rubric_sha256": "d" * 64,
+                "source_manifest_sha256": "c" * 64, "schema": "fixture",
+                "generator_version": "fixture", "seed": 1, "rows": rows}))
+            predictions = [
+                {"x0": "TRUE", "x1": "FALSE"},   # incumbent fresh current
+                {"x0": "WRONG", "x1": "FALSE"},  # contender fresh current
+                {"x0": "WRONG", "x1": "FALSE"},  # incumbent fresh battery
+                {"x0": "TRUE", "x1": "FALSE"},   # contender fresh battery
+            ]
+            with (patch.object(trainer, "load_semantically_bound_bundle", return_value=(
+                    {}, None, {"safetensors_sha256": "a" * 64,
+                               "optimizer_step": 10}, graph)),
+                  patch.object(trainer, "_predictions", side_effect=predictions) as infer):
+                match = trainer._fresh_title_match(
+                    None, root, receipt, epoch, cohort, challenger, {}, graph, "A.X")
+        self.assertEqual(infer.call_count, 4)
+        self.assertEqual(match["incumbent_current_exam"]["scores"]["A.X"]["correct"], 2)
+        self.assertEqual(match["challenger_current_exam"]["scores"]["A.X"]["correct"], 1)
+        segment = role["surviving_battery"][0]["sha256"]
+        self.assertEqual(len(match["battery_results"]["a" * 64][segment]), 1)
+        self.assertEqual(len(match["battery_results"]["b" * 64][segment]), 2)
 
     def test_fresh_nonflash_exam_earns_roles_and_max_votes_without_graduation(self):
         root = Path(__file__).resolve().parents[2]

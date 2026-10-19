@@ -75,7 +75,7 @@ def champion_roster(frontier: dict, grade: str, *, snapshot=None) -> tuple[dict,
 
 
 def perfect_role_roster(frontier: dict, grade_soups: dict) -> tuple[dict, ...]:
-    """One direct vote per active maxed capability role, across all grades.
+    """Inventory active maxed roles; the trainer scopes direct votes to the lesson grade.
 
     Several capability roles may share one intact checkpoint. Inference may be
     deduplicated by checkpoint, but voting weight remains the number of active

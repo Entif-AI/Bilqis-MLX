@@ -461,7 +461,8 @@ class GradeBTrainerTests(unittest.TestCase):
                 return {r["id"]:r["gold"] for r in rows}
 
             qualification_cohorts = []
-            first_grade_soups = None
+            first_b_soup = None
+            complete_grade_soups = None
             for expected_grade in ("B","A","B"):
                 self.assertEqual(_state_from_json(receipt["school"],self.b_course).grade,
                                  expected_grade)
@@ -489,20 +490,26 @@ class GradeBTrainerTests(unittest.TestCase):
                 self.assertEqual(sum(s["total"] for s in exam["scores"].values()),144)
                 self.assertTrue(all(s["correct"] == s["total"] for s in exam["scores"].values()))
                 self.assertEqual(len(exam["cohort_sha256"]),64)
-                # A's historical champion resets without votes. A newly
-                # trained whole student can earn an UNCONTESTED A title
-                # after the baseline step, separately from the old archive.
+                # Championship authority is same-grade. The first B exam
+                # therefore earns only B roles/soup; A earns fresh active
+                # roles when the scheduler actually replays A.
                 active_soups = receipt["mentor_epoch"]["active_grade_soups"]
-                self.assertEqual(set(active_soups), {"A", "B"})
                 soup_shas = {grade: entry["sha256"]
                              for grade, entry in active_soups.items()}
                 self.assertEqual({entry["vote_count"] for entry in
                                   active_soups.values()}, {6})
-                if first_grade_soups is None:
-                    first_grade_soups = soup_shas
-                    self.assertEqual(set(exam["grade_soups_refreshed"]), {"A", "B"})
+                if expected_grade == "B" and len(qualification_cohorts) == 1:
+                    self.assertEqual(set(active_soups), {"B"})
+                    self.assertEqual(set(exam["grade_soups_refreshed"]), {"B"})
+                    first_b_soup = soup_shas["B"]
+                elif expected_grade == "A":
+                    self.assertEqual(set(active_soups), {"A", "B"})
+                    self.assertEqual(exam["grade_soups_refreshed"], ["A"])
+                    self.assertEqual(soup_shas["B"], first_b_soup)
+                    complete_grade_soups = soup_shas
                 else:
-                    self.assertEqual(soup_shas, first_grade_soups)
+                    self.assertEqual(set(active_soups), {"A", "B"})
+                    self.assertEqual(soup_shas, complete_grade_soups)
                     self.assertEqual(exam["grade_soups_refreshed"], [])
             self.assertEqual(len(set(qualification_cohorts)), 3,
                              "Every grade enrollment, including a revisit, gets a new test")
@@ -519,17 +526,13 @@ class GradeBTrainerTests(unittest.TestCase):
             teacher_visits = [event for event in events if event.get("event") ==
                               "SCHOOL_TEACHER_VISIT_COMMITTED"]
             self.assertTrue(teacher_visits)
-            # The first B pass precedes any newly earned epoch roles. Once the
-            # all-perfect A+B exam mints six active roles per grade, each maxed
-            # foreign capability contributes one direct advisory vote.
+            # Direct champion advice is same-grade only. B's first pass has no
+            # active roles yet; the A replay cannot borrow B's direct votes;
+            # the final B replay can use B's six newly earned direct roles.
             self.assertTrue(all(event.get("prior_grade_champion_votes") == {}
-                                for event in teacher_visits[:6]))
-            self.assertTrue(all(event.get("prior_grade_champion_votes") == {"B": 6}
-                                for event in teacher_visits[6:12]))
-            self.assertTrue(all(event.get("prior_grade_champion_votes") == {"A": 6}
-                                for event in teacher_visits[12:18]))
+                                for event in teacher_visits))
             self.assertTrue(all(event["champion_confidence"]["direct_capability_votes"] ==
-                                ({ } if index < 6 else {"A": 6, "B": 6})
+                                ({} if index < 12 else {"B": 6})
                                 for index, event in enumerate(teacher_visits)))
             self.assertTrue(all(event.get("champion_directed_examples_available") == 0
                                 for event in teacher_visits))

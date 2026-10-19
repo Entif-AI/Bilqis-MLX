@@ -18,7 +18,7 @@ def record(cap, sha, perfect):
 
 
 class ChampionConfidenceTests(unittest.TestCase):
-    def test_foreign_maxed_capability_champion_and_diluted_soup_both_advise_grade_b(self):
+    def test_foreign_maxed_capability_champion_is_silent_but_diluted_soup_advises_grade_b(self):
         from bilqis_mlx.trainer import (
             _frozen_confidence_champions, _frozen_grade_soup_votes,
         )
@@ -39,11 +39,7 @@ class ChampionConfidenceTests(unittest.TestCase):
                 stat.return_value.st_size = 1
                 stat.return_value.st_mtime_ns = 1
                 direct = _frozen_confidence_champions(root, a_only, "B", graph)
-            self.assertEqual(len(direct), 1)
-            # One active maxed capability role is one direct vote even though
-            # its checkpoint happens to have broader simultaneous perfection.
-            self.assertEqual(direct[0]["breadth"], 1)
-            self.assertEqual(direct[0]["source_grade_votes"], {"A": 1})
+            self.assertEqual(direct, ())
             path = root / "soups" / "A-frozen.safetensors"
             path.parent.mkdir()
             path.write_bytes(b"synthetic immutable path")
@@ -60,7 +56,7 @@ class ChampionConfidenceTests(unittest.TestCase):
             self.assertEqual(receipts[0]["frozen_base_votes"], 7)
             self.assertAlmostEqual(receipts[0]["effective_votes"], 7 / 3)
 
-    def test_six_maxed_a_roles_equal_six_direct_votes_plus_two_foreign_soup_votes(self):
+    def test_six_maxed_a_roles_vote_directly_only_in_a_while_soup_crosses_to_b(self):
         from bilqis_mlx.trainer import _frozen_confidence_champions
         from bilqis_mlx.learning.grade_soup import soup_vote_count
         grade = "A"
@@ -85,7 +81,7 @@ class ChampionConfidenceTests(unittest.TestCase):
                         return_value=({"embedding.weight": "synthetic"}, graph))):
                 stat.return_value.st_size = 1
                 stat.return_value.st_mtime_ns = 1
-                direct = _frozen_confidence_champions(root, receipt, "B", graph)
+                direct = _frozen_confidence_champions(root, receipt, "A", graph)
         self.assertEqual(sum(mentor["breadth"] for mentor in direct), 6)
         self.assertEqual(sum(mentor["source_grade_votes"]["A"] for mentor in direct), 6)
         self.assertEqual(soup_vote_count(snapshot, "B", 3), 2.0)
