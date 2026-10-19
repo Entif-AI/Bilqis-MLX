@@ -3521,11 +3521,11 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     run_dir, receipt, course, optimizer)
         source_prefetch_executor = None
         if learning_settings is not None and source_prefetch_workers:
-            from concurrent.futures import ProcessPoolExecutor
-            import multiprocessing
-            source_prefetch_executor = resources.enter_context(ProcessPoolExecutor(
-                max_workers=source_prefetch_workers,
-                mp_context=multiprocessing.get_context("spawn")))
+            from bilqis_mlx.runtime.source_prefetch import (
+                source_prefetch_pool,
+            )
+            source_prefetch_executor = resources.enter_context(
+                source_prefetch_pool(source_prefetch_workers))
         school = _state_from_json(receipt["school"], course)
         if (stagnation_grace_grade is not None and
                 stagnation_grace_grade not in set(school.active_grades)):

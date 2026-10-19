@@ -3,9 +3,11 @@ from contextlib import redirect_stdout,redirect_stderr
 import io
 import json
 from pathlib import Path
+import signal
 import tempfile
 import unittest
 from unittest.mock import patch
+from bilqis_mlx import cli
 from bilqis_mlx.cli import main,parse_args,DEFAULT_RUN,ORIGINAL_CHECKPOINT
 from bilqis_mlx.presentation.spiral_dashboard import TABLES, Dashboard
 from bilqis_mlx.presentation.dashboard import build, ingest
@@ -13,6 +15,29 @@ from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TAB
 
 
 class OperatorTests(unittest.TestCase):
+    def test_human_sigint_guard_raises_once_then_ignores_duplicate_cleanup_signal(self):
+        previous = signal.getsignal(signal.SIGINT)
+        with cli._human_sigint_guard():
+            handler = signal.getsignal(signal.SIGINT)
+            with self.assertRaises(KeyboardInterrupt):
+                handler(signal.SIGINT, None)
+            handler(signal.SIGINT, None)
+        self.assertEqual(signal.getsignal(signal.SIGINT), previous)
+
+    def test_human_training_interrupt_reports_resume_point_once_without_traceback(self):
+        from bilqis_mlx import trainer
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+                trainer, "operate", side_effect=KeyboardInterrupt), \
+                redirect_stderr(io.StringIO()) as errors:
+            code = main([
+                "train", "--human-run", "--resume", "--run-dir", tmp,
+            ])
+        self.assertEqual(code, 130)
+        output = errors.getvalue()
+        self.assertEqual(output.count("HUMAN TRAINING INTERRUPTED"), 1)
+        self.assertIn("last completed visit/checkpoint remains the resume point", output)
+        self.assertNotIn("Traceback", output)
+
     def test_live_visit_projects_rows_once_before_durable_replay(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True)
         board.state["attempted_steps"] = 0

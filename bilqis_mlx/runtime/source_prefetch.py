@@ -5,7 +5,10 @@ parameters, optimizers, run-state paths, checkpoint authority, or MLX handles.
 """
 from __future__ import annotations
 
+from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
 from pathlib import Path
+import signal
 
 from bilqis_mlx.learning.fragile_replay import (
     select_preservation_rows,
@@ -20,6 +23,19 @@ FORBIDDEN_AUTHORITY_KEYS = frozenset({
     "parameters", "params", "optimizer", "run_dir", "checkpoint",
     "student", "receipt", "teacher", "school_state",
 })
+
+
+def source_prefetch_worker_initializer() -> None:
+    """Keep Ctrl+C ownership in the human trainer parent process."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
+def source_prefetch_pool(workers: int) -> ProcessPoolExecutor:
+    return ProcessPoolExecutor(
+        max_workers=workers,
+        mp_context=multiprocessing.get_context("spawn"),
+        initializer=source_prefetch_worker_initializer,
+    )
 
 
 def _fragile_rows(request: dict) -> tuple[dict, ...]:

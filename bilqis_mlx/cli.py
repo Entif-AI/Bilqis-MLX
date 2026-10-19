@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import argparse
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 import json
 from pathlib import Path
+import signal
 import sys
 
 from bilqis_mlx.runtime.disk import assert_headroom
@@ -494,8 +495,27 @@ def _prepare_live_board(args, build, ingest):
     return board, on_event if visual else None
 
 
-def main(argv=None):
-    args=parse_args(argv)
+@contextmanager
+def _human_sigint_guard():
+    """Treat one terminal interrupt as the stop request; ignore cleanup echoes."""
+    previous = signal.getsignal(signal.SIGINT)
+    interrupted = False
+
+    def handle_interrupt(_signum, _frame):
+        nonlocal interrupted
+        if interrupted:
+            return
+        interrupted = True
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGINT, handle_interrupt)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGINT, previous)
+
+
+def _main(args):
     trace_path = None
     try:
         if args.action=="status":return status(args.run_dir)
@@ -569,6 +589,17 @@ def main(argv=None):
             print("Saved school exists. To continue it, use: "
                   "npm run train -- --human-run --resume --minutes 90", file=sys.stderr)
         return 2
+
+
+def main(argv=None):
+    args=parse_args(argv)
+    interrupt_guard = (
+        _human_sigint_guard()
+        if args.action == "train" and args.human_run and not args.dry_run
+        else nullcontext()
+    )
+    with interrupt_guard:
+        return _main(args)
 
 
 if __name__=="__main__":
