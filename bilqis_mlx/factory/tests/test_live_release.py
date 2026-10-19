@@ -34,17 +34,26 @@ class LiveFactoryReleaseTests(unittest.TestCase):
                 release.verify()
                 self.assertEqual(release.course, course)
 
-    def test_generic_generation_matches_existing_a_and_b_source_contracts(self):
+    def test_generic_generation_preserves_a_and_runtime_samples_b_source_contracts(self):
         release = compile_factory_release(self.b, self.registry)
-        for capability, direct in (
-            ("A.IDENTITY", draw_predicates),
-            ("B.IMPLIES", draw_connectives),
-        ):
-            expected = list(direct(SOURCE, self.a_graph, seed=31,
-                                   capability=capability, each=12))
-            actual = draw_release_rows(SOURCE, self.a_graph, release, self.registry,
-                                       seed=31, capability=capability, each=12)
-            self.assertEqual(actual, expected)
+        expected_a = list(draw_predicates(SOURCE, self.a_graph, seed=31,
+                                          capability="A.IDENTITY", each=12))
+        actual_a = draw_release_rows(SOURCE, self.a_graph, release, self.registry,
+                                     seed=31, capability="A.IDENTITY", each=12)
+        self.assertEqual(actual_a, expected_a)
+
+        source_pool = list(draw_connectives(SOURCE, self.a_graph, seed=31,
+                                            capability="B.IMPLIES", each=24))
+        actual_b = draw_release_rows(SOURCE, self.a_graph, release, self.registry,
+                                     seed=31, capability="B.IMPLIES", each=12)
+        pool_ids = {row["id"] for row in source_pool}
+        self.assertEqual(len(actual_b), 12)
+        self.assertTrue({row["id"] for row in actual_b} <= pool_ids)
+        self.assertNotEqual(sum(row["gold"] == "TRUE" for row in actual_b), 6)
+        self.assertEqual({tuple(row["operand_truths"]) for row in actual_b},
+                         {(False,False), (False,True), (True,False), (True,True)})
+        self.assertEqual({row["runtime_sampler"] for row in actual_b},
+                         {"bilqis.mlx.grade-b-runtime-sampler/v2"})
 
     def test_generic_generation_matches_existing_numeric_source_contract(self):
         release = compile_factory_release(self.c, self.registry)

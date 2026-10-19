@@ -1,6 +1,9 @@
 """Admitted finite-world, Boolean and numeric source adapters and independent checks."""
 from __future__ import annotations
 
+import hashlib
+import random
+
 from ..factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from ..factory.model import SourceAdapter
 from ..factory.verification import check_predicate, check_connective, check_numeric
@@ -35,6 +38,9 @@ from ..boolean_association import (
 )
 
 
+BOOLEAN_RUNTIME_SAMPLER = "bilqis.mlx.grade-b-runtime-sampler/v2"
+
+
 
 
 
@@ -46,9 +52,64 @@ def draw_a(*, source_root, graph, course, capability, seed, each):
                            capability=capability, each=each)
 
 
+def _sample_boolean_runtime(rows, *, capability: str, seed: int, each: int):
+    if each < 4:
+        raise ValueError("FACTORY_BOOLEAN_MINIMUM_SAMPLE_REQUIRED")
+    by_pattern = {}
+    for row in rows:
+        by_pattern.setdefault(tuple(row["operand_truths"]), []).append(row)
+    expected_patterns = ({(False,), (True,)} if capability == "B.NOT" else
+                         {(False, False), (False, True), (True, False), (True, True)})
+    if set(by_pattern) != expected_patterns:
+        raise ValueError("FACTORY_BOOLEAN_TRUTH_PATTERN_COVERAGE_MISSING")
+
+    material = f"{BOOLEAN_RUNTIME_SAMPLER}:{seed}:{capability}:{each}".encode()
+    rng = random.Random(int(hashlib.sha256(material).hexdigest(), 16))
+    selected = []
+    for pattern in sorted(expected_patterns):
+        candidates = list(by_pattern[pattern])
+        rng.shuffle(candidates)
+        selected.append(candidates[0])
+
+    minimum_true = sum(row["gold"] == "TRUE" for row in selected)
+    minimum_false = sum(row["gold"] == "FALSE" for row in selected)
+    lower_true = max(minimum_true, each // 3)
+    upper_true = min(each - minimum_false, each - each // 3)
+    true_counts = [count for count in range(lower_true, upper_true + 1)
+                   if count * 2 != each]
+    if not true_counts:
+        true_counts = list(range(lower_true, upper_true + 1))
+    target_true = rng.choice(true_counts)
+
+    selected_ids = {row["id"] for row in selected}
+    remaining = [row for row in rows if row["id"] not in selected_ids]
+    rng.shuffle(remaining)
+    need = {
+        "TRUE": target_true - minimum_true,
+        "FALSE": (each - target_true) - minimum_false,
+    }
+    for row in remaining:
+        gold = row["gold"]
+        if need[gold] <= 0:
+            continue
+        selected.append(row)
+        need[gold] -= 1
+        if not any(need.values()):
+            break
+    if any(need.values()) or len(selected) != each:
+        raise ValueError("FACTORY_BOOLEAN_RUNTIME_SAMPLE_EXHAUSTED")
+    rng.shuffle(selected)
+    return tuple({**row, "runtime_sampler": BOOLEAN_RUNTIME_SAMPLER}
+                 for row in selected)
+
+
 def draw_b(*, source_root, graph, course, capability, seed, each):
-    return draw_connectives(source_root, graph, seed=seed,
-                            capability=capability, each=each)
+    pool_each = max(8, each * 2)
+    if pool_each % 2:
+        pool_each += 1
+    rows = draw_connectives(source_root, graph, seed=seed,
+                            capability=capability, each=pool_each)
+    return _sample_boolean_runtime(rows, capability=capability, seed=seed, each=each)
 
 
 def draw_c(*, source_root, graph, course, capability, seed, each):

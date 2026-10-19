@@ -14,6 +14,7 @@ from bilqis_mlx.grade_b_oracle import CONNECTIVES, evaluate as independent_oracl
 from bilqis_mlx.live_grade_a import live_course as live_a_course
 from bilqis_mlx.live_grade_b import (GENERATOR, RELEASE, draw_connectives,
                                     live_course, constructor_digest, source_attestation)
+from bilqis_mlx.source_adapters.school import draw_b
 
 ROOT = Path(__file__).resolve().parents[3]
 LEGACY = ROOT / "vendor" / "legacy-v16"
@@ -80,6 +81,29 @@ class LiveGradeBTests(unittest.TestCase):
         self.assertNotEqual({r["id"] for r in first}, {r["id"] for r in next_step})
         self.assertEqual(first, draw_connectives(LEGACY,self.graph,seed=413,
                                                  each=32,capability="B.AND"))
+
+    def test_factory_runtime_randomizes_answer_balance_without_losing_truth_table(self):
+        balance_signatures = set()
+        for seed in range(20):
+            signature = []
+            for op in CONNECTIVES:
+                capability = "B." + op
+                rows = draw_b(source_root=LEGACY, graph=self.graph, course=self.course,
+                              capability=capability, seed=seed, each=12)
+                counts = Counter(r["gold"] for r in rows)
+                signature.append((counts["TRUE"], counts["FALSE"]))
+                self.assertEqual(len(rows), 12)
+                self.assertNotEqual(counts["TRUE"], counts["FALSE"])
+                self.assertGreaterEqual(counts["TRUE"], 4)
+                self.assertGreaterEqual(counts["FALSE"], 4)
+                expected_patterns = ({(False,), (True,)} if op == "NOT" else
+                                     {(False,False), (False,True), (True,False), (True,True)})
+                self.assertEqual({tuple(r["operand_truths"]) for r in rows},
+                                 expected_patterns)
+                self.assertEqual({r["runtime_sampler"] for r in rows},
+                                 {"bilqis.mlx.grade-b-runtime-sampler/v2"})
+            balance_signatures.add(tuple(signature))
+        self.assertGreater(len(balance_signatures), 1)
 
     def test_oracle_rejects_undeclared_operator_and_wrong_arity(self):
         row = draw_connectives(LEGACY,self.graph,seed=1,each=4,capability="B.NOT")[0]
