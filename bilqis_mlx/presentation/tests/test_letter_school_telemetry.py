@@ -142,11 +142,12 @@ class SchoolTelemetryTests(unittest.TestCase):
                 [(c.name, c.width) for c in tables["SOUP & TEACHER"][:7]],
                 [
                     ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
-                    ("LR", 2), ("D", 1), ("C", 1), ("SOUP_KL", 8),
+                    ("LR", 2), ("D", 1), ("C", 1), ("OLD", 3),
                 ],
             )
             self.assertEqual(tables["GRADES & MASTERY"][0].name, "CAPABILITY")
             self.assertEqual(tables["GRADES & MASTERY"][0].width, 10)
+            self.assertEqual(tables["GRADES & MASTERY"][3].width, 12)
 
             candidate = board.rows["CANDIDATES"][-1]
             self.assertEqual(candidate["lr"], "13")
@@ -170,6 +171,44 @@ class SchoolTelemetryTests(unittest.TestCase):
             rendered = board.render(width=180, height=44)
             self.assertNotIn(capability, rendered)
             self.assertIn("B.VERYLON~", rendered)
+
+    def test_middle_pane_keeps_only_live_teacher_controls_and_compact_system_feed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            tables = dict(board.tables)
+            self.assertEqual(
+                [(column.name, column.width) for column in tables["SOUP & TEACHER"]],
+                [
+                    ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
+                    ("LR", 2), ("D", 1), ("C", 1), ("OLD", 3),
+                    ("DISTILL", 7), ("CREDIT", 7),
+                ],
+            )
+            self.assertEqual(
+                [(column.name, column.width)
+                 for column in tables["SYSTEM & QUALIFICATION"]],
+                [("TYPE", 13), ("DETAILS", 41)],
+            )
+
+            board.rows["SYSTEM & QUALIFICATION"].append({
+                "kind": "DIAGNOSTIC", "grade": "B",
+                "detail": "active S2:B.OR | 14 NOT MEASURED",
+            })
+            system = board._section_rows("SYSTEM & QUALIFICATION")[-1]
+            self.assertEqual(
+                system["detail"],
+                "B: active S2:B.OR | 14 NOT MEASURED",
+            )
+
+            rendered = board.render(width=210, height=40)
+            self.assertIn(" | ", rendered.splitlines()[5])
+            self.assertIn("SOUP & TEACHER", rendered)
+            self.assertIn("SYSTEM & QUALIFICATION", rendered)
+            self.assertNotIn("SOUP_KL", rendered)
+            self.assertNotIn("COVER", rendered)
+            self.assertNotIn("PREVIEW", rendered)
+            self.assertNotIn("PAR_KL", rendered)
+            self.assertNotIn("BRG_CE", rendered)
 
     def test_candidate_retention_populates_retention_panel_with_real_decision(self):
         with tempfile.TemporaryDirectory() as tmp:

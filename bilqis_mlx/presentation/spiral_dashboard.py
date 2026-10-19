@@ -81,7 +81,7 @@ TABLES = (
 # Full details need about 276 columns. Below that width, the wide view
 # preserves three panes but sheds optional metrics; ordinary terminals retain
 # the existing vertical presentation. This module is not part of model recipe.
-WIDE_MIN_WIDTH = 235
+WIDE_MIN_WIDTH = 210
 WIDE_MIN_HEIGHT = 12
 WIDE_SEP = " | "
 WIDE_PANES = (
@@ -184,7 +184,7 @@ def _columns(specs, width):
             drop = next((c for c in reversed(chosen) if c.key not in
                          ("grade", "decision", "outcome", "detail",
                           "right_pct", "subject", "step_exam",
-                          "score_line", "right_grew")),None)
+                          "score_line", "right_grew", "result")),None)
         if drop is None:break
         chosen.remove(drop)
     if sum(s.width for s in chosen) + len(chosen) - 1 > width:
@@ -234,10 +234,12 @@ def _pane_widths(width):
     """Share real terminal columns without virtual wrapping or lost space."""
     free = width - len(WIDE_SEP) * (len(WIDE_PANES)-1)
     if free < 270:
-        # A 235-column window still has room for three readable panes.
-        gain=free-227
-        left=100+gain*19//43
-        middle=65+gain*11//43
+        # The compact letter-school tables make a 210-column window viable:
+        # candidate evidence stays broad, the middle pane keeps its live core,
+        # and mastery receives enough room for a meaningful outcome label.
+        gain=max(0,free-204)
+        left=86+gain*33//66
+        middle=54+gain*22//66
     else:
         gain=free-270
         left=119+gain//2
@@ -656,6 +658,15 @@ class Dashboard:
 
     def _section_rows(self,name):
         rows=list(self.rows[name])
+        if name=='SYSTEM & QUALIFICATION':
+            return [
+                {**row, 'detail':(
+                    f'{row.get("grade")}: {row.get("detail","-")}'
+                    if row.get('grade') not in (None,'','-')
+                    else row.get('detail','-')
+                )}
+                for row in rows
+            ]
         if name=='GRADES & MASTERY' and self.current_course:
             rows=[{**row,'right_pct':(
                     f'{self.current_course[row["grade"]]["percent"]:.1f}%'

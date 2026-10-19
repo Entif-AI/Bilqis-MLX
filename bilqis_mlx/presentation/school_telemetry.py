@@ -278,25 +278,18 @@ LETTER_TABLES = (
         Column("LR", 2, "lr", right=True),
         Column("D", 1, "depth", right=True),
         Column("C", 1, "contrast", right=True),
-        Column("SOUP_KL", 8, "soup", optional=True, right=True),
-        Column("COVER", 7, "cover", optional=True, right=True),
         Column("OLD", 3, "old", optional=True, right=True),
-        Column("PREVIEW", 8, "preview", optional=True),
-        Column("DISTILL", 8, "distill", optional=True),
-        Column("CREDIT", 7, "credit", right=True),
-        Column("SUP_CE", 9, "sup", optional=True, right=True),
-        Column("PAR_KL", 9, "parent", optional=True, right=True),
-        Column("BRG_CE", 9, "bridge_ce", optional=True, right=True))),
+        Column("DISTILL", 7, "distill", optional=True),
+        Column("CREDIT", 7, "credit", right=True))),
     ("GRADES & MASTERY", (
         Column("CAPABILITY", 10, "subject"),
         Column("STEP/EXAM", 13, "step_exam", right=True),
         Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
-        Column("RIGHT[GREW]%", 14, "right_grew", right=True),
+        Column("RIGHT[GREW]%", 12, "right_grew", right=True),
         Column("OUTCOME", 26, "outcome"))),
     ("SYSTEM & QUALIFICATION", (
-        Column("TYPE", 15, "kind"),
-        Column("GRADE", 6, "grade", optional=True),
-        Column("DETAILS", 65, "detail"))),
+        Column("TYPE", 13, "kind"),
+        Column("DETAILS", 41, "detail"))),
 )
 
 
