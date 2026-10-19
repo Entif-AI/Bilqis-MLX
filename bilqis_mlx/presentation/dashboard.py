@@ -18,7 +18,7 @@ from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard:
     run_dir = Path(run_dir)
     board = Dashboard(stream=stream, redraw=False,
-                      title="BILQIS / SCHOOL50 MLX | LETTER GRADES",
+                      title="BILQIS", compact_header=True,
                       show_all_panels=True, tables=LETTER_TABLES)
     board.mode = "READ-ONLY"
     state_path = run_dir / "state.json"

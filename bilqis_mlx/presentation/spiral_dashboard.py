@@ -431,7 +431,7 @@ class Dashboard:
     """Bounded category buffers; render depends only on input records and size."""
     def __init__(self,*,stream=None,clock=None,max_records=512,redraw=True,
                  title="BILQIS / SCHOOL50 V5",show_all_panels=False,
-                 tables=TABLES):
+                 tables=TABLES,compact_header=False):
         self.stream=stream if stream is not None else sys.stdout
         self.clock=clock if clock is not None else time.monotonic
         self.started=self.clock()
@@ -445,6 +445,7 @@ class Dashboard:
         self.mode="LIVE"
         self.log_hint=""
         self.title=title
+        self.compact_header=compact_header
         self.show_all_panels=show_all_panels
         self.redraw_enabled=redraw
         self.dirty=False
@@ -916,30 +917,54 @@ class Dashboard:
         retained_suffix=(f" ({retained:,} retained)" if type(retained) is int else "")
         speed=(f"{round(self._steps_per_min):,} attempted steps/min{retained_suffix}"
                if isinstance(self._steps_per_min,(int,float)) else "")
-        headers=[_right_header(headline,speed,width) if speed else headline,
-                 status]
-        if self.progress is not None:
-            headers=[headline,_right_header(status,
-                        _score_summary(self.progress,'START',width),width),
-                     _right_header(
-                        f'LAST OBSERVED* (full pass {self.progress.last_full_pass or "-"}; '
-                        f'visit {self.progress.latest_visit})',
-                                   _score_summary(self.progress,'LATEST*',width),width)]
-            footer+=' | '+getattr(self.progress,'provenance_note',
-                '*different grade steps between full passes; ALL=mean(G,B,N)')
-        if self.current_course:
-            from bilqis_mlx import current_course_progress
-            # The selected G11/G20/G22 scores can come from DIFFERENT steps.
-            # Keep their provenance distinct from the terminal full rubric.
-            headers=[headers[0],current_course_progress.summary(self.current_course),
-                     'LAST RETAINED STEPS: '+ ' '.join(
-                        f'{grade}@{entry["optimizer_step"]}' for grade,entry in
-                        sorted(self.current_course.items())) +
-                     ' | '+current_course_progress.advancement(self.current_course)]
-        if self.current_graduation_line:
-            headers.append(self.current_graduation_line)
-        if self.operator_lines:
-            headers.extend(self.operator_lines)
+        if self.compact_header:
+            elapsed=f"{self.clock()-self.started:.0f}s"
+            parts=[self.title,f"{self.mode} {elapsed}"]
+            phase=state.get('phase','INIT')
+            prefix=state.get('prefix','-')
+            if prefix not in (None,'','-','?','NOT_ADMITTED'):
+                parts.append(f"{prefix}:{phase}")
+            elif phase not in (None,'','-','?'):
+                parts.append(str(phase))
+            step=state.get('step')
+            visits=state.get('visits')
+            if step not in (None,'','-','?'):
+                parts.append(f"S {step}")
+            if visits not in (None,'','-','?'):
+                parts.append(f"V {visits}")
+            if isinstance(self._steps_per_min,(int,float)):
+                parts.append(f"{round(self._steps_per_min):,} steps/min")
+            if type(retained) is int:
+                parts.append(f"{retained:,} retained")
+            halt=state.get('halt')
+            if halt:
+                parts.append(f"HALT {halt}")
+            headers=[" | ".join(parts),""]
+        else:
+            headers=[_right_header(headline,speed,width) if speed else headline,
+                     status]
+            if self.progress is not None:
+                headers=[headline,_right_header(status,
+                            _score_summary(self.progress,'START',width),width),
+                         _right_header(
+                            f'LAST OBSERVED* (full pass {self.progress.last_full_pass or "-"}; '
+                            f'visit {self.progress.latest_visit})',
+                                       _score_summary(self.progress,'LATEST*',width),width)]
+                footer+=' | '+getattr(self.progress,'provenance_note',
+                    '*different grade steps between full passes; ALL=mean(G,B,N)')
+            if self.current_course:
+                from bilqis_mlx import current_course_progress
+                # The selected G11/G20/G22 scores can come from DIFFERENT steps.
+                # Keep their provenance distinct from the terminal full rubric.
+                headers=[headers[0],current_course_progress.summary(self.current_course),
+                         'LAST RETAINED STEPS: '+ ' '.join(
+                            f'{grade}@{entry["optimizer_step"]}' for grade,entry in
+                            sorted(self.current_course.items())) +
+                         ' | '+current_course_progress.advancement(self.current_course)]
+            if self.current_graduation_line:
+                headers.append(self.current_graduation_line)
+            if self.operator_lines:
+                headers.extend(self.operator_lines)
         if width>=WIDE_MIN_WIDTH and height>=WIDE_MIN_HEIGHT:
             return self._render_wide(headers,footer,width=width,height=height)
         groups=list(self.tables) if self.show_all_panels else [

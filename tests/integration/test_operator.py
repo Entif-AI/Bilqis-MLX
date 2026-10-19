@@ -486,6 +486,10 @@ class OperatorTests(unittest.TestCase):
             with redirect_stdout(out):
                 result=main(["dashboard","--run-dir",tmp])
             self.assertEqual(result,0)
+            rendered_lines = out.getvalue().splitlines()
+            self.assertTrue(rendered_lines[0].startswith("BILQIS | READ-ONLY"))
+            self.assertEqual(rendered_lines[1], "")
+            self.assertNotIn("SCHOOL50", rendered_lines[0])
             for name,_ in LETTER_TABLES:
                 if name == "GRADES & MASTERY":
                     continue

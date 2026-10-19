@@ -266,6 +266,49 @@ class SchoolTelemetryTests(unittest.TestCase):
         )
         self.assertNotIn("GRADES & MASTERY   [TRAIN:", rendered)
 
+    def test_letter_school_uses_single_cockpit_header_and_blank_spacer(self):
+        board = Dashboard(
+            stream=io.StringIO(),
+            clock=lambda: 161.0,
+            show_all_panels=True,
+            tables=LETTER_TABLES,
+            title="BILQIS",
+            compact_header=True,
+        )
+        board.started = 0.0
+        board.mode = "LIVE"
+        board.state.update(
+            phase="MAIN",
+            prefix="A",
+            next="-",
+            failures="?",
+            max_failures="?",
+            step=126136,
+            visits=3221,
+            teacher=7480,
+            retained_visits=5,
+            stop="RUNNING",
+        )
+        board._steps_per_min = 186
+        board.operator_lines = [
+            "START GENERATED SAMPLE B 38/72 @step 126120 | LATEST B 38/72",
+            "TO100 34/72 wrong (fresh sampled cohort)",
+            "CUMULATIVE A+B: latest 109/144 @step 126120",
+        ]
+
+        rendered = board.render(width=210, height=40)
+        lines = rendered.splitlines()
+        self.assertEqual(
+            lines[0],
+            "BILQIS | LIVE 161s | A:MAIN | S 126136 | V 3221 | "
+            "186 steps/min | 5 retained",
+        )
+        self.assertEqual(lines[1], "")
+        self.assertNotIn("SCHOOL50", rendered)
+        self.assertNotIn("START GENERATED SAMPLE", rendered)
+        self.assertNotIn("TO100 34/72", rendered)
+        self.assertNotIn("CUMULATIVE A+B:", rendered)
+
     def test_system_feed_compacts_known_rows_and_keeps_latest_state_per_kind_and_grade(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                           tables=LETTER_TABLES)
@@ -637,9 +680,14 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(latest["before"], "-")
             self.assertEqual(latest["gain"], "-")
             self.assertFalse(board._section_rows("SENTINEL & RETENTION"))
+            self.assertIn(
+                "BEST OBSERVED SAMPLE (not paired)",
+                " ".join(board.operator_lines),
+            )
+            self.assertIn("fresh sampled cohort", " ".join(board.operator_lines))
             rendered = board.render(width=180, height=42)
-            self.assertIn("BEST OBSERVED SAMPLE (not paired)", rendered)
-            self.assertIn("fresh sampled cohort", rendered)
+            self.assertNotIn("BEST OBSERVED SAMPLE (not paired)", rendered)
+            self.assertNotIn("fresh sampled cohort", rendered)
 
     def test_both_grades_use_live_144_item_cohorts_without_unpaired_gains(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -958,11 +1006,16 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(mastery[0]["latest"], "10/24")
             self.assertEqual(mastery[0]["best"], "18/24")
             self.assertEqual(mastery[0]["to100"], "14")
+            operator = " ".join(board.operator_lines)
+            self.assertIn("START SEALED A 12/24", operator)
+            self.assertIn("LATEST A 10/24", operator)
+            self.assertIn("BEST A 18/24", operator)
+            self.assertIn("TO100 14/24", operator)
             text = board.render(width=180, height=42)
-            self.assertIn("START SEALED A 12/24", text)
-            self.assertIn("LATEST A 10/24", text)
-            self.assertIn("BEST A 18/24", text)
-            self.assertIn("TO100 14/24", text)
+            self.assertNotIn("START SEALED A 12/24", text)
+            self.assertNotIn("LATEST A 10/24", text)
+            self.assertNotIn("BEST A 18/24", text)
+            self.assertNotIn("TO100 14/24", text)
 
     def test_future_b_cumulative_exam_preserves_per_grade_and_checkpoint(self):
         with tempfile.TemporaryDirectory() as tmp:
