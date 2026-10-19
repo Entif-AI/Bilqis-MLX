@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+"""Build disclosure-safe linguistic enrichment from the live Curriculum Registry cache.
+
+The connector snapshots in _work/ are authenticated inputs and stay ignored.
+Tracked outputs exclude pedagogical ordering, mastery/champion state, private
+approval URLs, and proposed training schedules.
+"""
+
+from __future__ import annotations
+
+import csv
+import hashlib
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+WORK = ROOT / "_work" / "curriculum"
+DATA = ROOT / "data"
+SOURCES = ROOT / "sources"
+WORKBOOK_ID = "1xtOjO0jGCxjU2bgcg0TKpVruJ4Z5O3vW9ixu6oMQ-so"
+WORKBOOK_TITLE = "Bilqis Curriculum Registry - Version, Lessons, Prerequisites and Champion States"
+WORKBOOK_URL = f"https://docs.google.com/spreadsheets/d/{WORKBOOK_ID}/edit"
+
+
+def load_snapshot(slug: str) -> tuple[dict, list[list[str]]]:
+    payload = json.loads((WORK / f"{slug}.json").read_text(encoding="utf-8"))
+    values = payload["provider_result"].get("values") or []
+    return payload, values
+
+
+def rows_by_header(values: list[list[str]]) -> list[dict[str, str]]:
+    if not values:
+        return []
+    headers = [str(value) for value in values[0]]
+    rows: list[dict[str, str]] = []
+    for source_row, values_row in enumerate(values[1:], start=2):
+        padded = list(values_row) + [""] * (len(headers) - len(values_row))
+        row = {headers[i]: str(padded[i]) if padded[i] is not None else "" for i in range(len(headers))}
+        row["__source_row"] = str(source_row)
+        rows.append(row)
+    return rows
+
+
+def index(rows: list[dict[str, str]], key: str) -> dict[str, dict[str, str]]:
+    return {row[key]: row for row in rows if row.get(key)}
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def clean(value: str) -> str:
+    return " ".join((value or "").replace("\xa0", " ").split())
+
+
+def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
+    if not rows:
+        raise RuntimeError(f"no rows for {path}")
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def main() -> None:
+    DATA.mkdir(parents=True, exist_ok=True)
+    SOURCES.mkdir(parents=True, exist_ok=True)
+    snapshot_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+    cached_specs = [
+        ("token_atlas", "Token Atlas", "A1:P228"),
+        ("semantic_bridges", "Semantic Bridges", "A1:L331"),
+        ("token_mapping_reviews", "Token Mapping Reviews", "A1:P223"),
+        ("ni_adjudication_vd", "NI Adjudication vD", "A1:L95"),
+        ("lessons", "Lessons", "A1:M112"),
+        ("prerequisites", "Prerequisites", "A1:L77"),
+        ("decisions", "Decisions", "A1:G48"),
+        ("version_coverage", "Version Coverage", "A1:L106"),
+    ]
+    manifest_rows: list[dict[str, str]] = []
+    values_by_slug: dict[str, list[list[str]]] = {}
+    for slug, tab, requested_range in cached_specs:
+        payload, values = load_snapshot(slug)
+        values_by_slug[slug] = values
+        manifest_rows.append(
+            {
+                "workbook_id": WORKBOOK_ID,
+                "workbook_title": WORKBOOK_TITLE,
+                "workbook_url": WORKBOOK_URL,
+                "tab": tab,
+                "requested_range": requested_range,
+                "returned_range": clean(str(payload["provider_result"].get("range", ""))),
+                "returned_rows": str(len(values)),
+                "snapshot_json_sha256": sha256(WORK / f"{slug}.json"),
+                "snapshot_at_utc": snapshot_at,
+                "role": "enrichment_only_no_curriculum_order",
+            }
+        )
+    write_csv(SOURCES / "curriculum_manifest.csv", manifest_rows)
+
+    atlas = index(rows_by_header(values_by_slug["token_atlas"]), "0-based Token ID")
+    mapping = index(rows_by_header(values_by_slug["token_mapping_reviews"]), "Token ID")
+    adjudication = index(rows_by_header(values_by_slug["ni_adjudication_vd"]), "Token ID")
+
+    crosswalk_rows: list[dict[str, str]] = []
+    for token_id in sorted(mapping, key=lambda value: int(value) if value.isdigit() else 10**9):
+        review = mapping[token_id]
+        v_d = adjudication.get(token_id)
+        token = atlas.get(token_id, {})
+        if v_d:
+            source_tab = "NI Adjudication vD"
+            source_row = v_d["__source_row"]
+            definition = v_d.get("Source-exact semantic definition", "")
+            bridge = v_d.get("Reviewed New Ithkuil anchor / strategy", "")
+            official_url = v_d.get("Official Ithkuil source URL", "")
+            locus = v_d.get("Official locus", "")
+            differential = v_d.get("Semantic differential / non-equivalence", "")
+            disposition = v_d.get("Delegated disposition", "")
+            wordform_status = v_d.get("New Ithkuil wordform status", "")
+            generation = v_d.get("Ledger version", "")
+            crosswalk_state = "ADJUDICATED_VD"
+        else:
+            source_tab = "Token Mapping Reviews"
+            source_row = review["__source_row"]
+            definition = review.get("Proposed description", "") or review.get("Previous recorded description", "")
+            bridge = review.get("Proposed New Ithkuil bridge", "")
+            official_url = review.get("Source URL", "")
+            locus = review.get("Primary source location", "")
+            differential = review.get("Evidence / distinction", "")
+            disposition = review.get("Disposition", "")
+            wordform_status = "NOT_SEPARATELY_ADJUDICATED_VD"
+            generation = review.get("Applied in ledger version", "") or review.get("Parent version", "")
+            crosswalk_state = "MAPPING_REVIEW"
+
+        crosswalk_rows.append(
+            {
+                "crosswalk_id": f"BILQIS-NI-{int(token_id):03d}" if token_id.isdigit() else f"BILQIS-NI-{token_id}",
+                "bilqis_token_id": token_id,
+                "bilqis_token_symbol": clean(token.get("Bilqis token symbol", "") or review.get("Token symbol", "")),
+                "bilqis_pasigraphy_identity": clean(token.get("Pasigraphy identity", "") or review.get("Legacy pasigraphy identity", "")),
+                "bilqis_source_definition": clean(definition),
+                "bilqis_formal_signature": clean(token.get("Formal signature", "")),
+                "bilqis_semantic_family": clean(token.get("Semantic family", "")),
+                "bilqis_source_subtype": clean(token.get("Source subtype", "")),
+                "bilqis_arity": clean(token.get("Arity", "")),
+                "new_ithkuil_bridge": clean(bridge),
+                "relation_type": clean(review.get("Relation / change type", "")),
+                "official_source_url": clean(official_url),
+                "official_locus": clean(locus),
+                "semantic_differential": clean(differential),
+                "mapping_disposition": clean(disposition),
+                "new_ithkuil_wordform_status": clean(wordform_status),
+                "review_generation": clean(generation),
+                "crosswalk_state": crosswalk_state,
+                "source_tab": source_tab,
+                "source_row": source_row,
+                "mapping_review_id": clean(review.get("Revision ID", "")),
+            }
+        )
+    write_csv(DATA / "bilqis_ithkuil_crosswalk.csv", crosswalk_rows)
+
+    bridge_rows: list[dict[str, str]] = []
+    for row in rows_by_header(values_by_slug["semantic_bridges"]):
+        bridge_id = clean(row.get("Bridge ID", ""))
+        if not bridge_id:
+            continue
+        bridge_rows.append(
+            {
+                "bridge_id": bridge_id,
+                "source_locus_or_era": clean(row.get("Source locus / era", "")),
+                "ithkuil_category_or_root": clean(row.get("Ithkuil category / root", "")),
+                "source_grounded_semantic_meaning": clean(row.get("Source-grounded semantic meaning", "")),
+                "link_type": clean(row.get("Link type", "")),
+                "primary_source": clean(row.get("Primary source", "")),
+                "semantic_caution_or_dependencies": clean(row.get("Semantic caution / dependencies", "")),
+                "source_tab": "Semantic Bridges",
+                "source_row": row["__source_row"],
+            }
+        )
+    write_csv(DATA / "bilqis_semantic_bridges.csv", bridge_rows)
+
+    print(
+        f"curriculum_tabs={len(manifest_rows)} crosswalk={len(crosswalk_rows)} "
+        f"adjudicated_vd={sum(row['crosswalk_state'] == 'ADJUDICATED_VD' for row in crosswalk_rows)} "
+        f"semantic_bridges={len(bridge_rows)}"
+    )
+
+
+if __name__ == "__main__":
+    main()
+

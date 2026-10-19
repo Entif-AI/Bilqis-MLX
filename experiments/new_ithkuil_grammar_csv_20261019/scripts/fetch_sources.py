@@ -36,7 +36,15 @@ SOURCES = [
     ("NI-WEB-CH12", "grammar_chapter", "Chapter 12: Script", "newithkuil_12_script.htm", "newithkuil_12_script.htm"),
     ("NI-WEB-CH13", "grammar_chapter", "Chapter 13: Numbers", "newithkuil_13_numbers.htm", "newithkuil_13_numbers.htm"),
     ("NI-WEB-APP", "grammar_appendix", "New Ithkuil appendices", "newithkuil_appendices.htm", "newithkuil_appendices.htm"),
-    ("NI-LEXICON", "lexicon", "New Ithkuil lexicon", "newithkuil_lexicon.pdf", "newithkuil_lexicon.pdf"),
+    ("NI-LEXICON-SITE", "lexicon", "New Ithkuil lexicon (grammar-site link)", "newithkuil_lexicon.pdf", "newithkuil_lexicon.pdf"),
+    ("NI-AFFIX-PDF", "affix_reference", "New Ithkuil affix reference", "newithkuil_affixes.pdf", "newithkuil_affixes.pdf"),
+    (
+        "NI-LEXICON-CURRICULUM",
+        "lexicon",
+        "New Ithkuil lexicon (Curriculum Registry URL variant)",
+        "https://ithkuil.net/New_Ithkuil_Lexicon.pdf",
+        "New_Ithkuil_Lexicon.pdf",
+    ),
 ]
 
 
@@ -92,7 +100,7 @@ def main() -> None:
     rows: list[dict[str, str | int]] = []
 
     for source_id, source_type, title, relative_url, local_name in SOURCES:
-        url = BASE + relative_url
+        url = relative_url if relative_url.startswith(("http://", "https://")) else BASE + relative_url
         path = RAW / local_name
         final_url, content_type, last_modified, etag = fetch(url, path)
         data = path.read_bytes()
