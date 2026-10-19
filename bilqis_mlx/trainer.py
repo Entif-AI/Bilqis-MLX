@@ -3639,7 +3639,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     _require_active_stagnation_scope(active_scope)
     parent_checkpoint = school.current_student
     _, release, generator, _ = _cohort_contract(course)
-    rubric = assessment_rubric_for_scope(course, active_scope)
+    rubric = assessment_rubric_for_scope(course, full_scope)
     routine_cohort, _ = _grade_test_cohort(
         run_dir, receipt, manifest, course, source_root, graph)
     routine_cohort, routine_file = _introduced_cohort(
