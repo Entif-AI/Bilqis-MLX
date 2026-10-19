@@ -1,0 +1,36 @@
+category_id,family,category_code,category_name,description_summary,source_id,section_id,table_id,source_line,source_url,source_anchor
+CAT-04a68bdaa23610,bias_adjunct,BIAS,Bias adjunct,ACCIDENTAL bias adjunct,NI-WEB-CH08,NI-WEB-CH08:8.5,NI-WEB-CH08:T010,4545,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,
+CAT-0c6565cf7af6e1,affix_root,VXCS_AFFIX_ROOT,V_XC_S affix root,Degree of Consent,NI-WEB-CH04,NI-WEB-CH04:4.2.11,NI-WEB-CH04:T016,7359,https://www.ithkuil.net/newithkuil_04_case.htm,Sec4_2_11
+CAT-0cd547cdf6d979,case_scope,CASE_SCOPE,Case-Scope,"NATURAL case-scope, Pattern 1",NI-WEB-CH04,NI-WEB-CH04:4.10,NI-WEB-CH04:T102,18020,https://www.ithkuil.net/newithkuil_04_case.htm,Sec4_10
+CAT-13534adc97e5b4,affix_vowel,VX_TYPE_2,V_X affix type 2,"V_X exponent for affix type 2, degree 1",NI-WEB-CH07,NI-WEB-CH07:7.0,NI-WEB-CH07:T003,3079,https://www.ithkuil.net/newithkuil_07_affixes.htm,
+CAT-1fc55576a56886,lexical_root,LEXICAL_ROOT,Lexical root,NAME / DESIGNATION / LABEL,NI-WEB-CH02,NI-WEB-CH02:2.4.4,NI-WEB-CH02:T007,5121,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,Sec2_4_4
+CAT-253cb3cf79c8a8,suppletive_adjunct_cp,SUPPLETIVE_ADJUNCT,Suppletive adjunct,Carrier Adjunct fixed C_P exponent,NI-WEB-CH08,NI-WEB-CH08:8.4.1,NI-WEB-CH08:T006,4180,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,Sec8_4_1
+CAT-260918edf64f2b,illocution,ILLOCUTION,Illocution,assertive illocution,NI-WEB-CH06,NI-WEB-CH06:6.1.3,NI-WEB-CH06:T004,3238,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,
+CAT-3ced83b7960e1e,aspect,ASPECT,Aspect,Aspect value retrospective,NI-WEB-CH05,NI-WEB-CH05:5.0,NI-WEB-CH05:T004,4830,https://www.ithkuil.net/newithkuil_05_verbs.htm,
+CAT-47c2f4eab14bf3,referential,REFERENTIAL,Personal referent,Referent monadic speaker with neutral effect,NI-WEB-CH09,NI-WEB-CH09:9.1,NI-WEB-CH09:T003,972,https://www.ithkuil.net/newithkuil_09_referentials.htm,Sec9_1_1
+CAT-57aba109205752,case_accessor_vowel,CASE_ACCESSOR_VX,Case-derived V_X,V_X value corresponding to thematic case,NI-WEB-CH07,NI-WEB-CH07:7.6,NI-WEB-CH07:T011,5709,https://www.ithkuil.net/newithkuil_07_affixes.htm,Sec7_6
+CAT-57caa8c9409105,validation,VALIDATION,Validation,observational validation,NI-WEB-CH06,NI-WEB-CH06:6.1.3,NI-WEB-CH06:T004,3238,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,
+CAT-65fe52b58b48cd,case_affix_root,INVERSE_CASE_ACCESSOR,Inverse Case Accessor,Consonantal increment used for inverse case accessor type 1,NI-WEB-CH07,NI-WEB-CH07:7.6.1,NI-WEB-CH07:T019,10450,https://www.ithkuil.net/newithkuil_07_affixes.htm,
+CAT-6947408284cba8,affiliation,AFFILIATION,Affiliation,Affiliation value consolidative,NI-WEB-CH03,NI-WEB-CH03:3.6,NI-WEB-CH03:T035,6525,https://www.ithkuil.net/newithkuil_03_morphology.htm,Sec3_6
+CAT-701833a13b2da8,standard_vowel_sequence,SERIES3,Standard vowel sequence series 3,"Standard vowel-form sequence series 3, form 1",NI-WEB-CH02,NI-WEB-CH02:2.1,NI-WEB-CH02:T002,2702,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,
+CAT-7414a67a2842c3,phase,PHASE,Phase,Phase value PCT,NI-WEB-CH05,NI-WEB-CH05:5.0,NI-WEB-CH05:T003,3358,https://www.ithkuil.net/newithkuil_05_verbs.htm,
+CAT-78b261329e3996,valence,VALENCE,Valence,Valence value MNO,NI-WEB-CH05,NI-WEB-CH05:5.0,NI-WEB-CH05:T003,3358,https://www.ithkuil.net/newithkuil_05_verbs.htm,
+CAT-8093f2ad4ca683,perspective_essence,PERSPECTIVE_ESSENCE,Perspective + Essence,Fused perspective and essence value monadic + normal,NI-WEB-CH03,NI-WEB-CH03:3.6,NI-WEB-CH03:T035,6525,https://www.ithkuil.net/newithkuil_03_morphology.htm,Sec3_6
+CAT-81593799d69b26,affix_vowel,VX_TYPE_3,V_X affix type 3,"V_X exponent for affix type 3, degree 1",NI-WEB-CH07,NI-WEB-CH07:7.0,NI-WEB-CH07:T003,3079,https://www.ithkuil.net/newithkuil_07_affixes.htm,
+CAT-822c81c7d38c75,case,CASE,Case,thematic case; semantic role CONTENT,NI-WEB-CH04,NI-WEB-CH04:4.2.1,NI-WEB-CH04:T003,4104,https://www.ithkuil.net/newithkuil_04_case.htm,
+CAT-85a401fec2ac43,register_adjunct_final,REGISTER,Register,narrative (default register) register final adjunct,NI-WEB-CH08,NI-WEB-CH08:8.3,NI-WEB-CH08:T005,3563,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,Sec8_3
+CAT-895bb7e38de147,mood,MOOD,Mood,factual mood,NI-WEB-CH05,NI-WEB-CH05:5.0,NI-WEB-CH05:T003,3358,https://www.ithkuil.net/newithkuil_05_verbs.htm,
+CAT-8e74127ff6cddf,function_specification_context,FUNCTION_SPECIFICATION_CONTEXT,Function × Specification × Context,"Slot-IV V_R exponent for STA function, BSC specification, EXS context",NI-WEB-CH03,NI-WEB-CH03:3.9,NI-WEB-CH03:T040,9304,https://www.ithkuil.net/newithkuil_03_morphology.htm,Sec3_9
+CAT-9adbbdb796a0ea,number_root,NUMBER_ROOT,Number root,Number root for 0,NI-WEB-CH13,NI-WEB-CH13:13.2,NI-WEB-CH13:T002,972,https://www.ithkuil.net/newithkuil_13_numbers.htm,
+CAT-9d07f8593267be,standard_vowel_sequence,SERIES1,Standard vowel sequence series 1,"Standard vowel-form sequence series 1, form 1",NI-WEB-CH02,NI-WEB-CH02:2.1,NI-WEB-CH02:T002,2702,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,
+CAT-ad369d4938bfd1,affix_vowel,VX_TYPE_1,V_X affix type 1,"V_X exponent for affix type 1, degree 1",NI-WEB-CH07,NI-WEB-CH07:7.0,NI-WEB-CH07:T003,3079,https://www.ithkuil.net/newithkuil_07_affixes.htm,
+CAT-b2fb83befe2b85,standard_vowel_sequence,SERIES4,Standard vowel sequence series 4,"Standard vowel-form sequence series 4, form 1",NI-WEB-CH02,NI-WEB-CH02:2.1,NI-WEB-CH02:T002,2702,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,
+CAT-baba245ef33614,standard_vowel_sequence,SERIES2,Standard vowel sequence series 2,"Standard vowel-form sequence series 2, form 1",NI-WEB-CH02,NI-WEB-CH02:2.1,NI-WEB-CH02:T002,2702,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,
+CAT-cbf660ef56b818,specialized_root,SPECIALIZED_ROOT,Specialized root,carrier root,NI-WEB-CH10,NI-WEB-CH10:10.2,,3290,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,Sec10_2
+CAT-cf4d696f0906d4,case_affix_root,CASE_STACKING,Case Stacking,Consonantal increment used for case stacking type 1,NI-WEB-CH07,NI-WEB-CH07:7.6.1,NI-WEB-CH07:T019,10450,https://www.ithkuil.net/newithkuil_07_affixes.htm,
+CAT-d0028c2524c753,case_affix_root,CASE_ACCESSOR,Case Accessor,Consonantal increment used for case accessor type 1,NI-WEB-CH07,NI-WEB-CH07:7.6.1,NI-WEB-CH07:T019,10450,https://www.ithkuil.net/newithkuil_07_affixes.htm,
+CAT-d366e56471f30b,register_adjunct_initial,REGISTER,Register,narrative (default register) register initial adjunct,NI-WEB-CH08,NI-WEB-CH08:8.3,NI-WEB-CH08:T005,3563,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,Sec8_3
+CAT-dcebc52da09678,level,LEVEL,Level,Level value MIN,NI-WEB-CH05,NI-WEB-CH05:5.0,NI-WEB-CH05:T003,3358,https://www.ithkuil.net/newithkuil_05_verbs.htm,
+CAT-dd5f109f5eee15,extension,EXTENSION,Extension,Extension value delimitive,NI-WEB-CH03,NI-WEB-CH03:3.6,NI-WEB-CH03:T035,6525,https://www.ithkuil.net/newithkuil_03_morphology.htm,Sec3_6
+CAT-e3f6e12758047e,configuration,CONFIGURATION,Configuration,Configuration value uniplex,NI-WEB-CH03,NI-WEB-CH03:3.1,NI-WEB-CH03:T003,3239,https://www.ithkuil.net/newithkuil_03_morphology.htm,
+CAT-faeb889b5b709c,effect,EFFECT,Effect,Effect value 1:BEN,NI-WEB-CH05,NI-WEB-CH05:5.0,NI-WEB-CH05:T003,3358,https://www.ithkuil.net/newithkuil_05_verbs.htm,
