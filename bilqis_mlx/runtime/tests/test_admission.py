@@ -6,8 +6,49 @@ import tempfile
 import unittest
 
 from bilqis_mlx.learning.champions import Checkpoint
+from bilqis_mlx.factory.answers import (
+    AnswerModality, AnswerModalityRegistry, RegisteredAnswerModality,
+    fixed_domain,
+)
+from bilqis_mlx.factory.curriculum_definition import from_legacy_course
+from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+from bilqis_mlx.factory.execution import CurriculumProfile
+from bilqis_mlx.factory.tests.test_execution_plan import (
+    _synthetic_course, _synthetic_registry,
+)
 from bilqis_mlx.factory.tests.support import synthetic_release_inputs
-from bilqis_mlx.runtime.admission import _factory_admission, _require_factory_admission
+from bilqis_mlx.runtime.admission import (
+    _executable_factory_admission, _factory_admission,
+    _persist_executable_factory_release, _read_executable_factory_release,
+    _require_executable_factory_admission, _require_factory_admission,
+)
+
+
+def _executable_fixture(seed=17):
+    course = _synthetic_course(6)
+    registry = _synthetic_registry()
+    curriculum, bindings = from_legacy_course(course)
+    graph = {
+        "tokens": [
+            "fixture.padding",
+            "cogal.value.false",
+            "cogal.value.true",
+        ],
+    }
+    answers = AnswerModalityRegistry((
+        RegisteredAnswerModality(
+            AnswerModality("binary", "answer.binary/v1", "a" * 64),
+            fixed_domain(("FALSE", "TRUE")),
+            lambda value: {
+                "FALSE": "cogal.value.false",
+                "TRUE": "cogal.value.true",
+            }[value]),
+    ))
+    release = compile_executable_factory_release(
+        curriculum, bindings, CurriculumProfile.full(),
+        registry, answers, source_root=None, graph=graph,
+        verification_seed=seed, legacy_course=course)
+    return release, graph
 
 
 class RuntimeAdmissionTests(unittest.TestCase):
@@ -52,3 +93,91 @@ class RuntimeAdmissionTests(unittest.TestCase):
             path.write_text(json.dumps(payload))
             with self.assertRaisesRegex(ValueError, "FACTORY_RELEASE_DURABLE_SCHEMA_INVALID"):
                 _require_factory_admission(root, receipt, self.course, registry=self.registry)
+
+    def test_v2_executable_release_persists_and_cold_reads_without_course_rebuild(self):
+        release, graph = _executable_fixture()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            release_file = _persist_executable_factory_release(root, release)
+            receipt = {
+                "factory_release_sha256": release.release_sha256,
+                "factory_release_file": release_file,
+            }
+            restored = _read_executable_factory_release(
+                root, receipt, graph)
+            self.assertEqual(restored, release)
+            self.assertEqual(
+                restored.execution_plan.curriculum_sha256,
+                release.curriculum.digest())
+
+    def test_v2_readback_rejects_schema_and_loaded_catalog_drift(self):
+        release, graph = _executable_fixture(seed=19)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            release_file = _persist_executable_factory_release(root, release)
+            receipt = {
+                "factory_release_sha256": release.release_sha256,
+                "factory_release_file": release_file,
+            }
+            changed_graph = {
+                "tokens": [
+                    "fixture.padding",
+                    "cogal.value.true",
+                    "cogal.value.false",
+                ],
+            }
+            with self.assertRaisesRegex(
+                    ValueError, "FACTORY_EXECUTABLE_RELEASE_CATALOG_DRIFT"):
+                _read_executable_factory_release(
+                    root, receipt, changed_graph)
+
+            path = root / release_file
+            payload = json.loads(path.read_text())
+            payload["schema"] = "unrelated.schema/v999"
+            path.write_text(json.dumps(payload))
+            with self.assertRaisesRegex(
+                    ValueError, "FACTORY_EXECUTABLE_RELEASE_DURABLE_SCHEMA_INVALID"):
+                _read_executable_factory_release(root, receipt, graph)
+
+    def test_v2_admission_binds_release_plan_catalog_graph_and_student(self):
+        release, graph = _executable_fixture(seed=23)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _, release_file, admission = _executable_factory_admission(
+                root, release, self.student, "b" * 64, graph)
+            receipt = {
+                "factory_release_sha256": release.release_sha256,
+                "factory_release_file": release_file,
+                "factory_admission_v2": asdict(admission),
+                "semantic_graph_sha256": "b" * 64,
+                "school": {"current_student": asdict(self.student)},
+            }
+            restored = _require_executable_factory_admission(
+                root, json.loads(json.dumps(receipt)), graph)
+            self.assertEqual(restored, release)
+            self.assertEqual(
+                admission.execution_plan_sha256,
+                release.execution_plan.digest())
+            self.assertEqual(
+                admission.semantic_catalog_sha256,
+                release.semantic_catalog_sha256)
+
+    def test_v2_admission_rejects_same_step_student_substitution(self):
+        release, graph = _executable_fixture(seed=29)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _, release_file, admission = _executable_factory_admission(
+                root, release, self.student, "b" * 64, graph)
+            receipt = {
+                "factory_release_sha256": release.release_sha256,
+                "factory_release_file": release_file,
+                "factory_admission_v2": {
+                    **asdict(admission),
+                    "student_sha256": "c" * 64,
+                },
+                "semantic_graph_sha256": "b" * 64,
+                "school": {"current_student": asdict(self.student)},
+            }
+            with self.assertRaisesRegex(
+                    ValueError, "FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT"):
+                _require_executable_factory_admission(root, receipt, graph)

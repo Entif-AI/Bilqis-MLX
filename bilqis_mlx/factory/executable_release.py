@@ -162,6 +162,40 @@ class ExecutableVerificationReceipt:
 
 
 @dataclass(frozen=True)
+class ExecutableAdmissionReceipt:
+    factory_release_sha256: str
+    execution_plan_sha256: str
+    curriculum_sha256: str
+    source_binding_sha256: str
+    semantic_catalog_sha256: str
+    semantic_graph_sha256: str
+    student_sha256: str
+    optimizer_step: int
+
+    def __post_init__(self) -> None:
+        for value in (
+                self.factory_release_sha256, self.execution_plan_sha256,
+                self.curriculum_sha256, self.source_binding_sha256,
+                self.semantic_catalog_sha256, self.semantic_graph_sha256,
+                self.student_sha256):
+            _require_sha256(
+                value, "FACTORY_EXECUTABLE_ADMISSION_DIGEST_INVALID")
+        if type(self.optimizer_step) is not int or self.optimizer_step < 0:
+            raise ValueError("FACTORY_EXECUTABLE_ADMISSION_STEP_INVALID")
+
+    def verify(self, release: "ExecutableFactoryRelease") -> None:
+        if not isinstance(release, ExecutableFactoryRelease):
+            raise TypeError("FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED")
+        release.verify()
+        if (self.factory_release_sha256 != release.release_sha256 or
+                self.execution_plan_sha256 != release.execution_plan.digest() or
+                self.curriculum_sha256 != release.curriculum.digest() or
+                self.source_binding_sha256 != release.source_bindings.digest() or
+                self.semantic_catalog_sha256 != release.semantic_catalog_sha256):
+            raise ValueError("FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH")
+
+
+@dataclass(frozen=True)
 class ExecutableFactoryRelease:
     """Version-2 FactoryRelease; the complete executable authority artifact."""
 
@@ -629,3 +663,26 @@ def compile_executable_factory_release(
     release.verify()
     release.verify_semantic_catalog(graph)
     return release
+
+
+def admit_executable_factory_release(
+        release: ExecutableFactoryRelease, *, student_sha256: str,
+        optimizer_step: int, semantic_graph_sha256: str,
+        graph: dict) -> ExecutableAdmissionReceipt:
+    """Bind one verified v2 release to an exact causal-student baseline."""
+    if not isinstance(release, ExecutableFactoryRelease):
+        raise TypeError("FACTORY_EXECUTABLE_ADMISSION_RELEASE_REQUIRED")
+    release.verify()
+    release.verify_semantic_catalog(graph)
+    receipt = ExecutableAdmissionReceipt(
+        factory_release_sha256=release.release_sha256,
+        execution_plan_sha256=release.execution_plan.digest(),
+        curriculum_sha256=release.curriculum.digest(),
+        source_binding_sha256=release.source_bindings.digest(),
+        semantic_catalog_sha256=release.semantic_catalog_sha256,
+        semantic_graph_sha256=semantic_graph_sha256,
+        student_sha256=student_sha256,
+        optimizer_step=optimizer_step,
+    )
+    receipt.verify(release)
+    return receipt

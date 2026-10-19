@@ -332,6 +332,8 @@ Historical manifests decode through compatibility projection. Compatibility deco
 
 The v2 admission specimens are verification evidence, not a permanent test bank. They prove minimum source/oracle/answer-contract generation under the compiled release and bind the coverage projection. They do not claim exhaustive semantic-axis coverage or replace fresh routine cohorts.
 
+Dedicated v2 custody/admission primitives now persist and cold-read the content-addressed artifact, verify the actual loaded semantic catalog, and bind the release to the exact causal student, optimizer step and semantic graph. Existing live v1 admission remains unchanged. V2 release transitions carry `UNCHANGED` and `APPEND_ONLY_EXPANSION`; `INCOMPATIBLE` geometry fails closed.
+
 ### Wave 2: runtime consumers
 
 Migrate consumers by dependency:

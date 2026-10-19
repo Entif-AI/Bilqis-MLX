@@ -252,6 +252,43 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
                 verification_seed=20261019, legacy_course=changed_course,
                 predecessor=predecessor, lineage=incompatible)
 
+    def test_append_only_semantic_geometry_is_carried_by_successor_release(self):
+        predecessor = self.compile()
+        grade = self.course.grades[0]
+        new_capability = replace(
+            grade.capabilities[-1],
+            id="Z.C6",
+            taught_roots=("fixture.op.6",),
+            examined_roots=("fixture.op.6",))
+        expanded_grade = replace(
+            grade,
+            capabilities=(*grade.capabilities, new_capability),
+            exam_item_counts=(*grade.exam_item_counts, ("Z.C6", 4)))
+        expanded_course = replace(self.course, grades=(expanded_grade,))
+        curriculum, bindings = from_legacy_course(expanded_course)
+        candidate = compile_executable_factory_release(
+            curriculum, bindings, CurriculumProfile.full(),
+            self.registry, self.answers,
+            source_root=None, graph=self.graph,
+            verification_seed=20261019, legacy_course=expanded_course)
+        lineage = PlanLineage.from_semantic_catalogs(
+            predecessor.execution_plan, candidate.execution_plan,
+            ("a", "b"), ("a", "b", "c"))
+        successor = compile_executable_factory_release(
+            curriculum, bindings, CurriculumProfile.full(),
+            self.registry, self.answers,
+            source_root=None, graph=self.graph,
+            verification_seed=20261019, legacy_course=expanded_course,
+            predecessor=predecessor, lineage=lineage)
+
+        self.assertEqual(
+            successor.transition.semantic_geometry,
+            "APPEND_ONLY_EXPANSION")
+        self.assertEqual(
+            successor.predecessor_release_sha256,
+            predecessor.release_sha256)
+        self.assertIn("Z.C6", successor.transition.added_capabilities)
+
     def test_rehashed_modality_descriptor_drift_is_rejected(self):
         release = self.compile()
         changed = replace(

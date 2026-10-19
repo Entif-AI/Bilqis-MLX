@@ -48,9 +48,11 @@ from .execution import (
 from .executable_release import (
     AnswerHeadBinding,
     CapabilityVerificationReceipt,
+    ExecutableAdmissionReceipt,
     ExecutableFactoryRelease,
     ExecutableVerificationReceipt,
     VerifiedAssessmentSeal,
+    admit_executable_factory_release,
     compile_executable_factory_release,
 )
 from .release import (
@@ -78,6 +80,7 @@ __all__ = (
     "CurriculumDefinition",
     "CurriculumProfile",
     "ExecutionPlan",
+    "ExecutableAdmissionReceipt",
     "ExecutableFactoryRelease",
     "ExecutableVerificationReceipt",
     "FactoryRelease",
@@ -95,6 +98,7 @@ __all__ = (
     "SourceAdapter",
     "TeachingOption",
     "VerifiedAssessmentSeal",
+    "admit_executable_factory_release",
     "admit_factory_release",
     "compile_answer_heads",
     "compile_executable_factory_release",

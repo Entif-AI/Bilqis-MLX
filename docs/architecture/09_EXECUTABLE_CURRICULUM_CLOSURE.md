@@ -336,10 +336,12 @@ Rejected: a callback/plugin registry for every runtime subsystem. That would mer
 - The target executable release artifact now exists as schema `bilqis.mlx.factory-release/v2`. It binds the canonical curriculum, source bindings, profile, compiled plan, provider implementation descriptors, answer-modality descriptors and semantic-token head bindings, semantic catalog digest, source-verified admission specimens, cumulative verified assessment seals, and optional predecessor delta. The historical v1 `Course`-based release hash/decoder remains byte-stable compatibility evidence and is not the target live authority.
 - V2 admission specimens prove that the configured provider/oracle/answer contract can generate the required minimum verified sample under the compiled plan. Their hashes bind the declared coverage projection; they do **not** claim exhaustive semantic-axis saturation or become the routine exam cohort.
 - Runtime admission still consumes v1. No trainer, scheduler, championship, telemetry or CLI consumer may be moved to v2 until the v2 artifact and transition tests are checkpointed and the admission boundary is migrated explicitly.
+- V2 now has dedicated durable persist/readback and admission primitives. Cold readback reconstructs the artifact without rebuilding a `Course`, verifies the loaded semantic-token catalog and compiled answer-token bindings, and checks an admission receipt binding release, plan, curriculum, source bindings, semantic catalog, full graph identity, causal student and optimizer step. These primitives are not called by the existing live v1 path.
+- Release-level transition tests cover profile-only `UNCHANGED`, prefix-preserving `APPEND_ONLY_EXPANSION`, and fail-closed `INCOMPATIBLE` geometry.
 
 ## Next implementation step
 
-Wave 0.5 is committed and Wave 1 now has an isolated v2 artifact proof. Finish and checkpoint v2 compatibility, tamper, real-provider, source-verification and transition evidence before migrating the runtime admission boundary. Live consumers remain blocked.
+Wave 0.5 and the isolated Wave 1 v2 release/admission proof are complete. The next migration is Wave 2 consumer cutover by typed projection, beginning with source generation and answer schema. Existing human/live admission remains on v1 until an explicit consumer cutover changes it.
 
 ## Migration sequence
 
@@ -353,13 +355,15 @@ Exit gate: mutation tests distinguish roster, schedule, assessment, source, answ
 
 ### Wave 1: make FactoryRelease carry the executable plan
 
-Persist the profile identity and compiled execution plan in the immutable factory-release artifact. The v2 artifact also binds semantic catalog identity, exact provider/modality implementation descriptors, compiled answer-head identity, source-verified admission specimens and cumulative verified assessment seals. Runtime admission will read the plan from that artifact instead of recompiling policy from `Course` and release constants.
+Persist the profile identity and compiled execution plan in the immutable factory-release artifact. The v2 artifact also binds semantic catalog identity, exact provider/modality implementation descriptors, compiled answer-head identity, source-verified admission specimens and cumulative verified assessment seals. Dedicated v2 durable admission can read the plan from that artifact without reconstructing `Course`; the existing live v1 admission function has not been switched.
 
 Historical v1 factory-release manifests and hashes remain byte-stable. Their decoder is a compatibility boundary only. It must not become a live successor selector or a second canonical factory path.
 
 The verified assessment seal is not a frozen routine question bank. It proves that release compilation generated and independently source-checked the admitted minimum specimen set for every capability in the cumulative grade scope and binds those receipts to the assessment blueprint. Routine assessment still follows its own fresh-cohort lifetime contract.
 
 Exit gate: a fresh v2 release has one content-addressed artifact containing semantic provenance, executable projections, implementation identities, semantic-catalog binding, source-verification receipts, assessment seals and predecessor transition metadata; v1 hashes remain unchanged.
+
+**Exit evidence:** satisfied on the isolated factory branch. V2 JSON roundtrip, rehashed inconsistency rejection, real pinned Boolean profile compilation, source/oracle refusal, exact semantic-catalog readback, durable custody, admission baseline binding, and all three semantic-geometry transition classes are covered by tests. No live runtime consumer has been cut over.
 
 ### Wave 2: cut runtime consumers over by projection
 
