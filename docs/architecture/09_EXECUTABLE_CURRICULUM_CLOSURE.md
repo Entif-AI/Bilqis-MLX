@@ -380,6 +380,8 @@ Each consumer accepts the execution plan or its typed projection. It must not ac
 
 Exit gate: changing only `CurriculumProfile` changes the live disposable runtime behavior without edits to these consumers.
 
+**Wave 2A checkpoint:** complete in the factory layer. `draw_executable_release_rows(...)` accepts one v2 release plus provider implementations, verifies the admitted provider descriptor before execution, and draws only from the release's compiled plan/source bindings. `answer_heads_from_executable_release(...)` reconstructs the generic typed training head from the admitted semantic-token bindings without grade/release dispatch. The same consumer calls produce the full six-operator IDBOOLOPS domain or the AND/IFF domain solely by changing the release profile. The real pinned Boolean path produces byte-identical rows to direct plan generation and feeds `prepare_typed_batches()` successfully. Runtime assessment lifetimes remain on the legacy `Course` boundary and belong to Wave 2B.
+
 ### Wave 3: replace release-name transitions with release diffs
 
 Move successor lineage and runtime compatibility into typed release metadata. Generic transition execution consumes `CurriculumDelta` plus a semantic-geometry transition contract. Same-grade revision, appended grade, profile revision, and graph growth are derived facts.

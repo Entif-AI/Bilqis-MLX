@@ -686,3 +686,25 @@ def admit_executable_factory_release(
     )
     receipt.verify(release)
     return receipt
+
+
+def answer_heads_from_executable_release(
+        release: ExecutableFactoryRelease, graph: dict) -> dict:
+    """Return the admitted typed readout without grade/release reconstruction."""
+    if not isinstance(release, ExecutableFactoryRelease):
+        raise TypeError("FACTORY_EXECUTABLE_RELEASE_REQUIRED")
+    release.verify()
+    release.verify_semantic_catalog(graph)
+    names = graph["tokens"]
+    result = {
+        "semantic_token": {
+            "values": list(names),
+            "token_ids": list(range(len(names))),
+        },
+    }
+    for head in release.answer_heads:
+        result[head.kind] = {
+            "values": list(head.values),
+            "token_ids": list(head.token_ids),
+        }
+    return result

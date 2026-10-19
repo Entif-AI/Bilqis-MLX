@@ -347,6 +347,8 @@ Migrate consumers by dependency:
 
 Changing only a profile must change disposable live behavior without editing those consumers.
 
+**Current checkpoint:** generation and answer-schema consumers are release-driven and profile-neutral in the factory layer. Full Boolean versus AND/IFF behavior changes by swapping the admitted v2 release, with no consumer branch or minimal-B provider. The real pinned provider path also passes the resulting v2 answer heads into the generic typed batch adapter. Scheduler/assessment cohort lifetime and the existing human/live admission path remain unchanged pending the next migration slice.
+
 ### Wave 3: typed release transitions
 
 Replace named successor switches with structural plan/release diffs:

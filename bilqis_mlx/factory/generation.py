@@ -138,3 +138,43 @@ def draw_execution_rows(
                     + execution.capability_id)
         rows.extend(batch)
     return rows
+
+
+def draw_executable_release_rows(
+        source_root, graph, release, registry: SourceAdapterRegistry, *,
+        seed: int, legacy_course=None, capability: str | None = None,
+        each: int | None = None) -> list[dict]:
+    """Generate only from one admitted v2 release and its compiled projections."""
+    from .executable_release import ExecutableFactoryRelease
+
+    if not isinstance(release, ExecutableFactoryRelease):
+        raise TypeError("FACTORY_EXECUTABLE_GENERATION_RELEASE_REQUIRED")
+    if not isinstance(registry, SourceAdapterRegistry):
+        raise TypeError("FACTORY_EXECUTABLE_GENERATION_REGISTRY_REQUIRED")
+    release.verify()
+    release.verify_semantic_catalog(graph)
+
+    admitted = {
+        descriptor.adapter_id: descriptor
+        for descriptor in release.source_adapters}
+    bindings = release.source_bindings.by_capability
+    if capability is None:
+        selected = release.execution_plan.capabilities
+    else:
+        selected_item = release.execution_plan.capability_map.get(capability)
+        if selected_item is None:
+            raise ValueError("FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY")
+        selected = (selected_item,)
+    for execution in selected:
+        binding = bindings[execution.capability_id]
+        registered = registry.require(
+            binding.generator_id, binding.oracle_id).descriptor
+        if registered != admitted.get(execution.provider_id):
+            raise ValueError(
+                "FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT:"
+                + execution.capability_id)
+
+    return draw_execution_rows(
+        source_root, graph, release.curriculum, release.execution_plan, registry,
+        source_bindings=release.source_bindings, legacy_course=legacy_course,
+        seed=seed, capability=capability, each=each)

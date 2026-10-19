@@ -53,8 +53,10 @@ from .executable_release import (
     ExecutableVerificationReceipt,
     VerifiedAssessmentSeal,
     admit_executable_factory_release,
+    answer_heads_from_executable_release,
     compile_executable_factory_release,
 )
+from .generation import draw_executable_release_rows
 from .release import (
     admit_factory_release,
     compile_factory_release,
@@ -100,11 +102,13 @@ __all__ = (
     "VerifiedAssessmentSeal",
     "admit_executable_factory_release",
     "admit_factory_release",
+    "answer_heads_from_executable_release",
     "compile_answer_heads",
     "compile_executable_factory_release",
     "compile_execution_plan",
     "compile_factory_release",
     "diff_execution_plans",
+    "draw_executable_release_rows",
     "fixed_domain",
     "from_legacy_course",
     "qualification_complete",

@@ -34,13 +34,18 @@ class LiveProfileExecutionTests(unittest.TestCase):
                 compile_execution_plan,
             )
             from bilqis_mlx.factory.executable_release import (
-                ExecutableFactoryRelease, compile_executable_factory_release,
+                ExecutableFactoryRelease,
+                answer_heads_from_executable_release,
+                compile_executable_factory_release,
             )
-            from bilqis_mlx.factory.generation import draw_execution_rows
+            from bilqis_mlx.factory.generation import (
+                draw_executable_release_rows, draw_execution_rows,
+            )
             from bilqis_mlx.factory.live_releases import boolean_successor, initial_course
             from bilqis_mlx.grade_a_probe import read_sources
             from bilqis_mlx.grade_a_release import accepted_grade_a
             from bilqis_mlx.source_adapters.school import live_source_registry
+            from bilqis_mlx.typed_answer_training import prepare_typed_batches
 
             root = Path.cwd()
             source = root.parent / "bilqis-mlx-retention-lab" / "vendor" / "legacy-v16"
@@ -146,6 +151,24 @@ class LiveProfileExecutionTests(unittest.TestCase):
                 json.loads(json.dumps(release.manifest())),
                 release.release_sha256)
             assert restored == release
+
+            release_rows = []
+            for capability in release.execution_plan.grade_map["B"].capabilities:
+                release_rows.extend(draw_executable_release_rows(
+                    source, graph, release, registry,
+                    legacy_course=course, seed=20261019,
+                    capability=capability))
+            assert release_rows == rows
+            release_heads = answer_heads_from_executable_release(
+                release, graph)
+            assert release_heads["boolean_operator"]["values"] == ["AND", "IFF"]
+            typed = prepare_typed_batches(
+                [row for row in release_rows
+                 if row["capability"] == "B.IDBOOLOPS"],
+                release_heads)
+            assert typed["boolean_operator"]["gold_labels"]
+            assert set(typed["boolean_operator"]["gold_labels"]) == {
+                "AND", "IFF"}
             print("LIVE_PROFILE_EXECUTION_OK")
         ''')
         result = subprocess.run(
