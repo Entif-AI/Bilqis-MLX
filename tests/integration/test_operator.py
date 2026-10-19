@@ -494,7 +494,8 @@ class OperatorTests(unittest.TestCase):
                 if name == "GRADES & MASTERY":
                     continue
                 self.assertIn(name,out.getvalue())
-            self.assertIn("TRAIN: S -, X -, G 0, C 0", out.getvalue())
+            self.assertIn("G 0 C 0", rendered_lines[0])
+            self.assertIn("CURRICULUM [0/0 visible]", out.getvalue())
             self.assertNotIn("BRIDGE FAMILIES",out.getvalue())
             self.assertIn("READY_FOR_HUMAN_START",out.getvalue())
 

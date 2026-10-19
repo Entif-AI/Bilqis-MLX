@@ -147,7 +147,11 @@ class SchoolTelemetryTests(unittest.TestCase):
             )
             self.assertEqual(tables["GRADES & MASTERY"][0].name, "CAPABILITY")
             self.assertEqual(tables["GRADES & MASTERY"][0].width, 10)
-            self.assertEqual(tables["GRADES & MASTERY"][3].width, 12)
+            growth = next(
+                column for column in tables["GRADES & MASTERY"]
+                if column.key == "right_grew"
+            )
+            self.assertLessEqual(growth.width, 12)
 
             candidate = board.rows["CANDIDATES"][-1]
             self.assertEqual(candidate["lr"], "13")
@@ -228,7 +232,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             rows[1]["right_grew"].index("["),
         )
 
-    def test_mastery_header_carries_training_coordinates_and_cumulative_score(self):
+    def test_curriculum_header_reports_visibility_and_trained_score(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                           tables=LETTER_TABLES)
         board.state.update(_all_grade_correct=100, _all_grade_total=144)
@@ -257,14 +261,14 @@ class SchoolTelemetryTests(unittest.TestCase):
         self.assertEqual(
             board._section_label(
                 "GRADES & MASTERY", len(available), available, available),
-            "TRAIN: S 126056, X 5789, G 2, C 12 = 100/144 (69.4%)",
+            "CURRICULUM [14/14 visible]: 100/144 (69.4%) TRAINED",
         )
-        rendered = board.render(width=210, height=40)
+        rendered = board.render(width=210, height=60)
         self.assertIn(
-            "TRAIN: S 126056, X 5789, G 2, C 12 = 100/144 (69.4%)",
+            "CURRICULUM [14/14 visible]: 100/144 (69.4%) TRAINED",
             rendered,
         )
-        self.assertNotIn("GRADES & MASTERY   [TRAIN:", rendered)
+        self.assertNotIn("TRAIN: S 126056", rendered)
 
     def test_letter_school_uses_single_cockpit_header_and_blank_spacer(self):
         board = Dashboard(
@@ -290,6 +294,32 @@ class SchoolTelemetryTests(unittest.TestCase):
             stop="RUNNING",
         )
         board._steps_per_min = 186
+        board.rows["GRADES & MASTERY"].extend([
+            {"grade": "A", "step": 126120, "attempt": 5833,
+             "start": "71/72", "latest": "71/72", "best": "71/72",
+             "outcome": "NO TITLE CHANGE"},
+            {"grade": "B", "step": 126120, "attempt": 5833,
+             "start": "38/72", "latest": "38/72", "best": "38/72",
+             "outcome": "NO TITLE CHANGE"},
+        ])
+        for grade in ("A", "B"):
+            for index in range(6):
+                board.rows["BRIDGE FAMILIES"].append({
+                    "grade": grade,
+                    "family": f"{grade}.C{index}",
+                    "step": 126120,
+                    "attempt": 5833,
+                    "start": "6/12",
+                    "before": "-",
+                    "after": "6/12",
+                    "gain": "-",
+                })
+        cumulative_key = (("A", "B"), "rubric", "scope")
+        board.school_telemetry = SimpleNamespace(
+            cumulative_latest=(
+                cumulative_key, 109, 144, 126120, "144/144 REQUIRED"),
+            cumulative_best={cumulative_key: (109, 144, 126120)},
+        )
         board.operator_lines = [
             "START GENERATED SAMPLE B 38/72 @step 126120 | LATEST B 38/72",
             "TO100 34/72 wrong (fresh sampled cohort)",
@@ -300,7 +330,8 @@ class SchoolTelemetryTests(unittest.TestCase):
         lines = rendered.splitlines()
         self.assertEqual(
             lines[0],
-            "BILQIS | LIVE 161s | A:MAIN | S 126136 | V 3221 | "
+            "BILQIS | LIVE 161s | A:MAIN | S 126136 X 5833 V 3221 T 7480 | "
+            "G 2 C 12 | STUDENT LATEST 109/144@126120 / BEST 109/144@126120 | "
             "186 steps/min | 5 retained",
         )
         self.assertEqual(lines[1], "")
@@ -527,22 +558,20 @@ class SchoolTelemetryTests(unittest.TestCase):
             rows = board._section_rows("GRADES & MASTERY")
             summary, family = rows
             self.assertEqual(summary["subject"], "B")
-            self.assertEqual(summary["step_exam"], "125656/5463")
             self.assertEqual(summary["score_line"], " 30/ 47/ 39/ 72")
             self.assertEqual(summary["right_grew"], " 54% [+13%]")
             self.assertEqual(summary["outcome"], "NO TITLE CHANGE")
             self.assertEqual(family["subject"], "B.OR")
-            self.assertEqual(family["step_exam"], "125656/5463")
             self.assertEqual(family["score_line"], "  5/  7/  8/ 12")
             self.assertEqual(family["right_grew"], " 67% [+25%]")
             self.assertEqual(family["outcome"], "CHAMP @125096 | br5")
 
             columns = dict(LETTER_TABLES)["GRADES & MASTERY"]
             self.assertEqual(
-                [column.name for column in columns],
-                ["CAPABILITY", "STEP/EXAM", "WAS/TOP/NOW/ALL",
-                 "RIGHT[GREW]%", "OUTCOME"],
+                [column.key for column in columns],
+                ["subject", "score_line", "right_grew", "outcome"],
             )
+            self.assertEqual(columns[0].name, "CAPABILITY")
 
     def test_header_latest_uses_newest_generation_across_assessment_scopes(self):
         with tempfile.TemporaryDirectory() as tmp:

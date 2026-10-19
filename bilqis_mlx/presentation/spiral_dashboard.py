@@ -732,24 +732,10 @@ class Dashboard:
             total=len(self.bridge_families) if self.bridge_families else len(available)
             return f'{shown}/{total} families'
         elif name=='GRADES & MASTERY':
-            summaries=[row for row in available if row.get('row_type')=='summary']
-            full=self.grade_program or tuple(row['grade'] for row in summaries)
-            grades=len(full)
-            capabilities=sum(row.get('row_type')!='summary' for row in available)
-            latest=max(
-                summaries,
-                key=lambda row:(
-                    row.get('attempt') if type(row.get('attempt')) is int else -1,
-                    row.get('step') if type(row.get('step')) is int else -1,
-                ),
-                default={},
-            )
-            step=latest.get('step','-')
-            exam=latest.get('attempt','-')
             correct,total=self._latest_all_grade_score()
-            score=(f' = {correct}/{total} ({100*correct/total:.1f}%)'
+            score=(f': {correct}/{total} ({100*correct/total:.1f}%) TRAINED'
                    if total else '')
-            return f'TRAIN: S {step}, X {exam}, G {grades}, C {capabilities}{score}'
+            return f'CURRICULUM [{shown}/{len(available)} visible]{score}'
         elif name=='SYSTEM & QUALIFICATION':
             return f'{shown}/{len(available)} states'
         return f'{shown}/{len(available)} visible'
@@ -853,7 +839,7 @@ class Dashboard:
         if not names:
             return [""]*body_height
         if len(names)==1:
-            quotas={names[0]:min(len(self.rows[names[0]]),body_height-2)}
+            quotas={names[0]:min(len(self._section_rows(names[0])),body_height-2)}
         elif names[0]=='BRIDGE FAMILIES':
             # Concept totals are small: show each family once, then use all
             # remaining vertical space for distinct G/B grade results.
@@ -926,12 +912,29 @@ class Dashboard:
                 parts.append(f"{prefix}:{phase}")
             elif phase not in (None,'','-','?'):
                 parts.append(str(phase))
+            curriculum=self._curriculum_snapshot()
+            coordinates=[]
             step=state.get('step')
-            visits=state.get('visits')
             if step not in (None,'','-','?'):
-                parts.append(f"S {step}")
+                coordinates.append(f"S {step}")
+            exam=curriculum['exam']
+            if exam not in (None,'','-','?'):
+                coordinates.append(f"X {exam}")
+            visits=state.get('visits')
             if visits not in (None,'','-','?'):
-                parts.append(f"V {visits}")
+                coordinates.append(f"V {visits}")
+            teacher=state.get('teacher')
+            if teacher not in (None,'','-','?'):
+                coordinates.append(f"T {teacher}")
+            if coordinates:
+                parts.append(" ".join(coordinates))
+            parts.append(f"G {curriculum['grades']} C {curriculum['capabilities']}")
+            student=self._same_student_snapshot()
+            if student is not None:
+                latest,best=student
+                parts.append(
+                    f"STUDENT LATEST {latest[0]}/{latest[1]}@{latest[2]} / "
+                    f"BEST {best[0]}/{best[1]}@{best[2]}")
             if isinstance(self._steps_per_min,(int,float)):
                 parts.append(f"{round(self._steps_per_min):,} steps/min")
             if type(retained) is int:
@@ -1068,6 +1071,45 @@ class Dashboard:
                 latest[grade]=(correct,total)
         return (sum(v[0] for v in latest.values()),
                 sum(v[1] for v in latest.values()))
+
+    def _curriculum_snapshot(self):
+        rows=self._section_rows("GRADES & MASTERY")
+        summaries=[row for row in rows if row.get('row_type')=='summary']
+        full=self.grade_program or tuple(dict.fromkeys(
+            row.get('grade') for row in summaries if row.get('grade')))
+        latest=max(
+            summaries,
+            key=lambda row:(
+                row.get('attempt') if type(row.get('attempt')) is int else -1,
+                row.get('step') if type(row.get('step')) is int else -1,
+            ),
+            default={},
+        )
+        return {
+            'exam':latest.get('attempt','-'),
+            'grades':len(full),
+            'capabilities':sum(
+                row.get('row_type')!='summary' for row in rows),
+        }
+
+    def _same_student_snapshot(self):
+        telemetry=getattr(self,'school_telemetry',None)
+        latest=getattr(telemetry,'cumulative_latest',None)
+        best_by_key=getattr(telemetry,'cumulative_best',None)
+        if latest is None or not isinstance(best_by_key,dict):
+            return None
+        key,correct,total,step,_status=latest
+        best=best_by_key.get(key)
+        if (type(correct) is not int or type(total) is not int or total<=0 or
+                not 0<=correct<=total or type(step) is not int or
+                not isinstance(best,tuple) or len(best)!=3):
+            return None
+        best_correct,best_total,best_step=best
+        if (type(best_correct) is not int or type(best_total) is not int or
+                best_total<=0 or not 0<=best_correct<=best_total or
+                type(best_step) is not int):
+            return None
+        return ((correct,total,step),(best_correct,best_total,best_step))
 
 
 def _next_grade(stage):

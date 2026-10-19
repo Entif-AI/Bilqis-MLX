@@ -283,7 +283,6 @@ LETTER_TABLES = (
         Column("CREDIT", 7, "credit", right=True))),
     ("GRADES & MASTERY", (
         Column("CAPABILITY", 10, "subject"),
-        Column("STEP/EXAM", 12, "step_exam", right=True),
         Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
         Column("RIGHT[GREW]%", 12, "right_grew", right=True),
         Column("OUTCOME", 26, "outcome"))),
