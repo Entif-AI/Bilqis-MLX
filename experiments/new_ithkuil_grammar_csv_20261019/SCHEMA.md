@@ -43,12 +43,13 @@ Key fields:
 - `grammatical_categories.csv`: normalized category registry.
 - `affix_degrees.csv`: degree semantics attached to attested C_S affix roots.
 - `root_senses.csv`: compact stem/specification sense summaries attached to lexical roots.
+- `allomorph_rules.csv`: explicit source-listed C_A substitution rules, including multi-step substitutions where the source gives an intermediate form.
 - `composition_components.csv`: ordered linguistic component edges for every composed entity/template.
 
 ## Bilqis enrichment tables
 
 - `bilqis_ithkuil_crosswalk.csv`: 222 token-level mapping/adjudication records. Newer NI Adjudication vD rows supersede duplicate vD mapping-review semantics while retaining mapping revision provenance. Every row resolves to a pinned current source document or section.
-- `bilqis_semantic_bridges.csv`: 330 concept-level bridge rows. Current official sources resolve into the source graph; two 2011 predecessor rows remain explicit historical-only targets.
+- `bilqis_semantic_bridges.csv`: 330 concept-level bridge rows. Current official sources resolve into the source graph; two 2011 predecessor rows remain explicit historical-only targets. `registry_state_raw` preserves the workbook's exact epistemic/gate state and `bridge_epistemic_state` gives a compact normalized class such as `proposal`, `blocked`, `deferred`, or `historical_only`.
 
 The enrichment tables preserve qualified, partial, adapter, compositional, native-protocol, rejected-equivalence, and historical relation states. They do not promote a similarity into semantic identity.
 
@@ -71,5 +72,5 @@ python3 scripts/build_morphology.py
 python3 scripts/validate_dataset.py
 ```
 
-`validate_dataset.py` checks source and entity cardinalities, foreign keys, composition component counts, core grammar inventory counts, current-vs-historical crosswalk resolution, exclusion of curriculum-order columns, protected URL leakage, LF line endings, and raw/work-cache Git exclusion.
+`validate_dataset.py` checks source and entity cardinalities, foreign keys, composition component counts, core grammar inventory counts, Slot-IV V_R and register/suppletive coverage, exact C_A substitution rules and triggers, explicit root-paradigm coverage, current-vs-historical crosswalk resolution, exclusion of curriculum-order columns across every derived data table, protected URL leakage, LF line endings, and raw/work-cache Git exclusion.
 

@@ -82,6 +82,25 @@ def canonical_relation(disposition: str, relation_type: str = "") -> str:
     return "unmapped"
 
 
+def canonical_bridge_state(value: str) -> str:
+    raw = clean(value).upper()
+    if "BLOCKED" in raw:
+        return "blocked"
+    if "DEFERRED" in raw:
+        return "deferred"
+    if "HISTORICAL" in raw:
+        return "historical_only"
+    if "PROPOSED" in raw:
+        return "proposal"
+    if "SOURCE-SEEDED" in raw:
+        return "source_seeded"
+    if "RESEARCH SEED" in raw:
+        return "research_seed"
+    if "RESEARCH ONLY" in raw or "TRAINING NOT ACTIVE" in raw:
+        return "research_only"
+    return "unclassified"
+
+
 def url_from_text(value: str) -> str:
     match = re.search(r"https?://[^\s,;)]+", clean(value))
     return match.group(0).rstrip(".]'") if match else ""
@@ -178,7 +197,6 @@ def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
 def main() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
     SOURCES.mkdir(parents=True, exist_ok=True)
-    snapshot_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
     cached_specs = [
         ("token_atlas", "Token Atlas", "A1:P228"),
@@ -190,6 +208,10 @@ def main() -> None:
         ("decisions", "Decisions", "A1:G48"),
         ("version_coverage", "Version Coverage", "A1:L106"),
     ]
+    snapshot_at = datetime.fromtimestamp(
+        max((WORK / f"{slug}.json").stat().st_mtime for slug, _tab, _range in cached_specs),
+        tz=timezone.utc,
+    ).replace(microsecond=0).isoformat()
     manifest_rows: list[dict[str, str]] = []
     values_by_slug: dict[str, list[list[str]]] = {}
     for slug, tab, requested_range in cached_specs:
@@ -285,6 +307,7 @@ def main() -> None:
             continue
         primary_source = clean(row.get("Primary source", ""))
         locus = clean(row.get("Source locus / era", ""))
+        registry_state = clean(row.get("Status / gate", ""))
         resolution = resolve_source(primary_source, locus, official_manifest, source_sections)
         bridge_rows.append(
             {
@@ -293,6 +316,8 @@ def main() -> None:
                 "ithkuil_category_or_root": clean(row.get("Ithkuil category / root", "")),
                 "source_grounded_semantic_meaning": clean(row.get("Source-grounded semantic meaning", "")),
                 "link_type": clean(row.get("Link type", "")),
+                "registry_state_raw": registry_state,
+                "bridge_epistemic_state": canonical_bridge_state(registry_state),
                 "primary_source": primary_source,
                 **resolution,
                 "semantic_caution_or_dependencies": clean(row.get("Semantic caution / dependencies", "")),

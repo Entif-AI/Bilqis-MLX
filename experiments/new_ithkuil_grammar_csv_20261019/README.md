@@ -13,7 +13,7 @@ The user-required primary tables are:
 
 Supporting relational tables may preserve information that would be lossy in those two flat tables, including source hierarchy, grammatical categories, paradigms/examples, typed entity relationships, and Bilqis crosswalk/provenance.
 
-The current schema is documented in [`SCHEMA.md`](SCHEMA.md). The present snapshot contains 710 atomic surface records and 1,645 composition/template records, plus normalized source, component, category, degree, sense, and Bilqis-enrichment tables.
+The current schema is documented in [`SCHEMA.md`](SCHEMA.md). The present snapshot contains 772 atomic surface records and 1,917 composition/template records, plus 3,855 component edges, 200 root-sense rows, 19 explicit C_A allomorph rules, normalized source/category/degree tables, and Bilqis enrichment.
 
 ## Ordering boundary
 

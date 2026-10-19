@@ -207,10 +207,12 @@ def main() -> None:
             sec_idx = bisect_right(line_starts, line) - 1
             section = page_sections[sec_idx] if sec_idx >= 0 else None
             preceding = table.xpath("preceding::p[normalize-space()][1]")
-            context = element_text(preceding[0], limit=300) if preceding else ""
+            context = element_text(preceding[0], limit=180) if preceding else ""
             table_id = f"{source_id}:T{table_index:03d}"
             max_columns = max((len(row) for row in matrix), default=0)
             header = matrix[0] if matrix and likely_header(matrix[0]) else []
+            header_raw = " | ".join(header)
+            header_exact = header_raw if len(header_raw) <= 200 else ""
             tables.append(
                 {
                     "table_id": table_id,
@@ -223,7 +225,10 @@ def main() -> None:
                     "row_count": len(matrix),
                     "column_count": max_columns,
                     "header_row_detected": "true" if header else "false",
-                    "header_text": " | ".join(header),
+                    "header_text": header_exact,
+                    "header_text_sha256": text_sha256(header_raw) if header_raw else "",
+                    "header_char_count": len(header_raw),
+                    "header_text_truncated": "true" if header_raw and not header_exact else "false",
                     "source_url": source["final_url"],
                     "source_anchor": section["source_anchor"] if section else nearest_named_anchor(table),
                     "source_line": line,
@@ -234,7 +239,8 @@ def main() -> None:
                 for column_index, value in enumerate(row, start=1):
                     if not value:
                         continue
-                    header_value = header[column_index - 1] if header and column_index <= len(header) else ""
+                    header_value_raw = header[column_index - 1] if header and column_index <= len(header) else ""
+                    header_value = header_value_raw if len(header_value_raw) <= 200 else ""
                     exact_cell_text = value if len(value) <= 200 else ""
                     cells.append(
                         {
@@ -246,6 +252,9 @@ def main() -> None:
                             "row_index": row_index,
                             "column_index": column_index,
                             "header_value": header_value,
+                            "header_value_sha256": text_sha256(header_value_raw) if header_value_raw else "",
+                            "header_value_char_count": len(header_value_raw),
+                            "header_value_truncated": "true" if header_value_raw and not header_value else "false",
                             "cell_text": exact_cell_text,
                             "cell_text_sha256": text_sha256(value),
                             "cell_char_count": len(value),

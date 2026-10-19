@@ -23,6 +23,8 @@ CC-375858657b0ab8,COMP-02214574c4d995,1,case-derived vowel,ATOM-ba64d2b80008a3,,
 CC-262c1975fb3711,COMP-02214574c4d995,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
 CC-1c05bbcac597f8,COMP-024c0ead81b134,1,case-derived vowel,ATOM-82f6fa11c5a72a,,V_X,
 CC-bf8b8a2093b658,COMP-024c0ead81b134,2,accessor/stacking root,ATOM-d525a30bb67fbe,,C_S,
+CC-71ad229ac943be,COMP-0261b69b02b501,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-51781e95f37af4,COMP-0261b69b02b501,2,case exponent,ATOM-342bfdbaf1a63f,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-664db01b0437a4,COMP-0265ce6e2fb57f,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-e45d3cef58409d,COMP-0265ce6e2fb57f,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
 CC-556c3cf9aa1d5e,COMP-02991f7855e2fd,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -33,12 +35,18 @@ CC-8a89db2169e132,COMP-031a3aa32acba7,1,case-derived vowel,ATOM-c781409df5ed3d,,
 CC-1700c5acae8c20,COMP-031a3aa32acba7,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-02d06c3d94f17a,COMP-035f4f99635b5e,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-1cbf30224ee621,COMP-035f4f99635b5e,2,affix root,ATOM-36a96426fb24bf,,C_S,
+CC-561ee3415921d7,COMP-037df29b68a276,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-bc707b73005aed,COMP-037df29b68a276,2,case exponent,ATOM-9122a895d9a582,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-daeaafe356d5b9,COMP-037dfa8bbd64d2,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-dcbe6825a41ac9,COMP-037dfa8bbd64d2,2,case exponent,ATOM-7505a3e0fc0b94,,V_C,required realized word-final glottal V_C surface
 CC-21a862868db2d9,COMP-03ec7f13e1760f,1,case-derived vowel,ATOM-82f6fa11c5a72a,,V_X,
 CC-ca4d4590d6797a,COMP-03ec7f13e1760f,2,accessor/stacking root,ATOM-6b0da072d43904,,C_S,
 CC-24f622981abb0c,COMP-03f90749470b7a,1,type/degree vowel,ATOM-bd787a1b68bf48,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-d2361fc97a76df,COMP-03f90749470b7a,2,affix root,ATOM-4ed369ab2f4364,,C_S,
 CC-ca6a15d5a7f2ea,COMP-042d5c47758940,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
 CC-283c3876af8cf9,COMP-042d5c47758940,2,affix root,ATOM-97ca53f35b3631,,C_S,
+CC-b89c80b0f69019,COMP-042d7e5fc2dee8,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-7d56e3f2fdd2cf,COMP-042d7e5fc2dee8,2,case exponent,ATOM-4257531592c97c,,V_C,required realized word-final glottal V_C surface
 CC-86d908a6dd8ec1,COMP-044604fe8e62d7,1,source-declared template,,scope marker,,
 CC-8a2f8234fc13dc,COMP-044604fe8e62d7,2,source-declared template,,(V_NC_N),,
 CC-2572dce346294d,COMP-044604fe8e62d7,3,source-declared template,,(V_NC_M),,
@@ -81,10 +89,14 @@ CC-6b9cd8cc0ce222,COMP-0731a74130d938,1,type/degree vowel,ATOM-1fb3e3276a0563,,V
 CC-66ccb845e8feb7,COMP-0731a74130d938,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
 CC-9ad0a0ad82d5d8,COMP-07427e9d4c7877,1,case-derived vowel,ATOM-4c281370dee2c2,,V_X,immediately preceded by y
 CC-c5b791791a7f13,COMP-07427e9d4c7877,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
+CC-7f26a1be07b303,COMP-076e847e0a899c,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-10f029399f0cf6,COMP-076e847e0a899c,2,case exponent,ATOM-4257531592c97c,,V_C,required realized word-final glottal V_C surface
 CC-916cdcc6572485,COMP-078da4f81928fe,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
 CC-455bcbe6cf929b,COMP-078da4f81928fe,2,affix root,ATOM-c68de9c7af40ab,,C_S,
 CC-266f9405142355,COMP-07cb1c3c2cf054,1,case-derived vowel,ATOM-82f6fa11c5a72a,,V_X,
 CC-97281e1ac55936,COMP-07cb1c3c2cf054,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
+CC-187a1b6a49c6e2,COMP-07ced4bd4ba4fd,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-b28783dea7ba41,COMP-07ced4bd4ba4fd,2,case exponent,ATOM-171d1f198506ea,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-935d66a91c1b76,COMP-07d9446e3643ff,1,case-derived vowel,ATOM-55944235e4b921,,V_X,
 CC-53fba630cd5a1f,COMP-07d9446e3643ff,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
 CC-07a708369af5c8,COMP-080386163980b1,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
@@ -101,6 +113,8 @@ CC-2e41fb5f015ed1,COMP-08cf25472f435f,1,type/degree vowel,ATOM-b4c33c49007c15,,V
 CC-15785fab875b5f,COMP-08cf25472f435f,2,affix root,ATOM-107f3ae8088c0e,,C_S,
 CC-9cc5b9158f8f1b,COMP-08e441daeb1e33,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-cb425b57f103cb,COMP-08e441daeb1e33,2,affix root,ATOM-a3617133ad5a79,,C_S,
+CC-301487e44b25ca,COMP-08ebd5dcd7bc93,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-d199e5f85f56bf,COMP-08ebd5dcd7bc93,2,case exponent,ATOM-536725028edca8,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-8481a2a080f6a5,COMP-09095241ef413f,1,case-derived vowel,ATOM-ee6047f83c47c4,,V_X,
 CC-b6ec650e5c01fc,COMP-09095241ef413f,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-27b62db6d33583,COMP-092b6c006250c7,1,case-derived vowel,ATOM-55944235e4b921,,V_X,
@@ -117,6 +131,8 @@ CC-486d4fd3c87796,COMP-09cb420cdeaf41,1,case-derived vowel,ATOM-47d7cecb16b7d2,,
 CC-353347a1134fd2,COMP-09cb420cdeaf41,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-3d30e8bc016894,COMP-0a35db5d393801,1,case-derived vowel,ATOM-1e5d76a9267b03,,V_X,
 CC-6cf8663a110e3c,COMP-0a35db5d393801,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
+CC-b990d444b4f0a1,COMP-0a3ceea9548261,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-38f3d4fd327f66,COMP-0a3ceea9548261,2,case exponent,ATOM-c8a07a2b00c063,,V_C,required realized word-final glottal V_C surface
 CC-2e122bcad0db12,COMP-0a76f3408314e1,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
 CC-4ffc9026e2ec92,COMP-0a76f3408314e1,2,affix root,ATOM-0e14619e240857,,C_S,
 CC-1ba1edff1b445f,COMP-0aa39bcd7afa96,1,case-derived vowel,ATOM-55944235e4b921,,V_X,
@@ -125,6 +141,8 @@ CC-864ecd44799d76,COMP-0aa7d772d382ab,1,case-derived vowel,ATOM-73244aea17e4ec,,
 CC-91ba0f51464d24,COMP-0aa7d772d382ab,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
 CC-ce7eae33c4ac90,COMP-0b0afdbee4cc04,1,case-derived vowel,ATOM-904b5addc933aa,,V_X,immediately preceded by w
 CC-8be7b620085ec1,COMP-0b0afdbee4cc04,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
+CC-049a4d32c92f40,COMP-0b15d350978b85,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-1786bb7730b4bc,COMP-0b15d350978b85,2,case exponent,ATOM-9122a895d9a582,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-1e340777b5f7d6,COMP-0b2214110b6d36,1,type/degree vowel,ATOM-e022e5bc22dab9,,V_X,immediately preceded by y
 CC-6fa8a311e31989,COMP-0b2214110b6d36,2,affix root,ATOM-107f3ae8088c0e,,C_S,
 CC-ed4befae1217e1,COMP-0b4ab0ccd0f696,1,type/degree vowel,ATOM-7342852fbd0892,,V_X,immediately preceded by w
@@ -151,6 +169,8 @@ CC-161c309cb0af4f,COMP-0cd5d064af9f47,1,case-derived vowel,ATOM-633e607f2f4298,,
 CC-53503754ecf649,COMP-0cd5d064af9f47,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
 CC-60b3f584fe9fc9,COMP-0cdd3e9d50fbff,1,case-derived vowel,ATOM-d51556ff9124eb,,V_X,
 CC-19a51e33d04d31,COMP-0cdd3e9d50fbff,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
+CC-da590ad94deda0,COMP-0cddb30d93bc9b,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-5149593d771938,COMP-0cddb30d93bc9b,2,case exponent,ATOM-afa2be45ee2f99,,V_C,required realized word-final glottal V_C surface
 CC-01b8e630559b19,COMP-0ceba4ee559f34,1,case-derived vowel,ATOM-ca4f0c0cc33aae,,V_X,
 CC-3be16395dd14ab,COMP-0ceba4ee559f34,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-0ad0b0b2865a65,COMP-0d26f156149b37,1,case-derived vowel,ATOM-cfc24af87f91b4,,V_X,immediately preceded by w
@@ -175,6 +195,8 @@ CC-01fd1a7da93a0e,COMP-0e14503b5a1e1d,1,case-derived vowel,ATOM-baceed30da642a,,
 CC-aec1c6527a2e1c,COMP-0e14503b5a1e1d,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-ec3dc4df85df1a,COMP-0e26a0d7c37ecd,1,type/degree vowel,ATOM-1fb3e3276a0563,,V_X,
 CC-263e5b541c6a81,COMP-0e26a0d7c37ecd,2,affix root,ATOM-97ca53f35b3631,,C_S,
+CC-d6bd44c261033d,COMP-0e331a61abf85e,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-98afa8e65f841d,COMP-0e331a61abf85e,2,case exponent,ATOM-7505a3e0fc0b94,,V_C,required realized word-final glottal V_C surface
 CC-75234ec36923e4,COMP-0e3fc5f3207c83,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V_X,
 CC-535cd8da6da445,COMP-0e3fc5f3207c83,2,affix root,ATOM-64d8339c401e9c,,C_S,
 CC-4a652cde3a6899,COMP-0e458c68ea9e47,1,type/degree vowel,ATOM-2f7ba715ca84b7,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -195,6 +217,8 @@ CC-4b1e0ee3eaa552,COMP-0f83e5d0279a72,1,type/degree vowel,ATOM-dd32174f566f31,,V
 CC-0ebd00f1d1fe79,COMP-0f83e5d0279a72,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
 CC-7bd997c766f05d,COMP-0fda10c0a735e3,1,type/degree vowel,ATOM-03048c35ddd092,,V_X,immediately preceded by w
 CC-1cbff69837fc9f,COMP-0fda10c0a735e3,2,affix root,ATOM-107f3ae8088c0e,,C_S,
+CC-42588d8c78517b,COMP-100f5c016ed217,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-e0a1695f511153,COMP-100f5c016ed217,2,case exponent,ATOM-32b3986c9f690d,,V_C,required realized word-final glottal V_C surface
 CC-a0f94239aac5b4,COMP-1024c74fe8601e,1,type/degree vowel,ATOM-e022e5bc22dab9,,V_X,immediately preceded by y
 CC-c9c9f97e939a4b,COMP-1024c74fe8601e,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
 CC-f35c665442f56c,COMP-1027cacf4da854,1,type/degree vowel,ATOM-e022e5bc22dab9,,V_X,immediately preceded by y
@@ -207,6 +231,8 @@ CC-8ec0264059f53c,COMP-10d0d846cc8c14,1,type/degree vowel,ATOM-7342852fbd0892,,V
 CC-c8303e6bce8153,COMP-10d0d846cc8c14,2,affix root,ATOM-c68de9c7af40ab,,C_S,
 CC-83dc3394542a3b,COMP-10f2d2fd751f6e,1,case-derived vowel,ATOM-ee6047f83c47c4,,V_X,
 CC-cb50ab117d89ba,COMP-10f2d2fd751f6e,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
+CC-9e1c619ad27d8e,COMP-1139d0e04b4ed3,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-ed85f9fab5e21f,COMP-1139d0e04b4ed3,2,case exponent,ATOM-73f45080b4b58c,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-dd3720a841e22e,COMP-116d51f56056be,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
 CC-5f6f1e421623e4,COMP-116d51f56056be,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
 CC-02dd9f6199d91e,COMP-11820e02f4bb75,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -231,8 +257,12 @@ CC-787bf18ac558b0,COMP-126136b04a855f,3,source-declared template,,w/y,,
 CC-0a6cc5ace26aa8,COMP-126136b04a855f,4,source-declared template,,V_C2,,
 CC-10110ed1628663,COMP-126136b04a855f,5,source-declared template,,referential B,,
 CC-0ee29feaf5526a,COMP-126136b04a855f,6,source-declared template,,stress,,
+CC-7d0985425ee548,COMP-12665a59f50e66,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-e220c4f7d66a93,COMP-12665a59f50e66,2,case exponent,ATOM-4222e4e57aef18,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-f3118eaa1ee281,COMP-1278467fafe26e,1,case-derived vowel,ATOM-9558f20ee8beba,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-e25e33bada3801,COMP-1278467fafe26e,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
+CC-4fd4ea25034fd6,COMP-12865d4b1f7fc0,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-1599b8dfd98e0f,COMP-12865d4b1f7fc0,2,case exponent,ATOM-93a47684128fae,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-79d5680f0b7d6d,COMP-12997b551c2307,1,case-derived vowel,ATOM-facbe2e1674a7f,,V_X,
 CC-7487b0690a2401,COMP-12997b551c2307,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-50bdb84c17f7a2,COMP-12ab2f16a33bbd,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
@@ -245,6 +275,8 @@ CC-d7b444e587b9b1,COMP-13c166342afbe7,1,case-derived vowel,ATOM-aacc93d36f8139,,
 CC-6ca7718538edac,COMP-13c166342afbe7,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
 CC-8f92599d154d26,COMP-13fde5745a140c,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-5929565c47d379,COMP-13fde5745a140c,2,affix root,ATOM-0e14619e240857,,C_S,
+CC-706958d7266bce,COMP-1417be4edb66a0,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-3a9c513131dfc2,COMP-1417be4edb66a0,2,case exponent,ATOM-8f3a3f6eff7beb,,V_C,required realized word-final glottal V_C surface
 CC-2727028d87ab3b,COMP-1425517c3cb139,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
 CC-a8cc11c7060891,COMP-1425517c3cb139,2,affix root,ATOM-214968af776104,,C_S,
 CC-86e109b25a88fa,COMP-143de7aba3407c,1,case-derived vowel,ATOM-7b4390735ad1cf,,V_X,
@@ -285,12 +317,22 @@ CC-acefcbb5f91903,COMP-165c9faa362b9f,1,type/degree vowel,ATOM-1fb3e3276a0563,,V
 CC-94fc6e962c250c,COMP-165c9faa362b9f,2,affix root,ATOM-bec5efcf77e583,,C_S,
 CC-0325de94a102b9,COMP-166a0a191d25b7,1,case-derived vowel,ATOM-2ef29031b59be7,,V_X,
 CC-5874dc2c014d29,COMP-166a0a191d25b7,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
+CC-6f0d6072406b93,COMP-166a2d81f7e673,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-48a74800f4e405,COMP-166a2d81f7e673,2,case exponent,ATOM-6cd51a92e70bae,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-271589a0e34190,COMP-167a3cee29421a,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-89cb421a007a55,COMP-167a3cee29421a,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
 CC-1440ea1ec80fdb,COMP-167b5dff129f8b,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-ec1e9948ac7810,COMP-167b5dff129f8b,2,affix root,ATOM-c68de9c7af40ab,,C_S,
+CC-dd7c06a21bd82a,COMP-169345b28e0790,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-3f768bce39b99a,COMP-169345b28e0790,2,case exponent,ATOM-e9713288818d28,,V_C,required realized word-final glottal V_C surface
 CC-88612d3b0aa17b,COMP-169647c44476b0,1,type/degree vowel,ATOM-f3a7efe66f7f85,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-7b55632767282e,COMP-169647c44476b0,2,affix root,ATOM-0e14619e240857,,C_S,
+CC-34b543affd38f2,COMP-16d68e1fa30f10,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-c344fc262a9b40,COMP-16d68e1fa30f10,2,case exponent,ATOM-0b5a358814aa72,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-dcb024b568c975,COMP-16fd7af4fd0a39,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-3087fdc7e1e4d1,COMP-16fd7af4fd0a39,2,case exponent,ATOM-13b6542b94c60d,,V_C,required realized word-final glottal V_C surface
+CC-a6d0cf088f70c6,COMP-17300c737c2783,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-6f428fa5dd1769,COMP-17300c737c2783,2,case exponent,ATOM-bf8a937d77567c,,V_C,required realized word-final glottal V_C surface
 CC-c3f3d4ea976a6b,COMP-1743ecad5b87d4,1,type/degree vowel,ATOM-4e563dff257eb3,,V_X,immediately preceded by y
 CC-52dbf8621c1268,COMP-1743ecad5b87d4,2,affix root,ATOM-97ca53f35b3631,,C_S,
 CC-313d6144bb7d1a,COMP-174e85bbb075c8,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
@@ -325,10 +367,14 @@ CC-9d08e34c0cc230,COMP-18ea58f506878a,1,case-derived vowel,ATOM-ee6047f83c47c4,,
 CC-4452375220a687,COMP-18ea58f506878a,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-ff1cc2496ed7cc,COMP-19013f66227dd6,1,case-derived vowel,ATOM-baceed30da642a,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-f2c41a12c2e1f8,COMP-19013f66227dd6,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
+CC-546208f0aec04e,COMP-1915696bf61420,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-cfde57d072e6e4,COMP-1915696bf61420,2,case exponent,ATOM-2f5f4dc507d280,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-9a11aaefcb2071,COMP-1948773486a4a6,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-08be33a8475d11,COMP-1948773486a4a6,2,affix root,ATOM-9fd667ca39702b,,C_S,
 CC-89ab151fb32755,COMP-1964bbaf866762,1,case-derived vowel,ATOM-0b5f13c9f7bbfa,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-e59eb6b4afc637,COMP-1964bbaf866762,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
+CC-43fcc67e623dfc,COMP-199a7716be8527,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-5b41973750270b,COMP-199a7716be8527,2,case exponent,ATOM-4982020ce389a5,,V_C,required realized word-final glottal V_C surface
 CC-1cffcf144b2f40,COMP-199aa48b89fcc4,1,type/degree vowel,ATOM-9fb20be6058c27,,V_X,immediately preceded by w
 CC-f650c378fd3a5b,COMP-199aa48b89fcc4,2,affix root,ATOM-36a96426fb24bf,,C_S,
 CC-00adf32baa52e5,COMP-19c622bdf11649,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
@@ -345,6 +391,8 @@ CC-e6a084d3bb73a0,COMP-1a5f5e3ecd758c,1,case-derived vowel,ATOM-40b454d87f0b37,,
 CC-bb8ddc8023d354,COMP-1a5f5e3ecd758c,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-e9fc6ec5d900c1,COMP-1a694035d81576,1,case-derived vowel,ATOM-1e5d76a9267b03,,V_X,
 CC-9f84264626a95a,COMP-1a694035d81576,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
+CC-9fc97e25e60a5e,COMP-1a6b6a8fb18c13,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-59719b280d8c10,COMP-1a6b6a8fb18c13,2,case exponent,ATOM-ae019b3eda2b4b,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-69253d9d022f57,COMP-1a7a421841756f,1,type/degree vowel,ATOM-48da4ee9e28239,,V_X,
 CC-8f0f96bf759e71,COMP-1a7a421841756f,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
 CC-a7d65caf93db21,COMP-1b117b6175b8b7,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
@@ -363,10 +411,14 @@ CC-617b1a8cf63be7,COMP-1bf6c6364c7582,1,type/degree vowel,ATOM-7412b7c21b9a18,,V
 CC-354b3eb775b880,COMP-1bf6c6364c7582,2,affix root,ATOM-94dd4a586a256c,,C_S,
 CC-cf15869eac2018,COMP-1bfb866814e8f3,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-664c17a4dc1381,COMP-1bfb866814e8f3,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
+CC-4a2f4ff7a08fa2,COMP-1c0be66a6a1965,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-56fbb796ab91b0,COMP-1c0be66a6a1965,2,case exponent,ATOM-2e6c70f1df1144,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-28c03bcff15825,COMP-1c49877294f4c4,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-87506ed775af46,COMP-1c49877294f4c4,2,affix root,ATOM-ee451b4938a97d,,C_S,
 CC-31e4a4817c4fcf,COMP-1c502c1fd57ba9,1,case-derived vowel,ATOM-d4473cabce3de6,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-066e0f90760955,COMP-1c502c1fd57ba9,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
+CC-fa2e546bc72566,COMP-1c6aef0fe4a2a0,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-364c049df62b64,COMP-1c6aef0fe4a2a0,2,case exponent,ATOM-73f45080b4b58c,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-7dfadf127f7e93,COMP-1ca5e37997f991,1,type/degree vowel,ATOM-b4c33c49007c15,,V_X,
 CC-b01bca40ecb8cc,COMP-1ca5e37997f991,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-0ee43fff59f5ac,COMP-1cb395a6e30dd4,1,case-derived vowel,ATOM-7d73be11614d7e,,V_X,
@@ -385,6 +437,8 @@ CC-45ad67b41039dc,COMP-1d5c2a16e1f86b,1,case-derived vowel,ATOM-695249bcbfa9c0,,
 CC-6434e0cc79d67e,COMP-1d5c2a16e1f86b,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-a2209ccccfc022,COMP-1d5e62f973626e,1,type/degree vowel,ATOM-f3a7efe66f7f85,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-fb4b1a97b9df9b,COMP-1d5e62f973626e,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
+CC-a033548995250d,COMP-1d73a664cf57b1,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-e723285f23849b,COMP-1d73a664cf57b1,2,case exponent,ATOM-afa2be45ee2f99,,V_C,required realized word-final glottal V_C surface
 CC-79aa7a15171605,COMP-1d93b0f7498cb0,1,type/degree vowel,ATOM-e022e5bc22dab9,,V_X,immediately preceded by y
 CC-2d06b4a52b32fe,COMP-1d93b0f7498cb0,2,affix root,ATOM-b151da413f0d5f,,C_S,
 CC-bb3fbc70295487,COMP-1dbc7cd24af19f,1,case-derived vowel,ATOM-c886c565f8f92a,,V_X,
@@ -463,6 +517,8 @@ CC-6f9b6456b7a8c5,COMP-226e894db66d6a,1,type/degree vowel,ATOM-7412b7c21b9a18,,V
 CC-b5330cae327e41,COMP-226e894db66d6a,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-18c7aa0ef25ca5,COMP-22a83200ddc90e,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
 CC-4301a1f51c510f,COMP-22a83200ddc90e,2,affix root,ATOM-78f15b9e59348f,,C_S,
+CC-1f625a9503481e,COMP-22c1d76e5704f6,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-8b0a440bb58a0c,COMP-22c1d76e5704f6,2,case exponent,ATOM-ca78463b3c1c02,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-0e86414aa62c98,COMP-22c41048a32be9,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
 CC-e0bb535335cbfd,COMP-22c41048a32be9,2,affix root,ATOM-9fd667ca39702b,,C_S,
 CC-d74baea1549e45,COMP-22d979ecfce24d,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
@@ -489,6 +545,8 @@ CC-402e126df83c21,COMP-245862b95f8237,1,case-derived vowel,ATOM-ed47d961a5ca39,,
 CC-be4f41c118951d,COMP-245862b95f8237,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
 CC-d1d4334a0dbf35,COMP-24a3e5cfd5c0db,1,type/degree vowel,ATOM-09b8bd7f2797bf,,V_X,
 CC-f1eef33fd57bee,COMP-24a3e5cfd5c0db,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-0a40d866e2f83e,COMP-24afbd23883cfa,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-16f911c62c21e9,COMP-24afbd23883cfa,2,case exponent,ATOM-2e6c70f1df1144,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-af96f2e4defaa9,COMP-24c4f99f108ee3,1,type/degree vowel,ATOM-4e563dff257eb3,,V_X,immediately preceded by y
 CC-c03a5d5862333e,COMP-24c4f99f108ee3,2,affix root,ATOM-a3617133ad5a79,,C_S,
 CC-8349625bc09cf7,COMP-250ec69e73c979,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
@@ -505,6 +563,8 @@ CC-a144660751d6b5,COMP-2598c3f11e6a29,1,case-derived vowel,ATOM-151be5300123d4,,
 CC-e38ae6bc1821ca,COMP-2598c3f11e6a29,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-b360e782866a56,COMP-25c4d345222358,1,case-derived vowel,ATOM-47d7cecb16b7d2,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-6ce128451d7ee9,COMP-25c4d345222358,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
+CC-e197c3ca815523,COMP-25cb25dfcf1c7a,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-75fa3f414b5d05,COMP-25cb25dfcf1c7a,2,case exponent,ATOM-ae019b3eda2b4b,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-b00f8aa15324fb,COMP-2603133e4bd9aa,1,case-derived vowel,ATOM-5918379d9ecf2b,,V_X,
 CC-5326802a48230b,COMP-2603133e4bd9aa,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
 CC-702c2b936d53cc,COMP-267a38a1d3ca82,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
@@ -529,6 +589,8 @@ CC-de9e09e74c88ca,COMP-27698059526b19,1,type/degree vowel,ATOM-dd32174f566f31,,V
 CC-0d4be5e1bd84ff,COMP-27698059526b19,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
 CC-ed4db9036fa5db,COMP-276ff5a2a29a70,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
 CC-f8be05e2e0da4c,COMP-276ff5a2a29a70,2,affix root,ATOM-a3617133ad5a79,,C_S,
+CC-f4a0c8ee329dca,COMP-278c3865408ae6,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-e91fc690ea5ee7,COMP-278c3865408ae6,2,case exponent,ATOM-6cd51a92e70bae,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-0c8762bd6038b1,COMP-27962f7dc5bd0f,1,type/degree vowel,ATOM-4e563dff257eb3,,V_X,immediately preceded by y
 CC-93e42b7f9b12ca,COMP-27962f7dc5bd0f,2,affix root,ATOM-107f3ae8088c0e,,C_S,
 CC-3cdfab040730f1,COMP-27b3d4c51b3e7d,1,type/degree vowel,ATOM-bd787a1b68bf48,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -559,16 +621,24 @@ CC-957758f96b667a,COMP-29111c9a3ad493,1,type/degree vowel,ATOM-e022e5bc22dab9,,V
 CC-19b88ea921b579,COMP-29111c9a3ad493,2,affix root,ATOM-36a96426fb24bf,,C_S,
 CC-1f4ddd708b863f,COMP-29651fbfc03d59,1,case-derived vowel,ATOM-532f757523eb21,,V_X,
 CC-4388ae8555bf4f,COMP-29651fbfc03d59,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
+CC-737af8be745201,COMP-2965f54609f2f1,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-c4959995e242c4,COMP-2965f54609f2f1,2,case exponent,ATOM-ec7a57f9bafe10,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-f2542dc6124e45,COMP-299134244b2a76,1,case-derived vowel,ATOM-da55b4d7cf778b,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-0fb7f7e2ee9736,COMP-299134244b2a76,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-545aaf5c69745d,COMP-29957e759297c8,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
 CC-6dc645acbb1892,COMP-29957e759297c8,2,affix root,ATOM-bc6716c08c11a7,,C_S,
+CC-d1dabd3cd8743a,COMP-29d0de7d303981,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-858907747cbf2a,COMP-29d0de7d303981,2,case exponent,ATOM-2f5f4dc507d280,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-f89a36880047c2,COMP-29e481d8f86fdb,1,case-derived vowel,ATOM-8ceb70ee6cc296,,V_X,
 CC-eda23b52a32a48,COMP-29e481d8f86fdb,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
+CC-9debacc6e180e4,COMP-29f780484d71f1,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-126d2d7e6e7f66,COMP-29f780484d71f1,2,case exponent,ATOM-4222e4e57aef18,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-9d0820b0fd67b9,COMP-2a06708b0d46c7,1,case-derived vowel,ATOM-53d922b5a88e66,,V_X,
 CC-565c374ab72148,COMP-2a06708b0d46c7,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-be177f11ca7e4e,COMP-2a275ecb6f7a53,1,case-derived vowel,ATOM-7fb6701f06dd62,,V_X,
 CC-e80155f0e41765,COMP-2a275ecb6f7a53,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
+CC-e6778ab721bf2b,COMP-2a373d42db0d2d,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-d69fdd7612a9d4,COMP-2a373d42db0d2d,2,case exponent,ATOM-3a5a276f804975,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-07005d36c964f5,COMP-2a3d570e3eb85a,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-af82ba9bc7a868,COMP-2a3d570e3eb85a,2,affix root,ATOM-107f3ae8088c0e,,C_S,
 CC-b2353cfd0c8d33,COMP-2a4adba741cb20,1,case-derived vowel,ATOM-0775720bb9403d,,V_X,immediately preceded by w
@@ -619,12 +689,16 @@ CC-ef1d40c71e335d,COMP-2cc63611cecb8d,1,type/degree vowel,ATOM-e022e5bc22dab9,,V
 CC-fedc17d5f387c5,COMP-2cc63611cecb8d,2,affix root,ATOM-9fd667ca39702b,,C_S,
 CC-95f359289614d9,COMP-2cc659debfe11b,1,case-derived vowel,ATOM-17f638f3e093d2,,V_X,
 CC-c06de0c880215d,COMP-2cc659debfe11b,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
+CC-aa3d8baeafb042,COMP-2cf309ab72e45c,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-e2b95d3e7038c8,COMP-2cf309ab72e45c,2,case exponent,ATOM-ce9a23ed773385,,V_C,required realized word-final glottal V_C surface
 CC-046f67611f365f,COMP-2d119729355577,1,case-derived vowel,ATOM-4e22ec0ecf61e6,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-4a75836434750e,COMP-2d119729355577,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
 CC-a9b7c4d0289644,COMP-2d172e103e2975,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
 CC-c33f2e02d13650,COMP-2d172e103e2975,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
 CC-1a317334fe19a3,COMP-2d1805cad9fd9f,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
 CC-fd3adaa4dce741,COMP-2d1805cad9fd9f,2,affix root,ATOM-ef7cf17b427af9,,C_S,
+CC-b0dfb05fdcf7f0,COMP-2d4e4c2111754d,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-abc5673524d3a2,COMP-2d4e4c2111754d,2,case exponent,ATOM-6cd51a92e70bae,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-bd43e491b9e135,COMP-2d8a875db5fcac,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
 CC-362496b8f7c43d,COMP-2d8a875db5fcac,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-dbe91ba61d9e2c,COMP-2d910dc858176a,1,type/degree vowel,ATOM-09b8bd7f2797bf,,V_X,
@@ -643,12 +717,18 @@ CC-e3cceb90a6b40c,COMP-2e280577cf20ca,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V
 CC-d772b082fca869,COMP-2e280577cf20ca,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
 CC-59250f9d32f3e6,COMP-2e2a16acf35464,1,case-derived vowel,ATOM-4c281370dee2c2,,V_X,immediately preceded by y
 CC-e564065158d383,COMP-2e2a16acf35464,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
+CC-30d814cb9190bc,COMP-2e2c2e638e1d75,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-2ccaf18071c66d,COMP-2e2c2e638e1d75,2,case exponent,ATOM-7767230b38dca7,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-5d4db96e6ce078,COMP-2e537525dea443,1,case-derived vowel,ATOM-0675af2410eb6c,,V_X,immediately preceded by w
 CC-298ae405da125f,COMP-2e537525dea443,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
+CC-cd9518ad38a696,COMP-2e5a2549955bd3,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-685570ffcfb365,COMP-2e5a2549955bd3,2,case exponent,ATOM-60316d385314ad,,V_C,required realized word-final glottal V_C surface
 CC-0a2bb33ac26486,COMP-2e7f00c67eaf0d,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-437b3b73f1ca0e,COMP-2e7f00c67eaf0d,2,affix root,ATOM-214968af776104,,C_S,
 CC-1d77262e2a9509,COMP-2e850b73a58ffa,1,case-derived vowel,ATOM-1980f9d2ab20f6,,V_X,immediately preceded by y
 CC-d4db42541cd252,COMP-2e850b73a58ffa,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
+CC-a62b0846d07db8,COMP-2e89d779594214,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-75dcfb247505fe,COMP-2e89d779594214,2,case exponent,ATOM-769c8c069e367a,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-992b6e544c79dd,COMP-2e999f6f8fd1b5,1,type/degree vowel,ATOM-1fb3e3276a0563,,V_X,
 CC-edfeeaa18b2d8b,COMP-2e999f6f8fd1b5,2,affix root,ATOM-9fd667ca39702b,,C_S,
 CC-f3c85d495101d7,COMP-2e9f4dec7f2d71,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
@@ -657,6 +737,8 @@ CC-a35f0616606b78,COMP-2eb1e215a48021,1,case-derived vowel,ATOM-17f638f3e093d2,,
 CC-b7d59cd1750c70,COMP-2eb1e215a48021,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-5e82adad387fcc,COMP-2f0332e4a2fe78,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
 CC-1d06aba0fe412d,COMP-2f0332e4a2fe78,2,affix root,ATOM-36a96426fb24bf,,C_S,
+CC-9ca51cb2564f73,COMP-2f09a1862ba6ac,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-b8a4bc3902d436,COMP-2f09a1862ba6ac,2,case exponent,ATOM-ce9a23ed773385,,V_C,required realized word-final glottal V_C surface
 CC-de663b3a3a6de1,COMP-2f4f382cbdbed8,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V_X,
 CC-02cca568d6b5b7,COMP-2f4f382cbdbed8,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
 CC-d3d6905d815dd9,COMP-2f80767d112215,1,case-derived vowel,ATOM-1e5d76a9267b03,,V_X,
@@ -675,6 +757,10 @@ CC-2b1844e570b461,COMP-2fcaac2b6eb949,1,type/degree vowel,ATOM-e022e5bc22dab9,,V
 CC-9fd6c42a383ee0,COMP-2fcaac2b6eb949,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
 CC-fcac5f2528eda1,COMP-2fe31dddc36412,1,type/degree vowel,ATOM-4e563dff257eb3,,V_X,immediately preceded by y
 CC-eaab38b1a5962f,COMP-2fe31dddc36412,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-185697893011e1,COMP-30187176b5b22a,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-2a69120e775b95,COMP-30187176b5b22a,2,case exponent,ATOM-60316d385314ad,,V_C,required realized word-final glottal V_C surface
+CC-1360febc97999f,COMP-302bfb15b4544d,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-bfffa5e692ac1a,COMP-302bfb15b4544d,2,case exponent,ATOM-e9713288818d28,,V_C,required realized word-final glottal V_C surface
 CC-50b9a3ed3d38ee,COMP-3031a1307e0f14,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-aa5b3259f03fb9,COMP-3031a1307e0f14,2,affix root,ATOM-e719e0f5196d88,,C_S,
 CC-7ac460bb2fe449,COMP-30c416aad174e4,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -683,6 +769,8 @@ CC-b6d7666494023f,COMP-30cca7b7c1e940,1,case-derived vowel,ATOM-8dc18084545603,,
 CC-bb96f6c6173280,COMP-30cca7b7c1e940,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-0fc7d6901e8277,COMP-30e31cd3d82874,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-9ef5651afa7c3b,COMP-30e31cd3d82874,2,affix root,ATOM-b151da413f0d5f,,C_S,
+CC-a4924646c24d25,COMP-3114ee146782cc,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-52c63def2d2b28,COMP-3114ee146782cc,2,case exponent,ATOM-6f025a1a7a3df9,,V_C,required realized word-final glottal V_C surface
 CC-b27aa759a0d68d,COMP-314a183c72d089,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-0572b5bd37ec25,COMP-314a183c72d089,2,affix root,ATOM-0e14619e240857,,C_S,
 CC-83c65898d960ed,COMP-315b9169504b14,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -695,6 +783,8 @@ CC-665b62a3d2daa0,COMP-319eb790ed9523,1,type/degree vowel,ATOM-109428d5140ef9,,V
 CC-568f7061a8d4a1,COMP-319eb790ed9523,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
 CC-4bc556566ca411,COMP-31babbf5611ebe,1,case-derived vowel,ATOM-facbe2e1674a7f,,V_X,
 CC-b46b8ed2c72594,COMP-31babbf5611ebe,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
+CC-a9f294533b26f7,COMP-31ff6bac3b47f4,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-e5c970347fa0ac,COMP-31ff6bac3b47f4,2,case exponent,ATOM-8465f0f9cc2766,,V_C,required realized word-final glottal V_C surface
 CC-489952acbbc6a0,COMP-320b8aba8f242b,1,case-derived vowel,ATOM-ed47d961a5ca39,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-52decf265157d0,COMP-320b8aba8f242b,2,accessor/stacking root,ATOM-6b0da072d43904,,C_S,
 CC-86221e9ce36108,COMP-321685fe57fc51,1,type/degree vowel,ATOM-09b8bd7f2797bf,,V_X,
@@ -705,8 +795,12 @@ CC-71b7bb0cd832f6,COMP-323095e4df5cba,1,case-derived vowel,ATOM-042c68bddaeb57,,
 CC-2f49ee8bb394ec,COMP-323095e4df5cba,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
 CC-d34ad683f8c446,COMP-3232f8da70aece,1,type/degree vowel,ATOM-03048c35ddd092,,V_X,immediately preceded by w
 CC-04afed10f04ed7,COMP-3232f8da70aece,2,affix root,ATOM-4ed369ab2f4364,,C_S,
+CC-17045c9a1982ff,COMP-3238d0a6bac1ed,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-03c0f281737bb2,COMP-3238d0a6bac1ed,2,case exponent,ATOM-8d30d8b963913f,,V_C,required realized word-final glottal V_C surface
 CC-161b1b99728d9c,COMP-323baba52702e8,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-ee5c31e39d1069,COMP-323baba52702e8,2,affix root,ATOM-36a96426fb24bf,,C_S,
+CC-ff4ff3e28c135a,COMP-32e3540d2d672e,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-637e23efbb2b97,COMP-32e3540d2d672e,2,case exponent,ATOM-c8a07a2b00c063,,V_C,required realized word-final glottal V_C surface
 CC-7fb97cf02fb717,COMP-3317f199aa4e20,1,case-derived vowel,ATOM-eb0bfe34fe37bd,,V_X,
 CC-0874d7c3ceca19,COMP-3317f199aa4e20,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-f73b4af5c9f8ee,COMP-33573a5b163cc3,1,case-derived vowel,ATOM-cfc24af87f91b4,,V_X,immediately preceded by w
@@ -729,8 +823,12 @@ CC-e2dacae2aee25a,COMP-34b10ff4c431e5,1,case-derived vowel,ATOM-eb0bfe34fe37bd,,
 CC-feb11da74ba8d9,COMP-34b10ff4c431e5,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-02280b95ca1c2b,COMP-34d11ff6713a56,1,case-derived vowel,ATOM-41ad962b903cad,,V_X,
 CC-42b8313dc6c227,COMP-34d11ff6713a56,2,accessor/stacking root,ATOM-d525a30bb67fbe,,C_S,
+CC-6f18b78f8cc091,COMP-34db8563dfd648,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-e220bd29f707b9,COMP-34db8563dfd648,2,case exponent,ATOM-cd9473a74a3474,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-19c183f3eb52b9,COMP-34eed31550d676,1,case-derived vowel,ATOM-74fe4de529a915,,V_X,
 CC-c5b7e4cbaaa294,COMP-34eed31550d676,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
+CC-5db97561833b0b,COMP-34f84084256cf3,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-fbd273b6a126e6,COMP-34f84084256cf3,2,case exponent,ATOM-09e99ee78be910,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-ca1f40a270ff20,COMP-3505ed1759f19f,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-e1133d4e37d1ed,COMP-3505ed1759f19f,2,affix root,ATOM-94dd4a586a256c,,C_S,
 CC-9ea9601ddd893e,COMP-351258a718c712,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
@@ -747,20 +845,30 @@ CC-d8db72e07b2d7f,COMP-35f8aeaf25302b,1,type/degree vowel,ATOM-aab24543f54fa9,,V
 CC-5343403f5b4c08,COMP-35f8aeaf25302b,2,affix root,ATOM-94dd4a586a256c,,C_S,
 CC-e4d6ed58914a67,COMP-35fdda242e2341,1,case-derived vowel,ATOM-c781409df5ed3d,,V_X,
 CC-60e769ebd91c1a,COMP-35fdda242e2341,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
+CC-7ec527d330b4fc,COMP-36079bee9610d5,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-287f02b00f140a,COMP-36079bee9610d5,2,case exponent,ATOM-ef00f2a6d09364,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-ec02f85a00572a,COMP-3627d8cab20353,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V_X,
 CC-04758f5744ec92,COMP-3627d8cab20353,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-e70d3bcac454eb,COMP-3631a2eae7e6a6,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
 CC-70b88795f95e32,COMP-3631a2eae7e6a6,2,affix root,ATOM-ef7cf17b427af9,,C_S,
+CC-90cf6ce5ce0d87,COMP-363355e7b14b7f,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-a6708fa0eea630,COMP-363355e7b14b7f,2,case exponent,ATOM-4257531592c97c,,V_C,required realized word-final glottal V_C surface
 CC-58a77be50fb811,COMP-363fb7788b4419,1,case-derived vowel,ATOM-69590b6313c1f0,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-b2834e248e2513,COMP-363fb7788b4419,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
 CC-b34316f080fe39,COMP-365cbfdfe2a7da,1,case-derived vowel,ATOM-8f06c67099b391,,V_X,
 CC-c2d1b1091e19f8,COMP-365cbfdfe2a7da,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
+CC-ae741e9f01ef46,COMP-367e51bb4b4471,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-8d3c297624f2cd,COMP-367e51bb4b4471,2,case exponent,ATOM-32b3986c9f690d,,V_C,required realized word-final glottal V_C surface
+CC-f7d5d730b1c0bf,COMP-36903e25f3122b,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-776de08c098ffd,COMP-36903e25f3122b,2,case exponent,ATOM-afa2be45ee2f99,,V_C,required realized word-final glottal V_C surface
 CC-1a00028a9aa235,COMP-36c2874cc559a4,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-4d63887957ace0,COMP-36c2874cc559a4,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
 CC-e62bd05b033bbd,COMP-36c46da925613e,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-9d591e5b982281,COMP-36c46da925613e,2,affix root,ATOM-94dd4a586a256c,,C_S,
 CC-bcef41aee316eb,COMP-36d2569e49c5e9,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
 CC-91e45d66631e94,COMP-36d2569e49c5e9,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
+CC-5c8c00cd79a813,COMP-36d764acc7ca06,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-45095e3f33e9ff,COMP-36d764acc7ca06,2,case exponent,ATOM-8f3a3f6eff7beb,,V_C,required realized word-final glottal V_C surface
 CC-bac5de145dbb1b,COMP-36de73ac5b1cb3,1,type/degree vowel,ATOM-b4c33c49007c15,,V_X,
 CC-ba1c4c8364edf6,COMP-36de73ac5b1cb3,2,affix root,ATOM-214968af776104,,C_S,
 CC-4e4cf14ec79c66,COMP-36f719c39ee650,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -789,20 +897,30 @@ CC-06da7f2dc2231e,COMP-3827fdd0dc14d9,1,type/degree vowel,ATOM-a3b3452c509084,,V
 CC-74f9f583ff2783,COMP-3827fdd0dc14d9,2,affix root,ATOM-64d8339c401e9c,,C_S,
 CC-85e00686c0bafc,COMP-3829488facbf32,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-7e8b4cc630e0bc,COMP-3829488facbf32,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
+CC-b9aa899f4d4c56,COMP-385537604ee24d,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-0b0d805d1a5f3c,COMP-385537604ee24d,2,case exponent,ATOM-a743ec4e1e185f,,V_C,required realized word-final glottal V_C surface
+CC-a1e4cc7cd44dac,COMP-386e100b57a3a3,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-a505c5bc274aaa,COMP-386e100b57a3a3,2,case exponent,ATOM-7d764214a9f778,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-90173ca73653ea,COMP-387187e2e70410,1,type/degree vowel,ATOM-f3a7efe66f7f85,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-e3bb02c59d8e7c,COMP-387187e2e70410,2,affix root,ATOM-ee451b4938a97d,,C_S,
+CC-9ec60c05869f29,COMP-388e764cd289b6,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-f5a58ae671dd91,COMP-388e764cd289b6,2,case exponent,ATOM-1a56a7cec2da06,,V_C,required realized word-final glottal V_C surface
 CC-7cd7ea0ccb47ca,COMP-38933f0c8427ab,1,case-derived vowel,ATOM-09adc4f61653c6,,V_X,immediately preceded by y
 CC-f09aef9da202a2,COMP-38933f0c8427ab,2,accessor/stacking root,ATOM-6b0da072d43904,,C_S,
 CC-dea0d886cbc8e9,COMP-3899e2b91e4ac2,1,type/degree vowel,ATOM-7342852fbd0892,,V_X,immediately preceded by w
 CC-ee66c08865ce97,COMP-3899e2b91e4ac2,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
 CC-c740bd7ee50240,COMP-38dcc9791d4c0f,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
 CC-f8d94523d459f9,COMP-38dcc9791d4c0f,2,affix root,ATOM-bc6716c08c11a7,,C_S,
+CC-7dc77c6a138087,COMP-38e45d5884803f,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-cfbf961ad0f150,COMP-38e45d5884803f,2,case exponent,ATOM-4222e4e57aef18,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-e307c1132e61e5,COMP-38f22a2fcce972,1,case-derived vowel,ATOM-8f06c67099b391,,V_X,
 CC-8c037d86a70d32,COMP-38f22a2fcce972,2,accessor/stacking root,ATOM-6b0da072d43904,,C_S,
 CC-79f36aaacbf18d,COMP-392af7b63c920c,1,case-derived vowel,ATOM-9e108d8ffc3f93,,V_X,
 CC-66be219e89aa7f,COMP-392af7b63c920c,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
 CC-c9a24cb25db100,COMP-393c1dcd737669,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
 CC-5461e85a6d32d0,COMP-393c1dcd737669,2,affix root,ATOM-e719e0f5196d88,,C_S,
+CC-49bef8bd38fc69,COMP-395f890deef284,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-93a5d524994e96,COMP-395f890deef284,2,case exponent,ATOM-1a56a7cec2da06,,V_C,required realized word-final glottal V_C surface
 CC-a2a959c6b9dec5,COMP-3960cd363f5144,1,case-derived vowel,ATOM-2ef29031b59be7,,V_X,
 CC-9d0f2327747877,COMP-3960cd363f5144,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
 CC-21a98a531963b7,COMP-39adb6ead62dff,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
@@ -823,6 +941,8 @@ CC-5c2015c4484b29,COMP-3a695f5f7d5402,1,type/degree vowel,ATOM-9fb20be6058c27,,V
 CC-d3034cffbdc2ac,COMP-3a695f5f7d5402,2,affix root,ATOM-e88468a770f92e,,C_S,
 CC-acfdf2791faf78,COMP-3a90b7c2cc1ba6,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-4c16a7fdc2dd36,COMP-3a90b7c2cc1ba6,2,affix root,ATOM-64d8339c401e9c,,C_S,
+CC-904ff3d5cd7a4d,COMP-3a9a4110f5f627,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-f44a92b4412144,COMP-3a9a4110f5f627,2,case exponent,ATOM-701bb7285f112c,,V_C,required realized word-final glottal V_C surface
 CC-59861c2f4b30d5,COMP-3b097794e0c901,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
 CC-dd04c897e264e0,COMP-3b097794e0c901,2,affix root,ATOM-97ca53f35b3631,,C_S,
 CC-0b50e86c8de942,COMP-3b2a123ccd0e77,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -841,8 +961,12 @@ CC-2b387c201edde9,COMP-3bcd0e431fe8f2,1,type/degree vowel,ATOM-aab24543f54fa9,,V
 CC-eb834ef1af4de0,COMP-3bcd0e431fe8f2,2,affix root,ATOM-7c73d550bffdc5,,C_S,
 CC-a86cfe6c1936b9,COMP-3c0bff8d23bfa3,1,case-derived vowel,ATOM-bd548ab40150c9,,V_X,immediately preceded by y
 CC-072460622fe371,COMP-3c0bff8d23bfa3,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
+CC-a92bb37f8cc4e6,COMP-3c2d80f40b2925,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-bbffa965859224,COMP-3c2d80f40b2925,2,case exponent,ATOM-197081a3a31239,,V_C,required realized word-final glottal V_C surface
 CC-6838539dc3aa7d,COMP-3c5a557ea6e24d,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-52c74c8a7ce967,COMP-3c5a557ea6e24d,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-d09e1d913df591,COMP-3c797398e0ddfe,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-13490678e5b973,COMP-3c797398e0ddfe,2,case exponent,ATOM-fe1b69e6d8c217,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-e4206b58d181a6,COMP-3c8641fcab3ead,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-9a3d2f2c20305f,COMP-3c8641fcab3ead,2,affix root,ATOM-d5c5ee5c962eef,,C_S,
 CC-69a90c1972dbf9,COMP-3cb12299f68362,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
@@ -853,10 +977,16 @@ CC-525b2708fd7410,COMP-3ce33c6176c7f3,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V
 CC-7746caf9954871,COMP-3ce33c6176c7f3,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-e7e904b6a41d4f,COMP-3ce94b058416c9,1,type/degree vowel,ATOM-f3a7efe66f7f85,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-10e79c9f7f7cb4,COMP-3ce94b058416c9,2,affix root,ATOM-744e729367f6e7,,C_S,
+CC-af63563d2bb3ad,COMP-3d40e8b2862c31,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-3a7067bcd43cd4,COMP-3d40e8b2862c31,2,case exponent,ATOM-769c8c069e367a,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-cc17c669c403f2,COMP-3d6c3c04af0cdc,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-36be8389147b13,COMP-3d6c3c04af0cdc,2,case exponent,ATOM-ec7a57f9bafe10,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-36f6a55a51f30f,COMP-3d744014ff95ea,1,case-derived vowel,ATOM-4c281370dee2c2,,V_X,immediately preceded by y
 CC-d15e694e8e531b,COMP-3d744014ff95ea,2,accessor/stacking root,ATOM-6b0da072d43904,,C_S,
 CC-b3e524371acf6c,COMP-3d8a801341aefb,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
 CC-b60ff320cf480d,COMP-3d8a801341aefb,2,affix root,ATOM-e719e0f5196d88,,C_S,
+CC-bade38b9cdcd2e,COMP-3da047295c268a,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-4a7ee513f6b7b3,COMP-3da047295c268a,2,case exponent,ATOM-28192cda20ee9b,,V_C,required realized word-final glottal V_C surface
 CC-d917fded7e524a,COMP-3dbd0e8520cf5e,1,type/degree vowel,ATOM-09b8bd7f2797bf,,V_X,
 CC-1948d220facfbd,COMP-3dbd0e8520cf5e,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
 CC-dbf63b6f3f295a,COMP-3deca1cf2ffb21,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
@@ -865,6 +995,8 @@ CC-72a6f9d1f58d05,COMP-3deef5c3e0945f,1,type/degree vowel,ATOM-aab24543f54fa9,,V
 CC-438ee986a5b312,COMP-3deef5c3e0945f,2,affix root,ATOM-97ca53f35b3631,,C_S,
 CC-b8885f575b1b00,COMP-3e8de9bc1afe37,1,case-derived vowel,ATOM-3c24e17ec56eec,,V_X,
 CC-c6b2b2a9fd3e79,COMP-3e8de9bc1afe37,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
+CC-37a1656d69add6,COMP-3ebf2e87e0f711,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-8fbea4bc69a352,COMP-3ebf2e87e0f711,2,case exponent,ATOM-49b7abf6b72d13,,V_C,required realized word-final glottal V_C surface
 CC-739279b365e9a1,COMP-3ee55fedad7f91,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-183494459b0f28,COMP-3ee55fedad7f91,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-5e25068d917910,COMP-3ef3ad105874cf,1,case-derived vowel,ATOM-533ed0bd60978b,,V_X,
@@ -873,6 +1005,8 @@ CC-9962dfab51d4d9,COMP-3f1aecacccf11f,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V
 CC-643801a3849f7e,COMP-3f1aecacccf11f,2,affix root,ATOM-b151da413f0d5f,,C_S,
 CC-068821156d80f1,COMP-3f3d391b954d49,1,type/degree vowel,ATOM-bd787a1b68bf48,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-23489f376b55a6,COMP-3f3d391b954d49,2,affix root,ATOM-107f3ae8088c0e,,C_S,
+CC-f5cdb981c30d28,COMP-3f57224f6772ed,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-e266df6b93b3cf,COMP-3f57224f6772ed,2,case exponent,ATOM-3161535332fafc,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-5a9b3ab6483605,COMP-3f6d0febfaec31,1,case-derived vowel,ATOM-0775720bb9403d,,V_X,immediately preceded by w
 CC-aa38c4d8e6f575,COMP-3f6d0febfaec31,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
 CC-dd45f5bd71b451,COMP-3f7672a5488d13,1,case-derived vowel,ATOM-73244aea17e4ec,,V_X,
@@ -918,6 +1052,8 @@ CC-b952f8a70becff,COMP-4237750b6fbaef,1,case-derived vowel,ATOM-17f638f3e093d2,,
 CC-14d579cadf25d8,COMP-4237750b6fbaef,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-5a64b7a3d20817,COMP-429f84e714bd42,1,type/degree vowel,ATOM-03048c35ddd092,,V_X,immediately preceded by w
 CC-ff8000a6393fe3,COMP-429f84e714bd42,2,affix root,ATOM-ee451b4938a97d,,C_S,
+CC-9f4d2d1de221a7,COMP-42c3878e279265,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-c39496f54146f0,COMP-42c3878e279265,2,case exponent,ATOM-b0078ab5063976,,V_C,required realized word-final glottal V_C surface
 CC-9ecdcf595453d8,COMP-42e84c36ea6f90,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
 CC-fbb869b6398c59,COMP-42e84c36ea6f90,2,affix root,ATOM-78f15b9e59348f,,C_S,
 CC-99385e66b6e969,COMP-42ebf3e280ebef,1,case-derived vowel,ATOM-ba64d2b80008a3,,V_X,
@@ -942,18 +1078,24 @@ CC-654ba39230208a,COMP-4468fc4cba994a,1,case-derived vowel,ATOM-151be5300123d4,,
 CC-fdca3e684669cb,COMP-4468fc4cba994a,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-457c7fffed727c,COMP-447733c6624bd4,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
 CC-31e54ade5b0728,COMP-447733c6624bd4,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
+CC-f25202347a644b,COMP-44bc150048fdba,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-d37cefad3f4cbc,COMP-44bc150048fdba,2,case exponent,ATOM-7a69c1aeac9192,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-4f9e83c998b4c4,COMP-4514ade9378660,1,case-derived vowel,ATOM-cb3031c722f864,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-93c8eeaa25fc06,COMP-4514ade9378660,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
 CC-d77d24d20e4e3d,COMP-4517322145fc89,1,type/degree vowel,ATOM-09b8bd7f2797bf,,V_X,
 CC-88bed58d4e8b79,COMP-4517322145fc89,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-f2d5a8a280114e,COMP-459f53df085494,1,case-derived vowel,ATOM-3c24e17ec56eec,,V_X,
 CC-0b4c606dd0c0b7,COMP-459f53df085494,2,accessor/stacking root,ATOM-6b0da072d43904,,C_S,
+CC-6a2ba89a51ed62,COMP-46231a5d704687,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-a9809edc39c14b,COMP-46231a5d704687,2,case exponent,ATOM-09e99ee78be910,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-a0f14bdcdc19b3,COMP-46299dec0f4259,1,case-derived vowel,ATOM-5d938c82d98bf6,,V_X,
 CC-df125694763abe,COMP-46299dec0f4259,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-362ffe3d351440,COMP-4656c319e9a1c9,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-41af609484711f,COMP-4656c319e9a1c9,2,affix root,ATOM-107f3ae8088c0e,,C_S,
 CC-5e8c952c4de734,COMP-4659d3b579abb7,1,type/degree vowel,ATOM-9fb20be6058c27,,V_X,immediately preceded by w
 CC-ea4b3adab840dc,COMP-4659d3b579abb7,2,affix root,ATOM-ee451b4938a97d,,C_S,
+CC-c3ced1c251583f,COMP-46bf35a6a37793,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-2de6fb7043cbc1,COMP-46bf35a6a37793,2,case exponent,ATOM-18d38b00942860,,V_C,required realized word-final glottal V_C surface
 CC-5320be53d399c2,COMP-46dce7b9b773c9,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-4d2c4e9aba6658,COMP-46dce7b9b773c9,2,affix root,ATOM-107f3ae8088c0e,,C_S,
 CC-99206fdef38dd2,COMP-46df432184a6c3,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
@@ -964,8 +1106,12 @@ CC-6469f87b06f69b,COMP-471a3b1f397f44,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V
 CC-4d0969a9920f84,COMP-471a3b1f397f44,2,affix root,ATOM-64d8339c401e9c,,C_S,
 CC-d45fc1e54c90e2,COMP-4740d7d24699e2,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
 CC-dd66cc4a3146ff,COMP-4740d7d24699e2,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-84cdfb49fb2e7c,COMP-474667f8f71ae0,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-32b80cb2d42f61,COMP-474667f8f71ae0,2,case exponent,ATOM-93a47684128fae,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-af12471bcd1f82,COMP-47a17d96103199,1,type/degree vowel,ATOM-e022e5bc22dab9,,V_X,immediately preceded by y
 CC-c61b5f574576ce,COMP-47a17d96103199,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
+CC-a15921aecef97a,COMP-4830b86db4b570,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-8fb92fd09cabef,COMP-4830b86db4b570,2,case exponent,ATOM-bf8a937d77567c,,V_C,required realized word-final glottal V_C surface
 CC-8619e127a01a64,COMP-4841bb7dbcafa7,1,case-derived vowel,ATOM-9071236440ebc9,,V_X,
 CC-fa4dd744d6824c,COMP-4841bb7dbcafa7,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-edc47f68ab218f,COMP-485fdcba20c461,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
@@ -974,6 +1120,8 @@ CC-34547487c0b8c0,COMP-486ba969c8c181,1,case-derived vowel,ATOM-86b86098c672e3,,
 CC-bb30e93d22f799,COMP-486ba969c8c181,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-c747aa788f8094,COMP-48a2f43f2f1763,1,case-derived vowel,ATOM-23b0987b13e556,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-025af5343e38ed,COMP-48a2f43f2f1763,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
+CC-b9199a55178d67,COMP-48c890a3148773,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-2691a6cb15831b,COMP-48c890a3148773,2,case exponent,ATOM-b0078ab5063976,,V_C,required realized word-final glottal V_C surface
 CC-33f02c988f488d,COMP-48f598545efe49,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
 CC-3ff68601184336,COMP-48f598545efe49,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
 CC-7ad83063704166,COMP-4930b707c04f1e,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
@@ -1000,6 +1148,8 @@ CC-74c39b136a302c,COMP-4aa06af89b849f,1,case-derived vowel,ATOM-d51556ff9124eb,,
 CC-4bdba73cc946de,COMP-4aa06af89b849f,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-85345e442db108,COMP-4acdd0d2a7437b,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
 CC-53d250ca1146f8,COMP-4acdd0d2a7437b,2,affix root,ATOM-ee451b4938a97d,,C_S,
+CC-d44c6839e4a35b,COMP-4b469829057d8a,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-9af3399efa0913,COMP-4b469829057d8a,2,case exponent,ATOM-5d4b026388e9b3,,V_C,required realized word-final glottal V_C surface
 CC-e24a9758d5a887,COMP-4b4a8a5a9d1b63,1,type/degree vowel,ATOM-b4c33c49007c15,,V_X,
 CC-47bacddf8a614d,COMP-4b4a8a5a9d1b63,2,affix root,ATOM-0e14619e240857,,C_S,
 CC-fd09d2c33b52e7,COMP-4b6abec7ba2d0d,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
@@ -1052,14 +1202,20 @@ CC-3033501c6880bd,COMP-4daec7ba16265f,1,type/degree vowel,ATOM-05a2cd432977e8,,V
 CC-7db5924cc68f6e,COMP-4daec7ba16265f,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
 CC-4b44b3eb32405a,COMP-4dbcb243a934b2,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
 CC-96cbef20cc7d6d,COMP-4dbcb243a934b2,2,affix root,ATOM-ef7cf17b427af9,,C_S,
+CC-d303d53c770de8,COMP-4e028849887106,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-2ec1969a5de3c8,COMP-4e028849887106,2,case exponent,ATOM-8465f0f9cc2766,,V_C,required realized word-final glottal V_C surface
 CC-6564ebd1856089,COMP-4e0e9e7876aa65,1,type/degree vowel,ATOM-03048c35ddd092,,V_X,immediately preceded by w
 CC-3c0379f138ce8a,COMP-4e0e9e7876aa65,2,affix root,ATOM-e88468a770f92e,,C_S,
 CC-5abb36e2a709f5,COMP-4e1185f202a757,1,case-derived vowel,ATOM-ca4f0c0cc33aae,,V_X,
 CC-e94b2daefbe06c,COMP-4e1185f202a757,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
+CC-5abec82a8677d7,COMP-4e1c31370a21cc,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-42e7eeba1a8f43,COMP-4e1c31370a21cc,2,case exponent,ATOM-18d38b00942860,,V_C,required realized word-final glottal V_C surface
 CC-fb9b95615b4758,COMP-4e3eb1c61fbd46,1,type/degree vowel,ATOM-7342852fbd0892,,V_X,immediately preceded by w
 CC-87ad9805f88fac,COMP-4e3eb1c61fbd46,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
 CC-b410917a323660,COMP-4e4f99d3ec22e1,1,case-derived vowel,ATOM-23b0987b13e556,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-ba072262f45849,COMP-4e4f99d3ec22e1,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
+CC-d50b1dec66c9ad,COMP-4e6049a04dabec,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-54626daff6efde,COMP-4e6049a04dabec,2,case exponent,ATOM-32b3986c9f690d,,V_C,required realized word-final glottal V_C surface
 CC-8b0f6d3c6817a1,COMP-4eb6ec88f3302b,1,case-derived vowel,ATOM-0b5f13c9f7bbfa,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-3b386e8e948c44,COMP-4eb6ec88f3302b,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-4a9fbd2ff1b7af,COMP-4ec46e2dfdc0c5,1,case-derived vowel,ATOM-41ad962b903cad,,V_X,
@@ -1086,6 +1242,8 @@ CC-d16bd86f93179d,COMP-504db18e753d65,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V
 CC-c87740c8e6bd4b,COMP-504db18e753d65,2,affix root,ATOM-78f15b9e59348f,,C_S,
 CC-ec5d45eef0ca42,COMP-5053ff15b86741,1,case-derived vowel,ATOM-5918379d9ecf2b,,V_X,
 CC-83291d5019e52f,COMP-5053ff15b86741,2,accessor/stacking root,ATOM-d525a30bb67fbe,,C_S,
+CC-714fb3945bbfc0,COMP-508393cbf143fe,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-ac6b15ce95e49c,COMP-508393cbf143fe,2,case exponent,ATOM-dda9d7cdb47c41,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-bb3dc913d0239a,COMP-5123b14a3cbaf3,1,type/degree vowel,ATOM-d0b239448821f3,,V_X,immediately preceded by y
 CC-d66001dc802660,COMP-5123b14a3cbaf3,2,affix root,ATOM-e719e0f5196d88,,C_S,
 CC-12fd9fc7162e40,COMP-513cac2c78bab5,1,case-derived vowel,ATOM-8dc18084545603,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -1108,6 +1266,8 @@ CC-fce43d3e40804e,COMP-5206c5daeed8d6,1,type/degree vowel,ATOM-71ee063f3457d2,,V
 CC-54b4607cc6936f,COMP-5206c5daeed8d6,2,affix root,ATOM-36a96426fb24bf,,C_S,
 CC-eabd35c4ddfcf2,COMP-526cd2cb356561,1,type/degree vowel,ATOM-0d6064a1757fc2,,V_X,
 CC-9692b5e4d4dde9,COMP-526cd2cb356561,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-b529856581d86b,COMP-52817c163c010c,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-b67ba044a7bded,COMP-52817c163c010c,2,case exponent,ATOM-ca78463b3c1c02,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-0f80c5c8d384af,COMP-52ae72a2ca3457,1,type/degree vowel,ATOM-7342852fbd0892,,V_X,immediately preceded by w
 CC-2a214056e8be09,COMP-52ae72a2ca3457,2,affix root,ATOM-97ca53f35b3631,,C_S,
 CC-437d58fe782324,COMP-52c4a0908753c8,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -1118,6 +1278,8 @@ CC-84a3508a926a22,COMP-52d1950cc18115,1,type/degree vowel,ATOM-7342852fbd0892,,V
 CC-0fa90c6353202e,COMP-52d1950cc18115,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-0d53cf6531c71b,COMP-52d446508994b7,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-e1408787b4c6a1,COMP-52d446508994b7,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-a50f02a194a029,COMP-52dded4674b8da,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-4d43f77765228b,COMP-52dded4674b8da,2,case exponent,ATOM-09e99ee78be910,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-237fe2244edd10,COMP-5301512ae7d36a,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
 CC-8400d095e3cff2,COMP-5301512ae7d36a,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-ff0eb8c64e90aa,COMP-5326b483be932d,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
@@ -1134,6 +1296,8 @@ CC-08a4a215ae78c8,COMP-538f0f78379051,1,type/degree vowel,ATOM-e022e5bc22dab9,,V
 CC-27707dd25c240d,COMP-538f0f78379051,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-d9ebd25029ce9c,COMP-538f154c29a361,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
 CC-c375d370334bc9,COMP-538f154c29a361,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
+CC-9697d09aef1282,COMP-53be0bd4f8c075,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-19b1cc66069ce4,COMP-53be0bd4f8c075,2,case exponent,ATOM-6cd51a92e70bae,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-0a9acab3cb1952,COMP-53bfe5f300f3d6,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V_X,
 CC-0e0e327340084f,COMP-53bfe5f300f3d6,2,affix root,ATOM-ef7cf17b427af9,,C_S,
 CC-a560a0e9d78a86,COMP-53cec29dc7ef39,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
@@ -1158,6 +1322,10 @@ CC-4b57419f22095b,COMP-54bb64aceb8dbb,1,type/degree vowel,ATOM-2f7ba715ca84b7,,V
 CC-36f06a1fc9872c,COMP-54bb64aceb8dbb,2,affix root,ATOM-7c73d550bffdc5,,C_S,
 CC-a8f0a7e9fd3dc7,COMP-54c90e269b909a,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
 CC-ba2147f08f1622,COMP-54c90e269b909a,2,affix root,ATOM-744e729367f6e7,,C_S,
+CC-9a5e93ea16040c,COMP-54db16dd1e8c0c,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-628d214dec85ae,COMP-54db16dd1e8c0c,2,case exponent,ATOM-7a69c1aeac9192,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-4297fa99270c83,COMP-550ea2160ec57a,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-689e37723257d0,COMP-550ea2160ec57a,2,case exponent,ATOM-32b3986c9f690d,,V_C,required realized word-final glottal V_C surface
 CC-7203b3ba115668,COMP-55587983924e82,1,case-derived vowel,ATOM-eb0bfe34fe37bd,,V_X,
 CC-bdf7ecb6784736,COMP-55587983924e82,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-e44ab380b6737f,COMP-556633cfe02205,1,case-derived vowel,ATOM-ee6047f83c47c4,,V_X,
@@ -1172,6 +1340,10 @@ CC-b15bb088bfea8d,COMP-55e701a29f6110,1,case-derived vowel,ATOM-d5276afa504d49,,
 CC-95a3ec685f26d1,COMP-55e701a29f6110,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-3a49dab7eb965f,COMP-56198452bfed0c,1,type/degree vowel,ATOM-d0b239448821f3,,V_X,immediately preceded by y
 CC-8328d13c329514,COMP-56198452bfed0c,2,affix root,ATOM-7c73d550bffdc5,,C_S,
+CC-f4dfc5114d4b7c,COMP-5651c246e173ac,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-8e25f7363809f1,COMP-5651c246e173ac,2,case exponent,ATOM-756e29618aee4d,,V_C,required realized word-final glottal V_C surface
+CC-90fb8e3a700ecc,COMP-566a4899dc5f8f,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-23aaa2e1eb9c64,COMP-566a4899dc5f8f,2,case exponent,ATOM-dda9d7cdb47c41,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-a101cd069834e3,COMP-566becd963a84c,1,case-derived vowel,ATOM-0a1122d2fc9915,,V_X,
 CC-308ba389925f2e,COMP-566becd963a84c,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-a94c933554a2fa,COMP-567bb3645cda28,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
@@ -1192,6 +1364,8 @@ CC-a9a2416c8a5d48,COMP-5793b578a61a9a,1,case-derived vowel,ATOM-0a1122d2fc9915,,
 CC-711c8f2fb8e855,COMP-5793b578a61a9a,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
 CC-389046e61d8265,COMP-5793e1395b888f,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-ea9eea9917cd8e,COMP-5793e1395b888f,2,affix root,ATOM-64d8339c401e9c,,C_S,
+CC-b66f6046309c28,COMP-579f723a103204,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-93bc11bb13a6e8,COMP-579f723a103204,2,case exponent,ATOM-171d1f198506ea,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-d6f9bdf59c74c0,COMP-57e1ccfb23132d,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V_X,
 CC-4d17e5d683ab72,COMP-57e1ccfb23132d,2,affix root,ATOM-b151da413f0d5f,,C_S,
 CC-593c8f6fa1ad7b,COMP-57ec5546af488f,1,type/degree vowel,ATOM-09b8bd7f2797bf,,V_X,
@@ -1204,6 +1378,8 @@ CC-5bd45d9d875436,COMP-583683d60dbdc5,1,type/degree vowel,ATOM-4e563dff257eb3,,V
 CC-5efd85516a8758,COMP-583683d60dbdc5,2,affix root,ATOM-e88468a770f92e,,C_S,
 CC-81f4e45b5f1fd3,COMP-588532846b28d7,1,type/degree vowel,ATOM-1fb3e3276a0563,,V_X,
 CC-2855d05fc86d08,COMP-588532846b28d7,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
+CC-170b44f0eb5347,COMP-588bc620146619,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-b537fa5061a365,COMP-588bc620146619,2,case exponent,ATOM-a743ec4e1e185f,,V_C,required realized word-final glottal V_C surface
 CC-34f3b71131f5bb,COMP-58afa3f2b4518f,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
 CC-a162ab96d5f7f4,COMP-58afa3f2b4518f,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-390f9b0aede1af,COMP-58b4ee5d08ee08,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
@@ -1218,6 +1394,8 @@ CC-48d760193042a1,COMP-594d06ba65568f,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V
 CC-723ec90dcc84f4,COMP-594d06ba65568f,2,affix root,ATOM-4ed369ab2f4364,,C_S,
 CC-6e53f2d46ad41b,COMP-5973238bf6f5bc,1,type/degree vowel,ATOM-7342852fbd0892,,V_X,immediately preceded by w
 CC-5454431c1af045,COMP-5973238bf6f5bc,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
+CC-3e3cb01f27799b,COMP-599a4b8a94e4e7,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-4c0d2c2dbc008e,COMP-599a4b8a94e4e7,2,case exponent,ATOM-7d764214a9f778,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-939633fab92a35,COMP-59b76abc7a9355,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-eb42fc7aecea00,COMP-59b76abc7a9355,2,affix root,ATOM-ee451b4938a97d,,C_S,
 CC-0a71336b58ae3f,COMP-59c65a592adce3,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
@@ -1238,10 +1416,14 @@ CC-c080960b444868,COMP-5ab0343cfa7cad,1,case-derived vowel,ATOM-042c68bddaeb57,,
 CC-e84be334eeaae7,COMP-5ab0343cfa7cad,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-6819a085ad3bb7,COMP-5abf6abd1940e9,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
 CC-45fb7c68389a6f,COMP-5abf6abd1940e9,2,affix root,ATOM-a3617133ad5a79,,C_S,
+CC-6d602310603d98,COMP-5ae9486e91cf01,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-65158cf408c620,COMP-5ae9486e91cf01,2,case exponent,ATOM-08307fe78d6700,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-37ed8b7caf6f5d,COMP-5af9daa09e6ddc,1,type/degree vowel,ATOM-03048c35ddd092,,V_X,immediately preceded by w
 CC-9003521247892e,COMP-5af9daa09e6ddc,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
 CC-076456ba192983,COMP-5afc93db8c8b78,1,type/degree vowel,ATOM-4e563dff257eb3,,V_X,immediately preceded by y
 CC-9956a38b64cb19,COMP-5afc93db8c8b78,2,affix root,ATOM-411f23b4d28929,,C_S,
+CC-f8037860bfcc2a,COMP-5afd5ee080b578,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-0fdcb158df179f,COMP-5afd5ee080b578,2,case exponent,ATOM-73f45080b4b58c,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-5ee6d0903df9c6,COMP-5b077b84c47311,1,type/degree vowel,ATOM-9fb20be6058c27,,V_X,immediately preceded by w
 CC-34310f6174f103,COMP-5b077b84c47311,2,affix root,ATOM-94dd4a586a256c,,C_S,
 CC-d09c42f07058f9,COMP-5b093cea394347,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
@@ -1254,6 +1436,8 @@ CC-0e8733cf539191,COMP-5b3b48403579e2,1,case-derived vowel,ATOM-532f757523eb21,,
 CC-6075a2edbee49b,COMP-5b3b48403579e2,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-d667bc6cc3af58,COMP-5b54334360952a,1,type/degree vowel,ATOM-9fb20be6058c27,,V_X,immediately preceded by w
 CC-af8555d6ca414c,COMP-5b54334360952a,2,affix root,ATOM-b151da413f0d5f,,C_S,
+CC-4df7298bee32dd,COMP-5b6dc26ed9d5ad,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-32e205ecded9f2,COMP-5b6dc26ed9d5ad,2,case exponent,ATOM-d946208140bd96,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-274b296c2ab3d9,COMP-5b84c848ab3ef3,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
 CC-0a7f9987c69719,COMP-5b84c848ab3ef3,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-ef3882635e7010,COMP-5b907cf6e0bc56,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -1286,6 +1470,8 @@ CC-17a39d7976d73d,COMP-5e0bc35461baa7,1,case-derived vowel,ATOM-74bfd33ab3f879,,
 CC-7e1e992fb533e8,COMP-5e0bc35461baa7,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-530324bd28e183,COMP-5e14733bfc2aeb,1,type/degree vowel,ATOM-d0b239448821f3,,V_X,immediately preceded by y
 CC-55139d3edc3c36,COMP-5e14733bfc2aeb,2,affix root,ATOM-94dd4a586a256c,,C_S,
+CC-9ed42cef6a50be,COMP-5e1a0e7824a4d8,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-184c8963f91421,COMP-5e1a0e7824a4d8,2,case exponent,ATOM-fe1b69e6d8c217,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-786ffd8b27a6e1,COMP-5e21fd8f7bc91d,1,type/degree vowel,ATOM-05a2cd432977e8,,V_X,
 CC-382fcf4a9f60a0,COMP-5e21fd8f7bc91d,2,affix root,ATOM-a3617133ad5a79,,C_S,
 CC-67f016ce36b44c,COMP-5e68aa20db5a22,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
@@ -1296,12 +1482,16 @@ CC-0d9bcb9197dccc,COMP-5f1e75ca94856c,1,type/degree vowel,ATOM-a3b3452c509084,,V
 CC-e8ba60db2c8747,COMP-5f1e75ca94856c,2,affix root,ATOM-7c73d550bffdc5,,C_S,
 CC-115ffa7982dce0,COMP-5f3e2aed0d0ac6,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
 CC-44d3f204c8ac61,COMP-5f3e2aed0d0ac6,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
+CC-c017ab4177cef0,COMP-5f64e4ece89b8a,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-e47edbcf235ddc,COMP-5f64e4ece89b8a,2,case exponent,ATOM-8d30d8b963913f,,V_C,required realized word-final glottal V_C surface
 CC-8d76d1a34216ad,COMP-5f82618e045e89,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-248f30ffa90a82,COMP-5f82618e045e89,2,affix root,ATOM-4ed369ab2f4364,,C_S,
 CC-afdb862bdb9da1,COMP-5f8b0895eb74be,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
 CC-9e4fffe42322b8,COMP-5f8b0895eb74be,2,affix root,ATOM-ef7cf17b427af9,,C_S,
 CC-8a184c5d48bbce,COMP-5f90f1fc65b48b,1,type/degree vowel,ATOM-d0b239448821f3,,V_X,immediately preceded by y
 CC-6d206e0f2120a6,COMP-5f90f1fc65b48b,2,affix root,ATOM-87a50e64418478,,C_S,
+CC-9a219d1217eaca,COMP-5f989316323133,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-b789732d9fe135,COMP-5f989316323133,2,case exponent,ATOM-750832226a09f1,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-cd83ab2d6c5436,COMP-5f9c9056d3e64a,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V_X,
 CC-5b8d336a9b3ade,COMP-5f9c9056d3e64a,2,affix root,ATOM-a3617133ad5a79,,C_S,
 CC-f689714476840e,COMP-5fa39fe51ed397,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
@@ -1310,6 +1500,8 @@ CC-e56c224d905396,COMP-5fe0a8b48bea89,1,type/degree vowel,ATOM-9fb20be6058c27,,V
 CC-bbbb4faa19d34f,COMP-5fe0a8b48bea89,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-279a447af05ca6,COMP-600ec5c2f78612,1,case-derived vowel,ATOM-69590b6313c1f0,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-73ee2948fd58fd,COMP-600ec5c2f78612,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
+CC-8d8df265e844e5,COMP-6023f262ae28fb,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-fc3eec9f8dfb66,COMP-6023f262ae28fb,2,case exponent,ATOM-08307fe78d6700,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-80f172a1be2273,COMP-6048211860205c,1,case-derived vowel,ATOM-042c68bddaeb57,,V_X,
 CC-128cb23c9aa831,COMP-6048211860205c,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-aac14fd009bb72,COMP-60536caac2b61b,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
@@ -1350,12 +1542,16 @@ CC-bec1e373711e57,COMP-61d23da0f5c00b,1,case-derived vowel,ATOM-82f6fa11c5a72a,,
 CC-3a7ede197a7542,COMP-61d23da0f5c00b,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-773f1c36f2b101,COMP-6283d87cfbee27,1,case-derived vowel,ATOM-8dc18084545603,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-a9163799e68326,COMP-6283d87cfbee27,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
+CC-7a69b937133144,COMP-628dddafbfbea3,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-8dc806b09a5765,COMP-628dddafbfbea3,2,case exponent,ATOM-258c7f11aff301,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-667ecb420e5346,COMP-62adfebf26ecc6,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
 CC-84f30794994ad7,COMP-62adfebf26ecc6,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-127a7c8a08fba5,COMP-62bbb78d494af0,1,type/degree vowel,ATOM-1fb3e3276a0563,,V_X,
 CC-e11633d22deffc,COMP-62bbb78d494af0,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
 CC-534931b2d01d96,COMP-62cb2f1e09693f,1,case-derived vowel,ATOM-3c24e17ec56eec,,V_X,
 CC-1d14aa3a1c7ed6,COMP-62cb2f1e09693f,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
+CC-8f7b25752d0b90,COMP-632390d06ffcca,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-2836050d2f2cf4,COMP-632390d06ffcca,2,case exponent,ATOM-9e4c45edc24fc4,,V_C,required realized word-final glottal V_C surface
 CC-8877c9aef14b84,COMP-6323a605ff9013,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-824f726c2a86e7,COMP-6323a605ff9013,2,affix root,ATOM-94dd4a586a256c,,C_S,
 CC-7c590a1ffc4d50,COMP-639b7b150b46d4,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
@@ -1380,6 +1576,8 @@ CC-7783ac2d781df1,COMP-648997f0959a9a,1,case-derived vowel,ATOM-532f757523eb21,,
 CC-cbb098bca6dea2,COMP-648997f0959a9a,2,accessor/stacking root,ATOM-d525a30bb67fbe,,C_S,
 CC-f2c83375070a83,COMP-649c4e2a6e627c,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-bb64fb9823ccc5,COMP-649c4e2a6e627c,2,affix root,ATOM-c68de9c7af40ab,,C_S,
+CC-1daca058a1a90d,COMP-64c827c8814876,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-2ba7ed37a3a174,COMP-64c827c8814876,2,case exponent,ATOM-d946208140bd96,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-141055c7b02ee7,COMP-64e4995ba906e0,1,type/degree vowel,ATOM-1fb3e3276a0563,,V_X,
 CC-a0db57b05c7da3,COMP-64e4995ba906e0,2,affix root,ATOM-214968af776104,,C_S,
 CC-39795cec33c53e,COMP-650b33e7ecd6ee,1,case-derived vowel,ATOM-c54b3e85e75739,,V_X,
@@ -1390,6 +1588,8 @@ CC-a805b4962bfa9e,COMP-65517e45ce287f,1,type/degree vowel,ATOM-d0b239448821f3,,V
 CC-4ea024a1e54edf,COMP-65517e45ce287f,2,affix root,ATOM-c68de9c7af40ab,,C_S,
 CC-57626a653eb602,COMP-658eb0aece2eca,1,type/degree vowel,ATOM-9fb20be6058c27,,V_X,immediately preceded by w
 CC-5acbb3fc71ae1d,COMP-658eb0aece2eca,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
+CC-8c26f0345ecb3f,COMP-65afa228d02d52,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-317d711ed02936,COMP-65afa228d02d52,2,case exponent,ATOM-1a56a7cec2da06,,V_C,required realized word-final glottal V_C surface
 CC-a1a8b275419a01,COMP-65cdfd1921e7ff,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-83e4ccc735e852,COMP-65cdfd1921e7ff,2,affix root,ATOM-ef7cf17b427af9,,C_S,
 CC-d5a436e44b9dfd,COMP-65e788b45447ba,1,case-derived vowel,ATOM-09adc4f61653c6,,V_X,immediately preceded by y
@@ -1418,12 +1618,16 @@ CC-0d3fb33265479a,COMP-67a1ccbb86f9a2,1,case-derived vowel,ATOM-d4473cabce3de6,,
 CC-f0375eabd64b85,COMP-67a1ccbb86f9a2,2,accessor/stacking root,ATOM-6b0da072d43904,,C_S,
 CC-b1089aa4609aed,COMP-67ad18913a36a3,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-13deaf72236d90,COMP-67ad18913a36a3,2,affix root,ATOM-ef7cf17b427af9,,C_S,
+CC-cdeb96227fd864,COMP-67b64127dbed31,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-af3dc55d75f660,COMP-67b64127dbed31,2,case exponent,ATOM-ca78463b3c1c02,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-003c08709a3d10,COMP-67d3442828647d,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
 CC-e79a82fe8885b5,COMP-67d3442828647d,2,affix root,ATOM-7c73d550bffdc5,,C_S,
 CC-c79850562e4a95,COMP-67e14afc97c272,1,type/degree vowel,ATOM-09b8bd7f2797bf,,V_X,
 CC-12076081ce9c81,COMP-67e14afc97c272,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
 CC-5cf75b6c80a10b,COMP-6804930b741fce,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
 CC-7f5191921a06c4,COMP-6804930b741fce,2,affix root,ATOM-e719e0f5196d88,,C_S,
+CC-8d66c24b572459,COMP-689016fc17375c,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-a89bb589818020,COMP-689016fc17375c,2,case exponent,ATOM-342bfdbaf1a63f,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-94cd1a7f3fe984,COMP-68c20588aeeaac,1,case-derived vowel,ATOM-cfc24af87f91b4,,V_X,immediately preceded by w
 CC-df3276ba1964bb,COMP-68c20588aeeaac,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
 CC-20a25bf2ddb1fe,COMP-68df3ddf38b697,1,case-derived vowel,ATOM-baceed30da642a,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -1456,6 +1660,8 @@ CC-04b7eee3261178,COMP-6a8eb3446e2399,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V
 CC-c0930f79c0e72e,COMP-6a8eb3446e2399,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
 CC-db79b68fb79a88,COMP-6aadb5b65ed25a,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-926212e04c8b3b,COMP-6aadb5b65ed25a,2,affix root,ATOM-c68de9c7af40ab,,C_S,
+CC-8f1484191d02ef,COMP-6ac5c73869b6c5,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-627fc8efcdbcb4,COMP-6ac5c73869b6c5,2,case exponent,ATOM-4982020ce389a5,,V_C,required realized word-final glottal V_C surface
 CC-7f5f5105922f79,COMP-6af285f988aa60,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
 CC-e2903b369c8a77,COMP-6af285f988aa60,2,affix root,ATOM-78f15b9e59348f,,C_S,
 CC-cea36399418106,COMP-6af50f2b4d51db,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
@@ -1468,12 +1674,16 @@ CC-f145c339dbe90e,COMP-6b79e2c1220057,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V
 CC-ff17e99e60f6a0,COMP-6b79e2c1220057,2,affix root,ATOM-97ca53f35b3631,,C_S,
 CC-20bbb3b708bb8f,COMP-6bd6f523715963,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V_X,
 CC-2603ba393a2141,COMP-6bd6f523715963,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
+CC-0734cff8c684ea,COMP-6bd85e19428fd2,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-874b8a4155f007,COMP-6bd85e19428fd2,2,case exponent,ATOM-f5b119f6742a84,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-9eabad177e4091,COMP-6c09c243ef1044,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
 CC-32928e84f8e080,COMP-6c09c243ef1044,2,affix root,ATOM-78f15b9e59348f,,C_S,
 CC-598900b24b8e0c,COMP-6c27a0f1f02ef4,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
 CC-5ea15a2d8ae87f,COMP-6c27a0f1f02ef4,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-b904abe4b77c16,COMP-6c2f4f1735a4df,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
 CC-ebc3e6ab3b8c99,COMP-6c2f4f1735a4df,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
+CC-3650ba5cb06760,COMP-6c4da3f339d4a3,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-22b298f95e92c9,COMP-6c4da3f339d4a3,2,case exponent,ATOM-f5b119f6742a84,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-f3cec6aac51878,COMP-6c4eec2381be31,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-18e23614965c86,COMP-6c4eec2381be31,2,affix root,ATOM-744e729367f6e7,,C_S,
 CC-5c529270d0b1e5,COMP-6c530f33b6ed1e,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
@@ -1484,14 +1694,24 @@ CC-98c6d9dd0211f5,COMP-6c6dfefdd9e0c5,1,type/degree vowel,ATOM-44266409e896ea,,V
 CC-578f6dbe97c00c,COMP-6c6dfefdd9e0c5,2,affix root,ATOM-9fd667ca39702b,,C_S,
 CC-5f207023432d92,COMP-6c92f4e6a51d56,1,case-derived vowel,ATOM-b062726ad5143d,,V_X,
 CC-5fb6da42d86491,COMP-6c92f4e6a51d56,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
+CC-97d00e5e6d7561,COMP-6cad3a23f5b59a,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-9fe5dee1e6e0ee,COMP-6cad3a23f5b59a,2,case exponent,ATOM-0b5a358814aa72,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-31bffda1e0c883,COMP-6cb96a9ad13dbb,1,case-derived vowel,ATOM-b062726ad5143d,,V_X,
 CC-eec0f514597648,COMP-6cb96a9ad13dbb,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-35f127d09a842f,COMP-6ccbc2d9482e7a,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-340aba0612bfdd,COMP-6ccbc2d9482e7a,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-d52db93f543ac0,COMP-6d559fe33c37da,1,aspect exponent,,V_N,VIII,
 CC-3596264abb14cf,COMP-6d559fe33c37da,2,consonantal mood/case-scope exponent,,C_N,VIII,
+CC-4747c8a0ade9bd,COMP-6d8115c5a2aceb,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-707a08d09f4275,COMP-6d8115c5a2aceb,2,case exponent,ATOM-85919d252e3402,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-831e3397abb4ee,COMP-6d95a79d18d870,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-032c3b0a9dabd4,COMP-6d95a79d18d870,2,case exponent,ATOM-160dc61518abb0,,V_C,required realized word-final glottal V_C surface
+CC-d29a6f230ff53f,COMP-6dd88cc37246ba,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-a3fae21e4a0779,COMP-6dd88cc37246ba,2,case exponent,ATOM-ce9a23ed773385,,V_C,required realized word-final glottal V_C surface
 CC-b642dbf2308ab9,COMP-6df498c3b047b8,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-cd96e098f2bae5,COMP-6df498c3b047b8,2,affix root,ATOM-36a96426fb24bf,,C_S,
+CC-aa86b723dbf965,COMP-6e1503a9e3b1b5,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-41f08ea0230e46,COMP-6e1503a9e3b1b5,2,case exponent,ATOM-756e29618aee4d,,V_C,required realized word-final glottal V_C surface
 CC-f304da8b56d56e,COMP-6e72d5a5a8c543,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-7d1efedce95def,COMP-6e72d5a5a8c543,2,affix root,ATOM-94dd4a586a256c,,C_S,
 CC-e9909c2eef1c82,COMP-6eb964f0d543a8,1,case-derived vowel,ATOM-f38d7cc52d1851,,V_X,
@@ -1510,6 +1730,8 @@ CC-bbde3c3fdc1c59,COMP-6f541b40665d97,1,case-derived vowel,ATOM-bd548ab40150c9,,
 CC-22a114f1924860,COMP-6f541b40665d97,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-68094776dd5874,COMP-6f75a0362ab1ae,1,case-derived vowel,ATOM-17f638f3e093d2,,V_X,
 CC-5af8fa1f578128,COMP-6f75a0362ab1ae,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
+CC-18746bd17e987a,COMP-6f7ed85925936e,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-35552f5cfb9db3,COMP-6f7ed85925936e,2,case exponent,ATOM-2754e3574478ef,,V_C,required realized word-final glottal V_C surface
 CC-f121e17cb5dbb3,COMP-6f89bacaf120c5,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
 CC-8382fe1ced20ae,COMP-6f89bacaf120c5,2,affix root,ATOM-214968af776104,,C_S,
 CC-f6ecb48a5688ad,COMP-6fa84c7d3c60a1,1,case-derived vowel,ATOM-ed47d961a5ca39,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -1528,12 +1750,20 @@ CC-3b61007b837ece,COMP-704bdaffbb99bf,1,type/degree vowel,ATOM-3b825a7e6b109b,,V
 CC-2cdfc76165363f,COMP-704bdaffbb99bf,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
 CC-bd24150f2f5116,COMP-709a1d8e40ed71,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-c488b8a8ee521a,COMP-709a1d8e40ed71,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
+CC-aea21800d15a6e,COMP-709c4e3780a5e3,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-7d03fd1fdd74a8,COMP-709c4e3780a5e3,2,case exponent,ATOM-bf8a937d77567c,,V_C,required realized word-final glottal V_C surface
+CC-9dd9d4afc4461b,COMP-709ed3cdb34795,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-3b5617ad41a9cf,COMP-709ed3cdb34795,2,case exponent,ATOM-0b5a358814aa72,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-e28b09c19fea03,COMP-70cda171554567,1,case-derived vowel,ATOM-042c68bddaeb57,,V_X,
 CC-5d7d7f35385998,COMP-70cda171554567,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
+CC-aaff33d35d5ce4,COMP-70d30f7e766d56,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-b54afbad2340d0,COMP-70d30f7e766d56,2,case exponent,ATOM-9122a895d9a582,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-7f19f5f5bc7ac6,COMP-70ed74cdaa0e77,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
 CC-dd36f8de13186e,COMP-70ed74cdaa0e77,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
 CC-ab25318af84cf3,COMP-71a520d6eec0f6,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
 CC-eb699a8df5e7a8,COMP-71a520d6eec0f6,2,affix root,ATOM-7c73d550bffdc5,,C_S,
+CC-e95d0fccad87e6,COMP-71ae87caa65fd4,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-95034070b3e8ec,COMP-71ae87caa65fd4,2,case exponent,ATOM-7767230b38dca7,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-fe82f705a111b2,COMP-71be7dea990401,1,case-derived vowel,ATOM-042c68bddaeb57,,V_X,
 CC-1c6846d438b4c2,COMP-71be7dea990401,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-1f7f3f5cce3254,COMP-71ce91cecc1660,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
@@ -1558,12 +1788,16 @@ CC-d44ff91504a87a,COMP-739fab1d041478,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V
 CC-228eb37d11aa52,COMP-739fab1d041478,2,affix root,ATOM-94dd4a586a256c,,C_S,
 CC-7467b941ccd330,COMP-73a69e0188b01b,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-5b0e4d33fd6e9e,COMP-73a69e0188b01b,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
+CC-9e11d39808170e,COMP-73ab7dca74d620,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-018ede0f69d39a,COMP-73ab7dca74d620,2,case exponent,ATOM-4982020ce389a5,,V_C,required realized word-final glottal V_C surface
 CC-b78d6d93caf3f4,COMP-73b73a1da2978c,1,case-derived vowel,ATOM-7fb6701f06dd62,,V_X,
 CC-2bcfd10d5d34c8,COMP-73b73a1da2978c,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-a801de64b7ddf4,COMP-73b87eb7feed67,1,case-derived vowel,ATOM-40b454d87f0b37,,V_X,
 CC-4e10f656cc17c6,COMP-73b87eb7feed67,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-acfc66f84086e3,COMP-73f05d6a2e88b9,1,type/degree vowel,ATOM-0d6064a1757fc2,,V_X,
 CC-13d1ed9c5d85fa,COMP-73f05d6a2e88b9,2,affix root,ATOM-744e729367f6e7,,C_S,
+CC-085cbef9868c6a,COMP-73f178a8c587c6,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-f1cbf0dea99478,COMP-73f178a8c587c6,2,case exponent,ATOM-26ba6440eaaeef,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-e6a383090c90ac,COMP-741258a73fa533,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-6e7f050c0f02c4,COMP-741258a73fa533,2,affix root,ATOM-9fd667ca39702b,,C_S,
 CC-7936ccd09a3075,COMP-741ad6ec5de262,1,case-derived vowel,ATOM-0b39d8422d1349,,V_X,
@@ -1576,12 +1810,20 @@ CC-a42e8f61d3fd9e,COMP-748e8aa44dd3a0,1,type/degree vowel,ATOM-d5af7c40790521,,V
 CC-63a659b4cbfa34,COMP-748e8aa44dd3a0,2,affix root,ATOM-78f15b9e59348f,,C_S,
 CC-2e2d34ee6905fd,COMP-74959adf982fb7,1,type/degree vowel,ATOM-03048c35ddd092,,V_X,immediately preceded by w
 CC-c18865dbe3fb94,COMP-74959adf982fb7,2,affix root,ATOM-bc6716c08c11a7,,C_S,
+CC-dbf6ab81df97a3,COMP-74b68d748f1969,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-d2cbcbf655d351,COMP-74b68d748f1969,2,case exponent,ATOM-4982020ce389a5,,V_C,required realized word-final glottal V_C surface
 CC-a110c136871d0d,COMP-74b89fd5c24ac6,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-2d5098c6073cc2,COMP-74b89fd5c24ac6,2,affix root,ATOM-0e14619e240857,,C_S,
 CC-f642e5c1cd5437,COMP-74ccab6405c88e,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-bc7d2292fb3ae8,COMP-74ccab6405c88e,2,affix root,ATOM-97ca53f35b3631,,C_S,
+CC-b67df81feb6177,COMP-74e41eb9616c75,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-758ac44c54fe55,COMP-74e41eb9616c75,2,case exponent,ATOM-ef00f2a6d09364,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-f9c337cfc86b6f,COMP-74f72b5a4af8ed,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
 CC-0fd9a1d59ab193,COMP-74f72b5a4af8ed,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
+CC-b7ca189fcb9c7b,COMP-7501b7f9776edb,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-4289bd61ea1c01,COMP-7501b7f9776edb,2,case exponent,ATOM-701bb7285f112c,,V_C,required realized word-final glottal V_C surface
+CC-781b5776ff7ff7,COMP-75308f1e9ea799,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-3f64fc7d11bfad,COMP-75308f1e9ea799,2,case exponent,ATOM-f39b4520d23026,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-d2c42a4754e739,COMP-7530b26017d58f,1,case-derived vowel,ATOM-9071236440ebc9,,V_X,
 CC-f1feae8e9fbaab,COMP-7530b26017d58f,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
 CC-4e92fb919ce6f0,COMP-7535df38545f19,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
@@ -1590,6 +1832,8 @@ CC-a6ee8d65c3bb2f,COMP-7550427be2a437,1,case-derived vowel,ATOM-2ef29031b59be7,,
 CC-2bc007bf717dbc,COMP-7550427be2a437,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-70e1d8002ec905,COMP-755703441473d3,1,case-derived vowel,ATOM-ed47d961a5ca39,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-6d7197b75c9b59,COMP-755703441473d3,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
+CC-829a429feaa17d,COMP-7560fdb910e774,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-acc0b7705e2190,COMP-7560fdb910e774,2,case exponent,ATOM-c61e6fb40aaab6,,V_C,required realized word-final glottal V_C surface
 CC-e4f1be7ccda7c0,COMP-75749a34afb21a,1,case-derived vowel,ATOM-7d73be11614d7e,,V_X,
 CC-ed5147a1c152c7,COMP-75749a34afb21a,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-1b0a8595275aef,COMP-757c458eba8108,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
@@ -1614,10 +1858,14 @@ CC-f684f13b93dbad,COMP-76d0aa11f40be5,1,type/degree vowel,ATOM-f3a7efe66f7f85,,V
 CC-24bcbe4a8be04b,COMP-76d0aa11f40be5,2,affix root,ATOM-a3617133ad5a79,,C_S,
 CC-1d5f8d7c1135c5,COMP-7738c653c0cd3d,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
 CC-bc006be0b014ef,COMP-7738c653c0cd3d,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
+CC-411e9e12ba4a7f,COMP-773bff7c013256,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-ccce88f1c706b0,COMP-773bff7c013256,2,case exponent,ATOM-750832226a09f1,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-14404b45b975a4,COMP-775cf00a5dd450,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-38dff9dba5260e,COMP-775cf00a5dd450,2,affix root,ATOM-c68de9c7af40ab,,C_S,
 CC-71674cd108cab7,COMP-77bbcb1083c862,1,case-derived vowel,ATOM-1b39ba176730ee,,V_X,
 CC-99617edcf4b81f,COMP-77bbcb1083c862,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
+CC-78110c0d7748c5,COMP-77df60ac62a79f,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-4a3eab696fa570,COMP-77df60ac62a79f,2,case exponent,ATOM-60316d385314ad,,V_C,required realized word-final glottal V_C surface
 CC-d71731891e2cab,COMP-77ea440d4feb0d,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
 CC-8766d44739a4d4,COMP-77ea440d4feb0d,2,affix root,ATOM-e719e0f5196d88,,C_S,
 CC-383499bee9ef89,COMP-780593ba01d38b,1,type/degree vowel,ATOM-1fb3e3276a0563,,V_X,
@@ -1628,6 +1876,8 @@ CC-9ef3c2719b2340,COMP-783dafae081ab6,1,case-derived vowel,ATOM-9558f20ee8beba,,
 CC-fc43012747accf,COMP-783dafae081ab6,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
 CC-8c3ca9a8b002da,COMP-783f8afbdb8129,1,case-derived vowel,ATOM-69590b6313c1f0,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-df55975263b9c6,COMP-783f8afbdb8129,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
+CC-4bd891f47e8120,COMP-784ba348a3842f,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-888f66f2fc9dac,COMP-784ba348a3842f,2,case exponent,ATOM-d946208140bd96,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-59f7ad2c721fcd,COMP-787b3807cb7d75,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
 CC-1da8c7155b2a50,COMP-787b3807cb7d75,2,affix root,ATOM-36a96426fb24bf,,C_S,
 CC-33d56ec725c0b5,COMP-78977116101f02,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
@@ -1650,6 +1900,8 @@ CC-8afb28cb4888ac,COMP-79188f41e9e726,1,case-derived vowel,ATOM-fc8219ca2707ca,,
 CC-ab7954bcbbc96c,COMP-79188f41e9e726,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-34f242ecd668d9,COMP-7928d7658cc8e7,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
 CC-1085056bcbb1ec,COMP-7928d7658cc8e7,2,affix root,ATOM-0e14619e240857,,C_S,
+CC-739f64d7916b6c,COMP-7935ecb1c5e5f5,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-b6f6c496b54a19,COMP-7935ecb1c5e5f5,2,case exponent,ATOM-6f025a1a7a3df9,,V_C,required realized word-final glottal V_C surface
 CC-ea7420e3ddf4e8,COMP-79c5621dbc3a26,1,case-derived vowel,ATOM-53d922b5a88e66,,V_X,
 CC-4d9dabeccc8c58,COMP-79c5621dbc3a26,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-0fd69f8ce45fc5,COMP-79dfcb3533c99d,1,case-derived vowel,ATOM-2bd15c6f994e89,,V_X,
@@ -1660,8 +1912,12 @@ CC-9802bffcfb9557,COMP-7a10407a222ac5,1,type/degree vowel,ATOM-44266409e896ea,,V
 CC-17bdb8d3e28ca4,COMP-7a10407a222ac5,2,affix root,ATOM-ee451b4938a97d,,C_S,
 CC-83de8f8faa2c9d,COMP-7a5e66c892cedc,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
 CC-de36272dd345e7,COMP-7a5e66c892cedc,2,affix root,ATOM-e88468a770f92e,,C_S,
+CC-a0511d7ef0cdb1,COMP-7a7249731eee14,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-61c9fac6a5ab79,COMP-7a7249731eee14,2,case exponent,ATOM-73f45080b4b58c,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-3589bee3831464,COMP-7a7629c54b40ac,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-d0e0d99ba7a19d,COMP-7a7629c54b40ac,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
+CC-545ff1765400a8,COMP-7aac9cc5187c35,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-ae20db6f75df31,COMP-7aac9cc5187c35,2,case exponent,ATOM-5d7116db8e1508,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-d4d2f84fe564e9,COMP-7ae4e0477f0021,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
 CC-918f34412e3850,COMP-7ae4e0477f0021,2,affix root,ATOM-4ed369ab2f4364,,C_S,
 CC-376a3ad726bc2a,COMP-7b1caec72092ea,1,case-derived vowel,ATOM-633e607f2f4298,,V_X,
@@ -1680,6 +1936,8 @@ CC-898ad6056ac0f4,COMP-7bb2a6aa6a7784,1,case-derived vowel,ATOM-abdce83fc25e67,,
 CC-fd5741a6f70126,COMP-7bb2a6aa6a7784,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-ade984265d663e,COMP-7bf08433d4ba56,1,case-derived vowel,ATOM-0b39d8422d1349,,V_X,
 CC-5dbe19edd408c3,COMP-7bf08433d4ba56,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
+CC-7ffa73eb02b5d0,COMP-7bf95d51db3ebb,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-722e9dd04609bd,COMP-7bf95d51db3ebb,2,case exponent,ATOM-c8a07a2b00c063,,V_C,required realized word-final glottal V_C surface
 CC-3c651a89ed1e6f,COMP-7c26e3f8814e2a,1,type/degree vowel,ATOM-9fb20be6058c27,,V_X,immediately preceded by w
 CC-4dbf14297e6803,COMP-7c26e3f8814e2a,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-6cc3c6523e5c09,COMP-7c2b6210214bd1,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
@@ -1694,12 +1952,18 @@ CC-499309f2539e30,COMP-7cd8cee5cf85f8,1,type/degree vowel,ATOM-71ee063f3457d2,,V
 CC-64bd2f472a3745,COMP-7cd8cee5cf85f8,2,affix root,ATOM-bec5efcf77e583,,C_S,
 CC-0ea76fb418468c,COMP-7cfa894d68afa9,1,case-derived vowel,ATOM-4c281370dee2c2,,V_X,immediately preceded by y
 CC-4545904e00cae4,COMP-7cfa894d68afa9,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
+CC-b600d5dbc1eb2d,COMP-7cfeaba333b6da,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-91758ba59cf29f,COMP-7cfeaba333b6da,2,case exponent,ATOM-c61e6fb40aaab6,,V_C,required realized word-final glottal V_C surface
+CC-d41ef9efc7afbd,COMP-7d1c4c4b614735,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-4792bc07240d69,COMP-7d1c4c4b614735,2,case exponent,ATOM-bd973ac1ea40fc,,V_C,required realized word-final glottal V_C surface
 CC-0cdd7a7b352e70,COMP-7d2932beab19f5,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-25079e9344c042,COMP-7d2932beab19f5,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-9b8b82d1a3631f,COMP-7d304990090f51,1,type/degree vowel,ATOM-b4c33c49007c15,,V_X,
 CC-a8c34f03f48ffd,COMP-7d304990090f51,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
 CC-71ca13ec082694,COMP-7d6365d6f91e85,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
 CC-616187240c7959,COMP-7d6365d6f91e85,2,affix root,ATOM-107f3ae8088c0e,,C_S,
+CC-3f99162b26eeda,COMP-7d889f4e496b21,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-fc2e6dea5cbe01,COMP-7d889f4e496b21,2,case exponent,ATOM-2754e3574478ef,,V_C,required realized word-final glottal V_C surface
 CC-04caff3ef617b8,COMP-7d89dcf133125a,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
 CC-cd7dd0ebaa0758,COMP-7d89dcf133125a,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
 CC-15d0282478579b,COMP-7da498a0cb9091,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -1710,6 +1974,8 @@ CC-4279363bc154d8,COMP-7de5954c753680,1,case-derived vowel,ATOM-abdce83fc25e67,,
 CC-6fafb049c67d90,COMP-7de5954c753680,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-3657daf729d6d9,COMP-7e3c14277678ad,1,type/degree vowel,ATOM-9fb20be6058c27,,V_X,immediately preceded by w
 CC-20760395bf0e0c,COMP-7e3c14277678ad,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
+CC-ecc5597d62c8fa,COMP-7e811083303bbb,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-5cf563c79304bf,COMP-7e811083303bbb,2,case exponent,ATOM-197081a3a31239,,V_C,required realized word-final glottal V_C surface
 CC-804f9d1c782b04,COMP-7e8ac59d3080f2,1,type/degree vowel,ATOM-09b8bd7f2797bf,,V_X,
 CC-f2883ff39b7270,COMP-7e8ac59d3080f2,2,affix root,ATOM-d5c5ee5c962eef,,C_S,
 CC-02bd73de933a9f,COMP-7eb399a6349670,1,case-derived vowel,ATOM-74fe4de529a915,,V_X,
@@ -1728,8 +1994,12 @@ CC-9e77b8d2dcd302,COMP-7f4a49677dc9dd,1,type/degree vowel,ATOM-03048c35ddd092,,V
 CC-9a558b5706b321,COMP-7f4a49677dc9dd,2,affix root,ATOM-b151da413f0d5f,,C_S,
 CC-6f5a24685e17b5,COMP-7f897c90886761,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-d37a01059873f5,COMP-7f897c90886761,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
+CC-897d803302dbe9,COMP-7fb17892c64859,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-7e6c6deb7198ca,COMP-7fb17892c64859,2,case exponent,ATOM-701bb7285f112c,,V_C,required realized word-final glottal V_C surface
 CC-b032bf362d0e34,COMP-7fef292583ccd9,1,case-derived vowel,ATOM-2bd15c6f994e89,,V_X,
 CC-84d695aea9e249,COMP-7fef292583ccd9,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
+CC-ac3dfa6cf227e5,COMP-80107b2ba6bf44,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-ed4a874a5dd78d,COMP-80107b2ba6bf44,2,case exponent,ATOM-90d7534d54ce2b,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-61c3f2a9a56647,COMP-802d35c69f56cc,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
 CC-e93777a42aafda,COMP-802d35c69f56cc,2,affix root,ATOM-94dd4a586a256c,,C_S,
 CC-69eace52fdf452,COMP-803ee410115f8b,1,case-derived vowel,ATOM-2f512a3409bbc9,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -1744,18 +2014,24 @@ CC-9d00b9bf238404,COMP-80a3af92c2b505,1,case-derived vowel,ATOM-ed47d961a5ca39,,
 CC-58d042c304307b,COMP-80a3af92c2b505,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-5cc9efb071ef9a,COMP-80e619daa81cbb,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-e175a1ae86e99c,COMP-80e619daa81cbb,2,affix root,ATOM-87a50e64418478,,C_S,
+CC-a7aae9479afbd9,COMP-80e8374490b0df,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-416c071e49a574,COMP-80e8374490b0df,2,case exponent,ATOM-f5b119f6742a84,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-b3e06f19877819,COMP-80ffb82b741fe8,1,type/degree vowel,ATOM-4e563dff257eb3,,V_X,immediately preceded by y
 CC-1f34c19fcb56af,COMP-80ffb82b741fe8,2,affix root,ATOM-78f15b9e59348f,,C_S,
 CC-fec72638822a23,COMP-81151f4544dbf0,1,type/degree vowel,ATOM-7342852fbd0892,,V_X,immediately preceded by w
 CC-2d49cdca626a3f,COMP-81151f4544dbf0,2,affix root,ATOM-214968af776104,,C_S,
 CC-3b736e3dd03de4,COMP-811625d4f628ab,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
 CC-9e3c0858275e41,COMP-811625d4f628ab,2,affix root,ATOM-c68de9c7af40ab,,C_S,
+CC-717ad6844ce33a,COMP-81489b4923d518,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-8a8c60e1344d93,COMP-81489b4923d518,2,case exponent,ATOM-60316d385314ad,,V_C,required realized word-final glottal V_C surface
 CC-7db07ba096d655,COMP-814c33024a7d6c,1,case-derived vowel,ATOM-23b0987b13e556,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-0addee7d2dfdab,COMP-814c33024a7d6c,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-1b9f778e338176,COMP-815c6574282cda,1,type/degree vowel,ATOM-d0b239448821f3,,V_X,immediately preceded by y
 CC-80637c4cad1058,COMP-815c6574282cda,2,affix root,ATOM-ee451b4938a97d,,C_S,
 CC-1bd364626925be,COMP-81a81da5610732,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-cbc61649b1204c,COMP-81a81da5610732,2,affix root,ATOM-107f3ae8088c0e,,C_S,
+CC-47f31c4bef7add,COMP-81b412dffdeef9,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-bfe15adb0df970,COMP-81b412dffdeef9,2,case exponent,ATOM-6f025a1a7a3df9,,V_C,required realized word-final glottal V_C surface
 CC-b2550a4ec68fb1,COMP-81c7a53de365df,1,case-derived vowel,ATOM-9558f20ee8beba,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-c0c97456cfb997,COMP-81c7a53de365df,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-826e2d5f3bf701,COMP-81e71a1cfebc9b,1,case-derived vowel,ATOM-41ad962b903cad,,V_X,
@@ -1776,12 +2052,18 @@ CC-e1b6d707fbb8be,COMP-82d1eb07449397,1,case-derived vowel,ATOM-bd548ab40150c9,,
 CC-a6c7ee06475014,COMP-82d1eb07449397,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-45862f5bf61fea,COMP-82dd319ba3cddf,1,type/degree vowel,ATOM-d0b239448821f3,,V_X,immediately preceded by y
 CC-14136135c952c2,COMP-82dd319ba3cddf,2,affix root,ATOM-a3617133ad5a79,,C_S,
+CC-dcdf344dc98b5c,COMP-830fb805316b2a,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-346f0b0558f79c,COMP-830fb805316b2a,2,case exponent,ATOM-7d764214a9f778,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-1b87b65bfa167a,COMP-831a9c65e5ca0a,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
 CC-0feff4943283fa,COMP-831a9c65e5ca0a,2,affix root,ATOM-36a96426fb24bf,,C_S,
+CC-8df5978e9d3065,COMP-8335df4b31e9e3,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-0a9ad6fb4a7c10,COMP-8335df4b31e9e3,2,case exponent,ATOM-8d30d8b963913f,,V_C,required realized word-final glottal V_C surface
 CC-bd7482ac944e78,COMP-835feb55efec72,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
 CC-87541134bcb7de,COMP-835feb55efec72,2,affix root,ATOM-97ca53f35b3631,,C_S,
 CC-79ad2fef3293dc,COMP-83a7a79cb1dc97,1,type/degree vowel,ATOM-1fb3e3276a0563,,V_X,
 CC-cf01c605fbb3ac,COMP-83a7a79cb1dc97,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
+CC-6f8c980b8d4419,COMP-83b3531f04027e,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-8cfac8d04e1727,COMP-83b3531f04027e,2,case exponent,ATOM-90d7534d54ce2b,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-00f77735382e94,COMP-83b4fdd6cfe722,1,case-derived vowel,ATOM-aacc93d36f8139,,V_X,
 CC-867b7a53fae7a5,COMP-83b4fdd6cfe722,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
 CC-d5785bf7ced901,COMP-83bc0539e33aa1,1,type/degree vowel,ATOM-9fb20be6058c27,,V_X,immediately preceded by w
@@ -1812,12 +2094,16 @@ CC-26304579f1f2e7,COMP-8588874a89300a,1,case-derived vowel,ATOM-47d7cecb16b7d2,,
 CC-fdc483d0f2fa0d,COMP-8588874a89300a,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
 CC-52e512d4436abf,COMP-85978f66b0a113,1,type/degree vowel,ATOM-4e563dff257eb3,,V_X,immediately preceded by y
 CC-2170e8f42b1c83,COMP-85978f66b0a113,2,affix root,ATOM-36a96426fb24bf,,C_S,
+CC-fb41a21263377f,COMP-859d36922f6318,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-801983b897b463,COMP-859d36922f6318,2,case exponent,ATOM-5d7116db8e1508,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-1a64f5a94c9ce0,COMP-85b03eb852c9e2,1,type/degree vowel,ATOM-f3a7efe66f7f85,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-a5670a87a499df,COMP-85b03eb852c9e2,2,affix root,ATOM-e719e0f5196d88,,C_S,
 CC-90b60816fe2542,COMP-85e189a8009e35,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
 CC-eacbe6149d3740,COMP-85e189a8009e35,2,affix root,ATOM-e88468a770f92e,,C_S,
 CC-9233e247b31e5d,COMP-85e40ad5f4d17e,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
 CC-87ed4d4ef8ef42,COMP-85e40ad5f4d17e,2,affix root,ATOM-78f15b9e59348f,,C_S,
+CC-aa8b9441d1cbe0,COMP-8613a8de9cb11e,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-03501ff52bd9fe,COMP-8613a8de9cb11e,2,case exponent,ATOM-cd9473a74a3474,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-f7543a537ae00d,COMP-861a3c52047d1d,1,case-derived vowel,ATOM-7d73be11614d7e,,V_X,
 CC-4b938f0c1c1358,COMP-861a3c52047d1d,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-624fc859d5a151,COMP-86446348b42c37,1,case-derived vowel,ATOM-7b4390735ad1cf,,V_X,
@@ -1863,10 +2149,14 @@ CC-bf55aa93ffeb80,COMP-88e06a1da202bb,1,type/degree vowel,ATOM-aab24543f54fa9,,V
 CC-6fd8cea50fa127,COMP-88e06a1da202bb,2,affix root,ATOM-a3617133ad5a79,,C_S,
 CC-c57ce344093ec8,COMP-890bb84d8f1166,1,type/degree vowel,ATOM-4e563dff257eb3,,V_X,immediately preceded by y
 CC-8be4c1720351b7,COMP-890bb84d8f1166,2,affix root,ATOM-b151da413f0d5f,,C_S,
+CC-626fc99176e237,COMP-8912717b4e275c,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-65e3a5895c53ab,COMP-8912717b4e275c,2,case exponent,ATOM-160dc61518abb0,,V_C,required realized word-final glottal V_C surface
 CC-ca90c6893368e5,COMP-8979749a352ef7,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
 CC-d48067120324ea,COMP-8979749a352ef7,2,affix root,ATOM-ee451b4938a97d,,C_S,
 CC-be0e163dda360b,COMP-89a4668f3c610b,1,type/degree vowel,ATOM-7342852fbd0892,,V_X,immediately preceded by w
 CC-6074a86cae0a12,COMP-89a4668f3c610b,2,affix root,ATOM-7c73d550bffdc5,,C_S,
+CC-62e5701844ed47,COMP-89ae8c56de9827,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-87c03ac734c384,COMP-89ae8c56de9827,2,case exponent,ATOM-2e6c70f1df1144,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-615cac8a31c820,COMP-89ea43d1e996ee,1,case-derived vowel,ATOM-ba64d2b80008a3,,V_X,
 CC-bb8cabdd6e42b4,COMP-89ea43d1e996ee,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-3f4862bd1d0819,COMP-8ac40442663ba0,1,type/degree vowel,ATOM-2f7ba715ca84b7,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -1877,8 +2167,12 @@ CC-ffd31f7c55db97,COMP-8b03f6d5a5b1f2,1,case-derived vowel,ATOM-c781409df5ed3d,,
 CC-861637b249a35d,COMP-8b03f6d5a5b1f2,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-b6f834f1e37d07,COMP-8b084203fd70fb,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
 CC-e2c876a128057c,COMP-8b084203fd70fb,2,affix root,ATOM-214968af776104,,C_S,
+CC-aab0e28d3a4536,COMP-8b118b67857897,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-5766e16d6811bb,COMP-8b118b67857897,2,case exponent,ATOM-6f025a1a7a3df9,,V_C,required realized word-final glottal V_C surface
 CC-e5dea616b35400,COMP-8b47bc98c7b649,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
 CC-1bafc86776ee58,COMP-8b47bc98c7b649,2,affix root,ATOM-107f3ae8088c0e,,C_S,
+CC-c04629912c47b1,COMP-8b4b7d372ab00c,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-94550d2e396227,COMP-8b4b7d372ab00c,2,case exponent,ATOM-2f5f4dc507d280,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-b97370c2ea83b8,COMP-8b8f3eb6e8a334,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
 CC-20344ad310f180,COMP-8b8f3eb6e8a334,2,affix root,ATOM-0e14619e240857,,C_S,
 CC-a2a1e7a67b97a9,COMP-8b925f03662669,1,case-derived vowel,ATOM-f2004c24f83d96,,V_X,
@@ -1893,6 +2187,8 @@ CC-a9f24ffb94ae47,COMP-8c57313a604a88,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V
 CC-75795e216a5103,COMP-8c57313a604a88,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
 CC-b3e3a3833afd80,COMP-8cf1980620c751,1,type/degree vowel,ATOM-05a2cd432977e8,,V_X,
 CC-58e492bbfc41e1,COMP-8cf1980620c751,2,affix root,ATOM-9fd667ca39702b,,C_S,
+CC-f331de5b2bb353,COMP-8d51e5ca24863c,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-4c893949095b0b,COMP-8d51e5ca24863c,2,case exponent,ATOM-171d1f198506ea,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-caa9ddc211fdac,COMP-8d5d6455aaaa57,1,type/degree vowel,ATOM-e022e5bc22dab9,,V_X,immediately preceded by y
 CC-6eb0693c2686bb,COMP-8d5d6455aaaa57,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-2dda9da7116c83,COMP-8d6152162dfd95,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
@@ -1921,6 +2217,10 @@ CC-7454a079ea66ec,COMP-8f1d4c3d21bc83,1,type/degree vowel,ATOM-aab24543f54fa9,,V
 CC-354ad9784e5427,COMP-8f1d4c3d21bc83,2,affix root,ATOM-bec5efcf77e583,,C_S,
 CC-020e20e82c7ef5,COMP-8f31fb77a5fe17,1,case-derived vowel,ATOM-9e108d8ffc3f93,,V_X,
 CC-fcdee0ff9a44d5,COMP-8f31fb77a5fe17,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
+CC-1c1f9bb259d2f4,COMP-8f437feb7f7767,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-6fb3594b9b46e6,COMP-8f437feb7f7767,2,case exponent,ATOM-5d7116db8e1508,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-b6e819d8c72368,COMP-8f793aa9795ffc,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-6f625586a2b908,COMP-8f793aa9795ffc,2,case exponent,ATOM-ae019b3eda2b4b,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-71ac34b2ef9693,COMP-8f913072208dc4,1,case-derived vowel,ATOM-f38d7cc52d1851,,V_X,
 CC-c484d3de15b33a,COMP-8f913072208dc4,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
 CC-584a30599fc6d3,COMP-8fc0a1ee761ca2,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
@@ -1941,6 +2241,8 @@ CC-d280d5e3c8dada,COMP-90d9c97dcb66ca,1,case-derived vowel,ATOM-9e108d8ffc3f93,,
 CC-661728c4a29d4f,COMP-90d9c97dcb66ca,2,accessor/stacking root,ATOM-6b0da072d43904,,C_S,
 CC-29cad1c2e9291e,COMP-90da8e20c88bad,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-4a537bf174dd05,COMP-90da8e20c88bad,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
+CC-0159e5792bb2ef,COMP-91017480d082d2,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-23b05cac9a9f00,COMP-91017480d082d2,2,case exponent,ATOM-8d30d8b963913f,,V_C,required realized word-final glottal V_C surface
 CC-1172efe908bc20,COMP-9101f6e5f32369,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
 CC-420f50a2b62568,COMP-9101f6e5f32369,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-03a1052f85d49f,COMP-9176716247e4c2,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -1975,6 +2277,8 @@ CC-5cc65a250b9edc,COMP-93632b60e82ce0,1,case-derived vowel,ATOM-0775720bb9403d,,
 CC-0f4cfa90c11676,COMP-93632b60e82ce0,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-cf4f7fdff75c6c,COMP-93a35e51d8b0a5,1,case-derived vowel,ATOM-8dc18084545603,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-6efcb734734b0a,COMP-93a35e51d8b0a5,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
+CC-7481b923082184,COMP-93abd7141698a6,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-12abc0ea3e9c99,COMP-93abd7141698a6,2,case exponent,ATOM-18d38b00942860,,V_C,required realized word-final glottal V_C surface
 CC-e7ac85b7ada8b5,COMP-93d1a8fa49192a,1,case-derived vowel,ATOM-f2004c24f83d96,,V_X,
 CC-ba7cc9b02af23f,COMP-93d1a8fa49192a,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-f04dfbefc7d21b,COMP-940c6711427ee3,1,type/degree vowel,ATOM-03048c35ddd092,,V_X,immediately preceded by w
@@ -1987,6 +2291,10 @@ CC-067bd0a9446aaf,COMP-9448f37db9ac62,1,type/degree vowel,ATOM-4e563dff257eb3,,V
 CC-8030ee6f21a064,COMP-9448f37db9ac62,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
 CC-ba4d974adc34d6,COMP-9490b6d1a78adf,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
 CC-2abd23f8919fb1,COMP-9490b6d1a78adf,2,affix root,ATOM-4ed369ab2f4364,,C_S,
+CC-39af5e061ec766,COMP-94975b59b6d621,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-a996e18fc30faa,COMP-94975b59b6d621,2,case exponent,ATOM-b0078ab5063976,,V_C,required realized word-final glottal V_C surface
+CC-ccc60f0df7bd8e,COMP-94a1bc42863c84,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-c6c761e978b141,COMP-94a1bc42863c84,2,case exponent,ATOM-85919d252e3402,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-a772afcced96d2,COMP-94c8564c0ea29d,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-b57ad715ce7e28,COMP-94c8564c0ea29d,2,affix root,ATOM-64d8339c401e9c,,C_S,
 CC-9253e4f1e708de,COMP-94d0ab5531c137,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
@@ -1999,10 +2307,14 @@ CC-535595883d5d87,COMP-95203a05b4cfdd,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V
 CC-c208bb9be1178b,COMP-95203a05b4cfdd,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-31f8c84a67105c,COMP-953851dfcc312f,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-4e27144d9dadb7,COMP-953851dfcc312f,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
+CC-00b46f844952db,COMP-9549a7b3fa5cfd,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-c28e97b100187a,COMP-9549a7b3fa5cfd,2,case exponent,ATOM-bf8a937d77567c,,V_C,required realized word-final glottal V_C surface
 CC-d41d2bdd68d3b3,COMP-95a440aefedd7d,1,case-derived vowel,ATOM-0775720bb9403d,,V_X,immediately preceded by w
 CC-a56c21552b5996,COMP-95a440aefedd7d,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-63ecce32fd1818,COMP-95a67de48b2686,1,case-derived vowel,ATOM-0b5f13c9f7bbfa,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-dc2ea1c82b98fd,COMP-95a67de48b2686,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
+CC-f804e73749782f,COMP-95d6e0ebcd94f2,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-80cde68051bc6e,COMP-95d6e0ebcd94f2,2,case exponent,ATOM-9e4c45edc24fc4,,V_C,required realized word-final glottal V_C surface
 CC-c6deeb5fa36c1f,COMP-95e386b2e4db9f,1,type/degree vowel,ATOM-05a2cd432977e8,,V_X,
 CC-d81bcc2df2ad90,COMP-95e386b2e4db9f,2,affix root,ATOM-e719e0f5196d88,,C_S,
 CC-47daf1273a0f66,COMP-964a79600b0c58,1,case-derived vowel,ATOM-da55b4d7cf778b,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -2017,6 +2329,10 @@ CC-f102b3ba0a6efa,COMP-9697eb692a887d,1,case-derived vowel,ATOM-1eaedd0625207a,,
 CC-db04ad40e5911d,COMP-9697eb692a887d,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-cd4fedfbcebeda,COMP-96ad3bd04424f6,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-f601cdedfc99fd,COMP-96ad3bd04424f6,2,affix root,ATOM-e88468a770f92e,,C_S,
+CC-da1d51d7865f83,COMP-96ee05b320b0d6,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-c1893fa3efb915,COMP-96ee05b320b0d6,2,case exponent,ATOM-2f5f4dc507d280,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-e0a720ceadf524,COMP-96efb2db8c2a9f,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-628255b8cfb9dc,COMP-96efb2db8c2a9f,2,case exponent,ATOM-3a5a276f804975,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-525384abecb3ec,COMP-96fd1de3130b20,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
 CC-bca7d0f00610be,COMP-96fd1de3130b20,2,affix root,ATOM-a3617133ad5a79,,C_S,
 CC-f9605a5674be02,COMP-970a9a11aa4b9f,1,case-derived vowel,ATOM-74fe4de529a915,,V_X,
@@ -2035,6 +2351,8 @@ CC-bacedb04ede410,COMP-97dd651c92ee09,1,case-derived vowel,ATOM-7fb6701f06dd62,,
 CC-908a27ad1b08f9,COMP-97dd651c92ee09,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-c1606ff09578d8,COMP-97eab5a976999d,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-e1182dc792e5c2,COMP-97eab5a976999d,2,affix root,ATOM-ef7cf17b427af9,,C_S,
+CC-31ea6b449a62a3,COMP-97eab610e4278e,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-e709b5815b2325,COMP-97eab610e4278e,2,case exponent,ATOM-258c7f11aff301,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-19c357d91a8cee,COMP-9816242802f238,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-5c1c3df4dbdd85,COMP-9816242802f238,2,affix root,ATOM-107f3ae8088c0e,,C_S,
 CC-d9015d8437fbb5,COMP-982449f8d351b9,1,case-derived vowel,ATOM-8ceb70ee6cc296,,V_X,
@@ -2049,6 +2367,8 @@ CC-688e09ceed7839,COMP-98915756d61bff,1,case-derived vowel,ATOM-529b07b929b1a1,,
 CC-987249ccf9d3c1,COMP-98915756d61bff,2,accessor/stacking root,ATOM-d525a30bb67fbe,,C_S,
 CC-36083d8d22d8a2,COMP-989a1c4e162905,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
 CC-277c872c7431ea,COMP-989a1c4e162905,2,affix root,ATOM-4ed369ab2f4364,,C_S,
+CC-f798745837c617,COMP-98e3765ed1b215,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-a7f5ae51a73c62,COMP-98e3765ed1b215,2,case exponent,ATOM-3a5a276f804975,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-52c5d61dff0810,COMP-98e8570cf115ac,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-b86ba4810cc49a,COMP-98e8570cf115ac,2,affix root,ATOM-78f15b9e59348f,,C_S,
 CC-68073e48ab4ffb,COMP-992bd8d6581abb,1,case-derived vowel,ATOM-ad78d88b479e39,,V_X,
@@ -2077,6 +2397,8 @@ CC-5188f70e00d84e,COMP-9afb5d8b7e4ac2,1,case-derived vowel,ATOM-facbe2e1674a7f,,
 CC-c67a076bfa91b4,COMP-9afb5d8b7e4ac2,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-d53e5a4560c609,COMP-9b1684f2cd25d3,1,type/degree vowel,ATOM-09b8bd7f2797bf,,V_X,
 CC-3ad5ce3587087d,COMP-9b1684f2cd25d3,2,affix root,ATOM-214968af776104,,C_S,
+CC-7c3204c0a85b65,COMP-9b243e0b97c5af,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-d6e50b582debd3,COMP-9b243e0b97c5af,2,case exponent,ATOM-5d4b026388e9b3,,V_C,required realized word-final glottal V_C surface
 CC-b8ba0137476bed,COMP-9b4d6c783d4d2a,1,case-derived vowel,ATOM-9071236440ebc9,,V_X,
 CC-6579d188ddcb16,COMP-9b4d6c783d4d2a,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-972b4116bdf194,COMP-9b7f305083eaab,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
@@ -2101,12 +2423,16 @@ CC-aca7f265ee7315,COMP-9c4fa536669c7a,1,case-derived vowel,ATOM-529b07b929b1a1,,
 CC-a051ca759063ed,COMP-9c4fa536669c7a,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-db10b20bbfa055,COMP-9c678155a469f8,1,type/degree vowel,ATOM-bd787a1b68bf48,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-c0d079b2815c3d,COMP-9c678155a469f8,2,affix root,ATOM-e719e0f5196d88,,C_S,
+CC-455f2e32120b48,COMP-9c78d147ad9044,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-afd958024a8b86,COMP-9c78d147ad9044,2,case exponent,ATOM-ec7a57f9bafe10,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-0d7032b15ca3bc,COMP-9cb169e1431cd9,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
 CC-ae73f3ea07e2aa,COMP-9cb169e1431cd9,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
 CC-e0496c577d69f0,COMP-9cb73a01e9ff35,1,type/degree vowel,ATOM-9fb20be6058c27,,V_X,immediately preceded by w
 CC-2e90edf2af586c,COMP-9cb73a01e9ff35,2,affix root,ATOM-e719e0f5196d88,,C_S,
 CC-c7c33934faf3e4,COMP-9cbd15e2db6edc,1,case-derived vowel,ATOM-8dc18084545603,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-8aacc2c73b26a8,COMP-9cbd15e2db6edc,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
+CC-d0b1cb943afd31,COMP-9cc9da9bbeb19e,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-2e99363ba65f3e,COMP-9cc9da9bbeb19e,2,case exponent,ATOM-7a69c1aeac9192,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-afc359512b89fd,COMP-9ce263dc96da5b,1,case-derived vowel,ATOM-74fe4de529a915,,V_X,
 CC-a4f3ac68ab1601,COMP-9ce263dc96da5b,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
 CC-8a50d9d9bed8f6,COMP-9ceccfc34d8767,1,case-derived vowel,ATOM-86b86098c672e3,,V_X,
@@ -2131,14 +2457,20 @@ CC-3851b655110889,COMP-9e7824da3e8783,1,type/degree vowel,ATOM-2f7ba715ca84b7,,V
 CC-3003bdc5d665ac,COMP-9e7824da3e8783,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
 CC-f5f46a6496da89,COMP-9e8b41ddc80997,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
 CC-d3f12c8c01d56b,COMP-9e8b41ddc80997,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
+CC-4978735086cf5d,COMP-9ea139afefebc6,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-be4b0ae57f374c,COMP-9ea139afefebc6,2,case exponent,ATOM-7505a3e0fc0b94,,V_C,required realized word-final glottal V_C surface
 CC-3709de8dc6e1ee,COMP-9ea29e9524e60f,1,case-derived vowel,ATOM-41ad962b903cad,,V_X,
 CC-3b17e0c599bf57,COMP-9ea29e9524e60f,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-fca970b7ea0d29,COMP-9eb1653dcdfa2a,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-8f5912c499b39d,COMP-9eb1653dcdfa2a,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
+CC-6a5961ea53979f,COMP-9eb71865bed2cf,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-9c77ec9c006b43,COMP-9eb71865bed2cf,2,case exponent,ATOM-f39b4520d23026,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-0eec9937f69343,COMP-9ed6369a55fd3c,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
 CC-3691ea3637ca31,COMP-9ed6369a55fd3c,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-9d7919ee59b234,COMP-9edc224eec93d2,1,type/degree vowel,ATOM-05a2cd432977e8,,V_X,
 CC-4eaa5cd0b8f752,COMP-9edc224eec93d2,2,affix root,ATOM-b151da413f0d5f,,C_S,
+CC-96072a0ebc7be8,COMP-9ee6be74271925,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-5db3d14df9454b,COMP-9ee6be74271925,2,case exponent,ATOM-d946208140bd96,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-337c3ca4b37012,COMP-9ef5c5ba34bb63,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-922aa851aeceb6,COMP-9ef5c5ba34bb63,2,affix root,ATOM-b151da413f0d5f,,C_S,
 CC-e1be5841fb14e4,COMP-9f2ec43ebc1cdc,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
@@ -2163,6 +2495,8 @@ CC-5c657c4e2b55c9,COMP-a06e7464ef81c0,1,type/degree vowel,ATOM-4420148be55cf1,,V
 CC-65739781804e51,COMP-a06e7464ef81c0,2,affix root,ATOM-97ca53f35b3631,,C_S,
 CC-e0dbfc8030ead4,COMP-a07bb81b593137,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
 CC-22ff9abf4291f0,COMP-a07bb81b593137,2,affix root,ATOM-d5c5ee5c962eef,,C_S,
+CC-66a63987e8fb52,COMP-a09608dd8035d1,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-6dc0c7afef784e,COMP-a09608dd8035d1,2,case exponent,ATOM-ae019b3eda2b4b,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-d0095720b8e8ab,COMP-a0b1baddbcca9c,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-780cd5f221fdf3,COMP-a0b1baddbcca9c,2,affix root,ATOM-ee451b4938a97d,,C_S,
 CC-d6d6bdc57d030c,COMP-a0cfb72688dc89,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V_X,
@@ -2177,18 +2511,28 @@ CC-362ea56459555b,COMP-a15f5b058bd561,1,case-derived vowel,ATOM-41ad962b903cad,,
 CC-d55512cf27d22b,COMP-a15f5b058bd561,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-1c6f2995f17d27,COMP-a1a1a2611544a3,1,case-derived vowel,ATOM-5d938c82d98bf6,,V_X,
 CC-52b36c97cc56d1,COMP-a1a1a2611544a3,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
+CC-e0f3bf76449d8b,COMP-a1d3f830236171,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-32a9ba215ae22d,COMP-a1d3f830236171,2,case exponent,ATOM-13b6542b94c60d,,V_C,required realized word-final glottal V_C surface
+CC-0d7dfae92ba821,COMP-a1dacd9ad3228e,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-c1314242e548a9,COMP-a1dacd9ad3228e,2,case exponent,ATOM-f39b4520d23026,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-16d30ca85edb8e,COMP-a1f0ee84549a30,1,type/degree vowel,ATOM-e022e5bc22dab9,,V_X,immediately preceded by y
 CC-391f252ed172e7,COMP-a1f0ee84549a30,2,affix root,ATOM-78f15b9e59348f,,C_S,
 CC-fa24a5e4e26560,COMP-a223fdec6d723e,1,type/degree vowel,ATOM-f3a7efe66f7f85,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-b4d8c7ddcb2346,COMP-a223fdec6d723e,2,affix root,ATOM-e88468a770f92e,,C_S,
+CC-0bfa560d71c491,COMP-a247581dce1ee0,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-cad432f31b2a14,COMP-a247581dce1ee0,2,case exponent,ATOM-fe1b69e6d8c217,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-d07c1955e4b62a,COMP-a24db4b2748b09,1,type/degree vowel,ATOM-03048c35ddd092,,V_X,immediately preceded by w
 CC-7120021c265392,COMP-a24db4b2748b09,2,affix root,ATOM-9fd667ca39702b,,C_S,
 CC-53ab3990b50645,COMP-a2575490db9e79,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
 CC-a5a10c75459100,COMP-a2575490db9e79,2,affix root,ATOM-64d8339c401e9c,,C_S,
 CC-96227ad08c78b3,COMP-a28decab4f34ea,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-02d1c9b83b2681,COMP-a28decab4f34ea,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
+CC-94d71f97a6355b,COMP-a2ba2a6c241596,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-0ab29f508030e7,COMP-a2ba2a6c241596,2,case exponent,ATOM-1a56a7cec2da06,,V_C,required realized word-final glottal V_C surface
 CC-1a275c6728968d,COMP-a2cd6e9800f494,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
 CC-879d9f9be44024,COMP-a2cd6e9800f494,2,affix root,ATOM-87a50e64418478,,C_S,
+CC-7debc20d3b03d6,COMP-a2e80516fd9919,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-1a8b8ded5179c6,COMP-a2e80516fd9919,2,case exponent,ATOM-c61e6fb40aaab6,,V_C,required realized word-final glottal V_C surface
 CC-013838180042f3,COMP-a2ed68a0670d8d,1,type/degree vowel,ATOM-e022e5bc22dab9,,V_X,immediately preceded by y
 CC-22bbc88b256e30,COMP-a2ed68a0670d8d,2,affix root,ATOM-d5c5ee5c962eef,,C_S,
 CC-6c43fac65d9f35,COMP-a348326a933c9f,1,type/degree vowel,ATOM-f3a7efe66f7f85,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -2223,6 +2567,10 @@ CC-05f6bb3537d24a,COMP-a516fb6fada814,1,type/degree vowel,ATOM-d0b239448821f3,,V
 CC-3f2fba7c927041,COMP-a516fb6fada814,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
 CC-c6aa1a20fc1161,COMP-a528588bf04632,1,case-derived vowel,ATOM-26edb5490d8bc3,,V_X,immediately preceded by w
 CC-8a7b9c409437b2,COMP-a528588bf04632,2,accessor/stacking root,ATOM-d525a30bb67fbe,,C_S,
+CC-5ba64d783ed7fa,COMP-a58dce2453364f,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-024a6278ada872,COMP-a58dce2453364f,2,case exponent,ATOM-cd9473a74a3474,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-d295a9fe40c605,COMP-a5b2d962390528,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-2296750f894807,COMP-a5b2d962390528,2,case exponent,ATOM-08307fe78d6700,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-04b386b50753a0,COMP-a5b7ee43efe538,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-f55c609c8fd26c,COMP-a5b7ee43efe538,2,affix root,ATOM-744e729367f6e7,,C_S,
 CC-159a77308c41f5,COMP-a611e59b1e0686,1,case-derived vowel,ATOM-b062726ad5143d,,V_X,
@@ -2235,6 +2583,8 @@ CC-8abb625e4c45df,COMP-a67fd64ef54900,1,type/degree vowel,ATOM-1fb3e3276a0563,,V
 CC-49bb7c07b79a18,COMP-a67fd64ef54900,2,affix root,ATOM-e88468a770f92e,,C_S,
 CC-826cdf2f2ad99f,COMP-a69f355c5177d5,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-7a2b3b829aff52,COMP-a69f355c5177d5,2,affix root,ATOM-9fd667ca39702b,,C_S,
+CC-1b49e43366c709,COMP-a6c3333fd4ccad,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-d2a10deaa6fbd2,COMP-a6c3333fd4ccad,2,case exponent,ATOM-cd9473a74a3474,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-4d999619b05d07,COMP-a6cc5813bc2611,1,case-derived vowel,ATOM-73244aea17e4ec,,V_X,
 CC-2c6ccbe63cf391,COMP-a6cc5813bc2611,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-20c21e81e9ed17,COMP-a703b4f12a411f,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
@@ -2249,6 +2599,10 @@ CC-9ea42a90beb0eb,COMP-a78ea4db147d5e,1,type/degree vowel,ATOM-03048c35ddd092,,V
 CC-3eba8e6ac25cc4,COMP-a78ea4db147d5e,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
 CC-70f9fb6c024347,COMP-a7a3cb41e37ab5,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-968e827c005281,COMP-a7a3cb41e37ab5,2,affix root,ATOM-e88468a770f92e,,C_S,
+CC-4a535e999fe1e9,COMP-a7d27455aeffaf,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-d081dece68192d,COMP-a7d27455aeffaf,2,case exponent,ATOM-e9713288818d28,,V_C,required realized word-final glottal V_C surface
+CC-9032a032a3858a,COMP-a7e292eee441ff,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-b04f25d0e7ae14,COMP-a7e292eee441ff,2,case exponent,ATOM-5d7116db8e1508,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-751390df7b7cbe,COMP-a7e5450aa01ca9,1,case-derived vowel,ATOM-8ceb70ee6cc296,,V_X,
 CC-d0bcf9c47c469f,COMP-a7e5450aa01ca9,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
 CC-baa848057e87ab,COMP-a7ffdfea0ed07f,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
@@ -2259,6 +2613,10 @@ CC-1c034f86d26e0c,COMP-a8211c7e905358,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V
 CC-70972c471c8ec7,COMP-a8211c7e905358,2,affix root,ATOM-78f15b9e59348f,,C_S,
 CC-4b6c4fb11ead3c,COMP-a82d8292728035,1,type/degree vowel,ATOM-1fb3e3276a0563,,V_X,
 CC-a5d229d65fb694,COMP-a82d8292728035,2,affix root,ATOM-ee451b4938a97d,,C_S,
+CC-0a969e384ea6f4,COMP-a857878dfe016b,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-6a941a66728890,COMP-a857878dfe016b,2,case exponent,ATOM-afa2be45ee2f99,,V_C,required realized word-final glottal V_C surface
+CC-e51cef16b33379,COMP-a872bdcd0b5d3d,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-87dfe098805432,COMP-a872bdcd0b5d3d,2,case exponent,ATOM-bd973ac1ea40fc,,V_C,required realized word-final glottal V_C surface
 CC-69cbb20c509b58,COMP-a884bf700dce51,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
 CC-c01cb8cb5bc1e8,COMP-a884bf700dce51,2,affix root,ATOM-c68de9c7af40ab,,C_S,
 CC-6e7a50d09dbc29,COMP-a8b5e0baae438f,1,case-derived vowel,ATOM-1980f9d2ab20f6,,V_X,immediately preceded by y
@@ -2275,6 +2633,8 @@ CC-5a2a10c515d462,COMP-a94557b81431f8,1,type/degree vowel,ATOM-3b825a7e6b109b,,V
 CC-785e62e4d271a4,COMP-a94557b81431f8,2,affix root,ATOM-a3617133ad5a79,,C_S,
 CC-6437500dab1df7,COMP-a94a22cee68745,1,type/degree vowel,ATOM-0d6064a1757fc2,,V_X,
 CC-37908c8bdb6c72,COMP-a94a22cee68745,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
+CC-a8b642c3373b9d,COMP-a952a0515810c1,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-15ac8e279ede5a,COMP-a952a0515810c1,2,case exponent,ATOM-17891df32f5890,,V_C,required realized word-final glottal V_C surface
 CC-ec7a5774440454,COMP-a955a7aafb1c02,1,type/degree vowel,ATOM-d0b239448821f3,,V_X,immediately preceded by y
 CC-82998069a331c9,COMP-a955a7aafb1c02,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
 CC-13cabeb059f909,COMP-a957a519b725a9,1,case-derived vowel,ATOM-49d4912547f536,,V_X,immediately preceded by y
@@ -2335,8 +2695,12 @@ CC-6965461bf4eace,COMP-acf76004b63067,1,case-derived vowel,ATOM-aacc93d36f8139,,
 CC-9f54330b48227e,COMP-acf76004b63067,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-aeed807502d5cc,COMP-ad013d6a6bf443,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
 CC-ba9cfab03d2529,COMP-ad013d6a6bf443,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
+CC-81c0d39a9bdb22,COMP-ad028f16803a4b,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-d1b250409bd937,COMP-ad028f16803a4b,2,case exponent,ATOM-49b7abf6b72d13,,V_C,required realized word-final glottal V_C surface
 CC-7146a728a2ba14,COMP-ad0cab6b220fa3,1,case-derived vowel,ATOM-53d922b5a88e66,,V_X,
 CC-f35d0031f2f646,COMP-ad0cab6b220fa3,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
+CC-f4e76df158a30c,COMP-ad136a36b54a03,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-ffb852f7367f17,COMP-ad136a36b54a03,2,case exponent,ATOM-fe1b69e6d8c217,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-1ed2e847e44183,COMP-ad38a0aa1bb9a6,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-1faa961e5d8951,COMP-ad38a0aa1bb9a6,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
 CC-14c178802eeed6,COMP-adbba12ef9d4a3,1,case-derived vowel,ATOM-40b454d87f0b37,,V_X,
@@ -2365,6 +2729,8 @@ CC-263c9d4a10c431,COMP-aef2aaa48fb0ae,1,case-derived vowel,ATOM-82f6fa11c5a72a,,
 CC-c883c676316b7e,COMP-aef2aaa48fb0ae,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-80900c7802b340,COMP-af3a6c5a916202,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
 CC-dfe650aa8421be,COMP-af3a6c5a916202,2,affix root,ATOM-744e729367f6e7,,C_S,
+CC-d9dea84902175d,COMP-af452279a7c9e4,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-b35b45be3644fe,COMP-af452279a7c9e4,2,case exponent,ATOM-28192cda20ee9b,,V_C,required realized word-final glottal V_C surface
 CC-f44821bfc3581d,COMP-af536c24b68c0a,1,type/degree vowel,ATOM-7342852fbd0892,,V_X,immediately preceded by w
 CC-e275fb49483936,COMP-af536c24b68c0a,2,affix root,ATOM-107f3ae8088c0e,,C_S,
 CC-34deb881f6fbf6,COMP-af779bfa682fc8,1,type/degree vowel,ATOM-7342852fbd0892,,V_X,immediately preceded by w
@@ -2379,6 +2745,8 @@ CC-4f45b9d91fb481,COMP-afba5acf8090fb,1,type/degree vowel,ATOM-44266409e896ea,,V
 CC-d844b3a920fd92,COMP-afba5acf8090fb,2,affix root,ATOM-0e14619e240857,,C_S,
 CC-79dc092bd8fe32,COMP-afc6229cb2d882,1,case-derived vowel,ATOM-633e607f2f4298,,V_X,
 CC-ef5a8b02e3e38f,COMP-afc6229cb2d882,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
+CC-3f60d14c421d03,COMP-afc7e336db627a,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-d81cd8b70f7111,COMP-afc7e336db627a,2,case exponent,ATOM-f5b119f6742a84,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-e6e74d54944d0c,COMP-afd29bb6e79407,1,case-derived vowel,ATOM-8f06c67099b391,,V_X,
 CC-05756b8fea6ef2,COMP-afd29bb6e79407,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-f909c773c3d199,COMP-afe534d5be8ead,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
@@ -2391,14 +2759,26 @@ CC-bfdde0aaf63f53,COMP-b075184fce6736,1,case-derived vowel,ATOM-e47090551d24e2,,
 CC-af31b43c775d18,COMP-b075184fce6736,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-a2c7151908444d,COMP-b0b0a1145dcc0d,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-31ef30426510ed,COMP-b0b0a1145dcc0d,2,affix root,ATOM-e719e0f5196d88,,C_S,
+CC-553e4cc834484c,COMP-b0c708a813f6ac,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-a19828a0c98a21,COMP-b0c708a813f6ac,2,case exponent,ATOM-ef00f2a6d09364,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-6b8394c697f76f,COMP-b0cbfb060a1fff,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-7b1f65fe568faa,COMP-b0cbfb060a1fff,2,case exponent,ATOM-0b5a358814aa72,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-4363b59080a7c1,COMP-b1001bd9399a10,1,case-derived vowel,ATOM-5d938c82d98bf6,,V_X,
 CC-4fb8ec955597df,COMP-b1001bd9399a10,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-b0a597060120fe,COMP-b11d38628129fc,1,case-derived vowel,ATOM-bd548ab40150c9,,V_X,immediately preceded by y
 CC-d9230ea4e72b50,COMP-b11d38628129fc,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
+CC-94c39e43a4d2ed,COMP-b11e49b8f2233a,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-cc0e841b2690d5,COMP-b11e49b8f2233a,2,case exponent,ATOM-ef00f2a6d09364,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-62f61ee20a4a98,COMP-b149d4206e2382,1,type/degree vowel,ATOM-9fb20be6058c27,,V_X,immediately preceded by w
 CC-4e220d9f0fd7cb,COMP-b149d4206e2382,2,affix root,ATOM-7c73d550bffdc5,,C_S,
+CC-291639666e302b,COMP-b17e0036694218,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-f2e7b11b667c07,COMP-b17e0036694218,2,case exponent,ATOM-2754e3574478ef,,V_C,required realized word-final glottal V_C surface
 CC-7e2ba5cf58455f,COMP-b18987cf949cfe,1,case-derived vowel,ATOM-532f757523eb21,,V_X,
 CC-ce5da3e5cb4252,COMP-b18987cf949cfe,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
+CC-908c3be9debd10,COMP-b1a13fc38cbcfe,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-e24fa162055182,COMP-b1a13fc38cbcfe,2,case exponent,ATOM-dda9d7cdb47c41,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-ca550b426dd10e,COMP-b1ccc09b334940,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-daac4f54867c17,COMP-b1ccc09b334940,2,case exponent,ATOM-7767230b38dca7,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-8c055096defebe,COMP-b2740c797102c3,1,type/degree vowel,ATOM-b4c33c49007c15,,V_X,
 CC-d1babe8ec3d8fa,COMP-b2740c797102c3,2,affix root,ATOM-b151da413f0d5f,,C_S,
 CC-11ad9e8a46f12f,COMP-b2d58037417752,1,case-derived vowel,ATOM-b062726ad5143d,,V_X,
@@ -2411,8 +2791,14 @@ CC-062095bc8d47be,COMP-b38bd0a67e3590,1,type/degree vowel,ATOM-d8d97780bac009,,V
 CC-f8d32a6001adf8,COMP-b38bd0a67e3590,2,affix root,ATOM-744e729367f6e7,,C_S,
 CC-cc4dbcf3e0af0f,COMP-b394333aec5adf,1,type/degree vowel,ATOM-d0b239448821f3,,V_X,immediately preceded by y
 CC-dbdf80dc70e4ad,COMP-b394333aec5adf,2,affix root,ATOM-b151da413f0d5f,,C_S,
+CC-7f75ae0fe81154,COMP-b3e56ae4d82122,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-25f32d8829aa0d,COMP-b3e56ae4d82122,2,case exponent,ATOM-28192cda20ee9b,,V_C,required realized word-final glottal V_C surface
 CC-6dbe2991a595ee,COMP-b40c97b1bb0c6f,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
 CC-ec3af010439cc9,COMP-b40c97b1bb0c6f,2,affix root,ATOM-ee451b4938a97d,,C_S,
+CC-3d761599745c53,COMP-b4265960d9681d,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-288175957754c2,COMP-b4265960d9681d,2,case exponent,ATOM-ec7a57f9bafe10,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-c36ae70351048f,COMP-b426eb641a8deb,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-48bd05894bb2be,COMP-b426eb641a8deb,2,case exponent,ATOM-2754e3574478ef,,V_C,required realized word-final glottal V_C surface
 CC-f135fa528ca705,COMP-b442d701a5150c,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
 CC-c4b48019d47cda,COMP-b442d701a5150c,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-9024ac8b9d6a60,COMP-b455ffd7443a8a,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
@@ -2441,6 +2827,10 @@ CC-4bc15235516f63,COMP-b5d0198217bc54,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V
 CC-58f8d2877edf30,COMP-b5d0198217bc54,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-ec6f8953e0a6eb,COMP-b5e6753593985f,1,case-derived vowel,ATOM-d4473cabce3de6,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-106d307395ada1,COMP-b5e6753593985f,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
+CC-7c403b93e9d21a,COMP-b5f97cf8fb10f9,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-bea67e5ab0c1ad,COMP-b5f97cf8fb10f9,2,case exponent,ATOM-b0078ab5063976,,V_C,required realized word-final glottal V_C surface
+CC-fb05363255b243,COMP-b6080e8e9bbe7b,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-66988a684e3683,COMP-b6080e8e9bbe7b,2,case exponent,ATOM-49b7abf6b72d13,,V_C,required realized word-final glottal V_C surface
 CC-d16b5b50a39fd7,COMP-b60d98e7b26da8,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V_X,
 CC-f853e5e7eb5427,COMP-b60d98e7b26da8,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
 CC-b46c4e0ee8e19a,COMP-b61a64a1af2003,1,type/degree vowel,ATOM-0d6064a1757fc2,,V_X,
@@ -2449,6 +2839,8 @@ CC-5c139e2d21b67a,COMP-b61e33509cbb09,1,type/degree vowel,ATOM-b4c33c49007c15,,V
 CC-c32c291391529e,COMP-b61e33509cbb09,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
 CC-01884d712a428a,COMP-b64885a31c63d8,1,case-derived vowel,ATOM-3c24e17ec56eec,,V_X,
 CC-37c075aa26dc4b,COMP-b64885a31c63d8,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
+CC-c8b46a331f010f,COMP-b6577ac0e151ce,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-b7a98982e5d618,COMP-b6577ac0e151ce,2,case exponent,ATOM-93a47684128fae,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-a9f176d1e9f939,COMP-b673494b73164f,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-d3d23ef41e523c,COMP-b673494b73164f,2,affix root,ATOM-e719e0f5196d88,,C_S,
 CC-27f13e0b936318,COMP-b6a2f219b119c6,1,type/degree vowel,ATOM-09b8bd7f2797bf,,V_X,
@@ -2511,6 +2903,8 @@ CC-b32017a3a70a36,COMP-bb8918a57a13e7,1,case-derived vowel,ATOM-23b0987b13e556,,
 CC-8c014a0b4f2990,COMP-bb8918a57a13e7,2,accessor/stacking root,ATOM-6b0da072d43904,,C_S,
 CC-056c68d9102476,COMP-bb9edecfd94050,1,type/degree vowel,ATOM-bd787a1b68bf48,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-c4c3d88c03fae4,COMP-bb9edecfd94050,2,affix root,ATOM-744e729367f6e7,,C_S,
+CC-855803bb9c5403,COMP-bbc894933a3dfd,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-7815f2219ceaf5,COMP-bbc894933a3dfd,2,case exponent,ATOM-17891df32f5890,,V_C,required realized word-final glottal V_C surface
 CC-9015614ff67c7e,COMP-bbf50a19140f12,1,type/degree vowel,ATOM-1fb3e3276a0563,,V_X,
 CC-55604e54877840,COMP-bbf50a19140f12,2,affix root,ATOM-0e14619e240857,,C_S,
 CC-563aff8b78a2bc,COMP-bc6086d8514165,1,case-derived vowel,ATOM-2ef29031b59be7,,V_X,
@@ -2527,6 +2921,8 @@ CC-d17d06c1d8f314,COMP-bd1f359a3c4cc0,1,type/degree vowel,ATOM-b4c33c49007c15,,V
 CC-0283e60acd38e6,COMP-bd1f359a3c4cc0,2,affix root,ATOM-bec5efcf77e583,,C_S,
 CC-7433a495bed077,COMP-bd7846397da84f,1,type/degree vowel,ATOM-4e563dff257eb3,,V_X,immediately preceded by y
 CC-09204ba3e7ea81,COMP-bd7846397da84f,2,affix root,ATOM-7c73d550bffdc5,,C_S,
+CC-82b5eece7bab5b,COMP-bd7cef0bef8333,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-0104cad6333c6a,COMP-bd7cef0bef8333,2,case exponent,ATOM-701bb7285f112c,,V_C,required realized word-final glottal V_C surface
 CC-860f6c8712ca3b,COMP-bd92d1e0380390,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-88b30684c01e76,COMP-bd92d1e0380390,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-7d0155597bddce,COMP-bddc384207367d,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
@@ -2537,6 +2933,8 @@ CC-e9415de4f1c314,COMP-be2ce29bd71f14,1,case-derived vowel,ATOM-8f06c67099b391,,
 CC-dcd202d955af29,COMP-be2ce29bd71f14,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-0a20ff67f7d4a4,COMP-be6e02bcc29345,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
 CC-2888aa7f424506,COMP-be6e02bcc29345,2,affix root,ATOM-36a96426fb24bf,,C_S,
+CC-c1a90e261ca8ab,COMP-be8ed7b1c43eab,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-c6ba7d7c53b248,COMP-be8ed7b1c43eab,2,case exponent,ATOM-93a47684128fae,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-00835a192f33d7,COMP-be92f495de66ff,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-988115cae9e37e,COMP-be92f495de66ff,2,affix root,ATOM-ee451b4938a97d,,C_S,
 CC-9d4cf2e64839b0,COMP-beaffe27f1eb19,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
@@ -2547,12 +2945,16 @@ CC-d5077c50347529,COMP-bebed42712e37a,1,type/degree vowel,ATOM-e022e5bc22dab9,,V
 CC-67d06fecc7b4e4,COMP-bebed42712e37a,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
 CC-2ae44559a6bb6f,COMP-bec06817ad93cb,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
 CC-9aad0f27d99b7f,COMP-bec06817ad93cb,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
+CC-de822b0a378b2e,COMP-bed3ee72a9a5ea,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-416bdf1587a015,COMP-bed3ee72a9a5ea,2,case exponent,ATOM-7a69c1aeac9192,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-1ae2f033c994be,COMP-bf0a30f58cb545,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
 CC-d8acff6a6abcc0,COMP-bf0a30f58cb545,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
 CC-3b0d5f8f9a7f22,COMP-bf315bc95bfaa9,1,case-derived vowel,ATOM-9558f20ee8beba,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-21b4f021b74bd6,COMP-bf315bc95bfaa9,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
 CC-7bdd5d7e5bc050,COMP-bf5f83b5247ab0,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-87aa788e613afb,COMP-bf5f83b5247ab0,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-97443fd8f0788b,COMP-bf74628ff3acae,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-0a63366b70d6e9,COMP-bf74628ff3acae,2,case exponent,ATOM-7d764214a9f778,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-f596a0f6bd5ce9,COMP-bf7e05e979c244,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
 CC-7c9c7edb45b47f,COMP-bf7e05e979c244,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
 CC-540e1245d6ea81,COMP-bf9954da9d1836,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
@@ -2563,8 +2965,14 @@ CC-50110efa55bddb,COMP-bfc569c74e9649,1,type/degree vowel,ATOM-71ee063f3457d2,,V
 CC-45d084ee96fe33,COMP-bfc569c74e9649,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
 CC-c42667e28c2e02,COMP-bfc940521fc18d,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-d79bb90cd7585d,COMP-bfc940521fc18d,2,affix root,ATOM-6344fa8f06bbe8,,C_S,
+CC-f004d74b268550,COMP-bfc9ed5686cce2,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-72ad37a776909c,COMP-bfc9ed5686cce2,2,case exponent,ATOM-258c7f11aff301,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-27e31fe66c6e47,COMP-c0003773759a2a,1,case-derived vowel,ATOM-27a22bed24e9cd,,V_X,
 CC-d8c67cfa9435c2,COMP-c0003773759a2a,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
+CC-42345e36a0fc4a,COMP-c003daee4ed3cd,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-acd41a5bdd62c9,COMP-c003daee4ed3cd,2,case exponent,ATOM-ce9a23ed773385,,V_C,required realized word-final glottal V_C surface
+CC-603d9c83d2fad9,COMP-c0062ee60c8d1f,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-808af2f2279da3,COMP-c0062ee60c8d1f,2,case exponent,ATOM-9122a895d9a582,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-f5fb041d598e55,COMP-c03be66a14c351,1,case-derived vowel,ATOM-86b86098c672e3,,V_X,
 CC-6ee4d8eae07b8f,COMP-c03be66a14c351,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
 CC-5a01ba8393db49,COMP-c05877eb396194,1,type/degree vowel,ATOM-f3a7efe66f7f85,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -2573,6 +2981,8 @@ CC-30fa026403cf0f,COMP-c075b9c40a20d1,1,type/degree vowel,ATOM-05a2cd432977e8,,V
 CC-5c921a801e4849,COMP-c075b9c40a20d1,2,affix root,ATOM-744e729367f6e7,,C_S,
 CC-6ab3daf7db9153,COMP-c0a9e49cdd9397,1,case-derived vowel,ATOM-533ed0bd60978b,,V_X,
 CC-19cb556231dfbc,COMP-c0a9e49cdd9397,2,accessor/stacking root,ATOM-6b0da072d43904,,C_S,
+CC-8d423d4337821a,COMP-c0df101ac07c81,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-332c6aa8c4ba58,COMP-c0df101ac07c81,2,case exponent,ATOM-536725028edca8,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-02642b6a617cdf,COMP-c0f3dd8d8a9872,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-2e6ad272d2773e,COMP-c0f3dd8d8a9872,2,affix root,ATOM-744e729367f6e7,,C_S,
 CC-45d80a41b561bd,COMP-c1395c31232ddd,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -2585,12 +2995,16 @@ CC-bf5c7f97466a0f,COMP-c18746da51cd05,1,type/degree vowel,ATOM-2f7ba715ca84b7,,V
 CC-8fb08325bbf866,COMP-c18746da51cd05,2,affix root,ATOM-4b9c4ee0b3f1c3,,C_S,
 CC-1f4e2da8a1b6d1,COMP-c1e0bc7810d521,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-9e9443a5e46d76,COMP-c1e0bc7810d521,2,affix root,ATOM-bc6716c08c11a7,,C_S,
+CC-2b5a1184a62054,COMP-c1f3029df2a4cb,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-aa8ed518aab84f,COMP-c1f3029df2a4cb,2,case exponent,ATOM-90d7534d54ce2b,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-5c614d91634a2e,COMP-c1fce3fab4d2cc,1,case-derived vowel,ATOM-ee6047f83c47c4,,V_X,
 CC-f8786a30e6e9dc,COMP-c1fce3fab4d2cc,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-186c17e6e46e13,COMP-c21aeb8952e596,1,type/degree vowel,ATOM-b4c33c49007c15,,V_X,
 CC-0cdcc5efcc29dc,COMP-c21aeb8952e596,2,affix root,ATOM-e88468a770f92e,,C_S,
 CC-b1ac2c128434f7,COMP-c22721ed5465be,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-a24be88bbf7cce,COMP-c22721ed5465be,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
+CC-ee7a14fe03fc11,COMP-c22916069a8adc,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-f5ef0796d06662,COMP-c22916069a8adc,2,case exponent,ATOM-d8b78908eea208,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-ca3d6cb29d9608,COMP-c22b3cf0b5d9d3,1,case-derived vowel,ATOM-c54b3e85e75739,,V_X,
 CC-d52ef42ef4d251,COMP-c22b3cf0b5d9d3,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-68341863f4264e,COMP-c2375fbaa9c1b7,1,type/degree vowel,ATOM-05a2cd432977e8,,V_X,
@@ -2615,12 +3029,16 @@ CC-51f53f6ccf9aa1,COMP-c410c8a40cdd9c,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V
 CC-b52114156982be,COMP-c410c8a40cdd9c,2,affix root,ATOM-ef7cf17b427af9,,C_S,
 CC-ae0dd0a66784a9,COMP-c4290202411dd7,1,case-derived vowel,ATOM-23b0987b13e556,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-f9525021bd4c28,COMP-c4290202411dd7,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
+CC-90243139b0ce59,COMP-c43e3d57f0748a,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-3a5502b929b22e,COMP-c43e3d57f0748a,2,case exponent,ATOM-8465f0f9cc2766,,V_C,required realized word-final glottal V_C surface
 CC-fba8fdf8d2d488,COMP-c441f7d73665b2,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
 CC-d0154ba550815d,COMP-c441f7d73665b2,2,affix root,ATOM-c68de9c7af40ab,,C_S,
 CC-e786f689213e57,COMP-c4848c9fd7b558,1,case-derived vowel,ATOM-09adc4f61653c6,,V_X,immediately preceded by y
 CC-4b890796bd5f5c,COMP-c4848c9fd7b558,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-edfad48233a004,COMP-c4877bab9ab327,1,case-derived vowel,ATOM-da55b4d7cf778b,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-2cd4059d11e617,COMP-c4877bab9ab327,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
+CC-3cfb8bdc190a41,COMP-c4888b71812ea1,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-3a876c6439fd65,COMP-c4888b71812ea1,2,case exponent,ATOM-342bfdbaf1a63f,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-9a2084282579cb,COMP-c4975dfd3fb85e,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
 CC-58abfa6e2bd549,COMP-c4975dfd3fb85e,2,affix root,ATOM-e88468a770f92e,,C_S,
 CC-dbeedd5950b518,COMP-c4e5542bd3353e,1,type/degree vowel,ATOM-4e563dff257eb3,,V_X,immediately preceded by y
@@ -2629,6 +3047,8 @@ CC-f3b07448a826e0,COMP-c573ca5bb2d146,1,type/degree vowel,ATOM-05a2cd432977e8,,V
 CC-10faa41a752da8,COMP-c573ca5bb2d146,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-cf0e4477775be1,COMP-c58fbadc038543,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
 CC-febdb4a941bc1b,COMP-c58fbadc038543,2,affix root,ATOM-64d8339c401e9c,,C_S,
+CC-1f6131df2cdbbe,COMP-c5a9c8d0227190,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-92be5e41c0500c,COMP-c5a9c8d0227190,2,case exponent,ATOM-28192cda20ee9b,,V_C,required realized word-final glottal V_C surface
 CC-e84026279a84f6,COMP-c5de0800f6ced7,1,case-derived vowel,ATOM-151be5300123d4,,V_X,immediately preceded by w
 CC-3109d4f0e03771,COMP-c5de0800f6ced7,2,accessor/stacking root,ATOM-d525a30bb67fbe,,C_S,
 CC-d02ba2fdaec282,COMP-c5f3e905185b9f,1,case-derived vowel,ATOM-09adc4f61653c6,,V_X,immediately preceded by y
@@ -2643,6 +3063,8 @@ CC-78c8cf33a89b98,COMP-c694f8371f6d98,1,type/degree vowel,ATOM-4a41c36c38b74c,,V
 CC-f9d1983a97c635,COMP-c694f8371f6d98,2,affix root,ATOM-9fd667ca39702b,,C_S,
 CC-fe12f5f5493dca,COMP-c6a5cb17a0a5c7,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-17d74a54e1fd09,COMP-c6a5cb17a0a5c7,2,affix root,ATOM-94dd4a586a256c,,C_S,
+CC-01e68380a8abf8,COMP-c6b2af915196e0,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-b7a1a1e43a54a7,COMP-c6b2af915196e0,2,case exponent,ATOM-c61e6fb40aaab6,,V_C,required realized word-final glottal V_C surface
 CC-ea815b82932128,COMP-c6cb91a1f1081f,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
 CC-e03f69e7e08efb,COMP-c6cb91a1f1081f,2,affix root,ATOM-744e729367f6e7,,C_S,
 CC-810f63d7f2bdb8,COMP-c6e19f1df985b9,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
@@ -2685,6 +3107,8 @@ CC-4d36465bf6ffaf,COMP-c9eb4817c096de,1,case-derived vowel,ATOM-69590b6313c1f0,,
 CC-2030b7426c3b7b,COMP-c9eb4817c096de,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-40051d0d12d1f2,COMP-ca83de7ec1c73b,1,type/degree vowel,ATOM-b4c33c49007c15,,V_X,
 CC-09ee269c49af74,COMP-ca83de7ec1c73b,2,affix root,ATOM-a3617133ad5a79,,C_S,
+CC-9f8a8f34914b02,COMP-cadcafecb7961e,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-4870c589d92958,COMP-cadcafecb7961e,2,case exponent,ATOM-17891df32f5890,,V_C,required realized word-final glottal V_C surface
 CC-e65aeba7cbfa60,COMP-caec8912500495,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
 CC-36afa3b29213cf,COMP-caec8912500495,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-8f957562bbf364,COMP-cb290d50d6190e,1,type/degree vowel,ATOM-0d6064a1757fc2,,V_X,
@@ -2703,6 +3127,8 @@ CC-3a7b621c7ab26d,COMP-cc199d06e73f87,1,type/degree vowel,ATOM-7412b7c21b9a18,,V
 CC-e922c5bbac2b03,COMP-cc199d06e73f87,2,affix root,ATOM-4ed369ab2f4364,,C_S,
 CC-cab752f54578f5,COMP-cc456c7056b6ac,1,case-derived vowel,ATOM-ba64d2b80008a3,,V_X,
 CC-9a2ee23a23bf81,COMP-cc456c7056b6ac,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
+CC-387aca2e092471,COMP-cc6b71bcdd33dd,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-50ffb21d94cff9,COMP-cc6b71bcdd33dd,2,case exponent,ATOM-a344bcbc1effb5,,V_C,required realized word-final glottal V_C surface
 CC-e6eebb2d4ca038,COMP-cc984927de9b09,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-f4ad8f651ee595,COMP-cc984927de9b09,2,affix root,ATOM-7c73d550bffdc5,,C_S,
 CC-b29148e0d51ba2,COMP-cca3e74b65d21a,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
@@ -2743,6 +3169,8 @@ CC-cc6fbd8f6ed6dc,COMP-cfcbf28078d0f3,1,case-derived vowel,ATOM-c54b3e85e75739,,
 CC-82dc898a96a756,COMP-cfcbf28078d0f3,2,accessor/stacking root,ATOM-d525a30bb67fbe,,C_S,
 CC-e3bf540ce3cd7f,COMP-cff02aed44e9ff,1,case-derived vowel,ATOM-2ef29031b59be7,,V_X,
 CC-59bbc850be3a04,COMP-cff02aed44e9ff,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
+CC-2918ed09ce1c91,COMP-cff2627cbbc093,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-b38ba80dc350be,COMP-cff2627cbbc093,2,case exponent,ATOM-26ba6440eaaeef,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-72d6b2ae61dfde,COMP-d0105969cb6f1a,1,case-derived vowel,ATOM-74bfd33ab3f879,,V_X,immediately preceded by y
 CC-4d845eb0bda160,COMP-d0105969cb6f1a,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-3c532e57d9cdd6,COMP-d04dfafb9fdaa0,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
@@ -2753,6 +3181,8 @@ CC-72852329e5be39,COMP-d062b4c66d7c4e,1,type/degree vowel,ATOM-4a41c36c38b74c,,V
 CC-807a97cfcfd3a4,COMP-d062b4c66d7c4e,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-79b1723d5758ab,COMP-d0817914c1722a,1,type/degree vowel,ATOM-bd787a1b68bf48,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-761c9a66df9fa2,COMP-d0817914c1722a,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
+CC-9909e9e07e3f66,COMP-d0bfc6033b5632,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-258ccdcdfc325a,COMP-d0bfc6033b5632,2,case exponent,ATOM-08307fe78d6700,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-4cf59363fc6252,COMP-d0f655690a191f,1,case-derived vowel,ATOM-1b39ba176730ee,,V_X,
 CC-3c54f96c59cfc0,COMP-d0f655690a191f,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
 CC-e4b4a5350a20cf,COMP-d0f9f5732f6d8d,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -2771,8 +3201,12 @@ CC-079d5119dd8c9b,COMP-d1377b36ae465d,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V
 CC-542789defa31d5,COMP-d1377b36ae465d,2,affix root,ATOM-a3617133ad5a79,,C_S,
 CC-d15923fd751f05,COMP-d1951686ef4d8f,1,type/degree vowel,ATOM-05a2cd432977e8,,V_X,
 CC-2627d62dc3d36e,COMP-d1951686ef4d8f,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
+CC-0e85ef109c64e8,COMP-d1c3a0e7b59245,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-f0c124f999848c,COMP-d1c3a0e7b59245,2,case exponent,ATOM-a743ec4e1e185f,,V_C,required realized word-final glottal V_C surface
 CC-fc428500682a83,COMP-d227f28566c7bc,1,case-derived vowel,ATOM-9558f20ee8beba,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-b3252c222ce712,COMP-d227f28566c7bc,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
+CC-34c0529c5c2514,COMP-d27f0539024c97,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-a0de7281437f74,COMP-d27f0539024c97,2,case exponent,ATOM-d8b78908eea208,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-1766b324584ad1,COMP-d2888669df0972,1,type/degree vowel,ATOM-98d8fbf5e48aa5,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-bae7b7f5cb3c25,COMP-d2888669df0972,2,affix root,ATOM-ee451b4938a97d,,C_S,
 CC-2626c527ab28d9,COMP-d28d10109e492d,1,type/degree vowel,ATOM-d0b239448821f3,,V_X,immediately preceded by y
@@ -2787,12 +3221,16 @@ CC-70269570f91705,COMP-d2ecd68fd78f1b,1,case-derived vowel,ATOM-695249bcbfa9c0,,
 CC-1299557bc919f4,COMP-d2ecd68fd78f1b,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-05f9fc83534e7c,COMP-d2faa8154897a4,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
 CC-8ef6dafbd9b22b,COMP-d2faa8154897a4,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
+CC-b892fb07e9d216,COMP-d31eabb6b9edc7,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-a3458835356a91,COMP-d31eabb6b9edc7,2,case exponent,ATOM-171d1f198506ea,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-ae9327ec3664fb,COMP-d3421594a6e6c4,1,type/degree vowel,ATOM-0d6064a1757fc2,,V_X,
 CC-e4f9da310e45d9,COMP-d3421594a6e6c4,2,affix root,ATOM-107f3ae8088c0e,,C_S,
 CC-d57889664f5d09,COMP-d36cbeed1ed015,1,case-derived vowel,ATOM-74bfd33ab3f879,,V_X,immediately preceded by y
 CC-e42079a3ce27f8,COMP-d36cbeed1ed015,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
 CC-f945ea07eab527,COMP-d3723e656d37d1,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
 CC-2b815bfa67a185,COMP-d3723e656d37d1,2,affix root,ATOM-a3617133ad5a79,,C_S,
+CC-522f2874c9d76c,COMP-d3c49dd9d09f19,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-6059a6e2f6946e,COMP-d3c49dd9d09f19,2,case exponent,ATOM-13b6542b94c60d,,V_C,required realized word-final glottal V_C surface
 CC-00ca91e0974320,COMP-d3f691f1f0c5a5,1,case-derived vowel,ATOM-c781409df5ed3d,,V_X,
 CC-40412e63e280ac,COMP-d3f691f1f0c5a5,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-fa17dbfa8492e7,COMP-d427ea6621161f,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -2803,6 +3241,8 @@ CC-bd6290d29cb840,COMP-d46e0c142ddd65,1,case-derived vowel,ATOM-e47090551d24e2,,
 CC-000718ecef7439,COMP-d46e0c142ddd65,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-cf81f19eeebc3f,COMP-d48384043e3858,1,case-derived vowel,ATOM-3c24e17ec56eec,,V_X,
 CC-f652e8ddc70cf1,COMP-d48384043e3858,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
+CC-cb1cc29aa05746,COMP-d4a738f06b6acb,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-f0c9b7d69482b2,COMP-d4a738f06b6acb,2,case exponent,ATOM-ca78463b3c1c02,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-600e18a63d9740,COMP-d4bec94d1df6bb,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
 CC-b4fb4c569ec5d6,COMP-d4bec94d1df6bb,2,affix root,ATOM-8387f1bbcfaf5a,,C_S,
 CC-8c30d2753c8873,COMP-d4e26363fd5b21,1,case-derived vowel,ATOM-533ed0bd60978b,,V_X,
@@ -2813,10 +3253,16 @@ CC-57c49a10cb0120,COMP-d4e66fe088cadc,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V
 CC-5f3278540f7a4e,COMP-d4e66fe088cadc,2,affix root,ATOM-214968af776104,,C_S,
 CC-7d06004cded9d6,COMP-d503b92e62c46c,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-2f9a743447ce83,COMP-d503b92e62c46c,2,affix root,ATOM-0e14619e240857,,C_S,
+CC-57147b15aaa14b,COMP-d519f790e59383,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-c0ad71514a9ff8,COMP-d519f790e59383,2,case exponent,ATOM-4257531592c97c,,V_C,required realized word-final glottal V_C surface
 CC-19f35153b2d7ba,COMP-d54e85676fe818,1,type/degree vowel,ATOM-b4c33c49007c15,,V_X,
 CC-30c2143845e325,COMP-d54e85676fe818,2,affix root,ATOM-64d8339c401e9c,,C_S,
 CC-d3b8647ca08a50,COMP-d5563629d5d28c,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
 CC-b07d4e5357ad63,COMP-d5563629d5d28c,2,affix root,ATOM-87a50e64418478,,C_S,
+CC-7a1e7e4aefecaa,COMP-d563d39c3b1e9a,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-300a10626c262b,COMP-d563d39c3b1e9a,2,case exponent,ATOM-17891df32f5890,,V_C,required realized word-final glottal V_C surface
+CC-29110de2e00fcd,COMP-d5d6de18febae7,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-a6bbbcbb1652fe,COMP-d5d6de18febae7,2,case exponent,ATOM-d8b78908eea208,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-83dd306fb0d975,COMP-d60c15929d12ad,1,type/degree vowel,ATOM-44266409e896ea,,V_X,
 CC-54415784928751,COMP-d60c15929d12ad,2,affix root,ATOM-a3617133ad5a79,,C_S,
 CC-273cfcb587d8b7,COMP-d63fccc974f5f2,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
@@ -2831,6 +3277,8 @@ CC-94e5c8b78d341f,COMP-d6c8b2f79b8e4a,1,case-derived vowel,ATOM-b062726ad5143d,,
 CC-8d400f924fc82d,COMP-d6c8b2f79b8e4a,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-d615f7c5b90118,COMP-d6e97539971d98,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-94f79937d8be7f,COMP-d6e97539971d98,2,affix root,ATOM-411f23b4d28929,,C_S,
+CC-4ec718870ac6fb,COMP-d6fd4d490e19a0,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-91c711aac24ce5,COMP-d6fd4d490e19a0,2,case exponent,ATOM-197081a3a31239,,V_C,required realized word-final glottal V_C surface
 CC-be67f288ffcc1b,COMP-d70e10e25bdda7,1,type/degree vowel,ATOM-05a2cd432977e8,,V_X,
 CC-f961dd0ca614f6,COMP-d70e10e25bdda7,2,affix root,ATOM-7c73d550bffdc5,,C_S,
 CC-5e39b23c295765,COMP-d7177c1c589e19,1,case-derived vowel,ATOM-f2004c24f83d96,,V_X,
@@ -2841,6 +3289,8 @@ CC-6d5d19d841bd06,COMP-d72806a19110ec,1,case-derived vowel,ATOM-2bd15c6f994e89,,
 CC-0efa69323976f4,COMP-d72806a19110ec,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-79f51a0f34c8b9,COMP-d75af223e8a6e3,1,case-derived vowel,ATOM-7fb6701f06dd62,,V_X,
 CC-a22edbb87fa226,COMP-d75af223e8a6e3,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
+CC-8bf435ebecf051,COMP-d75d64a2b11754,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-35ec8663c1d8de,COMP-d75d64a2b11754,2,case exponent,ATOM-769c8c069e367a,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-e6c9e583ba3545,COMP-d802b6e362128e,1,case-derived vowel,ATOM-f38d7cc52d1851,,V_X,
 CC-53ebd166f82aca,COMP-d802b6e362128e,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-8ca93ea2740722,COMP-d83064d344c335,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -2855,8 +3305,16 @@ CC-27cdc1da5eb9c4,COMP-d8fb08143832c8,1,case-derived vowel,ATOM-09adc4f61653c6,,
 CC-f9ccdc637f6010,COMP-d8fb08143832c8,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
 CC-1dec18550f632f,COMP-d90e714b7faddc,1,type/degree vowel,ATOM-b4c33c49007c15,,V_X,
 CC-632df79f3b90e9,COMP-d90e714b7faddc,2,affix root,ATOM-bc6716c08c11a7,,C_S,
+CC-86c7fcb2dd763e,COMP-d9972cbb6036e8,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-b5dabb8b11f586,COMP-d9972cbb6036e8,2,case exponent,ATOM-8f3a3f6eff7beb,,V_C,required realized word-final glottal V_C surface
+CC-d0eaa1ecb6884e,COMP-d9ce7bc1395500,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-5c89e726fb25a8,COMP-d9ce7bc1395500,2,case exponent,ATOM-9e4c45edc24fc4,,V_C,required realized word-final glottal V_C surface
+CC-cb64dd52e17343,COMP-d9e784b34bb853,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-21928f194aade3,COMP-d9e784b34bb853,2,case exponent,ATOM-258c7f11aff301,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-c6a00aeff19ca6,COMP-da1a9c45185e35,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-e0853607c1233a,COMP-da1a9c45185e35,2,affix root,ATOM-64d8339c401e9c,,C_S,
+CC-279aa7e4fd1084,COMP-da227a973d1ed8,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-436291569cece2,COMP-da227a973d1ed8,2,case exponent,ATOM-5d4b026388e9b3,,V_C,required realized word-final glottal V_C surface
 CC-6d7b9b0ed4022f,COMP-da692ba8d2c79c,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
 CC-696d472630aa23,COMP-da692ba8d2c79c,2,affix root,ATOM-9fd667ca39702b,,C_S,
 CC-1d08935420abff,COMP-da860abf248700,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
@@ -2867,6 +3325,8 @@ CC-28770a836f8390,COMP-daadce1202230c,1,type/degree vowel,ATOM-4a41c36c38b74c,,V
 CC-af5d80dbf2ffe1,COMP-daadce1202230c,2,affix root,ATOM-7c73d550bffdc5,,C_S,
 CC-7f14bfaf5decef,COMP-dab74d2e38da0a,1,case-derived vowel,ATOM-cb3031c722f864,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-02e5afb0c9071f,COMP-dab74d2e38da0a,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
+CC-2efb34ef20cb20,COMP-dab97a312c1f55,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-56c821caa8ef67,COMP-dab97a312c1f55,2,case exponent,ATOM-18d38b00942860,,V_C,required realized word-final glottal V_C surface
 CC-519cdc138f7d29,COMP-dae8eb8452ebb9,1,case-derived vowel,ATOM-facbe2e1674a7f,,V_X,
 CC-4095c30abaf4d6,COMP-dae8eb8452ebb9,2,accessor/stacking root,ATOM-0d39e56c5de967,,C_S,
 CC-38a7c715564af5,COMP-db0ea2ad522adc,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
@@ -2882,18 +3342,26 @@ CC-e5231530096e0c,COMP-db595ab9beac42,6,standard affixes,,V_X C_S ...,VII,
 CC-24f5f678e7111a,COMP-db595ab9beac42,7,modular categories,,V_N C_N,VIII,
 CC-58d51ee1b6ea0c,COMP-db595ab9beac42,8,case/illocution-validation,,V_C / V_K,IX,
 CC-36171ad8fc4315,COMP-db595ab9beac42,9,relation discriminator,,stress,X,
+CC-740c33bb893805,COMP-dc025a0a1bf7db,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-45fae2aa63a064,COMP-dc025a0a1bf7db,2,case exponent,ATOM-342bfdbaf1a63f,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-cbebe3cb81f863,COMP-dc150d02430a03,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
 CC-4c29a9bf3e6340,COMP-dc150d02430a03,2,affix root,ATOM-36a96426fb24bf,,C_S,
 CC-9c2021dcba693b,COMP-dc248f88b074d7,1,case-derived vowel,ATOM-facbe2e1674a7f,,V_X,
 CC-967d0a2af2523d,COMP-dc248f88b074d7,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-c993d6e2b8064b,COMP-dccca30842b02c,1,case-derived vowel,ATOM-cb3031c722f864,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-e56466a1fd3362,COMP-dccca30842b02c,2,accessor/stacking root,ATOM-6c621854565c47,,C_S,
+CC-cd3294112de395,COMP-dcdfa587ad8fbc,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-fd94ba1e1e8290,COMP-dcdfa587ad8fbc,2,case exponent,ATOM-3161535332fafc,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-db9009aeca71b4,COMP-dd34469ad692ab,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
 CC-5cf24c9d328c6e,COMP-dd34469ad692ab,2,affix root,ATOM-7c73d550bffdc5,,C_S,
+CC-78e32cbb8140db,COMP-dd4353602513e6,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-87f656898f0da6,COMP-dd4353602513e6,2,case exponent,ATOM-536725028edca8,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-0a8ce5bedcb3e8,COMP-dda261879625ed,1,case-derived vowel,ATOM-89cf22cf088439,,V_X,
 CC-fb0938581feb14,COMP-dda261879625ed,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-425ee23a78da5f,COMP-dda5c1f2ccb0e5,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-243b8e86d34c66,COMP-dda5c1f2ccb0e5,2,affix root,ATOM-ee451b4938a97d,,C_S,
+CC-21cc7dc1ec9395,COMP-ddba5594575dc1,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-9ce49a0c41a395,COMP-ddba5594575dc1,2,case exponent,ATOM-750832226a09f1,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-1e8c18d56f5cad,COMP-ddc6254bb612e4,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-211b363238ef85,COMP-ddc6254bb612e4,2,affix root,ATOM-0e14619e240857,,C_S,
 CC-5424c694edaef9,COMP-ddc8f1fff9d774,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
@@ -2906,6 +3374,8 @@ CC-9bc37fcd798769,COMP-de3fc35a790416,1,type/degree vowel,ATOM-03048c35ddd092,,V
 CC-de4f1c1e25b44c,COMP-de3fc35a790416,2,affix root,ATOM-214968af776104,,C_S,
 CC-70fdd04dec1724,COMP-de62974ffc726a,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
 CC-f1cfb7e5ba3850,COMP-de62974ffc726a,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-47fe3322c93e39,COMP-de742dc0687441,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-681f7fb7d8796b,COMP-de742dc0687441,2,case exponent,ATOM-26ba6440eaaeef,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-c3bf1b1ad61bbf,COMP-de889ebf9dd59a,1,case-derived vowel,ATOM-86b86098c672e3,,V_X,
 CC-9a7998cc2b7397,COMP-de889ebf9dd59a,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
 CC-af9dc5d33aefe3,COMP-def7f5de0c7d60,1,case-derived vowel,ATOM-40b454d87f0b37,,V_X,
@@ -2918,6 +3388,8 @@ CC-7aefb28d306303,COMP-df68422ed0b1a0,1,type/degree vowel,ATOM-4e563dff257eb3,,V
 CC-0488c40efba5c9,COMP-df68422ed0b1a0,2,affix root,ATOM-94dd4a586a256c,,C_S,
 CC-b1fc3975cfe206,COMP-df744196ea4249,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
 CC-3ccd20da5f75cc,COMP-df744196ea4249,2,affix root,ATOM-b151da413f0d5f,,C_S,
+CC-9d827792b66a7a,COMP-df845cf7303cf9,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-13775c622d9326,COMP-df845cf7303cf9,2,case exponent,ATOM-5d4b026388e9b3,,V_C,required realized word-final glottal V_C surface
 CC-ea14c6da09ada1,COMP-dfcc10632a80da,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
 CC-8a603762b07cc5,COMP-dfcc10632a80da,2,affix root,ATOM-ee451b4938a97d,,C_S,
 CC-048a5d40350b2d,COMP-dfdbbd2be13ff7,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
@@ -2928,8 +3400,12 @@ CC-42fed74b6bf052,COMP-e00145f96aa39e,1,category,,AFFILIATION,VI,
 CC-a49e34764e50c7,COMP-e00145f96aa39e,2,category,,CONFIGURATION,VI,
 CC-117cd30657fe15,COMP-e00145f96aa39e,3,category,,EXTENSION,VI,
 CC-a989a485f26f37,COMP-e00145f96aa39e,4,fused category,,PERSPECTIVE/ESSENCE,VI,
+CC-1a745582d0aa1e,COMP-e09e0fc47d66ae,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-d7a21d7b621e15,COMP-e09e0fc47d66ae,2,case exponent,ATOM-90d7534d54ce2b,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-4cd0a8416ad1ae,COMP-e0a4c66415df67,1,type/degree vowel,ATOM-03048c35ddd092,,V_X,immediately preceded by w
 CC-18390619388581,COMP-e0a4c66415df67,2,affix root,ATOM-7c73d550bffdc5,,C_S,
+CC-74797d4fadcac2,COMP-e0fdcf0bf89dce,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-628c546d7fcadd,COMP-e0fdcf0bf89dce,2,case exponent,ATOM-09e99ee78be910,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-b099f8f7330a15,COMP-e1069e6648d41f,1,type/degree vowel,ATOM-aab24543f54fa9,,V_X,
 CC-0d3a45b96489e6,COMP-e1069e6648d41f,2,affix root,ATOM-107f3ae8088c0e,,C_S,
 CC-765bf03c055b08,COMP-e12b6fc33f4f08,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -2956,6 +3432,8 @@ CC-e2e2d0e8307e82,COMP-e2c39eb74cf3e5,1,type/degree vowel,ATOM-05a2cd432977e8,,V
 CC-fac18828a65e25,COMP-e2c39eb74cf3e5,2,affix root,ATOM-ba6fbca0edb1e9,,C_S,
 CC-c6ed7cb0417086,COMP-e2c5a080d9a845,1,type/degree vowel,ATOM-e022e5bc22dab9,,V_X,immediately preceded by y
 CC-84c8079edf943d,COMP-e2c5a080d9a845,2,affix root,ATOM-7c73d550bffdc5,,C_S,
+CC-ad707750f2d692,COMP-e2d91f49333edc,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-9a78beeb24c81f,COMP-e2d91f49333edc,2,case exponent,ATOM-197081a3a31239,,V_C,required realized word-final glottal V_C surface
 CC-e96e8f146ef8ca,COMP-e3057a7930b592,1,case-derived vowel,ATOM-26edb5490d8bc3,,V_X,immediately preceded by w
 CC-6071f4ad5aad0d,COMP-e3057a7930b592,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-badb25f1e37b5c,COMP-e308bc7bad1f29,1,case-derived vowel,ATOM-55944235e4b921,,V_X,
@@ -2968,8 +3446,12 @@ CC-77817b527c0316,COMP-e35fb45d23521f,1,case-derived vowel,ATOM-1eaedd0625207a,,
 CC-02786384c7f218,COMP-e35fb45d23521f,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
 CC-26a7e2e642adc0,COMP-e397c540620633,1,case-derived vowel,ATOM-d51556ff9124eb,,V_X,
 CC-840d22dfdaf122,COMP-e397c540620633,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
+CC-7e7e9bd69fa351,COMP-e3bf6c009f596a,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-12936b631cb749,COMP-e3bf6c009f596a,2,case exponent,ATOM-85919d252e3402,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-d786b12e9fd98c,COMP-e419ecfec6a92e,1,type/degree vowel,ATOM-4a4d3aa6f2fff5,,V_X,
 CC-01634a38e41f4c,COMP-e419ecfec6a92e,2,affix root,ATOM-b151da413f0d5f,,C_S,
+CC-7bd841dbdd4eeb,COMP-e46e7d679ca1ba,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-cb76aac359304e,COMP-e46e7d679ca1ba,2,case exponent,ATOM-2e6c70f1df1144,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-a44f6e2646a5c9,COMP-e4c738bce3c784,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-77befe5975ea6f,COMP-e4c738bce3c784,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-331f74c62007fe,COMP-e4e3b4e452aca4,1,case-derived vowel,ATOM-d5276afa504d49,,V_X,
@@ -2986,8 +3468,12 @@ CC-36e3b134b1ffa1,COMP-e53f58c76076e9,1,type/degree vowel,ATOM-2f7ba715ca84b7,,V
 CC-3dcb12cc888a4f,COMP-e53f58c76076e9,2,affix root,ATOM-c68de9c7af40ab,,C_S,
 CC-2f1c4bb8af5473,COMP-e57a2279185953,1,case-derived vowel,ATOM-cb3031c722f864,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-ba357b973c116f,COMP-e57a2279185953,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
+CC-b719e40ea7df48,COMP-e5c86769547452,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-0145f7ce3be976,COMP-e5c86769547452,2,case exponent,ATOM-3a5a276f804975,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-24aa087b9a453d,COMP-e5ddf08fdad1fc,1,type/degree vowel,ATOM-05a2cd432977e8,,V_X,
 CC-31cdc41ba10c0a,COMP-e5ddf08fdad1fc,2,affix root,ATOM-d5c5ee5c962eef,,C_S,
+CC-51628991ef25ad,COMP-e5e49a10559a47,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-944cbcf302f9fb,COMP-e5e49a10559a47,2,case exponent,ATOM-a344bcbc1effb5,,V_C,required realized word-final glottal V_C surface
 CC-865f3b38e8f4d1,COMP-e5fbf354c18ef1,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
 CC-615490532afe49,COMP-e5fbf354c18ef1,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-67c5d4697b5c02,COMP-e60a9613fabcb9,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V_X,default; replaced by listed alternant when immediately preceded by y
@@ -3000,6 +3486,10 @@ CC-d53fec882f1171,COMP-e67c67e9ff70c5,1,case-derived vowel,ATOM-9071236440ebc9,,
 CC-f9d48de638800a,COMP-e67c67e9ff70c5,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-a58a88ded38bf6,COMP-e6844d11e9aa38,1,type/degree vowel,ATOM-4c92c3b00d7b7f,,V_X,
 CC-e22dd72ae6b223,COMP-e6844d11e9aa38,2,affix root,ATOM-d5c5ee5c962eef,,C_S,
+CC-6e70a14d1ae140,COMP-e6b50e270ef8c4,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-edbe443af32a80,COMP-e6b50e270ef8c4,2,case exponent,ATOM-a344bcbc1effb5,,V_C,required realized word-final glottal V_C surface
+CC-dda34dfc7a9275,COMP-e6c5fd22893d47,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-4458fb109cee14,COMP-e6c5fd22893d47,2,case exponent,ATOM-dda9d7cdb47c41,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-4bf33dd8e55a70,COMP-e6d55c493a7d3a,1,type/degree vowel,ATOM-f23bda23f0e5ab,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-301f688934079d,COMP-e6d55c493a7d3a,2,affix root,ATOM-4ed369ab2f4364,,C_S,
 CC-947f1ef83ab094,COMP-e710ca94060e8e,1,type/degree vowel,ATOM-0d6064a1757fc2,,V_X,
@@ -3012,8 +3502,12 @@ CC-f83560fc89e046,COMP-e7485b0bd5ad06,1,case-derived vowel,ATOM-8ceb70ee6cc296,,
 CC-f625eaa3c2f21a,COMP-e7485b0bd5ad06,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-a813d0553930ae,COMP-e773c277716721,1,type/degree vowel,ATOM-bd787a1b68bf48,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-94bbdbd0d6a892,COMP-e773c277716721,2,affix root,ATOM-64d8339c401e9c,,C_S,
+CC-439af8a6d3102e,COMP-e7bca6e0c48bb4,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-44e3dcd317d28a,COMP-e7bca6e0c48bb4,2,case exponent,ATOM-9e4c45edc24fc4,,V_C,required realized word-final glottal V_C surface
 CC-d1ad89d1d54bd6,COMP-e7c201e2ce1573,1,type/degree vowel,ATOM-d0b239448821f3,,V_X,immediately preceded by y
 CC-e0f0e63b73854c,COMP-e7c201e2ce1573,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-f6c031337f9744,COMP-e7c3721da3f480,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-23b65906c8416f,COMP-e7c3721da3f480,2,case exponent,ATOM-756e29618aee4d,,V_C,required realized word-final glottal V_C surface
 CC-5b4fe717396d08,COMP-e7d4ffb86b9668,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
 CC-ba8cf2a8db2aa5,COMP-e7d4ffb86b9668,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-3272050b42a51e,COMP-e8189d8f18a01c,1,type/degree vowel,ATOM-71ee063f3457d2,,V_X,
@@ -3024,6 +3518,8 @@ CC-6ae5a9bf346a7d,COMP-e826ad10660c0c,1,case-derived vowel,ATOM-633e607f2f4298,,
 CC-96d53d0530827a,COMP-e826ad10660c0c,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-a6f93681e2b792,COMP-e859d4abd42aaa,1,type/degree vowel,ATOM-a3b3452c509084,,V_X,
 CC-bcd604b5bccd5b,COMP-e859d4abd42aaa,2,affix root,ATOM-744e729367f6e7,,C_S,
+CC-e2a92a3c12ad42,COMP-e8bb4e1009a7d9,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-b853a4cf7070c5,COMP-e8bb4e1009a7d9,2,case exponent,ATOM-8465f0f9cc2766,,V_C,required realized word-final glottal V_C surface
 CC-24308dd9b1e716,COMP-e961f8e7434bc4,1,case-derived vowel,ATOM-82f6fa11c5a72a,,V_X,
 CC-70f82936787512,COMP-e961f8e7434bc4,2,accessor/stacking root,ATOM-00e59b6388deca,,C_S,
 CC-24f8ee323a8acf,COMP-e966e03e994028,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
@@ -3036,6 +3532,8 @@ CC-7cd0e8f16ac6b2,COMP-ea131f6ed9d9c4,1,type/degree vowel,ATOM-4420148be55cf1,,V
 CC-cfd4431941ad88,COMP-ea131f6ed9d9c4,2,affix root,ATOM-411f23b4d28929,,C_S,
 CC-2902fb3a734ec5,COMP-ea2514589825f0,1,type/degree vowel,ATOM-d8d97780bac009,,V_X,immediately preceded by y
 CC-4933bafed77cfc,COMP-ea2514589825f0,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
+CC-885f9841dd4338,COMP-ea385c75d6731e,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-9121d2d1875fe2,COMP-ea385c75d6731e,2,case exponent,ATOM-769c8c069e367a,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-7c00e0b4b73eb6,COMP-ea47a3d8006b59,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
 CC-d2588c288e9e83,COMP-ea47a3d8006b59,2,affix root,ATOM-c413d0e6c8faa8,,C_S,
 CC-2230b26a307dd3,COMP-ea5f76b1a8148f,1,type/degree vowel,ATOM-dd32174f566f31,,V_X,
@@ -3046,10 +3544,16 @@ CC-565aa065f5c318,COMP-ea73ad8fa608d2,1,case-derived vowel,ATOM-1b39ba176730ee,,
 CC-d6be5d06cc1200,COMP-ea73ad8fa608d2,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-6ffc8a6f1ace48,COMP-ea77b14adbd2f0,1,case-derived vowel,ATOM-bd548ab40150c9,,V_X,immediately preceded by y
 CC-ccd8812bcd0cf1,COMP-ea77b14adbd2f0,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
+CC-cc7e870f876eae,COMP-ea7d1c4969da7c,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-a59c7e11598a3b,COMP-ea7d1c4969da7c,2,case exponent,ATOM-bd973ac1ea40fc,,V_C,required realized word-final glottal V_C surface
 CC-8fe71d401db82f,COMP-ea8f3faec4c05b,1,case-derived vowel,ATOM-4e22ec0ecf61e6,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-6c72c7b874b73d,COMP-ea8f3faec4c05b,2,accessor/stacking root,ATOM-d525a30bb67fbe,,C_S,
+CC-441158fbce7b50,COMP-eab0d0ac59729e,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-f80d5a81bbda50,COMP-eab0d0ac59729e,2,case exponent,ATOM-26ba6440eaaeef,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-5aa0d26397514c,COMP-eab18f52c527da,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V_X,
 CC-003af996252557,COMP-eab18f52c527da,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-bf2d4d13aad4a4,COMP-ead0a085359ca6,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-4052be510d9b71,COMP-ead0a085359ca6,2,case exponent,ATOM-160dc61518abb0,,V_C,required realized word-final glottal V_C surface
 CC-d557d082a2c14f,COMP-ead9fc6048dd27,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-55be387d6964d6,COMP-ead9fc6048dd27,2,affix root,ATOM-ef7cf17b427af9,,C_S,
 CC-85f04cb41ad3f0,COMP-eb0a9efee98fe3,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
@@ -3066,6 +3570,8 @@ CC-355f362e7fdf33,COMP-eca20a8e6f561f,1,type/degree vowel,ATOM-9fb20be6058c27,,V
 CC-cd51e57b68b27c,COMP-eca20a8e6f561f,2,affix root,ATOM-c68de9c7af40ab,,C_S,
 CC-832215a46ab346,COMP-eca66c954ef87a,1,case-derived vowel,ATOM-8dc18084545603,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-668cb9fde81da3,COMP-eca66c954ef87a,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
+CC-d55ed2b2c1c5dc,COMP-eca7761eae1835,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-536fcc7a57416e,COMP-eca7761eae1835,2,case exponent,ATOM-7767230b38dca7,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-fe7e78a6e9efee,COMP-ecc97125791a4e,1,case-derived vowel,ATOM-aacc93d36f8139,,V_X,
 CC-cecd5c9d18aaf8,COMP-ecc97125791a4e,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
 CC-cc3812da65e757,COMP-ed1a0e509061b1,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
@@ -3080,6 +3586,10 @@ CC-3c7b5f537e4f6d,COMP-edb1c0cad7a41d,1,type/degree vowel,ATOM-4420148be55cf1,,V
 CC-12518ef2c25068,COMP-edb1c0cad7a41d,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-b183164a112894,COMP-edb964a42718ce,1,type/degree vowel,ATOM-03048c35ddd092,,V_X,immediately preceded by w
 CC-4664b18154c7f2,COMP-edb964a42718ce,2,affix root,ATOM-bec5efcf77e583,,C_S,
+CC-57ae3da6390434,COMP-edc63825ddf0c0,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-11692863f85eef,COMP-edc63825ddf0c0,2,case exponent,ATOM-3161535332fafc,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
+CC-c890153271d3f8,COMP-ee2773ada0696e,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-5bd760e74bf35a,COMP-ee2773ada0696e,2,case exponent,ATOM-3161535332fafc,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-93ddd2e1649972,COMP-ee27fb454ae61a,1,case-derived vowel,ATOM-da55b4d7cf778b,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-0e9bbb0b1a9a32,COMP-ee27fb454ae61a,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
 CC-21362792df4d24,COMP-ee4a765fe1945e,1,type/degree vowel,ATOM-4420148be55cf1,,V_X,
@@ -3094,6 +3604,8 @@ CC-7a0dd0438a7425,COMP-ef59f8d1467d71,1,type/degree vowel,ATOM-4e563dff257eb3,,V
 CC-e72d35402943e8,COMP-ef59f8d1467d71,2,affix root,ATOM-4ed369ab2f4364,,C_S,
 CC-e7db0fc5493971,COMP-ef64577bcfeb8a,1,case-derived vowel,ATOM-1e5d76a9267b03,,V_X,
 CC-d9887cc9f33335,COMP-ef64577bcfeb8a,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
+CC-cc4df4708b494f,COMP-ef6da5cc672078,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-76df9a06fcc1d0,COMP-ef6da5cc672078,2,case exponent,ATOM-750832226a09f1,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-82949a8d91db50,COMP-ef8f21a9aef0f1,1,case-derived vowel,ATOM-aacc93d36f8139,,V_X,
 CC-1644a1677e9912,COMP-ef8f21a9aef0f1,2,accessor/stacking root,ATOM-4f904342dd5f08,,C_S,
 CC-66be7c0f8146ee,COMP-ef99a6f3aac4c0,1,type/degree vowel,ATOM-242dc9e1d5f85a,,V_X,
@@ -3117,6 +3629,8 @@ CC-5a990c6cc4164d,COMP-f091ef1acedd2f,1,type/degree vowel,ATOM-0d6064a1757fc2,,V
 CC-ccbb1ddd4d243a,COMP-f091ef1acedd2f,2,affix root,ATOM-9fd667ca39702b,,C_S,
 CC-0d64b325f53eba,COMP-f0c8a7877f2267,1,type/degree vowel,ATOM-d5af7c40790521,,V_X,
 CC-2517c4dbfdc54f,COMP-f0c8a7877f2267,2,affix root,ATOM-d5c5ee5c962eef,,C_S,
+CC-ec20bb8e8b812f,COMP-f0d22574e262ef,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-0a7ac0f25da78b,COMP-f0d22574e262ef,2,case exponent,ATOM-d8b78908eea208,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-821b0715893aad,COMP-f0ece16deb46ce,1,type/degree vowel,ATOM-109428d5140ef9,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-3304374fadbad1,COMP-f0ece16deb46ce,2,affix root,ATOM-4ed369ab2f4364,,C_S,
 CC-9bdcd801e42e34,COMP-f1068109c80cad,1,type/degree vowel,ATOM-38f0a9ebd7f568,,V_X,
@@ -3127,6 +3641,8 @@ CC-bd1584307dcfc6,COMP-f1778eda79d0e6,1,case-derived vowel,ATOM-0675af2410eb6c,,
 CC-05ab1122b8fd30,COMP-f1778eda79d0e6,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-658d05dcfb89e4,COMP-f1fc25e955f245,1,type/degree vowel,ATOM-bd787a1b68bf48,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-6157b13fc52342,COMP-f1fc25e955f245,2,affix root,ATOM-ee451b4938a97d,,C_S,
+CC-1d1291d2243ab9,COMP-f20b80ee19e63c,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-62f20a2f9813b5,COMP-f20b80ee19e63c,2,case exponent,ATOM-7505a3e0fc0b94,,V_C,required realized word-final glottal V_C surface
 CC-37db273b5726e0,COMP-f2161bc7cb3783,1,case-derived vowel,ATOM-da55b4d7cf778b,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-ba664d27fabc5c,COMP-f2161bc7cb3783,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-f1e18d733a0846,COMP-f29bbe76420e79,1,case-derived vowel,ATOM-68b853c6fb4930,,V_X,
@@ -3139,6 +3655,8 @@ CC-c437e43e93d1c4,COMP-f385d8a88b4d60,1,case-derived vowel,ATOM-d5276afa504d49,,
 CC-0a1fbc890acb75,COMP-f385d8a88b4d60,2,accessor/stacking root,ATOM-7671e7f56ccfb8,,C_S,
 CC-cc3b5296ae7067,COMP-f3866db28f63b8,1,case-derived vowel,ATOM-2f512a3409bbc9,,V_X,default; replaced by listed alternant when immediately preceded by y
 CC-d28972263761b3,COMP-f3866db28f63b8,2,accessor/stacking root,ATOM-32debe84fae4ad,,C_S,
+CC-76f61886fd378f,COMP-f3d3eccff31feb,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-a919d2303562c8,COMP-f3d3eccff31feb,2,case exponent,ATOM-536725028edca8,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-0a08834cca7a33,COMP-f42207f2e41457,1,case-derived vowel,ATOM-26edb5490d8bc3,,V_X,immediately preceded by w
 CC-ecadc06ff06b64,COMP-f42207f2e41457,2,accessor/stacking root,ATOM-d1643c2b47f98a,,C_S,
 CC-c9eec03e8bf05c,COMP-f4295fe2393b3e,1,type/degree vowel,ATOM-7412b7c21b9a18,,V_X,
@@ -3161,6 +3679,8 @@ CC-db18e12ce14198,COMP-f5965260e14172,1,case-derived vowel,ATOM-abdce83fc25e67,,
 CC-9ff0601cfa616f,COMP-f5965260e14172,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-8294d44974be5f,COMP-f5ac9b028b6caf,1,case-derived vowel,ATOM-2d8b1f5c78309e,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-dbed18539c4724,COMP-f5ac9b028b6caf,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
+CC-05cfc1b8bada4e,COMP-f5cea9eb58e987,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-e190e0f935625a,COMP-f5cea9eb58e987,2,case exponent,ATOM-e9713288818d28,,V_C,required realized word-final glottal V_C surface
 CC-b69800d1141770,COMP-f5fe0857554ac7,1,type/degree vowel,ATOM-3b825a7e6b109b,,V_X,
 CC-84e4e556f169f2,COMP-f5fe0857554ac7,2,affix root,ATOM-68f2d3f4e6eb72,,C_S,
 CC-c85e5df10c31ee,COMP-f60408ac18a60e,1,case-derived vowel,ATOM-9e108d8ffc3f93,,V_X,
@@ -3197,8 +3717,16 @@ CC-d266c0e6056036,COMP-f7bb99225ca6fa,1,type/degree vowel,ATOM-dd0e0257b9f63b,,V
 CC-b820af331a76aa,COMP-f7bb99225ca6fa,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-1e906eb2e654ad,COMP-f7d263bac6bc5b,1,source-declared template,,(ë)C_1((ë)C_1((ë)C_1)),,
 CC-512593bb377dae,COMP-f7d263bac6bc5b,2,source-declared template,,V_C1,,
+CC-05b9254f10b564,COMP-f7d43e726ddbc1,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-b83156e4676d8c,COMP-f7d43e726ddbc1,2,case exponent,ATOM-a743ec4e1e185f,,V_C,required realized word-final glottal V_C surface
 CC-4778b12b884b21,COMP-f7f1c15ed50965,1,type/degree vowel,ATOM-bd787a1b68bf48,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-441f4140de0e3c,COMP-f7f1c15ed50965,2,affix root,ATOM-b151da413f0d5f,,C_S,
+CC-1146240bbf74c0,COMP-f85af832381f21,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-89acc8ee8b0a0b,COMP-f85af832381f21,2,case exponent,ATOM-160dc61518abb0,,V_C,required realized word-final glottal V_C surface
+CC-b7491349210449,COMP-f885b936d9e6d3,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-b8475437a92bbc,COMP-f885b936d9e6d3,2,case exponent,ATOM-c8a07a2b00c063,,V_C,required realized word-final glottal V_C surface
+CC-4d0da847e3b04d,COMP-f8a989b3848456,1,suppletive adjunct marker,ATOM-cb4d17c3412137,,C_P,
+CC-85a1f6038f520e,COMP-f8a989b3848456,2,case exponent,ATOM-bd973ac1ea40fc,,V_C,required realized word-final glottal V_C surface
 CC-994124602d1483,COMP-f8cb9ba146add5,1,case-derived vowel,ATOM-533ed0bd60978b,,V_X,
 CC-9e43793d72c4bc,COMP-f8cb9ba146add5,2,accessor/stacking root,ATOM-ad4528f23abb46,,C_S,
 CC-7383cdc0cf8d98,COMP-f8e8e4de7293d0,1,case-derived vowel,ATOM-042c68bddaeb57,,V_X,
@@ -3219,8 +3747,12 @@ CC-9d1b43fae6f84b,COMP-f9ba954ecbceac,1,type/degree vowel,ATOM-44266409e896ea,,V
 CC-fcf1ad5790e468,COMP-f9ba954ecbceac,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-1997deb11b0ff8,COMP-f9cc35158864a7,1,type/degree vowel,ATOM-7342852fbd0892,,V_X,immediately preceded by w
 CC-09c2bdde1d6658,COMP-f9cc35158864a7,2,affix root,ATOM-94dd4a586a256c,,C_S,
+CC-45da332c4fd0ee,COMP-f9ec9bd9dfb156,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-50e00641cd41fc,COMP-f9ec9bd9dfb156,2,case exponent,ATOM-13b6542b94c60d,,V_C,required realized word-final glottal V_C surface
 CC-51773f4afd4377,COMP-f9f28268a3d3d7,1,type/degree vowel,ATOM-0d6064a1757fc2,,V_X,
 CC-12547bd6c255f8,COMP-f9f28268a3d3d7,2,affix root,ATOM-87a50e64418478,,C_S,
+CC-ef7c0bbb16aefc,COMP-fa41d64296f7a6,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-1fb6f38b3682eb,COMP-fa41d64296f7a6,2,case exponent,ATOM-85919d252e3402,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-05360e0214407e,COMP-fa4b82104dd9c1,1,case-derived vowel,ATOM-5918379d9ecf2b,,V_X,
 CC-fb6cb3c3466b05,COMP-fa4b82104dd9c1,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-244549141613dd,COMP-fa5b3d51e494fc,1,case-derived vowel,ATOM-1980f9d2ab20f6,,V_X,immediately preceded by y
@@ -3233,6 +3765,8 @@ CC-3d0f04eba96afd,COMP-faaab992345d8a,1,type/degree vowel,ATOM-f7ddaaa0e37bd8,,V
 CC-5475bd86c185c4,COMP-faaab992345d8a,2,affix root,ATOM-ee451b4938a97d,,C_S,
 CC-2defed57276078,COMP-faaf1447f557d7,1,case-derived vowel,ATOM-74bfd33ab3f879,,V_X,immediately preceded by y
 CC-b0bc67780e120c,COMP-faaf1447f557d7,2,accessor/stacking root,ATOM-db42cb9d40f4dd,,C_S,
+CC-36fdd94b61b5a1,COMP-facec9f130b005,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-4b01ebb2e47356,COMP-facec9f130b005,2,case exponent,ATOM-f39b4520d23026,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-07c740b132f7b7,COMP-faecf7531ca775,1,type/degree vowel,ATOM-1fb3e3276a0563,,V_X,
 CC-dda4d5b85fb75e,COMP-faecf7531ca775,2,affix root,ATOM-bc6716c08c11a7,,C_S,
 CC-c22ebab13ab21b,COMP-fb05f8b25598ef,1,case-derived vowel,ATOM-e47090551d24e2,,V_X,
@@ -3272,18 +3806,28 @@ CC-4b47460c6ae743,COMP-fc591836db4c98,2,source-declared template,,C_Z,,
 CC-d77730127bbd5d,COMP-fc591836db4c98,3,source-declared template,,V_XC_S...,,
 CC-482c5dc5d1b35d,COMP-fc591836db4c98,4,source-declared template,,V_Z,,
 CC-3ac37f03bb8725,COMP-fc591836db4c98,5,source-declared template,,stress,,
+CC-5ddb035bb7d3b6,COMP-fc61c441b8fc6f,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-ddf6aab363d4a8,COMP-fc61c441b8fc6f,2,case exponent,ATOM-756e29618aee4d,,V_C,required realized word-final glottal V_C surface
 CC-fed0f1f3dfa624,COMP-fc73cda8225df8,1,case-derived vowel,ATOM-74fe4de529a915,,V_X,
 CC-40fb5360b91585,COMP-fc73cda8225df8,2,accessor/stacking root,ATOM-d525a30bb67fbe,,C_S,
+CC-54968133a42cb3,COMP-fc7692e5def259,1,suppletive adjunct marker,ATOM-cc7b5ec43bb7ed,,C_P,
+CC-5e365366700329,COMP-fc7692e5def259,2,case exponent,ATOM-4222e4e57aef18,,V_C,default V_C surface after fixed C_P; y/w-conditioned alternants do not apply
 CC-eb39086840ba7c,COMP-fc7b6497efdaec,1,type/degree vowel,ATOM-4a41c36c38b74c,,V_X,immediately preceded by w
 CC-b8b760021fc67e,COMP-fc7b6497efdaec,2,affix root,ATOM-a3617133ad5a79,,C_S,
+CC-813d719fa43035,COMP-fcb3b9fec5b44b,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-a9837e396a5a60,COMP-fcb3b9fec5b44b,2,case exponent,ATOM-8f3a3f6eff7beb,,V_C,required realized word-final glottal V_C surface
 CC-21d7b600ab7217,COMP-fcd73ed34f0b55,1,type/degree vowel,ATOM-ca9ecf8a63e7a7,,V_X,default; replaced by listed alternant when immediately preceded by w
 CC-42d4ce579b2a52,COMP-fcd73ed34f0b55,2,affix root,ATOM-87a50e64418478,,C_S,
 CC-1d0a3a652729e1,COMP-fcfe361e745aa9,1,case-derived vowel,ATOM-1e5d76a9267b03,,V_X,
 CC-a936e0a2007d24,COMP-fcfe361e745aa9,2,accessor/stacking root,ATOM-4bcd1f60bb592b,,C_S,
 CC-7a99b9139352a0,COMP-fd03cb75326656,1,case-derived vowel,ATOM-0b39d8422d1349,,V_X,
 CC-7188469a0bf433,COMP-fd03cb75326656,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
+CC-22be381d503cf7,COMP-fd2762141ec89c,1,suppletive adjunct marker,ATOM-70b8917314caba,,C_P,
+CC-932515ac8e8b88,COMP-fd2762141ec89c,2,case exponent,ATOM-49b7abf6b72d13,,V_C,required realized word-final glottal V_C surface
 CC-6fa32a3f278edd,COMP-fd584aac9d66d1,1,case-derived vowel,ATOM-49d4912547f536,,V_X,immediately preceded by y
 CC-e45077a23e004b,COMP-fd584aac9d66d1,2,accessor/stacking root,ATOM-5a07afda0672f1,,C_S,
+CC-1177f893756d48,COMP-fd6521d0a89cb8,1,suppletive adjunct marker,ATOM-726489fd45207a,,C_P,
+CC-3d147585fcbb34,COMP-fd6521d0a89cb8,2,case exponent,ATOM-a344bcbc1effb5,,V_C,required realized word-final glottal V_C surface
 CC-c0d4df72708536,COMP-fd720aca570782,1,case-derived vowel,ATOM-74fe4de529a915,,V_X,
 CC-18806f2be5be3b,COMP-fd720aca570782,2,accessor/stacking root,ATOM-ec97d6adec13c1,,C_S,
 CC-86eb0c0391a40d,COMP-fddccf2615d198,1,type/degree vowel,ATOM-f3a7efe66f7f85,,V_X,default; replaced by listed alternant when immediately preceded by w

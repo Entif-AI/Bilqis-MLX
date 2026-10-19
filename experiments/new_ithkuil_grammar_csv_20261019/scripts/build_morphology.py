@@ -63,12 +63,17 @@ def strip_bound_form(value: str) -> str:
     value = clean(value)
     value = re.sub(r"^[-–—]\s*", "", value)
     value = re.sub(r"\s*[-–—]$", "", value)
-    return clean(value)
+    # Morpheme cells sometimes acquire spaces from adjacent HTML runs
+    # (e.g. `ö ë`).  Those are markup artifacts, not grammatical spaces.
+    return re.sub(r"\s+", "", clean(value))
 
 
 def surface_variants(value: str) -> list[tuple[str, str, str]]:
     """Return (surface, realization_type, condition) for an explicit form cell."""
     value = clean(value)
+    # Asterisks in these paradigms are source footnote markers, never surface
+    # characters.  Strip them before interpreting nulls or alternants.
+    value = clean(re.sub(r"\s*\*+\s*", " ", value))
     if not value or value in {"—", "-", "Ø", "∅"}:
         return [("∅", "zero", "default or unmarked value")]
     value = value.strip()
@@ -115,6 +120,7 @@ class Builder:
         self.assertions: dict[str, dict[str, str]] = {}
         self.affix_degrees: dict[str, dict[str, str]] = {}
         self.root_senses: dict[str, dict[str, str]] = {}
+        self.allomorph_rules: dict[str, dict[str, str]] = {}
         self.categories: dict[str, dict[str, str]] = {}
         self.affix_roots: dict[str, dict[str, str]] = {}
         self.vx_by_degree_type: dict[tuple[int, int], list[str]] = defaultdict(list)
@@ -398,6 +404,30 @@ class Builder:
             },
         )
 
+    def add_allomorph_rule(
+        self,
+        *,
+        domain: str,
+        input_pattern: str,
+        output_pattern: str,
+        locator: dict[str, str],
+        intermediate_pattern: str = "",
+        condition_summary: str = "",
+    ) -> None:
+        rule_id = stable_id("ALLO", domain, input_pattern, intermediate_pattern, output_pattern, condition_summary)
+        self.allomorph_rules.setdefault(
+            rule_id,
+            {
+                "allomorph_rule_id": rule_id,
+                "domain": domain,
+                "input_pattern": input_pattern,
+                "intermediate_pattern": intermediate_pattern,
+                "output_pattern": output_pattern,
+                "condition_summary": condition_summary,
+                **locator,
+            },
+        )
+
     def write(self) -> None:
         write_csv(DATA / "morphemes_atomic.csv", sorted(self.atomic.values(), key=lambda row: row["atomic_id"]))
         write_csv(DATA / "morpheme_compositions.csv", sorted(self.compositions.values(), key=lambda row: row["composition_id"]))
@@ -406,6 +436,7 @@ class Builder:
         write_csv(DATA / "grammatical_categories.csv", sorted(self.categories.values(), key=lambda row: row["category_id"]))
         write_csv(DATA / "affix_degrees.csv", sorted(self.affix_degrees.values(), key=lambda row: row["degree_id"]))
         write_csv(DATA / "root_senses.csv", sorted(self.root_senses.values(), key=lambda row: row["sense_id"]))
+        write_csv(DATA / "allomorph_rules.csv", sorted(self.allomorph_rules.values(), key=lambda row: row["allomorph_rule_id"]))
 
 
 def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
@@ -431,11 +462,14 @@ def add_variants(
     value_name: str = "",
     semantic_summary: str = "",
     allomorph_group: str = "",
+    alternate_condition: str = "",
     derivation: str = "source_table",
 ) -> list[str]:
     group = allomorph_group or stable_id("AG", family, category_code, value_code or value_name)
     ids: list[str] = []
     for surface, realization, condition in surface_variants(form):
+        if realization == "conditioned_allomorph" and alternate_condition:
+            condition = alternate_condition
         ids.append(
             b.add_atomic(
                 surface=surface,
@@ -564,9 +598,9 @@ def extract_ch3_ca(b: Builder) -> None:
         ("G.NRM", "agglomerative + normal", [("r", "overt", "")]),
         ("G.RPV", "agglomerative + representative", [("ř", "overt", "")]),
         ("N.NRM", "nomic + normal", [("w", "overt", "inside C_A complex"), ("v", "standalone_allomorph", "sole exponent in C_A complex")]),
-        ("N.RPV", "nomic + representative", [("m", "overt", "source primary form"), ("h", "conditioned_allomorph", "source-listed alternate; see C_A allomorph rules")]),
+        ("N.RPV", "nomic + representative", [("m", "overt", "default; use h when immediately preceded by consonant+t, consonant+p, or consonant+k"), ("h", "conditioned_allomorph", "immediately preceded by consonant+t, consonant+p, or consonant+k")]),
         ("A.NRM", "abstract + normal", [("y", "overt", "inside C_A complex"), ("j", "standalone_allomorph", "sole exponent in C_A complex")]),
-        ("A.RPV", "abstract + representative", [("n", "overt", "source primary form"), ("ç", "conditioned_allomorph", "source-listed alternate; see C_A allomorph rules")]),
+        ("A.RPV", "abstract + representative", [("n", "overt", "default; use ç when immediately preceded by consonant+t, consonant+p, or consonant+k"), ("ç", "conditioned_allomorph", "immediately preceded by consonant+t, consonant+p, or consonant+k")]),
     ]
     for code, name, variants in perspective_essence:
         group = stable_id("AG", "perspective_essence", code)
@@ -607,9 +641,103 @@ def extract_ch3_ca(b: Builder) -> None:
         ],
     )
 
+    substitutions = [
+        ("pp", "", "mp"),
+        ("pb", "", "mb"),
+        ("rr", "", "ns"),
+        ("[C]gm", "", "[C]x"),
+        ("[C]bm", "", "[C]v"),
+        ("tt", "", "nt"),
+        ("kg", "", "ng"),
+        ("rř", "", "nš"),
+        ("[C]gn", "", "[C]ň"),
+        ("[C]bn", "", "[C]ḑ"),
+        ("kk", "", "nk"),
+        ("çy", "", "nd"),
+        ("řr", "", "ňs"),
+        ("ngn", "", "ňn"),
+        ("fbm", "fv", "vw"),
+        ("ll", "", "pļ"),
+        ("řř", "", "ňš"),
+        ("[C]çx", "", "[C]xw"),
+        ("ţbn", "tḑ", "ḑy"),
+    ]
+    for input_pattern, intermediate, output_pattern in substitutions:
+        b.add_allomorph_rule(
+            domain="C_A affix-complex",
+            input_pattern=input_pattern,
+            intermediate_pattern=intermediate,
+            output_pattern=output_pattern,
+            condition_summary="Apply when concatenated C_A exponents produce the listed input cluster.",
+            locator=ca_locator,
+        )
+
+
+def extract_slot_iv_vr(b: Builder) -> None:
+    """Extract the complete Function × Specification × Context Slot-IV matrix."""
+    rows = b.table_rows("NI-WEB-CH03", 40)
+    locator = b.locator_for_table("NI-WEB-CH03", 40)
+    contexts = [value.replace("*", "").strip() for value in rows[1]]
+    function = ""
+    value_count = 0
+    for row in rows[2:]:
+        if not row:
+            continue
+        if row[0] in {"STA", "DYN"}:
+            function = row[0]
+            specification = row[1]
+            forms = row[2:6]
+        else:
+            specification = row[0]
+            forms = row[1:5]
+        if not function or len(forms) != 4:
+            continue
+        for context, form in zip(contexts, forms):
+            add_variants(
+                b,
+                form=form,
+                family="function_specification_context",
+                morpheme_class="VR_vocalic_exponent",
+                slot="IV / V_R",
+                locator=locator,
+                category_code="FUNCTION_SPECIFICATION_CONTEXT",
+                category_name="Function × Specification × Context",
+                value_code=f"{function}.{specification}.{context}",
+                value_name=f"{function} {specification} {context}",
+                semantic_summary=f"Slot-IV V_R exponent for {function} function, {specification} specification, {context} context",
+            )
+            value_count += 1
+    if value_count != 32:
+        raise RuntimeError(f"expected 32 Slot-IV V_R values, found {value_count}")
+
 
 def extract_cases(b: Builder) -> list[dict[str, object]]:
     case_rows: list[dict[str, object]] = []
+    ch4_case_loci: dict[str, dict[str, str]] = {}
+    for table_index, table in enumerate(b.tree("NI-WEB-CH04").xpath("//table"), start=1):
+        rows = table_matrix(table)
+        if len(rows) != 1 or len(rows[0]) < 3 or not re.fullmatch(r"[A-Z]{3}", rows[0][1]):
+            continue
+        code = rows[0][1]
+        current = table.getnext()
+        declaration_line = int(table.sourceline or 0)
+        while current is not None and current.tag != "table":
+            if current.tag == "p":
+                text = clean(" ".join(current.itertext()))
+                if "case is marked by" in text.lower():
+                    declaration_line = int(current.sourceline or declaration_line)
+                    break
+            current = current.getnext()
+        section = b.section_for_line("NI-WEB-CH04", declaration_line)
+        ch4_case_loci[code] = {
+            "source_id": "NI-WEB-CH04",
+            "section_id": section["section_id"] if section else "",
+            "table_id": f"NI-WEB-CH04:T{table_index:03d}",
+            "source_line": str(declaration_line),
+            "source_url": b.source_by_id["NI-WEB-CH04"]["final_url"],
+            "source_anchor": section["source_anchor"] if section else "",
+        }
+
     case_tables = range(11, 19)
     case_index = 0
     for table_index in case_tables:
@@ -644,18 +772,9 @@ def extract_cases(b: Builder) -> list[dict[str, object]]:
 
             # Chapter 4 is the source of the actual V_C case exponent.  Cases
             # 1-36 use the same base sequence, while 37-68 add the glottal marker.
-            ch4_section = next(
-                (section for section in b.sections["NI-WEB-CH04"] if section["section_title"].lower().startswith(name.lower())),
-                None,
-            )
-            ch4_loc = {
-                "source_id": "NI-WEB-CH04",
-                "section_id": ch4_section["section_id"] if ch4_section else "",
-                "table_id": "",
-                "source_line": ch4_section["source_line"] if ch4_section else "",
-                "source_url": b.source_by_id["NI-WEB-CH04"]["final_url"],
-                "source_anchor": ch4_section["source_anchor"] if ch4_section else "",
-            }
+            ch4_loc = ch4_case_loci.get(code)
+            if not ch4_loc:
+                raise RuntimeError(f"missing Chapter 4 source locus for case {code}")
             source_variants = surface_variants(vx_form)
             if case_index >= 37:
                 source_variants = [source_variants[0]]
@@ -730,6 +849,7 @@ def extract_cases(b: Builder) -> list[dict[str, object]]:
                     "name": name,
                     "vx_form": vx_form,
                     "vx_ids": vx_ids,
+                    "vc_ids": case_atomic_ids,
                     "locator": locator,
                 }
             )
@@ -772,13 +892,13 @@ def extract_ch5(b: Builder) -> None:
     locator = b.locator_for_table("NI-WEB-CH05", 3)
     rows = b.table_rows("NI-WEB-CH05", 3)
     for row in rows[2:]:
-        if len(row) < 9:
+        if len(row) < 12:
             continue
         groups = [
             ("valence", "Valence", "VIII / V_N", row[1], row[1], row[2]),
-            ("phase", "Phase", "VIII / V_N", row[3], row[3], row[4]),
-            ("effect", "Effect", "VIII / V_N", row[5], row[5], row[6]),
-            ("level", "Level", "VIII / V_N", row[7], row[7], row[8]),
+            ("phase", "Phase", "VIII / V_N", row[4], row[4], row[5]),
+            ("effect", "Effect", "VIII / V_N", row[7], row[7], row[8]),
+            ("level", "Level", "VIII / V_N", row[10], row[10], row[11]),
         ]
         for family, category_name, slot, code, name, form in groups:
             add_variants(
@@ -939,6 +1059,8 @@ def extract_ch6(b: Builder) -> None:
             )
         elif len(row) >= 3:
             code, name, form = row[0], row[1], row[-1]
+            if not code or not name or not form:
+                continue
             b.add_atomic(
                 surface=strip_bound_form(form),
                 family="illocution",
@@ -1182,6 +1304,123 @@ def generate_case_affix_compositions(b: Builder, cases: list[dict[str, object]])
                 b.add_assertion("morpheme_composition", comp_id, "case_affix_cs_join", locator)
 
 
+def extract_register_and_suppletive_adjuncts(b: Builder, cases: list[dict[str, object]]) -> None:
+    register_locator = b.locator_for_table("NI-WEB-CH08", 5)
+    rows = b.table_rows("NI-WEB-CH08", 5)
+    register_count = 0
+    for row in rows[1:]:
+        if len(row) < 4 or not re.fullmatch(r"[A-Z]{3}", row[0]):
+            continue
+        code, name, initial, final = row[:4]
+        name = re.sub(r"\s+[12]$", "", clean(name))
+        for position, form in (("initial", initial), ("final", final)):
+            if code == "END" and position == "initial" and form in {"—", "-", ""}:
+                continue
+            if form in {"—", "-", ""}:
+                surface = "∅"
+                realization = "zero"
+                condition = "unmarked/default register boundary"
+            else:
+                parenthetical = re.fullmatch(r"\(([^)]+)\)", clean(form))
+                surface = strip_bound_form(parenthetical.group(1) if parenthetical else form)
+                realization = "overt_optional" if position == "final" else "overt"
+                condition = (
+                    "final register adjunct; may be omitted when the last word of the register clause is pronounced with low pitch where the source permits"
+                    if position == "final"
+                    else "placed at the start of the registered word or phrase"
+                )
+            if code == "SPF" and position == "initial":
+                condition += "; preceding referent is a proper name, otherwise use PNT register"
+            if code == "END" and position == "final":
+                condition += "; use as the carrier-end marker where a register contains a proper name or foreign word/phrase"
+            b.add_atomic(
+                surface=surface,
+                family=f"register_adjunct_{position}",
+                morpheme_class="fixed_register_adjunct",
+                slot=f"register {position}",
+                category_code="REGISTER",
+                category_name="Register",
+                value_code=code,
+                value_name=name,
+                semantic_summary=f"{name} register {position} adjunct",
+                realization_type=realization,
+                allomorph_condition=condition,
+                locator=register_locator,
+            )
+            register_count += 1
+    if register_count != 13:
+        raise RuntimeError(f"expected 13 initial/final register records, found {register_count}")
+
+    suppletive_specs = [
+        (6, "CAR", "Carrier Adjunct", "hl"),
+        (7, "QUO", "Quotative Adjunct", "hm"),
+        (8, "NAM", "Naming Adjunct", "hn"),
+        (9, "PHR", "Phrasal Adjunct", "hň"),
+    ]
+    cp_atoms: dict[str, str] = {}
+    for table_index, code, name, expected_form in suppletive_specs:
+        locator = b.locator_for_table("NI-WEB-CH08", table_index)
+        rows = b.table_rows("NI-WEB-CH08", table_index)
+        form = strip_bound_form(rows[1][0]) if len(rows) > 1 and rows[1] else ""
+        if form != expected_form:
+            raise RuntimeError(f"unexpected {code} C_P form {form!r}, expected {expected_form!r}")
+        cp_atoms[code] = b.add_atomic(
+            surface=form,
+            family="suppletive_adjunct_cp",
+            morpheme_class="CP_consonantal_exponent",
+            slot="suppletive adjunct C_P",
+            category_code="SUPPLETIVE_ADJUNCT",
+            category_name="Suppletive adjunct",
+            value_code=code,
+            value_name=name,
+            semantic_summary=f"{name} fixed C_P exponent",
+            locator=locator,
+        )
+
+        for case in cases:
+            case_number = int(case["index"])
+            case_surfaces = [b.atomic[vc_id] for vc_id in case["vc_ids"]]  # type: ignore[index]
+            if case_number <= 36:
+                applicable = [
+                    vc
+                    for vc in case_surfaces
+                    if vc["realization_type"] not in {"conditioned_allomorph", "underlying_glottal"}
+                ]
+                join_condition = "default V_C surface after fixed C_P; y/w-conditioned alternants do not apply"
+            else:
+                applicable = [vc for vc in case_surfaces if vc["realization_type"] == "realized_allomorph"]
+                join_condition = "required realized word-final glottal V_C surface"
+            if len(applicable) != 1:
+                raise RuntimeError(
+                    f"expected one applicable V_C surface for {code}.{case['code']}, found "
+                    f"{[(vc['surface_form_raw'], vc['realization_type']) for vc in applicable]}"
+                )
+            vc = applicable[0]
+            vc_id = vc["atomic_id"]
+            surface = f"{form}{vc['surface_form_raw']}"
+            comp_id = b.add_composition(
+                composition_type="suppletive_adjunct",
+                construction_name=name,
+                surface=surface,
+                surface_pattern="C_P + V_C",
+                slot="suppletive adjunct",
+                category_code="SUPPLETIVE_ADJUNCT",
+                category_name="Suppletive adjunct",
+                value_code=f"{code}.{case['code']}",
+                value_name=f"{name} with {case['name']} case",
+                semantic_summary=f"{name} carrying the formative Slot-IX V_C value for {case['name']} case",
+                condition=join_condition,
+                derivation="source_join",
+                locator=locator,
+                components=[
+                    {"role": "suppletive adjunct marker", "atomic_id": cp_atoms[code], "slot": "C_P"},
+                    {"role": "case exponent", "atomic_id": vc_id, "slot": "V_C", "condition": join_condition},
+                ],
+                assertion_kind="suppletive_cp_vc_join",
+            )
+            b.add_assertion("morpheme_composition", comp_id, "case_vc_component", root_source_locator(vc))
+
+
 def extract_bias_adjuncts(b: Builder) -> None:
     rows = b.table_rows("NI-WEB-CH08", 10)
     locator = b.locator_for_table("NI-WEB-CH08", 10)
@@ -1232,10 +1471,112 @@ def extract_referentials(b: Builder) -> None:
                 value_code=f"{code}.{effect.upper()}",
                 value_name=f"{name}, {effect} effect",
                 semantic_summary=f"Referent {name} with {effect} effect",
+                alternate_condition=(
+                    "Referential Affixes only; used to avoid ambiguity with geminated C_A forms"
+                    if "*" in form
+                    else ""
+                ),
             )
             count += 1
     if count != 33:
         raise RuntimeError(f"expected 33 referential category/effect cells, found {count}")
+
+
+def root_header_info(header: str) -> tuple[str, str]:
+    match = re.search(r"-\s*([^-]+?)\s*-", clean(header))
+    if not match:
+        raise RuntimeError(f"cannot parse root header: {header!r}")
+    root = re.sub(r"\s+", "", match.group(1)).upper()
+    name = clean(header[match.end() :]).strip().strip("‘’\"'")
+    return root, short_meaning(name or f"root {root}", 160)
+
+
+def table_root_atomic(b: Builder, source_id: str, table_index: int) -> tuple[str, str, dict[str, str]]:
+    rows = b.table_rows(source_id, table_index)
+    root, name = root_header_info(rows[0][0])
+    locator = b.locator_for_table(source_id, table_index)
+    normalized = normalize_form(root)
+    existing = next(
+        (
+            atomic_id
+            for atomic_id, row in b.atomic.items()
+            if row["morpheme_class"] == "lexical_consonantal_root" and row["surface_form_normalized"] == normalized
+        ),
+        None,
+    )
+    if existing:
+        b.add_assertion("atomic_morpheme", existing, "root_paradigm", locator)
+        return existing, root, locator
+    atomic_id = b.add_atomic(
+        surface=root,
+        family="lexical_root",
+        morpheme_class="lexical_consonantal_root",
+        slot="III / C_R",
+        category_code="LEXICAL_ROOT",
+        category_name="Lexical root",
+        value_code=f"ROOT.{root}",
+        value_name=name,
+        semantic_summary=name,
+        locator=locator,
+        assertion_kind="root_paradigm",
+    )
+    return atomic_id, root, locator
+
+
+def extract_regular_root_paradigm(b: Builder, source_id: str, table_index: int) -> None:
+    """Parse tables with explicit Stem 1/2/3 columns and BSC/CTE/CSV/OBJ rows."""
+    rows = b.table_rows(source_id, table_index)
+    atomic_id, _root, locator = table_root_atomic(b, source_id, table_index)
+    if len(rows) < 3 or len(rows[1]) < 4:
+        raise RuntimeError(f"root paradigm {source_id}:T{table_index:03d} lacks three stem columns")
+    stems = [clean(value) for value in rows[1][1:4]]
+    added = 0
+    for row in rows[2:]:
+        if len(row) < 4 or row[0] not in {"BSC", "CTE", "CSV", "OBJ"}:
+            continue
+        for stem, summary in zip(stems, row[1:4]):
+            if summary:
+                b.add_root_sense(atomic_id, stem, row[0], summary, locator)
+                added += 1
+    if added != 12:
+        raise RuntimeError(f"expected 12 root senses at {source_id}:T{table_index:03d}, found {added}")
+
+
+def extract_compact_root_paradigm(b: Builder, source_id: str, table_index: int) -> None:
+    """Parse compact root tables whose Stem 2/3 definitions share a cell."""
+    rows = b.table_rows(source_id, table_index)
+    atomic_id, _root, locator = table_root_atomic(b, source_id, table_index)
+    combined = " ".join(cell for row in rows[:2] for cell in row)
+    stem2 = re.search(r"Stem\s*2\s*:\s*(.*?)(?=\s+Stem\s*3\s*:|$)", combined, flags=re.I)
+    stem3 = re.search(r"Stem\s*3\s*:\s*(.*)$", combined, flags=re.I)
+    if stem2:
+        b.add_root_sense(atomic_id, "Stem 2", "BSC", stem2.group(1), locator)
+    if stem3:
+        b.add_root_sense(atomic_id, "Stem 3", "BSC", stem3.group(1), locator)
+
+    stem1_specs = 0
+    for row in rows[1:]:
+        if len(row) < 2 or row[0] not in {"BSC", "CTE", "CSV", "OBJ"}:
+            continue
+        summary = re.sub(r"^Stem\s*1\s*:\s*", "", row[1], flags=re.I)
+        if summary:
+            b.add_root_sense(atomic_id, "Stem 1", row[0], summary, locator)
+            stem1_specs += 1
+    if stem1_specs != 4 or not stem2 or not stem3:
+        raise RuntimeError(
+            f"compact root paradigm {source_id}:T{table_index:03d} expected 4 Stem-1 specs plus Stem 2/3; "
+            f"got stem1={stem1_specs} stem2={bool(stem2)} stem3={bool(stem3)}"
+        )
+
+
+def extract_explicit_root_paradigms(b: Builder) -> None:
+    for table_index in (7, 8):
+        extract_regular_root_paradigm(b, "NI-WEB-CH02", table_index)
+    for table_index in (8, 9, 10, 11):
+        extract_compact_root_paradigm(b, "NI-WEB-APP", table_index)
+    extract_regular_root_paradigm(b, "NI-WEB-CH10", 3)
+    for table_index in (11, 12, 13):
+        extract_compact_root_paradigm(b, "NI-WEB-CH10", table_index)
 
 
 def extract_number_roots(b: Builder) -> dict[str, str]:
@@ -1243,6 +1584,7 @@ def extract_number_roots(b: Builder) -> dict[str, str]:
     roots: dict[str, str] = {}
     rows = b.table_rows("NI-WEB-CH13", 2)
     for number, form in zip(rows[0], rows[1]):
+        number = normalize_number_label(number)
         root = strip_bound_form(form).upper()
         atomic_id = b.add_atomic(
             surface=root,
@@ -1260,6 +1602,7 @@ def extract_number_roots(b: Builder) -> dict[str, str]:
     locator3 = b.locator_for_table("NI-WEB-CH13", 3)
     rows = b.table_rows("NI-WEB-CH13", 3)
     for number, form in zip(rows[0], rows[1]):
+        number = normalize_number_label(number)
         root = strip_bound_form(form).upper()
         atomic_id = b.add_atomic(
             surface=root,
@@ -1294,6 +1637,12 @@ def extract_number_roots(b: Builder) -> dict[str, str]:
             for index, summary in enumerate(row[1:4]):
                 b.add_root_sense(atomic_id, stems[index], specification, summary, locator)
     return roots
+
+
+def normalize_number_label(value: str) -> str:
+    value = clean(value)
+    match = re.fullmatch(r"100\s+([248])", value)
+    return f"100^{match.group(1)}" if match else value
 
 
 def extract_ch10_roots(b: Builder) -> None:
@@ -1401,6 +1750,7 @@ def main() -> None:
     b = Builder()
     extract_standard_vowels(b)
     extract_ch3_ca(b)
+    extract_slot_iv_vr(b)
     cases = extract_cases(b)
     extract_case_scope(b)
     extract_ch5(b)
@@ -1409,10 +1759,12 @@ def main() -> None:
     extract_affix_roots_and_degrees(b)
     generate_vxcs_compositions(b)
     generate_case_affix_compositions(b, cases)
+    extract_register_and_suppletive_adjuncts(b, cases)
     extract_bias_adjuncts(b)
     extract_referentials(b)
     extract_number_roots(b)
     extract_ch10_roots(b)
+    extract_explicit_root_paradigms(b)
     add_source_templates(b)
     b.write()
     print(
@@ -1425,6 +1777,7 @@ def main() -> None:
                 f"categories={len(b.categories)}",
                 f"affix_degrees={len(b.affix_degrees)}",
                 f"root_senses={len(b.root_senses)}",
+                f"allomorph_rules={len(b.allomorph_rules)}",
                 f"affix_roots={len(b.affix_roots)}",
             ]
         )
