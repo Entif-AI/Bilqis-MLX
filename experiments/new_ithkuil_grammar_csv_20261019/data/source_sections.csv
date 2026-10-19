@@ -1,0 +1,338 @@
+section_id,source_id,chapter_number,chapter_title,section_number,section_title,source_heading_text,hierarchy_depth,parent_section_id,source_anchor,source_url,source_line
+NI-WEB-CH01:1.0,NI-WEB-CH01,1,Phonology,1.0,PHONOLOGY,PHONOLOGY,1,,,https://www.ithkuil.net/newithkuil_01_phonology.htm,823
+NI-WEB-CH01:1.1,NI-WEB-CH01,1,Phonology,1.1,Phonemic Inventory,Phonemic Inventory,1,NI-WEB-CH01:1.0,,https://www.ithkuil.net/newithkuil_01_phonology.htm,836
+NI-WEB-CH01:1.2,NI-WEB-CH01,1,Phonology,1.2,Pronunciation Notes and Allophonic Distinctions,Pronunciation Notes and Allophonic Distinctions,1,NI-WEB-CH01:1.0,,https://www.ithkuil.net/newithkuil_01_phonology.htm,2179
+NI-WEB-CH01:1.2.1,NI-WEB-CH01,1,Phonology,1.2.1,Vowels: The sounds of the above-listed vowels are given below within brackets using the International Phonetic Alphabet.,Vowels: The sounds of the above-listed vowels are given below within brackets using the International Phonetic Alphabet.,2,NI-WEB-CH01:1.2,,https://www.ithkuil.net/newithkuil_01_phonology.htm,2187
+NI-WEB-CH01:1.2.2,NI-WEB-CH01,1,Phonology,1.2.2,Consonants: The sounds of the consonants in the table above are given below within brackets using the International Phonetic Alphabet.,Consonants: The sounds of the consonants in the table above are given below within brackets using the International Phonetic Alphabet.,2,NI-WEB-CH01:1.2,,https://www.ithkuil.net/newithkuil_01_phonology.htm,2328
+NI-WEB-CH01:1.3,NI-WEB-CH01,1,Phonology,1.3,Orthographic Conventions,Orthographic Conventions,1,NI-WEB-CH01:1.0,,https://www.ithkuil.net/newithkuil_01_phonology.htm,2636
+NI-WEB-CH01:1.3.1,NI-WEB-CH01,1,Phonology,1.3.1,Indicating Syllabic Stress,"Indicating Syllabic Stress: Penultimate stress (i.e., stress on the syllable-before-last) is unmarked; non-penultimate stress is marked by a diacritic on the vowel carrying the stress, as follows: a vowel with no diacritic takes the acute accent (e.g., á, ó, etc.); a vowel with a dieresis changes it to a circumflex accent (e.g., ö → ô ). The grave accent is used over the vowel - i - when it is unstressed as the initial member of a vocalic conjunct following a consonant (e.g., - C ìa -, - C ìo , etc.) — this is to remind the speaker/reader that this - ì - is to be pronounced as a long /i…",2,NI-WEB-CH01:1.3,,https://www.ithkuil.net/newithkuil_01_phonology.htm,2662
+NI-WEB-CH01:1.3.2,NI-WEB-CH01,1,Phonology,1.3.2,Written juncture affixes/adjuncts,"Written juncture affixes/adjuncts: In regard to parsing adjuncts (see Sec. 2.7, No. 5 ) and the ç ( ë )- sentence-juncture affix (see Sec. 11.8 ), these are normally never written in either the romanization scheme or the native New Ithkuil script, given that their occurrence is entirely dependent on the specific way any given individual utters a sentence or group of sentences on any particular occasion. The exception would be in the narrow context of a scripted utterance (e.g., a script for a play or screenplay), in poetry, in a rhetorical recital, or in singing instructions, where expl…",2,NI-WEB-CH01:1.3,,https://www.ithkuil.net/newithkuil_01_phonology.htm,2693
+NI-WEB-CH01:1.4,NI-WEB-CH01,1,Phonology,1.4,Gemination of Consonants,Gemination of Consonants,1,NI-WEB-CH01:1.0,Sec1_4,https://www.ithkuil.net/newithkuil_01_phonology.htm,2716
+NI-WEB-CH01:1.5,NI-WEB-CH01,1,Phonology,1.5,Phonotactics,Phonotactics,1,NI-WEB-CH01:1.0,Sec1_5,https://www.ithkuil.net/newithkuil_01_phonology.htm,2874
+NI-WEB-CH01:1.6,NI-WEB-CH01,1,Phonology,1.6,Tone and Pitch,Tone and Pitch,1,NI-WEB-CH01:1.0,,https://www.ithkuil.net/newithkuil_01_phonology.htm,2921
+NI-WEB-CH02:2.0,NI-WEB-CH02,2,Morpho-Phonology,2.0,MORPHO-PHONOLOGY,MORPHO-PHONOLOGY,1,,,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,2589
+NI-WEB-CH02:2.1,NI-WEB-CH02,2,Morpho-Phonology,2.1,The Standard Vowel-Form Sequence,The Standard Vowel-Form Sequence,1,NI-WEB-CH02:2.0,,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,2664
+NI-WEB-CH02:2.2,NI-WEB-CH02,2,Morpho-Phonology,2.2,Rules for Inserting a Glottal-Stop Into a Vowel-Form,Rules for Inserting a Glottal-Stop Into a Vowel-Form,1,NI-WEB-CH02:2.0,Sec2_2,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,3137
+NI-WEB-CH02:2.3,NI-WEB-CH02,2,Morpho-Phonology,2.3,The Structure of Formatives,The Structure of Formatives,1,NI-WEB-CH02:2.0,,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,3228
+NI-WEB-CH02:2.4,NI-WEB-CH02,2,Morpho-Phonology,2.4,Root and Stem Formation,Root and Stem Formation,1,NI-WEB-CH02:2.0,Sec2_4,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,4284
+NI-WEB-CH02:2.4.1,NI-WEB-CH02,2,Morpho-Phonology,2.4.1,The Root,The Root,2,NI-WEB-CH02:2.4,,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,4752
+NI-WEB-CH02:2.4.2,NI-WEB-CH02,2,Morpho-Phonology,2.4.2,The Notion of the “Formative”,The Notion of the “Formative”,2,NI-WEB-CH02:2.4,Sec2_4_2,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,4824
+NI-WEB-CH02:2.4.3,NI-WEB-CH02,2,Morpho-Phonology,2.4.3,Stems,Stems,2,NI-WEB-CH02:2.4,Sec2_4_3,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,4890
+NI-WEB-CH02:2.4.4,NI-WEB-CH02,2,Morpho-Phonology,2.4.4,Specification,Specification,2,NI-WEB-CH02:2.4,Sec2_4_4,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,4941
+NI-WEB-CH02:2.4.5,NI-WEB-CH02,2,Morpho-Phonology,2.4.5,The Lexicon,The Lexicon,2,NI-WEB-CH02:2.4,,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,5529
+NI-WEB-CH02:2.5,NI-WEB-CH02,2,Morpho-Phonology,2.5,Adjuncts,Adjuncts,1,NI-WEB-CH02:2.0,Sec2_5,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,5545
+NI-WEB-CH02:2.6,NI-WEB-CH02,2,Morpho-Phonology,2.6,Referentials,Referentials,1,NI-WEB-CH02:2.0,,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,5569
+NI-WEB-CH02:2.7,NI-WEB-CH02,2,Morpho-Phonology,2.7,A Self-Segregating Morphology,A Self-Segregating Morphology,1,NI-WEB-CH02:2.0,Sec2_7,https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm,5587
+NI-WEB-CH03:3.0,NI-WEB-CH03,3,Morphology,3.0,BASIC MORPHOLOGY,BASIC MORPHOLOGY,1,,,https://www.ithkuil.net/newithkuil_03_morphology.htm,2591
+NI-WEB-CH03:3.1,NI-WEB-CH03,3,Morphology,3.1,Configuration,Configuration,1,NI-WEB-CH03:3.0,,https://www.ithkuil.net/newithkuil_03_morphology.htm,3063
+NI-WEB-CH03:3.2,NI-WEB-CH03,3,Morphology,3.2,Affiliation,Affiliation,1,NI-WEB-CH03:3.0,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4044
+NI-WEB-CH03:3.2.1,NI-WEB-CH03,3,Morphology,3.2.1,,,2,NI-WEB-CH03:3.2,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4108
+NI-WEB-CH03:3.2.2,NI-WEB-CH03,3,Morphology,3.2.2,,,2,NI-WEB-CH03:3.2,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4191
+NI-WEB-CH03:3.2.3,NI-WEB-CH03,3,Morphology,3.2.3,,,2,NI-WEB-CH03:3.2,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4290
+NI-WEB-CH03:3.2.4,NI-WEB-CH03,3,Morphology,3.2.4,,,2,NI-WEB-CH03:3.2,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4399
+NI-WEB-CH03:3.3,NI-WEB-CH03,3,Morphology,3.3,Perspective,Perspective,1,NI-WEB-CH03:3.0,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4490
+NI-WEB-CH03:3.3.1,NI-WEB-CH03,3,Morphology,3.3.1,,,2,NI-WEB-CH03:3.3,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4523
+NI-WEB-CH03:3.3.2,NI-WEB-CH03,3,Morphology,3.3.2,,,2,NI-WEB-CH03:3.3,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4649
+NI-WEB-CH03:3.3.3,NI-WEB-CH03,3,Morphology,3.3.3,,,2,NI-WEB-CH03:3.3,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4754
+NI-WEB-CH03:3.3.4,NI-WEB-CH03,3,Morphology,3.3.4,,,2,NI-WEB-CH03:3.3,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4873
+NI-WEB-CH03:3.4,NI-WEB-CH03,3,Morphology,3.4,Extension,Extension,1,NI-WEB-CH03:3.0,,https://www.ithkuil.net/newithkuil_03_morphology.htm,4987
+NI-WEB-CH03:3.4.1,NI-WEB-CH03,3,Morphology,3.4.1,,,2,NI-WEB-CH03:3.4,,https://www.ithkuil.net/newithkuil_03_morphology.htm,5018
+NI-WEB-CH03:3.4.2,NI-WEB-CH03,3,Morphology,3.4.2,,,2,NI-WEB-CH03:3.4,,https://www.ithkuil.net/newithkuil_03_morphology.htm,5182
+NI-WEB-CH03:3.4.3,NI-WEB-CH03,3,Morphology,3.4.3,,,2,NI-WEB-CH03:3.4,,https://www.ithkuil.net/newithkuil_03_morphology.htm,5338
+NI-WEB-CH03:3.4.4,NI-WEB-CH03,3,Morphology,3.4.4,,,2,NI-WEB-CH03:3.4,,https://www.ithkuil.net/newithkuil_03_morphology.htm,5488
+NI-WEB-CH03:3.4.5,NI-WEB-CH03,3,Morphology,3.4.5,,,2,NI-WEB-CH03:3.4,,https://www.ithkuil.net/newithkuil_03_morphology.htm,5596
+NI-WEB-CH03:3.4.6,NI-WEB-CH03,3,Morphology,3.4.6,,,2,NI-WEB-CH03:3.4,,https://www.ithkuil.net/newithkuil_03_morphology.htm,5698
+NI-WEB-CH03:3.5,NI-WEB-CH03,3,Morphology,3.5,Essence,Essence,1,NI-WEB-CH03:3.0,,https://www.ithkuil.net/newithkuil_03_morphology.htm,5800
+NI-WEB-CH03:3.5.1,NI-WEB-CH03,3,Morphology,3.5.1,NRM The Normal RPV The Representative,NRM The Normal RPV The Representative,2,NI-WEB-CH03:3.5,,https://www.ithkuil.net/newithkuil_03_morphology.htm,5885
+NI-WEB-CH03:3.6,NI-WEB-CH03,3,Morphology,3.6,The C A Affix-Complex,The C A Affix-Complex,1,NI-WEB-CH03:3.0,Sec3_6,https://www.ithkuil.net/newithkuil_03_morphology.htm,6022
+NI-WEB-CH03:3.6.1,NI-WEB-CH03,3,Morphology,3.6.1,Gemination of C A when C S V X affixes are present in Slot V,Gemination of C A when C S V X affixes are present in Slot V,2,NI-WEB-CH03:3.6,Sec3_6_1,https://www.ithkuil.net/newithkuil_03_morphology.htm,7444
+NI-WEB-CH03:3.7,NI-WEB-CH03,3,Morphology,3.7,Version,Version,1,NI-WEB-CH03:3.0,Sec3_7,https://www.ithkuil.net/newithkuil_03_morphology.htm,7627
+NI-WEB-CH03:3.7.1,NI-WEB-CH03,3,Morphology,3.7.1,PRC The Processual,PRC The Processual,2,NI-WEB-CH03:3.7,,https://www.ithkuil.net/newithkuil_03_morphology.htm,8109
+NI-WEB-CH03:3.7.2,NI-WEB-CH03,3,Morphology,3.7.2,CPT The Completive,CPT The Completive,2,NI-WEB-CH03:3.7,,https://www.ithkuil.net/newithkuil_03_morphology.htm,8139
+NI-WEB-CH03:3.8,NI-WEB-CH03,3,Morphology,3.8,Function,Function,1,NI-WEB-CH03:3.0,Sec3_8,https://www.ithkuil.net/newithkuil_03_morphology.htm,8389
+NI-WEB-CH03:3.8.1,NI-WEB-CH03,3,Morphology,3.8.1,The Stative,The Stative,2,NI-WEB-CH03:3.8,,https://www.ithkuil.net/newithkuil_03_morphology.htm,8873
+NI-WEB-CH03:3.8.2,NI-WEB-CH03,3,Morphology,3.8.2,The Dynamic,The Dynamic,2,NI-WEB-CH03:3.8,,https://www.ithkuil.net/newithkuil_03_morphology.htm,8951
+NI-WEB-CH03:3.9,NI-WEB-CH03,3,Morphology,3.9,Context,Context,1,NI-WEB-CH03:3.0,Sec3_9,https://www.ithkuil.net/newithkuil_03_morphology.htm,9261
+NI-WEB-CH03:3.9.1,NI-WEB-CH03,3,Morphology,3.9.1,EXS The Existential,EXS The Existential,2,NI-WEB-CH03:3.9,,https://www.ithkuil.net/newithkuil_03_morphology.htm,9757
+NI-WEB-CH03:3.9.2,NI-WEB-CH03,3,Morphology,3.9.2,FNC The Functional,FNC The Functional,2,NI-WEB-CH03:3.9,,https://www.ithkuil.net/newithkuil_03_morphology.htm,9822
+NI-WEB-CH03:3.9.3,NI-WEB-CH03,3,Morphology,3.9.3,RPS The Representational,RPS The Representational,2,NI-WEB-CH03:3.9,,https://www.ithkuil.net/newithkuil_03_morphology.htm,9885
+NI-WEB-CH03:3.9.4,NI-WEB-CH03,3,Morphology,3.9.4,AMG The Amalgamative,AMG The Amalgamative,2,NI-WEB-CH03:3.9,,https://www.ithkuil.net/newithkuil_03_morphology.htm,9935
+NI-WEB-CH03:3.10,NI-WEB-CH03,3,Morphology,3.10,Restructuring of Slots I and II as a “Short-Cut” for Slots IV and VI,Restructuring of Slots I and II as a “Short-Cut” for Slots IV and VI,1,NI-WEB-CH03:3.0,Sec3_10,https://www.ithkuil.net/newithkuil_03_morphology.htm,10000
+NI-WEB-CH04:4.0,NI-WEB-CH04,4,Case,4.0,CASE MORPHOLOGY,CASE MORPHOLOGY,1,,,https://www.ithkuil.net/newithkuil_04_case.htm,2868
+NI-WEB-CH04:4.1,NI-WEB-CH04,4,Case,4.1,Semantic Role versus Positional Slot,Semantic Role versus Positional Slot,1,NI-WEB-CH04:4.0,,https://www.ithkuil.net/newithkuil_04_case.htm,3378
+NI-WEB-CH04:4.1.1,NI-WEB-CH04,4,Case,4.1.1,Case as Indicator of Semantic Role,Case as Indicator of Semantic Role,2,NI-WEB-CH04:4.1,,https://www.ithkuil.net/newithkuil_04_case.htm,3453
+NI-WEB-CH04:4.1.2,NI-WEB-CH04,4,Case,4.1.2,Additional Semantic Roles,Additional Semantic Roles,2,NI-WEB-CH04:4.1,,https://www.ithkuil.net/newithkuil_04_case.htm,3560
+NI-WEB-CH04:4.1.3,NI-WEB-CH04,4,Case,4.1.3,Argument Structure,Argument Structure,2,NI-WEB-CH04:4.1,,https://www.ithkuil.net/newithkuil_04_case.htm,3731
+NI-WEB-CH04:4.2,NI-WEB-CH04,4,Case,4.2,The Transrelative Cases,The Transrelative Cases,1,NI-WEB-CH04:4.0,,https://www.ithkuil.net/newithkuil_04_case.htm,4028
+NI-WEB-CH04:4.2.1,NI-WEB-CH04,4,Case,4.2.1,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4073
+NI-WEB-CH04:4.2.2,NI-WEB-CH04,4,Case,4.2.2,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4131
+NI-WEB-CH04:4.2.3,NI-WEB-CH04,4,Case,4.2.3,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4185
+NI-WEB-CH04:4.2.4,NI-WEB-CH04,4,Case,4.2.4,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4246
+NI-WEB-CH04:4.2.5,NI-WEB-CH04,4,Case,4.2.5,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4299
+NI-WEB-CH04:4.2.6,NI-WEB-CH04,4,Case,4.2.6,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4355
+NI-WEB-CH04:4.2.7,NI-WEB-CH04,4,Case,4.2.7,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4409
+NI-WEB-CH04:4.2.8,NI-WEB-CH04,4,Case,4.2.8,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4460
+NI-WEB-CH04:4.2.9,NI-WEB-CH04,4,Case,4.2.9,,,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,4515
+NI-WEB-CH04:4.2.10,NI-WEB-CH04,4,Case,4.2.10,Examples of the Transrelative Cases in Use,Examples of the Transrelative Cases in Use,2,NI-WEB-CH04:4.2,Sec4_2_10,https://www.ithkuil.net/newithkuil_04_case.htm,4566
+NI-WEB-CH04:4.2.11,NI-WEB-CH04,4,Case,4.2.11,Specialized Suffixes Used to Expand the Functionality of the Transrelative Cases,Specialized Suffixes Used to Expand the Functionality of the Transrelative Cases,2,NI-WEB-CH04:4.2,Sec4_2_11,https://www.ithkuil.net/newithkuil_04_case.htm,7309
+NI-WEB-CH04:4.2.12,NI-WEB-CH04,4,Case,4.2.12,Use of the CHC Affix with Transrelative Cases,Use of the CHC Affix with Transrelative Cases,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,9094
+NI-WEB-CH04:4.2.13,NI-WEB-CH04,4,Case,4.2.13,Using the Transrelative Cases to Achieve “Middle Voice” Semantic Effects,Using the Transrelative Cases to Achieve “Middle Voice” Semantic Effects,2,NI-WEB-CH04:4.2,,https://www.ithkuil.net/newithkuil_04_case.htm,10250
+NI-WEB-CH04:4.3,NI-WEB-CH04,4,Case,4.3,The Appositive Cases,The Appositive Cases,1,NI-WEB-CH04:4.0,,https://www.ithkuil.net/newithkuil_04_case.htm,10570
+NI-WEB-CH04:4.3.1,NI-WEB-CH04,4,Case,4.3.1,,,2,NI-WEB-CH04:4.3,,https://www.ithkuil.net/newithkuil_04_case.htm,10686
+NI-WEB-CH04:4.3.2,NI-WEB-CH04,4,Case,4.3.2,,,2,NI-WEB-CH04:4.3,,https://www.ithkuil.net/newithkuil_04_case.htm,10778
+NI-WEB-CH04:4.3.3,NI-WEB-CH04,4,Case,4.3.3,,,2,NI-WEB-CH04:4.3,,https://www.ithkuil.net/newithkuil_04_case.htm,10869
+NI-WEB-CH04:4.3.4,NI-WEB-CH04,4,Case,4.3.4,,,2,NI-WEB-CH04:4.3,,https://www.ithkuil.net/newithkuil_04_case.htm,10980
+NI-WEB-CH04:4.3.5,NI-WEB-CH04,4,Case,4.3.5,,,2,NI-WEB-CH04:4.3,,https://www.ithkuil.net/newithkuil_04_case.htm,11112
+NI-WEB-CH04:4.3.6,NI-WEB-CH04,4,Case,4.3.6,,,2,NI-WEB-CH04:4.3,,https://www.ithkuil.net/newithkuil_04_case.htm,11195
+NI-WEB-CH04:4.3.7,NI-WEB-CH04,4,Case,4.3.7,,,2,NI-WEB-CH04:4.3,,https://www.ithkuil.net/newithkuil_04_case.htm,11274
+NI-WEB-CH04:4.3.8,NI-WEB-CH04,4,Case,4.3.8,,,2,NI-WEB-CH04:4.3,,https://www.ithkuil.net/newithkuil_04_case.htm,11385
+NI-WEB-CH04:4.3.9,NI-WEB-CH04,4,Case,4.3.9,,,2,NI-WEB-CH04:4.3,,https://www.ithkuil.net/newithkuil_04_case.htm,11485
+NI-WEB-CH04:4.4,NI-WEB-CH04,4,Case,4.4,The Associative Cases,The Associative Cases,1,NI-WEB-CH04:4.0,,https://www.ithkuil.net/newithkuil_04_case.htm,11601
+NI-WEB-CH04:4.4.1,NI-WEB-CH04,4,Case,4.4.1,,,2,NI-WEB-CH04:4.4,,https://www.ithkuil.net/newithkuil_04_case.htm,11636
+NI-WEB-CH04:4.4.2,NI-WEB-CH04,4,Case,4.4.2,,,2,NI-WEB-CH04:4.4,,https://www.ithkuil.net/newithkuil_04_case.htm,11719
+NI-WEB-CH04:4.4.3,NI-WEB-CH04,4,Case,4.4.3,,,2,NI-WEB-CH04:4.4,,https://www.ithkuil.net/newithkuil_04_case.htm,11817
+NI-WEB-CH04:4.4.4,NI-WEB-CH04,4,Case,4.4.4,,,2,NI-WEB-CH04:4.4,,https://www.ithkuil.net/newithkuil_04_case.htm,11919
+NI-WEB-CH04:4.4.5,NI-WEB-CH04,4,Case,4.4.5,,,2,NI-WEB-CH04:4.4,,https://www.ithkuil.net/newithkuil_04_case.htm,12001
+NI-WEB-CH04:4.4.6,NI-WEB-CH04,4,Case,4.4.6,,,2,NI-WEB-CH04:4.4,,https://www.ithkuil.net/newithkuil_04_case.htm,12097
+NI-WEB-CH04:4.4.7,NI-WEB-CH04,4,Case,4.4.7,,,2,NI-WEB-CH04:4.4,,https://www.ithkuil.net/newithkuil_04_case.htm,12182
+NI-WEB-CH04:4.4.8,NI-WEB-CH04,4,Case,4.4.8,,,2,NI-WEB-CH04:4.4,,https://www.ithkuil.net/newithkuil_04_case.htm,12269
+NI-WEB-CH04:4.4.9,NI-WEB-CH04,4,Case,4.4.9,,,2,NI-WEB-CH04:4.4,,https://www.ithkuil.net/newithkuil_04_case.htm,12383
+NI-WEB-CH04:4.5,NI-WEB-CH04,4,Case,4.5,Adverbial Cases,Adverbial Cases,1,NI-WEB-CH04:4.0,,https://www.ithkuil.net/newithkuil_04_case.htm,12455
+NI-WEB-CH04:4.5.1,NI-WEB-CH04,4,Case,4.5.1,,,2,NI-WEB-CH04:4.5,,https://www.ithkuil.net/newithkuil_04_case.htm,12479
+NI-WEB-CH04:4.5.2,NI-WEB-CH04,4,Case,4.5.2,,,2,NI-WEB-CH04:4.5,,https://www.ithkuil.net/newithkuil_04_case.htm,12573
+NI-WEB-CH04:4.5.3,NI-WEB-CH04,4,Case,4.5.3,,,2,NI-WEB-CH04:4.5,Sec4_5_3,https://www.ithkuil.net/newithkuil_04_case.htm,12675
+NI-WEB-CH04:4.5.4,NI-WEB-CH04,4,Case,4.5.4,,,2,NI-WEB-CH04:4.5,,https://www.ithkuil.net/newithkuil_04_case.htm,12849
+NI-WEB-CH04:4.5.5,NI-WEB-CH04,4,Case,4.5.5,,,2,NI-WEB-CH04:4.5,Sec4_5_5,https://www.ithkuil.net/newithkuil_04_case.htm,12924
+NI-WEB-CH04:4.5.6,NI-WEB-CH04,4,Case,4.5.6,,,2,NI-WEB-CH04:4.5,,https://www.ithkuil.net/newithkuil_04_case.htm,12996
+NI-WEB-CH04:4.5.7,NI-WEB-CH04,4,Case,4.5.7,,,2,NI-WEB-CH04:4.5,,https://www.ithkuil.net/newithkuil_04_case.htm,13082
+NI-WEB-CH04:4.5.8,NI-WEB-CH04,4,Case,4.5.8,,,2,NI-WEB-CH04:4.5,Sec4_5_8,https://www.ithkuil.net/newithkuil_04_case.htm,13170
+NI-WEB-CH04:4.5.9,NI-WEB-CH04,4,Case,4.5.9,,,2,NI-WEB-CH04:4.5,,https://www.ithkuil.net/newithkuil_04_case.htm,13262
+NI-WEB-CH04:4.6,NI-WEB-CH04,4,Case,4.6,The Relational Cases,The Relational Cases,1,NI-WEB-CH04:4.0,Sec4_6,https://www.ithkuil.net/newithkuil_04_case.htm,13351
+NI-WEB-CH04:4.6.1,NI-WEB-CH04,4,Case,4.6.1,,,2,NI-WEB-CH04:4.6,,https://www.ithkuil.net/newithkuil_04_case.htm,13455
+NI-WEB-CH04:4.6.2,NI-WEB-CH04,4,Case,4.6.2,,,2,NI-WEB-CH04:4.6,,https://www.ithkuil.net/newithkuil_04_case.htm,13581
+NI-WEB-CH04:4.6.3,NI-WEB-CH04,4,Case,4.6.3,,,2,NI-WEB-CH04:4.6,,https://www.ithkuil.net/newithkuil_04_case.htm,13691
+NI-WEB-CH04:4.6.4,NI-WEB-CH04,4,Case,4.6.4,,,2,NI-WEB-CH04:4.6,,https://www.ithkuil.net/newithkuil_04_case.htm,13827
+NI-WEB-CH04:4.6.5,NI-WEB-CH04,4,Case,4.6.5,,,2,NI-WEB-CH04:4.6,,https://www.ithkuil.net/newithkuil_04_case.htm,13950
+NI-WEB-CH04:4.6.6,NI-WEB-CH04,4,Case,4.6.6,,,2,NI-WEB-CH04:4.6,,https://www.ithkuil.net/newithkuil_04_case.htm,14061
+NI-WEB-CH04:4.6.7,NI-WEB-CH04,4,Case,4.6.7,,,2,NI-WEB-CH04:4.6,,https://www.ithkuil.net/newithkuil_04_case.htm,14145
+NI-WEB-CH04:4.6.8,NI-WEB-CH04,4,Case,4.6.8,,,2,NI-WEB-CH04:4.6,,https://www.ithkuil.net/newithkuil_04_case.htm,14250
+NI-WEB-CH04:4.7,NI-WEB-CH04,4,Case,4.7,The Affinitive Cases,The Affinitive Cases,1,NI-WEB-CH04:4.0,,https://www.ithkuil.net/newithkuil_04_case.htm,14326
+NI-WEB-CH04:4.7.1,NI-WEB-CH04,4,Case,4.7.1,,,2,NI-WEB-CH04:4.7,,https://www.ithkuil.net/newithkuil_04_case.htm,14352
+NI-WEB-CH04:4.7.2,NI-WEB-CH04,4,Case,4.7.2,,,2,NI-WEB-CH04:4.7,,https://www.ithkuil.net/newithkuil_04_case.htm,14438
+NI-WEB-CH04:4.7.3,NI-WEB-CH04,4,Case,4.7.3,,,2,NI-WEB-CH04:4.7,,https://www.ithkuil.net/newithkuil_04_case.htm,14543
+NI-WEB-CH04:4.7.4,NI-WEB-CH04,4,Case,4.7.4,,,2,NI-WEB-CH04:4.7,,https://www.ithkuil.net/newithkuil_04_case.htm,14660
+NI-WEB-CH04:4.7.5,NI-WEB-CH04,4,Case,4.7.5,,,2,NI-WEB-CH04:4.7,Sec4_7_5,https://www.ithkuil.net/newithkuil_04_case.htm,14743
+NI-WEB-CH04:4.7.6,NI-WEB-CH04,4,Case,4.7.6,,,2,NI-WEB-CH04:4.7,,https://www.ithkuil.net/newithkuil_04_case.htm,14859
+NI-WEB-CH04:4.7.7,NI-WEB-CH04,4,Case,4.7.7,,,2,NI-WEB-CH04:4.7,Sec4_7_7,https://www.ithkuil.net/newithkuil_04_case.htm,14954
+NI-WEB-CH04:4.7.8,NI-WEB-CH04,4,Case,4.7.8,,,2,NI-WEB-CH04:4.7,,https://www.ithkuil.net/newithkuil_04_case.htm,15970
+NI-WEB-CH04:4.8,NI-WEB-CH04,4,Case,4.8,The Spatio-Temporal Cases — Group I,The Spatio-Temporal Cases — Group I,1,NI-WEB-CH04:4.0,,https://www.ithkuil.net/newithkuil_04_case.htm,16077
+NI-WEB-CH04:4.8.1,NI-WEB-CH04,4,Case,4.8.1,,,2,NI-WEB-CH04:4.8,,https://www.ithkuil.net/newithkuil_04_case.htm,16105
+NI-WEB-CH04:4.8.2,NI-WEB-CH04,4,Case,4.8.2,,,2,NI-WEB-CH04:4.8,,https://www.ithkuil.net/newithkuil_04_case.htm,16177
+NI-WEB-CH04:4.8.3,NI-WEB-CH04,4,Case,4.8.3,,,2,NI-WEB-CH04:4.8,,https://www.ithkuil.net/newithkuil_04_case.htm,16422
+NI-WEB-CH04:4.8.4,NI-WEB-CH04,4,Case,4.8.4,,,2,NI-WEB-CH04:4.8,Sec4_8_4,https://www.ithkuil.net/newithkuil_04_case.htm,16494
+NI-WEB-CH04:4.8.5,NI-WEB-CH04,4,Case,4.8.5,,,2,NI-WEB-CH04:4.8,,https://www.ithkuil.net/newithkuil_04_case.htm,16576
+NI-WEB-CH04:4.8.6,NI-WEB-CH04,4,Case,4.8.6,,,2,NI-WEB-CH04:4.8,,https://www.ithkuil.net/newithkuil_04_case.htm,16660
+NI-WEB-CH04:4.8.7,NI-WEB-CH04,4,Case,4.8.7,,,2,NI-WEB-CH04:4.8,,https://www.ithkuil.net/newithkuil_04_case.htm,16741
+NI-WEB-CH04:4.8.8,NI-WEB-CH04,4,Case,4.8.8,,,2,NI-WEB-CH04:4.8,,https://www.ithkuil.net/newithkuil_04_case.htm,16831
+NI-WEB-CH04:4.9,NI-WEB-CH04,4,Case,4.9,The Spatio-Temporal Cases — Group II,The Spatio-Temporal Cases — Group II,1,NI-WEB-CH04:4.0,,https://www.ithkuil.net/newithkuil_04_case.htm,16912
+NI-WEB-CH04:4.9.1,NI-WEB-CH04,4,Case,4.9.1,,,2,NI-WEB-CH04:4.9,Sec4_9_1,https://www.ithkuil.net/newithkuil_04_case.htm,16939
+NI-WEB-CH04:4.9.2,NI-WEB-CH04,4,Case,4.9.2,,,2,NI-WEB-CH04:4.9,,https://www.ithkuil.net/newithkuil_04_case.htm,17040
+NI-WEB-CH04:4.9.3,NI-WEB-CH04,4,Case,4.9.3,,,2,NI-WEB-CH04:4.9,,https://www.ithkuil.net/newithkuil_04_case.htm,17117
+NI-WEB-CH04:4.9.4,NI-WEB-CH04,4,Case,4.9.4,,,2,NI-WEB-CH04:4.9,,https://www.ithkuil.net/newithkuil_04_case.htm,17224
+NI-WEB-CH04:4.9.5,NI-WEB-CH04,4,Case,4.9.5,,,2,NI-WEB-CH04:4.9,,https://www.ithkuil.net/newithkuil_04_case.htm,17317
+NI-WEB-CH04:4.9.6,NI-WEB-CH04,4,Case,4.9.6,,,2,NI-WEB-CH04:4.9,,https://www.ithkuil.net/newithkuil_04_case.htm,17414
+NI-WEB-CH04:4.9.7,NI-WEB-CH04,4,Case,4.9.7,,,2,NI-WEB-CH04:4.9,,https://www.ithkuil.net/newithkuil_04_case.htm,17513
+NI-WEB-CH04:4.9.8,NI-WEB-CH04,4,Case,4.9.8,,,2,NI-WEB-CH04:4.9,,https://www.ithkuil.net/newithkuil_04_case.htm,17863
+NI-WEB-CH04:4.10,NI-WEB-CH04,4,Case,4.10,Case-Scope,Case-Scope,1,NI-WEB-CH04:4.0,Sec4_10,https://www.ithkuil.net/newithkuil_04_case.htm,17973
+NI-WEB-CH04:4.11,NI-WEB-CH04,4,Case,4.11,Introduction to Case-Accessor Affixes and Case-Stacking Affixes,Introduction to Case-Accessor Affixes and Case-Stacking Affixes,1,NI-WEB-CH04:4.0,Sec4_11,https://www.ithkuil.net/newithkuil_04_case.htm,18364
+NI-WEB-CH04:4.11.1,NI-WEB-CH04,4,Case,4.11.1,Case-Accessors and Inverse Case-Accessors,Case-Accessors and Inverse Case-Accessors,2,NI-WEB-CH04:4.11,,https://www.ithkuil.net/newithkuil_04_case.htm,18381
+NI-WEB-CH04:4.11.2,NI-WEB-CH04,4,Case,4.11.2,Case-Stacking,Case-Stacking,2,NI-WEB-CH04:4.11,,https://www.ithkuil.net/newithkuil_04_case.htm,18803
+NI-WEB-CH05:5.0,NI-WEB-CH05,5,Verbs,5.0,VERBAL MORPHOLOGY,VERBAL MORPHOLOGY,1,,,https://www.ithkuil.net/newithkuil_05_verbs.htm,2865
+NI-WEB-CH05:5.1,NI-WEB-CH05,5,Verbs,5.1,Valence,Valence,1,NI-WEB-CH05:5.0,Sec5_1,https://www.ithkuil.net/newithkuil_05_verbs.htm,6404
+NI-WEB-CH05:5.1.1,NI-WEB-CH05,5,Verbs,5.1.1,,,2,NI-WEB-CH05:5.1,,https://www.ithkuil.net/newithkuil_05_verbs.htm,6723
+NI-WEB-CH05:5.1.2,NI-WEB-CH05,5,Verbs,5.1.2,,,2,NI-WEB-CH05:5.1,Sec5_1_2,https://www.ithkuil.net/newithkuil_05_verbs.htm,6802
+NI-WEB-CH05:5.1.3,NI-WEB-CH05,5,Verbs,5.1.3,,,2,NI-WEB-CH05:5.1,,https://www.ithkuil.net/newithkuil_05_verbs.htm,6877
+NI-WEB-CH05:5.1.4,NI-WEB-CH05,5,Verbs,5.1.4,,,2,NI-WEB-CH05:5.1,,https://www.ithkuil.net/newithkuil_05_verbs.htm,6963
+NI-WEB-CH05:5.1.5,NI-WEB-CH05,5,Verbs,5.1.5,,,2,NI-WEB-CH05:5.1,Sec5_1_5,https://www.ithkuil.net/newithkuil_05_verbs.htm,7486
+NI-WEB-CH05:5.1.6,NI-WEB-CH05,5,Verbs,5.1.6,,,2,NI-WEB-CH05:5.1,,https://www.ithkuil.net/newithkuil_05_verbs.htm,7566
+NI-WEB-CH05:5.1.7,NI-WEB-CH05,5,Verbs,5.1.7,,,2,NI-WEB-CH05:5.1,,https://www.ithkuil.net/newithkuil_05_verbs.htm,7642
+NI-WEB-CH05:5.1.8,NI-WEB-CH05,5,Verbs,5.1.8,,,2,NI-WEB-CH05:5.1,,https://www.ithkuil.net/newithkuil_05_verbs.htm,7715
+NI-WEB-CH05:5.1.9,NI-WEB-CH05,5,Verbs,5.1.9,,,2,NI-WEB-CH05:5.1,,https://www.ithkuil.net/newithkuil_05_verbs.htm,7787
+NI-WEB-CH05:5.2,NI-WEB-CH05,5,Verbs,5.2,Mood,Mood,1,NI-WEB-CH05:5.0,Sec5_2,https://www.ithkuil.net/newithkuil_05_verbs.htm,7854
+NI-WEB-CH05:5.2.1,NI-WEB-CH05,5,Verbs,5.2.1,,,2,NI-WEB-CH05:5.2,,https://www.ithkuil.net/newithkuil_05_verbs.htm,7939
+NI-WEB-CH05:5.2.2,NI-WEB-CH05,5,Verbs,5.2.2,,,2,NI-WEB-CH05:5.2,,https://www.ithkuil.net/newithkuil_05_verbs.htm,8092
+NI-WEB-CH05:5.2.3,NI-WEB-CH05,5,Verbs,5.2.3,,,2,NI-WEB-CH05:5.2,,https://www.ithkuil.net/newithkuil_05_verbs.htm,8246
+NI-WEB-CH05:5.2.4,NI-WEB-CH05,5,Verbs,5.2.4,,,2,NI-WEB-CH05:5.2,,https://www.ithkuil.net/newithkuil_05_verbs.htm,8440
+NI-WEB-CH05:5.2.5,NI-WEB-CH05,5,Verbs,5.2.5,,,2,NI-WEB-CH05:5.2,,https://www.ithkuil.net/newithkuil_05_verbs.htm,8596
+NI-WEB-CH05:5.2.6,NI-WEB-CH05,5,Verbs,5.2.6,,,2,NI-WEB-CH05:5.2,,https://www.ithkuil.net/newithkuil_05_verbs.htm,8750
+NI-WEB-CH05:5.2.7,NI-WEB-CH05,5,Verbs,5.2.7,The Mood + Case-Scoping Affix,The Mood + Case-Scoping Affix,2,NI-WEB-CH05:5.2,,https://www.ithkuil.net/newithkuil_05_verbs.htm,8932
+NI-WEB-CH05:5.3,NI-WEB-CH05,5,Verbs,5.3,Phase,Phase,1,NI-WEB-CH05:5.0,,https://www.ithkuil.net/newithkuil_05_verbs.htm,9195
+NI-WEB-CH05:5.3.1,NI-WEB-CH05,5,Verbs,5.3.1,,,2,NI-WEB-CH05:5.3,,https://www.ithkuil.net/newithkuil_05_verbs.htm,9239
+NI-WEB-CH05:5.3.2,NI-WEB-CH05,5,Verbs,5.3.2,,,2,NI-WEB-CH05:5.3,,https://www.ithkuil.net/newithkuil_05_verbs.htm,9323
+NI-WEB-CH05:5.3.3,NI-WEB-CH05,5,Verbs,5.3.3,,,2,NI-WEB-CH05:5.3,,https://www.ithkuil.net/newithkuil_05_verbs.htm,9409
+NI-WEB-CH05:5.3.4,NI-WEB-CH05,5,Verbs,5.3.4,,,2,NI-WEB-CH05:5.3,,https://www.ithkuil.net/newithkuil_05_verbs.htm,9488
+NI-WEB-CH05:5.3.5,NI-WEB-CH05,5,Verbs,5.3.5,,,2,NI-WEB-CH05:5.3,,https://www.ithkuil.net/newithkuil_05_verbs.htm,9575
+NI-WEB-CH05:5.3.6,NI-WEB-CH05,5,Verbs,5.3.6,,,2,NI-WEB-CH05:5.3,,https://www.ithkuil.net/newithkuil_05_verbs.htm,9665
+NI-WEB-CH05:5.3.7,NI-WEB-CH05,5,Verbs,5.3.7,,,2,NI-WEB-CH05:5.3,,https://www.ithkuil.net/newithkuil_05_verbs.htm,9754
+NI-WEB-CH05:5.3.8,NI-WEB-CH05,5,Verbs,5.3.8,,,2,NI-WEB-CH05:5.3,,https://www.ithkuil.net/newithkuil_05_verbs.htm,9840
+NI-WEB-CH05:5.3.9,NI-WEB-CH05,5,Verbs,5.3.9,,,2,NI-WEB-CH05:5.3,,https://www.ithkuil.net/newithkuil_05_verbs.htm,9936
+NI-WEB-CH05:5.4,NI-WEB-CH05,5,Verbs,5.4,Effect,Effect,1,NI-WEB-CH05:5.0,Sec5_4,https://www.ithkuil.net/newithkuil_05_verbs.htm,10030
+NI-WEB-CH05:5.4.1,NI-WEB-CH05,5,Verbs,5.4.1,1:BEN Beneficial to Speaker,1:BEN Beneficial to Speaker,2,NI-WEB-CH05:5.4,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10072
+NI-WEB-CH05:5.4.2,NI-WEB-CH05,5,Verbs,5.4.2,2:BEN Beneficial to Addressee,2:BEN Beneficial to Addressee,2,NI-WEB-CH05:5.4,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10149
+NI-WEB-CH05:5.4.3,NI-WEB-CH05,5,Verbs,5.4.3,3:BEN Beneficial to Third Party,3:BEN Beneficial to Third Party,2,NI-WEB-CH05:5.4,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10212
+NI-WEB-CH05:5.4.4,NI-WEB-CH05,5,Verbs,5.4.4,SLF:BEN Beneficial to Self,SLF:BEN Beneficial to Self,2,NI-WEB-CH05:5.4,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10272
+NI-WEB-CH05:5.4.5,NI-WEB-CH05,5,Verbs,5.4.5,UNK Unknown Benefit,UNK Unknown Benefit,2,NI-WEB-CH05:5.4,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10330
+NI-WEB-CH05:5.4.6,NI-WEB-CH05,5,Verbs,5.4.6,SLF:DET Detrimental to Self,SLF:DET Detrimental to Self,2,NI-WEB-CH05:5.4,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10391
+NI-WEB-CH05:5.4.7,NI-WEB-CH05,5,Verbs,5.4.7,3:DET Detrimental to Third Party,3:DET Detrimental to Third Party,2,NI-WEB-CH05:5.4,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10446
+NI-WEB-CH05:5.4.8,NI-WEB-CH05,5,Verbs,5.4.8,2:DET Detrimental to Addressee,2:DET Detrimental to Addressee,2,NI-WEB-CH05:5.4,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10504
+NI-WEB-CH05:5.4.9,NI-WEB-CH05,5,Verbs,5.4.9,1:DET Detrimental to Speaker,1:DET Detrimental to Speaker,2,NI-WEB-CH05:5.4,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10568
+NI-WEB-CH05:5.5,NI-WEB-CH05,5,Verbs,5.5,Level,Level,1,NI-WEB-CH05:5.0,Sec5_5,https://www.ithkuil.net/newithkuil_05_verbs.htm,10650
+NI-WEB-CH05:5.5.1,NI-WEB-CH05,5,Verbs,5.5.1,Ambiguity and Under-Specification in Natural Languages,Ambiguity and Under-Specification in Natural Languages,2,NI-WEB-CH05:5.5,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10709
+NI-WEB-CH05:5.5.2,NI-WEB-CH05,5,Verbs,5.5.2,Relative Versus Absolute Comparison,Relative Versus Absolute Comparison,2,NI-WEB-CH05:5.5,,https://www.ithkuil.net/newithkuil_05_verbs.htm,10938
+NI-WEB-CH05:5.5.3,NI-WEB-CH05,5,Verbs,5.5.3,Comparison Operators (Levels),Comparison Operators (Levels),2,NI-WEB-CH05:5.5,,https://www.ithkuil.net/newithkuil_05_verbs.htm,11010
+NI-WEB-CH05:5.5.4,NI-WEB-CH05,5,Verbs,5.5.4,Examples of Level in Use,Examples of Level in Use,2,NI-WEB-CH05:5.5,,https://www.ithkuil.net/newithkuil_05_verbs.htm,12462
+NI-WEB-CH05:5.6,NI-WEB-CH05,5,Verbs,5.6,Aspect,Aspect,1,NI-WEB-CH05:5.0,,https://www.ithkuil.net/newithkuil_05_verbs.htm,12711
+NI-WEB-CH05:5.6.1,NI-WEB-CH05,5,Verbs,5.6.1,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,12806
+NI-WEB-CH05:5.6.2,NI-WEB-CH05,5,Verbs,5.6.2,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,12924
+NI-WEB-CH05:5.6.3,NI-WEB-CH05,5,Verbs,5.6.3,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13045
+NI-WEB-CH05:5.6.4,NI-WEB-CH05,5,Verbs,5.6.4,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13160
+NI-WEB-CH05:5.6.5,NI-WEB-CH05,5,Verbs,5.6.5,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13246
+NI-WEB-CH05:5.6.6,NI-WEB-CH05,5,Verbs,5.6.6,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13363
+NI-WEB-CH05:5.6.7,NI-WEB-CH05,5,Verbs,5.6.7,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13447
+NI-WEB-CH05:5.6.8,NI-WEB-CH05,5,Verbs,5.6.8,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13524
+NI-WEB-CH05:5.6.9,NI-WEB-CH05,5,Verbs,5.6.9,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13600
+NI-WEB-CH05:5.6.10,NI-WEB-CH05,5,Verbs,5.6.10,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13676
+NI-WEB-CH05:5.6.11,NI-WEB-CH05,5,Verbs,5.6.11,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13752
+NI-WEB-CH05:5.6.12,NI-WEB-CH05,5,Verbs,5.6.12,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13826
+NI-WEB-CH05:5.6.13,NI-WEB-CH05,5,Verbs,5.6.13,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,13905
+NI-WEB-CH05:5.6.14,NI-WEB-CH05,5,Verbs,5.6.14,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14000
+NI-WEB-CH05:5.6.15,NI-WEB-CH05,5,Verbs,5.6.15,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14093
+NI-WEB-CH05:5.6.16,NI-WEB-CH05,5,Verbs,5.6.16,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14214
+NI-WEB-CH05:5.6.17,NI-WEB-CH05,5,Verbs,5.6.17,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14293
+NI-WEB-CH05:5.6.18,NI-WEB-CH05,5,Verbs,5.6.18,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14384
+NI-WEB-CH05:5.6.19,NI-WEB-CH05,5,Verbs,5.6.19,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14463
+NI-WEB-CH05:5.6.20,NI-WEB-CH05,5,Verbs,5.6.20,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14548
+NI-WEB-CH05:5.6.21,NI-WEB-CH05,5,Verbs,5.6.21,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14616
+NI-WEB-CH05:5.6.22,NI-WEB-CH05,5,Verbs,5.6.22,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14697
+NI-WEB-CH05:5.6.23,NI-WEB-CH05,5,Verbs,5.6.23,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14767
+NI-WEB-CH05:5.6.24,NI-WEB-CH05,5,Verbs,5.6.24,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14839
+NI-WEB-CH05:5.6.25,NI-WEB-CH05,5,Verbs,5.6.25,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14922
+NI-WEB-CH05:5.6.26,NI-WEB-CH05,5,Verbs,5.6.26,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,14996
+NI-WEB-CH05:5.6.27,NI-WEB-CH05,5,Verbs,5.6.27,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,15069
+NI-WEB-CH05:5.6.28,NI-WEB-CH05,5,Verbs,5.6.28,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,15160
+NI-WEB-CH05:5.6.29,NI-WEB-CH05,5,Verbs,5.6.29,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,15255
+NI-WEB-CH05:5.6.30,NI-WEB-CH05,5,Verbs,5.6.30,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,15345
+NI-WEB-CH05:5.6.31,NI-WEB-CH05,5,Verbs,5.6.31,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,15477
+NI-WEB-CH05:5.6.32,NI-WEB-CH05,5,Verbs,5.6.32,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,15590
+NI-WEB-CH05:5.6.33,NI-WEB-CH05,5,Verbs,5.6.33,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,15662
+NI-WEB-CH05:5.6.34,NI-WEB-CH05,5,Verbs,5.6.34,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,15751
+NI-WEB-CH05:5.6.35,NI-WEB-CH05,5,Verbs,5.6.35,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,15839
+NI-WEB-CH05:5.6.36,NI-WEB-CH05,5,Verbs,5.6.36,,,2,NI-WEB-CH05:5.6,,https://www.ithkuil.net/newithkuil_05_verbs.htm,15931
+NI-WEB-CH05:5.7,NI-WEB-CH05,5,Verbs,5.7,Conveying “Tense”-Like Information,Conveying “Tense”-Like Information,1,NI-WEB-CH05:5.0,Sec5_7,https://www.ithkuil.net/newithkuil_05_verbs.htm,16015
+NI-WEB-CH05:5.7.1,NI-WEB-CH05,5,Verbs,5.7.1,"Combinations of Aspect, Extension, and Perspetive","Combinations of Aspect, Extension, and Perspetive",2,NI-WEB-CH05:5.7,,https://www.ithkuil.net/newithkuil_05_verbs.htm,16175
+NI-WEB-CH05:5.7.2,NI-WEB-CH05,5,Verbs,5.7.2,The TPP and RTI Affixes,The TPP and RTI Affixes,2,NI-WEB-CH05:5.7,,https://www.ithkuil.net/newithkuil_05_verbs.htm,16359
+NI-WEB-CH05:5.8,NI-WEB-CH05,5,Verbs,5.8,Moving the C N –Pattern 1 Mood/Case-Scope affix to the Slot VI C A Slot,Moving the C N –Pattern 1 Mood/Case-Scope affix to the Slot VI C A Slot,1,NI-WEB-CH05:5.0,Sec5_8,https://www.ithkuil.net/newithkuil_05_verbs.htm,17108
+NI-WEB-CH06:6.0,NI-WEB-CH06,6,More Verbs,6.0,ADDITIONAL VERBAL MORPHOLOGY,ADDITIONAL VERBAL MORPHOLOGY,1,,,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,2596
+NI-WEB-CH06:6.1,NI-WEB-CH06,6,More Verbs,6.1,Illocution and Validation,Illocution and Validation,1,NI-WEB-CH06:6.0,,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,2631
+NI-WEB-CH06:6.1.1,NI-WEB-CH06,6,More Verbs,6.1.1,Illocution,"Illocution: Illocution refers to the type of “speech act” being made by a speaker, i.e., the purpose of the statement in terms of how the addressee is to interpret either its truth-value, or its requirements/demands upon the speaker in terms of a physical and/or psychological response. There are nine illocutions. Additionally, the first Illocution, ASSERTIVE, has eight sub-types relating to the evidentiary basis for the assertion (analyzed in Sec. 6.1.2 below under Validation).",2,NI-WEB-CH06:6.1,,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,2637
+NI-WEB-CH06:6.1.2,NI-WEB-CH06,6,More Verbs,6.1.2,Validation,"Validation : Validation refers to the evidential basis for a statement in assertive illocution. Like various Native American and other natural languages, New Ithkuil requires a speaker to grammatically indicate the evidential source for an any assertion. Note that Validation applies only to formatives with assertive illocution; it does not apply to the other eight illocutions, as they are not making a truth claim about the world. There are nine Validations: observational , recollective , purportive , reportive , unspecified , imaginary , conventional , intuitive , and inferential , expl…",2,NI-WEB-CH06:6.1,Sec6_1_2,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,2934
+NI-WEB-CH06:6.1.3,NI-WEB-CH06,6,More Verbs,6.1.3,Slot IX V K Affix Values Denoting Illocution and Validation,Slot IX V K Affix Values Denoting Illocution and Validation,2,NI-WEB-CH06:6.1,,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,3228
+NI-WEB-CH06:6.2,NI-WEB-CH06,6,More Verbs,6.2,Case-Frames,Case-Frames,1,NI-WEB-CH06:6.0,Sec6_2,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,4542
+NI-WEB-CH06:6.2.1,NI-WEB-CH06,6,More Verbs,6.2.1,Relation and the Placement of Frames,Relation and the Placement of Frames,2,NI-WEB-CH06:6.2,Sec6_2_1,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,4747
+NI-WEB-CH06:6.2.2,NI-WEB-CH06,6,More Verbs,6.2.2,Example of Case-Frames in Use,Example of Case-Frames in Use,2,NI-WEB-CH06:6.2,,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,4902
+NI-WEB-CH06:6.3,NI-WEB-CH06,6,More Verbs,6.3,Relative Clause Formation,Relative Clause Formation,1,NI-WEB-CH06:6.0,,https://www.ithkuil.net/newithkuil_06_more_verbs.htm,4991
+NI-WEB-CH07:7.0,NI-WEB-CH07,7,Affixes,7.0,AFFIXES,AFFIXES,1,,,https://www.ithkuil.net/newithkuil_07_affixes.htm,2596
+NI-WEB-CH07:7.0.1,NI-WEB-CH07,7,Affixes,7.0.1,Degree 0,"Degree 0: The last row of values in the table above is termed “Degree Zero”, indicating an unspecified degree and refers to the affix’s general semantic concept as a whole. Note that even though a Degree Zero form technically exists for all affixes, not all affixes will utilize it if the semantics of the particular affix do not make for a coherent interpretation of a Degree Zero value.",2,NI-WEB-CH07:7.0,,https://www.ithkuil.net/newithkuil_07_affixes.htm,3553
+NI-WEB-CH07:7.0.2,NI-WEB-CH07,7,Affixes,7.0.2,C A stacking,"C A stacking : The specialized - V X value, -üö , is used to indicate that the subsequent - C S consonant-form is to be interpreted as a C A complex having scope over (i.e., stacked upon) the Slot VI C A complex of the stem (see Sec. 3.6 for an explanation of the C A complex).",2,NI-WEB-CH07:7.0,,https://www.ithkuil.net/newithkuil_07_affixes.htm,3570
+NI-WEB-CH07:7.1,NI-WEB-CH07,7,Affixes,7.1,V X C S Affix Degree and Gradient-Type,V X C S Affix Degree and Gradient-Type,1,NI-WEB-CH07:7.0,,https://www.ithkuil.net/newithkuil_07_affixes.htm,3597
+NI-WEB-CH07:7.2,NI-WEB-CH07,7,Affixes,7.2,V X C S Affix Type,V X C S Affix Type,1,NI-WEB-CH07:7.0,,https://www.ithkuil.net/newithkuil_07_affixes.htm,5284
+NI-WEB-CH07:7.3,NI-WEB-CH07,7,Affixes,7.3,Glottal Stop Requirements,Glottal Stop Requirements,1,NI-WEB-CH07:7.0,,https://www.ithkuil.net/newithkuil_07_affixes.htm,5492
+NI-WEB-CH07:7.3.1,NI-WEB-CH07,7,Affixes,7.3.1,Using Slot II to Foreshadow the Presence of Multiple Affixes in Slot V,Using Slot II to Foreshadow the Presence of Multiple Affixes in Slot V,2,NI-WEB-CH07:7.3,,https://www.ithkuil.net/newithkuil_07_affixes.htm,5510
+NI-WEB-CH07:7.3.2,NI-WEB-CH07,7,Affixes,7.3.2,Showing the End of Slot V in the Absence of a Slot VI C A form,Showing the End of Slot V in the Absence of a Slot VI C A form,2,NI-WEB-CH07:7.3,,https://www.ithkuil.net/newithkuil_07_affixes.htm,5536
+NI-WEB-CH07:7.4,NI-WEB-CH07,7,Affixes,7.4,Slot V Affixes versus Slot VII Affixes,Slot V Affixes versus Slot VII Affixes,1,NI-WEB-CH07:7.0,,https://www.ithkuil.net/newithkuil_07_affixes.htm,5567
+NI-WEB-CH07:7.5,NI-WEB-CH07,7,Affixes,7.5,List of V X C S Affixes,List of V X C S Affixes,1,NI-WEB-CH07:7.0,,https://www.ithkuil.net/newithkuil_07_affixes.htm,5663
+NI-WEB-CH07:7.6,NI-WEB-CH07,7,Affixes,7.6,"Case-Accessor , Inverse Case-Accessor, and Case-Stacking Affixes","Case-Accessor , Inverse Case-Accessor, and Case-Stacking Affixes",1,NI-WEB-CH07:7.0,Sec7_6,https://www.ithkuil.net/newithkuil_07_affixes.htm,5686
+NI-WEB-CH07:7.6.1,NI-WEB-CH07,7,Affixes,7.6.1,"The Phonological Structure of Case-Accessor, Inverse Case-Accessor, and Case-Stacking Affixes","The Phonological Structure of Case-Accessor, Inverse Case-Accessor, and Case-Stacking Affixes",2,NI-WEB-CH07:7.6,,https://www.ithkuil.net/newithkuil_07_affixes.htm,10410
+NI-WEB-CH07:7.6.2,NI-WEB-CH07,7,Affixes,7.6.2,Examples of Type-1 and Type-2 Case-Assessor Affixes in Use,Examples of Type-1 and Type-2 Case-Assessor Affixes in Use,2,NI-WEB-CH07:7.6,,https://www.ithkuil.net/newithkuil_07_affixes.htm,11327
+NI-WEB-CH07:7.6.3,NI-WEB-CH07,7,Affixes,7.6.3,Type-3 Case-Assessor & Inverse Case-Assessor Affixes,Type-3 Case-Assessor & Inverse Case-Assessor Affixes,2,NI-WEB-CH07:7.6,Sec7_6_3,https://www.ithkuil.net/newithkuil_07_affixes.htm,11535
+NI-WEB-CH07:7.6.4,NI-WEB-CH07,7,Affixes,7.6.4,Examples of Case-Stacking Affixes,Examples of Case-Stacking Affixes,2,NI-WEB-CH07:7.6,Sec7_6_4,https://www.ithkuil.net/newithkuil_07_affixes.htm,11669
+NI-WEB-CH07:7.7,NI-WEB-CH07,7,Affixes,7.7,Using Slot II as a “Short-Cut” for Three Common Affixes,Using Slot II as a “Short-Cut” for Three Common Affixes,1,NI-WEB-CH07:7.0,,https://www.ithkuil.net/newithkuil_07_affixes.htm,11835
+NI-WEB-CH08:8.0,NI-WEB-CH08,8,Adjuncts,8.0,ADJUNCTS,ADJUNCTS,1,,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,2605
+NI-WEB-CH08:8.1,NI-WEB-CH08,8,Adjuncts,8.1,Affixual Adjuncts,Affixual Adjuncts,1,NI-WEB-CH08:8.0,Sec8_1,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,2624
+NI-WEB-CH08:8.1.1,NI-WEB-CH08,8,Adjuncts,8.1.1,Single-Affix Adjunct,Single-Affix Adjunct,2,NI-WEB-CH08:8.1,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,2644
+NI-WEB-CH08:8.1.2,NI-WEB-CH08,8,Adjuncts,8.1.2,Multiple-Affix Adjunct,Multiple-Affix Adjunct,2,NI-WEB-CH08:8.1,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,2832
+NI-WEB-CH08:8.2,NI-WEB-CH08,8,Adjuncts,8.2,Modular Adjuncts,Modular Adjuncts,1,NI-WEB-CH08:8.0,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,3116
+NI-WEB-CH08:8.3,NI-WEB-CH08,8,Adjuncts,8.3,Register Adjuncts,Register Adjuncts,1,NI-WEB-CH08:8.0,Sec8_3,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,3527
+NI-WEB-CH08:8.3.1,NI-WEB-CH08,8,Adjuncts,8.3.1,NRR Narrative,NRR Narrative,2,NI-WEB-CH08:8.3,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,3910
+NI-WEB-CH08:8.3.2,NI-WEB-CH08,8,Adjuncts,8.3.2,"DSV Discursive Indicates a phrase/statement represents direct speech, as in ‘His wife turned to him and said “You’ve forgotten your hat.”’ ”","DSV Discursive Indicates a phrase/statement represents direct speech, as in ‘His wife turned to him and said “You’ve forgotten your hat.”’ ”",2,NI-WEB-CH08:8.3,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,3936
+NI-WEB-CH08:8.3.3,NI-WEB-CH08,8,Adjuncts,8.3.3,PNT Parenthetical,PNT Parenthetical,2,NI-WEB-CH08:8.3,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,3959
+NI-WEB-CH08:8.3.4,NI-WEB-CH08,8,Adjuncts,8.3.4,SPF Specificative,SPF Specificative,2,NI-WEB-CH08:8.3,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4002
+NI-WEB-CH08:8.3.5,NI-WEB-CH08,8,Adjuncts,8.3.5,EXM Exemplificative,EXM Exemplificative,2,NI-WEB-CH08:8.3,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4029
+NI-WEB-CH08:8.3.6,NI-WEB-CH08,8,Adjuncts,8.3.6,COG Cogitant,COG Cogitant,2,NI-WEB-CH08:8.3,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4056
+NI-WEB-CH08:8.3.7,NI-WEB-CH08,8,Adjuncts,8.3.7,END Carrier-End,END Carrier-End,2,NI-WEB-CH08:8.3,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4085
+NI-WEB-CH08:8.4,NI-WEB-CH08,8,Adjuncts,8.4,Suppletive Adjuncts,Suppletive Adjuncts,1,NI-WEB-CH08:8.0,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4112
+NI-WEB-CH08:8.4.1,NI-WEB-CH08,8,Adjuncts,8.4.1,CAR Carrier Adjunct,CAR Carrier Adjunct,2,NI-WEB-CH08:8.4,Sec8_4_1,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4161
+NI-WEB-CH08:8.4.2,NI-WEB-CH08,8,Adjuncts,8.4.2,QUO Quotative Adjunct,QUO Quotative Adjunct,2,NI-WEB-CH08:8.4,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4238
+NI-WEB-CH08:8.4.3,NI-WEB-CH08,8,Adjuncts,8.4.3,NAM Naming Adjunct,NAM Naming Adjunct,2,NI-WEB-CH08:8.4,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4316
+NI-WEB-CH08:8.4.4,NI-WEB-CH08,8,Adjuncts,8.4.4,PHR Phrasal Adjunct,PHR Phrasal Adjunct,2,NI-WEB-CH08:8.4,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4397
+NI-WEB-CH08:8.5,NI-WEB-CH08,8,Adjuncts,8.5,Bias Adjuncts,Bias Adjuncts,1,NI-WEB-CH08:8.0,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,4506
+NI-WEB-CH08:8.6,NI-WEB-CH08,8,Adjuncts,8.6,PSG The Parsing Adjunct,PSG The Parsing Adjunct,1,NI-WEB-CH08:8.0,,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,6500
+NI-WEB-CH09:9.0,NI-WEB-CH09,9,Referentials,9.0,REFERENTIALS,REFERENTIALS,1,,,https://www.ithkuil.net/newithkuil_09_referentials.htm,830
+NI-WEB-CH09:9.1,NI-WEB-CH09,9,Referentials,9.1,Single-Referent Referential,Single-Referent Referential,1,NI-WEB-CH09:9.0,Sec9_1_1,https://www.ithkuil.net/newithkuil_09_referentials.htm,850
+NI-WEB-CH09:9.2,NI-WEB-CH09,9,Referentials,9.2,Dual-Referent Referential,Dual-Referent Referential,1,NI-WEB-CH09:9.0,Sec9_2,https://www.ithkuil.net/newithkuil_09_referentials.htm,1711
+NI-WEB-CH09:9.3,NI-WEB-CH09,9,Referentials,9.3,The Provisional Referential,The Provisional Referential,1,NI-WEB-CH09:9.0,,https://www.ithkuil.net/newithkuil_09_referentials.htm,1942
+NI-WEB-CH09:9.4,NI-WEB-CH09,9,Referentials,9.4,Impersonal and Abstract Reference,Impersonal and Abstract Reference,1,NI-WEB-CH09:9.0,,https://www.ithkuil.net/newithkuil_09_referentials.htm,1982
+NI-WEB-CH09:9.5,NI-WEB-CH09,9,Referentials,9.5,Combination Referential with Case-Stacking,Combination Referential with Case-Stacking,1,NI-WEB-CH09:9.0,Sec9_5,https://www.ithkuil.net/newithkuil_09_referentials.htm,2011
+NI-WEB-CH09:9.6,NI-WEB-CH09,9,Referentials,9.6,"Applying Carrier , Quotative, Naming, and Phrasal Adjunct Forms to Referentials","Applying Carrier , Quotative, Naming, and Phrasal Adjunct Forms to Referentials",1,NI-WEB-CH09:9.0,Sec9_6,https://www.ithkuil.net/newithkuil_09_referentials.htm,2285
+NI-WEB-CH10:10.0,NI-WEB-CH10,10,Special Constructions,10.0,SPECIALIZED CONSTRUCTIONS,SPECIALIZED CONSTRUCTIONS,1,,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,2578
+NI-WEB-CH10:10.1,NI-WEB-CH10,10,Special Constructions,10.1,Concatenation and Format,Concatenation and Format,1,NI-WEB-CH10:10.0,Sec10_1,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,2595
+NI-WEB-CH10:10.1.1,NI-WEB-CH10,10,Special Constructions,10.1.1,Concatenation Type,Concatenation Type,2,NI-WEB-CH10:10.1,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,2983
+NI-WEB-CH10:10.1.2,NI-WEB-CH10,10,Special Constructions,10.1.2,C A Shortcut Indicator for Concatenated Formative,C A Shortcut Indicator for Concatenated Formative,2,NI-WEB-CH10:10.1,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,3008
+NI-WEB-CH10:10.1.3,NI-WEB-CH10,10,Special Constructions,10.1.3,Concatenation Chain,Concatenation Chain,2,NI-WEB-CH10:10.1,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,3030
+NI-WEB-CH10:10.1.4,NI-WEB-CH10,10,Special Constructions,10.1.4,Romanized Orthography for Concatenated Formatives,Romanized Orthography for Concatenated Formatives,2,NI-WEB-CH10:10.1,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,3052
+NI-WEB-CH10:10.1.5,NI-WEB-CH10,10,Special Constructions,10.1.5,Examples of Concatenated Formatives in Use,Examples of Concatenated Formatives in Use,2,NI-WEB-CH10:10.1,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,3072
+NI-WEB-CH10:10.2,NI-WEB-CH10,10,Special Constructions,10.2,The Carrier Root,The Carrier Root,1,NI-WEB-CH10:10.0,Sec10_2,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,3251
+NI-WEB-CH10:10.3,NI-WEB-CH10,10,Special Constructions,10.3,Specialized C S -Roots in Lieu of Affix-Scoping Adjuncts,Specialized C S -Roots in Lieu of Affix-Scoping Adjuncts,1,NI-WEB-CH10:10.0,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,3567
+NI-WEB-CH10:10.4,NI-WEB-CH10,10,Special Constructions,10.4,Specialized Personal-Reference Roots,Specialized Personal-Reference Roots,1,NI-WEB-CH10:10.0,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,4377
+NI-WEB-CH10:10.5,NI-WEB-CH10,10,Special Constructions,10.5,Use of Type-3 V X C S Affix Format and Standard Vowel-Sequence Column 4 Vowels as Shortcut for Referentials,Use of Type-3 V X C S Affix Format and Standard Vowel-Sequence Column 4 Vowels as Shortcut for Referentials,1,NI-WEB-CH10:10.0,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,4672
+NI-WEB-CH10:10.6,NI-WEB-CH10,10,Special Constructions,10.6,Equivalents to English WH -Questions,Equivalents to English WH -Questions,1,NI-WEB-CH10:10.0,Sec10_6,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,5236
+NI-WEB-CH10:10.7,NI-WEB-CH10,10,Special Constructions,10.7,Using Case on unframed Verbal Formatives,Using Case on unframed Verbal Formatives,1,NI-WEB-CH10:10.0,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,5538
+NI-WEB-CH10:10.8,NI-WEB-CH10,10,Special Constructions,10.8,Equivalent to English “Strings” of Adverbial Locative Particles,Equivalent to English “Strings” of Adverbial Locative Particles,1,NI-WEB-CH10:10.0,,https://www.ithkuil.net/newithkuil_10_spec_constructions.htm,5600
+NI-WEB-CH11:11.0,NI-WEB-CH11,11,Syntax,11.0,SYNTAX,SYNTAX,1,,,https://www.ithkuil.net/newithkuil_11_syntax.htm,709
+NI-WEB-CH11:11.1,NI-WEB-CH11,11,Syntax,11.1,Main Clauses,Main Clauses,1,NI-WEB-CH11:11.0,,https://www.ithkuil.net/newithkuil_11_syntax.htm,870
+NI-WEB-CH11:11.2,NI-WEB-CH11,11,Syntax,11.2,Subordinate clauses,Subordinate clauses,1,NI-WEB-CH11:11.0,,https://www.ithkuil.net/newithkuil_11_syntax.htm,884
+NI-WEB-CH11:11.3,NI-WEB-CH11,11,Syntax,11.3,Arguments to a Verb,Arguments to a Verb,1,NI-WEB-CH11:11.0,,https://www.ithkuil.net/newithkuil_11_syntax.htm,896
+NI-WEB-CH11:11.4,NI-WEB-CH11,11,Syntax,11.4,Formatives in Apposition,Formatives in Apposition,1,NI-WEB-CH11:11.0,,https://www.ithkuil.net/newithkuil_11_syntax.htm,921
+NI-WEB-CH11:11.5,NI-WEB-CH11,11,Syntax,11.5,Referentials,Referentials,1,NI-WEB-CH11:11.0,,https://www.ithkuil.net/newithkuil_11_syntax.htm,939
+NI-WEB-CH11:11.6,NI-WEB-CH11,11,Syntax,11.6,Modular and Affixual Adjuncts,Modular and Affixual Adjuncts,1,NI-WEB-CH11:11.0,,https://www.ithkuil.net/newithkuil_11_syntax.htm,956
+NI-WEB-CH11:11.7,NI-WEB-CH11,11,Syntax,11.7,"Register, Carrier, Quotative, Naming, and Phrasal Adjuncts","Register, Carrier, Quotative, Naming, and Phrasal Adjuncts",1,NI-WEB-CH11:11.0,,https://www.ithkuil.net/newithkuil_11_syntax.htm,972
+NI-WEB-CH11:11.8,NI-WEB-CH11,11,Syntax,11.8,Juncture between sentences,Juncture between sentences,1,NI-WEB-CH11:11.0,,https://www.ithkuil.net/newithkuil_11_syntax.htm,985
+NI-WEB-CH11:11.9,NI-WEB-CH11,11,Syntax,11.9,Bias Adjuncts,Bias Adjuncts,1,NI-WEB-CH11:11.0,,https://www.ithkuil.net/newithkuil_11_syntax.htm,1020
+NI-WEB-CH12:12.0,NI-WEB-CH12,12,Script,12.0,THE WRITING SYSTEM,THE WRITING SYSTEM,1,,Ch12,https://www.ithkuil.net/newithkuil_12_script.htm,774
+NI-WEB-CH12:12.1,NI-WEB-CH12,12,Script,12.1,Primary Characters,Primary Characters,1,NI-WEB-CH12:12.0,,https://www.ithkuil.net/newithkuil_12_script.htm,1050
+NI-WEB-CH12:12.2,NI-WEB-CH12,12,Script,12.2,Secondary Characters,Secondary Characters,1,NI-WEB-CH12:12.0,,https://www.ithkuil.net/newithkuil_12_script.htm,1233
+NI-WEB-CH12:12.2.1,NI-WEB-CH12,12,Script,12.2.1,Consonantal Extensions to Secondary Characters,Consonantal Extensions to Secondary Characters,2,NI-WEB-CH12:12.2,,https://www.ithkuil.net/newithkuil_12_script.htm,1272
+NI-WEB-CH12:12.2.2,NI-WEB-CH12,12,Script,12.2.2,Using Secondary Characters to Show V X C S Affixes,Using Secondary Characters to Show V X C S Affixes,2,NI-WEB-CH12:12.2,,https://www.ithkuil.net/newithkuil_12_script.htm,1372
+NI-WEB-CH12:12.2.3,NI-WEB-CH12,12,Script,12.2.3,Rotated Secondary Characters,Rotated Secondary Characters,2,NI-WEB-CH12:12.2,,https://www.ithkuil.net/newithkuil_12_script.htm,1453
+NI-WEB-CH12:12.2.4,NI-WEB-CH12,12,Script,12.2.4,Showing Specialized C S -Roots and Specialized Personal-Reference Roots,Showing Specialized C S -Roots and Specialized Personal-Reference Roots,2,NI-WEB-CH12:12.2,,https://www.ithkuil.net/newithkuil_12_script.htm,1496
+NI-WEB-CH12:12.3,NI-WEB-CH12,12,Script,12.3,Tertiary Characters,Tertiary Characters,1,NI-WEB-CH12:12.0,,https://www.ithkuil.net/newithkuil_12_script.htm,1546
+NI-WEB-CH12:12.4,NI-WEB-CH12,12,Script,12.4,Quarternary Characters,Quarternary Characters,1,NI-WEB-CH12:12.0,,https://www.ithkuil.net/newithkuil_12_script.htm,1583
+NI-WEB-CH12:12.4.1,NI-WEB-CH12,12,Script,12.4.1,Diacritics Used with Quarternary Characters,Diacritics Used with Quarternary Characters,2,NI-WEB-CH12:12.4,,https://www.ithkuil.net/newithkuil_12_script.htm,1647
+NI-WEB-CH12:12.4.2,NI-WEB-CH12,12,Script,12.4.2,Alternative To Using Quaternary Characters – Showing V C /V K Using Diacritics on the C R Character,Alternative To Using Quaternary Characters – Showing V C /V K Using Diacritics on the C R Character,2,NI-WEB-CH12:12.4,,https://www.ithkuil.net/newithkuil_12_script.htm,1775
+NI-WEB-CH12:12.4.3,NI-WEB-CH12,12,Script,12.4.3,Showing Referentials,Showing Referentials,2,NI-WEB-CH12:12.4,,https://www.ithkuil.net/newithkuil_12_script.htm,1843
+NI-WEB-CH12:12.5,NI-WEB-CH12,12,Script,12.5,Bias Characters,Bias Characters,1,NI-WEB-CH12:12.0,,https://www.ithkuil.net/newithkuil_12_script.htm,1869
+NI-WEB-CH12:12.6,NI-WEB-CH12,12,Script,12.6,Showing Register,Showing Register,1,NI-WEB-CH12:12.0,,https://www.ithkuil.net/newithkuil_12_script.htm,1919
+NI-WEB-CH12:12.6.1,NI-WEB-CH12,12,Script,12.6.1,Transcriptive & Transliterative Modes: The Phonetic Representation (or Suppression) of Adjuncts,Transcriptive & Transliterative Modes: The Phonetic Representation (or Suppression) of Adjuncts,2,NI-WEB-CH12:12.6,,https://www.ithkuil.net/newithkuil_12_script.htm,1959
+NI-WEB-CH12:12.7,NI-WEB-CH12,12,Script,12.7,Alphabetic Writing,Alphabetic Writing,1,NI-WEB-CH12:12.0,,https://www.ithkuil.net/newithkuil_12_script.htm,2018
+NI-WEB-CH12:12.7.1,NI-WEB-CH12,12,Script,12.7.1,Showing Carrier Adjuncts/Stems,Showing Carrier Adjuncts/Stems,2,NI-WEB-CH12:12.7,,https://www.ithkuil.net/newithkuil_12_script.htm,2166
+NI-WEB-CH12:12.8,NI-WEB-CH12,12,Script,12.8,Script Example,Script Example,1,NI-WEB-CH12:12.0,,https://www.ithkuil.net/newithkuil_12_script.htm,2189
+NI-WEB-CH13:13.0,NI-WEB-CH13,13,Numbers,13.0,NUMBERS,NUMBERS,1,,,https://www.ithkuil.net/newithkuil_13_numbers.htm,837
+NI-WEB-CH13:13.1,NI-WEB-CH13,13,Numbers,13.1,Features of a Centesimal Number System,Features of a Centesimal Number System,1,NI-WEB-CH13:13.0,,https://www.ithkuil.net/newithkuil_13_numbers.htm,859
+NI-WEB-CH13:13.2,NI-WEB-CH13,13,Numbers,13.2,Semantic Designations for Numerical Stems,Semantic Designations for Numerical Stems,1,NI-WEB-CH13:13.0,,https://www.ithkuil.net/newithkuil_13_numbers.htm,944
+NI-WEB-CH13:13.3,NI-WEB-CH13,13,Numbers,13.3,Writing Numerals,Writing Numerals,1,NI-WEB-CH13:13.0,Sec13_3,https://www.ithkuil.net/newithkuil_13_numbers.htm,3053
+NI-WEB-CH13:13.4,NI-WEB-CH13,13,Numbers,13.4,Using Numbers In Speech,Using Numbers In Speech,1,NI-WEB-CH13:13.0,,https://www.ithkuil.net/newithkuil_13_numbers.htm,3234
+NI-WEB-CH13:13.5,NI-WEB-CH13,13,Numbers,13.5,Dates and Times of Day,Dates and Times of Day,1,NI-WEB-CH13:13.0,,https://www.ithkuil.net/newithkuil_13_numbers.htm,3347
+NI-WEB-CH13:13.5.1,NI-WEB-CH13,13,Numbers,13.5.1,Alternate Names of the Months,Alternate Names of the Months,2,NI-WEB-CH13:13.5,,https://www.ithkuil.net/newithkuil_13_numbers.htm,3679
+NI-WEB-APP:Appendix-A,NI-WEB-APP,APP,New Ithkuil appendices,Appendix-A,"Demonymns, Ethnonymns, and Place Names","Demonymns, Ethnonymns, and Place Names",1,,,https://www.ithkuil.net/newithkuil_appendices.htm,2515
+NI-WEB-APP:Appendix-B,NI-WEB-APP,APP,New Ithkuil appendices,Appendix-B,List of Abbreviations for Grammatical Categories,List of Abbreviations for Grammatical Categories,1,,Appendix_B,https://www.ithkuil.net/newithkuil_appendices.htm,10433
+NI-WEB-APP:Appendix-C,NI-WEB-APP,APP,New Ithkuil appendices,Appendix-C,Contributors,Contributors,1,,Appendix_C,https://www.ithkuil.net/newithkuil_appendices.htm,14890

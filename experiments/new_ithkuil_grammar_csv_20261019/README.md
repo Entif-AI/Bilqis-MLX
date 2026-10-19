@@ -13,6 +13,8 @@ The user-required primary tables are:
 
 Supporting relational tables may preserve information that would be lossy in those two flat tables, including source hierarchy, grammatical categories, paradigms/examples, typed entity relationships, and Bilqis crosswalk/provenance.
 
+The current schema is documented in [`SCHEMA.md`](SCHEMA.md). The present snapshot contains 710 atomic surface records and 1,645 composition/template records, plus normalized source, component, category, degree, sense, and Bilqis-enrichment tables.
+
 ## Ordering boundary
 
 Website hierarchy is source structure and is retained: chapter, section, subsection, anchor, and parent-child relationships belong in the data.
@@ -30,6 +32,15 @@ python3 scripts/fetch_sources.py
 Raw downloaded source files are written to ignored `_raw/`. `sources/source_manifest.csv` is tracked and records source URLs, content hashes, response metadata, and snapshot time. This keeps the experiment reproducible without vendoring the complete copyrighted source pages into Git.
 
 The live Curriculum Registry is exported separately through authenticated Google Drive access. Its workbook bytes are not committed. Derived enrichment rows must retain tab/range provenance and source-state labels.
+
+After the authenticated tab snapshots have been written under ignored `_work/curriculum/`, rebuild the tracked relational data with:
+
+```bash
+python3 scripts/build_structure.py
+python3 scripts/build_curriculum_enrichment.py
+python3 scripts/build_morphology.py
+python3 scripts/validate_dataset.py
+```
 
 ## Data fidelity
 

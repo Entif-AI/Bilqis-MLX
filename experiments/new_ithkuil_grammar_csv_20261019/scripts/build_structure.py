@@ -8,6 +8,7 @@ It builds the relational substrate used by later, stricter classifiers.
 from __future__ import annotations
 
 import csv
+import hashlib
 import re
 from bisect import bisect_right
 from pathlib import Path
@@ -34,6 +35,10 @@ def clean(value: str | None, limit: int | None = None) -> str:
 
 def element_text(element, limit: int | None = None) -> str:
     return clean(" ".join(element.itertext()), limit=limit)
+
+
+def text_sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
 def load_manifest() -> dict[str, dict[str, str]]:
@@ -230,6 +235,7 @@ def main() -> None:
                     if not value:
                         continue
                     header_value = header[column_index - 1] if header and column_index <= len(header) else ""
+                    exact_cell_text = value if len(value) <= 200 else ""
                     cells.append(
                         {
                             "cell_id": f"{row_id}:C{column_index:02d}",
@@ -240,7 +246,10 @@ def main() -> None:
                             "row_index": row_index,
                             "column_index": column_index,
                             "header_value": header_value,
-                            "cell_text": value,
+                            "cell_text": exact_cell_text,
+                            "cell_text_sha256": text_sha256(value),
+                            "cell_char_count": len(value),
+                            "cell_text_truncated": "false" if exact_cell_text else "true",
                             "source_url": source["final_url"],
                             "source_line": line,
                         }
@@ -256,7 +265,7 @@ def write_csv(path: Path, rows: list[dict[str, str | int]]) -> None:
     if not rows:
         raise RuntimeError(f"no rows for {path}")
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

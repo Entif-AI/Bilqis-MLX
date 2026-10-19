@@ -1,3 +1,5 @@
 _raw/
 _work/
+!data/
+!data/*.csv
 
