@@ -94,8 +94,15 @@ class Course:
                    for grade in self.grades for c in grade.capabilities))
 
 
-def validate(course: Course) -> None:
+def validate(course: Course, *, answer_kinds: tuple[str, ...] | None = None) -> None:
     """Validate *structure*, not independently assert that cited sources are true."""
+    external_answer_contracts = answer_kinds is not None
+    allowed_answer_kinds = (
+        {"binary", "integer_0_3", "numeric_active", "boolean_operator"}
+        if answer_kinds is None else set(answer_kinds))
+    if (not allowed_answer_kinds or
+            any(not isinstance(kind, str) or not kind for kind in allowed_answer_kinds)):
+        raise ValueError("ANSWER_FAMILY_AUTHORITY_INVALID")
     if type(course.program_complete) is not bool:
         raise ValueError("COURSE_COMPLETE_FLAG_MUST_BE_BOOLEAN")
     if not course.version or not course.grades:
@@ -157,18 +164,19 @@ def validate(course: Course) -> None:
             kinds = {family.kind for family in cap.answer_families}
             if not kinds or len(kinds) != len(cap.answer_families):
                 raise ValueError("MISSING_OR_DUPLICATE_ANSWER_FAMILY")
-            if not kinds <= {"binary", "integer_0_3", "numeric_active",
-                             "boolean_operator"}:
+            if not kinds <= allowed_answer_kinds:
                 raise ValueError("UNKNOWN_CAPABILITY_ANSWER_FAMILY")
             for family in cap.answer_families:
                 if (not family.kind or not 2 <= len(family.values) <= 32 or
                         len(set(family.values)) != len(family.values)):
                     raise ValueError("INVALID_BOUNDED_ANSWER_FAMILY")
-                if family.kind == "binary" and family.values != BINARY:
+                if (not external_answer_contracts and
+                        family.kind == "binary" and family.values != BINARY):
                     raise ValueError("INVALID_BINARY_ANSWER_LABELS")
-                if family.kind == "integer_0_3" and family.values != INT_0_3:
+                if (not external_answer_contracts and
+                        family.kind == "integer_0_3" and family.values != INT_0_3):
                     raise ValueError("INVALID_INTEGER_0_3_ANSWER_LABELS")
-                if family.kind == "boolean_operator":
+                if not external_answer_contracts and family.kind == "boolean_operator":
                     if (len(family.values) < 2 or
                             any(value not in BOOLEAN_OPERATORS for value in family.values) or
                             family.values != tuple(

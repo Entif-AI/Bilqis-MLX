@@ -1,13 +1,9 @@
 """Detect split curriculum authority outside the compiled factory boundary.
 
-SPEC-0001 requires curriculum meaning and executable scope to flow through one
-factory artifact. This checker looks for the common ways a second handwritten
-runtime ontology can reappear: concrete release dispatch, capability/grade
-identity in generic control flow, and direct imports of concrete curriculum
-providers from generic runtime modules.
-
-It intentionally reports current migration debt. The final cutover gate should
-assert that this script prints FACTORY_CLOSURE_OK.
+This is a structural tripwire, not the decisive conformance proof. The decisive
+proof is behavioral: unfamiliar curriculum + profile + providers must execute
+through the same runtime without generic source edits. This checker prevents
+common ways a second handwritten curriculum ontology can creep back in.
 """
 from __future__ import annotations
 
@@ -28,22 +24,37 @@ GENERIC_ROOTS = (
     "bilqis_mlx/trainer.py",
     "bilqis_mlx/cli.py",
 )
+PROVIDER_ROOTS = ("bilqis_mlx/source_adapters",)
 EXCLUDED_PARTS = frozenset({"tests", "compatibility", "research"})
+CONSUMER_PREFIXES = (
+    "bilqis_mlx/runtime/",
+    "bilqis_mlx/presentation/",
+    "bilqis_mlx/learning/",
+    "bilqis_mlx/curriculum/scheduler.py",
+    "bilqis_mlx/trainer.py",
+    "bilqis_mlx/cli.py",
+)
 CONCRETE_PROVIDER = re.compile(
     r"(?:^|\.)(?:live_grade_[a-z]|grade_[a-z]_release|grade_transition|"
     r"boolean_composite|boolean_identification|minimal_grade_b|numeric_staircase)$",
     re.I,
 )
+PROFILE_SPECIFIC_PROVIDER = re.compile(
+    r"(?:^|\.)(?:minimal|compact|profile)[a-z0-9_.-]*(?:grade|boolean)|"
+    r"(?:^|\.)minimal_grade_[a-z]",
+    re.I,
+)
 CAPABILITY_ID = re.compile(r"^[A-Z][A-Z0-9]*\.[A-Z][A-Z0-9_~-]*$")
 GRADE_ID = re.compile(r"^[A-Z]$")
 GRADE_EVENT = re.compile(r"(?:^|_)GRADE_[A-Z](?:_|$)")
-RELEASE_NAME = re.compile(r"(?:^|_)(?:RELEASE|RELEASES)$")
+RELEASE_SYMBOL = re.compile(r"(?:^|_)(?:RELEASE|RELEASES)$")
+PROFILE_PROVIDER_LITERAL = re.compile(r"(?:minimal|compact|profile)", re.I)
 
 
-def _generic_files(root: Path):
+def _files(root: Path, roots):
     src = root / "bilqis_mlx"
     files = []
-    for relative in GENERIC_ROOTS:
+    for relative in roots:
         path = root / relative
         candidates = path.rglob("*.py") if path.is_dir() else (path,)
         for candidate in candidates:
@@ -56,9 +67,16 @@ def _generic_files(root: Path):
     return tuple(sorted(set(files)))
 
 
+def _generic_files(root: Path):
+    return _files(root, GENERIC_ROOTS)
+
+
+def _provider_files(root: Path):
+    return _files(root, PROVIDER_ROOTS)
+
+
 def _module_name(path: Path, root: Path) -> str:
-    relative = path.relative_to(root).with_suffix("")
-    return ".".join(relative.parts)
+    return ".".join(path.relative_to(root).with_suffix("").parts)
 
 
 def _import_target(node, current: str) -> tuple[str, ...]:
@@ -91,6 +109,38 @@ def _names(node) -> set[str]:
     return {item.id for item in ast.walk(node) if isinstance(item, ast.Name)}
 
 
+def _is_consumer(relative: Path) -> bool:
+    value = str(relative)
+    return any(value.startswith(prefix) for prefix in CONSUMER_PREFIXES)
+
+
+def _release_aliases(tree) -> set[str]:
+    aliases = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                # Match the authoritative imported symbol, not just its local
+                # alias, so `MINIMAL_BOOLEAN_RELEASE as MODE` cannot hide it.
+                if RELEASE_SYMBOL.search(alias.name):
+                    aliases.add(alias.asname or alias.name)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and RELEASE_SYMBOL.search(target.id):
+                    aliases.add(target.id)
+    return aliases
+
+
+def _lineage_of_attribute(node: ast.Attribute) -> str:
+    parts = [node.attr]
+    current = node.value
+    while isinstance(current, ast.Attribute):
+        parts.append(current.attr)
+        current = current.value
+    if isinstance(current, ast.Name):
+        parts.append(current.id)
+    return ".".join(reversed(parts))
+
+
 def inspect_factory_closure(root: Path) -> tuple[str, ...]:
     root = Path(root)
     problems = []
@@ -99,69 +149,102 @@ def inspect_factory_closure(root: Path) -> tuple[str, ...]:
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         except SyntaxError as exc:
-            problems.append(f"{relative}:{exc.lineno or 0} FACTORY_CLOSURE_SYNTAX_ERROR")
+            problems.append(
+                f"{relative}:{exc.lineno or 0} FACTORY_CLOSURE_SYNTAX_ERROR")
             continue
         current = _module_name(path, root)
 
-        # Concrete source-domain implementations belong behind provider/compat
-        # boundaries. Generic runtime importing them owns curriculum knowledge.
-        if not str(relative).startswith("bilqis_mlx/source_adapters/"):
-            for node in ast.walk(tree):
-                for target in _import_target(node, current):
-                    if CONCRETE_PROVIDER.search(target):
-                        problems.append(
-                            f"{relative}:{node.lineno} GENERIC_IMPORTS_CONCRETE_PROVIDER:{target}")
-
-        # Track imported/assigned names that represent concrete release identity.
-        release_names = set()
         for node in ast.walk(tree):
-            if isinstance(node, ast.ImportFrom):
-                for alias in node.names:
-                    local = alias.asname or alias.name
-                    if RELEASE_NAME.search(local):
-                        release_names.add(local)
-            elif isinstance(node, ast.Assign):
-                for target in node.targets:
-                    if isinstance(target, ast.Name) and RELEASE_NAME.search(target.id):
-                        release_names.add(target.id)
+            for target in _import_target(node, current):
+                if CONCRETE_PROVIDER.search(target):
+                    problems.append(
+                        f"{relative}:{node.lineno} "
+                        f"GENERIC_IMPORTS_CONCRETE_PROVIDER:{target}")
+
+        release_aliases = _release_aliases(tree)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Name) and node.id in release_aliases and not isinstance(
+                    getattr(node, "ctx", None), ast.Store):
+                problems.append(
+                    f"{relative}:{node.lineno} "
+                    f"GENERIC_RELEASE_IDENTITY_REFERENCE:{node.id}")
+            if (isinstance(node, ast.Constant) and isinstance(node.value, str) and
+                    CAPABILITY_ID.fullmatch(node.value)):
+                problems.append(
+                    f"{relative}:{node.lineno} "
+                    f"GENERIC_CAPABILITY_LITERAL:{node.value}")
 
         for node, decision in _decision_nodes(tree):
-            names = _names(decision)
-            release_hits = sorted(names & release_names)
+            release_hits = sorted(_names(decision) & release_aliases)
             if release_hits:
                 problems.append(
-                    f"{relative}:{node.lineno} GENERIC_RELEASE_IDENTITY_DISPATCH:"
-                    + ",".join(release_hits))
+                    f"{relative}:{node.lineno} "
+                    "GENERIC_RELEASE_IDENTITY_DISPATCH:" +
+                    ",".join(release_hits))
             strings = _strings(decision)
-            capability_hits = sorted(value for value in strings if CAPABILITY_ID.fullmatch(value))
+            capability_hits = sorted(
+                value for value in strings if CAPABILITY_ID.fullmatch(value))
             if capability_hits:
                 problems.append(
-                    f"{relative}:{node.lineno} GENERIC_CAPABILITY_IDENTITY_DISPATCH:"
-                    + ",".join(capability_hits))
-            grade_hits = sorted(value for value in strings if GRADE_ID.fullmatch(value))
+                    f"{relative}:{node.lineno} "
+                    "GENERIC_CAPABILITY_IDENTITY_DISPATCH:" +
+                    ",".join(capability_hits))
+            grade_hits = sorted(
+                value for value in strings if GRADE_ID.fullmatch(value))
             if grade_hits:
                 problems.append(
-                    f"{relative}:{node.lineno} GENERIC_GRADE_IDENTITY_DISPATCH:"
-                    + ",".join(grade_hits))
+                    f"{relative}:{node.lineno} "
+                    "GENERIC_GRADE_IDENTITY_DISPATCH:" +
+                    ",".join(grade_hits))
 
-        # Capability literals outside a provider/declaration boundary are a
-        # synchronized roster waiting to happen even when hidden behind a bool.
+        if _is_consumer(relative):
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ImportFrom):
+                    for alias in node.names:
+                        if alias.name == "Course":
+                            problems.append(
+                                f"{relative}:{node.lineno} "
+                                "GENERIC_RUNTIME_IMPORTS_COURSE")
+                if isinstance(node, ast.Attribute) and node.attr in {
+                        "grades", "capability_map"}:
+                    lineage = _lineage_of_attribute(node)
+                    if "course" in lineage.lower():
+                        problems.append(
+                            f"{relative}:{node.lineno} "
+                            f"GENERIC_RUNTIME_RECONSTRUCTS_COURSE:{lineage}")
+
         if str(relative).startswith((
-                "bilqis_mlx/curriculum/", "bilqis_mlx/trainer.py",
-                "bilqis_mlx/cli.py", "bilqis_mlx/learning/")):
+                "bilqis_mlx/trainer.py", "bilqis_mlx/presentation/")):
             for node in ast.walk(tree):
-                if isinstance(node, ast.Constant) and isinstance(node.value, str) and \
-                        CAPABILITY_ID.fullmatch(node.value):
+                if (isinstance(node, ast.Constant) and
+                        isinstance(node.value, str) and
+                        GRADE_EVENT.search(node.value)):
                     problems.append(
-                        f"{relative}:{node.lineno} GENERIC_CAPABILITY_LITERAL:{node.value}")
+                        f"{relative}:{node.lineno} "
+                        f"GRADE_SPECIFIC_EVENT_CLASS:{node.value}")
 
-        # Canonical events should carry grade as data, not encode an A/B/C class.
-        if str(relative).startswith(("bilqis_mlx/trainer.py", "bilqis_mlx/presentation/")):
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Constant) and isinstance(node.value, str) and \
-                        GRADE_EVENT.search(node.value):
+    # Provider implementations may be domain-specific. They may not encode an
+    # execution profile such as "minimal B" as a second source domain when the
+    # same semantic capability can be parameterized by a declared constraint.
+    for path in _provider_files(root):
+        relative = path.relative_to(root)
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except SyntaxError:
+            continue
+        current = _module_name(path, root)
+        for node in ast.walk(tree):
+            for target in _import_target(node, current):
+                if PROFILE_SPECIFIC_PROVIDER.search(target):
                     problems.append(
-                        f"{relative}:{node.lineno} GRADE_SPECIFIC_EVENT_CLASS:{node.value}")
+                        f"{relative}:{node.lineno} "
+                        f"PROFILE_SPECIFIC_PROVIDER_IMPORT:{target}")
+            if (isinstance(node, ast.Constant) and isinstance(node.value, str) and
+                    "source." in node.value and
+                    PROFILE_PROVIDER_LITERAL.search(node.value)):
+                problems.append(
+                    f"{relative}:{node.lineno} "
+                    f"PROFILE_SPECIFIC_PROVIDER_ID:{node.value}")
 
     return tuple(sorted(set(problems)))
 

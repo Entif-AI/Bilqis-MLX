@@ -6,7 +6,7 @@ from bilqis_mlx.curriculum import (
 )
 from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from bilqis_mlx.factory.execution import (
-    CapabilityProfile, CurriculumProfile, GradeProfile,
+    CapabilityProfile, CurriculumProfile, GradeProfile, PlanLineage,
     compile_execution_plan, diff_execution_plans,
 )
 from bilqis_mlx.factory.generation import draw_execution_rows
@@ -111,7 +111,12 @@ def _synthetic_boolean_course():
     ) for index, name in enumerate(names))
     grade_b = Grade(
         "B", b_caps, assessment_sha256="2" * 64,
-        exam_item_counts=tuple((cap.id, 12) for cap in b_caps))
+        exam_item_counts=tuple((cap.id, 12) for cap in b_caps),
+        teaching_stages=(
+            names[:6],
+            ("B.COMPOSITE",),
+            ("B.IDBOOLOPS",),
+        ))
     course = Course(
         (grade_a, grade_b), "fixture.a-b/v1",
         source_attestation_sha256="3" * 64,
@@ -155,7 +160,8 @@ class ExecutionPlanTests(unittest.TestCase):
         self.assertEqual(delta.revised_grades, ("Z",))
         self.assertEqual(
             set(delta.projection_changes),
-            {"roster", "schedule", "assessment", "source", "answer_schema"})
+            {"roster", "schedule", "assessment", "source", "answer_schema",
+             "coverage", "teaching"})
 
     def test_boolean_kernel_is_profile_data_not_a_minimal_release_or_provider(self):
         course, registry = _synthetic_boolean_course()
@@ -167,11 +173,6 @@ class ExecutionPlanTests(unittest.TestCase):
                 "B",
                 enabled_capabilities=(
                     "B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS"),
-                teaching_stages=(
-                    ("B.AND", "B.IFF"),
-                    ("B.COMPOSITE",),
-                    ("B.IDBOOLOPS",),
-                ),
                 capabilities=(
                     CapabilityProfile(
                         "B.COMPOSITE",
@@ -223,7 +224,17 @@ class ExecutionPlanTests(unittest.TestCase):
         self.assertEqual(delta.revised_grades, ("B",))
         self.assertEqual(
             set(delta.projection_changes),
-            {"roster", "schedule", "assessment", "source", "answer_schema"})
+            {"roster", "schedule", "assessment", "source", "answer_schema",
+             "coverage", "teaching"})
+        full_nodes = {
+            item.capability_id: item
+            for item in full.capability_projection_digests}
+        kernel_nodes = {
+            item.capability_id: item
+            for item in kernel.capability_projection_digests}
+        for capability in (
+                "A.C0", "A.C1", "A.C2", "A.C3", "A.C4", "A.C5"):
+            self.assertEqual(full_nodes[capability], kernel_nodes[capability])
 
     def test_profile_cannot_invent_capability_or_answer_value(self):
         course = _synthetic_course(6)
@@ -233,6 +244,18 @@ class ExecutionPlanTests(unittest.TestCase):
                 course,
                 CurriculumProfile("bad", grades=(GradeProfile(
                     "Z", enabled_capabilities=("Z.C0", "Z.MADE_UP"),
+                ),)),
+                registry,
+            )
+        with self.assertRaisesRegex(
+                ValueError, "ANSWER_VALUES_NOT_CANONICAL_SUBSET"):
+            compile_execution_plan(
+                course,
+                CurriculumProfile("bad-answer", grades=(GradeProfile(
+                    "Z", capabilities=(CapabilityProfile(
+                        "Z.C0",
+                        answer_family_values=(("binary", ("TRUE", "MAYBE")),),
+                    ),),
                 ),)),
                 registry,
             )
@@ -247,6 +270,22 @@ class ExecutionPlanTests(unittest.TestCase):
                         "B.COMPOSITE",
                         provider_parameters=(("made_up", ("x",)),)),),
                 ),)),
+                registry,
+            )
+
+    def test_profile_must_keep_declared_prerequisites_executable(self):
+        course, registry = _synthetic_boolean_course()
+        with self.assertRaisesRegex(ValueError, "DISABLED_PREREQUISITE:B.NOT"):
+            compile_execution_plan(
+                course,
+                CurriculumProfile(
+                    "dangling-prerequisite",
+                    grades=(GradeProfile(
+                        "A",
+                        enabled_capabilities=(
+                            "A.C0", "A.C2", "A.C3", "A.C4", "A.C5"),
+                    ),),
+                ),
                 registry,
             )
         with self.assertRaisesRegex(
@@ -295,24 +334,27 @@ class ExecutionPlanTests(unittest.TestCase):
         course, registry = _synthetic_boolean_course()
         baseline = compile_execution_plan(
             course, CurriculumProfile.full(), registry)
-        staged = compile_execution_plan(
+        grade_b = course.grades[1]
+        mutated_course = replace(
             course,
-            CurriculumProfile(
-                "staged-b",
-                grades=(GradeProfile(
-                    "B",
-                    teaching_stages=(
-                        ("B.NOT", "B.AND"),
-                        ("B.OR", "B.XOR"),
-                        ("B.IMPLIES", "B.IFF"),
-                        ("B.COMPOSITE",),
-                        ("B.IDBOOLOPS",),
-                    ),
-                ),),
-            ),
+            grades=(course.grades[0], replace(
+                grade_b,
+                teaching_stages=(
+                    ("B.NOT", "B.AND"),
+                    ("B.OR", "B.XOR"),
+                    ("B.IMPLIES", "B.IFF"),
+                    ("B.COMPOSITE",),
+                    ("B.IDBOOLOPS",),
+                ))))
+        staged = compile_execution_plan(
+            mutated_course,
+            CurriculumProfile.full(),
             registry,
         )
-        delta = diff_execution_plans(baseline, staged)
+        lineage = PlanLineage.from_semantic_catalogs(
+            baseline, staged, ("token-0",), ("token-0",))
+        delta = diff_execution_plans(
+            baseline, staged, lineage=lineage)
         self.assertEqual(
             set(delta.changed_capabilities),
             {"B.OR", "B.XOR", "B.IMPLIES", "B.IFF",
@@ -333,7 +375,10 @@ class ExecutionPlanTests(unittest.TestCase):
             course, grades=(course.grades[0], mutated_grade))
         mutated = compile_execution_plan(
             mutated_course, CurriculumProfile.full(), registry)
-        delta = diff_execution_plans(baseline, mutated)
+        lineage = PlanLineage.from_semantic_catalogs(
+            baseline, mutated, ("token-0",), ("token-0",))
+        delta = diff_execution_plans(
+            baseline, mutated, lineage=lineage)
         self.assertEqual(delta.changed_capabilities, ("B.IDBOOLOPS",))
         self.assertEqual(set(delta.projection_changes), {"schedule"})
 
@@ -362,19 +407,108 @@ class ExecutionPlanTests(unittest.TestCase):
         ))
         mutated = compile_execution_plan(
             mutated_course, CurriculumProfile.full(), registry)
+        self.assertEqual(
+            baseline.curriculum_sha256, mutated.curriculum_sha256)
+        self.assertNotEqual(
+            baseline.source_binding_sha256, mutated.source_binding_sha256)
         delta = diff_execution_plans(baseline, mutated)
         self.assertEqual(delta.changed_capabilities, ("Z.C5",))
         self.assertEqual(set(delta.projection_changes), {"source"})
-        with self.assertRaisesRegex(ValueError, "ANSWER_VALUES_NOT_CANONICAL_SUBSET"):
-            compile_execution_plan(
-                course,
-                CurriculumProfile("bad-answer", grades=(GradeProfile(
-                    "Z", capabilities=(CapabilityProfile(
-                        "Z.C0", answer_family_values=(("binary", ("TRUE", "MAYBE")),),
-                    ),),
-                ),)),
-                registry,
-            )
+
+    def test_source_anchor_mutation_changes_only_affected_source_projection(self):
+        course = _synthetic_course(6)
+        registry = _synthetic_registry()
+        baseline = compile_execution_plan(
+            course, CurriculumProfile.full(), registry)
+        grade = course.grades[0]
+        changed_capability = replace(
+            grade.capabilities[-1],
+            source_anchor="repo:fixture/z/source-v2")
+        changed_course = replace(
+            course,
+            grades=(replace(
+                grade,
+                capabilities=(*grade.capabilities[:-1], changed_capability)),),
+        )
+        mutated = compile_execution_plan(
+            changed_course, CurriculumProfile.full(), registry)
+
+        self.assertEqual(
+            baseline.curriculum_sha256, mutated.curriculum_sha256)
+        self.assertNotEqual(
+            baseline.source_binding_sha256, mutated.source_binding_sha256)
+        delta = diff_execution_plans(baseline, mutated)
+        self.assertEqual(delta.changed_capabilities, ("Z.C5",))
+        self.assertEqual(set(delta.projection_changes), {"source"})
+
+        baseline_nodes = {
+            item.capability_id: item
+            for item in baseline.capability_projection_digests}
+        mutated_nodes = {
+            item.capability_id: item
+            for item in mutated.capability_projection_digests}
+        for capability in ("Z.C0", "Z.C1", "Z.C2", "Z.C3", "Z.C4"):
+            self.assertEqual(
+                baseline_nodes[capability], mutated_nodes[capability])
+        self.assertNotEqual(
+            baseline_nodes["Z.C5"].source,
+            mutated_nodes["Z.C5"].source)
+
+    def test_release_source_metadata_changes_source_not_curriculum_identity(self):
+        course = _synthetic_course(6)
+        registry = _synthetic_registry()
+        previous = compile_execution_plan(
+            course, CurriculumProfile.full(), registry)
+        mutated = replace(
+            course,
+            version="fixture.z/v2",
+            source_attestation_sha256="c" * 64)
+        current = compile_execution_plan(
+            mutated, CurriculumProfile.full(), registry)
+        self.assertEqual(previous.curriculum_sha256, current.curriculum_sha256)
+        self.assertNotEqual(
+            previous.source_binding_sha256, current.source_binding_sha256)
+        delta = diff_execution_plans(previous, current)
+        self.assertEqual(delta.semantic_geometry, "UNCHANGED")
+        self.assertEqual(set(delta.projection_changes), {"source"})
+
+    def test_semantic_curriculum_change_requires_lineage_and_classifies_model_geometry(self):
+        course, registry = _synthetic_boolean_course()
+        previous = compile_execution_plan(
+            course, CurriculumProfile.full(), registry)
+        grade = course.grades[1]
+        changed_capability = replace(
+            grade.capabilities[-1],
+            prerequisites=("A.C0", "A.C1", "A.C2"))
+        changed_grade = replace(
+            grade,
+            capabilities=(*grade.capabilities[:-1], changed_capability))
+        changed_course = replace(
+            course, grades=(course.grades[0], changed_grade))
+        current = compile_execution_plan(
+            changed_course, CurriculumProfile.full(), registry)
+        self.assertNotEqual(
+            previous.curriculum_sha256, current.curriculum_sha256)
+        with self.assertRaisesRegex(ValueError, "LINEAGE_REQUIRED"):
+            diff_execution_plans(previous, current)
+
+        unchanged = PlanLineage.from_semantic_catalogs(
+            previous, current, ("a", "b"), ("a", "b"))
+        delta = diff_execution_plans(
+            previous, current, lineage=unchanged)
+        self.assertEqual(delta.semantic_geometry, "UNCHANGED")
+
+        expanded = PlanLineage.from_semantic_catalogs(
+            previous, current, ("a", "b"), ("a", "b", "c"))
+        delta = diff_execution_plans(
+            previous, current, lineage=expanded)
+        self.assertEqual(delta.semantic_geometry, "APPEND_ONLY_EXPANSION")
+
+        incompatible = PlanLineage.from_semantic_catalogs(
+            previous, current, ("a", "b"), ("b", "a"))
+        delta = diff_execution_plans(
+            previous, current, lineage=incompatible)
+        self.assertEqual(delta.semantic_geometry, "INCOMPATIBLE")
 
 
 if __name__ == "__main__":

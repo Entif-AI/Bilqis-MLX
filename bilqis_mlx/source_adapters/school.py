@@ -6,6 +6,7 @@ import random
 
 from ..factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from ..factory.model import SourceAdapter
+from ..curriculum import BOOLEAN_OPERATORS
 from ..factory.verification import (
     check_boolean_composite, check_boolean_identification, check_connective,
     check_numeric, check_predicate,
@@ -142,10 +143,18 @@ def draw_b(*, source_root, graph, course, capability, seed, each):
     return _sample_boolean_runtime(rows, capability=capability, seed=seed, each=each)
 
 
-def draw_b_composite_release(*, source_root, graph, course, capability, seed, each):
+def draw_b_composite_release(*, source_root, graph, course, capability, seed, each,
+                             profile_parameters=None):
+    parameters = profile_parameters or {}
+    if set(parameters) - {"operators"}:
+        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN")
+    operators = tuple(parameters.get("operators", BOOLEAN_OPERATORS))
     if capability == B_COMPOSITE_CAPABILITY:
         return draw_composite(source_root, graph, seed=seed,
-                              capability=capability, each=each)
+                              capability=capability, each=each,
+                              operators=operators)
+    if parameters:
+        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT")
     return draw_b(source_root=source_root, graph=graph, course=course,
                   capability=capability, seed=seed, each=each)
 
@@ -156,13 +165,22 @@ def check_b_composite_release(row, **kwargs):
     return check_connective(row, **kwargs)
 
 
-def draw_b_idboolops_release(*, source_root, graph, course, capability, seed, each):
+def draw_b_idboolops_release(*, source_root, graph, course, capability, seed, each,
+                             profile_parameters=None):
+    parameters = profile_parameters or {}
+    if set(parameters) - {"operators"}:
+        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN")
+    operators = tuple(parameters.get("operators", BOOLEAN_OPERATORS))
     if capability == B_IDBOOLOPS_CAPABILITY:
         return draw_identification(source_root, graph, seed=seed,
-                                   capability=capability, each=each)
+                                   capability=capability, each=each,
+                                   operators=operators)
     if capability == B_COMPOSITE_CAPABILITY:
         return draw_composite(source_root, graph, seed=seed,
-                              capability=capability, each=each)
+                              capability=capability, each=each,
+                              operators=operators)
+    if parameters:
+        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT")
     return draw_b(source_root=source_root, graph=graph, course=course,
                   capability=capability, seed=seed, each=each)
 
@@ -241,6 +259,7 @@ def live_source_registry() -> SourceAdapterRegistry:
             cohort_generator_id=B_COMPOSITE_GENERATOR,
             variation_axes=("source-valid", "fresh-seed", "operator-composition",
                             "runtime-answer-balance"),
+            profile_dimensions=(("operators", BOOLEAN_OPERATORS),),
             cohort_releases=((B_COMPOSITE_RELEASE, b_composite_digest()),)),
             draw_b_composite_release, check_b_composite_release),
         RegisteredSourceAdapter(SourceAdapter(
@@ -249,6 +268,7 @@ def live_source_registry() -> SourceAdapterRegistry:
             cohort_generator_id=B_IDBOOLOPS_GENERATOR,
             variation_axes=("source-valid", "fresh-seed", "inverse-operator-identification",
                             "balanced-operator-targets", "masked-operator-input"),
+            profile_dimensions=(("operators", BOOLEAN_OPERATORS),),
             cohort_releases=((B_IDBOOLOPS_RELEASE, b_idboolops_digest()),)),
             draw_b_idboolops_release, check_b_idboolops_release),
         RegisteredSourceAdapter(SourceAdapter(

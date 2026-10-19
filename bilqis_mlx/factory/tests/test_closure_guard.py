@@ -27,17 +27,24 @@ class FactoryClosureGuardTests(unittest.TestCase):
         self.assertTrue(any("GENERIC_RELEASE_IDENTITY_DISPATCH" in item
                             for item in problems))
 
-    def test_capability_roster_special_case_is_rejected(self):
+    def test_aliased_release_dict_dispatch_cannot_hide(self):
         temp, root = self.fixture(
-            "def valid(caps):\n"
-            "    compact = tuple(caps) == ('B.AND', 'B.IFF')\n"
-            "    return compact\n",
-            filename="curriculum/model.py")
+            "from x import MINIMAL_BOOLEAN_RELEASE as MODE\n"
+            "def handler(): return 1\n"
+            "HANDLERS = {MODE: handler}\n"
+            "def choose(mode): return HANDLERS[mode]()\n")
         with temp:
             problems = inspect_factory_closure(root)
-        self.assertTrue(any("GENERIC_CAPABILITY_LITERAL:B.AND" in item
+        self.assertTrue(any("GENERIC_RELEASE_IDENTITY_REFERENCE:MODE" in item
                             for item in problems))
-        self.assertTrue(any("GENERIC_CAPABILITY_LITERAL:B.IFF" in item
+
+    def test_capability_lookup_table_is_rejected_anywhere_in_generic_runtime(self):
+        temp, root = self.fixture(
+            "HANDLERS = {'B.OR': object()}\n",
+            filename="presentation/view.py")
+        with temp:
+            problems = inspect_factory_closure(root)
+        self.assertTrue(any("GENERIC_CAPABILITY_LITERAL:B.OR" in item
                             for item in problems))
 
     def test_concrete_provider_import_from_generic_runtime_is_rejected(self):
@@ -47,6 +54,28 @@ class FactoryClosureGuardTests(unittest.TestCase):
         with temp:
             problems = inspect_factory_closure(root)
         self.assertTrue(any("GENERIC_IMPORTS_CONCRETE_PROVIDER" in item
+                            for item in problems))
+
+    def test_generic_runtime_cannot_reconstruct_inventory_from_course(self):
+        temp, root = self.fixture(
+            "from bilqis_mlx.curriculum import Course\n"
+            "def run(course: Course):\n"
+            "    return tuple(cap.id for grade in course.grades for cap in grade.capabilities)\n",
+            filename="runtime/runner.py")
+        with temp:
+            problems = inspect_factory_closure(root)
+        self.assertTrue(any("GENERIC_RUNTIME_IMPORTS_COURSE" in item
+                            for item in problems))
+        self.assertTrue(any("GENERIC_RUNTIME_RECONSTRUCTS_COURSE" in item
+                            for item in problems))
+
+    def test_profile_specific_provider_is_rejected_at_provider_boundary(self):
+        temp, root = self.fixture(
+            "from bilqis_mlx.minimal_grade_b import draw_minimal\n",
+            filename="source_adapters/school.py")
+        with temp:
+            problems = inspect_factory_closure(root)
+        self.assertTrue(any("PROFILE_SPECIFIC_PROVIDER_IMPORT" in item
                             for item in problems))
 
     def test_data_driven_generic_runtime_passes(self):

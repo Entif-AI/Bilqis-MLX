@@ -4,6 +4,10 @@ from __future__ import annotations
 from .adapters import SourceAdapterRegistry
 from .model import FactoryRelease
 from .execution import ExecutionPlan
+from .curriculum_definition import (
+    CurriculumDefinition, SourceBindingSet, from_legacy_course,
+    validate_source_bindings,
+)
 
 
 def draw_release_rows(source_root, graph, release: FactoryRelease,
@@ -54,13 +58,26 @@ def draw_release_rows(source_root, graph, release: FactoryRelease,
     return rows
 
 
-def draw_execution_rows(source_root, graph, course, plan: ExecutionPlan,
-                        registry: SourceAdapterRegistry, *, seed: int,
-                        capability: str | None = None,
-                        each: int | None = None) -> list[dict]:
+def draw_execution_rows(
+        source_root, graph, curriculum, plan: ExecutionPlan,
+        registry: SourceAdapterRegistry, *, seed: int,
+        source_bindings: SourceBindingSet | None = None,
+        legacy_course=None, capability: str | None = None,
+        each: int | None = None) -> list[dict]:
     """Generate from one compiled execution contract, including profile constraints."""
-    if not isinstance(plan, ExecutionPlan) or plan.course_sha256 != course.digest():
-        raise ValueError("FACTORY_EXECUTION_GENERATION_PLAN_COURSE_DRIFT")
+    if isinstance(curriculum, CurriculumDefinition):
+        if source_bindings is None:
+            raise ValueError("FACTORY_EXECUTION_GENERATION_SOURCE_BINDINGS_REQUIRED")
+        validate_source_bindings(curriculum, source_bindings)
+    else:
+        if source_bindings is not None:
+            raise ValueError("FACTORY_EXECUTION_GENERATION_LEGACY_BINDINGS_AMBIGUOUS")
+        legacy_course = curriculum
+        curriculum, source_bindings = from_legacy_course(curriculum)
+    if (not isinstance(plan, ExecutionPlan) or
+            plan.curriculum_sha256 != curriculum.digest() or
+            plan.source_binding_sha256 != source_bindings.digest()):
+        raise ValueError("FACTORY_EXECUTION_GENERATION_PLAN_BINDING_DRIFT")
     if not isinstance(registry, SourceAdapterRegistry):
         raise TypeError("FACTORY_EXECUTION_GENERATION_REGISTRY_REQUIRED")
     selected = tuple(
@@ -72,14 +89,14 @@ def draw_execution_rows(source_root, graph, course, plan: ExecutionPlan,
         raise ValueError("FACTORY_EXECUTION_GENERATION_EMPTY_SCOPE")
 
     rows = []
-    canonical = course.capability_map
+    bindings = source_bindings.by_capability
     for execution in selected:
         count = execution.exam_item_count if each is None else each
         if type(count) is not int or count < 1:
             raise ValueError("FACTORY_EXECUTION_GENERATION_INVALID_COUNT")
-        declared = canonical[execution.capability_id]
+        binding = bindings[execution.capability_id]
         adapter = registry.require(
-            declared.lesson_generator, declared.independent_oracle)
+            binding.generator_id, binding.oracle_id)
         if adapter.descriptor.adapter_id != execution.provider_id:
             raise ValueError(
                 "FACTORY_EXECUTION_GENERATION_ADAPTER_DRIFT:"
@@ -89,7 +106,7 @@ def draw_execution_rows(source_root, graph, course, plan: ExecutionPlan,
         arguments = {
             "source_root": source_root,
             "graph": graph,
-            "course": course,
+            "course": legacy_course,
             "capability": execution.capability_id,
             "seed": seed,
             "each": count,
@@ -115,7 +132,7 @@ def draw_execution_rows(source_root, graph, course, plan: ExecutionPlan,
                     + execution.capability_id)
             if adapter.check(
                     row, source_root=source_root, graph=graph,
-                    course=course) is not True:
+                    course=legacy_course) is not True:
                 raise ValueError(
                     "FACTORY_EXECUTION_GENERATION_SOURCE_ORACLE_DISAGREEMENT:"
                     + execution.capability_id)

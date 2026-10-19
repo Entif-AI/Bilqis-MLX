@@ -1,5 +1,7 @@
 # Executable curriculum closure
 
+**Authority note:** Read [`10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md`](10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md) with this design. That record owns the cross-source authority hierarchy, supersession conflicts, New Ithkuil integration boundary, and governance-first migration order. This file owns the executable-factory architecture.
+
 ## Problem
 
 SPEC-0001 requires one declarative curriculum architecture in which new grades and capability changes flow through a common factory without edits to generic trainer, scheduler, evaluation, promotion, dashboard, checkpoint, or teacher runtime. The present implementation does not satisfy that contract. `FactoryRelease` is compiled and admission-gated, but much of live execution still reconstructs behavior from `Course`, concrete provider modules, release-name switches, CLI flags, and subsystem-local state assumptions. The reduced-Boolean experiment exposed the consequence: changing the active B roster required follow-up repairs in assessment rubric selection, championship source identity, dashboard replay, and stagnation scope.
@@ -13,14 +15,16 @@ The second authority must disappear from canonical execution. Historical compati
 
 ## Usage
 
-The caller should choose a canonical curriculum plus an optional declarative execution profile. It should not choose trainer branches.
+The caller chooses a semantic curriculum, source bindings, answer modalities, and an optional declarative execution profile. It does not choose trainer branches.
 
 ```python
-catalog = provider_catalog()
+curriculum = load_curriculum_definition("bilqis.school/core-v1")
+bindings = load_source_bindings("bilqis.school/source-bindings-v1")
+providers = provider_catalog()
+answers = answer_modality_registry()
 
-canonical = load_course("bilqis.school/core-v1")
 profile = CurriculumProfile(
-    id="boolean-kernel/and-iff",
+    profile_id="boolean-kernel/and-iff",
     grades=(
         GradeProfile(
             grade_id="B",
@@ -30,89 +34,79 @@ profile = CurriculumProfile(
                 "B.COMPOSITE",
                 "B.IDBOOLOPS",
             ),
-            capability_constraints=(
-                CapabilityConstraint("B.COMPOSITE", dimensions={
-                    "operators": ("AND", "IFF"),
-                }),
-                CapabilityConstraint("B.IDBOOLOPS", dimensions={
-                    "operators": ("AND", "IFF"),
-                    "answer_values": ("AND", "IFF"),
-                }),
+            capabilities=(
+                CapabilityProfile(
+                    "B.COMPOSITE",
+                    provider_parameters=(("operators", ("AND", "IFF")),),
+                ),
+                CapabilityProfile(
+                    "B.IDBOOLOPS",
+                    provider_parameters=(("operators", ("AND", "IFF")),),
+                    answer_family_values=(("boolean_operator", ("AND", "IFF")),),
+                ),
             ),
         ),
     ),
 )
 
-release = compile_executable_curriculum(canonical, profile, catalog)
-runtime = SchoolRuntime.from_release(release, provider_catalog=catalog)
-runtime.resume(run_dir)
-```
-
-The same runtime call must work for an unfamiliar synthetic grade:
-
-```python
-release = compile_executable_curriculum(
-    synthetic_course_z,
-    CurriculumProfile.full(),
-    synthetic_provider_catalog,
-)
-SchoolRuntime.from_release(
-    release,
-    provider_catalog=synthetic_provider_catalog,
-).run_disposable(disposable_student)
-```
-
-No new grade/capability/release name may be added to generic runtime source for either call.
-
-Changing the active Boolean kernel must be a profile-data edit:
-
-```python
-profile = replace(
+plan = compile_execution_plan(
+    curriculum,
     profile,
-    grades=(
-        replace(
-            profile.grades[0],
-            enabled_capabilities=("B.AND", "B.IFF"),
-        ),
-    ),
+    providers,
+    source_bindings=bindings,
+    answer_registry=answers,
 )
+release = compile_factory_release(
+    curriculum=curriculum,
+    source_bindings=bindings,
+    execution_plan=plan,
+    answer_modalities=answers.descriptors_for(plan),
+)
+SchoolRuntime.from_release(release).resume(run_dir)
 ```
 
-Compiling that profile must automatically alter every derived runtime projection that depends on the roster. The caller must not edit assessment, stagnation, championship, telemetry, answer-head, or migration code.
+The same runtime call must work for an unfamiliar synthetic grade. No new grade, capability, or release name may be added to generic runtime source.
+
+Changing the active Boolean kernel is profile data. The canonical B curriculum remains full and staged. Filtering the canonical stages by the active roster automatically produces `AND/IFF -> COMPOSITE -> IDBOOLOPS`.
+
+Compiling a profile must alter only the downstream projections that depend on the changed declaration. The caller must not edit assessment, stagnation, championship, telemetry, answer-head, or migration code.
 
 ## Shape
 
-### Canonical course and executable profile are different things
+### Semantic curriculum, source bindings, and executable profile are different things
 
-`Course` remains the canonical semantic curriculum. It answers what Bilqis knows how to teach and how those capabilities relate.
+The legacy `Course` object mixes several authorities: semantic capability structure, pedagogy, source generator/oracle IDs, release version, source attestation, and assessment seals. That is too much authority for one runtime-facing object.
 
-`CurriculumProfile` answers what subset/constraints are active for one executable release. A profile may disable capabilities or narrow declared construction dimensions, but it may not invent semantics, source adapters, answer values, prerequisites, or operations that the canonical course does not authorize.
+The target split is:
 
-This removes the current special case where a temporary four-capability B kernel is represented as a different canonical Grade B plus a validator exemption.
+1. `CurriculumDefinition`: semantic and pedagogical meaning only, including capability roster, prerequisites, composition, answer families, item counts, and teaching stages.
+2. `SourceBindingSet`: capability-to-generator/oracle/source provenance bindings plus source attestation.
+3. `CurriculumProfile`: active subset and allowed narrowing of provider/answer domains.
+4. `ExecutionPlan`: compiled runtime projections and dependency digests.
+5. `FactoryRelease`: immutable admission artifact that binds the four inputs above to sealed assessments, lineage, semantic geometry, and implementation evidence.
+
+`Course` is a compatibility input during migration. New canonical declarations must not originate from it.
+
+A profile may disable capabilities or narrow dimensions that the provider declares configurable. It may not invent semantics, source adapters, answer values, prerequisites, composition, teaching stages, or operations.
 
 ```python
 @dataclass(frozen=True)
-class CapabilityConstraint:
+class CapabilityProfile:
     capability_id: str
-    dimensions: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    provider_parameters: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    answer_family_values: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
 
 @dataclass(frozen=True)
 class GradeProfile:
     grade_id: str
     enabled_capabilities: tuple[str, ...] | None = None
-    capability_constraints: tuple[CapabilityConstraint, ...] = ()
-
-
-@dataclass(frozen=True)
-class CurriculumProfile:
-    id: str
-    grades: tuple[GradeProfile, ...] = ()
+    capabilities: tuple[CapabilityProfile, ...] = ()
 ```
 
 ### The compiler produces the sole live execution contract
 
-`FactoryRelease` must stop being only a certificate over `Course`. It must carry one compiled `ExecutionPlan`.
+`ExecutionPlan` is compiled from `CurriculumDefinition + SourceBindingSet + CurriculumProfile + provider/answer registries`.
 
 ```python
 @dataclass(frozen=True)
@@ -121,41 +115,32 @@ class CapabilityExecution:
     grade_id: str
     stage: int
     prerequisites: tuple[str, ...]
+    composed_of: tuple[str, ...]
+    source_anchor: str
     provider_id: str
+    provider_implementation_sha256: str
     oracle_id: str
-    construction_program_id: str
-    construction_constraints: tuple[tuple[str, tuple[str, ...]], ...]
+    provider_parameters: tuple[tuple[str, tuple[str, ...]], ...]
+    variation_axes: tuple[str, ...]
+    teaching_option_ids: tuple[str, ...]
     answer_families: tuple[AnswerFamily, ...]
     exam_item_count: int
 
 
 @dataclass(frozen=True)
-class GradeExecution:
-    grade_id: str
-    capabilities: tuple[str, ...]
-    teaching_stages: tuple[tuple[str, ...], ...]
-    cumulative_scope: tuple[str, ...]
-    assessment_sha256: str
-
-
-@dataclass(frozen=True)
-class ProjectionDigests:
-    roster: str
-    schedule: str
-    assessment: str
-    source: str
-    answer_schema: str
-
-
-@dataclass(frozen=True)
 class ExecutionPlan:
     profile_id: str
+    curriculum_sha256: str
+    source_binding_sha256: str
     grades: tuple[GradeExecution, ...]
     capabilities: tuple[CapabilityExecution, ...]
     projection_digests: ProjectionDigests
+    capability_projection_digests: tuple[CapabilityProjectionDigests, ...]
 ```
 
-Generic runtime receives `ExecutionPlan`, not a release-name switchboard. `Course` remains available as release provenance and for historical/source verification, but it is not independently reinterpreted by each runtime subsystem.
+The plan carries both global and capability-scoped digests for `roster`, `schedule`, `assessment`, `source`, `answer_schema`, `coverage`, and `teaching`. A B-only profile revision therefore need not invalidate unrelated A evidence.
+
+Assessment identity in the plan is a blueprint digest, not a final rubric seal. `FactoryRelease` must generate/verify the admitted assessment material and mint the executable seal. A metadata hash is never allowed to masquerade as source-verified assessment authority.
 
 ### Source specialization is a provider boundary, not a grade boundary
 
@@ -187,50 +172,64 @@ class SourceProvider(Protocol):
 
 There is no `minimal_boolean` provider. The normal Boolean providers receive the `operators=("AND", "IFF")` constraint from the compiled execution plan.
 
+Provider configuration is part of the source contract. A provider descriptor declares the dimensions that an execution profile may narrow and their canonical domains. The compiler rejects unknown dimensions, values outside the canonical domain, and reordered values. Plan-driven generation passes the compiled constraints to the provider. A profile therefore cannot claim AND/IFF-only execution while calling an unconstrained six-operator generator.
+
+### Answer modality is an extension boundary
+
+The execution plan declares answer families and active values. It does not contain grade-specific model-head code.
+
+Each answer kind resolves through a typed answer-modality adapter. The adapter owns the mapping from answer labels to semantic-token identities and the training/evaluation mechanics for that modality. `binary`, `boolean_operator`, and `numeric_active` are modality identities, not Grade A/B/C branches.
+
+For example, the Boolean-kernel profile compiles:
+
+```text
+answer kind: boolean_operator
+values:      AND, IFF
+```
+
+The `boolean_operator` modality adapter maps those values to their existing semantic-token identities. No minimal-B answer-head builder exists.
+
+Adding a new answer modality requires one new typed modality adapter, as SPEC-0001 §10.4 permits. Adding a grade or changing a capability roster does not.
+
 ### Release transitions are diffs, not version switches
 
-The compiler compares two releases and derives the transition.
+Plan changes are compared structurally. Profile-only changes over the same semantic curriculum are geometry-neutral by construction. A semantic curriculum change requires explicit lineage, and the model ABI classifies the semantic-token catalog as unchanged, append-only expansion, or incompatible.
 
 ```python
 class SemanticGeometryChange(Enum):
     UNCHANGED = "UNCHANGED"
-    EXPANDED = "EXPANDED"
+    APPEND_ONLY_EXPANSION = "APPEND_ONLY_EXPANSION"
+    INCOMPATIBLE = "INCOMPATIBLE"
 
 
 @dataclass(frozen=True)
-class CurriculumDelta:
-    previous_release_sha256: str
-    next_release_sha256: str
-    added_grades: tuple[str, ...]
-    removed_grades: tuple[str, ...]
-    revised_grades: tuple[str, ...]
-    added_capabilities: tuple[str, ...]
-    removed_capabilities: tuple[str, ...]
-    changed_capabilities: tuple[str, ...]
-    projection_changes: tuple[str, ...]
+class PlanLineage:
+    previous_curriculum_sha256: str
+    next_curriculum_sha256: str
     semantic_geometry: SemanticGeometryChange
 ```
 
 No generic code asks whether the version is `MINIMAL_BOOLEAN_RELEASE`, `BOOLEAN_IDENTIFICATION_RELEASE`, or `NUMERIC_STAIRCASE_RELEASE`.
 
-The transition executor has exactly two neural-state cases:
+The transition executor ultimately has three cases:
 
-1. semantic geometry unchanged: preserve model/AdamW exactly and swap the admitted execution plan;
-2. semantic geometry expanded: invoke the one model-ABI vocabulary expansion boundary, then admit the new execution plan.
+1. semantic geometry unchanged: preserve model/AdamW exactly and reconcile only state whose bound projections changed;
+2. append-only semantic expansion: invoke the one model-ABI vocabulary expansion boundary, then admit the plan;
+3. incompatible geometry: fail closed. No automatic migration.
 
-Same-grade revision vs appended grade is derived from the delta, not hard-coded by release name.
+Same-grade revision, appended grade, provider revision, and profile revision are derived from the release diff rather than hard-coded release names.
 
 ### Persistent subsystem state is bound to compiler projections
 
-Every durable control-plane structure that depends on curriculum geometry carries the digest of the projection it consumed.
+Every durable control-plane structure that depends on curriculum geometry carries the global and/or capability-scoped projection digests it consumed. A subsystem binds only the dependencies it actually uses.
 
 Examples:
 
-- scheduler state binds `schedule`;
-- stagnation state binds `schedule`;
-- assessment/cohort evidence binds `assessment` + `source`;
-- championship title evidence binds `assessment` + `source`;
-- typed answer-head metadata binds `answer_schema`;
+- scheduler state binds `schedule` for its active capability set;
+- stagnation state binds the same schedule nodes;
+- assessment/cohort evidence binds `assessment + source + coverage` for represented capabilities;
+- championship title evidence binds `assessment + source` for its capability;
+- typed answer-head metadata binds `answer_schema` plus answer-modality implementation identity;
 - dashboard active inventory binds `roster`.
 
 On resume or release transition, generic runtime compares stored projection digests with the newly admitted plan.
@@ -261,7 +260,7 @@ Grade and capability remain typed event fields.
 
 The core conformance proof is mutation-driven.
 
-One synthetic canonical course is compiled under multiple profiles. Tests mutate:
+One synthetic `CurriculumDefinition` is compiled under multiple profiles and source-binding sets. Tests mutate:
 
 - enabled capability roster;
 - stage membership;
@@ -330,15 +329,15 @@ Rejected: a callback/plugin registry for every runtime subsystem. That would mer
 
 ## Open questions and risks
 
-- Can every current source provider accept declarative construction constraints, or do one or more encode capability/release choices so deeply that they need a one-time provider refactor?
-- Which current persisted evidence can safely reconcile across a profile change, and which should be invalidated by default?
-- Should typed answer-head compilation live directly in the execution-plan compiler or in the model-ABI boundary consuming the plan?
-- Can the current `Course` cardinality rule remain a canonical-authoring constraint once executable profiles are allowed to expose a smaller subset?
-- Which historical release IDs must remain directly resumable, and which can be decoded into an equivalent canonical course + profile only at compatibility load time?
+- The real full-B COMPOSITE and IDBOOLOPS providers now accept an operator-domain profile and pass the pinned-source 48-row AND/IFF proof. Other current providers, especially numeric C, still need the same contract review.
+- `typed_answer_training.py` still contains modality-specific runtime validation. It must move behind the typed answer-modality registry without weakening ABI checks.
+- Persisted evidence needs an explicit dependency map before runtime cutover so reconciliation is scoped rather than global.
+- Historical release IDs must decode into semantic curriculum + source bindings + full profile under `compatibility/`; they must not remain live successor policy.
+- `FactoryRelease` has not yet been migrated to carry the new execution plan, answer-modality descriptors, sealed profile assessments, and predecessor lineage. Runtime cutover is blocked until that is complete.
 
 ## Next implementation step
 
-Implement `CurriculumProfile`, `ExecutionPlan`, deterministic projection digests, and mutation-closure tests first; do not migrate live runtime callers until that proof can express the reduced-B kernel without any named Boolean/minimal special case.
+Wave 0.5 is a proof scaffold, not a live cutover. Finish the stronger closure baseline and commit the review-corrected semantic/source/profile split. Then implement Wave 1: make `FactoryRelease` the immutable carrier of the compiled execution plan and final sealed assessment authority before migrating any live runtime consumer.
 
 ## Migration sequence
 
@@ -346,9 +345,9 @@ This redesign is an architectural cutover, not permission to maintain both execu
 
 ### Wave 0: prove the compiled dependency graph
 
-Build `CurriculumProfile`, `ExecutionPlan`, projection digests, and `CurriculumDelta` with synthetic mutation tests. The reduced Boolean kernel must compile from a full canonical A+B declaration without importing or naming a minimal-B release/provider.
+Build `CurriculumDefinition`, `SourceBindingSet`, `CurriculumProfile`, `ExecutionPlan`, scoped projection digests, answer-modality adapters, lineage classification, and mutation tests. The reduced Boolean kernel must compile and generate from the real full-B providers and pinned source without importing or naming a minimal-B release/provider.
 
-Exit gate: mutation tests distinguish roster, schedule, assessment, source, and answer-schema dependencies, and `scripts/check_factory_closure.py` records the complete current split-authority baseline.
+Exit gate: mutation tests distinguish roster, schedule, assessment, source, answer-schema, coverage, and teaching dependencies; unrelated capability digests remain unchanged; real pinned-source constrained generation passes; and `scripts/check_factory_closure.py` records the current split-authority baseline.
 
 ### Wave 1: make FactoryRelease carry the executable plan
 
