@@ -288,6 +288,10 @@ def _table_line(row, columns):
                           right=column.right) for column in columns).rstrip()
 
 
+def _section_heading(name,label):
+    return label if name=="GRADES & MASTERY" else f"{name}   [{label}]"
+
+
 def _right_header(left,summary,width):
     """Keep the means visible on short windows, without hidden line wrapping."""
     if len(summary)>width-2:return summary[:width]
@@ -718,7 +722,7 @@ class Dashboard:
         shown=min(shown,len(available))
         recent=available[-shown:] if shown else []
         label=self._section_label(name,shown,recent,available)
-        return ([f"{name}   [{label}]"[:width],
+        return ([_section_heading(name,label)[:width],
                  _table_line({c.key:c.name for c in fitted},fitted)[:width]]+
                 [_table_line(row,fitted)[:width] for row in recent])
 
@@ -729,19 +733,22 @@ class Dashboard:
         elif name=='GRADES & MASTERY':
             summaries=[row for row in available if row.get('row_type')=='summary']
             full=self.grade_program or tuple(row['grade'] for row in summaries)
-            total=len(full)
-            family_shown=sum(row.get('row_type')!='summary' for row in recent)
-            summary_shown=sum(row.get('row_type')=='summary' for row in recent)
-            gtotal=sum(grade.startswith('G') for grade in full)
-            btotal=sum(grade.startswith('B') for grade in full)
-            gshown=sum(row['grade'].startswith('G') for row in recent
-                       if row.get('row_type')=='summary')
-            bshown=sum(row['grade'].startswith('B') for row in recent
-                       if row.get('row_type')=='summary')
-            if full and all(len(str(g)) == 1 and str(g).isalpha() for g in full):
-                return f'{summary_shown}/{total} letter grades + {family_shown} families'
-            return (f'{summary_shown}/{total} grades + {family_shown} families; '
-                    f'G{gshown}/{gtotal} B{bshown}/{btotal}')
+            grades=len(full)
+            capabilities=sum(row.get('row_type')!='summary' for row in available)
+            latest=max(
+                summaries,
+                key=lambda row:(
+                    row.get('attempt') if type(row.get('attempt')) is int else -1,
+                    row.get('step') if type(row.get('step')) is int else -1,
+                ),
+                default={},
+            )
+            step=latest.get('step','-')
+            exam=latest.get('attempt','-')
+            correct,total=self._latest_all_grade_score()
+            score=(f' = {correct}/{total} ({100*correct/total:.1f}%)'
+                   if total else '')
+            return f'TRAIN: S {step}, X {exam}, G {grades}, C {capabilities}{score}'
         elif name=='SYSTEM & QUALIFICATION':
             return f'{shown}/{len(available)} states'
         return f'{shown}/{len(available)} visible'
@@ -909,11 +916,8 @@ class Dashboard:
         retained_suffix=(f" ({retained:,} retained)" if type(retained) is int else "")
         speed=(f"{round(self._steps_per_min):,} attempted steps/min{retained_suffix}"
                if isinstance(self._steps_per_min,(int,float)) else "")
-        correct,total=self._latest_all_grade_score()
-        accuracy=(f"ALL {correct}/{total} = {100*correct/total:.1f}% correct (last measured)"
-                  if total else "")
         headers=[_right_header(headline,speed,width) if speed else headline,
-                 _right_header(status,accuracy,width) if accuracy else status]
+                 status]
         if self.progress is not None:
             headers=[headline,_right_header(status,
                         _score_summary(self.progress,'START',width),width),
@@ -977,7 +981,7 @@ class Dashboard:
             shown=min(take,len(available))
             recent=available[-shown:] if shown else []
             label=self._section_label(name,shown,recent,available)
-            lines.append(f"{name}   [{label}]"[:width])
+            lines.append(_section_heading(name,label)[:width])
             fitted=_columns(columns,width)
             lines.append(_table_line({c.key:c.name for c in fitted},fitted)[:width])
             if shown:

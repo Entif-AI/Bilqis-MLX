@@ -228,6 +228,44 @@ class SchoolTelemetryTests(unittest.TestCase):
             rows[1]["right_grew"].index("["),
         )
 
+    def test_mastery_header_carries_training_coordinates_and_cumulative_score(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                          tables=LETTER_TABLES)
+        board.state.update(_all_grade_correct=100, _all_grade_total=144)
+        board.rows["GRADES & MASTERY"].extend([
+            {"grade": "A", "step": 126056, "attempt": 5789,
+             "start": "70/72", "latest": "63/72", "best": "72/72",
+             "outcome": "NO TITLE CHANGE"},
+            {"grade": "B", "step": 126056, "attempt": 5789,
+             "start": "33/72", "latest": "37/72", "best": "47/72",
+             "outcome": "NO TITLE CHANGE"},
+        ])
+        for grade in ("A", "B"):
+            for index in range(6):
+                board.rows["BRIDGE FAMILIES"].append({
+                    "grade": grade,
+                    "family": f"{grade}.C{index}",
+                    "step": 126056,
+                    "attempt": 5789,
+                    "start": "6/12",
+                    "before": "-",
+                    "after": "6/12",
+                    "gain": "-",
+                })
+
+        available = board._section_rows("GRADES & MASTERY")
+        self.assertEqual(
+            board._section_label(
+                "GRADES & MASTERY", len(available), available, available),
+            "TRAIN: S 126056, X 5789, G 2, C 12 = 100/144 (69.4%)",
+        )
+        rendered = board.render(width=210, height=40)
+        self.assertIn(
+            "TRAIN: S 126056, X 5789, G 2, C 12 = 100/144 (69.4%)",
+            rendered,
+        )
+        self.assertNotIn("GRADES & MASTERY   [TRAIN:", rendered)
+
     def test_system_feed_compacts_known_rows_and_keeps_latest_state_per_kind_and_grade(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                           tables=LETTER_TABLES)

@@ -207,7 +207,7 @@ class OperatorTests(unittest.TestCase):
         self.assertTrue(all("NO TITLES" in row["outcome"] for row in rows))
         self.assertTrue(all(key[2] == "c" * 64 for key in telemetry.latest))
 
-    def test_dashboard_top_right_shows_step_rate_and_all_grade_accuracy(self):
+    def test_dashboard_top_right_shows_step_rate_without_duplicate_all_grade_accuracy(self):
         now = [100.0]
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                           clock=lambda: now[0])
@@ -228,7 +228,7 @@ class OperatorTests(unittest.TestCase):
         shown = board.render(width=150, height=38)
 
         self.assertIn("1,440 attempted steps/min (1 retained)", shown.splitlines()[0])
-        self.assertIn("ALL 255/291 = 87.6% correct (last measured)", shown.splitlines()[1])
+        self.assertNotIn("ALL 255/291 = 87.6% correct (last measured)", shown)
 
     def test_resume_instructions_are_flag_free_at_default_retention_policy(self):
         from bilqis_mlx.trainer import _resume_command
@@ -487,7 +487,10 @@ class OperatorTests(unittest.TestCase):
                 result=main(["dashboard","--run-dir",tmp])
             self.assertEqual(result,0)
             for name,_ in LETTER_TABLES:
+                if name == "GRADES & MASTERY":
+                    continue
                 self.assertIn(name,out.getvalue())
+            self.assertIn("TRAIN: S -, X -, G 0, C 0", out.getvalue())
             self.assertNotIn("BRIDGE FAMILIES",out.getvalue())
             self.assertIn("READY_FOR_HUMAN_START",out.getvalue())
 
