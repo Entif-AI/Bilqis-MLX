@@ -10,6 +10,7 @@ from ..factory.verification import (
     check_boolean_composite, check_boolean_identification, check_connective,
     check_numeric, check_predicate,
 )
+from .structure import inspect_boolean_identification, inspect_source_query
 
 from ..grade_a_oracle import VERSION as A_ORACLE
 
@@ -197,6 +198,48 @@ def enrich_boolean(*, source_root, graph, course, capability, seed, option_id):
         per_source=4, capability=capability)
 
 
+def witness_micro_obligation(row, obligation, *, source_root, graph, course):
+    """Certify structural learner evidence in the finite-micro source dialect."""
+    del source_root, graph
+    required = tuple(getattr(obligation, "requires_capabilities", ()))
+    if len(required) != 1:
+        raise ValueError("FACTORY_MICRO_EVIDENCE_REQUIRES_ONE_PRODUCER")
+    producer = course.capability_map.get(required[0])
+    if producer is None or len(producer.examined_roots) != 1:
+        raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED")
+    producer_root = producer.examined_roots[0]
+    record = row.get("record")
+    if not isinstance(record, dict):
+        raise ValueError("FACTORY_MICRO_EVIDENCE_RECORD_MISSING")
+
+    kind = getattr(getattr(obligation, "kind", None), "value", None)
+    if kind == "PREREQUISITE":
+        if record.get("task") == "identify_boolean_operator":
+            shape = inspect_boolean_identification(record, row.get("root"))
+        else:
+            shape = inspect_source_query(record.get("query"))
+        return producer_root in shape.rooted_operators
+
+    if kind == "COMPOSITION":
+        key = getattr(obligation, "key", "")
+        try:
+            producer_id, slot_raw = key.rsplit("@", 1)
+            slot = int(slot_raw)
+        except (AttributeError, ValueError) as exc:
+            raise ValueError("FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID") from exc
+        if producer_id != producer.id:
+            raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
+        query = record.get("query")
+        args = query.get("args") if isinstance(query, dict) else None
+        if (query.get("kind") != "apply" if isinstance(query, dict) else True) or not isinstance(args, list):
+            raise ValueError("FACTORY_MICRO_EVIDENCE_COMPOSITION_AST_INVALID")
+        if not 0 <= slot < len(args):
+            return False
+        return inspect_source_query(args[slot]).root == producer_root
+
+    raise ValueError("FACTORY_MICRO_EVIDENCE_KIND_UNSUPPORTED")
+
+
 def live_source_registry() -> SourceAdapterRegistry:
     return SourceAdapterRegistry((
         RegisteredSourceAdapter(SourceAdapter(
@@ -208,7 +251,8 @@ def live_source_registry() -> SourceAdapterRegistry:
             "source.micro.boolean-connectives/v1", "bilqis_mlx.live_grade_b.draw_connectives",
             (B_ORACLE,), b_digest(), cohort_generator_id=B_COHORT_GENERATOR,
             cohort_releases=((B_RELEASE, b_digest()),),
-            teaching_option_ids=(BOOLEAN_ASSOCIATION_OPTION,)), draw_b, check_connective, enrich_boolean),
+            teaching_option_ids=(BOOLEAN_ASSOCIATION_OPTION,)), draw_b, check_connective,
+            enrich_boolean, witness_micro_obligation),
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.boolean-composite/v1", B_COMPOSITE_GENERATOR,
             (B_ORACLE, B_COMPOSITE_ORACLE), b_composite_digest(),
@@ -216,7 +260,8 @@ def live_source_registry() -> SourceAdapterRegistry:
             variation_axes=("source-valid", "fresh-seed", "operator-composition",
                             "runtime-answer-balance"),
             cohort_releases=((B_COMPOSITE_RELEASE, b_composite_digest()),)),
-            draw_b_composite_release, check_b_composite_release),
+            draw_b_composite_release, check_b_composite_release,
+            witness=witness_micro_obligation),
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.boolean-identification/v1", B_IDBOOLOPS_GENERATOR,
             (B_ORACLE, B_COMPOSITE_ORACLE, B_IDBOOLOPS_ORACLE), b_idboolops_digest(),
@@ -224,7 +269,8 @@ def live_source_registry() -> SourceAdapterRegistry:
             variation_axes=("source-valid", "fresh-seed", "inverse-operator-identification",
                             "balanced-operator-targets", "masked-operator-input"),
             cohort_releases=((B_IDBOOLOPS_RELEASE, b_idboolops_digest()),)),
-            draw_b_idboolops_release, check_b_idboolops_release),
+            draw_b_idboolops_release, check_b_idboolops_release,
+            witness=witness_micro_obligation),
         RegisteredSourceAdapter(SourceAdapter(
             "source.finite-numeric/v1", "bilqis_mlx.numeric_curriculum.draw_numeric",
             (C_ORACLE,), c_digest(), cohort_generator_id=C_COHORT_GENERATOR,
