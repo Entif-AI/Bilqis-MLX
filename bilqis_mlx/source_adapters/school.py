@@ -5,6 +5,7 @@ import hashlib
 import random
 
 from ..factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
+from ..factory.autonomy import SupplementalEvidenceSpec
 from ..factory.model import SourceAdapter
 from ..factory.verification import (
     check_boolean_composite, check_boolean_identification, check_connective,
@@ -19,7 +20,7 @@ from ..live_grade_a import (GENERATOR as A_COHORT_GENERATOR, RELEASE as A_RELEAS
                             draw_predicates, generator_source_digest)
 
 
-from ..grade_b_oracle import VERSION as B_ORACLE
+from ..grade_b_oracle import CONNECTIVES, VERSION as B_ORACLE
 
 from ..boolean_composite import (
     CAPABILITY as B_COMPOSITE_CAPABILITY,
@@ -266,6 +267,32 @@ def witness_numeric_obligation(row, obligation, *, source_root, graph, course):
     raise ValueError("FACTORY_NUMERIC_EVIDENCE_KIND_UNSUPPORTED")
 
 
+def boolean_evidence_dependencies(*, course, capability):
+    """Declare abstraction proofs without changing released Course contracts."""
+    del course
+    if capability == B_COMPOSITE_CAPABILITY:
+        return tuple(
+            SupplementalEvidenceSpec(
+                capability_id=capability,
+                kind="COMPOSITION",
+                key="B." + operator,
+                requires_capabilities=("B." + operator,),
+            )
+            for operator in CONNECTIVES
+        )
+    if capability == B_IDBOOLOPS_CAPABILITY:
+        return tuple(
+            SupplementalEvidenceSpec(
+                capability_id=capability,
+                kind="PREREQUISITE",
+                key="B." + operator,
+                requires_capabilities=("B." + operator,),
+            )
+            for operator in CONNECTIVES
+        )
+    return ()
+
+
 def live_source_registry() -> SourceAdapterRegistry:
     return SourceAdapterRegistry((
         RegisteredSourceAdapter(SourceAdapter(
@@ -287,7 +314,8 @@ def live_source_registry() -> SourceAdapterRegistry:
                             "runtime-answer-balance"),
             cohort_releases=((B_COMPOSITE_RELEASE, b_composite_digest()),)),
             draw_b_composite_release, check_b_composite_release,
-            witness=witness_micro_obligation),
+            witness=witness_micro_obligation,
+            dependencies=boolean_evidence_dependencies),
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.boolean-identification/v1", B_IDBOOLOPS_GENERATOR,
             (B_ORACLE, B_COMPOSITE_ORACLE, B_IDBOOLOPS_ORACLE), b_idboolops_digest(),
@@ -296,7 +324,8 @@ def live_source_registry() -> SourceAdapterRegistry:
                             "balanced-operator-targets", "masked-operator-input"),
             cohort_releases=((B_IDBOOLOPS_RELEASE, b_idboolops_digest()),)),
             draw_b_idboolops_release, check_b_idboolops_release,
-            witness=witness_micro_obligation),
+            witness=witness_micro_obligation,
+            dependencies=boolean_evidence_dependencies),
         RegisteredSourceAdapter(SourceAdapter(
             "source.finite-numeric/v1", "bilqis_mlx.numeric_curriculum.draw_numeric",
             (C_ORACLE,), c_digest(), cohort_generator_id=C_COHORT_GENERATOR,

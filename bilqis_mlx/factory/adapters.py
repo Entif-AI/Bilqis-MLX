@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from .autonomy import SupplementalEvidenceSpec
 from .model import SourceAdapter
 
 
@@ -16,6 +17,7 @@ Draw = Callable[..., tuple[dict, ...]]
 Enrich = Callable[..., tuple[dict, ...]]
 Check = Callable[..., bool]
 Witness = Callable[..., bool]
+Dependencies = Callable[..., tuple[SupplementalEvidenceSpec, ...]]
 
 
 @dataclass(frozen=True)
@@ -25,6 +27,7 @@ class RegisteredSourceAdapter:
     check: Check
     enrich: Enrich | None = None
     witness: Witness | None = None
+    dependencies: Dependencies | None = None
 
 
 class SourceAdapterRegistry:
@@ -36,7 +39,11 @@ class SourceAdapterRegistry:
     def register(self, adapter: RegisteredSourceAdapter) -> None:
         if not isinstance(adapter, RegisteredSourceAdapter):
             raise TypeError("FACTORY_INVALID_REGISTERED_SOURCE_ADAPTER")
-        if not callable(adapter.draw) or not callable(adapter.check):
+        if (not callable(adapter.draw) or not callable(adapter.check) or
+                (adapter.enrich is not None and not callable(adapter.enrich)) or
+                (adapter.witness is not None and not callable(adapter.witness)) or
+                (adapter.dependencies is not None and
+                 not callable(adapter.dependencies))):
             raise ValueError("FACTORY_SOURCE_CONSTRUCTOR_AND_CHECKER_REQUIRED")
         key = adapter.descriptor.generator_id
         if key in self._by_generator:
@@ -127,3 +134,30 @@ class SourceAdapterRegistry:
         if type(result) is not bool:
             raise ValueError("FACTORY_EVIDENCE_WITNESS_RESULT_INVALID")
         return result
+
+    def evidence_dependencies(
+        self, course,
+    ) -> tuple[SupplementalEvidenceSpec, ...]:
+        """Collect provider-owned proof metadata without altering Course."""
+        result = []
+        for grade in course.grades:
+            for cap in grade.capabilities:
+                adapter = self.require(
+                    cap.lesson_generator, cap.independent_oracle)
+                if adapter.dependencies is None:
+                    continue
+                supplied = adapter.dependencies(
+                    course=course, capability=cap.id)
+                if any(not isinstance(item, SupplementalEvidenceSpec)
+                       for item in supplied):
+                    raise ValueError(
+                        "FACTORY_EVIDENCE_DEPENDENCY_RESULT_INVALID")
+                if any(item.capability_id != cap.id for item in supplied):
+                    raise ValueError(
+                        "FACTORY_EVIDENCE_DEPENDENCY_SCOPE_DRIFT")
+                result.extend(supplied)
+        identities = [
+            (item.capability_id, item.kind, item.key) for item in result]
+        if len(set(identities)) != len(identities):
+            raise ValueError("FACTORY_EVIDENCE_DEPENDENCY_DUPLICATE")
+        return tuple(result)
