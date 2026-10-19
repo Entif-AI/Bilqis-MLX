@@ -4,6 +4,12 @@ Private, source-oracled MLX training for a compositional semantic transformer. *
 
 The former Bilqis implementations are preserved as pinned, read-only source dependencies under `vendor/legacy-v16/`. They are not separate runtime repositories. The native historical bootstrap checkpoint and inherited teacher state live in the ignored `vendor/legacy-v16/runs/`. The current model, its matching AdamW, learning history, champions and soups live under ignored `runs/`. None of those binaries are committed to Git.
 
+## Live training cockpit
+
+![Bilqis live training dashboard showing a two-row run cockpit above candidate evaluation, sentinel and teacher telemetry, system qualification state, and per-capability curriculum mastery.](docs/images/bilqis-dashboard-prometheus.png)
+
+*A live Bilqis training run in the operator dashboard. The cockpit summarizes runtime and whole-student progress while the panes expose candidate retention, sentinel and teacher evidence, qualification state, and curriculum mastery at a glance.*
+
 ## Keep training the existing student
 
 **Curriculum factory authority:** [`SPEC-0001`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) defines the mandatory end state for semantics-to-grade compilation, release, admission, assessment, generalization, repository structure and extension. The production rule is **no factory release, no grade**. New grades are declarative factory instances; handwritten grade-specific runtime paths are nonconforming. The execution packet is [`TASK-0001`](docs/tasks/0001_IMPLEMENT_GENERATIVE_CURRICULUM_FACTORY.md).
