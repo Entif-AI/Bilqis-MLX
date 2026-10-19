@@ -466,3 +466,44 @@ def next_work(
             if eligible(obligation):
                 return _work_item(release, obligation, mastered)
     return None
+
+class AutonomyActionKind(str, Enum):
+    SOURCE_COVERAGE = "SOURCE_COVERAGE"
+    LEARNING_EVIDENCE = "LEARNING_EVIDENCE"
+    QUALIFICATION = "QUALIFICATION"
+
+
+@dataclass(frozen=True)
+class AutonomyAction:
+    kind: AutonomyActionKind
+    source_coverage_debt: str | None = None
+    evidence_work: CurriculumWorkItem | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.kind, AutonomyActionKind):
+            raise ValueError("AUTONOMY_ACTION_KIND_INVALID")
+        if self.kind is AutonomyActionKind.SOURCE_COVERAGE:
+            if not self.source_coverage_debt or self.evidence_work is not None:
+                raise ValueError("AUTONOMY_SOURCE_ACTION_INVALID")
+        elif self.kind is AutonomyActionKind.LEARNING_EVIDENCE:
+            if self.source_coverage_debt is not None or self.evidence_work is None:
+                raise ValueError("AUTONOMY_LEARNING_ACTION_INVALID")
+        elif self.source_coverage_debt is not None or self.evidence_work is not None:
+            raise ValueError("AUTONOMY_QUALIFICATION_ACTION_INVALID")
+
+
+def next_action(
+    release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
+) -> AutonomyAction:
+    """Route one autonomous iteration without performing the selected work."""
+    _validate_ledger(release, ledger, plan=plan)
+    resolved_plan = _resolve_plan(release, plan)
+    debt = next_source_coverage_debt(resolved_plan)
+    if debt is not None:
+        return AutonomyAction(AutonomyActionKind.SOURCE_COVERAGE,
+                              source_coverage_debt=debt)
+    work = next_work(release, ledger, plan=resolved_plan)
+    if work is not None:
+        return AutonomyAction(AutonomyActionKind.LEARNING_EVIDENCE,
+                              evidence_work=work)
+    return AutonomyAction(AutonomyActionKind.QUALIFICATION)
