@@ -30,12 +30,10 @@ def inspect_lesson_step(course: Course, capability: str, offered: list[dict],
     if capability not in caps or not offered or not delivered:
         raise ValueError("LESSON_EVIDENCE_MISSING_CAPABILITY_OR_BATCH")
     own = caps[capability]
-    root_owner: dict[str, str] = {}
+    root_owners: dict[str, set[str]] = {}
     for candidate in caps.values():
         for root in candidate.taught_roots:
-            if root in root_owner and root_owner[root] != candidate.id:
-                raise ValueError("LESSON_EVIDENCE_AMBIGUOUS_SOURCE_ROOT")
-            root_owner[root] = candidate.id
+            root_owners.setdefault(root, set()).add(candidate.id)
 
     def extract(row: dict) -> tuple[tuple[int, int], tuple[str, ...]]:
         if (not isinstance(row, dict) or row.get("capability") != capability or
@@ -53,10 +51,13 @@ def inspect_lesson_step(course: Course, capability: str, offered: list[dict],
             raise ValueError("LESSON_EVIDENCE_WRONG_ROOT")
         involved = set()
         for root in shape.rooted_operators[1:]:
-            owner = root_owner.get(root)
-            if owner is None or owner not in own.prerequisites:
+            if root in own.taught_roots:
+                continue
+            owners = root_owners.get(root, set())
+            eligible = owners & set(own.prerequisites)
+            if len(eligible) != 1:
                 raise ValueError("LESSON_EVIDENCE_UNADMITTED_CONSTITUENT")
-            involved.add(owner)
+            involved.update(eligible)
         return (shape.semantic_operations, len(row["tokens"])), tuple(sorted(involved))
 
     available = {}

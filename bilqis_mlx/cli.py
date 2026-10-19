@@ -14,6 +14,7 @@ from .grade_a_release import RELEASE as GRADE_A_RELEASE
 from .factory.live_releases import (
     INITIAL_RELEASE as LIVE_GRADE_A_RELEASE,
     BOOLEAN_RELEASE as LIVE_GRADE_B_RELEASE,
+    BOOLEAN_COMPOSITE_RELEASE as LIVE_GRADE_B_COMPOSITE_RELEASE,
     NUMERIC_RELEASE as LIVE_GRADE_C_RELEASE,
 )
 from .numeric_staircase import RELEASE as STAIRCASE_RELEASE
@@ -141,12 +142,12 @@ def _inspect(run_dir: Path) -> dict:
                 "last_exam": saved["last_exam"],
                 "last_session_stop": _latest_session_stop(
                     run_dir, saved["generation"], student["optimizer_step"]),
-                "grade_a_release": LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE else saved.get("curriculum_mode") or GRADE_A_RELEASE,
+                "grade_a_release": LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE) else saved.get("curriculum_mode") or GRADE_A_RELEASE,
                 "historical_source_release": GRADE_A_RELEASE,
-                "grade_a_curriculum_mode": (LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE
+                "grade_a_curriculum_mode": (LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE)
                                              else saved.get("curriculum_mode", "HISTORICAL_FIXED_72")),
-                "grade_b_curriculum_mode": LIVE_GRADE_B_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE else None,
-                "grade_b_source_admitted": saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE),
+                "grade_b_curriculum_mode": saved.get("curriculum_mode") if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE) else None,
+                "grade_b_source_admitted": saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE),
                 "grade_c_curriculum_mode": saved.get("curriculum_mode") if saved.get("curriculum_mode") in (LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE) else None,
                 "introduction_stage": school.get("introduction_stage", 0),
                 "numeric_maximum": saved.get("numeric_maximum"),
@@ -205,7 +206,7 @@ def _source_paths(legacy_code_root: Path | None, champion_checkpoint: Path | Non
 
 def preflight(run_dir: Path, *, resume=False, verify_source=False,
               legacy_code_root: Path | None = None, champion_checkpoint: Path | None = None,
-              numeric_staircase=False, retention_enabled=True,
+              numeric_staircase=False, boolean_composite=False, retention_enabled=True,
               boolean_association_bridge=False):
     legacy_root, original_checkpoint = _source_paths(legacy_code_root, champion_checkpoint)
     existing = (run_dir / "state.json").is_file()
@@ -215,6 +216,8 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         raise ValueError("NEW_RUN_WOULD_OVERWRITE_SAVED_SCHOOL_USE_RESUME")
     if boolean_association_bridge and not resume:
         raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME")
+    if boolean_composite and not resume:
+        raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_RESUME")
     snapshot = _inspect(run_dir)
     snapshot.update({"result":"PREFLIGHT_ONLY_NO_NEURAL_UPDATES",
                      "start_behavior":"EXPLICIT_SAVED_STATE_RESUME" if resume else "GRADE_A_NEW_RUN",
@@ -263,6 +266,26 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
             'initial_maximum': INITIAL_MAXIMUM, 'final_maximum': FINAL_MAXIMUM,
             'resume_maximum': maximum, 'source_student_sha256': snapshot['checkpoint_sha256'],
             'neural_updates': 0, 'next_capability': 'C.COUNT' if saved['curriculum_mode'] != STAIRCASE_RELEASE else None}
+    if boolean_composite:
+        from .boolean_composite import CAPABILITY, RELEASE, build_course
+        from .factory.live_releases import initial_course, boolean_successor
+        from .grade_a_release import accepted_grade_a
+        saved = json.loads((run_dir / "state.json").read_text())
+        if saved.get("curriculum_mode") not in (LIVE_GRADE_B_RELEASE, RELEASE):
+            raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_EXISTING_GRADE_B")
+        accepted = accepted_grade_a(json.loads(GRADE_A_MANIFEST.read_text()))
+        parent = boolean_successor(initial_course(accepted), legacy_root)
+        proposal = build_course(parent, legacy_root)
+        snapshot["boolean_composite"] = {
+            "release": proposal.version,
+            "already_enrolled": saved.get("curriculum_mode") == RELEASE,
+            "next_capability": None if saved.get("curriculum_mode") == RELEASE else CAPABILITY,
+            "grade_b_exam_items": sum(count for _, count in proposal.grades[-1].exam_item_counts),
+            "cumulative_exam_items": sum(count for grade in proposal.grades
+                                         for _, count in grade.exam_item_counts),
+            "source_student_sha256": snapshot["checkpoint_sha256"],
+            "neural_updates": 0,
+        }
     if verify_source:
         from .grade_a_manifest import verify_manifest
         source = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
@@ -375,6 +398,8 @@ def parse_args(argv=None):
             p.add_argument("--resume",action="store_true")
             p.add_argument('--numeric-staircase', action='store_true',
                            help='Warm-start C at 0..3, grow to 6 before MUL/DIV')
+            p.add_argument('--boolean-composite', action='store_true',
+                           help='Neural-inertly enroll B.COMPOSITE into the current Grade-B release')
             retention = p.add_mutually_exclusive_group()
             retention.add_argument('--no-retention', action='store_true',
                                    help='Explicit unprotected legacy teaching (separate independent --run-dir only)')
@@ -533,6 +558,7 @@ def _main(args):
                              legacy_code_root=args.legacy_code_root,
                              champion_checkpoint=args.champion_checkpoint,
                              numeric_staircase=args.numeric_staircase,
+                             boolean_composite=args.boolean_composite,
                              retention_enabled=not args.no_retention,
                              boolean_association_bridge=args.boolean_association_bridge)
         if args.verify_source:
@@ -560,6 +586,7 @@ def _main(args):
                     steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
                     batch_size=args.batch_size, reserve_gib=args.reserve_gib,
                     numeric_staircase=args.numeric_staircase,
+                    boolean_composite=args.boolean_composite,
                     retention_enabled=not args.no_retention,
                     experiment_probe_each=args.experiment_probe_each,
                     experiment_mature_max_loss=args.experiment_mature_max_loss,

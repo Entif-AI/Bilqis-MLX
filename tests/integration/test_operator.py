@@ -398,18 +398,19 @@ class OperatorTests(unittest.TestCase):
 
     def test_grade_c_preflight_reports_missing_approved_registry_as_blocker(self):
         from bilqis_mlx import cli
+        from bilqis_mlx.boolean_composite import build_course as admitted_composite
         from bilqis_mlx.grade_a_release import accepted_grade_a
         from bilqis_mlx.live_grade_a import live_course as admitted_a
-        from bilqis_mlx.live_grade_b import live_course as admitted_b, constructor_digest
+        from bilqis_mlx.live_grade_b import live_course as admitted_b
         manifest = json.loads(cli.GRADE_A_MANIFEST.read_text())
         b_course = admitted_b(admitted_a(accepted_grade_a(manifest)), cli.LEGACY_ROOT)
+        b_course = admitted_composite(b_course, cli.LEGACY_ROOT)
         with tempfile.TemporaryDirectory() as tmp:
             run = Path(tmp)
             saved = {
                 "schema": "bilqis.mlx.human-grade-a-trainer/v1",
                 "generation": 3, "result": "GRADE_B_MASTERED_AWAITING_GRADE_C",
                 "curriculum_mode": b_course.version,
-                "grade_b_code_sha256": constructor_digest(),
                 "school": {"active_grades": ["A", "B"], "grade_index": 1,
                            "course_digest": b_course.digest(),
                            "stage": "AWAITING_NEXT_GRADE", "visits": 4,
@@ -434,6 +435,38 @@ class OperatorTests(unittest.TestCase):
             self.assertNotIn("next_grade_selection_review", report)
             self.assertNotIn("next_grade_source", report)
             self.assertTrue((run / "state.json").is_file())
+
+    def test_old_grade_b_preflight_routes_through_composite_before_c(self):
+        from bilqis_mlx import cli
+        from bilqis_mlx.grade_a_release import accepted_grade_a
+        from bilqis_mlx.live_grade_a import live_course as admitted_a
+        from bilqis_mlx.live_grade_b import live_course as admitted_b
+        manifest = json.loads(cli.GRADE_A_MANIFEST.read_text())
+        b_course = admitted_b(admitted_a(accepted_grade_a(manifest)), cli.LEGACY_ROOT)
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            saved = {
+                "schema": "bilqis.mlx.human-grade-a-trainer/v1",
+                "generation": 3, "result": "GRADE_B_MASTERED_AWAITING_GRADE_C",
+                "curriculum_mode": b_course.version,
+                "school": {"active_grades": ["A", "B"], "grade_index": 1,
+                           "course_digest": b_course.digest(),
+                           "stage": "AWAITING_NEXT_GRADE", "visits": 4,
+                           "current_student": {"sha256": "a" * 64,
+                                               "optimizer_step": 204072},
+                           "champions": {"A": {}, "B": {}}},
+                "teacher": {"events": 10, "strategies": {}}, "last_exam": None,
+            }
+            (run / "state.json").write_text(json.dumps(saved))
+            out = io.StringIO()
+            with patch("bilqis_mlx.cli.assert_headroom", return_value={}), redirect_stdout(out):
+                self.assertEqual(main(["train", "--dry-run", "--resume",
+                                       "--run-dir", tmp]), 0)
+            report = json.loads(out.getvalue())
+        self.assertEqual(report["next_grade"], "B")
+        self.assertEqual(report["next_capability"], "B.COMPOSITE")
+        self.assertEqual(report["next_grade_complete_assessment_items"], 156)
+        self.assertEqual(report["blockers"], [])
 
     def test_resume_terminal_clears_previous_session_stop_before_training(self):
         class Terminal(io.StringIO):
