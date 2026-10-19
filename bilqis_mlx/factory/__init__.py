@@ -61,6 +61,7 @@ from .executable_release import (
     compile_executable_factory_release,
 )
 from .generation import draw_executable_release_rows
+from .live_answers import live_answer_registry
 from .release import (
     admit_factory_release,
     compile_factory_release,
@@ -115,6 +116,7 @@ __all__ = (
     "compile_factory_release",
     "diff_execution_plans",
     "draw_executable_release_rows",
+    "live_answer_registry",
     "fixed_domain",
     "from_legacy_course",
     "qualification_complete",
