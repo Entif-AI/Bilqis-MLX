@@ -148,7 +148,21 @@ def verify_micro_composition_witnesses(plan: dict, rows: tuple[dict, ...],
 
     if plan.get("schema") != SCHEMA:
         raise ValueError("SEMANTIC_COVERAGE_PLAN_VERSION_MISMATCH")
-    if plan["unresolved"]:
+    hard_unresolved = {
+        "MISSING_ORACLE_OR_SOURCE_ANCHOR",
+        "INVALID_SOURCE_SIGNATURE_OR_ARITY",
+        "BOOLEAN_OUTPUT_WITHOUT_BINARY_ANSWER_CASTE",
+    }
+    if any(item.get("failure") in hard_unresolved
+           for item in plan["unresolved"] if isinstance(item, dict)):
+        raise ValueError("SEMANTIC_COVERAGE_UNRESOLVED_CONTRACT_PROOF_BLOCKED")
+    unresolved_consumers = {
+        item["capability"] for item in plan["unresolved"]
+        if isinstance(item, dict) and isinstance(item.get("capability"), str)
+    }
+    if any(edge["consumer"] in unresolved_consumers
+           for edge in plan["obligations"]
+           if edge["status"] == "AWAITING_SOURCE_WITNESS"):
         raise ValueError("SEMANTIC_COVERAGE_UNRESOLVED_CONTRACT_PROOF_BLOCKED")
     candidates = {(e["consumer"], e["producer_root"], e["operand_slot"]): e
                   for e in plan["obligations"]

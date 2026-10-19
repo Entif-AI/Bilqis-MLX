@@ -317,13 +317,23 @@ class AutonomyPlanRebindTests(TypedCompositionAutonomyTests):
             self.release, ledger, old_plan=old, new_plan=new)
         self.assertEqual(compatible.receipts, ledger.receipts)
 
-        # Now close through the old-plan composite and prove those receipts cannot
-        # be relabeled under the new typed-composition contract.
+        # Now close through the old-plan composite. Explicit composition evidence
+        # remains valid; the audited plan may add extra typed-slot obligations
+        # without relabeling or discarding the original receipts.
         ledger = self.close_current_capability(ledger)
         ledger = self.close_current_capability(ledger)
-        with self.assertRaisesRegex(ValueError, "PLAN_REBIND_INVALIDATES_EVIDENCE"):
-            rebind_evidence_ledger(
-                self.release, ledger, old_plan=old, new_plan=new)
+        rebound = rebind_evidence_ledger(
+            self.release, ledger, old_plan=old, new_plan=new)
+        self.assertEqual(rebound.receipts, ledger.receipts)
+        typed = tuple(
+            obligation for obligation in obligations_for_capability(
+                self.release, "A.F3", plan=new)
+            if "typed-composition" in obligation.obligation_id)
+        self.assertEqual(len(typed), 1)
+        self.assertNotIn(
+            typed[0].obligation_id,
+            {receipt.obligation_id for receipt in rebound.receipts},
+        )
 
 
 class TeachingInterventionTests(AutonomousCurriculumPlannerTests):
