@@ -17,6 +17,8 @@ from bilqis_mlx.boolean_identification import (
 )
 from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.grade_a_probe import read_sources
+from bilqis_mlx.live_grade_c import answer_heads as numeric_answer_heads
+from bilqis_mlx.live_grade_c import registry_graph as numeric_registry_graph
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.factory.live_releases import initial_course
 from bilqis_mlx.factory.live_releases import boolean_successor
@@ -29,6 +31,31 @@ from bilqis_mlx.learning.championship_witnesses import battery_from_exam, verifi
 
 
 class ChampionshipExamTests(TestCase):
+    def test_c_era_config_rebuilds_only_idboolops_heads_for_prefix_incumbent(self):
+        root = Path(__file__).resolve().parents[2]
+        source = root / "vendor/legacy-v16"
+        _, _, prefix_graph, _, _ = read_sources(source)
+        grown_graph = numeric_registry_graph()
+        current_heads = numeric_answer_heads(grown_graph, 3)
+        current_heads["boolean_operator"] = idboolops_answer_heads(grown_graph)[
+            "boolean_operator"]
+        current = {
+            "heads": 3,
+            "layers": 1,
+            "answer_heads": current_heads,
+        }
+
+        compatible = trainer._compatible_answer_config(current, prefix_graph)
+        rebuilt = compatible["answer_heads"]
+        self.assertNotIn("numeric_active", rebuilt)
+        self.assertEqual(rebuilt["boolean_operator"],
+                         idboolops_answer_heads(prefix_graph)["boolean_operator"])
+        self.assertEqual(len(rebuilt["semantic_token"]["values"]),
+                         len(prefix_graph["tokens"]))
+        self.assertTrue(all(
+            token_id < len(prefix_graph["tokens"])
+            for head in rebuilt.values() for token_id in head["token_ids"]))
+
     def test_idboolops_panel_is_readable_by_compatible_historical_graph(self):
         root = Path(__file__).resolve().parents[2]
         source = root / "vendor/legacy-v16"

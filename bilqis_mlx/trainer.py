@@ -781,10 +781,16 @@ def _compatible_answer_config(config, graph):
     if "answer_heads" not in config:
         return config
     heads = config["answer_heads"]
-    if "numeric_active" in heads:
+    vocabulary = len(graph["tokens"])
+
+    def readable(kind):
+        ids = heads.get(kind, {}).get("token_ids", ())
+        return bool(ids) and max(ids) < vocabulary
+
+    if "numeric_active" in heads and readable("numeric_active"):
         maximum = len(heads["numeric_active"]["values"])-1
         compatible = numeric_answer_heads(graph, maximum, prior_heads=heads)
-    elif "boolean_operator" in heads:
+    elif "boolean_operator" in heads and readable("boolean_operator"):
         compatible = boolean_identification_answer_heads(graph)
     else:
         raise ValueError("HUMAN_TRAINER_UNKNOWN_TYPED_ANSWER_CONFIG")
