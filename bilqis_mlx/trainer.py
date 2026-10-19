@@ -119,6 +119,7 @@ from bilqis_mlx.learning.stagnation_control import (
     activate_sole_grade_rehabilitation,
     begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
     grace_suppressed_capabilities, reconcile_optimizer_step_grace,
+    reconcile_required_scope,
     quarantined_capabilities, record_visit as record_stagnation_visit,
     start_session as start_stagnation_session,
 )
@@ -1826,6 +1827,42 @@ def _rehabilitate_sole_grade_debt(
         stagnation, capabilities=tuple(debt), generation=generation)
     school = reactivate_stagnation_debt(course, school, tuple(debt))
     return stagnation, school, (event,)
+
+
+def _reconcile_stagnation_scope(run_dir, receipt, course, school):
+    """Keep command-local stagnation state aligned with the live scheduler scope."""
+    control = receipt.get("stagnation_session")
+    if control is None:
+        return receipt
+    required = assessment_capabilities(course, school)
+    updated, event = reconcile_required_scope(
+        control, required_capabilities=required,
+        generation=receipt["generation"] + 1)
+    if event is None:
+        return receipt
+
+    history = list(receipt.get("stagnation_scope_history", ()))
+    history.append({
+        "session_id": control["session_id"],
+        "generation": receipt["generation"],
+        "reconciled_at_grade": school.grade,
+        "required_capabilities": list(control["required_capabilities"]),
+        "quarantined": list(quarantined_capabilities(control)),
+    })
+    migrated = {
+        **receipt,
+        "stagnation_session": updated,
+        "stagnation_scope_history": history[-32:],
+    }
+    record = _advance(
+        run_dir, migrated, school, result=receipt.get("result"),
+        persist=False)
+    if record["generation"] != event["generation"]:
+        raise ValueError("STAGNATION_SCOPE_RECONCILIATION_GENERATION_DRIFT")
+    event = {**event, "grade": school.grade}
+    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
+    _reconcile_delivery_outbox(run_dir, record)
+    return record
 
 
 def _advance_stagnation_after_routine(
@@ -4392,6 +4429,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             from .numeric_staircase import scope_advance_due, advance_scope
             if scope_advance_due(receipt, course):
                 course, receipt = advance_scope(run_dir, receipt, course, course_b, graph)
+            school = _state_from_json(receipt["school"], course)
+            receipt = _reconcile_stagnation_scope(
+                run_dir, receipt, course, school)
             school = _state_from_json(receipt["school"], course)
             reason = session_stop_reason(
                 stage=school.stage, elapsed_seconds=time.monotonic() - start,

@@ -116,6 +116,12 @@ def _validate(control: dict) -> None:
     if (not isinstance(control, dict) or control.get("schema") != SCHEMA or
             not isinstance(control.get("session_id"), str) or
             type(control.get("cycle_index")) is not int or
+            not isinstance(control.get("required_capabilities"), list) or
+            not control["required_capabilities"] or
+            len(set(control["required_capabilities"])) !=
+            len(control["required_capabilities"]) or
+            any(not isinstance(capability, str) or not capability
+                for capability in control["required_capabilities"]) or
             not isinstance(control.get("cycle_visits"), dict) or
             not isinstance(control.get("quarantined"), dict) or
             not isinstance(control.get("alerts"), list)):
@@ -131,6 +137,76 @@ def _validate(control: dict) -> None:
             len(rehabilitation["capabilities"]) or
             type(rehabilitation.get("started_generation")) is not int):
         raise ValueError("STAGNATION_REHABILITATION_STATE_DRIFT")
+
+
+def _validate_required_capabilities(required_capabilities: tuple[str, ...]) -> None:
+    if (not required_capabilities or
+            len(set(required_capabilities)) != len(required_capabilities) or
+            any(not isinstance(capability, str) or not capability
+                for capability in required_capabilities)):
+        raise ValueError("STAGNATION_REQUIRED_SCOPE_INVALID")
+
+
+def reconcile_required_scope(
+        control: dict, *, required_capabilities: tuple[str, ...],
+        generation: int) -> tuple[dict, dict | None]:
+    """Rebase one command-local controller when the scheduler changes scope."""
+    _validate(control)
+    _validate_required_capabilities(required_capabilities)
+    if type(generation) is not int or generation < 0:
+        raise ValueError("STAGNATION_SCOPE_RECONCILIATION_INVALID_GENERATION")
+    previous = tuple(control["required_capabilities"])
+    if previous == required_capabilities:
+        return deepcopy(control), None
+
+    previous_set = set(previous)
+    required_set = set(required_capabilities)
+    updated = deepcopy(control)
+    previous_cycle_index = updated["cycle_index"]
+    updated["required_capabilities"] = list(required_capabilities)
+    updated["cycle_index"] = 0
+    updated["cycle_first_recovery"] = []
+    updated["cycle_visits"] = {}
+
+    removed_quarantined = sorted(set(updated["quarantined"]) - required_set)
+    updated["quarantined"] = {
+        capability: evidence
+        for capability, evidence in updated["quarantined"].items()
+        if capability in required_set
+    }
+    removed_alerts = sorted({
+        alert.get("capability") for alert in updated["alerts"]
+        if alert.get("capability") not in required_set
+    } - {None})
+    updated["alerts"] = [
+        alert for alert in updated["alerts"]
+        if alert.get("capability") in required_set
+    ]
+    rehabilitation = updated.get("rehabilitation")
+    rehabilitation_cleared = bool(
+        rehabilitation and
+        not set(rehabilitation.get("capabilities", ())) <= required_set)
+    if rehabilitation_cleared:
+        updated.pop("rehabilitation", None)
+
+    return updated, {
+        "event": "SCHOOL_STAGNATION_SCOPE_RECONCILED",
+        "generation": generation,
+        "session_id": control["session_id"],
+        "previous_required_capabilities": list(previous),
+        "required_capabilities": list(required_capabilities),
+        "added_capabilities": sorted(required_set - previous_set),
+        "removed_capabilities": sorted(previous_set - required_set),
+        "retained_quarantined": sorted(updated["quarantined"]),
+        "removed_quarantined": removed_quarantined,
+        "removed_alert_capabilities": removed_alerts,
+        "rehabilitation_cleared": rehabilitation_cleared,
+        "previous_cycle_index": previous_cycle_index,
+        "cycle_index": 0,
+        "cycle_evidence_reset": True,
+        "actual_neural_updates": 0,
+        "model_and_own_adamw_unchanged": True,
+    }
 
 
 def quarantined_capabilities(control: dict | None) -> tuple[str, ...]:
@@ -196,6 +272,8 @@ def record_visit(control: dict, *, capability: str, phase: str,
             type(retained_optimizer_updates) is not int or
             retained_optimizer_updates < 0 or type(generation) is not int):
         raise ValueError("STAGNATION_VISIT_RECEIPT_INVALID")
+    if capability not in set(control["required_capabilities"]):
+        raise ValueError("STAGNATION_VISIT_OUTSIDE_REQUIRED_SCOPE")
     updated = deepcopy(control)
     capability_visits = updated["cycle_visits"].setdefault(capability, {})
     receipt = capability_visits.setdefault(
@@ -214,6 +292,8 @@ def begin_recovery_cycle(control: dict, *, first_recovery: tuple[str, ...]) -> d
     _validate(control)
     if len(set(first_recovery)) != len(first_recovery):
         raise ValueError("STAGNATION_FIRST_RECOVERY_DUPLICATE")
+    if not set(first_recovery) <= set(control["required_capabilities"]):
+        raise ValueError("STAGNATION_RECOVERY_OUTSIDE_REQUIRED_SCOPE")
     updated = deepcopy(control)
     updated["cycle_index"] += 1
     updated["cycle_first_recovery"] = list(first_recovery)
@@ -240,6 +320,8 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
     if (len(set(weakest_tail)) != len(weakest_tail) or
             type(generation) is not int or generation < 0):
         raise ValueError("STAGNATION_RECOVERY_RECEIPT_INVALID")
+    if not set(weakest_tail) <= set(control["required_capabilities"]):
+        raise ValueError("STAGNATION_RECOVERY_OUTSIDE_REQUIRED_SCOPE")
     if (len(set(quarantine_suppressed)) != len(quarantine_suppressed) or
             not set(quarantine_suppressed) <= set(control["required_capabilities"])):
         raise ValueError("STAGNATION_GRACE_SUPPRESSION_SCOPE_INVALID")

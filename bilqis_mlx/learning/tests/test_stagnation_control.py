@@ -2,7 +2,7 @@ from bilqis_mlx.learning.stagnation_control import (
     begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
     quarantined_capabilities, record_visit, start_session,
     create_optimizer_step_grace, grace_suppressed_capabilities,
-    reconcile_optimizer_step_grace,
+    reconcile_optimizer_step_grace, reconcile_required_scope,
 )
 import unittest
 
@@ -135,6 +135,48 @@ def test_rehabilitation_exemption_is_limited_to_recorded_debt_capabilities():
     assert events[0]["capability"] == "B.AND"
 
 
+def test_scope_reconciliation_expands_required_contract_and_resets_cycle_evidence():
+    state = start_session(
+        session_id="human-command-scope", generation=40,
+        required_capabilities=("A.IDENTITY", "A.LINK"))
+    state = begin_recovery_cycle(
+        state, first_recovery=("A.LINK",))
+    state = record_visit(
+        state, capability="A.LINK", phase="RECOVERY_1",
+        decision="REJECT", retained_optimizer_updates=0, generation=41)
+    state["quarantined"]["A.IDENTITY"] = {
+        "capability": "A.IDENTITY", "reason": "fixture"}
+
+    updated, event = reconcile_required_scope(
+        state,
+        required_capabilities=(
+            "A.IDENTITY", "A.LINK", "B.AND", "B.IFF"),
+        generation=42)
+
+    assert updated["required_capabilities"] == [
+        "A.IDENTITY", "A.LINK", "B.AND", "B.IFF"]
+    assert updated["cycle_first_recovery"] == []
+    assert updated["cycle_visits"] == {}
+    assert set(updated["quarantined"]) == {"A.IDENTITY"}
+    assert event["event"] == "SCHOOL_STAGNATION_SCOPE_RECONCILED"
+    assert event["added_capabilities"] == ["B.AND", "B.IFF"]
+    assert event["removed_capabilities"] == []
+
+
+def test_stagnation_operations_reject_capabilities_outside_current_required_scope():
+    state = start_session(
+        session_id="human-command-scope-guard", generation=50,
+        required_capabilities=("A.IDENTITY", "A.LINK"))
+    with unittest.TestCase().assertRaisesRegex(
+            ValueError, "STAGNATION_VISIT_OUTSIDE_REQUIRED_SCOPE"):
+        record_visit(
+            state, capability="B.AND", phase="RECOVERY_1",
+            decision="REJECT", retained_optimizer_updates=0, generation=51)
+    with unittest.TestCase().assertRaisesRegex(
+            ValueError, "STAGNATION_RECOVERY_OUTSIDE_REQUIRED_SCOPE"):
+        begin_recovery_cycle(state, first_recovery=("B.AND",))
+
+
 def test_optimizer_step_grace_is_b_scoped_and_expires_at_absolute_deadline():
     grace = create_optimizer_step_grace(
         grade="B", optimizer_step=231_912, optimizer_steps=100_000)
@@ -219,6 +261,12 @@ class StagnationControlUnittestCoverage(unittest.TestCase):
 
     def test_rehabilitation_exemption_is_capability_scoped(self):
         test_rehabilitation_exemption_is_limited_to_recorded_debt_capabilities()
+
+    def test_scope_reconciliation_resets_cycle_evidence(self):
+        test_scope_reconciliation_expands_required_contract_and_resets_cycle_evidence()
+
+    def test_outside_scope_operations_fail_closed(self):
+        test_stagnation_operations_reject_capabilities_outside_current_required_scope()
 
     def test_optimizer_step_grace_expires(self):
         test_optimizer_step_grace_is_b_scoped_and_expires_at_absolute_deadline()

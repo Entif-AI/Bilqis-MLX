@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from bilqis_mlx.boolean_composite import build_course as build_composite
 from bilqis_mlx.boolean_identification import build_course as build_identification
-from bilqis_mlx.curriculum.scheduler import start_new
+from bilqis_mlx.curriculum.scheduler import assessment_capabilities, start_new
 from bilqis_mlx.factory.live_releases import (
     MINIMAL_BOOLEAN_RELEASE,
     boolean_successor,
@@ -19,11 +19,13 @@ from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.learning.champions import Checkpoint
+from bilqis_mlx.learning.stagnation_control import start_session as start_stagnation_session
 from bilqis_mlx.runtime.state import _fingerprint
 from bilqis_mlx.runtime.assessment import _candidate_cohort, _introduced_cohort
 from bilqis_mlx.trainer import (
     VERSION, _activate_replaced_admitted_grade, _commit_scored_student,
     _repair_scope_rubric_evidence, _repair_championship_source_context,
+    _reconcile_stagnation_scope,
 )
 
 
@@ -301,6 +303,53 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
         self.assertEqual(
             events[-1]["event"],
             "SCHOOL_CHAMPIONSHIP_SOURCE_CONTEXT_REPAIRED")
+        self.assertEqual(events[-1]["actual_neural_updates"], 0)
+
+    def test_in_command_a_to_b_transition_reconciles_stagnation_scope_before_b_work(self):
+        student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
+        a_state = start_new(self.new, student)
+        b_state = replace(
+            a_state,
+            grade_index=1,
+            stage="MAIN",
+            queue=("B.AND", "B.IFF"),
+            champions={"A": student},
+        )
+        a_required = assessment_capabilities(self.new, a_state)
+        b_required = assessment_capabilities(self.new, b_state)
+        self.assertNotEqual(a_required, b_required)
+        receipt = {
+            "schema": VERSION,
+            "generation": 60,
+            "run_id": "in-command-a-to-b-stagnation-fixture",
+            "school": asdict(b_state),
+            "model_bundle": student.filename,
+            "curriculum_mode": self.new.version,
+            "result": "ACTIVE_GRADE_B",
+            "stagnation_session": start_stagnation_session(
+                session_id="same-human-command",
+                generation=50,
+                required_capabilities=a_required),
+        }
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            reconciled = _reconcile_stagnation_scope(
+                root, receipt, self.new, b_state)
+            events = [
+                json.loads(line)
+                for line in (root / "events.jsonl").read_text().splitlines()
+            ]
+        self.assertEqual(reconciled["generation"], 61)
+        self.assertEqual(
+            tuple(reconciled["stagnation_session"]["required_capabilities"]),
+            b_required)
+        self.assertEqual(
+            reconciled["stagnation_session"]["cycle_first_recovery"], [])
+        self.assertEqual(
+            reconciled["stagnation_session"]["cycle_visits"], {})
+        self.assertEqual(
+            events[-1]["event"], "SCHOOL_STAGNATION_SCOPE_RECONCILED")
+        self.assertEqual(events[-1]["added_capabilities"], ["B.AND", "B.IFF"])
         self.assertEqual(events[-1]["actual_neural_updates"], 0)
 
 
