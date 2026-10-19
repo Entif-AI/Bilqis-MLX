@@ -319,6 +319,7 @@ EVENT_KINDS = {
     "SCHOOL_LIVE_CANDIDATE_COMPARED": "candidate",
     "SCHOOL_QUALIFICATION_COMMITTED": "qualification",
     "SCHOOL_FLASH_ASSESSMENT_DEFERRED": "progress",
+    "SCHOOL_GRADE_RELEASE_REPLACED": "curriculum",
 }
 
 
@@ -457,6 +458,7 @@ class SchoolTelemetry:
             self._grade(grade)
         {
             "init": self._init,
+            "curriculum": self._curriculum,
             "start": self._start,
             "visit": self._visit,
             "exam": self._exam,
@@ -474,6 +476,59 @@ class SchoolTelemetry:
     def _init(self, grade, event):
         self.board.state["step"] = event.get("optimizer_step", self.board.state.get("step"))
         self.board.state["_rate_sample_eligible"] = True
+
+    def _curriculum(self, grade, event):
+        """Make a release replacement a hard boundary in the active dashboard view."""
+        old_caps = tuple(event.get("old_capabilities") or ())
+        new_caps = tuple(event.get("new_capabilities") or ())
+        if (not grade or not old_caps or not new_caps or
+                any(not isinstance(cap, str) for cap in (*old_caps, *new_caps))):
+            raise ValueError("SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID")
+        old_set = set(old_caps)
+
+        # Rows before this event describe the superseded curriculum. Keep them
+        # in the immutable event log, not in the operator's active curriculum.
+        for table in ("CANDIDATES", "SOUP & TEACHER", "BRIDGE FAMILIES",
+                      "SENTINEL & RETENTION"):
+            rows = self.board.rows[table]
+            self.board.rows[table] = [
+                row for row in rows
+                if (row.get("capability") or row.get("family")) not in old_set
+            ]
+        self.board.rows["GRADES & MASTERY"] = [
+            row for row in self.board.rows["GRADES & MASTERY"]
+            if row.get("grade") != grade
+        ]
+        self.board.rows["SYSTEM & QUALIFICATION"] = [
+            row for row in self.board.rows["SYSTEM & QUALIFICATION"]
+            if not (row.get("grade") == grade and
+                    row.get("kind") in {"CHAMPION", "GRADE SOUP", "CAP BEST"})
+        ]
+
+        for mapping in (self.start, self.latest, self.best, self.exam_cohorts,
+                        self.reported_scope_inventory):
+            for key in list(mapping):
+                if isinstance(key, tuple) and key and key[0] == grade:
+                    mapping.pop(key, None)
+        for mapping in (self.start_cap, self.last_cap):
+            for key in list(mapping):
+                if isinstance(key, tuple) and key and key[0] in old_set:
+                    mapping.pop(key, None)
+        for cap in old_set:
+            self.last_source_training.pop(cap, None)
+        for key in list(self.scope_variants):
+            if isinstance(key, tuple) and key and key[0] == grade:
+                self.scope_variants.pop(key, None)
+        self.cumulative_best.clear()
+        self.cumulative_latest = None
+        self.champions.pop(grade, None)
+        self.last_exam_grade = None
+
+        self.board.push("system", {
+            "kind": "CURRICULUM",
+            "grade": grade,
+            "detail": "Active " + grade + ": " + ", ".join(new_caps),
+        }, redraw=False)
 
     def begin_execution(self, *, grade=None, step=None):
         """Re-anchor START to the scores that exist when this command begins."""

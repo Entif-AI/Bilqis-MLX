@@ -83,8 +83,10 @@ def load_championship_cohort(run_dir, witness):
     if path.parent.is_symlink() or path.is_symlink() or not path.is_file():
         raise ValueError("CHAMPIONSHIP_EARNING_COHORT_MISSING")
     stored = json.loads(path.read_text())
+    source_rubric = witness.get(
+        "cohort_rubric_sha256", witness["rubric_sha256"])
     if (stored.get("cohort_sha256") != sha or
-            stored.get("rubric_sha256") != witness["rubric_sha256"] or
+            stored.get("rubric_sha256") != source_rubric or
             stored.get("source_manifest_sha256") != witness["source_oracle_sha256"]):
         raise ValueError("CHAMPIONSHIP_EARNING_COHORT_SOURCE_DRIFT")
     cohort = make_cohort(stored["rows"], generator_version=stored["generator_version"],

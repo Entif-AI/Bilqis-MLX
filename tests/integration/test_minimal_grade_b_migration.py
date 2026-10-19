@@ -17,12 +17,13 @@ from bilqis_mlx.factory.live_releases import (
 )
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
+from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.runtime.state import _fingerprint
 from bilqis_mlx.runtime.assessment import _candidate_cohort, _introduced_cohort
 from bilqis_mlx.trainer import (
     VERSION, _activate_replaced_admitted_grade, _commit_scored_student,
-    _repair_scope_rubric_evidence,
+    _repair_scope_rubric_evidence, _repair_championship_source_context,
 )
 
 
@@ -231,6 +232,76 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             events[-1]["event"], "SCHOOL_SCOPE_RUBRIC_EVIDENCE_REPAIRED")
         self.assertEqual(events[-1]["actual_neural_updates"], 0)
         self.assertTrue(events[-1]["model_and_own_adamw_unchanged"])
+
+    def test_resume_resets_titles_missing_distinct_cohort_source_rubric(self):
+        student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
+        school = start_new(self.new, student)
+        a_rubric = self.new.grades[0].assessment_sha256
+        b_rubric = self.new.grades[-1].assessment_sha256
+        rows = ({"id": "q0", "capability": "A.IDENTITY", "gold": "TRUE"},)
+        cohort = make_cohort(
+            rows, generator_version="minimal-b-source", seed=19,
+            rubric_version=self.new.version)
+        evidence = {
+            "cohort_sha256": cohort.digest,
+            "rubric_sha256": a_rubric,
+            "source_oracle_sha256": self.manifest["manifest_sha256"],
+        }
+        receipt = {
+            "schema": VERSION,
+            "generation": 9,
+            "run_id": "source-context-repair-fixture",
+            "school": asdict(school),
+            "model_bundle": student.filename,
+            "curriculum_mode": self.new.version,
+            "result": "ACTIVE_GRADE_A",
+            "semantic_graph_sha256": _fingerprint(self.graph),
+            "championship_school_identity": {"fixture": True},
+            "capability_best": {},
+            "championship_epoch_history": [],
+            "mentor_epoch": {
+                "schema": "fixture",
+                "active_roles": {
+                    "A.IDENTITY": {
+                        "capability": "A.IDENTITY",
+                        "rubric": a_rubric,
+                        "cohort_sha256": cohort.digest,
+                        "checkpoint": asdict(student),
+                        "qualification_witnesses": [evidence],
+                        "surviving_battery": [evidence],
+                    },
+                },
+                "active_grade_soups": {"A": {"grade": "A"}},
+            },
+        }
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            cohorts = root / "cohorts"
+            cohorts.mkdir()
+            (cohorts / f"{cohort.digest}.json").write_text(json.dumps({
+                "schema": self.new.version,
+                "source_manifest_sha256": self.manifest["manifest_sha256"],
+                "rubric_sha256": b_rubric,
+                "generator_version": "minimal-b-source",
+                "seed": 19,
+                "cohort_sha256": cohort.digest,
+                "rows": list(rows),
+            }))
+            repaired = _repair_championship_source_context(
+                root, receipt, self.new)
+            events = [
+                json.loads(line)
+                for line in (root / "events.jsonl").read_text().splitlines()
+            ]
+        self.assertEqual(repaired["generation"], 10)
+        self.assertEqual(repaired["school"]["current_student"], asdict(student))
+        self.assertEqual(repaired["mentor_epoch"]["active_roles"], {})
+        self.assertEqual(repaired["mentor_epoch"]["active_grade_soups"], {})
+        self.assertEqual(len(repaired["championship_epoch_history"]), 1)
+        self.assertEqual(
+            events[-1]["event"],
+            "SCHOOL_CHAMPIONSHIP_SOURCE_CONTEXT_REPAIRED")
+        self.assertEqual(events[-1]["actual_neural_updates"], 0)
 
 
 if __name__ == "__main__":

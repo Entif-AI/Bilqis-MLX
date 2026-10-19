@@ -209,6 +209,8 @@ def _exam_matches_capability(challenger: dict, incumbent: dict,
               "source_graph_sha256", "source_oracle_sha256")
     if (not isinstance(incumbent, dict) or
             any(incumbent.get(field) != challenger.get(field) for field in common) or
+            incumbent.get("cohort_rubric_sha256", incumbent.get("rubric_sha256")) !=
+            challenger.get("cohort_rubric_sha256", challenger.get("rubric_sha256")) or
             capability not in incumbent.get("scores", {}) or
             capability not in challenger.get("scores", {}) or
             incumbent["scores"][capability].get("total") !=
@@ -331,6 +333,8 @@ def _role_receipt(challenger_exam: dict, capability: str,
         owner_maxed = score["correct"] == score["total"]
     return {
         "rubric": challenger_exam["rubric_sha256"],
+        "cohort_rubric_sha256": challenger_exam.get(
+            "cohort_rubric_sha256", challenger_exam["rubric_sha256"]),
         "capability": capability,
         "cohort_sha256": challenger_exam["cohort_sha256"],
         "assessment_scope_sha256": challenger_exam["assessment_scope_sha256"],
@@ -372,6 +376,8 @@ def _same_current_context(reference: dict, replay: dict, capability: str) -> Non
               "source_graph_sha256", "source_oracle_sha256")
     if (not isinstance(replay, dict) or
             any(replay.get(key) != reference.get(key) for key in common) or
+            replay.get("cohort_rubric_sha256", replay.get("rubric_sha256")) !=
+            reference.get("cohort_rubric_sha256", reference.get("rubric_sha256")) or
             capability not in replay.get("scores", {}) or
             capability not in replay.get("questions", {}) or
             capability not in replay.get("correct_questions", {})):

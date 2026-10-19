@@ -7,6 +7,34 @@ from .championship_policy import CONTEXT_KEYS
 
 SCHEMA = "bilqis.mlx.championship-questions/v1"
 BATTERY_SCHEMA = "bilqis.mlx.championship-defense-battery/v1"
+COHORT_RUBRIC_KEY = "cohort_rubric_sha256"
+
+
+def _context_payload(context: dict) -> dict:
+    payload = {key: context[key] for key in CONTEXT_KEYS}
+    cohort_rubric = context.get(COHORT_RUBRIC_KEY)
+    if cohort_rubric is not None:
+        if not isinstance(cohort_rubric, str) or len(cohort_rubric) != 64:
+            raise ValueError("CHAMPIONSHIP_COHORT_RUBRIC_IDENTITY_DRIFT")
+        payload[COHORT_RUBRIC_KEY] = cohort_rubric
+    return payload
+
+
+def _context_identity(context: dict) -> tuple:
+    payload = _context_payload(context)
+    return (
+        *(payload[key] for key in CONTEXT_KEYS),
+        COHORT_RUBRIC_KEY in payload,
+        payload.get(COHORT_RUBRIC_KEY),
+    )
+
+
+def _context_from_identity(identity: tuple) -> dict:
+    core = dict(zip(CONTEXT_KEYS, identity[:len(CONTEXT_KEYS)]))
+    present, value = identity[len(CONTEXT_KEYS):]
+    if present:
+        core[COHORT_RUBRIC_KEY] = value
+    return core
 
 
 def earning_witness(exam: dict, capabilities) -> dict:
@@ -27,7 +55,7 @@ def earning_witness(exam: dict, capabilities) -> dict:
             any(not q.get("id") or not isinstance(q.get("gold"), str) for q in questions)):
         raise ValueError("CHAMPIONSHIP_QUESTION_IDENTITY_DRIFT")
     payload = {"schema": SCHEMA,
-               **{key: exam[key] for key in CONTEXT_KEYS},
+               **_context_payload(exam),
                "questions": sorted(questions, key=lambda q: q["id"]),
                "capabilities": sorted(set(capabilities)),
                "perfect_capabilities": perfect}
@@ -41,6 +69,10 @@ def verified_witnesses(role: dict) -> tuple[dict, ...]:
         if (payload.get("schema") != SCHEMA or digest(payload) != witness.get("sha256") or
                 any(not isinstance(payload.get(key), str) or len(payload[key]) != 64
                     for key in CONTEXT_KEYS)):
+            raise ValueError("CHAMPIONSHIP_QUESTION_WITNESS_DRIFT")
+        if (COHORT_RUBRIC_KEY in payload and
+                (not isinstance(payload[COHORT_RUBRIC_KEY], str) or
+                 len(payload[COHORT_RUBRIC_KEY]) != 64)):
             raise ValueError("CHAMPIONSHIP_QUESTION_WITNESS_DRIFT")
     return witnesses
 
@@ -58,7 +90,7 @@ def _battery_segment(context: dict, questions) -> dict:
             raise ValueError("CHAMPIONSHIP_BATTERY_QUESTION_DRIFT")
     payload = {
         "schema": BATTERY_SCHEMA,
-        **{key: context[key] for key in CONTEXT_KEYS},
+        **_context_payload(context),
         "questions": sorted(unique.values(), key=lambda q: q["id"]),
     }
     return {**payload, "sha256": digest(payload)}
@@ -70,7 +102,7 @@ def _dedup_battery_segments(segments) -> tuple[dict, ...]:
     by_context = {}
     context_order = []
     for segment in segments:
-        context = tuple(segment[key] for key in CONTEXT_KEYS)
+        context = _context_identity(segment)
         if context not in by_context:
             by_context[context] = []
             context_order.append(context)
@@ -84,7 +116,7 @@ def _dedup_battery_segments(segments) -> tuple[dict, ...]:
             chosen[identity] = question
             by_context[context].append(question)
     return tuple(
-        _battery_segment(dict(zip(CONTEXT_KEYS, context)), questions)
+        _battery_segment(_context_from_identity(context), questions)
         for context in context_order if (questions := by_context[context]))
 
 
@@ -113,6 +145,10 @@ def verified_battery(role: dict) -> tuple[dict, ...]:
                 digest(payload) != segment.get("sha256") or
                 any(not isinstance(payload.get(key), str) or len(payload[key]) != 64
                     for key in CONTEXT_KEYS)):
+            raise ValueError("CHAMPIONSHIP_BATTERY_DRIFT")
+        if (COHORT_RUBRIC_KEY in payload and
+                (not isinstance(payload[COHORT_RUBRIC_KEY], str) or
+                 len(payload[COHORT_RUBRIC_KEY]) != 64)):
             raise ValueError("CHAMPIONSHIP_BATTERY_DRIFT")
         for question in payload.get("questions", ()):
             if (not isinstance(question, dict) or not question.get("id") or

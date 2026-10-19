@@ -21,6 +21,47 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_grade_release_replacement_removes_obsolete_curriculum_from_live_view(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {
+                "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                "grade": "B",
+                "generation": 10,
+                "capability": "B.OR",
+                "optimizer_step": 100,
+                "retained_optimizer_updates": 0,
+            })
+            ingest(board, exam(
+                "B", 11, "old-rubric",
+                {cap: (6, 12) for cap in (
+                    "B.NOT", "B.AND", "B.OR", "B.XOR",
+                    "B.IMPLIES", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS")},
+                step=100))
+            ingest(board, {
+                "event": "SCHOOL_GRADE_RELEASE_REPLACED",
+                "grade": "B",
+                "generation": 12,
+                "old_capabilities": [
+                    "B.NOT", "B.AND", "B.OR", "B.XOR",
+                    "B.IMPLIES", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS"],
+                "new_capabilities": [
+                    "B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS"],
+                "withheld_capabilities": [
+                    "B.NOT", "B.OR", "B.XOR", "B.IMPLIES"],
+            })
+            self.assertNotIn(
+                "B.OR",
+                {row.get("capability") for row in board.rows["CANDIDATES"]})
+            self.assertFalse(any(
+                row.get("grade") == "B"
+                for row in board._section_rows("GRADES & MASTERY")
+                if row.get("row_type") == "summary"))
+            self.assertTrue(any(
+                row.get("kind") == "CURRICULUM" and
+                "B.AND, B.IFF, B.COMPOSITE, B.IDBOOLOPS" in row.get("detail", "")
+                for row in board.rows["SYSTEM & QUALIFICATION"]))
+
     def test_session_start_reanchors_start_score_without_erasing_historical_best(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

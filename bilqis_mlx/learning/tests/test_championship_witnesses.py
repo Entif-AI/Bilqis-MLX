@@ -84,6 +84,16 @@ class ChampionshipWitnessTests(TestCase):
         self.assertEqual(proof["perfect_capabilities"], ["A.X"])
         self.assertEqual(measured, exam())
 
+    def test_witness_and_battery_preserve_distinct_cohort_source_rubric(self):
+        measured = exam()
+        measured["cohort_rubric_sha256"] = "f" * 64
+        witness = earning_witness(measured, ("A.X",))
+        battery = battery_from_exam(measured, ("A.X",))
+        self.assertEqual(witness["rubric_sha256"], "b" * 64)
+        self.assertEqual(witness["cohort_rubric_sha256"], "f" * 64)
+        self.assertEqual(battery[0]["rubric_sha256"], "b" * 64)
+        self.assertEqual(battery[0]["cohort_rubric_sha256"], "f" * 64)
+
     def test_surviving_battery_can_shrink_to_latest_winning_answers(self):
         original = exam()
         role = {"capability": "A.X",

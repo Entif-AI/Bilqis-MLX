@@ -640,7 +640,7 @@ class GradeBTrainerTests(unittest.TestCase):
                               decision["opportunities"])
                 self.assertEqual(len(decision["decision_id"]), 64)
             examination_events = [e for e in events if e.get("event") ==
-                                  "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED"]
+                                  "SCHOOL_LIVE_EXAM_COMMITTED"]
             self.assertEqual(len(examination_events), 3)
             for index, event in enumerate(examination_events):
                 warnings = event["learning_diagnostics"]

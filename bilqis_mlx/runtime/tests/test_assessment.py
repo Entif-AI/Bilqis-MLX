@@ -12,7 +12,9 @@ from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.runtime.assessment import (
     _candidate_cohort, _generalization_cohort, _grade_test_cohort, _promotion_cohort,
+    load_championship_cohort,
 )
+from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.trainer import choose_lesson_batch
 from bilqis_mlx.live_grade_a import live_course
 from bilqis_mlx.curriculum.scheduler import start_new
@@ -49,6 +51,32 @@ class GradeTestLifecycleTests(unittest.TestCase):
             self.assertNotEqual(redraw.digest, original.digest)
             self.assertNotEqual(redraw.seed, original.seed)
             self.assertNotEqual(saved["cohort_sha256"], pointer["cohort_sha256"])
+
+    def test_championship_cohort_keeps_source_rubric_distinct_from_assessment_rubric(self):
+        rows = ({"id": "q0", "capability": "A.IDENTITY", "gold": "TRUE"},)
+        cohort = make_cohort(
+            rows, generator_version="source-v1", seed=17,
+            rubric_version="admitted-a-b-release")
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            path = root / "cohorts"
+            path.mkdir()
+            (path / f"{cohort.digest}.json").write_text(json.dumps({
+                "schema": "admitted-a-b-release",
+                "source_manifest_sha256": "d" * 64,
+                "rubric_sha256": "c" * 64,
+                "generator_version": "source-v1",
+                "seed": 17,
+                "cohort_sha256": cohort.digest,
+                "rows": list(rows),
+            }))
+            loaded = load_championship_cohort(root, {
+                "cohort_sha256": cohort.digest,
+                "rubric_sha256": "b" * 64,
+                "cohort_rubric_sha256": "c" * 64,
+                "source_oracle_sha256": "d" * 64,
+            })
+        self.assertEqual(loaded.digest, cohort.digest)
 
     def test_candidate_and_routine_cohorts_both_rotate_independently(self):
         receipt = self.receipt()

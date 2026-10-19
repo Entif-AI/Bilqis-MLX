@@ -1595,6 +1595,79 @@ def _repair_scope_rubric_evidence(run_dir, receipt, course):
     return record
 
 
+def _repair_championship_source_context(run_dir, receipt, course):
+    """Archive titles minted while cohort-source and assessment rubrics were conflated."""
+    epoch = receipt.get("mentor_epoch")
+    if not isinstance(epoch, dict) or not epoch.get("active_roles"):
+        return receipt
+
+    affected = set()
+    for capability, role in epoch["active_roles"].items():
+        evidence = (
+            *role.get("qualification_witnesses", ()),
+            *role.get("surviving_battery", ()),
+        )
+        for item in evidence:
+            if item.get("cohort_rubric_sha256") is not None:
+                continue
+            sha = item.get("cohort_sha256")
+            assessment_rubric = item.get("rubric_sha256")
+            source_oracle = item.get("source_oracle_sha256")
+            if not all(isinstance(value, str) and len(value) == 64
+                       for value in (sha, assessment_rubric, source_oracle)):
+                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_IDENTITY_DRIFT")
+            path = run_dir / "cohorts" / (sha + ".json")
+            if path.is_symlink() or not path.is_file():
+                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING")
+            stored = json.loads(path.read_text())
+            if (stored.get("cohort_sha256") != sha or
+                    stored.get("source_manifest_sha256") != source_oracle):
+                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT")
+            cohort = make_cohort(
+                stored["rows"], generator_version=stored["generator_version"],
+                seed=stored["seed"], rubric_version=stored["schema"])
+            if cohort.digest != sha:
+                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT")
+            if stored.get("rubric_sha256") != assessment_rubric:
+                affected.add(capability)
+                break
+
+    if not affected:
+        return receipt
+
+    school = _state_from_json(receipt["school"], course)
+    history = [*receipt.get("championship_epoch_history", ()), deepcopy(epoch)]
+    reset = begin_initial_epoch(
+        student=asdict(school.current_student),
+        introduced_grade=school.grade,
+        source_graph_sha256=receipt["semantic_graph_sha256"],
+        frontier={}, soups={})
+    reset["settled_matchups"] = {}
+    reset["championship_school_identity"] = receipt["championship_school_identity"]
+    repaired = {
+        **receipt,
+        "mentor_epoch": reset,
+        "championship_epoch_history": history,
+    }
+    record = _advance(
+        run_dir, repaired, school,
+        result=receipt.get("result"), persist=False)
+    event = {
+        "event": "SCHOOL_CHAMPIONSHIP_SOURCE_CONTEXT_REPAIRED",
+        "generation": record["generation"],
+        "source_generation": receipt["generation"],
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "invalidated_championship_roles": sorted(affected),
+        "archived_bad_epoch": True,
+        "actual_neural_updates": 0,
+        "model_and_own_adamw_unchanged": True,
+    }
+    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
+    _reconcile_delivery_outbox(run_dir, record)
+    return record
+
+
 def _reconcile_vocabulary_metadata(run_dir, receipt, course, parameters,
                                    optimizer, graph):
     """Repair historical stale size metadata by a NEW immutable generation.
@@ -2819,11 +2892,13 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
         raise ValueError("CHAMPIONSHIP_EPOCH_INCOMPLETE_EXAM")
     scope = tuple(cap for cap in allowed_scope if cap in set(materialized))
     rubric = assessment_rubric_for_scope(course, scope)
+    cohort_rubric, _, _, _ = _cohort_contract(course)
     checkpoint_origin_grade = receipt.get(
         "championship_checkpoint_origins", {}).get(school.current_student.sha256)
     context = {
         "cohort_sha256": cohort.digest,
         "rubric_sha256": rubric,
+        "cohort_rubric_sha256": cohort_rubric,
         "assessment_scope_sha256": _fingerprint(scope),
         "source_graph_sha256": _fingerprint(graph),
         "source_oracle_sha256": receipt["source_manifest_sha256"],
@@ -2915,6 +2990,8 @@ def _hydrate_championship_witnesses(mx, run_dir, receipt, epoch, graph):
             continue
         context = {
             "cohort_sha256": role["cohort_sha256"], "rubric_sha256": role["rubric"],
+            "cohort_rubric_sha256": role.get(
+                "cohort_rubric_sha256", role["rubric"]),
             "source_oracle_sha256": receipt["source_manifest_sha256"],
         }
         pointer = role["checkpoint"]
@@ -3021,7 +3098,8 @@ def _fresh_title_match(mx, run_dir, receipt, epoch, cohort, challenger,
     del own_adamw
     context = {key: challenger[key] for key in (
         "cohort_sha256", "rubric_sha256", "assessment_scope_sha256",
-        "source_graph_sha256", "source_oracle_sha256")}
+        "source_graph_sha256", "source_oracle_sha256",
+        "cohort_rubric_sha256")}
     fresh_incumbent = _fresh_title_current_exam(
         mx, receipt, cohort, pointer, weights, incumbent_graph, context, capability)
     fresh_challenger = _fresh_title_current_exam(
@@ -3048,7 +3126,8 @@ def _fresh_fanout_screen(mx, run_dir, receipt, epoch, cohort, challenger,
     """Freshly pair the new champion with same-grade sibling incumbents once."""
     context = {key: challenger[key] for key in (
         "cohort_sha256", "rubric_sha256", "assessment_scope_sha256",
-        "source_graph_sha256", "source_oracle_sha256")}
+        "source_graph_sha256", "source_oracle_sha256",
+        "cohort_rubric_sha256")}
     result = {}
     for capability in capabilities:
         role = epoch["active_roles"].get(capability)
@@ -3875,9 +3954,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         result=_school_result_label(advanced), persist=False)
     exam_event = {
         "event": ("SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED" if scheduler_only else
-                  "SCHOOL_LIVE_EXAM_COMMITTED" if len(course.grades) > 2 else
                   "GRADE_A_LIVE_EXAM_COMMITTED" if len(course.grades) == 1
-                  else "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED"),
+                  else "SCHOOL_LIVE_EXAM_COMMITTED"),
         "grade": school.grade, "generation": result["generation"],
         "grade_exam_epoch": school.grade_exam_epoch,
         "exam_plane": exam_plane,
@@ -4204,6 +4282,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     else:
                         raise ValueError("FACTORY_UNKNOWN_SUCCESSOR_TRANSITION")
             receipt = _repair_scope_rubric_evidence(run_dir, receipt, course)
+            receipt = _repair_championship_source_context(run_dir, receipt, course)
         else:
             if numeric_staircase:
                 raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
