@@ -582,12 +582,22 @@ def advance_epoch(epoch: dict, *, grades: dict, challenger_exam: dict,
     # A real primary takeover opens one and only one same-grade sibling scan.
     # Secondary wins never participate in deciding whether another scan occurs.
     if primary_won:
-        siblings = [
+        eligible_siblings = [
             cap for cap in caps if cap not in primary and
             (prior := original_roles.get(cap)) is not None and
             _pointer(prior["checkpoint"])["sha256"] != pointer["sha256"] and
             _settled_match(updated, cap, _pointer(prior["checkpoint"])["sha256"],
                            pointer["sha256"]) is None]
+        unmeasured = [cap for cap in eligible_siblings if cap not in scores]
+        for cap in unmeasured:
+            decisions.append({
+                "grade": grade,
+                "capability": cap,
+                "decision": "FANOUT_DEFERRED_UNMEASURED",
+                "challenger_sha256": pointer["sha256"],
+                "reason": "CAPABILITY_ABSENT_FROM_CURRENT_COHORT",
+            })
+        siblings = [cap for cap in eligible_siblings if cap in scores]
         if siblings and fanout_screen is None:
             decisions.append({
                 "grade": grade,
