@@ -100,8 +100,10 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
             "_require_executable_factory_admission",
             "_ensure_executable_release"}:
         problems.append("bilqis_mlx/trainer.py OPERATE_BYPASSES_FACTORY_RELEASE")
-    b_calls = _function_calls(trainer, "_activate_next_admitted_grade")
-    if "_factory_admission" not in b_calls:
+    b_calls = _function_calls(trainer, "_adopt_executable_profile")
+    if not b_calls & {
+            "_require_executable_factory_admission",
+            "_executable_factory_admission"}:
         problems.append("bilqis_mlx/trainer.py B_ADMISSION_BYPASSES_FACTORY_RELEASE")
 
     legacy = src / "grade_a_trainer.py"

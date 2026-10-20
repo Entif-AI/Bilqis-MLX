@@ -3,7 +3,8 @@ import hashlib
 import unittest
 
 from bilqis_mlx.curriculum.scheduler import (
-    Assessment, Score, adopt_appended_program, assess, start_new, visit,
+    Assessment, Score, adopt_appended_program, adopt_revised_program,
+    assess, start_new, visit,
 )
 from bilqis_mlx.factory.curriculum_definition import from_legacy_course
 from bilqis_mlx.factory.executable_release import compile_executable_factory_release
@@ -164,6 +165,27 @@ class ExecutableSchedulerTests(unittest.TestCase):
         self.assertEqual(successor.transition.semantic_geometry, "UNCHANGED")
         self.assertEqual(adopted.grade, "B")
         self.assertEqual(adopted.queue, ("B.AND", "B.IFF"))
+
+    def test_profile_revision_rebinds_active_grade_without_release_dispatch(self):
+        program = schedule_program_from_executable_release(self.full)
+        student = _checkpoint()
+        state = start_new(program, student)
+        state = replace(
+            state,
+            grade_index=1,
+            stage="MAIN",
+            queue=program.grades[1].teaching_stages[0],
+            introduction_stage=0,
+        )
+        revised_program = schedule_program_from_executable_release(self.reduced)
+        revised, grade = adopt_revised_program(
+            program, revised_program, state)
+
+        self.assertEqual(grade, "B")
+        self.assertEqual(revised.grade, "B")
+        self.assertEqual(revised.queue, ("B.AND", "B.IFF"))
+        self.assertEqual(revised.introduction_stage, 0)
+        self.assertEqual(revised.course_digest, revised_program.digest())
 
 
 if __name__ == "__main__":

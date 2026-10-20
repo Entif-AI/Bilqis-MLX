@@ -71,7 +71,9 @@ class FactoryArchitectureTests(unittest.TestCase):
             (root / "bilqis_mlx/live_curriculum.py").write_text("")
             (root / "bilqis_mlx/trainer.py").write_text(
                 "def operate():\n _ensure_executable_release()\n"
-                "def _activate_next_admitted_grade():\n _factory_admission()\n")
+                "def _adopt_executable_profile():\n"
+                " _require_executable_factory_admission()\n"
+                " _executable_factory_admission()\n")
             (root / "bilqis_mlx/grade_transition.py").write_text(
                 "def activate_numeric_grade():\n _factory_admission()\n")
             (root / "bilqis_mlx/numeric_staircase.py").write_text(

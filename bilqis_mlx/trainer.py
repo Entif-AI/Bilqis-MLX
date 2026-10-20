@@ -63,36 +63,20 @@ from .factory.executable_release import (
 from .factory.live_answers import live_answer_registry
 from .profiles.school import boolean_entry_profile
 from .factory.live_releases import (
-    BOOLEAN_COMPOSITE_RELEASE,
-    BOOLEAN_IDENTIFICATION_RELEASE,
-    BOOLEAN_RELEASE,
     GRAPH_GROWTH_TRANSITION,
     INITIAL_RELEASE,
     KNOWN_RELEASES,
-    NUMERIC_RELEASE,
     NUMERIC_STAIRCASE_RELEASE,
-    MINIMAL_BOOLEAN_RELEASE,
-    SAME_GRADE_TRANSITION,
-    SAME_GRAPH_TRANSITION,
-    boolean_composite_successor,
     boolean_identification_answer_heads,
-    boolean_identification_successor,
-    boolean_successor,
     course_for_mode,
-    default_resume_replacement,
     graph_matches_release,
     initial_course,
     numeric_answer_heads,
-    numeric_registry_graph,
-    numeric_successor,
     next_successor_plan,
     predecessor_course,
     resolve_admitted_courses,
-    legacy_receipt_fields,
     release_code_digest,
     release_generator,
-    rebind_same_grade_config,
-    staircase_successor,
     verify_release_receipt,
 )
 from .factory.model import AssessmentClass, LearningEvidence
@@ -121,7 +105,8 @@ from bilqis_mlx.runtime.mlx_checkpoint import save_new_bundle, load_semantically
 from bilqis_mlx.runtime.mlx_parity import (clip_gradients, forward_arrays,
                          native_optimizer_to_mlx)
 from bilqis_mlx.curriculum.scheduler import (start_new, visit, assess, assess_withheld, next_capability,
-                     adopt_appended_program, append_next_grade, assessment_capabilities,
+                     adopt_appended_program, adopt_revised_program,
+                     append_next_grade, assessment_capabilities,
                      revise_admitted_grade, replace_admitted_grade,
                      reactivate_stagnation_debt, weakest_three,
                      require_assessment_after_flash,
@@ -1263,92 +1248,15 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
 
 def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor,
                                   graph=None):
-    """Preserve the mastered student/AdamW across a same-graph grade boundary."""
-    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, previous_course))
-    current_grade = previous_course.grades[-1].id
-    if (not successor.executable or
-            len(successor.grades) != len(previous_course.grades) + 1 or
-            successor.grades[:-1] != previous_course.grades or
-            school.stage != "AWAITING_NEXT_GRADE" or
-            school.grade != current_grade or current_grade not in school.champions or
-            receipt.get("curriculum_mode") != previous_course.version):
-        raise ValueError("HUMAN_TRAINER_NEXT_GRADE_ADMISSION_BOUNDARY_NOT_MET")
-    legacy_school = replace(school, course_digest=previous_course.digest())
-    next_state = append_next_grade(previous_course, successor, legacy_school)
-    from bilqis_mlx.learning.mentor_epoch import begin_epoch
-    exam = receipt.get("last_exam") or {}
-    prior_caps = tuple(cap.id for grade in previous_course.grades
-                       for cap in grade.capabilities)
-    epoch = begin_epoch(
-        previous_graduate=asdict(school.current_student),
-        admitted_baseline=asdict(next_state.current_student),
-        introduced_grade=successor.grades[-1].id,
-        source_graph_sha256=receipt["semantic_graph_sha256"],
-        previous_capabilities=prior_caps,
-        previous_graduation_exam={
-            "checkpoint_sha256": exam.get("student_sha256"),
-            "rubric_sha256": exam.get("exam_rubric_sha256"),
-            "cohort_sha256": exam.get("cohort_sha256"),
-            "scores": exam.get("scores"),
-        })
-    history = list(receipt.get("championship_epoch_history", ()))
-    if receipt.get("mentor_epoch") is not None:
-        history.append(receipt["mentor_epoch"])
-    release, release_file, admission = _factory_admission(
-        run_dir, successor, next_state.current_student,
-        receipt["semantic_graph_sha256"])
-    settled = deepcopy((receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
-    identity = build_school_identity(
-        course_sha256=successor.digest(),
-        semantic_graph_sha256=receipt["semantic_graph_sha256"],
-        parameter_shapes=receipt["parameter_shapes"],
-        factory_release_sha256=release.release_sha256)
-    epoch["settled_matchups"] = settled
-    epoch["championship_school_identity"] = identity
-    compatibility = legacy_receipt_fields(successor.version)
-    config_update = {}
-    if successor.version == MINIMAL_BOOLEAN_RELEASE:
-        if not isinstance(graph, dict):
-            raise ValueError("HUMAN_TRAINER_MINIMAL_GRADE_B_REQUIRES_GRAPH")
-        config_update["config"] = rebind_same_grade_config(
-            successor.version, receipt["config"], graph)
-    candidate = {**receipt, **compatibility, "curriculum_mode": successor.version,
-                 **config_update,
-                 "live_rubric_sha256": assessment_rubric_for_scope(
-                     successor, assessment_capabilities(successor, next_state)),
-                 "factory_release_sha256": release.release_sha256,
-                 "factory_release_file": release_file,
-                 "factory_admission": asdict(admission),
-                 "championship_school_identity": identity,
-                 "mentor_epoch": epoch,
-                 "championship_epoch_history": history}
-    introduced_grade = successor.grades[-1].id
-    record = _advance(run_dir, candidate, next_state,
-                      result="ACTIVE_GRADE_" + introduced_grade,
-                      persist=False)
-    admitted = {"event": "SCHOOL_NEXT_GRADE_COURSE_ADMITTED",
-                      "generation": record["generation"], "grade": introduced_grade,
-                      "previous_cohort_sha256": (record.get("last_exam") or {}).get("cohort_sha256"),
-                      "previous_grade": current_grade,
-                      "previous_grade_champion_sha256": school.champions[current_grade].sha256,
-                      "student_sha256": school.current_student.sha256,
-                      "optimizer_step": school.current_student.optimizer_step,
-                      "teacher_events": record["teacher"]["events"],
-                      "championship_baseline_sha256": epoch["baseline"]["sha256"],
-                      "archived_championship_epochs": len(history),
-                      "introduced_grade_rubric": successor.grades[-1].assessment_sha256,
-                      "release_provider_sha256": release_code_digest(successor.version),
-                      "factory_release_sha256": release.release_sha256,
-                      **compatibility,
-                      "model_and_own_adamw_unchanged": True}
-    record = _persist(run_dir, _with_delivery_outbox(record, (admitted,)))
-    _reconcile_delivery_outbox(run_dir, record)
-    return record
+    """Compatibility shim for historical Course transition tests."""
+    from .compatibility.trainer_transitions import activate_next_admitted_grade
+    return activate_next_admitted_grade(
+        run_dir, receipt, previous_course, successor, graph)
 
 
 def _adopt_executable_profile(
         run_dir, receipt, grade_a_course, source_root, graph, profile):
-    """Adopt one same-ABI v2 profile expansion without release-name dispatch."""
+    """Adopt one same-ABI v2 profile change without release-name dispatch."""
     predecessor = _require_executable_factory_admission(run_dir, receipt, graph)
     previous_program = schedule_program_from_executable_release(predecessor)
     school = _state_from_json(receipt["school"], previous_program)
@@ -1364,38 +1272,64 @@ def _adopt_executable_profile(
         verification_seed=2026101906,
         legacy_course=compatibility_course)
     successor_program = schedule_program_from_executable_release(successor)
-    next_state = adopt_appended_program(
-        previous_program, successor_program, school)
+    appended = len(successor_program.grades) == len(previous_program.grades) + 1
+    revised = (
+        len(successor_program.grades) == len(previous_program.grades) and
+        tuple(grade.id for grade in successor_program.grades) ==
+        tuple(grade.id for grade in previous_program.grades))
+    if appended:
+        next_state = adopt_appended_program(
+            previous_program, successor_program, school)
+        revised_grade = None
+    elif revised:
+        next_state, revised_grade = adopt_revised_program(
+            previous_program, successor_program, school)
+    else:
+        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
     successor, release_file, admission = _executable_factory_admission(
         run_dir, successor, next_state.current_student,
         receipt["semantic_graph_sha256"], graph)
 
-    from bilqis_mlx.learning.mentor_epoch import begin_epoch
     exam = receipt.get("last_exam") or {}
-    epoch = begin_epoch(
-        previous_graduate=asdict(school.current_student),
-        admitted_baseline=asdict(next_state.current_student),
-        introduced_grade=next_state.grade,
-        source_graph_sha256=receipt["semantic_graph_sha256"],
-        previous_capabilities=tuple(
-            item.capability_id for item in predecessor.execution_plan.capabilities),
-        previous_graduation_exam={
-            "checkpoint_sha256": exam.get("student_sha256"),
-            "rubric_sha256": exam.get("exam_rubric_sha256"),
-            "cohort_sha256": exam.get("cohort_sha256"),
-            "scores": exam.get("scores"),
-        })
     history = list(receipt.get("championship_epoch_history", ()))
-    if receipt.get("mentor_epoch") is not None:
-        history.append(receipt["mentor_epoch"])
     identity = build_school_identity(
         course_sha256=successor.execution_plan.curriculum_sha256,
         semantic_graph_sha256=receipt["semantic_graph_sha256"],
         parameter_shapes=receipt["parameter_shapes"],
         factory_release_sha256=successor.release_sha256)
-    epoch["settled_matchups"] = deepcopy(
-        (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
-    epoch["championship_school_identity"] = identity
+    if appended:
+        from bilqis_mlx.learning.mentor_epoch import begin_epoch
+        epoch = begin_epoch(
+            previous_graduate=asdict(school.current_student),
+            admitted_baseline=asdict(next_state.current_student),
+            introduced_grade=next_state.grade,
+            source_graph_sha256=receipt["semantic_graph_sha256"],
+            previous_capabilities=tuple(
+                item.capability_id
+                for item in predecessor.execution_plan.capabilities),
+            previous_graduation_exam={
+                "checkpoint_sha256": exam.get("student_sha256"),
+                "rubric_sha256": exam.get("exam_rubric_sha256"),
+                "cohort_sha256": exam.get("cohort_sha256"),
+                "scores": exam.get("scores"),
+            })
+        if receipt.get("mentor_epoch") is not None:
+            history.append(receipt["mentor_epoch"])
+        epoch["settled_matchups"] = deepcopy(
+            (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
+        epoch["championship_school_identity"] = identity
+    else:
+        epoch = receipt.get("mentor_epoch")
+        if epoch is not None:
+            epoch, identity_event = enforce_school_identity(
+                epoch, identity,
+                generation=receipt["generation"] + 1,
+                student=asdict(school.current_student))
+            if identity_event is not None:
+                history.append({
+                    "kind": "profile-revision-school-identity-reset",
+                    "event": identity_event,
+                })
     heads = answer_heads_from_executable_release(successor, graph)
     config = {**receipt["config"], "answer_heads": heads}
     candidate = {
@@ -1411,7 +1345,9 @@ def _adopt_executable_profile(
         "championship_school_identity": identity,
         "mentor_epoch": epoch,
         "championship_epoch_history": history,
+        "last_exam": None if revised_grade is not None else receipt.get("last_exam"),
     }
+    candidate.pop("qualification_cohort_v2", None)
     record = _advance(
         run_dir, candidate, next_state,
         result="ACTIVE_GRADE_" + next_state.grade, persist=False)
@@ -1420,6 +1356,8 @@ def _adopt_executable_profile(
         "generation": record["generation"],
         "grade": next_state.grade,
         "profile_id": successor.profile.profile_id,
+        "transition_kind": "APPEND_GRADE" if appended else "REVISE_PROFILE",
+        "revised_grade": revised_grade,
         "previous_factory_release_sha256": predecessor.release_sha256,
         "factory_release_sha256": successor.release_sha256,
         "student_sha256": school.current_student.sha256,
@@ -1434,167 +1372,18 @@ def _adopt_executable_profile(
 
 def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successor,
                                      graph=None):
-    """Persist one neural-inert same-grade capability-inventory revision."""
-    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, previous_course))
-    legacy_school = replace(school, course_digest=previous_course.digest())
-    next_state, revised_grade = revise_admitted_grade(
-        previous_course, successor, legacy_school)
-    release, release_file, admission = _factory_admission(
-        run_dir, successor, next_state.current_student,
-        receipt["semantic_graph_sha256"])
-    identity = build_school_identity(
-        course_sha256=successor.digest(),
-        semantic_graph_sha256=receipt["semantic_graph_sha256"],
-        parameter_shapes=receipt["parameter_shapes"],
-        factory_release_sha256=release.release_sha256)
-    history = [*receipt.get("curriculum_history", ()), {
-        "release": previous_course.version,
-        "course_digest": previous_course.digest(),
-        "generation": receipt["generation"],
-        "state_file": f"states/{receipt['generation']:07d}.json",
-        "revised_grade": revised_grade,
-        "retired_grade_champion": (
-            asdict(school.champions[revised_grade])
-            if revised_grade in school.champions else None),
-    }]
-    config_update = {}
-    if "config" in receipt or successor.version == BOOLEAN_IDENTIFICATION_RELEASE:
-        if "config" not in receipt:
-            raise ValueError("HUMAN_TRAINER_TYPED_GRADE_REVISION_CONFIG_MISSING")
-        config_update["config"] = rebind_same_grade_config(
-            successor.version, receipt["config"], graph)
-    updated = {
-        **receipt, **legacy_receipt_fields(successor.version),
-        **config_update,
-        "curriculum_mode": successor.version,
-        "curriculum_history": history,
-        "curriculum_parent": receipt.get("curriculum_parent", asdict(school.current_student)),
-        "live_rubric_sha256": assessment_rubric_for_scope(
-            successor, assessment_capabilities(successor, next_state)),
-        "factory_release_sha256": release.release_sha256,
-        "factory_release_file": release_file,
-        "factory_admission": asdict(admission),
-        "championship_school_identity": identity,
-        "last_exam": None,
-    }
-    updated.pop("qualification_cohort", None)
-    if updated.get("mentor_epoch") is not None:
-        epoch, _ = enforce_school_identity(
-            updated["mentor_epoch"], identity,
-            generation=receipt["generation"] + 1,
-            student=asdict(school.current_student))
-        updated["mentor_epoch"] = epoch
-    record = _advance(
-        run_dir, updated, next_state,
-        result="ACTIVE_GRADE_" + next_state.grade, persist=False)
-    event = {
-        "event": "SCHOOL_GRADE_RELEASE_REVISED",
-        "generation": record["generation"],
-        "grade": revised_grade,
-        "previous_release": previous_course.version,
-        "release": successor.version,
-        "student_sha256": school.current_student.sha256,
-        "optimizer_step": school.current_student.optimizer_step,
-        "factory_release_sha256": release.release_sha256,
-        "actual_neural_updates": 0,
-    }
-    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
-    _reconcile_delivery_outbox(run_dir, record)
-    return record
+    """Compatibility shim for historical same-grade migration tests."""
+    from .compatibility.trainer_transitions import activate_revised_admitted_grade
+    return activate_revised_admitted_grade(
+        run_dir, receipt, previous_course, successor, graph)
 
 
 def _activate_replaced_admitted_grade(run_dir, receipt, previous_course, successor,
                                       graph=None):
-    """Persist one neural-inert replacement of the latest admitted grade contract."""
-    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, previous_course))
-    legacy_school = replace(school, course_digest=previous_course.digest())
-    next_state, replaced_grade = replace_admitted_grade(
-        previous_course, successor, legacy_school)
-    release, release_file, admission = _factory_admission(
-        run_dir, successor, next_state.current_student,
-        receipt["semantic_graph_sha256"])
-    identity = build_school_identity(
-        course_sha256=successor.digest(),
-        semantic_graph_sha256=receipt["semantic_graph_sha256"],
-        parameter_shapes=receipt["parameter_shapes"],
-        factory_release_sha256=release.release_sha256)
-    old_caps = tuple(
-        cap.id for grade in previous_course.grades if grade.id == replaced_grade
-        for cap in grade.capabilities)
-    new_caps = tuple(
-        cap.id for grade in successor.grades if grade.id == replaced_grade
-        for cap in grade.capabilities)
-    withheld = tuple(cap for cap in old_caps if cap not in set(new_caps))
-    history = [*receipt.get("curriculum_history", ()), {
-        "release": previous_course.version,
-        "course_digest": previous_course.digest(),
-        "generation": receipt["generation"],
-        "state_file": f"states/{receipt['generation']:07d}.json",
-        "replaced_grade": replaced_grade,
-        "old_capabilities": list(old_caps),
-        "new_capabilities": list(new_caps),
-        "withheld_capabilities": list(withheld),
-        "replacement_kind": "HUMAN_DIRECTED_GRADE_WINNOW",
-    }]
-    if "config" not in receipt:
-        raise ValueError("HUMAN_TRAINER_GRADE_REPLACEMENT_CONFIG_MISSING")
-    updated = {
-        **receipt,
-        **legacy_receipt_fields(successor.version),
-        "config": rebind_same_grade_config(
-            successor.version, receipt["config"], graph),
-        "curriculum_mode": successor.version,
-        "curriculum_history": history,
-        "live_rubric_sha256": assessment_rubric_for_scope(
-            successor, assessment_capabilities(successor, next_state)),
-        "factory_release_sha256": release.release_sha256,
-        "factory_release_file": release_file,
-        "factory_admission": asdict(admission),
-        "championship_school_identity": identity,
-        # Geometry-bound operational evidence from the old B contract must not
-        # participate in teaching, retention or qualification under the new one.
-        # The prior immutable state file remains the lossless archive.
-        "capability_best": {},
-        "graduation_perfect": {},
-        "whole_student_peaks": [],
-        "teacher_misses": [],
-        "teacher_miss_exposures": {},
-        "last_exam": None,
-        "burned_generalization_cohorts": [],
-        "legacy_frontier_pending_replay": False,
-        "stagnation_session": None,
-    }
-    updated.pop("qualification_cohort", None)
-    updated.pop("last_generalization_cohort", None)
-    if updated.get("mentor_epoch") is not None:
-        epoch, _ = enforce_school_identity(
-            updated["mentor_epoch"], identity,
-            generation=receipt["generation"] + 1,
-            student=asdict(school.current_student))
-        updated["mentor_epoch"] = epoch
-    record = _advance(
-        run_dir, updated, next_state,
-        result="ACTIVE_GRADE_" + next_state.grade, persist=False)
-    event = {
-        "event": "SCHOOL_GRADE_RELEASE_REPLACED",
-        "generation": record["generation"],
-        "grade": replaced_grade,
-        "previous_release": previous_course.version,
-        "release": successor.version,
-        "old_capabilities": list(old_caps),
-        "new_capabilities": list(new_caps),
-        "withheld_capabilities": list(withheld),
-        "student_sha256": school.current_student.sha256,
-        "optimizer_step": school.current_student.optimizer_step,
-        "factory_release_sha256": release.release_sha256,
-        "championship_field_reset": True,
-        "stale_geometry_evidence_deactivated": True,
-        "actual_neural_updates": 0,
-        "model_and_own_adamw_unchanged": True,
-    }
-    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
-    _reconcile_delivery_outbox(run_dir, record)
-    return record
+    """Compatibility shim for historical grade-winnowing tests."""
+    from .compatibility.trainer_transitions import activate_replaced_admitted_grade
+    return activate_replaced_admitted_grade(
+        run_dir, receipt, previous_course, successor, graph)
 
 
 def _mentor_epoch_references(receipt):
@@ -4439,34 +4228,28 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 admitted_courses, receipt.get("curriculum_mode"), course)
             admitted_v2 = _require_executable_factory_admission(
                 run_dir, receipt, graph)
-            if (receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" and
+            target_boolean_profile = (
+                boolean_entry_profile(full=full_grade_b)
+                if len(admitted_v2.curriculum.grades) == 2 else None)
+            if (target_boolean_profile is not None and
+                    receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" and
                     len(admitted_v2.execution_plan.grades) <
                     len(admitted_v2.curriculum.grades)):
                 receipt, course, admitted_v2, _ = _adopt_executable_profile(
                     run_dir, receipt, course_a, source_root, graph,
-                    boolean_entry_profile(full=full_grade_b))
-            replacement = default_resume_replacement(
-                course, course_a, source_root, full_grade_b=full_grade_b)
-            if replacement is not None:
-                receipt = _activate_replaced_admitted_grade(
-                    run_dir, receipt, course, replacement, graph)
-                course = replacement
-            if (full_grade_b and boolean_composite and
-                    receipt.get("curriculum_mode") != BOOLEAN_COMPOSITE_RELEASE):
-                if receipt.get("curriculum_mode") != BOOLEAN_RELEASE:
-                    raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_EXISTING_GRADE_B")
-                successor = boolean_composite_successor(course, source_root)
-                receipt = _activate_revised_admitted_grade(
-                    run_dir, receipt, course, successor, graph)
-                course = successor
-            if (full_grade_b and boolean_idboolops and
-                    receipt.get("curriculum_mode") != BOOLEAN_IDENTIFICATION_RELEASE):
-                if receipt.get("curriculum_mode") != BOOLEAN_COMPOSITE_RELEASE:
-                    raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_COMPOSITE_GRADE_B")
-                successor = boolean_identification_successor(course, source_root)
-                receipt = _activate_revised_admitted_grade(
-                    run_dir, receipt, course, successor, graph)
-                course = successor
+                    target_boolean_profile)
+            elif (target_boolean_profile is not None and
+                  len(admitted_v2.execution_plan.grades) ==
+                  len(admitted_v2.curriculum.grades) and
+                  admitted_v2.profile != target_boolean_profile):
+                current_program = schedule_program_from_executable_release(
+                    admitted_v2)
+                current_school = _state_from_json(
+                    receipt["school"], current_program)
+                if current_school.grade == current_program.grades[-1].id:
+                    receipt, course, admitted_v2, _ = _adopt_executable_profile(
+                        run_dir, receipt, course_a, source_root, graph,
+                        target_boolean_profile)
             if numeric_staircase and receipt.get('curriculum_mode') != NUMERIC_STAIRCASE_RELEASE:
                 from .numeric_staircase import enroll
                 course, receipt = enroll(
@@ -4476,22 +4259,14 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 plan = next_successor_plan(
                     course, source_root, full_grade_b=full_grade_b)
                 if plan is not None:
-                    if plan.transition == SAME_GRAPH_TRANSITION:
-                        receipt = _activate_next_admitted_grade(
-                            run_dir, receipt, course, plan.successor, graph)
-                        course = plan.successor
-                    elif plan.transition == SAME_GRADE_TRANSITION:
-                        receipt = _activate_revised_admitted_grade(
-                            run_dir, receipt, course, plan.successor, graph)
-                        course = plan.successor
-                    elif plan.transition == GRAPH_GROWTH_TRANSITION:
-                        from .grade_transition import activate_numeric_grade
-                        params, optimizer, graph, receipt = activate_numeric_grade(
-                            mx, run_dir, receipt, course, plan.successor,
-                            params, optimizer, graph, reserve_gib=reserve_gib)
-                        course = plan.successor
-                    else:
-                        raise ValueError("FACTORY_UNKNOWN_SUCCESSOR_TRANSITION")
+                    if plan.transition != GRAPH_GROWTH_TRANSITION:
+                        raise ValueError(
+                            "FACTORY_LEGACY_SUCCESSOR_REQUIRES_PROFILE_CONVERGENCE")
+                    from .grade_transition import activate_numeric_grade
+                    params, optimizer, graph, receipt = activate_numeric_grade(
+                        mx, run_dir, receipt, course, plan.successor,
+                        params, optimizer, graph, reserve_gib=reserve_gib)
+                    course = plan.successor
             receipt = _repair_scope_rubric_evidence(run_dir, receipt, course)
             receipt = _repair_championship_source_context(run_dir, receipt, course)
         else:

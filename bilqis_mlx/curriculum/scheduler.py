@@ -713,6 +713,48 @@ def adopt_appended_program(previous: ScheduleProgram,
     return _enter_grade(successor, extended, len(previous.grades))
 
 
+def adopt_revised_program(previous: ScheduleProgram,
+                          successor: ScheduleProgram,
+                          state: SchoolState) -> tuple[SchoolState, str]:
+    """Rebind one active projected grade after a profile roster revision."""
+    if (not isinstance(previous, ScheduleProgram) or
+            not isinstance(successor, ScheduleProgram)):
+        raise TypeError("FACTORY_SCHEDULE_PROGRAM_REQUIRED")
+    verify_state(previous, state)
+    previous_ids = tuple(grade.id for grade in previous.grades)
+    successor_ids = tuple(grade.id for grade in successor.grades)
+    changed = tuple(
+        index for index, (old, new) in
+        enumerate(zip(previous.grades, successor.grades))
+        if old != new)
+    if (previous_ids != successor_ids or len(changed) != 1 or
+            changed[0] != len(previous.grades) - 1):
+        raise ValueError("FACTORY_SCHEDULE_REVISION_INVALID")
+    revised_grade = successor_ids[changed[0]]
+    if state.grade != revised_grade:
+        raise ValueError("FACTORY_SCHEDULE_REVISION_REQUIRES_ACTIVE_GRADE")
+    champions = dict(state.champions)
+    champions.pop(revised_grade, None)
+    rebound = replace(
+        state,
+        course_digest=successor.digest(),
+        stage="MAIN",
+        queue=(),
+        first_recovery=(),
+        champions=champions,
+        grade_exam_epoch=state.grade_exam_epoch + 1,
+        introduction_stage=0,
+        main_sweep_visited=(),
+        revalidation_target_grade=None,
+        latest_rubric_digest=None,
+        pending_failures=(),
+        teacher_soup_digest=None,
+    )
+    rebound = _enter_grade(successor, rebound, state.grade_index)
+    verify_state(successor, rebound)
+    return rebound, revised_grade
+
+
 def append_next_grade(previous, successor, state: SchoolState) -> SchoolState:
     """Historical Course append migration; canonical v2 uses release deltas."""
     from bilqis_mlx.compatibility.scheduler_transitions import append_next_grade as legacy
