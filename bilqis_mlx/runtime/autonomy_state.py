@@ -10,6 +10,7 @@ from ..factory.autonomy import (
     EvidenceLedger,
     EvidenceReceipt,
     ProjectionEvidenceSpec,
+    RejectedTeachingAttemptReceipt,
     SourceCompositionEdge,
     SupplementalEvidenceSpec,
     TeachingReceipt,
@@ -70,6 +71,8 @@ def _plan_from_json(value: dict) -> AutonomyPlan:
                     minimum_specimens=item.get("minimum_specimens", 1),
                 )
                 for item in value.get("supplemental_evidence", ())),
+            remediation_failure_limit=value.get(
+                "remediation_failure_limit", 3),
         )
     except (KeyError, TypeError) as exc:
         raise ValueError("AUTONOMY_STATE_PLAN_INVALID") from exc
@@ -82,11 +85,15 @@ def _ledger_from_json(value: dict) -> EvidenceLedger:
         receipts = tuple(EvidenceReceipt(**item) for item in value.get("receipts", ()))
         interventions = tuple(
             TeachingReceipt(**item) for item in value.get("interventions", ()))
+        rejected_attempts = tuple(
+            RejectedTeachingAttemptReceipt(**item)
+            for item in value.get("rejected_attempts", ()))
         return EvidenceLedger(
             factory_release_sha256=value["factory_release_sha256"],
             autonomy_plan_sha256=value["autonomy_plan_sha256"],
             receipts=receipts,
             interventions=interventions,
+            rejected_attempts=rejected_attempts,
         )
     except (KeyError, TypeError) as exc:
         raise ValueError("AUTONOMY_STATE_LEDGER_INVALID") from exc
@@ -113,7 +120,9 @@ def persist_autonomy_state(
     # Normalize tuple/list container differences before hashing or readback.
     payload = json.loads(_canonical(payload))
     state_sha256 = _fingerprint(payload)
-    sequence = len(ledger.receipts) + len(ledger.interventions)
+    sequence = (
+        len(ledger.receipts) + len(ledger.interventions) +
+        len(ledger.rejected_attempts))
     relative = Path("autonomy") / "states" / (
         f"{sequence:07d}-{state_sha256[:16]}.json")
     state_path = Path(run_dir) / relative
@@ -135,6 +144,7 @@ def persist_autonomy_state(
         "state_sha256": state_sha256,
         "receipt_count": len(ledger.receipts),
         "intervention_count": len(ledger.interventions),
+        "rejected_attempt_count": len(ledger.rejected_attempts),
     }
     current = autonomy / "current.json"
     if current.is_symlink():
@@ -187,7 +197,9 @@ def read_autonomy_state(
     if (payload.get("autonomy_plan_sha256") != plan.digest() or
             pointer.get("autonomy_plan_sha256") != plan.digest() or
             pointer.get("receipt_count") != len(ledger.receipts) or
-            pointer.get("intervention_count", 0) != len(ledger.interventions)):
+            pointer.get("intervention_count", 0) != len(ledger.interventions) or
+            pointer.get("rejected_attempt_count", 0) !=
+            len(ledger.rejected_attempts)):
         raise ValueError("AUTONOMY_STATE_PLAN_OR_SEQUENCE_DRIFT")
     next_action(release, ledger, plan=plan)
     return plan, ledger

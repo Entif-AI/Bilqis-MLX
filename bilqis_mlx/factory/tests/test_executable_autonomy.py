@@ -189,6 +189,7 @@ class ExecutableAutonomyTests(TestCase):
                     "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
                     "capability": capability,
                     "optimizer_step": child.optimizer_step,
+                    "retained_optimizer_updates": 1,
                     "recovered_at_student_sha256": child.sha256,
                     "autonomy_teaching": {
                         **asdict(delivery),
@@ -214,3 +215,69 @@ class ExecutableAutonomyTests(TestCase):
             self.assertEqual(
                 read_autonomy_state(root, self.release),
                 (self.plan, session.ledger))
+
+    def test_rejected_teaching_outbox_is_not_recovered_as_intervention(self):
+        parent = Checkpoint("a" * 64, "bundles/parent", 10, True)
+        child = Checkpoint("b" * 64, "bundles/child", 11, True)
+        ledger = initial_evidence_ledger(self.release, plan=self.plan)
+        action = next_action(
+            self.release, ledger, plan=self.plan,
+            current_checkpoint_sha256=parent.sha256,
+            current_optimizer_step=parent.optimizer_step)
+        obligation = action.evidence_work.obligation
+        from bilqis_mlx.factory.autonomy import EvidenceReceipt
+        failed = EvidenceReceipt(
+            obligation.obligation_id, "failed-before-rejected-teaching",
+            parent.sha256, parent.optimizer_step, "c" * 64,
+            obligation.minimum_specimens, False)
+        ledger = record_evidence(
+            self.release, ledger, failed, plan=self.plan,
+            current_checkpoint_sha256=parent.sha256,
+            current_optimizer_step=parent.optimizer_step)
+        failed_child = EvidenceReceipt(
+            obligation.obligation_id, "failed-after-retained-teaching",
+            child.sha256, child.optimizer_step, "d" * 64,
+            obligation.minimum_specimens, False)
+        ledger = record_evidence(
+            self.release, ledger, failed_child, plan=self.plan,
+            current_checkpoint_sha256=child.sha256,
+            current_optimizer_step=child.optimizer_step)
+        capability = action.evidence_work.capability_id
+        option = action.evidence_work.teaching_option_ids[0]
+        rows = [{
+            "id": "rejected-teaching-row-1", "capability": capability,
+            "gold": "TRUE", "answer_kind": "binary"}]
+        delivery = describe_delivered_teaching(
+            self.release, capability, option, rows)
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            teaching_file = (
+                root / "autonomy/teaching" /
+                (delivery.specimen_content_sha256 + ".json"))
+            teaching_file.parent.mkdir(parents=True, exist_ok=True)
+            teaching_file.write_text(
+                json.dumps({"rows": rows}), encoding="utf-8")
+            school_receipt = {
+                "run_id": "issue-349-test",
+                "generation": 8,
+                "delivery_outbox": [{
+                    "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                    "capability": capability,
+                    "optimizer_step": child.optimizer_step,
+                    "candidate_attempt_optimizer_step":
+                        child.optimizer_step + 4,
+                    "retained_optimizer_updates": 0,
+                    "recovered_at_student_sha256": child.sha256,
+                    "autonomy_teaching": {
+                        **asdict(delivery),
+                        "specimen_file": (
+                            "autonomy/teaching/" +
+                            delivery.specimen_content_sha256 + ".json"),
+                    },
+                }],
+            }
+            session = LiveAutonomySession(
+                root, Path("."), self.release, self.plan, ledger)
+            self.assertIsNone(
+                session.recover_teaching(school_receipt, child))
+            self.assertEqual(session.ledger, ledger)

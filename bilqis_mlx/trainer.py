@@ -4811,12 +4811,81 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 continue
             if autonomous_curriculum:
                 from .factory.autonomy import (
-                    AutonomyActionKind, TeachingReceipt)
+                    AutonomyActionKind)
                 from .runtime.autonomy_live import scheduled_teaching_matches
 
                 current_release = _read_executable_factory_release_artifact(run_dir, receipt)
                 autonomy_session.refresh_release(current_release)
                 action = autonomy_session.action(school.current_student)
+                if action.deferred_obligation_ids:
+                    selected_work = (
+                        action.evidence_work or
+                        (action.teaching_work
+                         if action.kind is AutonomyActionKind.TEACHING
+                         else None))
+                    _record(run_dir, {
+                        "event": "SCHOOL_AUTONOMY_REMEDIATION_DEFERRED",
+                        "generation": receipt["generation"],
+                        "grade": school.grade,
+                        "deferred_obligations":
+                            list(action.deferred_obligation_ids),
+                        "selected_capability": (
+                            selected_work.capability_id
+                            if selected_work is not None else None),
+                        "student_sha256": school.current_student.sha256,
+                        "optimizer_step":
+                            school.current_student.optimizer_step,
+                        "actual_neural_updates": 0,
+                    })
+                if action.kind is AutonomyActionKind.SAFE_HOLD:
+                    frontier_result = (
+                        autonomy_session.propose_source_frontier_work(
+                            school.current_student))
+                    if frontier_result is not None:
+                        proposal, proposal_file = frontier_result
+                        reason = (
+                            "AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED"
+                            if proposal.disposition.value ==
+                            "SOURCE_DEVELOPMENT"
+                            else "AUTONOMY_JIT_PROPOSAL_READY")
+                        _record(run_dir, {
+                            "event": (
+                                "SCHOOL_AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED"
+                                if proposal.disposition.value ==
+                                "SOURCE_DEVELOPMENT"
+                                else "SCHOOL_AUTONOMY_JIT_PROPOSAL_READY"),
+                            "generation": receipt["generation"],
+                            "grade": school.grade,
+                            "deferred_obligations":
+                                list(action.deferred_obligation_ids),
+                            "proposal_sha256": proposal.proposal_sha256,
+                            "proposal_file": proposal_file,
+                            "frontier_sha256": proposal.frontier_sha256,
+                            "candidate_gate_count":
+                                len(proposal.candidate_gates),
+                            "selected_candidate_ids":
+                                list(proposal.selected_candidate_ids),
+                            "student_sha256":
+                                school.current_student.sha256,
+                            "optimizer_step":
+                                school.current_student.optimizer_step,
+                            "model_and_optimizer_unchanged": True,
+                        })
+                    else:
+                        reason = "AUTONOMY_SAFE_HOLD"
+                        _record(run_dir, {
+                            "event": "SCHOOL_AUTONOMY_SAFE_HOLD",
+                            "generation": receipt["generation"],
+                            "grade": school.grade,
+                            "deferred_obligations":
+                                list(action.deferred_obligation_ids),
+                            "student_sha256":
+                                school.current_student.sha256,
+                            "optimizer_step":
+                                school.current_student.optimizer_step,
+                            "model_and_optimizer_unchanged": True,
+                        })
+                    break
                 if action.kind is AutonomyActionKind.SOURCE_COVERAGE:
                     reason = "AUTONOMY_SOURCE_COVERAGE_REQUIRED"
                     _record(run_dir, {
@@ -4960,7 +5029,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 # Autonomy evidence may only refer to a complete, read-back
                 # verified model+AdamW checkpoint. Publish every autonomous
                 # teaching visit immediately instead of carrying RAM-only state.
-                delivery = (receipt.get("_pending_visit_events") or [{}])[-1].get("autonomy_teaching")
+                autonomy_visit = (receipt.get("_pending_visit_events") or [{}])[-1]
+                delivery = autonomy_visit.get("autonomy_teaching")
                 receipt = _flush_working_student(
                     mx, run_dir, receipt, manifest, course,
                     params, optimizer, graph, reserve_gib=reserve_gib,
@@ -4973,6 +5043,20 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 if autonomy_teaching_work is not None:
                     failed = autonomy_teaching_work.failed_evidence
                     current = school_after_flush.current_student
+                    durable_autonomy_visit = None
+                    if delivery is not None:
+                        digest = delivery.get("specimen_content_sha256")
+                        durable_autonomy_visit = next((
+                            event for event in reversed(
+                                receipt.get("delivery_outbox", ()))
+                            if (isinstance(
+                                    event.get("autonomy_teaching"), dict) and
+                                event["autonomy_teaching"].get(
+                                    "specimen_content_sha256") == digest)
+                        ), None)
+                        if durable_autonomy_visit is None:
+                            raise ValueError(
+                                "AUTONOMY_TEACHING_DURABLE_EVENT_MISSING")
                     if (delivery is not None and
                             current.sha256 != failed.checkpoint_sha256 and
                             current.optimizer_step > failed.optimizer_step):
@@ -4993,6 +5077,31 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                                 failed.checkpoint_sha256,
                             "student_sha256": current.sha256,
                             "optimizer_step": current.optimizer_step,
+                        })
+                    elif (delivery is not None and
+                            current.sha256 == failed.checkpoint_sha256 and
+                            current.optimizer_step == failed.optimizer_step and
+                            durable_autonomy_visit.get(
+                                "retained_optimizer_updates") == 0):
+                        rejected = (
+                            autonomy_session.rejected_attempt_from_event(
+                                durable_autonomy_visit, failed))
+                        _record(run_dir, {
+                            "event":
+                                "SCHOOL_AUTONOMY_TEACHING_REJECTED_RECORDED",
+                            "generation": receipt["generation"],
+                            "grade": school_after_flush.grade,
+                            "capability":
+                                autonomy_teaching_work.capability_id,
+                            "obligation": failed.obligation_id,
+                            "attempt_id": rejected.attempt_id,
+                            "retention_reason":
+                                rejected.retention_reason,
+                            "student_sha256": current.sha256,
+                            "optimizer_step": current.optimizer_step,
+                            "candidate_optimizer_step":
+                                rejected.candidate_optimizer_step,
+                            "retained_optimizer_updates": 0,
                         })
             pending_visits = receipt.get("_pending_visit_events", ())
             if len(pending_visits) > pending_before:

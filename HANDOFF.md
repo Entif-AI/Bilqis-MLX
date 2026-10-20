@@ -4,6 +4,49 @@ Authority: https://github.com/socr8s/private-ip/issues/349 (#349 OPEN); governin
 
 Branch `codex/349-autonomous-jit-ithkuil-20261020`, worktree `/Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020`. Base main observed `686438848a4644861febbf11d1b426f770ecb795`. This section describes the post-execution tree before final commit/push; use `git rev-parse HEAD` plus exact `git ls-remote` readback after closeout for the authoritative final SHA.
 
+## CORRECTION: live trainer is the acceptance surface
+
+**This section supersedes the earlier closeout framing below.** The 404-pass/47-subtest result remains useful regression evidence, but it is not operational qualification. The user explicitly authorized actual issue-owned neural execution and explicitly instructed the agent not to stop at the first green suite. After the user corrected the acceptance standard, the same issue-owned lineage was resumed repeatedly and immediately exposed failure modes that the synthetic/integration suite had not prevented.
+
+Current issue-owned lineage: `runs/issue-349-experiments/primary`. Exactly one experiment directory exists. Current retained causal student is SHA `260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f`, native AdamW step **116816**. All subsequent bounded remediation/source-development transitions preserved that exact learner custody.
+
+### Live failures found only by running the trainer
+
+1. **Rejected teaching recovered as retained teaching.** Restart recovery attempted to turn a prior rejected/no-retained-gain teaching outbox event into an autonomy intervention and failed with `AUTONOMY_TEACHING_PARENT_EVIDENCE_MISMATCH`. Recovery now requires positive `retained_optimizer_updates` before reconstructing an intervention.
+2. **Failed-first remediation monopoly.** A.IDENTITY repeatedly failed exact fresh evidence and monopolized the school indefinitely. Bounded remediation now defers a repeatedly unsuccessful obligation and selects another legal obligation before considering SAFE_HOLD.
+3. **Rejected challengers did not consume the remediation budget.** A.MEMBER demonstrated 60 visits with no new retained student after step 116816 because rejected challengers were invisible to the autonomy ledger. A typed `RejectedTeachingAttemptReceipt` now preserves no-retained-gain attempts without falsely claiming optimizer custody and counts them toward the bounded remediation campaign.
+4. **Provisional-event publication-order bug: missing `event_id`.** Rejection accounting assumed an in-memory pending visit already had its durable publication identity. It failed closed. Attempt identity is now deterministically derived from the teaching/candidate facts rather than publication order.
+5. **Provisional-event publication-order bug: missing recovered student identity.** The pending visit also lacked the durable `recovered_at_student_sha256`. Rejection receipts are now constructed only from the committed/read-back delivery outbox event, matched by exact teaching specimen digest.
+
+### Actual trainer behavior after those repairs
+
+- A.IDENTITY, A.PARENT and A.LINK each exhausted bounded retained-remediation campaigns and were deferred while other legal Grade-A work remained.
+- A.MEMBER's long historical no-retained-gain campaign was reconstructed from durable event evidence; it was deferred instead of being retried forever.
+- A.EDGE and A.MAPS each accumulated three durable rejected-attempt receipts and were then deferred.
+- With all six current direct Grade-A obligations deferred, the trainer stopped neural work after only four additional visits instead of burning another unbounded retry sequence.
+- The autonomy ledger at that boundary contained 19 exact-checkpoint evidence receipts, 14 retained interventions and 90 rejected-attempt receipts. The retained student remained SHA `260b56c5...` / step 116816.
+
+### SAFE_HOLD now hands off to the verified source frontier
+
+Issue #349 authority says SAFE_HOLD is valid only when no productive legal work remains, and an empty executable frontier must switch into source-preparation mode. The live trainer now invokes the verified candidate/JIT path at that boundary rather than treating learner exhaustion as global exhaustion.
+
+The actual zero-update handoff produced:
+
+- event: `SCHOOL_AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED`;
+- stop reason: `AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED`;
+- frontier SHA: `055ab68470ab248c68b86090f1a5e277ec289472326b6bfb592a45727bb17381`;
+- proposal SHA: `aaecd8fdfa1cf56cf749ad31b5f16209887addd3d4b1aa65fbb4d9420001d74a`;
+- durable proposal: `autonomy/jit-proposals/aaecd8fdfa1cf56cf749ad31b5f16209887addd3d4b1aa65fbb4d9420001d74a.json`;
+- **240/240 candidate gates blocked by `STAGED_SUCCESSOR_BINDING_REQUIRED`**;
+- selected candidate IDs: none;
+- model and optimizer unchanged.
+
+That is the exact current north-star blocker. The source candidate frontier exists and is verified, but no trustworthy candidate-to-staged-executable-successor compiler exists yet. The controller therefore enters source-development mode instead of inventing semantics or bypassing factory admission. D-01 (`D.COPULAR_IDENTITY`) also hypothesizes A.IDENTITY as a prerequisite, and the current causal student has not satisfied the strict A.IDENTITY evidence obligation, so the system must not smuggle D-01 into training merely because it is first in the research tranche.
+
+### Acceptance vocabulary going forward
+
+Passing tests mean only that encoded contracts did not regress under those fixtures. **Operationally demonstrated** means the actual issue-owned trainer exercised the path under durable checkpoint/AdamW/scheduler/filesystem state. The current branch is materially more robust because live training broke it repeatedly and those failures were converted into recovery/control behavior. The project is **not complete**: automated source-development into a valid staged executable successor remains unimplemented.
+
 ## Current implemented state
 
 - **Typed non-admitted frontier:** `candidate_frontier.py` verifies the generated source manifest, all source senses/evidence, 144 `CORE_D_O` candidates and 96 reserve candidates. CORE candidates are structurally `PROPOSED_NOT_ADMITTED`; reserve candidates are `CANDIDATE_RESERVE`; both require explicit factory-admission debt. Prerequisite edges remain hypotheses until executable admission.

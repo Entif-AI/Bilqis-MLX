@@ -6,7 +6,7 @@ source-backed plan, restores its durable ledger, and measures evidence.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
 from pathlib import Path
@@ -17,6 +17,7 @@ from ..factory.autonomy import (
     AutonomyAction,
     CurriculumWorkItem,
     EvidenceLedger,
+    RejectedTeachingAttemptReceipt,
     TeachingReceipt,
     compile_autonomy_plan,
     evidence_complete_capabilities,
@@ -24,6 +25,7 @@ from ..factory.autonomy import (
     next_action,
     rebind_evidence_ledger,
     record_evidence,
+    record_rejected_teaching_attempt,
     record_teaching_intervention,
     reconcile_successor_evidence,
 )
@@ -42,6 +44,7 @@ from .autonomy_state import (
     persist_autonomy_state,
     read_autonomy_state,
 )
+from .state import _durable_json
 
 
 REGISTRY_SNAPSHOT = (
@@ -204,7 +207,9 @@ class LiveAutonomySession:
     def open(cls, run_dir: Path, source_root: Path, release: FactoryRelease):
         plan = build_live_autonomy_plan(release, source_root)
         ledger = reconcile_live_autonomy_state(run_dir, release, plan)
-        return cls(Path(run_dir), Path(source_root), release, plan, ledger)
+        session = cls(Path(run_dir), Path(source_root), release, plan, ledger)
+        session.recover_rejected_attempts_from_events()
+        return session
 
     def refresh_release(self, release: FactoryRelease) -> None:
         if release.release_sha256 == self.release.release_sha256:
@@ -249,6 +254,147 @@ class LiveAutonomySession:
         persist_autonomy_state(
             self.run_dir, self.release, plan=self.plan, ledger=self.ledger)
 
+    def record_rejected_attempt(
+        self, receipt: RejectedTeachingAttemptReceipt,
+    ) -> None:
+        self.ledger = record_rejected_teaching_attempt(
+            self.release, self.ledger, receipt, plan=self.plan,
+            current_checkpoint_sha256=receipt.retained_checkpoint_sha256,
+            current_optimizer_step=receipt.retained_optimizer_step)
+        persist_autonomy_state(
+            self.run_dir, self.release, plan=self.plan, ledger=self.ledger)
+
+    @staticmethod
+    def _rejected_attempt_id(
+        event: dict, delivery: dict, obligation_id: str,
+    ) -> str:
+        return hashlib.sha256(json.dumps({
+            "generation": event.get("generation"),
+            "obligation": obligation_id,
+            "candidate_optimizer_step":
+                event.get("candidate_attempt_optimizer_step"),
+            "retained_optimizer_step": event.get("optimizer_step"),
+            "retained_checkpoint_sha256":
+                event.get("recovered_at_student_sha256"),
+            "specimen_content_sha256":
+                delivery.get("specimen_content_sha256"),
+            "paired_scores_sha256": (
+                event.get("candidate_retention", {}).get(
+                    "paired_scores_sha256")
+                if isinstance(event.get("candidate_retention"), dict)
+                else None),
+        }, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+
+    def rejected_attempt_from_event(
+        self, event: dict, failed,
+    ) -> RejectedTeachingAttemptReceipt:
+        delivery = event.get("autonomy_teaching")
+        if (not isinstance(delivery, dict) or
+                event.get("retained_optimizer_updates") != 0):
+            raise ValueError("AUTONOMY_REJECTED_ATTEMPT_EVENT_INVALID")
+        retention = event.get("candidate_retention")
+        reason = (
+            retention.get("reason")
+            if isinstance(retention, dict) else None)
+        if not isinstance(reason, str) or not reason:
+            reason = "REJECTED_WITHOUT_RETAINED_GAIN"
+        receipt = RejectedTeachingAttemptReceipt(
+            obligation_id=failed.obligation_id,
+            parent_evidence_id=failed.evidence_id,
+            attempt_id=self._rejected_attempt_id(
+                event, delivery, failed.obligation_id),
+            teaching_option_id=delivery["option_id"],
+            retained_checkpoint_sha256=event[
+                "recovered_at_student_sha256"],
+            retained_optimizer_step=event["optimizer_step"],
+            candidate_optimizer_step=event[
+                "candidate_attempt_optimizer_step"],
+            retention_reason=reason,
+            selected_provider_id=delivery["provider_id"],
+            provider_implementation_sha256=delivery[
+                "provider_implementation_sha256"],
+            specimen_content_sha256=delivery[
+                "specimen_content_sha256"],
+        )
+        self.record_rejected_attempt(receipt)
+        return receipt
+
+    def recover_rejected_attempts_from_events(self) -> int:
+        """Backfill current-campaign rejected attempts from the durable event log."""
+        path = self.run_dir / "events.jsonl"
+        if path.is_symlink() or not path.is_file():
+            return 0
+        before = len(self.ledger.rejected_attempts)
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            try:
+                event = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            delivery = event.get("autonomy_teaching")
+            if (not isinstance(delivery, dict) or
+                    event.get("retained_optimizer_updates") != 0):
+                continue
+            capability = event.get("capability")
+            checkpoint_sha256 = event.get("recovered_at_student_sha256")
+            optimizer_step = event.get("optimizer_step")
+            candidate_step = event.get("candidate_attempt_optimizer_step")
+            if (not isinstance(capability, str) or
+                    not isinstance(checkpoint_sha256, str) or
+                    type(optimizer_step) is not int or
+                    type(candidate_step) is not int):
+                continue
+            obligation_ids = {
+                item.obligation_id
+                for item in self._obligations_for_capability(capability)
+            }
+            failed = tuple(
+                item for item in self.ledger.receipts
+                if (not item.passed and item.obligation_id in obligation_ids and
+                    item.checkpoint_sha256 == checkpoint_sha256 and
+                    item.optimizer_step == optimizer_step)
+            )
+            if len(failed) != 1:
+                continue
+            parent = failed[0]
+            raw_reason = (
+                event.get("candidate_retention", {}).get("reason")
+                if isinstance(event.get("candidate_retention"), dict)
+                else None)
+            reason = (
+                raw_reason
+                if isinstance(raw_reason, str) and raw_reason
+                else "REJECTED_WITHOUT_RETAINED_GAIN")
+            try:
+                attempt = RejectedTeachingAttemptReceipt(
+                    obligation_id=parent.obligation_id,
+                    parent_evidence_id=parent.evidence_id,
+                    attempt_id=self._rejected_attempt_id(
+                        event, delivery, parent.obligation_id),
+                    teaching_option_id=delivery.get("option_id", ""),
+                    retained_checkpoint_sha256=checkpoint_sha256,
+                    retained_optimizer_step=optimizer_step,
+                    candidate_optimizer_step=candidate_step,
+                    retention_reason=reason,
+                    selected_provider_id=delivery.get("provider_id", ""),
+                    provider_implementation_sha256=delivery.get(
+                        "provider_implementation_sha256", ""),
+                    specimen_content_sha256=delivery.get(
+                        "specimen_content_sha256", ""),
+                )
+                self.ledger = record_rejected_teaching_attempt(
+                    self.release, self.ledger, attempt, plan=self.plan)
+            except ValueError as error:
+                if str(error) == "AUTONOMY_REJECTED_ATTEMPT_PARENT_EVIDENCE_MISMATCH":
+                    continue
+                raise
+        added = len(self.ledger.rejected_attempts) - before
+        if added:
+            persist_autonomy_state(
+                self.run_dir, self.release, plan=self.plan,
+                ledger=self.ledger)
+        return added
+
     def recover_teaching(
         self, school_receipt: dict, checkpoint,
     ) -> TeachingReceipt | None:
@@ -265,6 +411,14 @@ class LiveAutonomySession:
         for event in reversed(outbox):
             delivery = event.get("autonomy_teaching")
             if not isinstance(delivery, dict):
+                continue
+            # A teacher visit may attempt optimizer work and still retain the
+            # parent checkpoint after causal screening rejects the challenger.
+            # Such an outbox item is historical teaching evidence, not a
+            # committed autonomy intervention.  Recover only visits that
+            # provably advanced the durable student/AdamW lineage.
+            retained_updates = event.get("retained_optimizer_updates")
+            if type(retained_updates) is not int or retained_updates < 1:
                 continue
             if (event.get("recovered_at_student_sha256") != checkpoint.sha256 or
                     event.get("optimizer_step") != checkpoint.optimizer_step):
@@ -364,3 +518,45 @@ class LiveAutonomySession:
         self, school: SchoolState, capability_id: str,
     ) -> SchoolState:
         return reroute_failed_teaching(self.release, school, capability_id)
+
+    def propose_source_frontier_work(self, checkpoint):
+        """Project a learner-exhaustion boundary into the verified JIT frontier."""
+        from ..factory.candidate_frontier import load_candidate_frontier
+        from ..factory.executable_release import ExecutableFactoryRelease
+        from ..factory.jit_curriculum import propose_curriculum_delta
+
+        if not isinstance(self.release, ExecutableFactoryRelease):
+            return None
+        repo_root = Path(__file__).resolve().parents[2]
+        builder = repo_root / "lib/ithkuil/src/build_curriculum_frontier.py"
+        artifact_dir = repo_root / "lib/ithkuil/_private/curriculum_frontier"
+        source_dir = repo_root / "lib/ithkuil/_data/csv"
+        if not builder.is_file():
+            raise ValueError("AUTONOMY_FRONTIER_BUILDER_MISSING")
+        builder_sha256 = hashlib.sha256(builder.read_bytes()).hexdigest()
+        frontier = load_candidate_frontier(
+            artifact_dir, source_dir,
+            expected_builder_sha256=builder_sha256)
+        proposal = propose_curriculum_delta(
+            frontier, self.release, self.ledger, self.plan,
+            checkpoint.sha256, checkpoint.optimizer_step)
+        proposal_dir = self.run_dir / "autonomy" / "jit-proposals"
+        if proposal_dir.is_symlink():
+            raise ValueError("AUTONOMY_JIT_PROPOSAL_DIRECTORY_UNSAFE")
+        relative = Path("autonomy") / "jit-proposals" / (
+            proposal.proposal_sha256 + ".json")
+        path = self.run_dir / relative
+        if path.is_symlink():
+            raise ValueError("AUTONOMY_JIT_PROPOSAL_PATH_UNSAFE")
+        payload = json.loads(json.dumps(
+            asdict(proposal), sort_keys=True, ensure_ascii=False,
+            allow_nan=False))
+        if path.exists():
+            if (not path.is_file() or
+                    json.loads(path.read_text(encoding="utf-8")) != payload):
+                raise ValueError("AUTONOMY_JIT_PROPOSAL_IMMUTABLE_DRIFT")
+        else:
+            _durable_json(path, payload)
+        if json.loads(path.read_text(encoding="utf-8")) != payload:
+            raise ValueError("AUTONOMY_JIT_PROPOSAL_READBACK_DRIFT")
+        return proposal, relative.as_posix()
