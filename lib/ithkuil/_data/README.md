@@ -13,7 +13,7 @@ The user-required primary tables are:
 
 Supporting relational tables may preserve information that would be lossy in those two flat tables, including source hierarchy, grammatical categories, paradigms/examples, typed entity relationships, and Bilqis crosswalk/provenance.
 
-The current schema is documented in [`../SCHEMA.md`](../SCHEMA.md). The present snapshot contains 772 atomic surface records and 1,917 composition/template records, plus 3,855 component edges, 200 root-sense rows, 19 explicit C_A allomorph rules, normalized source/category/degree tables, and Bilqis enrichment.
+The current schema is documented in [`../SCHEMA.md`](../SCHEMA.md). The present snapshot contains 772 atomic surface records and 1,917 composition/template records, plus 3,855 component edges, 200 grammar-derived root-sense rows, 503 Chapter-1/2 lexicon roots, 1,530 Chapter-1/2 lexicon sense rows, 19 explicit C_A allomorph rules, normalized source/category/degree tables, and Bilqis enrichment.
 
 ## Ordering boundary
 
@@ -31,7 +31,7 @@ python3 src/fetch_sources.py
 
 Raw downloaded source files are written to ignored `_raw/`. `csv/sources/source_manifest.csv` is tracked and records source URLs, content hashes, response metadata, and snapshot time. This keeps the experiment reproducible without vendoring the complete copyrighted source pages into Git.
 
-The grammar HTML is parsed into the tracked relational tables. The two lexicon PDFs and affix-reference PDF are currently fetched and SHA-pinned as provenance inputs, but their PDF contents are not yet systematically parsed into canonical lexical records. Lexicon references present in the Bilqis enrichment tables therefore remain source-linked registry/adjudication evidence, not proof that the full lexicon has been ingested.
+The grammar HTML is parsed into the tracked relational tables. The canonical lexicon and affix-reference PDFs are fetched and SHA-pinned provenance inputs. The tracked split lexicon Chapters 1 and 2 are additionally parsed into source-corpus tables with exact split-PDF hashes and page/table loci. Those rows are **not** semantic admission or curriculum order. Later lexicon chapters and the affix-reference PDF remain unparsed by this extractor.
 
 The live Curriculum Registry is exported separately through authenticated Google Drive access. Its workbook bytes are not committed. Derived enrichment rows must retain tab/range provenance and source-state labels.
 
@@ -41,6 +41,7 @@ After the authenticated tab snapshots have been written under ignored `_private/
 python3 src/build_structure.py
 python3 src/build_curriculum_enrichment.py
 python3 src/build_morphology.py
+python3 src/build_lexicon_chapters.py
 python3 src/validate_dataset.py
 ```
 

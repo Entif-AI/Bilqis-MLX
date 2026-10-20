@@ -43,6 +43,8 @@ Key fields:
 - `grammatical_categories.csv`: normalized category registry.
 - `affix_degrees.csv`: degree semantics attached to attested C_S affix roots.
 - `root_senses.csv`: compact stem/specification sense summaries attached to lexical roots.
+- `lexicon_roots.csv`: source-corpus inventory of every root heading observed in the tracked New Ithkuil lexicon Chapter 1–2 split PDFs. These are source identities, **not** Bilqis ABI admissions or curriculum capabilities.
+- `lexicon_root_senses.csv`: compact source-grounded Stem/Specification senses extracted from explicit Chapter 1–2 lexicon root tables. Rows retain canonical lexicon source identity plus tracked split-PDF digest and exact page/table locus.
 - `allomorph_rules.csv`: explicit source-listed C_A substitution rules, including multi-step substitutions where the source gives an intermediate form.
 - `composition_components.csv`: ordered linguistic component edges for every composed entity/template.
 
@@ -60,7 +62,7 @@ The enrichment tables preserve qualified, partial, adapter, compositional, nativ
 
 The lower-case grammar-site lexicon and the capitalized lexicon URL used in the Curriculum Registry are separate source identities because their bytes and SHA-256 hashes differ.
 
-The current extractor parses the official grammar HTML. The lexicon and affix-reference PDFs are fetched and hash-pinned in the source manifest, but PDF contents are not yet parsed into the primary relational tables. Any lexicon citation in the Bilqis enrichment tables is therefore a provenance link from the registry/adjudication snapshot, not a canonical full-lexicon extraction.
+The grammar extractor parses the official grammar HTML. The canonical lexicon and affix-reference PDFs remain fetched and hash-pinned source identities. The tracked split lexicon Chapters 1 and 2 are additionally parsed into `lexicon_roots.csv` and `lexicon_root_senses.csv`; those tables are a source-corpus layer and do not mint Bilqis token IDs, grades, lessons, or mastery. Later lexicon chapters and the affix-reference PDF remain unparsed by this extractor.
 
 ## Rebuild and validation
 
@@ -71,8 +73,9 @@ python3 src/fetch_sources.py
 python3 src/build_structure.py
 python3 src/build_curriculum_enrichment.py
 python3 src/build_morphology.py
+python3 src/build_lexicon_chapters.py
 python3 src/validate_dataset.py
 ```
 
-`validate_dataset.py` checks source and entity cardinalities, foreign keys, composition component counts, core grammar inventory counts, Slot-IV V_R and register/suppletive coverage, exact C_A substitution rules and triggers, explicit root-paradigm coverage, current-vs-historical crosswalk resolution, exclusion of curriculum-order columns across every derived data table, protected URL leakage, LF line endings, and raw/work-cache Git exclusion.
+`build_lexicon_chapters.py` requires the pinned extraction dependency in `requirements-extraction.txt` and reads only the tracked split PDFs in `_data/pdf/`. `validate_dataset.py` checks source and entity cardinalities, lexicon root/sense identities and loci, foreign keys, composition component counts, core grammar inventory counts, Slot-IV V_R and register/suppletive coverage, exact C_A substitution rules and triggers, explicit root-paradigm coverage, current-vs-historical crosswalk resolution, exclusion of curriculum-order columns across every derived data table, protected URL leakage, LF line endings, and raw/work-cache Git exclusion.
 
