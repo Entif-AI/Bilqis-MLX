@@ -148,7 +148,21 @@ def verify_micro_composition_witnesses(plan: dict, rows: tuple[dict, ...],
 
     if plan.get("schema") != SCHEMA:
         raise ValueError("SEMANTIC_COVERAGE_PLAN_VERSION_MISMATCH")
-    if plan["unresolved"]:
+    hard_unresolved = {
+        "MISSING_ORACLE_OR_SOURCE_ANCHOR",
+        "INVALID_SOURCE_SIGNATURE_OR_ARITY",
+        "BOOLEAN_OUTPUT_WITHOUT_BINARY_ANSWER_CASTE",
+    }
+    if any(item.get("failure") in hard_unresolved
+           for item in plan["unresolved"] if isinstance(item, dict)):
+        raise ValueError("SEMANTIC_COVERAGE_UNRESOLVED_CONTRACT_PROOF_BLOCKED")
+    unresolved_consumers = {
+        item["capability"] for item in plan["unresolved"]
+        if isinstance(item, dict) and isinstance(item.get("capability"), str)
+    }
+    if any(edge["consumer"] in unresolved_consumers
+           for edge in plan["obligations"]
+           if edge["status"] == "AWAITING_SOURCE_WITNESS"):
         raise ValueError("SEMANTIC_COVERAGE_UNRESOLVED_CONTRACT_PROOF_BLOCKED")
     candidates = {(e["consumer"], e["producer_root"], e["operand_slot"]): e
                   for e in plan["obligations"]
@@ -262,9 +276,11 @@ def audit_pinned_micro_generator(plan: dict, source_root, *,
     collected = {}
     report = plan
     rounds = 0
+    in_scope = set(plan.get("capabilities", ()))
     for index in range(max_rounds):
         sample = draw_connectives(source_root, graph, seed=seed + index, each=each)
-        collected.update((row["id"], row) for row in sample)
+        collected.update((row["id"], row) for row in sample
+                         if row.get("capability") in in_scope)
         report = verify_micro_composition_witnesses(
             plan, tuple(collected.values()), micro=micro, graph=graph)
         rounds += 1
@@ -325,10 +341,10 @@ def main(argv=None) -> int:
     parser.add_argument("--each", type=int, default=12)
     parser.add_argument("--details", action="store_true")
     args = parser.parse_args(argv)
-    manifest = json.loads((project / "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
+    manifest = json.loads((project / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
     approved = live_course(accepted_grade_a(manifest), args.legacy_code_root)
     ast = compile_ast(approved)
-    registry = load_registry(project / "docs/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json")
+    registry = load_registry(project / "docs/provenance/CURRICULUM_REGISTRY_SNAPSHOT_20261015.json")
     plan = discover_composition_obligations(ast, registry)
     verified = audit_pinned_micro_generator(
         plan, args.legacy_code_root, seed=args.seed,

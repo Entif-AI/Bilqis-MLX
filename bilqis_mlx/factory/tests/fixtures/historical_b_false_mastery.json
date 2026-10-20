@@ -1,0 +1,24 @@
+{
+  "schema": "bilqis.mlx.historical-generalization-regression/v1",
+  "observed_on": "2026-10-18",
+  "checkpoint": {
+    "bundle": "runs/issue-340-mentor-epoch-trial/bundles/working-5457-dc95c8b23386",
+    "sha256": "e65d62174b7c9681991d27e3e2a424358f38dceeb50c90544803bc94d7546585",
+    "optimizer_step": 204072
+  },
+  "promotion": {
+    "cohort_sha256": "1888c7d27ddfe7f7a8679d84328fc7b0a180e7b942963998e9c6c42784403da7",
+    "a_correct": 72,
+    "a_total": 72,
+    "b_correct": 72,
+    "b_total": 72
+  },
+  "fresh_generalization": {
+    "cohort_sha256": "e2550b8b950f57b7ff60d08e897e1506119571dd5018cc052075ec53aa2dbeae",
+    "a_correct": 71,
+    "a_total": 72,
+    "b_correct": 47,
+    "b_total": 72
+  },
+  "interpretation": "The exact pre-C checkpoint passes the familiar fixed B classroom cohort but fails the independent fresh B qualification cohort. It must not graduate under SPEC-0001."
+}

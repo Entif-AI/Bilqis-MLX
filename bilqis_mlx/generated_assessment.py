@@ -12,6 +12,9 @@ import hashlib
 import json
 
 GRADE_TEST_LIFECYCLE = "bilqis.grade-test.fixed-until-passed/v1"
+ROUTINE_EVAL_LIFECYCLE = "bilqis.grade-test.fresh-routine/v2"
+PROMOTION_ATTEMPT_LIFECYCLE = "bilqis.grade-test.promotion-attempt/v1"
+GENERALIZATION_LIFECYCLE = "bilqis.grade-test.fresh-generalization/v1"
 
 
 def digest(value) -> str:

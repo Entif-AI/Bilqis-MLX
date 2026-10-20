@@ -1,0 +1,73 @@
+{
+  "schema": "bilqis.next-grade-review/v3",
+  "authority": "IPR-0220/grade-questions-20261017",
+  "grade": "C",
+  "parent_release": "bilqis.mlx.grade-a-b-live/20261015-v1",
+  "modality": "TEXT_ONLY",
+  "selected": "grounded-numeric-staircase",
+  "candidates": [
+    {
+      "id": "grounded-numeric-staircase",
+      "source": "https://ithkuil.net/newithkuil_13_numbers.htm",
+      "text_model_relevance": "DIRECT_TEXT_SEMANTIC_TRANSFER",
+      "needs_neural_learning": "Test whether the student generalizes source-checked cardinality, successor, and compositions to unfamiliar finite sets and direct numeric answers",
+      "smallest_increment": "Introduce cardinality and direct number identity before successor, then grounded arithmetic and exact quotient after the relevant staged constituent",
+      "prerequisites": [
+        {
+          "id": "A.IDENTITY",
+          "state": "MASTERED",
+          "evidence": "run:school-mlx-v1/6824/cumulative-144-of-144"
+        }
+      ],
+      "frontloaded_foundations": [
+        {
+          "id": "C.COUNT",
+          "unblocks": "C.NUMBER and C.SUCCESSOR before any extended arithmetic",
+          "timing": "First teaching stage, followed by a separate qualified numerical binding"
+        }
+      ],
+      "unlocks": [
+        {
+          "capability": "future:typed-number-morphology",
+          "via": "grounded-numeric-staircase",
+          "why": "Provides source-checked cardinality and numeric identities for later compositional symbol emission, rather than asserting morphology is mastered"
+        }
+      ]
+    },
+    {
+      "id": "semantic-binder-foundations",
+      "source": "repo:docs/history/architecture/05_BEHAVIORAL_CONTRACT_V1.md",
+      "text_model_relevance": "DIRECT_TEXT_SEMANTIC_TRANSFER",
+      "needs_neural_learning": "Candidate future transfer to unfamiliar scopes and composed predicates; not yet demonstrated",
+      "smallest_increment": "Introduce a single typed variable-binding distinction before general quantification",
+      "prerequisites": [],
+      "frontloaded_foundations": [],
+      "unlocks": []
+    }
+  ],
+  "decision": {
+    "why_now": "The human expressly chose staged cardinality and arithmetic after A+B; the full A+B same-checkpoint exam is 144/144, but actual C source release is not yet admitted",
+    "why_not_alternatives": {
+      "semantic-binder-foundations": "Potentially valuable for subsequent semantic composition but requires separate source/typed-oracle qualification and must not displace already requested concrete-number groundwork without a comparative evidence review"
+    },
+    "what_changed_since_last_grade": "A and B passed cumulative revalidation together at generation 6824, optimizer step 204072",
+    "expected_near_term_transfer": "Source-valid direct numeric answers on previously unseen finite constructions; unmeasured until human-run C",
+    "smallest_staircase_step": "Count and bind numbers before introducing successor and composition, checking each stage before its dependent operations"
+  },
+  "semantic_function_families": {
+    "association": {
+      "posture": "DEFERRED",
+      "rationale": "The proposed finite mathematical constructions name typed operations directly; ambiguous English-to-root applicability is not a Grade C objective"
+    },
+    "disambiguation": {
+      "posture": "DEFERRED",
+      "rationale": "Grade C does not yet depend on selecting between competing senses from word, passage or corpus context"
+    },
+    "identification": {
+      "posture": "FOUNDATIONAL",
+      "rationale": "Positive source-typed number meanings and operation witnesses must be composed from earlier qualified constituents; contextual comparison against neighboring meanings is not part of each primitive's definition"
+    }
+  },
+  "reviews": {},
+  "semantic_release": null
+}

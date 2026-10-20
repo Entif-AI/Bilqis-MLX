@@ -18,7 +18,7 @@ SCHEMA = "bilqis.next-grade-review/v3"
 AUTHORITY = "IPR-0220/grade-questions-20261017"
 QUESTION_IDS = tuple(f"Q{i:02d}" for i in range(1, 11))
 PHASES = ("selection", "construction", "admission", "operation", "retrospective")
-REVIEW_ROOT = Path(__file__).resolve().parents[1] / "docs" / "grade-reviews"
+REVIEW_ROOT = Path(__file__).resolve().parents[1] / "docs" / "provenance" / "grade-reviews"
 TEXT_RELEVANCE = frozenset(("DIRECT_TEXT_SEMANTIC_TRANSFER",
                             "TEXT_SURFACE_CONSTRAINT_FOR_COMPOSITION"))
 DECISION_FIELDS = ("why_now", "why_not_alternatives", "what_changed_since_last_grade",

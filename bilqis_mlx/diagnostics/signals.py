@@ -127,6 +127,15 @@ def diagnose_history(observations: Iterable[ExamObservation]) -> tuple[Diagnosti
     persistence observable, without claiming which practice questions caused it.
     """
     history = tuple(observations)
+    if history:
+        # Explicit baseline recovery is a new optimizer lineage, not a corrupt
+        # backwards step. Diagnose the latest contiguous branch while retaining
+        # older branches in immutable source history for audit/replay.
+        latest_lineage = history[-1].lineage_id
+        start = len(history) - 1
+        while start and history[start - 1].lineage_id == latest_lineage:
+            start -= 1
+        history = history[start:]
     if (len({o.optimizer_step for o in history}) != len(history) or
             len({o.student_sha256 for o in history}) != len(history)):
         raise ValueError("DIAGNOSTIC_REPEATED_CHECKPOINT_IS_NOT_A_LEARNING_TRAJECTORY")

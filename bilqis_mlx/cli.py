@@ -2,23 +2,30 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager, nullcontext
 import json
 from pathlib import Path
+import signal
 import sys
 
-from .disk import assert_headroom
+from bilqis_mlx.runtime.disk import assert_headroom
 from .source import AUDITED_PARENT
 from .grade_a_release import RELEASE as GRADE_A_RELEASE
-from .live_grade_a import RELEASE as LIVE_GRADE_A_RELEASE
-from .live_grade_b import RELEASE as LIVE_GRADE_B_RELEASE
-from .live_grade_c import RELEASE as LIVE_GRADE_C_RELEASE
+from .factory.live_releases import (
+    INITIAL_RELEASE as LIVE_GRADE_A_RELEASE,
+    BOOLEAN_RELEASE as LIVE_GRADE_B_RELEASE,
+    BOOLEAN_COMPOSITE_RELEASE as LIVE_GRADE_B_COMPOSITE_RELEASE,
+    BOOLEAN_IDENTIFICATION_RELEASE as LIVE_GRADE_B_IDBOOLOPS_RELEASE,
+    MINIMAL_BOOLEAN_RELEASE as LIVE_GRADE_B_MINIMAL_RELEASE,
+    NUMERIC_RELEASE as LIVE_GRADE_C_RELEASE,
+)
 from .numeric_staircase import RELEASE as STAIRCASE_RELEASE
 from .paths import REPO_ROOT, LEGACY_SOURCE, LEGACY_CHECKPOINTS, active_run_dir
-from .spiral_dashboard import Dashboard, TABLES
+from bilqis_mlx.presentation.spiral_dashboard import Dashboard, TABLES
 
 ROOT = REPO_ROOT
 DEFAULT_RUN = active_run_dir()
-GRADE_A_MANIFEST = ROOT / "docs" / "GRADE_A_CANDIDATE_MANIFEST_V2.json"
+GRADE_A_MANIFEST = ROOT / "docs" / "provenance" / "GRADE_A_CANDIDATE_MANIFEST_V2.json"
 LEGACY_ROOT = LEGACY_SOURCE
 ORIGINAL_CHECKPOINT = LEGACY_CHECKPOINTS / AUDITED_PARENT.basename
 
@@ -29,7 +36,7 @@ def _qualification_scope() -> dict:
         "disposable_full_student_optimizer_continuation": {
             "status": "PREVIOUSLY_VERIFIED_CPU_AND_APPLE_GPU",
             "scope": "ONE_DETACHED_STEP_AND_COMPLETE_39_TENSOR_ADAMW_RESTART",
-            "evidence": "docs/GRADE_A_REPAIR_AND_BACKEND_20261015.md",
+            "evidence": "docs/evidence/grades/GRADE_A_REPAIR_AND_BACKEND_20261015.md",
             "recheck": "npm run mlx:qualify",
             "freshly_rerun_by_this_command": False,
         },
@@ -92,6 +99,33 @@ def _inspect(run_dir: Path) -> dict:
                         else "NOT_MEASURED"),
                 },
                 "champion_pointer_count": len(school["champions"]),
+                "championship_epoch": ({
+                    "introduced_grade": saved["mentor_epoch"]["introduced_grade"],
+                    "baseline_sha256": saved["mentor_epoch"]["baseline"]["sha256"],
+                    "baseline_optimizer_step":
+                        saved["mentor_epoch"]["baseline"]["optimizer_step"],
+                    "earned_active_roles":
+                        len(saved["mentor_epoch"].get("active_roles", {})),
+                    "active_soup_votes": {
+                        grade: item["vote_count"]
+                        for grade, item in saved["mentor_epoch"].get(
+                            "active_grade_soups", {}).items()},
+                    "archived_champion_roles":
+                        len(saved.get("graduation_perfect", {})),
+                    "archived_soup_grades":
+                        sorted(saved.get("grade_soups", {})),
+                    "active_baseline_advisers": 0 if saved["mentor_epoch"].get(
+                        "guidance_policy") == "bilqis.mlx.earned-champions-only/v1"
+                        else "LEGACY_POLICY_REQUIRES_RESET",
+                    "championship_eligibility_after_step":
+                        saved["mentor_epoch"].get(
+                            "championship_eligibility_after_step"),
+                    "administrative_empty_reset":
+                        saved["mentor_epoch"].get("active_championship_reset"),
+                    "legacy_mid_grade_activation":
+                        saved["mentor_epoch"].get("experimental_refresh") ==
+                        "MID_GRADE_FROZEN_CURRENT_STUDENT",
+                } if saved.get("mentor_epoch") is not None else None),
                 "capability_best_pointer_count": len(saved.get("capability_best", {})),
                 "capability_best_bundle_count": len({
                     item["checkpoint"]["sha256"]
@@ -110,12 +144,12 @@ def _inspect(run_dir: Path) -> dict:
                 "last_exam": saved["last_exam"],
                 "last_session_stop": _latest_session_stop(
                     run_dir, saved["generation"], student["optimizer_step"]),
-                "grade_a_release": LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE else saved.get("curriculum_mode") or GRADE_A_RELEASE,
+                "grade_a_release": LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE) else saved.get("curriculum_mode") or GRADE_A_RELEASE,
                 "historical_source_release": GRADE_A_RELEASE,
-                "grade_a_curriculum_mode": (LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE
+                "grade_a_curriculum_mode": (LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE)
                                              else saved.get("curriculum_mode", "HISTORICAL_FIXED_72")),
-                "grade_b_curriculum_mode": LIVE_GRADE_B_RELEASE if saved.get("curriculum_mode") == LIVE_GRADE_B_RELEASE else None,
-                "grade_b_source_admitted": saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE),
+                "grade_b_curriculum_mode": saved.get("curriculum_mode") if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE) else None,
+                "grade_b_source_admitted": saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE, LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE),
                 "grade_c_curriculum_mode": saved.get("curriculum_mode") if saved.get("curriculum_mode") in (LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE) else None,
                 "introduction_stage": school.get("introduction_stage", 0),
                 "numeric_maximum": saved.get("numeric_maximum"),
@@ -172,15 +206,82 @@ def _source_paths(legacy_code_root: Path | None, champion_checkpoint: Path | Non
     return legacy, checkpoint
 
 
+def _boolean_revision_preflight(run_dir: Path, legacy_root: Path, *, resume: bool,
+                                boolean_composite: bool, boolean_idboolops: bool,
+                                checkpoint_sha256: str | None) -> dict:
+    """Describe optional same-grade Boolean revisions without neural mutation."""
+    if not boolean_composite and not boolean_idboolops:
+        return {}
+    if not resume:
+        if boolean_composite:
+            raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_RESUME")
+        raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_RESUME")
+    if not isinstance(checkpoint_sha256, str) or not checkpoint_sha256:
+        raise ValueError("BOOLEAN_REVISION_SOURCE_STUDENT_MISSING")
+
+    from .boolean_composite import CAPABILITY as COMPOSITE_CAPABILITY
+    from .boolean_composite import RELEASE as COMPOSITE_RELEASE
+    from .boolean_composite import build_course as build_composite
+    from .boolean_identification import CAPABILITY as ID_CAPABILITY
+    from .boolean_identification import RELEASE as ID_RELEASE
+    from .boolean_identification import build_course as build_identification
+    from .curriculum import BOOLEAN_OPERATORS
+    from .factory.live_releases import initial_course, boolean_successor
+    from .grade_a_release import accepted_grade_a
+
+    saved = json.loads((run_dir / "state.json").read_text())
+    mode = saved.get("curriculum_mode")
+    accepted = accepted_grade_a(json.loads(GRADE_A_MANIFEST.read_text()))
+    parent_b = boolean_successor(initial_course(accepted), legacy_root)
+    composite = build_composite(parent_b, legacy_root)
+    result = {}
+    if boolean_composite:
+        if mode not in (LIVE_GRADE_B_RELEASE, COMPOSITE_RELEASE):
+            raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_EXISTING_GRADE_B")
+        result["boolean_composite"] = {
+            "release": composite.version,
+            "already_enrolled": mode == COMPOSITE_RELEASE,
+            "next_capability": None if mode == COMPOSITE_RELEASE else COMPOSITE_CAPABILITY,
+            "grade_b_exam_items": sum(count for _, count in composite.grades[-1].exam_item_counts),
+            "cumulative_exam_items": sum(count for grade in composite.grades
+                                         for _, count in grade.exam_item_counts),
+            "source_student_sha256": checkpoint_sha256,
+            "neural_updates": 0,
+        }
+    if boolean_idboolops:
+        allowed = (LIVE_GRADE_B_COMPOSITE_RELEASE, ID_RELEASE)
+        if mode not in allowed and not (boolean_composite and mode == LIVE_GRADE_B_RELEASE):
+            raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_COMPOSITE_GRADE_B")
+        proposal = build_identification(composite, legacy_root)
+        result["boolean_idboolops"] = {
+            "release": proposal.version,
+            "already_enrolled": mode == ID_RELEASE,
+            "next_capability": None if mode == ID_RELEASE else ID_CAPABILITY,
+            "answer_choices": len(BOOLEAN_OPERATORS),
+            "random_guess_probability": 1 / len(BOOLEAN_OPERATORS),
+            "grade_b_exam_items": sum(count for _, count in proposal.grades[-1].exam_item_counts),
+            "cumulative_exam_items": sum(count for grade in proposal.grades
+                                         for _, count in grade.exam_item_counts),
+            "source_student_sha256": checkpoint_sha256,
+            "neural_updates": 0,
+        }
+    return result
+
+
 def preflight(run_dir: Path, *, resume=False, verify_source=False,
               legacy_code_root: Path | None = None, champion_checkpoint: Path | None = None,
-              numeric_staircase=False, retention_enabled=True):
+              numeric_staircase=False, boolean_composite=False, boolean_idboolops=False,
+              full_grade_b=False,
+              retention_enabled=True,
+              boolean_association_bridge=False):
     legacy_root, original_checkpoint = _source_paths(legacy_code_root, champion_checkpoint)
     existing = (run_dir / "state.json").is_file()
     if resume and not existing:
         raise ValueError("RESUME_EXPLICIT_BUT_NO_SAVED_NEW_SCHOOL_RUN")
     if not resume and existing:
         raise ValueError("NEW_RUN_WOULD_OVERWRITE_SAVED_SCHOOL_USE_RESUME")
+    if boolean_association_bridge and not resume:
+        raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME")
     snapshot = _inspect(run_dir)
     snapshot.update({"result":"PREFLIGHT_ONLY_NO_NEURAL_UPDATES",
                      "start_behavior":"EXPLICIT_SAVED_STATE_RESUME" if resume else "GRADE_A_NEW_RUN",
@@ -190,66 +291,117 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
                      "experimental_risks":["FIRST_HUMAN_RUN_NOT_YET_OBSERVED",
                                            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"],
                      "operator_constraint":"HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES"})
-    if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE" and snapshot.get("grade") == "A":
-        # Announce the actual next semantic release before the human operates.
-        # This compiles/verifies source only; no checkpoint is opened for edits.
+    if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE":
+        # Source-only preflight is release/provider driven. The CLI never picks
+        # a successor from a hard-coded grade letter.
+        from .factory.live_releases import (
+            course_for_mode, initial_course, preflight_successor,
+            resolve_admitted_courses,
+        )
         from .grade_a_release import accepted_grade_a
-        from .live_grade_a import live_course as admitted_a
-        from .live_grade_b import live_course as admitted_b
         manifest = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
-        next_course = admitted_b(admitted_a(accepted_grade_a(manifest)),legacy_root)
-        snapshot["start_behavior"] = "HUMAN_RESUME_ADMIT_B_FROM_MASTERY_A"
-        snapshot["next_grade"] = "B"
-        snapshot["next_grade_source_checked"] = next_course.executable
-        snapshot["next_grade_rubric_sha256"] = next_course.grades[-1].assessment_sha256
-        snapshot["next_grade_complete_assessment_items"] = sum(
-            count for grade in next_course.grades for _, count in grade.exam_item_counts)
-        snapshot["experimental_risks"] = [
-            "GRADE_B_REAL_STUDENT_CONVERGENCE_NOT_YET_OBSERVED",
-            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"]
-    snapshot["grade_a_source_manifest"] = "docs/GRADE_A_CANDIDATE_MANIFEST_V2.json"
-    if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE" and snapshot.get("grade") == "B":
-        from .grade_c_preflight import qualify
-        from .live_grade_c import (REGISTRY_PATH, REGISTRY_COUNTING_TARGET,
-                                   integer_scope, registry_graph)
-        snapshot["next_grade"] = "C"
-        snapshot["start_behavior"] = "HUMAN_RESUME_ADMIT_C_AFTER_CUMULATIVE_A_B_PASS"
-        snapshot["next_grade_policy"] = "PROTOTYPE_SOURCE_AND_CUSTODY_CHECKS"
-        if REGISTRY_PATH.is_symlink():
-            snapshot["blockers"].append("GRADE_C_NATIVE_REGISTRY_ARTIFACT_UNSAFE_PATH")
-        elif not REGISTRY_PATH.is_file():
-            snapshot["blockers"].append("GRADE_C_NATIVE_REGISTRY_ARTIFACT_MISSING")
-        else:
-            manifest = json.loads(GRADE_A_MANIFEST.read_text())
-            from .grade_a_release import accepted_grade_a
-            from .historical_live_release import resume_grade_courses
-            from .live_grade_b import live_course as admitted_b
-            parent_a, parent_b = resume_grade_courses(accepted_grade_a(manifest),
-                legacy_root, json.loads((run_dir / "state.json").read_text()))
-            parent_b = parent_b or admitted_b(parent_a, legacy_root)
-            snapshot["next_grade_source"] = qualify(legacy_root, manifest, previous=parent_b)
-            if integer_scope(registry_graph()) != REGISTRY_COUNTING_TARGET:
-                snapshot["blockers"].append("C_REQUIRES_BILQIS_INTEGER_MAX="+str(REGISTRY_COUNTING_TARGET))
+        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        accepted = accepted_grade_a(manifest)
+        initial = initial_course(accepted)
+        admitted = resolve_admitted_courses(
+            accepted, legacy_root, saved, include_prospective=False)
+        current = course_for_mode(admitted, saved.get("curriculum_mode"), initial)
+        successor = preflight_successor(
+            current, legacy_root, manifest, saved, full_grade_b=full_grade_b)
+        snapshot.update(successor["details"])
+        snapshot["blockers"].extend(successor["blockers"])
+    snapshot["grade_a_source_manifest"] = "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
     if numeric_staircase:
         if not resume:
             raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
-        from .live_grade_c import registry_graph
+        from .factory.live_releases import (
+            course_for_mode, initial_course, numeric_registry_graph as registry_graph,
+            predecessor_course, resolve_admitted_courses,
+        )
         from .numeric_staircase import build_course, INITIAL_MAXIMUM, FINAL_MAXIMUM
         from .grade_a_release import accepted_grade_a
-        from .historical_live_release import resume_grade_courses
-        from .live_grade_b import live_course as admitted_b
         saved = json.loads((run_dir/'state.json').read_text())
         if saved.get('curriculum_mode') not in (LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE):
             raise ValueError('NUMERIC_STAIRCASE_REQUIRES_EXISTING_C')
-        parent_a, parent_b = resume_grade_courses(accepted_grade_a(
-            json.loads(GRADE_A_MANIFEST.read_text())), legacy_root, saved)
+        accepted = accepted_grade_a(json.loads(GRADE_A_MANIFEST.read_text()))
+        initial = initial_course(accepted)
+        admitted = resolve_admitted_courses(
+            accepted, legacy_root, saved, include_prospective=False)
+        current = course_for_mode(admitted, saved.get('curriculum_mode'), initial)
+        parent_b = predecessor_course(admitted, current)
         maximum = saved['numeric_maximum'] if saved['curriculum_mode'] == STAIRCASE_RELEASE else INITIAL_MAXIMUM
-        proposal = build_course(parent_b or admitted_b(parent_a, legacy_root),
-                                registry_graph(), maximum=maximum)
+        proposal = build_course(parent_b, registry_graph(), maximum=maximum)
         snapshot['numeric_staircase'] = {'release': proposal.version,
             'initial_maximum': INITIAL_MAXIMUM, 'final_maximum': FINAL_MAXIMUM,
             'resume_maximum': maximum, 'source_student_sha256': snapshot['checkpoint_sha256'],
-            'neural_updates': 0, 'next_capability': 'C.COUNT' if saved['curriculum_mode'] != STAIRCASE_RELEASE else None}
+            'neural_updates': 0, 'next_capability': 'C.COUNT' if saved['curriculum_mode'] != STAIRCASE_RELEASE else None,
+            'parent_course_sha256': parent_b.digest(),
+            'grade_b_capabilities': [cap.id for cap in parent_b.grades[-1].capabilities],
+            'cumulative_exam_items': sum(
+                count for grade in proposal.grades for _, count in grade.exam_item_counts)}
+    snapshot.update(_boolean_revision_preflight(
+        run_dir, legacy_root, resume=resume,
+        boolean_composite=(boolean_composite if full_grade_b else False),
+        boolean_idboolops=(boolean_idboolops if full_grade_b else False),
+        checkpoint_sha256=snapshot.get("checkpoint_sha256")))
+    if resume:
+        from .factory.live_releases import (
+            FULL_BOOLEAN_RELEASES, MINIMAL_BOOLEAN_RELEASE,
+            course_for_mode, default_resume_replacement, initial_course,
+            resolve_admitted_courses,
+        )
+        from .grade_a_release import accepted_grade_a
+        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        accepted = accepted_grade_a(json.loads(GRADE_A_MANIFEST.read_text()))
+        initial = initial_course(accepted)
+        admitted = resolve_admitted_courses(
+            accepted, legacy_root, saved, include_prospective=False)
+        current = course_for_mode(admitted, saved.get("curriculum_mode"), initial)
+        replacement = default_resume_replacement(
+            current, initial, legacy_root, full_grade_b=full_grade_b)
+        if replacement is not None:
+            old_caps = tuple(cap.id for cap in current.grades[-1].capabilities)
+            new_caps = tuple(cap.id for cap in replacement.grades[-1].capabilities)
+            snapshot["grade_b_profile"] = {
+                "profile": "MINIMAL_DEFAULT",
+                "migration_required": True,
+                "previous_release": current.version,
+                "release": replacement.version,
+                "active_capabilities": list(new_caps),
+                "withheld_capabilities": [
+                    cap for cap in old_caps if cap not in set(new_caps)],
+                "grade_b_exam_items": sum(
+                    count for _, count in replacement.grades[-1].exam_item_counts),
+                "source_student_sha256": snapshot.get("checkpoint_sha256"),
+                "championship_field_reset_required": True,
+                "stale_geometry_evidence_deactivated": True,
+                "neural_updates": 0,
+            }
+        elif current.version == MINIMAL_BOOLEAN_RELEASE:
+            snapshot["grade_b_profile"] = {
+                "profile": "MINIMAL_DEFAULT",
+                "migration_required": False,
+                "release": current.version,
+                "active_capabilities": [
+                    cap.id for cap in current.grades[-1].capabilities],
+                "grade_b_exam_items": sum(
+                    count for _, count in current.grades[-1].exam_item_counts),
+                "neural_updates": 0,
+            }
+        elif full_grade_b and current.version in FULL_BOOLEAN_RELEASES:
+            snapshot["grade_b_profile"] = {
+                "profile": "FULL_OPT_IN",
+                "migration_required": False,
+                "release": current.version,
+                "active_capabilities": [
+                    cap.id for cap in current.grades[-1].capabilities],
+                "neural_updates": 0,
+            }
+        if (not full_grade_b and (boolean_composite or boolean_idboolops)):
+            snapshot["legacy_boolean_revision_flags"] = {
+                "ignored": True,
+                "reason": "MINIMAL_GRADE_B_ALREADY_INCLUDES_SIMPLIFIED_COMPOSITE_AND_IDBOOLOPS",
+            }
     if verify_source:
         from .grade_a_manifest import verify_manifest
         source = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
@@ -263,13 +415,29 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         }
     else:
         snapshot["source_manifest_preflight"] = "NOT_RERUN_USE_--verify-source"
+    if boolean_association_bridge:
+        from .boolean_association import VERSION, constructor_digest
+        from .runtime.admission import admitted_release_supports_teaching_option
+        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        if not admitted_release_supports_teaching_option(run_dir, saved, VERSION):
+            snapshot["blockers"].append("TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE")
+        snapshot["boolean_association_bridge"] = {
+            "enabled_for_next_human_command": True,
+            "version": VERSION,
+            "generator_code_sha256": constructor_digest(),
+            "authority": "FACTORY_RELEASE_TEACHING_OPTION",
+            "exam_rubric_changed": False,
+            "grade_a_pass_fail_changed": False,
+            "grade_c_pass_fail_changed": False,
+            "neural_updates": 0,
+        }
     # The source remains unchanged. This probes only current disk headroom.
     snapshot["disk"] = assert_headroom(ROOT, required_bytes=0)
     return _print_status(snapshot)
 
 
 def dashboard(run_dir: Path):
-    from .grade_a_dashboard import render
+    from bilqis_mlx.presentation.dashboard import render
     render(run_dir)
     return 0
 
@@ -288,6 +456,7 @@ def human_stop_summary(result: dict) -> str:
         "GRADE_B_AWAITING_NEXT_GRADE": "Grades A and B passed cumulative revalidation; awaiting Grade C admission.",
         "WHOLE_SCHOOL_MASTERED": "Every grade in the explicitly complete school program passed at one whole student.",
         "AWAITING_TEACHER_SOUP": "Whole-school consolidation requires a separately verified frozen teacher-soup continuation.",
+        "STAGNATION_REVIEW_REQUIRED": "The remaining required capabilities were withheld after repeated failed recovery rounds; they remain unqualified mastery debt for the next measured recovery run.",
         "DISK_RESERVE_REACHED": "Free space cannot cover the protected disk reserve plus another checkpoint.",
     }
     reason = result["stop_reason"]
@@ -301,6 +470,24 @@ def human_stop_summary(result: dict) -> str:
                     f"{result['disk_reserve_gib']:.1f} GiB reserve + "
                     f"{result['disk_next_visit_gib']:.2f} GiB estimated next checkpoint. "
                     "No checkpoint cleanup or reserve reduction was performed.")
+    quarantined = result.get("stagnation_quarantined") or ()
+    if quarantined:
+        message += ("\nStagnation review: withheld for this completed run: " +
+                    ", ".join(quarantined) +
+                    ". These capabilities still count against graduation and "
+                    "will be eligible for measured re-entry on resume.")
+    grace = result.get("stagnation_grace")
+    if grace and result.get("optimizer_step", 0) < grace.get("until_optimizer_step", 0):
+        remaining = grace["until_optimizer_step"] - result["optimizer_step"]
+        message += ("\nStagnation grace: " + grace["grade"] +
+                    " quarantine actuator suppressed for " + str(remaining) +
+                    " more retained optimizer steps; diagnostics remain active.")
+    if result.get("flash_mode"):
+        message += ("\nFlash mode: fresh routine scheduling assessments remained active; "
+                    "championship and promotion qualification work was deferred. "
+                    "A saved ASSESS_* boundary remains real debt and will be evaluated on resume. "
+                    "If flash reaches an all-perfect curriculum, a non-flash authoritative exam "
+                    "is still required before qualification can advance.")
     if reason not in ("GRADE_A_AWAITING_NEXT_GRADE", "GRADE_B_AWAITING_NEXT_GRADE",
                       "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
         message += ("\nTo continue: " +
@@ -327,6 +514,12 @@ def parse_args(argv=None):
             p.add_argument("--resume",action="store_true")
             p.add_argument('--numeric-staircase', action='store_true',
                            help='Warm-start C at 0..3, grow to 6 before MUL/DIV')
+            p.add_argument('--boolean-composite', action='store_true',
+                           help='Neural-inertly enroll B.COMPOSITE into the current Grade-B release')
+            p.add_argument('--boolean-idboolops', action='store_true',
+                           help='Neural-inertly enroll inverse Boolean primitive identification into Grade B')
+            p.add_argument('--full-grade-b', action='store_true',
+                           help='Opt into/retain the legacy full six-operator Grade B; default admission and existing A/B resume use reduced AND/IFF B')
             retention = p.add_mutually_exclusive_group()
             retention.add_argument('--no-retention', action='store_true',
                                    help='Explicit unprotected legacy teaching (separate independent --run-dir only)')
@@ -348,12 +541,28 @@ def parse_args(argv=None):
                            help='Bounded grade-stratified sentinel panel per visit')
             p.add_argument("--human-run",action="store_true",
                            help="Explicitly authorizes actual optimizer steps by the human operator")
+            p.add_argument("--autonomous-curriculum", action="store_true",
+                           help="After --human-run authorization, autonomously measure, teach, and remeasure factory evidence while preserving the school scheduler")
             p.add_argument("--minutes",type=int,default=90)
             p.add_argument("--steps-per-visit",type=int,default=16)
             p.add_argument("--max-visits",type=int,default=0,
                            help="Optional complete visit cap (default 0: use --minutes and disk reserve)")
+            p.add_argument("--timing-trace", action="store_true",
+                           help="Write low-overhead nanosecond timing markers under runs/.timing-traces")
+            p.add_argument("--source-prefetch-workers", type=int, choices=(0, 1, 2), default=2,
+                           help="Pure host-side lesson prep workers; 2 workers + main MLX lane = 3 lanes")
+            p.add_argument("--flash-mode", action="store_true",
+                           help="Defer expensive assessments while training; stop owing a real assessment")
+            p.add_argument("--boolean-association-bridge", action="store_true",
+                           help="Add 8 B-owned bridge questions per B step: 4 borrowing A assertions and 4 borrowing C assertions")
             p.add_argument("--batch-size",type=int,default=32)
             p.add_argument("--reserve-gib",type=float,default=100.)
+            p.add_argument("--stagnation-grace-grade",type=str,default=None,
+                           help="Human-authorized grade whose stagnation quarantine actuator is temporarily suppressed")
+            p.add_argument("--stagnation-grace-steps",type=int,default=0,
+                           help="Retained optimizer-step budget for the persisted stagnation grace")
+            p.add_argument("--admit-next-grade-with-debt", action="store_true",
+                           help="Human-authorized one-time next-grade admission after substantial rehabilitation; preserves unresolved prior mastery debt")
             p.add_argument("--triplets","--triples",dest="triples",action="store_true",
                            help="Global weakest-three recovery is intrinsic to the new scheduler")
     return parser.parse_args(argv)
@@ -376,7 +585,7 @@ def _guard_independent_no_retention(args):
 def _report_retention_plan(args):
     if args.no_retention:
         return
-    from .learning_experiment import Settings
+    from bilqis_mlx.learning.learning_experiment import Settings
     settings = Settings(
         probe_each=args.experiment_probe_each,
         mature_max_loss=args.experiment_mature_max_loss,
@@ -385,8 +594,82 @@ def _report_retention_plan(args):
     print("DEFAULT RETENTION PLAN, NO NEURAL UPDATES: "+str(settings), file=sys.stderr)
 
 
-def main(argv=None):
-    args=parse_args(argv)
+def _timing_context(args):
+    if not args.timing_trace:
+        return None, nullcontext()
+    from bilqis_mlx.runtime.timing_trace import TimingTrace, default_trace_path
+    path = default_trace_path(args.run_dir)
+    context = TimingTrace(
+        path,
+        metadata={
+            "run_dir": str(args.run_dir),
+            "max_visits": args.max_visits,
+            "steps_per_visit": args.steps_per_visit,
+            "batch_size": args.batch_size,
+        })
+    return path, context
+
+
+def _report_timing_trace(path, *, stream):
+    if path is not None and Path(path).exists():
+        print("Timing trace: " + str(path), file=stream, flush=True)
+
+
+def _prepare_live_board(args, build, ingest):
+    visual = sys.stdout.isatty()
+    board = build(args.run_dir, reserve_gib=args.reserve_gib) if visual else None
+    live_mode = "FLASH" if args.flash_mode else "LIVE"
+    def on_event(event):
+        ingest(board, event)
+        if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
+            board.mode = live_mode
+            board.state["stop"] = "RUNNING"
+        if event.get("_dashboard_redraw", True):
+            board.draw()
+    if board is not None:
+        board.time_budget_seconds = (
+            args.minutes * 60 if type(args.minutes) is int and args.minutes > 0
+            else None
+        )
+        board.school_telemetry.begin_execution(
+            grade=board.state.get("prefix"), step=board.state.get("step"))
+        board.mode = (("FLASH | " if args.flash_mode else "") +
+                      ("RESUMING" if args.resume else "STARTING"))
+        board.state["stop"] = "PREPARING"
+        board.state["attempted_steps"] = 0
+        board.state["retained_steps"] = 0
+        board.state["retained_visits"] = 0
+        board.state["_rate_sample_eligible"] = True
+        system_rows = board.rows["SYSTEM & QUALIFICATION"]
+        previous = [row for row in system_rows if row.get("kind") != "STOP"]
+        system_rows.clear()
+        system_rows.extend(previous)
+        board.draw()
+    return board, on_event if visual else None
+
+
+@contextmanager
+def _human_sigint_guard():
+    """Treat one terminal interrupt as the stop request; ignore cleanup echoes."""
+    previous = signal.getsignal(signal.SIGINT)
+    interrupted = False
+
+    def handle_interrupt(_signum, _frame):
+        nonlocal interrupted
+        if interrupted:
+            return
+        interrupted = True
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGINT, handle_interrupt)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGINT, previous)
+
+
+def _main(args):
+    trace_path = None
     try:
         if args.action=="status":return status(args.run_dir)
         if args.action=="dashboard":return dashboard(args.run_dir)
@@ -399,7 +682,11 @@ def main(argv=None):
                              legacy_code_root=args.legacy_code_root,
                              champion_checkpoint=args.champion_checkpoint,
                              numeric_staircase=args.numeric_staircase,
-                             retention_enabled=not args.no_retention)
+                             boolean_composite=args.boolean_composite,
+                             boolean_idboolops=args.boolean_idboolops,
+                             full_grade_b=args.full_grade_b,
+                             retention_enabled=not args.no_retention,
+                             boolean_association_bridge=args.boolean_association_bridge)
         if args.verify_source:
             raise ValueError("VERIFY_SOURCE_REQUIRES_DRY_RUN")
         if not args.human_run:
@@ -407,62 +694,80 @@ def main(argv=None):
                   "agents may run only --dry-run and tests. "
                   "Use npm run train -- --dry-run for preflight.",file=sys.stderr)
             return 2
+        if args.flash_mode and not args.resume:
+            raise ValueError("FLASH_MODE_REQUIRES_RESUME")
         if (args.legacy_code_root is not None and
                 not args.legacy_code_root.expanduser().resolve().is_relative_to(ROOT)):
             raise ValueError("HUMAN_TRAINER_EXTERNAL_SOURCE_ROOT_FORBIDDEN")
-        from .grade_a_trainer import operate, operator_view
-        from .grade_a_dashboard import build, ingest
-        # Interactive training owns the dashboard in its *own* terminal.
-        # Non-TTY operators continue to receive machine-readable events.
-        visual = sys.stdout.isatty()
-        board = build(args.run_dir, reserve_gib=args.reserve_gib) if visual else None
-        def on_event(event):
-            ingest(board, event)
-            if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
-                board.mode = "LIVE"
-                board.state["stop"] = "RUNNING"
-            board.draw()
-        if board is not None:
-            # Replay is historical evidence, not the state of this invocation.
-            # The previous TIME_LIMIT_REACHED must not impersonate a new stop.
-            board.mode = "RESUMING" if args.resume else "STARTING"
-            board.state["stop"] = "PREPARING"
-            system_rows = board.rows["SYSTEM & QUALIFICATION"]
-            previous = [row for row in system_rows if row.get("kind") != "STOP"]
-            system_rows.clear()
-            system_rows.extend(previous)
-            board.draw()
-        with operator_view(on_event if visual else None):
+        from .trainer import operate, operator_view
+        from bilqis_mlx.presentation.dashboard import build, ingest
+        board, on_event = _prepare_live_board(args, build, ingest)
+        with operator_view(on_event):
             legacy_root, original_checkpoint = _source_paths(args.legacy_code_root, args.champion_checkpoint)
-            result = operate(
-                args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
-                resume=args.resume, minutes=args.minutes,
-                steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
-                batch_size=args.batch_size, reserve_gib=args.reserve_gib,
-                numeric_staircase=args.numeric_staircase,
-                retention_enabled=not args.no_retention,
-                experiment_probe_each=args.experiment_probe_each,
-                experiment_mature_max_loss=args.experiment_mature_max_loss,
-                experiment_introduction_extra_loss=args.experiment_introduction_extra_loss,
-                experiment_protected_cap_limit=args.experiment_protected_cap_limit)
+            trace_path, timing_context = _timing_context(args)
+            with timing_context:
+                result = operate(
+                    args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
+                    resume=args.resume, minutes=args.minutes,
+                    steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
+                    batch_size=args.batch_size, reserve_gib=args.reserve_gib,
+                    numeric_staircase=args.numeric_staircase,
+                    boolean_composite=args.boolean_composite,
+                    boolean_idboolops=args.boolean_idboolops,
+                    full_grade_b=args.full_grade_b,
+                    retention_enabled=not args.no_retention,
+                    experiment_probe_each=args.experiment_probe_each,
+                    experiment_mature_max_loss=args.experiment_mature_max_loss,
+                    experiment_introduction_extra_loss=args.experiment_introduction_extra_loss,
+                    experiment_protected_cap_limit=args.experiment_protected_cap_limit,
+                    stagnation_grace_grade=args.stagnation_grace_grade,
+                    stagnation_grace_steps=args.stagnation_grace_steps,
+                    admit_next_grade_with_debt=args.admit_next_grade_with_debt,
+                    source_prefetch_workers=args.source_prefetch_workers,
+                    flash_mode=args.flash_mode,
+                    boolean_association_bridge=args.boolean_association_bridge,
+                    autonomous_curriculum=args.autonomous_curriculum)
+            if trace_path is not None:
+                result["timing_trace_file"] = str(trace_path)
         if board is not None:
             board = build(args.run_dir, reserve_gib=args.reserve_gib)
+            board.time_budget_seconds = (
+                args.minutes * 60 if type(args.minutes) is int and args.minutes > 0
+                else None
+            )
+            elapsed = result.get("elapsed_seconds")
+            if isinstance(elapsed, (int, float)) and elapsed >= 0:
+                board.started = board.clock() - elapsed
             board.mode = "STOPPED | " + result["stop_reason"]
             board.draw()
             print("\n" + human_stop_summary(result), flush=True)
+            _report_timing_trace(result.get("timing_trace_file"), stream=sys.stdout)
             return 0
         return _print_status(result)
     except KeyboardInterrupt:
         print("HUMAN TRAINING INTERRUPTED: the last completed visit/checkpoint "
               "remains the resume point. Run npm run train -- --human-run --resume.",
               file=sys.stderr)
+        _report_timing_trace(trace_path, stream=sys.stderr)
         return 130
     except (ValueError,RuntimeError,OSError,KeyError,IndexError) as err:
         print("OPERATOR BLOCKED: "+str(err),file=sys.stderr)
+        _report_timing_trace(trace_path, stream=sys.stderr)
         if "HUMAN_TRAINER_NEW_RUN_HAS_EXISTING_CONTENT" in str(err):
             print("Saved school exists. To continue it, use: "
                   "npm run train -- --human-run --resume --minutes 90", file=sys.stderr)
         return 2
+
+
+def main(argv=None):
+    args=parse_args(argv)
+    interrupt_guard = (
+        _human_sigint_guard()
+        if args.action == "train" and args.human_run and not args.dry_run
+        else nullcontext()
+    )
+    with interrupt_guard:
+        return _main(args)
 
 
 if __name__=="__main__":

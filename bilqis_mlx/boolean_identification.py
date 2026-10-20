@@ -1,0 +1,250 @@
+"""Versioned inverse Boolean-operator identification capability for Grade B."""
+from __future__ import annotations
+
+from collections import Counter
+from dataclasses import replace
+import hashlib
+import importlib
+import json
+from pathlib import Path
+import random
+
+from .boolean_composite import RELEASE as PARENT_RELEASE
+from .boolean_composite import constructor_digest as parent_composite_constructor_digest
+from .boolean_identification_oracle import TASK, VERSION as ORACLE
+from .boolean_identification_oracle import evaluate as independent_evaluate
+from .curriculum import AnswerFamily, BINARY, BOOLEAN_OPERATORS, Capability, Course
+from .grade_a_probe import read_sources
+from .grade_b_oracle import operand_truth
+from .live_grade_b import PREREQUISITES, _operand, _random_world, source_attestation
+
+
+CAPABILITY = "B.IDBOOLOPS"
+GENERATOR = "bilqis.mlx.grade-b-idboolops-constructor/v1"
+RELEASE = "bilqis.mlx.grade-a-b-idboolops/20261019-v1"
+ANSWER_KIND = "boolean_operator"
+ASSESSMENT_ITEMS = 12
+
+
+def _digest(value) -> str:
+    return hashlib.sha256(json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+        allow_nan=False).encode()).hexdigest()
+
+
+def constructor_digest() -> str:
+    home = Path(__file__).resolve().parent
+    return _digest({
+        "files": {name: hashlib.sha256((home / name).read_bytes()).hexdigest()
+                  for name in ("boolean_identification.py", "boolean_identification_oracle.py")},
+        "parent_boolean_composite_constructor_sha256": parent_composite_constructor_digest(),
+    })
+
+
+def _logic_source(legacy_root: Path):
+    source_attestation(legacy_root)
+    module = importlib.import_module("bilqis_logic.kernel")
+    expected = Path(legacy_root).resolve() / "bilqis_logic/kernel.py"
+    if Path(module.__file__).resolve() != expected:
+        raise ValueError("GRADE_B_IDBOOLOPS_BOOLEAN_SOURCE_ROOT_MISMATCH")
+    return module
+
+
+def _require_historical_graph(legacy_root: Path, graph: dict):
+    _, _, source_graph, _, _ = read_sources(legacy_root)
+    if (graph["tokens"][:len(source_graph["tokens"])] != source_graph["tokens"] or
+            len(graph["tokens"]) < len(source_graph["tokens"])):
+        raise ValueError("GRADE_B_IDBOOLOPS_FROZEN_TOKEN_PREFIX_MISMATCH")
+
+
+def answer_heads(graph: dict) -> dict:
+    """Restrict the typed readout to existing Boolean semantic-token identities."""
+    names = list(graph["tokens"])
+    operator_tokens = ["cogal.operator." + operator for operator in BOOLEAN_OPERATORS]
+    required = ["cogal.value.false", "cogal.value.true", *operator_tokens]
+    if any(name not in names for name in required):
+        raise ValueError("GRADE_B_IDBOOLOPS_ANSWER_HEAD_TOKEN_MISSING")
+    return {
+        "semantic_token": {"values": names, "token_ids": list(range(len(names)))},
+        "binary": {"values": list(BINARY),
+                   "token_ids": [names.index("cogal.value.false"),
+                                 names.index("cogal.value.true")]},
+        ANSWER_KIND: {"values": list(BOOLEAN_OPERATORS),
+                      "token_ids": [names.index(name) for name in operator_tokens]},
+    }
+
+
+def _apply(operator: str, values: tuple[bool, ...]) -> bool:
+    if operator == "NOT":
+        return not values[0]
+    left, right = values
+    return {
+        "AND": lambda: left and right,
+        "OR": lambda: left or right,
+        "XOR": lambda: left != right,
+        "IMPLIES": lambda: (not left) or right,
+        "IFF": lambda: left == right,
+    }[operator]()
+
+
+def _operand_with_truth(micro, rng, world, wanted: bool):
+    for _ in range(512):
+        candidate = _operand(micro, rng, world)
+        if operand_truth(world, candidate) == wanted:
+            return candidate
+    raise ValueError("GRADE_B_IDBOOLOPS_OPERAND_TRUTH_EXHAUSTED")
+
+
+def _operand_prefix(micro, graph, world, operand):
+    encoded = list(micro.encode(micro.record(world, operand)))
+    query = graph["tokens"].index("micro.syntax.query")
+    end = graph["tokens"].index("syntax.end")
+    try:
+        index = encoded.index(query)
+    except ValueError as exc:
+        raise ValueError("GRADE_B_IDBOOLOPS_QUERY_MARKER_MISSING") from exc
+    if encoded[-1] != end:
+        raise ValueError("GRADE_B_IDBOOLOPS_SOURCE_ENCODING_DRIFT")
+    return encoded[:index + 1], encoded[index + 1:-1]
+
+
+def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
+    """Serialize shown evidence with no operator token present in the input."""
+    micro, _, _, _, _ = read_sources(legacy_root)
+    _require_historical_graph(legacy_root, graph)
+    observations = record.get("observations") or []
+    if not observations:
+        raise ValueError("GRADE_B_IDBOOLOPS_OBSERVATIONS_MISSING")
+    first = observations[0]["operands"][0]
+    prefix, _ = _operand_prefix(micro, graph, record["world"], first)
+    premise = graph["tokens"].index("micro.proof.premise")
+    conclusion = graph["tokens"].index("micro.proof.conclusion")
+    separator = graph["tokens"].index("syntax.separator")
+    end = graph["tokens"].index("syntax.end")
+    false_id = graph["tokens"].index("cogal.value.false")
+    true_id = graph["tokens"].index("cogal.value.true")
+    tokens = list(prefix)
+    for observation in observations:
+        for operand in observation["operands"]:
+            current_prefix, encoded_operand = _operand_prefix(
+                micro, graph, record["world"], operand)
+            if current_prefix != prefix:
+                raise ValueError("GRADE_B_IDBOOLOPS_WORLD_ENCODING_DRIFT")
+            tokens.extend((premise, *encoded_operand))
+        tokens.extend((conclusion, true_id if observation["result"] else false_id,
+                       separator))
+    tokens[-1] = end
+    if not 1 <= len(tokens) <= 96:
+        raise ValueError("GRADE_B_IDBOOLOPS_CONTEXT_LENGTH")
+    return tokens
+
+
+def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int) -> tuple[dict, ...]:
+    micro, _, _, _, _ = read_sources(legacy_root)
+    _require_historical_graph(legacy_root, graph)
+    logic = _logic_source(legacy_root)
+    rng = random.Random(_digest([GENERATOR, seed, cycle]))
+    schedule = list(BOOLEAN_OPERATORS) * 2
+    rng.shuffle(schedule)
+    if Counter(schedule) != Counter({operator: 2 for operator in BOOLEAN_OPERATORS}):
+        raise ValueError("GRADE_B_IDBOOLOPS_OPERATOR_BALANCE_DRIFT")
+    rows = []
+    for target in schedule:
+        # Keep the experimental surface arity-neutral. NOT uses the first
+        # proposition and ignores the controlled second proposition; all six
+        # primitives therefore expose a unique four-bit FF/FT/TF/TT signature.
+        patterns = [(False, False), (False, True), (True, False), (True, True)]
+        rng.shuffle(patterns)
+        for _ in range(5000):
+            world = _random_world(micro, rng, rng.choice((3, 4)))
+            observations = []
+            for pattern in patterns:
+                operands = [_operand_with_truth(micro, rng, world, bit) for bit in pattern]
+                generator_truth = _apply(target, pattern)
+                source_values = ((pattern[0],) if target == "NOT" else pattern)
+                source_expr = logic.apply(
+                    target, *(logic.literal(bit) for bit in source_values))
+                if (logic.evaluate(source_expr, {}) != generator_truth or
+                        logic.independent_evaluate(source_expr, {}) != generator_truth):
+                    raise ValueError("GRADE_B_IDBOOLOPS_SOURCE_TRUTH_DISAGREEMENT")
+                observations.append({"operands": operands, "result": generator_truth})
+            record = {"task": TASK, "world": world,
+                      "observations": observations, "options": list(BOOLEAN_OPERATORS)}
+            gold = independent_evaluate(record)
+            if gold != target:
+                raise ValueError("GRADE_B_IDBOOLOPS_INDEPENDENT_ORACLE_DISAGREEMENT")
+            tokens = encode_record(record, legacy_root, graph)
+            identity = _digest(record)
+            if identity not in {row["id"] for row in rows}:
+                break
+        else:
+            raise ValueError("GRADE_B_IDBOOLOPS_VARIATION_EXHAUSTED")
+        rows.append({
+            "id": identity, "source_id": identity, "capability": CAPABILITY,
+            "answer_kind": ANSWER_KIND, "gold": gold, "record": record,
+            "tokens": tokens, "oracle": ORACLE, "generator": GENERATOR,
+            "operator_options": list(BOOLEAN_OPERATORS),
+            "observation_count": len(observations),
+            "root": "cogal.operator." + target,
+            "operator_roots": ["cogal.operator." + operator
+                               for operator in BOOLEAN_OPERATORS],
+        })
+    return tuple(rows)
+
+
+def draw_identification(legacy_root: Path, graph: dict, *, seed: int,
+                        each: int = ASSESSMENT_ITEMS,
+                        capability: str | None = CAPABILITY) -> tuple[dict, ...]:
+    if type(seed) is not int or type(each) is not int or each < 1:
+        raise ValueError("GRADE_B_IDBOOLOPS_INVALID_DRAW")
+    if capability not in (None, CAPABILITY):
+        raise ValueError("GRADE_B_IDBOOLOPS_UNKNOWN_CAPABILITY")
+    rows, seen = [], set()
+    cycle = 0
+    while len(rows) < each:
+        for row in _cycle(legacy_root, graph, seed=seed, cycle=cycle):
+            if row["id"] not in seen:
+                seen.add(row["id"])
+                rows.append(row)
+                if len(rows) == each:
+                    break
+        cycle += 1
+    return tuple(rows)
+
+
+def build_course(previous: Course, legacy_root: Path) -> Course:
+    if (not isinstance(previous, Course) or previous.version != PARENT_RELEASE or
+            len(previous.grades) != 2 or previous.grades[-1].id != "B" or
+            len(previous.grades[-1].capabilities) != 7 or
+            previous.grades[-1].capabilities[-1].id != "B.COMPOSITE"):
+        raise ValueError("GRADE_B_IDBOOLOPS_REQUIRES_COMPOSITE_PARENT")
+    _, _, graph, _, _ = read_sources(legacy_root)
+    witness = draw_identification(legacy_root, graph, seed=2026101902)
+    roots = tuple("cogal.operator." + operator for operator in BOOLEAN_OPERATORS)
+    cap = Capability(
+        id=CAPABILITY, difficulty=previous.grades[-1].capabilities[0].difficulty,
+        source_anchor="repo:bilqis_logic/kernel.py::TABLES+_operation",
+        taught_roots=roots, examined_roots=roots, prerequisites=PREREQUISITES,
+        composed_of=(),
+        answer_families=(AnswerFamily(ANSWER_KIND, BOOLEAN_OPERATORS),),
+        lesson_generator=GENERATOR, independent_oracle=ORACLE,
+    )
+    existing = tuple(replace(item, lesson_generator=GENERATOR)
+                     for item in previous.grades[-1].capabilities)
+    counts = (*previous.grades[-1].exam_item_counts, (CAPABILITY, ASSESSMENT_ITEMS))
+    seal = _digest({
+        "parent_course_sha256": previous.digest(),
+        "parent_b_rubric": previous.grades[-1].assessment_sha256,
+        "generator": GENERATOR, "generator_code_sha256": constructor_digest(),
+        "source_witness_sha256": _digest(witness),
+        "items_per_capability": ASSESSMENT_ITEMS,
+        "answer_kind": ANSWER_KIND,
+    })
+    grade = replace(previous.grades[-1], capabilities=(*existing, cap),
+                    assessment_sha256=seal, exam_item_counts=counts,
+                    teaching_stages=())
+    course = replace(previous, grades=(*previous.grades[:-1], grade),
+                     version=RELEASE, assessment_manifest_sha256=seal)
+    if not course.executable:
+        raise ValueError("GRADE_B_IDBOOLOPS_RELEASE_NOT_EXECUTABLE")
+    return course

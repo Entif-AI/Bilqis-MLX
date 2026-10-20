@@ -16,7 +16,8 @@ from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .token_atlas import ORIGINAL_GRAPH_DIGEST, rows_for_graph
 from .vocabulary_growth import digest
 
-REVIEW_PATH = Path(__file__).resolve().parents[1] / "docs" / "NI_SEMANTIC_ADJUDICATION_VD_20261015.json"
+REVIEW_PATH = (Path(__file__).resolve().parents[1] / "docs" / "provenance" /
+               "NI_SEMANTIC_ADJUDICATION_VD_20261015.json")
 PARENT = "mapping-review/20261015-c"
 SUCCESSOR = "mapping-review/20261015-d"
 DISPOSITIONS = frozenset({

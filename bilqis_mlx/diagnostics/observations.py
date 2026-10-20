@@ -14,6 +14,7 @@ import json
 import os
 import stat
 
+from ..curriculum import BOOLEAN_OPERATORS
 from ..generated_assessment import make_cohort
 
 
@@ -103,6 +104,7 @@ class ExamObservation:
     event_outbox_verified: bool = False
     run_id: str = ""
     assessment_scope_sha256: str = ""
+    lineage_id: str = ""
 
     @property
     def inventory(self) -> tuple[tuple[str, int], ...]:
@@ -144,7 +146,6 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
             cohort.get("cohort_sha256") != last_exam.get("cohort_sha256") or
             cohort.get("seed") != last_exam.get("cohort_seed") or
             cohort.get("generator_version") != last_exam.get("generator_version") or
-            cohort.get("rubric_sha256") != last_exam.get("exam_rubric_sha256") or
             type(last_exam.get("optimizer_step")) is not int or
             last_exam["optimizer_step"] < 0):
         raise ValueError("DIAGNOSTIC_EXAM_CUSTODY_MISMATCH")
@@ -157,7 +158,9 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
         raise ValueError("DIAGNOSTIC_COHORT_CONTENT_DRIFT")
     if any(not ((r.get("answer_kind") == "binary" and r.get("gold") in ("TRUE", "FALSE")) or
                (r.get("answer_kind") == "numeric_active" and isinstance(r.get("gold"), str)
-                and r["gold"].isascii() and r["gold"].isdecimal())) for r in rows):
+                and r["gold"].isascii() and r["gold"].isdecimal()) or
+               (r.get("answer_kind") == "boolean_operator" and
+                r.get("gold") in BOOLEAN_OPERATORS)) for r in rows):
         raise ValueError("DIAGNOSTIC_UNSUPPORTED_PREDICTION_CASTE")
     ordered = {r["id"]: r for r in rows}
     failures = last_exam.get("misses_for_teacher")
@@ -174,6 +177,8 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
                 failed.get("gold") != source_row["gold"] or
                 not isinstance(failed.get("predicted"), str) or not failed["predicted"] or
                 (source_row["answer_kind"] == "binary" and failed["predicted"] not in ("TRUE", "FALSE")) or
+                (source_row["answer_kind"] == "boolean_operator" and
+                 failed["predicted"] not in BOOLEAN_OPERATORS) or
                 failed["predicted"] == failed["gold"]):
             raise ValueError("DIAGNOSTIC_MISS_EVIDENCE_DRIFT")
         by_miss[failed["id"]] = failed["predicted"]
@@ -209,7 +214,7 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
             prediction_counts=tuple(sorted(prediction_counts.items())),
         ))
     return ExamObservation(cohort["cohort_sha256"], last_exam["student_sha256"],
-                           last_exam["optimizer_step"], cohort["rubric_sha256"],
+                           last_exam["optimizer_step"], last_exam["exam_rubric_sha256"],
                            cohort["generator_version"], tuple(capabilities),
                            cohort.get("source_manifest_sha256", ""),
                            cohort.get("generator_code_sha256", ""),
@@ -221,6 +226,13 @@ def observe_binary_exam(cohort: dict, last_exam: dict) -> ExamObservation:
     if any(r.get("answer_kind") != "binary" for r in cohort.get("rows", ())):
         raise ValueError("DIAGNOSTIC_UNSUPPORTED_PREDICTION_CASTE")
     return observe_exam(cohort, last_exam)
+
+
+def _require_run_id(receipt: dict) -> str:
+    run_id = receipt.get("run_id")
+    if not isinstance(run_id, str) or not run_id:
+        raise ValueError("DIAGNOSTIC_STATE_RUN_ID_MISSING")
+    return run_id
 
 
 def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObservation:
@@ -262,10 +274,43 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
         if (type(generation) is not int or generation < 0 or
                 path.name != f"{generation:07d}.json"):
             raise ValueError("DIAGNOSTIC_STATE_GENERATION_DRIFT")
-    if not isinstance(receipt.get("run_id"), str) or not receipt["run_id"]:
-        raise ValueError("DIAGNOSTIC_STATE_RUN_ID_MISSING")
+    run_id = _require_run_id(receipt)
     return replace(observe_exam(
-        json.loads(cohort_file.read_text(encoding="utf-8")), exam), run_id=receipt["run_id"])
+        json.loads(cohort_file.read_text(encoding="utf-8")), exam),
+        run_id=run_id, lineage_id=_receipt_lineage_id(receipt))
+
+
+def _receipt_lineage_id(receipt: dict) -> str:
+    """Identify the active optimizer lineage without rewriting history.
+
+    Normal training stays on the run root. An explicit experimental baseline
+    rebase starts a new immutable branch whose saved receipts carry the exact
+    rebase provenance forward. Diagnostics may compare checkpoints inside one
+    branch, but a lower optimizer step across a certified rebase is not data
+    corruption and must not poison all later learning-history observations.
+    """
+    run_id = _require_run_id(receipt)
+    rebased = receipt.get("experimental_baseline_rebase")
+    if rebased is None:
+        return "run-root/" + run_id
+    if (not isinstance(rebased, dict) or
+            rebased.get("schema") != "bilqis.mlx.experimental-baseline-rebase/v1" or
+            type(rebased.get("source_state_generation")) is not int or
+            type(rebased.get("prior_experiment_generation")) is not int or
+            type(rebased.get("baseline_optimizer_step")) is not int or
+            not isinstance(rebased.get("baseline_sha256"), str) or
+            len(rebased["baseline_sha256"]) != 64):
+        raise ValueError("DIAGNOSTIC_EXPERIMENT_REBASE_RECEIPT_DRIFT")
+    identity = {
+        "run_id": run_id,
+        "source_state_generation": rebased["source_state_generation"],
+        "prior_experiment_generation": rebased["prior_experiment_generation"],
+        "baseline_sha256": rebased["baseline_sha256"],
+        "baseline_optimizer_step": rebased["baseline_optimizer_step"],
+    }
+    return "experiment-rebase/" + hashlib.sha256(
+        json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
 
 
 @dataclass
@@ -341,6 +386,7 @@ def _append_verified_exams(root: Path, lines, grade, observations, files,
     run_id = observations[-1].run_id if observations else None
     last_step = observations[-1].optimizer_step if observations else -1
     last_student_sha = observations[-1].student_sha256 if observations else None
+    last_lineage = observations[-1].lineage_id if observations else None
     # Generation remains a separate event identity from student/checkpoint.
     # A cache stores it independently because the most recent log events need
     # not correspond to the most recent accepted optimizer step.
@@ -367,7 +413,7 @@ def _append_verified_exams(root: Path, lines, grade, observations, files,
         if "delivery_outbox" in receipt:
             # The trainer owns generation event IDs. Reuse its pure serializer;
             # it imports no neural runtime and performs no checkpoint I/O.
-            from ..grade_a_trainer import _with_delivery_outbox
+            from ..trainer import _with_delivery_outbox
             outbox = receipt["delivery_outbox"]
             if not isinstance(outbox, list) or any(not isinstance(e, dict) for e in outbox):
                 raise ValueError("DIAGNOSTIC_EVENT_OUTBOX_CONFLICT")
@@ -385,10 +431,12 @@ def _append_verified_exams(root: Path, lines, grade, observations, files,
                 {cap.capability: {"correct": cap.correct, "total": cap.total}
                  for cap in obs.capabilities} != event.get("scores")):
             raise ValueError("DIAGNOSTIC_EVENT_STATE_CONFLICT")
-        _require_checkpoint_progression(
-            obs.optimizer_step, obs.student_sha256, last_step, last_student_sha)
+        if last_lineage == obs.lineage_id:
+            _require_checkpoint_progression(
+                obs.optimizer_step, obs.student_sha256, last_step, last_student_sha)
         last_generation, last_step = generation, obs.optimizer_step
         last_student_sha = obs.student_sha256
+        last_lineage = obs.lineage_id
         observations.append(obs)
         if files is not None:
             for path in _history_evidence_files(root, generation, obs):
@@ -447,11 +495,12 @@ def distinct_checkpoint_history(history: tuple[ExamObservation, ...]) -> tuple[E
     indices = {}
     previous = None
     for observed in history:
-        if previous is not None:
+        if previous is not None and previous.lineage_id == observed.lineage_id:
             _require_checkpoint_progression(
                 observed.optimizer_step, observed.student_sha256,
                 previous.optimizer_step, previous.student_sha256)
-        key = (observed.contract, observed.optimizer_step, observed.student_sha256)
+        key = (observed.lineage_id, observed.contract,
+               observed.optimizer_step, observed.student_sha256)
         if key in indices:
             distinct[indices[key]] = observed
         else:

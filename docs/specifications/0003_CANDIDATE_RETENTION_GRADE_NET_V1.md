@@ -1,0 +1,51 @@
+# SPEC-0003: Bilqis retained-update grade-net safety specification
+
+**Status:** Normative for the isolated human-training experiment; 2026-10-18, ADR-054 as refined by ADR-055 through ADR-057.
+**Scope:** Candidate student + own AdamW admission during individual training visits. Separate from championship succession and whole-school graduation.
+
+## Reproduced failure
+
+The isolated run's immutable event generation **11566** accepted a B.XOR candidate at attempted step **230680** (PROVISIONAL, PAIRED_SCREEN_WITHIN_BUDGET) and retained **16** optimizer steps. Its own paired source-oracled panel measured **B.XOR +1, B.IFF -1, B.IMPLIES -1**, hence **Grade B net -1**. The recorded protected aggregate was diagnostic and did not gate admission. Independent fixed-cohort exams also show declines between successive retained student checkpoints; these separate exams are corroboration, not substitutes for the exact paired candidate evidence.
+
+## Candidate retention requirements
+
+1. **Stage one: the target.** The target capability's parent-versus-candidate fresh source-oracled probe MUST improve strictly. If it does not, reject immediately. Do not spend additional inference on its unscored peers or fixed-grade replay just to re-prove a failure.
+2. **Stage two: fill only missing same-grade scores.** For a candidate that passes stage one, reuse exact scores already measured on that candidate checkpoint and paired source question set. Evaluate only the remaining currently admitted capabilities of that grade on paired identical source questions for parent and candidate, with equal question count per grade capability. Missing grade coverage at the final admission decision is a failed screen. Never borrow scores from a different checkpoint, optimizer step, seed or rubric.
+3. **Choose the evidence regime from what actually exists.** Before a complete immutable whole-school fixed frontier exists, preserve the original stricter guard: the complete fresh lesson-grade panel MUST improve strictly, individual protected-capability tolerances remain admission gates, the B.OR/B.XOR parent-correct replay remains an item-level veto, and any comparable fixed-grade score must not decline.
+4. **Late-stage fixed-frontier regime.** Once the exact retained parent has a complete immutable whole-school fixed cohort, a fresh lesson-grade tie is allowed but a fresh lesson-grade loss is not. The saved exam MUST name the exact current retained parent student SHA and native AdamW optimizer step before its predictions may be reconstructed; any mismatch fails closed rather than falling back to stale frontier evidence. Reconstruct the parent's fixed predictions from the saved cohort and saved misses, verify that the reconstructed capability totals equal the immutable exam, then score the candidate on that same fixed cohort. The fixed lesson grade, the fixed active school grade, and the fixed whole-school total MUST each be non-regressing. Individual capabilities and individual rows MAY regress when those aggregate bounds still hold. The target fresh probe remains the only scope that must improve strictly.
+5. In the late-stage regime, protected-capability losses and B.OR/B.XOR item flips remain recorded teacher/diagnostic evidence but are not independent vetoes. In the pre-frontier regime they retain their earlier gate authority. Source-gold validation, student ownership, native AdamW custody, championship rules and graduation remain unchanged in both regimes.
+
+## Fragile-semantic preservation during candidate construction
+
+The fixed B.OR/B.XOR replay is never lesson material. When that verified replay exists, candidate construction SHOULD reserve fresh source-oracled rehearsal examples for each admitted fragile connective. Prefer rotating structural siblings matching truth pattern, ordered operand kinds and universe size; if an exact sibling is unavailable, fall back to the same operand shape across universe sizes, then to the same truth pattern. These rows MUST be generated independently of the fixed exam and MUST NOT share any fixed replay row identity. Exact unresolved examination misses retain their reserved lesson slots.
+
+A missing exact structural sibling is not a training blocker and never permits substituting fixed exam rows. The 24-row replay still runs when available. It is an item-level admission veto before a complete fixed school frontier exists, and diagnostic evidence once the late-stage aggregate frontier governs admission.
+
+If there is no comparable complete fixed cohort, report NOT_MEASURED rather than inventing fixed evidence and remain in the pre-frontier regime. A target-only rejection is marked TARGET_ONLY_REJECTED, not falsely described as a complete grade screen. In the late-stage regime, the saved whole-school cohort is also the candidate retention frontier: score only candidates that already passed the target and nonnegative fresh lesson-grade screen, reuse the reconstructed parent predictions, and derive lesson-grade, active-grade and school totals from one candidate pass.
+
+## Bounded execution, provenance and custody
+
+The current curriculum has six Grade B capabilities (12 fixed exam questions each) and seven Grade C capabilities. The mandatory current-grade completion cost scales with **that grade only**, regardless of total school size. The configurable protection budget controls optional rotating cross-grade sentinels, with two available slots reserved when earlier/other grades exist. It does **not** cap same-grade completeness: a grade larger than eight capabilities must still test its unscored grade members after target improvement. Never extend the screen to every school capability merely because another grade has been admitted.
+
+Reuse the saved fixed-cohort file, including the parent/candidate B.OR/B.XOR predictions when part of the same full-grade replay. No new 8 GB model copy, optimizer reset, retrospective rollback, source-gold rewrite, unapproved teacher-policy change or agent-initiated neural update. A rejected candidate discards only its provisional in-RAM model and own trial AdamW, leaving parent untouched. The teacher receives the measured negative retention evidence.
+
+At a scheduled whole-school exam boundary, the trainer MAY reuse an already verified exam instead of rerunning neural inference only when the retained checkpoint SHA and native AdamW step, cohort digest, rubric, assessment scope and semantic graph are identical and all pending visits retained zero optimizer updates. Stored wrong predictions MUST reconstruct the same scores and teacher misses exactly before reuse. Reuse advances ordinary scheduler/teacher bookkeeping but MUST NOT create a candidate checkpoint, rescore incumbents, mint championships, refresh soups or claim new learning evidence. Any changed identity or accepted in-memory update requires the normal full exam.
+
+## Executable acceptance examples
+
+- Real generation 11566 pattern: B.XOR +1, B.IFF -1, B.IMPLIES -1 => REJECT, SAME_GRADE_NET_REGRESSION, net -1.
+- Pre-frontier B target +1, peer B -1 => REJECT, NO_POSITIVE_SAME_GRADE_GAIN, net zero.
+- Late-stage B target +1, fresh B net zero, fixed B unchanged, active C unchanged, another fixed grade +1 => PROVISIONAL.
+- Late-stage B target +1, fixed B +1, active C unchanged, another grade -1, whole-school net zero => PROVISIONAL.
+- Late-stage B target +1 but fixed B declines => REJECT, FIXED_LESSON_GRADE_REGRESSION.
+- Late-stage B target +1, fixed B improves, but active C declines => REJECT, ACTIVE_SCHOOL_GRADE_REGRESSION.
+- Late-stage lesson/active grades do not decline but whole school declines elsewhere => REJECT, WHOLE_SCHOOL_NET_REGRESSION.
+- Individual fixed rows may swap correct/wrong status without rejection when all late-stage aggregate bounds hold.
+- Target gain with missing same-grade member => fail closed, not PROVISIONAL.
+- Target fails first => reject without scoring unrelated peers; retain the true target-only observation and mark the additional grade controls NOT_MEASURED.
+- Target passes and two grade capabilities already have valid scores for this exact candidate/cohort => evaluate only the missing capabilities; do not score either previously tested capability again.
+- A future grade has more than eight capabilities => completion still includes its entire grade, with bounded optional cross-grade controls; do not fail or silently truncate on the old global panel limit.
+- Positive target with the applicable regime's grade/school safeguards passing => PROVISIONAL only, not school graduation.
+- Real Grade B fixed cohort is 72 items with 12 for each of six capabilities, tied to a verified immutable digest and the current grade-test epoch.
+
+This is a forward-only retention correction. It does not reverse already retained updates, prove generalization beyond the compared cohorts, or claim new cumulative mastery without a human-run neural experiment.

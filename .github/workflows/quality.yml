@@ -25,7 +25,19 @@ jobs:
         run: |
           python3 -B scripts/check_historical_abi.py
           python3 -B scripts/check_semantic_boundaries.py
+          python3 -B scripts/check_factory_architecture.py
+          python3 -B scripts/check_docs.py
       - name: Reject newly introduced code hygiene regressions
-        run: python3 -B scripts/code_smell_audit.py --check-baseline docs/development/code_smell_baseline.json
+        run: python3 -B scripts/code_smell_audit.py --check-baseline docs/evidence/development/code_smell_baseline.json
       - name: Portable non-neural custody and release tests
-        run: python3 -B -m unittest -q tests.test_state_archive tests.test_whole_student_retention tests.test_release_version
+        run: >-
+          python3 -B scripts/run_tests.py
+          bilqis_mlx/runtime/tests/test_state_archive.py
+          bilqis_mlx/learning/tests/test_whole_student_retention.py
+          scripts/tests/test_release_version.py
+          scripts/tests/test_docs.py
+          scripts/tests/test_run_tests.py
+          bilqis_mlx/factory/tests/test_release.py
+          bilqis_mlx/factory/tests/test_generation.py
+          bilqis_mlx/factory/tests/test_historical_generalization.py
+          bilqis_mlx/runtime/tests/test_admission.py

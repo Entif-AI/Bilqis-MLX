@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
-from .champions import Checkpoint, soup_weights
+from bilqis_mlx.learning.champions import Checkpoint, soup_weights
 
 
 @dataclass(frozen=True)
