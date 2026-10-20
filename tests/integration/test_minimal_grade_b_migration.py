@@ -21,7 +21,12 @@ from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.learning.stagnation_control import start_session as start_stagnation_session
 from bilqis_mlx.runtime.state import _fingerprint
-from bilqis_mlx.runtime.assessment import _candidate_cohort, _introduced_cohort
+from bilqis_mlx.runtime.assessment import _candidate_executable_cohort
+from bilqis_mlx.runtime.admission import _executable_factory_admission
+from bilqis_mlx.compatibility.executable_projection import (
+    compile_projected_executable_release,
+)
+from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.trainer import (
     VERSION, _activate_replaced_admitted_grade, _commit_scored_student,
     _repair_scope_rubric_evidence, _repair_championship_source_context,
@@ -134,18 +139,6 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
 
     def test_a_candidate_after_minimal_b_migration_uses_a_scope_rubric(self):
         student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
-        school = start_new(self.new, student)
-        receipt = {
-            "school": asdict(school),
-            "generation": 1,
-            "run_id": "minimal-b-a-scope",
-            "source_manifest_sha256": self.manifest["manifest_sha256"],
-            "live_rubric_sha256": self.new.grades[0].assessment_sha256,
-            "config": {},
-            "answer_ids": [],
-            "capability_best": {},
-            "graduation_perfect": {},
-        }
         class Step:
             def item(self):
                 return student.optimizer_step
@@ -153,20 +146,43 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             state = {"step": Step()}
         with TemporaryDirectory() as temp:
             root = Path(temp)
-            cohort = _candidate_cohort(
-                root, receipt, self.manifest, self.new, SOURCE, self.graph)
-            cohort, _ = _introduced_cohort(
-                root, self.manifest, self.new, school, cohort)
+            release, program, canonical_course = (
+                compile_projected_executable_release(
+                    self.new, self.a, SOURCE, self.graph))
+            school = start_new(program, student)
+            release, release_file, admission = _executable_factory_admission(
+                root, release, student, _fingerprint(self.graph), self.graph)
+            receipt = {
+                "school": asdict(school),
+                "generation": 1,
+                "run_id": "minimal-b-a-scope",
+                "source_manifest_sha256": self.manifest["manifest_sha256"],
+                "semantic_graph_sha256": _fingerprint(self.graph),
+                "factory_release_sha256": release.release_sha256,
+                "factory_release_file": release_file,
+                "factory_admission_v2": asdict(admission),
+                "live_rubric_sha256": program.grades[0].assessment_sha256,
+                "config": {},
+                "answer_ids": [],
+                "capability_best": {},
+                "graduation_perfect": {},
+            }
+            a_scope = tuple(
+                capability.id for capability in program.grades[0].capabilities)
+            cohort, _ = _candidate_executable_cohort(
+                root, receipt, self.manifest, release,
+                live_source_registry(), SOURCE, self.graph,
+                capabilities=a_scope, legacy_course=canonical_course)
             predictions = {row["id"]: row["gold"] for row in cohort.rows}
             with patch("bilqis_mlx.trainer._bundle_pointer", return_value=student):
                 _, frontier, roles, _ = _commit_scored_student(
-                    None, root, receipt, self.manifest, self.new, school,
+                    None, root, receipt, self.manifest, canonical_course, school,
                     cohort, predictions, {}, Optimizer(), self.graph, reserve_gib=1)
         self.assertTrue(roles)
         self.assertTrue(frontier)
         self.assertEqual(
             {item["rubric"] for item in frontier.values()},
-            {self.new.grades[0].assessment_sha256})
+            {program.grades[0].assessment_sha256})
 
     def test_resume_repairs_mislabeled_scope_evidence_without_neural_update(self):
         student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)

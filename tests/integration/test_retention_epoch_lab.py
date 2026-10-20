@@ -29,6 +29,26 @@ def _rows(capability):
             for index in range(12)]
 
 
+def _visit_program():
+    return ScheduleProgram(
+        program_digest="c" * 64,
+        grades=(
+            ScheduleGrade(
+                "A", (ScheduleCapability("A.IDENTITY", 12),),
+                (("A.IDENTITY",),), "a" * 64),
+            ScheduleGrade(
+                "B", (ScheduleCapability("B.XOR", 12),),
+                (("B.XOR",),), "b" * 64),
+        ),
+        program_complete=False,
+    )
+
+
+def _visit_release(program):
+    return SimpleNamespace(execution_plan=SimpleNamespace(
+        capabilities=tuple(program.capability_map.values())))
+
+
 class RetentionTeachingPathTests(unittest.TestCase):
     def test_visit_consumes_prefetched_source_packet_without_serial_step_redraw(self):
         policy = {"old": 0, "lr": 0.0001, "depth": 1,
@@ -38,10 +58,7 @@ class RetentionTeachingPathTests(unittest.TestCase):
         school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
                                  champions={"A": {"optimizer_step": 1}},
                                  current_student=SimpleNamespace(sha256="e" * 64))
-        grades = [SimpleNamespace(id=grade, capabilities=[SimpleNamespace(id=cap)])
-                  for grade, cap in (("A", "A.IDENTITY"), ("B", "B.XOR"))]
-        course = SimpleNamespace(
-            grades=grades, capability_map={}, digest=lambda: "c" * 64)
+        course = _visit_program()
         receipt = {"teacher": teacher, "generation": 7, "run_id": "prefetch-fixture",
                    "school": {}, "teacher_misses": [], "config": {},
                    "answer_ids": [6, 7], "curriculum_mode": "fixture-school",
@@ -89,6 +106,10 @@ class RetentionTeachingPathTests(unittest.TestCase):
                     for row in rows}
 
         with (patch.object(trainer, "_state_from_json", return_value=school),
+              patch.object(trainer, "_read_executable_factory_release_artifact",
+                           return_value=_visit_release(course)),
+              patch.object(trainer, "schedule_program_from_executable_release",
+                           return_value=course),
               patch.object(trainer, "next_capability", return_value="B.XOR"),
               patch.object(trainer, "_draw_live_rows", side_effect=serial_source_rows),
               patch.object(trainer, "assessment_capabilities", return_value=("B.XOR",)),
@@ -99,6 +120,8 @@ class RetentionTeachingPathTests(unittest.TestCase):
                            return_value=(_rows("B.XOR")[:6], set(), 0)),
               patch.object(trainer, "_predictions", side_effect=wrong_predictions),
               patch.object(trainer, "fork_student", return_value=({}, optimizer)),
+              patch.object(trainer, "inspect_lesson_step",
+                           side_effect=ValueError("fixture methodology unavailable")),
               patch("bilqis_mlx.learning.fragile_replay.load_replay_rows", return_value=()),
               patch.object(trainer, "_train_step", side_effect=inspect_batch)):
             with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
@@ -120,9 +143,7 @@ class RetentionTeachingPathTests(unittest.TestCase):
         engine = SimpleNamespace(pick=lambda *_: ("p", policy))
         school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
                                  champions={"A": {"optimizer_step": 1}})
-        grades = [SimpleNamespace(id=grade, capabilities=[SimpleNamespace(id=cap)])
-                  for grade, cap in (("A", "A.IDENTITY"), ("B", "B.XOR"))]
-        course = SimpleNamespace(grades=grades, capability_map={})
+        course = _visit_program()
         receipt = {"teacher": teacher, "generation": 1, "run_id": "disposable",
                    "school": {}, "teacher_misses": [], "config": {},
                    "answer_ids": [6, 7], "curriculum_mode": "fixture-school"}
@@ -142,6 +163,10 @@ class RetentionTeachingPathTests(unittest.TestCase):
                     for row in rows}
 
         with (patch.object(trainer, "_state_from_json", return_value=school),
+              patch.object(trainer, "_read_executable_factory_release_artifact",
+                           return_value=_visit_release(course)),
+              patch.object(trainer, "schedule_program_from_executable_release",
+                           return_value=course),
               patch.object(trainer, "next_capability", return_value="B.XOR"),
               patch.object(trainer, "_draw_live_rows", side_effect=source_rows),
               patch.object(trainer, "_frozen_confidence_champions", return_value=()),
@@ -152,6 +177,8 @@ class RetentionTeachingPathTests(unittest.TestCase):
               patch.object(trainer, "_predictions", side_effect=wrong_predictions),
               patch.object(trainer, "fork_student",
                            return_value=({}, optimizer)),
+              patch.object(trainer, "inspect_lesson_step",
+                           side_effect=ValueError("fixture methodology unavailable")),
               patch("bilqis_mlx.learning.fragile_replay.load_replay_rows", return_value=()),
               patch.object(trainer, "_train_step", side_effect=inspect_batch)):
             with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
@@ -248,13 +275,14 @@ class RetentionTeachingPathTests(unittest.TestCase):
 
         school = SimpleNamespace()
         receipt = {"run_id": "preservation", "generation": 4}
+        program = _visit_program()
         with (patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
                     return_value=tuple(fixed)),
               patch.object(trainer, "assessment_capabilities",
                            return_value=("B.AND", "B.OR", "B.XOR")),
               patch.object(trainer, "_draw_live_rows", side_effect=draw)):
             selected = trainer._fresh_fragile_preservation_rows(
-                Path("/unused"), Path("/source"), {}, receipt, object(), school,
+                Path("/unused"), Path("/source"), {}, receipt, program, school,
                 "B.AND", step=1, batch_size=32)
         self.assertEqual(len(selected), 8)
         self.assertFalse({row["id"] for row in selected} &
@@ -273,9 +301,7 @@ class RetentionTeachingPathTests(unittest.TestCase):
         engine = SimpleNamespace(pick=lambda *_: ("p", policy))
         school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
                                  champions={"A": {"optimizer_step": 1}})
-        grades = [SimpleNamespace(id=grade, capabilities=[SimpleNamespace(id=cap)])
-                  for grade, cap in (("A", "A.IDENTITY"), ("B", "B.XOR"))]
-        course = SimpleNamespace(grades=grades, capability_map={})
+        course = _visit_program()
         misses = [
             {"id": f"miss:{index}", "source_id": f"miss:{index}",
              "capability": "B.XOR", "answer_kind": "binary",
@@ -310,6 +336,10 @@ class RetentionTeachingPathTests(unittest.TestCase):
                     for row in rows}
 
         with (patch.object(trainer, "_state_from_json", return_value=school),
+              patch.object(trainer, "_read_executable_factory_release_artifact",
+                           return_value=_visit_release(course)),
+              patch.object(trainer, "schedule_program_from_executable_release",
+                           return_value=course),
               patch.object(trainer, "next_capability", return_value="B.XOR"),
               patch.object(trainer, "_draw_live_rows", side_effect=source_rows),
               patch.object(trainer, "_frozen_confidence_champions", return_value=()),
@@ -319,6 +349,8 @@ class RetentionTeachingPathTests(unittest.TestCase):
                            return_value=(_rows("B.XOR")[:6], set(), 0)),
               patch.object(trainer, "_predictions", side_effect=wrong_predictions),
               patch.object(trainer, "fork_student", return_value=({}, optimizer)),
+              patch.object(trainer, "inspect_lesson_step",
+                           side_effect=ValueError("fixture methodology unavailable")),
               patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
                     return_value=({"id": "fixed"},)),
               patch.object(trainer, "_fresh_fragile_preservation_rows",

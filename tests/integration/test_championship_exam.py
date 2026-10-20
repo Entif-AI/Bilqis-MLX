@@ -177,6 +177,7 @@ class ChampionshipExamTests(TestCase):
             start_new(course, student), grade_index=1, stage="ASSESS_MAIN", queue=(),
             champions={"A": student})
         rubric, release, generator, _ = trainer._cohort_contract(course)
+        cohort_rubric = course.grades[-1].assessment_sha256
         caps = tuple(cap.id for grade in course.grades for cap in grade.capabilities)
         blocked = "B.AND"
         identity_cap = "A.IDENTITY"
@@ -186,17 +187,16 @@ class ChampionshipExamTests(TestCase):
                 {"id": f"{seed}:{cap}:{i}", "capability": cap,
                  "gold": "TRUE" if i % 2 else "FALSE", "tokens": [1, 2]}
                 for cap in caps for i in range(12)],
-                generator_version=generator, seed=seed, rubric_version=release)
+                generator_version=generator, seed=seed,
+                rubric_version=cohort_rubric)
 
         candidate, routine = cohort(11), cohort(12)
-
-        def filtered(*args):
-            source = args[-2]
-            selected = make_cohort(
-                [row for row in source.rows if row["capability"] != blocked],
-                generator_version=source.generator_version, seed=source.seed,
-                rubric_version=source.rubric_version)
-            return selected, "unused"
+        program = schedule_program_from_legacy_course(course)
+        executable_release = _fake_executable_release(course)
+        routine_active = make_cohort(
+            [row for row in routine.rows if row["capability"] != blocked],
+            generator_version=routine.generator_version, seed=routine.seed,
+            rubric_version=routine.rubric_version)
 
         def predict(_mx, _parameters, rows, *_):
             return {row["id"]: row["gold"] for row in rows}
@@ -218,13 +218,17 @@ class ChampionshipExamTests(TestCase):
                    "last_retained_update_grade": "A",
         }
         with TemporaryDirectory() as temp, ExitStack() as stack:
-            for source_cohort in (candidate, routine):
-                trainer._persist_live_cohort(Path(temp), manifest, course, source_cohort)
             patches = {
-                "_grade_test_cohort": lambda *_: (routine, {}),
-                "_candidate_cohort": lambda *_: candidate,
-                "_introduced_cohort": lambda *a: (a[-1], "unused"),
-                "_without_stagnant_capabilities": filtered,
+                "_read_executable_factory_release_artifact":
+                    lambda *_: executable_release,
+                "schedule_program_from_executable_release":
+                    lambda *_: program,
+                "_routine_executable_cohort":
+                    lambda *_a, **_k: (
+                        routine_active, _cohort_pointer(routine_active, program)),
+                "_candidate_executable_cohort":
+                    lambda *_a, **_k: (
+                        candidate, _cohort_pointer(candidate, program)),
                 "quarantined_capabilities": lambda *_: (blocked,),
                 "_predictions": predict,
                 "_commit_scored_student": lambda *_a, **_k: (school, {}, (), []),
@@ -242,6 +246,9 @@ class ChampionshipExamTests(TestCase):
             }
             for name, function in patches.items():
                 stack.enter_context(patch.object(trainer, name, side_effect=function))
+            stack.enter_context(patch(
+                "bilqis_mlx.factory.assessment.assessment_scope_contract",
+                return_value=SimpleNamespace(rubric_sha256=cohort_rubric)))
             completed = trainer._take_exam(
                 None, Path(temp), receipt, manifest, course, root, root,
                 {"embedding.weight": SimpleNamespace(shape=(1, 1))},
@@ -262,6 +269,7 @@ class ChampionshipExamTests(TestCase):
             start_new(course, student), grade_index=1, stage="ASSESS_MAIN", queue=(),
             champions={"A": student})
         rubric, release, generator, _ = trainer._cohort_contract(course)
+        cohort_rubric = course.grades[-1].assessment_sha256
         caps = tuple(cap.id for grade in course.grades for cap in grade.capabilities)
         blocked_after = "A.LINK"
 
@@ -270,9 +278,12 @@ class ChampionshipExamTests(TestCase):
                 {"id": f"{seed}:{cap}:{i}", "capability": cap,
                  "gold": "TRUE" if i % 2 else "FALSE", "tokens": [1, 2]}
                 for cap in caps for i in range(12)],
-                generator_version=generator, seed=seed, rubric_version=release)
+                generator_version=generator, seed=seed,
+                rubric_version=cohort_rubric)
 
         candidate, routine = cohort(21), cohort(22)
+        program = schedule_program_from_legacy_course(course)
+        executable_release = _fake_executable_release(course)
 
         def predict(_mx, _parameters, rows, *_):
             return {row["id"]: row["gold"] for row in rows}
@@ -298,13 +309,17 @@ class ChampionshipExamTests(TestCase):
             "last_retained_update_grade": "A",
         }
         with TemporaryDirectory() as temp, ExitStack() as stack:
-            for source_cohort in (candidate, routine):
-                trainer._persist_live_cohort(Path(temp), manifest, course, source_cohort)
             patches = {
-                "_grade_test_cohort": lambda *_: (routine, {}),
-                "_candidate_cohort": lambda *_: candidate,
-                "_introduced_cohort": lambda *a: (a[-1], "unused"),
-                "_without_stagnant_capabilities": lambda *_a: (_a[-2], "unused"),
+                "_read_executable_factory_release_artifact":
+                    lambda *_: executable_release,
+                "schedule_program_from_executable_release":
+                    lambda *_: program,
+                "_routine_executable_cohort":
+                    lambda *_a, **_k: (
+                        routine, _cohort_pointer(routine, program)),
+                "_candidate_executable_cohort":
+                    lambda *_a, **_k: (
+                        candidate, _cohort_pointer(candidate, program)),
                 "quarantined_capabilities": lambda *_: (),
                 "_advance_stagnation_after_routine": advance_after,
                 "_promotion_due_after_routine": lambda *_: False,
@@ -324,6 +339,9 @@ class ChampionshipExamTests(TestCase):
             }
             for name, function in patches.items():
                 stack.enter_context(patch.object(trainer, name, side_effect=function))
+            stack.enter_context(patch(
+                "bilqis_mlx.factory.assessment.assessment_scope_contract",
+                return_value=SimpleNamespace(rubric_sha256=cohort_rubric)))
             completed = trainer._take_exam(
                 None, Path(temp), receipt, manifest, course, root, root,
                 {"embedding.weight": SimpleNamespace(shape=(1, 1))},
@@ -355,10 +373,20 @@ class ChampionshipExamTests(TestCase):
                                                                "origin_grade": "A",
                                                                "checkpoint": pointer}}}}
         scores = {cap: {"correct": 2, "total": 2} for cap in ("A.X", "C.NEW")}
+        program = _synthetic_program(
+            (("A", ("A.X",)), ("C", ("C.NEW",))))
         with (
             TemporaryDirectory() as temp,
             patch.object(trainer, "assessment_capabilities", return_value=tuple(scores)),
-            patch.object(trainer, "_cohort_contract", return_value=("d" * 64, "fixture", "fixture", "e" * 64)),
+            patch.object(
+                trainer, "_read_executable_factory_release_artifact",
+                return_value=SimpleNamespace()),
+            patch.object(
+                trainer, "schedule_program_from_executable_release",
+                return_value=program),
+            patch(
+                "bilqis_mlx.factory.assessment.assessment_scope_contract",
+                return_value=SimpleNamespace(rubric_sha256="d" * 64)),
             patch.object(trainer, "load_semantically_bound_bundle", return_value=(
                 {}, None, {"safetensors_sha256": "a" * 64, "optimizer_step": 10}, old)),
             patch.object(trainer, "_predictions", side_effect=lambda _m, _w, rows, *_: {
@@ -400,11 +428,20 @@ class ChampionshipExamTests(TestCase):
             },
         }
         scores = {cap: {"correct": 2, "total": 2} for cap in ("A.X", "B.X")}
+        program = _synthetic_program(
+            (("A", ("A.X",)), ("B", ("B.X",))))
         with (
             TemporaryDirectory() as temp,
             patch.object(trainer, "assessment_capabilities", return_value=tuple(scores)),
-            patch.object(trainer, "_cohort_contract",
-                         return_value=("d" * 64, "fixture", "fixture", "e" * 64)),
+            patch.object(
+                trainer, "_read_executable_factory_release_artifact",
+                return_value=SimpleNamespace()),
+            patch.object(
+                trainer, "schedule_program_from_executable_release",
+                return_value=program),
+            patch(
+                "bilqis_mlx.factory.assessment.assessment_scope_contract",
+                return_value=SimpleNamespace(rubric_sha256="d" * 64)),
             patch.object(trainer, "load_semantically_bound_bundle", return_value=(
                 {}, None, {"safetensors_sha256": "a" * 64, "optimizer_step": 10}, old)),
             patch.object(trainer, "_predictions", side_effect=lambda _m, _w, rows, *_: {
@@ -468,13 +505,14 @@ class ChampionshipExamTests(TestCase):
         rows = [{"id": "x0", "capability": "A.X", "gold": "TRUE", "tokens": [1]},
                 {"id": "x1", "capability": "A.X", "gold": "FALSE", "tokens": [1]}]
         cohort = make_cohort(rows, generator_version="fixture", seed=1,
-                             rubric_version="fixture")
+                             rubric_version="d" * 64)
         incumbent = {"filename": "bundles/old", "sha256": "a" * 64,
                      "optimizer_step": 10, "model_and_native_adamw": True}
         challenger_pointer = {"filename": "bundles/new", "sha256": "b" * 64,
                               "optimizer_step": 11, "model_and_native_adamw": True}
         context = {
             "cohort_sha256": cohort.digest, "rubric_sha256": "d" * 64,
+            "cohort_rubric_sha256": "d" * 64,
             "assessment_scope_sha256": "e" * 64,
             "source_graph_sha256": trainer._fingerprint(graph),
             "source_oracle_sha256": "c" * 64,
@@ -504,7 +542,7 @@ class ChampionshipExamTests(TestCase):
             (root / "cohorts").mkdir()
             (root / "cohorts" / (cohort.digest + ".json")).write_text(json.dumps({
                 "cohort_sha256": cohort.digest, "rubric_sha256": "d" * 64,
-                "source_manifest_sha256": "c" * 64, "schema": "fixture",
+                "source_manifest_sha256": "c" * 64, "schema": "d" * 64,
                 "generator_version": "fixture", "seed": 1, "rows": rows}))
             predictions = [
                 {"x0": "TRUE", "x1": "FALSE"},   # incumbent fresh current
@@ -532,6 +570,7 @@ class ChampionshipExamTests(TestCase):
         student = Checkpoint("a" * 64, "bundles/disposable", 10, True)
         school = replace(start_new(course, student), stage="ASSESS_MAIN", queue=())
         rubric, release, generator, _ = trainer._cohort_contract(course)
+        cohort_rubric = course.grades[-1].assessment_sha256
         caps = tuple(cap.id for cap in course.grades[0].capabilities)
 
         def cohort(seed):
@@ -539,9 +578,12 @@ class ChampionshipExamTests(TestCase):
                 {"id": f"{seed}:{cap}:{i}", "capability": cap,
                  "gold": "TRUE" if i % 2 else "FALSE", "tokens": [1, 2]}
                 for cap in caps for i in range(12)],
-                generator_version=generator, seed=seed, rubric_version=release)
+                generator_version=generator, seed=seed,
+                rubric_version=cohort_rubric)
 
         candidate, routine = cohort(1), cohort(2)
+        program = schedule_program_from_legacy_course(course)
+        executable_release = _fake_executable_release(course)
 
         def predict(_mx, _parameters, rows, *_):
             return {r["id"]: r["gold"] if (
@@ -571,13 +613,17 @@ class ChampionshipExamTests(TestCase):
                    "championship_checkpoint_origins": {},
                    "last_retained_update_grade": "A"}
         with TemporaryDirectory() as temp, ExitStack() as stack:
-            for source_cohort in (candidate, routine):
-                trainer._persist_live_cohort(Path(temp), manifest, course, source_cohort)
             patches = {
-                "_grade_test_cohort": lambda *_: (routine, {}),
-                "_candidate_cohort": lambda *_: candidate,
-                "_introduced_cohort": lambda *a: (a[-1], "unused"),
-                "_without_stagnant_capabilities": lambda *a: (a[-2], "unused"),
+                "_read_executable_factory_release_artifact":
+                    lambda *_: executable_release,
+                "schedule_program_from_executable_release":
+                    lambda *_: program,
+                "_routine_executable_cohort":
+                    lambda *_a, **_k: (
+                        routine, _cohort_pointer(routine, program)),
+                "_candidate_executable_cohort":
+                    lambda *_a, **_k: (
+                        candidate, _cohort_pointer(candidate, program)),
                 "_predictions": predict,
                 "_commit_scored_student": lambda *_a, **_k: (school, {}, (), []),
                 "_score_parent_for_paired_s3": lambda *_: (None, "INERT_FIXTURE"),
@@ -594,6 +640,10 @@ class ChampionshipExamTests(TestCase):
             }
             for name, function in patches.items():
                 stack.enter_context(patch.object(trainer, name, side_effect=function))
+            stack.enter_context(patch(
+                "bilqis_mlx.factory.assessment.assessment_scope_contract",
+                return_value=SimpleNamespace(
+                    rubric_sha256=cohort_rubric)))
             completed = trainer._take_exam(
                 None, Path(temp), receipt, manifest, course, root, root,
                 {"embedding.weight": SimpleNamespace(shape=(1, 1))},
