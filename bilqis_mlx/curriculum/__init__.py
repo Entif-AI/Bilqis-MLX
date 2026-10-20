@@ -126,12 +126,11 @@ def validate(course: Course, *, answer_kinds: tuple[str, ...] | None = None) -> 
         if grade.id not in GRADE_IDS or grade.id in grade_ids_seen:
             raise ValueError("INVALID_OR_DUPLICATE_LETTER_GRADE")
         grade_ids_seen.add(grade.id)
-        compact_boolean = (
-            grade.id == "B" and
-            tuple(cap.id for cap in grade.capabilities) ==
-            ("B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS")
-        )
-        if not compact_boolean and not 6 <= len(grade.capabilities) <= 9:
+        # Course is the legacy authoring/compatibility shape. Canonical factory
+        # admission enforces the 6-9 capability grade invariant in
+        # CurriculumDefinition; historical releases may contain narrower
+        # executable projections and are normalized before v2 compilation.
+        if not 1 <= len(grade.capabilities) <= 9:
             raise ValueError("GRADE_CAPABILITY_COUNT_OUTSIDE_SIX_TO_NINE")
         difficulties = {cap.difficulty for cap in grade.capabilities}
         if len(difficulties) != 1:

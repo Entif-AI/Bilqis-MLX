@@ -10,6 +10,9 @@ from ..factory.execution import (
     GradeProfile,
 )
 from ..live_grade_c import expanded_graph
+from ..semantics.core import Literal
+from ..semantics.numeric import evaluate
+from ..source_adapters.numeric import decode
 from .school import (
     boolean_entry_profile,
     numeric_foundation_profile,
@@ -113,3 +116,28 @@ def next_numeric_scope_profile(
         f"/numeric-0-{target}",
         grades=(*prior, numeric_grade, *future),
     )
+
+
+def numeric_row_in_scope(row: dict, maximum: int) -> bool:
+    """Keep wider numeric mistakes deferred without grade-ID dispatch."""
+    if type(maximum) is not int or maximum < 0:
+        raise ValueError("FACTORY_NUMERIC_SCOPE_MAXIMUM_INVALID")
+    symbols = tuple((row.get("record") or {}).get("symbols", ()))
+    numeric_symbols = tuple(
+        symbol for symbol in symbols
+        if isinstance(symbol, str) and symbol.startswith("school.number."))
+    if not numeric_symbols:
+        return True
+    if any(
+            int(symbol.removeprefix("school.number.")) > maximum
+            for symbol in numeric_symbols):
+        return False
+
+    def bounded(node):
+        if node.type_name == "Number" and evaluate(node) > maximum:
+            return False
+        if isinstance(node, Literal):
+            return True
+        return all(bounded(child) for child in node.arguments)
+
+    return bounded(decode(symbols))

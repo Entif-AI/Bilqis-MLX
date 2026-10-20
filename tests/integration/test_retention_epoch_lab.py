@@ -8,6 +8,9 @@ from unittest.mock import patch
 
 from bilqis_mlx import trainer as trainer
 from bilqis_mlx.learning.learning_experiment import Settings, earlier_grade_capabilities
+from bilqis_mlx.factory.schedule import (
+    ScheduleCapability, ScheduleGrade, ScheduleProgram,
+)
 from bilqis_mlx.learning.mentor_epoch import (
     begin_epoch, qualify_candidate, active_adviser_checkpoints,
 )
@@ -182,20 +185,28 @@ class RetentionTeachingPathTests(unittest.TestCase):
         self.assertIn("STEP_TRAIN", names)
 
     def test_older_grade_pool_excludes_target_grade_and_future_grades(self):
-        grades = [SimpleNamespace(id=grade, capabilities=[SimpleNamespace(id=cap)])
-                  for grade, cap in (("A", "A.IDENTITY"), ("B", "B.XOR"),
-                                     ("C", "C.COUNT"), ("D", "D.NEW"))]
-        course = SimpleNamespace(grades=grades)
+        program = ScheduleProgram(
+            program_digest="a" * 64,
+            grades=tuple(ScheduleGrade(
+                grade,
+                (ScheduleCapability(cap, 12),),
+                ((cap,),),
+                "b" * 64,
+            ) for grade, cap in (
+                ("A", "A.IDENTITY"), ("B", "B.XOR"),
+                ("C", "C.COUNT"), ("D", "D.NEW"))),
+            program_complete=False,
+        )
         completed = {"A": object(), "B": object(), "C": object(),
                      "D": object()}
-        self.assertEqual(earlier_grade_capabilities(course, completed, "B.XOR"),
+        self.assertEqual(earlier_grade_capabilities(program, completed, "B.XOR"),
                          ("A.IDENTITY",))
-        self.assertEqual(earlier_grade_capabilities(course, completed, "C.COUNT"),
+        self.assertEqual(earlier_grade_capabilities(program, completed, "C.COUNT"),
                          ("A.IDENTITY", "B.XOR"))
-        self.assertEqual(earlier_grade_capabilities(course, completed, "A.IDENTITY"),
+        self.assertEqual(earlier_grade_capabilities(program, completed, "A.IDENTITY"),
                          ())
         with self.assertRaisesRegex(ValueError, "UNKNOWN_TARGET_GRADE"):
-            earlier_grade_capabilities(course, completed, "E.UNKNOWN")
+            earlier_grade_capabilities(program, completed, "E.UNKNOWN")
 
     def test_fresh_fragile_preservation_covers_truth_tables_without_exam_ids(self):
         fixed = []

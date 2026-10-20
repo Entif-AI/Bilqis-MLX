@@ -168,16 +168,16 @@ class SchoolTelemetryTests(unittest.TestCase):
                     ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
                     ("LR", 2), ("WAS/TOP/NOW/ALL", 15), ("REWARD", 6),
                     ("LOSS", 5), ("GRAD", 5), ("METHOD", 6),
-                    ("OLDpp", 8), ("RESULT", 6), ("REASON", 24),
-                    ("WARNINGS", 10),
+                    ("OLD pp", 6), ("RESULT", 6), ("REASON", 27),
+                    ("WARNINGS", 12),
                 ],
             )
             self.assertEqual(
                 [(c.name, c.width) for c in tables["SENTINEL & RETENTION"]],
                 [
                     ("CAPABILITY", 10), ("VISIT", 5), ("TARGET", 8),
-                    ("DTGT", 4), ("PROT", 4), ("WRST", 4),
-                    ("RESULT", 6), ("EVIDENCE", 20),
+                    ("DTG", 3), ("PRT", 3), ("WRS", 3),
+                    ("RSULT", 5), ("EVIDENCE", 20),
                 ],
             )
             self.assertEqual(
@@ -233,7 +233,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(
                 [(column.name, column.width)
                  for column in tables["SYSTEM & QUALIFICATION"]],
-                [("TYPE", 7), ("DETAILS", 38)],
+                [("TYPE", 7), ("DETAILS", 32)],
             )
 
             board.rows["SYSTEM & QUALIFICATION"].append({
@@ -1274,7 +1274,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertIn("LOSS", display)
             self.assertIn("GRAD", display)
             self.assertIn("WAS/TOP/NOW/ALL", display)
-            self.assertIn("RIGHT[GREW]%", display)
+            self.assertIn("GOOD [GREW]", display)
             self.assertIn("67% [+17%]", display)
             self.assertNotIn("BRIDGE FAMILIES", display)
             self.assertIn("0.00", display)

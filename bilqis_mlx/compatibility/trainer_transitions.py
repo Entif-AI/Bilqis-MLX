@@ -28,6 +28,7 @@ from ..learning.championship_identity import (
 )
 from ..live_curriculum import assessment_rubric_for_scope
 from ..runtime.admission import _factory_admission
+from .source_adapters import historical_source_registry
 
 
 def _owners():
@@ -73,7 +74,8 @@ def activate_next_admitted_grade(
         history.append(receipt["mentor_epoch"])
     release, release_file, admission = _factory_admission(
         run_dir, successor, next_state.current_student,
-        receipt["semantic_graph_sha256"])
+        receipt["semantic_graph_sha256"],
+        registry=historical_source_registry())
     settled = deepcopy(
         (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
     identity = build_school_identity(
@@ -145,7 +147,8 @@ def activate_revised_admitted_grade(
         previous_course, successor, legacy_school)
     release, release_file, admission = _factory_admission(
         run_dir, successor, next_state.current_student,
-        receipt["semantic_graph_sha256"])
+        receipt["semantic_graph_sha256"],
+        registry=historical_source_registry())
     identity = build_school_identity(
         course_sha256=successor.digest(),
         semantic_graph_sha256=receipt["semantic_graph_sha256"],
@@ -221,7 +224,8 @@ def activate_replaced_admitted_grade(
         previous_course, successor, legacy_school)
     release, release_file, admission = _factory_admission(
         run_dir, successor, next_state.current_student,
-        receipt["semantic_graph_sha256"])
+        receipt["semantic_graph_sha256"],
+        registry=historical_source_registry())
     identity = build_school_identity(
         course_sha256=successor.digest(),
         semantic_graph_sha256=receipt["semantic_graph_sha256"],

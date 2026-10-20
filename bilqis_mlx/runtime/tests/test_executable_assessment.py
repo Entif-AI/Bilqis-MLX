@@ -18,6 +18,7 @@ from bilqis_mlx.runtime.assessment import (
     _persist_executable_cohort,
     _promotion_executable_cohort,
     _routine_executable_cohort,
+    load_championship_cohort,
 )
 
 
@@ -96,6 +97,20 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             self.assertNotEqual(
                 payload["rubric_sha256"],
                 payload["factory_release_sha256"])
+
+    def test_v2_cohort_replays_as_championship_evidence_with_exact_rubric(self):
+        cohort, contract = self.draw(self.reduced, self.a_scope)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            pointer = _persist_executable_cohort(
+                root, self.manifest, contract, cohort)
+            restored = load_championship_cohort(root, {
+                "cohort_sha256": cohort.digest,
+                "rubric_sha256": contract.rubric_sha256,
+                "cohort_rubric_sha256": contract.rubric_sha256,
+                "source_oracle_sha256": self.manifest["manifest_sha256"],
+            })
+        self.assertEqual(restored, cohort)
 
     def test_current_pointer_rejects_holistic_release_change_even_when_scope_matches(self):
         cohort, contract = self.draw(self.full, self.a_scope)

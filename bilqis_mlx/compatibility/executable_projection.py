@@ -39,6 +39,29 @@ def legacy_execution_metadata(course: Course) -> dict:
     return {}
 
 
+def resolve_legacy_resume_course(
+        accepted, source_root, saved, initial, *, pending=None):
+    """Resolve a pre-v2 saved receipt through the historical release decoder."""
+    from .live_releases import course_for_mode, resolve_admitted_courses
+    admitted = resolve_admitted_courses(
+        accepted, source_root, saved, pending=pending)
+    return (
+        course_for_mode(admitted, saved.get("curriculum_mode"), initial),
+        admitted,
+    )
+
+
+def verify_legacy_resume_binding(
+        receipt, course, graph, manifest, fingerprint) -> None:
+    """Verify pre-v2 release/graph binding behind the compatibility boundary."""
+    from .live_releases import graph_matches_release, verify_release_receipt
+    if receipt.get("curriculum_mode") is not None:
+        verify_release_receipt(receipt, course)
+    if not graph_matches_release(
+            receipt.get("curriculum_mode"), graph, manifest, fingerprint):
+        raise ValueError("HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT")
+
+
 LIVE_V2_VERIFICATION_SEED = 2026101905
 
 

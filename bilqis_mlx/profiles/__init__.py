@@ -10,8 +10,10 @@ from .school import (
 from .catalog import (
     CatalogProfileTransition,
     next_numeric_scope_profile,
+    numeric_row_in_scope,
     numeric_entry_transition,
 )
+from .retention import fragile_preservation_capabilities
 
 __all__ = (
     "boolean_entry_profile",
@@ -21,5 +23,7 @@ __all__ = (
     "with_disabled_future_grades",
     "CatalogProfileTransition",
     "next_numeric_scope_profile",
+    "numeric_row_in_scope",
     "numeric_entry_transition",
+    "fragile_preservation_capabilities",
 )

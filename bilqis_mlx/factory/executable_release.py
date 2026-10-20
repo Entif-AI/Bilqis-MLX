@@ -789,9 +789,15 @@ def answer_heads_from_executable_release(
             "token_ids": list(range(len(names))),
         },
     }
+    modalities = {
+        modality.kind: modality for modality in release.answer_modalities
+    }
     for head in release.answer_heads:
+        modality = modalities[head.kind]
         result[head.kind] = {
             "values": list(head.values),
             "token_ids": list(head.token_ids),
+            "modality_id": modality.adapter_id,
+            "implementation_sha256": modality.implementation_sha256,
         }
     return result

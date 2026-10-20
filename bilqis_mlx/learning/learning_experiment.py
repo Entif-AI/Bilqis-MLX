@@ -553,19 +553,29 @@ def commit_trial(parameters: dict, optimizer, trial_parameters: dict, trial_opti
     optimizer.learning_rate = trial_optimizer.learning_rate
 
 
-def earlier_grade_capabilities(course, graduated_grades, target: str) -> tuple[str, ...]:
+def earlier_grade_capabilities(program, graduated_grades, target: str) -> tuple[str, ...]:
     """Only already-graduated grades preceding the target supply old lessons.
 
     A champion for the active grade does not make its own rows earlier-grade
     rehearsal; future grades must not leak into the pool during recovery.
     """
-    grade_id = target.partition(".")[0]
-    ids = [grade.id for grade in course.grades]
-    if grade_id not in ids:
+    from bilqis_mlx.factory.schedule import ScheduleProgram
+    if not isinstance(program, ScheduleProgram):
+        raise TypeError("LEARNING_EXPERIMENT_SCHEDULE_PROGRAM_REQUIRED")
+    target_index = next((
+        index for index, grade in enumerate(program.grades)
+        if target in {capability.id for capability in grade.capabilities}
+    ), None)
+    if target_index is None:
         raise ValueError("LEARNING_EXPERIMENT_UNKNOWN_TARGET_GRADE")
-    earlier = set(ids[:ids.index(grade_id)]) & set(graduated_grades)
-    return tuple(sorted(cap.id for grade in course.grades if grade.id in earlier
-                        for cap in grade.capabilities))
+    earlier = {
+        grade.id for grade in program.grades[:target_index]
+        if grade.id in set(graduated_grades)
+    }
+    return tuple(sorted(
+        capability.id
+        for grade in program.grades if grade.id in earlier
+        for capability in grade.capabilities))
 
 
 def _choose_binary_rows(source, count, policy, rng):

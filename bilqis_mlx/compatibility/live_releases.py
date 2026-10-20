@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from ..factory.model import FactoryRelease
 from ..factory.release import compile_factory_release
-from ..source_adapters.school import live_source_registry
+from .source_adapters import historical_source_registry
 from ..live_grade_a import (
     GENERATOR as _INITIAL_GENERATOR,
     RELEASE as INITIAL_RELEASE,
@@ -486,4 +486,4 @@ def verify_release_receipt(receipt: dict, course) -> None:
 
 
 def compile_live_release(course) -> FactoryRelease:
-    return compile_factory_release(course, live_source_registry())
+    return compile_factory_release(course, historical_source_registry())

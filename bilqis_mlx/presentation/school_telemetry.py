@@ -12,6 +12,11 @@ from typing import Any
 import string
 
 from bilqis_mlx.presentation.spiral_dashboard import Column
+from ..compatibility.telemetry_events import (
+    HISTORICAL_EVENT_KINDS,
+    historical_event_grade,
+    historical_live_exam,
+)
 
 
 TELEMETRY_VERSION = "bilqis.school50.telemetry/v1"
@@ -293,19 +298,15 @@ LETTER_TABLES = (
 
 
 EVENT_KINDS = {
-    "GRADE_A_NEW_RUN_INITIALIZED": "init",
-    "GRADE_A_TEACHER_VISIT_COMMITTED": "visit",
-    "GRADE_A_EXAM_COMMITTED": "exam",
-    "GRADE_A_LIVE_EXAM_COMMITTED": "exam",
-    "SCHOOL_GRADE_B_TEACHER_VISIT_COMMITTED": "visit",
-    "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED": "exam",
-    "SCHOOL_GRADE_B_COURSE_ADMITTED": "init",
+    **HISTORICAL_EVENT_KINDS,
+    "SCHOOL_NEW_RUN_INITIALIZED": "init",
     "SCHOOL_NEXT_GRADE_COURSE_ADMITTED": "init",
+    "SCHOOL_EXECUTION_PROFILE_ADOPTED": "curriculum",
+    "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED": "curriculum",
     "SCHOOL_TEACHER_VISIT_COMMITTED": "visit",
     "SCHOOL_LIVE_EXAM_COMMITTED": "exam",
     "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED": "exam",
     "SCHOOL_COURSE_ADMITTED": "init",
-    "GRADE_A_SESSION_STOPPED": "stop",
     "SCHOOL_RUN_INITIALIZED": "init",
     "SCHOOL_VISIT_COMMITTED": "visit",
     "SCHOOL_EXAM_COMMITTED": "exam",
@@ -451,7 +452,7 @@ class SchoolTelemetry:
         kind = EVENT_KINDS.get(event.get("event"))
         if kind is None:
             return
-        grade = event.get("grade") or ("A" if event["event"].startswith("GRADE_A_") else None)
+        grade = event.get("grade") or historical_event_grade(event["event"])
         if kind not in {"init", "resource"} and not grade:
             raise ValueError("SCHOOL_TELEMETRY_GRADE_REQUIRED")
         if grade:
@@ -741,10 +742,11 @@ class SchoolTelemetry:
         checkpoint = event.get("student_sha256")
         if not checkpoint:
             raise ValueError("SCHOOL_TELEMETRY_EXAM_CHECKPOINT_REQUIRED")
-        live = event.get("event") in ("GRADE_A_LIVE_EXAM_COMMITTED",
-                                       "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
-                                       "SCHOOL_LIVE_EXAM_COMMITTED",
-                                       "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED")
+        live = (
+            event.get("event") in (
+                "SCHOOL_LIVE_EXAM_COMMITTED",
+                "SCHOOL_FLASH_ROUTINE_EXAM_COMMITTED")
+            or historical_live_exam(event.get("event")))
         scope = event.get("assessment_scope_sha256", "")
         cohort_sha = event.get("cohort_sha256") if live else None
         if live and (not isinstance(cohort_sha, str) or len(cohort_sha) != 64 or

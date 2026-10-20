@@ -417,7 +417,7 @@ class OperatorTests(unittest.TestCase):
             self.assertEqual((cli.LEGACY_ROOT, cli.ORIGINAL_CHECKPOINT), original)
             self.assertFalse(json.loads(out.getvalue())["neural_training_started_by_this_command"])
 
-    def test_grade_c_preflight_reports_missing_approved_registry_as_blocker(self):
+    def test_legacy_grade_b_preflight_defers_next_grade_until_v2_migration(self):
         from bilqis_mlx import cli
         from bilqis_mlx.boolean_composite import build_course as admitted_composite
         from bilqis_mlx.boolean_identification import build_course as admitted_idboolops
@@ -452,14 +452,15 @@ class OperatorTests(unittest.TestCase):
                 self.assertEqual(main(["train", "--dry-run", "--resume",
                                        "--run-dir", tmp]), 0)
             report = json.loads(out.getvalue())
-            self.assertEqual(report["next_grade"], "C")
-            self.assertEqual(report["blockers"], [
-                "NEXT_GRADE_NATIVE_REGISTRY_ARTIFACT_MISSING"])
-            self.assertNotIn("next_grade_selection_review", report)
-            self.assertNotIn("next_grade_source", report)
+            self.assertNotIn("next_profile_transition", report)
+            self.assertNotIn("next_grade", report)
+            self.assertEqual(report["blockers"], [])
+            self.assertEqual(
+                report["legacy_profile"]["profile"], "MINIMAL_DEFAULT")
+            self.assertTrue(report["legacy_profile"]["migration_required"])
             self.assertTrue((run / "state.json").is_file())
 
-    def test_old_grade_b_preflight_routes_through_composite_before_c(self):
+    def test_old_grade_b_preflight_requires_profile_migration_not_release_ladder(self):
         from bilqis_mlx import cli
         from bilqis_mlx.grade_a_release import accepted_grade_a
         from bilqis_mlx.live_grade_a import live_course as admitted_a
@@ -486,12 +487,14 @@ class OperatorTests(unittest.TestCase):
                 self.assertEqual(main(["train", "--dry-run", "--resume",
                                        "--run-dir", tmp]), 0)
             report = json.loads(out.getvalue())
-        self.assertEqual(report["next_grade"], "B")
-        self.assertEqual(report["next_capability"], "B.COMPOSITE")
-        self.assertEqual(report["next_grade_complete_assessment_items"], 156)
+        self.assertNotIn("next_profile_transition", report)
+        self.assertNotIn("next_grade", report)
+        self.assertEqual(
+            report["legacy_profile"]["profile"], "MINIMAL_DEFAULT")
+        self.assertTrue(report["legacy_profile"]["migration_required"])
         self.assertEqual(report["blockers"], [])
 
-    def test_composite_grade_b_preflight_routes_through_idboolops_before_c(self):
+    def test_composite_grade_b_preflight_requires_profile_migration_not_release_ladder(self):
         from bilqis_mlx import cli
         from bilqis_mlx.boolean_composite import build_course as admitted_composite
         from bilqis_mlx.grade_a_release import accepted_grade_a
@@ -520,9 +523,11 @@ class OperatorTests(unittest.TestCase):
                 self.assertEqual(main(["train", "--dry-run", "--resume",
                                        "--run-dir", tmp]), 0)
             report = json.loads(out.getvalue())
-        self.assertEqual(report["next_grade"], "B")
-        self.assertEqual(report["next_capability"], "B.IDBOOLOPS")
-        self.assertEqual(report["next_grade_complete_assessment_items"], 168)
+        self.assertNotIn("next_profile_transition", report)
+        self.assertNotIn("next_grade", report)
+        self.assertEqual(
+            report["legacy_profile"]["profile"], "MINIMAL_DEFAULT")
+        self.assertTrue(report["legacy_profile"]["migration_required"])
         self.assertEqual(report["blockers"], [])
 
     def test_resume_terminal_clears_previous_session_stop_before_training(self):

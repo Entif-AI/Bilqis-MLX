@@ -405,16 +405,21 @@ def human_stop_summary(result: dict) -> str:
     explanations = {
         "TIME_LIMIT_REACHED": "The requested time budget was reached.",
         "VISIT_LIMIT_REACHED": "The explicitly configured --max-visits cap was reached.",
-        "GRADE_A_AWAITING_NEXT_GRADE": "Grade A is mastered; the admitted Grade B starts when the human operator resumes.",
-        "GRADE_B_AWAITING_NEXT_GRADE": "Grades A and B passed cumulative revalidation; awaiting Grade C admission.",
         "WHOLE_SCHOOL_MASTERED": "Every grade in the explicitly complete school program passed at one whole student.",
         "AWAITING_TEACHER_SOUP": "Whole-school consolidation requires a separately verified frozen teacher-soup continuation.",
         "STAGNATION_REVIEW_REQUIRED": "The remaining required capabilities were withheld after repeated failed recovery rounds; they remain unqualified mastery debt for the next measured recovery run.",
         "DISK_RESERVE_REACHED": "Free space cannot cover the protected disk reserve plus another checkpoint.",
     }
     reason = result["stop_reason"]
+    grade_wait = (
+        reason.startswith("GRADE_") and
+        reason.endswith("_AWAITING_NEXT_GRADE"))
+    explanation = (
+        "The current admitted grade is mastered; awaiting the next "
+        "factory-admitted curriculum grade."
+        if grade_wait else explanations[reason])
     message = ("TRAINING STOPPED NORMALLY: " + reason + "\n" +
-               explanations[reason] +
+               explanation +
                f" Completed {result['visits_this_command']} visits in "
                f"{result['elapsed_seconds']:.1f} seconds, "
                f"optimizer step {result['optimizer_step']}.")
@@ -441,8 +446,8 @@ def human_stop_summary(result: dict) -> str:
                     "A saved ASSESS_* boundary remains real debt and will be evaluated on resume. "
                     "If flash reaches an all-perfect curriculum, a non-flash authoritative exam "
                     "is still required before qualification can advance.")
-    if reason not in ("GRADE_A_AWAITING_NEXT_GRADE", "GRADE_B_AWAITING_NEXT_GRADE",
-                      "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
+    if not grade_wait and reason not in (
+            "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
         message += ("\nTo continue: " +
                     result.get("safe_resume_command",
                                "npm run train -- --human-run --resume") +

@@ -271,6 +271,24 @@ def _generalization_executable_cohort(
     raise ValueError("FACTORY_EXECUTABLE_FRESH_GENERALIZATION_COHORT_EXHAUSTED")
 
 
+def _candidate_executable_cohort(
+        run_dir, receipt, manifest, release, registry, source_root, graph, *,
+        capabilities, legacy_course=None):
+    """Fresh exact-scope checkpoint-candidate screen under the admitted v2 release."""
+    contract = assessment_scope_contract(release, capabilities)
+    seed = _seed(
+        receipt,
+        capability="CANDIDATE_SCOPE:" + contract.rubric_sha256,
+    )
+    cohort, actual = _draw_executable_scope_cohort(
+        source_root, graph, release, registry,
+        capabilities=contract.capabilities, seed=seed,
+        legacy_course=legacy_course)
+    pointer = _persist_executable_cohort(
+        run_dir, manifest, actual, cohort)
+    return cohort, pointer
+
+
 def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None, course=None):
     """Draw only through the verified course/factory source boundary."""
     if course is None:
@@ -347,8 +365,13 @@ def load_championship_cohort(run_dir, witness):
             stored.get("rubric_sha256") != source_rubric or
             stored.get("source_manifest_sha256") != witness["source_oracle_sha256"]):
         raise ValueError("CHAMPIONSHIP_EARNING_COHORT_SOURCE_DRIFT")
-    cohort = make_cohort(stored["rows"], generator_version=stored["generator_version"],
-                         seed=stored["seed"], rubric_version=stored["schema"])
+    rubric_version = (
+        stored["rubric_sha256"]
+        if stored.get("schema") == EXECUTABLE_COHORT_SCHEMA
+        else stored["schema"])
+    cohort = make_cohort(
+        stored["rows"], generator_version=stored["generator_version"],
+        seed=stored["seed"], rubric_version=rubric_version)
     if cohort.digest != sha:
         raise ValueError("CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT")
     return cohort
@@ -356,39 +379,28 @@ def load_championship_cohort(run_dir, witness):
 
 def _verify_saved_cohort(run_dir, receipt, course):
     exam = receipt.get("last_exam") or {}
-    sha = exam.get("cohort_sha256")
-    if sha is None:
-        return  # Migration may still point at an archived fixed-rubric exam.
-    if (not isinstance(sha, str) or len(sha) != 64 or
-            exam.get("cohort_file") != "cohorts/" + sha + ".json"):
-        raise ValueError("HUMAN_TRAINER_SAVED_COHORT_REFERENCE_DRIFT")
-    path = run_dir / exam["cohort_file"]
-    if path.is_symlink() or not path.is_file():
-        raise ValueError("HUMAN_TRAINER_SAVED_COHORT_MISSING")
-    stored = json.loads(path.read_text())
-    # Archived cohorts remain verifiable after later grade admissions; resolve
-    # their source contract by the release embedded in the cohort, not grade ID.
-    contracts = [lesson_contract(course, grade.id) for grade in course.grades]
-    matches = [contract for contract in contracts if contract[1] == stored.get("schema")]
-    if len(matches) == 1:
-        rubric, release, generator, code_sha = matches[0]
-    elif stored.get("schema") == course.version:
-        rubric, release, generator, code_sha = _cohort_contract(course)
-    else:
-        raise ValueError("HUMAN_TRAINER_SAVED_COHORT_RELEASE_NOT_ADMITTED")
-    if (stored.get("rubric_sha256") != rubric or
-            stored.get("source_manifest_sha256") != receipt["source_manifest_sha256"] or
-            stored.get("generator_version") != generator or
-            stored.get("generator_code_sha256") != code_sha or
-            stored.get("cohort_sha256") != sha or
-            stored.get("seed") != exam.get("cohort_seed") or
-            stored.get("schema") != release):
-        raise ValueError("HUMAN_TRAINER_SAVED_COHORT_METADATA_DRIFT")
-    cohort = make_cohort(stored["rows"], generator_version=generator,
-                         seed=stored["seed"], rubric_version=release)
-    if cohort.digest != sha:
-        raise ValueError("HUMAN_TRAINER_SAVED_COHORT_CONTENT_DRIFT")
-    return cohort
+    if exam.get("cohort_sha256") is None:
+        return None
+    if (receipt.get("factory_admission_v2") is not None and
+            exam.get("factory_release_sha256") is not None):
+        from .admission import _read_executable_factory_release_artifact
+        release = _read_executable_factory_release_artifact(run_dir, receipt)
+        capabilities = tuple(exam.get("capabilities", ()))
+        if not capabilities:
+            raise ValueError("FACTORY_EXECUTABLE_SAVED_COHORT_SCOPE_REQUIRED")
+        pointer = {
+            key: exam[key] for key in (
+                "factory_release_sha256", "capabilities", "rubric_sha256",
+                "source_sha256", "cohort_sha256", "cohort_file",
+                "cohort_seed")
+            if key in exam
+        }
+        return _load_executable_cohort(
+            run_dir,
+            {"manifest_sha256": receipt["source_manifest_sha256"]},
+            release, capabilities, pointer)
+    from ..compatibility.assessment import verify_legacy_saved_cohort
+    return verify_legacy_saved_cohort(run_dir, receipt, course)
 
 
 def _grade_test_cohort(run_dir, receipt, manifest, course, source_root, graph):

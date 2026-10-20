@@ -9,6 +9,7 @@ from bilqis_mlx.learning.fragile_replay import (
     select_structural_preservation_rows, structural_signature,
 )
 from bilqis_mlx.generated_assessment import make_cohort
+from bilqis_mlx.profiles.retention import fragile_preservation_capabilities
 
 
 class FragileReplayTests(unittest.TestCase):
@@ -51,7 +52,9 @@ class FragileReplayTests(unittest.TestCase):
                                      "cohort_file": f"cohorts/{digest}.json",
                                      "scores": {"B.OR": {"correct": 12, "total": 12},
                                                 "B.XOR": {"correct": 12, "total": 12}}}}
-            replay = load_replay_rows(Path(tmp), receipt)
+            replay = load_replay_rows(
+                Path(tmp), receipt,
+                capabilities=fragile_preservation_capabilities())
         self.assertEqual(len(replay), 24)
         self.assertEqual({r["capability"] for r in replay}, {"B.OR", "B.XOR"})
         before = {r["id"]: r["gold"] for r in replay}
@@ -112,7 +115,9 @@ class FragileReplayTests(unittest.TestCase):
                                      "cohort_file": f"cohorts/{digest}.json",
                                      "scores": {"B.OR": {"correct": 9, "total": 12},
                                                 "B.XOR": {"correct": 8, "total": 12}}}}
-            replay = load_replay_rows(Path(tmp), receipt)
+            replay = load_replay_rows(
+                Path(tmp), receipt,
+                capabilities=fragile_preservation_capabilities())
         self.assertEqual(len(replay), 24)
         self.assertEqual(sum(row["gold"] == "TRUE" for row in replay
                              if row["capability"] == "B.OR"), 8)
@@ -120,8 +125,10 @@ class FragileReplayTests(unittest.TestCase):
                              if row["capability"] == "B.XOR"), 4)
 
     def test_no_grade_b_exam_means_no_replay(self):
-        self.assertEqual(load_replay_rows(Path("unused"), {"last_exam": {
-            "scores": {"A.LINK": {"correct": 12, "total": 12}}}}), ())
+        self.assertEqual(load_replay_rows(
+            Path("unused"), {"last_exam": {
+                "scores": {"A.LINK": {"correct": 12, "total": 12}}}},
+            capabilities=fragile_preservation_capabilities()), ())
 
     def test_preservation_rows_cover_each_truth_pattern_without_exam_leakage(self):
         rows = []
