@@ -13,7 +13,7 @@ The user-required primary tables are:
 
 Supporting relational tables may preserve information that would be lossy in those two flat tables, including source hierarchy, grammatical categories, paradigms/examples, typed entity relationships, and Bilqis crosswalk/provenance.
 
-The current schema is documented in [`../SCHEMA.md`](../SCHEMA.md). The present snapshot contains 772 atomic surface records and 1,917 composition/template records, plus 3,855 component edges, 200 grammar-derived root-sense rows, 503 Chapter-1/2 lexicon roots, 1,530 Chapter-1/2 lexicon sense rows, 19 explicit C_A allomorph rules, normalized source/category/degree tables, and Bilqis enrichment.
+The current schema is documented in [`../SCHEMA.md`](../SCHEMA.md). The present snapshot contains 772 atomic surface records and 1,917 composition/template records, plus 3,855 component edges, 200 grammar-derived root-sense rows, 503 Chapter-1/2 lexicon roots, 1,615 Chapter-1/2 lexicon sense rows, 150 compact lexicon context-evidence rows, 19 explicit C_A allomorph rules, normalized source/category/degree tables, and Bilqis enrichment.
 
 ## Ordering boundary
 
@@ -45,6 +45,14 @@ python3 src/build_lexicon_chapters.py
 python3 src/validate_dataset.py
 ```
 
+To regenerate the **revisable curriculum-research projection** (not canonical source truth and not semantic admission), run:
+
+```bash
+python3 src/build_curriculum_frontier.py
+```
+
+That builder writes the D-O proposal, 96-root reserve, full 503-root source inventory and 1,615-sense candidate surface under ignored `_private/curriculum_frontier/` by default. Set `BILQIS_CURRICULUM_FRONTIER_OUT` to another directory for deterministic test or review builds. Every D-O target names an explicit source root + Stem + Specification and the build fails if that source-sense contract is incomplete.
+
 ## Data fidelity
 
 - Preserve exact grammatical forms, category/value abbreviations, source anchors, and identifiers where source fidelity requires them.
@@ -52,4 +60,5 @@ python3 src/validate_dataset.py
 - Separate observed source facts, normalized structure, and Bilqis enrichment.
 - Keep ambiguous or merely analogous Bilqis mappings explicitly qualified rather than silently equating them with New Ithkuil semantics.
 - Every generated record must be traceable to at least one source row, page, section, table, or spreadsheet locus.
+- Curriculum research projections must refer back to canonical `lexicon_sense_id` / `lexicon_evidence_id` values; they must not copy grade, rank or teaching-order fields back into canonical source CSVs.
 

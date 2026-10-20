@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Extract source-grounded root/sense records from the tracked split lexicon PDFs.
+"""Extract source-grounded root/sense records from tracked lexicon page projections.
 
 This is a source-corpus extractor only.  It deliberately does not assign Bilqis
-token IDs, capabilities, grades, prerequisites, or mastery state.  The split
-PDFs are tracked derivatives of the canonical New Ithkuil lexicon source;
-records retain the canonical source identity plus the exact tracked derivative
-hash and page locus used for extraction.
+token IDs, capabilities, grades, prerequisites, or mastery state.  The tracked
+split PDFs are page-projection artifacts bound to the canonical New Ithkuil
+lexicon source; they are not claimed to be byte-identical derivatives. Records
+retain the canonical source identity plus the exact tracked artifact digest and
+page locus used for extraction.
 """
 
 from __future__ import annotations
@@ -77,6 +78,19 @@ def short_meaning(value: str, limit: int = 180) -> str:
     return text
 
 
+def source_fingerprint(value: str) -> tuple[str, str]:
+    """Return full-source hash and character count without copying long prose."""
+    text = clean(value)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest(), str(len(text))
+
+
+def example_excerpt(value: str, limit: int = 180) -> str:
+    """Keep a short source example locator while the full wording stays in the PDF."""
+    text = clean(value)
+    match = re.search(r"(?:e\.g\.|for example)\s*[,;:]?\s*.*", text, re.IGNORECASE)
+    return short_meaning(match.group(0), limit) if match else ""
+
+
 def stable_id(prefix: str, *parts: object) -> str:
     raw = "\x1f".join(str(part) for part in parts)
     return f"{prefix}-{hashlib.sha1(raw.encode('utf-8')).hexdigest()[:14]}"
@@ -115,14 +129,14 @@ def split_stems(value: str) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(value)
-        summary = value[match.end():end].strip(" ;")
-        if summary:
-            out.append((f"STEM {match.group(1)}", short_meaning(summary)))
+        source_text = value[match.end():end].strip(" ;")
+        if source_text:
+            out.append((f"STEM {match.group(1)}", source_text))
     return out
 
 
-def extract_table_senses(data: list[list[str | None]]) -> list[tuple[str, str, str]]:
-    """Return (stem, specification, compact source sense) from a root table."""
+def extract_table_senses(data: list[list[str | None]]) -> list[tuple[str, str, str, str]]:
+    """Return (stem, specification, compact sense, full source text) from a root table."""
     if not data:
         return []
 
@@ -139,9 +153,10 @@ def extract_table_senses(data: list[list[str | None]]) -> list[tuple[str, str, s
             if spec not in SPECIFICATIONS:
                 continue
             for stem, cell in zip(stems, row[1:4]):
-                summary = short_meaning(clean(cell))
+                source_text = clean(cell)
+                summary = short_meaning(source_text)
                 if summary:
-                    senses.append((stem, spec, summary))
+                    senses.append((stem, spec, summary, source_text))
         return senses
 
     # Three-column tables normally put all three BSC stems into the last two
@@ -155,11 +170,14 @@ def extract_table_senses(data: list[list[str | None]]) -> list[tuple[str, str, s
             if label == "BSC":
                 stem_senses = split_stems(joined)
                 if stem_senses:
-                    senses.extend((stem, label, summary) for stem, summary in stem_senses)
+                    senses.extend(
+                        (stem, label, short_meaning(source_text), source_text)
+                        for stem, source_text in stem_senses
+                    )
                 elif joined:
-                    senses.append(("", label, short_meaning(joined)))
+                    senses.append(("", label, short_meaning(joined), joined))
             elif joined:
-                senses.append(("", label, short_meaning(joined)))
+                senses.append(("", label, short_meaning(joined), joined))
             continue
 
         # Some compact lexical tables use one row per stem and no explicit
@@ -168,7 +186,8 @@ def extract_table_senses(data: list[list[str | None]]) -> list[tuple[str, str, s
         if stem_match:
             summary = short_meaning(" ".join(clean(cell) for cell in row[1:] if clean(cell)))
             if summary:
-                senses.append((f"STEM {stem_match.group(1)}", "BSC", summary))
+                source_text = clean(" ".join(clean(cell) for cell in row[1:] if clean(cell)))
+                senses.append((f"STEM {stem_match.group(1)}", "BSC", summary, source_text))
 
     return senses
 
@@ -232,10 +251,343 @@ def page_line_records(document, chapter: ChapterSource) -> tuple[list[dict[str, 
     return roots, lookup
 
 
-def build() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+def extract_prose_senses(document, chapter: ChapterSource, root_loci: dict[tuple[int, str], dict[str, str]]):
+    """Extract explicit Stem/Specification prose outside detected PDF tables.
+
+    Several lexicon roots inherit the preceding root's Specification pattern and
+    therefore appear as prose rather than as their own table.  The source still
+    spells out their Stem 1/2/3 meanings.  Preserve those statements instead of
+    making the table detector the accidental ontology boundary.
+    """
+    records: list[dict[str, str]] = []
+    for local_page, page in enumerate(document, start=1):
+        lines = [clean(line) for line in page.get_text("text").splitlines()]
+        current_root: str | None = None
+        marker: tuple[str, str] | None = None
+        buffer: list[str] = []
+
+        def flush() -> None:
+            nonlocal marker, buffer
+            if current_root and marker and buffer:
+                locus = root_loci.get((local_page, current_root))
+                if locus:
+                    stem, specification = marker
+                    source_text = clean(" ".join(buffer))
+                    summary = short_meaning(source_text)
+                    if summary:
+                        source_text_sha256, source_text_char_count = source_fingerprint(
+                            source_text
+                        )
+                        records.append(
+                            {
+                                "root_form_raw": current_root,
+                                "stem": stem,
+                                "specification": specification,
+                                "sense_summary": summary,
+                                "source_text_sha256": source_text_sha256,
+                                "source_text_char_count": source_text_char_count,
+                                "source_example_excerpt": example_excerpt(source_text),
+                                "lexicon_chapter": chapter.chapter,
+                                "lexicon_section": locus["lexicon_section"],
+                                "source_pdf_page": str(local_page),
+                                "source_printed_page": printed_page(page),
+                                "source_table_index": "",
+                                "source_locus_kind": "prose",
+                            }
+                        )
+            marker = None
+            buffer = []
+
+        for line in lines:
+            section_match = SECTION_RE.match(line)
+            if section_match:
+                flush()
+                current_root = None
+                continue
+            root_match = ROOT_RE.match(line)
+            if root_match:
+                flush()
+                form = root_match.group(1)
+                current_root = form if (local_page, form) in root_loci else None
+                continue
+            if current_root is None:
+                continue
+
+            stem_match = re.match(r"^(?:BSC\s+)?Stem\s*([123])\s*:\s*(.*)$", line, re.IGNORECASE)
+            if stem_match:
+                flush()
+                marker = (f"STEM {stem_match.group(1)}", "BSC")
+                if stem_match.group(2):
+                    buffer = [stem_match.group(2)]
+                continue
+            spec_match = re.match(r"^(CTE|CSV|OBJ)\s+(.*)$", line, re.IGNORECASE)
+            if spec_match:
+                flush()
+                marker = ("", spec_match.group(1).upper())
+                buffer = [spec_match.group(2)]
+                continue
+            if marker is None and line.lower().startswith("the three stems of this root"):
+                marker = ("STEMS 1-3", "BSC")
+                buffer = [line]
+                continue
+            if line.startswith("NOTE:") or line.startswith("The Specification pattern"):
+                flush()
+                continue
+            if marker and line:
+                buffer.append(line)
+        flush()
+    return records
+
+
+def table_boundary_line(line: str) -> bool:
+    return bool(
+        re.match(r"^(?:STEM\s*[123]|BSC|CTE|CSV|OBJ)(?:\s|$)", line, re.IGNORECASE)
+    )
+
+
+def extract_numbered_stem_senses(
+    document,
+    chapter: ChapterSource,
+    root_loci: dict[tuple[int, str], dict[str, str]],
+) -> list[dict[str, str]]:
+    """Extract compact numbered root-stem inventories.
+
+    The lexicon uses a compact 1/2/3 presentation for families that explicitly
+    inherit a preceding root's Specification pattern, including Chapter-2
+    electronic-computer/program roots.  These numbered rows are source-stated
+    Stem meanings, not prose examples, so preserve them as BSC Stem 1/2/3
+    senses while retaining the inheritance statement separately as evidence.
+    """
+    records: list[dict[str, str]] = []
+    numbered_re = re.compile(r"^([123])\.\s+(.+)$")
+
+    for local_page, page in enumerate(document, start=1):
+        lines = [clean(line) for line in page.get_text("text").splitlines()]
+        current_root: str | None = None
+        current_values: dict[str, str] = {}
+
+        def flush() -> None:
+            nonlocal current_values
+            if current_root and set(current_values) == {"1", "2", "3"}:
+                locus = root_loci.get((local_page, current_root))
+                if locus:
+                    for number in ("1", "2", "3"):
+                        source_text = current_values[number]
+                        source_text_sha256, source_text_char_count = source_fingerprint(
+                            source_text
+                        )
+                        records.append(
+                            {
+                                "root_form_raw": current_root,
+                                "stem": f"STEM {number}",
+                                "specification": "BSC",
+                                "sense_summary": short_meaning(source_text),
+                                "source_text_sha256": source_text_sha256,
+                                "source_text_char_count": source_text_char_count,
+                                "source_example_excerpt": example_excerpt(source_text),
+                                "lexicon_chapter": chapter.chapter,
+                                "lexicon_section": locus["lexicon_section"],
+                                "source_pdf_page": str(local_page),
+                                "source_printed_page": printed_page(page),
+                                "source_table_index": "",
+                                "source_locus_kind": "compact_numbered_stem",
+                            }
+                        )
+            current_values = {}
+
+        for line in lines:
+            section_match = SECTION_RE.match(line)
+            if section_match:
+                flush()
+                current_root = None
+                continue
+            root_match = ROOT_RE.match(line)
+            if root_match:
+                flush()
+                form = root_match.group(1)
+                current_root = form if (local_page, form) in root_loci else None
+                continue
+            if current_root is None:
+                continue
+
+            match = numbered_re.match(line)
+            if match:
+                number, text = match.groups()
+                if number == "1" and current_values:
+                    flush()
+                if number not in current_values:
+                    current_values[number] = text
+                continue
+
+            # PyMuPDF may wrap one numbered meaning across physical lines.
+            if current_values:
+                if set(current_values) == {"1", "2", "3"}:
+                    # The compact inventories normally emit each numbered
+                    # meaning as one logical text line.  Once all three stems
+                    # are present, a following non-numbered line is a note or
+                    # derivational instruction, not part of Stem 3.
+                    flush()
+                    continue
+                last = str(max(int(n) for n in current_values))
+                if (
+                    line
+                    and not line.startswith(("NOTE:", "The stems of", "The Specifications"))
+                    and not table_boundary_line(line)
+                ):
+                    current_values[last] = clean(current_values[last] + " " + line)
+        flush()
+    return records
+
+
+def extract_root_evidence(
+    document,
+    chapter: ChapterSource,
+    roots_by_form: dict[str, dict[str, str]],
+) -> list[dict[str, str]]:
+    """Capture short contextual evidence while retaining hashes of the full source prose.
+
+    The tracked CSV deliberately does not reproduce long lexicon passages.  It
+    keeps short locators/excerpts plus a digest and character count so a later
+    researcher can re-open the exact tracked PDF page and verify the complete
+    wording.  This catches source-level examples, scope restrictions, notes and
+    inherited-Specification caveats that are semantically important but are not
+    themselves Stem/Specification senses.
+    """
+    records: list[dict[str, str]] = []
+    current_section: str | None = None
+    current_root: str | None = None
+    active_kind: str | None = None
+    active_lines: list[str] = []
+    active_page = ""
+    active_printed = ""
+
+    def flush() -> None:
+        nonlocal active_kind, active_lines, active_page, active_printed
+        if current_root and active_kind and active_lines:
+            source_text = clean(" ".join(active_lines))
+            if source_text:
+                source_text_sha256, source_text_char_count = source_fingerprint(
+                    source_text
+                )
+                locus = roots_by_form[current_root]
+                records.append(
+                    {
+                        "lexicon_evidence_id": stable_id(
+                            "LEXEVID",
+                            SOURCE_ID,
+                            current_root,
+                            active_kind,
+                            source_text_sha256,
+                        ),
+                        "lexicon_root_id": locus["lexicon_root_id"],
+                        "root_form_raw": current_root,
+                        "evidence_kind": active_kind,
+                        "evidence_excerpt": short_meaning(source_text),
+                        "source_text_sha256": source_text_sha256,
+                        "source_text_char_count": source_text_char_count,
+                        "lexicon_chapter": chapter.chapter,
+                        "lexicon_section": locus["lexicon_section"],
+                        "source_pdf_page": active_page,
+                        "source_printed_page": active_printed,
+                    }
+                )
+        active_kind = None
+        active_lines = []
+        active_page = ""
+        active_printed = ""
+
+    table_boundary = re.compile(
+        r"^(?:STEM\s*[123]|BSC|CTE|CSV|OBJ)(?:\s|$)", re.IGNORECASE
+    )
+
+    for local_page, page in enumerate(document, start=1):
+        pprinted = printed_page(page)
+        for raw_line in page.get_text("text").splitlines():
+            line = clean(raw_line)
+            if not line:
+                continue
+            section_match = SECTION_RE.match(line)
+            if section_match:
+                flush()
+                current_section = (
+                    section_match.group(1)
+                    if section_match.group(1).startswith(chapter.chapter + ".")
+                    else None
+                )
+                if current_section is None:
+                    current_root = None
+                else:
+                    # Chapter 1 introduces several special roots directly in
+                    # the section heading (e.g. "1.3 The Copular Root: -Č-")
+                    # and places scope prose before the repeated table heading.
+                    # Attribute that prose to the root named by the section,
+                    # rather than leaving the previous section's root active.
+                    section_root = re.search(r"(-[^s]{1,14}-)(?:s|$)", line)
+                    if section_root and section_root.group(1) in roots_by_form:
+                        current_root = section_root.group(1)
+                    elif current_root not in roots_by_form:
+                        current_root = None
+                continue
+            root_match = ROOT_RE.match(line)
+            if root_match:
+                form = root_match.group(1)
+                if form != current_root:
+                    flush()
+                current_root = form if (
+                    current_section
+                    and current_section.startswith(chapter.chapter + ".")
+                    and form in roots_by_form
+                ) else None
+                continue
+            if current_root is None:
+                continue
+            if table_boundary.match(line):
+                flush()
+                continue
+
+            # A PDF bullet is often emitted as its own text line. Once a
+            # scope restriction/note has started, keep its continuation
+            # together even when that continuation contains "e.g."; the next
+            # bullet/root/section/table boundary will flush it.
+            if active_kind in {"scope_restriction", "scope_note"} and not line.startswith("•"):
+                active_lines.append(line)
+                continue
+
+            lowered = line.lower()
+            new_kind: str | None = None
+            if line.startswith("•"):
+                new_kind = "scope_restriction"
+            elif lowered.startswith("the scope of this root") or "not to be used" in lowered:
+                new_kind = "scope_note"
+            elif line.upper().startswith("NOTE:"):
+                new_kind = "note"
+            elif lowered.startswith("the specification pattern") or lowered.startswith(
+                "the specifications of"
+            ):
+                new_kind = "specification_note"
+            elif "e.g." in lowered or "for example" in lowered:
+                new_kind = "example_context"
+
+            if new_kind:
+                flush()
+                active_kind = new_kind
+                active_lines = [line]
+                active_page = str(local_page)
+                active_printed = pprinted
+                continue
+            if active_kind:
+                active_lines.append(line)
+        # A contextual note may continue onto the next page, so do not flush
+        # merely because the page ended.
+    flush()
+    return records
+
+
+def build() -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]]]:
     manifest = source_manifest_row()
     roots_by_id: dict[str, dict[str, str]] = {}
-    senses_by_id: dict[str, dict[str, str]] = {}
+    senses_by_key: dict[tuple[str, str, str], dict[str, str]] = {}
+    evidence_by_id: dict[str, dict[str, str]] = {}
 
     for chapter in CHAPTERS:
         path = PDF_DIR / chapter.filename
@@ -259,6 +611,7 @@ def build() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
             roots_by_id.setdefault(row["lexicon_root_id"], row)
 
         root_loci = {(int(row["source_pdf_page"]), row["root_form_raw"]): row for row in chapter_roots}
+        chapter_roots_by_form = {row["root_form_raw"]: row for row in chapter_roots}
         for local_page, page in enumerate(document, start=1):
             table_index = 0
             for table in page.find_tables().tables:
@@ -276,10 +629,13 @@ def build() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
                     # Boundary-overlap or extraction-order anomaly: a root not
                     # owned by this chapter is deliberately ignored.
                     continue
-                for stem, specification, summary in extract_table_senses(data):
+                for stem, specification, summary, source_text in extract_table_senses(data):
                     sense_id = stable_id("LEXSENSE", SOURCE_ID, form, stem, specification, summary)
-                    senses_by_id.setdefault(
-                        sense_id,
+                    source_text_sha256, source_text_char_count = source_fingerprint(
+                        source_text
+                    )
+                    senses_by_key.setdefault(
+                        (form, stem, specification),
                         {
                             "lexicon_sense_id": sense_id,
                             "lexicon_root_id": locus["lexicon_root_id"],
@@ -287,11 +643,15 @@ def build() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
                             "stem": stem,
                             "specification": specification,
                             "sense_summary": summary,
+                            "source_text_sha256": source_text_sha256,
+                            "source_text_char_count": source_text_char_count,
+                            "source_example_excerpt": example_excerpt(source_text),
                             "lexicon_chapter": chapter.chapter,
                             "lexicon_section": locus["lexicon_section"],
                             "source_pdf_page": str(local_page),
                             "source_printed_page": printed_page(page),
                             "source_table_index": str(table_index),
+                            "source_locus_kind": "table",
                             "source_id": SOURCE_ID,
                             "source_url": manifest["final_url"],
                             "tracked_pdf_name": chapter.filename,
@@ -300,9 +660,80 @@ def build() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
                         },
                     )
 
+        for prose in extract_prose_senses(document, chapter, root_loci):
+            form = prose["root_form_raw"]
+            stem = prose["stem"]
+            specification = prose["specification"]
+            key = (form, stem, specification)
+            if key in senses_by_key:
+                continue
+            sense_id = stable_id("LEXSENSE", SOURCE_ID, form, stem, specification, prose["sense_summary"])
+            senses_by_key[key] = {
+                "lexicon_sense_id": sense_id,
+                "lexicon_root_id": root_loci[(int(prose["source_pdf_page"]), form)]["lexicon_root_id"],
+                **prose,
+                "source_id": SOURCE_ID,
+                "source_url": manifest["final_url"],
+                "tracked_pdf_name": chapter.filename,
+                "tracked_pdf_sha256": split_digest,
+                "evidence_status": "official_source_observed",
+            }
+
+        for numbered in extract_numbered_stem_senses(document, chapter, root_loci):
+            form = numbered["root_form_raw"]
+            stem = numbered["stem"]
+            specification = numbered["specification"]
+            key = (form, stem, specification)
+            if key in senses_by_key:
+                continue
+            sense_id = stable_id(
+                "LEXSENSE",
+                SOURCE_ID,
+                form,
+                stem,
+                specification,
+                numbered["sense_summary"],
+            )
+            senses_by_key[key] = {
+                "lexicon_sense_id": sense_id,
+                "lexicon_root_id": root_loci[
+                    (int(numbered["source_pdf_page"]), form)
+                ]["lexicon_root_id"],
+                **numbered,
+                "source_id": SOURCE_ID,
+                "source_url": manifest["final_url"],
+                "tracked_pdf_name": chapter.filename,
+                "tracked_pdf_sha256": split_digest,
+                "evidence_status": "official_source_observed",
+            }
+
+        for evidence in extract_root_evidence(
+            document, chapter, chapter_roots_by_form
+        ):
+            evidence.update(
+                {
+                    "source_id": SOURCE_ID,
+                    "source_url": manifest["final_url"],
+                    "tracked_pdf_name": chapter.filename,
+                    "tracked_pdf_sha256": split_digest,
+                    "canonical_source_sha256": manifest["sha256"],
+                    "evidence_status": "official_source_observed",
+                }
+            )
+            evidence_by_id.setdefault(evidence["lexicon_evidence_id"], evidence)
+
     roots = sorted(roots_by_id.values(), key=lambda row: (int(row["lexicon_chapter"]), int(row["source_printed_page"] or 0), row["root_form_raw"]))
-    senses = sorted(senses_by_id.values(), key=lambda row: (row["lexicon_root_id"], row["specification"], row["stem"], row["lexicon_sense_id"]))
-    return roots, senses
+    senses = sorted(senses_by_key.values(), key=lambda row: (row["lexicon_root_id"], row["specification"], row["stem"], row["lexicon_sense_id"]))
+    evidence = sorted(
+        evidence_by_id.values(),
+        key=lambda row: (
+            row["lexicon_root_id"],
+            int(row["source_pdf_page"] or 0),
+            row["evidence_kind"],
+            row["lexicon_evidence_id"],
+        ),
+    )
+    return roots, senses, evidence
 
 
 def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
@@ -315,10 +746,13 @@ def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
 
 
 def main() -> None:
-    roots, senses = build()
+    roots, senses, evidence = build()
     write_csv(DATA / "lexicon_roots.csv", roots)
     write_csv(DATA / "lexicon_root_senses.csv", senses)
-    print(f"lexicon roots={len(roots)} senses={len(senses)}")
+    write_csv(DATA / "lexicon_root_evidence.csv", evidence)
+    print(
+        f"lexicon roots={len(roots)} senses={len(senses)} evidence={len(evidence)}"
+    )
 
 
 if __name__ == "__main__":

@@ -23,11 +23,12 @@ def load_module():
 class LexiconChapterExtractionTests(unittest.TestCase):
     def test_chapters_one_and_two_extract_source_roots_and_senses(self):
         module = load_module()
-        roots, senses = module.build()
+        roots, senses, evidence = module.build()
         by_form = {row["root_form_raw"]: row for row in roots}
 
         self.assertEqual(len(roots), 503)
-        self.assertEqual(len(senses), 1530)
+        self.assertEqual(len(senses), 1615)
+        self.assertEqual(len(evidence), 150)
         self.assertIn("-Č-", by_form)
         self.assertIn("-PS-", by_form)
         self.assertIn("-THW-", by_form)
@@ -41,10 +42,46 @@ class LexiconChapterExtractionTests(unittest.TestCase):
         self.assertEqual({row["specification"] for row in copular}, {"BSC", "CTE", "CSV", "OBJ"})
         self.assertEqual({row["stem"] for row in copular}, {"STEM 1", "STEM 2", "STEM 3"})
 
+        inherited_pattern = [row for row in senses if row["root_form_raw"] == "-RMC-"]
+        self.assertEqual(len(inherited_pattern), 3)
+        self.assertEqual({row["stem"] for row in inherited_pattern}, {"STEM 1", "STEM 2", "STEM 3"})
+        self.assertTrue(all(row["source_locus_kind"] == "prose" for row in inherited_pattern))
+
+        inherited_stems = [row for row in senses if row["root_form_raw"] == "-ŘḐŘ-"]
+        self.assertEqual(len(inherited_stems), 1)
+        self.assertEqual(inherited_stems[0]["stem"], "STEMS 1-3")
+
+        computer = [row for row in senses if row["root_form_raw"] == "-KŢG-"]
+        self.assertEqual(len(computer), 3)
+        self.assertEqual(
+            {row["stem"] for row in computer},
+            {"STEM 1", "STEM 2", "STEM 3"},
+        )
+        self.assertTrue(
+            all(row["source_locus_kind"] == "compact_numbered_stem" for row in computer)
+        )
+        program = [row for row in senses if row["root_form_raw"] == "-KŢGY-"]
+        self.assertEqual(len(program), 3)
+        self.assertIn("computer program", program[0]["sense_summary"].lower())
+
+        self.assertTrue(all(len(row["source_text_sha256"]) == 64 for row in senses))
+        self.assertTrue(all(int(row["source_text_char_count"]) > 0 for row in senses))
+        copular_evidence = [row for row in evidence if row["root_form_raw"] == "-Č-"]
+        self.assertEqual(len(copular_evidence), 8)
+        self.assertEqual(
+            sum(row["evidence_kind"] == "scope_restriction" for row in copular_evidence),
+            7,
+        )
+        self.assertFalse(any(row["root_form_raw"] == "-T-" for row in copular_evidence))
+
     def test_checked_in_tables_are_reproducible(self):
         module = load_module()
-        roots, senses = module.build()
-        for filename, expected in (("lexicon_roots.csv", roots), ("lexicon_root_senses.csv", senses)):
+        roots, senses, evidence = module.build()
+        for filename, expected in (
+            ("lexicon_roots.csv", roots),
+            ("lexicon_root_senses.csv", senses),
+            ("lexicon_root_evidence.csv", evidence),
+        ):
             with (ROOT / "_data" / "csv" / filename).open(newline="", encoding="utf-8") as handle:
                 observed = list(csv.DictReader(handle))
             self.assertEqual(observed, expected)
