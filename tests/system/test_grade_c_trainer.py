@@ -11,8 +11,8 @@ from unittest.mock import patch
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.trainer import (_bundle_pointer, _fingerprint, _persist,
-    _measure_debt_admission_boundary, _resume, _state_from_json, _take_exam,
-    _take_visit, prepare_source)
+    _measure_debt_admission_boundary, _migrate_grade_c_fixed_frontier, _resume,
+    _state_from_json, _take_exam, _take_visit, prepare_source)
 from bilqis_mlx.grade_transition import activate_numeric_grade
 from bilqis_mlx.live_grade_a import live_course as a_course
 from bilqis_mlx.live_grade_b import RELEASE as B_RELEASE, constructor_digest as b_digest, live_course as b_course
@@ -83,6 +83,43 @@ class GradeCTrainerTests(unittest.TestCase):
                 exam_rubric_sha256=self.previous.grades[-1].assessment_sha256,
                 scores={c.id: {"correct":12,"total":12} for g in self.previous.grades for c in g.capabilities}))
 
+    def debt_receipt(self, pointer, params, *, session_id):
+        school = start_new(self.previous, pointer)
+        b = self.previous.grades[-1]
+        school = replace(
+            school, grade_index=1,
+            introduction_stage=(len(b.teaching_stages)-1 if b.teaching_stages else 0),
+            stage="RECOVERY_2", queue=("B.AND", "B.IFF"),
+            first_recovery=("B.AND", "B.IFF"), champions={"A": pointer},
+            latest_rubric_digest=b.assessment_sha256)
+        receipt = self.receipt(school, pointer, params)
+        receipt["stagnation_session"] = {
+            "schema": "bilqis.mlx.stagnation-session/v1",
+            "session_id": session_id, "started_generation": 1,
+            "required_capabilities": [
+                cap.id for grade in self.previous.grades for cap in grade.capabilities],
+            "cycle_index": 3, "cycle_first_recovery": [], "cycle_visits": {},
+            "quarantined": {}, "alerts": [],
+            "rehabilitation": {
+                "grade": "B", "capabilities": ["B.AND", "B.IFF"],
+                "started_generation": 1,
+                "reason": "SOLE_REMAINING_GRADE_MASTERY_DEBT",
+            },
+        }
+        return receipt
+
+    @staticmethod
+    def boundary_predictions(_mx, _params, rows, *_args):
+        miss_ids = {
+            min(row["id"] for row in rows if row["capability"] == cap)
+            for cap in {"A.EDGE", "B.AND", "B.IFF"}
+        }
+        return {
+            row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
+            if row["id"] in miss_ids else row["gold"]
+            for row in rows
+        }
+
     def test_c_resume_selects_the_exact_historical_parent_release(self):
         from bilqis_mlx.compatibility.historical_live_release import (
             HISTORICAL_B_COURSE_SHA256, resume_grade_courses)
@@ -105,15 +142,7 @@ class GradeCTrainerTests(unittest.TestCase):
     def test_human_debt_admission_grows_c_without_fabricating_b_mastery(self):
         mx, params, opt = self.toy()
         pointer = Checkpoint("a"*64,"bundles/inert",1,True)
-        school = start_new(self.previous, pointer)
-        b = self.previous.grades[-1]
-        school = replace(
-            school, grade_index=1,
-            introduction_stage=(len(b.teaching_stages)-1 if b.teaching_stages else 0),
-            stage="RECOVERY_2", queue=("B.AND", "B.IFF"),
-            first_recovery=("B.AND", "B.IFF"), champions={"A": pointer},
-            latest_rubric_digest=b.assessment_sha256)
-        receipt = self.receipt(school, pointer, params)
+        receipt = self.debt_receipt(pointer, params, session_id="debt-admission")
         # Mirror the live staged-B shape: the hot `last_exam` is narrower than
         # the full declared prior release and there is no complete same-checkpoint
         # generalization event to recover. Debt admission itself must measure it.
@@ -123,47 +152,29 @@ class GradeCTrainerTests(unittest.TestCase):
             cap: value for cap, value in receipt["last_exam"]["scores"].items()
             if cap != omitted
         }
-        receipt["stagnation_session"] = {
-            "schema": "bilqis.mlx.stagnation-session/v1",
-            "session_id": "debt-admission",
-            "started_generation": 1,
-            "required_capabilities": [
-                cap.id for grade in self.previous.grades for cap in grade.capabilities],
-            "cycle_index": 3,
-            "cycle_first_recovery": [],
-            "cycle_visits": {},
-            "quarantined": {},
-            "alerts": [],
-            "rehabilitation": {
-                "grade": "B", "capabilities": ["B.AND", "B.IFF"],
-                "started_generation": 1,
-                "reason": "SOLE_REMAINING_GRADE_MASTERY_DEBT",
-            },
-        }
-
         with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
             root = Path(temp)
             receipt = _persist(root, receipt)
-            missed = set()
-            def boundary_predictions(_mx, _params, rows, *_args):
-                answers = {}
-                for row in rows:
-                    answer = row["gold"]
-                    if (row["capability"] in {"A.EDGE", "B.AND", "B.IFF"} and
-                            row["capability"] not in missed):
-                        answer = "FALSE" if answer == "TRUE" else "TRUE"
-                        missed.add(row["capability"])
-                    answers[row["id"]] = answer
-                return answers
             with patch("bilqis_mlx.trainer._predictions",
-                       side_effect=boundary_predictions):
+                       side_effect=self.boundary_predictions):
                 receipt = _measure_debt_admission_boundary(
                     mx, root, receipt, self.manifest, self.previous, SOURCE,
                     params, self.parent_graph)
-            grown, own, graph, changed = activate_numeric_grade(
-                mx, root, receipt, self.previous, self.course,
-                params, opt, self.parent_graph, reserve_gib=0.,
-                allow_mastery_debt=True)
+                grown, own, graph, changed = activate_numeric_grade(
+                    mx, root, receipt, self.previous, self.course,
+                    params, opt, self.parent_graph, reserve_gib=0.,
+                    allow_mastery_debt=True)
+            from bilqis_mlx.fixed_frontier import load_frontier
+            current = changed["school"]["current_student"]
+            rows, parent = load_frontier(
+                root, changed,
+                parent_sha256=current["sha256"],
+                parent_optimizer_step=current["optimizer_step"])
+            self.assertEqual(
+                len(rows),
+                sum(count for grade in self.previous.grades
+                    for _, count in grade.exam_item_counts))
+            self.assertEqual(set(parent), {row["id"] for row in rows})
 
         changed_school = changed["school"]
         self.assertEqual(
@@ -196,6 +207,49 @@ class GradeCTrainerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "NATIVE_CATALOG_INVALID"):
                 activate_numeric_grade(mx, Path("/unused"), receipt, self.previous,
                     self.course, params, opt, self.parent_graph, reserve_gib=0.)
+
+    def test_resume_repairs_pre_fix_c_frontier_from_exact_debt_boundary(self):
+        mx, params, opt = self.toy()
+        with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
+            root = Path(temp)
+            pointer = _bundle_pointer(
+                root, "pre-c", params, opt, self.parent_graph, reserve_gib=0.)
+            pre = self.debt_receipt(
+                pointer, params, session_id="debt-admission-recovery")
+            pre = _persist(root, pre)
+            with patch("bilqis_mlx.trainer._predictions",
+                       side_effect=self.boundary_predictions):
+                measured = _measure_debt_admission_boundary(
+                    mx, root, pre, self.manifest, self.previous, SOURCE,
+                    params, self.parent_graph)
+                grown, own, graph, admitted = activate_numeric_grade(
+                    mx, root, measured, self.previous, self.course,
+                    params, opt, self.parent_graph, reserve_gib=0.,
+                    allow_mastery_debt=True)
+
+            # Recreate the historical bug: admission succeeded, but last_exam
+            # still names the pre-growth parent instead of the grown C baseline.
+            broken = json.loads(json.dumps(admitted))
+            broken["last_exam"] = json.loads(json.dumps(pre["last_exam"]))
+            broken.pop("grade_c_fixed_frontier_cohort_sha256", None)
+            with patch("bilqis_mlx.trainer._predictions",
+                       side_effect=self.boundary_predictions):
+                repaired = _migrate_grade_c_fixed_frontier(
+                    mx, root, broken, self.course, grown)
+            current = repaired["school"]["current_student"]
+            self.assertEqual(repaired["generation"], broken["generation"] + 1)
+            self.assertEqual(repaired["last_exam"]["student_sha256"],
+                             current["sha256"])
+            self.assertEqual(repaired["last_exam"]["optimizer_step"],
+                             current["optimizer_step"])
+            self.assertEqual(repaired["last_exam"]["exam_plane"],
+                             "FIXED_FRONTIER_REBASELINE")
+            self.assertEqual(
+                repaired["last_exam"]["scores"],
+                admitted["last_exam"]["scores"])
+            self.assertEqual(
+                _migrate_grade_c_fixed_frontier(
+                    mx, root, repaired, self.course, grown), repaired)
 
     def test_c_graph_growth_starts_empty_authority_and_carries_settled_history(self):
         from bilqis_mlx.learning.mentor_epoch import begin_initial_epoch
@@ -262,8 +316,13 @@ class GradeCTrainerTests(unittest.TestCase):
                         receipt["qualification_cohort"]["cohort_sha256"], routine)
                 self.assertEqual(len(receipt["last_exam"]["scores"]),13+stage)
                 self.assertEqual(receipt["last_exam"]["learning_diagnostics"]["history_issue"],None)
-                params,opt,graph,reloaded = _resume(root,self.manifest,self.course,self.policy_sha,
-                    admitted_courses={self.course.version:self.course})
+                drifted = replace(
+                    self.course, program_complete=not self.course.program_complete)
+                admitted = {self.course.version: drifted}
+                params,opt,graph,reloaded = _resume(
+                    root,self.manifest,drifted,self.policy_sha,
+                    admitted_courses=admitted)
+                self.assertEqual(admitted[self.course.version], self.course)
                 self.assertEqual(reloaded,receipt)
             self.assertEqual(receipt["school"]["active_grades"][receipt["school"]["grade_index"]],"A")
             self.assertEqual(receipt["school"]["revalidation_target_grade"],"C")

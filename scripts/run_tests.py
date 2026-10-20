@@ -7,12 +7,34 @@ import importlib.util
 import os
 from pathlib import Path
 import sys
+import types
 import unittest
 
 
 IGNORED_DIRECTORIES = frozenset({
     ".git", ".venv", "__pycache__", "node_modules", "runs", "vendor", "venv",
 })
+
+
+def _install_source_only_legacy_geometry_shim() -> bool:
+    """Keep symbolic source tests portable without changing admitted generator bytes."""
+    name = "bilqis_logic.geometry"
+    if name in sys.modules:
+        return False
+    try:
+        torch_available = importlib.util.find_spec("torch") is not None
+    except (ImportError, ModuleNotFoundError, ValueError):
+        torch_available = False
+    if torch_available:
+        return False
+    module = types.ModuleType(name)
+
+    def tensor_hash(*_args, **_kwargs):
+        raise RuntimeError("SOURCE_ONLY_TEST_NEURAL_GEOMETRY_FORBIDDEN")
+
+    module.tensor_hash = tensor_hash
+    sys.modules[name] = module
+    return True
 
 
 class _LoadFailure(unittest.TestCase):
@@ -106,15 +128,21 @@ def main(argv: list[str] | None = None, *, root: Path | None = None, stream=None
     arguments = parser.parse_args(argv)
     root = root or Path(__file__).resolve().parents[1]
     stream = stream or sys.stdout
-    suite = _load_targets(tuple(arguments.targets), root) if arguments.targets else load_test_files(
-        discover_test_files(root), root)
-    if suite.countTestCases() == 0:
-        print("TEST_TOTALS total=0 passed=0 failed=0 skipped=0 errors=0", file=stream)
-        print("0 passed, 0 failed, 0 skipped", file=stream)
-        return 2
-    result = unittest.TextTestRunner(stream=stream, verbosity=2).run(suite)
-    _print_totals(result, stream)
-    return 0 if result.wasSuccessful() else 1
+    shimmed = _install_source_only_legacy_geometry_shim()
+    try:
+        suite = (_load_targets(tuple(arguments.targets), root)
+                 if arguments.targets else
+                 load_test_files(discover_test_files(root), root))
+        if suite.countTestCases() == 0:
+            print("TEST_TOTALS total=0 passed=0 failed=0 skipped=0 errors=0", file=stream)
+            print("0 passed, 0 failed, 0 skipped", file=stream)
+            return 2
+        result = unittest.TextTestRunner(stream=stream, verbosity=2).run(suite)
+        _print_totals(result, stream)
+        return 0 if result.wasSuccessful() else 1
+    finally:
+        if shimmed:
+            sys.modules.pop("bilqis_logic.geometry", None)
 
 
 if __name__ == "__main__":

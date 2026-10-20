@@ -203,8 +203,8 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
                            allow_mastery_debt: bool = False):
     # Import the existing custody writer at use time; it owns all state/outbox I/O.
     from .trainer import (_advance, _bundle_pointer, _factory_admission,
-        _fingerprint, _persist, _reconcile_delivery_outbox, _state_from_json,
-        _with_delivery_outbox)
+        _fingerprint, _persist, _predictions, _reconcile_delivery_outbox,
+        _state_from_json, _with_delivery_outbox)
     school = _state_from_json(receipt["school"], previous)
     exam = receipt.get("last_exam") or {}
     counts = {cap: count for grade in previous.grades for cap, count in grade.exam_item_counts}
@@ -365,6 +365,16 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         "config": {**receipt["config"], "vocab_size": len(grown_graph["tokens"]),
                    "answer_heads": heads},
         "live_rubric_sha256": successor.grades[-1].assessment_sha256}
+    if debt_exam.get("cohort_file"):
+        from .fixed_frontier import load_frontier_cohort, rebaseline_frontier_exam
+        cohort = load_frontier_cohort(run_dir, debt_exam)
+        guesses = _predictions(
+            mx, grown, list(cohort.rows), updated["config"], receipt["answer_ids"])
+        updated["last_exam"] = rebaseline_frontier_exam(
+            run_dir, debt_exam, checkpoint=asdict(pointer), predictions=guesses,
+            assessment_grade=school.grade,
+            grade_exam_epoch=school.grade_exam_epoch)
+        updated["grade_c_fixed_frontier_cohort_sha256"] = cohort.digest
     updated.pop("debt_admission_boundary_exam", None)
     updated["mentor_epoch"] = next_epoch
     updated["championship_epoch_history"] = epoch_history
@@ -380,6 +390,8 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         "admission_mode": updated["grade_c_admission_mode"],
         "carried_mastery_debt": updated["grade_c_carried_mastery_debt"],
         "prior_grade_mastery_complete": not allow_mastery_debt,
+        "fixed_frontier_cohort_sha256": updated.get(
+            "grade_c_fixed_frontier_cohort_sha256"),
         "teacher_events": receipt["teacher"]["events"],
         "rubric": successor.grades[-1].assessment_sha256,
         "actual_neural_updates": 0}

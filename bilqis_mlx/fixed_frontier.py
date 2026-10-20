@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .generated_assessment import make_cohort
+from .generated_assessment import make_cohort, score
 
 
 def _valid_sha(value) -> bool:
@@ -12,22 +12,11 @@ def _valid_sha(value) -> bool:
             all(char in "0123456789abcdef" for char in value))
 
 
-def load_frontier(run_dir: Path, receipt: dict, *, parent_sha256: str,
-                  parent_optimizer_step: int) -> tuple[tuple[dict, ...], dict[str, str]]:
-    """Load the current fixed cohort and reconstruct the retained parent's outputs.
-
-    The saved exam stores only misses. Every other fixed row was correct by
-    definition; recomputing capability totals proves that reconstruction before
-    it is used as an admission reference.
-    """
-    exam = receipt.get("last_exam") or {}
-    scores = exam.get("scores")
+def load_frontier_cohort(run_dir: Path, exam: dict):
+    """Verify and load one immutable cohort referenced by an exam receipt."""
     sha = exam.get("cohort_sha256")
-    if not scores or sha is None:
-        return (), {}
-    if (exam.get("student_sha256") != parent_sha256 or
-            exam.get("optimizer_step") != parent_optimizer_step):
-        raise ValueError("FIXED_FRONTIER_PARENT_IDENTITY_DRIFT")
+    if sha is None:
+        return None
     if (not _valid_sha(sha) or
             exam.get("cohort_file") != f"cohorts/{sha}.json"):
         raise ValueError("FIXED_FRONTIER_UNBOUND_EXAM_COHORT")
@@ -44,6 +33,55 @@ def load_frontier(run_dir: Path, receipt: dict, *, parent_sha256: str,
         seed=stored["seed"], rubric_version=stored["schema"])
     if cohort.digest != sha:
         raise ValueError("FIXED_FRONTIER_COHORT_CONTENT_DRIFT")
+    return cohort
+
+
+def rebaseline_frontier_exam(run_dir: Path, source_exam: dict, *, checkpoint: dict,
+                             predictions: dict, assessment_grade: str | None = None,
+                             grade_exam_epoch: int | None = None) -> dict:
+    """Bind a preserved cohort to a newly measured, function-preserving parent."""
+    cohort = load_frontier_cohort(run_dir, source_exam)
+    if cohort is None:
+        raise ValueError("FIXED_FRONTIER_REBASELINE_COHORT_REQUIRED")
+    measured = score(cohort, predictions, checkpoint)
+    source_scores = source_exam.get("scores")
+    if isinstance(source_scores, dict) and measured["scores"] != source_scores:
+        raise ValueError("FIXED_FRONTIER_REBASELINE_SCORE_DRIFT")
+    return {
+        "assessment_grade": assessment_grade or source_exam.get("assessment_grade"),
+        "grade_exam_epoch": (grade_exam_epoch if grade_exam_epoch is not None
+                             else source_exam.get("grade_exam_epoch")),
+        "exam_plane": "FIXED_FRONTIER_REBASELINE",
+        "source_exam_plane": source_exam.get(
+            "source_exam_plane", source_exam.get("exam_plane")),
+        "assessment_scope_sha256": source_exam.get("assessment_scope_sha256"),
+        "evaluation_id": "fixed-frontier-rebaseline/" + cohort.digest + "/" +
+                         checkpoint["sha256"],
+        "exam_rubric_sha256": source_exam.get("exam_rubric_sha256"),
+        "cohort_sha256": cohort.digest,
+        "cohort_file": source_exam["cohort_file"],
+        "cohort_seed": cohort.seed,
+        "generator_version": cohort.generator_version,
+        "misses_for_teacher": list(measured["misses_for_teacher"]),
+        "student_sha256": checkpoint["sha256"],
+        "optimizer_step": checkpoint["optimizer_step"],
+        "scores": measured["scores"],
+        "rebaselined_from_student_sha256": source_exam.get("student_sha256"),
+        "rebaseline_reason": "APPEND_ONLY_SEMANTIC_GRAPH_GROWTH",
+    }
+
+
+def load_frontier(run_dir: Path, receipt: dict, *, parent_sha256: str,
+                  parent_optimizer_step: int) -> tuple[tuple[dict, ...], dict[str, str]]:
+    """Load the current fixed cohort and reconstruct the retained parent's outputs."""
+    exam = receipt.get("last_exam") or {}
+    scores = exam.get("scores")
+    if not scores or exam.get("cohort_sha256") is None:
+        return (), {}
+    if (exam.get("student_sha256") != parent_sha256 or
+            exam.get("optimizer_step") != parent_optimizer_step):
+        raise ValueError("FIXED_FRONTIER_PARENT_IDENTITY_DRIFT")
+    cohort = load_frontier_cohort(run_dir, exam)
 
     rows = tuple(cohort.rows)
     if len({row["id"] for row in rows}) != len(rows):

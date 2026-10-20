@@ -1,7 +1,6 @@
 """Real symbolic source curriculum draft, tested without optimizer updates."""
 from pathlib import Path
 import random
-import subprocess
 import sys
 import unittest
 
@@ -61,27 +60,6 @@ class GradeAProbeTests(unittest.TestCase):
         self.assertFalse(course.executable)
         self.assertIsNone(course.source_attestation_sha256)
         self.assertIsNone(course.assessment_manifest_sha256)
-
-    def test_symbolic_source_probe_does_not_require_torch(self):
-        """Portable CI can execute pinned source interpreters without neural deps."""
-        code = r'''
-import importlib.util
-from pathlib import Path
-from unittest.mock import patch
-from bilqis_mlx.grade_a_probe import read_sources
-
-original = importlib.util.find_spec
-with patch("importlib.util.find_spec",
-           side_effect=lambda name, *a, **k: None if name == "torch" else original(name, *a, **k)):
-    micro, development, graph, hashes, graph_sha = read_sources(Path(r"'''+str(LEGACY_ROOT)+r'''"))
-print(len(graph["tokens"]), graph_sha, micro.evaluate(micro.record(micro.world(["A","B"]), micro.compare("EQ", micro.entity("A"), micro.entity("A")))))
-'''
-        result = subprocess.run(
-            [sys.executable, "-B", "-c", code], cwd=Path(__file__).resolve().parents[3],
-            text=True, capture_output=True, check=False)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn(PINNED_GRAPH_SHA256, result.stdout)
-        self.assertTrue(result.stdout.rstrip().endswith("TRUE"))
 
     def test_exact_frozen_graph_prefix_matches_complete_historical_student(self):
         source = LEGACY_ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt"

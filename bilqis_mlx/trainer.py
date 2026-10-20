@@ -136,7 +136,8 @@ from .runtime.state import (
 )
 from .runtime.admission import (
     admitted_release_supports_teaching_option,
-    _factory_release, _persist_factory_release, _factory_admission, _require_factory_admission,
+    _factory_release, _persist_factory_release, _factory_admission,
+    _read_factory_release, _require_factory_admission,
 )
 from .runtime.assessment import (
     load_championship_cohort,
@@ -1073,6 +1074,166 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
     return parameters, optimizer, graph, receipt
 
 
+def _grade_c_admission_event(run_dir, current, previous, introduced_grade):
+    admissions = []
+    events_path = run_dir / "events.jsonl"
+    if events_path.is_file():
+        with events_path.open(encoding="utf-8") as stream:
+            for line in stream:
+                if not line.strip():
+                    continue
+                event = json.loads(line)
+                if (event.get("event") == "SCHOOL_COURSE_ADMITTED" and
+                        event.get("grade") == introduced_grade and
+                        event.get("student_sha256") == current.get("sha256") and
+                        event.get("previous_student_sha256") == previous.get("sha256")):
+                    admissions.append(event)
+    if len(admissions) != 1:
+        raise ValueError("FIXED_FRONTIER_GRADE_C_ADMISSION_EVENT_DRIFT")
+    return admissions[0]
+
+
+def _grade_c_pre_admission_state(run_dir, admission, previous):
+    pre_path = run_dir / "states" / f"{admission['generation'] - 1:07d}.json"
+    if pre_path.is_symlink() or not pre_path.is_file():
+        raise ValueError("FIXED_FRONTIER_GRADE_C_PRE_ADMISSION_STATE_MISSING")
+    pre = json.loads(pre_path.read_text(encoding="utf-8"))
+    pre_student = (pre.get("school") or {}).get("current_student") or {}
+    if (pre_student.get("sha256") != previous.get("sha256") or
+            pre_student.get("optimizer_step") != previous.get("optimizer_step")):
+        raise ValueError("FIXED_FRONTIER_GRADE_C_PRE_ADMISSION_STATE_DRIFT")
+    return pre
+
+
+def _debt_boundary_source_exam(run_dir, pre, epoch, previous):
+    expected_seed = _seed(
+        pre,
+        capability=(f"DEBT_ADMISSION_BOUNDARY:{pre.get('curriculum_mode')}:"
+                    f"{previous['optimizer_step']}"))
+    previous_caps = set(epoch.get("previous_capabilities") or ())
+    matches = []
+    for path in (run_dir / "cohorts").glob("*.json"):
+        try:
+            stored = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            continue
+        rows = stored.get("rows") or ()
+        if (stored.get("seed") == expected_seed and
+                stored.get("schema") == pre.get("curriculum_mode") and
+                {row.get("capability") for row in rows} == previous_caps):
+            matches.append((path, stored))
+    if len(matches) != 1:
+        raise ValueError("FIXED_FRONTIER_GRADE_C_BOUNDARY_COHORT_AMBIGUOUS")
+    path, stored = matches[0]
+    return {
+        "student_sha256": previous["sha256"],
+        "optimizer_step": previous["optimizer_step"],
+        "cohort_sha256": stored.get("cohort_sha256"),
+        "cohort_file": str(path.relative_to(run_dir)),
+        "cohort_seed": stored.get("seed"),
+        "exam_rubric_sha256": stored.get("rubric_sha256"),
+        "source_exam_plane": "DEBT_ADMISSION_BOUNDARY",
+    }
+
+
+def _verify_recovered_boundary_exam(mx, run_dir, source_exam, pre, previous, epoch):
+    """Re-score the preserved parent and prove the mentor-epoch digest exactly."""
+
+    from .fixed_frontier import load_frontier_cohort
+    cohort = load_frontier_cohort(run_dir, source_exam)
+    previous_weights, previous_optimizer, meta, previous_graph = (
+        load_semantically_bound_bundle(run_dir / previous["filename"]))
+    if (meta.get("safetensors_sha256") != previous["sha256"] or
+            meta.get("optimizer_step") != previous["optimizer_step"]):
+        raise ValueError("FIXED_FRONTIER_GRADE_C_PREVIOUS_BUNDLE_DRIFT")
+    previous_guesses = _predictions(
+        mx, previous_weights, list(cohort.rows), pre["config"], pre["answer_ids"])
+    previous_measured = score_cohort(cohort, previous_guesses, previous)
+    source_exam["scores"] = previous_measured["scores"]
+    source_exam["misses_for_teacher"] = list(previous_measured["misses_for_teacher"])
+    boundary = {
+        "checkpoint_sha256": previous["sha256"],
+        "cohort_sha256": cohort.digest,
+        "rubric_sha256": source_exam.get("exam_rubric_sha256"),
+        "scores": previous_measured["scores"],
+    }
+    expected_digest = (epoch.get("previous_boundary_exam_sha256") or
+                       epoch.get("previous_graduation_exam_sha256"))
+    if _fingerprint(boundary) != expected_digest:
+        raise ValueError("FIXED_FRONTIER_GRADE_C_BOUNDARY_DIGEST_DRIFT")
+    del previous_weights, previous_optimizer, previous_graph
+    return source_exam
+
+
+def _recover_grade_c_boundary_source(mx, run_dir, receipt):
+    """Recover the exact pre-C boundary cohort from immutable admission evidence."""
+    epoch = receipt.get("mentor_epoch") or {}
+    school = receipt.get("school") or {}
+    current = school.get("current_student") or {}
+    baseline = epoch.get("baseline") or {}
+    introduced_grade = epoch.get("introduced_grade")
+    previous = (epoch.get("previous_boundary_checkpoint") or
+                epoch.get("previous_graduate") or {})
+    exam = receipt.get("last_exam") or {}
+    if (not introduced_grade or not receipt.get("grade_c_parent_course_digest") or
+            baseline.get("sha256") != current.get("sha256") or
+            baseline.get("optimizer_step") != current.get("optimizer_step") or
+            exam.get("student_sha256") == current.get("sha256")):
+        return None
+    if (not previous.get("sha256") or
+            exam.get("student_sha256") != previous.get("sha256")):
+        raise ValueError("FIXED_FRONTIER_GRADE_C_LINEAGE_DRIFT")
+    admission = _grade_c_admission_event(
+        run_dir, current, previous, introduced_grade)
+    pre = _grade_c_pre_admission_state(run_dir, admission, previous)
+    source_exam = (
+        _debt_boundary_source_exam(run_dir, pre, epoch, previous)
+        if receipt.get("grade_c_admission_mode") == "CARRIED_MASTERY_DEBT"
+        else dict(pre.get("last_exam") or {}))
+    return _verify_recovered_boundary_exam(
+        mx, run_dir, source_exam, pre, previous, epoch)
+
+
+def _migrate_grade_c_fixed_frontier(mx, run_dir, receipt, course, parameters):
+    """Idempotently bind an early Grade-C frontier to its graph-grown parent."""
+    source_exam = _recover_grade_c_boundary_source(mx, run_dir, receipt)
+    if source_exam is None:
+        return receipt
+    school = _state_from_json(receipt["school"], course)
+    previous_caps = (receipt.get("mentor_epoch") or {}).get("previous_capabilities") or ()
+    previous_grade = (
+        previous_caps[-1].partition(".")[0] if previous_caps else None)
+    from .fixed_frontier import load_frontier_cohort, rebaseline_frontier_exam
+    cohort = load_frontier_cohort(run_dir, source_exam)
+    guesses = _predictions(
+        mx, parameters, list(cohort.rows), receipt["config"], receipt["answer_ids"])
+    migrated_exam = rebaseline_frontier_exam(
+        run_dir, source_exam, checkpoint=asdict(school.current_student),
+        predictions=guesses,
+        assessment_grade=source_exam.get("assessment_grade", previous_grade),
+        grade_exam_epoch=source_exam.get("grade_exam_epoch"))
+    migrated = {**receipt,
+                "last_exam": migrated_exam,
+                "grade_c_fixed_frontier_cohort_sha256": cohort.digest}
+    record = _advance(
+        run_dir, migrated, school, last_exam=migrated_exam,
+        result=receipt.get("result"), persist=False)
+    event = {
+        "event": "SCHOOL_FIXED_FRONTIER_REBASELINED",
+        "generation": record["generation"],
+        "grade": school.grade,
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "previous_student_sha256": source_exam.get("student_sha256"),
+        "cohort_sha256": cohort.digest,
+        "rows": len(cohort.rows),
+        "actual_neural_updates": 0,
+    }
+    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
+    _reconcile_delivery_outbox(run_dir, record)
+    return record
+
+
 def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, admitted_courses=None):
     import mlx.core as mx
     path = run_dir / "state.json"
@@ -1093,10 +1254,19 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, adm
     old_mode = saved_mode is None
     if saved_mode is not None and saved_mode not in KNOWN_RELEASES:
         raise ValueError("HUMAN_TRAINER_UNKNOWN_CURRICULUM_MODE")
-    old_course = ((admitted_courses or {})[saved_mode] if saved_mode in (admitted_courses or {}) else
-                  accepted_grade_a(manifest) if old_mode else
-                  initial_course(accepted_grade_a(manifest)) if saved_mode == INITIAL_RELEASE
-                  else successor_course if successor_course is not None else course)
+    if not old_mode and receipt.get("factory_release_file") is not None:
+        sealed_release = _read_factory_release(run_dir, receipt)
+        old_course = sealed_release.course
+        if admitted_courses is not None:
+            admitted_courses[saved_mode] = old_course
+    else:
+        old_course = (
+            (admitted_courses or {})[saved_mode]
+            if saved_mode in (admitted_courses or {}) else
+            accepted_grade_a(manifest) if old_mode else
+            initial_course(accepted_grade_a(manifest))
+            if saved_mode == INITIAL_RELEASE else
+            successor_course if successor_course is not None else course)
     if not old_mode:
         if old_course.version != saved_mode:
             raise ValueError("FACTORY_RELEASE_COURSE_NOT_LOADED")
@@ -1124,6 +1294,10 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, adm
     if not old_mode:
         _verify_saved_cohort(run_dir, receipt, old_course)
     mx.eval(parameters, optimizer.state)
+    if receipt.get("curriculum_mode") == NUMERIC_RELEASE:
+        receipt = _migrate_grade_c_fixed_frontier(
+            mx, run_dir, receipt, old_course, parameters)
+        school = _state_from_json(receipt["school"], old_course)
     if "capability_best" not in receipt:
         # Existing full-history run: reconstruct bests from actual sealed
         # checkpoint receipts before permitting reference-aware retirement.

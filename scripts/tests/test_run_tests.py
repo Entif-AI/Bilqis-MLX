@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 def _runner_module():
@@ -16,6 +17,17 @@ def _runner_module():
 
 
 class RunTestsTests(unittest.TestCase):
+    def test_source_only_geometry_shim_is_fail_closed_and_temporary(self):
+        runner = _runner_module()
+        sys.modules.pop("bilqis_logic.geometry", None)
+        with patch.object(runner.importlib.util, "find_spec", return_value=None):
+            self.assertTrue(runner._install_source_only_legacy_geometry_shim())
+        module = sys.modules["bilqis_logic.geometry"]
+        with self.assertRaisesRegex(
+                RuntimeError, "SOURCE_ONLY_TEST_NEURAL_GEOMETRY_FORBIDDEN"):
+            module.tensor_hash("not-a-tensor")
+        sys.modules.pop("bilqis_logic.geometry", None)
+
     def test_discovers_each_test_directory_without_basename_collisions(self):
         runner = _runner_module()
         with tempfile.TemporaryDirectory() as temporary:

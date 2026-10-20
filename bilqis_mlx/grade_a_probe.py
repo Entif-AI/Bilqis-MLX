@@ -11,12 +11,10 @@ from __future__ import annotations
 from collections import Counter
 import hashlib
 import importlib
-import importlib.util
 import json
 from pathlib import Path
 import random
 import sys
-import types
 
 from .curriculum import AnswerFamily, BINARY, Capability, Course, Grade, ExamItem, validate_exam_item
 from .grade_a_oracle import VERSION as INDEPENDENT_ORACLE, evaluate as third_oracle
@@ -45,42 +43,6 @@ FAMILIES = (
 SEED = 20261015
 
 
-def _source_only_tensor_hash(*_args, **_kwargs):
-    """Fail closed if a source-only probe reaches legacy neural geometry."""
-    raise RuntimeError("GRADE_A_SOURCE_PROBE_NEURAL_GEOMETRY_FORBIDDEN")
-
-
-def _import_source_interpreters(root: Path):
-    """Import pinned symbolic interpreters without requiring PyTorch.
-
-    `bilqis_micro.graph` imports `tensor_hash` at module import time, although
-    the symbolic kernels used by this probe never call it.  Portable source
-    verification should not need the historical neural stack merely to import
-    those constants.  When torch is absent, provide only that imported name;
-    any accidental embedding/tensor path still fails closed immediately.
-    """
-    geometry_name = "bilqis_logic.geometry"
-    try:
-        torch_available = importlib.util.find_spec("torch") is not None
-    except (ImportError, ModuleNotFoundError, ValueError):
-        torch_available = False
-    previous_geometry = sys.modules.get(geometry_name)
-    inserted = False
-    if not torch_available and previous_geometry is None:
-        source_only_geometry = types.ModuleType(geometry_name)
-        source_only_geometry.tensor_hash = _source_only_tensor_hash
-        sys.modules[geometry_name] = source_only_geometry
-        inserted = True
-    try:
-        micro = importlib.import_module("bilqis_micro.kernel")
-        development = importlib.import_module("bilqis_development.kernel")
-        registry = importlib.import_module("bilqis_development.registry")
-    finally:
-        if inserted:
-            sys.modules.pop(geometry_name, None)
-    return micro, development, registry
-
-
 def read_sources(root: Path):
     root = Path(root).resolve(strict=True)
     for name in PINNED_SOURCES:
@@ -92,11 +54,12 @@ def read_sources(root: Path):
         raise ValueError("GRADE_A_HISTORICAL_ORACLE_SOURCE_DRIFT")
     sys.path.insert(0,str(root)) if str(root) not in sys.path else None
     sys.dont_write_bytecode = True
-    micro, development, registry = _import_source_interpreters(root)
+    micro = importlib.import_module("bilqis_micro.kernel")
+    development = importlib.import_module("bilqis_development.kernel")
     if (Path(micro.__file__).resolve() != root/"bilqis_micro/kernel.py" or
             Path(development.__file__).resolve() != root/"bilqis_development/kernel.py"):
         raise ValueError("GRADE_A_LEGACY_IMPORT_ROOT_MISMATCH")
-    graph = registry.extended_catalog()
+    graph = importlib.import_module("bilqis_development.registry").extended_catalog()
     graph_hash = hashlib.sha256(json.dumps(graph,sort_keys=True,separators=(",", ":"))
                                .encode()).hexdigest()
     if graph_hash != PINNED_GRAPH_SHA256:
