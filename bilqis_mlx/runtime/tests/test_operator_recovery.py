@@ -42,4 +42,3 @@ class OperatorRecoveryTests(TestCase):
         self.assertEqual(
             recovery_advice("ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL").disposition,
             "CORRECT_INPUT_OR_STATE")
-

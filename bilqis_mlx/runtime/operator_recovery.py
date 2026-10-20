@@ -140,4 +140,3 @@ def recovery_advice(error: BaseException | str) -> RecoveryAdvice:
         "No automatic repair is proven safe for this condition. Preserve the last durable "
         "checkpoint and diagnose the owning boundary before retrying.",
     )
-
