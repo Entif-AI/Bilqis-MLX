@@ -537,9 +537,13 @@ class LiveAutonomySession:
         frontier = load_candidate_frontier(
             artifact_dir, source_dir,
             expected_builder_sha256=builder_sha256)
+        from .candidate_staging import load_staged_candidates
+
+        staged = load_staged_candidates(self.run_dir, frontier, self.release)
         proposal = propose_curriculum_delta(
             frontier, self.release, self.ledger, self.plan,
-            checkpoint.sha256, checkpoint.optimizer_step)
+            checkpoint.sha256, checkpoint.optimizer_step,
+            candidate_bindings=tuple(item.binding for item in staged))
         proposal_dir = self.run_dir / "autonomy" / "jit-proposals"
         if proposal_dir.is_symlink():
             raise ValueError("AUTONOMY_JIT_PROPOSAL_DIRECTORY_UNSAFE")
@@ -559,4 +563,10 @@ class LiveAutonomySession:
             _durable_json(path, payload)
         if json.loads(path.read_text(encoding="utf-8")) != payload:
             raise ValueError("AUTONOMY_JIT_PROPOSAL_READBACK_DRIFT")
+        if proposal.disposition.value == "SOURCE_DEVELOPMENT":
+            from .source_development import prepare_source_frontier, persist_source_development
+
+            result = prepare_source_frontier(repo_root)
+            persist_source_development(
+                self.run_dir, result, proposal=proposal, checkpoint=checkpoint)
         return proposal, relative.as_posix()

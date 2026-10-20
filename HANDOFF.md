@@ -1,4 +1,18 @@
-# Issue349 autonomous JIT Ithkuil execution | 2026-10-20
+# Issue349 candidate staging and productive source fallback | 2026-10-20
+
+Continuation: `docs/evidence/development/ISSUE349_SOURCE_STAGING_HANDOFF_20261020.md`.
+An explicit-definition-to-staged-successor compiler and real Chapter-3 source
+fallback now extend the work below. All 240 current candidates still lack real
+qualified semantic/provider bindings; no new capability is admitted.
+The actual checkpoint remains `260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f`,
+native AdamW step 116816. Source work produced 122 roots, 189 senses and 27
+context records, with 88 roots explicitly lacking extracted senses. State,
+events and the complete student/AdamW bundle stayed byte-identical afterward.
+Authority: https://github.com/socr8s/private-ip/issues/336 (#336 OPEN), execution
+https://github.com/socr8s/private-ip/issues/349 (#349 OPEN). See the continuation
+for source identities, proof limits, concurrent edits and next action.
+
+# Earlier issue349 execution checkpoint | 2026-10-20
 
 Authority: https://github.com/socr8s/private-ip/issues/349 (#349 OPEN); governing https://github.com/socr8s/private-ip/issues/336 (#336 OPEN, IPR-0220). Both remain open. #335/#339/#340/#343/#344/#345/#348 are incorporated authority; #346 remains unrelated/deferred and MUST NOT be absorbed.
 

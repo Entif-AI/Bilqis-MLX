@@ -4,6 +4,7 @@ import csv
 import importlib.util
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 
 
@@ -21,6 +22,34 @@ def load_module():
 
 
 class LexiconChapterExtractionTests(unittest.TestCase):
+    def test_chapter_three_expands_source_work_without_mutating_canonical_tables(self):
+        module = load_module()
+        data = ROOT / "_data" / "csv"
+        original = {name: (data / name).read_bytes() for name in (
+            "lexicon_roots.csv", "lexicon_root_senses.csv", "lexicon_root_evidence.csv")}
+        with tempfile.TemporaryDirectory() as temp:
+            manifest = module.extract_snapshot(("3",), Path(temp))
+            self.assertEqual(manifest["chapters"], ["3"])
+            with (Path(temp) / "lexicon_roots.csv").open(newline="") as stream:
+                roots = list(csv.DictReader(stream))
+            with (Path(temp) / "lexicon_root_senses.csv").open(newline="") as stream:
+                senses = list(csv.DictReader(stream))
+            self.assertIn("-ŠŘ-", {row["root_form_raw"] for row in roots})
+            self.assertIn("-LC-", {row["root_form_raw"] for row in roots})
+            self.assertTrue(senses)
+            self.assertEqual({row["lexicon_chapter"] for row in roots}, {"3"})
+            self.assertEqual(manifest, module.extract_snapshot(("3",), Path(temp)))
+            self.assertEqual(manifest["canonical_page_equivalence"], "NOT_MEASURED")
+        self.assertEqual(original, {name: (data / name).read_bytes() for name in original})
+
+    def test_expansion_refuses_canonical_output_and_unknown_chapters(self):
+        module = load_module()
+        with self.assertRaisesRegex(ValueError, "LEXICON_EXPANSION_REQUIRES_SEPARATE_OUTPUT"):
+            module.extract_snapshot(("3",), module.DATA)
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(ValueError, "LEXICON_CHAPTER_SCOPE_INVALID"):
+                module.extract_snapshot(("99",), Path(temp))
+
     def test_chapters_one_and_two_extract_source_roots_and_senses(self):
         module = load_module()
         roots, senses, evidence = module.build()
