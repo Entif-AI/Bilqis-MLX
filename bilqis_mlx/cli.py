@@ -11,7 +11,7 @@ import sys
 from bilqis_mlx.runtime.disk import assert_headroom
 from .source import AUDITED_PARENT
 from .grade_a_release import RELEASE as GRADE_A_RELEASE
-from .factory.live_releases import (
+from .compatibility.live_releases import (
     INITIAL_RELEASE as LIVE_GRADE_A_RELEASE,
     BOOLEAN_RELEASE as LIVE_GRADE_B_RELEASE,
     BOOLEAN_COMPOSITE_RELEASE as LIVE_GRADE_B_COMPOSITE_RELEASE,
@@ -226,7 +226,7 @@ def _boolean_revision_preflight(run_dir: Path, legacy_root: Path, *, resume: boo
     from .boolean_identification import RELEASE as ID_RELEASE
     from .boolean_identification import build_course as build_identification
     from .curriculum import BOOLEAN_OPERATORS
-    from .factory.live_releases import initial_course, boolean_successor
+    from .compatibility.live_releases import initial_course, boolean_successor
     from .grade_a_release import accepted_grade_a
 
     saved = json.loads((run_dir / "state.json").read_text())
@@ -294,7 +294,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE":
         # Source-only preflight is release/provider driven. The CLI never picks
         # a successor from a hard-coded grade letter.
-        from .factory.live_releases import (
+        from .compatibility.live_releases import (
             course_for_mode, initial_course, preflight_successor,
             resolve_admitted_courses,
         )
@@ -314,7 +314,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     if numeric_staircase:
         if not resume:
             raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
-        from .factory.live_releases import (
+        from .compatibility.live_releases import (
             course_for_mode, initial_course, numeric_registry_graph as registry_graph,
             predecessor_course, resolve_admitted_courses,
         )
@@ -345,7 +345,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         boolean_idboolops=(boolean_idboolops if full_grade_b else False),
         checkpoint_sha256=snapshot.get("checkpoint_sha256")))
     if resume:
-        from .factory.live_releases import (
+        from .compatibility.live_releases import (
             FULL_BOOLEAN_RELEASES, MINIMAL_BOOLEAN_RELEASE,
             course_for_mode, default_resume_replacement, initial_course,
             resolve_admitted_courses,

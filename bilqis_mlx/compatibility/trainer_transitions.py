@@ -15,7 +15,7 @@ from ..curriculum.scheduler import (
     replace_admitted_grade,
     revise_admitted_grade,
 )
-from ..factory.live_releases import (
+from .live_releases import (
     BOOLEAN_IDENTIFICATION_RELEASE,
     MINIMAL_BOOLEAN_RELEASE,
     legacy_receipt_fields,

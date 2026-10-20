@@ -70,7 +70,7 @@ from .profiles.catalog import (
     next_numeric_scope_profile,
     numeric_entry_transition,
 )
-from .factory.live_releases import (
+from .compatibility.live_releases import (
     GRAPH_GROWTH_TRANSITION,
     INITIAL_RELEASE,
     KNOWN_RELEASES,

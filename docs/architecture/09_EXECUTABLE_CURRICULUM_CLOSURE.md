@@ -392,6 +392,8 @@ Exit gate: changing only `CurriculumProfile` changes the live disposable runtime
 
 **Wave 3B numeric-scope checkpoint:** the 0..3 -> 0..4 -> 0..5 -> 0..6 staircase is now a sequence of same-curriculum v2 profile revisions, not a numeric release ladder. Numeric providers declare a typed `numbers` profile dimension; answer-family domains and source generation consume the same canonical prefix. `ScheduleProgram` identity includes the assessment projection so a changed numeric domain cannot silently reuse old rubric state. The bounded-final policy is persisted as profile execution metadata (`numeric_scope_final_maximum`), including one-time translation of historical staircase receipts in `compatibility/`. No live loop dispatches on the staircase release identity.
 
+**Wave 3C compatibility-boundary checkpoint:** the former `factory/live_releases.py` implementation has been retired from the current factory namespace and moved intact to `compatibility/live_releases.py`. The old import path is a deprecation shim for historical tests/external callers only. Current trainer/CLI compatibility reads import the compatibility module explicitly; live B/C progression already uses profiles, plan diffs and v2 admission. This relocation removed the 129-finding release-switchboard cluster from the closure ledger without deleting historical decode/replay evidence.
+
 ### Wave 3: replace release-name transitions with release diffs
 
 Move successor lineage and runtime compatibility into typed release metadata. Generic transition execution consumes `CurriculumDelta` plus a semantic-geometry transition contract. Same-grade revision, appended grade, profile revision, and graph growth are derived facts.
