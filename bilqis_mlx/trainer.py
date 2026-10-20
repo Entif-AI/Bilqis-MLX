@@ -3252,8 +3252,11 @@ def _hydrate_championship_witnesses(mx, run_dir, receipt, epoch, graph):
 def _fresh_title_current_exam(mx, receipt, cohort, pointer, parameters, graph, context,
                               capability):
     """Freshly replay the current cohort; title adjudication never reuses model answers."""
+    panel_rows = [row for row in cohort.rows if row["capability"] == capability]
+    if not panel_rows:
+        raise ValueError("CHAMPIONSHIP_TITLE_MATCH_CURRENT_PANEL_UNMEASURED")
     panel = make_cohort(
-        [row for row in cohort.rows if row["capability"] == capability],
+        panel_rows,
         generator_version=cohort.generator_version, seed=cohort.seed,
         rubric_version=cohort.rubric_version)
     readable = _readable_championship_rows(panel, graph, receipt)

@@ -752,10 +752,11 @@ def _main(args):
         return 130
     except (ValueError,RuntimeError,OSError,KeyError,IndexError) as err:
         print("OPERATOR BLOCKED: "+str(err),file=sys.stderr)
+        from .runtime.operator_recovery import recovery_advice
+        advice = recovery_advice(err)
+        print("RECOVERY: " + advice.disposition + " | " + advice.next_action,
+              file=sys.stderr)
         _report_timing_trace(trace_path, stream=sys.stderr)
-        if "HUMAN_TRAINER_NEW_RUN_HAS_EXISTING_CONTENT" in str(err):
-            print("Saved school exists. To continue it, use: "
-                  "npm run train -- --human-run --resume --minutes 90", file=sys.stderr)
         return 2
 
 
