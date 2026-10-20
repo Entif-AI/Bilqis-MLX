@@ -561,6 +561,8 @@ def parse_args(argv=None):
                            help="Human-authorized grade whose stagnation quarantine actuator is temporarily suppressed")
             p.add_argument("--stagnation-grace-steps",type=int,default=0,
                            help="Retained optimizer-step budget for the persisted stagnation grace")
+            p.add_argument("--admit-next-grade-with-debt", action="store_true",
+                           help="Human-authorized one-time next-grade admission after substantial rehabilitation; preserves unresolved prior mastery debt")
             p.add_argument("--triplets","--triples",dest="triples",action="store_true",
                            help="Global weakest-three recovery is intrinsic to the new scheduler")
     return parser.parse_args(argv)
@@ -720,6 +722,7 @@ def _main(args):
                     experiment_protected_cap_limit=args.experiment_protected_cap_limit,
                     stagnation_grace_grade=args.stagnation_grace_grade,
                     stagnation_grace_steps=args.stagnation_grace_steps,
+                    admit_next_grade_with_debt=args.admit_next_grade_with_debt,
                     source_prefetch_workers=args.source_prefetch_workers,
                     flash_mode=args.flash_mode,
                     boolean_association_bridge=args.boolean_association_bridge,

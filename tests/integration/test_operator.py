@@ -317,6 +317,9 @@ class OperatorTests(unittest.TestCase):
             "--stagnation-grace-steps", "100000"])
         self.assertEqual(grace.stagnation_grace_grade, "B")
         self.assertEqual(grace.stagnation_grace_steps, 100000)
+        debt = parse_args([
+            "train", "--resume", "--admit-next-grade-with-debt"])
+        self.assertTrue(debt.admit_next_grade_with_debt)
         with tempfile.TemporaryDirectory() as tmp:
             out=io.StringIO()
             with redirect_stdout(out), redirect_stderr(io.StringIO()):
@@ -391,6 +394,19 @@ class OperatorTests(unittest.TestCase):
                 self.assertEqual(main(["train", "--human-run", "--no-retention",
                                        "--run-dir", tmp]), 2)
             self.assertFalse(operate.call_args.kwargs["retention_enabled"])
+
+    def test_human_operator_forwards_explicit_debt_grade_admission(self):
+        from bilqis_mlx import trainer as trainer
+        no_neural_work = "TEST_BLOCKS_ANY_NEURAL_WORK"
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(trainer, "operate", side_effect=ValueError(
+                    no_neural_work)) as operate, redirect_stderr(io.StringIO()):
+                self.assertEqual(main([
+                    "train", "--human-run", "--resume",
+                    "--admit-next-grade-with-debt", "--run-dir", tmp,
+                ]), 2)
+            self.assertTrue(
+                operate.call_args.kwargs["admit_next_grade_with_debt"])
 
     def test_human_operator_explicitly_passes_autonomous_curriculum_mode(self):
         from bilqis_mlx import trainer as trainer

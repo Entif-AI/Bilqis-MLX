@@ -10,7 +10,10 @@ from typing import Mapping
 
 from .live_grade_c import RELEASE, answer_heads, constructor_digest, expanded_graph
 from .live_curriculum import numeric_maximum
-from bilqis_mlx.curriculum.scheduler import Assessment, SchoolState, append_next_grade, verify_state
+from bilqis_mlx.curriculum.scheduler import (
+    Assessment, SchoolState, append_next_grade, append_next_grade_with_debt,
+    verify_state,
+)
 from .curriculum import Course
 from .semantics.core import Operation
 from .curriculum_compiler import TypedCandidatePackage, compile_ast
@@ -196,7 +199,8 @@ def next_grade_readiness(
 
 
 def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
-                           parameters, optimizer, graph, *, reserve_gib):
+                           parameters, optimizer, graph, *, reserve_gib,
+                           allow_mastery_debt: bool = False):
     # Import the existing custody writer at use time; it owns all state/outbox I/O.
     from .trainer import (_advance, _bundle_pointer, _factory_admission,
         _fingerprint, _persist, _reconcile_delivery_outbox, _state_from_json,
@@ -204,32 +208,109 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
     school = _state_from_json(receipt["school"], previous)
     exam = receipt.get("last_exam") or {}
     counts = {cap: count for grade in previous.grades for cap, count in grade.exam_item_counts}
-    if (successor.version != RELEASE or school.grade != "B" or
-            school.revalidation_target_grade is not None or
-            exam.get("student_sha256") != school.current_student.sha256 or
-            exam.get("optimizer_step") != school.current_student.optimizer_step or
-            exam.get("scores") != {cap: {"correct": count, "total": count} for cap,count in counts.items()}):
-        raise ValueError("GRADE_C_REQUIRES_ONE_COMPLETE_CUMULATIVE_A_B_PASS")
-    next_state = append_next_grade(previous, successor, school)
+    debt_exam = exam
+    exam_scores = exam.get("scores") if isinstance(exam.get("scores"), dict) else {}
+    if allow_mastery_debt and set(counts) - set(exam_scores):
+        # A staged prior grade can leave `last_exam` narrower than the complete
+        # declared release even when this exact checkpoint has a fresh complete
+        # generalization exam in the durable event ledger. Debt admission must
+        # account for the full prior release, not only its current teaching stage.
+        recovered = None
+        events_path = run_dir / "events.jsonl"
+        if events_path.is_file():
+            with events_path.open(encoding="utf-8") as stream:
+                for line in stream:
+                    if not line.strip():
+                        continue
+                    event = json.loads(line)
+                    scores = event.get("scores")
+                    if (event.get("event") != "SCHOOL_LIVE_EXAM_COMMITTED" or
+                            event.get("student_sha256") != school.current_student.sha256 or
+                            event.get("optimizer_step") != school.current_student.optimizer_step or
+                            not isinstance(scores, dict) or
+                            not set(counts) <= set(scores)):
+                        continue
+                    recovered = {
+                        "student_sha256": event.get("student_sha256"),
+                        "optimizer_step": event.get("optimizer_step"),
+                        "cohort_sha256": event.get("cohort_sha256"),
+                        "exam_rubric_sha256": event.get("rubric"),
+                        "scores": scores,
+                        "source_generation": event.get("generation"),
+                        "source_exam_plane": event.get("exam_plane"),
+                    }
+        if recovered is not None:
+            debt_exam = recovered
+            exam_scores = recovered["scores"]
+    common_boundary_valid = (
+        successor.version == RELEASE and school.grade == "B" and
+        school.revalidation_target_grade is None and
+        debt_exam.get("student_sha256") == school.current_student.sha256 and
+        debt_exam.get("optimizer_step") == school.current_student.optimizer_step)
+    boundary_scores = {
+        capability: exam_scores[capability]
+        for capability in counts if capability in exam_scores
+    }
+    complete_boundary = (
+        set(boundary_scores) == set(counts) and
+        all(isinstance(boundary_scores[capability], dict) and
+            type(boundary_scores[capability].get("correct")) is int and
+            boundary_scores[capability].get("total") == count and
+            0 <= boundary_scores[capability]["correct"] <= count
+            for capability, count in counts.items()))
+    mastery_debt = tuple(
+        capability for capability in counts
+        if capability in boundary_scores and
+        boundary_scores[capability]["correct"] != counts[capability])
+    if allow_mastery_debt:
+        rehabilitation = (
+            (receipt.get("stagnation_session") or {}).get("rehabilitation") or {})
+        rehabilitation_capabilities = tuple(rehabilitation.get("capabilities", ()))
+        if (not common_boundary_valid or not complete_boundary or not mastery_debt or
+                rehabilitation.get("grade") != "B" or
+                not rehabilitation_capabilities or
+                not set(rehabilitation_capabilities) <= set(mastery_debt)):
+            raise ValueError("GRADE_C_DEBT_ADMISSION_REQUIRES_REHABILITATED_CURRENT_A_B_DEBT")
+        next_state = append_next_grade_with_debt(
+            previous, successor, school, mastery_debt)
+    else:
+        expected = {
+            cap: {"correct": count, "total": count}
+            for cap, count in counts.items()
+        }
+        if (not common_boundary_valid or boundary_scores != expected or
+                set(exam_scores) != set(counts)):
+            raise ValueError("GRADE_C_REQUIRES_ONE_COMPLETE_CUMULATIVE_A_B_PASS")
+        next_state = append_next_grade(previous, successor, school)
     grown_graph = expanded_graph(graph)
     grown, own_optimizer, growth = extend_mlx_student(parameters, optimizer, graph, grown_graph)
     import uuid
     pointer = _bundle_pointer(run_dir, "numeric-admission-"+uuid.uuid4().hex[:12],
         grown, own_optimizer, grown_graph, reserve_gib=reserve_gib)
-    from bilqis_mlx.learning.mentor_epoch import begin_epoch
+    from bilqis_mlx.learning.mentor_epoch import begin_debt_epoch, begin_epoch
     previous_caps = tuple(cap.id for grade in previous.grades
                           for cap in grade.capabilities)
-    next_epoch = begin_epoch(
-        previous_graduate=asdict(school.current_student),
-        admitted_baseline=asdict(pointer), introduced_grade="C",
-        source_graph_sha256=_fingerprint(grown_graph),
-        previous_capabilities=previous_caps,
-        previous_graduation_exam={
-            "checkpoint_sha256": exam.get("student_sha256"),
-            "cohort_sha256": exam.get("cohort_sha256"),
-            "rubric_sha256": exam.get("exam_rubric_sha256"),
-            "scores": exam.get("scores"),
-        })
+    boundary_exam = {
+        "checkpoint_sha256": debt_exam.get("student_sha256"),
+        "cohort_sha256": debt_exam.get("cohort_sha256"),
+        "rubric_sha256": debt_exam.get("exam_rubric_sha256"),
+        "scores": boundary_scores,
+    }
+    if allow_mastery_debt:
+        next_epoch = begin_debt_epoch(
+            previous_checkpoint=asdict(school.current_student),
+            admitted_baseline=asdict(pointer), introduced_grade="C",
+            source_graph_sha256=_fingerprint(grown_graph),
+            previous_capabilities=previous_caps,
+            previous_boundary_exam=boundary_exam,
+            previous_mastery_debt=mastery_debt)
+    else:
+        next_epoch = begin_epoch(
+            previous_graduate=asdict(school.current_student),
+            admitted_baseline=asdict(pointer), introduced_grade="C",
+            source_graph_sha256=_fingerprint(grown_graph),
+            previous_capabilities=previous_caps,
+            previous_graduation_exam=boundary_exam)
     epoch_history = list(receipt.get("championship_epoch_history", ()))
     if receipt.get("mentor_epoch") is not None:
         epoch_history.append(receipt["mentor_epoch"])
@@ -256,6 +337,13 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         }
     updated = {**receipt, "curriculum_mode": RELEASE,
         "grade_c_parent_course_digest": previous.digest(),
+        "grade_c_admission_mode": (
+            "CARRIED_MASTERY_DEBT" if allow_mastery_debt else "MASTERED_BOUNDARY"),
+        "grade_c_carried_mastery_debt": list(mastery_debt) if allow_mastery_debt else [],
+        "grade_c_debt_source_generation": (
+            debt_exam.get("source_generation") if allow_mastery_debt else None),
+        "grade_c_debt_source_exam_plane": (
+            debt_exam.get("source_exam_plane") if allow_mastery_debt else None),
         "numeric_maximum": maximum, "grade_c_code_sha256": constructor_digest(),
         "semantic_graph_sha256": _fingerprint(grown_graph),
         "factory_release_sha256": release.release_sha256,
@@ -277,6 +365,9 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         "championship_baseline_sha256": pointer.sha256,
         "factory_release_sha256": release.release_sha256,
         "archived_championship_epochs": len(epoch_history),
+        "admission_mode": updated["grade_c_admission_mode"],
+        "carried_mastery_debt": updated["grade_c_carried_mastery_debt"],
+        "prior_grade_mastery_complete": not allow_mastery_debt,
         "teacher_events": receipt["teacher"]["events"],
         "rubric": successor.grades[-1].assessment_sha256,
         "actual_neural_updates": 0}

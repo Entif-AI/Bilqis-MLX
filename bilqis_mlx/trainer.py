@@ -3101,7 +3101,8 @@ def _fresh_title_current_exam(mx, receipt, cohort, pointer, parameters, graph, c
 
 def _fresh_battery_results(mx, run_dir, receipt, role, parameters, graph):
     """Fresh model inference over one capability's surviving battery, with no answer cache."""
-    results = {}
+    selected_by_segment = {}
+    batched_rows = []
     for segment in verified_battery(role):
         cohort = load_championship_cohort(run_dir, segment)
         rows = {row["id"]: row for row in cohort.rows}
@@ -3118,13 +3119,32 @@ def _fresh_battery_results(mx, run_dir, receipt, role, parameters, graph):
             graph, receipt)
         if len(readable) != len(selected):
             raise ValueError("CHAMPIONSHIP_BATTERY_CHECKPOINT_INCOMPARABLE")
-        config = (_compatible_answer_config(receipt["config"], graph)
-                  if any(row.get("answer_kind", "binary") != "binary" for row in readable)
-                  else receipt["config"])
-        predictions = _predictions(mx, parameters, readable, config, receipt["answer_ids"])
-        results[segment["sha256"]] = [
-            row["id"] for row in readable if predictions[row["id"]] == row["gold"]]
-    return results
+        selected_by_segment[segment["sha256"]] = tuple(readable)
+        batched_rows.extend(readable)
+    if not batched_rows:
+        return {}
+    if len({row["id"] for row in batched_rows}) != len(batched_rows):
+        raise ValueError("CHAMPIONSHIP_BATTERY_BATCH_DUPLICATE_QUESTION")
+    config = (_compatible_answer_config(receipt["config"], graph)
+              if any(row.get("answer_kind", "binary") != "binary"
+                     for row in batched_rows)
+              else receipt["config"])
+    # Freshness is about when model answers are produced, not one device launch
+    # per immutable evidence segment.  Verify every segment independently above,
+    # then infer the complete title battery once and partition those fresh
+    # answers back to their original segment receipts.
+    with trace_span(
+            "CHAMPIONSHIP_BATTERY_INFERENCE",
+            capability=role.get("capability"),
+            battery_segments=len(selected_by_segment),
+            battery_rows=len(batched_rows)):
+        predictions = _predictions(
+            mx, parameters, batched_rows, config, receipt["answer_ids"])
+    return {
+        sha256: [row["id"] for row in rows
+                 if predictions[row["id"]] == row["gold"]]
+        for sha256, rows in selected_by_segment.items()
+    }
 
 
 def _fresh_title_match(mx, run_dir, receipt, epoch, cohort, challenger,
@@ -4215,6 +4235,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             experiment_protected_cap_limit: int = 8,
             stagnation_grace_grade: str | None = None,
             stagnation_grace_steps: int = 0,
+            admit_next_grade_with_debt: bool = False,
             source_prefetch_workers: int = 2,
             flash_mode: bool = False,
             boolean_association_bridge: bool = False,
@@ -4229,6 +4250,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         autonomous_curriculum=autonomous_curriculum,
         boolean_composite=boolean_composite,
         boolean_idboolops=boolean_idboolops,
+        admit_next_grade_with_debt=admit_next_grade_with_debt,
         full_grade_b=full_grade_b)
     if (type(minutes) is not int or not 1 <= minutes <= 1440 or
             type(steps_per_visit) is not int or not 1 <= steps_per_visit <= 2048 or
@@ -4251,6 +4273,10 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_RESUME")
     if boolean_association_bridge and not resume:
         raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME")
+    if admit_next_grade_with_debt and not resume:
+        raise ValueError("DEBT_GRADE_ADMISSION_REQUIRES_RESUME")
+    if admit_next_grade_with_debt and numeric_staircase:
+        raise ValueError("DEBT_GRADE_ADMISSION_INCOMPATIBLE_WITH_NUMERIC_STAIRCASE")
     if autonomous_curriculum and not retention_enabled:
         raise ValueError("AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION")
     if autonomous_curriculum and flash_mode:
@@ -4339,7 +4365,18 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 course, receipt = enroll(
                     run_dir, receipt, course,
                     predecessor_course(admitted_courses, course), graph)
-            if receipt["school"]["stage"] == "AWAITING_NEXT_GRADE":
+            if admit_next_grade_with_debt:
+                plan = next_successor_plan(
+                    course, source_root, full_grade_b=full_grade_b)
+                if plan is None or plan.transition != GRAPH_GROWTH_TRANSITION:
+                    raise ValueError("DEBT_GRADE_ADMISSION_REQUIRES_GRAPH_GROWTH_SUCCESSOR")
+                from .grade_transition import activate_numeric_grade
+                params, optimizer, graph, receipt = activate_numeric_grade(
+                    mx, run_dir, receipt, course, plan.successor,
+                    params, optimizer, graph, reserve_gib=reserve_gib,
+                    allow_mastery_debt=True)
+                course = plan.successor
+            elif receipt["school"]["stage"] == "AWAITING_NEXT_GRADE":
                 plan = next_successor_plan(
                     course, source_root, full_grade_b=full_grade_b)
                 if plan is not None:

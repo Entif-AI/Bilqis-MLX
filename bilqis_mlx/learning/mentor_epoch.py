@@ -94,6 +94,63 @@ def begin_epoch(*, previous_graduate: dict, admitted_baseline: dict,
             "qualified": [], "historical_advisers_remain_archived": True}
 
 
+def begin_debt_epoch(*, previous_checkpoint: dict, admitted_baseline: dict,
+                     introduced_grade: str, source_graph_sha256: str,
+                     previous_capabilities: tuple[str, ...],
+                     previous_boundary_exam: dict,
+                     previous_mastery_debt: tuple[str, ...]) -> dict:
+    """Start a new-grade epoch without mislabeling unresolved prior work mastered.
+
+    The previous checkpoint is preserved for custody, but is explicitly not a
+    graduate.  The complete prior-course exam must name exactly the carried
+    non-perfect capabilities; no missing or synthetic score may become debt.
+    """
+    checkpoint = _pointer(previous_checkpoint)
+    baseline = _pointer(admitted_baseline)
+    caps = tuple(previous_capabilities)
+    debt = tuple(previous_mastery_debt)
+    if (not introduced_grade or not _sha(source_graph_sha256) or
+            not caps or len(set(caps)) != len(caps) or
+            any(not isinstance(cap, str) or
+                cap.partition(".")[0] == introduced_grade for cap in caps) or
+            baseline["optimizer_step"] < checkpoint["optimizer_step"] or
+            not debt or len(set(debt)) != len(debt) or
+            not set(debt) <= set(caps)):
+        raise ValueError("MENTOR_EPOCH_INVALID_DEBT_BOUNDARY")
+    exam = previous_boundary_exam
+    if (not isinstance(exam, dict) or
+            exam.get("checkpoint_sha256") != checkpoint["sha256"] or
+            not _sha(exam.get("cohort_sha256")) or
+            not _sha(exam.get("rubric_sha256")) or
+            set(_scores(exam.get("scores"))) != set(caps)):
+        raise ValueError("MENTOR_EPOCH_COMPLETE_PREVIOUS_BOUNDARY_REQUIRED")
+    observed_debt = tuple(cap for cap in caps
+                          if exam["scores"][cap]["correct"] !=
+                          exam["scores"][cap]["total"])
+    if set(observed_debt) != set(debt):
+        raise ValueError("MENTOR_EPOCH_MASTERY_DEBT_MISMATCH")
+    return {
+        "schema": SCHEMA,
+        "introduced_grade": introduced_grade,
+        "source_graph_sha256": source_graph_sha256,
+        "previous_capabilities": list(caps),
+        "previous_graduate": None,
+        "previous_boundary_checkpoint": checkpoint,
+        "previous_mastery_debt": list(debt),
+        "baseline": baseline,
+        "baseline_roles": {},
+        "active_roles": {},
+        "active_grade_soups": {},
+        "guidance_policy": EARNED_ONLY_POLICY,
+        "championship_eligibility_after_step": baseline["optimizer_step"],
+        "earned_role_votes_at_reset": 0,
+        "previous_boundary_exam_sha256": _digest(exam),
+        "qualified": [],
+        "historical_advisers_remain_archived": True,
+        "admission_mode": "CARRIED_MASTERY_DEBT",
+    }
+
+
 def begin_initial_epoch(*, student: dict, introduced_grade: str,
                         source_graph_sha256: str, frontier: dict, soups: dict) -> dict:
     """Start earned roles before graduation; preserve existing active titles."""
@@ -157,6 +214,8 @@ def reference_checkpoints(epoch: dict) -> tuple[dict, ...]:
     pointers = [_pointer(epoch["baseline"])]
     if epoch.get("previous_graduate") is not None:
         pointers.append(_pointer(epoch["previous_graduate"]))
+    if epoch.get("previous_boundary_checkpoint") is not None:
+        pointers.append(_pointer(epoch["previous_boundary_checkpoint"]))
     pointers.extend(_pointer(item["checkpoint"]) for item in epoch["qualified"])
     for historic in epoch.get("superseded_active_championships", ()):
         pointers.extend(_pointer(item["checkpoint"])

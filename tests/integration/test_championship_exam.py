@@ -513,6 +513,70 @@ class ChampionshipExamTests(TestCase):
             self.assertEqual(infer.call_count, 2)
             self.assertNotEqual(first, second)
 
+    def test_fresh_battery_batches_verified_segments_into_one_model_inference(self):
+        graph = {"tokens": ["PAD", "TRUE"], "nodes": [0, 1],
+                 "row_contract_sha256": {}}
+        receipt = {"source_manifest_sha256": "c" * 64,
+                   "config": {}, "answer_ids": [1]}
+        contexts = []
+        cohorts = []
+        for seed, prefix in ((1, "x"), (2, "y")):
+            rows = [
+                {"id": prefix + "0", "capability": "A.X",
+                 "gold": "TRUE", "tokens": [1]},
+                {"id": prefix + "1", "capability": "A.X",
+                 "gold": "FALSE", "tokens": [1]},
+            ]
+            cohort = make_cohort(
+                rows, generator_version="fixture", seed=seed,
+                rubric_version="fixture")
+            context = {
+                "cohort_sha256": cohort.digest,
+                "rubric_sha256": "d" * 64,
+                "cohort_rubric_sha256": "d" * 64,
+                "assessment_scope_sha256": "e" * 64,
+                "source_graph_sha256": trainer._fingerprint(graph),
+                "source_oracle_sha256": "c" * 64,
+                "scores": {"A.X": {"correct": 2, "total": 2}},
+                "questions": {"A.X": [
+                    {"id": row["id"], "gold": row["gold"]} for row in rows]},
+                "correct_questions": {"A.X": [
+                    {"id": row["id"], "gold": row["gold"]} for row in rows]},
+            }
+            contexts.append(context)
+            cohorts.append((cohort, rows))
+        role = {
+            "capability": "A.X",
+            "surviving_battery": list(
+                battery_from_exam(contexts[0], ("A.X",)) +
+                battery_from_exam(contexts[1], ("A.X",))),
+        }
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "cohorts").mkdir()
+            for cohort, rows in cohorts:
+                (root / "cohorts" / (cohort.digest + ".json")).write_text(
+                    json.dumps({
+                        "cohort_sha256": cohort.digest,
+                        "rubric_sha256": "d" * 64,
+                        "source_manifest_sha256": "c" * 64,
+                        "schema": "fixture",
+                        "generator_version": "fixture",
+                        "seed": cohort.seed,
+                        "rows": rows,
+                    }))
+            answers = {"x0": "TRUE", "x1": "FALSE",
+                       "y0": "TRUE", "y1": "FALSE"}
+            with patch.object(trainer, "_predictions", return_value=answers) as infer:
+                result = trainer._fresh_battery_results(
+                    None, root, receipt, role, {}, graph)
+
+        self.assertEqual(infer.call_count, 1)
+        self.assertEqual(len(infer.call_args.args[2]), 4)
+        self.assertEqual(set(result), {
+            segment["sha256"] for segment in role["surviving_battery"]})
+        self.assertTrue(all(len(correct) == 2 for correct in result.values()))
+
     def test_title_match_reinfers_both_models_for_current_panel_and_battery(self):
         graph = {"tokens": ["PAD", "TRUE"], "nodes": [0, 1],
                  "row_contract_sha256": {}}

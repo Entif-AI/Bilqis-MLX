@@ -119,6 +119,10 @@ class SchoolState:
     # current cross-grade sweep. Global weakest-three recovery is due only
     # after every currently imperfect eligible grade has had that pass.
     main_sweep_visited: tuple[str, ...] = ()
+    # Explicit human-authorized progression may admit a later grade before all
+    # earlier capabilities are mastered.  These identities remain cumulative
+    # mastery debt until one intact checkpoint clears the whole active program.
+    carried_mastery_debt: tuple[str, ...] = ()
 
     @property
     def grade(self) -> str:
@@ -132,6 +136,10 @@ def _caps(course: Course, grade_ids: tuple[str, ...]) -> tuple[str, ...]:
 
 def _score_pool(course: Course, state: SchoolState) -> tuple[str, ...]:
     represented = set(state.champions) | {state.grade}
+    if state.carried_mastery_debt:
+        # Debt admission opens new learning territory without letting an
+        # unresolved earlier grade disappear from cumulative assessment.
+        represented.update(state.active_grades)
     if state.latest_rubric_digest is not None:
         sealed = [index for index, grade in enumerate(course.grades)
                   if grade.id in state.active_grades and
@@ -201,6 +209,13 @@ def verify_state(course: Course, state: SchoolState):
     if (len(set(state.main_sweep_visited)) != len(state.main_sweep_visited) or
             not set(state.main_sweep_visited) <= set(state.active_grades)):
         raise ValueError("INVALID_MAIN_SWEEP_HISTORY")
+    all_active_caps = set(_caps(course, state.active_grades))
+    if (len(set(state.carried_mastery_debt)) != len(state.carried_mastery_debt) or
+            not set(state.carried_mastery_debt) <= all_active_caps):
+        raise ValueError("INVALID_CARRIED_MASTERY_DEBT")
+    if state.carried_mastery_debt and state.stage in (
+            "AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED"):
+        raise ValueError("CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY")
     current = next(g for g in course.grades if g.id == state.grade)
     if state.introduction_stage >= max(1, len(current.teaching_stages)):
         raise ValueError("INVALID_INTRODUCTION_STAGE")
@@ -261,7 +276,7 @@ def weakest_three(scores: dict[str, Score], pool: tuple[str, ...]) -> tuple[str,
 
 
 def _perfect_in_grade(course: Course, grade: str, scores: dict[str, Score]) -> bool:
-    return all(scores[c].perfect for c in _caps(course, (grade,)))
+    return all(c in scores and scores[c].perfect for c in _caps(course, (grade,)))
 
 
 def _next_imperfect_grade_index(course: Course, state: SchoolState,
@@ -401,6 +416,37 @@ def _promote(course: Course, state: SchoolState, assessment: Assessment) -> Scho
                                fully_mastered_at_this_candidate=full_at_candidate)
     pointers[state.grade] = candidate
 
+    if state.carried_mastery_debt:
+        all_caps = _caps(course, state.active_grades)
+        if not set(all_caps) <= set(assessment.scores):
+            raise ValueError("DEBT_PROMOTION_REQUIRES_COMPLETE_ACTIVE_ASSESSMENT")
+        debt = tuple(capability for capability in all_caps
+                     if not assessment.scores[capability].perfect)
+        if not debt:
+            # One intact checkpoint has finally cleared every admitted grade.
+            # Repoint every grade to that same complete student, then use the
+            # ordinary partial/full program boundary machinery.
+            complete_pointers = {
+                grade: candidate for grade in state.active_grades
+            }
+            last = len(state.active_grades) - 1
+            boundary = _enter_grade(
+                course, replace(state, carried_mastery_debt=()), last,
+                stage="MAIN", first_recovery=(), champions=complete_pointers,
+                main_sweep_visited=(), revalidation_target_grade=None,
+                latest_rubric_digest=assessment.rubric_digest)
+            return _finish_grade_series(
+                course, boundary, assessment, complete_pointers)
+        next_index = _next_imperfect_grade_index(
+            course, state, assessment.scores)
+        if next_index is None:
+            raise ValueError("DEBT_SPIRAL_HAS_NO_IMPERFECT_GRADE")
+        return _enter_grade(
+            course, replace(state, carried_mastery_debt=debt), next_index,
+            stage="MAIN", first_recovery=(), champions=pointers,
+            main_sweep_visited=(), revalidation_target_grade=None,
+            latest_rubric_digest=assessment.rubric_digest)
+
     target = state.revalidation_target_grade
     if target is not None:
         target_index = state.active_grades.index(target)
@@ -460,6 +506,15 @@ def _verify_assessment_boundary(course: Course, state: SchoolState,
 def assess(course: Course, state: SchoolState, snapshot: Assessment) -> SchoolState:
     pool = _score_pool(course, state)
     _verify_assessment_boundary(course, state, snapshot, pool)
+    if state.carried_mastery_debt:
+        all_caps = _caps(course, state.active_grades)
+        if set(all_caps) <= set(snapshot.scores):
+            debt = tuple(capability for capability in all_caps
+                         if not snapshot.scores[capability].perfect)
+            # Keep the nonempty marker until _promote observes one complete
+            # all-perfect checkpoint and closes the debt-admission epoch.
+            if debt:
+                state = replace(state, carried_mastery_debt=debt)
     grade = next(g for g in course.grades if g.id == state.grade)
     if grade.teaching_stages and state.introduction_stage < len(grade.teaching_stages)-1:
         own = set(_main_queue(course, state))
@@ -682,7 +737,57 @@ def append_next_grade(previous: Course, successor: Course,
                    main_sweep_visited=(),
                    revalidation_target_grade=None,
                    latest_rubric_digest=None, pending_failures=(),
+                   carried_mastery_debt=(),
                    teacher_soup_digest=None)
+    return _enter_grade(successor, extended, len(previous.grades))
+
+
+def append_next_grade_with_debt(
+        previous: Course, successor: Course, state: SchoolState,
+        mastery_debt: tuple[str, ...]) -> SchoolState:
+    """Human-authorized append while preserving unresolved prior mastery debt.
+
+    This is progression, not graduation.  It never fabricates a champion for
+    an unresolved grade and it never clears debt merely because a later grade
+    becomes available.  One later cumulative checkpoint must still perfect the
+    complete active program before the ordinary next-grade boundary is reached.
+    """
+    verify_state(previous, state)
+    validate(successor)
+    if previous.program_complete:
+        raise ValueError("DEBT_GRADE_APPEND_REQUIRES_PARTIAL_PROGRAM")
+    if not mastery_debt or len(set(mastery_debt)) != len(mastery_debt):
+        raise ValueError("DEBT_GRADE_APPEND_REQUIRES_EXPLICIT_MASTERY_DEBT")
+    previous_caps = set(_caps(previous, tuple(g.id for g in previous.grades)))
+    if not set(mastery_debt) <= previous_caps:
+        raise ValueError("DEBT_GRADE_APPEND_DEBT_OUTSIDE_PREVIOUS_PROGRAM")
+    if len(successor.grades) != len(previous.grades) + 1:
+        raise ValueError("GRADE_APPEND_REQUIRES_EXACTLY_ONE_NEW_GRADE")
+    if tuple(successor.grades[:len(previous.grades)]) != previous.grades:
+        raise ValueError("GRADE_APPEND_WOULD_CHANGE_PREVIOUS_GRADE")
+    if any(g.assessment_sha256 is None for g in previous.grades):
+        raise ValueError("GRADE_APPEND_UNSEALED_PREVIOUS_GRADE")
+    if state.revalidation_target_grade is not None:
+        raise ValueError("DEBT_GRADE_APPEND_DURING_REVALIDATION_FORBIDDEN")
+    grade_by_capability = {
+        capability.id: grade.id
+        for grade in previous.grades for capability in grade.capabilities
+    }
+    debt_grades = {grade_by_capability[capability] for capability in mastery_debt}
+    mastered_required = set(state.active_grades) - debt_grades
+    if not mastered_required <= set(state.champions):
+        raise ValueError("DEBT_GRADE_APPEND_NONDEBT_GRADE_NOT_MASTERED")
+    added = successor.grades[-1].id
+    if added in state.champions:
+        raise ValueError("GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS")
+    extended = replace(
+        state, course_digest=successor.digest(),
+        grade_exam_epoch=state.grade_exam_epoch + 1,
+        active_grades=tuple(g.id for g in successor.grades),
+        stage="MAIN", first_recovery=(), main_sweep_visited=(),
+        revalidation_target_grade=None, latest_rubric_digest=None,
+        pending_failures=(), teacher_soup_digest=None,
+        carried_mastery_debt=tuple(mastery_debt))
     return _enter_grade(successor, extended, len(previous.grades))
 
 
@@ -821,6 +926,7 @@ def read_state(path: Path, course: Course) -> SchoolState:
     raw["first_recovery"] = tuple(raw["first_recovery"])
     raw["pending_failures"] = tuple(raw["pending_failures"])
     raw["main_sweep_visited"] = tuple(raw.get("main_sweep_visited", ()))
+    raw["carried_mastery_debt"] = tuple(raw.get("carried_mastery_debt", ()))
     raw["current_student"] = Checkpoint(**raw["current_student"])
     raw["champions"] = {grade: Checkpoint(**cp)
                         for grade, cp in raw["champions"].items()}

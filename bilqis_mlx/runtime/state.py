@@ -45,8 +45,9 @@ def _durable_json(path: Path, data: dict, *, replace_existing=False):
 def _state_from_json(value: dict, course) -> SchoolState:
     school = dict(value)
     school.setdefault("main_sweep_visited", ())
+    school.setdefault("carried_mastery_debt", ())
     for name in ("active_grades", "queue", "first_recovery", "pending_failures",
-                 "main_sweep_visited"):
+                 "main_sweep_visited", "carried_mastery_debt"):
         school[name] = tuple(school[name])
     school["current_student"] = Checkpoint(**school["current_student"])
     school["champions"] = {key: Checkpoint(**item)

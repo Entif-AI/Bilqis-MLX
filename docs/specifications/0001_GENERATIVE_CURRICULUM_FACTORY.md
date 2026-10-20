@@ -110,11 +110,19 @@ A grade cannot graduate solely by passing a familiar cohort.
 
 Promotion requires independent fresh source-valid evidence generated from the same released semantic contract. The factory must make the lifetime and contamination status of every assessment cohort explicit.
 
-### 3.7 Human neural authority remains unchanged
+### 3.7 Progression may carry explicit mastery debt without fabricating graduation
+
+Graduation and access to new learning territory are separate authorities. The ordinary path remains cumulative same-checkpoint mastery before clean next-grade admission. However, after substantial stagnation rehabilitation, an explicit human-authorized admission MAY open the next source-valid released grade while preserving every currently imperfect prior capability as durable `carried_mastery_debt`.
+
+Debt admission MUST NOT fabricate a champion, graduation receipt, perfect score, or historical reclassification for an unresolved grade. The complete current-checkpoint prior-course assessment is the authority for the exact carried capability set. While any carried debt remains, cumulative assessment keeps every admitted grade in scope and ordinary grade-neutral spiral scheduling continues across imperfect grades. A later grade may itself earn a champion without erasing earlier debt. The debt epoch ends only when one intact student checkpoint with its own optimizer satisfies the complete active-school mastery contract; only then may the runtime reach the ordinary clean next-grade boundary.
+
+Debt admission is an explicit human progression decision, not a fixed timeout, two-recovery-round shortcut, or autonomous scheduler guess. The factory/runtime must preserve the release, ABI, vocabulary-growth, source-admission, checkpoint-custody, championship, and human-optimizer gates that would apply to an ordinary admission.
+
+### 3.8 Human neural authority remains unchanged
 
 Only the human may start or resume actual optimizer updates. Factory compilation, source verification, disposable model tests, static conformance checks, and read-only checkpoint evaluation do not authorize a live neural run.
 
-### 3.8 Historical evidence is immutable
+### 3.9 Historical evidence is immutable
 
 Existing checkpoints, AdamW state, cohorts, event ledgers, source manifests, rubrics, champions, soups, receipts, and historical documents remain interpretable. Migration must preserve their hashes and decoding paths.
 

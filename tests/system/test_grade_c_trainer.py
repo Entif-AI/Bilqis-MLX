@@ -101,6 +101,83 @@ class GradeCTrainerTests(unittest.TestCase):
                 activate_numeric_grade(mx, Path("/unused"), receipt, self.previous, self.course,
                     params,opt,self.parent_graph,reserve_gib=0.)
 
+    def test_human_debt_admission_grows_c_without_fabricating_b_mastery(self):
+        mx, params, opt = self.toy()
+        pointer = Checkpoint("a"*64,"bundles/inert",1,True)
+        school = start_new(self.previous, pointer)
+        b = self.previous.grades[-1]
+        school = replace(
+            school, grade_index=1,
+            introduction_stage=(len(b.teaching_stages)-1 if b.teaching_stages else 0),
+            stage="RECOVERY_2", queue=("B.AND", "B.IFF"),
+            first_recovery=("B.AND", "B.IFF"), champions={"A": pointer},
+            latest_rubric_digest=b.assessment_sha256)
+        receipt = self.receipt(school, pointer, params)
+        full_boundary_scores = json.loads(json.dumps(receipt["last_exam"]["scores"]))
+        full_boundary_scores["A.EDGE"]["correct"] = 10
+        full_boundary_scores["B.AND"]["correct"] = 7
+        full_boundary_scores["B.IFF"]["correct"] = 6
+        # Mirror the live staged-B shape: the hot `last_exam` can be narrower
+        # than the declared prior release even though a complete fresh
+        # same-checkpoint generalization exam exists in the durable event log.
+        omitted = next(cap for cap in full_boundary_scores
+                       if cap.startswith("B.") and cap not in ("B.AND", "B.IFF"))
+        receipt["last_exam"]["scores"] = {
+            cap: value for cap, value in full_boundary_scores.items()
+            if cap != omitted
+        }
+        receipt["stagnation_session"] = {
+            "schema": "bilqis.mlx.stagnation-session/v1",
+            "session_id": "debt-admission",
+            "started_generation": 1,
+            "required_capabilities": [
+                cap.id for grade in self.previous.grades for cap in grade.capabilities],
+            "cycle_index": 3,
+            "cycle_first_recovery": [],
+            "cycle_visits": {},
+            "quarantined": {},
+            "alerts": [],
+            "rehabilitation": {
+                "grade": "B", "capabilities": ["B.AND", "B.IFF"],
+                "started_generation": 1,
+                "reason": "SOLE_REMAINING_GRADE_MASTERY_DEBT",
+            },
+        }
+
+        with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
+            root = Path(temp)
+            receipt = _persist(root, receipt)
+            (root / "events.jsonl").write_text(json.dumps({
+                "event": "SCHOOL_LIVE_EXAM_COMMITTED",
+                "generation": 9,
+                "student_sha256": pointer.sha256,
+                "optimizer_step": pointer.optimizer_step,
+                "cohort_sha256": "c" * 64,
+                "rubric": self.previous.grades[-1].assessment_sha256,
+                "exam_plane": "GENERALIZATION",
+                "scores": full_boundary_scores,
+            }) + "\n")
+            grown, own, graph, changed = activate_numeric_grade(
+                mx, root, receipt, self.previous, self.course,
+                params, opt, self.parent_graph, reserve_gib=0.,
+                allow_mastery_debt=True)
+
+        changed_school = changed["school"]
+        self.assertEqual(
+            changed_school["carried_mastery_debt"],
+            ["A.EDGE", "B.AND", "B.IFF"])
+        self.assertEqual(
+            changed_school["active_grades"][changed_school["grade_index"]], "C")
+        self.assertEqual(set(changed_school["champions"]), {"A"})
+        self.assertEqual(changed["mentor_epoch"]["previous_mastery_debt"],
+                         ["A.EDGE", "B.AND", "B.IFF"])
+        self.assertEqual(changed["grade_c_debt_source_generation"], 9)
+        self.assertEqual(changed["grade_c_debt_source_exam_plane"], "GENERALIZATION")
+        from bilqis_mlx.learning.mentor_epoch import reference_checkpoints
+        references = reference_checkpoints(changed["mentor_epoch"])
+        self.assertIn(pointer.sha256, {item["sha256"] for item in references})
+        self.assertEqual(int(own.state["step"].item()), int(opt.state["step"].item()))
+
     def test_c_checks_native_catalog_without_external_review_before_growth(self):
         mx, params, opt = self.toy()
         pointer = Checkpoint("a"*64,"bundles/inert",1,True)

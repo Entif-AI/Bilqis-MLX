@@ -50,6 +50,14 @@ def three_grade_course(*, complete=False):
                    version="synthetic/abc-v1", program_complete=complete)
 
 
+def sealed_three_grade_course(*, complete=False):
+    course = three_grade_course(complete=complete)
+    seals = ("a" * 64, "b" * 64, "c" * 64)
+    grades = tuple(replace(grade, assessment_sha256=seal)
+                   for grade, seal in zip(course.grades, seals))
+    return replace(course, grades=grades, assessment_manifest_sha256=seals[-1])
+
+
 def four_grade_course():
     base = three_grade_course()
     fourth = replace(base.grades[-1], id="D", capabilities=tuple(
@@ -829,6 +837,71 @@ class SchoolTests(unittest.TestCase):
             changed_a = replace(a, assessment_sha256="c"*64)
             append_next_grade(a_only, replace(successor, grades=(changed_a, full.grades[1])),
                               state)
+
+    def test_explicit_debt_admission_adds_next_grade_without_fabricating_prior_champion(self):
+        from bilqis_mlx.curriculum import scheduler
+
+        full = sealed_three_grade_course()
+        previous = replace(
+            full, grades=full.grades[:2], version="synthetic/ab-debt-v1",
+            program_complete=False)
+        successor = replace(full, version="synthetic/abc-debt-v1",
+                            program_complete=False)
+        student = cp("debt-candidate", 900)
+        state = start_new(previous, student)
+        state = replace(
+            state, grade_index=1, stage="RECOVERY_2", queue=("b.0",),
+            first_recovery=("b.0",), champions={"A": student},
+            latest_rubric_digest=previous.grades[-1].assessment_sha256)
+
+        migrated = scheduler.append_next_grade_with_debt(
+            previous, successor, state, ("a.0", "b.0"))
+
+        self.assertEqual(migrated.grade, "C")
+        self.assertEqual(migrated.carried_mastery_debt, ("a.0", "b.0"))
+        self.assertEqual(set(migrated.champions), {"A"})
+        self.assertNotIn("B", migrated.champions)
+        self.assertIn("b.0", assessment_capabilities(successor, migrated))
+
+    def test_debt_admitted_school_spirals_until_one_checkpoint_clears_all_active_debt(self):
+        from bilqis_mlx.curriculum import scheduler
+
+        full = sealed_three_grade_course()
+        previous = replace(
+            full, grades=full.grades[:2], version="synthetic/ab-debt-v2",
+            program_complete=False)
+        successor = replace(full, version="synthetic/abc-debt-v2",
+                            program_complete=False)
+        student = cp("debt-spiral", 901)
+        state = start_new(previous, student)
+        state = replace(
+            state, grade_index=1, stage="RECOVERY_2", queue=("b.0",),
+            first_recovery=("b.0",), champions={"A": student},
+            latest_rubric_digest=previous.grades[-1].assessment_sha256)
+        state = scheduler.append_next_grade_with_debt(
+            previous, successor, state, ("b.0",))
+
+        state = grade_loop(successor, state, student)
+        state = assess(
+            successor, state,
+            snapshot(
+                successor, student, all_scores(successor, imperfect=("b.0",)),
+                from_rubric=successor.grades[-1].assessment_sha256))
+        self.assertEqual((state.grade, state.stage), ("B", "MAIN"))
+        self.assertEqual(state.carried_mastery_debt, ("b.0",))
+        self.assertIn("C", state.champions)
+        self.assertNotIn("B", state.champions)
+
+        state = grade_loop(successor, state, student)
+        state = assess(
+            successor, state,
+            snapshot(
+                successor, student, all_scores(successor),
+                from_rubric=successor.grades[-1].assessment_sha256))
+        self.assertEqual(state.stage, "AWAITING_NEXT_GRADE")
+        self.assertEqual(state.grade, "C")
+        self.assertEqual(state.carried_mastery_debt, ())
+        self.assertEqual(set(state.champions), {"A", "B", "C"})
 
 
 if __name__=="__main__":
