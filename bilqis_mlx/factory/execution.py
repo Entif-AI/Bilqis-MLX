@@ -504,12 +504,15 @@ def diff_execution_plans(
     if not isinstance(previous, ExecutionPlan) or not isinstance(current, ExecutionPlan):
         raise TypeError("FACTORY_EXECUTION_PLAN_DIFF_INVALID_INPUT")
     if previous.curriculum_sha256 == current.curriculum_sha256:
-        if lineage is not None and (
-                lineage.previous_curriculum_sha256 != previous.curriculum_sha256 or
-                lineage.next_curriculum_sha256 != current.curriculum_sha256 or
-                lineage.semantic_geometry is not SemanticGeometryChange.UNCHANGED):
-            raise ValueError("FACTORY_PLAN_LINEAGE_PROFILE_REVISION_DRIFT")
-        geometry = SemanticGeometryChange.UNCHANGED
+        if lineage is None:
+            geometry = SemanticGeometryChange.UNCHANGED
+        else:
+            if (lineage.previous_curriculum_sha256 !=
+                    previous.curriculum_sha256 or
+                    lineage.next_curriculum_sha256 !=
+                    current.curriculum_sha256):
+                raise ValueError("FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT")
+            geometry = lineage.semantic_geometry
     else:
         if lineage is None:
             raise ValueError("FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED")

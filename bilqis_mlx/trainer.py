@@ -61,7 +61,11 @@ from .factory.executable_release import (
     compile_successor_profile_release,
 )
 from .factory.live_answers import live_answer_registry
-from .profiles.school import boolean_entry_profile
+from .profiles.school import (
+    boolean_entry_profile,
+    with_disabled_future_grades,
+)
+from .profiles.catalog import numeric_entry_transition
 from .factory.live_releases import (
     GRAPH_GROWTH_TRANSITION,
     INITIAL_RELEASE,
@@ -121,6 +125,7 @@ from bilqis_mlx.learning.stagnation_control import (
 )
 from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .source import AUDITED_PARENT
+from .vocabulary_growth import extend_mlx_student
 from bilqis_mlx.learning.teacher_feedback import (
     FairMissRequest, TeacherDecisionInput, active_warning_signals, reconcile_unresolved_misses,
     select_fair_miss_window, summarize_teacher_decision,
@@ -1368,6 +1373,136 @@ def _adopt_executable_profile(
         run_dir, _with_delivery_outbox(record, (event,)))
     _reconcile_delivery_outbox(run_dir, record)
     return record, compatibility_course, successor, successor_program
+
+
+def _require_complete_profile_boundary(program, school, receipt):
+    """Require one complete perfect cumulative exam for the admitted prefix."""
+    if school.stage != "AWAITING_NEXT_GRADE":
+        raise ValueError("FACTORY_PROFILE_EXPANSION_NOT_AT_GRADE_BOUNDARY")
+    exam = receipt.get("last_exam") or {}
+    expected = {
+        capability.id: capability.exam_item_count
+        for grade in program.grades for capability in grade.capabilities
+    }
+    if (exam.get("student_sha256") != school.current_student.sha256 or
+            exam.get("optimizer_step") != school.current_student.optimizer_step or
+            exam.get("scores") != {
+                capability: {"correct": count, "total": count}
+                for capability, count in expected.items()}):
+        raise ValueError(
+            "FACTORY_PROFILE_EXPANSION_REQUIRES_COMPLETE_PERFECT_PREFIX")
+
+
+def _adopt_catalog_profile(
+        mx, run_dir, receipt, grade_a_course, source_root, graph,
+        parameters, optimizer, transition, *, reserve_gib):
+    """Adopt one append-only semantic ABI/profile expansion with zero updates."""
+    predecessor = _require_executable_factory_admission(run_dir, receipt, graph)
+    previous_program = schedule_program_from_executable_release(predecessor)
+    school = _state_from_json(receipt["school"], previous_program)
+    _require_complete_profile_boundary(previous_program, school, receipt)
+    compatibility_course = legacy_course_for_profile(
+        grade_a_course, source_root, transition.profile)
+    successor = compile_successor_profile_release(
+        predecessor,
+        transition.profile,
+        live_source_registry(),
+        live_answer_registry(),
+        source_root=source_root,
+        graph=transition.graph,
+        verification_seed=2026101907,
+        legacy_course=compatibility_course)
+    if (successor.transition is None or
+            successor.transition.semantic_geometry != "APPEND_ONLY_EXPANSION"):
+        raise ValueError("FACTORY_CATALOG_TRANSITION_NOT_APPEND_ONLY")
+    successor_program = schedule_program_from_executable_release(successor)
+    next_state = adopt_appended_program(
+        previous_program, successor_program, school)
+
+    grown, own_optimizer, growth = extend_mlx_student(
+        parameters, optimizer, graph, transition.graph)
+    pointer = _bundle_pointer(
+        run_dir, "catalog-admission-" + uuid.uuid4().hex[:12],
+        grown, own_optimizer, transition.graph, reserve_gib=reserve_gib)
+    next_state = replace(next_state, current_student=pointer)
+    successor, release_file, admission = _executable_factory_admission(
+        run_dir, successor, pointer, _fingerprint(transition.graph),
+        transition.graph)
+
+    from bilqis_mlx.learning.mentor_epoch import begin_epoch
+    exam = receipt.get("last_exam") or {}
+    epoch = begin_epoch(
+        previous_graduate=asdict(school.current_student),
+        admitted_baseline=asdict(pointer),
+        introduced_grade=next_state.grade,
+        source_graph_sha256=_fingerprint(transition.graph),
+        previous_capabilities=tuple(
+            item.capability_id for item in predecessor.execution_plan.capabilities),
+        previous_graduation_exam={
+            "checkpoint_sha256": exam.get("student_sha256"),
+            "rubric_sha256": exam.get("exam_rubric_sha256"),
+            "cohort_sha256": exam.get("cohort_sha256"),
+            "scores": exam.get("scores"),
+        })
+    history = list(receipt.get("championship_epoch_history", ()))
+    if receipt.get("mentor_epoch") is not None:
+        history.append(receipt["mentor_epoch"])
+    identity = build_school_identity(
+        course_sha256=successor.execution_plan.curriculum_sha256,
+        semantic_graph_sha256=_fingerprint(transition.graph),
+        parameter_shapes={name: list(value.shape) for name, value in grown.items()},
+        factory_release_sha256=successor.release_sha256)
+    epoch["settled_matchups"] = deepcopy(
+        (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
+    epoch["championship_school_identity"] = identity
+    heads = answer_heads_from_executable_release(successor, transition.graph)
+    numeric_values = heads.get("numeric_active", {}).get("values")
+    updated = {
+        **receipt,
+        "curriculum_mode": compatibility_course.version,
+        "semantic_graph_sha256": _fingerprint(transition.graph),
+        "factory_release_sha256": successor.release_sha256,
+        "factory_release_file": release_file,
+        "factory_release_schema": successor.schema,
+        "factory_admission_v2": asdict(admission),
+        "parameter_shapes": {
+            name: list(value.shape) for name, value in grown.items()},
+        "championship_school_identity": identity,
+        "config": {
+            **receipt["config"],
+            "vocab_size": len(transition.graph["tokens"]),
+            "answer_heads": heads,
+        },
+        "live_rubric_sha256":
+            successor_program.grades[-1].assessment_sha256,
+        "numeric_maximum": (
+            len(numeric_values) - 1 if numeric_values is not None else
+            receipt.get("numeric_maximum")),
+        "mentor_epoch": epoch,
+        "championship_epoch_history": history,
+        "last_exam": None,
+    }
+    updated.pop("qualification_cohort_v2", None)
+    record = _advance(
+        run_dir, updated, next_state, model_bundle=pointer.filename,
+        result="ACTIVE_GRADE_" + next_state.grade, persist=False)
+    event = {
+        "event": "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED",
+        "generation": record["generation"],
+        "grade": next_state.grade,
+        "profile_id": successor.profile.profile_id,
+        "semantic_geometry": successor.transition.semantic_geometry,
+        "growth": growth,
+        "previous_student_sha256": school.current_student.sha256,
+        "student_sha256": pointer.sha256,
+        "optimizer_step": pointer.optimizer_step,
+        "factory_release_sha256": successor.release_sha256,
+        "actual_neural_updates": 0,
+    }
+    record = _persist(
+        run_dir, _with_delivery_outbox(record, (event,)))
+    _reconcile_delivery_outbox(run_dir, record)
+    return grown, own_optimizer, transition.graph, record, compatibility_course
 
 
 def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successor,
@@ -4228,19 +4363,22 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 admitted_courses, receipt.get("curriculum_mode"), course)
             admitted_v2 = _require_executable_factory_admission(
                 run_dir, receipt, graph)
-            target_boolean_profile = (
-                boolean_entry_profile(full=full_grade_b)
-                if len(admitted_v2.curriculum.grades) == 2 else None)
+            active_grade_count = len(admitted_v2.execution_plan.grades)
+            target_boolean_profile = None
+            if active_grade_count <= 2:
+                target_boolean_profile = with_disabled_future_grades(
+                    boolean_entry_profile(full=full_grade_b),
+                    tuple(
+                        grade.grade_id
+                        for grade in admitted_v2.curriculum.grades[2:]))
             if (target_boolean_profile is not None and
                     receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" and
-                    len(admitted_v2.execution_plan.grades) <
-                    len(admitted_v2.curriculum.grades)):
+                    active_grade_count == 1):
                 receipt, course, admitted_v2, _ = _adopt_executable_profile(
                     run_dir, receipt, course_a, source_root, graph,
                     target_boolean_profile)
             elif (target_boolean_profile is not None and
-                  len(admitted_v2.execution_plan.grades) ==
-                  len(admitted_v2.curriculum.grades) and
+                  active_grade_count == 2 and
                   admitted_v2.profile != target_boolean_profile):
                 current_program = schedule_program_from_executable_release(
                     admitted_v2)
@@ -4250,23 +4388,20 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     receipt, course, admitted_v2, _ = _adopt_executable_profile(
                         run_dir, receipt, course_a, source_root, graph,
                         target_boolean_profile)
-            if numeric_staircase and receipt.get('curriculum_mode') != NUMERIC_STAIRCASE_RELEASE:
-                from .numeric_staircase import enroll
-                course, receipt = enroll(
-                    run_dir, receipt, course,
-                    predecessor_course(admitted_courses, course), graph)
-            if receipt["school"]["stage"] == "AWAITING_NEXT_GRADE":
-                plan = next_successor_plan(
-                    course, source_root, full_grade_b=full_grade_b)
-                if plan is not None:
-                    if plan.transition != GRAPH_GROWTH_TRANSITION:
-                        raise ValueError(
-                            "FACTORY_LEGACY_SUCCESSOR_REQUIRES_PROFILE_CONVERGENCE")
-                    from .grade_transition import activate_numeric_grade
-                    params, optimizer, graph, receipt = activate_numeric_grade(
-                        mx, run_dir, receipt, course, plan.successor,
-                        params, optimizer, graph, reserve_gib=reserve_gib)
-                    course = plan.successor
+            admitted_v2 = _require_executable_factory_admission(
+                run_dir, receipt, graph)
+            if (receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" and
+                    len(admitted_v2.execution_plan.grades) == 2 and
+                    len(admitted_v2.curriculum.grades) > 2):
+                catalog_transition = numeric_entry_transition(
+                    admitted_v2, graph,
+                    full_boolean=full_grade_b,
+                    maximum=3 if numeric_staircase else 10)
+                params, optimizer, graph, receipt, course = (
+                    _adopt_catalog_profile(
+                        mx, run_dir, receipt, course_a, source_root, graph,
+                        params, optimizer, catalog_transition,
+                        reserve_gib=reserve_gib))
             receipt = _repair_scope_rubric_evidence(run_dir, receipt, course)
             receipt = _repair_championship_source_context(run_dir, receipt, course)
         else:

@@ -538,6 +538,19 @@ class ExecutionPlanTests(unittest.TestCase):
             previous, current, lineage=incompatible)
         self.assertEqual(delta.semantic_geometry, "INCOMPATIBLE")
 
+    def test_same_curriculum_can_expand_semantic_geometry(self):
+        course, registry = _synthetic_boolean_course()
+        previous = compile_execution_plan(
+            course, CurriculumProfile.full(), registry)
+        current = compile_execution_plan(
+            course, CurriculumProfile.full(), registry)
+        lineage = PlanLineage.from_semantic_catalogs(
+            previous, current, ("a", "b"), ("a", "b", "c"))
+        delta = diff_execution_plans(
+            previous, current, lineage=lineage)
+        self.assertEqual(
+            delta.semantic_geometry, "APPEND_ONLY_EXPANSION")
+
 
 if __name__ == "__main__":
     unittest.main()
