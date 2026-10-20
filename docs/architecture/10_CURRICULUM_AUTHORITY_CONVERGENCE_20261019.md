@@ -328,11 +328,11 @@ Make `FactoryRelease` carry the compiled execution plan and final source-verifie
 
 Historical manifests decode through compatibility projection. Compatibility decoding must not select live successors.
 
-**Current checkpoint:** schema `bilqis.mlx.factory-release/v2` is implemented as the target executable artifact while historical v1 remains byte-stable compatibility. V2 binds `CurriculumDefinition`, `SourceBindingSet`, `CurriculumProfile`, `ExecutionPlan`, semantic catalog identity, provider and answer-modality implementation descriptors, compiled semantic-token answer heads, source-verified capability specimen receipts, cumulative verified assessment seals, and predecessor transition metadata. Runtime admission still consumes v1 and has not been cut over.
+**Current checkpoint:** schema `bilqis.mlx.factory-release/v2` is the live executable artifact while historical v1 remains byte-stable compatibility. V2 binds `CurriculumDefinition`, `SourceBindingSet`, `CurriculumProfile`, `ExecutionPlan`, semantic catalog identity, provider and answer-modality implementation descriptors, compiled semantic-token answer heads, source-verified capability specimen receipts, cumulative verified assessment seals, and predecessor transition metadata. Live trainer admission and resume converge on v2 before school work.
 
 The v2 admission specimens are verification evidence, not a permanent test bank. They prove minimum source/oracle/answer-contract generation under the compiled release and bind the coverage projection. They do not claim exhaustive semantic-axis coverage or replace fresh routine cohorts.
 
-Dedicated v2 custody/admission primitives now persist and cold-read the content-addressed artifact, verify the actual loaded semantic catalog, and bind the release to the exact causal student, optimizer step and semantic graph. Existing live v1 admission remains unchanged. V2 release transitions carry `UNCHANGED` and `APPEND_ONLY_EXPANSION`; `INCOMPATIBLE` geometry fails closed.
+V2 custody/admission persists and cold-reads the content-addressed artifact, verifies the actual loaded semantic catalog, and binds the release to the exact causal student, optimizer step and semantic graph. V2 release transitions carry `UNCHANGED` and `APPEND_ONLY_EXPANSION`; `INCOMPATIBLE` geometry fails closed.
 
 ### Wave 2: runtime consumers
 
@@ -347,9 +347,9 @@ Migrate consumers by dependency:
 
 Changing only a profile must change disposable live behavior without editing those consumers.
 
-**Current scheduler checkpoint:** `ScheduleProgram` is now the scheduler-owned runtime view. It is compiled from the admitted v2 release's roster/schedule projections and exact grade-scope assessment identities; historical `Course` scheduling input is isolated behind compatibility. The next cutover step is to make the human trainer admit/read v2 and pass that projection explicitly, then delete the scheduler's temporary legacy fallback.
+**Current scheduler checkpoint:** `ScheduleProgram` is the scheduler-owned runtime view. It is compiled from the admitted v2 release's roster/schedule projections and exact grade-scope assessment identities; historical `Course` scheduling input is isolated behind compatibility. The human trainer admits/reads v2 and passes this projection through teaching, assessment, retention and stop-boundary scheduling.
 
-**Current checkpoint:** generation and answer-schema consumers are release-driven and profile-neutral in the factory layer. Full Boolean versus AND/IFF behavior changes by swapping the admitted v2 release, with no consumer branch or minimal-B provider. The real pinned provider path also passes the resulting v2 answer heads into the generic typed batch adapter. Scheduler/assessment cohort lifetime and the existing human/live admission path remain unchanged pending the next migration slice.
+**Current checkpoint:** generation and answer-schema consumers are release-driven and profile-neutral. Full Boolean versus AND/IFF behavior changes by swapping the admitted v2 profile, with no consumer branch or minimal-B provider. V2 answer heads carry the admitted modality implementation identity, and the generic tied-embedding batch adapter accepts new registered modality kinds without a runtime kind allowlist edit.
 
 **2026-10-19 convergence update:** current execution no longer treats A-only, Boolean entry, COMPOSITE, IDBOOLOPS or numeric entry as separate semantic curricula. Canonical A+B+C semantics are declared once; `CurriculumProfile` chooses the active grade/capability prefix and source/answer domains. Later grades may be disabled only as a canonical suffix. The live Boolean boundary now adopts v2 profiles directly. Numeric entry separates semantic-catalog growth from curriculum identity: the existing 222-token historical student ABI grows append-only, `PlanLineage` records `APPEND_ONLY_EXPANSION`, and the C profile activates the source-verified numeric prefix. Historical release-shaped `Course` objects are compatibility views for callers not yet migrated, not current semantic authority.
 
@@ -359,7 +359,7 @@ Historical live-release construction/lookup has now moved wholesale under `compa
 
 Exact assessment scope now has a grade-neutral v2 contract. The rubric identity hashes only the selected capabilities' assessment projections. The source identity hashes only their source projections plus verified source receipts. The enclosing factory-release SHA and semantic-catalog SHA remain separate identities. This prevents the prior scope/rubric conflation where a broader admitted course could relabel evidence for a narrower scored scope.
 
-Parallel v2 assessment custody now implements the governing lifetime distinctions without grade/release switches: fresh routine measurement, fixed-within-attempt promotion, and fresh/burnable generalization all receive the exact active capability scope explicitly. Persisted cohort evidence keeps scope rubric/source identities separate from holistic release identity. Existing human/live assessment callers still use the historical path; the next cutover must migrate callers rather than leave both paths canonical.
+V2 assessment custody implements the governing lifetime distinctions without grade/release switches: fresh routine measurement, fixed-within-attempt promotion, and fresh/burnable generalization all receive the exact active capability scope explicitly. Persisted cohort evidence keeps scope rubric/source identities separate from holistic release identity. The live exam loop, candidate screen, championship replay and human stop boundary use this v2 lifecycle; historical cohort readers are compatibility-only.
 
 ### Wave 3: typed release transitions
 
@@ -377,11 +377,21 @@ Remove canonical live use of minimal-B release/provider identity, compact-B vali
 
 Historical readers remain under compatibility boundaries only.
 
+**Status: complete.** Minimal-B source identity, compact-B exceptions and named
+release successor policy are not part of current execution. Historical source
+adapters/releases/assessment readers remain explicitly under `compatibility/`.
+
 ### Wave 5: disposable Grade Z
 
 Run one synthetic grade through the same top-level orchestration used by the human shell: admission, teaching, routine assessment, recovery, promotion/generalization, championship, stagnation, telemetry, checkpoint/recovery, and stop handling.
 
 Adding Grade Z must require no generic runtime edit.
+
+**Status: complete.** `tests/system/test_factory_grade_z.py` declares Z only
+inside the disposable test and proves generic v2 compilation, admission,
+generation, scheduling, routine/promotion/generalization assessment,
+stagnation, championship, telemetry, recovery, teacher evidence and stop
+handling.
 
 ### Wave 6: closure
 
@@ -389,32 +399,39 @@ Adding Grade Z must require no generic runtime edit.
 
 Static closure is necessary but insufficient. Real-provider behavior and the full Grade Z runtime proof are also required.
 
+**Status: complete.** `scripts/check_factory_closure.py` reports
+`FACTORY_CLOSURE_OK`, the original architecture guard reports
+`FACTORY_ARCHITECTURE_OK`, pinned real-provider profile tests pass, and the
+Grade-Z system proof passes.
+
 ## Convergence matrix
 
 | Domain | Governing interpretation | Evidence / planning sources | Current normalization need |
 | --- | --- | --- | --- |
 | Semantic identity | Code-resident typed definition + immutable append-only ABI after admission | Registry, Ledger, Ithkuil corpus, semantic bridge | Keep sheets as evidence/review surfaces, not live allocators |
 | Curriculum order | Canonical prerequisites and stages; profiles only filter | Roadmap, SPEC-0001, IPR-0220 | Remove release-specific stage authorship |
-| Factory compilation | One `ExecutionPlan` compiled from semantics + source bindings + profile | SPEC-0001, architecture 09 | Integrate into `FactoryRelease` |
-| Answer modalities | Typed modality registry, grade-neutral | SPEC-0001 `10.4, typed-answer evidence | Remove grade/release head builders |
+| Factory compilation | One `ExecutionPlan` compiled from semantics + source bindings + profile | SPEC-0001, architecture 09 | Closed: live v2 release carries executable projections |
+| Answer modalities | Typed modality registry, grade-neutral | SPEC-0001 `10.4, typed-answer evidence | Closed for current runtime: v2-admitted modalities use generic batching; legacy heads retain compatibility validation |
 | Source/admission | Typed providers + independent oracle + coverage proof | IPR-0220, Ithkuil corpus, Bridge | Add complete lexicon parser and provider binding |
 | ABI growth | Append-only admitted-token path | Roadmap, Registry, existing Grade C path | Ithkuil compiler must emit admitted identities |
 | Assessment lifetime | Fresh routine cohorts; qualification attempts separately identified; release seal source-verified | championship spec, Ledger, factory spec | Keep blueprint hash separate from admitted seal |
 | Championship | Same-grade title ownership; school-identity reset; advisory rights separate from title geography | SPEC-0002, governing Drive spec, protected tracker | Preserve cross-grade maxed-role advisory rule unless explicitly rescinded |
 | Autonomy | Evidence/remediation over admitted release; cannot invent semantics | Oct-19 autonomy work | Consume `ExecutionPlan` projections after cutover |
 | Ithkuil ingestion | Grammar corpus deterministic; lexicon PDF parsing incomplete | `lib/ithkuil`, Oct-19 Minutes, Bridge | Build canonical lexicon/affix ingestion |
-| Telemetry | Current inventory comes from admitted executable plan | SPEC-0001, School50 contract | Stop reconstructing current curriculum from historical event names |
+| Telemetry | Current inventory comes from admitted executable plan | SPEC-0001, School50 contract | Closed for current state; historical event decoding remains compatibility-only |
 | Human-run custody | Human alone starts real optimizer updates | All current operational authorities | Preserve unchanged |
 
-## Acceptance before further implementation
+## Final factory acceptance
 
-The factory branch may resume code work only when:
+The authority-convergence gate is satisfied when this record and architecture 09
+are committed with the executable branch, the protected tracker records the same
+state, and the following proofs remain green:
 
-- this record is committed and pushed;
-- root governance points here;
-- the protected tracker carries the same current interpretation;
-- normalized tracker rows distinguish the current rule from historical superseded rules;
-- no unresolved source conflict is being silently encoded as implementation;
-- the dirty Wave 0.5 proof remains preserved.
+- real-provider full/reduced Boolean and numeric profile execution;
+- v2 durable admission, exact-scope assessment and typed answer modalities;
+- `FACTORY_CLOSURE_OK` and `FACTORY_ARCHITECTURE_OK`;
+- disposable end-to-end Grade Z with no generic runtime edit;
+- no agent-initiated neural optimizer work.
 
-The next code change after this governance wave is verification and repair of the existing Wave 0.5 proof. It is not a trainer, CLI, or broad runtime cutover.
+At that point further work may add curriculum/semantics through the factory
+contract. It must not reopen named grade/release authority in generic runtime.
