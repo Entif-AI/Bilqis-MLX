@@ -23,11 +23,53 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.factory.live_releases import initial_course
 from bilqis_mlx.factory.live_releases import boolean_successor
 from bilqis_mlx.curriculum.scheduler import start_new
+from bilqis_mlx.compatibility.schedule_program import (
+    schedule_program_from_legacy_course,
+)
+from bilqis_mlx.factory.schedule import (
+    ScheduleCapability, ScheduleGrade, ScheduleProgram,
+)
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.learning.champion_confidence import perfect_role_roster
 from bilqis_mlx.learning.epoch_championships import active_frontier
 from bilqis_mlx.learning.grade_soup import grade_soup_recipe
 from bilqis_mlx.learning.championship_witnesses import battery_from_exam, verified_battery
+
+
+def _fake_executable_release(course):
+    return SimpleNamespace(execution_plan=SimpleNamespace(
+        capability_map=course.capability_map))
+
+
+def _cohort_pointer(cohort, program):
+    capabilities = tuple(dict.fromkeys(
+        row["capability"] for row in cohort.rows))
+    grade = next(
+        grade for grade in reversed(program.grades)
+        if any(cap.id in set(capabilities) for cap in grade.capabilities))
+    return {
+        "factory_release_sha256": "f" * 64,
+        "capabilities": capabilities,
+        "rubric_sha256": grade.assessment_sha256,
+        "source_sha256": "c" * 64,
+        "cohort_sha256": cohort.digest,
+        "cohort_file": "cohorts/" + cohort.digest + ".json",
+        "cohort_seed": cohort.seed,
+    }
+
+
+def _synthetic_program(grades):
+    return ScheduleProgram(
+        program_digest="d" * 64,
+        grades=tuple(ScheduleGrade(
+            grade,
+            tuple(ScheduleCapability(capability, 2)
+                  for capability in capabilities),
+            (),
+            "e" * 64,
+        ) for grade, capabilities in grades),
+        program_complete=False,
+    )
 
 
 class ChampionshipExamTests(TestCase):
@@ -78,7 +120,7 @@ class ChampionshipExamTests(TestCase):
         self.assertEqual({row["answer_kind"] for row in readable}, {"boolean_operator"})
         self.assertEqual({row["capability"] for row in readable}, {"B.IDBOOLOPS"})
 
-    def test_idboolops_live_exam_factor_guard_accepts_balanced_operator_family(self):
+    def test_idboolops_live_exam_factor_guard_checks_declared_domain_not_provider_balance(self):
         root = Path(__file__).resolve().parents[2]
         source = root / "vendor/legacy-v16"
         manifest = json.loads((
@@ -99,16 +141,17 @@ class ChampionshipExamTests(TestCase):
             {value: sum(row["gold"] == value for row in cohort.rows)
              for value in family.values},
             {value: 2 for value in family.values})
+        release = _fake_executable_release(course)
         self.assertTrue(trainer._live_exam_factors_complete(
-            course, cohort, {"B.IDBOOLOPS": 12}))
+            release, cohort, {"B.IDBOOLOPS": 12}))
 
         broken_rows = list(cohort.rows)
-        broken_rows[-1] = {**broken_rows[-1], "gold": broken_rows[0]["gold"]}
+        broken_rows[-1] = {**broken_rows[-1], "gold": "XNOR"}
         broken = make_cohort(
             broken_rows, generator_version=cohort.generator_version,
             seed=cohort.seed, rubric_version=cohort.rubric_version)
         self.assertFalse(trainer._live_exam_factors_complete(
-            course, broken, {"B.IDBOOLOPS": 12}))
+            release, broken, {"B.IDBOOLOPS": 12}))
 
     def test_assessment_scope_hash_tracks_actual_scored_capabilities(self):
         full = ("A.IDENTITY", "A.LINK", "B.AND", "B.IFF")
