@@ -64,7 +64,7 @@ The enrichment tables preserve qualified, partial, adapter, compositional, nativ
 
 The lower-case grammar-site lexicon and the capitalized lexicon URL used in the Curriculum Registry are separate source identities because their bytes and SHA-256 hashes differ.
 
-The grammar extractor parses the official grammar HTML. The canonical lexicon and affix-reference PDFs remain fetched and hash-pinned source identities. The tracked split lexicon Chapters 1 and 2 are additionally parsed into `lexicon_roots.csv` and `lexicon_root_senses.csv`; those tables are a source-corpus layer and do not mint Bilqis token IDs, grades, lessons, or mastery. Later lexicon chapters and the affix-reference PDF remain unparsed by this extractor.
+The grammar extractor parses the official grammar HTML. The canonical lexicon and affix-reference PDFs remain fetched and hash-pinned source identities. The tracked split lexicon Chapters 1 and 2 are additionally parsed into `lexicon_roots.csv` and `lexicon_root_senses.csv`; those tables are a source-corpus layer and do not mint Bilqis token IDs, grades, lessons, or mastery. Later tracked chapters 3–7 can be extracted separately with `python3 src/build_lexicon_chapters.py --next --output <directory>`. Expanded snapshots retain exact input/output hashes, explicit roots-without-senses debt and `tracked_source_projection_observed` status. Canonical full-PDF page equivalence remains `NOT_MEASURED`; these snapshots do not change the canonical Chapter-1/2 tables or current research frontier. The affix-reference PDF remains unparsed.
 
 ## Rebuild and validation
 

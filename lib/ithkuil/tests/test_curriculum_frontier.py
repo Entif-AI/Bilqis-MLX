@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,6 +41,61 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 
 class CurriculumFrontierTest(unittest.TestCase):
+    def test_abi_anchor_matching_is_exact_bridge_identity(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("frontier_builder", BUILDER)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        module.crosswalk[:] = [
+            {"new_ithkuil_bridge": "-AB-", "bilqis_token_id": "1", "bilqis_token_symbol": "x", "mapping_disposition": "ok"},
+            {"new_ithkuil_bridge": "prefix-AB-suffix", "bilqis_token_id": "2", "bilqis_token_symbol": "y", "mapping_disposition": "wrong"},
+        ]
+        self.assertEqual(module.anchor_rows("-AB-"), ["1:x:ok"])
+
+    def test_frontier_manifest_records_and_validates_inputs_outputs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            env = os.environ.copy()
+            env["BILQIS_CURRICULUM_FRONTIER_OUT"] = temp
+            subprocess.run([sys.executable, str(BUILDER)], cwd=ROOT, env=env, check=True)
+            manifest_path = Path(temp) / "frontier_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["schema"], "bilqis.ithkuil.frontier-manifest/v1")
+            self.assertEqual(len(manifest["input_files"]), 4)
+            self.assertIn("candidate_pool.csv", manifest["output_files"])
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("frontier_manifest_builder", BUILDER)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            self.assertEqual(module.validate_frontier_manifest(manifest_path)["output_digest"], manifest["output_digest"])
+            (Path(temp) / "candidate_pool.csv").write_text("stale\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "OUTPUT_STALE:candidate_pool.csv"):
+                module.validate_frontier_manifest(manifest_path)
+
+    def test_frontier_manifest_validator_rejects_missing_output_and_bad_digest(self):
+        with tempfile.TemporaryDirectory() as temp:
+            env = os.environ.copy()
+            env["BILQIS_CURRICULUM_FRONTIER_OUT"] = temp
+            subprocess.run(
+                [sys.executable, str(BUILDER)], cwd=ROOT, env=env, check=True)
+            manifest_path = Path(temp) / "frontier_manifest.json"
+            import importlib.util
+            spec = importlib.util.spec_from_file_location(
+                "frontier_manifest_strict_builder", BUILDER)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["output_files"].pop("candidate_pool.csv")
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "OUTPUT_SET_INVALID"):
+                module.validate_frontier_manifest(manifest_path)
+            subprocess.run(
+                [sys.executable, str(BUILDER)], cwd=ROOT, env=env, check=True)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["output_digest"] = "0" * 64
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "OUTPUT_DIGEST_INVALID"):
+                module.validate_frontier_manifest(manifest_path)
+
     def test_research_frontier_is_source_explicit_and_dependency_closed(self):
         with tempfile.TemporaryDirectory() as temp:
             env = os.environ.copy()

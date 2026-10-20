@@ -12,7 +12,12 @@ page locus used for extraction.
 from __future__ import annotations
 
 import csv
+import argparse
+import contextlib
 import hashlib
+import io
+import json
+import sys
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -42,6 +47,13 @@ class ChapterSource:
 CHAPTERS = (
     ChapterSource("1", "New Ithkuil Lexicon - Chapter 01 - Roots and Grammar.pdf", "1.0"),
     ChapterSource("2", "New Ithkuil Lexicon - Chapter 02 - Tools, States and Acts.pdf", "2.0"),
+)
+AVAILABLE_CHAPTERS = (*CHAPTERS,
+    ChapterSource("3", "New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf", "3.0"),
+    ChapterSource("4", "New Ithkuil Lexicon - Chapter 04 - Psychology and Sociology.pdf", "4.0"),
+    ChapterSource("5", "New Ithkuil Lexicon - Chapter 05 - Miscellaneous Entities.pdf", "5.0"),
+    ChapterSource("6", "New Ithkuil Lexicon - Chapter 06 - Nature, Non-Biological.pdf", "6.0"),
+    ChapterSource("7", "New Ithkuil Lexicon - Chapter 07 - Natural Phenomena.pdf", "7.0"),
 )
 
 SECTION_TITLES = {
@@ -583,13 +595,13 @@ def extract_root_evidence(
     return records
 
 
-def build() -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]]]:
+def build(chapters=CHAPTERS) -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]]]:
     manifest = source_manifest_row()
     roots_by_id: dict[str, dict[str, str]] = {}
     senses_by_key: dict[tuple[str, str, str], dict[str, str]] = {}
     evidence_by_id: dict[str, dict[str, str]] = {}
 
-    for chapter in CHAPTERS:
+    for chapter in chapters:
         path = PDF_DIR / chapter.filename
         if not path.exists():
             raise RuntimeError(f"missing tracked split lexicon PDF: {path}")
@@ -605,7 +617,8 @@ def build() -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, 
                     "tracked_pdf_name": chapter.filename,
                     "tracked_pdf_sha256": split_digest,
                     "canonical_source_sha256": manifest["sha256"],
-                    "evidence_status": "official_source_observed",
+                    "evidence_status": ("official_source_observed" if chapter in CHAPTERS
+                                        else "tracked_source_projection_observed"),
                 }
             )
             roots_by_id.setdefault(row["lexicon_root_id"], row)
@@ -656,7 +669,8 @@ def build() -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, 
                             "source_url": manifest["final_url"],
                             "tracked_pdf_name": chapter.filename,
                             "tracked_pdf_sha256": split_digest,
-                            "evidence_status": "official_source_observed",
+                            "evidence_status": ("official_source_observed" if chapter in CHAPTERS
+                                                else "tracked_source_projection_observed"),
                         },
                     )
 
@@ -676,7 +690,8 @@ def build() -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, 
                 "source_url": manifest["final_url"],
                 "tracked_pdf_name": chapter.filename,
                 "tracked_pdf_sha256": split_digest,
-                "evidence_status": "official_source_observed",
+                "evidence_status": ("official_source_observed" if chapter in CHAPTERS
+                                    else "tracked_source_projection_observed"),
             }
 
         for numbered in extract_numbered_stem_senses(document, chapter, root_loci):
@@ -704,7 +719,8 @@ def build() -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, 
                 "source_url": manifest["final_url"],
                 "tracked_pdf_name": chapter.filename,
                 "tracked_pdf_sha256": split_digest,
-                "evidence_status": "official_source_observed",
+                "evidence_status": ("official_source_observed" if chapter in CHAPTERS
+                                    else "tracked_source_projection_observed"),
             }
 
         for evidence in extract_root_evidence(
@@ -717,7 +733,8 @@ def build() -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, 
                     "tracked_pdf_name": chapter.filename,
                     "tracked_pdf_sha256": split_digest,
                     "canonical_source_sha256": manifest["sha256"],
-                    "evidence_status": "official_source_observed",
+                    "evidence_status": ("official_source_observed" if chapter in CHAPTERS
+                                        else "tracked_source_projection_observed"),
                 }
             )
             evidence_by_id.setdefault(evidence["lexicon_evidence_id"], evidence)
@@ -745,7 +762,123 @@ def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writerows(rows)
 
 
+def extract_snapshot(chapter_ids: tuple[str, ...], output: Path) -> dict:
+    """Extract a separate, hash-bound source queue without changing live inputs.
+
+    Later tracked page projections retain their own observed provenance. Their
+    equivalence to the canonical full PDF needs a separate source comparison.
+    Missing sense extraction remains visible source debt.
+    """
+    available = {chapter.chapter: chapter for chapter in AVAILABLE_CHAPTERS}
+    if (not chapter_ids or len(set(chapter_ids)) != len(chapter_ids) or
+            any(value not in available for value in chapter_ids)):
+        raise ValueError("LEXICON_CHAPTER_SCOPE_INVALID")
+    output = Path(output)
+    if output.resolve() == DATA.resolve() or DATA.resolve() in output.resolve().parents:
+        raise ValueError("LEXICON_EXPANSION_REQUIRES_SEPARATE_OUTPUT")
+    chapters = tuple(available[value] for value in sorted(chapter_ids, key=int))
+    roots, senses, evidence = build(chapters)
+    files = {}
+    for filename, rows in (("lexicon_roots.csv", roots),
+                           ("lexicon_root_senses.csv", senses),
+                           ("lexicon_root_evidence.csv", evidence)):
+        if not rows:
+            raise ValueError("LEXICON_EXTRACTION_EMPTY_TABLE:" + filename)
+        stream = io.StringIO(newline="")
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+        files[filename] = stream.getvalue().encode("utf-8")
+    sense_roots = {row["lexicon_root_id"] for row in senses}
+    manifest = dict(
+        schema="bilqis.ithkuil.lexicon-extraction/v1",
+        chapters=[chapter.chapter for chapter in chapters],
+        builder_sha256=sha256(Path(__file__)),
+        canonical_source=source_manifest_row(),
+        canonical_page_equivalence="NOT_MEASURED",
+        input_files={chapter.filename: sha256(PDF_DIR / chapter.filename)
+                     for chapter in chapters},
+        output_files={name: hashlib.sha256(value).hexdigest()
+                      for name, value in files.items()},
+        root_count=len(roots), sense_count=len(senses), evidence_count=len(evidence),
+        unresolved_root_ids=sorted(row["lexicon_root_id"] for row in roots
+                                   if row["lexicon_root_id"] not in sense_roots),
+        disposition="SOURCE_OBSERVATIONS_NOT_ADMITTED")
+    files["lexicon_extraction_manifest.json"] = (
+        json.dumps(manifest, sort_keys=True, ensure_ascii=False, indent=2) + "\n"
+    ).encode("utf-8")
+    # Complete only matching partial writes; retain conflicting prior snapshots.
+    if output.is_symlink():
+        raise ValueError("LEXICON_EXTRACTION_OUTPUT_UNSAFE")
+    for name, contents in files.items():
+        path = output / name
+        if path.is_symlink() or (path.exists() and (
+                not path.is_file() or path.read_bytes() != contents)):
+            raise ValueError("LEXICON_EXTRACTION_OUTPUT_IDENTITY_CHANGED:" + name)
+    output.mkdir(parents=True, exist_ok=True)
+    for name, contents in files.items():
+        path = output / name
+        if not path.exists():
+            path.write_bytes(contents)
+        if path.read_bytes() != contents:
+            raise ValueError("LEXICON_EXTRACTION_READBACK_MISMATCH:" + name)
+    return manifest
+
+
+def verify_snapshot(output: Path) -> dict:
+    """Verify completed extraction before selecting more source work."""
+    manifest = json.loads((output / "lexicon_extraction_manifest.json").read_text())
+    expected_names = {"lexicon_roots.csv", "lexicon_root_senses.csv", "lexicon_root_evidence.csv"}
+    if (manifest.get("schema") != "bilqis.ithkuil.lexicon-extraction/v1" or
+            set(manifest.get("output_files", {})) != expected_names or
+            any((output / name).is_symlink() or
+                sha256(output / name) != digest
+                for name, digest in manifest["output_files"].items()) or
+            any(sha256(PDF_DIR / name) != digest
+                for name, digest in manifest["input_files"].items()) or
+            manifest["canonical_source"] != source_manifest_row()):
+        raise ValueError("LEXICON_EXTRACTION_SNAPSHOT_DRIFT")
+    return manifest
+
+
+def expand_next_snapshot(output_root: Path) -> dict:
+    """Advance the source queue; chapter order never selects teaching order."""
+    for chapter in AVAILABLE_CHAPTERS[len(CHAPTERS):]:
+        output = output_root / ("chapter-" + chapter.chapter)
+        manifest_path = output / "lexicon_extraction_manifest.json"
+        if output.is_symlink() or manifest_path.is_symlink():
+            raise ValueError("LEXICON_EXTRACTION_OUTPUT_UNSAFE")
+        if manifest_path.exists():
+            manifest = verify_snapshot(output)
+            if manifest["chapters"] != [chapter.chapter]:
+                raise ValueError("LEXICON_EXTRACTION_SNAPSHOT_SCOPE_DRIFT")
+            continue
+        manifest = extract_snapshot((chapter.chapter,), output)
+        return dict(status="SOURCE_SNAPSHOT_EXTRACTED", output=str(output.resolve()),
+                    manifest=manifest)
+    return dict(status="TRACKED_SOURCE_QUEUE_EXHAUSTED")
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--chapters", nargs="+", choices=tuple(
+        chapter.chapter for chapter in AVAILABLE_CHAPTERS))
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--next", action="store_true", help="Extract one unprocessed later chapter")
+    args = parser.parse_args()
+    if args.next:
+        if args.output is None or args.chapters:
+            parser.error("--next requires --output and cannot be combined with --chapters")
+        with contextlib.redirect_stdout(sys.stderr):
+            result = expand_next_snapshot(args.output)
+        print(json.dumps(result, sort_keys=True, ensure_ascii=False))
+        return
+    if args.chapters or args.output:
+        if args.output is None:
+            parser.error("--chapters requires --output to preserve canonical source tables")
+        manifest = extract_snapshot(tuple(args.chapters or ("1", "2")), args.output)
+        print(json.dumps(manifest, sort_keys=True, ensure_ascii=False))
+        return
     roots, senses, evidence = build()
     write_csv(DATA / "lexicon_roots.csv", roots)
     write_csv(DATA / "lexicon_root_senses.csv", senses)

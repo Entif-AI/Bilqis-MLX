@@ -112,17 +112,23 @@ class SourceAdapterRegistry:
             cap.lesson_generator, cap.independent_oracle).descriptor.teaching_option_ids
 
     def obligation_witness(self, course, *, capability: str, row: dict,
-                           obligation, source_root, graph) -> bool:
+                           obligation, source_root, graph, release=None) -> bool:
         """Ask the source dialect whether one row proves a semantic obligation.
 
         Direct evidence needs no dialect-specific interpretation. Structural
         obligations do: the source adapter must certify that the row actually
         exercises the requested prerequisite/composition edge.
         """
-        cap = course.capability_map.get(capability)
-        if cap is None:
-            raise ValueError("FACTORY_EVIDENCE_UNKNOWN_CAPABILITY:" + str(capability))
-        adapter = self.require(cap.lesson_generator, cap.independent_oracle)
+        if release is None:
+            cap = course.capability_map.get(capability)
+            if cap is None:
+                raise ValueError("FACTORY_EVIDENCE_UNKNOWN_CAPABILITY:" + str(capability))
+            adapter = self.require(cap.lesson_generator, cap.independent_oracle)
+        else:
+            binding = release.source_bindings.by_capability.get(capability)
+            if capability not in release.execution_plan.capability_map or binding is None:
+                raise ValueError("FACTORY_EVIDENCE_UNKNOWN_CAPABILITY:" + str(capability))
+            adapter = self.require(binding.generator_id, binding.oracle_id)
         kind = getattr(getattr(obligation, "kind", None), "value", None)
         if kind == "DIRECT":
             return True
@@ -136,10 +142,25 @@ class SourceAdapterRegistry:
         return result
 
     def evidence_dependencies(
-        self, course,
+        self, course, *, release=None,
     ) -> tuple[SupplementalEvidenceSpec, ...]:
         """Collect provider-owned proof metadata without altering Course."""
         result = []
+        if release is not None:
+            active = set(release.execution_plan.capability_map)
+            for execution in release.execution_plan.capabilities:
+                binding = release.source_bindings.by_capability[execution.capability_id]
+                adapter = self.require(binding.generator_id, binding.oracle_id)
+                if adapter.dependencies is None:
+                    continue
+                supplied = adapter.dependencies(course=course, capability=execution.capability_id)
+                for item in supplied:
+                    if (not isinstance(item, SupplementalEvidenceSpec) or
+                            item.capability_id != execution.capability_id):
+                        raise ValueError("FACTORY_EVIDENCE_DEPENDENCY_SCOPE_DRIFT")
+                    if set(item.requires_capabilities) <= active:
+                        result.append(item)
+            return tuple(result)
         for grade in course.grades:
             for cap in grade.capabilities:
                 adapter = self.require(

@@ -1,0 +1,70 @@
+{
+  "actual_neural_updates": 0,
+  "autonomy_action": "SAFE_HOLD",
+  "base_head": "708c1179d2355492a34bf79ca71f24802f0071d8",
+  "branch": "codex/349-autonomous-jit-ithkuil-20261020",
+  "budget_after": {
+    "issue_number": 349,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "run_count": 1,
+    "runs": [
+      "primary"
+    ],
+    "used_bytes": 749371392,
+    "within_budget": true
+  },
+  "budget_before": {
+    "issue_number": 349,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "run_count": 1,
+    "runs": [
+      "primary"
+    ],
+    "used_bytes": 749363200,
+    "within_budget": true
+  },
+  "candidate_gate_count": 240,
+  "canonical_page_equivalence": "NOT_MEASURED",
+  "chapters": [
+    "3"
+  ],
+  "checkpoint_sha256": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+  "context_evidence": 27,
+  "date": "2026-10-20",
+  "factory_release_sha256": "d03e076179524fe9b7098ed308b8f09ebf721d41003d1445966b1e0ce81211ba",
+  "frontier_sha256": "055ab68470ab248c68b86090f1a5e277ec289472326b6bfb592a45727bb17381",
+  "generation": 356,
+  "optimizer_step": 116816,
+  "proof": "ACTUAL_ISSUE_OWNED_SOURCE_FALLBACK_ZERO_NEURAL_UPDATES",
+  "proposal_file": "autonomy/jit-proposals/aaecd8fdfa1cf56cf749ad31b5f16209887addd3d4b1aa65fbb4d9420001d74a.json",
+  "proposal_sha256": "aaecd8fdfa1cf56cf749ad31b5f16209887addd3d4b1aa65fbb4d9420001d74a",
+  "protected_after": {
+    "bundles/working-120-d4a37442195e/manifest.json": "3ed9de4d639d5203fc46aae4c53b9820e79ce4da7be5ef3ee4ef2f385f3cc788",
+    "bundles/working-120-d4a37442195e/model-and-own-adamw.safetensors": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+    "bundles/working-120-d4a37442195e/semantic-catalog.json": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716",
+    "events.jsonl": "0f689c01ce9dfe235dff9249e4576535d70b7461722e7bf0ce65f893124866fb",
+    "state.json": "6fca9091032b186b6aa110d89f0111f1451d037b6dec76d4b1bdc529449bd523"
+  },
+  "protected_before": {
+    "bundles/working-120-d4a37442195e/manifest.json": "3ed9de4d639d5203fc46aae4c53b9820e79ce4da7be5ef3ee4ef2f385f3cc788",
+    "bundles/working-120-d4a37442195e/model-and-own-adamw.safetensors": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+    "bundles/working-120-d4a37442195e/semantic-catalog.json": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716",
+    "events.jsonl": "0f689c01ce9dfe235dff9249e4576535d70b7461722e7bf0ce65f893124866fb",
+    "state.json": "6fca9091032b186b6aa110d89f0111f1451d037b6dec76d4b1bdc529449bd523"
+  },
+  "roots": 122,
+  "roots_without_extracted_senses": 88,
+  "run_dir": "runs/issue-349-experiments/primary",
+  "seconds": 2.638,
+  "selected_candidate_ids": [],
+  "senses": 189,
+  "snapshot_disposition": "SOURCE_OBSERVATIONS_NOT_ADMITTED",
+  "source_builder_sha256": "819b8c5b86842f3d1a691caa22ed695aba2224149f5441491f2712e5c7ef9842",
+  "source_output": "/Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/.local/issue-349-source-snapshots/chapter-3",
+  "source_receipt_file": "autonomy/source-development/0603f0fd0ea6f41dbca961f967d062c3d294e2a79ca3c8a7cbf11b9661d89092.json",
+  "source_receipt_sha256": "0603f0fd0ea6f41dbca961f967d062c3d294e2a79ca3c8a7cbf11b9661d89092",
+  "source_status": "SOURCE_SNAPSHOT_EXTRACTED",
+  "uncommitted_source": true
+}

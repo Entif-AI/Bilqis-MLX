@@ -51,6 +51,8 @@ def run_until_qualification(
     ledger: EvidenceLedger,
     source_coverage_executor: SourceCoverageExecutor,
     learning_evidence_executor: LearningEvidenceExecutor,
+    current_checkpoint_sha256: str,
+    current_optimizer_step: int,
     teaching_executor: TeachingExecutor | None = None,
     max_steps: int = 256,
 ) -> AutonomyRunResult:
@@ -72,7 +74,11 @@ def run_until_qualification(
     persist_autonomy_state(run_dir, release, plan=plan, ledger=ledger)
     current_plan, current_ledger = plan, ledger
     for step in range(max_steps):
-        action = next_action(release, current_ledger, plan=current_plan)
+        action = next_action(
+            release, current_ledger, plan=current_plan,
+            current_checkpoint_sha256=current_checkpoint_sha256,
+            current_optimizer_step=current_optimizer_step,
+        )
         if action.kind is AutonomyActionKind.QUALIFICATION:
             return AutonomyRunResult(action, current_plan, current_ledger, step)
 
@@ -96,7 +102,10 @@ def run_until_qualification(
             if not isinstance(receipt, EvidenceReceipt):
                 raise TypeError("AUTONOMY_EVIDENCE_EXECUTOR_RESULT_INVALID")
             current_ledger = record_evidence(
-                release, current_ledger, receipt, plan=current_plan)
+                release, current_ledger, receipt, plan=current_plan,
+                current_checkpoint_sha256=current_checkpoint_sha256,
+                current_optimizer_step=current_optimizer_step,
+            )
         elif action.kind is AutonomyActionKind.TEACHING:
             if teaching_executor is None:
                 raise ValueError("AUTONOMY_TEACHING_EXECUTOR_REQUIRED")
@@ -104,14 +113,23 @@ def run_until_qualification(
             if not isinstance(receipt, TeachingReceipt):
                 raise TypeError("AUTONOMY_TEACHING_EXECUTOR_RESULT_INVALID")
             current_ledger = record_teaching_intervention(
-                release, current_ledger, receipt, plan=current_plan)
+                release, current_ledger, receipt, plan=current_plan,
+                current_checkpoint_sha256=current_checkpoint_sha256,
+                current_optimizer_step=current_optimizer_step,
+            )
+            current_checkpoint_sha256 = receipt.checkpoint_sha256
+            current_optimizer_step = receipt.optimizer_step
         else:
             raise ValueError("AUTONOMY_ACTION_UNHANDLED")
 
         persist_autonomy_state(
             run_dir, release, plan=current_plan, ledger=current_ledger)
 
-    action = next_action(release, current_ledger, plan=current_plan)
+    action = next_action(
+        release, current_ledger, plan=current_plan,
+        current_checkpoint_sha256=current_checkpoint_sha256,
+        current_optimizer_step=current_optimizer_step,
+    )
     if action.kind is AutonomyActionKind.QUALIFICATION:
         return AutonomyRunResult(action, current_plan, current_ledger, max_steps)
     raise ValueError("AUTONOMY_STEP_BUDGET_EXHAUSTED")

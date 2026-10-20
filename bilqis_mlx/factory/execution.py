@@ -351,7 +351,8 @@ def _profiled_grade(
             construction_program_id=cap.capability_id,
             provider_parameters=provider_parameters,
             variation_axes=adapter.variation_axes,
-            teaching_option_ids=adapter.teaching_option_ids,
+            teaching_option_ids=("source.direct/" + cap.capability_id,
+                                 *adapter.teaching_option_ids),
             answer_families=_answer_families(cap, override),
             exam_item_count=counts[cap.capability_id],
         ))
