@@ -105,6 +105,7 @@ class SourceAdapter:
     cohort_releases: tuple[tuple[str, str], ...] = ()
     variation_axes: tuple[str, ...] = ("source-valid", "balanced-gold", "fresh-seed")
     teaching_option_ids: tuple[str, ...] = ()
+    profile_dimensions: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
     def __post_init__(self) -> None:
         if (not self.adapter_id or not self.generator_id or
@@ -130,6 +131,13 @@ class SourceAdapter:
                 any(not isinstance(item, str) or not item
                     for item in self.teaching_option_ids)):
             raise ValueError("FACTORY_SOURCE_ADAPTER_TEACHING_OPTIONS_INVALID")
+        names = tuple(name for name, _ in self.profile_dimensions)
+        if (len(set(names)) != len(names) or
+                any(not isinstance(name, str) or not name or
+                    not values or len(set(values)) != len(values) or
+                    any(not isinstance(value, str) or not value for value in values)
+                    for name, values in self.profile_dimensions)):
+            raise ValueError("FACTORY_SOURCE_ADAPTER_PROFILE_DIMENSIONS_INVALID")
 
     @property
     def cohort_generator(self) -> str:
@@ -138,6 +146,21 @@ class SourceAdapter:
     def cohort_code_sha256(self, release: str) -> str:
         mapping = dict(self.cohort_releases)
         return mapping.get(release, self.implementation_sha256)
+
+    def validate_profile_parameters(
+            self, parameters: tuple[tuple[str, tuple[str, ...]], ...]) -> None:
+        declared = dict(self.profile_dimensions)
+        supplied = dict(parameters)
+        if set(supplied) - set(declared):
+            raise ValueError(
+                "FACTORY_PROFILE_PROVIDER_DIMENSION_UNDECLARED:" + self.adapter_id)
+        for name, values in parameters:
+            domain = declared[name]
+            if (not set(values) <= set(domain) or
+                    values != tuple(value for value in domain if value in values)):
+                raise ValueError(
+                    "FACTORY_PROFILE_PROVIDER_VALUES_NOT_CANONICAL_SUBSET:"
+                    + self.adapter_id + ":" + name)
 
 
 @dataclass(frozen=True)

@@ -57,10 +57,22 @@ def _require_historical_graph(legacy_root: Path, graph: dict):
         raise ValueError("GRADE_B_IDBOOLOPS_FROZEN_TOKEN_PREFIX_MISMATCH")
 
 
-def answer_heads(graph: dict) -> dict:
+def _operator_domain(operators) -> tuple[str, ...]:
+    operators = tuple(operators)
+    if (len(operators) < 2 or len(set(operators)) != len(operators) or
+            not set(operators) <= set(BOOLEAN_OPERATORS) or
+            operators != tuple(
+                operator for operator in BOOLEAN_OPERATORS
+                if operator in operators)):
+        raise ValueError("GRADE_B_IDBOOLOPS_OPERATOR_DOMAIN_INVALID")
+    return operators
+
+
+def answer_heads(graph: dict, operators=BOOLEAN_OPERATORS) -> dict:
     """Restrict the typed readout to existing Boolean semantic-token identities."""
+    operators = _operator_domain(operators)
     names = list(graph["tokens"])
-    operator_tokens = ["cogal.operator." + operator for operator in BOOLEAN_OPERATORS]
+    operator_tokens = ["cogal.operator." + operator for operator in operators]
     required = ["cogal.value.false", "cogal.value.true", *operator_tokens]
     if any(name not in names for name in required):
         raise ValueError("GRADE_B_IDBOOLOPS_ANSWER_HEAD_TOKEN_MISSING")
@@ -69,7 +81,7 @@ def answer_heads(graph: dict) -> dict:
         "binary": {"values": list(BINARY),
                    "token_ids": [names.index("cogal.value.false"),
                                  names.index("cogal.value.true")]},
-        ANSWER_KIND: {"values": list(BOOLEAN_OPERATORS),
+        ANSWER_KIND: {"values": list(operators),
                       "token_ids": [names.index(name) for name in operator_tokens]},
     }
 
@@ -139,14 +151,22 @@ def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
     return tokens
 
 
-def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int) -> tuple[dict, ...]:
+def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
+           operators=BOOLEAN_OPERATORS) -> tuple[dict, ...]:
+    operators = _operator_domain(operators)
     micro, _, _, _, _ = read_sources(legacy_root)
     _require_historical_graph(legacy_root, graph)
     logic = _logic_source(legacy_root)
-    rng = random.Random(_digest([GENERATOR, seed, cycle]))
-    schedule = list(BOOLEAN_OPERATORS) * 2
+    material = ([GENERATOR, seed, cycle]
+                if operators == tuple(BOOLEAN_OPERATORS)
+                else [GENERATOR, "profile", list(operators), seed, cycle])
+    rng = random.Random(_digest(material))
+    copies, remainder = divmod(ASSESSMENT_ITEMS, len(operators))
+    schedule = list(operators) * copies + list(operators[:remainder])
     rng.shuffle(schedule)
-    if Counter(schedule) != Counter({operator: 2 for operator in BOOLEAN_OPERATORS}):
+    counts = Counter(schedule)
+    if (set(counts) != set(operators) or
+            max(counts.values()) - min(counts.values()) > 1):
         raise ValueError("GRADE_B_IDBOOLOPS_OPERATOR_BALANCE_DRIFT")
     rows = []
     for target in schedule:
@@ -169,7 +189,7 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int) -> tuple[di
                     raise ValueError("GRADE_B_IDBOOLOPS_SOURCE_TRUTH_DISAGREEMENT")
                 observations.append({"operands": operands, "result": generator_truth})
             record = {"task": TASK, "world": world,
-                      "observations": observations, "options": list(BOOLEAN_OPERATORS)}
+                      "observations": observations, "options": list(operators)}
             gold = independent_evaluate(record)
             if gold != target:
                 raise ValueError("GRADE_B_IDBOOLOPS_INDEPENDENT_ORACLE_DISAGREEMENT")
@@ -183,26 +203,30 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int) -> tuple[di
             "id": identity, "source_id": identity, "capability": CAPABILITY,
             "answer_kind": ANSWER_KIND, "gold": gold, "record": record,
             "tokens": tokens, "oracle": ORACLE, "generator": GENERATOR,
-            "operator_options": list(BOOLEAN_OPERATORS),
+            "operator_options": list(operators),
             "observation_count": len(observations),
             "root": "cogal.operator." + target,
             "operator_roots": ["cogal.operator." + operator
-                               for operator in BOOLEAN_OPERATORS],
+                               for operator in operators],
         })
     return tuple(rows)
 
 
 def draw_identification(legacy_root: Path, graph: dict, *, seed: int,
                         each: int = ASSESSMENT_ITEMS,
-                        capability: str | None = CAPABILITY) -> tuple[dict, ...]:
+                        capability: str | None = CAPABILITY,
+                        operators=BOOLEAN_OPERATORS) -> tuple[dict, ...]:
     if type(seed) is not int or type(each) is not int or each < 1:
         raise ValueError("GRADE_B_IDBOOLOPS_INVALID_DRAW")
     if capability not in (None, CAPABILITY):
         raise ValueError("GRADE_B_IDBOOLOPS_UNKNOWN_CAPABILITY")
+    operators = _operator_domain(operators)
     rows, seen = [], set()
     cycle = 0
     while len(rows) < each:
-        for row in _cycle(legacy_root, graph, seed=seed, cycle=cycle):
+        for row in _cycle(
+                legacy_root, graph, seed=seed, cycle=cycle,
+                operators=operators):
             if row["id"] not in seen:
                 seen.add(row["id"])
                 rows.append(row)

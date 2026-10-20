@@ -63,6 +63,23 @@ class FactoryArchitectureTests(unittest.TestCase):
                 "bilqis_mlx/trainer.py OPERATE_BYPASSES_FACTORY_RELEASE",
                 problems)
 
+    def test_training_entrypoint_with_v2_release_gate_is_accepted(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "bilqis_mlx/factory").mkdir(parents=True)
+            (root / "bilqis_mlx/factory/__init__.py").write_text("")
+            (root / "bilqis_mlx/live_curriculum.py").write_text("")
+            (root / "bilqis_mlx/trainer.py").write_text(
+                "def operate():\n _ensure_executable_release()\n"
+                "def _adopt_executable_profile():\n"
+                " _require_executable_factory_admission()\n"
+                " _executable_factory_admission()\n")
+            (root / "bilqis_mlx/grade_transition.py").write_text(
+                "def activate_numeric_grade():\n _factory_admission()\n")
+            (root / "bilqis_mlx/numeric_staircase.py").write_text(
+                "def _rebind():\n _factory_admission()\n")
+            self.assertEqual(inspect_factory_architecture(root), ())
+
 
 if __name__ == "__main__":
     unittest.main()

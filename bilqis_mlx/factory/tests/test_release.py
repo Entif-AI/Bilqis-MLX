@@ -16,6 +16,9 @@ class FactoryReleaseTests(unittest.TestCase):
     def test_release_binds_semantics_adapters_and_three_assessment_classes(self):
         release = compile_factory_release(self.course, self.registry)
         release.verify()
+        self.assertEqual(
+            release.release_sha256,
+            "e288a8ec96ed9323fc1f0ed2cb30eabdd16deddf6c64ce5ae7306cf84fd37c28")
         self.assertEqual(tuple(item.capability_id for item in release.capabilities),
                          tuple(cap.id for cap in self.course.grades[0].capabilities))
         self.assertEqual({plan.assessment_class for plan in release.assessments},

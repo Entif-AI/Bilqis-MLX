@@ -19,7 +19,8 @@ class SourceMemoExamTests(TestCase):
         row = {"id": "same-equation", "capability": "C.ADD", "gold": "2",
                "answer_kind": "numeric_active", "tokens": [1, 2]}
         heads = {"semantic_token": {"values": ["school.number." + str(i) for i in range(4)],
-                                    "token_ids": list(range(4))}}
+                                    "token_ids": list(range(4))},
+                 "numeric_active": {"values": [str(i) for i in range(4)], "token_ids": list(range(4))}}
         config = {"heads": 1, "layers": 1, "answer_heads": heads}
         mx = SimpleNamespace(eval=lambda *_: None)
         measured = []

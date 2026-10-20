@@ -60,8 +60,11 @@ def evaluate(record: dict, capability: str = CAPABILITY) -> str:
             capability != CAPABILITY or set(record) != {"task", "world", "observations", "options"}):
         raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
     options = record["options"]
-    if (not isinstance(options, list) or tuple(options) != BOOLEAN_OPERATORS or
-            len(set(options)) != len(options)):
+    if (not isinstance(options, list) or len(options) < 2 or
+            len(set(options)) != len(options) or
+            not set(options) <= set(BOOLEAN_OPERATORS) or
+            tuple(options) != tuple(
+                operator for operator in BOOLEAN_OPERATORS if operator in options)):
         raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_OPTION_DRIFT")
     observations = record["observations"]
     if not isinstance(observations, list) or not observations:

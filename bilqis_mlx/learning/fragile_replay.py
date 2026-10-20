@@ -8,7 +8,6 @@ from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.grade_b_oracle import evaluate as grade_b_gold, operand_truth
 
 
-CAPABILITIES = ("B.OR", "B.XOR")
 TRUTH_PATTERNS = (
     (False, False),
     (False, True),
@@ -38,7 +37,7 @@ def structural_signature(row: dict) -> tuple:
     query = record.get("query") or {}
     args = query.get("args")
     universe = row.get("universe_size")
-    if (capability not in CAPABILITIES or
+    if (not isinstance(capability, str) or not capability or
             not isinstance(raw, (list, tuple)) or len(raw) != 2 or
             any(type(value) is not bool for value in raw) or
             not isinstance(args, list) or len(args) != 2 or
@@ -96,17 +95,7 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
     return tuple(selected)
 
 
-def _pattern_gold(capability: str, pattern: tuple[bool, bool]) -> str:
-    if capability == "B.OR":
-        value = pattern[0] or pattern[1]
-    elif capability == "B.XOR":
-        value = pattern[0] != pattern[1]
-    else:
-        raise ValueError("FRAGILE_PRESERVATION_UNKNOWN_CAPABILITY")
-    return "TRUE" if value else "FALSE"
-
-
-def select_preservation_rows(rows, *, capabilities=CAPABILITIES,
+def select_preservation_rows(rows, *, capabilities=None,
                              excluded_ids=frozenset()) -> tuple[dict, ...]:
     """Pick fresh source siblings that cover each fragile truth-table cell once.
 
@@ -114,12 +103,21 @@ def select_preservation_rows(rows, *, capabilities=CAPABILITIES,
     therefore teaches the same Boolean semantics without turning admission
     questions into lesson material.
     """
-    requested = tuple(capabilities)
+    requested = (
+        tuple(capabilities) if capabilities is not None else
+        tuple(sorted({
+            row.get("capability") for row in rows
+            if isinstance(row.get("capability"), str) and
+            isinstance(row.get("operand_truths"), (list, tuple)) and
+            len(row.get("operand_truths")) == 2
+        })))
     if (not requested or len(requested) != len(set(requested)) or
-            any(capability not in CAPABILITIES for capability in requested)):
+            any(not isinstance(capability, str) or not capability
+                for capability in requested)):
         raise ValueError("FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET")
     excluded = set(excluded_ids)
     selected = {}
+    gold_by_cell = {}
     for row in rows:
         capability = row.get("capability")
         if capability not in requested or row.get("id") in excluded:
@@ -129,12 +127,16 @@ def select_preservation_rows(rows, *, capabilities=CAPABILITIES,
                 any(type(value) is not bool for value in raw)):
             raise ValueError("FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID")
         pattern = tuple(raw)
-        if pattern not in TRUTH_PATTERNS or row.get("gold") != _pattern_gold(
-                capability, pattern):
+        gold = row.get("gold")
+        if pattern not in TRUTH_PATTERNS or gold not in ("TRUE", "FALSE"):
+            raise ValueError("FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT")
+        cell = (capability, pattern)
+        prior_gold = gold_by_cell.setdefault(cell, gold)
+        if prior_gold != gold:
             raise ValueError("FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT")
         if not row.get("tokens"):
             raise ValueError("FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING")
-        selected.setdefault((capability, pattern), row)
+        selected.setdefault(cell, row)
     required = {(capability, pattern)
                 for capability in requested for pattern in TRUTH_PATTERNS}
     missing = required - set(selected)
@@ -144,11 +146,15 @@ def select_preservation_rows(rows, *, capabilities=CAPABILITIES,
                  if key in required)
 
 
-def load_replay_rows(run_dir: Path, receipt: dict) -> tuple[dict, ...]:
+def load_replay_rows(run_dir: Path, receipt: dict, *, capabilities) -> tuple[dict, ...]:
     """Reuse the current materialized full-exam B cases, never generate new gold."""
+    requested = tuple(capabilities)
+    if (not requested or len(requested) != len(set(requested)) or
+            any(not isinstance(name, str) or not name for name in requested)):
+        raise ValueError("FRAGILE_REPLAY_CAPABILITY_SET_INVALID")
     exam = receipt.get("last_exam") or {}
     scores = exam.get("scores") or {}
-    if any(name not in scores for name in CAPABILITIES):
+    if any(name not in scores for name in requested):
         return ()
     sha = exam.get("cohort_sha256")
     if (not isinstance(sha, str) or len(sha) != 64 or
@@ -165,12 +171,15 @@ def load_replay_rows(run_dir: Path, receipt: dict) -> tuple[dict, ...]:
                          seed=stored["seed"], rubric_version=stored["schema"])
     if cohort.digest != sha:
         raise ValueError("FRAGILE_REPLAY_COHORT_CONTENT_DRIFT")
-    rows = tuple(row for row in cohort.rows if row["capability"] in CAPABILITIES)
-    if len(rows) != 24 or len({row["id"] for row in rows}) != 24:
+    rows = tuple(row for row in cohort.rows if row["capability"] in requested)
+    expected_total = sum(scores[name].get("total", 0) for name in requested)
+    if (expected_total < 1 or len(rows) != expected_total or
+            len({row["id"] for row in rows}) != expected_total):
         raise ValueError("FRAGILE_REPLAY_INCOMPLETE_B_COHORT")
-    for name in CAPABILITIES:
+    for name in requested:
         group = [row for row in rows if row["capability"] == name]
-        if len(group) != 12 or scores[name].get("total") != 12:
+        expected = scores[name].get("total")
+        if type(expected) is not int or expected < 4 or len(group) != expected:
             raise ValueError("FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY")
         observed_patterns = set()
         for row in group:

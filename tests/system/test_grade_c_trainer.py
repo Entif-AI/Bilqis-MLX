@@ -10,8 +10,10 @@ from unittest.mock import patch
 
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.grade_a_release import accepted_grade_a
+from bilqis_mlx.compatibility.frontier_recovery import (
+    _measure_debt_admission_boundary, _migrate_grade_c_fixed_frontier)
 from bilqis_mlx.trainer import (_bundle_pointer, _fingerprint, _persist,
-    _measure_debt_admission_boundary, _migrate_grade_c_fixed_frontier, _resume,
+    _resume,
     _state_from_json, _take_exam, _take_visit, prepare_source)
 from bilqis_mlx.grade_transition import activate_numeric_grade
 from bilqis_mlx.live_grade_a import live_course as a_course

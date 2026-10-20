@@ -5,6 +5,12 @@ import json
 from pathlib import Path
 
 from ..source_adapters.school import live_source_registry
+from ..factory.executable_release import (
+    ExecutableAdmissionReceipt,
+    ExecutableFactoryRelease,
+    SCHEMA as EXECUTABLE_SCHEMA,
+    admit_executable_factory_release,
+)
 from ..factory.model import AdmissionReceipt, FactoryRelease
 from ..factory.release import admit_factory_release, compile_factory_release
 from .state import _canonical, _durable_json
@@ -48,6 +54,46 @@ def _factory_admission(run_dir, course, student, graph_sha256, *, registry=None)
     return release, release_file, admission
 
 
+def _persist_executable_factory_release(
+        run_dir: Path, release: ExecutableFactoryRelease) -> str:
+    """Publish one immutable v2 release without changing the live v1 path."""
+    if not isinstance(release, ExecutableFactoryRelease):
+        raise TypeError("FACTORY_EXECUTABLE_RELEASE_REQUIRED")
+    release.verify()
+    directory = run_dir / "factory-releases"
+    path = directory / (release.release_sha256 + ".json")
+    if directory.is_symlink():
+        raise ValueError("FACTORY_RELEASE_UNSAFE_ARTIFACT_DIRECTORY")
+    payload = {
+        "factory_release_sha256": release.release_sha256,
+        **release.manifest(),
+    }
+    payload = json.loads(_canonical(payload))
+    if path.exists():
+        if path.is_symlink() or json.loads(path.read_text()) != payload:
+            raise ValueError("FACTORY_EXECUTABLE_RELEASE_DURABLE_ARTIFACT_DRIFT")
+    else:
+        _durable_json(path, payload)
+    if json.loads(path.read_text()) != payload:
+        raise ValueError("FACTORY_EXECUTABLE_RELEASE_DURABLE_READBACK_DRIFT")
+    return str(path.relative_to(run_dir))
+
+
+def _executable_factory_admission(
+        run_dir: Path, release: ExecutableFactoryRelease, student,
+        graph_sha256: str, graph: dict):
+    """Publish and admit v2 without switching the existing live v1 caller."""
+    release_file = _persist_executable_factory_release(run_dir, release)
+    admission = admit_executable_factory_release(
+        release,
+        student_sha256=student.sha256,
+        optimizer_step=student.optimizer_step,
+        semantic_graph_sha256=graph_sha256,
+        graph=graph,
+    )
+    return release, release_file, admission
+
+
 def _read_factory_release(run_dir, receipt):
     """Decode the persisted artifact without rebuilding a grade provider."""
     digest = receipt.get("factory_release_sha256")
@@ -69,6 +115,60 @@ def _read_factory_release(run_dir, receipt):
     return FactoryRelease.from_manifest(
         {key: value for key, value in payload.items()
          if key not in {"schema", "factory_release_sha256"}}, digest)
+
+
+def _read_executable_factory_release_artifact(
+        run_dir: Path, receipt: dict) -> ExecutableFactoryRelease:
+    """Cold-read and structurally verify the immutable v2 artifact."""
+    digest = receipt.get("factory_release_sha256")
+    if (not isinstance(digest, str) or len(digest) != 64 or
+            any(char not in "0123456789abcdef" for char in digest)):
+        raise ValueError("FACTORY_EXECUTABLE_RELEASE_DIGEST_INVALID")
+    release_file = receipt.get("factory_release_file")
+    expected_file = "factory-releases/" + digest + ".json"
+    if release_file != expected_file:
+        raise ValueError("FACTORY_EXECUTABLE_RELEASE_NOT_ADMITTED_FOR_RUNTIME")
+    path = run_dir / expected_file
+    if path.parent.is_symlink() or path.is_symlink() or not path.is_file():
+        raise ValueError("FACTORY_EXECUTABLE_RELEASE_DURABLE_ARTIFACT_MISSING")
+    payload = json.loads(path.read_text())
+    if payload.get("schema") != EXECUTABLE_SCHEMA:
+        raise ValueError("FACTORY_EXECUTABLE_RELEASE_DURABLE_SCHEMA_INVALID")
+    if payload.get("factory_release_sha256") != digest:
+        raise ValueError("FACTORY_EXECUTABLE_RELEASE_ARTIFACT_DIGEST_DRIFT")
+    release = ExecutableFactoryRelease.from_manifest(
+        {key: value for key, value in payload.items()
+         if key != "factory_release_sha256"}, digest)
+    return release
+
+
+def _read_executable_factory_release(
+        run_dir: Path, receipt: dict, graph: dict) -> ExecutableFactoryRelease:
+    """Cold-read v2 authority and bind it to the actual loaded semantic catalog."""
+    release = _read_executable_factory_release_artifact(run_dir, receipt)
+    release.verify_semantic_catalog(graph)
+    return release
+
+
+def _require_executable_factory_admission(
+        run_dir: Path, receipt: dict, graph: dict) -> ExecutableFactoryRelease:
+    """Verify cold v2 artifact plus exact student/catalog/graph baseline."""
+    release = _read_executable_factory_release(run_dir, receipt, graph)
+    raw = receipt.get("factory_admission_v2")
+    if not isinstance(raw, dict):
+        raise ValueError("FACTORY_EXECUTABLE_ADMISSION_RECEIPT_REQUIRED")
+    try:
+        admission = ExecutableAdmissionReceipt(**raw)
+    except TypeError as exc:
+        raise ValueError("FACTORY_EXECUTABLE_ADMISSION_RECEIPT_INVALID") from exc
+    admission.verify(release)
+    current = receipt["school"]["current_student"]
+    if (admission.semantic_graph_sha256 != receipt.get("semantic_graph_sha256") or
+            admission.optimizer_step > current["optimizer_step"] or
+            (admission.optimizer_step == current["optimizer_step"] and
+             admission.student_sha256 != current["sha256"])):
+        raise ValueError("FACTORY_EXECUTABLE_ADMISSION_BASELINE_DRIFT")
+    return release
 
 
 def _require_factory_admission(run_dir, receipt, course, *, registry=None):

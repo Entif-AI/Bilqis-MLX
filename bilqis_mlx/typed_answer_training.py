@@ -15,8 +15,40 @@ from bilqis_mlx.curriculum import BOOLEAN_OPERATORS
 from bilqis_mlx.runtime.mlx_parity import clip_gradients, forward_arrays
 
 
-TRAIN_CASTES = ("numeric_0_3", "numeric_active", "numeric_full_101",
-                "binary", "boolean_operator", "evidence", "semantic_token")
+LEGACY_TRAIN_CASTES = (
+    "numeric_0_3", "numeric_active", "numeric_full_101",
+    "binary", "boolean_operator", "evidence", "semantic_token")
+
+
+def _verified_v2_head(head: dict) -> bool:
+    modality_id = head.get("modality_id")
+    implementation = head.get("implementation_sha256")
+    return (
+        isinstance(modality_id, str) and bool(modality_id) and
+        isinstance(implementation, str) and len(implementation) == 64 and
+        all(char in "0123456789abcdef" for char in implementation))
+
+
+def _validate_legacy_head(kind: str, labels: list[str]) -> None:
+    """Preserve pre-v2 ABI checks while new modalities extend through v2."""
+    if kind not in LEGACY_TRAIN_CASTES:
+        raise ValueError("ANSWER_CASTE_NOT_ADMITTED_FOR_TRAINING")
+    sizes = {"numeric_0_3": 4, "numeric_full_101": 101,
+             "evidence": 5, "binary": 2}
+    if (kind in sizes and len(labels) != sizes[kind] or
+            kind == "numeric_active" and (
+                len(labels) < 2 or labels != [str(i) for i in range(len(labels))]) or
+            kind == "semantic_token" and not labels or
+            kind == "numeric_0_3" and labels != ["0", "1", "2", "3"] or
+            kind == "numeric_full_101" and
+            labels != [str(i) for i in range(101)] or
+            kind == "boolean_operator" and (
+                len(labels) < 2 or
+                any(label not in BOOLEAN_OPERATORS for label in labels) or
+                labels != [label for label in BOOLEAN_OPERATORS if label in labels]) or
+            kind in ("evidence", "binary") and
+            labels[:2] != ["FALSE", "TRUE"]):
+        raise ValueError("ANSWER_CASTE_UNTRUSTED_HEAD_ABI")
 
 
 def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
@@ -31,29 +63,23 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
     grouped = {}
     for row in rows:
         kind = row.get("answer_kind")
-        if kind not in TRAIN_CASTES:
+        if not isinstance(kind, str) or not kind or kind not in heads:
             raise ValueError("ANSWER_CASTE_NOT_ADMITTED_FOR_TRAINING")
-        head = heads.get(kind) or {}
+        head = heads[kind]
         labels = head.get("values") or []
         answer_ids = head.get("token_ids") or []
-        sizes = {"numeric_0_3":4, "numeric_full_101":101, "evidence":5,
-                 "binary":2}
         if (len(labels) != len(answer_ids) or
+                len(labels) < 2 or
                 len(set(labels)) != len(labels) or
                 any(type(i) is not int or not 0 <= i < len(vocabulary) for i in answer_ids) or
-                kind in sizes and len(labels) != sizes[kind] or
-                kind == "numeric_active" and (len(labels) < 2 or
-                         labels != [str(i) for i in range(len(labels))]) or
-                kind == "semantic_token" and len(labels) != len(vocabulary) or
-                len(set(answer_ids)) != len(answer_ids) or
-                kind == "numeric_0_3" and labels != ["0", "1", "2", "3"] or
-                kind == "numeric_full_101" and labels != [str(i) for i in range(101)] or
-                kind == "boolean_operator" and (
-                    len(labels) < 2 or
-                    any(label not in BOOLEAN_OPERATORS for label in labels) or
-                    labels != [label for label in BOOLEAN_OPERATORS if label in labels]) or
-                kind in ("evidence", "binary") and labels[:2] != ["FALSE", "TRUE"]):
+                len(set(answer_ids)) != len(answer_ids)):
             raise ValueError("ANSWER_CASTE_UNTRUSTED_HEAD_ABI")
+        if kind == "semantic_token":
+            if (labels != vocabulary or
+                    answer_ids != list(range(len(vocabulary)))):
+                raise ValueError("ANSWER_CASTE_UNTRUSTED_HEAD_ABI")
+        elif not _verified_v2_head(head):
+            _validate_legacy_head(kind, labels)
         if row.get("gold") not in labels:
             raise ValueError("ANSWER_CASTE_GOLD_OUTSIDE_HEAD")
         tokens = row.get("tokens")
@@ -105,7 +131,7 @@ def predict_rows(mx, weights, rows, heads, config) -> dict[str, str]:
     for offset in range(0, len(rows), 24):
         group = rows[offset:offset+24]
         for kind in {row["answer_kind"] for row in group}:
-            if kind not in TRAIN_CASTES:
+            if kind not in heads:
                 raise ValueError("ANSWER_CASTE_NOT_ADMITTED_FOR_INFERENCE")
             own = [row for row in group if row["answer_kind"] == kind]
             head = heads["semantic_token" if kind.startswith("numeric_") else kind]
