@@ -52,6 +52,7 @@ from bilqis_mlx.learning.championship_identity import (
 from .source_adapters.school import live_source_registry
 from .compatibility.executable_projection import (
     compile_projected_executable_release,
+    legacy_execution_metadata,
     legacy_course_for_profile,
 )
 from .factory.assessment import qualification_complete
@@ -65,12 +66,14 @@ from .profiles.school import (
     boolean_entry_profile,
     with_disabled_future_grades,
 )
-from .profiles.catalog import numeric_entry_transition
+from .profiles.catalog import (
+    next_numeric_scope_profile,
+    numeric_entry_transition,
+)
 from .factory.live_releases import (
     GRAPH_GROWTH_TRANSITION,
     INITIAL_RELEASE,
     KNOWN_RELEASES,
-    NUMERIC_STAIRCASE_RELEASE,
     boolean_identification_answer_heads,
     course_for_mode,
     graph_matches_release,
@@ -202,6 +205,7 @@ def _migrate_executable_release(run_dir, receipt, course, grade_a_course, source
         "factory_release_file": release_file,
         "factory_release_schema": release.schema,
         "factory_admission_v2": asdict(admission),
+        **legacy_execution_metadata(course),
     })
     return migrated, release, program, rebound
 
@@ -1336,6 +1340,7 @@ def _adopt_executable_profile(
                     "event": identity_event,
                 })
     heads = answer_heads_from_executable_release(successor, graph)
+    numeric_values = heads.get("numeric_active", {}).get("values")
     config = {**receipt["config"], "answer_heads": heads}
     candidate = {
         **receipt,
@@ -1352,6 +1357,8 @@ def _adopt_executable_profile(
         "championship_epoch_history": history,
         "last_exam": None if revised_grade is not None else receipt.get("last_exam"),
     }
+    if numeric_values is not None:
+        candidate["numeric_maximum"] = len(numeric_values) - 1
     candidate.pop("qualification_cohort_v2", None)
     record = _advance(
         run_dir, candidate, next_state,
@@ -1478,6 +1485,8 @@ def _adopt_catalog_profile(
         "numeric_maximum": (
             len(numeric_values) - 1 if numeric_values is not None else
             receipt.get("numeric_maximum")),
+        "numeric_scope_final_maximum":
+            transition.numeric_scope_final_maximum,
         "mentor_epoch": epoch,
         "championship_epoch_history": history,
         "last_exam": None,
@@ -2427,7 +2436,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     priority = [r for r in receipt.get("teacher_misses", ())
                 if r["capability"] == cap]
     deferred_misses = []
-    if receipt.get('curriculum_mode') == NUMERIC_STAIRCASE_RELEASE:
+    if receipt.get("numeric_maximum") is not None:
         from .numeric_staircase import row_in_scope
         deferred_misses = [r for r in priority if not row_in_scope(r, receipt['numeric_maximum'])]
         priority = [r for r in priority if row_in_scope(r, receipt['numeric_maximum'])]
@@ -4511,9 +4520,22 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         })
         visits = 0
         while True:
-            from .numeric_staircase import scope_advance_due, advance_scope
-            if scope_advance_due(receipt, course):
-                course, receipt = advance_scope(run_dir, receipt, course, course_b, graph)
+            final_numeric_scope = receipt.get("numeric_scope_final_maximum")
+            if final_numeric_scope is not None:
+                admitted_v2 = _require_executable_factory_admission(
+                    run_dir, receipt, graph)
+                active_program = schedule_program_from_executable_release(
+                    admitted_v2)
+                active_school = _state_from_json(
+                    receipt["school"], active_program)
+                next_numeric_profile = next_numeric_scope_profile(
+                    admitted_v2, final_maximum=final_numeric_scope)
+                if (next_numeric_profile is not None and
+                        active_school.stage == "AWAITING_NEXT_GRADE"):
+                    receipt, course, executable_release, schedule_program = (
+                        _adopt_executable_profile(
+                            run_dir, receipt, course_a, source_root, graph,
+                            next_numeric_profile))
             school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
             receipt = _reconcile_stagnation_scope(
                 run_dir, receipt, course, school)

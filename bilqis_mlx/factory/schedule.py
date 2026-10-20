@@ -133,6 +133,7 @@ def schedule_program_from_executable_release(
         "schema": "bilqis.mlx.schedule-program/v2",
         "roster": plan.projection_digests.roster,
         "schedule": plan.projection_digests.schedule,
+        "assessment": plan.projection_digests.assessment,
         "program_complete": program_complete,
     })
     manifest = (

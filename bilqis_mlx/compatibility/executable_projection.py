@@ -26,6 +26,19 @@ from ..minimal_grade_b import build_course as build_minimal_boolean
 from ..source_adapters.school import live_source_registry
 
 
+def legacy_execution_metadata(course: Course) -> dict:
+    """Translate historical mode identity into current profile-policy metadata."""
+    from ..numeric_staircase import (
+        FINAL_MAXIMUM as LEGACY_NUMERIC_SCOPE_FINAL,
+        RELEASE as LEGACY_NUMERIC_STAIRCASE_RELEASE,
+    )
+    if course.version == LEGACY_NUMERIC_STAIRCASE_RELEASE:
+        return {
+            "numeric_scope_final_maximum": LEGACY_NUMERIC_SCOPE_FINAL,
+        }
+    return {}
+
+
 LIVE_V2_VERIFICATION_SEED = 2026101905
 
 

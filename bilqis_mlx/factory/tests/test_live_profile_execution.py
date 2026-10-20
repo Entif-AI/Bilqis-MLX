@@ -53,7 +53,9 @@ class LiveProfileExecutionTests(unittest.TestCase):
             from bilqis_mlx.live_grade_c import registry_graph
             from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
             from bilqis_mlx.source_adapters.school import live_source_registry
-            from bilqis_mlx.profiles.catalog import numeric_entry_transition
+            from bilqis_mlx.profiles.catalog import (
+                next_numeric_scope_profile, numeric_entry_transition,
+            )
             from bilqis_mlx.typed_answer_training import prepare_typed_batches
 
             root = Path.cwd()
@@ -295,6 +297,31 @@ class LiveProfileExecutionTests(unittest.TestCase):
             assert "source.micro.boolean-minimal/v1" not in {
                 cap.provider_id
                 for cap in numeric_release.execution_plan.capabilities}
+
+            next_numeric = next_numeric_scope_profile(numeric_release)
+            assert next_numeric is not None
+            next_numeric_course = legacy_course_for_profile(
+                grade_a, source, next_numeric)
+            numeric_four = compile_successor_profile_release(
+                numeric_release,
+                next_numeric,
+                registry,
+                answers,
+                source_root=source,
+                graph=numeric_transition.graph,
+                verification_seed=2026101906,
+                legacy_course=next_numeric_course)
+            assert numeric_four.transition.semantic_geometry == "UNCHANGED"
+            assert answer_heads_from_executable_release(
+                numeric_four, numeric_transition.graph
+            )["numeric_active"]["values"] == ["0", "1", "2", "3", "4"]
+            from bilqis_mlx.factory.schedule import (
+                schedule_program_from_executable_release,
+            )
+            assert (
+                schedule_program_from_executable_release(numeric_four).digest()
+                != schedule_program_from_executable_release(numeric_release).digest()
+            )
             print("LIVE_PROFILE_EXECUTION_OK")
         ''')
         result = subprocess.run(

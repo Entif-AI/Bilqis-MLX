@@ -7,7 +7,11 @@ from .school import (
     numeric_foundation_profile,
     with_disabled_future_grades,
 )
-from .catalog import CatalogProfileTransition, numeric_entry_transition
+from .catalog import (
+    CatalogProfileTransition,
+    next_numeric_scope_profile,
+    numeric_entry_transition,
+)
 
 __all__ = (
     "boolean_entry_profile",
@@ -16,5 +20,6 @@ __all__ = (
     "numeric_foundation_profile",
     "with_disabled_future_grades",
     "CatalogProfileTransition",
+    "next_numeric_scope_profile",
     "numeric_entry_transition",
 )
