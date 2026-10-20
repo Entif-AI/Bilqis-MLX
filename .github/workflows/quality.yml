@@ -27,10 +27,10 @@ jobs:
           python3 -B scripts/check_semantic_boundaries.py
           python3 -B scripts/check_factory_architecture.py
           python3 -B scripts/check_docs.py
-      - name: Reject newly introduced code hygiene regressions
-        run: python3 -B scripts/code_smell_audit.py --check-baseline docs/evidence/development/code_smell_baseline.json
       - name: Reject newly introduced opaque error codes and magic numeric guards
         run: python3 -B scripts/operator_contract_audit.py --check-baseline docs/evidence/development/operator_contract_baseline.json
+      - name: Reject newly introduced code hygiene regressions
+        run: python3 -B scripts/code_smell_audit.py --check-baseline docs/evidence/development/code_smell_baseline.json
       - name: Portable non-neural custody and release tests
         run: >-
           python3 -B scripts/run_tests.py
