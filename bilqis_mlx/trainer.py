@@ -139,6 +139,7 @@ from .runtime.admission import (
     _factory_release, _persist_factory_release, _factory_admission,
     _read_executable_factory_release_artifact,
     _require_executable_factory_admission, _require_factory_admission,
+    _verified_legacy_upgrade_release,
 )
 from .runtime.assessment import (
     load_championship_cohort,
@@ -1165,11 +1166,13 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
                           **reconciled})
     receipt = _recover_orphaned_commit(run_dir, receipt)
     saved_mode = receipt.get("curriculum_mode")
+    sealed_v1_release = _verified_legacy_upgrade_release(run_dir, receipt)
     executable = (
         _read_executable_factory_release_artifact(run_dir, receipt)
         if receipt.get("factory_admission_v2") is not None else None)
     old_mode = executable is None and saved_mode is None
     old_course = (
+        sealed_v1_release.course if sealed_v1_release is not None else
         accepted_grade_a(manifest) if old_mode else course)
     school_program = (
         schedule_program_from_executable_release(executable)
@@ -1184,7 +1187,8 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
         executable.verify_semantic_catalog(graph)
     else:
         verify_legacy_resume_binding(
-            receipt, old_course, graph, manifest, _fingerprint)
+            receipt, old_course, graph, manifest, _fingerprint,
+            sealed_v1_release=sealed_v1_release)
     if (bundle["source_digest"] != AUDITED_PARENT.sha256 or
             bundle["safetensors_sha256"] != school.current_student.sha256 or
             bundle["optimizer_step"] != school.current_student.optimizer_step or
@@ -1198,7 +1202,9 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
                    f"{receipt['generation']:07d}.json").read_text()) != receipt:
         raise ValueError("HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED")
     if not old_mode:
-        _verify_saved_cohort(run_dir, receipt, old_course)
+        _verify_saved_cohort(
+            run_dir, receipt, old_course,
+            sealed_v1_release=sealed_v1_release)
     mx.eval(parameters, optimizer.state)
     from .compatibility.frontier_recovery import recover_legacy_frontier
     receipt = recover_legacy_frontier(mx, run_dir, receipt, old_course, parameters)

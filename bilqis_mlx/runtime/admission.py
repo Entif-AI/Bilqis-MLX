@@ -117,6 +117,40 @@ def _read_factory_release(run_dir, receipt):
          if key not in {"schema", "factory_release_sha256"}}, digest)
 
 
+def _verified_legacy_upgrade_release(run_dir: Path, receipt: dict) -> FactoryRelease | None:
+    """Reopen exact sealed v1 course solely for a source-verified v2 migration.
+
+    Reconstructing the old course from subsequently edited constructor source
+    changes its B/C digest. The original admitted release is the only valid
+    historical course authority. This is NOT a waiver of provider verification:
+    the caller must compile/admit the new v2 source and oracle contract before
+    any resumed learning is permitted.
+    """
+    if receipt.get("factory_admission_v2") is not None:
+        return None
+    raw = receipt.get("factory_admission")
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ValueError("FACTORY_ADMISSION_RECEIPT_INVALID")
+    release = _read_factory_release(Path(run_dir), receipt)
+    try:
+        admission = AdmissionReceipt(**raw)
+    except TypeError as exc:
+        raise ValueError("FACTORY_ADMISSION_RECEIPT_INVALID") from exc
+    admission.verify(release)
+    school = receipt["school"]
+    student = school["current_student"]
+    if (receipt.get("curriculum_mode") != release.course.version or
+            school.get("course_digest") != release.course.digest() or
+            receipt.get("semantic_graph_sha256") != admission.semantic_graph_sha256 or
+            admission.optimizer_step > student["optimizer_step"] or
+            (admission.optimizer_step == student["optimizer_step"] and
+             admission.student_sha256 != student["sha256"])):
+        raise ValueError("FACTORY_ADMISSION_SEALED_RESUME_IDENTITY_DRIFT")
+    return release
+
+
 def _read_executable_factory_release_artifact(
         run_dir: Path, receipt: dict) -> ExecutableFactoryRelease:
     """Cold-read and structurally verify the immutable v2 artifact."""

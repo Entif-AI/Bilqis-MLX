@@ -366,6 +366,13 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
             "original_candidate_manifest_release_flag": False,
             "grade_a_user_acceptance_is_separate": True,
         }
+        if resume:
+            from .compatibility.executable_projection import preflight_sealed_v1_migration
+            saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+            compatibility = preflight_sealed_v1_migration(
+                run_dir, saved, source, legacy_root)
+            if compatibility is not None:
+                snapshot["resume_compatibility"] = compatibility
     else:
         snapshot["source_manifest_preflight"] = "NOT_RERUN_USE_--verify-source"
     if boolean_association_bridge:

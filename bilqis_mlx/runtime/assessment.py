@@ -377,7 +377,7 @@ def load_championship_cohort(run_dir, witness):
     return cohort
 
 
-def _verify_saved_cohort(run_dir, receipt, course):
+def _verify_saved_cohort(run_dir, receipt, course, *, sealed_v1_release=None):
     exam = receipt.get("last_exam") or {}
     if exam.get("cohort_sha256") is None:
         return None
@@ -400,7 +400,8 @@ def _verify_saved_cohort(run_dir, receipt, course):
             {"manifest_sha256": receipt["source_manifest_sha256"]},
             release, capabilities, pointer)
     from ..compatibility.assessment import verify_legacy_saved_cohort
-    return verify_legacy_saved_cohort(run_dir, receipt, course)
+    return verify_legacy_saved_cohort(
+        run_dir, receipt, course, sealed_v1_release=sealed_v1_release)
 
 
 def _grade_test_cohort(run_dir, receipt, manifest, course, source_root, graph):

@@ -7,7 +7,35 @@ from ..generated_assessment import make_cohort
 from ..live_curriculum import cohort_contract, lesson_contract
 
 
-def verify_legacy_saved_cohort(run_dir, receipt, course):
+def sealed_v1_cohort_contract(release, grade):
+    """Derive historical cohort provenance from its original signed adapter.
+
+    V1 cohort identities cannot be reconstructed by compiling the old course
+    against today's registry: source adapters and constructor fingerprints have
+    evolved. The verified persisted release already owns these exact values.
+    """
+    candidates = tuple(item for item in release.capabilities
+                       if item.grade_id == grade.id)
+    adapters = {item.source_adapter_id for item in candidates}
+    if len(adapters) != 1:
+        raise ValueError("FACTORY_SEALED_COHORT_ADAPTER_AMBIGUOUS")
+    adapter = release.source_adapter_map[next(iter(adapters))]
+    known = {name for name, _ in adapter.cohort_releases}
+    schema = (release.course.version if
+              grade.id == release.course.grades[-1].id and
+              release.course.version in known else
+              adapter.cohort_releases[0][0]
+              if adapter.cohort_releases else release.course.version)
+    code_sha = adapter.cohort_code_sha256(schema)
+    from .historical_live_release import (
+        HISTORICAL_A_GENERATOR_SHA256, HISTORICAL_A_RUBRIC_SHA256,
+    )
+    if grade.assessment_sha256 == HISTORICAL_A_RUBRIC_SHA256:
+        code_sha = HISTORICAL_A_GENERATOR_SHA256
+    return (grade.assessment_sha256, schema, adapter.cohort_generator, code_sha)
+
+
+def verify_legacy_saved_cohort(run_dir, receipt, course, *, sealed_v1_release=None):
     """Cold-verify one historical Course-bound cohort."""
     exam = receipt.get("last_exam") or {}
     sha = exam.get("cohort_sha256")
@@ -20,14 +48,19 @@ def verify_legacy_saved_cohort(run_dir, receipt, course):
     if path.is_symlink() or not path.is_file():
         raise ValueError("HUMAN_TRAINER_SAVED_COHORT_MISSING")
     stored = json.loads(path.read_text())
-    contracts = [lesson_contract(course, grade.id) for grade in course.grades]
+    contracts = [
+        (sealed_v1_cohort_contract(sealed_v1_release, grade)
+         if sealed_v1_release is not None else lesson_contract(course, grade.id))
+        for grade in course.grades]
     matches = [
         contract for contract in contracts
         if contract[1] == stored.get("schema")]
     if len(matches) == 1:
         rubric, release, generator, code_sha = matches[0]
     elif stored.get("schema") == course.version:
-        rubric, release, generator, code_sha = cohort_contract(course)
+        rubric, release, generator, code_sha = (
+            sealed_v1_cohort_contract(sealed_v1_release, course.grades[-1])
+            if sealed_v1_release is not None else cohort_contract(course))
     else:
         raise ValueError("HUMAN_TRAINER_SAVED_COHORT_RELEASE_NOT_ADMITTED")
     if (stored.get("rubric_sha256") != rubric or

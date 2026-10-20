@@ -52,14 +52,70 @@ def resolve_legacy_resume_course(
 
 
 def verify_legacy_resume_binding(
-        receipt, course, graph, manifest, fingerprint) -> None:
-    """Verify pre-v2 release/graph binding behind the compatibility boundary."""
+        receipt, course, graph, manifest, fingerprint, *,
+        sealed_v1_release=None) -> None:
+    """Verify historical graph and provider custody before v2 qualification.
+
+    For a separately verified, immutable v1 admission, its old provider hash
+    describes the *historical* executable source, not the current constructor
+    bytes. The caller must immediately compile and qualify the new v2 source
+    release before making any neural update. All other legacy paths retain the
+    exact live-provider digest check.
+    """
     from .live_releases import graph_matches_release, verify_release_receipt
-    if receipt.get("curriculum_mode") is not None:
+    if sealed_v1_release is not None:
+        if sealed_v1_release.course != course:
+            raise ValueError("FACTORY_ADMISSION_SEALED_COURSE_MISMATCH")
+    elif receipt.get("curriculum_mode") is not None:
         verify_release_receipt(receipt, course)
     if not graph_matches_release(
             receipt.get("curriculum_mode"), graph, manifest, fingerprint):
         raise ValueError("HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT")
+
+
+def preflight_sealed_v1_migration(run_dir, receipt, manifest, source_root):
+    """Exercise the real v1 -> v2 authority transition without neural writes.
+
+    This closes the old CLI preflight gap where source manifests passed even
+    though the saved school could not be decoded with the runtime's curriculum.
+    """
+    from ..grade_a_release import accepted_grade_a
+    from ..runtime.admission import _verified_legacy_upgrade_release
+    from ..runtime.assessment import _verify_saved_cohort
+    from ..runtime.state import _fingerprint, _state_from_json
+    from .schedule_program import schedule_program_from_legacy_course
+    from .live_releases import initial_course, NUMERIC_RELEASE, NUMERIC_STAIRCASE_RELEASE
+
+    release = _verified_legacy_upgrade_release(run_dir, receipt)
+    if release is None:
+        return None
+    pinned = release.course
+    _state_from_json(receipt["school"], schedule_program_from_legacy_course(pinned))
+    _verify_saved_cohort(run_dir, receipt, pinned, sealed_v1_release=release)
+    if receipt.get("curriculum_mode") in (NUMERIC_RELEASE, NUMERIC_STAIRCASE_RELEASE):
+        from ..live_grade_c import registry_graph
+        graph = registry_graph()
+    else:
+        from ..source import read_sources
+        _, _, graph, _, _ = read_sources(source_root)
+    if _fingerprint(graph) != receipt["semantic_graph_sha256"]:
+        raise ValueError("FACTORY_ADMISSION_SEALED_GRAPH_DRIFT")
+    verify_legacy_resume_binding(
+        receipt, pinned, graph, manifest, _fingerprint,
+        sealed_v1_release=release)
+    grade_a = initial_course(accepted_grade_a(manifest))
+    successor, program, _ = compile_projected_executable_release(
+        pinned, grade_a, source_root, graph)
+    successor.verify_semantic_catalog(graph)
+    return {
+        "status": "VERIFIED_SEALED_V1_TO_SOURCE_QUALIFIED_V2",
+        "saved_course_sha256": pinned.digest(),
+        "source_qualified_successor_sha256": successor.release_sha256,
+        "successor_schedule_sha256": program.digest(),
+        "capabilities_by_grade": {
+            grade.id: len(grade.capabilities) for grade in program.grades},
+        "neural_updates": 0,
+    }
 
 
 LIVE_V2_VERIFICATION_SEED = 2026101905
