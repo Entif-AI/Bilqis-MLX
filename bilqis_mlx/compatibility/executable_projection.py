@@ -18,6 +18,7 @@ from ..factory.executable_release import compile_executable_factory_release
 from ..factory.live_answers import live_answer_registry
 from ..factory.schedule import schedule_program_from_executable_release
 from ..live_grade_b import live_course as build_boolean_grade
+from ..minimal_grade_b import build_course as build_minimal_boolean
 from ..source_adapters.school import live_source_registry
 
 
@@ -126,3 +127,22 @@ def compile_projected_executable_release(
         predecessor=predecessor,
     )
     return release, schedule_program_from_executable_release(release), canonical_course
+
+
+def legacy_course_for_profile(
+        grade_a: Course, source_root, profile: CurriculumProfile) -> Course:
+    """Temporary historical Course view for consumers not yet on v2 projections."""
+    canonical = _canonical_boolean_course(grade_a, source_root)
+    grade_profile = next(
+        (item for item in profile.grades if item.grade_id == "B"), None)
+    if grade_profile is None:
+        return canonical
+    enabled = grade_profile.enabled_capabilities
+    if enabled == ():
+        return grade_a
+    canonical_ids = tuple(cap.id for cap in canonical.grades[-1].capabilities)
+    if enabled is None or enabled == canonical_ids:
+        return canonical
+    if enabled == ("B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS"):
+        return build_minimal_boolean(grade_a, source_root)
+    raise ValueError("FACTORY_COMPATIBILITY_PROFILE_VIEW_UNSUPPORTED")
