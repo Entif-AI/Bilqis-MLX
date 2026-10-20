@@ -125,18 +125,22 @@ def schedule_program_from_executable_release(
             teaching_stages=grade.teaching_stages,
             assessment_sha256=contract.rubric_sha256,
         ))
+    program_complete = (
+        release.curriculum.program_complete and
+        tuple(item.capability_id for item in plan.capabilities) ==
+        tuple(release.curriculum.capability_map))
     program_digest = _digest({
         "schema": "bilqis.mlx.schedule-program/v2",
         "roster": plan.projection_digests.roster,
         "schedule": plan.projection_digests.schedule,
-        "program_complete": release.curriculum.program_complete,
+        "program_complete": program_complete,
     })
     manifest = (
         grades[-1].assessment_sha256
-        if release.curriculum.program_complete else None)
+        if program_complete else None)
     return ScheduleProgram(
         program_digest=program_digest,
         grades=tuple(grades),
-        program_complete=release.curriculum.program_complete,
+        program_complete=program_complete,
         assessment_manifest_sha256=manifest,
     )

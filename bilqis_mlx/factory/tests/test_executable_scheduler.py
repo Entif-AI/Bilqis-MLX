@@ -7,7 +7,7 @@ from bilqis_mlx.curriculum.scheduler import (
 )
 from bilqis_mlx.factory.curriculum_definition import from_legacy_course
 from bilqis_mlx.factory.executable_release import compile_executable_factory_release
-from bilqis_mlx.factory.execution import CurriculumProfile
+from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
 from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
 from bilqis_mlx.factory.tests.test_executable_consumers import _profile
 from bilqis_mlx.factory.tests.test_executable_release import _boolean_answers
@@ -110,6 +110,23 @@ class ExecutableSchedulerTests(unittest.TestCase):
         self.assertNotEqual(
             program.digest(),
             self.reduced.execution_plan.projection_digests.source)
+
+    def test_disabled_future_grade_is_not_terminal_program(self):
+        curriculum, bindings = from_legacy_course(self.course)
+        a_only = compile_executable_factory_release(
+            curriculum, bindings,
+            CurriculumProfile(
+                "a-only",
+                grades=(GradeProfile("B", enabled_capabilities=()),)),
+            self.providers, _boolean_answers(),
+            source_root=None, graph=self.graph,
+            verification_seed=67, legacy_course=self.course)
+        program = schedule_program_from_executable_release(a_only)
+
+        self.assertEqual(
+            tuple(grade.id for grade in program.grades),
+            ("A",))
+        self.assertFalse(program.program_complete)
 
 
 if __name__ == "__main__":

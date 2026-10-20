@@ -37,12 +37,15 @@ def project_legacy_course(
     if not isinstance(course, Course) or not isinstance(grade_a, Course):
         raise TypeError("FACTORY_COMPATIBILITY_COURSE_REQUIRED")
 
+    canonical_b = _canonical_boolean_course(grade_a, source_root)
     current_b = next((grade for grade in course.grades if grade.id == "B"), None)
     if current_b is None:
-        canonical_course = course
-        profile = CurriculumProfile.full()
+        canonical_course = canonical_b
+        profile = CurriculumProfile(
+            "compatibility/v1-a-only",
+            grades=(GradeProfile("B", enabled_capabilities=()),),
+        )
     else:
-        canonical_b = _canonical_boolean_course(grade_a, source_root)
         canonical_grade_b = canonical_b.grades[-1]
         current_ids = tuple(cap.id for cap in current_b.capabilities)
         canonical_ids = tuple(cap.id for cap in canonical_grade_b.capabilities)
@@ -54,13 +57,17 @@ def project_legacy_course(
             if len(course.grades) == 2
             else (canonical_b.grades[0], canonical_grade_b, *course.grades[2:])
         )
-        canonical_course = replace(
-            course,
-            grades=grades,
-            # Preserve the historical higher-grade provenance as compatibility
-            # metadata; v2 capability verification independently checks every
-            # active source/oracle contract.
-            program_complete=course.program_complete,
+        canonical_course = (
+            canonical_b
+            if len(course.grades) == 2
+            else replace(
+                course,
+                grades=grades,
+                # Preserve higher-grade provenance only when higher grades are
+                # actually present. A/B semantic and source authority comes
+                # from the single canonical full-B declaration.
+                program_complete=course.program_complete,
+            )
         )
 
         overrides = []

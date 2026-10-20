@@ -291,11 +291,13 @@ class ExecutableFactoryRelease:
         used_kinds = tuple(dict.fromkeys(
             family.kind for capability in self.execution_plan.capabilities
             for family in capability.answer_families))
-        if used_kinds != answer_kinds:
+        if (not set(used_kinds) <= set(answer_kinds) or
+                used_kinds != tuple(
+                    kind for kind in answer_kinds if kind in set(used_kinds))):
             raise ValueError("FACTORY_EXECUTABLE_RELEASE_MODALITY_DRIFT")
         modalities = {item.kind: item for item in self.answer_modalities}
         heads = {item.kind: item for item in self.answer_heads}
-        if tuple(heads) != answer_kinds:
+        if tuple(heads) != used_kinds:
             raise ValueError("FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_DRIFT")
         for kind, head in heads.items():
             descriptor = modalities[kind]
@@ -658,7 +660,14 @@ def compile_executable_factory_release(
     plan = compile_execution_plan(
         curriculum, profile, source_registry,
         source_bindings=source_bindings, answer_registry=answer_registry)
-    answer_modalities = answer_registry.descriptors_for(plan)
+    canonical_kinds = tuple(dict.fromkeys(
+        family.kind
+        for grade in curriculum.grades
+        for capability in grade.capabilities
+        for family in capability.answer_families))
+    answer_modalities = tuple(
+        answer_registry.require(kind).descriptor
+        for kind in canonical_kinds)
     answer_heads = _answer_head_bindings(plan, graph, answer_registry)
     source_adapters = _provider_descriptors(
         plan, source_bindings, source_registry)

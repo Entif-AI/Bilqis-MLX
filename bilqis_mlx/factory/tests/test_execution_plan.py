@@ -236,6 +236,34 @@ class ExecutionPlanTests(unittest.TestCase):
                 "A.C0", "A.C1", "A.C2", "A.C3", "A.C4", "A.C5"):
             self.assertEqual(full_nodes[capability], kernel_nodes[capability])
 
+    def test_profile_can_disable_future_grade_as_canonical_prefix(self):
+        course, registry = _synthetic_boolean_course()
+        plan = compile_execution_plan(
+            course,
+            CurriculumProfile(
+                "a-only",
+                grades=(GradeProfile("B", enabled_capabilities=()),)),
+            registry)
+
+        self.assertEqual(
+            tuple(grade.grade_id for grade in plan.grades),
+            ("A",))
+        self.assertEqual(
+            {item.grade_id for item in plan.capabilities},
+            {"A"})
+
+    def test_profile_cannot_leave_active_grade_after_disabled_prefix(self):
+        course, registry = _synthetic_boolean_course()
+        with self.assertRaisesRegex(
+                ValueError,
+                "FACTORY_PROFILE_ACTIVE_GRADE_AFTER_DISABLED_GRADE:B"):
+            compile_execution_plan(
+                course,
+                CurriculumProfile(
+                    "invalid-gap",
+                    grades=(GradeProfile("A", enabled_capabilities=()),)),
+                registry)
+
     def test_profile_cannot_invent_capability_or_answer_value(self):
         course = _synthetic_course(6)
         registry = _synthetic_registry()

@@ -60,7 +60,6 @@ class GradeProfile:
         if not isinstance(self.grade_id, str) or not self.grade_id:
             raise ValueError("FACTORY_PROFILE_GRADE_ID_REQUIRED")
         if self.enabled_capabilities is not None and (
-                not self.enabled_capabilities or
                 len(set(self.enabled_capabilities)) != len(self.enabled_capabilities) or
                 any(not isinstance(item, str) or not item
                     for item in self.enabled_capabilities)):
@@ -399,14 +398,30 @@ def compile_execution_plan(
     active_capabilities = {
         capability for values in enabled_by_grade.values() for capability in values
     }
+    if not active_capabilities:
+        raise ValueError("FACTORY_PROFILE_EMPTY_EXECUTION")
     grades = []
     capabilities = []
     cumulative: tuple[str, ...] = ()
+    disabled_grade_seen = False
     for grade in curriculum.grades:
+        enabled = enabled_by_grade[grade.grade_id]
+        grade_profile = grade_profiles.get(grade.grade_id)
+        if not enabled:
+            if grade_profile is not None and grade_profile.capabilities:
+                raise ValueError(
+                    "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE:"
+                    + grade.grade_id)
+            disabled_grade_seen = True
+            continue
+        if disabled_grade_seen:
+            raise ValueError(
+                "FACTORY_PROFILE_ACTIVE_GRADE_AFTER_DISABLED_GRADE:"
+                + grade.grade_id)
         compiled, members, cumulative = _profiled_grade(
-            curriculum, grade, grade_profiles.get(grade.grade_id),
+            curriculum, grade, grade_profile,
             source_bindings, registry, cumulative,
-            enabled_by_grade[grade.grade_id], active_capabilities)
+            enabled, active_capabilities)
         grades.append(compiled)
         capabilities.extend(members)
 
