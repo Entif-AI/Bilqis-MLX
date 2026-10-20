@@ -28,6 +28,8 @@ def detect_literal_prefix_count(source_root: Path, count: int) -> tuple[str, ...
     """Flag numeric AST constants in live Python, not immutable prose or seeds."""
     problems = []
     for path in sorted((source_root / "bilqis_mlx").rglob("*.py")):
+        if "tests" in path.relative_to(source_root / "bilqis_mlx").parts:
+            continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and type(node.value) is int and node.value == count:

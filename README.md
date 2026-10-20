@@ -6,7 +6,7 @@ The former Bilqis implementations are preserved as pinned, read-only source depe
 
 ## Live training cockpit
 
-![Bilqis live training dashboard showing a two-row run cockpit above candidate evaluation, sentinel and teacher telemetry, system qualification state, and per-capability curriculum mastery.](docs/images/bilqis-dashboard-prometheus.png)
+![Bilqis live training dashboard showing a two-row run cockpit above candidate evaluation, sentinel and teacher telemetry, system qualification state, and per-capability curriculum mastery.](docs/evidence/diagnostics/images/bilqis-dashboard-prometheus.png)
 
 *A live Bilqis training run in the operator dashboard. The cockpit summarizes runtime and whole-student progress while the panes expose candidate retention, sentinel and teacher evidence, qualification state, and curriculum mastery at a glance.*
 

@@ -3,14 +3,9 @@
   "description": "Review findings only; not proven defects or frozen-source rewrite authority",
   "fingerprints": [
     [
-      "bilqis_mlx/learning/capability_frontier.py",
+      "bilqis_mlx/boolean_composite_oracle.py",
       "duplicate-error-code",
-      "CAPABILITY_FRONTIER_CUSTODY_PROTECTED_BUNDLE_MISSING: used 2 times"
-    ],
-    [
-      "bilqis_mlx/learning/capability_frontier.py",
-      "duplicate-error-code",
-      "CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_BUNDLE: used 2 times"
+      "GRADE_B_COMPOSITE_ORACLE_UNKNOWN_OPERATOR: used 2 times"
     ],
     [
       "bilqis_mlx/cli.py",
@@ -19,13 +14,43 @@
     ],
     [
       "bilqis_mlx/cli.py",
+      "branch-density",
+      "preflight"
+    ],
+    [
+      "bilqis_mlx/cli.py",
       "long-function",
       "preflight"
+    ],
+    [
+      "bilqis_mlx/cli.py",
+      "long-function",
+      "_main"
     ],
     [
       "bilqis_mlx/curriculum/__init__.py",
       "branch-density",
       "validate"
+    ],
+    [
+      "bilqis_mlx/curriculum/scheduler.py",
+      "duplicate-error-code",
+      "GRADE_APPEND_REQUIRES_EXACTLY_ONE_NEW_GRADE: used 2 times"
+    ],
+    [
+      "bilqis_mlx/curriculum/scheduler.py",
+      "duplicate-error-code",
+      "GRADE_APPEND_WOULD_CHANGE_PREVIOUS_GRADE: used 2 times"
+    ],
+    [
+      "bilqis_mlx/curriculum/scheduler.py",
+      "duplicate-error-code",
+      "GRADE_APPEND_UNSEALED_PREVIOUS_GRADE: used 2 times"
+    ],
+    [
+      "bilqis_mlx/curriculum/scheduler.py",
+      "duplicate-error-code",
+      "GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS: used 2 times"
     ],
     [
       "bilqis_mlx/curriculum_compiler.py",
@@ -108,6 +133,56 @@
       "diagnose_history"
     ],
     [
+      "bilqis_mlx/factory/autonomy.py",
+      "long-function",
+      "compile_autonomy_plan"
+    ],
+    [
+      "bilqis_mlx/factory/autonomy.py",
+      "duplicate-error-code",
+      "AUTONOMY_COMPOSITION_REPORT_EDGE_INVALID: used 2 times"
+    ],
+    [
+      "bilqis_mlx/factory/autonomy.py",
+      "duplicate-error-code",
+      "AUTONOMY_PLAN_RELEASE_MISMATCH: used 2 times"
+    ],
+    [
+      "bilqis_mlx/factory/autonomy.py",
+      "duplicate-error-code",
+      "AUTONOMY_DUPLICATE_EVIDENCE_OBLIGATION: used 2 times"
+    ],
+    [
+      "bilqis_mlx/factory/autonomy.py",
+      "duplicate-error-code",
+      "AUTONOMY_UNKNOWN_EVIDENCE_OBLIGATION: used 3 times"
+    ],
+    [
+      "bilqis_mlx/factory/development.py",
+      "long-function",
+      "post_boolean_staircase"
+    ],
+    [
+      "bilqis_mlx/factory/live_releases.py",
+      "duplicate-error-code",
+      "FACTORY_TYPED_SAME_GRADE_REVISION_REQUIRES_GRAPH: used 2 times"
+    ],
+    [
+      "bilqis_mlx/factory/live_releases.py",
+      "long-function",
+      "preflight_successor"
+    ],
+    [
+      "bilqis_mlx/factory/understanding.py",
+      "module-mutable-literal",
+      "PROJECTION_SPECS"
+    ],
+    [
+      "bilqis_mlx/factory/understanding.py",
+      "duplicate-error-code",
+      "UNDERSTANDING_AUTONOMY_INPUT_INVALID: used 2 times"
+    ],
+    [
       "bilqis_mlx/full_student_qualification.py",
       "long-function",
       "probe"
@@ -133,69 +208,69 @@
       "PINNED_SOURCES"
     ],
     [
-      "bilqis_mlx/trainer.py",
-      "duplicate-error-code",
-      "CHAMPION_CONFIDENCE_BUNDLE_DRIFT: used 2 times"
-    ],
-    [
-      "bilqis_mlx/trainer.py",
-      "duplicate-error-code",
-      "HUMAN_TRAINER_UNSAFE_STAGING_ROOT: used 2 times"
-    ],
-    [
-      "bilqis_mlx/trainer.py",
-      "duplicate-error-code",
-      "HUMAN_TRAINER_UNSAFE_BUNDLE_QUARANTINE: used 2 times"
-    ],
-    [
-      "bilqis_mlx/trainer.py",
-      "duplicate-error-code",
-      "HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION: used 2 times"
-    ],
-    [
-      "bilqis_mlx/trainer.py",
+      "bilqis_mlx/grade_transition.py",
       "branch-density",
-      "_resume"
+      "next_grade_readiness"
     ],
     [
-      "bilqis_mlx/trainer.py",
+      "bilqis_mlx/grade_transition.py",
       "long-function",
-      "_resume"
+      "next_grade_readiness"
     ],
     [
-      "bilqis_mlx/trainer.py",
-      "duplicate-error-code",
-      "LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN: used 2 times"
-    ],
-    [
-      "bilqis_mlx/trainer.py",
+      "bilqis_mlx/grade_transition.py",
       "branch-density",
-      "_take_visit"
+      "activate_numeric_grade"
     ],
     [
-      "bilqis_mlx/trainer.py",
+      "bilqis_mlx/grade_transition.py",
       "long-function",
-      "_take_visit"
+      "activate_numeric_grade"
     ],
     [
-      "bilqis_mlx/trainer.py",
+      "bilqis_mlx/learning/capability_frontier.py",
       "duplicate-error-code",
-      "HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH: used 2 times"
+      "CAPABILITY_FRONTIER_CUSTODY_PROTECTED_BUNDLE_MISSING: used 2 times"
     ],
     [
-      "bilqis_mlx/trainer.py",
-      "long-function",
-      "_take_exam"
+      "bilqis_mlx/learning/capability_frontier.py",
+      "duplicate-error-code",
+      "CAPABILITY_FRONTIER_CUSTODY_UNRECOGNIZED_BUNDLE: used 2 times"
     ],
     [
-      "bilqis_mlx/trainer.py",
+      "bilqis_mlx/learning/championship_witnesses.py",
+      "duplicate-error-code",
+      "CHAMPIONSHIP_QUESTION_WITNESS_DRIFT: used 2 times"
+    ],
+    [
+      "bilqis_mlx/learning/championship_witnesses.py",
+      "duplicate-error-code",
+      "CHAMPIONSHIP_BATTERY_QUESTION_INVALID: used 2 times"
+    ],
+    [
+      "bilqis_mlx/learning/championship_witnesses.py",
+      "duplicate-error-code",
+      "CHAMPIONSHIP_BATTERY_QUESTION_DRIFT: used 2 times"
+    ],
+    [
+      "bilqis_mlx/learning/championship_witnesses.py",
+      "duplicate-error-code",
+      "CHAMPIONSHIP_BATTERY_INVALID: used 2 times"
+    ],
+    [
+      "bilqis_mlx/learning/championship_witnesses.py",
+      "duplicate-error-code",
+      "CHAMPIONSHIP_BATTERY_DRIFT: used 2 times"
+    ],
+    [
+      "bilqis_mlx/learning/epoch_championships.py",
       "branch-density",
-      "operate"
+      "advance_epoch"
     ],
     [
-      "bilqis_mlx/trainer.py",
+      "bilqis_mlx/learning/epoch_championships.py",
       "long-function",
-      "operate"
+      "advance_epoch"
     ],
     [
       "bilqis_mlx/learning/grade_soup.py",
@@ -203,19 +278,29 @@
       "GRADE_SOUP_SAVED_SCHEMA_DRIFT: used 2 times"
     ],
     [
-      "bilqis_mlx/grade_transition.py",
-      "branch-density",
-      "next_grade_readiness"
+      "bilqis_mlx/learning/learning_experiment.py",
+      "duplicate-error-code",
+      "LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS: used 2 times"
     ],
     [
-      "bilqis_mlx/grade_transition.py",
-      "long-function",
-      "next_grade_readiness"
+      "bilqis_mlx/learning/stagnation_control.py",
+      "duplicate-error-code",
+      "STAGNATION_RECOVERY_OUTSIDE_REQUIRED_SCOPE: used 2 times"
+    ],
+    [
+      "bilqis_mlx/learning/teacher_feedback.py",
+      "duplicate-error-code",
+      "TEACHER_MISS_FAIRNESS_INPUT_INVALID: used 4 times"
     ],
     [
       "bilqis_mlx/live_grade_b.py",
       "duplicate-error-code",
       "GRADE_B_UNKNOWN_OPERATOR: used 2 times"
+    ],
+    [
+      "bilqis_mlx/minimal_grade_b.py",
+      "duplicate-error-code",
+      "GRADE_B_MINIMAL_FROZEN_TOKEN_PREFIX_MISMATCH: used 2 times"
     ],
     [
       "bilqis_mlx/next_grade_review.py",
@@ -263,6 +348,86 @@
       "PARITY_PREDECESSOR_GRADE_NOT_IN_SOURCE: used 2 times"
     ],
     [
+      "bilqis_mlx/presentation/dashboard.py",
+      "long-function",
+      "build"
+    ],
+    [
+      "bilqis_mlx/presentation/school_telemetry.py",
+      "module-mutable-literal",
+      "_SIGNAL_LABELS"
+    ],
+    [
+      "bilqis_mlx/presentation/school_telemetry.py",
+      "module-mutable-literal",
+      "_REASON_LABELS"
+    ],
+    [
+      "bilqis_mlx/presentation/school_telemetry.py",
+      "module-mutable-literal",
+      "EVENT_KINDS"
+    ],
+    [
+      "bilqis_mlx/presentation/school_telemetry.py",
+      "branch-density",
+      "_visit"
+    ],
+    [
+      "bilqis_mlx/presentation/school_telemetry.py",
+      "long-function",
+      "_visit"
+    ],
+    [
+      "bilqis_mlx/presentation/school_telemetry.py",
+      "branch-density",
+      "_exam"
+    ],
+    [
+      "bilqis_mlx/presentation/school_telemetry.py",
+      "long-function",
+      "_exam"
+    ],
+    [
+      "bilqis_mlx/presentation/spiral_dashboard.py",
+      "module-mutable-literal",
+      "WIDE_ROW_FRACTIONS"
+    ],
+    [
+      "bilqis_mlx/presentation/spiral_dashboard.py",
+      "module-mutable-literal",
+      "_SYSTEM_KIND_CODES"
+    ],
+    [
+      "bilqis_mlx/presentation/spiral_dashboard.py",
+      "long-function",
+      "_refresh_champions"
+    ],
+    [
+      "bilqis_mlx/presentation/spiral_dashboard.py",
+      "branch-density",
+      "_section_rows"
+    ],
+    [
+      "bilqis_mlx/presentation/spiral_dashboard.py",
+      "long-function",
+      "_section_rows"
+    ],
+    [
+      "bilqis_mlx/presentation/spiral_dashboard.py",
+      "branch-density",
+      "render"
+    ],
+    [
+      "bilqis_mlx/presentation/spiral_dashboard.py",
+      "long-function",
+      "render"
+    ],
+    [
+      "bilqis_mlx/presentation/tests/test_letter_school_telemetry.py",
+      "long-function",
+      "test_compact_visit_panels_share_capability_and_numeric_width_contract"
+    ],
+    [
       "bilqis_mlx/registry_ast.py",
       "module-mutable-literal",
       "REQUIRED_HEADERS"
@@ -278,24 +443,29 @@
       "parse_registry"
     ],
     [
-      "bilqis_mlx/presentation/school_telemetry.py",
-      "module-mutable-literal",
-      "_SIGNAL_LABELS"
+      "bilqis_mlx/runtime/autonomy_state.py",
+      "duplicate-error-code",
+      "AUTONOMY_UNSAFE_ARTIFACT_DIRECTORY: used 3 times"
     ],
     [
-      "bilqis_mlx/presentation/school_telemetry.py",
-      "module-mutable-literal",
-      "EVENT_KINDS"
+      "bilqis_mlx/runtime/autonomy_state.py",
+      "duplicate-error-code",
+      "AUTONOMY_STATE_PLAN_INVALID: used 2 times"
     ],
     [
-      "bilqis_mlx/presentation/school_telemetry.py",
-      "branch-density",
-      "_exam"
+      "bilqis_mlx/runtime/autonomy_state.py",
+      "duplicate-error-code",
+      "AUTONOMY_STATE_LEDGER_INVALID: used 2 times"
     ],
     [
-      "bilqis_mlx/presentation/school_telemetry.py",
-      "long-function",
-      "_exam"
+      "bilqis_mlx/runtime/autonomy_state.py",
+      "duplicate-error-code",
+      "AUTONOMY_STATE_DURABLE_READBACK_DRIFT: used 2 times"
+    ],
+    [
+      "bilqis_mlx/runtime/autonomy_state.py",
+      "duplicate-error-code",
+      "AUTONOMY_STATE_POINTER_INVALID: used 2 times"
     ],
     [
       "bilqis_mlx/semantic_coverage.py",
@@ -318,6 +488,11 @@
       "SEMANTIC_COVERAGE_PLAN_VERSION_MISMATCH: used 2 times"
     ],
     [
+      "bilqis_mlx/semantic_coverage.py",
+      "duplicate-error-code",
+      "SEMANTIC_COVERAGE_UNRESOLVED_CONTRACT_PROOF_BLOCKED: used 2 times"
+    ],
+    [
       "bilqis_mlx/semantic_test_generation.py",
       "duplicate-error-code",
       "SEMANTIC_TEST_INTEGRITY_UNSAFE_RELEASE: used 2 times"
@@ -328,29 +503,114 @@
       "_ROOT_PREFIX"
     ],
     [
+      "bilqis_mlx/source_adapters/school.py",
+      "duplicate-error-code",
+      "FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT: used 2 times"
+    ],
+    [
       "bilqis_mlx/source_adapters/structure.py",
       "module-mutable-literal",
       "_SOURCE_NODES"
     ],
     [
-      "bilqis_mlx/presentation/spiral_dashboard.py",
-      "module-mutable-literal",
-      "WIDE_ROW_FRACTIONS"
-    ],
-    [
-      "bilqis_mlx/presentation/spiral_dashboard.py",
+      "bilqis_mlx/trainer.py",
       "branch-density",
-      "render"
+      "_migrate_championship_governance"
     ],
     [
-      "bilqis_mlx/presentation/spiral_dashboard.py",
+      "bilqis_mlx/trainer.py",
       "long-function",
-      "render"
+      "_migrate_championship_governance"
     ],
     [
-      "bilqis_mlx/learning/teacher_feedback.py",
+      "bilqis_mlx/trainer.py",
       "duplicate-error-code",
-      "TEACHER_MISS_FAIRNESS_INPUT_INVALID: used 4 times"
+      "CHAMPIONSHIP_CHECKPOINT_ORIGIN_PROVENANCE_CONFLICT: used 2 times"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "duplicate-error-code",
+      "CHAMPION_CONFIDENCE_BUNDLE_DRIFT: used 2 times"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "duplicate-error-code",
+      "HUMAN_TRAINER_UNSAFE_STAGING_ROOT: used 2 times"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "duplicate-error-code",
+      "HUMAN_TRAINER_UNSAFE_BUNDLE_QUARANTINE: used 2 times"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "duplicate-error-code",
+      "HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION: used 2 times"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "branch-density",
+      "_resume"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "long-function",
+      "_resume"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "long-function",
+      "_activate_replaced_admitted_grade"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "duplicate-error-code",
+      "LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN: used 2 times"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "branch-density",
+      "_take_visit"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "long-function",
+      "_take_visit"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "duplicate-error-code",
+      "CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_REQUIRED: used 2 times"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "long-function",
+      "_epoch_paired_examinations"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "duplicate-error-code",
+      "HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH: used 2 times"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "branch-density",
+      "_take_exam"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "long-function",
+      "_take_exam"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "branch-density",
+      "operate"
+    ],
+    [
+      "bilqis_mlx/trainer.py",
+      "long-function",
+      "operate"
     ],
     [
       "bilqis_mlx/typed_answer_training.py",
@@ -388,6 +648,21 @@
       "inspect"
     ],
     [
+      "scripts/audit_championship_quarantine.py",
+      "module-mutable-literal",
+      "SETTLED"
+    ],
+    [
+      "scripts/audit_championship_quarantine.py",
+      "branch-density",
+      "audit"
+    ],
+    [
+      "scripts/audit_championship_quarantine.py",
+      "long-function",
+      "audit"
+    ],
+    [
       "scripts/check_semantic_boundaries.py",
       "module-mutable-literal",
       "PERMITTED"
@@ -413,19 +688,24 @@
       "execute"
     ],
     [
-      "tests/test_grade_a_trainer.py",
+      "tests/integration/test_championship_exam.py",
+      "long-function",
+      "test_quarantine_b_and_does_not_suppress_complete_a_identity_title"
+    ],
+    [
+      "tests/system/test_grade_a_trainer.py",
       "long-function",
       "test_synthetic_end_to_end_six_visits_generated_grade_exam"
     ],
     [
-      "tests/test_grade_b_trainer.py",
+      "tests/system/test_grade_b_trainer.py",
       "long-function",
       "test_disposable_full_billy_madison_human_trainer_functions"
     ],
     [
-      "bilqis_mlx/trainer.py",
-      "branch-density",
-      "_take_exam"
+      "tests/system/test_grade_b_trainer.py",
+      "positional-grade-boundary",
+      "grade-like comparison to literal 12"
     ]
   ]
 }

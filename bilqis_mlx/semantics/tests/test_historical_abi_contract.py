@@ -118,9 +118,13 @@ class HistoricalAbiTests(unittest.TestCase):
             root = Path(td)
             package = root / "bilqis_mlx"
             package.mkdir()
+            tests = package / "semantics" / "tests"
+            tests.mkdir(parents=True)
             (package / "example.py").write_text(
                 'MODEL_SIZE = '+str(HISTORICAL_PREFIX_SIZE)+'\n'
                 'MESSAGE = "historical '+str(HISTORICAL_PREFIX_SIZE)+' tokens"\n', encoding="utf-8")
+            (tests / "test_fixture.py").write_text(
+                'EXPECTED_MODEL_SIZE = '+str(HISTORICAL_PREFIX_SIZE)+'\n', encoding="utf-8")
             self.assertEqual(len(detect_literal_prefix_count(root, HISTORICAL_PREFIX_SIZE)), 1)
 
     def test_real_checker_is_advisory_without_external_policy(self):

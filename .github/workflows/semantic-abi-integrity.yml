@@ -34,10 +34,15 @@ jobs:
           python3 -B scripts/check_semantic_boundaries.py
       - name: Verify curriculum evidence, construction and shadow boundaries
         run: >-
-          python3 -B -m unittest
-          tests.test_review_evidence tests.test_next_grade_review
-          tests.test_factory_construction tests.test_curriculum_compiler
-          tests.test_grade_admission tests.test_health_shadow
-          tests.test_candidate_shadow tests.test_semantic_module_boundaries
-          tests.test_domain_contracts tests.test_construction_contracts
-          tests.test_release_outcome_contracts -q
+          python3 -B scripts/run_tests.py
+          bilqis_mlx/verification/tests/test_review_evidence.py
+          bilqis_mlx/factory/tests/test_next_grade_review.py
+          bilqis_mlx/factory/tests/test_factory_construction.py
+          bilqis_mlx/factory/tests/test_curriculum_compiler.py
+          bilqis_mlx/factory/tests/test_grade_admission.py
+          bilqis_mlx/diagnostics/tests/test_health_shadow.py
+          bilqis_mlx/diagnostics/tests/test_candidate_shadow.py
+          scripts/tests/test_semantic_module_boundaries.py
+          bilqis_mlx/semantics/tests/test_domain_contracts.py
+          bilqis_mlx/verification/tests/test_construction_contracts.py
+          bilqis_mlx/factory/tests/test_release_outcome_contracts.py
