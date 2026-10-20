@@ -207,10 +207,26 @@ def start_new(program, initial_student: Checkpoint) -> SchoolState:
 
 def verify_state(program, state: SchoolState):
     program = _program(program)
-    if (state.schema != "bilqis.mlx.letter-grade/v1" or
-            state.course_digest != program.digest() or state.stage not in STAGES or
-            not state.active_grades or not 0 <= state.grade_index < len(state.active_grades)):
-        raise ValueError("INVALID_OR_DRIFTED_SCHOOL_STATE")
+    expected_digest = program.digest()
+    if state.schema != "bilqis.mlx.letter-grade/v1":
+        raise ValueError(
+            "INVALID_OR_DRIFTED_SCHOOL_STATE: schema "
+            f"saved={state.schema!r} expected='bilqis.mlx.letter-grade/v1'")
+    if state.course_digest != expected_digest:
+        raise ValueError(
+            "INVALID_OR_DRIFTED_SCHOOL_STATE: course_digest "
+            f"saved={state.course_digest} expected={expected_digest}")
+    if state.stage not in STAGES:
+        raise ValueError(
+            "INVALID_OR_DRIFTED_SCHOOL_STATE: stage "
+            f"saved={state.stage!r} expected_one_of={sorted(STAGES)!r}")
+    if not state.active_grades:
+        raise ValueError(
+            "INVALID_OR_DRIFTED_SCHOOL_STATE: active_grades saved=() expected=nonempty")
+    if not 0 <= state.grade_index < len(state.active_grades):
+        raise ValueError(
+            "INVALID_OR_DRIFTED_SCHOOL_STATE: grade_index "
+            f"saved={state.grade_index} valid_range=0..{len(state.active_grades)-1}")
     known = {g.id for g in program.grades}
     if (not set(state.active_grades) <= known or
             tuple(g.id for g in program.grades if g.id in state.active_grades) != state.active_grades or
