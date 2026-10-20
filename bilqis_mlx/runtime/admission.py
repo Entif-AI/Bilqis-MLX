@@ -117,9 +117,9 @@ def _read_factory_release(run_dir, receipt):
          if key not in {"schema", "factory_release_sha256"}}, digest)
 
 
-def _read_executable_factory_release(
-        run_dir: Path, receipt: dict, graph: dict) -> ExecutableFactoryRelease:
-    """Cold-read v2 authority and bind it to the actual loaded semantic catalog."""
+def _read_executable_factory_release_artifact(
+        run_dir: Path, receipt: dict) -> ExecutableFactoryRelease:
+    """Cold-read and structurally verify the immutable v2 artifact."""
     digest = receipt.get("factory_release_sha256")
     if (not isinstance(digest, str) or len(digest) != 64 or
             any(char not in "0123456789abcdef" for char in digest)):
@@ -139,6 +139,13 @@ def _read_executable_factory_release(
     release = ExecutableFactoryRelease.from_manifest(
         {key: value for key, value in payload.items()
          if key != "factory_release_sha256"}, digest)
+    return release
+
+
+def _read_executable_factory_release(
+        run_dir: Path, receipt: dict, graph: dict) -> ExecutableFactoryRelease:
+    """Cold-read v2 authority and bind it to the actual loaded semantic catalog."""
+    release = _read_executable_factory_release_artifact(run_dir, receipt)
     release.verify_semantic_catalog(graph)
     return release
 

@@ -14,7 +14,14 @@ from ..factory.curriculum_definition import from_legacy_course
 from ..factory.execution import (
     CapabilityProfile, CurriculumProfile, GradeProfile,
 )
+from ..factory.executable_release import compile_executable_factory_release
+from ..factory.live_answers import live_answer_registry
+from ..factory.schedule import schedule_program_from_executable_release
 from ..live_grade_b import live_course as build_boolean_grade
+from ..source_adapters.school import live_source_registry
+
+
+LIVE_V2_VERIFICATION_SEED = 2026101905
 
 
 def _canonical_boolean_course(grade_a: Course, source_root) -> Course:
@@ -93,3 +100,22 @@ def project_legacy_course(
     curriculum, bindings = from_legacy_course(
         canonical_course, answer_kinds=answer_kinds)
     return curriculum, bindings, profile, canonical_course
+
+
+def compile_projected_executable_release(
+        course: Course, grade_a: Course, source_root, graph: dict, *,
+        predecessor=None):
+    """Compile one v2 artifact from the historical live-course boundary."""
+    answers = live_answer_registry()
+    curriculum, bindings, profile, canonical_course = project_legacy_course(
+        course, grade_a, source_root, answer_kinds=answers.kinds)
+    release = compile_executable_factory_release(
+        curriculum, bindings, profile,
+        live_source_registry(), answers,
+        source_root=source_root,
+        graph=graph,
+        verification_seed=LIVE_V2_VERIFICATION_SEED,
+        legacy_course=canonical_course,
+        predecessor=predecessor,
+    )
+    return release, schedule_program_from_executable_release(release), canonical_course

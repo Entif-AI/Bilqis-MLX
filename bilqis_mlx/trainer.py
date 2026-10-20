@@ -50,7 +50,9 @@ from bilqis_mlx.learning.epoch_championships import (
 from bilqis_mlx.learning.championship_identity import (
     build_school_identity, enforce_school_identity)
 from .source_adapters.school import live_source_registry
+from .compatibility.executable_projection import compile_projected_executable_release
 from .factory.assessment import qualification_complete
+from .factory.schedule import schedule_program_from_executable_release
 from .factory.live_releases import (
     BOOLEAN_COMPOSITE_RELEASE,
     BOOLEAN_IDENTIFICATION_RELEASE,
@@ -136,7 +138,10 @@ from .runtime.state import (
 )
 from .runtime.admission import (
     admitted_release_supports_teaching_option,
-    _factory_release, _persist_factory_release, _factory_admission, _require_factory_admission,
+    _executable_factory_admission,
+    _factory_release, _persist_factory_release, _factory_admission,
+    _read_executable_factory_release_artifact,
+    _require_executable_factory_admission, _require_factory_admission,
 )
 from .runtime.assessment import (
     load_championship_cohort,
@@ -162,7 +167,7 @@ def _ensure_factory_admission(run_dir, receipt, course, graph):
     if receipt.get("factory_admission") is not None:
         _require_factory_admission(run_dir, receipt, course)
         return receipt
-    school = _state_from_json(receipt["school"], course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     release, release_file, admission = _factory_admission(
         run_dir, course, school.current_student, _fingerprint(graph))
     migrated = {**receipt,
@@ -181,6 +186,57 @@ def _ensure_factory_admission(run_dir, receipt, course, graph):
     _reconcile_delivery_outbox(run_dir, record)
     _require_factory_admission(run_dir, record, course)
     return record
+
+
+def _migrate_executable_release(run_dir, receipt, course, grade_a_course, source_root, graph):
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
+    release, program, _ = compile_projected_executable_release(
+        course, grade_a_course, source_root, graph)
+    rebound = replace(school, course_digest=program.digest())
+    _state_from_json(asdict(rebound), program)
+    release, release_file, admission = _executable_factory_admission(
+        run_dir, release, rebound.current_student,
+        receipt["semantic_graph_sha256"], graph)
+    migrated = dict(receipt)
+    migrated.update({
+        "factory_release_sha256": release.release_sha256,
+        "factory_release_file": release_file,
+        "factory_release_schema": release.schema,
+        "factory_admission_v2": asdict(admission),
+    })
+    return migrated, release, program, rebound
+
+
+def _ensure_executable_release(run_dir, receipt, course, grade_a_course, source_root, graph):
+    if receipt.get("factory_admission_v2") is None:
+        migrated, release, program, rebound = _migrate_executable_release(
+            run_dir, receipt, course, grade_a_course, source_root, graph)
+        receipt = _advance(run_dir, migrated, rebound)
+        _require_executable_factory_admission(run_dir, receipt, graph)
+        return receipt, release, program
+    release = _require_executable_factory_admission(run_dir, receipt, graph)
+    return receipt, release, schedule_program_from_executable_release(release)
+
+
+@lru_cache(maxsize=32)
+def _cached_schedule_program(run_dir_string, release_sha256, release_file):
+    release = _read_executable_factory_release_artifact(
+        Path(run_dir_string), {
+            "factory_release_sha256": release_sha256,
+            "factory_release_file": release_file,
+        })
+    return schedule_program_from_executable_release(release)
+
+
+def _schedule_for_receipt(run_dir, receipt, course):
+    if receipt.get("factory_admission_v2") is not None:
+        return _cached_schedule_program(
+            str(Path(run_dir).resolve()),
+            receipt["factory_release_sha256"],
+            receipt["factory_release_file"],
+        )
+    from .compatibility.schedule_program import schedule_program_from_legacy_course
+    return schedule_program_from_legacy_course(course)
 
 
 def _championship_identity(receipt, course):
@@ -279,7 +335,7 @@ def _migrate_championship_governance(run_dir, receipt, course):
             changed = True
         updated.pop("championship_checkpoint_origin_ambiguities", None)
 
-    school = _state_from_json(updated["school"], course)
+    school = _state_from_json(updated["school"], _schedule_for_receipt(run_dir, updated, course))
     current_origin = origin_map.get(school.current_student.sha256)
     if current_origin is not None:
         if updated.get("last_retained_update_grade") != current_origin:
@@ -1014,7 +1070,7 @@ def _clean_staged_bundles(run_dir: Path) -> dict[str, tuple[str, ...]]:
 
 def _init(run_dir, manifest, course, policy_sha, historical_teacher,
           teacher_provenance, checkpoint,
-          *, reserve_gib):
+          *, source_root, reserve_gib):
     import mlx.core as mx
     _clean_staged_bundles(run_dir)
     if (run_dir / "state.json").exists() or any(
@@ -1025,12 +1081,15 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
     initial_pointer = _bundle_pointer(
         run_dir, "initial-"+uuid.uuid4().hex[:12], parameters, optimizer, graph,
         reserve_gib=reserve_gib)
-    state = start_new(course, initial_pointer)
-    release, release_file, admission = _factory_admission(
-        run_dir, course, initial_pointer, _fingerprint(graph))
+    release, program, _ = compile_projected_executable_release(
+        course, course, source_root, graph)
+    state = start_new(program, initial_pointer)
+    release, release_file, admission = _executable_factory_admission(
+        run_dir, release, initial_pointer, _fingerprint(graph), graph)
     parameter_shapes = {name: list(param.shape) for name, param in parameters.items()}
     championship_identity = build_school_identity(
-        course_sha256=course.digest(), semantic_graph_sha256=_fingerprint(graph),
+        course_sha256=release.execution_plan.curriculum_sha256,
+        semantic_graph_sha256=_fingerprint(graph),
         parameter_shapes=parameter_shapes,
         factory_release_sha256=release.release_sha256)
     receipt = {
@@ -1051,7 +1110,8 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
         "semantic_graph_sha256": _fingerprint(graph),
         "factory_release_sha256": release.release_sha256,
         "factory_release_file": release_file,
-        "factory_admission": asdict(admission),
+        "factory_release_schema": release.schema,
+        "factory_admission_v2": asdict(admission),
         "championship_school_identity": championship_identity,
         "championship_checkpoint_origins": {},
         "answer_ids": answer_ids,
@@ -1062,7 +1122,7 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
                       "grade": "A",
                       "student": initial_pointer.sha256,
                       "optimizer_step": initial_pointer.optimizer_step,
-                      "exam_rubric": course.grades[0].assessment_sha256,
+                      "exam_rubric": program.grades[0].assessment_sha256,
                       "historical_rubric": manifest["exam_rubric_sha256"],
                       "generator_version": release_generator(INITIAL_RELEASE),
                       "generator_code_sha256": release_code_digest(INITIAL_RELEASE),
@@ -1073,7 +1133,8 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
     return parameters, optimizer, graph, receipt
 
 
-def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, admitted_courses=None):
+def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
+            source_root, successor_course=None, admitted_courses=None):
     import mlx.core as mx
     path = run_dir / "state.json"
     if not path.is_file():
@@ -1101,7 +1162,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, adm
         if old_course.version != saved_mode:
             raise ValueError("FACTORY_RELEASE_COURSE_NOT_LOADED")
         verify_release_receipt(receipt, old_course)
-    school = _state_from_json(receipt["school"], old_course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, old_course))
     directory = (run_dir / receipt["model_bundle"]).resolve(strict=True)
     if directory.parent != (run_dir / "bundles").resolve(strict=True):
         raise ValueError("HUMAN_TRAINER_BUNDLE_PATH_ESCAPES_RUN")
@@ -1170,7 +1231,8 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, adm
                           "legacy_best_slots": len(legacy_frontier),
                           "source_student_unchanged": True})
     active_course = course if old_mode else old_course
-    receipt = _ensure_factory_admission(run_dir, receipt, active_course, graph)
+    receipt, _, _ = _ensure_executable_release(
+        run_dir, receipt, active_course, grade_a_course, source_root, graph)
     _verify_best_custody(run_dir, receipt)
     # Also finishes a retirement interrupted after the prior state commit.
     _publish_boundary(run_dir, receipt, (), ())
@@ -1193,7 +1255,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, successor_course=None, adm
 def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor,
                                   graph=None):
     """Preserve the mastered student/AdamW across a same-graph grade boundary."""
-    school = _state_from_json(receipt["school"], previous_course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, previous_course))
     current_grade = previous_course.grades[-1].id
     if (not successor.executable or
             len(successor.grades) != len(previous_course.grades) + 1 or
@@ -1202,7 +1264,8 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor,
             school.grade != current_grade or current_grade not in school.champions or
             receipt.get("curriculum_mode") != previous_course.version):
         raise ValueError("HUMAN_TRAINER_NEXT_GRADE_ADMISSION_BOUNDARY_NOT_MET")
-    next_state = append_next_grade(previous_course, successor, school)
+    legacy_school = replace(school, course_digest=previous_course.digest())
+    next_state = append_next_grade(previous_course, successor, legacy_school)
     from bilqis_mlx.learning.mentor_epoch import begin_epoch
     exam = receipt.get("last_exam") or {}
     prior_caps = tuple(cap.id for grade in previous_course.grades
@@ -1277,9 +1340,10 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor,
 def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successor,
                                      graph=None):
     """Persist one neural-inert same-grade capability-inventory revision."""
-    school = _state_from_json(receipt["school"], previous_course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, previous_course))
+    legacy_school = replace(school, course_digest=previous_course.digest())
     next_state, revised_grade = revise_admitted_grade(
-        previous_course, successor, school)
+        previous_course, successor, legacy_school)
     release, release_file, admission = _factory_admission(
         run_dir, successor, next_state.current_student,
         receipt["semantic_graph_sha256"])
@@ -1347,9 +1411,10 @@ def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successo
 def _activate_replaced_admitted_grade(run_dir, receipt, previous_course, successor,
                                       graph=None):
     """Persist one neural-inert replacement of the latest admitted grade contract."""
-    school = _state_from_json(receipt["school"], previous_course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, previous_course))
+    legacy_school = replace(school, course_digest=previous_course.digest())
     next_state, replaced_grade = replace_admitted_grade(
-        previous_course, successor, school)
+        previous_course, successor, legacy_school)
     release, release_file, admission = _factory_admission(
         run_dir, successor, next_state.current_student,
         receipt["semantic_graph_sha256"])
@@ -1557,7 +1622,7 @@ def _repair_scope_rubric_evidence(run_dir, receipt, course):
     }
     if not wrong_frontier and not wrong_roles:
         return receipt
-    school = _state_from_json(receipt["school"], course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     history = [*receipt.get("championship_epoch_history", ()), deepcopy(epoch)]
     reset = begin_initial_epoch(
         student=asdict(school.current_student),
@@ -1636,7 +1701,7 @@ def _repair_championship_source_context(run_dir, receipt, course):
     if not affected:
         return receipt
 
-    school = _state_from_json(receipt["school"], course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     history = [*receipt.get("championship_epoch_history", ()), deepcopy(epoch)]
     reset = begin_initial_epoch(
         student=asdict(school.current_student),
@@ -1691,7 +1756,7 @@ def _reconcile_vocabulary_metadata(run_dir, receipt, course, parameters,
         return receipt
     if type(previous) is not int or previous < 1 or previous > actual:
         raise ValueError("HUMAN_TRAINER_UNVERIFIED_VOCAB_METADATA_MIGRATION")
-    school = _state_from_json(receipt["school"], course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     if int(optimizer.state["step"].item()) != school.current_student.optimizer_step:
         raise ValueError("HUMAN_TRAINER_VOCAB_RECONCILE_OWN_ADAMW_DRIFT")
     candidate = _advance(
@@ -1733,7 +1798,7 @@ def _reconcile_learning_settings(run_dir, receipt, course, settings, optimizer):
             new["introduction_extra_loss"] != old["introduction_extra_loss"] or
             new["mature_max_loss"] >= old["mature_max_loss"]):
         raise ValueError("LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN")
-    school = _state_from_json(receipt["school"], course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     if int(optimizer.state["step"].item()) != school.current_student.optimizer_step:
         raise ValueError("LEARNING_EXPERIMENT_POLICY_OWN_ADAMW_DRIFT")
     prior = list(receipt.get("learning_policy_revisions", ()))
@@ -1761,7 +1826,7 @@ def _seed_saved_whole_student_peak(run_dir, receipt, course, optimizer):
     """
     if receipt.get("whole_student_peaks"):
         return receipt
-    school = _state_from_json(receipt["school"], course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     checkpoint = asdict(school.current_student)
     prior = receipt.get("last_exam") or {}
     if (not prior.get("scores") or
@@ -1815,7 +1880,7 @@ def _extend_binary_guidance(guidance, rows):
 
 
 def _rehabilitate_sole_grade_debt(
-        course, school, stagnation, debt, *, generation):
+        program, school, stagnation, debt, *, generation):
     """Keep training when containment debt is the only work left in one grade."""
     if (stagnation is None or school.stage != "DEFERRED_STAGNATION" or
             not debt):
@@ -1825,7 +1890,7 @@ def _rehabilitate_sole_grade_debt(
         return stagnation, school, ()
     stagnation, event = activate_sole_grade_rehabilitation(
         stagnation, capabilities=tuple(debt), generation=generation)
-    school = reactivate_stagnation_debt(course, school, tuple(debt))
+    school = reactivate_stagnation_debt(program, school, tuple(debt))
     return stagnation, school, (event,)
 
 
@@ -1834,7 +1899,7 @@ def _reconcile_stagnation_scope(run_dir, receipt, course, school):
     control = receipt.get("stagnation_session")
     if control is None:
         return receipt
-    required = assessment_capabilities(course, school)
+    required = assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school)
     updated, event = reconcile_required_scope(
         control, required_capabilities=required,
         generation=receipt["generation"] + 1)
@@ -1866,7 +1931,7 @@ def _reconcile_stagnation_scope(run_dir, receipt, course, school):
 
 
 def _advance_stagnation_after_routine(
-        *, course, school, routine_assessment, routine_advanced,
+        *, program, school, routine_assessment, routine_advanced,
         stagnation, blocked_before, active_scope, routine_measured,
         routine_warnings, generation, quarantine_suppressed=()):
     """Apply one completed routine boundary to the current session containment."""
@@ -1905,11 +1970,11 @@ def _advance_stagnation_after_routine(
                     evaluation_id=routine_assessment.evaluation_id +
                                   "/post-stagnation-filter")
                 routine_advanced = assess_withheld(
-                    course, school, reduced, blocked_after)
+                    program, school, reduced, blocked_after)
     if routine_advanced.stage == "DEFERRED_STAGNATION":
         stagnation, routine_advanced, rehabilitation_events = (
             _rehabilitate_sole_grade_debt(
-                course, routine_advanced, stagnation,
+                program, routine_advanced, stagnation,
                 quarantined_capabilities(stagnation),
                 generation=generation))
         events = (*events, *rehabilitation_events)
@@ -1919,9 +1984,11 @@ def _advance_stagnation_after_routine(
 
 
 def _learning_probe_rows(source_root, graph, receipt, course, school, capability,
-                         settings):
+                         settings, *, schedule_program=None):
     """Complete admitted target grade plus bounded cross-grade protection."""
-    eligible = set(assessment_capabilities(course, school)) | {capability}
+    eligible = set(assessment_capabilities(
+        schedule_program if schedule_program is not None else course,
+        school)) | {capability}
     scores = (receipt.get("last_exam") or {}).get("scores") or {}
     from bilqis_mlx.learning.learning_experiment import whole_grade_protection
     selected = whole_grade_protection(
@@ -1962,7 +2029,7 @@ def _fixed_same_grade_rows(run_dir, receipt, course, school, capability, setting
     if (exam.get("assessment_grade") != own_grade or
             exam.get("grade_exam_epoch") != school.grade_exam_epoch):
         return ()
-    required = {cap for cap in assessment_capabilities(course, school)
+    required = {cap for cap in assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school)
                 if cap.partition(".")[0] == own_grade}
     exam_scores = exam.get("scores") or {}
     if not required <= set(exam_scores):
@@ -2101,7 +2168,7 @@ def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
     target_candidate = _predictions(mx, candidate, target_rows, config, answer_ids)
     target_pair = paired_outcomes(target_rows, target_parent, target_candidate)
     required = tuple(sorted(
-        name for name in assessment_capabilities(course, school)
+        name for name in assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school)
         if name.partition(".")[0] == capability.partition(".")[0]))
     if target_pair[capability]["after"] <= target_pair[capability]["before"]:
         return (target_pair, set(), (capability,), {
@@ -2161,7 +2228,7 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
              else load_replay_rows(run_dir, receipt))
     if not fixed:
         return ()
-    admitted = set(assessment_capabilities(course, school))
+    admitted = set(assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school))
     requested = tuple(name for name in CAPABILITIES if name in admitted)
     if not requested:
         return ()
@@ -2236,7 +2303,7 @@ def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):
 def _skip_perfect_target_visit(run_dir, receipt, school, course, capability,
                                probe_total, optimizer_step, *, teacher=None):
     """Advance the in-memory schedule without checkpointing a provisional model."""
-    skipped_school = visit(course, school, capability, school.current_student)
+    skipped_school = visit(_schedule_for_receipt(run_dir, receipt, course), school, capability, school.current_student)
     result = _advance(run_dir, receipt, skipped_school, teacher=teacher, persist=False)
     event = {
         "event": "SCHOOL_PERFECT_TARGET_VISIT_SKIPPED",
@@ -2258,7 +2325,7 @@ def _skip_perfect_target_visit(run_dir, receipt, school, course, capability,
 def _skip_stagnant_target_visit(run_dir, receipt, school, course, capability,
                                 optimizer_step):
     """Advance past a current-session quarantined capability without teaching."""
-    skipped_school = visit(course, school, capability, school.current_student)
+    skipped_school = visit(_schedule_for_receipt(run_dir, receipt, course), school, capability, school.current_student)
     result = _advance(run_dir, receipt, skipped_school, persist=False)
     event = {
         "event": "SCHOOL_STAGNANT_CAPABILITY_VISIT_SKIPPED",
@@ -2282,7 +2349,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 source_root=None, learning_settings: LearningSettings | None = None,
                 boolean_association_bridge: bool = False,
                 source_prefetch_executor=None, source_prefetch_workers: int = 0):
-    school = _state_from_json(receipt["school"], course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     if (receipt.get("mentor_epoch") is not None and
             receipt.get("championship_school_identity") !=
             _live_championship_identity(receipt, course, graph, params)):
@@ -2358,7 +2425,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     if learning_settings is not None:
         with trace_span("RETENTION_PROBE_BUILD", capability=cap):
             probe_rows, protected_caps, unsampled_caps = _learning_probe_rows(
-                source_root, graph, receipt, course, school, cap, learning_settings)
+                source_root, graph, receipt, course, school, cap, learning_settings,
+                schedule_program=_schedule_for_receipt(
+                    run_dir, receipt, course))
         target_rows = [row for row in probe_rows if row["capability"] == cap]
         with trace_span("RETENTION_PARENT_PREDICT", capability=cap,
                         row_count=len(target_rows)):
@@ -2397,7 +2466,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     if prefetch_enabled:
         from bilqis_mlx.learning.fragile_replay import CAPABILITIES as FRAGILE_CAPABILITIES
         from bilqis_mlx.runtime.source_prefetch import SCHEMA as SOURCE_PREFETCH_SCHEMA, prepare_step_sources
-        admitted = set(assessment_capabilities(course, school))
+        admitted = set(assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school))
         fragile_requested = tuple(name for name in FRAGILE_CAPABILITIES if name in admitted)
         course_digest = course.digest()
         graph_digest = receipt.get("semantic_graph_sha256") or _fingerprint(graph)
@@ -2650,7 +2719,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             outcome["matrix_strain"] = observe_matrix_strain(
                 mx, run_dir, receipt, parent_parameters, params)
         outcome["unsampled_admitted_capabilities"] = (
-            len(set(assessment_capabilities(course, school)) | {cap})-len(pair))
+            len(set(assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school)) | {cap})-len(pair))
         with trace_span("RETENTION_APPLY_DECISION", capability=cap,
                         decision=outcome["decision"]):
             context_credit = observe_context(
@@ -2698,7 +2767,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         raise ValueError("LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT")
     # No new archive exists yet. The retained checkpoint is the last complete
     # recovery point, NOT a representation of these newly updated RAM weights.
-    school = visit(course, school, cap, school.current_student)
+    school = visit(_schedule_for_receipt(run_dir, receipt, course), school, cap, school.current_student)
     methodology = summarize_teaching_visit(
         course, cap, tuple(methodology_steps),
         introductory=introduction_pass,
@@ -2922,7 +2991,7 @@ def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
         raise ValueError("CHAMPIONSHIP_EPOCH_SCHOOL_IDENTITY_RESET_REQUIRED")
     grades = {grade.id: tuple(cap.id for cap in grade.capabilities)
               for grade in course.grades}
-    allowed_scope = assessment_capabilities(course, school)
+    allowed_scope = assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school)
     materialized = tuple(dict.fromkeys(row["capability"] for row in cohort.rows))
     if (not materialized or set(scores) != set(materialized) or
             not set(materialized) <= set(allowed_scope)):
@@ -3278,7 +3347,7 @@ def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
     recovery point. This is NOT a champion or an additional archive slot.
     """
     _, cohort_release, _, _ = _cohort_contract(course)
-    full_allowed = set(assessment_capabilities(course, school))
+    full_allowed = set(assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school))
     allowed = (set(allowed_capabilities) if allowed_capabilities is not None
                else set(full_allowed))
     if not allowed or not allowed <= full_allowed:
@@ -3623,7 +3692,7 @@ def _assessment_scope_sha256(full_scope, scores) -> str:
 def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                source_checkpoint, parameters, optimizer, graph, *, reserve_gib,
                scheduler_only: bool = False):
-    school = _state_from_json(receipt["school"], course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     if not school.stage.startswith("ASSESS_"):
         raise ValueError("HUMAN_TRAINER_EXAM_OUTSIDE_SCHEDULED_BOUNDARY")
     if (receipt.get("championship_school_identity") !=
@@ -3631,7 +3700,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         raise ValueError("CHAMPIONSHIP_SCHOOL_IDENTITY_RESET_REQUIRED")
     stagnation = receipt.get("stagnation_session")
     blocked_before = quarantined_capabilities(stagnation)
-    full_scope = assessment_capabilities(course, school)
+    full_scope = assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school)
     active_scope = tuple(cap for cap in full_scope if cap not in set(blocked_before))
     _require_active_stagnation_scope(active_scope)
     parent_checkpoint = school.current_student
@@ -3693,11 +3762,11 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         evaluation_id="source-oracled-routine-cohort/" + routine_cohort.digest + "/" +
                       school.current_student.sha256)
     routine_advanced = (
-        assess_withheld(course, school, routine_assessment, blocked_before)
+        assess_withheld(_schedule_for_receipt(run_dir, receipt, course), school, routine_assessment, blocked_before)
         if blocked_before else
-        assess_flash(course, school, routine_assessment)
+        assess_flash(_schedule_for_receipt(run_dir, receipt, course), school, routine_assessment)
         if scheduler_only else
-        assess(course, school, routine_assessment))
+        assess(_schedule_for_receipt(run_dir, receipt, course), school, routine_assessment))
 
     routine_last_exam = {
         "assessment_grade": school.grade,
@@ -3733,7 +3802,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         optimizer_step=routine_assessment.optimizer_step)
     stagnation, stagnation_events, routine_advanced, blocked_after = (
         _advance_stagnation_after_routine(
-            course=course, school=school,
+            program=_schedule_for_receipt(run_dir, receipt, course),
+            school=school,
             routine_assessment=routine_assessment,
             routine_advanced=routine_advanced,
             stagnation=stagnation, blocked_before=blocked_before,
@@ -3783,7 +3853,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         guesses = promotion_guesses
         measured = promotion_measured
         assessment = promotion_assessment
-        promotion_advanced = assess(course, school, promotion_assessment)
+        promotion_advanced = assess(_schedule_for_receipt(run_dir, receipt, course), school, promotion_assessment)
         advanced = promotion_advanced
         if _promotion_due_after_routine(school, promotion_advanced):
             promotion_evidence = LearningEvidence(
@@ -3825,7 +3895,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             guesses = generalization_guesses
             measured = generalization_measured
             assessment = generalization_assessment
-            advanced = assess(course, school, generalization_assessment)
+            advanced = assess(_schedule_for_receipt(run_dir, receipt, course), school, generalization_assessment)
             generalization_evidence = LearningEvidence(
                 AssessmentClass.GENERALIZATION,
                 generalization_cohort.digest,
@@ -4038,11 +4108,11 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
     pending = receipt.get("_pending_visit_events", ())
     if not pending:
         return receipt
-    school = _state_from_json(receipt["school"], course)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     stagnation = receipt.get("stagnation_session")
     blocked = quarantined_capabilities(stagnation)
     active_scope = tuple(
-        cap for cap in assessment_capabilities(course, school)
+        cap for cap in assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school)
         if cap not in set(blocked))
     if not active_scope:
         raise ValueError("STAGNATION_STOP_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES")
@@ -4109,8 +4179,8 @@ def _flush_flash_student(run_dir, receipt, course, parameters, optimizer, graph,
     pending = tuple(receipt.get("_pending_visit_events", ()))
     if not pending:
         return receipt
-    school = _state_from_json(receipt["school"], course)
-    due = require_assessment_after_flash(course, school)
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
+    due = require_assessment_after_flash(_schedule_for_receipt(run_dir, receipt, course), school)
     optimizer_step = int(optimizer.state["step"].item())
     if optimizer_step == school.current_student.optimizer_step:
         candidate = school.current_student
@@ -4268,6 +4338,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             with trace_span("RESUME_STUDENT"):
                 params, optimizer, graph, receipt = _resume(
                     run_dir, manifest, course, teacher_sha,
+                    grade_a_course=course_a, source_root=source_root,
                     admitted_courses=admitted_courses)
             course = course_for_mode(
                 admitted_courses, receipt.get("curriculum_mode"), course)
@@ -4326,8 +4397,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             params, optimizer, graph, receipt = _init(
                 run_dir, manifest, course, teacher_sha,
                 historical_teacher, provenance, source_checkpoint,
-                reserve_gib=reserve_gib)
-        _require_factory_admission(run_dir, receipt, course)
+                source_root=source_root, reserve_gib=reserve_gib)
+        receipt, executable_release, schedule_program = _ensure_executable_release(
+            run_dir, receipt, course, course_a, source_root, graph)
         with trace_span("RECONCILE_VOCABULARY"):
             receipt = _reconcile_vocabulary_metadata(
                 run_dir, receipt, course, params, optimizer, graph)
@@ -4351,7 +4423,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             )
             source_prefetch_executor = resources.enter_context(
                 source_prefetch_pool(source_prefetch_workers))
-        school = _state_from_json(receipt["school"], course)
+        school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
         if (stagnation_grace_grade is not None and
                 stagnation_grace_grade not in set(school.active_grades)):
             raise ValueError("STAGNATION_GRACE_GRADE_NOT_ACTIVE")
@@ -4377,10 +4449,10 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 })
         previous_stagnation = receipt.get("stagnation_session")
         prior_debt = quarantined_capabilities(previous_stagnation)
-        school = _state_from_json(receipt["school"], course)
+        school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
         deferred_before_reentry = school.stage == "DEFERRED_STAGNATION"
         if prior_debt and deferred_before_reentry:
-            school = reactivate_stagnation_debt(course, school, prior_debt)
+            school = reactivate_stagnation_debt(_schedule_for_receipt(run_dir, receipt, course), school, prior_debt)
             receipt = {**receipt, "school": asdict(school)}
         history = list(receipt.get("stagnation_history", ()))
         if previous_stagnation is not None:
@@ -4394,7 +4466,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         receipt["stagnation_history"] = history[-16:]
         receipt["stagnation_session"] = start_stagnation_session(
             session_id=uuid.uuid4().hex, generation=receipt["generation"],
-            required_capabilities=assessment_capabilities(course, school))
+            required_capabilities=assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school))
         debt_grades = {capability.partition(".")[0] for capability in prior_debt}
         grace_reentry = grace_suppressed_capabilities(
             receipt.get("stagnation_grace"), required_capabilities=tuple(prior_debt),
@@ -4409,7 +4481,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             pending = list(receipt.get("_pending_visit_events", ()))
             pending.append(rehabilitation_event)
             receipt["_pending_visit_events"] = pending
-        school = _state_from_json(receipt["school"], course)
+        school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
         _record(run_dir, {
             "event": "SCHOOL_SESSION_STARTED",
             "generation": receipt["generation"],
@@ -4429,10 +4501,10 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             from .numeric_staircase import scope_advance_due, advance_scope
             if scope_advance_due(receipt, course):
                 course, receipt = advance_scope(run_dir, receipt, course, course_b, graph)
-            school = _state_from_json(receipt["school"], course)
+            school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
             receipt = _reconcile_stagnation_scope(
                 run_dir, receipt, course, school)
-            school = _state_from_json(receipt["school"], course)
+            school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
             reason = session_stop_reason(
                 stage=school.stage, elapsed_seconds=time.monotonic() - start,
                 minutes=minutes, visits=visits, max_visits=max_visits,
@@ -4451,7 +4523,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         mx, run_dir, receipt, manifest, course, source_root,
                         source_checkpoint, params, optimizer, graph,
                         reserve_gib=reserve_gib, scheduler_only=True)
-                    school = _state_from_json(receipt["school"], course)
+                    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
                     if school.stage.startswith("ASSESS_"):
                         # Scheduler-only evidence found no remaining imperfect
                         # grade. Preserve the qualification debt for a full
@@ -4506,7 +4578,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         "_live_ephemeral": True,
                         "_dashboard_redraw": False,
                     })
-            after_visit = _state_from_json(receipt["school"], course)
+            after_visit = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
         with trace_span("FLUSH_FLASH_STUDENT" if flash_mode else "FLUSH_WORKING_STUDENT",
                         visits=visits):
             if flash_mode:
@@ -4517,7 +4589,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 receipt = _flush_working_student(
                     mx, run_dir, receipt, manifest, course, params, optimizer, graph,
                     reserve_gib=reserve_gib, source_root=source_root)
-        school = _state_from_json(receipt["school"], course)
+        school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
         budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
                                    reserve_gib=reserve_gib)
         elapsed_seconds = round(time.monotonic() - start, 3)
