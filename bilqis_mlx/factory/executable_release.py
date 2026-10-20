@@ -727,6 +727,31 @@ def compile_executable_factory_release(
     return release
 
 
+def compile_successor_profile_release(
+        predecessor: ExecutableFactoryRelease,
+        profile: CurriculumProfile,
+        source_registry: SourceAdapterRegistry,
+        answer_registry: AnswerModalityRegistry, *,
+        source_root, graph: dict, verification_seed: int,
+        legacy_course=None) -> ExecutableFactoryRelease:
+    """Recompile one profile over the predecessor's immutable authorities."""
+    if not isinstance(predecessor, ExecutableFactoryRelease):
+        raise TypeError("FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID")
+    predecessor.verify()
+    return compile_executable_factory_release(
+        predecessor.curriculum,
+        predecessor.source_bindings,
+        profile,
+        source_registry,
+        answer_registry,
+        source_root=source_root,
+        graph=graph,
+        verification_seed=verification_seed,
+        legacy_course=legacy_course,
+        predecessor=predecessor,
+    )
+
+
 def admit_executable_factory_release(
         release: ExecutableFactoryRelease, *, student_sha256: str,
         optimizer_step: int, semantic_graph_sha256: str,

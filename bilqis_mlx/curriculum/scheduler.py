@@ -676,6 +676,43 @@ def reactivate_stagnation_debt(program, state: SchoolState,
                    first_recovery=tuple(debt[:3]))
 
 
+def adopt_appended_program(previous: ScheduleProgram,
+                           successor: ScheduleProgram,
+                           state: SchoolState) -> SchoolState:
+    """Admit exactly one appended projected grade without knowing its identity."""
+    if (not isinstance(previous, ScheduleProgram) or
+            not isinstance(successor, ScheduleProgram)):
+        raise TypeError("FACTORY_SCHEDULE_PROGRAM_REQUIRED")
+    verify_state(previous, state)
+    previous_ids = tuple(grade.id for grade in previous.grades)
+    successor_ids = tuple(grade.id for grade in successor.grades)
+    if (previous.program_complete or
+            state.stage != "AWAITING_NEXT_GRADE" or
+            len(successor_ids) != len(previous_ids) + 1 or
+            successor_ids[:-1] != previous_ids or
+            successor.grades[:-1] != previous.grades):
+        raise ValueError("FACTORY_SCHEDULE_APPEND_INVALID")
+    if state.grade not in state.champions:
+        raise ValueError("FACTORY_SCHEDULE_APPEND_REQUIRES_GRADUATED_PREFIX")
+    added = successor_ids[-1]
+    if added in state.champions:
+        raise ValueError("FACTORY_SCHEDULE_APPEND_FUTURE_CHAMPION_EXISTS")
+    extended = replace(
+        state,
+        course_digest=successor.digest(),
+        grade_exam_epoch=state.grade_exam_epoch + 1,
+        active_grades=successor_ids,
+        stage="MAIN",
+        first_recovery=(),
+        main_sweep_visited=(),
+        revalidation_target_grade=None,
+        latest_rubric_digest=None,
+        pending_failures=(),
+        teacher_soup_digest=None,
+    )
+    return _enter_grade(successor, extended, len(previous.grades))
+
+
 def append_next_grade(previous, successor, state: SchoolState) -> SchoolState:
     """Historical Course append migration; canonical v2 uses release deltas."""
     from bilqis_mlx.compatibility.scheduler_transitions import append_next_grade as legacy

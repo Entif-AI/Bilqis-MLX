@@ -3,16 +3,18 @@ import hashlib
 import unittest
 
 from bilqis_mlx.curriculum.scheduler import (
-    Assessment, Score, assess, start_new, visit,
+    Assessment, Score, adopt_appended_program, assess, start_new, visit,
 )
 from bilqis_mlx.factory.curriculum_definition import from_legacy_course
 from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+from bilqis_mlx.factory.executable_release import compile_successor_profile_release
 from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
 from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
 from bilqis_mlx.factory.tests.test_executable_consumers import _profile
 from bilqis_mlx.factory.tests.test_executable_release import _boolean_answers
 from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_boolean_course
 from bilqis_mlx.learning.champions import Checkpoint
+from bilqis_mlx.profiles.school import boolean_kernel_profile
 
 
 def _checkpoint():
@@ -127,6 +129,41 @@ class ExecutableSchedulerTests(unittest.TestCase):
             tuple(grade.id for grade in program.grades),
             ("A",))
         self.assertFalse(program.program_complete)
+
+    def test_profile_successor_appends_grade_without_release_dispatch(self):
+        curriculum, bindings = from_legacy_course(self.course)
+        answers = _boolean_answers()
+        a_only = compile_executable_factory_release(
+            curriculum, bindings,
+            CurriculumProfile(
+                "a-only",
+                grades=(GradeProfile("B", enabled_capabilities=()),)),
+            self.providers, answers,
+            source_root=None, graph=self.graph,
+            verification_seed=71, legacy_course=self.course)
+        a_program, state = self._finish_a(a_only)
+        self.assertEqual(state.stage, "AWAITING_NEXT_GRADE")
+
+        successor = compile_successor_profile_release(
+            a_only,
+            boolean_kernel_profile(),
+            self.providers,
+            answers,
+            source_root=None,
+            graph=self.graph,
+            verification_seed=73,
+            legacy_course=self.course)
+        b_program = schedule_program_from_executable_release(successor)
+        adopted = adopt_appended_program(a_program, b_program, state)
+
+        self.assertEqual(successor.curriculum.digest(), a_only.curriculum.digest())
+        self.assertEqual(
+            successor.source_bindings.digest(),
+            a_only.source_bindings.digest())
+        self.assertEqual(successor.transition.added_grades, ("B",))
+        self.assertEqual(successor.transition.semantic_geometry, "UNCHANGED")
+        self.assertEqual(adopted.grade, "B")
+        self.assertEqual(adopted.queue, ("B.AND", "B.IFF"))
 
 
 if __name__ == "__main__":
