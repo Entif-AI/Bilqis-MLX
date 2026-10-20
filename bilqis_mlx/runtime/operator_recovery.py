@@ -16,6 +16,23 @@ class RecoveryAdvice:
     code: str
     disposition: str
     next_action: str
+    explanation: str = ""
+    safe_check: str = ""
+    manual_ref: str = "docs/operations/OPERATOR_FIELD_MANUAL.md"
+
+
+@dataclass(frozen=True)
+class LegacyRecoveryPattern:
+    """Compatibility classification only. Typed diagnostics bypass heuristics."""
+
+    disposition: str
+    next_action: str
+    contains: tuple[str, ...] = ()
+    suffixes: tuple[str, ...] = ()
+
+    def matches(self, code: str) -> bool:
+        return (any(fragment in code for fragment in self.contains) or
+                any(code.endswith(ending) for ending in self.suffixes))
 
 
 _EXACT = MappingProxyType({
@@ -45,6 +62,19 @@ _EXACT = MappingProxyType({
         "An internal path attempted to materialize an empty assessment cohort. "
         "The durable checkpoint remains the resume authority; do not invent questions or bypass the cohort guard.",
     ),
+    "INVALID_OR_DRIFTED_SCHOOL_STATE": RecoveryAdvice(
+        "INVALID_OR_DRIFTED_SCHOOL_STATE",
+        "PRESERVE_AND_DIAGNOSE",
+        "Run the neural-inert preflight against the same run directory: "
+        "npm run train -- --dry-run --resume --verify-source [--run-dir <same-run-dir>]. "
+        "Read the mismatch printed after the error code. Do not hand-edit state.json. "
+        "If the course digest differs, resume through the release/compatibility path that owns "
+        "that saved state or repair the producing code so it reconstructs the saved program identity. "
+        "See docs/operations/OPERATOR_FIELD_MANUAL.md#invalid_or_drifted_school_state.",
+        "The saved school identity failed one of its structural predicates. This does not by itself "
+        "mean the student checkpoint or AdamW state is corrupt.",
+        "npm run train -- --dry-run --resume --verify-source",
+    ),
     "CHAMPIONSHIP_TITLE_MATCH_CURRENT_PANEL_UNMEASURED": RecoveryAdvice(
         "CHAMPIONSHIP_TITLE_MATCH_CURRENT_PANEL_UNMEASURED",
         "INTERNAL_RECOVERY_REQUIRED",
@@ -53,87 +83,93 @@ _EXACT = MappingProxyType({
     ),
 })
 
+_LEGACY_PATTERNS = (
+    LegacyRecoveryPattern(
+        "RETRY_OR_REGENERATE",
+        "The owning source/generator exhausted its bounded search. Retry or expand "
+        "that source-valid search; do not weaken gold, scope, or custody requirements.",
+        contains=("_EXHAUSTED_",), suffixes=("_EXHAUSTED",),
+    ),
+    LegacyRecoveryPattern(
+        "OPERATOR_OR_SOURCE_PREREQUISITE",
+        "A declared prerequisite is absent. Satisfy or safely produce the named "
+        "prerequisite before retrying; do not fabricate its receipt.",
+        contains=("REQUIRES",), suffixes=("_REQUIRED",),
+    ),
+    LegacyRecoveryPattern(
+        "PRESERVE_AND_REPAIR",
+        "Identity or custody evidence disagrees. Preserve the durable checkpoint and "
+        "repair the mismatched source/state boundary before retrying; bypass is not safe.",
+        contains=("DRIFT", "TAMPER", "UNSAFE", "MISMATCH", "CONFLICT", "CORRUPT"),
+    ),
+    LegacyRecoveryPattern(
+        "RECONSTRUCT_OR_RESTORE",
+        "Required durable evidence is missing. Reconstruct it only from authoritative "
+        "receipts or restore the original artifact; do not synthesize replacement evidence.",
+        contains=("_MISSING_",), suffixes=("_MISSING",),
+    ),
+    LegacyRecoveryPattern(
+        "CORRECT_INPUT_OR_STATE",
+        "The supplied configuration or saved structure is invalid. Correct the owning "
+        "input or state producer, then retry from the last durable checkpoint.",
+        contains=("_INVALID_",), suffixes=("_INVALID",),
+    ),
+    LegacyRecoveryPattern(
+        "AUTHORITY_OR_POLICY_BLOCK",
+        "The requested action crosses an explicit authority or safety boundary. Keep "
+        "the durable state unchanged and obtain the required authority or choose the permitted path.",
+        contains=("FORBIDDEN", "PROHIBITED", "NOT_AUTHORIZED", "AUTHORITY_DENIED"),
+    ),
+    LegacyRecoveryPattern(
+        "CORRECT_INPUT_OR_STATE",
+        "The current request or generated state is outside the admitted contract. "
+        "Correct the owning input/scope producer and retry; do not coerce the invalid "
+        "value through the gate.",
+        contains=("UNKNOWN", "UNSUPPORTED", "OUTSIDE", "INCOMPLETE", "WRONG_",
+                  "NOT_ADMITTED", "NOT_SCHEDULED", "NOT_COMPLETE", "OUT_OF_"),
+    ),
+    LegacyRecoveryPattern(
+        "OPERATOR_OR_SOURCE_PREREQUISITE",
+        "The operation is not yet qualified on current evidence. Produce the missing "
+        "source or student evidence through its normal owner, then retry from the durable checkpoint.",
+        contains=("UNQUALIFIED", "NOT_QUALIFIED", "NOT_READY",
+                  "NOT_MASTERED", "UNAVAILABLE"),
+    ),
+    LegacyRecoveryPattern(
+        "RETRY_OR_REGENERATE",
+        "A generated or selected work set is empty. The owning domain should regenerate, "
+        "defer, or choose another admitted work item; it must not fabricate evidence.",
+        contains=("EMPTY",),
+    ),
+)
+
 
 def error_code(error: BaseException | str) -> str:
     """Extract the stable leading code without depending on exception prose."""
+    from .diagnostic_bus import DiagnosticError
+    if isinstance(error, DiagnosticError):
+        return error.code.value
     text = str(error).strip()
     return text.split(":", 1)[0].strip() or error.__class__.__name__
 
 
 def recovery_advice(error: BaseException | str) -> RecoveryAdvice:
     """Classify every surfaced operator failure into one safe recovery posture."""
+    from .diagnostic_bus import DiagnosticError
+    if isinstance(error, DiagnosticError):
+        definition = error.definition
+        return RecoveryAdvice(
+            definition.code.value, definition.disposition,
+            definition.next_action, definition.explanation,
+            definition.safe_check,
+        )
     code = error_code(error)
     exact = _EXACT.get(code)
     if exact is not None:
         return exact
-    if code.endswith("_EXHAUSTED") or "_EXHAUSTED_" in code:
-        return RecoveryAdvice(
-            code,
-            "RETRY_OR_REGENERATE",
-            "The owning source/generator exhausted its bounded search. Retry or expand that "
-            "source-valid search; do not weaken gold, scope, or custody requirements.",
-        )
-    if "REQUIRES" in code or code.endswith("_REQUIRED"):
-        return RecoveryAdvice(
-            code,
-            "OPERATOR_OR_SOURCE_PREREQUISITE",
-            "A declared prerequisite is absent. Satisfy or safely produce the named prerequisite "
-            "before retrying; do not fabricate its receipt.",
-        )
-    if any(marker in code for marker in (
-            "DRIFT", "TAMPER", "UNSAFE", "MISMATCH", "CONFLICT", "CORRUPT")):
-        return RecoveryAdvice(
-            code,
-            "PRESERVE_AND_REPAIR",
-            "Identity or custody evidence disagrees. Preserve the durable checkpoint and repair "
-            "the mismatched source/state boundary before retrying; bypass is not safe.",
-        )
-    if code.endswith("_MISSING") or "_MISSING_" in code:
-        return RecoveryAdvice(
-            code,
-            "RECONSTRUCT_OR_RESTORE",
-            "Required durable evidence is missing. Reconstruct it only from authoritative "
-            "receipts or restore the original artifact; do not synthesize replacement evidence.",
-        )
-    if code.endswith("_INVALID") or "_INVALID_" in code:
-        return RecoveryAdvice(
-            code,
-            "CORRECT_INPUT_OR_STATE",
-            "The supplied configuration or saved structure is invalid. Correct the owning input "
-            "or state producer, then retry from the last durable checkpoint.",
-        )
-    if any(marker in code for marker in (
-            "FORBIDDEN", "PROHIBITED", "NOT_AUTHORIZED", "AUTHORITY_DENIED")):
-        return RecoveryAdvice(
-            code,
-            "AUTHORITY_OR_POLICY_BLOCK",
-            "The requested action crosses an explicit authority or safety boundary. Keep the "
-            "durable state unchanged and obtain the required authority or choose the permitted path.",
-        )
-    if any(marker in code for marker in (
-            "UNKNOWN", "UNSUPPORTED", "OUTSIDE", "INCOMPLETE", "WRONG_",
-            "NOT_ADMITTED", "NOT_SCHEDULED", "NOT_COMPLETE", "OUT_OF_")):
-        return RecoveryAdvice(
-            code,
-            "CORRECT_INPUT_OR_STATE",
-            "The current request or generated state is outside the admitted contract. Correct the "
-            "owning input/scope producer and retry; do not coerce the invalid value through the gate.",
-        )
-    if any(marker in code for marker in (
-            "UNQUALIFIED", "NOT_QUALIFIED", "NOT_READY", "NOT_MASTERED", "UNAVAILABLE")):
-        return RecoveryAdvice(
-            code,
-            "OPERATOR_OR_SOURCE_PREREQUISITE",
-            "The operation is not yet qualified on current evidence. Produce the missing source or "
-            "student evidence through its normal owner, then retry from the durable checkpoint.",
-        )
-    if "EMPTY" in code:
-        return RecoveryAdvice(
-            code,
-            "RETRY_OR_REGENERATE",
-            "A generated or selected work set is empty. The owning domain should regenerate, defer, "
-            "or choose another admitted work item; it must not fabricate evidence.",
-        )
+    for pattern in _LEGACY_PATTERNS:
+        if pattern.matches(code):
+            return RecoveryAdvice(code, pattern.disposition, pattern.next_action)
     return RecoveryAdvice(
         code,
         "PRESERVE_AND_REPORT",

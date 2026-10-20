@@ -69,6 +69,16 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
+    def test_school_state_drift_reports_the_failed_identity_predicate(self):
+        course = three_grade_course()
+        state = start_new(course, self.init)
+        drifted = replace(state, course_digest="0" * 64)
+
+        with self.assertRaisesRegex(
+                ValueError,
+                r"INVALID_OR_DRIFTED_SCHOOL_STATE: course_digest saved=0{64} expected="):
+            verify_state(course, drifted)
+
     def test_full_imperfect_grade_sweep_precedes_global_two_round_recovery(self):
         course = three_grade_course()
         student = self.init

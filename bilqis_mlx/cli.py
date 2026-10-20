@@ -712,8 +712,14 @@ def _main(args):
         print("OPERATOR BLOCKED: "+str(err),file=sys.stderr)
         from .runtime.operator_recovery import recovery_advice
         advice = recovery_advice(err)
+        if advice.explanation:
+            print("CAUSE: " + advice.explanation, file=sys.stderr)
+        if advice.safe_check:
+            print("SAFE CHECK: " + advice.safe_check, file=sys.stderr)
         print("RECOVERY: " + advice.disposition + " | " + advice.next_action,
               file=sys.stderr)
+        if advice.manual_ref:
+            print("FIELD MANUAL: " + advice.manual_ref, file=sys.stderr)
         _report_timing_trace(trace_path, stream=sys.stderr)
         return 2
 
