@@ -394,6 +394,8 @@ Exit gate: changing only `CurriculumProfile` changes the live disposable runtime
 
 **Wave 3C compatibility-boundary checkpoint:** the former `factory/live_releases.py` implementation has been retired from the current factory namespace and moved intact to `compatibility/live_releases.py`. The old import path is a deprecation shim for historical tests/external callers only. Current trainer/CLI compatibility reads import the compatibility module explicitly; live B/C progression already uses profiles, plan diffs and v2 admission. This relocation removed the 129-finding release-switchboard cluster from the closure ledger without deleting historical decode/replay evidence.
 
+**Wave 3D CLI checkpoint:** current status/preflight no longer reconstructs Course/release/provider state from historical release names. It reads the admitted v2 artifact and reports profile ID, canonical versus active grades, active capabilities, answer domains, semantic-catalog identity, projection digests and typed transition metadata. Historical release labels remain available only through `compatibility/cli_preflight.py` for pre-v2 saved receipts. Legacy COMPOSITE/ID flags are reported as canonical teaching-stage requests, not release enrollments.
+
 ### Wave 3: replace release-name transitions with release diffs
 
 Move successor lineage and runtime compatibility into typed release metadata. Generic transition execution consumes `CurriculumDelta` plus a semantic-geometry transition contract. Same-grade revision, appended grade, profile revision, and graph growth are derived facts.
