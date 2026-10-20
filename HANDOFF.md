@@ -11,6 +11,9 @@ events and the complete student/AdamW bundle stayed byte-identical afterward.
 Authority: https://github.com/socr8s/private-ip/issues/336 (#336 OPEN), execution
 https://github.com/socr8s/private-ip/issues/349 (#349 OPEN). See the continuation
 for source identities, proof limits, concurrent edits and next action.
+All later tracked Chapters 3–7 have now been extracted separately; the next
+source fallback reports TRACKED_SOURCE_QUEUE_EXHAUSTED. See the continuation
+for per-chapter counts, missing-sense debt and the v2 partial-scope seal repair.
 
 # Earlier issue349 execution checkpoint | 2026-10-20
 

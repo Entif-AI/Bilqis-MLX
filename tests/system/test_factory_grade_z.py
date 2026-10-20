@@ -8,7 +8,7 @@ No optimizer or MLX runtime is invoked.
 """
 from __future__ import annotations
 
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import hashlib
 import io
 import json
@@ -251,6 +251,16 @@ class DisposableGradeZSystemProof(unittest.TestCase):
                         for identity in CAPABILITIES if identity != withheld},
                 evaluation_id="grade-z-withheld",
             )
+            with self.assertRaisesRegex(ValueError, "ASSESSMENT_NOT_GRADE_SEALED_RUBRIC"):
+                assess_withheld(program, school, partial, (withheld,))
+            partial_cohort, partial_pointer = _routine_executable_cohort(
+                root, receipt, manifest, release, registry, None, graph,
+                capabilities=tuple(identity for identity in CAPABILITIES
+                                   if identity != withheld),
+                assessment_epoch=1, legacy_course=course)
+            self.assertEqual({row["capability"] for row in partial_cohort.rows},
+                             set(partial.scores))
+            partial = replace(partial, rubric_digest=partial_pointer["rubric_sha256"])
             contained = assess_withheld(program, school, partial, (withheld,))
             self.assertNotEqual(contained.stage, "WHOLE_SCHOOL_MASTERED")
 

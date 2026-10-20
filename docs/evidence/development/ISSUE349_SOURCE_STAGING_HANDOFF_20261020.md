@@ -84,3 +84,48 @@ existing primary remains authorized and only one second run may be created if
 useful. Canonical/historical students remain read-only. Do not merge main or
 close #349. Rollback is a normal revert of this slice's source commits, retaining
 source snapshots, receipts and learner custody. No neural rollback is needed.
+
+## Continued empirical source work and scope repair
+
+The same live source fallback was subsequently exercised for every remaining
+tracked chapter, then once more to verify `TRACKED_SOURCE_QUEUE_EXHAUSTED`.
+Every call held the actual operator lock and verified identical state/events
+and complete current model+own-AdamW hashes before/after, at step 116816.
+Individual tracked receipts are `20261020-issue349-source-development-chapter4.json`
+through `chapter7.json`, and `20261020-issue349-source-development-exhausted.json`
+in `docs/evidence/experiments/`.
+
+| Chapter | Root headings | Senses | Context records | Roots without extracted senses |
+| --- | ---: | ---: | ---: | ---: |
+| 3 | 122 | 189 | 27 | 88 |
+| 4 | 716 | 2743 | 187 | 60 |
+| 5 | 257 | 183 | 78 | 209 |
+| 6 | 771 | 625 | 64 | 664 |
+| 7 | 3519 | 1107 | 65 | 3169 |
+
+These are per-snapshot observations, not a deduplicated admitted lexicon. Inherited
+patterns and roots without explicit extracted senses remain substantial debt.
+The final measured primary allocation is 749,494,272 bytes; still one run.
+Source snapshot expansion can no longer make independent progress over additional
+tracked chapters: the next source task is the missing-sense/inheritance and
+canonical-PDF-provenance work, or a qualified semantic realization.
+
+Broader validation exposed an earlier v2 scheduler bug. A source-valid partial
+withheld assessment passed the exact-scope check, then failed an incompatible
+full-course seal check. The repair uses the actual measured scope for that v2
+check while preserving the legacy cumulative-rubric scope. Grade Z now constructs
+its partial cohort through the real producer and asserts rejection of a full-scope
+seal. Incident PM-2026-10-20-003 / RC-116 was enriched in the canonical native Sheet
+and read back; no duplicate incident or new policy was created.
+
+The hashed-file test runner also cannot spawn-import the prefetch test's generated
+module name. That existing test passes under its normal importable module name:
+`python3 -B -m unittest bilqis_mlx.runtime.tests.test_source_prefetch -q`.
+
+Latest broad worktree validation: 471 tests, 467 passed, 3 skipped, 1 failure.
+The Grade-Z system proof and v2 scope regressions pass after repair. The remaining
+failure is `test_school.py:826` expecting the historical `DRIFTED` text while the
+other writer's staged typed-error migration emits
+`SCHOOL.STATE.COURSE_DIGEST_MISMATCH`. Preserve this for that migration's writer;
+it is outside this source slice. The two prefetch tests pass separately under
+their importable module name. No full-repository-green claim is made.

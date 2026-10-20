@@ -84,12 +84,13 @@ class Assessment:
             raise ValueError("ASSESSMENT_HAS_NO_REPRESENTED_GRADE")
         # Each grade seals its *cumulative* exam (including prior grades).
         # A newly introduced B rubric need not share A's exam digest.
-        grade_seal = (program.exact_scope_rubric(required_capabilities) or
-                      represented[-1].assessment_sha256)
+        exact_seal = program.exact_scope_rubric(required_capabilities)
+        grade_seal = exact_seal or represented[-1].assessment_sha256
         if grade_seal is not None and self.rubric_digest != grade_seal:
             raise ValueError("ASSESSMENT_NOT_GRADE_SEALED_RUBRIC")
         all_caps = _caps(program, tuple(g.id for g in program.grades))
-        if (set(rubric_scope) == set(all_caps) and
+        sealed_scope = required_capabilities if exact_seal is not None else rubric_scope
+        if (set(sealed_scope) == set(all_caps) and
                 program.assessment_manifest_sha256 is not None and
                 self.rubric_digest != program.assessment_manifest_sha256):
             raise ValueError("ASSESSMENT_NOT_COURSE_SEALED_RUBRIC")
