@@ -210,6 +210,17 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
     counts = {cap: count for grade in previous.grades for cap, count in grade.exam_item_counts}
     debt_exam = exam
     exam_scores = exam.get("scores") if isinstance(exam.get("scores"), dict) else {}
+    explicit_boundary = receipt.get("debt_admission_boundary_exam")
+    if allow_mastery_debt and isinstance(explicit_boundary, dict):
+        boundary_scores = explicit_boundary.get("scores")
+        if (explicit_boundary.get("schema") != "bilqis.mlx.debt-admission-boundary/v1" or
+                explicit_boundary.get("student_sha256") != school.current_student.sha256 or
+                explicit_boundary.get("optimizer_step") != school.current_student.optimizer_step or
+                not isinstance(boundary_scores, dict) or
+                not set(counts) <= set(boundary_scores)):
+            raise ValueError("GRADE_C_DEBT_ADMISSION_BOUNDARY_DRIFT")
+        debt_exam = explicit_boundary
+        exam_scores = boundary_scores
     if allow_mastery_debt and set(counts) - set(exam_scores):
         # A staged prior grade can leave `last_exam` narrower than the complete
         # declared release even when this exact checkpoint has a fresh complete
@@ -354,6 +365,7 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
         "config": {**receipt["config"], "vocab_size": len(grown_graph["tokens"]),
                    "answer_heads": heads},
         "live_rubric_sha256": successor.grades[-1].assessment_sha256}
+    updated.pop("debt_admission_boundary_exam", None)
     updated["mentor_epoch"] = next_epoch
     updated["championship_epoch_history"] = epoch_history
     record = _advance(run_dir, updated, next_state, model_bundle=pointer.filename,

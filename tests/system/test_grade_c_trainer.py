@@ -11,7 +11,8 @@ from unittest.mock import patch
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.trainer import (_bundle_pointer, _fingerprint, _persist,
-    _resume, _state_from_json, _take_exam, _take_visit, prepare_source)
+    _measure_debt_admission_boundary, _resume, _state_from_json, _take_exam,
+    _take_visit, prepare_source)
 from bilqis_mlx.grade_transition import activate_numeric_grade
 from bilqis_mlx.live_grade_a import live_course as a_course
 from bilqis_mlx.live_grade_b import RELEASE as B_RELEASE, constructor_digest as b_digest, live_course as b_course
@@ -113,17 +114,13 @@ class GradeCTrainerTests(unittest.TestCase):
             first_recovery=("B.AND", "B.IFF"), champions={"A": pointer},
             latest_rubric_digest=b.assessment_sha256)
         receipt = self.receipt(school, pointer, params)
-        full_boundary_scores = json.loads(json.dumps(receipt["last_exam"]["scores"]))
-        full_boundary_scores["A.EDGE"]["correct"] = 10
-        full_boundary_scores["B.AND"]["correct"] = 7
-        full_boundary_scores["B.IFF"]["correct"] = 6
-        # Mirror the live staged-B shape: the hot `last_exam` can be narrower
-        # than the declared prior release even though a complete fresh
-        # same-checkpoint generalization exam exists in the durable event log.
-        omitted = next(cap for cap in full_boundary_scores
+        # Mirror the live staged-B shape: the hot `last_exam` is narrower than
+        # the full declared prior release and there is no complete same-checkpoint
+        # generalization event to recover. Debt admission itself must measure it.
+        omitted = next(cap for cap in receipt["last_exam"]["scores"]
                        if cap.startswith("B.") and cap not in ("B.AND", "B.IFF"))
         receipt["last_exam"]["scores"] = {
-            cap: value for cap, value in full_boundary_scores.items()
+            cap: value for cap, value in receipt["last_exam"]["scores"].items()
             if cap != omitted
         }
         receipt["stagnation_session"] = {
@@ -147,16 +144,22 @@ class GradeCTrainerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
             root = Path(temp)
             receipt = _persist(root, receipt)
-            (root / "events.jsonl").write_text(json.dumps({
-                "event": "SCHOOL_LIVE_EXAM_COMMITTED",
-                "generation": 9,
-                "student_sha256": pointer.sha256,
-                "optimizer_step": pointer.optimizer_step,
-                "cohort_sha256": "c" * 64,
-                "rubric": self.previous.grades[-1].assessment_sha256,
-                "exam_plane": "GENERALIZATION",
-                "scores": full_boundary_scores,
-            }) + "\n")
+            missed = set()
+            def boundary_predictions(_mx, _params, rows, *_args):
+                answers = {}
+                for row in rows:
+                    answer = row["gold"]
+                    if (row["capability"] in {"A.EDGE", "B.AND", "B.IFF"} and
+                            row["capability"] not in missed):
+                        answer = "FALSE" if answer == "TRUE" else "TRUE"
+                        missed.add(row["capability"])
+                    answers[row["id"]] = answer
+                return answers
+            with patch("bilqis_mlx.trainer._predictions",
+                       side_effect=boundary_predictions):
+                receipt = _measure_debt_admission_boundary(
+                    mx, root, receipt, self.manifest, self.previous, SOURCE,
+                    params, self.parent_graph)
             grown, own, graph, changed = activate_numeric_grade(
                 mx, root, receipt, self.previous, self.course,
                 params, opt, self.parent_graph, reserve_gib=0.,
@@ -171,8 +174,10 @@ class GradeCTrainerTests(unittest.TestCase):
         self.assertEqual(set(changed_school["champions"]), {"A"})
         self.assertEqual(changed["mentor_epoch"]["previous_mastery_debt"],
                          ["A.EDGE", "B.AND", "B.IFF"])
-        self.assertEqual(changed["grade_c_debt_source_generation"], 9)
-        self.assertEqual(changed["grade_c_debt_source_exam_plane"], "GENERALIZATION")
+        self.assertIsNone(changed["grade_c_debt_source_generation"])
+        self.assertEqual(changed["grade_c_debt_source_exam_plane"],
+                         "DEBT_ADMISSION_BOUNDARY")
+        self.assertNotIn("debt_admission_boundary_exam", changed)
         from bilqis_mlx.learning.mentor_epoch import reference_checkpoints
         references = reference_checkpoints(changed["mentor_epoch"])
         self.assertIn(pointer.sha256, {item["sha256"] for item in references})

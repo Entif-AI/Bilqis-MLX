@@ -3675,6 +3675,59 @@ def _assessment_scope_sha256(full_scope, scores) -> str:
     return _fingerprint(selected)
 
 
+def _measure_debt_admission_boundary(mx, run_dir, receipt, manifest, course,
+                                     source_root, parameters, graph):
+    """Freshly score the complete declared prior release for debt admission."""
+    school = _state_from_json(receipt["school"], course)
+    full_scope = tuple(
+        capability.id for grade in course.grades for capability in grade.capabilities)
+    expected = {
+        capability: count for grade in course.grades
+        for capability, count in grade.exam_item_counts
+    }
+    if set(full_scope) != set(expected):
+        raise ValueError("DEBT_ADMISSION_DECLARED_SCOPE_DRIFT")
+    _, release, generator, _ = _cohort_contract(course)
+    seed = _seed(
+        receipt,
+        capability=(
+            f"DEBT_ADMISSION_BOUNDARY:{course.version}:"
+            f"{school.current_student.optimizer_step}"),
+    )
+    rows = _draw_live_rows(source_root, graph, seed=seed, course=course)
+    actual = {
+        capability: sum(row["capability"] == capability for row in rows)
+        for capability in full_scope
+    }
+    if (set(row["capability"] for row in rows) != set(full_scope) or
+            actual != expected or len(rows) != sum(expected.values()) or
+            len({row["id"] for row in rows}) != len(rows)):
+        raise ValueError("DEBT_ADMISSION_BOUNDARY_SCOPE_INCOMPLETE")
+    cohort = make_cohort(
+        rows, generator_version=generator, seed=seed, rubric_version=release)
+    cohort_file = _persist_live_cohort(run_dir, manifest, course, cohort)
+    guesses = _predictions(
+        mx, parameters, rows, receipt["config"], receipt["answer_ids"])
+    scores = score_cohort(
+        cohort, guesses, asdict(school.current_student))["scores"]
+    if (set(scores) != set(expected) or
+            any(scores[capability]["total"] != count
+                for capability, count in expected.items())):
+        raise ValueError("DEBT_ADMISSION_BOUNDARY_SCORE_SCOPE_DRIFT")
+    return {**receipt, "debt_admission_boundary_exam": {
+        "schema": "bilqis.mlx.debt-admission-boundary/v1",
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "cohort_sha256": cohort.digest,
+        "cohort_file": cohort_file,
+        "cohort_seed": cohort.seed,
+        "exam_rubric_sha256": assessment_rubric_for_scope(course, full_scope),
+        "assessment_scope_sha256": _fingerprint(full_scope),
+        "source_exam_plane": "DEBT_ADMISSION_BOUNDARY",
+        "scores": scores,
+    }}
+
+
 def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                source_checkpoint, parameters, optimizer, graph, *, reserve_gib,
                scheduler_only: bool = False):
@@ -4370,6 +4423,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     course, source_root, full_grade_b=full_grade_b)
                 if plan is None or plan.transition != GRAPH_GROWTH_TRANSITION:
                     raise ValueError("DEBT_GRADE_ADMISSION_REQUIRES_GRAPH_GROWTH_SUCCESSOR")
+                receipt = _measure_debt_admission_boundary(
+                    mx, run_dir, receipt, manifest, course, source_root,
+                    params, graph)
                 from .grade_transition import activate_numeric_grade
                 params, optimizer, graph, receipt = activate_numeric_grade(
                     mx, run_dir, receipt, course, plan.successor,
