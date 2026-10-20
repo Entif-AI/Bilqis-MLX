@@ -15,6 +15,7 @@ from ..factory.autonomy import (
     TeachingReceipt,
     compile_autonomy_plan,
     next_action,
+    is_factory_release,
 )
 from ..factory.model import FactoryRelease
 from .state import _canonical, _durable_json, _fingerprint
@@ -96,7 +97,7 @@ def persist_autonomy_state(
     plan: AutonomyPlan | None = None,
 ) -> dict:
     """Write one immutable snapshot, then atomically advance a tiny pointer."""
-    if not isinstance(release, FactoryRelease) or not isinstance(ledger, EvidenceLedger):
+    if not is_factory_release(release) or not isinstance(ledger, EvidenceLedger):
         raise TypeError("AUTONOMY_STATE_INVALID_INPUT")
     resolved_plan = compile_autonomy_plan(release) if plan is None else plan
     # next_action validates release/plan/ledger binding without mutating anything.
@@ -150,7 +151,7 @@ def read_autonomy_state(
     run_dir: Path, release: FactoryRelease,
 ) -> tuple[AutonomyPlan, EvidenceLedger]:
     """Read and fully revalidate the latest durable autonomous state."""
-    if not isinstance(release, FactoryRelease):
+    if not is_factory_release(release):
         raise TypeError("AUTONOMY_STATE_INVALID_RELEASE")
     autonomy, states = _artifact_dirs(Path(run_dir))
     current = autonomy / "current.json"

@@ -16,10 +16,10 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.runtime.autonomy_live import (
     advance_if_scheduled_evidence_complete, build_live_autonomy_plan,
     LiveAutonomySession, reconcile_live_autonomy_state,
-    scheduled_teaching_matches,
+    reroute_failed_teaching, scheduled_teaching_matches,
 )
 from bilqis_mlx.grade_a_probe import read_sources
-from bilqis_mlx.curriculum.scheduler import start_new
+from bilqis_mlx.curriculum.scheduler import next_capability, start_new, visit
 from bilqis_mlx.learning.champions import Checkpoint
 
 
@@ -112,6 +112,19 @@ class LiveAutonomyBridgeTests(unittest.TestCase):
             school,
         )
 
+    def test_failed_teaching_can_be_neural_inertly_rerouted_within_legal_pool(self):
+        release = compile_live_release(self.a)
+        school = start_new(
+            self.a, Checkpoint("e" * 64, "bundles/fixture", 0, True))
+        advanced = visit(
+            self.a, school, "A.IDENTITY", school.current_student)
+        self.assertEqual(next_capability(advanced), "A.PARENT")
+        rerouted = reroute_failed_teaching(
+            release, advanced, "A.IDENTITY")
+        self.assertEqual(next_capability(rerouted), "A.IDENTITY")
+        self.assertEqual(rerouted.current_student, advanced.current_student)
+        self.assertEqual(rerouted.visits, advanced.visits)
+
     def test_complete_evidence_advances_only_the_current_scheduled_visit(self):
         release = compile_live_release(self.a)
         plan = build_live_autonomy_plan(release, LEGACY)
@@ -145,13 +158,15 @@ class LiveAutonomyBridgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             session = LiveAutonomySession.open(root, LEGACY, release)
-            action = session.action()
+            checkpoint = Checkpoint(
+                "e" * 64, "bundles/fixture", 0, True)
+            action = session.action(checkpoint)
             self.assertEqual(action.evidence_work.capability_id, "A.IDENTITY")
             evidence = session.measure(
                 graph, action.evidence_work,
                 checkpoint={
-                    "sha256": "e" * 64,
-                    "optimizer_step": 0,
+                    "sha256": checkpoint.sha256,
+                    "optimizer_step": checkpoint.optimizer_step,
                     "model_and_native_adamw": True,
                 },
                 seed=20261019,

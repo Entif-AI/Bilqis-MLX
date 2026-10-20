@@ -1,18 +1,47 @@
 # Issue349 autonomous JIT Ithkuil execution | 2026-10-20
 
-Authority: https://github.com/socr8s/private-ip/issues/349 (#349 OPEN); governing https://github.com/socr8s/private-ip/issues/336 (#336 OPEN, IPR-0220). Both remain open. Protected/private checkpoint only.
+Authority: https://github.com/socr8s/private-ip/issues/349 (#349 OPEN); governing https://github.com/socr8s/private-ip/issues/336 (#336 OPEN, IPR-0220). Both remain open. #335/#339/#340/#343/#344/#345/#348 are incorporated authority; #346 remains unrelated/deferred and MUST NOT be absorbed.
 
-Branch `codex/349-autonomous-jit-ithkuil-20261020`, hidden worktree `/Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020`. Base main `686438848a4644861febbf11d1b426f770ecb795`; factory history `d702822fd4cd35c153d84894b8f7c6db0ff4983f` merged at `178e9509b73e62533efd376b035886768b7eda27`; D-O history `d425e91c831a1a923680ee83fdb5bca9cdf49371` incorporated by this merge. Use `git rev-parse HEAD` and exact remote readback for successor HEAD.
+Branch `codex/349-autonomous-jit-ithkuil-20261020`, worktree `/Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020`. Base main observed `686438848a4644861febbf11d1b426f770ecb795`. This section describes the post-execution tree before final commit/push; use `git rev-parse HEAD` plus exact `git ls-remote` readback after closeout for the authoritative final SHA.
 
-Completed: manually reconciled factory v2 scheduler/trainer with current-main championship and fixed-frontier recovery; retained newer SPEC0002 rev10; moved historical frontier recovery to compatibility and research staircase declarations to profiles. Exact-scope scheduler and v2 fixed-frontier consumer regressions reproduced red then passed. Focused integration129:128 passed,1 expected skip; source3/3. Factory architecture/closure guards pass. Untouched main baseline881:803 passed,13 failures,65 skips, including9 missing historical run-fixture errors,1 spawn test-loader error and3 telemetry assertions. Full branch acceptance remains pending.
+## Current implemented state
 
-Provisional/uncommitted work: current-checkpoint autonomy evidence, actual teaching provenance, experiment budget, source frontier manifest. Remaining: v2 autonomy union, typed candidate frontier/JIT proposals, scoped reconciliation, bounded owner recovery, actual experiment integration and empirical proof. No learned mastery or whole-repository-green claim.
+- **Typed non-admitted frontier:** `candidate_frontier.py` verifies the generated source manifest, all source senses/evidence, 144 `CORE_D_O` candidates and 96 reserve candidates. CORE candidates are structurally `PROPOSED_NOT_ADMITTED`; reserve candidates are `CANDIDATE_RESERVE`; both require explicit factory-admission debt. Prerequisite edges remain hypotheses until executable admission.
+- **Frontier source closure:** `build_curriculum_frontier.py` now records and validates exact input/output sets, per-file hashes, aggregate digests, builder SHA, exact source/sense inventory, and exact crosswalk root matching. Current regenerated private frontier: 240 candidates, 1,615 senses, 144 core + 96 reserve.
+- **Proposal-only JIT path:** `jit_curriculum.py` accepts only exact precompiled successor bindings, verifies source sense/anchor/prerequisites/current-checkpoint mastery, chooses the smallest operation-cost legal slice, and never invokes admission. A candidate cannot smuggle unrelated capability changes: the successor transition must add exactly the selected capability and remove/change none.
+- **Current-checkpoint evidence:** the autonomy controller binds every evidence decision to exact checkpoint SHA + optimizer step. No mixed-checkpoint mastery closure. Cross-release evidence carries only when the semantic declaration, source projection, answer-schema projection, coverage projection, and exact obligation remain identical.
+- **Truthful teaching receipts:** the trainer receipts only specimens actually emitted by the selected teaching option and actually delivered to the optimizer. Receipt provenance includes option/provider/provider implementation hash/specimen IDs/content digest/variation axes/parent+child checkpoint/AdamW step delta.
+- **Crash recovery:** a committed school teaching outbox plus immutable specimen artifact can reconstruct a missing autonomy intervention idempotently after a crash. Cold-start release adoption can reconstruct projection-stable evidence from immutable predecessor factory artifacts.
+- **Proactive remediation:** if retention rejects a teaching candidate after the ordinary scheduler has already moved on, autonomy neural-inertly reroutes the failed legal capability back to queue head and emits `SCHOOL_AUTONOMY_TEACHING_REROUTED` before further optimization. It no longer silently trains unrelated work.
+- **Issue-owned experiment custody:** `ExperimentRunBudget` enforces issue 349 identity, <=2 direct-child run directories, collective measured allocated bytes <=100,000,000,000, safe pre-write checks, protected checkpoint/state/event/factory/autonomy paths, registry locking, and intermediate-symlink rejection. `--issue-349-experiment-root` wires this owner into the actual trainer; historical/canonical runs remain read-only.
 
-New native-ledger incidents: PM-2026-10-20-002 / RC114,RC115 / PAT084 (stale prerequisite authority and unproven intervention attribution); PM-2026-10-20-003 / RC116 (v2 downstream schema/scope consumer migration). Existing PM-2026-10-20-001 / RC113 recovery doctrine and PM-2026-10-19-004 worktree lifecycle still apply.
+## Verification
 
-Human-student boundary: all existing canonical/historical runs and their matching AdamW remain read-only. Issue349 explicitly authorizes agent optimizer work only in at most TWO NEW issue-owned isolated experiment directories, combined measured use<=100GB; none created yet. No main merge, force push, issue close, public publication or neural update has occurred in this run.
+After hydrating the repository's intentionally gitignored audited predecessor fixture from the read-only canonical checkout, the combined issue-relevant suite is **404 passed, 3 skipped, 47 subtests passed**. `scripts/check_factory_architecture.py` => `FACTORY_ARCHITECTURE_OK`; `scripts/check_semantic_boundaries.py` => `SEMANTIC_BOUNDARIES_OK`; `git diff --check` passes. The earlier 15 broad-suite errors were all the same missing gitignored historical `.pt` fixture, not code failures; with the exact audited SHA present they disappear.
 
-Next permitted action: commit/test frontier and evidence units, wire them through the single executable factory, then use one budgeted isolated empirical lineage only after engineering/source preflight. Do not absorb deferred #346.
+## Empirical issue-349 run
+
+Exactly one issue-owned run exists: `runs/issue-349-experiments/primary`. Current measured allocation is **519,131,136 bytes** under the 100-GB collective cap; no second run was needed. The read-only audited predecessor source was copied into this worktree's ignored vendor fixture only after SHA verification; no historical/canonical run was mutated.
+
+The first bounded neural attempt exposed two integration bugs rather than being papered over: an executable-v2 school-state decode against the legacy course, then a scheduler/autonomy mismatch after retention rejected A.IDENTITY. Both were repaired and regression-tested.
+
+Empirical causal sequence now demonstrated:
+
+1. fresh exact-checkpoint A.IDENTITY/direct evidence at parent `da50cef3617a4050c06bbd1be3dc2383299046c778774a519ad226fc8890f4a4`, optimizer step 116760, failed;
+2. source-grounded teaching option `source.direct/A.IDENTITY` / provider `source.micro.predicates/v1` was delivered with exact specimen receipts;
+3. four retained optimizer updates passed the same-grade causal retention screen, producing child `2c5664c13e13718e0a792a5f3d8a806daf2b67640a457e172110310fad653700`, step 116764; local A.IDENTITY +1, same-grade net +1, protected net 0, worst protected loss 0;
+4. an exact fresh child-checkpoint EvidenceReceipt was then recorded for A.IDENTITY/direct at step 116764. It still failed the stricter evidence obligation, proving the controller did not confuse a retained local gain with mastery;
+5. a subsequent four-step challenger was correctly rejected because its A.IDENTITY +1 was offset by A.MEMBER -1, and the durable student/AdamW remained the retained step-116764 child.
+
+Thus the empirical claim is deliberately narrow: **failure -> reroute -> source-grounded teaching -> causal retention -> truthful intervention receipt -> fresh child-checkpoint remeasurement -> safe rejection/rollback is demonstrated.** Bilqis has not learned all Ithkuil, and this run does not claim Grade-A mastery.
+
+## Remaining work
+
+The source/frontier/JIT machinery is now executable and tested, but automatic frontier expansion is still deliberately separated from admission: there is not yet a trustworthy compiler from a source candidate to a staged executable successor for arbitrary New Ithkuil semantics. When candidate work lacks that exact binding, JIT returns `SOURCE_DEVELOPMENT` instead of inventing semantics or bypassing factory admission. That is the principal remaining north-star gap. Further empirical work should continue in the same issue-owned run unless a materially useful ablation justifies the second authorized directory.
+
+Existing native-ledger incidents still apply: PM-2026-10-20-002 / RC114,RC115 / PAT084; PM-2026-10-20-003 / RC116; PM-2026-10-20-001 / RC113; PM-2026-10-19-004 worktree lifecycle.
+
+No main merge, force push, #349 close, public publication, canonical-run mutation, AdamW merge, or synthesized lineage is authorized or performed.
 
 ---
 

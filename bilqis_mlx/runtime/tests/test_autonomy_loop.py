@@ -11,6 +11,7 @@ from bilqis_mlx.factory.autonomy import (
     AutonomyActionKind, EvidenceReceipt, TeachingReceipt, compile_autonomy_plan,
     initial_evidence_ledger,
 )
+from bilqis_mlx.factory.teaching import content_digest
 from bilqis_mlx.factory.model import SourceAdapter
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.runtime.autonomy_loop import run_until_qualification
@@ -74,7 +75,7 @@ class AutonomousRuntimeLoopTests(unittest.TestCase):
         return EvidenceReceipt(
             obligation_id=work.obligation.obligation_id,
             evidence_id=f"evidence-{self.receipt_index}",
-            checkpoint_sha256="e" * 64, optimizer_step=self.receipt_index,
+            checkpoint_sha256="e" * 64, optimizer_step=0,
             cohort_sha256=sha(f"cohort-{self.receipt_index}"),
             specimen_count=work.obligation.minimum_specimens, passed=True,
         )
@@ -95,6 +96,8 @@ class AutonomousRuntimeLoopTests(unittest.TestCase):
                 root, self.release, plan=plan, ledger=ledger,
                 source_coverage_executor=source_executor,
                 learning_evidence_executor=self.evidence,
+                current_checkpoint_sha256="e" * 64,
+                current_optimizer_step=0,
                 max_steps=64,
             )
             self.assertEqual(result.action.kind, AutonomyActionKind.QUALIFICATION)
@@ -114,6 +117,8 @@ class AutonomousRuntimeLoopTests(unittest.TestCase):
                     Path(temp), self.release, plan=plan, ledger=ledger,
                     source_coverage_executor=lambda debt, current: current,
                     learning_evidence_executor=self.evidence,
+                    current_checkpoint_sha256="e" * 64,
+                    current_optimizer_step=0,
                     max_steps=4,
                 )
 
@@ -126,6 +131,8 @@ class AutonomousRuntimeLoopTests(unittest.TestCase):
                     Path(temp), self.release, plan=plan, ledger=ledger,
                     source_coverage_executor=lambda debt, current: current,
                     learning_evidence_executor=self.evidence,
+                    current_checkpoint_sha256="e" * 64,
+                    current_optimizer_step=0,
                     max_steps=1,
                 )
 
@@ -157,6 +164,20 @@ class AutonomousRuntimeLoopTests(unittest.TestCase):
                 parent = dict(checkpoint)
                 checkpoint["sha256"] = "f" * 64
                 checkpoint["optimizer_step"] += 1
+                definition = {
+                    item.capability_id: item for item in self.release.capabilities
+                }[work.capability_id]
+                provider = {
+                    item.adapter_id: item
+                    for item in self.release.source_adapters
+                }[definition.source_adapter_id]
+                coverage = {
+                    item.capability_id: item
+                    for item in self.release.coverage_plans
+                }[work.capability_id]
+                rows = ({"id": "runtime-teaching-row-1",
+                         "capability": work.capability_id,
+                         "gold": "1"},)
                 return TeachingReceipt(
                     obligation_id=work.obligation.obligation_id,
                     intervention_id="runtime-teach-1",
@@ -165,6 +186,12 @@ class AutonomousRuntimeLoopTests(unittest.TestCase):
                     parent_optimizer_step=parent["optimizer_step"],
                     checkpoint_sha256=checkpoint["sha256"],
                     optimizer_step=checkpoint["optimizer_step"],
+                    selected_provider_id=provider.adapter_id,
+                    provider_implementation_sha256=provider.implementation_sha256,
+                    specimen_ids=("runtime-teaching-row-1",),
+                    specimen_content_sha256=content_digest(rows),
+                    variation_axes=coverage.variation_axes,
+                    optimizer_step_delta=1,
                 )
 
             result = run_until_qualification(
@@ -172,6 +199,8 @@ class AutonomousRuntimeLoopTests(unittest.TestCase):
                 source_coverage_executor=lambda debt, current: current,
                 learning_evidence_executor=evidence_executor,
                 teaching_executor=teaching_executor,
+                current_checkpoint_sha256=checkpoint["sha256"],
+                current_optimizer_step=checkpoint["optimizer_step"],
                 max_steps=64,
             )
             self.assertEqual(result.action.kind, AutonomyActionKind.QUALIFICATION)

@@ -12,6 +12,7 @@ import csv
 import json
 import os
 import re
+import hashlib
 from collections import defaultdict
 from pathlib import Path
 
@@ -34,9 +35,52 @@ crosswalk=list(csv.DictReader(open(DATA/'bilqis_ithkuil_crosswalk.csv',encoding=
 def anchor_rows(root):
     out=[]
     for row in crosswalk:
-        if root in ' | '.join(row.values()):
+        # The bridge column is the only source-form identity.  Searching all
+        # cells by substring can attach a root to an unrelated gloss/URL.
+        if row.get('new_ithkuil_bridge','').strip() == root:
             out.append(f"{row['bilqis_token_id']}:{row['bilqis_token_symbol']}:{row['mapping_disposition']}")
     return out
+
+def _sha256(path):
+    digest=hashlib.sha256()
+    with path.open('rb') as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+def validate_frontier_manifest(path):
+    """Validate a generated frontier sidecar without rewriting artifacts."""
+    manifest=json.loads(Path(path).read_text(encoding='utf-8'))
+    builder=Path(__file__)
+    input_names={'lexicon_roots.csv','lexicon_root_senses.csv','lexicon_root_evidence.csv','bilqis_ithkuil_crosswalk.csv'}
+    output_names={'candidate_pool.csv','grade_map.csv','sense_candidate_pool.csv','source_inventory.csv','deferred_codec.csv','grade_rationale.csv','frontier_plan.json'}
+    if manifest.get('schema') != 'bilqis.ithkuil.frontier-manifest/v1':
+        raise ValueError('CURRICULUM_FRONTIER_MANIFEST_SCHEMA_INVALID')
+    if manifest.get('builder_file_sha256') != _sha256(builder):
+        raise ValueError('CURRICULUM_FRONTIER_BUILDER_STALE')
+    if set(manifest.get('input_files', {})) != input_names:
+        raise ValueError('CURRICULUM_FRONTIER_INPUT_SET_INVALID')
+    if set(manifest.get('output_files', {})) != output_names:
+        raise ValueError('CURRICULUM_FRONTIER_OUTPUT_SET_INVALID')
+    for name, expected in manifest['input_files'].items():
+        actual=_sha256(DATA / name)
+        if actual != expected:
+            raise ValueError(f'CURRICULUM_FRONTIER_INPUT_STALE:{name}')
+    for name, expected in manifest['output_files'].items():
+        actual=_sha256(Path(path).parent / name)
+        if actual != expected:
+            raise ValueError(f'CURRICULUM_FRONTIER_OUTPUT_STALE:{name}')
+    input_digest=hashlib.sha256(''.join(
+        f'{name}:{digest}\n' for name,digest in
+        sorted(manifest['input_files'].items())).encode()).hexdigest()
+    output_digest=hashlib.sha256(''.join(
+        f'{name}:{digest}\n' for name,digest in
+        sorted(manifest['output_files'].items())).encode()).hexdigest()
+    if manifest.get('input_digest') != input_digest:
+        raise ValueError('CURRICULUM_FRONTIER_INPUT_DIGEST_INVALID')
+    if manifest.get('output_digest') != output_digest:
+        raise ValueError('CURRICULUM_FRONTIER_OUTPUT_DIGEST_INVALID')
+    return manifest
 
 def sense_key(s):
     return (0 if s['specification']=='BSC' else 1, 0 if s['stem']=='STEM 1' else 1, len(s['sense_summary']))
@@ -638,6 +682,16 @@ with open(OUT/'grade_rationale.csv','w',newline='',encoding='utf-8') as f:
         w.writerow({'grade':g,'theme':GRADES[g][0],'root_count':12,'why_now':why,'hard_prerequisite_plane':pre,'unlocks':unlock,'status':'PROPOSED_NOT_ADMITTED'})
 
 json.dump({'grades':GRADES,'reserve':RESERVE,'grade_rationale':GRADE_RATIONALE},open(OUT/'frontier_plan.json','w',encoding='utf-8'),ensure_ascii=False,indent=2)
+_input_names=('lexicon_roots.csv','lexicon_root_senses.csv','lexicon_root_evidence.csv','bilqis_ithkuil_crosswalk.csv')
+_output_names=('candidate_pool.csv','grade_map.csv','sense_candidate_pool.csv','source_inventory.csv','deferred_codec.csv','grade_rationale.csv','frontier_plan.json')
+_input_files={name:_sha256(DATA/name) for name in _input_names}
+_output_files={name:_sha256(OUT/name) for name in _output_names}
+_output_digest=hashlib.sha256(''.join(f'{name}:{digest}\n' for name,digest in sorted(_output_files.items())).encode()).hexdigest()
+with (OUT/'frontier_manifest.json').open('w',encoding='utf-8') as _manifest_handle:
+    json.dump({'schema':'bilqis.ithkuil.frontier-manifest/v1',
+               'builder_file_sha256':_sha256(Path(__file__)),
+               'input_files':_input_files,'input_digest':hashlib.sha256(''.join(f'{name}:{digest}\n' for name,digest in sorted(_input_files.items())).encode()).hexdigest(),
+               'output_files':_output_files,'output_digest':_output_digest}, _manifest_handle, ensure_ascii=False, indent=2)
 print('core',len(core),'reserve',len(RESERVE),'root-family shortlist',len(rows),
       'sense candidates',len(sense_candidates),'source inventory',len(source_inventory),
       'codec deferred',len(deferred_codec))

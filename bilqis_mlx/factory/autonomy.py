@@ -13,7 +13,7 @@ from enum import Enum
 import hashlib
 import json
 
-from .model import FactoryRelease
+from .model import CapabilityDefinition, CoveragePlan, FactoryRelease
 
 
 def _digest(value) -> str:
@@ -137,6 +137,22 @@ class AutonomyPlan:
         return _digest(payload)
 
 
+def is_factory_release(release) -> bool:
+    from .executable_release import ExecutableFactoryRelease
+    return isinstance(release, (FactoryRelease, ExecutableFactoryRelease))
+
+
+def release_capabilities(release):
+    """Project autonomy facts from the admitted executable plan or historical v1."""
+    if isinstance(release, FactoryRelease):
+        return release.capabilities
+    return tuple(CapabilityDefinition(
+        item.capability_id, item.grade_id, item.prerequisites,
+        item.provider_id, item.oracle_id,
+        tuple(family.kind for family in item.answer_families))
+        for item in release.execution_plan.capabilities)
+
+
 def compile_autonomy_plan(
     release: FactoryRelease, composition_report: dict | None = None,
     *, projection_evidence: tuple[ProjectionEvidenceSpec, ...] = (),
@@ -150,7 +166,7 @@ def compile_autonomy_plan(
     consumers remain explicitly blocked instead of being silently omitted.
     """
     release.verify()
-    capability_ids = tuple(item.capability_id for item in release.capabilities)
+    capability_ids = tuple(item.capability_id for item in release_capabilities(release))
     if (any(not isinstance(item, ProjectionEvidenceSpec)
             for item in projection_evidence) or
             len({(item.capability_id, item.projection_id)
@@ -335,8 +351,24 @@ class TeachingReceipt:
     parent_optimizer_step: int
     checkpoint_sha256: str
     optimizer_step: int
+    # These fields are optional only so historical snapshots remain readable.
+    # New interventions are rejected by record_teaching_intervention unless all
+    # provenance is present and bound to the released construction boundary.
+    selected_provider_id: str | None = None
+    provider_implementation_sha256: str | None = None
+    specimen_ids: tuple[str, ...] = ()
+    specimen_content_sha256: str | None = None
+    variation_axes: tuple[str, ...] = ()
+    optimizer_step_delta: int | None = None
 
     def __post_init__(self) -> None:
+        # JSON state decoding yields lists; normalize them back to the durable
+        # tuple form before validating or comparing the released contract.
+        if (not isinstance(self.specimen_ids, (tuple, list)) or
+                not isinstance(self.variation_axes, (tuple, list))):
+            raise ValueError("AUTONOMY_TEACHING_RECEIPT_PROVENANCE_INVALID")
+        object.__setattr__(self, "specimen_ids", tuple(self.specimen_ids))
+        object.__setattr__(self, "variation_axes", tuple(self.variation_axes))
         if (not self.obligation_id or not self.intervention_id or
                 not self.teaching_option_id):
             raise ValueError("AUTONOMY_TEACHING_RECEIPT_IDENTITY_INVALID")
@@ -350,6 +382,32 @@ class TeachingReceipt:
                 self.optimizer_step <= self.parent_optimizer_step or
                 self.checkpoint_sha256 == self.parent_checkpoint_sha256):
             raise ValueError("AUTONOMY_TEACHING_RECEIPT_NO_CHECKPOINT_PROGRESS")
+        if self.optimizer_step_delta is not None and (
+                type(self.optimizer_step_delta) is not int or
+                self.optimizer_step_delta < 1 or
+                self.optimizer_step_delta !=
+                self.optimizer_step - self.parent_optimizer_step):
+            raise ValueError("AUTONOMY_TEACHING_RECEIPT_STEP_DELTA_INVALID")
+        if ((self.selected_provider_id is not None and
+             (not isinstance(self.selected_provider_id, str) or
+              not self.selected_provider_id)) or
+                (self.provider_implementation_sha256 is not None and
+                 (not isinstance(self.provider_implementation_sha256, str) or
+                  len(self.provider_implementation_sha256) != 64 or
+                  any(char not in "0123456789abcdef"
+                      for char in self.provider_implementation_sha256))) or
+                len(set(self.specimen_ids)) != len(self.specimen_ids) or
+                any(not isinstance(item, str) or not item
+                    for item in self.specimen_ids) or
+                (self.specimen_content_sha256 is not None and
+                 (not isinstance(self.specimen_content_sha256, str) or
+                  len(self.specimen_content_sha256) != 64 or
+                  any(char not in "0123456789abcdef"
+                      for char in self.specimen_content_sha256))) or
+                len(set(self.variation_axes)) != len(self.variation_axes) or
+                any(not isinstance(item, str) or not item
+                    for item in self.variation_axes)):
+            raise ValueError("AUTONOMY_TEACHING_RECEIPT_PROVENANCE_INVALID")
 
 
 @dataclass(frozen=True)
@@ -409,15 +467,20 @@ class TeachingWorkItem:
 
 
 def _capability_definitions(release: FactoryRelease):
-    return {item.capability_id: item for item in release.capabilities}
+    return {item.capability_id: item for item in release_capabilities(release)}
 
 
 def _course_capabilities(release: FactoryRelease):
-    return release.course.capability_map
+    return (release.course.capability_map if isinstance(release, FactoryRelease)
+            else release.execution_plan.capability_map)
 
 
 def _coverage_by_capability(release: FactoryRelease):
-    return {item.capability_id: item for item in release.coverage_plans}
+    if isinstance(release, FactoryRelease):
+        return {item.capability_id: item for item in release.coverage_plans}
+    return {item.capability_id: CoveragePlan(
+        item.capability_id, item.variation_axes, item.exam_item_count)
+        for item in release.execution_plan.capabilities}
 
 
 def obligations_for_capability(
@@ -512,7 +575,7 @@ def _obligation_map(
 ) -> dict[str, EvidenceObligation]:
     obligations = tuple(
         obligation
-        for capability in release.capabilities
+        for capability in release_capabilities(release)
         for obligation in obligations_for_capability(
             release, capability.capability_id, plan=plan)
     )
@@ -533,7 +596,7 @@ def initial_evidence_ledger(
 def _validate_ledger(
     release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
 ) -> dict[str, EvidenceObligation]:
-    if not isinstance(release, FactoryRelease) or not isinstance(ledger, EvidenceLedger):
+    if not is_factory_release(release) or not isinstance(ledger, EvidenceLedger):
         raise TypeError("AUTONOMY_INVALID_INPUT")
     if ledger.factory_release_sha256 != release.release_sha256:
         raise ValueError("AUTONOMY_RELEASE_MISMATCH")
@@ -561,28 +624,59 @@ def _latest_interventions(ledger: EvidenceLedger) -> dict[str, TeachingReceipt]:
     return latest
 
 
+def _validate_current_context(
+    checkpoint_sha256: str | None, optimizer_step: int | None,
+) -> tuple[str, int] | None:
+    """Validate an explicit causal checkpoint context, if a caller supplies one."""
+    if checkpoint_sha256 is None and optimizer_step is None:
+        return None
+    if (not isinstance(checkpoint_sha256, str) or len(checkpoint_sha256) != 64 or
+            any(char not in "0123456789abcdef" for char in checkpoint_sha256) or
+            type(optimizer_step) is not int or optimizer_step < 0):
+        raise ValueError("AUTONOMY_CURRENT_CHECKPOINT_CONTEXT_INVALID")
+    return checkpoint_sha256, optimizer_step
+
+
+def _receipt_is_current(
+    receipt: EvidenceReceipt, current: tuple[str, int] | None,
+) -> bool:
+    return current is None or (
+        receipt.checkpoint_sha256 == current[0] and
+        receipt.optimizer_step == current[1])
+
+
 def closed_obligations(
     release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
+    current_checkpoint_sha256: str | None = None,
+    current_optimizer_step: int | None = None,
 ) -> tuple[str, ...]:
     obligations = _validate_ledger(release, ledger, plan=plan)
+    current = _validate_current_context(
+        current_checkpoint_sha256, current_optimizer_step)
     latest = _latest_receipts(ledger)
     return tuple(
         identity for identity in obligations
         if identity in latest and latest[identity].passed and
-        latest[identity].specimen_count >= obligations[identity].minimum_specimens
+        latest[identity].specimen_count >= obligations[identity].minimum_specimens and
+        _receipt_is_current(latest[identity], current)
     )
 
 
 def evidence_complete_capabilities(
     release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
+    current_checkpoint_sha256: str | None = None,
+    current_optimizer_step: int | None = None,
 ) -> tuple[str, ...]:
     resolved_plan = _resolve_plan(release, plan)
     obligations = _validate_ledger(release, ledger, plan=resolved_plan)
-    closed = set(closed_obligations(release, ledger, plan=resolved_plan))
+    closed = set(closed_obligations(
+        release, ledger, plan=resolved_plan,
+        current_checkpoint_sha256=current_checkpoint_sha256,
+        current_optimizer_step=current_optimizer_step))
     blocked = set(resolved_plan.blocked_capabilities)
     mastered: list[str] = []
     mastered_set: set[str] = set()
-    for definition in release.capabilities:
+    for definition in release_capabilities(release):
         if definition.capability_id in blocked:
             continue
         if not set(definition.prerequisites) <= mastered_set:
@@ -600,6 +694,8 @@ def evidence_complete_capabilities(
 def record_evidence(
     release: FactoryRelease, ledger: EvidenceLedger, receipt: EvidenceReceipt, *,
     plan: AutonomyPlan | None = None,
+    current_checkpoint_sha256: str | None = None,
+    current_optimizer_step: int | None = None,
 ) -> EvidenceLedger:
     obligations = _validate_ledger(release, ledger, plan=plan)
     if not isinstance(receipt, EvidenceReceipt):
@@ -611,6 +707,10 @@ def record_evidence(
         raise ValueError("AUTONOMY_INSUFFICIENT_EVIDENCE_SPECIMENS")
     if receipt.evidence_id in {item.evidence_id for item in ledger.receipts}:
         raise ValueError("AUTONOMY_DUPLICATE_EVIDENCE_RECEIPT")
+    current = _validate_current_context(
+        current_checkpoint_sha256, current_optimizer_step)
+    if current is not None and not _receipt_is_current(receipt, current):
+        raise ValueError("AUTONOMY_EVIDENCE_CURRENT_CHECKPOINT_MISMATCH")
     return EvidenceLedger(
         ledger.factory_release_sha256, ledger.autonomy_plan_sha256,
         (*ledger.receipts, receipt), ledger.interventions)
@@ -619,6 +719,8 @@ def record_evidence(
 def record_teaching_intervention(
     release: FactoryRelease, ledger: EvidenceLedger, receipt: TeachingReceipt, *,
     plan: AutonomyPlan | None = None,
+    current_checkpoint_sha256: str | None = None,
+    current_optimizer_step: int | None = None,
 ) -> EvidenceLedger:
     obligations = _validate_ledger(release, ledger, plan=plan)
     if not isinstance(receipt, TeachingReceipt):
@@ -632,11 +734,30 @@ def record_teaching_intervention(
     if (receipt.parent_checkpoint_sha256 != latest.checkpoint_sha256 or
             receipt.parent_optimizer_step != latest.optimizer_step):
         raise ValueError("AUTONOMY_TEACHING_PARENT_EVIDENCE_MISMATCH")
+    current = _validate_current_context(
+        current_checkpoint_sha256, current_optimizer_step)
+    if current is not None and (
+            receipt.parent_checkpoint_sha256 != current[0] or
+            receipt.parent_optimizer_step != current[1]):
+        raise ValueError("AUTONOMY_TEACHING_CURRENT_CHECKPOINT_MISMATCH")
     work = _work_item(
         release, obligation,
         evidence_complete_capabilities(release, ledger, plan=plan))
     if receipt.teaching_option_id not in work.teaching_option_ids:
         raise ValueError("AUTONOMY_TEACHING_OPTION_NOT_RELEASED")
+    definition = _capability_definitions(release)[obligation.capability_id]
+    provider = {item.adapter_id: item for item in release.source_adapters}[definition.source_adapter_id]
+    coverage = _coverage_by_capability(release)[obligation.capability_id]
+    if (not receipt.selected_provider_id or
+            not receipt.provider_implementation_sha256 or
+            not receipt.specimen_ids or not receipt.specimen_content_sha256 or
+            not receipt.variation_axes or receipt.optimizer_step_delta is None):
+        raise ValueError("AUTONOMY_TEACHING_PROVENANCE_UNPROVEN")
+    if (receipt.selected_provider_id != provider.adapter_id or
+            receipt.provider_implementation_sha256 != provider.implementation_sha256):
+        raise ValueError("AUTONOMY_TEACHING_PROVIDER_MISMATCH")
+    if receipt.variation_axes != coverage.variation_axes:
+        raise ValueError("AUTONOMY_TEACHING_VARIATION_AXES_MISMATCH")
     if receipt.intervention_id in {
             item.intervention_id for item in ledger.interventions}:
         raise ValueError("AUTONOMY_DUPLICATE_TEACHING_RECEIPT")
@@ -650,8 +771,10 @@ def _work_item(
     mastered: tuple[str, ...],
 ) -> CurriculumWorkItem:
     definition = _capability_definitions(release)[obligation.capability_id]
-    options = tuple(item.option_id for item in release.teaching_options
-                    if item.capability_id == obligation.capability_id)
+    options = (tuple(item.option_id for item in release.teaching_options
+                     if item.capability_id == obligation.capability_id)
+               if isinstance(release, FactoryRelease) else
+               release.execution_plan.capability_map[obligation.capability_id].teaching_option_ids)
     return CurriculumWorkItem(
         capability_id=obligation.capability_id,
         obligation=obligation,
@@ -663,13 +786,21 @@ def _work_item(
 
 def next_work(
     release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
+    current_checkpoint_sha256: str | None = None,
+    current_optimizer_step: int | None = None,
 ) -> CurriculumWorkItem | None:
     """Return the next legal semantic proof target, never a training command."""
     obligations = _validate_ledger(release, ledger, plan=plan)
     resolved_plan = _resolve_plan(release, plan)
     latest = _latest_receipts(ledger)
-    closed = set(closed_obligations(release, ledger, plan=resolved_plan))
-    mastered = evidence_complete_capabilities(release, ledger, plan=resolved_plan)
+    closed = set(closed_obligations(
+        release, ledger, plan=resolved_plan,
+        current_checkpoint_sha256=current_checkpoint_sha256,
+        current_optimizer_step=current_optimizer_step))
+    mastered = evidence_complete_capabilities(
+        release, ledger, plan=resolved_plan,
+        current_checkpoint_sha256=current_checkpoint_sha256,
+        current_optimizer_step=current_optimizer_step)
     mastered_set = set(mastered)
     definitions = _capability_definitions(release)
 
@@ -688,7 +819,7 @@ def next_work(
             return _work_item(release, obligation, mastered)
 
     blocked = set(resolved_plan.blocked_capabilities)
-    for definition in release.capabilities:
+    for definition in release_capabilities(release):
         if definition.capability_id in blocked:
             continue
         if definition.capability_id in mastered_set:
@@ -737,6 +868,8 @@ class AutonomyAction:
 
 def next_action(
     release: FactoryRelease, ledger: EvidenceLedger, *, plan: AutonomyPlan | None = None,
+    current_checkpoint_sha256: str | None = None,
+    current_optimizer_step: int | None = None,
 ) -> AutonomyAction:
     """Route one autonomous iteration without performing the selected work."""
     _validate_ledger(release, ledger, plan=plan)
@@ -745,10 +878,16 @@ def next_action(
     if debt is not None:
         return AutonomyAction(AutonomyActionKind.SOURCE_COVERAGE,
                               source_coverage_debt=debt)
-    work = next_work(release, ledger, plan=resolved_plan)
+    work = next_work(
+        release, ledger, plan=resolved_plan,
+        current_checkpoint_sha256=current_checkpoint_sha256,
+        current_optimizer_step=current_optimizer_step)
     if work is not None:
         latest_failed = _latest_receipts(ledger).get(work.obligation.obligation_id)
-        if latest_failed is not None and not latest_failed.passed:
+        current = _validate_current_context(
+            current_checkpoint_sha256, current_optimizer_step)
+        if (latest_failed is not None and not latest_failed.passed and
+                _receipt_is_current(latest_failed, current)):
             latest_intervention = _latest_interventions(ledger).get(
                 work.obligation.obligation_id)
             if (latest_intervention is None or
@@ -788,3 +927,64 @@ def rebind_evidence_ledger(
         ledger.receipts, ledger.interventions)
     _validate_ledger(release, rebound, plan=new_plan)
     return rebound
+
+
+def reconcile_successor_evidence(
+    previous_release, current_release, ledger: EvidenceLedger, *,
+    previous_plan: AutonomyPlan, current_plan: AutonomyPlan,
+) -> EvidenceLedger:
+    """Carry only unchanged semantic/source/answer/coverage evidence forward.
+
+    Release identity is not evidence identity.  A successor may retain learner
+    receipts for a capability only when its semantic declaration and the
+    source, answer-schema, and coverage projections are byte-identical and the
+    concrete learner obligation itself is unchanged.  Teaching interventions
+    remain in the immutable predecessor snapshot; they are not re-authorized
+    across a release boundary.
+    """
+    from .executable_release import ExecutableFactoryRelease
+
+    if (not isinstance(previous_release, ExecutableFactoryRelease) or
+            not isinstance(current_release, ExecutableFactoryRelease)):
+        raise TypeError("AUTONOMY_SUCCESSOR_RECONCILIATION_REQUIRES_V2")
+    previous_release.verify()
+    current_release.verify_successor_of(previous_release)
+    _validate_ledger(previous_release, ledger, plan=previous_plan)
+    if current_plan.factory_release_sha256 != current_release.release_sha256:
+        raise ValueError("AUTONOMY_PLAN_RELEASE_MISMATCH")
+
+    old_semantics = previous_release.curriculum.capability_map
+    new_semantics = current_release.curriculum.capability_map
+    old_projection = {
+        item.capability_id: item
+        for item in previous_release.execution_plan.capability_projection_digests
+    }
+    new_projection = {
+        item.capability_id: item
+        for item in current_release.execution_plan.capability_projection_digests
+    }
+    unchanged_capabilities = {
+        capability_id
+        for capability_id in set(old_semantics) & set(new_semantics)
+        if old_semantics[capability_id] == new_semantics[capability_id]
+        and all(
+            getattr(old_projection[capability_id], field)
+            == getattr(new_projection[capability_id], field)
+            for field in ("source", "answer_schema", "coverage")
+        )
+    }
+    old_obligations = _obligation_map(previous_release, previous_plan)
+    new_obligations = _obligation_map(current_release, current_plan)
+    carried = tuple(
+        receipt for receipt in ledger.receipts
+        if (receipt.obligation_id in old_obligations
+            and receipt.obligation_id in new_obligations
+            and old_obligations[receipt.obligation_id]
+            == new_obligations[receipt.obligation_id]
+            and old_obligations[receipt.obligation_id].capability_id
+            in unchanged_capabilities)
+    )
+    reconciled = EvidenceLedger(
+        current_release.release_sha256, current_plan.digest(), carried, ())
+    _validate_ledger(current_release, reconciled, plan=current_plan)
+    return reconciled

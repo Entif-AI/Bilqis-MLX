@@ -70,6 +70,33 @@ class AutonomousCurriculumPlannerTests(unittest.TestCase):
             passed=passed,
         )
 
+    def teaching_receipt(self, failed, *, intervention_id="teach-1",
+                         teaching_option_id=None, checkpoint_sha256="f" * 64,
+                         optimizer_step=None, **overrides):
+        adapter = self.release.source_adapters[0]
+        coverage = next(item for item in self.release.coverage_plans
+                        if item.capability_id == failed.obligation_id.split("/", 1)[0])
+        values = {
+            "obligation_id": failed.obligation_id,
+            "intervention_id": intervention_id,
+            "teaching_option_id": teaching_option_id or
+                "source.direct/" + failed.obligation_id.split("/", 1)[0],
+            "parent_checkpoint_sha256": failed.checkpoint_sha256,
+            "parent_optimizer_step": failed.optimizer_step,
+            "checkpoint_sha256": checkpoint_sha256,
+            "optimizer_step": (failed.optimizer_step + 1 if optimizer_step is None
+                               else optimizer_step),
+            "selected_provider_id": adapter.adapter_id,
+            "provider_implementation_sha256": adapter.implementation_sha256,
+            "specimen_ids": ("teaching-specimen-" + intervention_id,),
+            "specimen_content_sha256": _sha("teaching-content-" + intervention_id),
+            "variation_axes": coverage.variation_axes,
+            "optimizer_step_delta": 1,
+        }
+        values.update(overrides)
+        from bilqis_mlx.factory.autonomy import TeachingReceipt
+        return TeachingReceipt(**values)
+
     def close_current_capability(self, ledger):
         capability = next_work(self.release, ledger).capability_id
         while True:
@@ -112,6 +139,47 @@ class AutonomousCurriculumPlannerTests(unittest.TestCase):
         first = next_work(self.release, ledger)
         second = next_work(self.release, ledger)
         self.assertEqual(first, second)
+
+    def test_explicit_current_context_excludes_stale_mastery(self):
+        ledger = initial_evidence_ledger(self.release)
+        first = next_work(self.release, ledger)
+        ledger = record_evidence(self.release, ledger, self.receipt(first.obligation))
+        self.assertEqual(
+            evidence_complete_capabilities(self.release, ledger), ("A.BASE",))
+        self.assertEqual(
+            evidence_complete_capabilities(
+                self.release, ledger,
+                current_checkpoint_sha256="f" * 64,
+                current_optimizer_step=999),
+            (),
+        )
+        self.assertEqual(
+            next_work(
+                self.release, ledger, current_checkpoint_sha256="f" * 64,
+                current_optimizer_step=999).capability_id,
+            "A.BASE",
+        )
+
+    def test_recording_with_explicit_context_rejects_another_checkpoint(self):
+        ledger = initial_evidence_ledger(self.release)
+        work = next_work(self.release, ledger)
+        with self.assertRaisesRegex(ValueError, "EVIDENCE_CURRENT_CHECKPOINT_MISMATCH"):
+            record_evidence(
+                self.release, ledger, self.receipt(work.obligation),
+                current_checkpoint_sha256="f" * 64,
+                current_optimizer_step=1)
+
+    def test_explicit_current_context_does_not_reteach_a_stale_failure(self):
+        ledger = initial_evidence_ledger(self.release)
+        work = next_work(self.release, ledger)
+        ledger = record_evidence(
+            self.release, ledger, self.receipt(work.obligation, passed=False))
+        action = next_action(
+            self.release, ledger,
+            current_checkpoint_sha256="f" * 64,
+            current_optimizer_step=999)
+        self.assertEqual(action.kind, AutonomyActionKind.LEARNING_EVIDENCE)
+        self.assertEqual(action.evidence_work.obligation, work.obligation)
 
     def test_composition_evidence_is_required_for_evidence_complete_state(self):
         ledger = initial_evidence_ledger(self.release)
@@ -420,15 +488,8 @@ class TeachingInterventionTests(AutonomousCurriculumPlannerTests):
         self.assertEqual(action.teaching_work.failed_evidence, failed)
         self.assertEqual(action.teaching_work.capability_id, "A.BASE")
 
-        intervention = TeachingReceipt(
-            obligation_id=failed.obligation_id,
-            intervention_id="teach-1",
-            teaching_option_id=action.teaching_work.teaching_option_ids[0],
-            parent_checkpoint_sha256=failed.checkpoint_sha256,
-            parent_optimizer_step=failed.optimizer_step,
-            checkpoint_sha256="f" * 64,
-            optimizer_step=failed.optimizer_step + 1,
-        )
+        intervention = self.teaching_receipt(
+            failed, teaching_option_id=action.teaching_work.teaching_option_ids[0])
         ledger = record_teaching_intervention(
             self.release, ledger, intervention)
         action = next_action(self.release, ledger)
@@ -472,14 +533,42 @@ class TeachingInterventionTests(AutonomousCurriculumPlannerTests):
         failed = self.receipt(work.obligation, passed=False)
         ledger = record_evidence(self.release, ledger, failed)
         action = next_action(self.release, ledger)
-        receipt = TeachingReceipt(
-            obligation_id=failed.obligation_id,
-            intervention_id="teach-unreleased",
-            teaching_option_id="fixture.not-released",
-            parent_checkpoint_sha256=failed.checkpoint_sha256,
-            parent_optimizer_step=failed.optimizer_step,
-            checkpoint_sha256="f" * 64,
-            optimizer_step=failed.optimizer_step + 1,
-        )
+        receipt = self.teaching_receipt(
+            failed, intervention_id="teach-unreleased",
+            teaching_option_id="fixture.not-released")
         with self.assertRaisesRegex(ValueError, "TEACHING_OPTION_NOT_RELEASED"):
             record_teaching_intervention(self.release, ledger, receipt)
+
+    def test_new_teaching_receipt_requires_delivered_provenance(self):
+        from bilqis_mlx.factory.autonomy import record_teaching_intervention
+        ledger = initial_evidence_ledger(self.release)
+        work = next_work(self.release, ledger)
+        failed = self.receipt(work.obligation, passed=False)
+        ledger = record_evidence(self.release, ledger, failed)
+        receipt = self.teaching_receipt(
+            failed, specimen_ids=(), specimen_content_sha256=None,
+            variation_axes=(), optimizer_step_delta=None)
+        with self.assertRaisesRegex(ValueError, "TEACHING_PROVENANCE_UNPROVEN"):
+            record_teaching_intervention(self.release, ledger, receipt)
+
+    def test_teaching_receipt_rejects_provider_or_axis_mutation(self):
+        from bilqis_mlx.factory.autonomy import record_teaching_intervention
+        ledger = initial_evidence_ledger(self.release)
+        work = next_work(self.release, ledger)
+        failed = self.receipt(work.obligation, passed=False)
+        ledger = record_evidence(self.release, ledger, failed)
+        with self.assertRaisesRegex(ValueError, "TEACHING_PROVIDER_MISMATCH"):
+            record_teaching_intervention(
+                self.release, ledger,
+                self.teaching_receipt(failed, selected_provider_id="unbound"))
+        with self.assertRaisesRegex(ValueError, "TEACHING_VARIATION_AXES_MISMATCH"):
+            record_teaching_intervention(
+                self.release, ledger,
+                self.teaching_receipt(failed, variation_axes=("fresh-seed",)))
+
+    def test_teaching_receipt_rejects_incorrect_step_delta(self):
+        from bilqis_mlx.factory.autonomy import TeachingReceipt
+        failed = self.receipt(next_work(self.release, initial_evidence_ledger(self.release)).obligation,
+                              passed=False)
+        with self.assertRaisesRegex(ValueError, "STEP_DELTA_INVALID"):
+            self.teaching_receipt(failed, optimizer_step_delta=2)

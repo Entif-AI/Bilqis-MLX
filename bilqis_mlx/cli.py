@@ -501,6 +501,9 @@ def parse_args(argv=None):
                            help="Explicitly authorizes actual optimizer steps by the human operator")
             p.add_argument("--autonomous-curriculum", action="store_true",
                            help="After --human-run authorization, autonomously measure, teach, and remeasure factory evidence while preserving the school scheduler")
+            p.add_argument(
+                "--issue-349-experiment-root", type=Path,
+                help="Register/enforce this run under issue #349's <=2-run, 100-GB collective experiment custody root")
             p.add_argument("--minutes",type=int,default=90)
             p.add_argument("--steps-per-visit",type=int,default=16)
             p.add_argument("--max-visits",type=int,default=0,
@@ -664,6 +667,32 @@ def _main(args):
             legacy_root, original_checkpoint = _source_paths(args.legacy_code_root, args.champion_checkpoint)
             trace_path, timing_context = _timing_context(args)
             with timing_context:
+                experiment_budget_guard = None
+                if args.issue_349_experiment_root is not None:
+                    from .runtime.experiment_runs import ExperimentRunBudget
+                    root = args.issue_349_experiment_root.expanduser().resolve()
+                    target = args.run_dir.expanduser().resolve()
+                    if target.parent != root:
+                        raise ValueError(
+                            "ISSUE349_EXPERIMENT_RUN_MUST_BE_DIRECT_CHILD")
+                    owner = ExperimentRunBudget(root)
+                    if args.resume:
+                        owner.register(target)
+                    else:
+                        if target.exists():
+                            owner.register(target)
+                            unexpected = tuple(
+                                entry.name for entry in target.iterdir()
+                                if entry.name != ".experiment-run.json")
+                            if unexpected:
+                                raise ValueError(
+                                    "ISSUE349_EXISTING_RUN_REQUIRES_RESUME")
+                            owner.assert_can_allocate(600_000_000)
+                        else:
+                            owner.create(
+                                target.name, required_bytes=600_000_000)
+                    owner.assert_within_budget()
+                    experiment_budget_guard = owner.assert_can_allocate
                 result = operate(
                     args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
                     resume=args.resume, minutes=args.minutes,
@@ -684,7 +713,8 @@ def _main(args):
                     source_prefetch_workers=args.source_prefetch_workers,
                     flash_mode=args.flash_mode,
                     boolean_association_bridge=args.boolean_association_bridge,
-                    autonomous_curriculum=args.autonomous_curriculum)
+                    autonomous_curriculum=args.autonomous_curriculum,
+                    experiment_budget_guard=experiment_budget_guard)
             if trace_path is not None:
                 result["timing_trace_file"] = str(trace_path)
         if board is not None:
