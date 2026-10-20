@@ -1,3 +1,21 @@
+# Issue349 autonomous JIT Ithkuil execution | 2026-10-20
+
+Authority: https://github.com/socr8s/private-ip/issues/349 (#349 OPEN); governing https://github.com/socr8s/private-ip/issues/336 (#336 OPEN, IPR-0220). Both remain open. Protected/private checkpoint only.
+
+Branch `codex/349-autonomous-jit-ithkuil-20261020`, hidden worktree `/Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020`. Base main `686438848a4644861febbf11d1b426f770ecb795`; factory history `d702822fd4cd35c153d84894b8f7c6db0ff4983f` merged at `178e9509b73e62533efd376b035886768b7eda27`; D-O history `d425e91c831a1a923680ee83fdb5bca9cdf49371` incorporated by this merge. Use `git rev-parse HEAD` and exact remote readback for successor HEAD.
+
+Completed: manually reconciled factory v2 scheduler/trainer with current-main championship and fixed-frontier recovery; retained newer SPEC0002 rev10; moved historical frontier recovery to compatibility and research staircase declarations to profiles. Exact-scope scheduler and v2 fixed-frontier consumer regressions reproduced red then passed. Focused integration129:128 passed,1 expected skip; source3/3. Factory architecture/closure guards pass. Untouched main baseline881:803 passed,13 failures,65 skips, including9 missing historical run-fixture errors,1 spawn test-loader error and3 telemetry assertions. Full branch acceptance remains pending.
+
+Provisional/uncommitted work: current-checkpoint autonomy evidence, actual teaching provenance, experiment budget, source frontier manifest. Remaining: v2 autonomy union, typed candidate frontier/JIT proposals, scoped reconciliation, bounded owner recovery, actual experiment integration and empirical proof. No learned mastery or whole-repository-green claim.
+
+New native-ledger incidents: PM-2026-10-20-002 / RC114,RC115 / PAT084 (stale prerequisite authority and unproven intervention attribution); PM-2026-10-20-003 / RC116 (v2 downstream schema/scope consumer migration). Existing PM-2026-10-20-001 / RC113 recovery doctrine and PM-2026-10-19-004 worktree lifecycle still apply.
+
+Human-student boundary: all existing canonical/historical runs and their matching AdamW remain read-only. Issue349 explicitly authorizes agent optimizer work only in at most TWO NEW issue-owned isolated experiment directories, combined measured use<=100GB; none created yet. No main merge, force push, issue close, public publication or neural update has occurred in this run.
+
+Next permitted action: commit/test frontier and evidence units, wire them through the single executable factory, then use one budgeted isolated empirical lineage only after engineering/source preflight. Do not absorb deferred #346.
+
+---
+
 # CURRENT: championship conformance repair queued after durable authority capture (2026-10-19)
 
 **Read this section first. It supersedes conflicting championship instructions below while preserving them as history.**

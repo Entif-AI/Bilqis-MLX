@@ -228,5 +228,3 @@ def _measure_debt_admission_boundary(mx, run_dir, receipt, manifest, course,
         "source_exam_plane": "DEBT_ADMISSION_BOUNDARY",
         "scores": scores,
     }}
-
-
