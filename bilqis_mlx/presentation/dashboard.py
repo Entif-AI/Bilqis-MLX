@@ -6,6 +6,7 @@ score exams, influence teacher rewards, or touch neural state and checkpoints.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TABLES
@@ -83,12 +84,23 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
                        redraw=False)
     board.push("system", {"kind": "RESTART", "detail": "Saved run: train --human-run --resume"}, redraw=False)
     board.log_hint = str(run_dir / "events.jsonl")
+    # A detached observer must resume at the byte immediately after the last
+    # event actually consumed, not a later stat().st_size. Otherwise events
+    # appended during the initial replay can vanish between snapshot and tail.
+    board.journal_offset = 0
+    board.journal_identity = None
     events = run_dir / "events.jsonl"
     if events.exists():
         # Bounded visual history, streaming replay: no whole-log materialization
         # as the school eventually expands through many letter grades.
-        with events.open(encoding="utf-8") as log:
-            for line in log:
+        with events.open("rb") as log:
+            identity = os.fstat(log.fileno())
+            board.journal_identity = (identity.st_dev, identity.st_ino)
+            while line := log.readline():
+                if not line.endswith(b"\n"):
+                    # Preserve a partially appended JSON line for the follower.
+                    break
+                board.journal_offset = log.tell()
                 if line.strip():
                     try:
                         ingest(board, json.loads(line))
