@@ -70,6 +70,7 @@ from .profiles.school import (
 )
 from .profiles.catalog import (
     next_numeric_scope_profile,
+    numeric_scope_profile,
     numeric_row_in_scope,
     numeric_entry_transition,
 )
@@ -5047,6 +5048,25 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         while True:
             if experiment_budget_guard is not None:
                 experiment_budget_guard(600_000_000)
+            if numeric_staircase:
+                from .numeric_staircase import INITIAL_MAXIMUM, FINAL_MAXIMUM
+            if (numeric_staircase and
+                    receipt.get("numeric_maximum", 0) > FINAL_MAXIMUM):
+                admitted_v2 = _require_executable_factory_admission(
+                    run_dir, receipt, graph)
+                active_program = schedule_program_from_executable_release(
+                    admitted_v2)
+                active_school = _state_from_json(
+                    receipt["school"], active_program)
+                if active_school.grade == active_program.grades[-1].id:
+                    receipt, course, executable_release, schedule_program = (
+                        _adopt_executable_profile(
+                            run_dir,
+                            {**receipt,
+                             "numeric_scope_final_maximum": FINAL_MAXIMUM},
+                            course_a, source_root, graph,
+                            numeric_scope_profile(
+                                admitted_v2, INITIAL_MAXIMUM)))
             final_numeric_scope = receipt.get("numeric_scope_final_maximum")
             if final_numeric_scope is not None:
                 admitted_v2 = _require_executable_factory_admission(
