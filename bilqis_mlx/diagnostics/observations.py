@@ -127,6 +127,13 @@ class ExamObservation:
         return aggregate_capabilities(letter, group)
 
 
+def _raise_exam_custody_mismatch(cause: ValueError | None = None) -> None:
+    error = ValueError("DIAGNOSTIC_EXAM_CUSTODY_MISMATCH")
+    if cause is None:
+        raise error
+    raise error from cause
+
+
 def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
     """Fail closed on imperfect source custody; no inference or teacher mutation.
 
@@ -148,7 +155,7 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
             cohort.get("generator_version") != last_exam.get("generator_version") or
             type(last_exam.get("optimizer_step")) is not int or
             last_exam["optimizer_step"] < 0):
-        raise ValueError("DIAGNOSTIC_EXAM_CUSTODY_MISMATCH")
+        _raise_exam_custody_mismatch()
     rows = cohort.get("rows")
     if not isinstance(rows, list) or not rows or any(not isinstance(r, dict) for r in rows):
         raise ValueError("DIAGNOSTIC_COHORT_ROWS_MISSING")
@@ -161,7 +168,7 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
     except ValueError as exc:
         if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
             raise ValueError("DIAGNOSTIC_COHORT_CONTENT_DRIFT") from exc
-        raise ValueError("DIAGNOSTIC_EXAM_CUSTODY_MISMATCH") from exc
+        _raise_exam_custody_mismatch(exc)
     if any(not ((r.get("answer_kind") == "binary" and r.get("gold") in ("TRUE", "FALSE")) or
                (r.get("answer_kind") == "numeric_active" and isinstance(r.get("gold"), str)
                 and r["gold"].isascii() and r["gold"].isdecimal()) or
@@ -389,6 +396,79 @@ def _require_checkpoint_progression(step: int, student_sha: str,
         raise ValueError("DIAGNOSTIC_SAME_STEP_CHECKPOINT_CONFLICT")
 
 
+def _history_event_selected(event: dict, grade: str | None,
+                            rubric_sha256: str | None,
+                            generator_version: str | None) -> bool:
+    if event.get("event") not in (
+            "GRADE_A_LIVE_EXAM_COMMITTED",
+            "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED",
+            "SCHOOL_LIVE_EXAM_COMMITTED"):
+        return False
+    if grade is not None and event.get("grade") != grade:
+        return False
+    if rubric_sha256 is None:
+        return True
+    declared_rubric = event.get("rubric")
+    declared_generator = event.get("generator_version")
+    complete_header = (
+        isinstance(declared_rubric, str) and bool(declared_rubric) and
+        isinstance(declared_generator, str) and bool(declared_generator))
+    return not (
+        complete_header and
+        (declared_rubric != rubric_sha256 or
+         declared_generator != generator_version))
+
+
+def _verify_history_event_outbox(receipt: dict, event: dict,
+                                 observation: ExamObservation) -> ExamObservation:
+    if "delivery_outbox" not in receipt:
+        return observation
+    from ..trainer import _with_delivery_outbox
+    outbox = receipt["delivery_outbox"]
+    if not isinstance(outbox, list) or any(not isinstance(item, dict) for item in outbox):
+        raise ValueError("DIAGNOSTIC_EVENT_OUTBOX_CONFLICT")
+    expected = _with_delivery_outbox(receipt, tuple(
+        {key: value for key, value in item.items() if key != "event_id"}
+        for item in outbox))["delivery_outbox"]
+    if expected != outbox or outbox.count(event) != 1:
+        raise ValueError("DIAGNOSTIC_EVENT_OUTBOX_CONFLICT")
+    return replace(observation, event_outbox_verified=True)
+
+
+def _history_event_matches_observation(event: dict, observation: ExamObservation) -> bool:
+    scores = {
+        cap.capability: {"correct": cap.correct, "total": cap.total}
+        for cap in observation.capabilities
+    }
+    return (
+        observation.cohort_sha256 == event.get("cohort_sha256") and
+        observation.student_sha256 == event.get("student_sha256") and
+        observation.optimizer_step == event.get("optimizer_step") and
+        observation.generator_version == event.get("generator_version") and
+        observation.rubric_sha256 == event.get("rubric") and
+        scores == event.get("scores"))
+
+
+def _load_verified_history_event(root: Path, event: dict, run_id: str | None,
+                                 last_generation: int):
+    generation = event.get("generation")
+    if type(generation) is not int or generation < 0:
+        raise ValueError("DIAGNOSTIC_EVENT_GENERATION_DRIFT")
+    if generation <= last_generation:
+        raise ValueError("DIAGNOSTIC_NON_MONOTONIC_EVENT_HISTORY")
+    saved = root / "states" / f"{generation:07d}.json"
+    observation = load_saved_exam(root, state_file=saved)
+    from ..state_archive import read_generation
+    receipt = read_generation(root, generation)
+    if (not receipt.get("run_id") or
+            (run_id is not None and receipt["run_id"] != run_id)):
+        raise ValueError("DIAGNOSTIC_EVENT_RUN_CONFLICT")
+    observation = _verify_history_event_outbox(receipt, event, observation)
+    if not _history_event_matches_observation(event, observation):
+        raise ValueError("DIAGNOSTIC_EVENT_STATE_CONFLICT")
+    return generation, observation, receipt["run_id"]
+
+
 def _append_verified_exams(root: Path, lines, grade, observations, files,
                            last_generation: int = -1, *,
                            rubric_sha256: str | None = None,
@@ -402,57 +482,11 @@ def _append_verified_exams(root: Path, lines, grade, observations, files,
     # not correspond to the most recent accepted optimizer step.
     for line in lines:
         event = json.loads(line)
-        if event.get("event") not in ("GRADE_A_LIVE_EXAM_COMMITTED",
-                                      "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED", "SCHOOL_LIVE_EXAM_COMMITTED"):
+        if not _history_event_selected(
+                event, grade, rubric_sha256, generator_version):
             continue
-        if grade is not None and event.get("grade") != grade:
-            continue
-        if rubric_sha256 is not None:
-            declared_rubric = event.get("rubric")
-            declared_generator = event.get("generator_version")
-            # Preselection is an optimization, not a relaxation. Only a complete
-            # declared header can prove that an exam belongs to another coarse
-            # comparison stratum. Missing/malformed metadata stays selected and
-            # therefore reaches the same state/cohort/outbox verification below.
-            if (isinstance(declared_rubric, str) and declared_rubric and
-                    isinstance(declared_generator, str) and declared_generator and
-                    (declared_rubric != rubric_sha256 or
-                     declared_generator != generator_version)):
-                continue
-        generation = event.get("generation")
-        if type(generation) is not int or generation < 0:
-            raise ValueError("DIAGNOSTIC_EVENT_GENERATION_DRIFT")
-        if generation <= last_generation:
-            raise ValueError("DIAGNOSTIC_NON_MONOTONIC_EVENT_HISTORY")
-        saved = root / "states" / f"{generation:07d}.json"
-        obs = load_saved_exam(root, state_file=saved)
-        from ..state_archive import read_generation
-        receipt = read_generation(root, generation)
-        if (not receipt.get("run_id") or
-                (run_id is not None and receipt["run_id"] != run_id)):
-            raise ValueError("DIAGNOSTIC_EVENT_RUN_CONFLICT")
-        run_id = receipt["run_id"]
-        if "delivery_outbox" in receipt:
-            # The trainer owns generation event IDs. Reuse its pure serializer;
-            # it imports no neural runtime and performs no checkpoint I/O.
-            from ..trainer import _with_delivery_outbox
-            outbox = receipt["delivery_outbox"]
-            if not isinstance(outbox, list) or any(not isinstance(e, dict) for e in outbox):
-                raise ValueError("DIAGNOSTIC_EVENT_OUTBOX_CONFLICT")
-            expected = _with_delivery_outbox(receipt, tuple(
-                {key: value for key, value in e.items() if key != "event_id"}
-                for e in outbox))["delivery_outbox"]
-            if expected != outbox or outbox.count(event) != 1:
-                raise ValueError("DIAGNOSTIC_EVENT_OUTBOX_CONFLICT")
-            obs = replace(obs, event_outbox_verified=True)
-        if (obs.cohort_sha256 != event.get("cohort_sha256") or
-                obs.student_sha256 != event.get("student_sha256") or
-                obs.optimizer_step != event.get("optimizer_step") or
-                obs.generator_version != event.get("generator_version") or
-                obs.rubric_sha256 != event.get("rubric") or
-                {cap.capability: {"correct": cap.correct, "total": cap.total}
-                 for cap in obs.capabilities} != event.get("scores")):
-            raise ValueError("DIAGNOSTIC_EVENT_STATE_CONFLICT")
+        generation, obs, run_id = _load_verified_history_event(
+            root, event, run_id, last_generation)
         if last_lineage == obs.lineage_id:
             _require_checkpoint_progression(
                 obs.optimizer_step, obs.student_sha256, last_step, last_student_sha)
