@@ -251,6 +251,51 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
         self.assertEqual(events[-1]["actual_neural_updates"], 0)
         self.assertTrue(events[-1]["model_and_own_adamw_unchanged"])
 
+    def test_resuming_v2_does_not_erase_valid_different_scope_evidence(self):
+        """An exam's *latest* rubric never supersedes other proven strata.
+
+        A cumulative/partial exam can score the same capability under a new
+        signed v2 scope. Capability and championship records from a different
+        v2 scope are separate authority, not malformed source evidence.
+        """
+        student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
+        school = start_new(self.new, student)
+        prior_rubric = self.new.grades[-1].assessment_sha256
+        latest_rubric = self.new.grades[0].assessment_sha256
+        leader = {
+            "capability": "A.IDENTITY", "rubric": prior_rubric,
+            "correct": 12, "total": 12, "checkpoint": asdict(student),
+            "evaluation_id": "capability-evaluation/original",
+        }
+        role = {**leader, "cohort_sha256": "c" * 64}
+        receipt = {
+            "generation": 10, "run_id": "valid-v2-cross-scope",
+            "school": asdict(school),
+            "factory_admission_v2": {"factory_release_sha256": "e" * 64},
+            "factory_release_sha256": "e" * 64,
+            "capability_best": {prior_rubric + ":A.IDENTITY": leader},
+            "championship_epoch_history": [],
+            "mentor_epoch": {
+                "active_roles": {"A.IDENTITY": role},
+                "active_grade_soups": {"A": {"grade": "A"}},
+            },
+            "last_exam": {
+                "factory_release_sha256": "e" * 64,
+                "exam_rubric_sha256": latest_rubric,
+                "scores": {"A.IDENTITY": {"correct": 11, "total": 12}},
+            },
+        }
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            result = _repair_scope_rubric_evidence(root, receipt, self.new)
+            self.assertFalse((root / "state.json").exists())
+            self.assertFalse((root / "events.jsonl").exists())
+        self.assertIs(result, receipt)
+        self.assertEqual(result["capability_best"][prior_rubric + ":A.IDENTITY"],
+                         leader)
+        self.assertEqual(result["mentor_epoch"]["active_roles"]["A.IDENTITY"],
+                         role)
+
     def test_resume_resets_titles_missing_distinct_cohort_source_rubric(self):
         student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
         school = start_new(self.new, student)

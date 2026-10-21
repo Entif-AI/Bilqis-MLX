@@ -1709,7 +1709,17 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
 
 
 def _repair_scope_rubric_evidence(run_dir, receipt, course):
-    """Repair evidence minted by the historical course-rubric/scope-rubric conflation."""
+    """Legacy-only reconciliation of old course-rubric conflation.
+
+    An admitted v2 factory defines multiple legitimate, exact-scope rubric
+    strata, so the newest examination is NEVER authority to invalidate an
+    earlier capability frontier or championship. V2 cohort and title evidence
+    is separately verified against its own immutable source by the admitted
+    release and championship custody verifiers. This historical v1 migration
+    must not run as an automatic v2 restart-time repair.
+    """
+    if receipt.get("factory_admission_v2") is not None:
+        return receipt
     exam = receipt.get("last_exam") or {}
     exam_rubric = exam.get("exam_rubric_sha256")
     scores = exam.get("scores") or {}
