@@ -17,6 +17,7 @@ PROMOTION_ATTEMPT_LIFECYCLE = "bilqis.grade-test.promotion-attempt/v1"
 GENERALIZATION_LIFECYCLE = "bilqis.grade-test.fresh-generalization/v1"
 EXECUTABLE_COHORT_SCHEMA = "bilqis.mlx.generated-cohort/v2"
 VERSIONED_COHORT_SCHEMA_PREFIX = "bilqis.mlx.generated-cohort/"
+_METADATA_DRIFT = "STORED_COHORT_METADATA_DRIFT"
 
 
 def digest(value) -> str:
@@ -74,7 +75,7 @@ def verify_stored_cohort(
             not isinstance(stored.get("generator_version"), str) or
             not stored["generator_version"] or type(stored.get("seed")) is not int or
             not isinstance(stored.get("rows"), list)):
-        raise ValueError("STORED_COHORT_METADATA_DRIFT")
+        raise ValueError(_METADATA_DRIFT)
     if stored.get("cohort_sha256") != expected_sha256:
         raise ValueError("STORED_COHORT_IDENTITY_DRIFT")
 
@@ -84,21 +85,21 @@ def verify_stored_cohort(
         raise ValueError("STORED_COHORT_SCHEMA_UNSUPPORTED")
     if (expected_rubric_sha256 is not None and
             stored.get("rubric_sha256") != expected_rubric_sha256):
-        raise ValueError("STORED_COHORT_METADATA_DRIFT")
+        raise ValueError(_METADATA_DRIFT)
     rubric_version = schema
     if schema == EXECUTABLE_COHORT_SCHEMA:
         rubric_sha256 = stored.get("rubric_sha256")
         factory_release_sha256 = stored.get("factory_release_sha256")
         if not valid_sha(rubric_sha256) or not valid_sha(factory_release_sha256):
-            raise ValueError("STORED_COHORT_METADATA_DRIFT")
+            raise ValueError(_METADATA_DRIFT)
         if (expected_factory_release_sha256 is not None and
                 factory_release_sha256 != expected_factory_release_sha256):
-            raise ValueError("STORED_COHORT_METADATA_DRIFT")
+            raise ValueError(_METADATA_DRIFT)
         rubric_version = rubric_sha256
     elif expected_factory_release_sha256 is not None:
         # A receipt that declares an executable release must point at the v2
         # storage schema rather than silently reinterpret legacy hash rules.
-        raise ValueError("STORED_COHORT_METADATA_DRIFT")
+        raise ValueError(_METADATA_DRIFT)
 
     cohort = make_cohort(
         stored["rows"], generator_version=stored["generator_version"],

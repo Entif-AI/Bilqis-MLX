@@ -8,6 +8,8 @@ from .generated_assessment import (
     EXECUTABLE_COHORT_SCHEMA, score, verify_stored_cohort,
 )
 
+_COHORT_METADATA_DRIFT = "FIXED_FRONTIER_COHORT_METADATA_DRIFT"
+
 
 def _valid_sha(value) -> bool:
     return (isinstance(value, str) and len(value) == 64 and
@@ -29,7 +31,7 @@ def load_frontier_cohort(run_dir: Path, exam: dict):
     if (stored.get("cohort_sha256") != sha or
             not stored.get("generator_version") or not stored.get("schema") or
             type(stored.get("seed")) is not int):
-        raise ValueError("FIXED_FRONTIER_COHORT_METADATA_DRIFT")
+        raise ValueError(_COHORT_METADATA_DRIFT)
     try:
         cohort = verify_stored_cohort(
             stored, sha,
@@ -39,7 +41,7 @@ def load_frontier_cohort(run_dir: Path, exam: dict):
     except ValueError as exc:
         if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
             raise ValueError("FIXED_FRONTIER_COHORT_CONTENT_DRIFT") from exc
-        raise ValueError("FIXED_FRONTIER_COHORT_METADATA_DRIFT") from exc
+        raise ValueError(_COHORT_METADATA_DRIFT) from exc
     return cohort
 
 

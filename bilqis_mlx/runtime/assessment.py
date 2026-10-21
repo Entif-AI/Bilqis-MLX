@@ -24,6 +24,8 @@ from bilqis_mlx.curriculum.scheduler import assessment_capabilities
 from bilqis_mlx.learning.stagnation_control import quarantined_capabilities
 from .state import _durable_json, _seed, _state_from_json
 
+_CURRENT_ADMISSION_DRIFT = "FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT"
+
 def _draw_executable_scope_cohort(
         source_root, graph, release: ExecutableFactoryRelease,
         registry: SourceAdapterRegistry, *, capabilities, seed: int,
@@ -448,9 +450,7 @@ def _verify_saved_cohort(run_dir, receipt, course, *, sealed_v1_release=None):
                 admission = ExecutableAdmissionReceipt(**raw_admission)
                 admission.verify(current)
             except (TypeError, ValueError) as exc:
-                raise ValueError(
-                    "FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT"
-                ) from exc
+                raise ValueError(_CURRENT_ADMISSION_DRIFT) from exc
             student = (receipt.get("school") or {}).get("current_student") or {}
             student_step = student.get("optimizer_step")
             if (admission.semantic_graph_sha256 !=
@@ -459,8 +459,7 @@ def _verify_saved_cohort(run_dir, receipt, course, *, sealed_v1_release=None):
                     admission.optimizer_step > student_step or
                     (admission.optimizer_step == student_step and
                      admission.student_sha256 != student.get("sha256"))):
-                raise ValueError(
-                    "FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT")
+                raise ValueError(_CURRENT_ADMISSION_DRIFT)
             if (exam.get("student_sha256") != admission.student_sha256 or
                     exam.get("optimizer_step") != admission.optimizer_step):
                 raise ValueError(

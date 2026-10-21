@@ -14,6 +14,8 @@ TRUTH_PATTERNS = (
     (True, False),
     (True, True),
 )
+_SOURCE_GOLD_DRIFT = "FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT"
+_COHORT_IDENTITY_DRIFT = "FRAGILE_REPLAY_COHORT_IDENTITY_DRIFT"
 
 
 def _operand_kind(node: dict) -> str:
@@ -129,11 +131,11 @@ def select_preservation_rows(rows, *, capabilities=None,
         pattern = tuple(raw)
         gold = row.get("gold")
         if pattern not in TRUTH_PATTERNS or gold not in ("TRUE", "FALSE"):
-            raise ValueError("FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT")
+            raise ValueError(_SOURCE_GOLD_DRIFT)
         cell = (capability, pattern)
         prior_gold = gold_by_cell.setdefault(cell, gold)
         if prior_gold != gold:
-            raise ValueError("FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT")
+            raise ValueError(_SOURCE_GOLD_DRIFT)
         if not row.get("tokens"):
             raise ValueError("FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING")
         selected.setdefault(cell, row)
@@ -166,7 +168,7 @@ def load_replay_rows(run_dir: Path, receipt: dict, *, capabilities) -> tuple[dic
         raise ValueError("FRAGILE_REPLAY_UNSAFE_COHORT_PATH")
     stored = json.loads(file.read_text(encoding="utf-8"))
     if stored.get("cohort_sha256") != sha:
-        raise ValueError("FRAGILE_REPLAY_COHORT_IDENTITY_DRIFT")
+        raise ValueError(_COHORT_IDENTITY_DRIFT)
     try:
         cohort = verify_stored_cohort(
             stored, sha,
@@ -176,7 +178,7 @@ def load_replay_rows(run_dir: Path, receipt: dict, *, capabilities) -> tuple[dic
     except ValueError as exc:
         if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
             raise ValueError("FRAGILE_REPLAY_COHORT_CONTENT_DRIFT") from exc
-        raise ValueError("FRAGILE_REPLAY_COHORT_IDENTITY_DRIFT") from exc
+        raise ValueError(_COHORT_IDENTITY_DRIFT) from exc
     rows = tuple(row for row in cohort.rows if row["capability"] in requested)
     expected_total = sum(scores[name].get("total", 0) for name in requested)
     if (expected_total < 1 or len(rows) != expected_total or
