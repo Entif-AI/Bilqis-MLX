@@ -95,6 +95,7 @@ from .diagnostics.exam_events import (apply_paired_checkpoint_s3,
 from .generated_assessment import (
     GENERALIZATION_LIFECYCLE, PROMOTION_ATTEMPT_LIFECYCLE,
     ROUTINE_EVAL_LIFECYCLE, make_cohort, score as score_cohort,
+    verify_stored_cohort,
 )
 from .grade_a_manifest import verify_manifest
 from .compatibility.source_bootstrap import AUTHORITY, accepted_grade_a
@@ -1708,75 +1709,6 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
     return json.loads(_canonical(record))
 
 
-def _repair_scope_rubric_evidence(run_dir, receipt, course):
-    """Legacy-only reconciliation of old course-rubric conflation.
-
-    An admitted v2 factory defines multiple legitimate, exact-scope rubric
-    strata, so the newest examination is NEVER authority to invalidate an
-    earlier capability frontier or championship. V2 cohort and title evidence
-    is separately verified against its own immutable source by the admitted
-    release and championship custody verifiers. This historical v1 migration
-    must not run as an automatic v2 restart-time repair.
-    """
-    if receipt.get("factory_admission_v2") is not None:
-        return receipt
-    exam = receipt.get("last_exam") or {}
-    exam_rubric = exam.get("exam_rubric_sha256")
-    scores = exam.get("scores") or {}
-    epoch = receipt.get("mentor_epoch")
-    frontier = receipt.get("capability_best") or {}
-    if (not isinstance(exam_rubric, str) or len(exam_rubric) != 64 or
-            not scores or not isinstance(epoch, dict) or not frontier):
-        return receipt
-    scored = set(scores)
-    wrong_frontier = {
-        key: item for key, item in frontier.items()
-        if item.get("capability") in scored and item.get("rubric") != exam_rubric
-    }
-    wrong_roles = {
-        cap: item for cap, item in epoch.get("active_roles", {}).items()
-        if cap in scored and item.get("rubric") != exam_rubric
-    }
-    if not wrong_frontier and not wrong_roles:
-        return receipt
-    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
-    history = [*receipt.get("championship_epoch_history", ()), deepcopy(epoch)]
-    reset = begin_initial_epoch(
-        student=asdict(school.current_student),
-        introduced_grade=school.grade,
-        source_graph_sha256=receipt["semantic_graph_sha256"],
-        frontier={}, soups={})
-    reset["settled_matchups"] = {}
-    reset["championship_school_identity"] = receipt["championship_school_identity"]
-    kept = {key: item for key, item in frontier.items() if key not in wrong_frontier}
-    repaired = {
-        **receipt,
-        "capability_best": kept,
-        "mentor_epoch": reset,
-        "championship_epoch_history": history,
-        "live_rubric_sha256": exam_rubric,
-    }
-    record = _advance(
-        run_dir, repaired, school, frontier=kept,
-        result=receipt.get("result"), persist=False)
-    event = {
-        "event": "SCHOOL_SCOPE_RUBRIC_EVIDENCE_REPAIRED",
-        "generation": record["generation"],
-        "source_generation": receipt["generation"],
-        "student_sha256": school.current_student.sha256,
-        "optimizer_step": school.current_student.optimizer_step,
-        "assessment_rubric_sha256": exam_rubric,
-        "invalidated_frontier_capabilities":
-            sorted(item["capability"] for item in wrong_frontier.values()),
-        "invalidated_championship_roles": sorted(wrong_roles),
-        "archived_bad_epoch": True,
-        "actual_neural_updates": 0,
-        "model_and_own_adamw_unchanged": True,
-    }
-    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
-    _reconcile_delivery_outbox(run_dir, record)
-    return record
-
 
 def _repair_championship_source_context(run_dir, receipt, course):
     """Archive titles minted while cohort-source and assessment rubrics were conflated."""
@@ -1791,8 +1723,6 @@ def _repair_championship_source_context(run_dir, receipt, course):
             *role.get("surviving_battery", ()),
         )
         for item in evidence:
-            if item.get("cohort_rubric_sha256") is not None:
-                continue
             sha = item.get("cohort_sha256")
             assessment_rubric = item.get("rubric_sha256")
             source_oracle = item.get("source_oracle_sha256")
@@ -1806,11 +1736,21 @@ def _repair_championship_source_context(run_dir, receipt, course):
             if (stored.get("cohort_sha256") != sha or
                     stored.get("source_manifest_sha256") != source_oracle):
                 raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT")
-            cohort = make_cohort(
-                stored["rows"], generator_version=stored["generator_version"],
-                seed=stored["seed"], rubric_version=stored["schema"])
-            if cohort.digest != sha:
-                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT")
+            try:
+                verify_stored_cohort(stored, sha)
+            except ValueError as exc:
+                raise ValueError(
+                    "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT") from exc
+            declared_cohort_rubric = item.get("cohort_rubric_sha256")
+            if declared_cohort_rubric is not None:
+                # A modern witness has a distinct, authenticated source
+                # rubric. It is authoritative for its own cohort and cannot
+                # be replaced by either the championship title rubric or a
+                # later exam's scope. Verify it rather than skipping the row.
+                if stored.get("rubric_sha256") != declared_cohort_rubric:
+                    raise ValueError(
+                        "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT")
+                continue
             if stored.get("rubric_sha256") != assessment_rubric:
                 affected.add(capability)
                 break
@@ -1820,13 +1760,27 @@ def _repair_championship_source_context(run_dir, receipt, course):
 
     school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     history = [*receipt.get("championship_epoch_history", ()), deepcopy(epoch)]
-    reset = begin_initial_epoch(
-        student=asdict(school.current_student),
-        introduced_grade=school.grade,
-        source_graph_sha256=receipt["semantic_graph_sha256"],
-        frontier={}, soups={})
-    reset["settled_matchups"] = {}
-    reset["championship_school_identity"] = receipt["championship_school_identity"]
+    # This is a capability-local evidence failure, not a holistic school
+    # identity change. Invalidate only the affected title(s) and their grade
+    # soup(s). In particular, settled matchups are permanent; clearing that
+    # ledger would permit repeated title matches between the same checkpoints.
+    reset = deepcopy(epoch)
+    for capability in sorted(affected):
+        prior = reset["active_roles"].pop(capability)
+        reset.setdefault("invalidated_active_roles", []).append({
+            "capability": capability,
+            "reason": "COHORT_SOURCE_RUBRIC_CONTRADICTION",
+            "role": prior,
+        })
+    touched_grades = {cap.partition(".")[0] for cap in affected}
+    for grade in sorted(touched_grades):
+        prior_soup = reset.get("active_grade_soups", {}).pop(grade, None)
+        if prior_soup is not None:
+            reset.setdefault("invalidated_active_soups", []).append({
+                "grade": grade,
+                "reason": "ROLE_SOURCE_CONTRADICTION",
+                "active_grade_soup": prior_soup,
+            })
     repaired = {
         **receipt,
         "mentor_epoch": reset,
@@ -1842,7 +1796,9 @@ def _repair_championship_source_context(run_dir, receipt, course):
         "student_sha256": school.current_student.sha256,
         "optimizer_step": school.current_student.optimizer_step,
         "invalidated_championship_roles": sorted(affected),
-        "archived_bad_epoch": True,
+        "archived_prior_epoch": True,
+        "preserved_championship_roles": sorted(reset["active_roles"]),
+        "preserved_settled_matchups": len(reset.get("settled_matchups", {})),
         "actual_neural_updates": 0,
         "model_and_own_adamw_unchanged": True,
     }
@@ -4781,7 +4737,6 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         params, optimizer, catalog_transition,
                         reserve_gib=reserve_gib,
                         allow_mastery_debt=admit_next_grade_with_debt))
-            receipt = _repair_scope_rubric_evidence(run_dir, receipt, course)
             receipt = _repair_championship_source_context(run_dir, receipt, course)
         else:
             if numeric_staircase:

@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .generated_assessment import make_cohort, score
+from .generated_assessment import score, verify_stored_cohort
 
 
 def _valid_sha(value) -> bool:
@@ -28,14 +28,16 @@ def load_frontier_cohort(run_dir: Path, exam: dict):
             not stored.get("generator_version") or not stored.get("schema") or
             type(stored.get("seed")) is not int):
         raise ValueError("FIXED_FRONTIER_COHORT_METADATA_DRIFT")
-    cohort = make_cohort(
-        stored["rows"], generator_version=stored["generator_version"],
-        seed=stored["seed"], rubric_version=(
-            stored["rubric_sha256"]
-            if stored["schema"] == "bilqis.mlx.generated-cohort/v2"
-            else stored["schema"]))
-    if cohort.digest != sha:
-        raise ValueError("FIXED_FRONTIER_COHORT_CONTENT_DRIFT")
+    try:
+        cohort = verify_stored_cohort(
+            stored, sha,
+            expected_rubric_sha256=exam.get("rubric_sha256"),
+            expected_factory_release_sha256=exam.get(
+                "factory_release_sha256"))
+    except ValueError as exc:
+        if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
+            raise ValueError("FIXED_FRONTIER_COHORT_CONTENT_DRIFT") from exc
+        raise ValueError("FIXED_FRONTIER_COHORT_METADATA_DRIFT") from exc
     return cohort
 
 

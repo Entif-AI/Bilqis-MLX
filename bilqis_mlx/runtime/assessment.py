@@ -12,16 +12,14 @@ from ..factory.executable_release import ExecutableFactoryRelease
 from ..factory.generation import draw_executable_release_rows
 from ..factory.adapters import SourceAdapterRegistry
 from ..generated_assessment import (
+    EXECUTABLE_COHORT_SCHEMA,
     GENERALIZATION_LIFECYCLE, PROMOTION_ATTEMPT_LIFECYCLE,
-    ROUTINE_EVAL_LIFECYCLE, make_cohort,
+    ROUTINE_EVAL_LIFECYCLE, make_cohort, verify_stored_cohort,
 )
 from ..live_curriculum import cohort_contract as _cohort_contract, draw_course_rows, lesson_contract
 from bilqis_mlx.curriculum.scheduler import assessment_capabilities
 from bilqis_mlx.learning.stagnation_control import quarantined_capabilities
 from .state import _durable_json, _seed, _state_from_json
-
-EXECUTABLE_COHORT_SCHEMA = "bilqis.mlx.generated-cohort/v2"
-
 
 def _draw_executable_scope_cohort(
         source_root, graph, release: ExecutableFactoryRelease,
@@ -128,14 +126,12 @@ def _load_executable_cohort(
             stored.get("cohort_sha256") != sha or
             stored.get("seed") != pointer.get("cohort_seed")):
         raise ValueError("FACTORY_EXECUTABLE_COHORT_METADATA_DRIFT")
-    cohort = make_cohort(
-        stored["rows"],
-        generator_version=contract.generator_version,
-        seed=stored["seed"],
-        rubric_version=contract.rubric_sha256,
-    )
-    if cohort.digest != sha:
-        raise ValueError("FACTORY_EXECUTABLE_COHORT_CONTENT_DRIFT")
+    try:
+        cohort = verify_stored_cohort(
+            stored, sha, expected_rubric_sha256=contract.rubric_sha256,
+            expected_factory_release_sha256=release.release_sha256)
+    except ValueError as exc:
+        raise ValueError("FACTORY_EXECUTABLE_COHORT_CONTENT_DRIFT") from exc
     return cohort
 
 
@@ -393,15 +389,13 @@ def load_championship_cohort(run_dir, witness):
             stored.get("rubric_sha256") != source_rubric or
             stored.get("source_manifest_sha256") != witness["source_oracle_sha256"]):
         raise ValueError("CHAMPIONSHIP_EARNING_COHORT_SOURCE_DRIFT")
-    rubric_version = (
-        stored["rubric_sha256"]
-        if stored.get("schema") == EXECUTABLE_COHORT_SCHEMA
-        else stored["schema"])
-    cohort = make_cohort(
-        stored["rows"], generator_version=stored["generator_version"],
-        seed=stored["seed"], rubric_version=rubric_version)
-    if cohort.digest != sha:
-        raise ValueError("CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT")
+    try:
+        cohort = verify_stored_cohort(
+            stored, sha,
+            expected_rubric_sha256=(source_rubric if stored.get("schema") ==
+                                    EXECUTABLE_COHORT_SCHEMA else None))
+    except ValueError as exc:
+        raise ValueError("CHAMPIONSHIP_EARNING_COHORT_CONTENT_DRIFT") from exc
     return cohort
 
 
@@ -508,11 +502,11 @@ def _generalization_cohort(run_dir, receipt, manifest, course, source_root, grap
         if path.is_symlink() or not path.is_file():
             raise ValueError("HUMAN_TRAINER_GENERALIZATION_EXPOSURE_EVIDENCE_MISSING")
         payload = json.loads(path.read_text())
-        previous = make_cohort(payload["rows"], seed=payload["seed"],
-                               generator_version=payload["generator_version"],
-                               rubric_version=payload["schema"])
-        if previous.digest != digest or payload.get("cohort_sha256") != digest:
-            raise ValueError("HUMAN_TRAINER_GENERALIZATION_EXPOSURE_CONTENT_DRIFT")
+        try:
+            previous = verify_stored_cohort(payload, digest)
+        except ValueError as exc:
+            raise ValueError(
+                "HUMAN_TRAINER_GENERALIZATION_EXPOSURE_CONTENT_DRIFT") from exc
         specimen_ids = frozenset(row["id"] for row in previous.rows)
         if digest == promotion_sha256:
             excluded.update(specimen_ids)

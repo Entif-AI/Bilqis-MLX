@@ -2,6 +2,7 @@
 from __future__ import annotations
 from dataclasses import asdict
 import json
+from ..generated_assessment import score as score_cohort
 from ..runtime.state import _seed, _fingerprint, _state_from_json
 from ..runtime.mlx_checkpoint import load_semantically_bound_bundle
 
