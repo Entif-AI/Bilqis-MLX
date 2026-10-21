@@ -198,6 +198,31 @@ def _promotion_executable_cohort(
     }
 
 
+def _burned_generalization_evidence(
+        run_dir, manifest, current_release, burned):
+    """Verify permanent burned cohorts under each pointer's own v2 release."""
+    digests = set()
+    specimen_sets = set()
+    for pointer in burned:
+        pointer_release_sha = pointer.get("factory_release_sha256")
+        if pointer_release_sha == current_release.release_sha256:
+            pointer_release = current_release
+        else:
+            from .admission import _read_executable_factory_release_artifact
+            pointer_release = _read_executable_factory_release_artifact(
+                run_dir, {
+                    "factory_release_sha256": pointer_release_sha,
+                    "factory_release_file": (
+                        "factory-releases/" + str(pointer_release_sha) + ".json"),
+                })
+        previous = _load_executable_cohort(
+            run_dir, manifest, pointer_release,
+            tuple(pointer.get("capabilities", ())), pointer)
+        digests.add(previous.digest)
+        specimen_sets.add(frozenset(row["id"] for row in previous.rows))
+    return digests, specimen_sets
+
+
 def _generalization_executable_cohort(
         run_dir, receipt, manifest, release, registry, source_root, graph, *,
         capabilities, assessment_epoch: int, promotion_pointer,
@@ -214,18 +239,10 @@ def _generalization_executable_cohort(
     excluded = set(exposed_specimen_ids)
     excluded.update(row["id"] for row in promotion.rows)
     excluded.update(row["id"] for row in receipt.get("teacher_misses", ()))
-    burned_digests = set()
-    burned_specimen_sets = set()
-    for pointer in burned:
-        # A burned generalization cohort is permanent instrument history,
-        # not a promise that its old assessment scope equals today's. Verify
-        # it under its own signed source scope before checking non-reuse.
-        previous = _load_executable_cohort(
-            run_dir, manifest, release, tuple(pointer.get("capabilities", ())),
-            pointer)
-        burned_digests.add(previous.digest)
-        burned_specimen_sets.add(
-            frozenset(row["id"] for row in previous.rows))
+    # Permanent instrument history retains its original release authority; a
+    # later profile may legitimately disable some capabilities from that scope.
+    burned_digests, burned_specimen_sets = _burned_generalization_evidence(
+        run_dir, manifest, release, burned)
 
     required = None
     selected = {}
