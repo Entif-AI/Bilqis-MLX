@@ -1655,9 +1655,33 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
         if old_path.is_symlink() or not old_path.is_file():
             raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_UNCOMMITTED_SOURCE")
         durable = json.loads(old_path.read_text(encoding="utf-8"))
+        # Only *durable* outbox events have delivery authority. Transient
+        # callers may carry a subsequently edited copy of a committed event;
+        # requiring payload-object equality here mistakes a working copy for
+        # its signed owner. Instead bind the ordered event IDs, run and
+        # checkpoint to the immutable snapshot, then validate its original
+        # exact payloads against the journal below. Never publish the caller's
+        # potentially edited copy, and never lose/ignore an extra event ID.
+        source_outbox = durable.get("delivery_outbox")
+        candidate_outbox = old["delivery_outbox"]
+        source_ids = (tuple(event.get("event_id") for event in source_outbox)
+                      if isinstance(source_outbox, list) and
+                      all(isinstance(event, dict) for event in source_outbox)
+                      else None)
+        candidate_ids = (tuple(event.get("event_id") for event in candidate_outbox)
+                         if isinstance(candidate_outbox, list) and
+                         all(isinstance(event, dict) for event in candidate_outbox)
+                         else None)
         if (durable.get("run_id") != old.get("run_id") or
                 durable.get("generation") != old.get("generation") or
-                durable.get("delivery_outbox") != old["delivery_outbox"]):
+                not source_ids or candidate_ids != source_ids or
+                durable.get("model_bundle") != old.get("model_bundle") or
+                durable.get("school", {}).get("current_student") !=
+                old.get("school", {}).get("current_student") or
+                durable.get("source_manifest_sha256") !=
+                old.get("source_manifest_sha256") or
+                durable.get("teacher_source_sha256") !=
+                old.get("teacher_source_sha256")):
             raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_SOURCE_DRIFT")
         # Reconcile the *committed* owner, not the caller's proposed in-memory
         # next-generation metadata. A resume-time championship repair can
@@ -3546,14 +3570,28 @@ def _live_exam_factors_complete(executable_release, cohort, expected) -> bool:
 
 
 def _verify_live_rubric_lineage(run_dir, receipt, program) -> None:
-    """Distinguish preserved signed v1 assessment evidence from new v2 exams.
+    """Resolve the active rubric to the exact immutable exam that minted it.
 
-    A migrated student retains its last v1 rubric until it has fresh v2
-    evidence. Historical authority is never relabeled into a v2 qualification.
+    A migrated student may retain a signed v1 assessment; subsequent v2 exams
+    carry exact-scope rubrics that are *not* whole-grade blueprint hashes.
+    Neither kind may be relabeled into the other or accepted without its own
+    source-bound cohort proof.
     """
     live_rubric = receipt.get("live_rubric_sha256")
     known_rubrics = {grade.assessment_sha256 for grade in program.grades}
     if live_rubric is None or live_rubric in known_rubrics:
+        return
+    exam = receipt.get("last_exam") or {}
+    if (exam.get("factory_release_sha256") ==
+            receipt.get("factory_release_sha256") and
+            exam.get("factory_release_sha256") is not None and
+            live_rubric == exam.get("rubric_sha256") ==
+            exam.get("exam_rubric_sha256")):
+        # Do not trust a matching label alone. Reconstruct the scope contract,
+        # content-addressed cohort and saved source/oracle evidence from disk.
+        from .runtime.assessment import _verify_saved_cohort
+        if _verify_saved_cohort(run_dir, receipt, None) is None:
+            raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_EVIDENCE_MISSING")
         return
     from .runtime.admission import _verified_historical_cohort_release
     previous = _verified_historical_cohort_release(run_dir, receipt)

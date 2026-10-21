@@ -216,8 +216,12 @@ def _generalization_executable_cohort(
     burned_digests = set()
     burned_specimen_sets = set()
     for pointer in burned:
+        # A burned generalization cohort is permanent instrument history,
+        # not a promise that its old assessment scope equals today's. Verify
+        # it under its own signed source scope before checking non-reuse.
         previous = _load_executable_cohort(
-            run_dir, manifest, release, contract.capabilities, pointer)
+            run_dir, manifest, release, tuple(pointer.get("capabilities", ())),
+            pointer)
         burned_digests.add(previous.digest)
         burned_specimen_sets.add(
             frozenset(row["id"] for row in previous.rows))

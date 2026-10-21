@@ -1,5 +1,6 @@
 """Outbox receipts belong to their immutable generation, never its successor."""
 from dataclasses import asdict, dataclass
+from copy import deepcopy
 from pathlib import Path
 import json
 import tempfile
@@ -126,6 +127,41 @@ class InheritedOutboxTests(unittest.TestCase):
                          edited["championship_checkpoint_origin_ambiguities"])
         self.assertNotIn("delivery_outbox", successor)
         self.assertEqual(journal.read_bytes(), original_bytes)
+
+    def test_advance_discards_mutated_transient_payload_but_keeps_signed_receipts(self):
+        journal = self._publish()
+        original_journal = journal.read_bytes()
+        path = self.root / "states" / "0000008.json"
+        path.write_text(json.dumps(self.current))
+        original_state = path.read_bytes()
+        proposed = deepcopy(self.current)
+        proposed["delivery_outbox"][0]["optimizer_step"] = 888
+
+        # The event_id still points to the immutable committed event; this
+        # transient payload is never authority to republish or inherit it.
+        next_record = _advance(self.root, proposed, _School(), persist=False)
+        self.assertEqual(next_record["generation"], 9)
+        self.assertNotIn("delivery_outbox", next_record)
+        self.assertEqual(journal.read_bytes(), original_journal)
+        self.assertEqual(path.read_bytes(), original_state)
+
+    def test_advance_does_not_discard_unrecognized_transient_event_id(self):
+        self._publish()
+        (self.root / "states" / "0000008.json").write_text(
+            json.dumps(self.current))
+        proposed = deepcopy(self.current)
+        proposed["delivery_outbox"][0]["event_id"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "OUTBOX_ADVANCE_SOURCE_DRIFT"):
+            _advance(self.root, proposed, _School(), persist=False)
+
+    def test_advance_rejects_drifted_durable_student_identity(self):
+        self._publish()
+        (self.root / "states" / "0000008.json").write_text(
+            json.dumps(self.current))
+        proposed = deepcopy(self.current)
+        proposed["school"]["current_student"]["sha256"] = "f" * 64
+        with self.assertRaisesRegex(ValueError, "OUTBOX_ADVANCE_SOURCE_DRIFT"):
+            _advance(self.root, proposed, _School(), persist=False)
 
     def test_uncommitted_successor_cannot_publish_inherited_outbox(self):
         journal = self._publish()

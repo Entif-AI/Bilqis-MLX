@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 from bilqis_mlx.curriculum import BOOLEAN_OPERATORS
 from bilqis_mlx.factory.assessment import assessment_scope_contract
@@ -20,6 +21,8 @@ from bilqis_mlx.runtime.assessment import (
     _routine_executable_cohort,
     load_championship_cohort,
 )
+from bilqis_mlx.runtime.admission import _persist_executable_factory_release
+from bilqis_mlx.trainer import _verify_live_rubric_lineage
 
 
 class ExecutableAssessmentRuntimeTests(unittest.TestCase):
@@ -97,6 +100,31 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             self.assertNotEqual(
                 payload["rubric_sha256"],
                 payload["factory_release_sha256"])
+
+    def test_recent_v2_exact_scope_exam_is_a_valid_live_rubric_authority(self):
+        cohort, contract = self.draw(self.reduced, ("B.IDBOOLOPS",))
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            release_path = _persist_executable_factory_release(root, self.reduced)
+            pointer = _persist_executable_cohort(root, self.manifest, contract, cohort)
+            receipt = {
+                "factory_release_sha256": self.reduced.release_sha256,
+                "factory_release_file": release_path,
+                "factory_admission_v2": {},
+                "source_manifest_sha256": self.manifest["manifest_sha256"],
+                "live_rubric_sha256": contract.rubric_sha256,
+                "last_exam": {**pointer, "exam_rubric_sha256": contract.rubric_sha256},
+            }
+            program = SimpleNamespace(grades=(SimpleNamespace(
+                assessment_sha256="f" * 64),))
+            self.assertIsNone(_verify_live_rubric_lineage(root, receipt, program))
+            with self.assertRaises(ValueError):
+                _verify_live_rubric_lineage(root, {
+                    **receipt, "last_exam": {**receipt["last_exam"],
+                       "cohort_sha256": "0" * 64}}, program)
+            with self.assertRaisesRegex(ValueError, "LIVE_RUBRIC_IDENTITY_DRIFT"):
+                _verify_live_rubric_lineage(root, {
+                    **receipt, "live_rubric_sha256": "e" * 64}, program)
 
     def test_v2_cohort_replays_as_championship_evidence_with_exact_rubric(self):
         cohort, contract = self.draw(self.reduced, self.a_scope)
@@ -217,6 +245,33 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             self.assertNotEqual(
                 {row["id"] for row in second.rows},
                 {row["id"] for row in first.rows})
+
+    def test_generalization_preserves_burned_cohort_from_prior_larger_scope(self):
+        # A later grade's active scope may shrink after assessment scheduling.
+        # Previously burned source evidence remains valid under its own signed
+        # scope, not the newly scheduled assessment's narrower scope.
+        receipt = self.receipt()
+        current_scope = self.a_scope
+        historical_scope = tuple(
+            item.capability_id for item in self.reduced.execution_plan.capabilities)
+        self.assertNotEqual(current_scope, historical_scope)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            historical, contract = self.draw(self.reduced, historical_scope, seed=72)
+            burned_pointer = _persist_executable_cohort(
+                root, self.manifest, contract, historical)
+            promotion, promotion_pointer = _promotion_executable_cohort(
+                root, receipt, self.manifest, self.reduced, self.registry,
+                None, self.graph, capabilities=current_scope, assessment_epoch=12,
+                legacy_course=self.course)
+            receipt["burned_generalization_cohorts_v2"] = [burned_pointer]
+            fresh, _ = _generalization_executable_cohort(
+                root, receipt, self.manifest, self.reduced, self.registry,
+                None, self.graph, capabilities=current_scope, assessment_epoch=12,
+                promotion_pointer=promotion_pointer,
+                legacy_course=self.course)
+            self.assertNotEqual(fresh.digest, promotion.digest)
+            self.assertNotEqual(fresh.digest, historical.digest)
 
     def test_fixed_frontier_reads_v2_cohort_without_using_schema_as_rubric(self):
         from bilqis_mlx.fixed_frontier import load_frontier_cohort
