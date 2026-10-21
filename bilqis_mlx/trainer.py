@@ -2077,7 +2077,8 @@ def _advance_stagnation_after_routine(
                     evaluation_id=routine_assessment.evaluation_id +
                                   "/post-stagnation-filter")
                 routine_advanced = assess_withheld(
-                    program, school, reduced, blocked_after)
+                    program, school, reduced, blocked_after,
+                    rubric_capabilities=active_scope)
     if routine_advanced.stage == "DEFERRED_STAGNATION":
         stagnation, routine_advanced, rehabilitation_events = (
             _rehabilitate_sole_grade_debt(
@@ -2187,10 +2188,22 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
                 "reason": "NO_FIXED_WHOLE_SCHOOL_FRONTIER"}
     frontier_parent = frontier_candidate = {}
     from .fixed_frontier import load_frontier, screen_frontier
+    exam = receipt.get("last_exam") or {}
+    # The immutable exam belongs to the checkpoint that actually took it.
+    # A later retained lesson may advance the causal student before the next
+    # full exam. Verify the saved exam against *its* original checkpoint,
+    # then measure the real, newer parent on exactly those frozen questions.
+    # Never misattribute historical predictions to a different student.
     frontier_rows, frontier_parent = load_frontier(
-        run_dir, receipt,
-        parent_sha256=school.current_student.sha256,
-        parent_optimizer_step=school.current_student.optimizer_step)
+        run_dir, receipt, parent_sha256=exam.get("student_sha256"),
+        parent_optimizer_step=exam.get("optimizer_step"))
+    if frontier_rows and (exam.get("student_sha256") != school.current_student.sha256 or
+                          exam.get("optimizer_step") != school.current_student.optimizer_step):
+        if (type(exam.get("optimizer_step")) is not int or
+                school.current_student.optimizer_step <= exam["optimizer_step"]):
+            raise ValueError("FIXED_FRONTIER_PARENT_IDENTITY_DRIFT")
+        frontier_parent = _predictions(
+            mx, parent, list(frontier_rows), config, answer_ids)
     if frontier_rows:
         grade = capability.partition(".")[0]
         grade_rows = tuple(

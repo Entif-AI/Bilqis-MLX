@@ -108,6 +108,8 @@ def _recover_grade_c_boundary_source(mx, run_dir, receipt):
     previous = (epoch.get("previous_boundary_checkpoint") or
                 epoch.get("previous_graduate") or {})
     exam = receipt.get("last_exam") or {}
+    if introduced_grade != "C":
+        return None
     if (not introduced_grade or not receipt.get("grade_c_parent_course_digest") or
             baseline.get("sha256") != current.get("sha256") or
             baseline.get("optimizer_step") != current.get("optimizer_step") or

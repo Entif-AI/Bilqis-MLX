@@ -84,7 +84,7 @@ class Assessment:
             raise ValueError("ASSESSMENT_HAS_NO_REPRESENTED_GRADE")
         # Each grade seals its *cumulative* exam (including prior grades).
         # A newly introduced B rubric need not share A's exam digest.
-        grade_seal = (program.exact_scope_rubric(required_capabilities) or
+        grade_seal = (program.exact_scope_rubric(rubric_scope) or
                       represented[-1].assessment_sha256)
         if grade_seal is not None and self.rubric_digest != grade_seal:
             raise ValueError("ASSESSMENT_NOT_GRADE_SEALED_RUBRIC")
@@ -660,7 +660,8 @@ def assess_flash(program, state: SchoolState, snapshot: Assessment) -> SchoolSta
 
 
 def assess_withheld(program, state: SchoolState, snapshot: Assessment,
-                    withheld: tuple[str, ...]) -> SchoolState:
+                    withheld: tuple[str, ...], *,
+                    rubric_capabilities: tuple[str, ...] | None = None) -> SchoolState:
     """Advance ordinary school work while retaining quarantined mastery debt.
 
     The snapshot contains only capabilities still eligible for this human
@@ -682,7 +683,8 @@ def assess_withheld(program, state: SchoolState, snapshot: Assessment,
                        first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
     _verify_assessment_boundary(
         program, state, snapshot, active_pool,
-        rubric_pool=pool,
+        rubric_pool=(rubric_capabilities if rubric_capabilities is not None else
+                     active_pool if program.assessment_projections else pool),
     )
 
     grade = next(g for g in program.grades if g.id == state.grade)

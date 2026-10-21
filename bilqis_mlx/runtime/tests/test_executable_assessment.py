@@ -299,6 +299,37 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
         self.assertEqual(completed.stage, "DEFERRED_STAGNATION")
         self.assertNotIn("B", completed.champions)
 
+    def test_quarantine_after_exam_keeps_the_measured_rubric_scope(self):
+        from dataclasses import replace
+        from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
+        from bilqis_mlx.curriculum.scheduler import Assessment, Score, start_new, assess_withheld
+        from bilqis_mlx.learning.champions import Checkpoint
+        program = schedule_program_from_executable_release(self.full)
+        student = Checkpoint("a" * 64, "bundles/fixture", 10, True)
+        school = replace(start_new(program, student), grade_index=1,
+                         stage="ASSESS_RECOVERY_2", queue=(),
+                         first_recovery=("B.AND",), champions={"A": student},
+                         introduction_stage=max(0, len(program.grades[1].teaching_stages)-1))
+        measured_scope = tuple(item.capability_id
+                               for item in self.full.execution_plan.capabilities)
+        contract = assessment_scope_contract(self.full, measured_scope)
+        blocked_after = ("B.IFF",)
+        counts = {cap.id: cap.exam_item_count for grade in program.grades
+                  for cap in grade.capabilities}
+        filtered_scores = {cap: Score(counts[cap] - 1, counts[cap])
+                           for cap in measured_scope if cap not in blocked_after}
+        filtered = Assessment(student.sha256, student.optimizer_step,
+                              program.digest(), contract.rubric_sha256,
+                              filtered_scores, "measured-before-quarantine")
+        next_state = assess_withheld(
+            program, school, filtered, blocked_after,
+            rubric_capabilities=measured_scope)
+        self.assertNotIn("B", next_state.champions)
+        self.assertNotEqual(next_state.stage, "AWAITING_NEXT_GRADE")
+        with self.assertRaisesRegex(ValueError, "ASSESSMENT_NOT_GRADE_SEALED_RUBRIC"):
+            assess_withheld(program, school, replace(filtered, rubric_digest="f" * 64),
+                            blocked_after, rubric_capabilities=measured_scope)
+
 
 if __name__ == "__main__":
     unittest.main()

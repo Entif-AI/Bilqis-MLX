@@ -251,7 +251,8 @@ class DisposableGradeZSystemProof(unittest.TestCase):
                         for identity in CAPABILITIES if identity != withheld},
                 evaluation_id="grade-z-withheld",
             )
-            contained = assess_withheld(program, school, partial, (withheld,))
+            contained = assess_withheld(program, school, partial, (withheld,),
+                                      rubric_capabilities=CAPABILITIES)
             self.assertNotEqual(contained.stage, "WHOLE_SCHOOL_MASTERED")
 
             control = start_session(

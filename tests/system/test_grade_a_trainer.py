@@ -35,6 +35,47 @@ MANIFEST = Path(__file__).resolve().parents[2] / "docs/provenance/GRADE_A_CANDID
 
 
 class GradeATrainerContractTests(unittest.TestCase):
+    def test_fixed_frontier_uses_newer_retained_parent_predictions(self):
+        from bilqis_mlx.generated_assessment import make_cohort
+        rows = [
+            {"id": "B.NOT:0", "capability": "B.NOT", "gold": "TRUE"},
+            {"id": "B.NOT:1", "capability": "B.NOT", "gold": "FALSE"},
+        ]
+        cohort = make_cohort(rows, generator_version="fixture", seed=7,
+                             rubric_version="fixture-rubric")
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "cohorts").mkdir()
+            (root / "cohorts" / f"{cohort.digest}.json").write_text(
+                json.dumps({"schema": "fixture-rubric", "generator_version": "fixture",
+                            "seed": 7, "cohort_sha256": cohort.digest, "rows": rows}))
+            receipt = {"config": {}, "answer_ids": [], "last_exam": {
+                "student_sha256": "a" * 64, "optimizer_step": 13,
+                "cohort_sha256": cohort.digest,
+                "cohort_file": f"cohorts/{cohort.digest}.json",
+                "scores": {"B.NOT": {"correct": 2, "total": 2}},
+                "misses_for_teacher": [],
+            }}
+            school = SimpleNamespace(current_student=SimpleNamespace(
+                sha256="b" * 64, optimizer_step=14))
+            parent = {"B.NOT:0": "FALSE", "B.NOT:1": "FALSE"}
+            candidate = {"B.NOT:0": "FALSE", "B.NOT:1": "TRUE"}
+
+            def predict(_mx, weights, selected, _config, _answers):
+                expected = parent if weights == "parent" else candidate
+                return {row["id"]: expected[row["id"]] for row in selected}
+
+            with (patch.object(trainer, "_predictions", side_effect=predict),
+                  patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
+                        return_value=())):
+                fixed, replay, frontier = trainer._candidate_fixed_evidence(
+                    None, root, receipt, None, school, "B.NOT", "parent",
+                    "candidate", SimpleNamespace())
+        self.assertEqual(fixed["before"], 1)
+        self.assertEqual(fixed["after"], 0)
+        self.assertEqual(frontier["regressions"], [
+            {"id": "B.NOT:1", "capability": "B.NOT"}])
+        self.assertEqual(replay["status"], "NOT_MEASURED")
     def test_candidate_frontier_protects_other_grades_when_active_grade_absent(self):
         rows = (
             {"id": "A.LINK:0", "capability": "A.LINK", "gold": "TRUE"},
@@ -43,7 +84,9 @@ class GradeATrainerContractTests(unittest.TestCase):
         parent_predictions = {row["id"]: row["gold"] for row in rows}
         receipt = {
             "config": {}, "answer_ids": {},
-            "last_exam": {"cohort_sha256": "a" * 64},
+            "last_exam": {"cohort_sha256": "a" * 64,
+                          "student_sha256": "b" * 64,
+                          "optimizer_step": 123},
         }
         school = SimpleNamespace(current_student=SimpleNamespace(
             sha256="b" * 64, optimizer_step=123))

@@ -29,6 +29,16 @@ MANIFEST = ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
 
 class GradeCTrainerTests(unittest.TestCase):
+    def test_other_epoch_does_not_replay_original_c_admission(self):
+        from bilqis_mlx.compatibility.frontier_recovery import _recover_grade_c_boundary_source
+        current = {"sha256": "b" * 64, "optimizer_step": 14}
+        receipt = {"grade_c_parent_course_digest": "d" * 64,
+                   "school": {"current_student": current},
+                   "mentor_epoch": {"introduced_grade": "B", "baseline": current},
+                   "last_exam": {"student_sha256": "a" * 64, "optimizer_step": 13}}
+        self.assertIsNone(_recover_grade_c_boundary_source(
+            None, Path("/unused"), receipt))
+
     @classmethod
     def setUpClass(cls):
         cls.manifest, old, cls.engine, cls.policy_sha, cls.teacher, _ = prepare_source(SOURCE, PARENT, MANIFEST)
