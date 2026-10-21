@@ -30,12 +30,27 @@ def _source(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def _function_calls(path: Path, function_name: str) -> frozenset[str]:
+def _function_calls(path: Path, function_name: str, seen=frozenset()) -> frozenset[str]:
+    key = (path, function_name)
+    if key in seen or not path.is_file():
+        return frozenset()
     tree = ast.parse(_source(path), filename=str(path))
     function = next((node for node in tree.body
                      if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
                      and node.name == function_name), None)
     if function is None:
+        # Follow the facade statically: importing code would execute the runtime.
+        root = next((parent for parent in path.parents if parent.name == "bilqis_mlx"), None)
+        for statement in tree.body:
+            if not isinstance(statement, ast.ImportFrom) or not statement.module:
+                continue
+            for alias in statement.names:
+                if (alias.asname or alias.name) != function_name:
+                    continue
+                if root is None or not statement.module.startswith("bilqis_mlx."):
+                    return frozenset()
+                owner = root.parent.joinpath(*statement.module.split(".")).with_suffix(".py")
+                return _function_calls(owner, alias.name, seen | {key})
         return frozenset()
     names = set()
     for node in ast.walk(function):
@@ -78,7 +93,19 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
     # A/B/C remain compatibility/provider modules during migration. There is no
     # permission to repeat the pattern for D or any later grade.
     for path in sorted(src.rglob("*.py")):
-        if set(path.relative_to(src).parts) & {"tests", "compatibility", "research"}:
+        if "tests" in path.relative_to(src).parts:
+            continue
+        if path.name not in {"trainer.py", "cli.py"}:
+            for node in ast.walk(ast.parse(_source(path))):
+                imports_trainer = (
+                    isinstance(node, ast.Import) and
+                    any(alias.name == "bilqis_mlx.trainer" for alias in node.names) or
+                    isinstance(node, ast.ImportFrom) and (
+                        (node.module or "").split(".")[-1] == "trainer" or
+                        any(alias.name == "trainer" for alias in node.names)))
+                if imports_trainer:
+                    problems.append(f"{path.relative_to(root)} LEAF_IMPORTS_TRAINER")
+        if set(path.relative_to(src).parts) & {"compatibility", "research"}:
             continue
         match = FUTURE_GRADE_FILE.match(path.name)
         if match:

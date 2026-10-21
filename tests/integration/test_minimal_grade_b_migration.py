@@ -231,7 +231,7 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
                 live_source_registry(), SOURCE, self.graph,
                 capabilities=a_scope, legacy_course=canonical_course)
             predictions = {row["id"]: row["gold"] for row in cohort.rows}
-            with patch("bilqis_mlx.trainer._bundle_pointer", return_value=student):
+            with patch('bilqis_mlx.runtime.checkpoints._bundle_pointer', return_value=student):
                 _, frontier, roles, _ = _commit_scored_student(
                     None, root, receipt, self.manifest, canonical_course, school,
                     cohort, predictions, {}, Optimizer(), self.graph, reserve_gib=1)

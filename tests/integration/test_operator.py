@@ -26,8 +26,7 @@ class OperatorTests(unittest.TestCase):
 
     def test_human_training_interrupt_reports_resume_point_once_without_traceback(self):
         from bilqis_mlx import trainer
-        with tempfile.TemporaryDirectory() as tmp, patch.object(
-                trainer, "operate", side_effect=KeyboardInterrupt), \
+        with tempfile.TemporaryDirectory() as tmp, patch('bilqis_mlx.runtime.operating_loop.operate', side_effect=KeyboardInterrupt), \
                 redirect_stderr(io.StringIO()) as errors:
             code = main([
                 "train", "--human-run", "--resume", "--run-dir", tmp,
@@ -362,7 +361,7 @@ class OperatorTests(unittest.TestCase):
             state=root/"state.json"
             payload=json.dumps({"learning_experiment":{"version":"protected"}}).encode()
             state.write_bytes(payload)
-            with patch.object(trainer, "prepare_source", side_effect=AssertionError(
+            with patch('bilqis_mlx.runtime.session.prepare_source', side_effect=AssertionError(
                     "NO_SOURCE_OR_GPU_BEFORE_POLICY_REFUSAL")):
                 with self.assertRaisesRegex(
                         ValueError, "LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION"):
@@ -374,21 +373,21 @@ class OperatorTests(unittest.TestCase):
         from bilqis_mlx import trainer as trainer
         no_neural_work = "TEST_BLOCKS_ANY_NEURAL_WORK"
         with tempfile.TemporaryDirectory() as tmp:
-            with patch.object(trainer, "operate", side_effect=ValueError(
+            with patch('bilqis_mlx.runtime.operating_loop.operate', side_effect=ValueError(
                     no_neural_work)) as operate, \
                     redirect_stderr(io.StringIO()):
                 self.assertEqual(main(["train", "--human-run", "--resume",
                                        "--run-dir", tmp]), 2)
             self.assertTrue(operate.call_args.kwargs["retention_enabled"])
             self.assertEqual(operate.call_args.kwargs["source_prefetch_workers"], 2)
-            with patch.object(trainer, "operate", side_effect=ValueError(
+            with patch('bilqis_mlx.runtime.operating_loop.operate', side_effect=ValueError(
                     no_neural_work)) as operate, \
                     redirect_stderr(io.StringIO()):
                 self.assertEqual(main(["train", "--human-run", "--resume",
                                        "--source-prefetch-workers", "0",
                                        "--run-dir", tmp]), 2)
             self.assertEqual(operate.call_args.kwargs["source_prefetch_workers"], 0)
-            with patch.object(trainer, "operate", side_effect=ValueError(
+            with patch('bilqis_mlx.runtime.operating_loop.operate', side_effect=ValueError(
                     no_neural_work)) as operate, \
                     redirect_stderr(io.StringIO()):
                 self.assertEqual(main(["train", "--human-run", "--no-retention",
@@ -402,7 +401,7 @@ class OperatorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             owner = ExperimentRunBudget(Path(directory).resolve() / "issue349")
             run = owner.create("primary")
-            with patch.object(trainer, "operate", side_effect=ValueError(
+            with patch('bilqis_mlx.runtime.operating_loop.operate', side_effect=ValueError(
                     "TEST_BLOCKS_ANY_NEURAL_WORK")) as operate, \
                     redirect_stderr(io.StringIO()):
                 self.assertEqual(main([
@@ -417,7 +416,7 @@ class OperatorTests(unittest.TestCase):
         from bilqis_mlx import trainer as trainer
         no_neural_work = "TEST_BLOCKS_ANY_NEURAL_WORK"
         with tempfile.TemporaryDirectory() as tmp:
-            with patch.object(trainer, "operate", side_effect=ValueError(
+            with patch('bilqis_mlx.runtime.operating_loop.operate', side_effect=ValueError(
                     no_neural_work)) as operate, redirect_stderr(io.StringIO()):
                 self.assertEqual(main([
                     "train", "--human-run", "--resume",
@@ -428,8 +427,7 @@ class OperatorTests(unittest.TestCase):
 
     def test_human_operator_explicitly_passes_autonomous_curriculum_mode(self):
         from bilqis_mlx import trainer as trainer
-        with tempfile.TemporaryDirectory() as tmp, patch.object(
-                trainer, "operate", side_effect=ValueError(
+        with tempfile.TemporaryDirectory() as tmp, patch('bilqis_mlx.runtime.operating_loop.operate', side_effect=ValueError(
                     "AUTONOMY_TEST_NO_NEURAL_TRAINING")) as operate, \
                 redirect_stderr(io.StringIO()):
             self.assertEqual(main([
@@ -440,8 +438,7 @@ class OperatorTests(unittest.TestCase):
 
     def test_autonomous_curriculum_flag_cannot_start_optimizer_without_human_run(self):
         from bilqis_mlx import trainer as trainer
-        with tempfile.TemporaryDirectory() as tmp, patch.object(
-                trainer, "operate",
+        with tempfile.TemporaryDirectory() as tmp, patch('bilqis_mlx.runtime.operating_loop.operate',
                 side_effect=AssertionError("AUTONOMY_MUST_NOT_REACH_OPERATE")) as operate, \
                 redirect_stderr(io.StringIO()) as errors:
             self.assertEqual(main([
@@ -457,8 +454,7 @@ class OperatorTests(unittest.TestCase):
         from bilqis_mlx import trainer as trainer
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            with patch.object(
-                    trainer, "prepare_source",
+            with patch('bilqis_mlx.runtime.session.prepare_source',
                     side_effect=AssertionError("NO_SOURCE_OR_GPU_BEFORE_AUTONOMY_GUARD")):
                 with self.assertRaisesRegex(
                         ValueError, "AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION"):
@@ -469,8 +465,7 @@ class OperatorTests(unittest.TestCase):
 
     def test_human_operator_passes_flash_mode_without_changing_retention(self):
         from bilqis_mlx import trainer as trainer
-        with tempfile.TemporaryDirectory() as tmp, patch.object(
-                trainer, "operate", side_effect=ValueError(
+        with tempfile.TemporaryDirectory() as tmp, patch('bilqis_mlx.runtime.operating_loop.operate', side_effect=ValueError(
                     "FLASH_TEST_NO_NEURAL_TRAINING")) as operate, \
                 redirect_stderr(io.StringIO()):
             self.assertEqual(main([
@@ -627,7 +622,7 @@ class OperatorTests(unittest.TestCase):
 
             terminal = Terminal()
             with patch("bilqis_mlx.cli.sys.stdout", terminal), patch(
-                    "bilqis_mlx.trainer.operate",
+                    'bilqis_mlx.runtime.operating_loop.operate',
                     side_effect=ValueError("DISPOSABLE_TEST_NO_NEURAL_TRAINING")), \
                     redirect_stderr(io.StringIO()):
                 result = main(["train", "--human-run", "--resume",

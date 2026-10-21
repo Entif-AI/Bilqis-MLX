@@ -64,7 +64,7 @@ class TypedSoupExperimentTests(unittest.TestCase):
             data[:,winning] = 5.0
             return mx.array(data)
 
-        with patch("bilqis_mlx.trainer.forward_arrays", side_effect=oracle_logits):
+        with patch('bilqis_mlx.runtime.mlx_parity.forward_arrays', side_effect=oracle_logits):
             advice = _typed_confidence_guidance(
                 mx, mentors, self.rows, self.config,scope_size=6,teacher_distill=.7)
         self.assertEqual(set(advice), {"numeric_0_3", "semantic_token"})
@@ -88,7 +88,7 @@ class TypedSoupExperimentTests(unittest.TestCase):
     def test_incompatible_historic_vocabulary_is_not_falsely_consulted(self):
         mx=self.mx
         mentors=[{"weights":self.weights,"vocab_size":23,"breadth":3}]
-        with patch("bilqis_mlx.trainer.forward_arrays",
+        with patch('bilqis_mlx.runtime.mlx_parity.forward_arrays',
                    side_effect=AssertionError("INCOMPATIBLE_OLD_SOUP_CALLED")):
             self.assertIsNone(_typed_confidence_guidance(
                 mx,mentors,self.rows,self.config,scope_size=6,teacher_distill=.8))

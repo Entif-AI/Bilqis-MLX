@@ -118,7 +118,7 @@ class CourseTests(unittest.TestCase):
             grades=(replace(a, capabilities=a.capabilities[:5]), course.grades[1]))
         validate(compact_legacy)
         curriculum, _ = from_legacy_course(compact_legacy)
-        with self.assertRaisesRegex(ValueError, "GRADE_INVALID"):
+        with self.assertRaisesRegex(ValueError, "FACTORY_CURRICULUM_GRADE_INVENTORY_INVALID"):
             validate_curriculum_definition(
                 curriculum,
                 answer_kinds=("binary", "integer_0_3"))

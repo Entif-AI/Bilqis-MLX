@@ -33,10 +33,10 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         def correctly_predict(_mx, _params, rows, _config, _ids):
             return {row["id"]: row["gold"] for row in rows}
 
-        with patch.object(storage, "_predictions", side_effect=correctly_predict), \
-                patch.object(storage, "_train_step", side_effect=AssertionError(
+        with patch('bilqis_mlx.learning.student_ops._predictions', side_effect=correctly_predict), \
+                patch('bilqis_mlx.learning.student_ops._train_step', side_effect=AssertionError(
                     "PERFECT_TARGET_MUST_NOT_OPTIMIZE")), \
-                patch.object(storage, "_persist", side_effect=AssertionError(
+                patch('bilqis_mlx.runtime.checkpoints._persist', side_effect=AssertionError(
                     "PENDING_STUDENT_MUST_NOT_PERSIST")):
             updated = self.visit()
 
@@ -162,7 +162,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
             "schema": "bilqis.mlx.whole-student-retention/v1",
             "checkpoint": pointer, "scope_sha256": "fixture"}]}
         storage._verify_best_custody(self.fixture.root, protected)
-        with patch.object(storage, "retire_bundles", return_value=()) as retired:
+        with patch('bilqis_mlx.learning.capability_frontier.retire_bundles', return_value=()) as retired:
             storage._publish_boundary(self.fixture.root, protected, (), ())
         self.assertIn(pointer["filename"], retired.call_args.args[1])
 
@@ -170,7 +170,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         # operate is never entered by tests: this must fail at its first
         # read-only pathname guard, before source loading or optimizer setup.
         from unittest.mock import patch
-        with patch.object(storage, "prepare_source",
+        with patch('bilqis_mlx.runtime.session.prepare_source',
                           side_effect=AssertionError("SOURCE_SHOULD_NOT_BE_LOADED")):
             with self.assertRaisesRegex(
                     ValueError, "LEARNING_EXPERIMENT_REQUIRES_ISOLATED_WORKTREE_RUN"):
@@ -179,7 +179,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
                     self.fixture.fixture.manifest, retention_enabled=True)
 
     def test_metadata_advance_never_carries_prior_generation_outbox(self):
-        school = storage._state_from_json(self.receipt["school"], self.program)
+        school = storage._state_from_json(self.receipt["school"], self.schedule_program)
         prior = list(self.receipt["delivery_outbox"])
         advanced = storage._advance(self.fixture.root, self.receipt, school)
         storage._reconcile_delivery_outbox(self.fixture.root, advanced)
@@ -205,7 +205,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
             scores={"A.LINK": {"correct": 1, "total": 1}}, misses_for_teacher=[],
             cohort_sha256=cohort.digest, cohort_file=f"cohorts/{cohort.digest}.json")
         saved = {**self.receipt, "last_exam": historical}
-        with patch.object(storage, "_predictions", return_value={"fixed-0": "FALSE"}):
+        with patch('bilqis_mlx.learning.student_ops._predictions', return_value={"fixed-0": "FALSE"}):
             updated = storage._refresh_fixed_frontier(
                 self.mx, self.fixture.root, saved, self.course,
                 self.fixture.params, self.fixture.optimizer)
@@ -218,7 +218,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertEqual(storage._refresh_fixed_frontier(
             self.mx, self.fixture.root, updated, self.course,
             self.fixture.params, self.fixture.optimizer), updated)
-        school = storage._state_from_json(updated["school"], self.program)
+        school = storage._state_from_json(updated["school"], self.schedule_program)
         replaced = storage._advance(self.fixture.root, updated, school,
                                     last_exam=historical, persist=False)
         self.assertNotIn("fixed_frontier_exam", replaced)
@@ -228,7 +228,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             owner = ExperimentRunBudget(Path(directory) / "issue349")
             run = owner.create("primary")
-            with patch.object(storage, "prepare_source", side_effect=RuntimeError(
+            with patch('bilqis_mlx.runtime.session.prepare_source', side_effect=RuntimeError(
                     "SOURCE_BOUNDARY_REACHED")):
                 with self.assertRaisesRegex(RuntimeError, "SOURCE_BOUNDARY_REACHED"):
                     storage.operate(
@@ -295,7 +295,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
     def test_provisional_grade_c_candidate_has_context_and_real_old_rows(self):
         school = storage._state_from_json(
             self.receipt["school"],self.schedule_program)
-        with patch.object(storage,"decide_learning_trial",
+        with patch('bilqis_mlx.learning.learning_experiment.decide',
                           wraps=storage.decide_learning_trial) as gate,redirect_stdout(io.StringIO()):
             result=self.visit()
         self.assertEqual(gate.call_args.kwargs["mature_grades"],frozenset(school.champions))
@@ -353,7 +353,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         def capture(*args,**kwargs):
             requested[kwargs["capability"]]=kwargs["each"]
             return source(*args,**kwargs)
-        with patch.object(storage,"_draw_live_rows",side_effect=capture):
+        with patch('bilqis_mlx.runtime.assessment._draw_live_rows',side_effect=capture):
             rows,protected,_ = storage._learning_probe_rows(
                 self.source_root,self.fixture.graph,latest,self.course,school,
                 "C.COUNT",Settings(),schedule_program=self.schedule_program,
@@ -378,7 +378,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
             return {**decision,"decision":"REJECT",
                     "reason":"FIXTURE_FORCED_TRANSACTION_REJECTION"}
 
-        with patch.object(storage,"decide_learning_trial",
+        with patch('bilqis_mlx.learning.learning_experiment.decide',
                           side_effect=forced_rejection),redirect_stdout(io.StringIO()):
             result=self.visit()
         event=result["_pending_visit_events"][-1]

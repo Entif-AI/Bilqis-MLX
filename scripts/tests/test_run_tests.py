@@ -71,7 +71,8 @@ class RunTestsTests(unittest.TestCase):
                 path.write_text("import unittest\n\nclass Example(unittest.TestCase):\n    def test_ok(self): pass\n")
             (root / "other" / "not_a_test.py").write_text("")
             for ignored in (root / "vendor" / "tests" / "test_vendor.py",
-                            root / "runs" / "tests" / "test_run.py"):
+                            root / "runs" / "tests" / "test_run.py",
+                            root / ".local" / "source-archive" / "tests" / "test_old.py"):
                 ignored.parent.mkdir(parents=True)
                 ignored.write_text("")
 

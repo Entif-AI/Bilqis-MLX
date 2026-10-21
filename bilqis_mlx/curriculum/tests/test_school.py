@@ -76,7 +76,7 @@ class SchoolTests(unittest.TestCase):
 
         with self.assertRaisesRegex(
                 ValueError,
-                r"INVALID_OR_DRIFTED_SCHOOL_STATE: course_digest saved=0{64} expected="):
+                r"SCHOOL.STATE.COURSE_DIGEST_MISMATCH"):
             verify_state(course, drifted)
 
     def test_full_imperfect_grade_sweep_precedes_global_two_round_recovery(self):
@@ -866,7 +866,7 @@ class SchoolTests(unittest.TestCase):
             successor = replace(full, grades=(a, full.grades[1]),
                                 version="partial-A-plus-B/v2", program_complete=False,
                                 assessment_manifest_sha256="b"*64)
-            with self.assertRaisesRegex(ValueError, "DRIFTED"):
+            with self.assertRaisesRegex(ValueError, "SCHOOL.STATE.COURSE_DIGEST_MISMATCH"):
                 read_state(target, successor)
         resumed = append_next_grade(a_only, successor, state)
         self.assertEqual(resumed.grade, "B")
@@ -874,7 +874,7 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(resumed.champions["A"], student)
         self.assertEqual(resumed.current_student, student)
         self.assertEqual(resumed.latest_rubric_digest, None)
-        with self.assertRaisesRegex(ValueError, "DRIFTED"):
+        with self.assertRaisesRegex(ValueError, "SCHOOL.STATE.COURSE_DIGEST_MISMATCH"):
             append_next_grade(a_only, successor, resumed)
         with self.assertRaisesRegex(ValueError, "CHANGE_PREVIOUS_GRADE"):
             changed_a = replace(a, assessment_sha256="c"*64)

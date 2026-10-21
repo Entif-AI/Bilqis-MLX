@@ -70,7 +70,7 @@ def _debt_boundary_source_exam(run_dir, pre, epoch, previous):
 
 def _verify_recovered_boundary_exam(mx, run_dir, source_exam, pre, previous, epoch):
     """Re-score the preserved parent and prove the mentor-epoch digest exactly."""
-    from ..trainer import _predictions
+    from bilqis_mlx.learning.student_ops import _predictions
 
 
     from ..fixed_frontier import load_frontier_cohort
@@ -132,7 +132,8 @@ def _recover_grade_c_boundary_source(mx, run_dir, receipt):
 
 def _migrate_grade_c_fixed_frontier(mx, run_dir, receipt, course, parameters):
     """Idempotently bind an early Grade-C frontier to its graph-grown parent."""
-    from ..trainer import _predictions, _advance, _persist, _with_delivery_outbox, _reconcile_delivery_outbox
+    from bilqis_mlx.learning.student_ops import _predictions
+    from bilqis_mlx.runtime.checkpoints import _advance, _persist, _with_delivery_outbox, _reconcile_delivery_outbox
 
     source_exam = _recover_grade_c_boundary_source(mx, run_dir, receipt)
     if source_exam is None:
@@ -182,7 +183,10 @@ def recover_legacy_frontier(mx, run_dir, receipt, course, parameters):
 def _measure_debt_admission_boundary(mx, run_dir, receipt, manifest, course,
                                      source_root, parameters, graph):
     """Freshly score the complete declared prior release for debt admission."""
-    from ..trainer import (_draw_live_rows, _cohort_contract, _persist_live_cohort, _predictions, assessment_rubric_for_scope, make_cohort, score_cohort)
+    from bilqis_mlx.runtime.assessment import _draw_live_rows, _persist_live_cohort
+    from bilqis_mlx.live_curriculum import cohort_contract as _cohort_contract, assessment_rubric_for_scope
+    from bilqis_mlx.learning.student_ops import _predictions
+    from bilqis_mlx.generated_assessment import make_cohort, score as score_cohort
     school = _state_from_json(receipt["school"], course)
     full_scope = tuple(
         capability.id for grade in course.grades for capability in grade.capabilities)

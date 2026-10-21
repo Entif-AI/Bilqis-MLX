@@ -367,7 +367,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
             "grade_a_user_acceptance_is_separate": True,
         }
         if resume:
-            from .trainer import _reconcile_delivery_outbox
+            from bilqis_mlx.runtime.checkpoints import _reconcile_delivery_outbox
             from .compatibility.executable_projection import preflight_sealed_v1_migration
             saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
             outbox = saved.get("delivery_outbox")
@@ -782,7 +782,8 @@ def _main(args):
         if (args.legacy_code_root is not None and
                 not args.legacy_code_root.expanduser().resolve().is_relative_to(ROOT)):
             raise ValueError("HUMAN_TRAINER_EXTERNAL_SOURCE_ROOT_FORBIDDEN")
-        from .trainer import operate, operator_view
+        from bilqis_mlx.runtime.operating_loop import operate
+        from bilqis_mlx.runtime.checkpoints import operator_view
         from bilqis_mlx.presentation.dashboard import build, ingest
         board, on_event = _prepare_live_board(args, build, ingest)
         with operator_view(on_event):

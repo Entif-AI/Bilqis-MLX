@@ -6,6 +6,10 @@ remain reproducible while the compatibility surface is retired.
 """
 from __future__ import annotations
 
+import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
+import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
+import bilqis_mlx.runtime.state as _runtime_state
+
 from copy import deepcopy
 from dataclasses import asdict, replace
 
@@ -29,11 +33,6 @@ from ..learning.championship_identity import (
 from ..live_curriculum import assessment_rubric_for_scope
 from ..runtime.admission import _factory_admission
 from .source_adapters import historical_source_registry
-
-
-def _owners():
-    from .. import trainer
-    return trainer
 
 
 def _next_grade_admission_event(record, school, current_grade: str,
@@ -86,10 +85,9 @@ def _grade_replacement_event(record, school, previous_course, successor,
 
 def activate_next_admitted_grade(
         run_dir, receipt, previous_course, successor, graph=None):
-    t = _owners()
-    school = t._state_from_json(
+    school = _runtime_state._state_from_json(
         receipt["school"],
-        t._schedule_for_receipt(run_dir, receipt, previous_course))
+        _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, previous_course))
     current_grade = previous_course.grades[-1].id
     if (not successor.executable or
             len(successor.grades) != len(previous_course.grades) + 1 or
@@ -155,24 +153,23 @@ def activate_next_admitted_grade(
         "championship_epoch_history": history,
     }
     introduced_grade = successor.grades[-1].id
-    record = t._advance(
+    record = _runtime_checkpoints._advance(
         run_dir, candidate, next_state,
         result="ACTIVE_GRADE_" + introduced_grade, persist=False)
     admitted = _next_grade_admission_event(
         record, school, current_grade, introduced_grade, successor, epoch,
         history, compatibility, release.release_sha256)
-    record = t._persist(
-        run_dir, t._with_delivery_outbox(record, (admitted,)))
-    t._reconcile_delivery_outbox(run_dir, record)
+    record = _runtime_checkpoints._persist(
+        run_dir, _runtime_checkpoints._with_delivery_outbox(record, (admitted,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
     return record
 
 
 def activate_revised_admitted_grade(
         run_dir, receipt, previous_course, successor, graph=None):
-    t = _owners()
-    school = t._state_from_json(
+    school = _runtime_state._state_from_json(
         receipt["school"],
-        t._schedule_for_receipt(run_dir, receipt, previous_course))
+        _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, previous_course))
     legacy_school = replace(school, course_digest=previous_course.digest())
     next_state, revised_grade = revise_admitted_grade(
         previous_course, successor, legacy_school)
@@ -224,7 +221,7 @@ def activate_revised_admitted_grade(
             generation=receipt["generation"] + 1,
             student=asdict(school.current_student))
         updated["mentor_epoch"] = epoch
-    record = t._advance(
+    record = _runtime_checkpoints._advance(
         run_dir, updated, next_state,
         result="ACTIVE_GRADE_" + next_state.grade, persist=False)
     event = {
@@ -238,18 +235,17 @@ def activate_revised_admitted_grade(
         "factory_release_sha256": release.release_sha256,
         "actual_neural_updates": 0,
     }
-    record = t._persist(
-        run_dir, t._with_delivery_outbox(record, (event,)))
-    t._reconcile_delivery_outbox(run_dir, record)
+    record = _runtime_checkpoints._persist(
+        run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
     return record
 
 
 def activate_replaced_admitted_grade(
         run_dir, receipt, previous_course, successor, graph=None):
-    t = _owners()
-    school = t._state_from_json(
+    school = _runtime_state._state_from_json(
         receipt["school"],
-        t._schedule_for_receipt(run_dir, receipt, previous_course))
+        _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, previous_course))
     legacy_school = replace(school, course_digest=previous_course.digest())
     next_state, replaced_grade = replace_admitted_grade(
         previous_course, successor, legacy_school)
@@ -313,13 +309,13 @@ def activate_replaced_admitted_grade(
             generation=receipt["generation"] + 1,
             student=asdict(school.current_student))
         updated["mentor_epoch"] = epoch
-    record = t._advance(
+    record = _runtime_checkpoints._advance(
         run_dir, updated, next_state,
         result="ACTIVE_GRADE_" + next_state.grade, persist=False)
     event = _grade_replacement_event(
         record, school, previous_course, successor, replaced_grade,
         old_caps, new_caps, withheld, release.release_sha256)
-    record = t._persist(
-        run_dir, t._with_delivery_outbox(record, (event,)))
-    t._reconcile_delivery_outbox(run_dir, record)
+    record = _runtime_checkpoints._persist(
+        run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
     return record

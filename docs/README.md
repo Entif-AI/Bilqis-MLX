@@ -13,6 +13,8 @@ The curriculum architecture did not originate with SPEC-0001. Earlier roadmaps, 
 
 ## Evidence and provenance
 
+The [2026-10-21 main integration and runtime ownership record](evidence/development/ISSUE352_INTEGRATION_20261021.md) maps the trainer facade to its service owners and records size/debt dispositions.
+
 - [`evidence/`](evidence/) contains observations, experiment receipts, diagnostics, grade evidence, and development qualification artifacts. Evidence can prove or falsify a claim; it does not become policy merely by existing.
 - [`provenance/`](provenance/) contains source manifests, registry snapshots, adjudication records, review dossiers, source audits, and derivative requirement companions. These artifacts preserve what an implementation was grounded in. They are not duplicate canonical specifications.
 

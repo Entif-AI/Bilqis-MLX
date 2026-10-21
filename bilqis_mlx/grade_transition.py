@@ -202,9 +202,10 @@ def activate_numeric_grade(mx, run_dir, receipt, previous, successor,
                            parameters, optimizer, graph, *, reserve_gib,
                            allow_mastery_debt: bool = False):
     # Import the existing custody writer at use time; it owns all state/outbox I/O.
-    from .trainer import (_advance, _bundle_pointer, _factory_admission,
-        _fingerprint, _persist, _predictions, _reconcile_delivery_outbox,
-        _state_from_json, _with_delivery_outbox)
+    from bilqis_mlx.runtime.checkpoints import _advance, _bundle_pointer, _persist, _reconcile_delivery_outbox, _with_delivery_outbox
+    from bilqis_mlx.runtime.admission import _factory_admission
+    from bilqis_mlx.runtime.state import _fingerprint, _state_from_json
+    from bilqis_mlx.learning.student_ops import _predictions
     school = _state_from_json(receipt["school"], previous)
     exam = receipt.get("last_exam") or {}
     counts = {cap: count for grade in previous.grades for cap, count in grade.exam_item_counts}

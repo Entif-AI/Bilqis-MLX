@@ -107,8 +107,7 @@ class NumericStaircaseTests(unittest.TestCase):
             transition = numeric_entry_transition(
                 self.boolean_release, self.graph,
                 full_boolean=False, maximum=3)
-            with patch.object(
-                    storage, '_predictions',
+            with patch('bilqis_mlx.learning.student_ops._predictions',
                     side_effect=lambda _m, _p, rows, *args:
                     {row['id']: row['gold'] for row in rows}):
                 self.params, self.optimizer, self.graph, record, course = (
@@ -430,8 +429,7 @@ class NumericStaircaseTests(unittest.TestCase):
             transition = numeric_entry_transition(
                 release, self.fixture.parent_graph,
                 full_boolean=True, maximum=3)
-            with patch.object(
-                    storage, '_predictions',
+            with patch('bilqis_mlx.learning.student_ops._predictions',
                     side_effect=lambda _m, _p, rows, *args:
                     {row['id']: row['gold'] for row in rows}):
                 grown, own, graph, c_record, staircase = (
@@ -563,7 +561,7 @@ class NumericStaircaseTests(unittest.TestCase):
                     value.get('factory_admission_v2') is not None):
                 raise RuntimeError('enrollment pointer interrupted')
             return original(path,value,**kwargs)
-        with patch.object(storage,'_durable_json',side_effect=interrupt), redirect_stdout(io.StringIO()):
+        with patch('bilqis_mlx.runtime.state._durable_json',side_effect=interrupt), redirect_stdout(io.StringIO()):
             with self.assertRaisesRegex(RuntimeError,'pointer interrupted'):
                 self.start()
         transition = numeric_entry_transition(

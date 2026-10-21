@@ -168,7 +168,7 @@ class GradeCTrainerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
             root = Path(temp)
             receipt = _persist(root, receipt)
-            with patch("bilqis_mlx.trainer._predictions",
+            with patch('bilqis_mlx.learning.student_ops._predictions',
                        side_effect=self.boundary_predictions):
                 receipt = _measure_debt_admission_boundary(
                     mx, root, receipt, self.manifest, self.previous, SOURCE,
@@ -230,7 +230,7 @@ class GradeCTrainerTests(unittest.TestCase):
             pre = self.debt_receipt(
                 pointer, params, session_id="debt-admission-recovery")
             pre = _persist(root, pre)
-            with patch("bilqis_mlx.trainer._predictions",
+            with patch('bilqis_mlx.learning.student_ops._predictions',
                        side_effect=self.boundary_predictions):
                 measured = _measure_debt_admission_boundary(
                     mx, root, pre, self.manifest, self.previous, SOURCE,
@@ -245,7 +245,7 @@ class GradeCTrainerTests(unittest.TestCase):
             broken = json.loads(json.dumps(admitted))
             broken["last_exam"] = json.loads(json.dumps(pre["last_exam"]))
             broken.pop("grade_c_fixed_frontier_cohort_sha256", None)
-            with patch("bilqis_mlx.trainer._predictions",
+            with patch('bilqis_mlx.learning.student_ops._predictions',
                        side_effect=self.boundary_predictions):
                 repaired = _migrate_grade_c_fixed_frontier(
                     mx, root, broken, self.course, grown)
@@ -321,7 +321,7 @@ class GradeCTrainerTests(unittest.TestCase):
                 receipt = _take_visit(mx,root,receipt,self.manifest,self.course,self.engine,
                     params,opt,graph,steps_per_visit=1,batch_size=6,reserve_gib=0.,source_root=SOURCE)
                 # Oracle fixture validates graduation mechanics; these scores are not neural mastery.
-                with patch("bilqis_mlx.trainer._predictions",side_effect=
+                with patch('bilqis_mlx.learning.student_ops._predictions',side_effect=
                            lambda _m,_p,rows,*args: {r["id"]:r["gold"] for r in rows}):
                     receipt = _take_exam(mx,root,receipt,self.manifest,self.course,SOURCE,PARENT,
                                          params,opt,graph,reserve_gib=0.)

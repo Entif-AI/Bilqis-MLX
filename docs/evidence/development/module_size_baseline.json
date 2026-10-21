@@ -1,0 +1,11 @@
+{
+  "schema": "bilqis.production-size-baseline/v1",
+  "source_commit": "bc6e6b3",
+  "description": "Pre-extraction integration inventory; trainer functions follow their new owners. Counts are inherited limits, never permission for growth. See ISSUE352_INTEGRATION_20261021.md for architectural dispositions.",
+  "sizes": {
+    "bilqis_mlx/presentation/spiral_dashboard.py": 1361,
+    "bilqis_mlx/runtime/exam_execution.py::_take_exam": 446,
+    "bilqis_mlx/runtime/operating_loop.py::operate": 786,
+    "bilqis_mlx/runtime/visits.py::_take_visit": 603
+  }
+}

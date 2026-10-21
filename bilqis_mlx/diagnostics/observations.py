@@ -15,7 +15,7 @@ import os
 import stat
 
 from ..curriculum import BOOLEAN_OPERATORS
-from ..generated_assessment import verify_stored_cohort
+from ..generated_assessment import EXECUTABLE_COHORT_SCHEMA, verify_stored_cohort
 
 
 def _is_sha(value):
@@ -156,6 +156,9 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
             cohort.get("generator_version") != last_exam.get("generator_version") or
             type(last_exam.get("optimizer_step")) is not int or
             last_exam["optimizer_step"] < 0):
+        _raise_exam_custody_mismatch()
+    if (cohort["schema"] == EXECUTABLE_COHORT_SCHEMA and
+            last_exam.get("rubric_sha256") != last_exam["exam_rubric_sha256"]):
         _raise_exam_custody_mismatch()
     rows = cohort.get("rows")
     if not isinstance(rows, list) or not rows or any(not isinstance(r, dict) for r in rows):
@@ -427,7 +430,7 @@ def _verify_history_event_outbox(receipt: dict, event: dict,
                                  observation: ExamObservation) -> ExamObservation:
     if "delivery_outbox" not in receipt:
         return observation
-    from ..trainer import _with_delivery_outbox
+    from bilqis_mlx.runtime.checkpoints import _with_delivery_outbox
     outbox = receipt["delivery_outbox"]
     if not isinstance(outbox, list) or any(not isinstance(item, dict) for item in outbox):
         raise ValueError("DIAGNOSTIC_EVENT_OUTBOX_CONFLICT")

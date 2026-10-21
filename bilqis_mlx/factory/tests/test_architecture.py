@@ -80,6 +80,31 @@ class FactoryArchitectureTests(unittest.TestCase):
                 "def _rebind():\n _factory_admission()\n")
             self.assertEqual(inspect_factory_architecture(root), ())
 
+    def test_leaf_service_cannot_import_the_trainer_facade(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "bilqis_mlx/factory").mkdir(parents=True)
+            (root / "bilqis_mlx/runtime").mkdir()
+            (root / "bilqis_mlx/trainer.py").write_text(
+                "def operate():\n _ensure_executable_release()\n"
+                "def _adopt_executable_profile():\n _executable_factory_admission()\n")
+            (root / "bilqis_mlx/runtime/leaf.py").write_text(
+                "from bilqis_mlx import trainer\n")
+            self.assertTrue(any("LEAF_IMPORTS_TRAINER" in problem
+                                for problem in inspect_factory_architecture(root)))
+
+    def test_facade_cannot_hide_an_ungated_service(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "bilqis_mlx/factory").mkdir(parents=True)
+            (root / "bilqis_mlx/runtime").mkdir()
+            (root / "bilqis_mlx/trainer.py").write_text(
+                "from bilqis_mlx.runtime.loop import operate\n"
+                "def _adopt_executable_profile():\n _executable_factory_admission()\n")
+            (root / "bilqis_mlx/runtime/loop.py").write_text("def operate():\n pass\n")
+            self.assertTrue(any("OPERATE_BYPASSES_FACTORY_RELEASE" in problem
+                                for problem in inspect_factory_architecture(root)))
+
 
 if __name__ == "__main__":
     unittest.main()

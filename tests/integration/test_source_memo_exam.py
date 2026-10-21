@@ -61,7 +61,7 @@ class SourceMemoExamTests(TestCase):
             return np.array([[0., 1.]] if parameters["correct"] else [[1., 0.]])
 
         results = []
-        with patch.object(trainer, "forward_arrays", side_effect=network):
+        with patch('bilqis_mlx.runtime.mlx_parity.forward_arrays', side_effect=network):
             for identity, correct in (("weak", False), ("strong", True), ("later-weak", False)):
                 predictions = trainer._predictions(
                     mx, {"identity": identity, "correct": correct}, [row], config, [6, 7])

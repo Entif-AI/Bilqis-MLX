@@ -60,10 +60,10 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             evaluated.append((identity, tuple(row["id"] for row in chosen)))
             truth = parent if identity == "parent" else candidate
             return {row["id"]: truth[row["id"]] for row in chosen}
-        with (patch.object(trainer, "assessment_capabilities",
+        with (patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities',
                            return_value=(*grade, "A.EDGE")),
-              patch.object(trainer, "_predictions", side_effect=inference),
-              patch.object(trainer, "_fixed_same_grade_rows",
+              patch('bilqis_mlx.learning.student_ops._predictions', side_effect=inference),
+              patch('bilqis_mlx.runtime.candidate_evidence._fixed_same_grade_rows',
                            return_value=()) as fixed,
               patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
                     return_value=())):
@@ -103,12 +103,12 @@ class CausalTeacherExperimentTests(unittest.TestCase):
 
         # With no target gain, neither peers nor a fixed full-grade exam are
         # evaluated and the unchanged parent can be rejected immediately.
-        with (patch.object(trainer, "assessment_capabilities",
+        with (patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities',
                            return_value=(*grade, "A.EDGE")),
-              patch.object(trainer, "_predictions",
+              patch('bilqis_mlx.learning.student_ops._predictions',
                            side_effect=lambda _mx, _id, selected, *_:
                            {row["id"]: parent[row["id"]] for row in selected}),
-              patch.object(trainer, "_fixed_same_grade_rows",
+              patch('bilqis_mlx.runtime.candidate_evidence._fixed_same_grade_rows',
                            side_effect=AssertionError("no extra grade test"))):
             program = schedule_program(
                 ("A", ("A.EDGE",)),
@@ -133,14 +133,14 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         degraded = dict(candidate)
         degraded["B.NOT0"] = "FALSE"
         degraded["B.NOT1"] = "FALSE"
-        with (patch.object(trainer, "assessment_capabilities",
+        with (patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities',
                            return_value=(*grade, "A.EDGE")),
-              patch.object(trainer, "_predictions",
+              patch('bilqis_mlx.learning.student_ops._predictions',
                            side_effect=lambda _mx, identity, selected, *_:
                            {row["id"]: (parent if identity == "parent"
                                         else degraded)[row["id"]]
                             for row in selected}),
-              patch.object(trainer, "_fixed_same_grade_rows",
+              patch('bilqis_mlx.runtime.candidate_evidence._fixed_same_grade_rows',
                            side_effect=AssertionError("net grade loss must stop"))):
             incomplete, controls, required, fixed, replay, _, stage = (
                 trainer._candidate_grade_evidence(
@@ -198,9 +198,9 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             "current_student": type(
                 "Student", (), {"sha256": "a" * 64, "optimizer_step": 1})(),
         })()
-        with (patch.object(trainer, "assessment_capabilities",
+        with (patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities',
                            return_value=("B.IFF", "B.NOT", "C.DIV")),
-              patch.object(trainer, "_predictions", side_effect=inference),
+              patch('bilqis_mlx.learning.student_ops._predictions', side_effect=inference),
               patch("bilqis_mlx.fixed_frontier.load_frontier",
                     return_value=(tuple(frontier_rows), frontier_parent)),
               patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",

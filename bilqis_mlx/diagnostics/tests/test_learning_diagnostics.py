@@ -82,7 +82,7 @@ class DiagnosticObservationTests(unittest.TestCase):
                     capabilities=["X.NOT"])
         observed = observe_exam(cohort, exam)
         self.assertEqual(observed.capabilities[0].correct, exam["scores"]["X.NOT"]["correct"])
-        for field in ("rubric_sha256", "source_sha256", "factory_release_sha256", "capabilities"):
+        for field in ("exam_rubric_sha256", "rubric_sha256", "source_sha256", "factory_release_sha256", "capabilities"):
             wrong = deepcopy(exam)
             wrong[field] = ["X.OTHER"] if field == "capabilities" else "f" * 64
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, "CUSTODY"):

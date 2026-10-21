@@ -290,3 +290,8 @@ def legacy_course_for_profile(
         maximum = len(numbers) - 1
     return build_numeric_grade(
         base, numeric_registry_graph(), maximum=maximum)
+
+
+def profile_has_legacy_inventory(release, course) -> bool:
+    """Limit legacy operator profile coercion to its reconstructible inventory."""
+    return set(release.execution_plan.capability_map) <= set(course.capability_map)

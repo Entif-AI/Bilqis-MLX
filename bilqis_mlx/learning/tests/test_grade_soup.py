@@ -75,7 +75,7 @@ class GradeSoupTests(unittest.TestCase):
             root=Path(temp)
             (root/"bundles/older").mkdir(parents=True)
             (root/"bundles/newer").mkdir(parents=True)
-            with patch.object(trainer,"load_semantically_bound_bundle",
+            with patch('bilqis_mlx.runtime.mlx_checkpoint.load_semantically_bound_bundle',
                               side_effect=load_bundle):
                 frozen,refreshed=trainer._cook_new_grade_soups(
                     mx,root,{"grade_soups":{}},roles,course,new_graph,

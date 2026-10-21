@@ -301,13 +301,13 @@ def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None,
     A compatibility Course is only metadata for v2 execution. Its historical
     generator names are not runtime provider authority, and may be retired.
     """
-    if course is None:
-        raise ValueError("FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION")
     if executable_release is not None:
         from ..source_adapters.school import live_source_registry
         return draw_executable_release_rows(
             source_root, graph, executable_release, live_source_registry(),
             seed=seed, legacy_course=course, capability=capability, each=each)
+    if course is None:
+        raise ValueError("FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION")
     return draw_course_rows(source_root, graph, course, seed=seed,
                             capability=capability, each=each)
 

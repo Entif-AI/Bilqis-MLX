@@ -88,7 +88,7 @@ class GradeATrainerContractTests(unittest.TestCase):
                 expected = parent if weights == "parent" else candidate
                 return {row["id"]: expected[row["id"]] for row in selected}
 
-            with (patch.object(trainer, "_predictions", side_effect=predict),
+            with (patch('bilqis_mlx.learning.student_ops._predictions', side_effect=predict),
                   patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
                         return_value=())):
                 fixed, replay, frontier = trainer._candidate_fixed_evidence(
@@ -116,8 +116,7 @@ class GradeATrainerContractTests(unittest.TestCase):
         with (
             patch("bilqis_mlx.fixed_frontier.load_frontier",
                   return_value=(rows, parent_predictions)),
-            patch.object(
-                trainer, "_predictions",
+            patch('bilqis_mlx.learning.student_ops._predictions',
                 side_effect=lambda _mx, _bundle, selected, _config, _answers: {
                     row["id"]: row["gold"] for row in selected}),
             patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
@@ -231,7 +230,7 @@ class GradeATrainerContractTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            with patch("bilqis_mlx.trainer.save_new_bundle",
+            with patch('bilqis_mlx.runtime.mlx_checkpoint.save_new_bundle',
                        side_effect=fail_after_partial_stage):
                 with self.assertRaisesRegex(OSError, "injected disk interruption"):
                     _bundle_pointer(root, "interrupted-unique", {}, None, {},
@@ -260,7 +259,7 @@ class GradeATrainerContractTests(unittest.TestCase):
             late.mkdir(parents=True)
             details = {"source_digest": AUDITED_PARENT.sha256,
                        "optimizer_step": 101, "safetensors_sha256": "f" * 64}
-            with patch("bilqis_mlx.trainer.load_semantically_bound_bundle",
+            with patch('bilqis_mlx.runtime.mlx_checkpoint.load_semantically_bound_bundle',
                        return_value=({}, None, details, {})):
                 found = _quarantine_newer_uncommitted_bundles(root, set(), 100)
             self.assertEqual(found, ("candidate-after-crash",))

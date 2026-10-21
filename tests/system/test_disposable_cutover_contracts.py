@@ -91,7 +91,7 @@ class DisposableCutoverContractTests(unittest.TestCase):
         with patch("bilqis_mlx.runtime.mlx_checkpoint.assert_headroom", side_effect=RuntimeError("DISK_BUDGET_EXHAUSTED")):
             with self.assertRaisesRegex(RuntimeError, "DISK_BUDGET"):
                 storage._bundle_pointer(self.root, "fixture-candidate", parameters, optimizer, graph, reserve_gib=100)
-        with patch.object(storage, "load_semantically_bound_bundle", side_effect=RuntimeError("lost readback")):
+        with patch('bilqis_mlx.runtime.mlx_checkpoint.load_semantically_bound_bundle', side_effect=RuntimeError("lost readback")):
             with self.assertRaisesRegex(RuntimeError, "lost readback"):
                 storage._bundle_pointer(self.root, "fixture-candidate", parameters, optimizer, graph, reserve_gib=100)
         self.assertFalse((self.root / "bundles/fixture-candidate").exists())
@@ -107,12 +107,12 @@ class DisposableCutoverContractTests(unittest.TestCase):
             if path.name == "state.json":
                 raise RuntimeError("crash before pointer")
             return original_write(path, value, **kwargs)
-        with storage.operator_lock(self.root), patch.object(storage, "_durable_json", side_effect=fail_pointer):
+        with storage.operator_lock(self.root), patch('bilqis_mlx.runtime.state._durable_json', side_effect=fail_pointer):
             with self.assertRaisesRegex(RuntimeError, "crash before pointer"):
                 storage._persist(self.root, record)
         self.assertEqual(json.loads((self.root / "state.json").read_text())["generation"], 1)
         with redirect_stdout(io.StringIO()), storage.operator_lock(self.root), \
-                patch.object(storage, "_bundle_pointer", side_effect=AssertionError("duplicate allocation")):
+                patch('bilqis_mlx.runtime.checkpoints._bundle_pointer', side_effect=AssertionError("duplicate allocation")):
             recovered = storage._recover_orphaned_commit(self.root, self.receipt)
             storage._reconcile_delivery_outbox(self.root, recovered)
         self.assertEqual(recovered["generation"], 2)
@@ -128,7 +128,7 @@ class DisposableCutoverContractTests(unittest.TestCase):
             append(run_dir, event)
             raise RuntimeError("lost event acknowledgement")
         with redirect_stdout(io.StringIO()), storage.operator_lock(self.root):
-            with patch.object(storage, "_record", side_effect=lost_ack), self.assertRaises(RuntimeError):
+            with patch('bilqis_mlx.runtime.checkpoints._record', side_effect=lost_ack), self.assertRaises(RuntimeError):
                 storage._reconcile_delivery_outbox(self.root, record)
             storage._reconcile_delivery_outbox(self.root, record)
             storage._reconcile_delivery_outbox(self.root, record)

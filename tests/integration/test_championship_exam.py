@@ -106,6 +106,11 @@ def _exam_receipt(*, school, run_id, release, manifest, course, graph,
     }
 
 
+def _patch_owner(name, **kwargs):
+    function = getattr(trainer, name)
+    return patch(function.__module__ + "." + function.__name__, **kwargs)
+
+
 def _exam_patches(*, executable_release, program, routine, candidate, school,
                   predict, cook_soups=None, extra=None):
     patches = {
@@ -138,7 +143,7 @@ def _take_inert_exam(*, temp, receipt, manifest, course, root, graph, patches,
                      rubric_sha256):
     with ExitStack() as stack:
         for name, function in patches.items():
-            stack.enter_context(patch.object(trainer, name, side_effect=function))
+            stack.enter_context(_patch_owner(name, side_effect=function))
         stack.enter_context(patch(
             "bilqis_mlx.factory.assessment.assessment_scope_contract",
             return_value=SimpleNamespace(rubric_sha256=rubric_sha256)))
@@ -330,7 +335,7 @@ class ChampionshipExamTests(TestCase):
                 "_publish_boundary": lambda *_a, **_k: None,
             }
             for name, function in patches.items():
-                stack.enter_context(patch.object(trainer, name, side_effect=function))
+                stack.enter_context(_patch_owner(name, side_effect=function))
             stack.enter_context(patch(
                 "bilqis_mlx.factory.assessment.assessment_scope_contract",
                 return_value=SimpleNamespace(rubric_sha256=cohort_rubric)))
@@ -484,19 +489,17 @@ class ChampionshipExamTests(TestCase):
             (("A", ("A.X",)), ("C", ("C.NEW",))))
         with (
             TemporaryDirectory() as temp,
-            patch.object(trainer, "assessment_capabilities", return_value=tuple(scores)),
-            patch.object(
-                trainer, "_read_executable_factory_release_artifact",
+            patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities', return_value=tuple(scores)),
+            patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                 return_value=SimpleNamespace()),
-            patch.object(
-                trainer, "schedule_program_from_executable_release",
+            patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
                 return_value=program),
             patch(
                 "bilqis_mlx.factory.assessment.assessment_scope_contract",
                 return_value=SimpleNamespace(rubric_sha256="d" * 64)),
-            patch.object(trainer, "load_semantically_bound_bundle", return_value=(
+            patch('bilqis_mlx.runtime.mlx_checkpoint.load_semantically_bound_bundle', return_value=(
                 {}, None, {"safetensors_sha256": "a" * 64, "optimizer_step": 10}, old)),
-            patch.object(trainer, "_predictions", side_effect=lambda _m, _w, rows, *_: {
+            patch('bilqis_mlx.learning.student_ops._predictions', side_effect=lambda _m, _w, rows, *_: {
                 row["id"]: row["gold"] for row in rows}) as inference,
         ):
             _, _, incumbents = trainer._epoch_paired_examinations(
@@ -541,19 +544,17 @@ class ChampionshipExamTests(TestCase):
             (("A", ("A.X",)), ("B", ("B.X",))))
         with (
             TemporaryDirectory() as temp,
-            patch.object(trainer, "assessment_capabilities", return_value=tuple(scores)),
-            patch.object(
-                trainer, "_read_executable_factory_release_artifact",
+            patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities', return_value=tuple(scores)),
+            patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                 return_value=SimpleNamespace()),
-            patch.object(
-                trainer, "schedule_program_from_executable_release",
+            patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
                 return_value=program),
             patch(
                 "bilqis_mlx.factory.assessment.assessment_scope_contract",
                 return_value=SimpleNamespace(rubric_sha256="d" * 64)),
-            patch.object(trainer, "load_semantically_bound_bundle", return_value=(
+            patch('bilqis_mlx.runtime.mlx_checkpoint.load_semantically_bound_bundle', return_value=(
                 {}, None, {"safetensors_sha256": "a" * 64, "optimizer_step": 10}, old)),
-            patch.object(trainer, "_predictions", side_effect=lambda _m, _w, rows, *_: {
+            patch('bilqis_mlx.learning.student_ops._predictions', side_effect=lambda _m, _w, rows, *_: {
                 row["id"]: row["gold"] for row in rows}) as inference,
         ):
             _, challenger, incumbents = trainer._epoch_paired_examinations(
@@ -590,8 +591,8 @@ class ChampionshipExamTests(TestCase):
             bundle = root / pointer["filename"]
             bundle.mkdir(parents=True)
             (bundle / "model-and-own-adamw.safetensors").write_bytes(b"inert fixture")
-            with (patch.object(trainer, "_cached_frozen_champion", return_value=({}, old)),
-                  patch.object(trainer, "_predictions", return_value={"x0": "TRUE", "x1": "WRONG"})):
+            with (patch('bilqis_mlx.learning.lesson_guidance._cached_frozen_champion', return_value=({}, old)),
+                  patch('bilqis_mlx.learning.student_ops._predictions', return_value={"x0": "TRUE", "x1": "WRONG"})):
                 hydrated = trainer._hydrate_championship_witnesses(
                     None, root, receipt, epoch, current)
             proof = hydrated["active_roles"]["A.X"]["qualification_witnesses"][0]
@@ -602,7 +603,7 @@ class ChampionshipExamTests(TestCase):
             battery = verified_battery(role)
             self.assertEqual({q["id"] for segment in battery for q in segment["questions"]},
                              {"x0", "x1"})
-            with patch.object(trainer, "_predictions", side_effect=[
+            with patch('bilqis_mlx.learning.student_ops._predictions', side_effect=[
                     {"x0": "TRUE", "x1": "FALSE"},
                     {"x0": "WRONG", "x1": "FALSE"}]) as infer:
                 first = trainer._fresh_battery_results(None, root, receipt, role, {}, old)
@@ -664,7 +665,7 @@ class ChampionshipExamTests(TestCase):
                     }))
             answers = {"x0": "TRUE", "x1": "FALSE",
                        "y0": "TRUE", "y1": "FALSE"}
-            with patch.object(trainer, "_predictions", return_value=answers) as infer:
+            with patch('bilqis_mlx.learning.student_ops._predictions', return_value=answers) as infer:
                 result = trainer._fresh_battery_results(
                     None, root, receipt, role, {}, graph)
 
@@ -725,10 +726,10 @@ class ChampionshipExamTests(TestCase):
                 {"x0": "WRONG", "x1": "FALSE"},  # incumbent fresh battery
                 {"x0": "TRUE", "x1": "FALSE"},   # contender fresh battery
             ]
-            with (patch.object(trainer, "load_semantically_bound_bundle", return_value=(
+            with (patch('bilqis_mlx.runtime.mlx_checkpoint.load_semantically_bound_bundle', return_value=(
                     {}, None, {"safetensors_sha256": "a" * 64,
                                "optimizer_step": 10}, graph)),
-                  patch.object(trainer, "_predictions", side_effect=predictions) as infer):
+                  patch('bilqis_mlx.learning.student_ops._predictions', side_effect=predictions) as infer):
                 match = trainer._fresh_title_match(
                     None, root, receipt, epoch, cohort, challenger, {}, graph, "A.X")
         self.assertEqual(infer.call_count, 4)
