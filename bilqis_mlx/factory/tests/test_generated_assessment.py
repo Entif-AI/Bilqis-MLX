@@ -2,7 +2,7 @@
 import unittest
 
 from bilqis_mlx.generated_assessment import (
-    make_cohort, score, compare_on_same_cohort)
+    make_cohort, score, compare_on_same_cohort, verify_stored_cohort)
 
 
 class GeneratedAssessmentTests(unittest.TestCase):
@@ -52,6 +52,45 @@ class GeneratedAssessmentTests(unittest.TestCase):
         self.assertEqual(compare_on_same_cohort(new,old),
                          ("A.NUM",))
         self.assertTrue(new["perfect_on_sample"])
+
+    def test_stored_legacy_cohort_checks_distinct_rubric_metadata(self):
+        legacy = make_cohort(
+            self.rows, generator_version="typed/v1", seed=31,
+            rubric_version="historical-release/v1")
+        stored = {
+            "schema": "historical-release/v1",
+            "rubric_sha256": "a" * 64,
+            "generator_version": legacy.generator_version,
+            "seed": legacy.seed,
+            "cohort_sha256": legacy.digest,
+            "rows": list(legacy.rows),
+        }
+        self.assertEqual(
+            verify_stored_cohort(
+                stored, legacy.digest,
+                expected_rubric_sha256="a" * 64).digest,
+            legacy.digest)
+
+        tampered = {**stored, "rubric_sha256": "b" * 64}
+        with self.assertRaisesRegex(ValueError, "STORED_COHORT_METADATA_DRIFT"):
+            verify_stored_cohort(
+                tampered, legacy.digest,
+                expected_rubric_sha256="a" * 64)
+
+    def test_stored_cohort_rejects_unsupported_versioned_schema(self):
+        unsupported = "bilqis.mlx.generated-cohort/v3"
+        cohort = make_cohort(
+            self.rows, generator_version="typed/future", seed=37,
+            rubric_version=unsupported)
+        stored = {
+            "schema": unsupported,
+            "generator_version": cohort.generator_version,
+            "seed": cohort.seed,
+            "cohort_sha256": cohort.digest,
+            "rows": list(cohort.rows),
+        }
+        with self.assertRaisesRegex(ValueError, "STORED_COHORT_SCHEMA_UNSUPPORTED"):
+            verify_stored_cohort(stored, cohort.digest)
 
 
 if __name__ == "__main__":

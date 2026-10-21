@@ -9,10 +9,7 @@ ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT.parent / "bilqis-mlx-retention-lab" / "vendor" / "legacy-v16"
 
 
-@unittest.skipUnless(SOURCE.is_dir(), "Pinned historic source not mounted")
-class LiveProfileExecutionTests(unittest.TestCase):
-    def test_real_full_b_provider_executes_and_iff_profile_without_minimal_provider(self):
-        code = textwrap.dedent(r'''
+LIVE_PROFILE_PROBE = textwrap.dedent(r'''
             from dataclasses import replace
             import hashlib
             import json
@@ -323,10 +320,19 @@ class LiveProfileExecutionTests(unittest.TestCase):
                 != schedule_program_from_executable_release(numeric_release).digest()
             )
             print("LIVE_PROFILE_EXECUTION_OK")
-        ''')
-        result = subprocess.run(
-            [sys.executable, "-B", "-c", code], cwd=ROOT,
-            capture_output=True, text=True, check=False)
+''')
+
+
+def _run_live_profile_probe():
+    return subprocess.run(
+        [sys.executable, "-B", "-c", LIVE_PROFILE_PROBE], cwd=ROOT,
+        capture_output=True, text=True, check=False)
+
+
+@unittest.skipUnless(SOURCE.is_dir(), "Pinned historic source not mounted")
+class LiveProfileExecutionTests(unittest.TestCase):
+    def test_real_full_b_provider_executes_and_iff_profile_without_minimal_provider(self):
+        result = _run_live_profile_probe()
         self.assertEqual(
             result.returncode, 0,
             msg="stdout:\n" + result.stdout + "\nstderr:\n" + result.stderr)

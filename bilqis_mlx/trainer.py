@@ -23,6 +23,7 @@ import sys
 import time
 import uuid
 
+from .fixed_frontier import frontier_exam
 from .backup import digest_file
 from .runtime.experiment_runs import ExperimentRunBudget, require_training_run
 from bilqis_mlx.learning.champions import Checkpoint
@@ -99,6 +100,7 @@ from .diagnostics.exam_events import (apply_paired_checkpoint_s3,
 from .generated_assessment import (
     GENERALIZATION_LIFECYCLE, PROMOTION_ATTEMPT_LIFECYCLE,
     ROUTINE_EVAL_LIFECYCLE, make_cohort, score as score_cohort,
+    verify_stored_cohort,
 )
 from .grade_a_manifest import verify_manifest
 from .compatibility.source_bootstrap import AUTHORITY, accepted_grade_a
@@ -121,7 +123,7 @@ from bilqis_mlx.learning.stagnation_control import (
     activate_sole_grade_rehabilitation,
     begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
     grace_suppressed_capabilities, reconcile_optimizer_step_grace,
-    reconcile_required_scope,
+    observe_paired_progress, reconcile_required_scope,
     quarantined_capabilities, record_visit as record_stagnation_visit,
     start_session as start_stagnation_session,
 )
@@ -144,12 +146,14 @@ from .runtime.admission import (
     _read_factory_release,
     _read_executable_factory_release_artifact,
     _require_executable_factory_admission, _require_factory_admission,
+    _verified_legacy_upgrade_release,
 )
 from .runtime.assessment import (
     load_championship_cohort,
     _candidate_executable_cohort, _generalization_executable_cohort,
     _promotion_executable_cohort, _routine_executable_cohort,
     _draw_live_rows, _persist_live_cohort, _load_current_cohort,
+    released_lesson_source_identity,
     _verify_saved_cohort, _grade_test_cohort, _promotion_cohort,
     _generalization_cohort, _candidate_cohort, _introduced_cohort,
     _without_stagnant_capabilities, _require_active_stagnation_scope,
@@ -1178,17 +1182,14 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
                           **reconciled})
     receipt = _recover_orphaned_commit(run_dir, receipt)
     saved_mode = receipt.get("curriculum_mode")
+    sealed_v1_release = _verified_legacy_upgrade_release(run_dir, receipt)
     executable = (
         _read_executable_factory_release_artifact(run_dir, receipt)
         if receipt.get("factory_admission_v2") is not None else None)
-    sealed_legacy_release = (
-        _read_factory_release(run_dir, receipt)
-        if executable is None and receipt.get("factory_admission") is not None
-        else None)
     old_mode = (
-        executable is None and sealed_legacy_release is None and saved_mode is None)
+        executable is None and sealed_v1_release is None and saved_mode is None)
     old_course = (
-        sealed_legacy_release.course if sealed_legacy_release is not None else
+        sealed_v1_release.course if sealed_v1_release is not None else
         accepted_grade_a(manifest) if old_mode else course)
     school_program = (
         schedule_program_from_executable_release(executable)
@@ -1203,7 +1204,8 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
         executable.verify_semantic_catalog(graph)
     else:
         verify_legacy_resume_binding(
-            receipt, old_course, graph, manifest, _fingerprint)
+            receipt, old_course, graph, manifest, _fingerprint,
+            sealed_v1_release=sealed_v1_release)
     if (bundle["source_digest"] != AUDITED_PARENT.sha256 or
             bundle["safetensors_sha256"] != school.current_student.sha256 or
             bundle["optimizer_step"] != school.current_student.optimizer_step or
@@ -1217,7 +1219,9 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
                    f"{receipt['generation']:07d}.json").read_text()) != receipt:
         raise ValueError("HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED")
     if not old_mode:
-        _verify_saved_cohort(run_dir, receipt, old_course)
+        _verify_saved_cohort(
+            run_dir, receipt, old_course,
+            sealed_v1_release=sealed_v1_release)
     mx.eval(parameters, optimizer.state)
     from .compatibility.frontier_recovery import recover_legacy_frontier
     receipt = recover_legacy_frontier(mx, run_dir, receipt, old_course, parameters)
@@ -1282,44 +1286,28 @@ def _verify_profile_successor(predecessor, successor, graph, profile):
         raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH")
 
 
-def _adopt_executable_profile(
-        run_dir, receipt, grade_a_course, source_root, graph, profile, *,
-        compiled_successor=None):
-    """Adopt one same-ABI v2 profile change without release-name dispatch."""
-    predecessor = _require_executable_factory_admission(run_dir, receipt, graph)
-    previous_program = schedule_program_from_executable_release(predecessor)
-    school = _state_from_json(receipt["school"], previous_program)
-    compatibility_course = legacy_course_for_profile(
-        grade_a_course, source_root, profile)
-    successor = compiled_successor or compile_successor_profile_release(
-        predecessor,
-        profile,
-        live_source_registry(),
-        live_answer_registry(),
-        source_root=source_root,
-        graph=graph,
-        verification_seed=2026101906,
-        legacy_course=compatibility_course)
-    _verify_profile_successor(predecessor, successor, graph, profile)
-    successor_program = schedule_program_from_executable_release(successor)
+
+def _profile_transition(previous_program, successor_program, school):
     appended = len(successor_program.grades) == len(previous_program.grades) + 1
     revised = (
         len(successor_program.grades) == len(previous_program.grades) and
         tuple(grade.id for grade in successor_program.grades) ==
         tuple(grade.id for grade in previous_program.grades))
     if appended:
-        next_state = adopt_appended_program(
-            previous_program, successor_program, school)
-        revised_grade = None
-    elif revised:
+        return (
+            adopt_appended_program(previous_program, successor_program, school),
+            None,
+            True,
+        )
+    if revised:
         next_state, revised_grade = adopt_revised_program(
             previous_program, successor_program, school)
-    else:
-        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
-    successor, release_file, admission = _executable_factory_admission(
-        run_dir, successor, next_state.current_student,
-        receipt["semantic_graph_sha256"], graph)
+        return next_state, revised_grade, False
+    raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
 
+
+def _profile_championship_state(
+        receipt, predecessor, successor, school, next_state, *, appended):
     exam = receipt.get("last_exam") or {}
     history = list(receipt.get("championship_epoch_history", ()))
     identity = build_school_identity(
@@ -1348,27 +1336,32 @@ def _adopt_executable_profile(
         epoch["settled_matchups"] = deepcopy(
             (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
         epoch["championship_school_identity"] = identity
-    else:
-        epoch = receipt.get("mentor_epoch")
-        if epoch is not None:
-            epoch, identity_event = enforce_school_identity(
-                epoch, identity,
-                generation=receipt["generation"] + 1,
-                student=asdict(school.current_student))
-            if identity_event is not None:
-                history.append({
-                    "kind": "profile-revision-school-identity-reset",
-                    "event": identity_event,
-                })
+        return identity, epoch, history
+    epoch = receipt.get("mentor_epoch")
+    if epoch is not None:
+        epoch, identity_event = enforce_school_identity(
+            epoch, identity,
+            generation=receipt["generation"] + 1,
+            student=asdict(school.current_student))
+        if identity_event is not None:
+            history.append({
+                "kind": "profile-revision-school-identity-reset",
+                "event": identity_event,
+            })
+    return identity, epoch, history
+
+
+def _profile_adoption_receipt(
+        receipt, compatibility_course, successor, successor_program,
+        release_file, admission, identity, epoch, history, revised_grade,
+        graph):
     heads = answer_heads_from_executable_release(successor, graph)
     numeric_values = heads.get("numeric_active", {}).get("values")
-    config = {**receipt["config"], "answer_heads": heads}
     candidate = {
         **receipt,
         "curriculum_mode": compatibility_course.version,
-        "config": config,
-        "live_rubric_sha256":
-            successor_program.grades[-1].assessment_sha256,
+        "config": {**receipt["config"], "answer_heads": heads},
+        "live_rubric_sha256": successor_program.grades[-1].assessment_sha256,
         "factory_release_sha256": successor.release_sha256,
         "factory_release_file": release_file,
         "factory_release_schema": successor.schema,
@@ -1381,6 +1374,38 @@ def _adopt_executable_profile(
     if numeric_values is not None:
         candidate["numeric_maximum"] = len(numeric_values) - 1
     candidate.pop("qualification_cohort_v2", None)
+    return candidate
+
+
+def _adopt_executable_profile(
+        run_dir, receipt, grade_a_course, source_root, graph, profile, *, compiled_successor=None):
+    """Adopt one same-ABI v2 profile change without release-name dispatch."""
+    predecessor = _require_executable_factory_admission(run_dir, receipt, graph)
+    previous_program = schedule_program_from_executable_release(predecessor)
+    school = _state_from_json(receipt["school"], previous_program)
+    compatibility_course = legacy_course_for_profile(
+        grade_a_course, source_root, profile)
+    successor = compiled_successor or compile_successor_profile_release(
+        predecessor,
+        profile,
+        live_source_registry(),
+        live_answer_registry(),
+        source_root=source_root,
+        graph=graph,
+        verification_seed=2026101906,
+        legacy_course=compatibility_course)
+    _verify_profile_successor(predecessor, successor, graph, profile)
+    successor_program = schedule_program_from_executable_release(successor)
+    next_state, revised_grade, appended = _profile_transition(
+        previous_program, successor_program, school)
+    successor, release_file, admission = _executable_factory_admission(
+        run_dir, successor, next_state.current_student,
+        receipt["semantic_graph_sha256"], graph)
+    identity, epoch, history = _profile_championship_state(
+        receipt, predecessor, successor, school, next_state, appended=appended)
+    candidate = _profile_adoption_receipt(
+        receipt, compatibility_course, successor, successor_program,
+        release_file, admission, identity, epoch, history, revised_grade, graph)
     record = _advance(
         run_dir, candidate, next_state,
         result="ACTIVE_GRADE_" + next_state.grade, persist=False)
@@ -1421,6 +1446,127 @@ def _require_complete_profile_boundary(program, school, receipt):
             "FACTORY_PROFILE_EXPANSION_REQUIRES_COMPLETE_PERFECT_PREFIX")
 
 
+def _catalog_boundary_evidence(
+        predecessor, previous_program, school, receipt, *, allow_mastery_debt):
+    if not allow_mastery_debt:
+        _require_complete_profile_boundary(previous_program, school, receipt)
+        return receipt.get("last_exam") or {}, ()
+    exam = receipt.get("debt_admission_boundary_exam") or {}
+    expected = {
+        cap.id: cap.exam_item_count
+        for grade in previous_program.grades for cap in grade.capabilities
+    }
+    from .factory.assessment import assessment_scope_contract
+    contract = assessment_scope_contract(predecessor, tuple(expected))
+    if (exam.get("student_sha256") != school.current_student.sha256 or
+            exam.get("optimizer_step") != school.current_student.optimizer_step or
+            exam.get("factory_release_sha256") != predecessor.release_sha256 or
+            exam.get("exam_rubric_sha256") != contract.rubric_sha256 or
+            set(exam.get("scores", {})) != set(expected) or
+            any(score.get("total") != expected[cap]
+                for cap, score in exam.get("scores", {}).items())):
+        raise ValueError("DEBT_ADMISSION_REQUIRES_EXACT_COMPLETE_BOUNDARY")
+    mastery_debt = tuple(
+        cap for cap in expected
+        if exam["scores"][cap]["correct"] != expected[cap])
+    return exam, mastery_debt
+
+
+def _catalog_epoch_state(
+        receipt, predecessor, successor, school, next_state, pointer,
+        transition, grown, exam, mastery_debt, *, allow_mastery_debt):
+    from bilqis_mlx.learning.mentor_epoch import begin_debt_epoch, begin_epoch
+    graph_sha = _fingerprint(transition.graph)
+    boundary_exam = {
+        "checkpoint_sha256": exam.get("student_sha256"),
+        "rubric_sha256": exam.get("exam_rubric_sha256"),
+        "cohort_sha256": exam.get("cohort_sha256"),
+        "scores": exam.get("scores"),
+    }
+    epoch_args = dict(
+        admitted_baseline=asdict(pointer),
+        introduced_grade=next_state.grade,
+        source_graph_sha256=graph_sha,
+        previous_capabilities=tuple(
+            item.capability_id for item in predecessor.execution_plan.capabilities))
+    if allow_mastery_debt:
+        epoch = begin_debt_epoch(
+            **epoch_args,
+            previous_checkpoint=asdict(school.current_student),
+            previous_boundary_exam=boundary_exam,
+            previous_mastery_debt=mastery_debt)
+    else:
+        epoch = begin_epoch(
+            **epoch_args,
+            previous_graduate=asdict(school.current_student),
+            previous_graduation_exam=boundary_exam)
+    history = list(receipt.get("championship_epoch_history", ()))
+    if receipt.get("mentor_epoch") is not None:
+        history.append(receipt["mentor_epoch"])
+    identity = build_school_identity(
+        course_sha256=successor.execution_plan.curriculum_sha256,
+        semantic_graph_sha256=graph_sha,
+        parameter_shapes={name: list(value.shape) for name, value in grown.items()},
+        factory_release_sha256=successor.release_sha256)
+    epoch["settled_matchups"] = deepcopy(
+        (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
+    epoch["championship_school_identity"] = identity
+    return epoch, history, identity
+
+
+def _catalog_adoption_receipt(
+        receipt, compatibility_course, successor, successor_program,
+        release_file, admission, transition, grown, epoch, history,
+        identity):
+    graph_sha = _fingerprint(transition.graph)
+    heads = answer_heads_from_executable_release(successor, transition.graph)
+    numeric_values = heads.get("numeric_active", {}).get("values")
+    updated = {
+        **receipt,
+        "curriculum_mode": compatibility_course.version,
+        "semantic_graph_sha256": graph_sha,
+        "factory_release_sha256": successor.release_sha256,
+        "factory_release_file": release_file,
+        "factory_release_schema": successor.schema,
+        "factory_admission_v2": asdict(admission),
+        "parameter_shapes": {
+            name: list(value.shape) for name, value in grown.items()},
+        "championship_school_identity": identity,
+        "config": {
+            **receipt["config"],
+            "vocab_size": len(transition.graph["tokens"]),
+            "answer_heads": heads,
+        },
+        "live_rubric_sha256": successor_program.grades[-1].assessment_sha256,
+        "numeric_maximum": (
+            len(numeric_values) - 1 if numeric_values is not None else
+            receipt.get("numeric_maximum")),
+        "numeric_scope_final_maximum": transition.numeric_scope_final_maximum,
+        "mentor_epoch": epoch,
+        "championship_epoch_history": history,
+        "last_exam": None,
+    }
+    updated.pop("qualification_cohort_v2", None)
+    return updated
+
+
+def _catalog_adoption_event(
+        record, school, pointer, successor, growth, grade: str) -> dict:
+    return {
+        "event": "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED",
+        "generation": record["generation"],
+        "grade": grade,
+        "profile_id": successor.profile.profile_id,
+        "semantic_geometry": successor.transition.semantic_geometry,
+        "growth": growth,
+        "previous_student_sha256": school.current_student.sha256,
+        "student_sha256": pointer.sha256,
+        "optimizer_step": pointer.optimizer_step,
+        "factory_release_sha256": successor.release_sha256,
+        "actual_neural_updates": 0,
+    }
+
+
 def _adopt_catalog_profile(
         mx, run_dir, receipt, grade_a_course, source_root, graph,
         parameters, optimizer, transition, *, reserve_gib, allow_mastery_debt=False,
@@ -1429,26 +1575,9 @@ def _adopt_catalog_profile(
     predecessor = _require_executable_factory_admission(run_dir, receipt, graph)
     previous_program = schedule_program_from_executable_release(predecessor)
     school = _state_from_json(receipt["school"], previous_program)
-    if allow_mastery_debt:
-        exam = receipt.get("debt_admission_boundary_exam") or {}
-        expected = {cap.id: cap.exam_item_count
-                    for grade in previous_program.grades for cap in grade.capabilities}
-        from .factory.assessment import assessment_scope_contract
-        contract = assessment_scope_contract(predecessor, tuple(expected))
-        if (exam.get("student_sha256") != school.current_student.sha256 or
-                exam.get("optimizer_step") != school.current_student.optimizer_step or
-                exam.get("factory_release_sha256") != predecessor.release_sha256 or
-                exam.get("exam_rubric_sha256") != contract.rubric_sha256 or
-                set(exam.get("scores", {})) != set(expected) or
-                any(score.get("total") != expected[cap]
-                    for cap, score in exam.get("scores", {}).items())):
-            raise ValueError("DEBT_ADMISSION_REQUIRES_EXACT_COMPLETE_BOUNDARY")
-        mastery_debt = tuple(cap for cap in expected
-                             if exam["scores"][cap]["correct"] != expected[cap])
-    else:
-        _require_complete_profile_boundary(previous_program, school, receipt)
-        exam = receipt.get("last_exam") or {}
-        mastery_debt = ()
+    exam, mastery_debt = _catalog_boundary_evidence(
+        predecessor, previous_program, school, receipt,
+        allow_mastery_debt=allow_mastery_debt)
     compatibility_course = legacy_course_for_profile(
         grade_a_course, source_root, transition.profile)
     successor = compiled_successor or compile_successor_profile_release(
@@ -1480,69 +1609,14 @@ def _adopt_catalog_profile(
     successor, release_file, admission = _executable_factory_admission(
         run_dir, successor, pointer, _fingerprint(transition.graph),
         transition.graph)
-
-    from bilqis_mlx.learning.mentor_epoch import begin_debt_epoch, begin_epoch
-    boundary_exam = {
-        "checkpoint_sha256": exam.get("student_sha256"),
-        "rubric_sha256": exam.get("exam_rubric_sha256"),
-        "cohort_sha256": exam.get("cohort_sha256"),
-        "scores": exam.get("scores"),
-    }
-    epoch_args = dict(
-        admitted_baseline=asdict(pointer),
-        introduced_grade=next_state.grade,
-        source_graph_sha256=_fingerprint(transition.graph),
-        previous_capabilities=tuple(
-            item.capability_id for item in predecessor.execution_plan.capabilities))
-    epoch = (
-        begin_debt_epoch(**epoch_args,
-                         previous_checkpoint=asdict(school.current_student),
-                         previous_boundary_exam=boundary_exam,
-                         previous_mastery_debt=mastery_debt)
-        if allow_mastery_debt else
-        begin_epoch(**epoch_args,
-                    previous_graduate=asdict(school.current_student),
-                    previous_graduation_exam=boundary_exam))
-    history = list(receipt.get("championship_epoch_history", ()))
-    if receipt.get("mentor_epoch") is not None:
-        history.append(receipt["mentor_epoch"])
-    identity = build_school_identity(
-        course_sha256=successor.execution_plan.curriculum_sha256,
-        semantic_graph_sha256=_fingerprint(transition.graph),
-        parameter_shapes={name: list(value.shape) for name, value in grown.items()},
-        factory_release_sha256=successor.release_sha256)
-    epoch["settled_matchups"] = deepcopy(
-        (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
-    epoch["championship_school_identity"] = identity
-    heads = answer_heads_from_executable_release(successor, transition.graph)
-    numeric_values = heads.get("numeric_active", {}).get("values")
-    updated = {
-        **receipt,
-        "curriculum_mode": compatibility_course.version,
-        "semantic_graph_sha256": _fingerprint(transition.graph),
-        "factory_release_sha256": successor.release_sha256,
-        "factory_release_file": release_file,
-        "factory_release_schema": successor.schema,
-        "factory_admission_v2": asdict(admission),
-        "parameter_shapes": {
-            name: list(value.shape) for name, value in grown.items()},
-        "championship_school_identity": identity,
-        "config": {
-            **receipt["config"],
-            "vocab_size": len(transition.graph["tokens"]),
-            "answer_heads": heads,
-        },
-        "live_rubric_sha256":
-            successor_program.grades[-1].assessment_sha256,
-        "numeric_maximum": (
-            len(numeric_values) - 1 if numeric_values is not None else
-            receipt.get("numeric_maximum")),
-        "numeric_scope_final_maximum":
-            transition.numeric_scope_final_maximum,
-        "mentor_epoch": epoch,
-        "championship_epoch_history": history,
-        "last_exam": None,
-    }
+    epoch, history, identity = _catalog_epoch_state(
+        receipt, predecessor, successor, school, next_state, pointer,
+        transition, grown, exam, mastery_debt,
+        allow_mastery_debt=allow_mastery_debt)
+    updated = _catalog_adoption_receipt(
+        receipt, compatibility_course, successor, successor_program,
+        release_file, admission, transition, grown, epoch, history,
+        identity)
     from .fixed_frontier import load_frontier_cohort, rebaseline_frontier_exam
     preserved = load_frontier_cohort(run_dir, exam)
     if preserved is None:
@@ -1550,23 +1624,11 @@ def _adopt_catalog_profile(
     updated["last_exam"] = rebaseline_frontier_exam(
         run_dir, exam, checkpoint=asdict(pointer), predictions=_predictions(
             mx, grown, list(preserved.rows), updated["config"], updated["answer_ids"]))
-    updated.pop("qualification_cohort_v2", None)
     record = _advance(
         run_dir, updated, next_state, model_bundle=pointer.filename,
         result="ACTIVE_GRADE_" + next_state.grade, persist=False)
-    event = {
-        "event": "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED",
-        "generation": record["generation"],
-        "grade": next_state.grade,
-        "profile_id": successor.profile.profile_id,
-        "semantic_geometry": successor.transition.semantic_geometry,
-        "growth": growth,
-        "previous_student_sha256": school.current_student.sha256,
-        "student_sha256": pointer.sha256,
-        "optimizer_step": pointer.optimizer_step,
-        "factory_release_sha256": successor.release_sha256,
-        "actual_neural_updates": 0,
-    }
+    event = _catalog_adoption_event(
+        record, school, pointer, successor, growth, next_state.grade)
     record = _persist(
         run_dir, _with_delivery_outbox(record, (event,)))
     _reconcile_delivery_outbox(run_dir, record)
@@ -1695,7 +1757,51 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
              teacher=None, model_bundle=None, last_exam=None, result=None,
              frontier=None, persist=True):
     # One snapshot captures teacher learning, school progress and model pointer.
+    if old.get("delivery_outbox") is not None:
+        # A generation's event IDs cannot be inherited by a successor. First
+        # prove this generation was durably committed, then reconcile the
+        # original intent or fail before state mutation. Uncommitted event
+        # intents must never be published on the strength of a transient dict.
+        old_path = (Path(run_dir) / "states" /
+                    f"{old['generation']:07d}.json")
+        if old_path.is_symlink() or not old_path.is_file():
+            raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_UNCOMMITTED_SOURCE")
+        durable = json.loads(old_path.read_text(encoding="utf-8"))
+        # Only *durable* outbox events have delivery authority. Transient
+        # callers may carry a subsequently edited copy of a committed event;
+        # requiring payload-object equality here mistakes a working copy for
+        # its signed owner. Instead bind the ordered event IDs, run and
+        # checkpoint to the immutable snapshot, then validate its original
+        # exact payloads against the journal below. Never publish the caller's
+        # potentially edited copy, and never lose/ignore an extra event ID.
+        source_outbox = durable.get("delivery_outbox")
+        candidate_outbox = old["delivery_outbox"]
+        source_ids = (tuple(event.get("event_id") for event in source_outbox)
+                      if isinstance(source_outbox, list) and
+                      all(isinstance(event, dict) for event in source_outbox)
+                      else None)
+        candidate_ids = (tuple(event.get("event_id") for event in candidate_outbox)
+                         if isinstance(candidate_outbox, list) and
+                         all(isinstance(event, dict) for event in candidate_outbox)
+                         else None)
+        if (durable.get("run_id") != old.get("run_id") or
+                durable.get("generation") != old.get("generation") or
+                not source_ids or candidate_ids != source_ids or
+                durable.get("model_bundle") != old.get("model_bundle") or
+                durable.get("school", {}).get("current_student") !=
+                old.get("school", {}).get("current_student") or
+                durable.get("source_manifest_sha256") !=
+                old.get("source_manifest_sha256") or
+                durable.get("teacher_source_sha256") !=
+                old.get("teacher_source_sha256")):
+            raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_SOURCE_DRIFT")
+        # Reconcile the *committed* owner, not the caller's proposed in-memory
+        # next-generation metadata. A resume-time championship repair can
+        # legitimately change unrelated fields before _advance is invoked;
+        # using that transient dict would falsely fail signed v1->v2 lineage.
+        _reconcile_delivery_outbox(run_dir, durable)
     record = dict(old)
+    record.pop("delivery_outbox", None)
     record["generation"] = old["generation"] + 1
     record["school"] = asdict(school)
     if teacher is not None:
@@ -1712,7 +1818,6 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
     if persist:
         record.pop("_pending_visit_events", None)
         if old.get("delivery_outbox") is not None:
-            _reconcile_delivery_outbox(run_dir, old)
             event = {"event": "SCHOOL_STATE_ADVANCED",
                      "generation": record["generation"],
                      "source_generation": old["generation"],
@@ -1725,72 +1830,13 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
     return json.loads(_canonical(record))
 
 
-def _repair_scope_rubric_evidence(run_dir, receipt, course):
-    """Repair evidence minted by the historical course-rubric/scope-rubric conflation."""
-    exam = receipt.get("last_exam") or {}
-    exam_rubric = exam.get("exam_rubric_sha256")
-    scores = exam.get("scores") or {}
-    epoch = receipt.get("mentor_epoch")
-    frontier = receipt.get("capability_best") or {}
-    if (not isinstance(exam_rubric, str) or len(exam_rubric) != 64 or
-            not scores or not isinstance(epoch, dict) or not frontier):
-        return receipt
-    scored = set(scores)
-    wrong_frontier = {
-        key: item for key, item in frontier.items()
-        if item.get("capability") in scored and item.get("rubric") != exam_rubric
-    }
-    wrong_roles = {
-        cap: item for cap, item in epoch.get("active_roles", {}).items()
-        if cap in scored and item.get("rubric") != exam_rubric
-    }
-    if not wrong_frontier and not wrong_roles:
-        return receipt
-    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
-    history = [*receipt.get("championship_epoch_history", ()), deepcopy(epoch)]
-    reset = begin_initial_epoch(
-        student=asdict(school.current_student),
-        introduced_grade=school.grade,
-        source_graph_sha256=receipt["semantic_graph_sha256"],
-        frontier={}, soups={})
-    reset["settled_matchups"] = {}
-    reset["championship_school_identity"] = receipt["championship_school_identity"]
-    kept = {key: item for key, item in frontier.items() if key not in wrong_frontier}
-    repaired = {
-        **receipt,
-        "capability_best": kept,
-        "mentor_epoch": reset,
-        "championship_epoch_history": history,
-        "live_rubric_sha256": exam_rubric,
-    }
-    record = _advance(
-        run_dir, repaired, school, frontier=kept,
-        result=receipt.get("result"), persist=False)
-    event = {
-        "event": "SCHOOL_SCOPE_RUBRIC_EVIDENCE_REPAIRED",
-        "generation": record["generation"],
-        "source_generation": receipt["generation"],
-        "student_sha256": school.current_student.sha256,
-        "optimizer_step": school.current_student.optimizer_step,
-        "assessment_rubric_sha256": exam_rubric,
-        "invalidated_frontier_capabilities":
-            sorted(item["capability"] for item in wrong_frontier.values()),
-        "invalidated_championship_roles": sorted(wrong_roles),
-        "archived_bad_epoch": True,
-        "actual_neural_updates": 0,
-        "model_and_own_adamw_unchanged": True,
-    }
-    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
-    _reconcile_delivery_outbox(run_dir, record)
-    return record
+
+def _require_championship_source_context_custody(condition: bool) -> None:
+    if not condition:
+        raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT")
 
 
-def _repair_championship_source_context(run_dir, receipt, course):
-    """Archive titles minted while cohort-source and assessment rubrics were conflated."""
-    epoch = receipt.get("mentor_epoch")
-    if not isinstance(epoch, dict) or not epoch.get("active_roles"):
-        return receipt
-
+def _affected_championship_source_context(run_dir, epoch) -> set[str]:
     affected = set()
     for capability, role in epoch["active_roles"].items():
         evidence = (
@@ -1798,8 +1844,6 @@ def _repair_championship_source_context(run_dir, receipt, course):
             *role.get("surviving_battery", ()),
         )
         for item in evidence:
-            if item.get("cohort_rubric_sha256") is not None:
-                continue
             sha = item.get("cohort_sha256")
             assessment_rubric = item.get("rubric_sha256")
             source_oracle = item.get("source_oracle_sha256")
@@ -1810,30 +1854,68 @@ def _repair_championship_source_context(run_dir, receipt, course):
             if path.is_symlink() or not path.is_file():
                 raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_COHORT_MISSING")
             stored = json.loads(path.read_text())
-            if (stored.get("cohort_sha256") != sha or
-                    stored.get("source_manifest_sha256") != source_oracle):
-                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CUSTODY_DRIFT")
-            cohort = make_cohort(
-                stored["rows"], generator_version=stored["generator_version"],
-                seed=stored["seed"], rubric_version=stored["schema"])
-            if cohort.digest != sha:
-                raise ValueError("CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT")
+            _require_championship_source_context_custody(
+                stored.get("cohort_sha256") == sha and
+                stored.get("source_manifest_sha256") == source_oracle)
+            try:
+                verify_stored_cohort(stored, sha)
+            except ValueError as exc:
+                raise ValueError(
+                    "CHAMPIONSHIP_SOURCE_CONTEXT_REPAIR_CONTENT_DRIFT") from exc
+            declared_cohort_rubric = item.get("cohort_rubric_sha256")
+            if declared_cohort_rubric is not None:
+                # A modern witness has a distinct, authenticated source
+                # rubric. It is authoritative for its own cohort and cannot
+                # be replaced by either the championship title rubric or a
+                # later exam's scope. Verify it rather than skipping the row.
+                _require_championship_source_context_custody(
+                    stored.get("rubric_sha256") == declared_cohort_rubric)
+                continue
             if stored.get("rubric_sha256") != assessment_rubric:
                 affected.add(capability)
                 break
+    return affected
+
+
+def _invalidate_championship_source_context(epoch, affected: set[str]):
+    reset = deepcopy(epoch)
+    for capability in sorted(affected):
+        prior = reset["active_roles"].pop(capability)
+        reset.setdefault("invalidated_active_roles", []).append({
+            "capability": capability,
+            "reason": "COHORT_SOURCE_RUBRIC_CONTRADICTION",
+            "role": prior,
+        })
+    touched_grades = {cap.partition(".")[0] for cap in affected}
+    for grade in sorted(touched_grades):
+        prior_soup = reset.get("active_grade_soups", {}).pop(grade, None)
+        if prior_soup is not None:
+            reset.setdefault("invalidated_active_soups", []).append({
+                "grade": grade,
+                "reason": "ROLE_SOURCE_CONTRADICTION",
+                "active_grade_soup": prior_soup,
+            })
+    return reset
+
+
+def _repair_championship_source_context(run_dir, receipt, course):
+    """Archive titles minted while cohort-source and assessment rubrics were conflated."""
+    epoch = receipt.get("mentor_epoch")
+    if not isinstance(epoch, dict) or not epoch.get("active_roles"):
+        return receipt
+
+    affected = _affected_championship_source_context(run_dir, epoch)
 
     if not affected:
         return receipt
 
     school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
     history = [*receipt.get("championship_epoch_history", ()), deepcopy(epoch)]
-    reset = begin_initial_epoch(
-        student=asdict(school.current_student),
-        introduced_grade=school.grade,
-        source_graph_sha256=receipt["semantic_graph_sha256"],
-        frontier={}, soups={})
-    reset["settled_matchups"] = {}
-    reset["championship_school_identity"] = receipt["championship_school_identity"]
+    # This is a capability-local evidence failure, not a holistic school
+    # identity change. Invalidate only the affected title(s) and their grade
+    # soup(s). In particular, settled matchups are permanent; clearing that
+    # ledger would permit repeated title matches between the same checkpoints.
+    reset = _invalidate_championship_source_context(epoch, affected)
     repaired = {
         **receipt,
         "mentor_epoch": reset,
@@ -1849,7 +1931,9 @@ def _repair_championship_source_context(run_dir, receipt, course):
         "student_sha256": school.current_student.sha256,
         "optimizer_step": school.current_student.optimizer_step,
         "invalidated_championship_roles": sorted(affected),
-        "archived_bad_epoch": True,
+        "archived_prior_epoch": True,
+        "preserved_championship_roles": sorted(reset["active_roles"]),
+        "preserved_settled_matchups": len(reset.get("settled_matchups", {})),
         "actual_neural_updates": 0,
         "model_and_own_adamw_unchanged": True,
     }
@@ -2061,11 +2145,23 @@ def _reconcile_stagnation_scope(run_dir, receipt, course, school):
 def _advance_stagnation_after_routine(
         *, program, school, routine_assessment, routine_advanced,
         stagnation, blocked_before, active_scope, routine_measured,
-        routine_warnings, generation, quarantine_suppressed=()):
+        routine_warnings, generation, quarantine_suppressed=(),
+        session_elapsed_seconds=None, paired_progressed=(),
+        paired_progress_usable=None, progress_checkpoint=None):
     """Apply one completed routine boundary to the current session containment."""
     events = ()
     if stagnation is None:
         return stagnation, events, routine_advanced, ()
+    if (session_elapsed_seconds is not None and
+            paired_progress_usable is not None and
+            progress_checkpoint is not None):
+        stagnation = observe_paired_progress(
+            stagnation,
+            measured_capabilities=tuple(routine_measured["scores"]),
+            improved_capabilities=tuple(paired_progressed),
+            measurement_usable=paired_progress_usable,
+            elapsed_seconds=session_elapsed_seconds,
+            progress_checkpoint=progress_checkpoint)
     if (school.stage == "ASSESS_MAIN" and
             routine_advanced.stage == "RECOVERY_1"):
         stagnation = begin_recovery_cycle(
@@ -2077,7 +2173,9 @@ def _advance_stagnation_after_routine(
             scores=routine_measured["scores"],
             generation=generation,
             active_warnings=tuple(routine_warnings.get("active_warnings", ())),
-            quarantine_suppressed=tuple(quarantine_suppressed))
+            quarantine_suppressed=tuple(quarantine_suppressed),
+            **({"elapsed_seconds": session_elapsed_seconds}
+               if session_elapsed_seconds is not None else {}))
         blocked_after = quarantined_capabilities(stagnation)
         if set(blocked_after) != set(blocked_before):
             retained_scores = {
@@ -2098,7 +2196,8 @@ def _advance_stagnation_after_routine(
                     evaluation_id=routine_assessment.evaluation_id +
                                   "/post-stagnation-filter")
                 routine_advanced = assess_withheld(
-                    program, school, reduced, blocked_after)
+                    program, school, reduced, blocked_after,
+                    rubric_capabilities=active_scope)
     if routine_advanced.stage == "DEFERRED_STAGNATION":
         stagnation, routine_advanced, rehabilitation_events = (
             _rehabilitate_sole_grade_debt(
@@ -2112,7 +2211,8 @@ def _advance_stagnation_after_routine(
 
 
 def _learning_probe_rows(source_root, graph, receipt, course, school, capability,
-                         settings, *, schedule_program=None, release=None):
+                         settings, *, schedule_program=None,
+                         executable_release=None):
     """Complete admitted target grade plus bounded cross-grade protection."""
     eligible = set(assessment_capabilities(
         schedule_program if schedule_program is not None else course,
@@ -2136,7 +2236,8 @@ def _learning_probe_rows(source_root, graph, receipt, course, school, capability
     rows = []
     for name in sorted(sampled):
         rows.extend(_draw_live_rows(
-            source_root, graph, course=course, release=release, capability=name,
+            source_root, graph, course=course, capability=name,
+            executable_release=executable_release,
             each=(target_each if name.partition(".")[0] ==
                   capability.partition(".")[0] else settings.probe_each),
             seed=_seed(receipt, capability="LEARNING_PROBE:"+name)))
@@ -2196,21 +2297,26 @@ def _reusable_exam_identity(receipt, school, *, rubric_sha256,
             rubric_sha256, assessment_scope_sha256)
 
 
-def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
-                              parent, candidate, settings):
-    """Score only the fixed evidence needed after fresh grade gain is proven."""
-    config, answer_ids = receipt["config"], receipt["answer_ids"]
+def _frontier_fixed_evidence(
+        mx, run_dir, receipt, school, capability, parent, candidate,
+        config, answer_ids):
     fixed = {"status": "NOT_MEASURED",
              "reason": "NO_COMPARABLE_COMPLETE_GRADE_EXAM"}
     frontier = {"status": "NOT_MEASURED",
                 "reason": "NO_FIXED_WHOLE_SCHOOL_FRONTIER"}
     frontier_parent = frontier_candidate = {}
     from .fixed_frontier import load_frontier, screen_frontier, frontier_exam
-    fixed_exam = frontier_exam(receipt)
+    exam = frontier_exam(receipt)
     frontier_rows, frontier_parent = load_frontier(
-        run_dir, receipt,
-        parent_sha256=school.current_student.sha256,
-        parent_optimizer_step=school.current_student.optimizer_step)
+        run_dir, receipt, parent_sha256=exam.get("student_sha256"),
+        parent_optimizer_step=exam.get("optimizer_step"))
+    if frontier_rows and (exam.get("student_sha256") != school.current_student.sha256 or
+                          exam.get("optimizer_step") != school.current_student.optimizer_step):
+        if (type(exam.get("optimizer_step")) is not int or
+                school.current_student.optimizer_step <= exam["optimizer_step"]):
+            raise ValueError("FIXED_FRONTIER_PARENT_IDENTITY_DRIFT")
+        frontier_parent = _predictions(
+            mx, parent, list(frontier_rows), config, answer_ids)
     if frontier_rows:
         grade = capability.partition(".")[0]
         grade_rows = tuple(
@@ -2225,7 +2331,7 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
                 grade_rows, grade_parent, grade_candidate)
             fixed = {
                 "status": "MEASURED", "grade": grade,
-                "cohort_sha256": fixed_exam["cohort_sha256"],
+                "cohort_sha256": exam["cohort_sha256"],
                 "before": sum(value["before"] for value in grade_scores.values()),
                 "after": sum(value["after"] for value in grade_scores.values()),
                 "total": sum(value["total"] for value in grade_scores.values()),
@@ -2243,45 +2349,77 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
                 mx, candidate, list(other_rows), config, answer_ids))
         frontier = screen_frontier(
             frontier_rows, frontier_parent, frontier_candidate,
-            fixed_exam["cohort_sha256"])
-    else:
-        fixed_rows = _fixed_same_grade_rows(
-            run_dir, receipt, course, school, capability, settings)
-        if fixed_rows:
-            parent_fixed = _predictions(
-                mx, parent, list(fixed_rows), config, answer_ids)
-            candidate_fixed = _predictions(
-                mx, candidate, list(fixed_rows), config, answer_ids)
-            scores = paired_outcomes(
-                fixed_rows, parent_fixed, candidate_fixed)
-            fixed = {
-                "status": "MEASURED",
-                "grade": capability.partition(".")[0],
-                "cohort_sha256": fixed_exam["cohort_sha256"],
-                "before": sum(value["before"] for value in scores.values()),
-                "after": sum(value["after"] for value in scores.values()),
-                "total": sum(value["total"] for value in scores.values()),
-            }
+            frontier_exam(receipt)["cohort_sha256"])
+    return frontier_rows, fixed, frontier, frontier_parent, frontier_candidate
 
+
+def _same_grade_fixed_evidence(
+        mx, run_dir, receipt, course, school, capability, parent, candidate,
+        settings, config, answer_ids):
+    fixed_rows = _fixed_same_grade_rows(
+        run_dir, receipt, course, school, capability, settings)
+    if not fixed_rows:
+        return {
+            "status": "NOT_MEASURED",
+            "reason": "NO_COMPARABLE_COMPLETE_GRADE_EXAM",
+        }
+    parent_fixed = _predictions(
+        mx, parent, list(fixed_rows), config, answer_ids)
+    candidate_fixed = _predictions(
+        mx, candidate, list(fixed_rows), config, answer_ids)
+    scores = paired_outcomes(fixed_rows, parent_fixed, candidate_fixed)
+    return {
+        "status": "MEASURED",
+        "grade": capability.partition(".")[0],
+        "cohort_sha256": frontier_exam(receipt)["cohort_sha256"],
+        "before": sum(value["before"] for value in scores.values()),
+        "after": sum(value["after"] for value in scores.values()),
+        "total": sum(value["total"] for value in scores.values()),
+    }
+
+
+def _fragile_replay_evidence(
+        mx, run_dir, receipt, parent, candidate, config, answer_ids,
+        frontier_parent, frontier_candidate):
     from bilqis_mlx.learning.fragile_replay import load_replay_rows, screen_replay
     replay_rows = load_replay_rows(
         run_dir, receipt,
         capabilities=fragile_preservation_capabilities())
-    replay = {"status": "NOT_MEASURED",
-              "reason": "FRAGILE_PRESERVATION_EXAM_NOT_YET_ADMITTED"}
-    if replay_rows:
-        ids = {row["id"] for row in replay_rows}
-        replay_parent = (
-            {rid: frontier_parent[rid] for rid in ids}
-            if ids <= frontier_parent.keys() else
-            _predictions(mx, parent, list(replay_rows), config, answer_ids))
-        replay_candidate = (
-            {rid: frontier_candidate[rid] for rid in ids}
-            if ids <= frontier_candidate.keys() else
-            _predictions(mx, candidate, list(replay_rows), config, answer_ids))
-        replay = screen_replay(
-            replay_rows, replay_parent, replay_candidate,
-            fixed_exam["cohort_sha256"])
+    if not replay_rows:
+        return {
+            "status": "NOT_MEASURED",
+            "reason": "FRAGILE_PRESERVATION_EXAM_NOT_YET_ADMITTED",
+        }
+    ids = {row["id"] for row in replay_rows}
+    replay_parent = (
+        {rid: frontier_parent[rid] for rid in ids}
+        if ids <= frontier_parent.keys() else
+        _predictions(mx, parent, list(replay_rows), config, answer_ids))
+    replay_candidate = (
+        {rid: frontier_candidate[rid] for rid in ids}
+        if ids <= frontier_candidate.keys() else
+        _predictions(mx, candidate, list(replay_rows), config, answer_ids))
+    return screen_replay(
+        replay_rows, replay_parent, replay_candidate,
+        frontier_exam(receipt)["cohort_sha256"])
+
+
+def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
+                              parent, candidate, settings):
+    """Score only the fixed evidence needed after fresh grade gain is proven."""
+    config, answer_ids = receipt["config"], receipt["answer_ids"]
+    (frontier_rows, fixed, frontier,
+     frontier_parent, frontier_candidate) = _frontier_fixed_evidence(
+        mx, run_dir, receipt, school, capability, parent, candidate,
+        config, answer_ids)
+    if not frontier_rows:
+        fixed = _same_grade_fixed_evidence(
+            mx, run_dir, receipt, course, school, capability, parent, candidate,
+            settings, config, answer_ids)
+
+    replay = _fragile_replay_evidence(
+        mx, run_dir, receipt, parent, candidate, config, answer_ids,
+        frontier_parent, frontier_candidate)
     return fixed, replay, frontier
 
 
@@ -2345,7 +2483,8 @@ def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
 
 def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
                                      course, school, capability, *, step,
-                                     batch_size, fixed_rows=None):
+                                     batch_size, fixed_rows=None,
+                                     executable_release=None):
     """Generate fresh semantic siblings for the configured fragile safety rows.
 
     Rehearsal is active only after a source-verified B replay exam exists.
@@ -2375,7 +2514,7 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
         for attempt in range(3):
             fresh.extend(_draw_live_rows(
                 source_root, graph,
-                release=_read_executable_factory_release_artifact(run_dir, receipt),
+                executable_release=executable_release,
                 seed=_seed(
                     receipt,
                     capability=f"FRAGILE_PRESERVE:{name}:{attempt}",
@@ -2525,8 +2664,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     with trace_span("VISIT_SOURCE_DRAW", capability=cap):
         rows = _draw_live_rows(source_root, graph,
                                seed=_seed(receipt, capability=cap),
-                               capability=cap, each=max(32, batch_size), course=course,
-                               release=executable_release)
+                               capability=cap, each=max(32, batch_size),
+                               course=course, executable_release=executable_release)
     # Active maxed capability roles advise only inside their own grade.
     # Frozen grade soups remain the separately diluted cross-grade voice.
     with trace_span("MENTOR_SOURCES_LOAD", capability=cap):
@@ -2569,7 +2708,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             probe_rows, protected_caps, unsampled_caps = _learning_probe_rows(
                 source_root, graph, receipt, course, school, cap, learning_settings,
                 schedule_program=_schedule_for_receipt(
-                    run_dir, receipt, course), release=executable_release)
+                    run_dir, receipt, course),
+                executable_release=executable_release)
         target_rows = [row for row in probe_rows if row["capability"] == cap]
         with trace_span("RETENTION_PARENT_PREDICT", capability=cap,
                         row_count=len(target_rows)):
@@ -2640,6 +2780,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 step=step_index + 1)
             identity = _fingerprint({
                 "schema": SOURCE_PREFETCH_SCHEMA,
+                "factory_release_sha256": executable_release.release_sha256,
                 "run_id": receipt["run_id"],
                 "generation": receipt["generation"],
                 "source_manifest_sha256": receipt.get("source_manifest_sha256"),
@@ -2664,7 +2805,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 "source_root": str(Path(source_root).resolve()),
                 "graph": graph,
                 "course": course,
-                "factory_release": executable_release,
+                "executable_release": executable_release,
                 "capability": cap,
                 "batch_size": batch_size,
                 "fresh_seed": fresh_seed,
@@ -2712,7 +2853,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     fresh = _draw_live_rows(source_root, graph,
                         seed=_seed(receipt, capability=cap, step=step+1),
                         capability=cap, each=max(32, batch_size), course=course,
-                        release=executable_release)
+                        executable_release=executable_release)
                 else:
                     from .factory.teaching import draw_teaching_option_rows
                     fresh = list(draw_teaching_option_rows(
@@ -2732,7 +2873,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 if prepared is None and int(policy.get("old", 0)) > 0 and old_capabilities:
                     selected = old_capabilities[(school.visits + step) % len(old_capabilities)]
                     prior = _draw_live_rows(source_root, graph, course=course,
-                        release=executable_release,
+                        executable_release=executable_release,
                         capability=selected, each=max(batch_size, 6),
                         seed=_seed(receipt, capability="EXPERIMENT_OLD:"+selected, step=step))
                 picked, control = select_source_lesson(
@@ -2753,7 +2894,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     preservation = _fresh_fragile_preservation_rows(
                         run_dir, source_root, graph, receipt, course, school, cap,
                         step=step + 1, batch_size=batch_size,
-                        fixed_rows=fragile_fixed_rows)
+                        fixed_rows=fragile_fixed_rows,
+                        executable_release=executable_release)
             with trace_span("STEP_FRAGILE_PRESERVATION_INJECT", capability=cap,
                             visit_step=step + 1):
                 picked, delivered_preservation = _inject_preservation_rows(
@@ -2960,6 +3102,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         champion_prioritized=0,
         seed=_seed(receipt, capability=cap),
     ))
+    lesson_generator, lesson_source_digest = released_lesson_source_identity(
+        executable_release, cap)
     event = {
         "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
         "grade": lesson_grade,
@@ -3007,8 +3151,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             "candidate_attempt_optimizer_step": attempted_step,
             "retained_optimizer_updates": retained_optimizer_updates}
            if outcome is not None else {}),
-        "generator_version": executable_release.source_bindings.by_capability[cap].generator_id,
-        "generator_code_sha256": executable_release.execution_plan.capability_map[cap].provider_implementation_sha256,
+        "generator_version": lesson_generator,
+        "generator_code_sha256": lesson_source_digest,
         "lesson_source_sha256": manifest["manifest_sha256"],
         "lesson_seed": _seed(receipt, capability=cap),
         "prior_exam_misses_available": len(priority),
@@ -3156,6 +3300,36 @@ def _score_parent_for_paired_s3(mx, run_dir, receipt, parent, cohort, graph,
         return measured, None
     except (OSError, ValueError, KeyError, TypeError) as exc:
         return None, str(exc)
+
+
+def _paired_stagnation_progress(mx, run_dir, receipt, stagnation, cohort, graph,
+                                current_checkpoint, current_scores):
+    """Compare consecutive assessment checkpoints on this same fresh cohort."""
+    pointer = (stagnation or {}).get("progress_checkpoint")
+    if pointer is None:
+        return (), False
+    try:
+        previous = Checkpoint(**pointer)
+    except (TypeError, ValueError):
+        return (), False
+    if (previous.sha256 == current_checkpoint.sha256 and
+            previous.optimizer_step == current_checkpoint.optimizer_step):
+        return (), True
+    previous_scores, issue = _score_parent_for_paired_s3(
+        mx, run_dir, receipt, previous, cohort, graph, current_scores)
+    if issue is not None or previous_scores is None:
+        return (), False
+    improved = []
+    for capability, current in current_scores.items():
+        prior = previous_scores.get(capability)
+        if (not isinstance(prior, dict) or
+                type(prior.get("correct")) is not int or
+                type(prior.get("total")) is not int or
+                prior["total"] != current.get("total")):
+            return (), False
+        if current["correct"] > prior["correct"]:
+            improved.append(capability)
+    return tuple(improved), True
 
 
 def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
@@ -3553,8 +3727,13 @@ def _live_exam_factors_complete(executable_release, cohort, expected) -> bool:
     Source/construction-specific invariants belong to the registered provider
     and its independent oracle.  The generic trainer verifies only what the
     executable plan declares: exact cohort size, admitted answer kind, admitted
-    gold label, and at least one observation of every declared answer value.
+    gold label, representation of every declared answer modality, and complete
+    target coverage only when the admitted provider declares a balancing axis.
+    A numeric output *vocabulary* is not a guarantee that every arithmetic
+    result appears in every finite exam.
     """
+    balancing_axes = frozenset((
+        "balanced-gold", "balanced-operator-targets", "runtime-answer-balance"))
     capability_map = executable_release.execution_plan.capability_map
     for cap, total in expected.items():
         rows = [row for row in cohort.rows if row["capability"] == cap]
@@ -3572,9 +3751,44 @@ def _live_exam_factors_complete(executable_release, cohort, expected) -> bool:
             observed = {
                 row["gold"] for row in rows
                 if row.get("answer_kind", "binary") == family.kind}
-            if observed != set(family.values):
+            if (not observed or
+                    (balancing_axes.intersection(
+                        getattr(capability_map[cap], "variation_axes", ()))
+                     and observed != set(family.values))):
                 return False
     return True
+
+
+def _verify_live_rubric_lineage(run_dir, receipt, program) -> None:
+    """Resolve the active rubric to the exact immutable exam that minted it.
+
+    A migrated student may retain a signed v1 assessment; subsequent v2 exams
+    carry exact-scope rubrics that are *not* whole-grade blueprint hashes.
+    Neither kind may be relabeled into the other or accepted without its own
+    source-bound cohort proof.
+    """
+    live_rubric = receipt.get("live_rubric_sha256")
+    known_rubrics = {grade.assessment_sha256 for grade in program.grades}
+    if live_rubric is None or live_rubric in known_rubrics:
+        return
+    exam = receipt.get("last_exam") or {}
+    if (exam.get("factory_release_sha256") ==
+            receipt.get("factory_release_sha256") and
+            exam.get("factory_release_sha256") is not None and
+            live_rubric == exam.get("rubric_sha256") ==
+            exam.get("exam_rubric_sha256")):
+        # Do not trust a matching label alone. Reconstruct the scope contract,
+        # content-addressed cohort and saved source/oracle evidence from disk.
+        from .runtime.assessment import _verify_saved_cohort
+        if _verify_saved_cohort(run_dir, receipt, None) is None:
+            raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_EVIDENCE_MISSING")
+        return
+    from .runtime.admission import _verified_historical_cohort_release
+    previous = _verified_historical_cohort_release(run_dir, receipt)
+    if (previous is not None and
+            live_rubric in set(previous.assessment_rubric_sha256s)):
+        return
+    raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_IDENTITY_DRIFT")
 
 
 def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
@@ -3596,11 +3810,7 @@ def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
     from .factory.assessment import assessment_scope_contract
     rubric = assessment_scope_contract(
         executable_release, allowed).rubric_sha256
-    known_rubrics = {
-        grade.assessment_sha256 for grade in program.grades}
-    live_rubric = receipt.get("live_rubric_sha256")
-    if live_rubric is not None and live_rubric not in known_rubrics:
-        raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_IDENTITY_DRIFT")
+    _verify_live_rubric_lineage(run_dir, receipt, program)
     expected = {
         capability.id: capability.exam_item_count
         for grade in program.grades
@@ -3728,7 +3938,66 @@ def _with_delivery_outbox(record: dict, events) -> dict:
     return prepared
 
 
-def _reconcile_delivery_outbox(run_dir: Path, record: dict):
+def _require_outbox_lineage(condition: bool) -> None:
+    if not condition:
+        raise ValueError("HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT")
+
+
+def _outbox_source_generation(run_dir: Path, record: dict, outbox: list):
+    source_generation = record["generation"]
+    ordinary_lineage = all(
+        isinstance(event, dict) and "event_id" in event and
+        event["event_id"] == _fingerprint([
+            "school-generation-event/v1", record["run_id"], source_generation,
+            index, {k: v for k, v in event.items() if k != "event_id"}])
+        for index, event in enumerate(outbox)
+    )
+    inherited = None
+    if not ordinary_lineage:
+        from .runtime.outbox_lineage import verified_inherited_v1_generation
+        inherited = verified_inherited_v1_generation(run_dir, record)
+        if inherited is not None:
+            source_generation = inherited
+    return source_generation, inherited
+
+
+def _expected_outbox_events(record: dict, outbox: list, source_generation: int):
+    expected = {}
+    for index, event in enumerate(outbox):
+        if not isinstance(event, dict) or "event_id" not in event:
+            raise ValueError("HUMAN_TRAINER_OUTBOX_EVENT_ID_MISSING")
+        payload = {k: v for k, v in event.items() if k != "event_id"}
+        identity = _fingerprint([
+            "school-generation-event/v1", record["run_id"],
+            source_generation, index, payload])
+        _require_outbox_lineage(
+            event["event_id"] == identity and identity not in expected)
+        expected[identity] = event
+    return expected
+
+
+def _observed_outbox_events(run_dir: Path, expected: dict):
+    observed = set()
+    observed_counts = {}
+    journal = run_dir / "events.jsonl"
+    if not journal.exists():
+        return observed, observed_counts
+    if journal.is_symlink() or not journal.is_file():
+        raise ValueError("HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER")
+    with journal.open(encoding="utf-8") as stream:
+        for line in stream:
+            item = json.loads(line)
+            identity = item.get("event_id")
+            if identity in expected:
+                if item != expected[identity]:
+                    raise ValueError("HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT")
+                observed.add(identity)
+                observed_counts[identity] = observed_counts.get(identity, 0) + 1
+    return observed, observed_counts
+
+
+def _reconcile_delivery_outbox(
+        run_dir: Path, record: dict, *, publish_missing: bool = True):
     """Replay missing events; never duplicate or amend prior ledger history.
 
     Caller must hold the exclusive operator lock. JSONL write+fsync can succeed
@@ -3740,29 +4009,26 @@ def _reconcile_delivery_outbox(run_dir: Path, record: dict):
         return False
     if not isinstance(outbox, list) or not outbox:
         raise ValueError("HUMAN_TRAINER_OUTBOX_INVALID")
-    expected = {}
-    for index, event in enumerate(outbox):
-        if not isinstance(event, dict) or "event_id" not in event:
-            raise ValueError("HUMAN_TRAINER_OUTBOX_EVENT_ID_MISSING")
-        payload = {k:v for k,v in event.items() if k != "event_id"}
-        identity = _fingerprint(["school-generation-event/v1", record["run_id"],
-                                 record["generation"], index, payload])
-        if event["event_id"] != identity or identity in expected:
-            raise ValueError("HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT")
-        expected[identity] = event
-    observed = set()
-    journal = run_dir / "events.jsonl"
-    if journal.exists():
-        if journal.is_symlink() or not journal.is_file():
-            raise ValueError("HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER")
-        with journal.open(encoding="utf-8") as stream:
-            for line in stream:
-                item = json.loads(line)
-                identity = item.get("event_id")
-                if identity in expected:
-                    if item != expected[identity]:
-                        raise ValueError("HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT")
-                    observed.add(identity)
+    # Ordinarily all outbox IDs are bound to the current generation. A single
+    # historical v1->v2 migration erroneously copied the previous outbox into
+    # an otherwise valid immutable successor; accept that *only* with proven
+    # signed predecessor identity and fully published, unmodified journal rows.
+    # Most valid generations are not compatibility migrations. Avoid rereading
+    # a 47 MB immutable predecessor when the ordinary current-generation IDs
+    # already validate; verify an inherited predecessor only upon actual drift.
+    source_generation, inherited = _outbox_source_generation(
+        run_dir, record, outbox)
+    expected = _expected_outbox_events(record, outbox, source_generation)
+    observed, observed_counts = _observed_outbox_events(run_dir, expected)
+    if inherited is not None:
+        _require_outbox_lineage(
+            observed == set(expected) and
+            all(count == 1 for count in observed_counts.values()))
+        return True
+    if not publish_missing:
+        # Neural-inert operator preflight may inspect custody, but must never
+        # replay missing events or alter the append-only journal.
+        return observed == set(expected)
     for event in outbox:
         if event["event_id"] not in observed:
             _record(run_dir, event)
@@ -3913,14 +4179,15 @@ def _school_result_label(school):
             "ACTIVE_GRADE_" + school.grade)
 
 
-def _promotion_due_after_routine(before, after) -> bool:
+def _promotion_due_after_routine(
+        before, after, *, complete_assessment: bool = True) -> bool:
     """Whether a perfect routine evaluation would advance the school state.
 
-    Passing an intermediate introduction tranche is not graduation. Moving to
-    another grade, beginning/advancing a cumulative revalidation sweep, or
-    reaching a curriculum boundary is.
+    An incomplete assessment can legitimately move the scheduler to a new
+    grade during a stagnation spiral, but it cannot create a qualification
+    instrument. Distinguish *teaching progression* from *graduation authority*.
     """
-    return (
+    return complete_assessment and (
         after.grade != before.grade
         or after.revalidation_target_grade != before.revalidation_target_grade
         or after.stage in {
@@ -3968,7 +4235,8 @@ def _measure_debt_admission_boundary(mx, run_dir, receipt, manifest, course,
 
 def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                source_checkpoint, parameters, optimizer, graph, *, reserve_gib,
-               scheduler_only: bool = False):
+               scheduler_only: bool = False,
+               session_elapsed_seconds=None):
     executable_release = _read_executable_factory_release_artifact(
         run_dir, receipt)
     program = schedule_program_from_executable_release(executable_release)
@@ -4024,6 +4292,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         mx, parameters, routine_rows, receipt["config"], receipt["answer_ids"])
     routine_measured = score_cohort(
         routine_cohort, routine_guesses, asdict(school.current_student))
+    paired_progressed, paired_progress_usable = _paired_stagnation_progress(
+        mx, run_dir, receipt, stagnation, routine_cohort, graph,
+        school.current_student, routine_measured["scores"])
     championship_exams = ([] if scheduler_only else [
         (candidate_cohort, candidate_measured, candidate_guesses),
         (routine_cohort, routine_measured, routine_guesses)])
@@ -4089,7 +4360,11 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             active_scope=active_scope, routine_measured=routine_measured,
             routine_warnings=routine_warnings,
             generation=receipt["generation"] + 1,
-            quarantine_suppressed=quarantine_suppressed))
+            quarantine_suppressed=quarantine_suppressed,
+            session_elapsed_seconds=session_elapsed_seconds,
+            paired_progressed=paired_progressed,
+            paired_progress_usable=paired_progress_usable,
+            progress_checkpoint=asdict(school.current_student)))
 
     qualification = None
     generalization = None
@@ -4105,7 +4380,13 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     measured = routine_measured
     assessment = routine_assessment
     advanced = routine_advanced
-    if not scheduler_only and _promotion_due_after_routine(school, routine_advanced):
+    complete_assessment = (
+        not blocked_before and not blocked_after and
+        tuple(active_scope) == tuple(full_scope))
+    if (not scheduler_only and
+            _promotion_due_after_routine(
+                school, routine_advanced,
+                complete_assessment=complete_assessment)):
         promotion_cohort, qualification = _promotion_executable_cohort(
             run_dir, receipt, manifest, executable_release, source_registry,
             source_root, graph, capabilities=active_scope,
@@ -4138,7 +4419,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         assessment = promotion_assessment
         promotion_advanced = assess(program, school, promotion_assessment)
         advanced = promotion_advanced
-        if _promotion_due_after_routine(school, promotion_advanced):
+        if _promotion_due_after_routine(
+                school, promotion_advanced,
+                complete_assessment=complete_assessment):
             promotion_evidence = LearningEvidence(
                 AssessmentClass.PROMOTION,
                 promotion_cohort.digest,
@@ -4190,7 +4473,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                 generalization_cohort.digest,
                 generalization_assessment.checkpoint_sha256,
                 generalization_assessment.optimizer_step,
-                _promotion_due_after_routine(school, advanced),
+                _promotion_due_after_routine(
+                    school, advanced,
+                    complete_assessment=complete_assessment),
             )
             generalization_passed = qualification_complete(
                 promotion_evidence, generalization_evidence)
@@ -4746,7 +5031,6 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         params, optimizer, catalog_transition,
                         reserve_gib=reserve_gib,
                         allow_mastery_debt=admit_next_grade_with_debt))
-            receipt = _repair_scope_rubric_evidence(run_dir, receipt, course)
             receipt = _repair_championship_source_context(run_dir, receipt, course)
         else:
             if numeric_staircase:
@@ -4837,7 +5121,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         receipt["stagnation_history"] = history[-16:]
         receipt["stagnation_session"] = start_stagnation_session(
             session_id=uuid.uuid4().hex, generation=receipt["generation"],
-            required_capabilities=assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school))
+            required_capabilities=assessment_capabilities(
+                _schedule_for_receipt(run_dir, receipt, course), school),
+            progress_checkpoint=asdict(school.current_student))
         debt_grades = {capability.partition(".")[0] for capability in prior_debt}
         grace_reentry = grace_suppressed_capabilities(
             receipt.get("stagnation_grace"), required_capabilities=tuple(prior_debt),
@@ -4936,7 +5222,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     receipt = _take_exam(
                         mx, run_dir, receipt, manifest, course, source_root,
                         source_checkpoint, params, optimizer, graph,
-                        reserve_gib=reserve_gib, scheduler_only=True)
+                        reserve_gib=reserve_gib, scheduler_only=True,
+                        session_elapsed_seconds=time.monotonic() - start)
                     if experiment_budget is not None:
                         experiment_budget.assert_can_allocate(0)
                     school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
@@ -4953,7 +5240,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     receipt = _take_exam(
                         mx, run_dir, receipt, manifest, course, source_root,
                         source_checkpoint, params, optimizer, graph,
-                        reserve_gib=reserve_gib)
+                        reserve_gib=reserve_gib,
+                        session_elapsed_seconds=time.monotonic() - start)
                 if experiment_budget is not None:
                     experiment_budget.assert_can_allocate(0)
                 continue

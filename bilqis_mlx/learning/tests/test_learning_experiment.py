@@ -189,7 +189,9 @@ class CausalTeacherExperimentTests(unittest.TestCase):
 
         receipt = {
             "config": {}, "answer_ids": [],
-            "last_exam": {"cohort_sha256": "a" * 64},
+            "last_exam": {"cohort_sha256": "a" * 64,
+                          "student_sha256": "a" * 64,
+                          "optimizer_step": 1},
         }
         school = type("School", (), {
             "grade": "C",

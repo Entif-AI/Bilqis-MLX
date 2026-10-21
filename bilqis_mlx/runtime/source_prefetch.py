@@ -40,14 +40,19 @@ def source_prefetch_pool(workers: int) -> ProcessPoolExecutor:
     )
 
 
-def _draw(request, *, seed, capability, each):
-    release = request.get("factory_release")
-    if release is None:
-        return draw_course_rows(Path(request["source_root"]), request["graph"], request["course"],
-                                seed=seed, capability=capability, each=each)
-    return draw_executable_release_rows(Path(request["source_root"]), request["graph"],
-        release, live_source_registry(), seed=seed, capability=capability, each=each,
-        legacy_course=request["course"])
+def _source_rows(request, *, seed: int, capability: str, each: int):
+    """Only pure, previously admitted source contracts enter worker processes."""
+    root = Path(request["source_root"])
+    release = request.get("executable_release")
+    if release is not None:
+        from bilqis_mlx.factory.generation import draw_executable_release_rows
+        return draw_executable_release_rows(
+            root, request["graph"], release, live_source_registry(),
+            seed=seed, capability=capability, each=each,
+            legacy_course=request["course"])
+    return draw_course_rows(
+        root, request["graph"], request["course"],
+        seed=seed, capability=capability, each=each)
 
 
 def _fragile_rows(request: dict) -> tuple[dict, ...]:
@@ -71,8 +76,8 @@ def _fragile_rows(request: dict) -> tuple[dict, ...]:
         if len(seeds) != 3:
             raise ValueError("SOURCE_PREFETCH_FRAGILE_SEEDS_INVALID")
         for seed in seeds:
-            fresh.extend(_draw(request,
-                seed=seed, capability=name,
+            fresh.extend(_source_rows(
+                request, seed=seed, capability=name,
                 each=max(96, batch_size * 3)))
             matched = select_structural_preservation_rows(
                 fresh, fixed_capability, excluded_ids=excluded,
@@ -102,9 +107,9 @@ def _fragile_rows(request: dict) -> tuple[dict, ...]:
 
 
 def _teaching_enrichment_rows(request: dict):
-    if request.get("factory_release") is not None:
+    if request.get("executable_release") is not None:
         return optional_teaching_rows(Path(request["source_root"]), request["graph"],
-            request["factory_release"], live_source_registry(), capability=request["capability"],
+            request["executable_release"], live_source_registry(), capability=request["capability"],
             seed=request["teaching_seed"], enabled=request["teaching_enrichment_enabled"],
             legacy_course=request["course"])
     return live_source_registry().optional_teaching_rows(
@@ -123,7 +128,7 @@ def prepare_step_sources(request: dict) -> dict:
         "prior_seed", "fragile_fixed_rows", "fragile_requested", "fragile_seeds",
         "fragile_rotation", "teaching_seed", "teaching_enrichment_enabled",
     }
-    if set(request) - {"factory_release"} != required:
+    if set(request) not in (required, required | {"executable_release"}):
         raise ValueError("SOURCE_PREFETCH_REQUEST_SCHEMA_DRIFT")
     identity = request["identity"]
     if (not isinstance(identity, str) or len(identity) != 64 or
@@ -131,14 +136,14 @@ def prepare_step_sources(request: dict) -> dict:
         raise ValueError("SOURCE_PREFETCH_IDENTITY_INVALID")
     batch_size = request["batch_size"]
     source_root = Path(request["source_root"])
-    fresh = _draw(request,
-        seed=request["fresh_seed"], capability=request["capability"],
-        each=max(32, batch_size))
+    fresh = _source_rows(
+        request, seed=request["fresh_seed"],
+        capability=request["capability"], each=max(32, batch_size))
     prior = []
     if request["prior_capability"] is not None:
-        prior = _draw(request,
-            seed=request["prior_seed"], capability=request["prior_capability"],
-            each=max(batch_size, 6))
+        prior = _source_rows(
+            request, seed=request["prior_seed"],
+            capability=request["prior_capability"], each=max(batch_size, 6))
     preservation = _fragile_rows(request)
     enrichment = _teaching_enrichment_rows(request)
     return {

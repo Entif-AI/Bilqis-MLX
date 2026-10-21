@@ -277,12 +277,30 @@ def next_source_coverage_debt(plan: AutonomyPlan) -> str | None:
     return plan.coverage_debt[0] if plan.coverage_debt else None
 
 
+def _require_plan_release(factory_release_sha256: str, plan: AutonomyPlan) -> None:
+    if plan.factory_release_sha256 != factory_release_sha256:
+        raise ValueError("AUTONOMY_PLAN_RELEASE_MISMATCH")
+
+
+def _require_known_obligation(
+        obligations: dict[str, EvidenceObligation], obligation_id: str,
+) -> EvidenceObligation:
+    obligation = obligations.get(obligation_id)
+    if obligation is None:
+        raise ValueError("AUTONOMY_UNKNOWN_EVIDENCE_OBLIGATION")
+    return obligation
+
+
+def _require_teaching_provenance(condition: bool) -> None:
+    if not condition:
+        raise ValueError("AUTONOMY_TEACHING_RECEIPT_PROVENANCE_INVALID")
+
+
 def _resolve_plan(release: FactoryRelease, plan: AutonomyPlan | None) -> AutonomyPlan:
     resolved = compile_autonomy_plan(release) if plan is None else plan
     if not isinstance(resolved, AutonomyPlan):
         raise TypeError("AUTONOMY_INVALID_PLAN")
-    if resolved.factory_release_sha256 != release.release_sha256:
-        raise ValueError("AUTONOMY_PLAN_RELEASE_MISMATCH")
+    _require_plan_release(release.release_sha256, resolved)
     return resolved
 
 
@@ -373,9 +391,9 @@ class TeachingReceipt:
     def __post_init__(self) -> None:
         # JSON state decoding yields lists; normalize them back to the durable
         # tuple form before validating or comparing the released contract.
-        if (not isinstance(self.specimen_ids, (tuple, list)) or
-                not isinstance(self.variation_axes, (tuple, list))):
-            raise ValueError("AUTONOMY_TEACHING_RECEIPT_PROVENANCE_INVALID")
+        _require_teaching_provenance(
+            isinstance(self.specimen_ids, (tuple, list)) and
+            isinstance(self.variation_axes, (tuple, list)))
         object.__setattr__(self, "specimen_ids", tuple(self.specimen_ids))
         object.__setattr__(self, "variation_axes", tuple(self.variation_axes))
         if (not self.obligation_id or not self.intervention_id or
@@ -397,26 +415,24 @@ class TeachingReceipt:
                 self.optimizer_step_delta !=
                 self.optimizer_step - self.parent_optimizer_step):
             raise ValueError("AUTONOMY_TEACHING_RECEIPT_STEP_DELTA_INVALID")
-        if ((self.selected_provider_id is not None and
-             (not isinstance(self.selected_provider_id, str) or
-              not self.selected_provider_id)) or
-                (self.provider_implementation_sha256 is not None and
+        _require_teaching_provenance(
+            not (self.selected_provider_id is not None and
+                 (not isinstance(self.selected_provider_id, str) or
+                  not self.selected_provider_id)) and
+            not (self.provider_implementation_sha256 is not None and
                  (not isinstance(self.provider_implementation_sha256, str) or
                   len(self.provider_implementation_sha256) != 64 or
                   any(char not in "0123456789abcdef"
-                      for char in self.provider_implementation_sha256))) or
-                len(set(self.specimen_ids)) != len(self.specimen_ids) or
-                any(not isinstance(item, str) or not item
-                    for item in self.specimen_ids) or
-                (self.specimen_content_sha256 is not None and
+                      for char in self.provider_implementation_sha256))) and
+            len(set(self.specimen_ids)) == len(self.specimen_ids) and
+            all(isinstance(item, str) and item for item in self.specimen_ids) and
+            not (self.specimen_content_sha256 is not None and
                  (not isinstance(self.specimen_content_sha256, str) or
                   len(self.specimen_content_sha256) != 64 or
                   any(char not in "0123456789abcdef"
-                      for char in self.specimen_content_sha256))) or
-                len(set(self.variation_axes)) != len(self.variation_axes) or
-                any(not isinstance(item, str) or not item
-                    for item in self.variation_axes)):
-            raise ValueError("AUTONOMY_TEACHING_RECEIPT_PROVENANCE_INVALID")
+                      for char in self.specimen_content_sha256))) and
+            len(set(self.variation_axes)) == len(self.variation_axes) and
+            all(isinstance(item, str) and item for item in self.variation_axes))
 
 
 @dataclass(frozen=True)
@@ -655,12 +671,9 @@ def _validate_ledger(
         raise ValueError("AUTONOMY_PLAN_MISMATCH")
     release.verify()
     obligations = _obligation_map(release, resolved_plan)
-    if any(item.obligation_id not in obligations for item in ledger.receipts):
-        raise ValueError("AUTONOMY_UNKNOWN_EVIDENCE_OBLIGATION")
-    if any(
-            item.obligation_id not in obligations
-            for item in (*ledger.interventions, *ledger.rejected_attempts)):
-        raise ValueError("AUTONOMY_UNKNOWN_EVIDENCE_OBLIGATION")
+    for item in (
+            *ledger.receipts, *ledger.interventions, *ledger.rejected_attempts):
+        _require_known_obligation(obligations, item.obligation_id)
     return obligations
 
 
@@ -754,9 +767,7 @@ def record_evidence(
     obligations = _validate_ledger(release, ledger, plan=plan)
     if not isinstance(receipt, EvidenceReceipt):
         raise TypeError("AUTONOMY_INVALID_EVIDENCE_RECEIPT")
-    obligation = obligations.get(receipt.obligation_id)
-    if obligation is None:
-        raise ValueError("AUTONOMY_UNKNOWN_EVIDENCE_OBLIGATION")
+    obligation = _require_known_obligation(obligations, receipt.obligation_id)
     if receipt.passed and receipt.specimen_count < obligation.minimum_specimens:
         raise ValueError("AUTONOMY_INSUFFICIENT_EVIDENCE_SPECIMENS")
     if receipt.evidence_id in {item.evidence_id for item in ledger.receipts}:
@@ -780,9 +791,7 @@ def record_teaching_intervention(
     obligations = _validate_ledger(release, ledger, plan=plan)
     if not isinstance(receipt, TeachingReceipt):
         raise TypeError("AUTONOMY_INVALID_TEACHING_RECEIPT")
-    obligation = obligations.get(receipt.obligation_id)
-    if obligation is None:
-        raise ValueError("AUTONOMY_UNKNOWN_EVIDENCE_OBLIGATION")
+    obligation = _require_known_obligation(obligations, receipt.obligation_id)
     latest = _latest_receipts(ledger).get(receipt.obligation_id)
     if latest is None or latest.passed:
         raise ValueError("AUTONOMY_TEACHING_REQUIRES_FAILED_EVIDENCE")
@@ -833,9 +842,7 @@ def record_rejected_teaching_attempt(
     obligations = _validate_ledger(release, ledger, plan=plan)
     if not isinstance(receipt, RejectedTeachingAttemptReceipt):
         raise TypeError("AUTONOMY_INVALID_REJECTED_TEACHING_ATTEMPT")
-    obligation = obligations.get(receipt.obligation_id)
-    if obligation is None:
-        raise ValueError("AUTONOMY_UNKNOWN_EVIDENCE_OBLIGATION")
+    obligation = _require_known_obligation(obligations, receipt.obligation_id)
     latest = _latest_receipts(ledger).get(receipt.obligation_id)
     if (latest is None or latest.passed or
             receipt.parent_evidence_id != latest.evidence_id or
@@ -1105,9 +1112,8 @@ def rebind_evidence_ledger(
 ) -> EvidenceLedger:
     """Carry forward only receipts whose semantic obligation is unchanged."""
     _validate_ledger(release, ledger, plan=old_plan)
-    if (old_plan.factory_release_sha256 != release.release_sha256 or
-            new_plan.factory_release_sha256 != release.release_sha256):
-        raise ValueError("AUTONOMY_PLAN_RELEASE_MISMATCH")
+    _require_plan_release(release.release_sha256, old_plan)
+    _require_plan_release(release.release_sha256, new_plan)
     old_obligations = _obligation_map(release, old_plan)
     new_obligations = _obligation_map(release, new_plan)
     for receipt in ledger.receipts:
@@ -1151,8 +1157,7 @@ def reconcile_successor_evidence(
     previous_release.verify()
     current_release.verify_successor_of(previous_release)
     _validate_ledger(previous_release, ledger, plan=previous_plan)
-    if current_plan.factory_release_sha256 != current_release.release_sha256:
-        raise ValueError("AUTONOMY_PLAN_RELEASE_MISMATCH")
+    _require_plan_release(current_release.release_sha256, current_plan)
 
     old_semantics = previous_release.curriculum.capability_map
     new_semantics = current_release.curriculum.capability_map

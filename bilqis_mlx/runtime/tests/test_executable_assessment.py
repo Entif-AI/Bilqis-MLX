@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 from bilqis_mlx.curriculum import BOOLEAN_OPERATORS
 from bilqis_mlx.factory.assessment import assessment_scope_contract
@@ -20,6 +21,8 @@ from bilqis_mlx.runtime.assessment import (
     _routine_executable_cohort,
     load_championship_cohort,
 )
+from bilqis_mlx.runtime.admission import _persist_executable_factory_release
+from bilqis_mlx.trainer import _verify_live_rubric_lineage
 
 
 class ExecutableAssessmentRuntimeTests(unittest.TestCase):
@@ -97,6 +100,31 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             self.assertNotEqual(
                 payload["rubric_sha256"],
                 payload["factory_release_sha256"])
+
+    def test_recent_v2_exact_scope_exam_is_a_valid_live_rubric_authority(self):
+        cohort, contract = self.draw(self.reduced, ("B.IDBOOLOPS",))
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            release_path = _persist_executable_factory_release(root, self.reduced)
+            pointer = _persist_executable_cohort(root, self.manifest, contract, cohort)
+            receipt = {
+                "factory_release_sha256": self.reduced.release_sha256,
+                "factory_release_file": release_path,
+                "factory_admission_v2": {},
+                "source_manifest_sha256": self.manifest["manifest_sha256"],
+                "live_rubric_sha256": contract.rubric_sha256,
+                "last_exam": {**pointer, "exam_rubric_sha256": contract.rubric_sha256},
+            }
+            program = SimpleNamespace(grades=(SimpleNamespace(
+                assessment_sha256="f" * 64),))
+            self.assertIsNone(_verify_live_rubric_lineage(root, receipt, program))
+            with self.assertRaises(ValueError):
+                _verify_live_rubric_lineage(root, {
+                    **receipt, "last_exam": {**receipt["last_exam"],
+                       "cohort_sha256": "0" * 64}}, program)
+            with self.assertRaisesRegex(ValueError, "LIVE_RUBRIC_IDENTITY_DRIFT"):
+                _verify_live_rubric_lineage(root, {
+                    **receipt, "live_rubric_sha256": "e" * 64}, program)
 
     def test_v2_cohort_replays_as_championship_evidence_with_exact_rubric(self):
         cohort, contract = self.draw(self.reduced, self.a_scope)
@@ -218,6 +246,33 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
                 {row["id"] for row in second.rows},
                 {row["id"] for row in first.rows})
 
+    def test_generalization_preserves_burned_cohort_from_prior_larger_scope(self):
+        # A later grade's active scope may shrink after assessment scheduling.
+        # Previously burned source evidence remains valid under its own signed
+        # scope, not the newly scheduled assessment's narrower scope.
+        receipt = self.receipt()
+        current_scope = self.a_scope
+        historical_scope = tuple(
+            item.capability_id for item in self.reduced.execution_plan.capabilities)
+        self.assertNotEqual(current_scope, historical_scope)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            historical, contract = self.draw(self.reduced, historical_scope, seed=72)
+            burned_pointer = _persist_executable_cohort(
+                root, self.manifest, contract, historical)
+            promotion, promotion_pointer = _promotion_executable_cohort(
+                root, receipt, self.manifest, self.reduced, self.registry,
+                None, self.graph, capabilities=current_scope, assessment_epoch=12,
+                legacy_course=self.course)
+            receipt["burned_generalization_cohorts_v2"] = [burned_pointer]
+            fresh, _ = _generalization_executable_cohort(
+                root, receipt, self.manifest, self.reduced, self.registry,
+                None, self.graph, capabilities=current_scope, assessment_epoch=12,
+                promotion_pointer=promotion_pointer,
+                legacy_course=self.course)
+            self.assertNotEqual(fresh.digest, promotion.digest)
+            self.assertNotEqual(fresh.digest, historical.digest)
+
     def test_fixed_frontier_reads_v2_cohort_without_using_schema_as_rubric(self):
         from bilqis_mlx.fixed_frontier import load_frontier_cohort
         cohort, contract = self.draw(self.full, self.a_scope)
@@ -243,6 +298,37 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
         completed = assess_withheld(program, school, exam, blocked)
         self.assertEqual(completed.stage, "DEFERRED_STAGNATION")
         self.assertNotIn("B", completed.champions)
+
+    def test_quarantine_after_exam_keeps_the_measured_rubric_scope(self):
+        from dataclasses import replace
+        from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
+        from bilqis_mlx.curriculum.scheduler import Assessment, Score, start_new, assess_withheld
+        from bilqis_mlx.learning.champions import Checkpoint
+        program = schedule_program_from_executable_release(self.full)
+        student = Checkpoint("a" * 64, "bundles/fixture", 10, True)
+        school = replace(start_new(program, student), grade_index=1,
+                         stage="ASSESS_RECOVERY_2", queue=(),
+                         first_recovery=("B.AND",), champions={"A": student},
+                         introduction_stage=max(0, len(program.grades[1].teaching_stages)-1))
+        measured_scope = tuple(item.capability_id
+                               for item in self.full.execution_plan.capabilities)
+        contract = assessment_scope_contract(self.full, measured_scope)
+        blocked_after = ("B.IFF",)
+        counts = {cap.id: cap.exam_item_count for grade in program.grades
+                  for cap in grade.capabilities}
+        filtered_scores = {cap: Score(counts[cap] - 1, counts[cap])
+                           for cap in measured_scope if cap not in blocked_after}
+        filtered = Assessment(student.sha256, student.optimizer_step,
+                              program.digest(), contract.rubric_sha256,
+                              filtered_scores, "measured-before-quarantine")
+        next_state = assess_withheld(
+            program, school, filtered, blocked_after,
+            rubric_capabilities=measured_scope)
+        self.assertNotIn("B", next_state.champions)
+        self.assertNotEqual(next_state.stage, "AWAITING_NEXT_GRADE")
+        with self.assertRaisesRegex(ValueError, "ASSESSMENT_NOT_GRADE_SEALED_RUBRIC"):
+            assess_withheld(program, school, replace(filtered, rubric_digest="f" * 64),
+                            blocked_after, rubric_capabilities=measured_scope)
 
 
 if __name__ == "__main__":

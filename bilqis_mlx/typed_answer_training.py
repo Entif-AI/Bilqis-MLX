@@ -14,6 +14,9 @@ import numpy as np
 from bilqis_mlx.curriculum import BOOLEAN_OPERATORS
 from bilqis_mlx.runtime.mlx_parity import clip_gradients, forward_arrays
 
+_NOT_ADMITTED = "ANSWER_CASTE_NOT_ADMITTED_FOR_TRAINING"
+_UNTRUSTED_HEAD_ABI = "ANSWER_CASTE_UNTRUSTED_HEAD_ABI"
+
 
 LEGACY_TRAIN_CASTES = (
     "numeric_0_3", "numeric_active", "numeric_full_101",
@@ -32,7 +35,7 @@ def _verified_v2_head(head: dict) -> bool:
 def _validate_legacy_head(kind: str, labels: list[str]) -> None:
     """Preserve pre-v2 ABI checks while new modalities extend through v2."""
     if kind not in LEGACY_TRAIN_CASTES:
-        raise ValueError("ANSWER_CASTE_NOT_ADMITTED_FOR_TRAINING")
+        raise ValueError(_NOT_ADMITTED)
     sizes = {"numeric_0_3": 4, "numeric_full_101": 101,
              "evidence": 5, "binary": 2}
     if (kind in sizes and len(labels) != sizes[kind] or
@@ -48,7 +51,7 @@ def _validate_legacy_head(kind: str, labels: list[str]) -> None:
                 labels != [label for label in BOOLEAN_OPERATORS if label in labels]) or
             kind in ("evidence", "binary") and
             labels[:2] != ["FALSE", "TRUE"]):
-        raise ValueError("ANSWER_CASTE_UNTRUSTED_HEAD_ABI")
+        raise ValueError(_UNTRUSTED_HEAD_ABI)
 
 
 def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
@@ -64,7 +67,7 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
     for row in rows:
         kind = row.get("answer_kind")
         if not isinstance(kind, str) or not kind or kind not in heads:
-            raise ValueError("ANSWER_CASTE_NOT_ADMITTED_FOR_TRAINING")
+            raise ValueError(_NOT_ADMITTED)
         head = heads[kind]
         labels = head.get("values") or []
         answer_ids = head.get("token_ids") or []
@@ -73,11 +76,11 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
                 len(set(labels)) != len(labels) or
                 any(type(i) is not int or not 0 <= i < len(vocabulary) for i in answer_ids) or
                 len(set(answer_ids)) != len(answer_ids)):
-            raise ValueError("ANSWER_CASTE_UNTRUSTED_HEAD_ABI")
+            raise ValueError(_UNTRUSTED_HEAD_ABI)
         if kind == "semantic_token":
             if (labels != vocabulary or
                     answer_ids != list(range(len(vocabulary)))):
-                raise ValueError("ANSWER_CASTE_UNTRUSTED_HEAD_ABI")
+                raise ValueError(_UNTRUSTED_HEAD_ABI)
         elif not _verified_v2_head(head):
             _validate_legacy_head(kind, labels)
         if row.get("gold") not in labels:

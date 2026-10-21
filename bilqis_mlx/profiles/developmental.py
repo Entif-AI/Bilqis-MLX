@@ -2,16 +2,10 @@
 from ..factory.development import (DevelopmentalStaircase, DevelopmentalTarget, RepresentationLayer, UnderstandingProjection)
 
 
-def post_boolean_staircase() -> DevelopmentalStaircase:
-    """Candidate developmental DAG beginning after compositional Boolean identity.
-
-    The sequence keeps semantic identity, structural composition, and surface
-    realization distinct.  Branches open only where the semantic novelty can be
-    isolated without forcing morphology to carry unresolved reasoning burdens.
-    """
+def _formal_targets() -> tuple[DevelopmentalTarget, ...]:
     S = RepresentationLayer
     P = UnderstandingProjection
-    targets = (
+    return (
         DevelopmentalTarget(
             "DEV.LAW_SCHEMA", 1, "Law identity and metavariable schema",
             ("B.IDBOOLOPS", "B.COMPOSITE"),
@@ -45,6 +39,13 @@ def post_boolean_staircase() -> DevelopmentalStaircase:
             ("source-grounded nested expressions with contrastive attachment or scope",),
             "Recover and manipulate hierarchical attachment when token inventory is "
             "held constant."),
+    )
+
+
+def _feature_targets() -> tuple[DevelopmentalTarget, ...]:
+    S = RepresentationLayer
+    P = UnderstandingProjection
+    return (
         DevelopmentalTarget(
             "DEV.FEATURE_DIMENSION", 4, "Orthogonal feature dimension",
             ("DEV.TYPE_DISCIPLINE",),
@@ -67,6 +68,13 @@ def post_boolean_staircase() -> DevelopmentalStaircase:
             (P.EXECUTE, P.DISCRIMINATE, P.TRANSFER, P.INVERT, P.COUNTERFACTUAL),
             ("source-grounded n-ary relation or event-role inventory",),
             "Generalize ordered roles into reusable participant frames."),
+    )
+
+
+def _realization_targets() -> tuple[DevelopmentalTarget, ...]:
+    S = RepresentationLayer
+    P = UnderstandingProjection
+    return (
         DevelopmentalTarget(
             "DEV.REALIZATION", 6, "Semantic identity to surface realization",
             ("DEV.FEATURE_BUNDLE",),
@@ -108,6 +116,16 @@ def post_boolean_staircase() -> DevelopmentalStaircase:
             "Predict the consequence of one changed rule or feature and emit the "
             "rule/binding/result trace that explains it."),
     )
+
+
+def post_boolean_staircase() -> DevelopmentalStaircase:
+    """Candidate developmental DAG beginning after compositional Boolean identity.
+
+    The sequence keeps semantic identity, structural composition, and surface
+    realization distinct.  Branches open only where the semantic novelty can be
+    isolated without forcing morphology to carry unresolved reasoning burdens.
+    """
+    targets = (*_formal_targets(), *_feature_targets(), *_realization_targets())
     return DevelopmentalStaircase(
         version="bilqis.mlx.post-boolean-development/v1",
         baseline_capabilities=("B.IDBOOLOPS", "B.COMPOSITE"),

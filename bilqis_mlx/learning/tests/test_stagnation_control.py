@@ -2,7 +2,8 @@ from bilqis_mlx.learning.stagnation_control import (
     begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
     quarantined_capabilities, record_visit, start_session,
     create_optimizer_step_grace, grace_suppressed_capabilities,
-    reconcile_optimizer_step_grace, reconcile_required_scope,
+    observe_paired_progress, reconcile_optimizer_step_grace,
+    reconcile_required_scope,
 )
 import unittest
 
@@ -43,6 +44,77 @@ def test_a_retained_recovery_update_prevents_quarantine():
         state, weakest_tail=("B.NOT",),
         scores={"B.NOT": {"correct": 5, "total": 12}}, generation=13)
     assert not quarantined_capabilities(state)
+    assert events == ()
+
+
+def test_stagnation_requires_twenty_minutes_without_measured_progress():
+    state = session()
+    state = begin_recovery_cycle(state, first_recovery=("B.NOT",))
+    for phase, generation in (("RECOVERY_1", 11), ("RECOVERY_2", 12)):
+        state = record_visit(
+            state, capability="B.NOT", phase=phase, decision="REJECT",
+            retained_optimizer_updates=0, generation=generation)
+    state, events = complete_recovery_cycle(
+        state, weakest_tail=("B.NOT",),
+        scores={"B.NOT": {"correct": 4, "total": 12}}, generation=13,
+        elapsed_seconds=1199.0)
+    assert quarantined_capabilities(state) == ()
+    assert events == ()
+
+    state = begin_recovery_cycle(state, first_recovery=("B.NOT",))
+    for phase, generation in (("RECOVERY_1", 14), ("RECOVERY_2", 15)):
+        state = record_visit(
+            state, capability="B.NOT", phase=phase, decision="REJECT",
+            retained_optimizer_updates=0, generation=generation)
+    state, events = complete_recovery_cycle(
+        state, weakest_tail=("B.NOT",),
+        scores={"B.NOT": {"correct": 4, "total": 12}}, generation=16,
+        elapsed_seconds=1200.0)
+    assert quarantined_capabilities(state) == ("B.NOT",)
+    assert events[0]["stagnant_seconds"] == 1200.0
+
+
+def test_recent_held_out_gain_resets_stagnation_clock():
+    state = session()
+    state = observe_paired_progress(
+        state, measured_capabilities=("B.NOT",),
+        improved_capabilities=("B.NOT",), measurement_usable=True,
+        elapsed_seconds=1100.0,
+        progress_checkpoint={"filename": "bundles/current", "sha256": "a" * 64,
+                             "optimizer_step": 100,
+                             "model_and_native_adamw": True})
+    state = begin_recovery_cycle(state, first_recovery=("B.NOT",))
+    for phase, generation in (("RECOVERY_1", 21), ("RECOVERY_2", 22)):
+        state = record_visit(
+            state, capability="B.NOT", phase=phase, decision="REJECT",
+            retained_optimizer_updates=0, generation=generation)
+    state, events = complete_recovery_cycle(
+        state, weakest_tail=("B.NOT",),
+        scores={"B.NOT": {"correct": 7, "total": 12}}, generation=23,
+        elapsed_seconds=1210.0)
+    assert quarantined_capabilities(state) == ()
+    assert events == ()
+
+
+def test_unavailable_paired_measurement_cannot_prove_stagnation():
+    state = session()
+    state = observe_paired_progress(
+        state, measured_capabilities=("B.NOT",),
+        improved_capabilities=(), measurement_usable=False,
+        elapsed_seconds=1190.0,
+        progress_checkpoint={"filename": "bundles/current", "sha256": "b" * 64,
+                             "optimizer_step": 101,
+                             "model_and_native_adamw": True})
+    state = begin_recovery_cycle(state, first_recovery=("B.NOT",))
+    for phase, generation in (("RECOVERY_1", 21), ("RECOVERY_2", 22)):
+        state = record_visit(
+            state, capability="B.NOT", phase=phase, decision="REJECT",
+            retained_optimizer_updates=0, generation=generation)
+    state, events = complete_recovery_cycle(
+        state, weakest_tail=("B.NOT",),
+        scores={"B.NOT": {"correct": 7, "total": 12}}, generation=23,
+        elapsed_seconds=1210.0)
+    assert quarantined_capabilities(state) == ()
     assert events == ()
 
 
@@ -249,6 +321,15 @@ class StagnationControlUnittestCoverage(unittest.TestCase):
 
     def test_retained_update_prevents_quarantine(self):
         test_a_retained_recovery_update_prevents_quarantine()
+
+    def test_twenty_minute_no_progress_window(self):
+        test_stagnation_requires_twenty_minutes_without_measured_progress()
+
+    def test_recent_gain_resets_stagnation_clock(self):
+        test_recent_held_out_gain_resets_stagnation_clock()
+
+    def test_unavailable_paired_measurement_delays_quarantine(self):
+        test_unavailable_paired_measurement_cannot_prove_stagnation()
 
     def test_breakout_from_tail_prevents_quarantine(self):
         test_capability_that_breaks_out_of_tail_is_not_quarantined()

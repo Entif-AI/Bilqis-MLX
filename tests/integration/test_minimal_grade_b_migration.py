@@ -29,13 +29,70 @@ from bilqis_mlx.compatibility.executable_projection import (
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.trainer import (
     VERSION, _activate_replaced_admitted_grade, _commit_scored_student,
-    _repair_scope_rubric_evidence, _repair_championship_source_context,
+    _repair_championship_source_context,
     _reconcile_stagnation_scope,
 )
 
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "vendor" / "legacy-v16"
+
+
+def _source_context_repair_receipt(*, student, school, graph, course, cohort,
+                                   evidence, same_grade_capability,
+                                   same_grade_role, settlement):
+    a_rubric = course.grades[0].assessment_sha256
+    b_rubric = course.grades[-1].assessment_sha256
+    return {
+        "schema": VERSION,
+        "generation": 9,
+        "run_id": "source-context-repair-fixture",
+        "school": asdict(school),
+        "model_bundle": student.filename,
+        "curriculum_mode": course.version,
+        "result": "ACTIVE_GRADE_A",
+        "semantic_graph_sha256": _fingerprint(graph),
+        "championship_school_identity": {"fixture": True},
+        "capability_best": {},
+        "championship_epoch_history": [],
+        "mentor_epoch": {
+            "schema": "fixture",
+            "active_roles": {
+                "A.IDENTITY": {
+                    "capability": "A.IDENTITY",
+                    "rubric": a_rubric,
+                    "cohort_sha256": cohort.digest,
+                    "checkpoint": asdict(student),
+                    "qualification_witnesses": [evidence],
+                    "surviving_battery": [evidence],
+                },
+                same_grade_capability: same_grade_role,
+                "B.AND": {
+                    "capability": "B.AND", "rubric": b_rubric,
+                    "checkpoint": asdict(student),
+                    "qualification_witnesses": [],
+                    "surviving_battery": [],
+                },
+            },
+            "active_grade_soups": {"A": {"grade": "A"},
+                                   "B": {"grade": "B"}},
+            "settled_matchups": {"B.AND|first|second": settlement},
+        },
+    }
+
+
+def _write_source_context_cohort(root, *, course, manifest, rubric, cohort, rows):
+    cohorts = root / "cohorts"
+    cohorts.mkdir()
+    (cohorts / f"{cohort.digest}.json").write_text(json.dumps({
+        "schema": course.version,
+        "source_manifest_sha256": manifest["manifest_sha256"],
+        "rubric_sha256": rubric,
+        "generator_version": "minimal-b-source",
+        "seed": 19,
+        "cohort_sha256": cohort.digest,
+        "rows": list(rows),
+    }))
 
 
 class MinimalGradeBMigrationTests(unittest.TestCase):
@@ -184,7 +241,7 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             {item["rubric"] for item in frontier.values()},
             {program.grades[0].assessment_sha256})
 
-    def test_resume_repairs_mislabeled_scope_evidence_without_neural_update(self):
+    def test_unproven_legacy_rubric_mismatch_cannot_destroy_evidence(self):
         student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
         school = start_new(self.new, student)
         a_rubric = self.new.grades[0].assessment_sha256
@@ -233,23 +290,70 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
                 },
             },
         }
+        # The latest exam cannot establish that this older rubric is false;
+        # only a verifiable source witness can authorize a local revocation.
         with TemporaryDirectory() as temp:
             root = Path(temp)
-            repaired = _repair_scope_rubric_evidence(root, receipt, self.new)
-            events = [
-                json.loads(line)
-                for line in (root / "events.jsonl").read_text().splitlines()
-            ]
-        self.assertEqual(repaired["generation"], 8)
-        self.assertEqual(repaired["school"]["current_student"], asdict(student))
-        self.assertEqual(repaired["capability_best"], {})
-        self.assertEqual(repaired["mentor_epoch"]["active_roles"], {})
-        self.assertEqual(repaired["mentor_epoch"]["active_grade_soups"], {})
-        self.assertEqual(len(repaired["championship_epoch_history"]), 1)
-        self.assertEqual(
-            events[-1]["event"], "SCHOOL_SCOPE_RUBRIC_EVIDENCE_REPAIRED")
-        self.assertEqual(events[-1]["actual_neural_updates"], 0)
-        self.assertTrue(events[-1]["model_and_own_adamw_unchanged"])
+            repaired = _repair_championship_source_context(root, receipt, self.new)
+            self.assertFalse((root / "state.json").exists())
+            self.assertFalse((root / "events.jsonl").exists())
+        self.assertIs(repaired, receipt)
+        self.assertEqual(len(repaired["capability_best"]), 1)
+        self.assertEqual(set(repaired["mentor_epoch"]["active_roles"]),
+                         {"A.IDENTITY"})
+        self.assertEqual(repaired["championship_epoch_history"], [])
+
+    def test_resuming_v2_does_not_erase_valid_different_scope_evidence(self):
+        """An exam's *latest* rubric never supersedes other proven strata.
+
+        A cumulative/partial exam can score the same capability under a new
+        signed v2 scope. Capability and championship records from a different
+        v2 scope are separate authority, not malformed source evidence.
+        """
+        student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
+        school = start_new(self.new, student)
+        prior_rubric = self.new.grades[-1].assessment_sha256
+        latest_rubric = self.new.grades[0].assessment_sha256
+        leader = {
+            "capability": "A.IDENTITY", "rubric": prior_rubric,
+            "correct": 12, "total": 12, "checkpoint": asdict(student),
+            "evaluation_id": "capability-evaluation/original",
+        }
+        role = {**leader, "cohort_sha256": "c" * 64}
+        settlement = {"capability": "A.IDENTITY", "winner_sha256": student.sha256}
+        receipt = {
+            "generation": 10, "run_id": "valid-v2-cross-scope",
+            "school": asdict(school),
+            "factory_admission_v2": {"factory_release_sha256": "e" * 64},
+            "factory_release_sha256": "e" * 64,
+            "capability_best": {prior_rubric + ":A.IDENTITY": leader},
+            "championship_epoch_history": [],
+            "mentor_epoch": {
+                "active_roles": {"A.IDENTITY": role},
+                "active_grade_soups": {"A": {"grade": "A"}},
+                "settled_matchups": {"A.IDENTITY|first|second": settlement},
+            },
+            "last_exam": {
+                "factory_release_sha256": "e" * 64,
+                "exam_rubric_sha256": latest_rubric,
+                "scores": {"A.IDENTITY": {"correct": 11, "total": 12}},
+            },
+        }
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            result = _repair_championship_source_context(root, receipt, self.new)
+            self.assertFalse((root / "state.json").exists())
+            self.assertFalse((root / "events.jsonl").exists())
+        self.assertIs(result, receipt)
+        self.assertEqual(result["capability_best"][prior_rubric + ":A.IDENTITY"],
+                         leader)
+        self.assertEqual(result["mentor_epoch"]["active_roles"]["A.IDENTITY"],
+                         role)
+        self.assertEqual(result["mentor_epoch"]["active_grade_soups"],
+                         {"A": {"grade": "A"}})
+        self.assertEqual(result["mentor_epoch"]["settled_matchups"],
+                         {"A.IDENTITY|first|second": settlement})
+        self.assertEqual(result["championship_epoch_history"], [])
 
     def test_resume_resets_titles_missing_distinct_cohort_source_rubric(self):
         student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
@@ -265,61 +369,98 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             "rubric_sha256": a_rubric,
             "source_oracle_sha256": self.manifest["manifest_sha256"],
         }
-        receipt = {
-            "schema": VERSION,
-            "generation": 9,
-            "run_id": "source-context-repair-fixture",
-            "school": asdict(school),
-            "model_bundle": student.filename,
-            "curriculum_mode": self.new.version,
-            "result": "ACTIVE_GRADE_A",
-            "semantic_graph_sha256": _fingerprint(self.graph),
-            "championship_school_identity": {"fixture": True},
-            "capability_best": {},
-            "championship_epoch_history": [],
-            "mentor_epoch": {
-                "schema": "fixture",
-                "active_roles": {
-                    "A.IDENTITY": {
-                        "capability": "A.IDENTITY",
-                        "rubric": a_rubric,
-                        "cohort_sha256": cohort.digest,
-                        "checkpoint": asdict(student),
-                        "qualification_witnesses": [evidence],
-                        "surviving_battery": [evidence],
-                    },
-                },
-                "active_grade_soups": {"A": {"grade": "A"}},
-            },
+        same_grade_capability = next(
+            cap.id for cap in self.new.grades[0].capabilities
+            if cap.id != "A.IDENTITY")
+        same_grade_role = {
+            "capability": same_grade_capability,
+            "rubric": a_rubric,
+            "checkpoint": asdict(student),
+            "qualification_witnesses": [],
+            "surviving_battery": [],
         }
+        settlement = {"capability": "B.AND", "winner": student.sha256}
+        receipt = _source_context_repair_receipt(
+            student=student, school=school, graph=self.graph, course=self.new,
+            cohort=cohort, evidence=evidence,
+            same_grade_capability=same_grade_capability,
+            same_grade_role=same_grade_role, settlement=settlement)
         with TemporaryDirectory() as temp:
             root = Path(temp)
-            cohorts = root / "cohorts"
-            cohorts.mkdir()
-            (cohorts / f"{cohort.digest}.json").write_text(json.dumps({
-                "schema": self.new.version,
-                "source_manifest_sha256": self.manifest["manifest_sha256"],
-                "rubric_sha256": b_rubric,
-                "generator_version": "minimal-b-source",
-                "seed": 19,
-                "cohort_sha256": cohort.digest,
-                "rows": list(rows),
-            }))
+            _write_source_context_cohort(
+                root, course=self.new, manifest=self.manifest, rubric=b_rubric,
+                cohort=cohort, rows=rows)
             repaired = _repair_championship_source_context(
                 root, receipt, self.new)
+            repeated = _repair_championship_source_context(
+                root, repaired, self.new)
             events = [
                 json.loads(line)
                 for line in (root / "events.jsonl").read_text().splitlines()
             ]
         self.assertEqual(repaired["generation"], 10)
         self.assertEqual(repaired["school"]["current_student"], asdict(student))
-        self.assertEqual(repaired["mentor_epoch"]["active_roles"], {})
-        self.assertEqual(repaired["mentor_epoch"]["active_grade_soups"], {})
+        self.assertEqual(set(repaired["mentor_epoch"]["active_roles"]),
+                         {same_grade_capability, "B.AND"})
+        self.assertEqual(
+            repaired["mentor_epoch"]["active_roles"][same_grade_capability],
+            same_grade_role)
+        self.assertEqual(repaired["mentor_epoch"]["active_grade_soups"],
+                         {"B": {"grade": "B"}})
+        self.assertEqual(repaired["mentor_epoch"]["settled_matchups"],
+                         {"B.AND|first|second": settlement})
         self.assertEqual(len(repaired["championship_epoch_history"]), 1)
+        self.assertIs(repeated, repaired)
+        self.assertEqual(repeated["generation"], 10)
+        self.assertEqual(len(events), 1)
         self.assertEqual(
             events[-1]["event"],
             "SCHOOL_CHAMPIONSHIP_SOURCE_CONTEXT_REPAIRED")
         self.assertEqual(events[-1]["actual_neural_updates"], 0)
+
+    def test_resuming_v2_does_not_misread_its_signed_witness_schema_as_rubric(self):
+        """Legacy witness upgrades must verify using the cohort's true ABI."""
+        rubric = self.new.grades[0].assessment_sha256
+        rows = [{"id": "v2-witness", "capability": "A.IDENTITY", "gold": "TRUE"}]
+        original = make_cohort(rows, generator_version="minimal-b-source", seed=21,
+                               rubric_version=rubric)
+        stored = {
+            "schema": "bilqis.mlx.generated-cohort/v2",
+            "factory_release_sha256": "e" * 64,
+            "rubric_sha256": rubric,
+            "source_manifest_sha256": self.manifest["manifest_sha256"],
+            "generator_version": original.generator_version,
+            "seed": original.seed, "cohort_sha256": original.digest,
+            "rows": rows,
+        }
+        witness = {"cohort_sha256": original.digest, "rubric_sha256": rubric,
+                   "source_oracle_sha256": self.manifest["manifest_sha256"]}
+        active_role = {"qualification_witnesses": [witness],
+                       "surviving_battery": [], "rubric": rubric}
+        receipt = {
+            "factory_admission_v2": {"factory_release_sha256": "e" * 64},
+            "mentor_epoch": {"active_roles": {"A.IDENTITY": active_role}},
+        }
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "cohorts").mkdir()
+            (root / "cohorts" / f"{original.digest}.json").write_text(
+                json.dumps(stored))
+            result = _repair_championship_source_context(root, receipt, self.new)
+            self.assertFalse((root / "state.json").exists())
+            signed = json.loads(json.dumps(receipt))
+            signed["mentor_epoch"]["active_roles"]["A.IDENTITY"][
+                "qualification_witnesses"][0]["cohort_rubric_sha256"] = rubric
+            self.assertIs(
+                _repair_championship_source_context(root, signed, self.new),
+                signed)
+            tampered = json.loads(json.dumps(signed))
+            tampered["mentor_epoch"]["active_roles"]["A.IDENTITY"][
+                "qualification_witnesses"][0]["cohort_rubric_sha256"] = "0" * 64
+            with self.assertRaisesRegex(ValueError, "REPAIR_CUSTODY_DRIFT"):
+                _repair_championship_source_context(root, tampered, self.new)
+            self.assertFalse((root / "state.json").exists())
+        self.assertIs(result, receipt)
 
     def test_in_command_a_to_b_transition_reconciles_stagnation_scope_before_b_work(self):
         student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)

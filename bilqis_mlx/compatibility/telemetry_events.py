@@ -1,6 +1,8 @@
 """Historical telemetry aliases for replaying pre-generic event ledgers."""
 
-HISTORICAL_EVENT_KINDS = {
+from types import MappingProxyType
+
+HISTORICAL_EVENT_KINDS = MappingProxyType({
     "GRADE_A_NEW_RUN_INITIALIZED": "init",
     "GRADE_A_TEACHER_VISIT_COMMITTED": "visit",
     "GRADE_A_EXAM_COMMITTED": "exam",
@@ -9,7 +11,7 @@ HISTORICAL_EVENT_KINDS = {
     "SCHOOL_GRADE_B_LIVE_EXAM_COMMITTED": "exam",
     "SCHOOL_GRADE_B_COURSE_ADMITTED": "init",
     "GRADE_A_SESSION_STOPPED": "stop",
-}
+})
 
 _HISTORICAL_GRADE_A_EVENTS = frozenset(
     event for event in HISTORICAL_EVENT_KINDS

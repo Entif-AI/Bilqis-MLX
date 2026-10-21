@@ -193,6 +193,97 @@ def advance_if_scheduled_evidence_complete(
     return visit(program, school, capability_id, school.current_student)
 
 
+def _recoverable_teaching_event(event: dict, checkpoint):
+    delivery = event.get("autonomy_teaching")
+    if not isinstance(delivery, dict):
+        return None
+    # A teacher visit may attempt optimizer work and still retain the parent
+    # checkpoint after causal screening rejects the challenger. Such an outbox
+    # item is historical evidence, not a committed autonomy intervention.
+    retained_updates = event.get("retained_optimizer_updates")
+    if type(retained_updates) is not int or retained_updates < 1:
+        return None
+    if (event.get("recovered_at_student_sha256") != checkpoint.sha256 or
+            event.get("optimizer_step") != checkpoint.optimizer_step):
+        return None
+    capability = event.get("capability")
+    if not isinstance(capability, str) or not capability:
+        raise ValueError("AUTONOMY_TEACHING_RECOVERY_CAPABILITY_INVALID")
+    return delivery, capability
+
+
+def _verify_recovery_specimen(run_dir: Path, delivery: dict) -> str:
+    specimen_file = delivery.get("specimen_file")
+    digest = delivery.get("specimen_content_sha256")
+    expected_file = "autonomy/teaching/" + str(digest) + ".json"
+    if specimen_file != expected_file:
+        raise ValueError("AUTONOMY_TEACHING_RECOVERY_SPECIMEN_PATH_DRIFT")
+    path = run_dir / expected_file
+    if path.parent.is_symlink() or path.is_symlink() or not path.is_file():
+        raise ValueError("AUTONOMY_TEACHING_RECOVERY_SPECIMEN_MISSING")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    rows = payload.get("rows") if isinstance(payload, dict) else None
+    if (not isinstance(rows, list) or content_digest(rows) != digest or
+            tuple(dict.fromkeys(row.get("id") for row in rows)) !=
+            tuple(delivery.get("specimen_ids", ()))):
+        raise ValueError("AUTONOMY_TEACHING_RECOVERY_SPECIMEN_DRIFT")
+    return digest
+
+
+def _failed_recovery_evidence(
+        ledger: EvidenceLedger, obligations: dict, checkpoint):
+    return next((
+        receipt for receipt in reversed(ledger.receipts)
+        if (not receipt.passed and
+            receipt.obligation_id in obligations and
+            receipt.optimizer_step < checkpoint.optimizer_step)
+    ), None)
+
+
+def _existing_recovered_intervention(
+        ledger: EvidenceLedger, failed, checkpoint, digest: str):
+    return next((
+        item for item in ledger.interventions
+        if (item.obligation_id == failed.obligation_id and
+            item.checkpoint_sha256 == checkpoint.sha256 and
+            item.specimen_content_sha256 == digest)
+    ), None)
+
+
+def _recovery_intervention_id(
+        school_receipt: dict, failed, checkpoint) -> str:
+    return hashlib.sha256(json.dumps({
+        "run_id": school_receipt.get("run_id"),
+        "generation": school_receipt.get("generation"),
+        "obligation": failed.obligation_id,
+        "parent": failed.checkpoint_sha256,
+        "student": checkpoint.sha256,
+        "optimizer_step": checkpoint.optimizer_step,
+    }, sort_keys=True, separators=(",", ":"),
+        ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+
+
+def _recovered_teaching_receipt(
+        school_receipt: dict, delivery: dict, failed, checkpoint,
+        digest: str) -> TeachingReceipt:
+    return TeachingReceipt(
+        obligation_id=failed.obligation_id,
+        intervention_id=_recovery_intervention_id(
+            school_receipt, failed, checkpoint),
+        teaching_option_id=delivery["option_id"],
+        selected_provider_id=delivery["provider_id"],
+        provider_implementation_sha256=delivery["provider_implementation_sha256"],
+        specimen_ids=tuple(delivery["specimen_ids"]),
+        specimen_content_sha256=digest,
+        variation_axes=tuple(delivery["variation_axes"]),
+        optimizer_step_delta=checkpoint.optimizer_step - failed.optimizer_step,
+        parent_checkpoint_sha256=failed.checkpoint_sha256,
+        parent_optimizer_step=failed.optimizer_step,
+        checkpoint_sha256=checkpoint.sha256,
+        optimizer_step=checkpoint.optimizer_step,
+    )
+
+
 @dataclass
 class LiveAutonomySession:
     """Durable neural-inert autonomy state for one human-operated trainer."""
@@ -409,85 +500,25 @@ class LiveAutonomySession:
         if not isinstance(outbox, list):
             return None
         for event in reversed(outbox):
-            delivery = event.get("autonomy_teaching")
-            if not isinstance(delivery, dict):
+            recoverable = _recoverable_teaching_event(event, checkpoint)
+            if recoverable is None:
                 continue
-            # A teacher visit may attempt optimizer work and still retain the
-            # parent checkpoint after causal screening rejects the challenger.
-            # Such an outbox item is historical teaching evidence, not a
-            # committed autonomy intervention.  Recover only visits that
-            # provably advanced the durable student/AdamW lineage.
-            retained_updates = event.get("retained_optimizer_updates")
-            if type(retained_updates) is not int or retained_updates < 1:
-                continue
-            if (event.get("recovered_at_student_sha256") != checkpoint.sha256 or
-                    event.get("optimizer_step") != checkpoint.optimizer_step):
-                continue
-            capability = event.get("capability")
-            if not isinstance(capability, str) or not capability:
-                raise ValueError("AUTONOMY_TEACHING_RECOVERY_CAPABILITY_INVALID")
-            specimen_file = delivery.get("specimen_file")
-            digest = delivery.get("specimen_content_sha256")
-            expected_file = "autonomy/teaching/" + str(digest) + ".json"
-            if specimen_file != expected_file:
-                raise ValueError("AUTONOMY_TEACHING_RECOVERY_SPECIMEN_PATH_DRIFT")
-            path = self.run_dir / expected_file
-            if (path.parent.is_symlink() or path.is_symlink() or
-                    not path.is_file()):
-                raise ValueError("AUTONOMY_TEACHING_RECOVERY_SPECIMEN_MISSING")
-            payload = json.loads(path.read_text(encoding="utf-8"))
-            rows = payload.get("rows") if isinstance(payload, dict) else None
-            if (not isinstance(rows, list) or content_digest(rows) != digest or
-                    tuple(dict.fromkeys(row.get("id") for row in rows)) !=
-                    tuple(delivery.get("specimen_ids", ()))):
-                raise ValueError("AUTONOMY_TEACHING_RECOVERY_SPECIMEN_DRIFT")
-
+            delivery, capability = recoverable
+            digest = _verify_recovery_specimen(self.run_dir, delivery)
             obligations = {
                 item.obligation_id: item
                 for item in self._obligations_for_capability(capability)
             }
-            failed = next((
-                receipt for receipt in reversed(self.ledger.receipts)
-                if (not receipt.passed and
-                    receipt.obligation_id in obligations and
-                    receipt.optimizer_step < checkpoint.optimizer_step)
-            ), None)
+            failed = _failed_recovery_evidence(
+                self.ledger, obligations, checkpoint)
             if failed is None:
                 continue
-            existing = next((
-                item for item in self.ledger.interventions
-                if (item.obligation_id == failed.obligation_id and
-                    item.checkpoint_sha256 == checkpoint.sha256 and
-                    item.specimen_content_sha256 == digest)
-            ), None)
+            existing = _existing_recovered_intervention(
+                self.ledger, failed, checkpoint, digest)
             if existing is not None:
                 return existing
-            intervention_id = hashlib.sha256(json.dumps({
-                "run_id": school_receipt.get("run_id"),
-                "generation": school_receipt.get("generation"),
-                "obligation": failed.obligation_id,
-                "parent": failed.checkpoint_sha256,
-                "student": checkpoint.sha256,
-                "optimizer_step": checkpoint.optimizer_step,
-            }, sort_keys=True, separators=(",", ":"),
-                ensure_ascii=False, allow_nan=False).encode()).hexdigest()
-            intervention = TeachingReceipt(
-                obligation_id=failed.obligation_id,
-                intervention_id=intervention_id,
-                teaching_option_id=delivery["option_id"],
-                selected_provider_id=delivery["provider_id"],
-                provider_implementation_sha256=(
-                    delivery["provider_implementation_sha256"]),
-                specimen_ids=tuple(delivery["specimen_ids"]),
-                specimen_content_sha256=digest,
-                variation_axes=tuple(delivery["variation_axes"]),
-                optimizer_step_delta=(
-                    checkpoint.optimizer_step - failed.optimizer_step),
-                parent_checkpoint_sha256=failed.checkpoint_sha256,
-                parent_optimizer_step=failed.optimizer_step,
-                checkpoint_sha256=checkpoint.sha256,
-                optimizer_step=checkpoint.optimizer_step,
-            )
+            intervention = _recovered_teaching_receipt(
+                school_receipt, delivery, failed, checkpoint, digest)
             self.ledger = record_teaching_intervention(
                 self.release, self.ledger, intervention, plan=self.plan,
                 current_checkpoint_sha256=failed.checkpoint_sha256,

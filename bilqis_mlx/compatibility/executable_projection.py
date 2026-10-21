@@ -52,14 +52,70 @@ def resolve_legacy_resume_course(
 
 
 def verify_legacy_resume_binding(
-        receipt, course, graph, manifest, fingerprint) -> None:
-    """Verify pre-v2 release/graph binding behind the compatibility boundary."""
+        receipt, course, graph, manifest, fingerprint, *,
+        sealed_v1_release=None) -> None:
+    """Verify historical graph and provider custody before v2 qualification.
+
+    For a separately verified, immutable v1 admission, its old provider hash
+    describes the *historical* executable source, not the current constructor
+    bytes. The caller must immediately compile and qualify the new v2 source
+    release before making any neural update. All other legacy paths retain the
+    exact live-provider digest check.
+    """
     from .live_releases import graph_matches_release, verify_release_receipt
-    if receipt.get("curriculum_mode") is not None:
+    if sealed_v1_release is not None:
+        if sealed_v1_release.course != course:
+            raise ValueError("FACTORY_ADMISSION_SEALED_COURSE_MISMATCH")
+    elif receipt.get("curriculum_mode") is not None:
         verify_release_receipt(receipt, course)
     if not graph_matches_release(
             receipt.get("curriculum_mode"), graph, manifest, fingerprint):
         raise ValueError("HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT")
+
+
+def preflight_sealed_v1_migration(run_dir, receipt, manifest, source_root):
+    """Exercise the real v1 -> v2 authority transition without neural writes.
+
+    This closes the old CLI preflight gap where source manifests passed even
+    though the saved school could not be decoded with the runtime's curriculum.
+    """
+    from ..grade_a_release import accepted_grade_a
+    from ..runtime.admission import _verified_legacy_upgrade_release
+    from ..runtime.assessment import _verify_saved_cohort
+    from ..runtime.state import _fingerprint, _state_from_json
+    from .schedule_program import schedule_program_from_legacy_course
+    from .live_releases import initial_course, NUMERIC_RELEASE, NUMERIC_STAIRCASE_RELEASE
+
+    release = _verified_legacy_upgrade_release(run_dir, receipt)
+    if release is None:
+        return None
+    pinned = release.course
+    _state_from_json(receipt["school"], schedule_program_from_legacy_course(pinned))
+    _verify_saved_cohort(run_dir, receipt, pinned, sealed_v1_release=release)
+    if receipt.get("curriculum_mode") in (NUMERIC_RELEASE, NUMERIC_STAIRCASE_RELEASE):
+        from ..live_grade_c import registry_graph
+        graph = registry_graph()
+    else:
+        from ..source import read_sources
+        _, _, graph, _, _ = read_sources(source_root)
+    if _fingerprint(graph) != receipt["semantic_graph_sha256"]:
+        raise ValueError("FACTORY_ADMISSION_SEALED_GRAPH_DRIFT")
+    verify_legacy_resume_binding(
+        receipt, pinned, graph, manifest, _fingerprint,
+        sealed_v1_release=release)
+    grade_a = initial_course(accepted_grade_a(manifest))
+    successor, program, _ = compile_projected_executable_release(
+        pinned, grade_a, source_root, graph)
+    successor.verify_semantic_catalog(graph)
+    return {
+        "status": "VERIFIED_SEALED_V1_TO_SOURCE_QUALIFIED_V2",
+        "saved_course_sha256": pinned.digest(),
+        "source_qualified_successor_sha256": successor.release_sha256,
+        "successor_schedule_sha256": program.digest(),
+        "capabilities_by_grade": {
+            grade.id: len(grade.capabilities) for grade in program.grades},
+        "neural_updates": 0,
+    }
 
 
 LIVE_V2_VERIFICATION_SEED = 2026101905
@@ -77,6 +133,63 @@ def _canonical_school_course(grade_a: Course, source_root) -> Course:
         boolean, numeric_registry_graph(), maximum=10)
 
 
+def _boolean_grade_profile(current_b, canonical_b) -> GradeProfile:
+    current_ids = tuple(cap.id for cap in current_b.capabilities)
+    canonical_ids = tuple(cap.id for cap in canonical_b.capabilities)
+    if not set(current_ids) <= set(canonical_ids):
+        raise ValueError("FACTORY_COMPATIBILITY_BOOLEAN_SCOPE_UNKNOWN")
+    overrides = []
+    id_capability = next(
+        (cap for cap in current_b.capabilities if cap.id == "B.IDBOOLOPS"), None)
+    operator_values = (
+        id_capability.answer_families[0].values
+        if id_capability is not None else BOOLEAN_OPERATORS
+    )
+    if tuple(operator_values) != tuple(BOOLEAN_OPERATORS):
+        if not set(operator_values) <= set(BOOLEAN_OPERATORS):
+            raise ValueError("FACTORY_COMPATIBILITY_BOOLEAN_DOMAIN_UNKNOWN")
+        if "B.COMPOSITE" in current_ids:
+            overrides.append(CapabilityProfile(
+                "B.COMPOSITE",
+                provider_parameters=(("operators", tuple(operator_values)),),
+            ))
+        if "B.IDBOOLOPS" in current_ids:
+            overrides.append(CapabilityProfile(
+                "B.IDBOOLOPS",
+                provider_parameters=(("operators", tuple(operator_values)),),
+                answer_family_values=(
+                    ("boolean_operator", tuple(operator_values)),),
+            ))
+    return GradeProfile(
+        "B", enabled_capabilities=current_ids, capabilities=tuple(overrides))
+
+
+def _numeric_grade_profile(current_c, canonical_c) -> GradeProfile:
+    current_ids = tuple(cap.id for cap in current_c.capabilities)
+    if not set(current_ids) <= {cap.id for cap in canonical_c.capabilities}:
+        raise ValueError("FACTORY_COMPATIBILITY_NUMERIC_SCOPE_UNKNOWN")
+    overrides = []
+    canonical_by_id = {cap.id: cap for cap in canonical_c.capabilities}
+    for capability in current_c.capabilities:
+        numeric = next(
+            (family for family in capability.answer_families
+             if family.kind == "numeric_active"), None)
+        if numeric is None:
+            continue
+        numbers = tuple(numeric.values)
+        canonical_numeric = next(
+            family for family in canonical_by_id[capability.id].answer_families
+            if family.kind == "numeric_active")
+        if numbers != tuple(canonical_numeric.values):
+            overrides.append(CapabilityProfile(
+                capability.id,
+                provider_parameters=(("numbers", numbers),),
+                answer_family_values=(("numeric_active", numbers),),
+            ))
+    return GradeProfile(
+        "C", enabled_capabilities=current_ids, capabilities=tuple(overrides))
+
+
 def project_legacy_course(
         course: Course, grade_a: Course, source_root, *,
         answer_kinds: tuple[str, ...]):
@@ -84,7 +197,6 @@ def project_legacy_course(
     if not isinstance(course, Course) or not isinstance(grade_a, Course):
         raise TypeError("FACTORY_COMPATIBILITY_COURSE_REQUIRED")
 
-    canonical_b = _canonical_boolean_course(grade_a, source_root)
     canonical_school = _canonical_school_course(grade_a, source_root)
     current_b = next((grade for grade in course.grades if grade.id == "B"), None)
     current_c = next((grade for grade in course.grades if grade.id == "C"), None)
@@ -98,78 +210,14 @@ def project_legacy_course(
             ),
         )
     else:
-        canonical_grade_b = canonical_school.grades[1]
-        current_ids = tuple(cap.id for cap in current_b.capabilities)
-        canonical_ids = tuple(cap.id for cap in canonical_grade_b.capabilities)
-        if not set(current_ids) <= set(canonical_ids):
-            raise ValueError("FACTORY_COMPATIBILITY_BOOLEAN_SCOPE_UNKNOWN")
-
         canonical_course = canonical_school
-
-        overrides = []
-        id_capability = next(
-            (cap for cap in current_b.capabilities
-             if cap.id == "B.IDBOOLOPS"),
-            None,
-        )
-        operator_values = (
-            id_capability.answer_families[0].values
-            if id_capability is not None else BOOLEAN_OPERATORS
-        )
-        if tuple(operator_values) != tuple(BOOLEAN_OPERATORS):
-            if not set(operator_values) <= set(BOOLEAN_OPERATORS):
-                raise ValueError("FACTORY_COMPATIBILITY_BOOLEAN_DOMAIN_UNKNOWN")
-            if "B.COMPOSITE" in current_ids:
-                overrides.append(CapabilityProfile(
-                    "B.COMPOSITE",
-                    provider_parameters=(("operators", tuple(operator_values)),),
-                ))
-            if "B.IDBOOLOPS" in current_ids:
-                overrides.append(CapabilityProfile(
-                    "B.IDBOOLOPS",
-                    provider_parameters=(("operators", tuple(operator_values)),),
-                    answer_family_values=(
-                        ("boolean_operator", tuple(operator_values)),),
-                ))
-        grade_profiles = [GradeProfile(
-            "B",
-            enabled_capabilities=current_ids,
-            capabilities=tuple(overrides),
-        )]
+        grade_profiles = [_boolean_grade_profile(
+            current_b, canonical_school.grades[1])]
         if current_c is None:
-            grade_profiles.append(
-                GradeProfile("C", enabled_capabilities=()))
+            grade_profiles.append(GradeProfile("C", enabled_capabilities=()))
         else:
-            canonical_c = canonical_school.grades[2]
-            current_c_ids = tuple(cap.id for cap in current_c.capabilities)
-            if not set(current_c_ids) <= {
-                    cap.id for cap in canonical_c.capabilities}:
-                raise ValueError("FACTORY_COMPATIBILITY_NUMERIC_SCOPE_UNKNOWN")
-            c_overrides = []
-            for capability in current_c.capabilities:
-                numeric = next(
-                    (family for family in capability.answer_families
-                     if family.kind == "numeric_active"), None)
-                if numeric is None:
-                    continue
-                numbers = tuple(numeric.values)
-                canonical_cap = next(
-                    item for item in canonical_c.capabilities
-                    if item.id == capability.id)
-                canonical_numeric = next(
-                    family for family in canonical_cap.answer_families
-                    if family.kind == "numeric_active")
-                if numbers != tuple(canonical_numeric.values):
-                    c_overrides.append(CapabilityProfile(
-                        capability.id,
-                        provider_parameters=(("numbers", numbers),),
-                        answer_family_values=(("numeric_active", numbers),),
-                    ))
-            grade_profiles.append(GradeProfile(
-                "C",
-                enabled_capabilities=current_c_ids,
-                capabilities=tuple(c_overrides),
-            ))
+            grade_profiles.append(_numeric_grade_profile(
+                current_c, canonical_school.grades[2]))
         profile = CurriculumProfile(
             "compatibility/v1-active-scope",
             grades=tuple(grade_profiles),

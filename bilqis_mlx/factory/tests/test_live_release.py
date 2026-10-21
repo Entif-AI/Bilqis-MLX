@@ -88,6 +88,9 @@ class LiveFactoryReleaseTests(unittest.TestCase):
         sealed = json.loads(json.dumps(old_release.manifest()))
         self.assertEqual(type(old_release).from_manifest(sealed, old_release.release_sha256),
                          old_release)
+
+        old_release.verify()
+        self.assertEqual(old_release.course, self.full_b)
         plan = next_successor_plan(self.full_b, SOURCE)
         self.assertEqual(plan.transition, SAME_GRADE_TRANSITION)
         composite = plan.successor
