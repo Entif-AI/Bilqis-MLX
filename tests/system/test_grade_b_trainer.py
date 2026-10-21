@@ -31,6 +31,7 @@ from bilqis_mlx.boolean_composite import (
     build_course as composite_b_course,
 )
 from bilqis_mlx.curriculum.scheduler import (Assessment, Score, assess, start_new, visit)
+from bilqis_mlx.errors import BilqisError, SCHOOL
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.diagnostics import DiagnosticStatus, LearningSignal
 from bilqis_mlx.learning.teacher_feedback import OutcomeAttribution, TeachingOpportunity
@@ -69,8 +70,10 @@ class GradeBTrainerTests(unittest.TestCase):
         self.assertNotEqual(historical_b.digest(), self.b_course.digest())
         school = start_new(historical_b, Checkpoint("a"*64,"bundles/test",0,True))
         self.assertEqual(_state_from_json(asdict(school),historical_b), school)
-        with self.assertRaisesRegex(ValueError,"INVALID_OR_DRIFTED_SCHOOL_STATE"):
+        with self.assertRaises(BilqisError) as caught:
             _state_from_json(asdict(school),self.b_course)
+        self.assertIs(
+            caught.exception.spec, SCHOOL.STATE.COURSE_DIGEST_MISMATCH)
 
     def _graduated_a(self, pointer):
         school = start_new(self.a_course, pointer)

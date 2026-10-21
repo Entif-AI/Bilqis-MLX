@@ -9,6 +9,7 @@ import json
 from .autonomy import evidence_complete_capabilities
 from .candidate_frontier import CandidateFrontierRelease
 from .executable_release import ExecutableFactoryRelease
+from ..operator_vocabulary import STAGED_SUCCESSOR_BINDING_REQUIRED
 
 
 def _digest(value) -> str:
@@ -131,7 +132,7 @@ def _gate(frontier, candidate, binding, current, mastered) -> CandidateGateResul
     debt: list[str] = []
     rationale: list[str] = []
     if binding is None:
-        debt.append("STAGED_SUCCESSOR_BINDING_REQUIRED")
+        debt.append(STAGED_SUCCESSOR_BINDING_REQUIRED.code)
         return CandidateGateResult(candidate.candidate_id, False, tuple(debt),
                                    ("no exact executable binding",), (9999,) * 4)
     try:

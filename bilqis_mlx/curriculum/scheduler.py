@@ -15,12 +15,14 @@ from pathlib import Path
 from bilqis_mlx.learning.champions import Checkpoint, repoint_earlier, vote_counts, soup_weights
 from bilqis_mlx.factory.schedule import ScheduleProgram
 from bilqis_mlx.runtime.disk import atomic_text
+from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 
 STAGES = frozenset(("MAIN", "ASSESS_MAIN", "RECOVERY_1", "ASSESS_RECOVERY_1",
                     "RECOVERY_2", "ASSESS_RECOVERY_2", "AWAITING_TEACHER_SOUP",
                     "AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED",
                     "DEFERRED_STAGNATION"))
+SCHOOL_STATE_SCHEMA = "bilqis.mlx.letter-grade/v1"
 
 
 def _program(value) -> ScheduleProgram:
@@ -196,7 +198,7 @@ def _enter_grade(program, state: SchoolState, grade_index: int, **changes) -> Sc
 
 def start_new(program, initial_student: Checkpoint) -> SchoolState:
     program = _program(program)
-    state = SchoolState(schema="bilqis.mlx.letter-grade/v1",
+    state = SchoolState(schema=SCHOOL_STATE_SCHEMA,
                        course_digest=program.digest(),
                        active_grades=tuple(g.id for g in program.grades),
                        grade_index=0, stage="MAIN",
@@ -206,12 +208,40 @@ def start_new(program, initial_student: Checkpoint) -> SchoolState:
     return replace(state, queue=_main_queue(program, state))
 
 
+def _school_state_boundary_issue(program, state: SchoolState):
+    """Return the first boundary violation without discarding its evidence."""
+    program = _program(program)
+    runtime_digest = program.digest()
+    if state.schema != SCHOOL_STATE_SCHEMA:
+        return SCHOOL.STATE.SCHEMA_MISMATCH, {
+            "actual_schema": state.schema,
+            "expected_schema": SCHOOL_STATE_SCHEMA,
+        }
+    if state.course_digest != runtime_digest:
+        return SCHOOL.STATE.COURSE_DIGEST_MISMATCH, {
+            "saved_course_digest": state.course_digest,
+            "runtime_course_digest": runtime_digest,
+        }
+    if state.stage not in STAGES:
+        return SCHOOL.STATE.STAGE_INVALID, {
+            "actual_stage": state.stage,
+        }
+    if not state.active_grades:
+        return SCHOOL.STATE.ACTIVE_GRADES_EMPTY, {}
+    if not 0 <= state.grade_index < len(state.active_grades):
+        return SCHOOL.STATE.GRADE_INDEX_OUT_OF_RANGE, {
+            "grade_index": state.grade_index,
+            "active_grade_count": len(state.active_grades),
+        }
+    return None
+
+
 def verify_state(program, state: SchoolState):
     program = _program(program)
-    if (state.schema != "bilqis.mlx.letter-grade/v1" or
-            state.course_digest != program.digest() or state.stage not in STAGES or
-            not state.active_grades or not 0 <= state.grade_index < len(state.active_grades)):
-        raise ValueError("INVALID_OR_DRIFTED_SCHOOL_STATE")
+    boundary_issue = _school_state_boundary_issue(program, state)
+    if boundary_issue is not None:
+        spec, context = boundary_issue
+        ErrorBus.raise_(spec, **context)
     known = {g.id for g in program.grades}
     if (not set(state.active_grades) <= known or
             tuple(g.id for g in program.grades if g.id in state.active_grades) != state.active_grades or

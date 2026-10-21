@@ -228,8 +228,8 @@ class FactoryRelease:
         }
 
     @classmethod
-    def from_manifest(cls, payload: dict, release_sha256: str) -> FactoryRelease:
-        """Decode typed release data; never import executable provider names from it."""
+    def _decode_manifest(cls, payload: dict, release_sha256: str) -> FactoryRelease:
+        """Decode manifest shape without assigning a digest verification policy."""
         def tuples(value):
             return tuple(tuples(item) for item in value) if isinstance(value, list) else value
 
@@ -246,7 +246,7 @@ class FactoryRelease:
                 }) for cap in grade["capabilities"])
                 grades.append(record(Grade, {**grade, "capabilities": caps}))
             course = Course(**{**declared, "grades": tuple(grades)})
-            release = cls(
+            return cls(
                 semantic_release=record(SemanticRelease, payload["semantic_release"]),
                 course=course,
                 **{key: tuple(record(kind, value) for value in payload[key])
@@ -262,20 +262,25 @@ class FactoryRelease:
             )
         except (KeyError, TypeError, AttributeError) as exc:
             raise ValueError("FACTORY_RELEASE_MANIFEST_INVALID") from exc
-        if _digest(payload) != release_sha256 or payload["course_sha256"] != course.digest():
+
+    @classmethod
+    def from_manifest(cls, payload: dict, release_sha256: str) -> FactoryRelease:
+        """Decode a manifest minted by the current FactoryRelease serializer."""
+        release = cls._decode_manifest(payload, release_sha256)
+        if (_digest(payload) != release_sha256 or
+                payload["course_sha256"] != release.course.digest()):
             raise ValueError("FACTORY_RELEASE_MANIFEST_CONTENT_DRIFT")
         release.verify()
         return release
 
-    def verify(self) -> None:
+    def verify_contract(self) -> None:
+        """Verify semantic/source structure independently of serializer identity."""
         from ..curriculum_compiler import compile_ast
 
         if not self.course.executable:
             raise ValueError("FACTORY_RELEASE_COURSE_NOT_EXECUTABLE")
         if self.semantic_release.course_sha256 != self.course.digest():
             raise ValueError("FACTORY_RELEASE_COURSE_BINDING_DRIFT")
-        if self.release_sha256 != self.expected_digest():
-            raise ValueError("FACTORY_RELEASE_CONTENT_DRIFT")
         if (self.semantic_release.version != self.course.version or
                 self.semantic_release.ast_sha256 != compile_ast(self.course).digest() or
                 self.semantic_release.source_attestation_sha256 !=
@@ -301,6 +306,11 @@ class FactoryRelease:
         self._verify_source_contracts(expected_caps)
         if self.assessments != assessment_plans(grade_ids):
             raise ValueError("FACTORY_RELEASE_ASSESSMENT_CONTRACT_DRIFT")
+
+    def verify(self) -> None:
+        if self.release_sha256 != self.expected_digest():
+            raise ValueError("FACTORY_RELEASE_CONTENT_DRIFT")
+        self.verify_contract()
 
 
     def _verify_source_contracts(self, expected_caps):

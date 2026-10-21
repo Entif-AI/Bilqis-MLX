@@ -14,11 +14,34 @@ import json
 import re
 
 from .curriculum_compiler import CurriculumAST
+from .errors import ErrorBus, SEMANTIC_COVERAGE
 from .registry_ast import RegistryAST
+from .semantic_sampling import (
+    LEGACY_AUDIT_POLICY, audit_budget_violations, missing_coverage_cases,
+)
 
 
 SCHEMA = "bilqis.mlx.semantic-composition-coverage/v1"
 _TYPE = re.compile(r"[A-Za-z][A-Za-z0-9_]*")
+
+
+def require_coverage_audit_budget(max_rounds: object, each: object) -> None:
+    violations = audit_budget_violations(max_rounds, each)
+    if violations:
+        ErrorBus.Raise(
+            SEMANTIC_COVERAGE.AUDIT.INVALID_BUDGET,
+            max_rounds=max_rounds,
+            each=each,
+            violations=violations,
+            policy=(
+                f"rounds={LEGACY_AUDIT_POLICY.minimum_rounds}.."
+                f"{LEGACY_AUDIT_POLICY.max_rounds}; "
+                f"minimum-per-outcome="
+                f"{LEGACY_AUDIT_POLICY.sample_policy.minimum_per_outcome}; "
+                "violations=" + ",".join(
+                    f"{item.field}:{item.rule.value}" for item in violations)
+            ),
+        )
 
 
 def _digest(value: object) -> str:
@@ -147,7 +170,11 @@ def verify_micro_composition_witnesses(plan: dict, rows: tuple[dict, ...],
     from .live_grade_b import GENERATOR as B_GENERATOR
 
     if plan.get("schema") != SCHEMA:
-        raise ValueError("SEMANTIC_COVERAGE_PLAN_VERSION_MISMATCH")
+        ErrorBus.Raise(
+            SEMANTIC_COVERAGE.PLAN.VERSION_MISMATCH,
+            actual_schema=plan.get("schema"),
+            expected_schema=SCHEMA,
+        )
     hard_unresolved = {
         "MISSING_ORACLE_OR_SOURCE_ANCHOR",
         "INVALID_SOURCE_SIGNATURE_OR_ARITY",
@@ -244,7 +271,7 @@ def verify_micro_composition_witnesses(plan: dict, rows: tuple[dict, ...],
                 for bits in product((False, True), repeat=arity)}))
         observed_cases = tuple(sorted({(direct, composed) for _, direct, composed
                                        in witnesses}))
-        missing_cases = tuple(case for case in expected if case not in observed_cases)
+        missing_cases = missing_coverage_cases(expected, observed_cases)
         status = ("SOURCE_CONTRAST_COVERED" if witnesses and not missing_cases else
                   "SOURCE_CONTRAST_PARTIAL" if witnesses else edge["status"])
         completed.append({**edge, "status": status,
@@ -270,8 +297,7 @@ def audit_pinned_micro_generator(plan: dict, source_root, *,
     from .grade_a_probe import read_sources
     from .live_grade_b import draw_connectives, constructor_digest
 
-    if not 1 <= max_rounds <= 32 or each < 4 or each % 2:
-        raise ValueError("SEMANTIC_COVERAGE_INVALID_AUDIT_BUDGET")
+    require_coverage_audit_budget(max_rounds, each)
     micro, _, graph, source_hashes, source_graph_sha = read_sources(source_root)
     collected = {}
     report = plan
@@ -304,7 +330,11 @@ def audit_pinned_micro_generator(plan: dict, source_root, *,
 def affected_typed_dependency_closure(plan: dict, changed: tuple[str, ...]) -> tuple[str, ...]:
     """Regenerate descendants of newly *discovered* as well as declared edges."""
     if plan.get("schema") != SCHEMA:
-        raise ValueError("SEMANTIC_COVERAGE_PLAN_VERSION_MISMATCH")
+        ErrorBus.Raise(
+            SEMANTIC_COVERAGE.PLAN.VERSION_MISMATCH,
+            actual_schema=plan.get("schema"),
+            expected_schema=SCHEMA,
+        )
     reverse: dict[str, set[str]] = {}
     for edge in plan["obligations"]:
         reverse.setdefault(edge["producer"], set()).add(edge["consumer"])

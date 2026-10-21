@@ -7,6 +7,7 @@ from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRe
 from bilqis_mlx.factory.model import AssessmentClass, FactoryRelease, SourceAdapter
 from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.factory.tests.support import synthetic_release_inputs
+from bilqis_mlx.compatibility.factory_release_v1 import decode_sealed_factory_release_v1
 
 
 class FactoryReleaseTests(unittest.TestCase):
@@ -68,6 +69,26 @@ class FactoryReleaseTests(unittest.TestCase):
         payload["course"]["grades"][0]["capabilities"][0]["prerequisites"] = ["unknown"]
         with self.assertRaises(ValueError):
             FactoryRelease.from_manifest(payload, release.release_sha256)
+
+    def test_sealed_v1_manifest_survives_later_optional_adapter_fields(self):
+        release = compile_factory_release(self.course, self.registry)
+        payload = json.loads(json.dumps(release.manifest()))
+        for adapter in payload["source_adapters"]:
+            adapter.pop("profile_dimensions", None)
+        import hashlib
+        digest = hashlib.sha256(json.dumps(
+            payload, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+
+        restored = decode_sealed_factory_release_v1(payload, digest)
+
+        self.assertEqual(restored.course, release.course)
+        self.assertEqual(
+            restored.semantic_release.course_sha256,
+            release.semantic_release.course_sha256)
+        self.assertTrue(all(
+            adapter.profile_dimensions == ()
+            for adapter in restored.source_adapters))
 
     def test_rehashed_incomplete_or_inconsistent_release_is_rejected(self):
         release = compile_factory_release(self.course, self.registry)

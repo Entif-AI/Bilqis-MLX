@@ -13,6 +13,7 @@ from bilqis_mlx.registry_ast import load_registry
 from bilqis_mlx.semantic_coverage import (
     affected_typed_dependency_closure, discover_composition_obligations,
     verify_micro_composition_witnesses, audit_pinned_micro_generator)
+from bilqis_mlx.errors import BilqisError, SEMANTIC_COVERAGE
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -111,8 +112,10 @@ class SemanticCoverageTests(unittest.TestCase):
         self.assertFalse(improved["training_authorized"])
         self.assertEqual(improved, audit_pinned_micro_generator(
             plan, LEGACY, max_rounds=8))
-        with self.assertRaisesRegex(ValueError, "INVALID_AUDIT_BUDGET"):
+        with self.assertRaises(BilqisError) as caught:
             audit_pinned_micro_generator(plan, LEGACY, max_rounds=0)
+        self.assertIs(
+            caught.exception.spec, SEMANTIC_COVERAGE.AUDIT.INVALID_BUDGET)
 
     def test_new_source_typed_primitive_and_grade_regenerate_dependents(self):
         plan = self._plan()

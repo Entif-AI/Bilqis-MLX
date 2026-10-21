@@ -6,10 +6,10 @@ The curriculum architecture did not originate with SPEC-0001. Earlier roadmaps, 
 
 ## Current authority
 
-- [`specifications/`](specifications/) contains numbered normative repository specifications. Start with [`0001_GENERATIVE_CURRICULUM_FACTORY.md`](specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md). The hard runtime rule is **no factory release, no grade**.
+- [`specifications/`](specifications/) contains numbered normative repository specifications. Start with [`0001_GENERATIVE_CURRICULUM_FACTORY.md`](specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md). [`0004_TYPED_ERROR_CONTROL_PLANE.md`](specifications/0004_TYPED_ERROR_CONTROL_PLANE.md) governs operator-visible failures, recovery and the error-debt migration. The hard runtime rule is **no factory release, no grade**.
 - [`tasks/`](tasks/) contains numbered execution packets. [`0001_IMPLEMENT_GENERATIVE_CURRICULUM_FACTORY.md`](tasks/0001_IMPLEMENT_GENERATIVE_CURRICULUM_FACTORY.md) is the implementation/verification contract for SPEC-0001.
 - [`architecture/`](architecture/) contains current architectural explanations that remain compatible with the numbered specifications. Architecture documents do not outrank a numbered spec or external governing authority.
-- [`operations/`](operations/) contains current operator/repository procedures. Operational instructions do not redefine curriculum semantics.
+- [`operations/`](operations/) contains current operator/repository procedures. For a training stop, start with [`OPERATOR_FIELD_MANUAL.md`](operations/OPERATOR_FIELD_MANUAL.md); the exhaustive generated error catalog is [`ERROR_FIELD_MANUAL.md`](operations/ERROR_FIELD_MANUAL.md). Operational instructions do not redefine curriculum semantics.
 
 ## Evidence and provenance
 

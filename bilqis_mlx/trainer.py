@@ -75,6 +75,9 @@ from .profiles.catalog import (
     numeric_entry_transition,
 )
 from .profiles.retention import fragile_preservation_capabilities
+from .operator_vocabulary import (
+    AUTONOMY_SAFE_HOLD, AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED,
+)
 from .compatibility.live_releases import (
     boolean_identification_answer_heads,
     initial_course,
@@ -138,6 +141,7 @@ from .runtime.admission import (
     admitted_release_supports_teaching_option,
     _executable_factory_admission,
     _factory_release, _persist_factory_release, _factory_admission,
+    _read_factory_release,
     _read_executable_factory_release_artifact,
     _require_executable_factory_admission, _require_factory_admission,
 )
@@ -234,6 +238,8 @@ def _cached_schedule_program(run_dir_string, release_sha256, release_file):
 
 
 def _schedule_for_receipt(run_dir, receipt, course):
+    from .compatibility.schedule_program import schedule_program_from_legacy_course
+
     if isinstance(course, ScheduleProgram):
         return course
     if receipt.get("factory_admission_v2") is not None:
@@ -242,7 +248,12 @@ def _schedule_for_receipt(run_dir, receipt, course):
             receipt["factory_release_sha256"],
             receipt["factory_release_file"],
         )
-    from .compatibility.schedule_program import schedule_program_from_legacy_course
+    if receipt.get("factory_admission") is not None:
+        # A v1 run already owns an immutable admitted course. Reconstruct the
+        # scheduler from that sealed artifact instead of asking today's source
+        # constructors to reproduce yesterday's byte identity.
+        release = _read_factory_release(Path(run_dir), receipt)
+        return schedule_program_from_legacy_course(release.course)
     return schedule_program_from_legacy_course(course)
 
 
@@ -1170,8 +1181,14 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
     executable = (
         _read_executable_factory_release_artifact(run_dir, receipt)
         if receipt.get("factory_admission_v2") is not None else None)
-    old_mode = executable is None and saved_mode is None
+    sealed_legacy_release = (
+        _read_factory_release(run_dir, receipt)
+        if executable is None and receipt.get("factory_admission") is not None
+        else None)
+    old_mode = (
+        executable is None and sealed_legacy_release is None and saved_mode is None)
     old_course = (
+        sealed_legacy_release.course if sealed_legacy_release is not None else
         accepted_grade_a(manifest) if old_mode else course)
     school_program = (
         schedule_program_from_executable_release(executable)
@@ -4684,7 +4701,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 course_a, source_root, admitted_v2.profile)
             active_grade_count = len(admitted_v2.execution_plan.grades)
             target_boolean_profile = None
-            if active_grade_count <= 2 and not autonomous_curriculum:
+            if (active_grade_count <= 2 and not autonomous_curriculum and
+                    set(admitted_v2.execution_plan.capability_map) <= set(course.capability_map)):
                 target_boolean_profile = with_disabled_future_grades(
                     boolean_entry_profile(full=full_grade_b),
                     tuple(
@@ -4974,7 +4992,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     if frontier_result is not None:
                         proposal, proposal_file = frontier_result
                         reason = (
-                            "AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED"
+                            AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED.code
                             if proposal.disposition.value ==
                             "SOURCE_DEVELOPMENT"
                             else "AUTONOMY_JIT_PROPOSAL_READY")
@@ -5002,7 +5020,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                             "model_and_optimizer_unchanged": True,
                         })
                     else:
-                        reason = "AUTONOMY_SAFE_HOLD"
+                        reason = AUTONOMY_SAFE_HOLD.code
                         _record(run_dir, {
                             "event": "SCHOOL_AUTONOMY_SAFE_HOLD",
                             "generation": receipt["generation"],

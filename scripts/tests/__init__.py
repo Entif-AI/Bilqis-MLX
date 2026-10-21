@@ -1,0 +1,1 @@
+"""Script-level contract tests."""

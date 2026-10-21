@@ -13,6 +13,7 @@ from ..factory.executable_release import (
 )
 from ..factory.model import AdmissionReceipt, FactoryRelease
 from ..factory.release import admit_factory_release, compile_factory_release
+from ..compatibility.factory_release_v1 import decode_sealed_factory_release_v1
 from .state import _canonical, _durable_json
 
 SCHEMA = "bilqis.mlx.factory-release/v1"
@@ -112,7 +113,7 @@ def _read_factory_release(run_dir, receipt):
         raise ValueError("FACTORY_RELEASE_DURABLE_SCHEMA_INVALID")
     if payload.get("factory_release_sha256") != digest:
         raise ValueError("FACTORY_RELEASE_ARTIFACT_DIGEST_DRIFT")
-    return FactoryRelease.from_manifest(
+    return decode_sealed_factory_release_v1(
         {key: value for key, value in payload.items()
          if key not in {"schema", "factory_release_sha256"}}, digest)
 

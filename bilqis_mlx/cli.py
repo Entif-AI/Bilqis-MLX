@@ -526,6 +526,10 @@ def parse_args(argv=None):
                            help="Human-authorized one-time next-grade admission after substantial rehabilitation; preserves unresolved prior mastery debt")
             p.add_argument("--triplets","--triples",dest="triples",action="store_true",
                            help="Global weakest-three recovery is intrinsic to the new scheduler")
+    for name in ("explain", "explain-error"):
+        explain = actions.add_parser(name)
+        explain.add_argument(
+            "code", help="Typed error, legacy error, stop reason, or blocker code")
     return parser.parse_args(argv)
 
 
@@ -635,6 +639,31 @@ def _main(args):
         if args.action=="status":return status(args.run_dir)
         if args.action=="dashboard":return dashboard(args.run_dir)
         if args.action=="diagnostics":return diagnostics(args.run_dir)
+        if args.action in ("explain", "explain-error"):
+            from .operator_vocabulary import BY_OPERATIONAL_CODE
+            term = BY_OPERATIONAL_CODE.get(args.code)
+            if term is not None:
+                print("OPERATIONAL TERM: " + term.code)
+                print("KIND: " + term.kind.value)
+                print("OWNER: " + term.owner)
+                print("MEANING: " + term.meaning)
+                print("NEURAL EFFECT: " + term.neural_effect)
+                print("NEXT ACTION: " + term.next_action)
+                if term.aliases:
+                    print("ALIASES: " + ", ".join(term.aliases))
+                return 0
+            from .errors import ErrorBus
+            reports = ErrorBus.explain(args.code)
+            if len(reports) > 1:
+                print(
+                    "LEGACY ERROR AMBIGUITY: " + args.code + " historically "
+                    "collapsed " + str(len(reports)) + " distinct invariants.")
+            for index, report in enumerate(reports):
+                if index:
+                    print()
+                for line in report.cli_lines():
+                    print(line)
+            return 0
         _guard_independent_no_retention(args)
         if args.dry_run:
             _report_retention_plan(args)
@@ -739,11 +768,10 @@ def _main(args):
         _report_timing_trace(trace_path, stream=sys.stderr)
         return 130
     except (ValueError,RuntimeError,OSError,KeyError,IndexError) as err:
-        print("OPERATOR BLOCKED: "+str(err),file=sys.stderr)
-        from .runtime.operator_recovery import recovery_advice
-        advice = recovery_advice(err)
-        print("RECOVERY: " + advice.disposition + " | " + advice.next_action,
-              file=sys.stderr)
+        from .errors import ErrorBus
+        report = ErrorBus.report(err)
+        for line in report.cli_lines():
+            print(line, file=sys.stderr)
         _report_timing_trace(trace_path, stream=sys.stderr)
         return 2
 
