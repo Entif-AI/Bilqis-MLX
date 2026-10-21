@@ -330,8 +330,10 @@ class _HistoryCache:
     files: dict[Path, tuple[int, ...]] = field(default_factory=dict)
 
 
-@lru_cache(maxsize=2)
-def _cached_history_bucket(root: str, grade: str | None) -> _HistoryCache:
+@lru_cache(maxsize=16)
+def _cached_history_bucket(root: str, grade: str | None,
+                           rubric_sha256: str | None = None,
+                           generator_version: str | None = None) -> _HistoryCache:
     return _HistoryCache()
 
 
@@ -388,7 +390,9 @@ def _require_checkpoint_progression(step: int, student_sha: str,
 
 
 def _append_verified_exams(root: Path, lines, grade, observations, files,
-                           last_generation: int = -1):
+                           last_generation: int = -1, *,
+                           rubric_sha256: str | None = None,
+                           generator_version: str | None = None):
     run_id = observations[-1].run_id if observations else None
     last_step = observations[-1].optimizer_step if observations else -1
     last_student_sha = observations[-1].student_sha256 if observations else None
@@ -403,6 +407,18 @@ def _append_verified_exams(root: Path, lines, grade, observations, files,
             continue
         if grade is not None and event.get("grade") != grade:
             continue
+        if rubric_sha256 is not None:
+            declared_rubric = event.get("rubric")
+            declared_generator = event.get("generator_version")
+            # Preselection is an optimization, not a relaxation. Only a complete
+            # declared header can prove that an exam belongs to another coarse
+            # comparison stratum. Missing/malformed metadata stays selected and
+            # therefore reaches the same state/cohort/outbox verification below.
+            if (isinstance(declared_rubric, str) and declared_rubric and
+                    isinstance(declared_generator, str) and declared_generator and
+                    (declared_rubric != rubric_sha256 or
+                     declared_generator != generator_version)):
+                continue
         generation = event.get("generation")
         if type(generation) is not int or generation < 0:
             raise ValueError("DIAGNOSTIC_EVENT_GENERATION_DRIFT")
@@ -451,16 +467,29 @@ def _append_verified_exams(root: Path, lines, grade, observations, files,
 
 
 def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B",
-                               incremental: bool = False) -> tuple[ExamObservation, ...]:
+                               incremental: bool = False,
+                               rubric_sha256: str | None = None,
+                               generator_version: str | None = None) -> tuple[ExamObservation, ...]:
     """Validate all saved exams; optionally reuse immutable verified history.
 
     Standalone audits always reread full source evidence. The live observer may
-    reuse already verified events *only* while the complete log prefix matches
-    byte-for-byte by SHA and every referenced immutable file is unchanged.
+    optionally preselect a declared rubric+generator stratum before opening the
+    much larger immutable states. Header-unknown events still receive full
+    verification. Incremental reuse is valid *only* while the complete log
+    prefix matches byte-for-byte by SHA and every selected immutable file is
+    unchanged.
     """
+    if (rubric_sha256 is None) != (generator_version is None):
+        raise ValueError("DIAGNOSTIC_HISTORY_FILTER_INCOMPLETE")
+    if rubric_sha256 is not None and (
+            not isinstance(rubric_sha256, str) or not rubric_sha256 or
+            not isinstance(generator_version, str) or not generator_version):
+        raise ValueError("DIAGNOSTIC_HISTORY_FILTER_INVALID")
     root = Path(run_dir).resolve(strict=True)
     ledger = _require_evidence_file(root, root / "events.jsonl")
-    bucket = _cached_history_bucket(str(root), grade) if incremental else None
+    bucket = (_cached_history_bucket(
+        str(root), grade, rubric_sha256, generator_version)
+        if incremental else None)
     valid = bool(bucket and bucket.ledger_hash)
     if valid:
         try:
@@ -479,7 +508,9 @@ def load_archived_exam_history(run_dir: Path, *, grade: str | None = "B",
     # A source-backed audit validates the complete ledger and its provenance.
     last_generation = _append_verified_exams(
         root, lines, grade, observations, files,
-        previous.last_generation if previous else -1)
+        previous.last_generation if previous else -1,
+        rubric_sha256=rubric_sha256,
+        generator_version=generator_version)
     if bucket is not None:
         bucket.offset = size
         bucket.ledger_hash = fingerprint
