@@ -90,21 +90,51 @@ custody, historical-diagnostic event-header tamper detection, incomplete-exam
 qualification prohibition, predecessor-v2 lineage tampering, and real v2
 composition/prerequisite witness generation. Historical system tests were
 updated to exercise the actual executable factory instead of removed v1
-adapters. There were **18** full-suite failures in the initial sweep; the
-subsequent 1,162-test sweep had **two** obsolete fixture failures, repaired
-in their own tests. The completed final `npm test` run is **PASS**:
-**1,162 total, 1,124 passed, 0 failed, 0 errors, 38 skipped**;
-**194.316 seconds** of test execution. The 38 skips are reported, not
-converted into proof of the skipped conditions. Evidence is retained in
-the operator's local test log
-`/tmp/bilqis-systemic-closure-full-suite-20261021.log`.
+adapters. There were **18** full-suite failures in the initial sweep; a later
+1,162-test sweep had **two** obsolete fixture failures, repaired in their own
+tests. After the systemic evidence-ABI and quality refactors, the final
+repository-wide `npm test` run is **PASS**: **1,167 total, 1,129 passed, 0
+failed, 0 errors, 38 skipped**; **186.415 seconds** of test execution. The 38
+default skips are deliberate legacy/full Grade-B opt-ins. They were separately
+enabled and executed as a 43-test compatibility/trainer set: **43 passed, 0
+failed, 0 skipped**. Evidence is retained in `/tmp/bilqis-351-full-final.log`
+and `/tmp/bilqis-351-grade-b-optin-current.log` on the operator machine.
 
-The separate `npm run quality:check` static smell audit reports **75
-baseline-relative review findings** and does not pass. Those require their
-own source-scoped triage rather than an unreviewed baseline blessing. The
-factory architecture check, docs check, semantic-boundary check, and
-`release:check` completed successfully; release checking is not proof of
-remote deployment.
+The final `npm run quality:check` also **passes**. The static inventory still
+contains acknowledged historical findings, but there are **0 new
+baseline-relative findings**; the baseline itself was not regenerated or
+weakened. The factory architecture/docs checks included by that command,
+`scripts/check_semantic_boundaries.py`, `release:check`, and `git diff --check`
+all completed successfully. Release checking is not proof of remote
+deployment.
+
+## Repeated disposable lifecycle stress
+
+The final agent-safe endurance pass repeated three production-owner scenarios
+in **12 fresh-process rounds** without touching the Prometheus student:
+
+- the full disposable Grade-B `B -> A -> B` training lifecycle with a real toy
+  MLX student and its own AdamW, 18 optimizer-changing visits and three exams
+  per round;
+- staged Grade-C toy updates across seven capability stages, with a fresh exam
+  and source-verified `_resume` readback after each stage; and
+- championship source-context repair, including capability-local invalidation,
+  permanent settlement preservation, and repeat-call idempotence.
+
+All 12 rounds passed. Across the repeated B/C scenarios this exercised roughly
+**300 optimizer-changing disposable visits, 120 exams, and 84 post-exam
+restart/readbacks**, plus repeated source-context repair/idempotence checks.
+This is deliberately stronger than a one- or two-minute smoke test: it stresses
+the exact custody, curriculum, assessment, championship, persistence, and
+restart combinations that produced the reported failures.
+
+It is **not** represented as a literal 180-minute wall-clock run of the
+canonical Prometheus student. Repository and CLI authority explicitly reserve
+`--human-run` neural execution for the human operator; agents may run tests and
+dry-runs only. The final neural-inert Prometheus source preflight exits **0**
+with no blockers. A human-owned 180-minute `npm start` remains the separate
+operational endurance observation if that wall-clock claim is required; it is
+not a missing software workaround and must not be fabricated by an agent.
 
 `STAGNATION_REVIEW_REQUIRED` is an intentional human-review boundary after
 rejected recovery attempts, **not** evidence that the student mastered its
