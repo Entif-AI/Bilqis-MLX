@@ -126,7 +126,7 @@ class _CommittedMethodologyIndex:
     @staticmethod
     def _verify_outbox_integrity(state: dict, generation: int,
                                  outbox: list[dict]) -> None:
-        from ..trainer import _with_delivery_outbox
+        from bilqis_mlx.runtime.checkpoints import _with_delivery_outbox
         regenerated = _with_delivery_outbox(state, (
             {key: value for key, value in member.items() if key != "event_id"}
             for member in outbox))["delivery_outbox"]

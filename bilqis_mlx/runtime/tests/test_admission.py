@@ -66,8 +66,7 @@ class ExecutableMigrationTests(unittest.TestCase):
         receipt = dict(school=asdict(school), semantic_graph_sha256=trainer._fingerprint(graph),
                        live_rubric_sha256="d" * 64, last_exam={"historical": "unchanged"})
         original = deepcopy(receipt)
-        with tempfile.TemporaryDirectory() as temporary, patch.object(
-                trainer, "compile_projected_executable_release",
+        with tempfile.TemporaryDirectory() as temporary, patch('bilqis_mlx.compatibility.executable_projection.compile_projected_executable_release',
                 return_value=(release, program, None)):
             migrated, _, _, rebound = trainer._migrate_executable_release(
                 Path(temporary), receipt, course, course, None, graph)

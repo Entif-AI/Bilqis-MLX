@@ -34,6 +34,27 @@ from .model import SourceAdapter
 SCHEMA = "bilqis.mlx.factory-release/v2"
 
 
+class _ReleaseError:
+    """Stable legacy wire codes owned by the executable-release contract."""
+
+    MODALITY_DRIFT = "FACTORY_EXECUTABLE_RELEASE_MODALITY_DRIFT"
+    PROVIDER_DRIFT = "FACTORY_EXECUTABLE_RELEASE_PROVIDER_DRIFT"
+    ANSWER_HEAD_DRIFT = "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_DRIFT"
+    CATALOG_INVALID = "FACTORY_EXECUTABLE_RELEASE_CATALOG_INVALID"
+    CATALOG_DRIFT = "FACTORY_EXECUTABLE_RELEASE_CATALOG_DRIFT"
+    SEMANTIC_CATALOG_REQUIRED = "FACTORY_EXECUTABLE_RELEASE_SEMANTIC_CATALOG_REQUIRED"
+    VERIFICATION_INVALID = "FACTORY_EXECUTABLE_RELEASE_VERIFICATION_INVALID"
+    VERIFICATION_DRIFT = "FACTORY_EXECUTABLE_RELEASE_VERIFICATION_DRIFT"
+    ASSESSMENT_DRIFT = "FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_DRIFT"
+    LINEAGE_DRIFT = "FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT"
+
+
+def _require(condition: bool, code: str) -> None:
+    """Fail one named release invariant without duplicating its wire identity."""
+    if not condition:
+        raise ValueError(code)
+
+
 def _digest(value) -> str:
     return hashlib.sha256(json.dumps(
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
@@ -90,9 +111,11 @@ class CapabilityVerificationReceipt:
     answer_schema_projection_sha256: str
 
     def __post_init__(self) -> None:
-        if (not self.capability_id or type(self.verification_seed) is not int or
-                type(self.specimen_count) is not int or self.specimen_count < 1):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_VERIFICATION_INVALID")
+        _require(
+            bool(self.capability_id) and type(self.verification_seed) is int and
+            type(self.specimen_count) is int and self.specimen_count >= 1,
+            _ReleaseError.VERIFICATION_INVALID,
+        )
         for value in (
                 self.specimen_ids_sha256, self.specimen_content_sha256,
                 self.source_projection_sha256, self.coverage_projection_sha256,
@@ -150,9 +173,11 @@ class ExecutableVerificationReceipt:
     assessments: tuple[VerifiedAssessmentSeal, ...]
 
     def __post_init__(self) -> None:
-        if (type(self.verification_seed) is not int or
-                not self.capabilities or not self.assessments):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_VERIFICATION_INVALID")
+        _require(
+            type(self.verification_seed) is int and
+            bool(self.capabilities) and bool(self.assessments),
+            _ReleaseError.VERIFICATION_INVALID,
+        )
         for value in (
                 self.execution_plan_sha256, self.source_binding_sha256,
                 self.provider_descriptors_sha256, self.answer_modalities_sha256,
@@ -221,14 +246,15 @@ class ExecutableFactoryRelease:
             _require_sha256(
                 self.predecessor_release_sha256,
                 "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID")
-        if (not self.semantic_catalog or
-                len(set(self.semantic_catalog)) != len(self.semantic_catalog) or
-                any(not isinstance(item, str) or not item
-                    for item in self.semantic_catalog)):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_CATALOG_INVALID")
+        _require(
+            bool(self.semantic_catalog) and
+            len(set(self.semantic_catalog)) == len(self.semantic_catalog) and
+            all(isinstance(item, str) and item for item in self.semantic_catalog),
+            _ReleaseError.CATALOG_INVALID,
+        )
         _require_sha256(
             self.semantic_catalog_sha256,
-            "FACTORY_EXECUTABLE_RELEASE_CATALOG_INVALID")
+            _ReleaseError.CATALOG_INVALID)
         _require_sha256(
             self.release_sha256, "FACTORY_EXECUTABLE_RELEASE_DIGEST_INVALID")
 
@@ -254,132 +280,27 @@ class ExecutableFactoryRelease:
         return _digest(self.manifest())
 
     def verify(self) -> None:
-        if self.release_sha256 != self.expected_digest():
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_CONTENT_DRIFT")
-
-        answer_kinds = tuple(item.kind for item in self.answer_modalities)
-        if len(set(answer_kinds)) != len(answer_kinds):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_MODALITY_DRIFT")
-        validate_curriculum_definition(
-            self.curriculum, answer_kinds=answer_kinds)
-        validate_source_bindings(self.curriculum, self.source_bindings)
-
-        if self.profile.profile_id != self.execution_plan.profile_id:
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_PROFILE_DRIFT")
-        if (self.curriculum.digest() != self.execution_plan.curriculum_sha256 or
-                self.source_bindings.digest() !=
-                self.execution_plan.source_binding_sha256):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_PLAN_BINDING_DRIFT")
-
-        providers = {item.adapter_id: item for item in self.source_adapters}
-        if len(providers) != len(self.source_adapters):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_PROVIDER_DRIFT")
-        bindings = self.source_bindings.by_capability
-        for execution in self.execution_plan.capabilities:
-            provider = providers.get(execution.provider_id)
-            binding = bindings.get(execution.capability_id)
-            if (provider is None or binding is None or
-                    execution.provider_implementation_sha256 !=
-                    provider.implementation_sha256 or
-                    binding.source_anchor != execution.source_anchor or
-                    binding.generator_id != provider.generator_id or
-                    execution.oracle_id != binding.oracle_id or
-                    binding.oracle_id not in provider.accepted_oracle_ids):
-                raise ValueError("FACTORY_EXECUTABLE_RELEASE_PROVIDER_DRIFT")
-            provider.validate_profile_parameters(execution.provider_parameters)
-
-        used_kinds = tuple(dict.fromkeys(
-            family.kind for capability in self.execution_plan.capabilities
-            for family in capability.answer_families))
-        if (not set(used_kinds) <= set(answer_kinds) or
-                used_kinds != tuple(
-                    kind for kind in answer_kinds if kind in set(used_kinds))):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_MODALITY_DRIFT")
-        modalities = {item.kind: item for item in self.answer_modalities}
-        heads = {item.kind: item for item in self.answer_heads}
-        if tuple(heads) != used_kinds:
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_DRIFT")
-        for kind, head in heads.items():
-            descriptor = modalities[kind]
-            if (head.modality_id != descriptor.adapter_id or
-                    head.implementation_sha256 != descriptor.implementation_sha256):
-                raise ValueError("FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_DRIFT")
-
-        verification = self.verification
-        if (_digest(self.semantic_catalog) != self.semantic_catalog_sha256 or
-                verification.semantic_catalog_sha256 != self.semantic_catalog_sha256):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_CATALOG_DRIFT")
-        if (verification.execution_plan_sha256 != self.execution_plan.digest() or
-                verification.source_binding_sha256 != self.source_bindings.digest() or
-                verification.provider_descriptors_sha256 !=
-                _digest([asdict(item) for item in self.source_adapters]) or
-                verification.answer_modalities_sha256 !=
-                _digest([asdict(item) for item in self.answer_modalities]) or
-                verification.answer_heads_sha256 !=
-                _digest([asdict(item) for item in self.answer_heads])):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_VERIFICATION_DRIFT")
-
-        capability_ids = tuple(
-            item.capability_id for item in self.execution_plan.capabilities)
-        receipts = verification.capabilities
-        if tuple(item.capability_id for item in receipts) != capability_ids:
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_VERIFICATION_DRIFT")
-        projection_map = {
-            item.capability_id: item
-            for item in self.execution_plan.capability_projection_digests}
-        execution_map = self.execution_plan.capability_map
-        for receipt in receipts:
-            execution = execution_map[receipt.capability_id]
-            projection = projection_map[receipt.capability_id]
-            if (receipt.verification_seed != verification.verification_seed or
-                    receipt.specimen_count != execution.exam_item_count or
-                    receipt.source_projection_sha256 != projection.source or
-                    receipt.coverage_projection_sha256 != projection.coverage or
-                    receipt.answer_schema_projection_sha256 !=
-                    projection.answer_schema):
-                raise ValueError("FACTORY_EXECUTABLE_RELEASE_VERIFICATION_DRIFT")
-
-        receipt_map = {item.capability_id: item for item in receipts}
-        if tuple(item.grade_id for item in verification.assessments) != tuple(
-                item.grade_id for item in self.execution_plan.grades):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_DRIFT")
-        for seal, grade in zip(
-                verification.assessments, self.execution_plan.grades):
-            expected_receipts = tuple(
-                receipt_map[capability].digest()
-                for capability in grade.cumulative_scope)
-            if (seal.cumulative_scope != grade.cumulative_scope or
-                    seal.assessment_blueprint_sha256 !=
-                    grade.assessment_blueprint_sha256 or
-                    seal.capability_receipt_sha256s != expected_receipts or
-                    seal.seal_sha256 != seal.expected_digest()):
-                raise ValueError("FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_DRIFT")
-
-        if self.predecessor_release_sha256 is None:
-            if self.transition is not None:
-                raise ValueError("FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT")
-        else:
-            if (self.transition is None or
-                    self.transition.next_plan_sha256 !=
-                    self.execution_plan.digest() or
-                    self.transition.next_curriculum_sha256 !=
-                    self.execution_plan.curriculum_sha256 or
-                    self.transition.next_source_binding_sha256 !=
-                    self.execution_plan.source_binding_sha256 or
-                    self.transition.semantic_geometry ==
-                    SemanticGeometryChange.INCOMPATIBLE.value):
-                raise ValueError("FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT")
+        answer_kinds = _verify_release_structure(self)
+        _verify_release_providers(self)
+        _verify_release_answers(self, answer_kinds)
+        _verify_release_evidence(self)
+        _verify_release_assessments(self)
+        _verify_release_lineage(self)
 
     def verify_semantic_catalog(self, graph: dict) -> None:
         """Bind the offline release artifact to the exact loaded semantic ABI."""
         names = graph.get("tokens") if isinstance(graph, dict) else None
-        if (not isinstance(names, list) or not names or
-                len(set(names)) != len(names) or
-                any(not isinstance(name, str) or not name for name in names)):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_CATALOG_INVALID")
-        if (tuple(names) != self.semantic_catalog or
-                _digest(tuple(names)) != self.semantic_catalog_sha256):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_CATALOG_DRIFT")
+        _require(
+            isinstance(names, list) and bool(names) and
+            len(set(names)) == len(names) and
+            all(isinstance(name, str) and name for name in names),
+            _ReleaseError.CATALOG_INVALID,
+        )
+        _require(
+            tuple(names) == self.semantic_catalog and
+            _digest(tuple(names)) == self.semantic_catalog_sha256,
+            _ReleaseError.CATALOG_DRIFT,
+        )
         for head in self.answer_heads:
             if any(
                     token_id >= len(names) or
@@ -414,7 +335,7 @@ class ExecutableFactoryRelease:
             expected = SemanticGeometryChange.INCOMPATIBLE.value
         if (expected == SemanticGeometryChange.INCOMPATIBLE.value or
                 self.transition.semantic_geometry != expected):
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT")
+            raise ValueError(_ReleaseError.LINEAGE_DRIFT)
 
     @classmethod
     def from_manifest(
@@ -456,6 +377,152 @@ class ExecutableFactoryRelease:
             raise ValueError("FACTORY_EXECUTABLE_RELEASE_MANIFEST_CONTENT_DRIFT")
         release.verify()
         return release
+
+
+def _verify_release_structure(release: ExecutableFactoryRelease) -> tuple[str, ...]:
+    _require(
+        release.release_sha256 == release.expected_digest(),
+        "FACTORY_EXECUTABLE_RELEASE_CONTENT_DRIFT",
+    )
+    answer_kinds = tuple(item.kind for item in release.answer_modalities)
+    _require(
+        len(set(answer_kinds)) == len(answer_kinds),
+        _ReleaseError.MODALITY_DRIFT,
+    )
+    validate_curriculum_definition(release.curriculum, answer_kinds=answer_kinds)
+    validate_source_bindings(release.curriculum, release.source_bindings)
+    _require(
+        release.profile.profile_id == release.execution_plan.profile_id,
+        "FACTORY_EXECUTABLE_RELEASE_PROFILE_DRIFT",
+    )
+    _require(
+        release.curriculum.digest() == release.execution_plan.curriculum_sha256 and
+        release.source_bindings.digest() == release.execution_plan.source_binding_sha256,
+        "FACTORY_EXECUTABLE_RELEASE_PLAN_BINDING_DRIFT",
+    )
+    return answer_kinds
+
+
+def _verify_release_providers(release: ExecutableFactoryRelease) -> None:
+    providers = {item.adapter_id: item for item in release.source_adapters}
+    _require(
+        len(providers) == len(release.source_adapters),
+        _ReleaseError.PROVIDER_DRIFT,
+    )
+    bindings = release.source_bindings.by_capability
+    for execution in release.execution_plan.capabilities:
+        provider = providers.get(execution.provider_id)
+        binding = bindings.get(execution.capability_id)
+        _require(
+            provider is not None and binding is not None and
+            execution.provider_implementation_sha256 == provider.implementation_sha256 and
+            binding.source_anchor == execution.source_anchor and
+            binding.generator_id == provider.generator_id and
+            execution.oracle_id == binding.oracle_id and
+            binding.oracle_id in provider.accepted_oracle_ids,
+            _ReleaseError.PROVIDER_DRIFT,
+        )
+        provider.validate_profile_parameters(execution.provider_parameters)
+
+
+def _verify_release_answers(
+        release: ExecutableFactoryRelease, answer_kinds: tuple[str, ...]) -> None:
+    used_kinds = tuple(dict.fromkeys(
+        family.kind for capability in release.execution_plan.capabilities
+        for family in capability.answer_families))
+    _require(
+        set(used_kinds) <= set(answer_kinds) and
+        used_kinds == tuple(kind for kind in answer_kinds if kind in set(used_kinds)),
+        _ReleaseError.MODALITY_DRIFT,
+    )
+    modalities = {item.kind: item for item in release.answer_modalities}
+    heads = {item.kind: item for item in release.answer_heads}
+    _require(tuple(heads) == used_kinds, _ReleaseError.ANSWER_HEAD_DRIFT)
+    for kind, head in heads.items():
+        descriptor = modalities[kind]
+        _require(
+            head.modality_id == descriptor.adapter_id and
+            head.implementation_sha256 == descriptor.implementation_sha256,
+            _ReleaseError.ANSWER_HEAD_DRIFT,
+        )
+
+
+def _verify_release_evidence(release: ExecutableFactoryRelease) -> None:
+    verification = release.verification
+    _require(
+        _digest(release.semantic_catalog) == release.semantic_catalog_sha256 and
+        verification.semantic_catalog_sha256 == release.semantic_catalog_sha256,
+        _ReleaseError.CATALOG_DRIFT,
+    )
+    _require(
+        verification.execution_plan_sha256 == release.execution_plan.digest() and
+        verification.source_binding_sha256 == release.source_bindings.digest() and
+        verification.provider_descriptors_sha256 ==
+            _digest([asdict(item) for item in release.source_adapters]) and
+        verification.answer_modalities_sha256 ==
+            _digest([asdict(item) for item in release.answer_modalities]) and
+        verification.answer_heads_sha256 ==
+            _digest([asdict(item) for item in release.answer_heads]),
+        _ReleaseError.VERIFICATION_DRIFT,
+    )
+    capability_ids = tuple(
+        item.capability_id for item in release.execution_plan.capabilities)
+    receipts = verification.capabilities
+    _require(
+        tuple(item.capability_id for item in receipts) == capability_ids,
+        _ReleaseError.VERIFICATION_DRIFT,
+    )
+    projections = {
+        item.capability_id: item
+        for item in release.execution_plan.capability_projection_digests}
+    executions = release.execution_plan.capability_map
+    for receipt in receipts:
+        execution = executions[receipt.capability_id]
+        projection = projections[receipt.capability_id]
+        _require(
+            receipt.verification_seed == verification.verification_seed and
+            receipt.specimen_count == execution.exam_item_count and
+            receipt.source_projection_sha256 == projection.source and
+            receipt.coverage_projection_sha256 == projection.coverage and
+            receipt.answer_schema_projection_sha256 == projection.answer_schema,
+            _ReleaseError.VERIFICATION_DRIFT,
+        )
+
+
+def _verify_release_assessments(release: ExecutableFactoryRelease) -> None:
+    verification = release.verification
+    receipt_map = {
+        item.capability_id: item for item in verification.capabilities}
+    _require(
+        tuple(item.grade_id for item in verification.assessments) ==
+        tuple(item.grade_id for item in release.execution_plan.grades),
+        _ReleaseError.ASSESSMENT_DRIFT,
+    )
+    for seal, grade in zip(verification.assessments, release.execution_plan.grades):
+        expected_receipts = tuple(
+            receipt_map[capability].digest() for capability in grade.cumulative_scope)
+        _require(
+            seal.cumulative_scope == grade.cumulative_scope and
+            seal.assessment_blueprint_sha256 == grade.assessment_blueprint_sha256 and
+            seal.capability_receipt_sha256s == expected_receipts and
+            seal.seal_sha256 == seal.expected_digest(),
+            _ReleaseError.ASSESSMENT_DRIFT,
+        )
+
+
+def _verify_release_lineage(release: ExecutableFactoryRelease) -> None:
+    if release.predecessor_release_sha256 is None:
+        _require(release.transition is None, _ReleaseError.LINEAGE_DRIFT)
+        return
+    transition = release.transition
+    _require(
+        transition is not None and
+        transition.next_plan_sha256 == release.execution_plan.digest() and
+        transition.next_curriculum_sha256 == release.execution_plan.curriculum_sha256 and
+        transition.next_source_binding_sha256 == release.execution_plan.source_binding_sha256 and
+        transition.semantic_geometry != SemanticGeometryChange.INCOMPATIBLE.value,
+        _ReleaseError.LINEAGE_DRIFT,
+    )
 
 
 def _decode_curriculum(value: dict) -> CurriculumDefinition:
@@ -623,9 +690,11 @@ def _verification_receipt(
         assessments.append(replace(seal, seal_sha256=seal.expected_digest()))
     descriptors = _provider_descriptors(plan, bindings, source_registry)
     names = graph.get("tokens") if isinstance(graph, dict) else None
-    if (not isinstance(names, list) or not names or
-            any(not isinstance(name, str) or not name for name in names)):
-        raise ValueError("FACTORY_EXECUTABLE_RELEASE_SEMANTIC_CATALOG_REQUIRED")
+    _require(
+        isinstance(names, list) and bool(names) and
+        all(isinstance(name, str) and name for name in names),
+        _ReleaseError.SEMANTIC_CATALOG_REQUIRED,
+    )
     return ExecutableVerificationReceipt(
         verification_seed=verification_seed,
         execution_plan_sha256=plan.digest(),
@@ -673,11 +742,12 @@ def compile_executable_factory_release(
         plan, source_bindings, source_registry)
     semantic_catalog = tuple(
         graph.get("tokens") if isinstance(graph, dict) else ())
-    if (not semantic_catalog or
-            len(set(semantic_catalog)) != len(semantic_catalog) or
-            any(not isinstance(item, str) or not item
-                for item in semantic_catalog)):
-        raise ValueError("FACTORY_EXECUTABLE_RELEASE_SEMANTIC_CATALOG_REQUIRED")
+    _require(
+        bool(semantic_catalog) and
+        len(set(semantic_catalog)) == len(semantic_catalog) and
+        all(isinstance(item, str) and item for item in semantic_catalog),
+        _ReleaseError.SEMANTIC_CATALOG_REQUIRED,
+    )
     verification = _verification_receipt(
         curriculum, source_bindings, plan, source_registry,
         answer_modalities, answer_heads, source_root=source_root, graph=graph,

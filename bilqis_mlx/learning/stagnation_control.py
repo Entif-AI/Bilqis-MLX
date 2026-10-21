@@ -14,6 +14,7 @@ from copy import deepcopy
 SCHEMA = "bilqis.mlx.stagnation-session/v1"
 GRACE_SCHEMA = "bilqis.mlx.stagnation-grace/v1"
 RECOVERY_PHASES = ("RECOVERY_1", "RECOVERY_2")
+MINIMUM_NO_PROGRESS_SECONDS = 20 * 60
 
 
 def _validate_grace(grace: dict | None) -> None:
@@ -93,11 +94,23 @@ def grace_suppressed_capabilities(
         if capability.startswith(prefix)))
 
 
+def _valid_checkpoint(pointer: dict | None) -> bool:
+    return bool(
+        isinstance(pointer, dict) and
+        isinstance(pointer.get("filename"), str) and pointer["filename"] and
+        isinstance(pointer.get("sha256"), str) and len(pointer["sha256"]) == 64 and
+        type(pointer.get("optimizer_step")) is int and pointer["optimizer_step"] >= 0 and
+        pointer.get("model_and_native_adamw") is True)
+
+
 def start_session(*, session_id: str, generation: int,
-                  required_capabilities: tuple[str, ...]) -> dict:
+                  required_capabilities: tuple[str, ...],
+                  progress_checkpoint: dict | None = None) -> dict:
     if (not session_id or type(generation) is not int or generation < 0 or
             not required_capabilities or
-            len(set(required_capabilities)) != len(required_capabilities)):
+            len(set(required_capabilities)) != len(required_capabilities) or
+            (progress_checkpoint is not None and
+             not _valid_checkpoint(progress_checkpoint))):
         raise ValueError("STAGNATION_SESSION_INVALID_START")
     return {
         "schema": SCHEMA,
@@ -109,6 +122,10 @@ def start_session(*, session_id: str, generation: int,
         "cycle_visits": {},
         "quarantined": {},
         "alerts": [],
+        "score_peaks": {},
+        "last_progress_elapsed_seconds": {},
+        "minimum_no_progress_seconds": MINIMUM_NO_PROGRESS_SECONDS,
+        "progress_checkpoint": deepcopy(progress_checkpoint),
     }
 
 
@@ -124,7 +141,15 @@ def _validate(control: dict) -> None:
                 for capability in control["required_capabilities"]) or
             not isinstance(control.get("cycle_visits"), dict) or
             not isinstance(control.get("quarantined"), dict) or
-            not isinstance(control.get("alerts"), list)):
+            not isinstance(control.get("alerts"), list) or
+            not isinstance(control.get("score_peaks", {}), dict) or
+            not isinstance(control.get("last_progress_elapsed_seconds", {}), dict) or
+            (control.get("progress_checkpoint") is not None and
+             not _valid_checkpoint(control.get("progress_checkpoint"))) or
+            type(control.get("minimum_no_progress_seconds",
+                             MINIMUM_NO_PROGRESS_SECONDS)) is not int or
+            control.get("minimum_no_progress_seconds",
+                        MINIMUM_NO_PROGRESS_SECONDS) <= 0):
         raise ValueError("STAGNATION_SESSION_STATE_DRIFT")
     rehabilitation = control.get("rehabilitation")
     if rehabilitation is not None and (
@@ -287,6 +312,58 @@ def record_visit(control: dict, *, capability: str, phase: str,
     return updated
 
 
+def _validated_score(score: dict) -> dict:
+    if (not isinstance(score, dict) or
+            type(score.get("correct")) is not int or
+            type(score.get("total")) is not int or
+            score["total"] <= 0 or
+            not 0 <= score["correct"] <= score["total"]):
+        raise ValueError("STAGNATION_SCORE_OBSERVATION_INVALID")
+    return {"correct": score["correct"], "total": score["total"]}
+
+
+def observe_paired_progress(
+        control: dict, *, measured_capabilities: tuple[str, ...],
+        improved_capabilities: tuple[str, ...], measurement_usable: bool,
+        elapsed_seconds: float, progress_checkpoint: dict) -> dict:
+    """Advance the no-progress clock only from same-cohort checkpoint evidence.
+
+    Routine cohorts intentionally redraw at every assessment boundary, so raw
+    scores from two different cohorts are not longitudinal evidence.  The
+    trainer instead scores the previous assessment checkpoint and current
+    checkpoint on the *same fresh cohort*.  A strict current>previous result
+    resets only that capability's clock.  If the paired comparison is
+    unavailable, the unknown interval cannot prove stagnation and therefore
+    resets the measured capabilities' clocks conservatively.
+    """
+    _validate(control)
+    required = set(control["required_capabilities"])
+    measured = set(measured_capabilities)
+    improved = set(improved_capabilities)
+    if (type(measurement_usable) is not bool or
+            not measured_capabilities or
+            len(measured) != len(measured_capabilities) or
+            len(improved) != len(improved_capabilities) or
+            not measured <= required or not improved <= measured or
+            not _valid_checkpoint(progress_checkpoint) or
+            not isinstance(elapsed_seconds, (int, float)) or
+            elapsed_seconds < 0):
+        raise ValueError("STAGNATION_PAIRED_PROGRESS_INVALID")
+    updated = deepcopy(control)
+    progress = updated.setdefault("last_progress_elapsed_seconds", {})
+    resets = improved if measurement_usable else measured
+    for capability in resets:
+        progress[capability] = float(elapsed_seconds)
+    updated["progress_checkpoint"] = deepcopy(progress_checkpoint)
+    updated["last_paired_progress_observation"] = {
+        "elapsed_seconds": float(elapsed_seconds),
+        "measurement_usable": measurement_usable,
+        "measured_capabilities": sorted(measured),
+        "improved_capabilities": sorted(improved) if measurement_usable else [],
+    }
+    return updated
+
+
 def begin_recovery_cycle(control: dict, *, first_recovery: tuple[str, ...]) -> dict:
     """Start the two-round tail check after one fresh MAIN assessment."""
     _validate(control)
@@ -306,10 +383,55 @@ def _rejected_without_retention(control: dict, capability: str, phase: str) -> b
     return bool(item and item["rejected"] >= 1 and item["retained_updates"] == 0)
 
 
+def _warning_signals(active_warnings: tuple[dict, ...]) -> dict[str, list[str]]:
+    result: dict[str, list[str]] = {}
+    for warning in active_warnings:
+        if not isinstance(warning, dict):
+            continue
+        capability = warning.get("capability")
+        signal = warning.get("signal")
+        if isinstance(capability, str) and isinstance(signal, str):
+            result.setdefault(capability, []).append(signal)
+    return result
+
+
+def _stagnation_evidence(control: dict, *, capability: str, score: dict,
+                         weakest_tail: tuple[str, ...], generation: int,
+                         warning_by_capability: dict[str, list[str]],
+                         elapsed_seconds: float) -> dict | None:
+    if score["correct"] == score["total"]:
+        return None
+    if not all(_rejected_without_retention(control, capability, phase)
+               for phase in RECOVERY_PHASES):
+        return None
+    minimum = control.get(
+        "minimum_no_progress_seconds", MINIMUM_NO_PROGRESS_SECONDS)
+    last_progress = control.get(
+        "last_progress_elapsed_seconds", {}).get(capability, 0.0)
+    stagnant_seconds = elapsed_seconds - last_progress
+    if stagnant_seconds < minimum:
+        return None
+    return {
+        "capability": capability,
+        "cycle_index": control["cycle_index"],
+        "trigger_generation": generation,
+        "latest_score": dict(score),
+        "first_recovery": list(control["cycle_first_recovery"]),
+        "latest_weakest_tail": list(weakest_tail),
+        "recovery_visits": deepcopy(control["cycle_visits"].get(capability, {})),
+        "active_warning_signals": sorted(set(warning_by_capability.get(capability, ()))),
+        "last_progress_elapsed_seconds": last_progress,
+        "stagnant_seconds": stagnant_seconds,
+        "minimum_no_progress_seconds": minimum,
+        "reason": "SUSTAINED_NO_PROGRESS_AFTER_REPEATED_RECOVERY_FAILURE",
+    }
+
+
 def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
                             scores: dict[str, dict], generation: int,
                             active_warnings: tuple[dict, ...] = (),
-                            quarantine_suppressed: tuple[str, ...] = ()) -> tuple[dict, tuple[dict, ...]]:
+                            quarantine_suppressed: tuple[str, ...] = (),
+                            elapsed_seconds: float = float("inf")) -> tuple[dict, tuple[dict, ...]]:
     """Contain only repeated tail failures already proven by both recovery rounds.
 
     `weakest_tail` is the scheduler's source-scored weakest-three result on the
@@ -325,15 +447,11 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
     if (len(set(quarantine_suppressed)) != len(quarantine_suppressed) or
             not set(quarantine_suppressed) <= set(control["required_capabilities"])):
         raise ValueError("STAGNATION_GRACE_SUPPRESSION_SCOPE_INVALID")
+    if (not isinstance(elapsed_seconds, (int, float)) or
+            elapsed_seconds < 0):
+        raise ValueError("STAGNATION_RECOVERY_ELAPSED_INVALID")
     updated = deepcopy(control)
-    warning_by_capability: dict[str, list[str]] = {}
-    for warning in active_warnings:
-        if not isinstance(warning, dict):
-            continue
-        capability = warning.get("capability")
-        signal = warning.get("signal")
-        if isinstance(capability, str) and isinstance(signal, str):
-            warning_by_capability.setdefault(capability, []).append(signal)
+    warning_by_capability = _warning_signals(active_warnings)
     candidates = set(updated["cycle_first_recovery"]) & set(weakest_tail)
     events = []
     rehabilitation_capabilities = set(
@@ -343,25 +461,17 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
             continue
         if capability in updated["quarantined"]:
             continue
-        score = scores.get(capability)
-        if (not isinstance(score, dict) or type(score.get("correct")) is not int or
-                type(score.get("total")) is not int or
-                score["correct"] == score["total"]):
+        raw_score = scores.get(capability)
+        if not isinstance(raw_score, dict):
             continue
-        if not all(_rejected_without_retention(updated, capability, phase)
-                   for phase in RECOVERY_PHASES):
+        score = _validated_score(raw_score)
+        evidence = _stagnation_evidence(
+            updated, capability=capability, score=score,
+            weakest_tail=weakest_tail, generation=generation,
+            warning_by_capability=warning_by_capability,
+            elapsed_seconds=elapsed_seconds)
+        if evidence is None:
             continue
-        evidence = {
-            "capability": capability,
-            "cycle_index": updated["cycle_index"],
-            "trigger_generation": generation,
-            "latest_score": dict(score),
-            "first_recovery": list(updated["cycle_first_recovery"]),
-            "latest_weakest_tail": list(weakest_tail),
-            "recovery_visits": deepcopy(updated["cycle_visits"].get(capability, {})),
-            "active_warning_signals": sorted(set(warning_by_capability.get(capability, ()))),
-            "reason": "REPEATED_WEAKEST_TAIL_WITH_TWO_REJECTED_RECOVERY_VISITS",
-        }
         if capability in set(quarantine_suppressed):
             events.append({
                 "event": "SCHOOL_CAPABILITY_STAGNATION_QUARANTINE_SUPPRESSED",

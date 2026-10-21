@@ -15,6 +15,9 @@ from .jit_curriculum import CandidateBinding, _digest
 
 
 SCHEMA = "bilqis.mlx.staged-candidate/v1"
+_SOURCE_BINDING_MISMATCH = "CANDIDATE_STAGING_SOURCE_BINDING_MISMATCH"
+_DIGEST_MISMATCH = "CANDIDATE_STAGING_DIGEST_MISMATCH"
+_MANIFEST_INVALID = "CANDIDATE_STAGING_MANIFEST_INVALID"
 
 
 def _target(frontier, candidate_id):
@@ -47,7 +50,7 @@ def _verify_delta(frontier, current, candidate_id, successor):
     _preserve_existing_authority(current, successor.curriculum, successor.source_bindings)
     binding = successor.source_bindings.by_capability.get(target)
     if binding is None or binding.source_anchor != candidate_source_anchor(frontier, candidate_id):
-        raise ValueError("CANDIDATE_STAGING_SOURCE_BINDING_MISMATCH")
+        raise ValueError(_SOURCE_BINDING_MISMATCH)
     execution = successor.execution_plan.capability_map[target]
     explicit = set(execution.prerequisites) | set(execution.composed_of)
     if not {edge.capability_id for edge in candidate.prerequisites} <= explicit:
@@ -89,7 +92,7 @@ class StagedCandidate:
 
     def verify(self, frontier, current) -> None:
         if self.staged_sha256 != self.expected_digest():
-            raise ValueError("CANDIDATE_STAGING_DIGEST_MISMATCH")
+            raise ValueError(_DIGEST_MISMATCH)
         frontier.verify()
         current.verify()
         if self.frontier_sha256 != frontier.release_sha256:
@@ -98,15 +101,15 @@ class StagedCandidate:
         if (self.target_capability_id != candidate.proposed_capability_id or
                 self.source_sense_id != sense.sense_id or
                 self.source_anchor != candidate_source_anchor(frontier, self.candidate_id)):
-            raise ValueError("CANDIDATE_STAGING_SOURCE_BINDING_MISMATCH")
+            raise ValueError(_SOURCE_BINDING_MISMATCH)
         _verify_delta(frontier, current, self.candidate_id, self.successor)
 
     @classmethod
     def from_manifest(cls, payload: dict, staged_sha256: str):
         if not isinstance(payload, dict) or payload.get("schema") != SCHEMA:
-            raise ValueError("CANDIDATE_STAGING_MANIFEST_INVALID")
+            raise ValueError(_MANIFEST_INVALID)
         if _digest(payload) != staged_sha256:
-            raise ValueError("CANDIDATE_STAGING_DIGEST_MISMATCH")
+            raise ValueError(_DIGEST_MISMATCH)
         try:
             return cls(payload["frontier_sha256"], payload["candidate_id"],
                        payload["target_capability_id"], payload["source_sense_id"],
@@ -114,7 +117,7 @@ class StagedCandidate:
                            payload["successor_manifest"], payload["successor_sha256"]),
                        staged_sha256)
         except (KeyError, TypeError) as exc:
-            raise ValueError("CANDIDATE_STAGING_MANIFEST_INVALID") from exc
+            raise ValueError(_MANIFEST_INVALID) from exc
 
 
 def compile_candidate_successor(
@@ -140,7 +143,7 @@ def compile_candidate_successor(
     anchor = candidate_source_anchor(frontier, candidate_id)
     binding = source_bindings.by_capability.get(candidate.proposed_capability_id)
     if binding is None or binding.source_anchor != anchor:
-        raise ValueError("CANDIDATE_STAGING_SOURCE_BINDING_MISMATCH")
+        raise ValueError(_SOURCE_BINDING_MISMATCH)
     successor = compile_executable_factory_release(
         curriculum, source_bindings, profile, source_registry, answer_registry,
         source_root=source_root, graph=graph, verification_seed=verification_seed,

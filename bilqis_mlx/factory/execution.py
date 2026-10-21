@@ -378,18 +378,10 @@ def _profiled_grade(
     )
 
 
-def compile_execution_plan(
-        curriculum: CurriculumDefinition | Course, profile: CurriculumProfile,
-        registry: SourceAdapterRegistry, *,
-        source_bindings: SourceBindingSet | None = None,
-        answer_registry=None) -> ExecutionPlan:
-    """Compile one executable projection without mutating canonical curriculum."""
-    if not isinstance(profile, CurriculumProfile):
-        raise TypeError("FACTORY_EXECUTION_PLAN_INVALID_INPUT")
-    if not isinstance(registry, SourceAdapterRegistry):
-        raise TypeError("FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED")
-    curriculum, source_bindings = _normalize_inputs(
-        curriculum, source_bindings, answer_registry)
+def _compile_profiled_grades(
+        curriculum: CurriculumDefinition, source_bindings: SourceBindingSet,
+        profile: CurriculumProfile, registry: SourceAdapterRegistry,
+) -> tuple[tuple[GradeExecution, ...], tuple[CapabilityExecution, ...]]:
     grade_profiles = _profile_maps(curriculum, profile)
     enabled_by_grade = {
         grade.grade_id: _enabled_for_grade(
@@ -401,8 +393,8 @@ def compile_execution_plan(
     }
     if not active_capabilities:
         raise ValueError("FACTORY_PROFILE_EMPTY_EXECUTION")
-    grades = []
-    capabilities = []
+    grades: list[GradeExecution] = []
+    capabilities: list[CapabilityExecution] = []
     cumulative: tuple[str, ...] = ()
     for grade in curriculum.grades:
         enabled = enabled_by_grade[grade.grade_id]
@@ -410,28 +402,33 @@ def compile_execution_plan(
         if not enabled:
             if grade_profile is not None and grade_profile.capabilities:
                 raise ValueError(
-                    "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE:"
-                    + grade.grade_id)
+                    "FACTORY_PROFILE_OVERRIDE_FOR_DISABLED_GRADE:" + grade.grade_id)
             continue
         compiled, members, cumulative = _profiled_grade(
-            curriculum, grade, grade_profile,
-            source_bindings, registry, cumulative,
-            enabled, active_capabilities)
+            curriculum, grade, grade_profile, source_bindings, registry,
+            cumulative, enabled, active_capabilities)
         grades.append(compiled)
         capabilities.extend(members)
+    return tuple(grades), tuple(capabilities)
 
-    roster_payload = tuple((grade.grade_id, grade.capabilities) for grade in grades)
-    schedule_payload = tuple((
+
+def _projection_digests(
+        grades: tuple[GradeExecution, ...],
+        capabilities: tuple[CapabilityExecution, ...],
+        source_bindings: SourceBindingSet,
+) -> ProjectionDigests:
+    roster = tuple((grade.grade_id, grade.capabilities) for grade in grades)
+    schedule = tuple((
         grade.grade_id, grade.teaching_stages,
         tuple((cap.capability_id, cap.stage, cap.prerequisites, cap.composed_of)
               for cap in capabilities if cap.grade_id == grade.grade_id),
     ) for grade in grades)
-    assessment_payload = tuple((
+    assessment = tuple((
         grade.grade_id, grade.cumulative_scope, grade.assessment_blueprint_sha256,
         tuple((cap.capability_id, cap.exam_item_count)
               for cap in capabilities if cap.grade_id == grade.grade_id),
     ) for grade in grades)
-    source_payload = (
+    source = (
         ("source_attestation", source_bindings.source_attestation_sha256),
         *tuple((
             cap.capability_id, cap.source_anchor, cap.provider_id,
@@ -439,26 +436,27 @@ def compile_execution_plan(
             cap.construction_program_id, cap.provider_parameters,
         ) for cap in capabilities),
     )
-    answer_payload = tuple((
+    answer_schema = tuple((
         cap.capability_id,
         tuple((family.kind, family.values) for family in cap.answer_families),
     ) for cap in capabilities)
-    coverage_payload = tuple((
+    coverage = tuple((
         cap.capability_id, cap.exam_item_count, cap.variation_axes,
     ) for cap in capabilities)
-    teaching_payload = tuple((
-        cap.capability_id, cap.teaching_option_ids,
-    ) for cap in capabilities)
-    digests = ProjectionDigests(
-        roster=_digest(roster_payload),
-        schedule=_digest(schedule_payload),
-        assessment=_digest(assessment_payload),
-        source=_digest(source_payload),
-        answer_schema=_digest(answer_payload),
-        coverage=_digest(coverage_payload),
-        teaching=_digest(teaching_payload),
-    )
-    capability_digests = tuple(CapabilityProjectionDigests(
+    teaching = tuple((cap.capability_id, cap.teaching_option_ids)
+                     for cap in capabilities)
+    return ProjectionDigests(
+        roster=_digest(roster), schedule=_digest(schedule),
+        assessment=_digest(assessment), source=_digest(source),
+        answer_schema=_digest(answer_schema), coverage=_digest(coverage),
+        teaching=_digest(teaching))
+
+
+def _capability_projection_digests(
+        capabilities: tuple[CapabilityExecution, ...],
+        source_bindings: SourceBindingSet,
+) -> tuple[CapabilityProjectionDigests, ...]:
+    return tuple(CapabilityProjectionDigests(
         capability_id=cap.capability_id,
         schedule=_digest((
             cap.capability_id, cap.grade_id, cap.stage,
@@ -473,24 +471,48 @@ def compile_execution_plan(
             source_bindings.source_attestation_sha256)),
         answer_schema=_digest((
             cap.capability_id,
-            tuple((family.kind, family.values)
-                  for family in cap.answer_families))),
-        coverage=_digest((
-            cap.capability_id, cap.exam_item_count, cap.variation_axes)),
+            tuple((family.kind, family.values) for family in cap.answer_families))),
+        coverage=_digest((cap.capability_id, cap.exam_item_count, cap.variation_axes)),
         teaching=_digest((cap.capability_id, cap.teaching_option_ids)),
     ) for cap in capabilities)
+
+
+def compile_execution_plan(
+        curriculum: CurriculumDefinition | Course, profile: CurriculumProfile,
+        registry: SourceAdapterRegistry, *,
+        source_bindings: SourceBindingSet | None = None,
+        answer_registry=None) -> ExecutionPlan:
+    """Compile one executable projection without mutating canonical curriculum."""
+    if not isinstance(profile, CurriculumProfile):
+        raise TypeError("FACTORY_EXECUTION_PLAN_INVALID_INPUT")
+    if not isinstance(registry, SourceAdapterRegistry):
+        raise TypeError("FACTORY_EXECUTION_PLAN_REGISTRY_REQUIRED")
+    curriculum, source_bindings = _normalize_inputs(
+        curriculum, source_bindings, answer_registry)
+    grades, capabilities = _compile_profiled_grades(
+        curriculum, source_bindings, profile, registry)
+    digests = _projection_digests(grades, capabilities, source_bindings)
+    capability_digests = _capability_projection_digests(
+        capabilities, source_bindings)
     plan = ExecutionPlan(
         profile_id=profile.profile_id,
         curriculum_sha256=curriculum.digest(),
         source_binding_sha256=source_bindings.digest(),
-        grades=tuple(grades),
-        capabilities=tuple(capabilities),
+        grades=grades,
+        capabilities=capabilities,
         projection_digests=digests,
         capability_projection_digests=capability_digests,
     )
     if answer_registry is not None:
         answer_registry.validate_plan(plan)
     return plan
+
+
+def _verify_lineage_curriculum(
+        previous: ExecutionPlan, current: ExecutionPlan, lineage: PlanLineage) -> None:
+    if (lineage.previous_curriculum_sha256 != previous.curriculum_sha256 or
+            lineage.next_curriculum_sha256 != current.curriculum_sha256):
+        raise ValueError("FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT")
 
 
 def diff_execution_plans(
@@ -502,18 +524,12 @@ def diff_execution_plans(
         if lineage is None:
             geometry = SemanticGeometryChange.UNCHANGED
         else:
-            if (lineage.previous_curriculum_sha256 !=
-                    previous.curriculum_sha256 or
-                    lineage.next_curriculum_sha256 !=
-                    current.curriculum_sha256):
-                raise ValueError("FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT")
+            _verify_lineage_curriculum(previous, current, lineage)
             geometry = lineage.semantic_geometry
     else:
         if lineage is None:
             raise ValueError("FACTORY_EXECUTION_PLAN_LINEAGE_REQUIRED")
-        if (lineage.previous_curriculum_sha256 != previous.curriculum_sha256 or
-                lineage.next_curriculum_sha256 != current.curriculum_sha256):
-            raise ValueError("FACTORY_PLAN_LINEAGE_CURRICULUM_DRIFT")
+        _verify_lineage_curriculum(previous, current, lineage)
         geometry = lineage.semantic_geometry
 
     previous_grades = previous.grade_map

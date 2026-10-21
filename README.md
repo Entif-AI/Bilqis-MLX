@@ -1,6 +1,6 @@
 # Bilqis MLX
 
-Private, source-oracled MLX training for a compositional semantic transformer. **This is the one active repository:** `~/Code/bilqis-mlx`. The human operator alone launches real neural updates; CI, tests, and agents must not train or replace the human student.
+Private, source-oracled MLX training for a compositional semantic transformer. **This is the one active repository:** `~/Code/bilqis-mlx`. The human operator owns ordinary and long-running neural training. During trainer repair, the user's standing authorization also permits agents to run short, explicitly finite trainer tests against the current student when needed to reproduce and verify failures. Those bounded repair runs must preserve the student and its own AdamW, may not reset or replace the canonical lineage, and are not authority for unattended or open-ended training.
 
 The former Bilqis implementations are preserved as pinned, read-only source dependencies under `vendor/legacy-v16/`. They are not separate runtime repositories. The native historical bootstrap checkpoint and inherited teacher state live in the ignored `vendor/legacy-v16/runs/`. The current model, its matching AdamW, learning history, champions and soups live under ignored `runs/`. None of those binaries are committed to Git.
 
@@ -11,6 +11,8 @@ The former Bilqis implementations are preserved as pinned, read-only source depe
 *A live Bilqis training run in the operator dashboard. The cockpit summarizes runtime and whole-student progress while the panes expose candidate retention, sentinel and teacher evidence, qualification state, and curriculum mastery at a glance.*
 
 ## Keep training the existing student
+
+**Operator recovery:** hard stops should identify the failed predicate, state what remains safe, and give a concrete neural-inert next step. See the [`Bilqis Operator Field Manual`](docs/operations/OPERATOR_FIELD_MANUAL.md). Do not hand-edit `state.json` or replace checkpoint/AdamW evidence to bypass a guard.
 
 **Curriculum factory authority:** [`SPEC-0001`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) defines the mandatory end state for semantics-to-grade compilation, release, admission, assessment, generalization, repository structure and extension. [`Authority convergence`](docs/architecture/10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md) records the current source hierarchy, resolved architecture, known conflicts and migration order. The production rule is **no factory release, no grade**. New grades are declarative factory instances; handwritten grade-specific runtime paths are nonconforming. The execution packet is [`TASK-0001`](docs/tasks/0001_IMPLEMENT_GENERATIVE_CURRICULUM_FACTORY.md).
 
@@ -25,7 +27,7 @@ npm run train -- --dry-run --resume --verify-source
 npm run train -- --human-run --resume --minutes 90
 ```
 
-The first command is **read-only** and reports blockers. Only the second, explicitly run by the human, makes neural updates. Both use the default `runs/school-mlx-v1` and the internal historical oracle files. No `--legacy-code-root` flag, another checkout or checkpoint clone is needed. The actual progress and optimizer step always come from the latest `runs/school-mlx-v1/state.json`, not from dated documentation.
+The first command is **read-only** and reports blockers. The second is the ordinary human-operated training path. Under the standing repair authorization above, an agent may use the same `--human-run` gate only for a deliberately small debugging session with an explicit finite `--minutes` and/or `--max-visits` budget, then inspect the committed result before continuing. Both paths use the default `runs/school-mlx-v1` and the internal historical oracle files. No `--legacy-code-root` flag, another checkout or checkpoint clone is needed. The actual progress and optimizer step always come from the latest `runs/school-mlx-v1/state.json`, not from dated documentation.
 
 **Hard stop or cryptic code?** Start with the [Bilqis Operator Field Manual](docs/operations/OPERATOR_FIELD_MANUAL.md), then query the living catalog directly: `python3 -m bilqis_mlx.cli explain CODE`. The source-derived atlas is available through `python3 -B scripts/operator_contract_audit.py --lookup CODE`. New operator-visible failures must use the typed error control plane in [`SPEC-0004`](docs/specifications/0004_TYPED_ERROR_CONTROL_PLANE.md); raw exception strings and opaque numeric guards are migration debt and may not grow.
 

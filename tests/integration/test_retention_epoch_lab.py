@@ -45,57 +45,76 @@ def _visit_program():
 
 
 def _visit_release(program):
-    return SimpleNamespace(execution_plan=SimpleNamespace(
+    # The prefetch identity is bound to the admitted executable release, not
+    # merely to the scheduler's projected capability set.
+    return SimpleNamespace(release_sha256="f" * 64,
+                           execution_plan=SimpleNamespace(
         capabilities=tuple(program.capability_map.values())))
+
+
+def _prefetch_visit_fixture():
+    policy = {"old": 0, "lr": 0.0001, "depth": 1,
+              "contrast": 1., "distill": 0., "preview": 0}
+    teacher = {"strategies": {"p": policy}}
+    engine = SimpleNamespace(pick=lambda *_: ("p", policy))
+    school = SimpleNamespace(
+        stage="MAIN", grade="B", visits=0,
+        champions={"A": {"optimizer_step": 1}},
+        current_student=SimpleNamespace(sha256="e" * 64))
+    receipt = {
+        "teacher": teacher, "generation": 7, "run_id": "prefetch-fixture",
+        "school": {}, "teacher_misses": [], "config": {},
+        "answer_ids": [6, 7], "curriculum_mode": "fixture-school",
+        "semantic_graph_sha256": "d" * 64,
+    }
+    optimizer = SimpleNamespace(
+        learning_rate=0.0001,
+        state={"step": SimpleNamespace(item=lambda: 1)})
+    return engine, school, _visit_program(), receipt, optimizer
+
+
+class _ReadyResult:
+    def __init__(self, value):
+        self.value = value
+
+    def result(self):
+        return self.value
+
+
+class _InlinePrefetchExecutor:
+    def __init__(self, submitted_requests):
+        self.submitted_requests = submitted_requests
+
+    def submit(self, _fn, request):
+        self.submitted_requests.append(request)
+        fresh = [
+            {"id": f"prefetch:{index}", "source_id": f"prefetch:{index}",
+             "capability": "B.XOR", "answer_kind": "binary",
+             "gold": "TRUE" if index % 2 else "FALSE", "tokens": [3, 4, index + 5]}
+            for index in range(12)
+        ]
+        return _ReadyResult({
+            "schema": "bilqis.mlx.source-prefetch/v1",
+            "identity": request["identity"],
+            "fresh": fresh,
+            "prior": [],
+            "preservation": [],
+            "teaching_enrichment_rows": [],
+        })
 
 
 class RetentionTeachingPathTests(unittest.TestCase):
     def test_visit_consumes_prefetched_source_packet_without_serial_step_redraw(self):
-        policy = {"old": 0, "lr": 0.0001, "depth": 1,
-                  "contrast": 1., "distill": 0., "preview": 0}
-        teacher = {"strategies": {"p": policy}}
-        engine = SimpleNamespace(pick=lambda *_: ("p", policy))
-        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
-                                 champions={"A": {"optimizer_step": 1}},
-                                 current_student=SimpleNamespace(sha256="e" * 64))
-        course = _visit_program()
-        receipt = {"teacher": teacher, "generation": 7, "run_id": "prefetch-fixture",
-                   "school": {}, "teacher_misses": [], "config": {},
-                   "answer_ids": [6, 7], "curriculum_mode": "fixture-school",
-                   "semantic_graph_sha256": "d" * 64}
-        optimizer = SimpleNamespace(learning_rate=0.0001,
-                                    state={"step": SimpleNamespace(item=lambda: 1)})
+        engine, school, course, receipt, optimizer = _prefetch_visit_fixture()
         captured = []
         serial_draws = []
+        submitted_requests = []
 
         def serial_source_rows(*_args, **kwargs):
             serial_draws.append(kwargs["seed"])
             if len(serial_draws) > 1:
                 raise AssertionError("STEP_SOURCE_REDRAW_BYPASSED_PREFETCH")
             return _rows(kwargs["capability"])
-
-        class Ready:
-            def __init__(self, value):
-                self.value = value
-            def result(self):
-                return self.value
-
-        class InlineExecutor:
-            def submit(self, _fn, request):
-                fresh = [
-                    {"id": f"prefetch:{index}", "source_id": f"prefetch:{index}",
-                     "capability": "B.XOR", "answer_kind": "binary",
-                     "gold": "TRUE" if index % 2 else "FALSE", "tokens": [3, 4, index + 5]}
-                    for index in range(12)
-                ]
-                return Ready({
-                    "schema": "bilqis.mlx.source-prefetch/v1",
-                    "identity": request["identity"],
-                    "fresh": fresh,
-                    "prior": [],
-                    "preservation": [],
-                    "teaching_enrichment_rows": [],
-                })
 
         def inspect_batch(_mx, _parameters, _optimizer, rows, *_args, **_kwargs):
             captured.extend(rows)
@@ -105,34 +124,38 @@ class RetentionTeachingPathTests(unittest.TestCase):
             return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
                     for row in rows}
 
-        with (patch.object(trainer, "_state_from_json", return_value=school),
-              patch.object(trainer, "_read_executable_factory_release_artifact",
+        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+              patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                            return_value=_visit_release(course)),
-              patch.object(trainer, "schedule_program_from_executable_release",
+              patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
                            return_value=course),
-              patch.object(trainer, "next_capability", return_value="B.XOR"),
-              patch.object(trainer, "_draw_live_rows", side_effect=serial_source_rows),
-              patch.object(trainer, "assessment_capabilities", return_value=("B.XOR",)),
-              patch.object(trainer, "_frozen_confidence_champions", return_value=()),
-              patch.object(trainer, "_frozen_grade_soup_votes", return_value=((), ())),
-              patch.object(trainer, "_train_score", return_value=0.5),
-              patch.object(trainer, "_learning_probe_rows",
+              patch('bilqis_mlx.curriculum.scheduler.next_capability', return_value="B.XOR"),
+              patch('bilqis_mlx.runtime.assessment._draw_live_rows', side_effect=serial_source_rows),
+              patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities', return_value=("B.XOR",)),
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_confidence_champions', return_value=()),
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_grade_soup_votes', return_value=((), ())),
+              patch('bilqis_mlx.learning.student_ops._train_score', return_value=0.5),
+              patch('bilqis_mlx.runtime.candidate_evidence._learning_probe_rows',
                            return_value=(_rows("B.XOR")[:6], set(), 0)),
-              patch.object(trainer, "_predictions", side_effect=wrong_predictions),
-              patch.object(trainer, "fork_student", return_value=({}, optimizer)),
-              patch.object(trainer, "inspect_lesson_step",
+              patch('bilqis_mlx.learning.student_ops._predictions', side_effect=wrong_predictions),
+              patch('bilqis_mlx.learning.learning_experiment.fork_student', return_value=({}, optimizer)),
+              patch('bilqis_mlx.diagnostics.teaching.inspect_lesson_step',
                            side_effect=ValueError("fixture methodology unavailable")),
               patch("bilqis_mlx.learning.fragile_replay.load_replay_rows", return_value=()),
-              patch.object(trainer, "_train_step", side_effect=inspect_batch)):
+              patch('bilqis_mlx.learning.student_ops._train_step', side_effect=inspect_batch)):
             with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
                 trainer._take_visit(
                     None, Path("/never-opened"), receipt, {}, course, engine, {},
                     optimizer, {}, steps_per_visit=1, batch_size=8, reserve_gib=0.,
                     source_root=Path("/not-used"), learning_settings=Settings(),
-                    source_prefetch_executor=InlineExecutor(), source_prefetch_workers=1)
+                    source_prefetch_executor=_InlinePrefetchExecutor(submitted_requests),
+                    source_prefetch_workers=1)
 
         self.assertEqual(len(serial_draws), 1,
                          "Only the visit-level score draw should use the serial path")
+        self.assertEqual(len(submitted_requests), 1)
+        self.assertEqual(submitted_requests[0]["executable_release"].release_sha256,
+                         "f" * 64)
         self.assertEqual(len(captured), 8)
         self.assertTrue(all(row["id"].startswith("prefetch:") for row in captured))
 
@@ -162,25 +185,25 @@ class RetentionTeachingPathTests(unittest.TestCase):
             return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
                     for row in rows}
 
-        with (patch.object(trainer, "_state_from_json", return_value=school),
-              patch.object(trainer, "_read_executable_factory_release_artifact",
+        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+              patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                            return_value=_visit_release(course)),
-              patch.object(trainer, "schedule_program_from_executable_release",
+              patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
                            return_value=course),
-              patch.object(trainer, "next_capability", return_value="B.XOR"),
-              patch.object(trainer, "_draw_live_rows", side_effect=source_rows),
-              patch.object(trainer, "_frozen_confidence_champions", return_value=()),
-              patch.object(trainer, "_frozen_grade_soup_votes", return_value=((), ())),
-              patch.object(trainer, "_train_score", return_value=0.5),
-              patch.object(trainer, "_learning_probe_rows",
+              patch('bilqis_mlx.curriculum.scheduler.next_capability', return_value="B.XOR"),
+              patch('bilqis_mlx.runtime.assessment._draw_live_rows', side_effect=source_rows),
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_confidence_champions', return_value=()),
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_grade_soup_votes', return_value=((), ())),
+              patch('bilqis_mlx.learning.student_ops._train_score', return_value=0.5),
+              patch('bilqis_mlx.runtime.candidate_evidence._learning_probe_rows',
                            return_value=(_rows("B.XOR")[:6], set(), 0)),
-              patch.object(trainer, "_predictions", side_effect=wrong_predictions),
-              patch.object(trainer, "fork_student",
+              patch('bilqis_mlx.learning.student_ops._predictions', side_effect=wrong_predictions),
+              patch('bilqis_mlx.learning.learning_experiment.fork_student',
                            return_value=({}, optimizer)),
-              patch.object(trainer, "inspect_lesson_step",
+              patch('bilqis_mlx.diagnostics.teaching.inspect_lesson_step',
                            side_effect=ValueError("fixture methodology unavailable")),
               patch("bilqis_mlx.learning.fragile_replay.load_replay_rows", return_value=()),
-              patch.object(trainer, "_train_step", side_effect=inspect_batch)):
+              patch('bilqis_mlx.learning.student_ops._train_step', side_effect=inspect_batch)):
             with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
                 trainer._take_visit(None, Path("/never-opened"), receipt, {},
                                     course, engine, {}, optimizer, {},
@@ -278,9 +301,9 @@ class RetentionTeachingPathTests(unittest.TestCase):
         program = _visit_program()
         with (patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
                     return_value=tuple(fixed)),
-              patch.object(trainer, "assessment_capabilities",
+              patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities',
                            return_value=("B.AND", "B.OR", "B.XOR")),
-              patch.object(trainer, "_draw_live_rows", side_effect=draw)):
+              patch('bilqis_mlx.runtime.assessment._draw_live_rows', side_effect=draw)):
             selected = trainer._fresh_fragile_preservation_rows(
                 Path("/unused"), Path("/source"), {}, receipt, program, school,
                 "B.AND", step=1, batch_size=32)
@@ -335,27 +358,27 @@ class RetentionTeachingPathTests(unittest.TestCase):
             return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
                     for row in rows}
 
-        with (patch.object(trainer, "_state_from_json", return_value=school),
-              patch.object(trainer, "_read_executable_factory_release_artifact",
+        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+              patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
                            return_value=_visit_release(course)),
-              patch.object(trainer, "schedule_program_from_executable_release",
+              patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
                            return_value=course),
-              patch.object(trainer, "next_capability", return_value="B.XOR"),
-              patch.object(trainer, "_draw_live_rows", side_effect=source_rows),
-              patch.object(trainer, "_frozen_confidence_champions", return_value=()),
-              patch.object(trainer, "_frozen_grade_soup_votes", return_value=((), ())),
-              patch.object(trainer, "_train_score", return_value=0.5),
-              patch.object(trainer, "_learning_probe_rows",
+              patch('bilqis_mlx.curriculum.scheduler.next_capability', return_value="B.XOR"),
+              patch('bilqis_mlx.runtime.assessment._draw_live_rows', side_effect=source_rows),
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_confidence_champions', return_value=()),
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_grade_soup_votes', return_value=((), ())),
+              patch('bilqis_mlx.learning.student_ops._train_score', return_value=0.5),
+              patch('bilqis_mlx.runtime.candidate_evidence._learning_probe_rows',
                            return_value=(_rows("B.XOR")[:6], set(), 0)),
-              patch.object(trainer, "_predictions", side_effect=wrong_predictions),
-              patch.object(trainer, "fork_student", return_value=({}, optimizer)),
-              patch.object(trainer, "inspect_lesson_step",
+              patch('bilqis_mlx.learning.student_ops._predictions', side_effect=wrong_predictions),
+              patch('bilqis_mlx.learning.learning_experiment.fork_student', return_value=({}, optimizer)),
+              patch('bilqis_mlx.diagnostics.teaching.inspect_lesson_step',
                            side_effect=ValueError("fixture methodology unavailable")),
               patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
                     return_value=({"id": "fixed"},)),
-              patch.object(trainer, "_fresh_fragile_preservation_rows",
+              patch('bilqis_mlx.runtime.candidate_evidence._fresh_fragile_preservation_rows',
                            return_value=preservation),
-              patch.object(trainer, "_train_step", side_effect=inspect_batch)):
+              patch('bilqis_mlx.learning.student_ops._train_step', side_effect=inspect_batch)):
             with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
                 trainer._take_visit(None, Path("/never-opened"), receipt, {},
                                     course, engine, {}, optimizer, {},
@@ -474,11 +497,11 @@ class MentorEpochTests(unittest.TestCase):
             receipt = {"mentor_epoch": epoch,
                        "championship_school_identity": identity,
                        "grade_soups": {"B": {"vote_count": 6}}}
-            with (patch.object(trainer, "_frozen_confidence_champions",
+            with (patch('bilqis_mlx.learning.lesson_guidance._frozen_confidence_champions',
                                return_value=()) as fresh_champs,
-                  patch.object(trainer, "_frozen_grade_soup_votes",
+                  patch('bilqis_mlx.learning.lesson_guidance._frozen_grade_soup_votes',
                                return_value=((), ())) as fresh_soups,
-                  patch.object(trainer, "_cached_frozen_champion",
+                  patch('bilqis_mlx.learning.lesson_guidance._cached_frozen_champion',
                                return_value=({"synthetic": "weights"}, graph))):
                 champions, soups, receipts = trainer._mentor_sources_for_visit(
                     root, receipt, "C", graph, 3)
@@ -494,10 +517,10 @@ class MentorEpochTests(unittest.TestCase):
                   "school": {"active_grades": ["A", "B", "C"], "grade_index": 2,
                              "current_student": _pointer("c"), "champions": {}},
                   "capability_best": {}, "grade_soups": {}}
-        with (patch.object(trainer, "_boundary_delivery_events", return_value=()),
-              patch.object(trainer, "_quarantine_newer_uncommitted_bundles"),
-              patch.object(trainer, "retire_bundles", return_value=()) as retire,
-              patch.object(trainer, "retire_stale_soups", return_value=())):
+        with (patch('bilqis_mlx.runtime.checkpoints._boundary_delivery_events', return_value=()),
+              patch('bilqis_mlx.runtime.checkpoints._quarantine_newer_uncommitted_bundles'),
+              patch('bilqis_mlx.learning.capability_frontier.retire_bundles', return_value=()) as retire,
+              patch('bilqis_mlx.learning.grade_soup.retire_stale_soups', return_value=())):
             trainer._publish_boundary(Path("/not-created"), record, (), ())
         self.assertTrue({"bundles/a", "bundles/b", "bundles/f"} <=
                         retire.call_args.args[1])

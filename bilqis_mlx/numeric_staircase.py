@@ -68,9 +68,9 @@ def scope_advance_due(receipt, course):
 
 
 def _rebind(run_dir, receipt, old_course, new_course, graph, *, introduction_stage, queue, event):
-    from .trainer import (_advance, _factory_admission, _persist,
-                                  _state_from_json, _with_delivery_outbox,
-                                  _reconcile_delivery_outbox)
+    from bilqis_mlx.runtime.checkpoints import _advance, _persist, _with_delivery_outbox, _reconcile_delivery_outbox
+    from bilqis_mlx.runtime.admission import _factory_admission
+    from bilqis_mlx.runtime.state import _state_from_json
     school = _state_from_json(receipt['school'], old_course)
     if school.grade != 'C' or school.revalidation_target_grade is not None:
         raise ValueError('NUMERIC_STAIRCASE_REQUIRES_ACTIVE_C')

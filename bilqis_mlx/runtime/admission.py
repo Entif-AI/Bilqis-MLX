@@ -17,6 +17,8 @@ from ..compatibility.factory_release_v1 import decode_sealed_factory_release_v1
 from .state import _canonical, _durable_json
 
 SCHEMA = "bilqis.mlx.factory-release/v1"
+_ADMISSION_RECEIPT_INVALID = "FACTORY_ADMISSION_RECEIPT_INVALID"
+_UNSAFE_ARTIFACT_DIRECTORY = "FACTORY_RELEASE_UNSAFE_ARTIFACT_DIRECTORY"
 
 
 def _factory_release(course, *, registry=None):
@@ -28,7 +30,7 @@ def _persist_factory_release(run_dir: Path, release):
     release.verify()
     path = run_dir / "factory-releases" / (release.release_sha256 + ".json")
     if (run_dir / "factory-releases").is_symlink():
-        raise ValueError("FACTORY_RELEASE_UNSAFE_ARTIFACT_DIRECTORY")
+        raise ValueError(_UNSAFE_ARTIFACT_DIRECTORY)
     payload = {"schema": SCHEMA,
                "factory_release_sha256": release.release_sha256,
                **release.manifest()}
@@ -64,7 +66,7 @@ def _persist_executable_factory_release(
     directory = run_dir / "factory-releases"
     path = directory / (release.release_sha256 + ".json")
     if directory.is_symlink():
-        raise ValueError("FACTORY_RELEASE_UNSAFE_ARTIFACT_DIRECTORY")
+        raise ValueError(_UNSAFE_ARTIFACT_DIRECTORY)
     payload = {
         "factory_release_sha256": release.release_sha256,
         **release.manifest(),
@@ -116,6 +118,77 @@ def _read_factory_release(run_dir, receipt):
     return decode_sealed_factory_release_v1(
         {key: value for key, value in payload.items()
          if key not in {"schema", "factory_release_sha256"}}, digest)
+
+
+def _verified_legacy_upgrade_release(run_dir: Path, receipt: dict) -> FactoryRelease | None:
+    """Reopen exact sealed v1 course solely for a source-verified v2 migration.
+
+    Reconstructing the old course from subsequently edited constructor source
+    changes its B/C digest. The original admitted release is the only valid
+    historical course authority. This is NOT a waiver of provider verification:
+    the caller must compile/admit the new v2 source and oracle contract before
+    any resumed learning is permitted.
+    """
+    if receipt.get("factory_admission_v2") is not None:
+        return None
+    raw = receipt.get("factory_admission")
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ValueError(_ADMISSION_RECEIPT_INVALID)
+    release = _read_factory_release(Path(run_dir), receipt)
+    try:
+        admission = AdmissionReceipt(**raw)
+    except TypeError as exc:
+        raise ValueError(_ADMISSION_RECEIPT_INVALID) from exc
+    admission.verify(release)
+    school = receipt["school"]
+    student = school["current_student"]
+    if (receipt.get("curriculum_mode") != release.course.version or
+            school.get("course_digest") != release.course.digest() or
+            receipt.get("semantic_graph_sha256") != admission.semantic_graph_sha256 or
+            admission.optimizer_step > student["optimizer_step"] or
+            (admission.optimizer_step == student["optimizer_step"] and
+             admission.student_sha256 != student["sha256"])):
+        raise ValueError("FACTORY_ADMISSION_SEALED_RESUME_IDENTITY_DRIFT")
+    return release
+
+
+def _verified_historical_cohort_release(run_dir: Path, receipt: dict) -> FactoryRelease | None:
+    """Resolve a retained v1 exam's original signed authority after v2 admission.
+
+    An admitted v2 curriculum may still reference its most recent historical
+    exam. Only the separately signed v1 admission can validate those cohort
+    bytes. The v2 release remains authoritative for *new* training and exams.
+    """
+    exam = receipt.get("last_exam") or {}
+    if (receipt.get("factory_admission_v2") is None or
+            exam.get("cohort_sha256") is None or
+            exam.get("factory_release_sha256") is not None):
+        return None
+    prior = receipt.get("factory_admission")
+    if not isinstance(prior, dict):
+        raise ValueError("HUMAN_TRAINER_HISTORICAL_EXAM_ADMISSION_REQUIRED")
+    sha = prior.get("factory_release_sha256")
+    if not isinstance(sha, str) or len(sha) != 64:
+        raise ValueError("HUMAN_TRAINER_HISTORICAL_EXAM_RELEASE_INVALID")
+    historical = _read_factory_release(Path(run_dir), {
+        "factory_release_sha256": sha,
+        "factory_release_file": f"factory-releases/{sha}.json",
+    })
+    try:
+        admission = AdmissionReceipt(**prior)
+    except TypeError as exc:
+        raise ValueError("HUMAN_TRAINER_HISTORICAL_EXAM_ADMISSION_INVALID") from exc
+    admission.verify(historical)
+    latest = receipt["school"]["current_student"]
+    if (historical.course.version != receipt.get("curriculum_mode") or
+            receipt.get("semantic_graph_sha256") != admission.semantic_graph_sha256 or
+            admission.optimizer_step > latest["optimizer_step"] or
+            (admission.optimizer_step == latest["optimizer_step"] and
+             admission.student_sha256 != latest["sha256"])):
+        raise ValueError("HUMAN_TRAINER_HISTORICAL_EXAM_LINEAGE_DRIFT")
+    return historical
 
 
 def _read_executable_factory_release_artifact(
@@ -186,7 +259,7 @@ def _require_factory_admission(run_dir, receipt, course, *, registry=None):
     try:
         admission = AdmissionReceipt(**raw)
     except TypeError as exc:
-        raise ValueError("FACTORY_ADMISSION_RECEIPT_INVALID") from exc
+        raise ValueError(_ADMISSION_RECEIPT_INVALID) from exc
     admission.verify(release)
     current = receipt["school"]["current_student"]
     if (admission.semantic_graph_sha256 != receipt.get("semantic_graph_sha256") or

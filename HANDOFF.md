@@ -1,3 +1,46 @@
+# Issue 352 main integration | 2026-10-21
+
+Worktree remains the user-selected managed #349 checkout, now on fork
+`codex/352-main-integration-20261021`. Verified code head:
+`639dccfeb6653cd6135e92a09ac032606221c792`. Merge `bc6e6b3` contains main
+`2327c42f323d10f4444b2c3932e4bdacc15b29e0`; remote main was read back unchanged.
+The original #349 branch and remote preservation branch
+`codex/349-preserved-before-352-20261021` remain at
+`bb71d6dff50ee89b1d891cf1d8cb8ab915b5a55e`.
+
+IPR-0220 / governing issue 336 remains OPEN; execution issues 349/352 remain OPEN.
+The protected issue checkpoints retain the private authority URL and exact pushed
+head. Existing private pointers below are historical provenance; public review
+prose uses the opaque authority identity. No main promotion or issue closure.
+
+Full unique tracked suite, `BILQIS_FULL_GRADE_B_TESTS=1`: **1,229 passed,
+3 skipped, 0 failed** (1,232 total). Final diagnostic/custody/architecture slice:
+51 passed, 2 human-evidence skips. Size/discovery/architecture proof: 16/16.
+Architecture, factory closure, semantic boundaries, docs, release metadata,
+quality and whitespace pass. Historical ABI remains advisory without an external
+expected fingerprint. The diagnostic rubric mismatch and `.local` archive
+exclusion each have failing-before/passing-after evidence.
+
+`trainer.py` is now a 303-line compatibility facade over 13 cohesive service
+modules; no domain service imports it. 119 of 120 moved functions have identical
+normalized ASTs; the operating loop uses equivalent explicit dependency owners.
+The largest active production module is 1,361 lines. Large phase functions remain
+visible inherited debt under a new no-growth size ratchet. Presentation and
+factory-autonomy extractions have focused protected follow-ups 355 and 356.
+
+Read `docs/evidence/development/ISSUE352_INTEGRATION_20261021.md` for the ownership
+map and behavior reconciliation. The separate inherited-operator-debt receipt
+records all 132 baseline increments with exact parent witnesses; no new
+unwitnessed debt was admitted. Legacy sites remain migration debt, not typed.
+
+No existing student, own AdamW, teacher, source CSV or experiment run was updated.
+Prior learning/coverage limitations and PM-2026-10-20-003 / RC-116 remain relevant
+provenance. Source-integration tests do not establish neural mastery or operational
+qualification. Next permitted action: review this fork and its proof; further
+learning remains under the separate existing human/isolated-run authority.
+Older sections below retain #349's empirical history and are superseded only
+where this integration changes source/ownership facts.
+
 # Continued issue349 execution | retained frontier and empirical continuation | 2026-10-21
 
 Branch `codex/349-autonomous-jit-ithkuil-20261020`; draft PR11. Read actual HEAD

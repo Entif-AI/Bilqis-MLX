@@ -97,95 +97,16 @@ This is an internal recovery failure, not a request for the operator to fabricat
 The cohort owner must regenerate, defer, or choose another admitted work item. If this reaches
 the CLI, preserve the run and fix the internal caller before resuming.
 
-## Search the living diagnostic atlas
-
-The typed catalog is the authority for meanings and recovery. Query it directly:
-
-```bash
-python3 -m bilqis_mlx.cli explain SCHOOL.STATE.COURSE_DIGEST_MISMATCH
-python3 -m bilqis_mlx.cli explain INVALID_OR_DRIFTED_SCHOOL_STATE
-python3 -m bilqis_mlx.cli explain STAGED_SUCCESSOR_BINDING_REQUIRED
-```
-
-The second command is deliberately useful during migration: if one legacy code
-historically collapsed several invariants, it lists every typed replacement
-instead of pretending the old string identifies one diagnosis.
-
-For source locations, the code-derived atlas indexes errors, statuses, events,
-gates, and otherwise unclassified uppercase terms. From the repository root:
-
-```bash
-python3 -B scripts/operator_contract_audit.py --lookup INVALID_OR_DRIFTED_SCHOOL_STATE
-python3 -B scripts/operator_contract_audit.py --lookup STAGED_SUCCESSOR_BINDING_REQUIRED
-```
-
-Use `--json` for machine-readable source locations. To inspect codes introduced
-by another concurrently developed branch, pass `--source-root /path/to/that/worktree`.
-The atlas distinguishes exception sites, event names, status/stop reasons,
-gate names, and otherwise unclassified symbols. **An occurrence is not a
-definition.** For terms not yet in the typed catalogs, the atlas deliberately
-reports source locations rather than fabricating recovery instructions.
-
-The durable `operator_contract_baseline.json` is an inventory of **existing**
-string-error and numeric-guard debt, not permission to repeat it. CI checks
-that baseline through `scripts/error_control_plane.py --check` and rejects
-new raw error identities and opaque numeric guards. To retire a debt item,
-refactor to a named domain policy or registered diagnostic; do not silently
-refresh the baseline.
-
-The generated exhaustive catalog is `docs/operations/ERROR_FIELD_MANUAL.md`;
-`docs/operations/error_catalog.json` is the machine-readable form. Those files
-are generated from the runtime catalogs. This shorter manual explains operator
-procedure and high-value recovery patterns; it is not a second error registry.
-
-## Source-development handoff (issue #349)
-
-`AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED` is a **stop reason**, not evidence
-of checkpoint corruption. It means currently admitted productive teaching
-was exhausted and the JIT frontier had no eligible compiled successor.
-The matching event is `SCHOOL_AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED`.
-
-`STAGED_SUCCESSOR_BINDING_REQUIRED` is an **admission gate** recorded for a
-candidate with no verified mapping to a precompiled executable successor.
-The issue-owned run observed this gate for all 240 current frontier candidates.
-The correct engineering continuation is to build and verify the
-source-candidate-to-staged-successor compiler, then rerun source admission.
-Do not invent source evidence, assume all candidates are invalid, or modify
-the preserved student or AdamW.
-
-## Binary sampling, audit budgets, and hidden policy numbers
-
-The Grade-B constructor balances Boolean answers by alternating TRUE and
-FALSE. An even sample count is required for equal class totals. The historical
-minimum `each=4` corresponds to two examples per outcome; **it does not**
-prove coverage of all operand-truth combinations. The audit's historical
-`max_rounds <= 32` is a resource ceiling without a source-backed derivation
-in the inspected code history. These are preserved as named, inspectable
-policy choices in `bilqis_mlx/semantic_sampling.py`, not mathematical laws.
-
-Use `sample_count_violations` and `audit_budget_violations` for pure validation,
-`balanced_answer_targets` for the explicit sampling sequence, and
-`missing_coverage_cases` to test *actual* semantic case coverage. The
-coverage audit now raises a typed, context-rich broker diagnostic for invalid
-budgets and schema mismatches. The legacy Grade-B source constructor is
-still hash-bound; its historical file must not be silently rewritten merely
-to centralize validation, since doing so changes the constructor release
-identity and can break checkpoint compatibility.
-
 ## Adding a new hard error
 
 Any new operator-visible error must ship with the following in the same change:
 
-1. a typed `ErrorSpec` in `bilqis_mlx/errors/catalog.py`, using a compositional namespace;
-2. exact failed-predicate context preserved at the detection boundary;
-3. owner, localization/recovery keys, recovery disposition, self-heal owner, and operator steps;
-4. a focused test that asserts the typed invariant and repair context;
-5. an attempt at safe domain-level self-healing **before** allowing the condition to reach the CLI;
-6. regenerated `ERROR_FIELD_MANUAL.md` and `error_catalog.json`;
-7. a clean operator-contract ratchet. Do not refresh the baseline to admit the new string.
-
-New code should raise through `ErrorBus.Raise(...)`. The legacy substring
-classifier exists only so old failures remain survivable while they are migrated.
-It is not an approved way to define a new failure.
+1. a stable error code;
+2. the failed predicate or relevant observed/expected values in the exception text;
+3. a specific entry in `bilqis_mlx/runtime/operator_recovery.py` when generic classification
+   cannot provide a concrete resolution;
+4. a focused regression test;
+5. a field-manual entry when operator judgment or a new recovery procedure is required;
+6. an attempt at safe domain-level self-healing **before** allowing the condition to reach the CLI.
 
 An uppercase identifier by itself is a developer breadcrumb, not an operator recovery experience.

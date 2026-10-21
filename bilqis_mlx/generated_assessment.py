@@ -16,12 +16,8 @@ ROUTINE_EVAL_LIFECYCLE = "bilqis.grade-test.fresh-routine/v2"
 PROMOTION_ATTEMPT_LIFECYCLE = "bilqis.grade-test.promotion-attempt/v1"
 GENERALIZATION_LIFECYCLE = "bilqis.grade-test.fresh-generalization/v1"
 EXECUTABLE_COHORT_SCHEMA = "bilqis.mlx.generated-cohort/v2"
-
-
-def stored_rubric_version(cohort: dict) -> str:
-    """Read the rubric bound by a legacy cohort or a v2 storage envelope."""
-    return (cohort["rubric_sha256"] if cohort["schema"] == EXECUTABLE_COHORT_SCHEMA
-            else cohort["schema"])
+VERSIONED_COHORT_SCHEMA_PREFIX = "bilqis.mlx.generated-cohort/"
+_METADATA_DRIFT = "STORED_COHORT_METADATA_DRIFT"
 
 
 def digest(value) -> str:
@@ -56,6 +52,74 @@ def make_cohort(rows, *, generator_version: str, seed: int,
                 "rows": records}
     return Cohort(generator_version, seed, rubric_version, records,
                   digest(identity))
+
+
+def verify_stored_cohort(
+        stored: dict, expected_sha256: str, *,
+        expected_rubric_sha256: str | None = None,
+        expected_factory_release_sha256: str | None = None,
+        expected_source_sha256: str | None = None,
+        expected_capabilities: tuple[str, ...] | None = None) -> Cohort:
+    """Reconstruct one content-addressed v1/v2 cohort without changing its ABI.
+
+    Historical v1 cohorts hashed their release/schema string as rubric_version.
+    Executable v2 cohorts hash the separately stored rubric digest instead and
+    bind that measurement identity to an admitted factory release. Unknown
+    schemas in the explicit generated-cohort version family fail closed rather
+    than being reinterpreted as historical release identifiers.
+    """
+    def valid_sha(value) -> bool:
+        return (isinstance(value, str) and len(value) == 64 and
+                all(char in "0123456789abcdef" for char in value))
+
+    if (not isinstance(stored, dict) or not valid_sha(expected_sha256) or
+            not isinstance(stored.get("schema"), str) or not stored["schema"] or
+            not isinstance(stored.get("generator_version"), str) or
+            not stored["generator_version"] or type(stored.get("seed")) is not int or
+            not isinstance(stored.get("rows"), list)):
+        raise ValueError(_METADATA_DRIFT)
+    if stored.get("cohort_sha256") != expected_sha256:
+        raise ValueError("STORED_COHORT_IDENTITY_DRIFT")
+
+    schema = stored["schema"]
+    if (schema.startswith(VERSIONED_COHORT_SCHEMA_PREFIX) and
+            schema != EXECUTABLE_COHORT_SCHEMA):
+        raise ValueError("STORED_COHORT_SCHEMA_UNSUPPORTED")
+    if (expected_rubric_sha256 is not None and
+            stored.get("rubric_sha256") != expected_rubric_sha256):
+        raise ValueError(_METADATA_DRIFT)
+    if expected_source_sha256 is not None and (
+            not valid_sha(expected_source_sha256) or
+            stored.get("source_sha256") != expected_source_sha256 or
+            stored.get("generator_version") != expected_source_sha256):
+        raise ValueError(_METADATA_DRIFT)
+    if expected_capabilities is not None and (
+            not isinstance(stored.get("capabilities"), list) or
+            len(stored["capabilities"]) != len(set(stored["capabilities"])) or
+            set(stored["capabilities"]) != set(expected_capabilities) or
+            {row.get("capability") for row in stored["rows"]} != set(expected_capabilities)):
+        raise ValueError(_METADATA_DRIFT)
+    rubric_version = schema
+    if schema == EXECUTABLE_COHORT_SCHEMA:
+        rubric_sha256 = stored.get("rubric_sha256")
+        factory_release_sha256 = stored.get("factory_release_sha256")
+        if not valid_sha(rubric_sha256) or not valid_sha(factory_release_sha256):
+            raise ValueError(_METADATA_DRIFT)
+        if (expected_factory_release_sha256 is not None and
+                factory_release_sha256 != expected_factory_release_sha256):
+            raise ValueError(_METADATA_DRIFT)
+        rubric_version = rubric_sha256
+    elif expected_factory_release_sha256 is not None:
+        # A receipt that declares an executable release must point at the v2
+        # storage schema rather than silently reinterpret legacy hash rules.
+        raise ValueError(_METADATA_DRIFT)
+
+    cohort = make_cohort(
+        stored["rows"], generator_version=stored["generator_version"],
+        seed=stored["seed"], rubric_version=rubric_version)
+    if cohort.digest != expected_sha256:
+        raise ValueError("STORED_COHORT_CONTENT_DRIFT")
+    return cohort
 
 
 def score(cohort: Cohort, predictions: dict, checkpoint: dict) -> dict:

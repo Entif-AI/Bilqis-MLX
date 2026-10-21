@@ -16,6 +16,7 @@ from pathlib import Path
 
 SCHEMA = "bilqis.mlx.candidate-frontier-release/v1"
 BUILDER_SCHEMA = "bilqis.ithkuil.frontier-manifest/v1"
+_MANIFEST_INVALID = "CANDIDATE_FRONTIER_MANIFEST_INVALID"
 _INPUT_FILES = (
     "lexicon_roots.csv", "lexicon_root_senses.csv", "lexicon_root_evidence.csv",
     "bilqis_ithkuil_crosswalk.csv",
@@ -216,7 +217,7 @@ class CandidateFrontierRelease:
     @classmethod
     def from_manifest(cls, manifest: dict, release_sha256: str) -> "CandidateFrontierRelease":
         if not isinstance(manifest, dict) or manifest.get("schema") != SCHEMA:
-            raise ValueError("CANDIDATE_FRONTIER_MANIFEST_INVALID")
+            raise ValueError(_MANIFEST_INVALID)
         try:
             candidates = tuple(Candidate(
                 **{**item, "source_evidence_ids": tuple(item["source_evidence_ids"]),
@@ -231,7 +232,7 @@ class CandidateFrontierRelease:
             release = cls(manifest["builder_sha256"], manifest["input_digest"],
                           manifest["output_digest"], candidates, senses, release_sha256)
         except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError("CANDIDATE_FRONTIER_MANIFEST_INVALID") from exc
+            raise ValueError(_MANIFEST_INVALID) from exc
         release.verify()
         return release
 
@@ -253,7 +254,7 @@ def _validate_builder_manifest(
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError("CANDIDATE_FRONTIER_MANIFEST_UNREADABLE") from exc
     if not isinstance(manifest, dict) or manifest.get("schema") != BUILDER_SCHEMA:
-        raise ValueError("CANDIDATE_FRONTIER_MANIFEST_INVALID")
+        raise ValueError(_MANIFEST_INVALID)
     if manifest.get("builder_file_sha256") != expected_builder_sha256:
         raise ValueError("CANDIDATE_FRONTIER_BUILDER_STALE")
     for names, base, label in ((_INPUT_FILES, source_dir, "INPUT"),

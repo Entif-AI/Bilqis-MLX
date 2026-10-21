@@ -102,7 +102,7 @@ def test_b_grade_bridge_can_target_unary_not():
 
 def test_trainer_delegates_optional_teaching_to_source_adapter_registry():
     registry = SimpleNamespace(optional_teaching_rows=lambda *args, **kwargs: ({"id": "x"},))
-    with patch("bilqis_mlx.trainer.live_source_registry", return_value=registry):
+    with patch('bilqis_mlx.source_adapters.school.live_source_registry', return_value=registry):
         assert _teaching_enrichment_rows(
             None, {}, object(), "B.IFF", seed=1, enabled=True) == ({"id": "x"},)
 

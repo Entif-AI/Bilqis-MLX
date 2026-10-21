@@ -1,6 +1,8 @@
 """One-time migrations for receipts predating executable factory v2."""
 from __future__ import annotations
 
+import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
+
 from dataclasses import asdict, replace
 
 from .live_releases import INITIAL_RELEASE
@@ -9,10 +11,9 @@ from .live_releases import INITIAL_RELEASE
 def migrate_historical_grade_a(
         run_dir, receipt, school, live_course, historical_course, manifest):
     """Archive fixed-rubric Grade-A authority and rebind to generated live A."""
-    from .. import trainer as t
 
     legacy_frontier = receipt.get("capability_best", {})
-    t._verify_best_custody(run_dir, receipt)
+    _runtime_checkpoints._verify_best_custody(run_dir, receipt)
     historical_champions = dict(school.champions)
     if historical_champions:
         school = replace(
@@ -37,8 +38,8 @@ def migrate_historical_grade_a(
     record["capability_best"] = {}
     record["curriculum_mode"] = INITIAL_RELEASE
     record["legacy_frontier_pending_replay"] = bool(legacy_frontier)
-    receipt = t._advance(run_dir, record, school)
-    t._record(run_dir, {
+    receipt = _runtime_checkpoints._advance(run_dir, record, school)
+    _runtime_checkpoints._record(run_dir, {
         "event": "SCHOOL_LIVE_GRADE_A_MIGRATED",
         "generation": receipt["generation"],
         "historical_rubric": manifest["exam_rubric_sha256"],

@@ -82,7 +82,7 @@ class DiagnosticObservationTests(unittest.TestCase):
                     capabilities=["X.NOT"])
         observed = observe_exam(cohort, exam)
         self.assertEqual(observed.capabilities[0].correct, exam["scores"]["X.NOT"]["correct"])
-        for field in ("rubric_sha256", "source_sha256", "factory_release_sha256", "capabilities"):
+        for field in ("exam_rubric_sha256", "rubric_sha256", "source_sha256", "factory_release_sha256", "capabilities"):
             wrong = deepcopy(exam)
             wrong[field] = ["X.OTHER"] if field == "capabilities" else "f" * 64
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, "CUSTODY"):
@@ -92,6 +92,59 @@ class DiagnosticObservationTests(unittest.TestCase):
             missing.pop(field)
             with self.subTest(missing=field), self.assertRaisesRegex(ValueError, "CUSTODY"):
                 observe_exam(missing, exam)
+
+    def test_v2_cohort_digest_uses_stored_rubric_identity(self):
+        rows = [
+            {"id": f"v2-{index}", "source_id": f"v2-{index}",
+             "capability": "X.NOT", "answer_kind": "binary",
+             "gold": "TRUE" if index % 2 else "FALSE"}
+            for index in range(12)
+        ]
+        rubric = "c" * 64
+        release = "d" * 64
+        cohort = make_cohort(
+            rows, generator_version="source-fixture-v2", seed=41,
+            rubric_version=rubric)
+        payload = {
+            "schema": "bilqis.mlx.generated-cohort/v2",
+            "factory_release_sha256": release,
+            "rubric_sha256": rubric,
+            "generator_version": cohort.generator_version,
+            "seed": cohort.seed,
+            "cohort_sha256": cohort.digest,
+            "rows": rows,
+        }
+        predictions = {row["id"]: row["gold"] for row in rows}
+        measured = score(cohort, predictions, {
+            "sha256": "a" * 64,
+            "optimizer_step": 500,
+            "model_and_native_adamw": True,
+        })
+        exam = {
+            "cohort_sha256": cohort.digest,
+            "cohort_seed": cohort.seed,
+            "generator_version": cohort.generator_version,
+            "rubric_sha256": rubric,
+            "factory_release_sha256": release,
+            "exam_rubric_sha256": rubric,
+            "student_sha256": "a" * 64,
+            "optimizer_step": 500,
+            "scores": measured["scores"],
+            "misses_for_teacher": list(measured["misses_for_teacher"]),
+        }
+
+        observed = observe_exam(payload, exam)
+        self.assertEqual(observed.cohort_sha256, cohort.digest)
+
+        drifted = deepcopy(payload)
+        drifted["factory_release_sha256"] = "e" * 64
+        with self.assertRaisesRegex(ValueError, "CUSTODY|METADATA|RELEASE"):
+            observe_exam(drifted, exam)
+
+        drifted = deepcopy(payload)
+        drifted["schema"] = "historical-release/v1"
+        with self.assertRaisesRegex(ValueError, "CUSTODY|METADATA|RELEASE"):
+            observe_exam(drifted, exam)
 
     def test_six_way_operator_identity_uses_two_of_twelve_majority_baseline(self):
         operators = ("NOT", "AND", "OR", "XOR", "IMPLIES", "IFF")

@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 
-from .generation import draw_executable_release_rows
+from .generation import draw_executable_release_rows, runtime_adapter_for_release
 
 
 def content_digest(rows) -> str:
@@ -37,10 +37,10 @@ def draw_teaching_option_rows(source_root, graph, release, registry, *,
         return tuple(draw_executable_release_rows(
             source_root, graph, release, registry, capability=capability,
             seed=seed, each=each, legacy_course=legacy_course))
-    binding = release.source_bindings.by_capability[capability]
-    adapter = registry.require(binding.generator_id, binding.oracle_id)
-    if adapter.descriptor.implementation_sha256 != execution.provider_implementation_sha256:
-        raise ValueError("FACTORY_TEACHING_PROVIDER_DRIFT")
+    adapter = runtime_adapter_for_release(
+        source_root, graph, release, registry, execution,
+        legacy_course=legacy_course,
+        drift_code="FACTORY_TEACHING_PROVIDER_DRIFT")
     if adapter.enrich is None or option_id not in adapter.descriptor.teaching_option_ids:
         raise ValueError("FACTORY_TEACHING_OPTION_HAS_NO_IMPLEMENTATION")
     rows = tuple(adapter.enrich(source_root=source_root, graph=graph,

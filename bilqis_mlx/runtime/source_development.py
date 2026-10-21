@@ -7,6 +7,9 @@ import sys
 
 from .disk import atomic_text
 
+_RESULT_DRIFT = "AUTONOMY_SOURCE_RESULT_DRIFT"
+_RECEIPT_PATH_UNSAFE = "AUTONOMY_SOURCE_RECEIPT_PATH_UNSAFE"
+
 
 def prepare_source_frontier(repo_root: Path, *, timeout: int = 60) -> dict:
     """The child receives source paths only, with no learner or run-state inputs."""
@@ -39,11 +42,11 @@ def prepare_source_frontier(repo_root: Path, *, timeout: int = 60) -> dict:
                 json.loads((path / "lexicon_extraction_manifest.json").read_text()) !=
                 result["manifest"] or
                 result["manifest"]["builder_sha256"] != digest):
-            raise ValueError("AUTONOMY_SOURCE_RESULT_DRIFT")
+            raise ValueError(_RESULT_DRIFT)
         for name, expected in result["manifest"]["output_files"].items():
             if (Path(name).name != name or (path / name).is_symlink() or
                     hashlib.sha256((path / name).read_bytes()).hexdigest() != expected):
-                raise ValueError("AUTONOMY_SOURCE_RESULT_DRIFT")
+                raise ValueError(_RESULT_DRIFT)
     return {**result, "builder_sha256": digest}
 
 
@@ -52,7 +55,7 @@ def persist_source_development(run_dir, result, *, proposal, checkpoint) -> Path
     root = Path(run_dir).resolve(strict=True)
     directory = root / "autonomy" / "source-development"
     if any(path.is_symlink() for path in (root / "autonomy", directory)):
-        raise ValueError("AUTONOMY_SOURCE_RECEIPT_PATH_UNSAFE")
+        raise ValueError(_RECEIPT_PATH_UNSAFE)
     payload = dict(schema="bilqis.mlx.source-development/v1",
                    proposal_sha256=proposal.proposal_sha256,
                    checkpoint_sha256=checkpoint.sha256,
@@ -62,7 +65,7 @@ def persist_source_development(run_dir, result, *, proposal, checkpoint) -> Path
     digest = hashlib.sha256(content.encode()).hexdigest()
     path = directory / (digest + ".json")
     if path.is_symlink():
-        raise ValueError("AUTONOMY_SOURCE_RECEIPT_PATH_UNSAFE")
+        raise ValueError(_RECEIPT_PATH_UNSAFE)
     if not path.exists():
         atomic_text(path, content)
     if path.read_text() != content:

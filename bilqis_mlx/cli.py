@@ -366,6 +366,33 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
             "original_candidate_manifest_release_flag": False,
             "grade_a_user_acceptance_is_separate": True,
         }
+        if resume:
+            from bilqis_mlx.runtime.checkpoints import _reconcile_delivery_outbox
+            from .compatibility.executable_projection import preflight_sealed_v1_migration
+            saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+            outbox = saved.get("delivery_outbox")
+            delivered = _reconcile_delivery_outbox(
+                run_dir, saved, publish_missing=False)
+            snapshot["outbox_preflight"] = (
+                "NO_OUTBOX" if outbox is None else
+                "VERIFIED_ALL_PUBLISHED" if delivered else
+                "PENDING_DELIVERY_REPLAY_ON_RESUME")
+            compatibility = preflight_sealed_v1_migration(
+                run_dir, saved, source, legacy_root)
+            if compatibility is not None:
+                snapshot["resume_compatibility"] = compatibility
+            elif saved.get("factory_admission_v2") is not None:
+                from .runtime.admission import _read_executable_factory_release_artifact
+                from .runtime.assessment import _verify_saved_cohort
+                executable = _read_executable_factory_release_artifact(
+                    run_dir, saved)
+                cohort = _verify_saved_cohort(run_dir, saved, None)
+                snapshot["resume_compatibility"] = {
+                    "status": "VERIFIED_EXISTING_V2_WITH_SAVED_EVIDENCE",
+                    "factory_release_sha256": executable.release_sha256,
+                    "last_cohort_sha256": None if cohort is None else cohort.digest,
+                    "neural_updates": 0,
+                }
     else:
         snapshot["source_manifest_preflight"] = "NOT_RERUN_USE_--verify-source"
     if boolean_association_bridge:
@@ -407,7 +434,7 @@ def human_stop_summary(result: dict) -> str:
         "VISIT_LIMIT_REACHED": "The explicitly configured --max-visits cap was reached.",
         "WHOLE_SCHOOL_MASTERED": "Every grade in the explicitly complete school program passed at one whole student.",
         "AWAITING_TEACHER_SOUP": "Whole-school consolidation requires a separately verified frozen teacher-soup continuation.",
-        "STAGNATION_REVIEW_REQUIRED": "The remaining required capabilities were withheld after repeated failed recovery rounds; they remain unqualified mastery debt for the next measured recovery run.",
+        "STAGNATION_REVIEW_REQUIRED": "The remaining required capabilities showed no fresh measured improvement for the full stagnation window and also failed repeated recovery rounds; they remain unqualified mastery debt for the next measured recovery run.",
         "DISK_RESERVE_REACHED": "Free space cannot cover the protected disk reserve plus another checkpoint.",
     }
     reason = result["stop_reason"]
@@ -526,6 +553,8 @@ def parse_args(argv=None):
                            help="Human-authorized one-time next-grade admission after substantial rehabilitation; preserves unresolved prior mastery debt")
             p.add_argument("--triplets","--triples",dest="triples",action="store_true",
                            help="Global weakest-three recovery is intrinsic to the new scheduler")
+    # The npm explain script is an operator contract, not an experimental
+    # feature. Register it in the same CLI that npm invokes from this checkout.
     for name in ("explain", "explain-error"):
         explain = actions.add_parser(name)
         explain.add_argument(
@@ -633,6 +662,91 @@ def _human_sigint_guard():
         signal.signal(signal.SIGINT, previous)
 
 
+def _explain_code(code: str) -> int:
+    from .operator_vocabulary import BY_OPERATIONAL_CODE
+    term = BY_OPERATIONAL_CODE.get(code)
+    if term is not None:
+        print("OPERATIONAL TERM: " + term.code)
+        print("KIND: " + term.kind.value)
+        print("OWNER: " + term.owner)
+        print("MEANING: " + term.meaning)
+        print("NEURAL EFFECT: " + term.neural_effect)
+        print("NEXT ACTION: " + term.next_action)
+        if term.aliases:
+            print("ALIASES: " + ", ".join(term.aliases))
+        return 0
+    from .errors import ErrorBus
+    reports = ErrorBus.explain(code)
+    if len(reports) > 1:
+        print(
+            "LEGACY ERROR AMBIGUITY: " + code + " historically collapsed " +
+            str(len(reports)) + " distinct invariants.")
+    for index, report in enumerate(reports):
+        if index:
+            print()
+        for line in report.cli_lines():
+            print(line)
+    return 0
+
+
+def _experiment_budget(args):
+    if args.issue_349_experiment_root is None:
+        return None
+    from .runtime.experiment_runs import ExperimentRunBudget
+    root = args.issue_349_experiment_root.expanduser().resolve()
+    target = args.run_dir.expanduser().resolve()
+    if target.parent != root:
+        raise ValueError("ISSUE349_EXPERIMENT_RUN_MUST_BE_DIRECT_CHILD")
+    owner = ExperimentRunBudget(root)
+    if args.resume:
+        owner.register(target)
+    elif target.exists():
+        owner.register(target)
+        unexpected = tuple(
+            entry.name for entry in target.iterdir()
+            if entry.name != ".experiment-run.json")
+        if unexpected:
+            raise ValueError("ISSUE349_EXISTING_RUN_REQUIRES_RESUME")
+        owner.assert_can_allocate(600_000_000)
+    else:
+        owner.create(target.name, required_bytes=600_000_000)
+    owner.assert_within_budget()
+    return owner
+
+
+def _render_stopped_board(board, build, args, result: dict) -> int | None:
+    if board is None:
+        return None
+    board = build(args.run_dir, reserve_gib=args.reserve_gib)
+    board.time_budget_seconds = (
+        args.minutes * 60 if type(args.minutes) is int and args.minutes > 0
+        else None)
+    elapsed = result.get("elapsed_seconds")
+    if isinstance(elapsed, (int, float)) and elapsed >= 0:
+        board.started = board.clock() - elapsed
+    board.mode = "STOPPED | " + result["stop_reason"]
+    board.draw()
+    print("\n" + human_stop_summary(result), flush=True)
+    _report_timing_trace(result.get("timing_trace_file"), stream=sys.stdout)
+    return 0
+
+
+def _report_operator_blocked(err, trace_path) -> int:
+    print("OPERATOR BLOCKED: " + str(err), file=sys.stderr)
+    from .runtime.operator_recovery import recovery_advice
+    advice = recovery_advice(err)
+    if advice.explanation:
+        print("CAUSE: " + advice.explanation, file=sys.stderr)
+    if advice.safe_check:
+        print("SAFE CHECK: " + advice.safe_check, file=sys.stderr)
+    print("RECOVERY: " + advice.disposition + " | " + advice.next_action,
+          file=sys.stderr)
+    if advice.manual_ref:
+        print("FIELD MANUAL: " + advice.manual_ref, file=sys.stderr)
+    _report_timing_trace(trace_path, stream=sys.stderr)
+    return 2
+
+
 def _main(args):
     trace_path = None
     try:
@@ -640,30 +754,7 @@ def _main(args):
         if args.action=="dashboard":return dashboard(args.run_dir)
         if args.action=="diagnostics":return diagnostics(args.run_dir)
         if args.action in ("explain", "explain-error"):
-            from .operator_vocabulary import BY_OPERATIONAL_CODE
-            term = BY_OPERATIONAL_CODE.get(args.code)
-            if term is not None:
-                print("OPERATIONAL TERM: " + term.code)
-                print("KIND: " + term.kind.value)
-                print("OWNER: " + term.owner)
-                print("MEANING: " + term.meaning)
-                print("NEURAL EFFECT: " + term.neural_effect)
-                print("NEXT ACTION: " + term.next_action)
-                if term.aliases:
-                    print("ALIASES: " + ", ".join(term.aliases))
-                return 0
-            from .errors import ErrorBus
-            reports = ErrorBus.explain(args.code)
-            if len(reports) > 1:
-                print(
-                    "LEGACY ERROR AMBIGUITY: " + args.code + " historically "
-                    "collapsed " + str(len(reports)) + " distinct invariants.")
-            for index, report in enumerate(reports):
-                if index:
-                    print()
-                for line in report.cli_lines():
-                    print(line)
-            return 0
+            return _explain_code(args.code)
         _guard_independent_no_retention(args)
         if args.dry_run:
             _report_retention_plan(args)
@@ -681,7 +772,9 @@ def _main(args):
             raise ValueError("VERIFY_SOURCE_REQUIRES_DRY_RUN")
         if not args.human_run:
             print("TRAINING REQUIRES EXPLICIT HUMAN OPERATOR: add --human-run; "
-                  "agents may run only --dry-run and tests. "
+                  "ordinary and long-running training is human-operated. "
+                  "User-authorized agent repair tests must be explicitly finite "
+                  "and preserve the current student and own AdamW. "
                   "Use npm run train -- --dry-run for preflight.",file=sys.stderr)
             return 2
         if args.flash_mode and not args.resume:
@@ -689,39 +782,15 @@ def _main(args):
         if (args.legacy_code_root is not None and
                 not args.legacy_code_root.expanduser().resolve().is_relative_to(ROOT)):
             raise ValueError("HUMAN_TRAINER_EXTERNAL_SOURCE_ROOT_FORBIDDEN")
-        from .trainer import operate, operator_view
+        from bilqis_mlx.runtime.operating_loop import operate
+        from bilqis_mlx.runtime.checkpoints import operator_view
         from bilqis_mlx.presentation.dashboard import build, ingest
         board, on_event = _prepare_live_board(args, build, ingest)
         with operator_view(on_event):
             legacy_root, original_checkpoint = _source_paths(args.legacy_code_root, args.champion_checkpoint)
             trace_path, timing_context = _timing_context(args)
             with timing_context:
-                experiment_budget = None
-                if args.issue_349_experiment_root is not None:
-                    from .runtime.experiment_runs import ExperimentRunBudget
-                    root = args.issue_349_experiment_root.expanduser().resolve()
-                    target = args.run_dir.expanduser().resolve()
-                    if target.parent != root:
-                        raise ValueError(
-                            "ISSUE349_EXPERIMENT_RUN_MUST_BE_DIRECT_CHILD")
-                    owner = ExperimentRunBudget(root)
-                    if args.resume:
-                        owner.register(target)
-                    else:
-                        if target.exists():
-                            owner.register(target)
-                            unexpected = tuple(
-                                entry.name for entry in target.iterdir()
-                                if entry.name != ".experiment-run.json")
-                            if unexpected:
-                                raise ValueError(
-                                    "ISSUE349_EXISTING_RUN_REQUIRES_RESUME")
-                            owner.assert_can_allocate(600_000_000)
-                        else:
-                            owner.create(
-                                target.name, required_bytes=600_000_000)
-                    owner.assert_within_budget()
-                    experiment_budget = owner
+                experiment_budget = _experiment_budget(args)
                 result = operate(
                     args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
                     resume=args.resume, minutes=args.minutes,
@@ -746,20 +815,9 @@ def _main(args):
                     experiment_budget=experiment_budget)
             if trace_path is not None:
                 result["timing_trace_file"] = str(trace_path)
-        if board is not None:
-            board = build(args.run_dir, reserve_gib=args.reserve_gib)
-            board.time_budget_seconds = (
-                args.minutes * 60 if type(args.minutes) is int and args.minutes > 0
-                else None
-            )
-            elapsed = result.get("elapsed_seconds")
-            if isinstance(elapsed, (int, float)) and elapsed >= 0:
-                board.started = board.clock() - elapsed
-            board.mode = "STOPPED | " + result["stop_reason"]
-            board.draw()
-            print("\n" + human_stop_summary(result), flush=True)
-            _report_timing_trace(result.get("timing_trace_file"), stream=sys.stdout)
-            return 0
+        rendered = _render_stopped_board(board, build, args, result)
+        if rendered is not None:
+            return rendered
         return _print_status(result)
     except KeyboardInterrupt:
         print("HUMAN TRAINING INTERRUPTED: the last completed visit/checkpoint "
@@ -768,12 +826,7 @@ def _main(args):
         _report_timing_trace(trace_path, stream=sys.stderr)
         return 130
     except (ValueError,RuntimeError,OSError,KeyError,IndexError) as err:
-        from .errors import ErrorBus
-        report = ErrorBus.report(err)
-        for line in report.cli_lines():
-            print(line, file=sys.stderr)
-        _report_timing_trace(trace_path, stream=sys.stderr)
-        return 2
+        return _report_operator_blocked(err, trace_path)
 
 
 def main(argv=None):

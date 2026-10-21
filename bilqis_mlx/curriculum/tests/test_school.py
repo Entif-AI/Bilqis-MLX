@@ -69,6 +69,16 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
+    def test_school_state_drift_reports_the_failed_identity_predicate(self):
+        course = three_grade_course()
+        state = start_new(course, self.init)
+        drifted = replace(state, course_digest="0" * 64)
+
+        with self.assertRaisesRegex(
+                ValueError,
+                r"SCHOOL.STATE.COURSE_DIGEST_MISMATCH"):
+            verify_state(course, drifted)
+
     def test_full_imperfect_grade_sweep_precedes_global_two_round_recovery(self):
         course = three_grade_course()
         student = self.init
@@ -263,6 +273,39 @@ class SchoolTests(unittest.TestCase):
         reentered = reactivate_stagnation_debt(self.course, deferred, ("a.0",))
         self.assertEqual(reentered.stage, "RECOVERY_1")
         self.assertEqual(reentered.queue, ("a.0",))
+
+    def test_withheld_staged_grade_entry_does_not_hide_other_imperfect_grades(self):
+        course = three_grade_course()
+        c = course.grades[-1]
+        c = replace(c, teaching_stages=tuple((cap.id,) for cap in c.capabilities))
+        course = replace(course, grades=(*course.grades[:-1], c))
+        all_c = tuple(cap.id for cap in c.capabilities)
+        state = replace(
+            start_new(course, self.init),
+            grade_index=1,
+            stage="ASSESS_RECOVERY_2",
+            queue=(),
+            first_recovery=("b.0",),
+            carried_mastery_debt=all_c,
+            main_sweep_visited=("A", "B"),
+        )
+        withheld = ("c.0",)
+        active = {
+            cap.id: (8, 8)
+            for grade in course.grades
+            for cap in grade.capabilities
+            if cap.id not in withheld
+        }
+        active["a.0"] = (7, 8)
+        active["b.0"] = (7, 8)
+        active["c.1"] = (7, 8)
+
+        continued = assess_withheld(
+            course, state, snapshot(course, self.init, active), withheld)
+
+        self.assertEqual((continued.grade, continued.stage), ("A", "MAIN"))
+        self.assertIn("a.0", continued.queue)
+        self.assertNotEqual(continued.stage, "DEFERRED_STAGNATION")
 
     def test_trainer_auto_rehabilitates_when_one_grade_is_the_only_debt_left(self):
         from bilqis_mlx import trainer as trainer
@@ -823,7 +866,7 @@ class SchoolTests(unittest.TestCase):
             successor = replace(full, grades=(a, full.grades[1]),
                                 version="partial-A-plus-B/v2", program_complete=False,
                                 assessment_manifest_sha256="b"*64)
-            with self.assertRaisesRegex(ValueError, "DRIFTED"):
+            with self.assertRaisesRegex(ValueError, "SCHOOL.STATE.COURSE_DIGEST_MISMATCH"):
                 read_state(target, successor)
         resumed = append_next_grade(a_only, successor, state)
         self.assertEqual(resumed.grade, "B")
@@ -831,7 +874,7 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(resumed.champions["A"], student)
         self.assertEqual(resumed.current_student, student)
         self.assertEqual(resumed.latest_rubric_digest, None)
-        with self.assertRaisesRegex(ValueError, "DRIFTED"):
+        with self.assertRaisesRegex(ValueError, "SCHOOL.STATE.COURSE_DIGEST_MISMATCH"):
             append_next_grade(a_only, successor, resumed)
         with self.assertRaisesRegex(ValueError, "CHANGE_PREVIOUS_GRADE"):
             changed_a = replace(a, assessment_sha256="c"*64)

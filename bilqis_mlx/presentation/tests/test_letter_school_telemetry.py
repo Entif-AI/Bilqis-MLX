@@ -69,6 +69,10 @@ class SchoolTelemetryTests(unittest.TestCase):
                                step=100))
             ingest(board, exam("A", 20, "rubric-a", {"A.IDENTITY": (10, 12)},
                                step=120))
+            # The live CLI prepares the board before the session-start event.
+            # Receiving that same start boundary must not move START a second
+            # time and zero the entire GREW column again.
+            board.school_telemetry.begin_execution(grade="A", step=120)
             ingest(board, {"event": "SCHOOL_SESSION_STARTED", "grade": "A",
                            "generation": 20, "optimizer_step": 120,
                            "checkpoint_sha256": "a" * 64})

@@ -63,3 +63,8 @@ def check_numeric(row, *, graph, **_):
             row["record"]["symbols"])
 
 
+
+
+from ..verification.event_frames import (
+    VERSION as EVENT_FRAME_ORACLE, independent_answer as event_frame_answer,
+)

@@ -25,15 +25,23 @@ class ChampionshipIdentityTests(TestCase):
 
     def test_identity_drift_archives_and_clears_all_live_authority(self):
         epoch = {
-            "active_roles": {"A.X": {"capability": "A.X"}},
-            "active_grade_soups": {"A": {"vote_count": 1}},
+            "active_roles": {
+                "A.X": {"capability": "A.X"},
+                "B.Y": {"capability": "B.Y"},
+            },
+            "active_grade_soups": {
+                "A": {"vote_count": 1},
+                "B": {"vote_count": 2},
+            },
             "settled_matchups": {"A.X|1|2": {"winner_sha256": "1" * 64}},
             "championship_school_identity": _identity(),
             "championship_eligibility_after_step": 3,
         }
-        student = {"sha256": "d" * 64, "optimizer_step": 11}
+        student = {"filename": "bundles/current", "sha256": "d" * 64,
+                   "optimizer_step": 11, "model_and_native_adamw": True}
+        successor_identity = _identity(course="e")
         result, changed = enforce_school_identity(
-            epoch, _identity(course="e"), generation=20, student=student)
+            epoch, successor_identity, generation=20, student=student)
         self.assertTrue(changed)
         self.assertEqual(result["active_roles"], {})
         self.assertEqual(result["active_grade_soups"], {})
@@ -44,6 +52,11 @@ class ChampionshipIdentityTests(TestCase):
         self.assertEqual(historic["active_grade_soups"], epoch["active_grade_soups"])
         self.assertEqual(historic["starting_student"], student)
         self.assertEqual(result["superseded_active_championships"][-1], historic)
+        repeated, changed = enforce_school_identity(
+            result, successor_identity, generation=21, student=student)
+        self.assertFalse(changed)
+        self.assertEqual(repeated, result)
+        self.assertEqual(len(repeated["school_identity_history"]), 1)
 
     def test_each_identity_component_drift_clears_live_authority(self):
         base = _identity()

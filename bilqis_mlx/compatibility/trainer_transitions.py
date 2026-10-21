@@ -6,6 +6,10 @@ remain reproducible while the compatibility surface is retired.
 """
 from __future__ import annotations
 
+import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
+import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
+import bilqis_mlx.runtime.state as _runtime_state
+
 from copy import deepcopy
 from dataclasses import asdict, replace
 
@@ -31,17 +35,59 @@ from ..runtime.admission import _factory_admission
 from .source_adapters import historical_source_registry
 
 
-def _owners():
-    from .. import trainer
-    return trainer
+def _next_grade_admission_event(record, school, current_grade: str,
+                                introduced_grade: str, successor, epoch: dict,
+                                history: list, compatibility: dict,
+                                release_sha256: str) -> dict:
+    return {
+        "event": "SCHOOL_NEXT_GRADE_COURSE_ADMITTED",
+        "generation": record["generation"],
+        "grade": introduced_grade,
+        "previous_cohort_sha256":
+            (record.get("last_exam") or {}).get("cohort_sha256"),
+        "previous_grade": current_grade,
+        "previous_grade_champion_sha256": school.champions[current_grade].sha256,
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "teacher_events": record["teacher"]["events"],
+        "championship_baseline_sha256": epoch["baseline"]["sha256"],
+        "archived_championship_epochs": len(history),
+        "introduced_grade_rubric": successor.grades[-1].assessment_sha256,
+        "release_provider_sha256": release_code_digest(successor.version),
+        "factory_release_sha256": release_sha256,
+        **compatibility,
+        "model_and_own_adamw_unchanged": True,
+    }
+
+
+def _grade_replacement_event(record, school, previous_course, successor,
+                             replaced_grade: str, old_caps: tuple[str, ...],
+                             new_caps: tuple[str, ...], withheld: tuple[str, ...],
+                             release_sha256: str) -> dict:
+    return {
+        "event": "SCHOOL_GRADE_RELEASE_REPLACED",
+        "generation": record["generation"],
+        "grade": replaced_grade,
+        "previous_release": previous_course.version,
+        "release": successor.version,
+        "old_capabilities": list(old_caps),
+        "new_capabilities": list(new_caps),
+        "withheld_capabilities": list(withheld),
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "factory_release_sha256": release_sha256,
+        "championship_field_reset": True,
+        "stale_geometry_evidence_deactivated": True,
+        "actual_neural_updates": 0,
+        "model_and_own_adamw_unchanged": True,
+    }
 
 
 def activate_next_admitted_grade(
         run_dir, receipt, previous_course, successor, graph=None):
-    t = _owners()
-    school = t._state_from_json(
+    school = _runtime_state._state_from_json(
         receipt["school"],
-        t._schedule_for_receipt(run_dir, receipt, previous_course))
+        _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, previous_course))
     current_grade = previous_course.grades[-1].id
     if (not successor.executable or
             len(successor.grades) != len(previous_course.grades) + 1 or
@@ -107,41 +153,23 @@ def activate_next_admitted_grade(
         "championship_epoch_history": history,
     }
     introduced_grade = successor.grades[-1].id
-    record = t._advance(
+    record = _runtime_checkpoints._advance(
         run_dir, candidate, next_state,
         result="ACTIVE_GRADE_" + introduced_grade, persist=False)
-    admitted = {
-        "event": "SCHOOL_NEXT_GRADE_COURSE_ADMITTED",
-        "generation": record["generation"],
-        "grade": introduced_grade,
-        "previous_cohort_sha256":
-            (record.get("last_exam") or {}).get("cohort_sha256"),
-        "previous_grade": current_grade,
-        "previous_grade_champion_sha256":
-            school.champions[current_grade].sha256,
-        "student_sha256": school.current_student.sha256,
-        "optimizer_step": school.current_student.optimizer_step,
-        "teacher_events": record["teacher"]["events"],
-        "championship_baseline_sha256": epoch["baseline"]["sha256"],
-        "archived_championship_epochs": len(history),
-        "introduced_grade_rubric": successor.grades[-1].assessment_sha256,
-        "release_provider_sha256": release_code_digest(successor.version),
-        "factory_release_sha256": release.release_sha256,
-        **compatibility,
-        "model_and_own_adamw_unchanged": True,
-    }
-    record = t._persist(
-        run_dir, t._with_delivery_outbox(record, (admitted,)))
-    t._reconcile_delivery_outbox(run_dir, record)
+    admitted = _next_grade_admission_event(
+        record, school, current_grade, introduced_grade, successor, epoch,
+        history, compatibility, release.release_sha256)
+    record = _runtime_checkpoints._persist(
+        run_dir, _runtime_checkpoints._with_delivery_outbox(record, (admitted,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
     return record
 
 
 def activate_revised_admitted_grade(
         run_dir, receipt, previous_course, successor, graph=None):
-    t = _owners()
-    school = t._state_from_json(
+    school = _runtime_state._state_from_json(
         receipt["school"],
-        t._schedule_for_receipt(run_dir, receipt, previous_course))
+        _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, previous_course))
     legacy_school = replace(school, course_digest=previous_course.digest())
     next_state, revised_grade = revise_admitted_grade(
         previous_course, successor, legacy_school)
@@ -193,7 +221,7 @@ def activate_revised_admitted_grade(
             generation=receipt["generation"] + 1,
             student=asdict(school.current_student))
         updated["mentor_epoch"] = epoch
-    record = t._advance(
+    record = _runtime_checkpoints._advance(
         run_dir, updated, next_state,
         result="ACTIVE_GRADE_" + next_state.grade, persist=False)
     event = {
@@ -207,18 +235,17 @@ def activate_revised_admitted_grade(
         "factory_release_sha256": release.release_sha256,
         "actual_neural_updates": 0,
     }
-    record = t._persist(
-        run_dir, t._with_delivery_outbox(record, (event,)))
-    t._reconcile_delivery_outbox(run_dir, record)
+    record = _runtime_checkpoints._persist(
+        run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
     return record
 
 
 def activate_replaced_admitted_grade(
         run_dir, receipt, previous_course, successor, graph=None):
-    t = _owners()
-    school = t._state_from_json(
+    school = _runtime_state._state_from_json(
         receipt["school"],
-        t._schedule_for_receipt(run_dir, receipt, previous_course))
+        _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, previous_course))
     legacy_school = replace(school, course_digest=previous_course.digest())
     next_state, replaced_grade = replace_admitted_grade(
         previous_course, successor, legacy_school)
@@ -282,27 +309,13 @@ def activate_replaced_admitted_grade(
             generation=receipt["generation"] + 1,
             student=asdict(school.current_student))
         updated["mentor_epoch"] = epoch
-    record = t._advance(
+    record = _runtime_checkpoints._advance(
         run_dir, updated, next_state,
         result="ACTIVE_GRADE_" + next_state.grade, persist=False)
-    event = {
-        "event": "SCHOOL_GRADE_RELEASE_REPLACED",
-        "generation": record["generation"],
-        "grade": replaced_grade,
-        "previous_release": previous_course.version,
-        "release": successor.version,
-        "old_capabilities": list(old_caps),
-        "new_capabilities": list(new_caps),
-        "withheld_capabilities": list(withheld),
-        "student_sha256": school.current_student.sha256,
-        "optimizer_step": school.current_student.optimizer_step,
-        "factory_release_sha256": release.release_sha256,
-        "championship_field_reset": True,
-        "stale_geometry_evidence_deactivated": True,
-        "actual_neural_updates": 0,
-        "model_and_own_adamw_unchanged": True,
-    }
-    record = t._persist(
-        run_dir, t._with_delivery_outbox(record, (event,)))
-    t._reconcile_delivery_outbox(run_dir, record)
+    event = _grade_replacement_event(
+        record, school, previous_course, successor, replaced_grade,
+        old_caps, new_caps, withheld, release.release_sha256)
+    record = _runtime_checkpoints._persist(
+        run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
     return record

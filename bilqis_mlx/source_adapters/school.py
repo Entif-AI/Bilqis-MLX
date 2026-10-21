@@ -134,18 +134,25 @@ def draw_b(*, source_root, graph, course, capability, seed, each):
     return _sample_boolean_runtime(rows, capability=capability, seed=seed, each=each)
 
 
-def draw_b_composite_release(*, source_root, graph, course, capability, seed, each,
-                             profile_parameters=None):
+def _boolean_profile_operators(
+        profile_parameters, *, capability, scoped_capabilities) -> tuple[str, ...]:
     parameters = profile_parameters or {}
     if set(parameters) - {"operators"}:
         raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN")
-    operators = tuple(parameters.get("operators", BOOLEAN_OPERATORS))
+    if parameters and capability not in scoped_capabilities:
+        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT")
+    return tuple(parameters.get("operators", BOOLEAN_OPERATORS))
+
+
+def draw_b_composite_release(*, source_root, graph, course, capability, seed, each,
+                             profile_parameters=None):
+    operators = _boolean_profile_operators(
+        profile_parameters, capability=capability,
+        scoped_capabilities={B_COMPOSITE_CAPABILITY})
     if capability == B_COMPOSITE_CAPABILITY:
         return draw_composite(source_root, graph, seed=seed,
                               capability=capability, each=each,
                               operators=operators)
-    if parameters:
-        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT")
     return draw_b(source_root=source_root, graph=graph, course=course,
                   capability=capability, seed=seed, each=each)
 
@@ -158,10 +165,9 @@ def check_b_composite_release(row, **kwargs):
 
 def draw_b_idboolops_release(*, source_root, graph, course, capability, seed, each,
                              profile_parameters=None):
-    parameters = profile_parameters or {}
-    if set(parameters) - {"operators"}:
-        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN")
-    operators = tuple(parameters.get("operators", BOOLEAN_OPERATORS))
+    operators = _boolean_profile_operators(
+        profile_parameters, capability=capability,
+        scoped_capabilities={B_COMPOSITE_CAPABILITY, B_IDBOOLOPS_CAPABILITY})
     if capability == B_IDBOOLOPS_CAPABILITY:
         return draw_identification(source_root, graph, seed=seed,
                                    capability=capability, each=each,
@@ -170,8 +176,6 @@ def draw_b_idboolops_release(*, source_root, graph, course, capability, seed, ea
         return draw_composite(source_root, graph, seed=seed,
                               capability=capability, each=each,
                               operators=operators)
-    if parameters:
-        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT")
     return draw_b(source_root=source_root, graph=graph, course=course,
                   capability=capability, seed=seed, each=each)
 
@@ -240,6 +244,11 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
     producer = course.capability_map.get(required[0])
     if producer is None or len(producer.examined_roots) != 1:
         raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED")
+    declared_producer_id = getattr(producer, "id", None)
+    if declared_producer_id is None:
+        declared_producer_id = getattr(producer, "capability_id", None)
+    if not isinstance(declared_producer_id, str) or not declared_producer_id:
+        raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED")
     producer_root = producer.examined_roots[0]
     record = row.get("record")
     if not isinstance(record, dict):
@@ -256,7 +265,7 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
     if kind == "COMPOSITION":
         key = getattr(obligation, "key", "")
         if "@" not in key:
-            if key != producer.id:
+            if key != declared_producer_id:
                 raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
             if record.get("task") == "identify_boolean_operator":
                 shape = inspect_boolean_identification(record, row.get("root"))
@@ -269,7 +278,7 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
             slot = int(slot_raw)
         except (AttributeError, ValueError) as exc:
             raise ValueError("FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID") from exc
-        if producer_id != producer.id:
+        if producer_id != declared_producer_id:
             raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
         query = record.get("query")
         args = query.get("args") if isinstance(query, dict) else None

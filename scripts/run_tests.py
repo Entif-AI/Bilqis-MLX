@@ -12,7 +12,7 @@ import unittest
 
 
 IGNORED_DIRECTORIES = frozenset({
-    ".git", ".venv", "__pycache__", "node_modules", "runs", "vendor", "venv",
+    ".git", ".local", ".venv", "__pycache__", "node_modules", "runs", "vendor", "venv",
 })
 
 

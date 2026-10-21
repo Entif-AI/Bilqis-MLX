@@ -65,12 +65,12 @@ class GradeMentorFidelityTests(TestCase):
                    "championship_school_identity": identity,
                    "graduation_perfect": {"historic": {"checkpoint": graduate}},
                    "grade_soups": {"A": {"grade": "A", "vote_count": 6}}}
-        with (patch.object(trainer, "_frozen_confidence_champions",
+        with (patch('bilqis_mlx.learning.lesson_guidance._frozen_confidence_champions',
                            return_value=({"checkpoint_sha256": earned["sha256"],
                                           "breadth": 5},)) as champions,
-              patch.object(trainer, "_frozen_grade_soup_votes",
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_grade_soup_votes',
                            return_value=(("new-epoch-soup",), ("receipt",))) as soups,
-              patch.object(trainer, "_cached_frozen_champion",
+              patch('bilqis_mlx.learning.lesson_guidance._cached_frozen_champion',
                            side_effect=AssertionError("bootstrap must yield"))):
             live, frozen, events = trainer._mentor_sources_for_visit(
                 Path("/unused"), receipt, "C", graph, 3)
@@ -145,9 +145,9 @@ class GradeMentorFidelityTests(TestCase):
         current = {"mentor_epoch": epoch, "championship_school_identity": identity,
                    "graduation_perfect": {},
                    "grade_soups": {}}
-        with (patch.object(trainer, "_frozen_confidence_champions", return_value=()) as champions,
-              patch.object(trainer, "_frozen_grade_soup_votes", return_value=((), ())) as soups,
-              patch.object(trainer, "_cached_frozen_champion",
+        with (patch('bilqis_mlx.learning.lesson_guidance._frozen_confidence_champions', return_value=()) as champions,
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_grade_soup_votes', return_value=((), ())) as soups,
+              patch('bilqis_mlx.learning.lesson_guidance._cached_frozen_champion',
                            return_value=({"frozen": True}, graph)),
               patch("pathlib.Path.stat") as stat):
             stat.return_value.st_size = 1

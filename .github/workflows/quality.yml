@@ -30,6 +30,8 @@ jobs:
           python3 -B scripts/error_control_plane.py --check
       - name: Reject newly introduced code hygiene regressions
         run: python3 -B scripts/code_smell_audit.py --check-baseline docs/evidence/development/code_smell_baseline.json
+      - name: Reject new or worsened production size debt
+        run: python3 -B scripts/check_module_size.py
       - name: Portable non-neural custody and release tests
         run: >-
           python3 -B scripts/run_tests.py
@@ -38,6 +40,7 @@ jobs:
           scripts/tests/test_release_version.py
           scripts/tests/test_docs.py
           scripts/tests/test_run_tests.py
+          scripts/tests/test_module_size.py
           bilqis_mlx/factory/tests/test_release.py
           bilqis_mlx/factory/tests/test_generation.py
           bilqis_mlx/factory/tests/test_historical_generalization.py

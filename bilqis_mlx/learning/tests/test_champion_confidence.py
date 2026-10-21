@@ -34,7 +34,7 @@ class ChampionConfidenceTests(unittest.TestCase):
             graph = {"tokens": ["PAD", "TRUE", "FALSE"], "nodes": [],
                      "row_contract_sha256": {}}
             with (patch("pathlib.Path.stat") as stat,
-                  patch("bilqis_mlx.trainer._cached_frozen_champion",
+                  patch('bilqis_mlx.learning.lesson_guidance._cached_frozen_champion',
                         return_value=({"embedding.weight": "synthetic"}, graph))):
                 stat.return_value.st_size = 1
                 stat.return_value.st_mtime_ns = 1
@@ -47,7 +47,7 @@ class ChampionConfidenceTests(unittest.TestCase):
                     "grade": "A", "filename": str(path.relative_to(root)),
                     "sha256": "c" * 64, "token_count": 12,
                     "recipe_sha256": "d" * 64, "vote_count": 7}
-            with patch("bilqis_mlx.trainer._cached_grade_soup",
+            with patch('bilqis_mlx.learning.lesson_guidance._cached_grade_soup',
                        return_value={"embedding.weight": "synthetic"}):
                 mentors, receipts = _frozen_grade_soup_votes(
                     root, {"grade_soups": {"A": soup}}, "B", 3)
@@ -77,7 +77,7 @@ class ChampionConfidenceTests(unittest.TestCase):
             receipt = {"graduation_perfect": frontier,
                        "grade_soups": {grade: snapshot}}
             with (patch("pathlib.Path.stat") as stat,
-                  patch("bilqis_mlx.trainer._cached_frozen_champion",
+                  patch('bilqis_mlx.learning.lesson_guidance._cached_frozen_champion',
                         return_value=({"embedding.weight": "synthetic"}, graph))):
                 stat.return_value.st_size = 1
                 stat.return_value.st_mtime_ns = 1

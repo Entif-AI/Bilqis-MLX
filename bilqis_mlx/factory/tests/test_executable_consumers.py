@@ -95,19 +95,45 @@ class ExecutableConsumerTests(unittest.TestCase):
             reduced["semantic_token"]["values"],
             self.graph["tokens"])
 
-    def test_generation_refuses_provider_implementation_drift(self):
+    def _registry_with_reimplemented_provider(self, draw=None):
         registered = self.registry.require(
             self.bindings.by_capability["B.IDBOOLOPS"].generator_id,
             self.bindings.by_capability["B.IDBOOLOPS"].oracle_id)
         changed = replace(
             registered.descriptor,
             implementation_sha256="f" * 64)
-        registry = SourceAdapterRegistry((
+        return SourceAdapterRegistry((
             *(item for item in self.registry._by_generator.values()
               if item.descriptor.adapter_id != changed.adapter_id),
             RegisteredSourceAdapter(
-                changed, registered.draw, registered.check),
+                changed, draw or registered.draw, registered.check),
         ))
+
+    def test_generation_accepts_reimplementation_when_sealed_specimens_match(self):
+        expected = draw_executable_release_rows(
+            None, self.graph, self.reduced, self.registry,
+            seed=41, legacy_course=self.course,
+            capability="B.IDBOOLOPS")
+        registry = self._registry_with_reimplemented_provider()
+
+        actual = draw_executable_release_rows(
+            None, self.graph, self.reduced, registry,
+            seed=41, legacy_course=self.course,
+            capability="B.IDBOOLOPS")
+
+        self.assertEqual(actual, expected)
+
+    def test_generation_refuses_provider_behavior_drift(self):
+        registered = self.registry.require(
+            self.bindings.by_capability["B.IDBOOLOPS"].generator_id,
+            self.bindings.by_capability["B.IDBOOLOPS"].oracle_id)
+
+        def drifted_draw(**kwargs):
+            rows = list(registered.draw(**kwargs))
+            rows[0] = {**rows[0], "id": "drifted-" + rows[0]["id"]}
+            return tuple(rows)
+
+        registry = self._registry_with_reimplemented_provider(drifted_draw)
         with self.assertRaisesRegex(
                 ValueError, "FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT"):
             draw_executable_release_rows(

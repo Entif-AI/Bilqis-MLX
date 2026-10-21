@@ -10,6 +10,7 @@ from pathlib import Path
 import csv
 import hashlib
 import random
+from types import MappingProxyType
 
 from ..curriculum import AnswerFamily, BINARY
 from ..factory.adapters import RegisteredSourceAdapter
@@ -18,17 +19,19 @@ from ..factory.curriculum_definition import CapabilitySpec, CapabilitySourceBind
 from ..factory.executable_release import compile_executable_factory_release
 from ..factory.execution import CurriculumProfile
 from ..semantics.core import Apply, Operation, Signature, literal
-from ..verification.event_frames import VERSION as ORACLE, independent_answer
+from ..factory.verification import (
+    EVENT_FRAME_ORACLE as ORACLE, event_frame_answer as independent_answer,
+)
 from ..vocabulary_growth import AdmittedToken, append_catalog, digest
 
 DIALECT = 'bilqis.finite-event-frame/v1'
 GENERATOR = 'bilqis.issue349.event-frames/v1'
 ROOT = Path(__file__).resolve().parents[2]
-SPECS = {
+SPECS = MappingProxyType({
     'D.EVENT_OCCURRENCE': ('LEXSENSE-294d00be074a56', ('A.IDENTITY',)),
     'D.COMMENCEMENT': ('LEXSENSE-45453409b348c4', ('D.EVENT_OCCURRENCE',)),
     'D.TERMINATION': ('LEXSENSE-fb0402389745d0', ('D.EVENT_OCCURRENCE','D.COMMENCEMENT')),
-}
+})
 SYMBOLS = {cap: 'experiment.ithkuil.op.' + cap.split('.')[1] for cap in SPECS}
 TRUE, FALSE = 'cogal.value.true', 'cogal.value.false'
 

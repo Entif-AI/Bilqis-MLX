@@ -81,14 +81,14 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
     def test_ordinary_lesson_draw_uses_v2_source_without_legacy_grade_membership(self):
         from bilqis_mlx.runtime.assessment import _draw_live_rows
         rows = _draw_live_rows(LEGACY, self.graph, seed=12,
-            capability=CAPABILITY, each=32, release=self.staged.successor)
+            capability=CAPABILITY, each=32, executable_release=self.staged.successor)
         self.assertEqual(len(rows), 32)
         self.assertTrue(all(check(row, graph=self.graph) for row in rows))
 
     def test_pure_host_packet_can_prepare_a_new_source_from_its_release(self):
         from bilqis_mlx.runtime.source_prefetch import prepare_step_sources
         request = dict(identity="d" * 64, source_root=str(LEGACY), graph=self.graph,
-            course=None, factory_release=self.staged.successor, capability=CAPABILITY,
+            course=None, executable_release=self.staged.successor, capability=CAPABILITY,
             batch_size=32, fresh_seed=42, prior_capability=None, prior_seed=None,
             fragile_fixed_rows=(), fragile_requested=(), fragile_seeds={},
             fragile_rotation=0, teaching_seed=43, teaching_enrichment_enabled=True)
@@ -189,9 +189,9 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
         session = Mock()
         session.resolve_ready_proposal.return_value = self.staged
         parameters, optimizer = object(), object()
-        with patch("bilqis_mlx.trainer._require_executable_factory_admission", return_value=self.current), \
-                patch("bilqis_mlx.trainer._state_from_json", return_value=school), \
-                patch("bilqis_mlx.trainer._adopt_catalog_profile", return_value="adopted") as adopt:
+        with patch('bilqis_mlx.runtime.admission._require_executable_factory_admission', return_value=self.current), \
+                patch('bilqis_mlx.runtime.state._state_from_json', return_value=school), \
+                patch('bilqis_mlx.runtime.release_adoption._adopt_catalog_profile', return_value="adopted") as adopt:
             self.assertEqual(_adopt_jit_proposal(None, Path("unused"), receipt, None,
                 LEGACY, self.parent_graph, parameters, optimizer, session, object(),
                 reserve_gib=0), "adopted")
