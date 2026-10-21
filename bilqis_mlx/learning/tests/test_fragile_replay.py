@@ -8,7 +8,7 @@ from bilqis_mlx.learning.fragile_replay import (
     load_replay_rows, screen_replay, select_preservation_rows,
     select_structural_preservation_rows, structural_signature,
 )
-from bilqis_mlx.generated_assessment import make_cohort
+from bilqis_mlx.generated_assessment import make_cohort, EXECUTABLE_COHORT_SCHEMA
 from bilqis_mlx.profiles.retention import fragile_preservation_capabilities
 
 
@@ -45,16 +45,25 @@ class FragileReplayTests(unittest.TestCase):
             cohort = make_cohort(rows, generator_version="test-oracle", seed=23,
                                  rubric_version="test-grade-b")
             digest = cohort.digest
-            (path / f"{digest}.json").write_text(json.dumps({
-                "cohort_sha256": digest, "rows": rows, "seed": 23,
-                "generator_version": "test-oracle", "schema": "test-grade-b"}))
             receipt = {"last_exam": {"cohort_sha256": digest,
                                      "cohort_file": f"cohorts/{digest}.json",
                                      "scores": {"B.OR": {"correct": 12, "total": 12},
                                                 "B.XOR": {"correct": 12, "total": 12}}}}
-            replay = load_replay_rows(
-                Path(tmp), receipt,
-                capabilities=fragile_preservation_capabilities())
+            file = path / f"{digest}.json"
+            for schema in ("test-grade-b", EXECUTABLE_COHORT_SCHEMA):
+                payload = dict(cohort_sha256=digest, rows=rows, seed=23,
+                               generator_version="test-oracle", schema=schema,
+                               rubric_sha256="test-grade-b")
+                file.write_text(json.dumps(payload))
+                with self.subTest(schema=schema):
+                    replay = load_replay_rows(Path(tmp), receipt,
+                        capabilities=fragile_preservation_capabilities())
+                    self.assertEqual(len(replay), 24)
+            payload["rubric_sha256"] = "different-rubric"
+            file.write_text(json.dumps(payload))
+            with self.assertRaisesRegex(ValueError, "CONTENT_DRIFT"):
+                load_replay_rows(Path(tmp), receipt,
+                    capabilities=fragile_preservation_capabilities())
         self.assertEqual(len(replay), 24)
         self.assertEqual({r["capability"] for r in replay}, {"B.OR", "B.XOR"})
         before = {r["id"]: r["gold"] for r in replay}

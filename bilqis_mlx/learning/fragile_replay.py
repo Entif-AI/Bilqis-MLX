@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from bilqis_mlx.generated_assessment import make_cohort
+from bilqis_mlx.generated_assessment import make_cohort, stored_rubric_version
 from bilqis_mlx.grade_b_oracle import evaluate as grade_b_gold, operand_truth
 
 
@@ -168,7 +168,7 @@ def load_replay_rows(run_dir: Path, receipt: dict, *, capabilities) -> tuple[dic
     if stored.get("cohort_sha256") != sha:
         raise ValueError("FRAGILE_REPLAY_COHORT_IDENTITY_DRIFT")
     cohort = make_cohort(stored["rows"], generator_version=stored["generator_version"],
-                         seed=stored["seed"], rubric_version=stored["schema"])
+                         seed=stored["seed"], rubric_version=stored_rubric_version(stored))
     if cohort.digest != sha:
         raise ValueError("FRAGILE_REPLAY_COHORT_CONTENT_DRIFT")
     rows = tuple(row for row in cohort.rows if row["capability"] in requested)

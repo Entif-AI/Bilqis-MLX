@@ -1,9 +1,11 @@
 """A declarative unknown grade uses the same durable runtime admission gate."""
 from dataclasses import asdict, replace
+from copy import deepcopy
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.factory.answers import (
@@ -49,6 +51,30 @@ def _executable_fixture(seed=17):
         registry, answers, source_root=None, graph=graph,
         verification_seed=seed, legacy_course=course)
     return release, graph
+
+
+class ExecutableMigrationTests(unittest.TestCase):
+    def test_legacy_live_rubric_rebinds_without_changing_parent_evidence(self):
+        from bilqis_mlx import trainer
+        from bilqis_mlx.curriculum.scheduler import start_new
+        from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
+        release, graph = _executable_fixture()
+        program = schedule_program_from_executable_release(release)
+        course = _synthetic_course(6)
+        student = Checkpoint("c" * 64, "bundles/parent", 23, True)
+        school = start_new(course, student)
+        receipt = dict(school=asdict(school), semantic_graph_sha256=trainer._fingerprint(graph),
+                       live_rubric_sha256="d" * 64, last_exam={"historical": "unchanged"})
+        original = deepcopy(receipt)
+        with tempfile.TemporaryDirectory() as temporary, patch.object(
+                trainer, "compile_projected_executable_release",
+                return_value=(release, program, None)):
+            migrated, _, _, rebound = trainer._migrate_executable_release(
+                Path(temporary), receipt, course, course, None, graph)
+        self.assertEqual(migrated["live_rubric_sha256"], program.grades[0].assessment_sha256)
+        self.assertEqual(rebound.current_student, student)
+        self.assertEqual(migrated["last_exam"], receipt["last_exam"])
+        self.assertEqual(receipt, original)
 
 
 class RuntimeAdmissionTests(unittest.TestCase):

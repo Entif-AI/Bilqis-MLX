@@ -15,6 +15,13 @@ GRADE_TEST_LIFECYCLE = "bilqis.grade-test.fixed-until-passed/v1"
 ROUTINE_EVAL_LIFECYCLE = "bilqis.grade-test.fresh-routine/v2"
 PROMOTION_ATTEMPT_LIFECYCLE = "bilqis.grade-test.promotion-attempt/v1"
 GENERALIZATION_LIFECYCLE = "bilqis.grade-test.fresh-generalization/v1"
+EXECUTABLE_COHORT_SCHEMA = "bilqis.mlx.generated-cohort/v2"
+
+
+def stored_rubric_version(cohort: dict) -> str:
+    """Read the rubric bound by a legacy cohort or a v2 storage envelope."""
+    return (cohort["rubric_sha256"] if cohort["schema"] == EXECUTABLE_COHORT_SCHEMA
+            else cohort["schema"])
 
 
 def digest(value) -> str:

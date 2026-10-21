@@ -10,6 +10,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from tests.support.executable_school import admit_executable_school
+
 from bilqis_mlx.grade_a_release import accepted_grade_a, AUTHORITY
 from bilqis_mlx.trainer import (
     VERSION, _activate_next_admitted_grade, _activate_revised_admitted_grade, _bundle_pointer,
@@ -308,9 +310,14 @@ class GradeBTrainerTests(unittest.TestCase):
                   patch("bilqis_mlx.trainer._publish_boundary"),
                   redirect_stdout(io.StringIO())):
                 saved_params, saved_optimizer, saved_graph, recovered = _resume(
-                    root,self.manifest,self.a_course,self.teacher_sha,
+                    root,self.manifest,self.b_course,self.teacher_sha,
+                    grade_a_course=self.a_course, source_root=SOURCE_ROOT,
                     successor_course=self.b_course)
-            self.assertEqual(recovered,successor)
+            self.assertEqual(recovered["school"]["current_student"],
+                             successor["school"]["current_student"])
+            self.assertEqual(recovered["teacher"], successor["teacher"])
+            self.assertGreater(recovered["generation"], successor["generation"])
+            self.assertIn("factory_admission_v2", recovered)
             self.assertEqual(recovered["curriculum_mode"],B_RELEASE)
             self.assertEqual(recovered["school"]["grade_index"],1)
             self.assertEqual(saved_graph,graph)
@@ -447,18 +454,25 @@ class GradeBTrainerTests(unittest.TestCase):
             optimizer.state["step"].count += 1
             return .25,.2
 
-        with (patch("bilqis_mlx.trainer._draw_live_rows",
-                    return_value=examples),
-              patch("bilqis_mlx.trainer.load_semantically_bound_bundle",
-                    side_effect=AssertionError("prior grade master cannot nominate rows")),
-              patch("bilqis_mlx.trainer._train_score",return_value=.5),
-              patch("bilqis_mlx.trainer._predictions",
-                    return_value={"old-true":"TRUE","old-false":"TRUE"}),
-              patch("bilqis_mlx.trainer._train_step",side_effect=toy_step)):
-            updated = _take_visit(
-                None,Path("/unused-during-disposable-test"),receipt,self.manifest,
-                self.b_course,Teacher(),{},optimizer,{},steps_per_visit=1,
-                batch_size=4,reserve_gib=0.,source_root=SOURCE_ROOT)
+        import torch
+        graph = torch.load(CHECKPOINT, map_location="cpu", weights_only=True)["graph"]
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            receipt["semantic_graph_sha256"] = _fingerprint(graph)
+            receipt, _, _ = admit_executable_school(
+                root, receipt, self.b_course, self.a_course, SOURCE_ROOT, graph)
+            with (patch("bilqis_mlx.trainer._draw_live_rows",
+                        return_value=examples),
+                  patch("bilqis_mlx.trainer.load_semantically_bound_bundle",
+                        side_effect=AssertionError("prior grade master cannot nominate rows")),
+                  patch("bilqis_mlx.trainer._train_score",return_value=.5),
+                  patch("bilqis_mlx.trainer._predictions",
+                        return_value={"old-true":"TRUE","old-false":"TRUE"}),
+                  patch("bilqis_mlx.trainer._train_step",side_effect=toy_step)):
+                updated = _take_visit(
+                    None,root,receipt,self.manifest,
+                    self.b_course,Teacher(),{},optimizer,graph,steps_per_visit=1,
+                    batch_size=4,reserve_gib=0.,source_root=SOURCE_ROOT)
         self.assertEqual(observed,[("pick","A"),("observe","A")])
         event = updated["_pending_visit_events"][0]
         self.assertEqual(event["capability"],"A.IDENTITY")
@@ -535,15 +549,16 @@ class GradeBTrainerTests(unittest.TestCase):
             with redirect_stdout(io.StringIO()):
                 receipt = _activate_next_admitted_grade(
                     root,receipt,self.a_course,self.b_course)
+                receipt, _, program = admit_executable_school(
+                    root, receipt, self.b_course, self.a_course, SOURCE_ROOT, graph)
 
             def perfect_oracle_predictions(mx,parameters,rows,config,answer_ids):
                 return {r["id"]:r["gold"] for r in rows}
 
             qualification_cohorts = []
-            first_b_soup = None
             complete_grade_soups = None
             for expected_grade in ("B","A","B"):
-                self.assertEqual(_state_from_json(receipt["school"],self.b_course).grade,
+                self.assertEqual(_state_from_json(receipt["school"],program).grade,
                                  expected_grade)
                 with redirect_stdout(io.StringIO()):
                     for _ in range(6):
@@ -569,30 +584,24 @@ class GradeBTrainerTests(unittest.TestCase):
                 self.assertEqual(sum(s["total"] for s in exam["scores"].values()),144)
                 self.assertTrue(all(s["correct"] == s["total"] for s in exam["scores"].values()))
                 self.assertEqual(len(exam["cohort_sha256"]),64)
-                # Championship authority is same-grade. The first B exam
-                # therefore earns only B roles/soup; A earns fresh active
-                # roles when the scheduler actually replays A.
-                active_soups = receipt["mentor_epoch"]["active_grade_soups"]
-                soup_shas = {grade: entry["sha256"]
-                             for grade, entry in active_soups.items()}
-                self.assertEqual({entry["vote_count"] for entry in
-                                  active_soups.values()}, {6})
-                if expected_grade == "B" and len(qualification_cohorts) == 1:
-                    self.assertEqual(set(active_soups), {"B"})
-                    self.assertEqual(set(exam["grade_soups_refreshed"]), {"B"})
-                    first_b_soup = soup_shas["B"]
-                elif expected_grade == "A":
-                    self.assertEqual(set(active_soups), {"A", "B"})
-                    self.assertEqual(exam["grade_soups_refreshed"], ["A"])
-                    self.assertEqual(soup_shas["B"], first_b_soup)
-                    complete_grade_soups = soup_shas
-                else:
-                    self.assertEqual(set(active_soups), {"A", "B"})
-                    self.assertEqual(soup_shas, complete_grade_soups)
-                    self.assertEqual(exam["grade_soups_refreshed"], [])
+                # SPEC-0002 rev9/10 separates title jurisdiction from checkpoint
+                # training provenance and transfers a defended title on a tie.
+                epoch = receipt["mentor_epoch"]
+                self.assertEqual(set(epoch["active_roles"]), set(self.b_course.capability_map))
+                for capability, role in epoch["active_roles"].items():
+                    self.assertEqual(role["origin_grade"], capability.partition(".")[0])
+                    self.assertEqual(role["checkpoint_origin_grade"], expected_grade)
+                active_soups = epoch["active_grade_soups"]
+                self.assertEqual(set(active_soups), {"A", "B"})
+                self.assertEqual(set(exam["grade_soups_refreshed"]), {"A", "B"})
+                self.assertEqual({entry["vote_count"] for entry in active_soups.values()}, {6})
+                soup_shas = {grade: entry["sha256"] for grade, entry in active_soups.items()}
+                if complete_grade_soups is not None:
+                    self.assertTrue(all(soup_shas[g] != complete_grade_soups[g] for g in soup_shas))
+                complete_grade_soups = soup_shas
             self.assertEqual(len(set(qualification_cohorts)), 3,
                              "Every grade enrollment, including a revisit, gets a new test")
-            final = _state_from_json(receipt["school"],self.b_course)
+            final = _state_from_json(receipt["school"],program)
             self.assertEqual(final.stage,"AWAITING_NEXT_GRADE")
             self.assertEqual(final.active_grades,("A","B"))
             self.assertEqual(final.revalidation_target_grade,None)
@@ -605,13 +614,12 @@ class GradeBTrainerTests(unittest.TestCase):
             teacher_visits = [event for event in events if event.get("event") ==
                               "SCHOOL_TEACHER_VISIT_COMMITTED"]
             self.assertTrue(teacher_visits)
-            # Direct champion advice is same-grade only. B's first pass has no
-            # active roles yet; the A replay cannot borrow B's direct votes;
-            # the final B replay can use B's six newly earned direct roles.
+            # Each lesson receives direct advice from its own earned title-grade
+            # roles; the separately diluted soups span the admitted grades.
             self.assertTrue(all(event.get("prior_grade_champion_votes") == {}
                                 for event in teacher_visits))
             self.assertTrue(all(event["champion_confidence"]["direct_capability_votes"] ==
-                                ({} if index < 12 else {"B": 6})
+                                ({} if index < 6 else {"A": 6} if index < 12 else {"B": 6})
                                 for index, event in enumerate(teacher_visits)))
             self.assertTrue(all(event.get("champion_directed_examples_available") == 0
                                 for event in teacher_visits))
@@ -620,7 +628,7 @@ class GradeBTrainerTests(unittest.TestCase):
             self.assertEqual(len(b_visits), 12)
             with_soups = [e for e in events if e.get("event") ==
                           "SCHOOL_GRADE_SOUP_FROZEN"]
-            self.assertEqual(len(with_soups), 2)
+            self.assertEqual(len(with_soups), 6)
             self.assertEqual({e["grade"] for e in with_soups}, {"A", "B"})
             for event in b_visits[6:]:
                 votes = {v["soup_grade"]: v["effective_votes"] for v in

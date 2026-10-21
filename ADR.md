@@ -859,3 +859,28 @@ must match the sealed package. The normal student/own-AdamW transaction performs
 catalog growth, scheduler adoption, identity reset, outbox persistence and fresh
 evidence reconciliation. New-grade automation retains complete-prefix qualification;
 the source frontier cannot grant itself a mastery-debt exception.
+
+
+## ADR-076 | 2026-10-21 | Complete v2 rubric migration and observational readback
+
+Continued issue349 system execution exposed stale legacy live-rubric metadata
+after executable v2 migration, and diagnostic/replay readers reconstructing a
+cohort with its storage schema in place of its actual rubric. Bind the migrated
+live rubric to the active executable grade while retaining immutable historical
+receipts/exams and causal student/own-AdamW identity. Own v1/v2 stored-rubric
+interpretation once in generated_assessment; consume it in diagnostics, fixed
+frontier and fragile replay. Validate v2 diagnostic source, release and scope
+bindings and retain original content-digest/scoring checks. Routine observations
+receive their actual released cohort pointer metadata. Diagnostics remain
+observational and cannot redefine source meaning, teacher policy or admission.
+
+Migrate disposable system fixtures through production admission/migration owners.
+Preserve exact historical student/optimizer custody and verify same-checkpoint
+recovery. Current championship behavior follows SPEC-0002 revision9/10; historical
+same-training-origin and tie-defense assertions are superseded. No production
+championship policy is changed here. Fix repository-root test import precedence
+for file and dotted targets rather than relying on an installed tests package.
+Focused red/green regressions and the combined511-test source-isolated run support
+the repair. PM-2026-10-20-003 / RC-116 was enriched with native readback. Existing
+issue-owned experiments alone remain authorized; no third run, canonical-run
+mutation, AdamW merge, synthetic lineage, main merge or issue closure.

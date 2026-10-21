@@ -1,3 +1,23 @@
+# Continued issue349 execution | 2026-10-21
+
+The five legacy system errors are repaired. Isolated factory/runtime,
+diagnostics, replay, frontier and A/B/Z proof: 508 passed, 3 skipped; the final
+file/dotted test-runner regression passes 6/6. v2 migration now rebinds the live
+rubric, and diagnostics/replay read rubric identity separately from the storage
+envelope. Historical receipts, source semantics, learner/own-AdamW and teacher
+policy remain preserved. 53 inherited hygiene findings still block portable CI.
+
+Read the **Continued execution** section of
+`docs/evidence/development/ISSUE349_REVIEW_HANDOFF_20261021.md` for proof,
+source authority, exact experiment custody and next actions. Fresh-seeded
+read-only probes show primary 58/113 IDENTITY and 70/139 MAPS; control 73/113 and
+88/139 before any further visit. These are not mastery; D stays unadopted.
+Governing https://github.com/socr8s/private-ip/issues/336 (#336 OPEN, IPR-0220),
+execution #349 OPEN; #346 excluded. Branch remains
+`codex/349-autonomous-jit-ithkuil-20261020`; read HEAD and its remote readback.
+The independent 36 staged paths remain preserved and excluded. Older sections
+below are history and are superseded by this continuation where they conflict.
+
 # Issue349 progress review | 2026-10-21
 
 Review entry point: `docs/evidence/development/ISSUE349_REVIEW_HANDOFF_20261021.md`.

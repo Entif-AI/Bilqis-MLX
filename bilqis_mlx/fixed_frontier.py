@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .generated_assessment import make_cohort, score
+from .generated_assessment import make_cohort, score, stored_rubric_version
 
 
 def _valid_sha(value) -> bool:
@@ -30,10 +30,7 @@ def load_frontier_cohort(run_dir: Path, exam: dict):
         raise ValueError("FIXED_FRONTIER_COHORT_METADATA_DRIFT")
     cohort = make_cohort(
         stored["rows"], generator_version=stored["generator_version"],
-        seed=stored["seed"], rubric_version=(
-            stored["rubric_sha256"]
-            if stored["schema"] == "bilqis.mlx.generated-cohort/v2"
-            else stored["schema"]))
+        seed=stored["seed"], rubric_version=stored_rubric_version(stored))
     if cohort.digest != sha:
         raise ValueError("FIXED_FRONTIER_COHORT_CONTENT_DRIFT")
     return cohort

@@ -15,7 +15,25 @@ import os
 import stat
 
 from ..curriculum import BOOLEAN_OPERATORS
-from ..generated_assessment import make_cohort
+from ..generated_assessment import make_cohort, stored_rubric_version, EXECUTABLE_COHORT_SCHEMA
+
+
+def _is_sha(value):
+    return (isinstance(value, str) and len(value) == 64 and
+            all(c in "0123456789abcdef" for c in value))
+
+
+def _executable_binding_matches(cohort, exam):
+    scope = cohort.get("capabilities")
+    return (all(_is_sha(cohort.get(key)) for key in (
+                "factory_release_sha256", "rubric_sha256", "source_sha256")) and
+            isinstance(scope, list) and bool(scope) and
+            all(isinstance(cap, str) for cap in scope) and len(set(scope)) == len(scope) and
+            isinstance(exam.get("scores"), dict) and set(scope) == set(exam["scores"]) and
+            cohort.get("rubric_sha256") == exam.get("exam_rubric_sha256") and
+            cohort.get("source_sha256") == cohort.get("generator_version") and
+            all(cohort.get(key) == exam.get(key) for key in (
+                "factory_release_sha256", "rubric_sha256", "source_sha256", "capabilities")))
 
 
 def _require_evidence_file(root: Path, path: Path) -> Path:
@@ -134,12 +152,8 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
     their gold labels. Missing IDs are correct *only* after score validation.
     Never reconstruct a nonbinary label from absence in the missed-row list.
     """
-    def is_sha(value):
-        return (isinstance(value, str) and len(value) == 64 and
-                all(c in "0123456789abcdef" for c in value))
-
     if (not isinstance(cohort, dict) or not isinstance(last_exam, dict) or
-            not all(is_sha(last_exam.get(key)) for key in (
+            not all(_is_sha(last_exam.get(key)) for key in (
                 "cohort_sha256", "student_sha256", "exam_rubric_sha256")) or
             not cohort.get("schema") or not cohort.get("generator_version") or
             type(cohort.get("seed")) is not int or
@@ -147,13 +161,15 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
             cohort.get("seed") != last_exam.get("cohort_seed") or
             cohort.get("generator_version") != last_exam.get("generator_version") or
             type(last_exam.get("optimizer_step")) is not int or
-            last_exam["optimizer_step"] < 0):
+            last_exam["optimizer_step"] < 0 or
+            (cohort.get("schema") == EXECUTABLE_COHORT_SCHEMA and
+             not _executable_binding_matches(cohort, last_exam))):
         raise ValueError("DIAGNOSTIC_EXAM_CUSTODY_MISMATCH")
     rows = cohort.get("rows")
     if not isinstance(rows, list) or not rows or any(not isinstance(r, dict) for r in rows):
         raise ValueError("DIAGNOSTIC_COHORT_ROWS_MISSING")
     candidate = make_cohort(rows, generator_version=cohort["generator_version"],
-                            seed=cohort["seed"], rubric_version=cohort["schema"])
+                            seed=cohort["seed"], rubric_version=stored_rubric_version(cohort))
     if candidate.digest != cohort["cohort_sha256"]:
         raise ValueError("DIAGNOSTIC_COHORT_CONTENT_DRIFT")
     if any(not ((r.get("answer_kind") == "binary" and r.get("gold") in ("TRUE", "FALSE")) or

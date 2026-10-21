@@ -17,6 +17,34 @@ def _runner_module():
 
 
 class RunTestsTests(unittest.TestCase):
+    def test_repository_root_precedes_script_local_helper_names(self):
+        runner = _runner_module()
+        name = "runner_root_precedence_fixture"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            scripts = root / "scripts"
+            scripts.mkdir()
+            (root / (name + ".py")).write_text("VALUE = 'root'\n")
+            (scripts / (name + ".py")).write_text("VALUE = 'shadow'\n")
+            test = root / "runner_precedence_test.py"
+            test.write_text(
+                f"from {name} import VALUE\nimport unittest\n"
+                "class RootTest(unittest.TestCase):\n"
+                "    def test_source(self): self.assertEqual(VALUE, 'root')\n")
+            for targets in ((str(test),), (test.stem,)):
+                with self.subTest(targets=targets), patch.object(
+                        sys, "path", [str(scripts), str(root), *sys.path]):
+                    try:
+                        suite = runner._load_targets(targets, root)
+                        result = unittest.TestResult()
+                        suite.run(result)
+                        self.assertEqual(result.testsRun, 1)
+                        self.assertFalse(result.errors)
+                        self.assertFalse(result.failures)
+                    finally:
+                        sys.modules.pop(name, None)
+                        sys.modules.pop(test.stem, None)
+
     def test_source_only_geometry_shim_is_fail_closed_and_temporary(self):
         runner = _runner_module()
         sys.modules.pop("bilqis_logic.geometry", None)

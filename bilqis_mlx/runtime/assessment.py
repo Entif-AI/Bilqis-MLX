@@ -12,6 +12,7 @@ from ..factory.executable_release import ExecutableFactoryRelease
 from ..factory.generation import draw_executable_release_rows
 from ..factory.adapters import SourceAdapterRegistry
 from ..generated_assessment import (
+    EXECUTABLE_COHORT_SCHEMA,
     GENERALIZATION_LIFECYCLE, PROMOTION_ATTEMPT_LIFECYCLE,
     ROUTINE_EVAL_LIFECYCLE, make_cohort,
 )
@@ -19,9 +20,6 @@ from ..live_curriculum import cohort_contract as _cohort_contract, draw_course_r
 from bilqis_mlx.curriculum.scheduler import assessment_capabilities
 from bilqis_mlx.learning.stagnation_control import quarantined_capabilities
 from .state import _durable_json, _seed, _state_from_json
-
-EXECUTABLE_COHORT_SCHEMA = "bilqis.mlx.generated-cohort/v2"
-
 
 def _draw_executable_scope_cohort(
         source_root, graph, release: ExecutableFactoryRelease,

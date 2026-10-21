@@ -11,6 +11,58 @@ https://github.com/socr8s/private-ip/issues/336 (#336 OPEN, IPR-0220).
 Worktree: `/Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020`.
 Branch: `codex/349-autonomous-jit-ithkuil-20261020`.
 
+## Continued execution after the review checkpoint
+
+The user asked to continue on this branch. The five legacy A/B system failures
+were migrated to the normal executable-release owners. They now exercise actual
+toy training, whole-school replay, atomic recovery and preserved historical
+student/own-AdamW custody. Championship assertions follow current SPEC-0002
+revision 9/10: title jurisdiction is separate from training provenance, and a
+qualified challenger takes a defended title on a battery tie. Production
+championship policy was not changed.
+
+The fixture migration exposed a real v1-to-v2 resume defect: the old live-rubric
+hash remained active after v2 adoption. Migration now binds the current v2 grade
+rubric and preserves historical exams and the input receipt. Diagnostics and
+fragile replay also treated the v2 envelope schema as the rubric. A shared
+`stored_rubric_version` decoder preserves legacy identities and reads v2 rubric
+identity separately. Diagnostic v2 readback checks source/release/scope metadata;
+routine exam observations receive the actual pointer metadata. The test runner
+now prioritizes the repository root for file and dotted targets, avoiding
+`scripts/tests` shadowing shared test fixtures. Red regressions captured the
+migration, import and diagnostic failures. PM-2026-10-20-003 / RC-116 was enriched
+and verified by native ledger readback.
+
+Isolated combined proof: **508 passed, 3 skipped, 0 failed (511 total)** across
+factory/runtime, diagnostics, replay, fixed-frontier integration and A/B/Z system
+checks, with full B enabled. The final file/dotted runner regression also passes
+all 6 checks. The previous hardcoded live-provider release fingerprint in the
+opt-in B test was replaced by sealed-manifest roundtrip/preservation checks;
+source course identity and transition order remain checked. No ABI validator,
+expected ABI fingerprint or audit baseline was changed. 53 inherited hygiene
+findings remain; this continuation adds none.
+
+A read-only fresh-seed transfer probe is now reproducible with
+`scripts/issue349_transfer_probe.py`. It scores three seeded draws, deduplicates
+source identities, records the majority baseline and predictions, verifies native
+checkpoint/AdamW and hashes protected files before/after. It writes no admission
+evidence. Historical training-exposure overlap remains NOT_MEASURED; these are
+fresh-seeded observations, not a guarantee of wholly unseen semantic worlds.
+
+| Current saved run | A.IDENTITY | A.MAPS |
+| --- | --- | --- |
+| Protected primary, step 116816 | 58/113 | 70/139 |
+| Independent control, step 117648 | 73/113 | 88/139 |
+| Gold majority baseline | 70/113 | 70/139 |
+
+Both runs stayed byte-identical through these probes. The control's earlier 888
+updates produced useful but limited transfer on this sample; the two lineages
+are not a matched causal experiment. Neither prerequisite is mastered. D remains
+unadopted and untaught. Tracked receipts:
+`20261021-issue349-transfer-primary.json` and
+`20261021-issue349-transfer-control-before.json`. A subsequent bounded control
+visit and paired probe, if performed, must preserve these pre-visit receipts.
+
 ## Publication and ownership
 
 The configured origin is `https://github.com/Entif-AI/Bilqis-MLX.git`.

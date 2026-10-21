@@ -66,6 +66,33 @@ def rescore_fixed_exam(cohort, earlier, predicted, *, step, student_sha):
 
 
 class DiagnosticObservationTests(unittest.TestCase):
+    def test_v2_envelope_binds_source_release_and_scope_separately_from_rubric(self):
+        cohort, exam = constructed_exam(predicted=("TRUE", "FALSE", "FALSE", "TRUE"))
+        rubric = "c" * 64
+        source = "d" * 64
+        cohort.update(schema="bilqis.mlx.generated-cohort/v2", rubric_sha256=rubric,
+                      source_sha256=source, generator_version=source,
+                      factory_release_sha256="e" * 64, capabilities=["X.NOT"])
+        cohort["cohort_sha256"] = make_cohort(
+            cohort["rows"], generator_version=source, seed=cohort["seed"],
+            rubric_version=rubric).digest
+        exam.update(cohort_sha256=cohort["cohort_sha256"], generator_version=source,
+                    exam_rubric_sha256=rubric, rubric_sha256=rubric,
+                    source_sha256=source, factory_release_sha256="e" * 64,
+                    capabilities=["X.NOT"])
+        observed = observe_exam(cohort, exam)
+        self.assertEqual(observed.capabilities[0].correct, exam["scores"]["X.NOT"]["correct"])
+        for field in ("rubric_sha256", "source_sha256", "factory_release_sha256", "capabilities"):
+            wrong = deepcopy(exam)
+            wrong[field] = ["X.OTHER"] if field == "capabilities" else "f" * 64
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "CUSTODY"):
+                observe_exam(cohort, wrong)
+        for field in ("source_sha256", "factory_release_sha256", "capabilities"):
+            missing = deepcopy(cohort)
+            missing.pop(field)
+            with self.subTest(missing=field), self.assertRaisesRegex(ValueError, "CUSTODY"):
+                observe_exam(missing, exam)
+
     def test_six_way_operator_identity_uses_two_of_twelve_majority_baseline(self):
         operators = ("NOT", "AND", "OR", "XOR", "IMPLIES", "IFF")
         rows = [

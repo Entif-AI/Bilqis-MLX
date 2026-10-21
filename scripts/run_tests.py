@@ -81,8 +81,7 @@ def load_test_files(paths: tuple[Path, ...], root: Path) -> unittest.TestSuite:
     """Load files under unique names so duplicate test basenames remain distinct."""
     suite = unittest.TestSuite()
     root_string = str(root)
-    if root_string not in sys.path:
-        sys.path.insert(0, root_string)
+    sys.path[:] = [root_string, *(entry for entry in sys.path if entry != root_string)]
     for path in paths:
         name = _module_name(path, root)
         spec = importlib.util.spec_from_file_location(name, path)
@@ -103,7 +102,7 @@ def load_test_files(paths: tuple[Path, ...], root: Path) -> unittest.TestSuite:
 
 def _load_targets(targets: tuple[str, ...], root: Path) -> unittest.TestSuite:
     paths = tuple(Path(target).resolve() for target in targets if target.endswith(".py"))
-    suite = load_test_files(paths, root) if paths else unittest.TestSuite()
+    suite = load_test_files(paths, root)
     for target in targets:
         if not target.endswith(".py"):
             suite.addTests(unittest.defaultTestLoader.loadTestsFromName(target))

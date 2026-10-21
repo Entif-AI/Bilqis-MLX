@@ -205,6 +205,7 @@ def _migrate_executable_release(run_dir, receipt, course, grade_a_course, source
         "factory_release_file": release_file,
         "factory_release_schema": release.schema,
         "factory_admission_v2": asdict(admission),
+        "live_rubric_sha256": program.grades[rebound.grade_index].assessment_sha256,
         **legacy_execution_metadata(course),
     })
     return migrated, release, program, rebound
@@ -4016,6 +4017,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         assess(program, school, routine_assessment))
 
     routine_last_exam = {
+        **routine_pointer,
         "assessment_grade": school.grade,
         "grade_exam_epoch": school.grade_exam_epoch,
         "exam_plane": "ROUTINE",
