@@ -404,17 +404,22 @@ class GradeATrainerContractTests(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as tmp:
             run_dir = Path(tmp)
-            release, release_file, admission = trainer._factory_admission(
-                run_dir, course, initial, trainer._fingerprint(graph))
+            release, program, _ = trainer.compile_projected_executable_release(
+                course, course, ROOT, graph)
+            school = start_new(program, initial)
+            release, release_file, admission = trainer._executable_factory_admission(
+                run_dir, release, initial, trainer._fingerprint(graph), graph)
             parameter_shapes = {name: list(value.shape) for name, value in params.items()}
             control.update({
+                "school": asdict(school),
                 "parameter_shapes": parameter_shapes,
                 "semantic_graph_sha256": trainer._fingerprint(graph),
                 "factory_release_sha256": release.release_sha256,
                 "factory_release_file": release_file,
-                "factory_admission": asdict(admission),
+                "factory_release_schema": release.schema,
+                "factory_admission_v2": asdict(admission),
                 "championship_school_identity": trainer.build_school_identity(
-                    course_sha256=course.digest(),
+                    course_sha256=release.execution_plan.curriculum_sha256,
                     semantic_graph_sha256=trainer._fingerprint(graph),
                     parameter_shapes=parameter_shapes,
                     factory_release_sha256=release.release_sha256),
@@ -435,7 +440,7 @@ class GradeATrainerContractTests(unittest.TestCase):
                     mx,run_dir,control,manifest,course,ROOT,SOURCE,
                     params,opt,graph,reserve_gib=0.)
             self.assertEqual(completed["last_exam"]["exam_rubric_sha256"],
-                             course.grades[0].assessment_sha256)
+                             program.grades[0].assessment_sha256)
             self.assertEqual(sum(score["total"] for score in
                                  completed["last_exam"]["scores"].values()),72)
             self.assertEqual(completed["school"]["current_student"]["optimizer_step"],7)
@@ -443,9 +448,11 @@ class GradeATrainerContractTests(unittest.TestCase):
                              completed)
             self.assertEqual(len(list((run_dir/"bundles").iterdir())),1)
             self.assertEqual(len(completed["capability_best"]),6)
-            self.assertEqual(completed["last_exam"]["generator_version"],
-                             "bilqis.mlx.grade-a-live-constructor/v1")
             saved_cohort = json.loads((run_dir / completed["last_exam"]["cohort_file"]).read_text())
+            self.assertEqual(completed["last_exam"]["generator_version"],
+                             saved_cohort["generator_version"])
+            self.assertEqual(saved_cohort["generator_version"],
+                             saved_cohort["source_sha256"])
             self.assertEqual(len(saved_cohort["rows"]), 72)
             self.assertEqual(saved_cohort["cohort_sha256"],
                              completed["last_exam"]["cohort_sha256"])
@@ -535,22 +542,41 @@ class GradeATrainerContractTests(unittest.TestCase):
                 "answer_ids": answer_ids, "result": "ACTIVE_GRADE_A",
                 "last_exam": None,
             }
+            trainer._record(run_dir, {
+                "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                "generation": 1,
+                "grade": "A",
+                "optimizer_step": base.optimizer_step,
+                "retained_optimizer_updates": 1,
+                "recovered_at_student_sha256": base.sha256,
+                "checkpoint_status": "RECORDED_AT_BOUNDARY",
+            })
             _persist(run_dir, historical)
             with redirect_stdout(io.StringIO()):
                 loaded, own_adamw, loaded_graph, resumed = _resume(
-                    run_dir, manifest, course, sha)
+                    run_dir, manifest, course, sha,
+                    grade_a_course=course, source_root=ROOT)
             self.assertEqual(resumed["curriculum_mode"], LIVE_RELEASE)
             self.assertEqual(resumed["school"]["current_student"], asdict(base))
             self.assertEqual(int(own_adamw.state["step"].item()), base.optimizer_step)
             self.assertEqual(resumed["teacher"], teacher)
             self.assertEqual(resumed["historical_capability_best"], frontier)
             self.assertTrue(resumed["legacy_frontier_pending_replay"])
-            self.assertEqual(resumed["school"]["course_digest"], course.digest())
+            self.assertEqual(resumed["championship_checkpoint_origins"],
+                             {base.sha256: "A"})
+            admitted_release = trainer._read_executable_factory_release_artifact(
+                run_dir, resumed)
+            self.assertEqual(
+                resumed["school"]["course_digest"],
+                trainer.schedule_program_from_executable_release(
+                    admitted_release).digest())
             self.assertEqual(json.loads((run_dir/"states/0000001.json").read_text()),
                              json.loads(json.dumps(historical)))
-            self.assertIn("factory_admission", resumed)
+            self.assertIn("factory_admission_v2", resumed)
+            self.assertEqual(resumed["factory_release_schema"],
+                             "bilqis.mlx.factory-release/v2")
             self.assertEqual(resumed["factory_release_sha256"],
-                             resumed["factory_admission"]["factory_release_sha256"])
+                             resumed["factory_admission_v2"]["factory_release_sha256"])
             # Fault injection: the live-course migration plus factory-admission
             # generations exist, but the mutable latest pointer is rewound to
             # the historical generation 1 receipt.
@@ -559,7 +585,8 @@ class GradeATrainerContractTests(unittest.TestCase):
                           json.loads(json.dumps(historical)), replace_existing=True)
             with redirect_stdout(io.StringIO()):
                 restored_weights, restored_adamw, restored_graph, repaired = _resume(
-                    run_dir, manifest, course, sha)
+                    run_dir, manifest, course, sha,
+                    grade_a_course=course, source_root=ROOT)
             self.assertEqual(repaired, resumed)
             self.assertEqual(repaired["generation"], 4)
             self.assertEqual(int(restored_adamw.state["step"].item()),

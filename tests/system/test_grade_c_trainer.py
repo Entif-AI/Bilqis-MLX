@@ -13,7 +13,7 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.compatibility.frontier_recovery import (
     _measure_debt_admission_boundary, _migrate_grade_c_fixed_frontier)
 from bilqis_mlx.trainer import (_bundle_pointer, _fingerprint, _persist,
-    _resume,
+    _ensure_executable_release, _migrate_championship_governance, _resume,
     _state_from_json, _take_exam, _take_visit, prepare_source)
 from bilqis_mlx.grade_transition import activate_numeric_grade
 from bilqis_mlx.live_grade_a import live_course as a_course
@@ -42,7 +42,8 @@ class GradeCTrainerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.manifest, old, cls.engine, cls.policy_sha, cls.teacher, _ = prepare_source(SOURCE, PARENT, MANIFEST)
-        cls.previous = b_course(a_course(old), SOURCE)
+        cls.grade_a = a_course(old)
+        cls.previous = b_course(cls.grade_a, SOURCE)
         from bilqis_mlx.pedagogical_parity import _source_stack
         _, _, _, _, cls.parent_graph, _ = _source_stack(SOURCE)
         cls.course, cls.graph = prepare_course(cls.previous, maximum=10)
@@ -303,6 +304,10 @@ class GradeCTrainerTests(unittest.TestCase):
             receipt = _persist(root,self.receipt(self.graduated(pointer),pointer,params))
             params,opt,graph,receipt = activate_numeric_grade(mx,root,receipt,self.previous,
                 self.course,params,opt,self.parent_graph,reserve_gib=0.)
+            receipt, executable_release, _ = _ensure_executable_release(
+                root, receipt, self.course, self.grade_a, SOURCE, graph)
+            receipt = _migrate_championship_governance(
+                root, receipt, self.course)
             self.assertEqual(receipt["curriculum_mode"],C_RELEASE)
             self.assertEqual(receipt["teacher"],self.teacher)
             self.assertEqual(int(opt.state["step"].item()),1)
@@ -333,9 +338,14 @@ class GradeCTrainerTests(unittest.TestCase):
                 admitted = {self.course.version: drifted}
                 params,opt,graph,reloaded = _resume(
                     root,self.manifest,drifted,self.policy_sha,
+                    grade_a_course=self.grade_a, source_root=SOURCE,
                     admitted_courses=admitted)
-                self.assertEqual(admitted[self.course.version], self.course)
                 self.assertEqual(reloaded,receipt)
+                self.assertEqual(reloaded["factory_release_sha256"],
+                                 executable_release.release_sha256)
+                self.assertEqual(
+                    reloaded["factory_admission_v2"]["factory_release_sha256"],
+                    executable_release.release_sha256)
             self.assertEqual(receipt["school"]["active_grades"][receipt["school"]["grade_index"]],"A")
             self.assertEqual(receipt["school"]["revalidation_target_grade"],"C")
             self.assertEqual(len(set(routine_cohorts)), len(PLANS))
