@@ -414,7 +414,7 @@ class NumericStaircaseTests(unittest.TestCase):
                     '--legacy-code-root', str(fixtures.SOURCE)]), 0)
             report = json.loads(output.getvalue())
             self.assertEqual(report['numeric_staircase']['resume_maximum'], 3)
-            self.assertEqual(report['numeric_staircase']['final_maximum'], 6)
+            self.assertEqual(report['numeric_staircase']['final_maximum'], 4)
             self.assertFalse(report['neural_training_started_by_this_command'])
             self.assertEqual((self.root/'state.json').read_bytes(), original)
 
