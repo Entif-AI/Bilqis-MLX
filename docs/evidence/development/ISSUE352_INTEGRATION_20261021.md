@@ -100,6 +100,11 @@ that archive copies are excluded from ordinary test discovery. The full suite
 was run against the unique tracked test inventory. No canonical/historical run or
 existing issue-owned experimental learner was resumed or updated.
 
+Full-suite result: **1,229 passed, 3 skipped, 0 failed**, full Grade B enabled.
+The final diagnostic/custody slice passed 51 with 2 human-evidence skips;
+size/discovery/architecture proof passed 16/16. Quality, closure, source boundaries,
+docs, release metadata and whitespace checks pass.
+
 Final totals and exact pushed code head are recorded in the issue checkpoint and
 current HANDOFF. Neural learning, mastery, D admission and feature promotion
 remain separate from source-integration correctness. ABI verification is advisory
