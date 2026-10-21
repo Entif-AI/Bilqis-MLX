@@ -47,7 +47,8 @@ def draw_evidence_rows(source_root, graph, release: FactoryRelease,
         )
         for row in rows:
             if registry.obligation_witness(
-                    release.course if legacy else None, capability=obligation.capability_id,
+                    release.course if legacy else release.curriculum,
+                    capability=obligation.capability_id,
                     row=row, obligation=obligation,
                     source_root=source_root, graph=graph,
                     release=None if legacy else release):

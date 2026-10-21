@@ -240,6 +240,11 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
     producer = course.capability_map.get(required[0])
     if producer is None or len(producer.examined_roots) != 1:
         raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED")
+    declared_producer_id = getattr(producer, "id", None)
+    if declared_producer_id is None:
+        declared_producer_id = getattr(producer, "capability_id", None)
+    if not isinstance(declared_producer_id, str) or not declared_producer_id:
+        raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED")
     producer_root = producer.examined_roots[0]
     record = row.get("record")
     if not isinstance(record, dict):
@@ -256,7 +261,7 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
     if kind == "COMPOSITION":
         key = getattr(obligation, "key", "")
         if "@" not in key:
-            if key != producer.id:
+            if key != declared_producer_id:
                 raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
             if record.get("task") == "identify_boolean_operator":
                 shape = inspect_boolean_identification(record, row.get("root"))
@@ -269,7 +274,7 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
             slot = int(slot_raw)
         except (AttributeError, ValueError) as exc:
             raise ValueError("FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID") from exc
-        if producer_id != producer.id:
+        if producer_id != declared_producer_id:
             raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
         query = record.get("query")
         args = query.get("args") if isinstance(query, dict) else None
