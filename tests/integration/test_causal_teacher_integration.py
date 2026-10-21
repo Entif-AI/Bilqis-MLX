@@ -12,8 +12,10 @@ import numpy as np
 
 from bilqis_mlx import trainer as storage
 from bilqis_mlx.compatibility.live_releases import initial_course
+from bilqis_mlx.factory.generation import draw_executable_release_rows
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.learning.learning_experiment import Settings, select_source_lesson
+from bilqis_mlx.source_adapters.school import live_source_registry
 from tests.system import test_grade_c_trainer as fixtures
 from tests.integration import test_numeric_staircase as staircase_fixtures
 
@@ -335,12 +337,15 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertGreater(result["teacher"]["causal_experiment"]["events"],0)
 
     def test_typed_actions_have_actual_distinct_effect_on_selected_source_rows(self):
-        raw=storage._draw_live_rows(
-            self.source_root,self.fixture.graph,capability="C.COUNT",
-            course=self.course,each=12,seed=109)
-        prior=storage._draw_live_rows(
-            self.source_root,self.fixture.graph,capability="A.IDENTITY",
-            course=self.course,each=12,seed=29)
+        registry = live_source_registry()
+        raw = draw_executable_release_rows(
+            self.source_root, self.fixture.graph, self.executable_release,
+            registry, capability="C.COUNT", legacy_course=self.course,
+            each=12, seed=109)
+        prior = draw_executable_release_rows(
+            self.source_root, self.fixture.graph, self.executable_release,
+            registry, capability="A.IDENTITY", legacy_course=self.course,
+            each=12, seed=29)
         x,trace1=select_source_lesson(raw,prior,
             {"old":0,"contrast":0,"depth":1},seed=13,batch_size=6)
         y,trace2=select_source_lesson(raw,prior,
