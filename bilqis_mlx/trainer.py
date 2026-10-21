@@ -3542,7 +3542,8 @@ def _live_exam_factors_complete(executable_release, cohort, expected) -> bool:
                 row["gold"] for row in rows
                 if row.get("answer_kind", "binary") == family.kind}
             if (not observed or
-                    (balancing_axes.intersection(capability_map[cap].variation_axes)
+                    (balancing_axes.intersection(
+                        getattr(capability_map[cap], "variation_axes", ()))
                      and observed != set(family.values))):
                 return False
     return True

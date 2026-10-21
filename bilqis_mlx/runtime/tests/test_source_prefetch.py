@@ -17,10 +17,6 @@ CHECKPOINT = (SOURCE_ROOT / "runs/primitive-consolidation-v16-triplets/"
 MANIFEST = ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
 
-def _worker_ignores_sigint():
-    return signal.getsignal(signal.SIGINT) == signal.SIG_IGN
-
-
 class SourcePrefetchTests(unittest.TestCase):
     def test_human_cli_defaults_to_two_prep_workers_with_serial_escape_hatch(self):
         self.assertEqual(parse_args(["train"]).source_prefetch_workers, 2)
@@ -31,7 +27,11 @@ class SourcePrefetchTests(unittest.TestCase):
 
     def test_spawned_prefetch_workers_ignore_terminal_sigint(self):
         with source_prefetch.source_prefetch_pool(1) as pool:
-            self.assertTrue(pool.submit(_worker_ignores_sigint).result(timeout=10))
+            # Child importability must not depend on the dynamic module name
+            # that scripts/run_tests.py assigns to collected test files.
+            self.assertEqual(
+                pool.submit(signal.getsignal, signal.SIGINT).result(timeout=10),
+                signal.SIG_IGN)
 
     def test_step_packet_is_deterministic_and_rejects_neural_or_write_authority(self):
         course = SimpleNamespace(grades=(SimpleNamespace(id="B"),))
