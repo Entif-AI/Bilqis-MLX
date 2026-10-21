@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from bilqis_mlx.generated_assessment import make_cohort
+from bilqis_mlx.generated_assessment import verify_stored_cohort
 from bilqis_mlx.grade_b_oracle import evaluate as grade_b_gold, operand_truth
 
 
@@ -167,10 +167,16 @@ def load_replay_rows(run_dir: Path, receipt: dict, *, capabilities) -> tuple[dic
     stored = json.loads(file.read_text(encoding="utf-8"))
     if stored.get("cohort_sha256") != sha:
         raise ValueError("FRAGILE_REPLAY_COHORT_IDENTITY_DRIFT")
-    cohort = make_cohort(stored["rows"], generator_version=stored["generator_version"],
-                         seed=stored["seed"], rubric_version=stored["schema"])
-    if cohort.digest != sha:
-        raise ValueError("FRAGILE_REPLAY_COHORT_CONTENT_DRIFT")
+    try:
+        cohort = verify_stored_cohort(
+            stored, sha,
+            expected_rubric_sha256=exam.get("rubric_sha256"),
+            expected_factory_release_sha256=exam.get(
+                "factory_release_sha256"))
+    except ValueError as exc:
+        if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
+            raise ValueError("FRAGILE_REPLAY_COHORT_CONTENT_DRIFT") from exc
+        raise ValueError("FRAGILE_REPLAY_COHORT_IDENTITY_DRIFT") from exc
     rows = tuple(row for row in cohort.rows if row["capability"] in requested)
     expected_total = sum(scores[name].get("total", 0) for name in requested)
     if (expected_total < 1 or len(rows) != expected_total or

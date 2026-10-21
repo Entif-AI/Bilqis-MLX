@@ -15,7 +15,7 @@ import os
 import stat
 
 from ..curriculum import BOOLEAN_OPERATORS
-from ..generated_assessment import make_cohort
+from ..generated_assessment import verify_stored_cohort
 
 
 def _require_evidence_file(root: Path, path: Path) -> Path:
@@ -152,10 +152,16 @@ def observe_exam(cohort: dict, last_exam: dict) -> ExamObservation:
     rows = cohort.get("rows")
     if not isinstance(rows, list) or not rows or any(not isinstance(r, dict) for r in rows):
         raise ValueError("DIAGNOSTIC_COHORT_ROWS_MISSING")
-    candidate = make_cohort(rows, generator_version=cohort["generator_version"],
-                            seed=cohort["seed"], rubric_version=cohort["schema"])
-    if candidate.digest != cohort["cohort_sha256"]:
-        raise ValueError("DIAGNOSTIC_COHORT_CONTENT_DRIFT")
+    try:
+        verify_stored_cohort(
+            cohort, cohort["cohort_sha256"],
+            expected_rubric_sha256=last_exam.get("rubric_sha256"),
+            expected_factory_release_sha256=last_exam.get(
+                "factory_release_sha256"))
+    except ValueError as exc:
+        if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
+            raise ValueError("DIAGNOSTIC_COHORT_CONTENT_DRIFT") from exc
+        raise ValueError("DIAGNOSTIC_EXAM_CUSTODY_MISMATCH") from exc
     if any(not ((r.get("answer_kind") == "binary" and r.get("gold") in ("TRUE", "FALSE")) or
                (r.get("answer_kind") == "numeric_active" and isinstance(r.get("gold"), str)
                 and r["gold"].isascii() and r["gold"].isdecimal()) or

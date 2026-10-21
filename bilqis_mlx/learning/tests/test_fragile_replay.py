@@ -12,7 +12,82 @@ from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.profiles.retention import fragile_preservation_capabilities
 
 
+def _v2_replay_rows():
+    rows = []
+    for capability in ("B.OR", "B.XOR"):
+        for repetition in range(3):
+            for pattern_index, bits in enumerate((
+                    (False, False), (False, True), (True, False), (True, True))):
+                args = [
+                    {"kind": "relation", "name": relation,
+                     "args": [{"kind": "entity", "name": "A"},
+                              {"kind": "entity", "name": "B"}]}
+                    for relation in ("PARENT", "LINK")
+                ]
+                gold = ("TRUE" if (any(bits) if capability == "B.OR"
+                                   else bits[0] != bits[1]) else "FALSE")
+                rows.append({
+                    "id": f"{capability}:{repetition}:{pattern_index}",
+                    "capability": capability,
+                    "gold": gold,
+                    "operand_truths": list(bits),
+                    "tokens": [17, 24, 5],
+                    "record": {"task": "micro", "world": {
+                        "entities": ["A", "B"],
+                        "facts": [[relation, "A", "B"] for relation, truth in
+                                  zip(("PARENT", "LINK"), bits) if truth]},
+                        "query": {"kind": "apply", "operator": capability[2:],
+                                  "args": args}},
+                })
+    return rows
+
+
 class FragileReplayTests(unittest.TestCase):
+    def test_saved_v2_cohort_replay_uses_rubric_digest_and_release_binding(self):
+        rows = _v2_replay_rows()
+        rubric = "b" * 64
+        release = "c" * 64
+        cohort = make_cohort(
+            rows, generator_version="test-v2-oracle", seed=31,
+            rubric_version=rubric)
+        digest = cohort.digest
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "cohorts"
+            path.mkdir()
+            payload = {
+                "schema": "bilqis.mlx.generated-cohort/v2",
+                "factory_release_sha256": release,
+                "rubric_sha256": rubric,
+                "cohort_sha256": digest,
+                "rows": rows,
+                "seed": 31,
+                "generator_version": "test-v2-oracle",
+            }
+            cohort_path = path / f"{digest}.json"
+            cohort_path.write_text(json.dumps(payload))
+            receipt = {"last_exam": {
+                "cohort_sha256": digest,
+                "cohort_file": f"cohorts/{digest}.json",
+                "rubric_sha256": rubric,
+                "factory_release_sha256": release,
+                "scores": {
+                    "B.OR": {"correct": 12, "total": 12},
+                    "B.XOR": {"correct": 12, "total": 12},
+                },
+            }}
+
+            replay = load_replay_rows(
+                Path(tmp), receipt,
+                capabilities=fragile_preservation_capabilities())
+            self.assertEqual(len(replay), 24)
+
+            payload["factory_release_sha256"] = "d" * 64
+            cohort_path.write_text(json.dumps(payload))
+            with self.assertRaisesRegex(ValueError, "IDENTITY|METADATA|RELEASE"):
+                load_replay_rows(
+                    Path(tmp), receipt,
+                    capabilities=fragile_preservation_capabilities())
+
     def test_materialized_balanced_or_xor_only_and_per_item_loss(self):
         rows = []
         for name in ("B.OR", "B.XOR"):
