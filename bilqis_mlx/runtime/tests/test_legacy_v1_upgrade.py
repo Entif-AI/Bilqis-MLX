@@ -1,17 +1,21 @@
 """A historically sealed v1 release is resume authority during v2 migration."""
 from dataclasses import asdict
+import json
 from pathlib import Path
 import tempfile
 import unittest
 from types import SimpleNamespace
 
+from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.factory.tests.support import synthetic_release_inputs
 from bilqis_mlx.factory.release import compile_factory_release, admit_factory_release
 from bilqis_mlx.runtime.admission import (
     _persist_factory_release, _verified_legacy_upgrade_release,
     _verified_historical_cohort_release,
 )
-from bilqis_mlx.compatibility.assessment import sealed_v1_cohort_contract
+from bilqis_mlx.compatibility.assessment import (
+    sealed_v1_cohort_contract, verify_legacy_saved_cohort,
+)
 from bilqis_mlx.trainer import _verify_live_rubric_lineage
 
 
@@ -82,6 +86,59 @@ class LegacyUpgradeTests(unittest.TestCase):
                 **migrated["factory_admission"], "course_sha256": "0" * 64}}
             with self.assertRaises(ValueError):
                 _verified_historical_cohort_release(Path(tmp), tampered)
+
+    def test_sealed_v1_cohort_reader_uses_common_content_verifier(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            release, state = self._stored(root)
+            grade = release.course.grades[-1]
+            rubric, schema, generator, code_sha = sealed_v1_cohort_contract(
+                release, grade)
+            rows = [{
+                "id": "legacy-v1-row",
+                "capability": grade.capabilities[0].id,
+                "gold": "TRUE",
+            }]
+            cohort = make_cohort(
+                rows, generator_version=generator, seed=23,
+                rubric_version=schema)
+            directory = root / "cohorts"
+            directory.mkdir()
+            path = directory / f"{cohort.digest}.json"
+            source = "f" * 64
+            payload = {
+                "schema": schema,
+                "source_manifest_sha256": source,
+                "rubric_sha256": rubric,
+                "generator_version": generator,
+                "generator_code_sha256": code_sha,
+                "seed": cohort.seed,
+                "cohort_sha256": cohort.digest,
+                "rows": rows,
+            }
+            path.write_text(json.dumps(payload))
+            receipt = {
+                **state,
+                "source_manifest_sha256": source,
+                "last_exam": {
+                    "cohort_sha256": cohort.digest,
+                    "cohort_file": f"cohorts/{cohort.digest}.json",
+                    "cohort_seed": cohort.seed,
+                },
+            }
+            self.assertEqual(
+                verify_legacy_saved_cohort(
+                    root, receipt, release.course,
+                    sealed_v1_release=release).digest,
+                cohort.digest)
+
+            payload["rows"][0]["gold"] = "FALSE"
+            path.write_text(json.dumps(payload))
+            with self.assertRaisesRegex(
+                    ValueError, "HUMAN_TRAINER_SAVED_COHORT_CONTENT_DRIFT"):
+                verify_legacy_saved_cohort(
+                    root, receipt, release.course,
+                    sealed_v1_release=release)
 
     def test_scoring_v2_evidence_does_not_relabel_a_signed_historical_v1_rubric(self):
         with tempfile.TemporaryDirectory() as tmp:

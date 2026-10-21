@@ -369,11 +369,15 @@ def _load_current_cohort(run_dir, manifest, course, pointer):
             stored.get("cohort_sha256") != sha or
             stored.get("seed") != pointer.get("cohort_seed")):
         raise ValueError("HUMAN_TRAINER_COHORT_POINTER_METADATA_DRIFT")
-    cohort = make_cohort(stored["rows"], generator_version=generator,
-                         seed=stored["seed"], rubric_version=release)
-    if cohort.digest != sha:
-        raise ValueError("HUMAN_TRAINER_COHORT_POINTER_CONTENT_DRIFT")
-    return cohort
+    try:
+        return verify_stored_cohort(
+            stored, sha, expected_rubric_sha256=rubric)
+    except ValueError as exc:
+        if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
+            raise ValueError(
+                "HUMAN_TRAINER_COHORT_POINTER_CONTENT_DRIFT") from exc
+        raise ValueError(
+            "HUMAN_TRAINER_COHORT_POINTER_METADATA_DRIFT") from exc
 
 
 def load_championship_cohort(run_dir, witness):

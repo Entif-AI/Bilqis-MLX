@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-from ..generated_assessment import make_cohort
+from ..generated_assessment import verify_stored_cohort
 from ..live_curriculum import cohort_contract, lesson_contract
 
 
@@ -76,9 +76,10 @@ def verify_legacy_saved_cohort(run_dir, receipt, course, *, sealed_v1_release=No
             stored.get("seed") != exam.get("cohort_seed") or
             stored.get("schema") != release):
         raise ValueError("HUMAN_TRAINER_SAVED_COHORT_METADATA_DRIFT")
-    cohort = make_cohort(
-        stored["rows"], generator_version=generator,
-        seed=stored["seed"], rubric_version=release)
-    if cohort.digest != sha:
-        raise ValueError("HUMAN_TRAINER_SAVED_COHORT_CONTENT_DRIFT")
-    return cohort
+    try:
+        return verify_stored_cohort(
+            stored, sha, expected_rubric_sha256=rubric)
+    except ValueError as exc:
+        if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
+            raise ValueError("HUMAN_TRAINER_SAVED_COHORT_CONTENT_DRIFT") from exc
+        raise ValueError("HUMAN_TRAINER_SAVED_COHORT_METADATA_DRIFT") from exc

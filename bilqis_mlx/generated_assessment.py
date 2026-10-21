@@ -16,6 +16,7 @@ ROUTINE_EVAL_LIFECYCLE = "bilqis.grade-test.fresh-routine/v2"
 PROMOTION_ATTEMPT_LIFECYCLE = "bilqis.grade-test.promotion-attempt/v1"
 GENERALIZATION_LIFECYCLE = "bilqis.grade-test.fresh-generalization/v1"
 EXECUTABLE_COHORT_SCHEMA = "bilqis.mlx.generated-cohort/v2"
+VERSIONED_COHORT_SCHEMA_PREFIX = "bilqis.mlx.generated-cohort/"
 
 
 def digest(value) -> str:
@@ -60,7 +61,9 @@ def verify_stored_cohort(
 
     Historical v1 cohorts hashed their release/schema string as rubric_version.
     Executable v2 cohorts hash the separately stored rubric digest instead and
-    bind that measurement identity to an admitted factory release.
+    bind that measurement identity to an admitted factory release. Unknown
+    schemas in the explicit generated-cohort version family fail closed rather
+    than being reinterpreted as historical release identifiers.
     """
     def valid_sha(value) -> bool:
         return (isinstance(value, str) and len(value) == 64 and
@@ -76,14 +79,17 @@ def verify_stored_cohort(
         raise ValueError("STORED_COHORT_IDENTITY_DRIFT")
 
     schema = stored["schema"]
+    if (schema.startswith(VERSIONED_COHORT_SCHEMA_PREFIX) and
+            schema != EXECUTABLE_COHORT_SCHEMA):
+        raise ValueError("STORED_COHORT_SCHEMA_UNSUPPORTED")
+    if (expected_rubric_sha256 is not None and
+            stored.get("rubric_sha256") != expected_rubric_sha256):
+        raise ValueError("STORED_COHORT_METADATA_DRIFT")
     rubric_version = schema
     if schema == EXECUTABLE_COHORT_SCHEMA:
         rubric_sha256 = stored.get("rubric_sha256")
         factory_release_sha256 = stored.get("factory_release_sha256")
         if not valid_sha(rubric_sha256) or not valid_sha(factory_release_sha256):
-            raise ValueError("STORED_COHORT_METADATA_DRIFT")
-        if (expected_rubric_sha256 is not None and
-                rubric_sha256 != expected_rubric_sha256):
             raise ValueError("STORED_COHORT_METADATA_DRIFT")
         if (expected_factory_release_sha256 is not None and
                 factory_release_sha256 != expected_factory_release_sha256):
