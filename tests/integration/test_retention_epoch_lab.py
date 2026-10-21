@@ -45,7 +45,10 @@ def _visit_program():
 
 
 def _visit_release(program):
-    return SimpleNamespace(execution_plan=SimpleNamespace(
+    # The prefetch identity is bound to the admitted executable release, not
+    # merely to the scheduler's projected capability set.
+    return SimpleNamespace(release_sha256="f" * 64,
+                           execution_plan=SimpleNamespace(
         capabilities=tuple(program.capability_map.values())))
 
 
@@ -67,6 +70,7 @@ class RetentionTeachingPathTests(unittest.TestCase):
                                     state={"step": SimpleNamespace(item=lambda: 1)})
         captured = []
         serial_draws = []
+        submitted_requests = []
 
         def serial_source_rows(*_args, **kwargs):
             serial_draws.append(kwargs["seed"])
@@ -82,6 +86,7 @@ class RetentionTeachingPathTests(unittest.TestCase):
 
         class InlineExecutor:
             def submit(self, _fn, request):
+                submitted_requests.append(request)
                 fresh = [
                     {"id": f"prefetch:{index}", "source_id": f"prefetch:{index}",
                      "capability": "B.XOR", "answer_kind": "binary",
@@ -133,6 +138,9 @@ class RetentionTeachingPathTests(unittest.TestCase):
 
         self.assertEqual(len(serial_draws), 1,
                          "Only the visit-level score draw should use the serial path")
+        self.assertEqual(len(submitted_requests), 1)
+        self.assertEqual(submitted_requests[0]["executable_release"].release_sha256,
+                         "f" * 64)
         self.assertEqual(len(captured), 8)
         self.assertTrue(all(row["id"].startswith("prefetch:") for row in captured))
 
