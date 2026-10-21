@@ -300,6 +300,71 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertEqual(own.state['step'].item(), prior_step)
         self.assertEqual(graph, self.graph)
 
+    def test_rebaselined_predecessor_v2_pointer_is_bound_and_tamper_rejected(self):
+        # The pre-growth Boolean exam is a normal same-current v2 cohort.
+        self.assertIsNotNone(storage._verify_saved_cohort(
+            self.root, self.before_numeric, self.boolean_course))
+
+        course, record = self.start()
+        exam = record['last_exam']
+        predecessor = self.boolean_release
+        expected_capabilities = tuple(
+            item.capability_id for item in predecessor.execution_plan.capabilities)
+        self.assertEqual(exam['schema'], 'bilqis.mlx.generated-cohort/v2')
+        self.assertEqual(
+            exam['factory_release_sha256'], predecessor.release_sha256)
+        self.assertEqual(tuple(exam['capabilities']), expected_capabilities)
+        self.assertEqual(
+            exam['rubric_sha256'],
+            self.before_numeric['last_exam']['rubric_sha256'])
+        self.assertEqual(
+            exam['source_sha256'],
+            self.before_numeric['last_exam']['source_sha256'])
+        self.assertEqual(
+            exam['student_sha256'], record['school']['current_student']['sha256'])
+        self.assertEqual(
+            exam['optimizer_step'],
+            record['school']['current_student']['optimizer_step'])
+        self.assertIsNotNone(storage._verify_saved_cohort(
+            self.root, record, course))
+
+        arbitrary_release = deepcopy(record)
+        arbitrary_release['last_exam']['factory_release_sha256'] = 'a' * 64
+        with self.assertRaisesRegex(
+                ValueError,
+                'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_UNAUTHORIZED'):
+            storage._verify_saved_cohort(self.root, arbitrary_release, course)
+
+        for field, value in (
+                ('rubric_sha256', 'b' * 64),
+                ('source_sha256', 'c' * 64),
+                ('capabilities', list(expected_capabilities[:-1]))):
+            tampered = deepcopy(record)
+            tampered['last_exam'][field] = value
+            with self.assertRaisesRegex(
+                    ValueError, 'FACTORY_EXECUTABLE_COHORT_SCOPE_DRIFT'):
+                storage._verify_saved_cohort(self.root, tampered, course)
+
+        wrong_student = deepcopy(record)
+        wrong_student['last_exam']['student_sha256'] = 'd' * 64
+        with self.assertRaisesRegex(
+                ValueError,
+                'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_STUDENT_DRIFT'):
+            storage._verify_saved_cohort(self.root, wrong_student, course)
+
+        wrong_provenance = deepcopy(record)
+        wrong_provenance['factory_admission_v2']['semantic_graph_sha256'] = 'e' * 64
+        with self.assertRaisesRegex(
+                ValueError,
+                'FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT'):
+            storage._verify_saved_cohort(self.root, wrong_provenance, course)
+
+        wrong_manifest = deepcopy(record)
+        wrong_manifest['source_manifest_sha256'] = 'f' * 64
+        with self.assertRaisesRegex(
+                ValueError, 'FACTORY_EXECUTABLE_COHORT_METADATA_DRIFT'):
+            storage._verify_saved_cohort(self.root, wrong_manifest, course)
+
     def test_question_inventory_change_globally_resets_live_champions_and_soups(self):
         course, record = self.start()
         seeded = deepcopy(record)

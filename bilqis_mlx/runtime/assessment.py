@@ -8,7 +8,10 @@ from ..factory.assessment import (
     AssessmentScopeContract,
     assessment_scope_contract,
 )
-from ..factory.executable_release import ExecutableFactoryRelease
+from ..factory.executable_release import (
+    ExecutableAdmissionReceipt,
+    ExecutableFactoryRelease,
+)
 from ..factory.generation import draw_executable_release_rows
 from ..factory.adapters import SourceAdapterRegistry
 from ..generated_assessment import (
@@ -406,7 +409,52 @@ def _verify_saved_cohort(run_dir, receipt, course, *, sealed_v1_release=None):
     if (receipt.get("factory_admission_v2") is not None and
             exam.get("factory_release_sha256") is not None):
         from .admission import _read_executable_factory_release_artifact
-        release = _read_executable_factory_release_artifact(run_dir, receipt)
+        current = _read_executable_factory_release_artifact(run_dir, receipt)
+        release = current
+        if exam["factory_release_sha256"] != current.release_sha256:
+            if exam.get("schema") != EXECUTABLE_COHORT_SCHEMA:
+                raise ValueError(
+                    "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_POINTER_INVALID")
+            predecessor_sha = exam["factory_release_sha256"]
+            if current.predecessor_release_sha256 != predecessor_sha:
+                raise ValueError(
+                    "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_UNAUTHORIZED")
+            predecessor = _read_executable_factory_release_artifact(
+                run_dir, {
+                    "factory_release_sha256": predecessor_sha,
+                    "factory_release_file":
+                        f"factory-releases/{predecessor_sha}.json",
+                })
+            try:
+                current.verify_successor_of(predecessor)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_LINEAGE_DRIFT"
+                ) from exc
+
+            raw_admission = receipt.get("factory_admission_v2")
+            try:
+                admission = ExecutableAdmissionReceipt(**raw_admission)
+                admission.verify(current)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT"
+                ) from exc
+            student = (receipt.get("school") or {}).get("current_student") or {}
+            student_step = student.get("optimizer_step")
+            if (admission.semantic_graph_sha256 !=
+                    receipt.get("semantic_graph_sha256") or
+                    type(student_step) is not int or student_step < 0 or
+                    admission.optimizer_step > student_step or
+                    (admission.optimizer_step == student_step and
+                     admission.student_sha256 != student.get("sha256"))):
+                raise ValueError(
+                    "FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT")
+            if (exam.get("student_sha256") != admission.student_sha256 or
+                    exam.get("optimizer_step") != admission.optimizer_step):
+                raise ValueError(
+                    "FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_STUDENT_DRIFT")
+            release = predecessor
         capabilities = tuple(exam.get("capabilities", ()))
         if not capabilities:
             raise ValueError("FACTORY_EXECUTABLE_SAVED_COHORT_SCOPE_REQUIRED")
