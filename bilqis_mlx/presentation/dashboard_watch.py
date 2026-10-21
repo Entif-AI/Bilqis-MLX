@@ -16,12 +16,16 @@ import time
 from typing import Callable
 
 from bilqis_mlx.paths import active_run_dir
+from bilqis_mlx.compatibility.telemetry_events import HISTORICAL_EVENT_KINDS
 from .dashboard import build, ingest
 from .run_discovery import AmbiguousActiveRun, select_run
 
 
 DEFAULT_REFRESH_SECONDS = 1.0
-_SESSION_STOP_EVENTS = frozenset(("SCHOOL_SESSION_STOPPED", "GRADE_A_SESSION_STOPPED"))
+_SESSION_STOP_EVENTS = frozenset({
+    "SCHOOL_SESSION_STOPPED",
+    *(event for event, kind in HISTORICAL_EVENT_KINDS.items() if kind == "stop"),
+})
 
 
 class JournalReplaced(Exception):
