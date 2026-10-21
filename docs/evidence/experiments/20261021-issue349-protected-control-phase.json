@@ -1,0 +1,1990 @@
+{
+  "schema": "bilqis.issue349.protected-control-phase/v1",
+  "source_tree": "6575edd8359dea2bcb7325a1602fb6cdc8280ec2",
+  "prior_source_head": "4c74f50cf47a2b057e5a357b63dec9d113104f7e",
+  "phase": "SEQUENTIAL_EXPLORATORY_POLICY_TIGHTENING",
+  "matched_ablation": false,
+  "run": "plasticity-control",
+  "generation": 33,
+  "checkpoint": {
+    "filename": "bundles/best-24-d59dbd48aa0e",
+    "model_and_native_adamw": true,
+    "optimizer_step": 118048,
+    "sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284"
+  },
+  "learning_experiment": {
+    "settings": {
+      "introduction_extra_loss": 2,
+      "mature_max_loss": 1,
+      "probe_each": 6,
+      "protected_cap_limit": 8
+    },
+    "version": "bilqis.mlx.causal-teacher-experiment/v1"
+  },
+  "attempted_updates": 48,
+  "retained_updates": 16,
+  "visits": [
+    {
+      "event_id": "88aac7ea03593e947ad373333da1834a58b27cf1b1a097f6903d4f8525d5981b",
+      "generation": 30,
+      "capability": "A.MEMBER",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 16,
+      "optimizer_step": 118048,
+      "candidate_attempt_optimizer_step": 118048,
+      "recovered_at_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 16,
+        "preview": 2
+      },
+      "teacher_reward": 0.2142857142857143,
+      "teacher_selection_reward": -0.2857142857142857,
+      "context_teacher_credit": {
+        "legacy_reward_reinterpreted": false,
+        "negative_archetype_count": 1,
+        "teacher_context_reward": -0.2857142857142857,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1"
+      },
+      "candidate_retention": {
+        "active_capability": "A.MEMBER",
+        "active_probe_after": 6,
+        "active_probe_before": 3,
+        "active_probe_total": 12,
+        "decision": "PROVISIONAL",
+        "deltas": {
+          "A.EDGE": -0.25,
+          "A.IDENTITY": 0.0,
+          "A.LINK": 0.0,
+          "A.MAPS": 0.0,
+          "A.MEMBER": 0.25,
+          "A.PARENT": 0.0
+        },
+        "discordance_similarity": null,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {
+          "A.EDGE": 3
+        },
+        "fixed_frontier_replay": {
+          "after_correct": 47,
+          "before_correct": 45,
+          "cohort_sha256": "dcdca23a9d1ae07e1fa0175fd662736201daacfc16e7ae9d8721ab5da05a08e5",
+          "grades": {
+            "A": {
+              "after": 47,
+              "before": 45,
+              "net_correct_delta": 2,
+              "total": 72
+            }
+          },
+          "net_correct_delta": 2,
+          "regressions": [
+            {
+              "capability": "A.PARENT",
+              "id": "c2b5c354c0a692ec1879645b3d9e3229b32b9e62a163e2599a0c77d54a7dc839"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "2e9becf404596c8f79ae4b03b28e1af7393c05b325535c85c8ccd7d279eb91ee"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "4e3ce7d4e71df497c125d476483f5cd1849bee8e8269552ed317047b82791f2e"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "c834364b56045b70fc7007abe59a9a225e03c19ecc463c01ae0ec12067103a81"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "93920cdcb6b7296db9bcd53f1754d73e25875086e09c09ea424a52c0d16a39dd"
+            }
+          ],
+          "repaired": [
+            {
+              "capability": "A.IDENTITY",
+              "id": "b10e2452ad1db16853ca4fb81e427848c15343fdeda758e56e5c19120587c426"
+            },
+            {
+              "capability": "A.PARENT",
+              "id": "b28feb56538d701bd04d49b0865a3405344eceec0f05c819181b335f531fb3a2"
+            },
+            {
+              "capability": "A.LINK",
+              "id": "12d7a3aefa1eed657b5ce9bb5216f52bd2dfcc6c8b4adc1b3c56171d23db8484"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "72f6888718c65f1ecc3447a866e139772373aa59224778f1645cac2dfdbc81b2"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "5ad1e5714b39b70106e5cd9f29b34c017bfc6af7bcc3f6f444b07113c0a9302e"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "f12e6e98ce4ddfb6f664bc339a693b8ba42cbcc9fb4aa2691a0f169463103d2b"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "a64d7e2b77fc3a639698f77073cd634a048bc0e5c8d353f2b3b398693b2eecc7"
+            }
+          ],
+          "rows": 72,
+          "status": "MEASURED"
+        },
+        "fixed_grade_replay": {
+          "after": 47,
+          "before": 45,
+          "cohort_sha256": "dcdca23a9d1ae07e1fa0175fd662736201daacfc16e7ae9d8721ab5da05a08e5",
+          "grade": "A",
+          "net_correct_delta": 2,
+          "status": "MEASURED",
+          "total": 72
+        },
+        "fixed_whole_school_net_correct_delta": 2,
+        "fragile_replay": {
+          "reason": "FRAGILE_PRESERVATION_EXAM_NOT_YET_ADMITTED",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 3,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 1,
+        "paired_scores_sha256": "a8ea52d1eebdd0b8112b2becb123c887a9bab2fcc19e20937fd3c30f37c1fc85",
+        "phase": "RECOVERY_2",
+        "protected_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.PARENT"
+        ],
+        "protected_net_correct_delta": -3,
+        "protected_tolerances": {
+          "A.EDGE": 1,
+          "A.IDENTITY": 1,
+          "A.LINK": 1,
+          "A.MAPS": 1,
+          "A.PARENT": 1
+        },
+        "qualification_stage": "COMPLETE_SAME_GRADE",
+        "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+        "same_grade_net_correct_delta": 0,
+        "same_grade_probed_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "source_cohort_sha256": "e20f4e225149cd76c0fbde0a2b420249f5bb0f8cc337bc14e653b1613e4786cd",
+        "unsampled_admitted_capabilities": 0,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 3
+      }
+    },
+    {
+      "event_id": "433cd3f1b0c440479031f6e99ce6952f614e0c1dbc954b35736ff695849a389c",
+      "generation": 31,
+      "capability": "A.PARENT",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118048,
+      "candidate_attempt_optimizer_step": 118064,
+      "recovered_at_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.15,
+        "lr": 0.00013,
+        "old": 16,
+        "preview": 4
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.38095238095238093,
+      "context_teacher_credit": {
+        "legacy_reward_reinterpreted": false,
+        "negative_archetype_count": 2,
+        "teacher_context_reward": -0.38095238095238093,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1"
+      },
+      "candidate_retention": {
+        "active_capability": "A.PARENT",
+        "active_probe_after": 8,
+        "active_probe_before": 7,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.EDGE": -0.25,
+          "A.IDENTITY": 0.0833333,
+          "A.LINK": -0.1666667,
+          "A.MAPS": 0.0,
+          "A.MEMBER": 0.0,
+          "A.PARENT": 0.0833333
+        },
+        "discordance_similarity": 0.547723,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {
+          "A.EDGE": 3,
+          "A.LINK": 2
+        },
+        "fixed_frontier_replay": {
+          "reason": "SAME_GRADE_NET_REGRESSION",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "SAME_GRADE_NET_REGRESSION",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "SAME_GRADE_NET_REGRESSION",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 1,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 1,
+        "paired_scores_sha256": "f88d294d566964f1e57fd5f145c22169ac48ff489ac9e3c733d5f8d06a033c4f",
+        "phase": "RECOVERY_2",
+        "protected_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER"
+        ],
+        "protected_net_correct_delta": -4,
+        "protected_tolerances": {
+          "A.EDGE": 1,
+          "A.IDENTITY": 1,
+          "A.LINK": 1,
+          "A.MAPS": 1,
+          "A.MEMBER": 1
+        },
+        "qualification_stage": "GRADE_NET_REJECTED",
+        "reason": "PROTECTED_CAPABILITY_REGRESSION",
+        "same_grade_net_correct_delta": -3,
+        "same_grade_probed_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "source_cohort_sha256": "0f249cead27a39541097536cfea155822e5613b12cce1b58e3b46040439e0aa6",
+        "unsampled_admitted_capabilities": 0,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 3
+      }
+    },
+    {
+      "event_id": "a958536dc980040c7352408e6a941e27c1a5ae3dc4fcf066041bbbe0c26a82d0",
+      "generation": 32,
+      "capability": "A.EDGE",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118048,
+      "candidate_attempt_optimizer_step": 118064,
+      "recovered_at_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.0003,
+        "old": 16,
+        "preview": 4
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05,
+      "context_teacher_credit": {
+        "legacy_reward_reinterpreted": false,
+        "negative_archetype_count": 3,
+        "teacher_context_reward": -0.05,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1"
+      },
+      "candidate_retention": {
+        "active_capability": "A.EDGE",
+        "active_probe_after": 5,
+        "active_probe_before": 8,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.EDGE": -0.25
+        },
+        "discordance_similarity": 1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": -3,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 1,
+        "paired_scores_sha256": "ca0412c4cb6880e2793a677a69962da592437f597b83441752f2fdf84f92477b",
+        "phase": "RECOVERY_2",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": -3,
+        "same_grade_probed_capabilities": [
+          "A.EDGE"
+        ],
+        "source_cohort_sha256": "f8b3f5e9720bde2bf705d9eb8eef779b96936747de72fe8524227ce62aa3aac7",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      }
+    }
+  ],
+  "last_exam": {
+    "assessment_grade": "A",
+    "assessment_scope_sha256": "bfeeaef0ae8bdcde28b84b3529b730e6504c8a660198b627b44f79f5311276ff",
+    "candidate_cohort_sha256": "2b861206db8b8516ba3582ddecf664f08842dd182913a542fdf9fb3e865c7f5f",
+    "capabilities": [
+      "A.IDENTITY",
+      "A.PARENT",
+      "A.LINK",
+      "A.MEMBER",
+      "A.EDGE",
+      "A.MAPS"
+    ],
+    "championship_decisions": [
+      {
+        "capability": "A.MEMBER",
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "correct": 7,
+        "decision": "INITIAL_TITLE_THRESHOLD_NOT_MET",
+        "grade": "A",
+        "minimum_percent": 66,
+        "total": 12
+      },
+      {
+        "capability": "A.MAPS",
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "correct": 5,
+        "decision": "INITIAL_TITLE_THRESHOLD_NOT_MET",
+        "grade": "A",
+        "minimum_percent": 66,
+        "total": 12
+      },
+      {
+        "battery_total": 26,
+        "capability": "A.IDENTITY",
+        "challenger_battery_correct": 25,
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "decision": "TITLE_DEFENDED",
+        "grade": "A",
+        "incumbent_battery_correct": 26,
+        "incumbent_sha256": "4859ff22c7b9fb4722aa2c653655049eada61baad3e1c8deae2a4a78bc19f21c",
+        "qualification": "STRICT_GAIN",
+        "qualification_scope": [
+          "A.IDENTITY"
+        ],
+        "winner_sha256": "4859ff22c7b9fb4722aa2c653655049eada61baad3e1c8deae2a4a78bc19f21c"
+      },
+      {
+        "battery_total": 8,
+        "capability": "A.PARENT",
+        "challenger_battery_correct": 5,
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "decision": "TITLE_DEFENDED",
+        "grade": "A",
+        "incumbent_battery_correct": 8,
+        "incumbent_sha256": "73c432433b7716e04fee9cf63f82683945708c967d85243f179bb06c3a89ba02",
+        "qualification": "STRICT_GAIN",
+        "qualification_scope": [
+          "A.PARENT"
+        ],
+        "winner_sha256": "73c432433b7716e04fee9cf63f82683945708c967d85243f179bb06c3a89ba02"
+      },
+      {
+        "battery_total": 21,
+        "capability": "A.LINK",
+        "challenger_battery_correct": 14,
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "decision": "TITLE_DEFENDED",
+        "grade": "A",
+        "incumbent_battery_correct": 21,
+        "incumbent_sha256": "cd84b3157abd0d013c62d73ee9389c908a2c815038b61f63e9288c270774bff4",
+        "qualification": "STRICT_GAIN",
+        "qualification_scope": [
+          "A.LINK"
+        ],
+        "winner_sha256": "cd84b3157abd0d013c62d73ee9389c908a2c815038b61f63e9288c270774bff4"
+      },
+      {
+        "battery_total": 25,
+        "capability": "A.EDGE",
+        "challenger_battery_correct": 15,
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "decision": "TITLE_DEFENDED",
+        "grade": "A",
+        "incumbent_battery_correct": 25,
+        "incumbent_sha256": "cd84b3157abd0d013c62d73ee9389c908a2c815038b61f63e9288c270774bff4",
+        "qualification": "STRICT_GAIN",
+        "qualification_scope": [
+          "A.EDGE"
+        ],
+        "winner_sha256": "cd84b3157abd0d013c62d73ee9389c908a2c815038b61f63e9288c270774bff4"
+      },
+      {
+        "capability": "A.IDENTITY",
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "decision": "TITLE_MATCH_ALREADY_SETTLED",
+        "grade": "A",
+        "incumbent_sha256": "4859ff22c7b9fb4722aa2c653655049eada61baad3e1c8deae2a4a78bc19f21c",
+        "settled_winner_sha256": "4859ff22c7b9fb4722aa2c653655049eada61baad3e1c8deae2a4a78bc19f21c"
+      },
+      {
+        "capability": "A.PARENT",
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "decision": "TITLE_MATCH_ALREADY_SETTLED",
+        "grade": "A",
+        "incumbent_sha256": "73c432433b7716e04fee9cf63f82683945708c967d85243f179bb06c3a89ba02",
+        "settled_winner_sha256": "73c432433b7716e04fee9cf63f82683945708c967d85243f179bb06c3a89ba02"
+      },
+      {
+        "capability": "A.LINK",
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "decision": "TITLE_MATCH_ALREADY_SETTLED",
+        "grade": "A",
+        "incumbent_sha256": "cd84b3157abd0d013c62d73ee9389c908a2c815038b61f63e9288c270774bff4",
+        "settled_winner_sha256": "cd84b3157abd0d013c62d73ee9389c908a2c815038b61f63e9288c270774bff4"
+      },
+      {
+        "capability": "A.MEMBER",
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "correct": 6,
+        "decision": "INITIAL_TITLE_THRESHOLD_NOT_MET",
+        "grade": "A",
+        "minimum_percent": 66,
+        "total": 12
+      },
+      {
+        "capability": "A.EDGE",
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "decision": "TITLE_MATCH_ALREADY_SETTLED",
+        "grade": "A",
+        "incumbent_sha256": "cd84b3157abd0d013c62d73ee9389c908a2c815038b61f63e9288c270774bff4",
+        "settled_winner_sha256": "cd84b3157abd0d013c62d73ee9389c908a2c815038b61f63e9288c270774bff4"
+      },
+      {
+        "capability": "A.MAPS",
+        "challenger_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "correct": 6,
+        "decision": "INITIAL_TITLE_THRESHOLD_NOT_MET",
+        "grade": "A",
+        "minimum_percent": 66,
+        "total": 12
+      }
+    ],
+    "championship_roles": [],
+    "cohort_file": "cohorts/789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579.json",
+    "cohort_seed": 9763784253215341760,
+    "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+    "evaluation_id": "source-oracled-routine-cohort/789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579/2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+    "exam_plane": "ROUTINE",
+    "exam_rubric_sha256": "005386a214b393fb4db1e321c2db7251270068d474e89329137bdb386761964f",
+    "factory_release_sha256": "d03e076179524fe9b7098ed308b8f09ebf721d41003d1445966b1e0ce81211ba",
+    "flash_scheduler_only": false,
+    "generator_version": "c8e6f7bb6a04c9dc323f01bb707d836dc0180e74c73ac728646335389f86a1d3",
+    "grade_exam_epoch": 0,
+    "grade_soups_refreshed": [
+      "A"
+    ],
+    "grade_test_lifecycle": "bilqis.grade-test.fresh-routine/v2",
+    "graduation_perfect_roles": [],
+    "incumbent_comparisons": [
+      {
+        "checkpoint": {
+          "filename": "bundles/best-21-62bb7f3709f7",
+          "model_and_native_adamw": true,
+          "optimizer_step": 118032,
+          "sha256": "4859ff22c7b9fb4722aa2c653655049eada61baad3e1c8deae2a4a78bc19f21c"
+        },
+        "cohort_sha256": "2b861206db8b8516ba3582ddecf664f08842dd182913a542fdf9fb3e865c7f5f",
+        "scored_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "scores": {
+          "A.EDGE": {
+            "correct": 5,
+            "total": 12
+          },
+          "A.IDENTITY": {
+            "correct": 11,
+            "total": 12
+          },
+          "A.LINK": {
+            "correct": 6,
+            "total": 12
+          },
+          "A.MAPS": {
+            "correct": 6,
+            "total": 12
+          },
+          "A.MEMBER": {
+            "correct": 6,
+            "total": 12
+          },
+          "A.PARENT": {
+            "correct": 8,
+            "total": 12
+          }
+        },
+        "unsupported_capabilities": []
+      },
+      {
+        "checkpoint": {
+          "filename": "bundles/best-18-75f35a96bb72",
+          "model_and_native_adamw": true,
+          "optimizer_step": 117648,
+          "sha256": "73c432433b7716e04fee9cf63f82683945708c967d85243f179bb06c3a89ba02"
+        },
+        "cohort_sha256": "2b861206db8b8516ba3582ddecf664f08842dd182913a542fdf9fb3e865c7f5f",
+        "scored_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "scores": {
+          "A.EDGE": {
+            "correct": 5,
+            "total": 12
+          },
+          "A.IDENTITY": {
+            "correct": 8,
+            "total": 12
+          },
+          "A.LINK": {
+            "correct": 8,
+            "total": 12
+          },
+          "A.MAPS": {
+            "correct": 6,
+            "total": 12
+          },
+          "A.MEMBER": {
+            "correct": 10,
+            "total": 12
+          },
+          "A.PARENT": {
+            "correct": 6,
+            "total": 12
+          }
+        },
+        "unsupported_capabilities": []
+      },
+      {
+        "checkpoint": {
+          "filename": "bundles/best-9-1a15656ca6d0",
+          "model_and_native_adamw": true,
+          "optimizer_step": 116832,
+          "sha256": "cd84b3157abd0d013c62d73ee9389c908a2c815038b61f63e9288c270774bff4"
+        },
+        "cohort_sha256": "2b861206db8b8516ba3582ddecf664f08842dd182913a542fdf9fb3e865c7f5f",
+        "scored_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "scores": {
+          "A.EDGE": {
+            "correct": 6,
+            "total": 12
+          },
+          "A.IDENTITY": {
+            "correct": 4,
+            "total": 12
+          },
+          "A.LINK": {
+            "correct": 4,
+            "total": 12
+          },
+          "A.MAPS": {
+            "correct": 7,
+            "total": 12
+          },
+          "A.MEMBER": {
+            "correct": 6,
+            "total": 12
+          },
+          "A.PARENT": {
+            "correct": 6,
+            "total": 12
+          }
+        },
+        "unsupported_capabilities": []
+      }
+    ],
+    "learning_diagnostics": {
+      "active_warnings": [
+        {
+          "capability": "A.EDGE",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.IDENTITY",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.LINK",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.MAPS",
+          "signal": "REPETITIVE_ANSWERS",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.MAPS",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.MAPS",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.MEMBER",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.PARENT",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "GRADE"
+        }
+      ],
+      "assessment_cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+      "current_observation_usable": true,
+      "findings": [
+        {
+          "capability": "A.EDGE",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.EDGE",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness above the gold majority baseline",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.EDGE",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "Regression versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              8,
+              12
+            ],
+            [
+              118048,
+              7,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A.IDENTITY",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 9,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.IDENTITY",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness above the gold majority baseline",
+          "observed_correct": 9,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.IDENTITY",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "Regression versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 9,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              10,
+              12
+            ],
+            [
+              118048,
+              9,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A.LINK",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.LINK",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness above the gold majority baseline",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.LINK",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "Regression versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              8,
+              12
+            ],
+            [
+              118048,
+              7,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A.MAPS",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Constant output on both source-attested gold classes",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_IN_COHORT",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.MAPS",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness at or below the gold majority baseline",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_IN_COHORT",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.MAPS",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "No positive retained gain versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              6,
+              12
+            ],
+            [
+              118048,
+              6,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A.MEMBER",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.MEMBER",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness at or below the gold majority baseline",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_IN_COHORT",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.MEMBER",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "Positive retained gain versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              4,
+              12
+            ],
+            [
+              118048,
+              6,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A.PARENT",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.PARENT",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness above the gold majority baseline",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.PARENT",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "No positive retained gain versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              7,
+              12
+            ],
+            [
+              118048,
+              7,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A",
+          "evidence_count": 72,
+          "majority_baseline": 36,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 42,
+          "observed_total": 72,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "GRADE",
+          "trajectory": []
+        },
+        {
+          "capability": "A",
+          "evidence_count": 72,
+          "majority_baseline": 36,
+          "note": "Observed correctness above the gold majority baseline",
+          "observed_correct": 42,
+          "observed_total": 72,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "GRADE",
+          "trajectory": []
+        },
+        {
+          "capability": "A",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "Regression versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 42,
+          "observed_total": 72,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "GRADE",
+          "trajectory": [
+            [
+              118032,
+              43,
+              72
+            ],
+            [
+              118048,
+              42,
+              72
+            ]
+          ]
+        }
+      ],
+      "history_issue": null,
+      "history_usable": true,
+      "optimizer_step": 118048,
+      "paired_s3": {
+        "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+        "current_optimizer_step": 118048,
+        "current_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "parent_optimizer_step": 118032,
+        "parent_sha256": "4859ff22c7b9fb4722aa2c653655049eada61baad3e1c8deae2a4a78bc19f21c",
+        "s3_usable": true,
+        "source_oracled_same_cohort_pair": true,
+        "unavailable_reason": null
+      },
+      "s3_usable": true,
+      "schema": "bilqis.grade-exam.learning-warnings/v1",
+      "student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284"
+    },
+    "misses_for_teacher": [
+      {
+        "capability": "A.IDENTITY",
+        "gold": "FALSE",
+        "id": "5e4c93f3b1ccfaba8e6f1a42c3545879c2e1d004c73615be8b1a7e117dc47b1c",
+        "predicted": "TRUE",
+        "source_id": "5e4c93f3b1ccfaba8e6f1a42c3545879c2e1d004c73615be8b1a7e117dc47b1c"
+      },
+      {
+        "capability": "A.IDENTITY",
+        "gold": "TRUE",
+        "id": "eae118817da15b512c5e0cf5a9395de4b530da2c27232e478d257c27e7147c61",
+        "predicted": "FALSE",
+        "source_id": "eae118817da15b512c5e0cf5a9395de4b530da2c27232e478d257c27e7147c61"
+      },
+      {
+        "capability": "A.IDENTITY",
+        "gold": "FALSE",
+        "id": "d9b0b9fb1bcb41efd52abccffda6b5ca7d359c8687425e457ac9df83df4f220b",
+        "predicted": "TRUE",
+        "source_id": "d9b0b9fb1bcb41efd52abccffda6b5ca7d359c8687425e457ac9df83df4f220b"
+      },
+      {
+        "capability": "A.PARENT",
+        "gold": "FALSE",
+        "id": "def7d39ceab0e6140c02d36351fb67004e3a9b61d318178395c71ff8baafa10b",
+        "predicted": "TRUE",
+        "source_id": "def7d39ceab0e6140c02d36351fb67004e3a9b61d318178395c71ff8baafa10b"
+      },
+      {
+        "capability": "A.PARENT",
+        "gold": "FALSE",
+        "id": "80f82a9f6fc23d80f3684f01eb100f29c2c527798355cd59ff164d3912b9dad2",
+        "predicted": "TRUE",
+        "source_id": "80f82a9f6fc23d80f3684f01eb100f29c2c527798355cd59ff164d3912b9dad2"
+      },
+      {
+        "capability": "A.PARENT",
+        "gold": "FALSE",
+        "id": "55fc38f2dcd1cedd79329d526aa704e0c1beb2845156edcd6c8ab8a28b02cb91",
+        "predicted": "TRUE",
+        "source_id": "55fc38f2dcd1cedd79329d526aa704e0c1beb2845156edcd6c8ab8a28b02cb91"
+      },
+      {
+        "capability": "A.PARENT",
+        "gold": "FALSE",
+        "id": "25b3b93034ce2fe38f951d3824359cf983ead728948a0d778abe1b723bbcbcda",
+        "predicted": "TRUE",
+        "source_id": "25b3b93034ce2fe38f951d3824359cf983ead728948a0d778abe1b723bbcbcda"
+      },
+      {
+        "capability": "A.PARENT",
+        "gold": "TRUE",
+        "id": "665452326e81cb5750dbe6d37038374199ca06bbb7bc3e7bf7c38ae5944e148c",
+        "predicted": "FALSE",
+        "source_id": "665452326e81cb5750dbe6d37038374199ca06bbb7bc3e7bf7c38ae5944e148c"
+      },
+      {
+        "capability": "A.LINK",
+        "gold": "FALSE",
+        "id": "5219e7c541157a069473ebd0e74983dcfa6254bf068014a84f7ca7ef07d2145f",
+        "predicted": "TRUE",
+        "source_id": "5219e7c541157a069473ebd0e74983dcfa6254bf068014a84f7ca7ef07d2145f"
+      },
+      {
+        "capability": "A.LINK",
+        "gold": "TRUE",
+        "id": "dfbaefb0b20b2ac21b480b51f5cfad59ce2fa22b058a11d995c85a7bb3553fe6",
+        "predicted": "FALSE",
+        "source_id": "dfbaefb0b20b2ac21b480b51f5cfad59ce2fa22b058a11d995c85a7bb3553fe6"
+      },
+      {
+        "capability": "A.LINK",
+        "gold": "TRUE",
+        "id": "94a7c5b8ca4c1d020012fc9d15059314c7c692cf729a29e8f5d6f0cb00251f69",
+        "predicted": "FALSE",
+        "source_id": "94a7c5b8ca4c1d020012fc9d15059314c7c692cf729a29e8f5d6f0cb00251f69"
+      },
+      {
+        "capability": "A.LINK",
+        "gold": "TRUE",
+        "id": "5cb00be13d80058687b9ca622acd7bbbfd05b0ce82cb43a3bf1635a27745d984",
+        "predicted": "FALSE",
+        "source_id": "5cb00be13d80058687b9ca622acd7bbbfd05b0ce82cb43a3bf1635a27745d984"
+      },
+      {
+        "capability": "A.LINK",
+        "gold": "TRUE",
+        "id": "2090c08c725df6deac3a714fc3603ba777332380739804638e7491e7fd9f9a0a",
+        "predicted": "FALSE",
+        "source_id": "2090c08c725df6deac3a714fc3603ba777332380739804638e7491e7fd9f9a0a"
+      },
+      {
+        "capability": "A.MEMBER",
+        "gold": "TRUE",
+        "id": "dacc84a0842766987a8bcbc4be2f36fad308abb119fad39b96c896681fd1920f",
+        "predicted": "FALSE",
+        "source_id": "dacc84a0842766987a8bcbc4be2f36fad308abb119fad39b96c896681fd1920f"
+      },
+      {
+        "capability": "A.MEMBER",
+        "gold": "TRUE",
+        "id": "f60d448d5150f5f29b2e9f6bb25866c023360c82015ecb1046c0bacd2cf26728",
+        "predicted": "FALSE",
+        "source_id": "f60d448d5150f5f29b2e9f6bb25866c023360c82015ecb1046c0bacd2cf26728"
+      },
+      {
+        "capability": "A.MEMBER",
+        "gold": "TRUE",
+        "id": "6ee8a194ad12b588022c2e50824f4613d89ccc83ea260680f84965de4f078d3a",
+        "predicted": "FALSE",
+        "source_id": "6ee8a194ad12b588022c2e50824f4613d89ccc83ea260680f84965de4f078d3a"
+      },
+      {
+        "capability": "A.MEMBER",
+        "gold": "FALSE",
+        "id": "f0a8694cabd5a3c049b9954875f0dd6cbe2a257268393af94dd37ea2e3041c9d",
+        "predicted": "TRUE",
+        "source_id": "f0a8694cabd5a3c049b9954875f0dd6cbe2a257268393af94dd37ea2e3041c9d"
+      },
+      {
+        "capability": "A.MEMBER",
+        "gold": "TRUE",
+        "id": "58ed81ccf71f8e784d28075d1ef3971febe4d94c3be844bd98b95134fb6da065",
+        "predicted": "FALSE",
+        "source_id": "58ed81ccf71f8e784d28075d1ef3971febe4d94c3be844bd98b95134fb6da065"
+      },
+      {
+        "capability": "A.MEMBER",
+        "gold": "TRUE",
+        "id": "25afb94c4828d808fe1ff482b47b271cb33a29e8056272f5b949facfc91687f6",
+        "predicted": "FALSE",
+        "source_id": "25afb94c4828d808fe1ff482b47b271cb33a29e8056272f5b949facfc91687f6"
+      },
+      {
+        "capability": "A.EDGE",
+        "gold": "FALSE",
+        "id": "ffb5cc5d993b769dfef8c33db379c8067c69b0786586a9cdd2aacb495f315658",
+        "predicted": "TRUE",
+        "source_id": "ffb5cc5d993b769dfef8c33db379c8067c69b0786586a9cdd2aacb495f315658"
+      },
+      {
+        "capability": "A.EDGE",
+        "gold": "FALSE",
+        "id": "3b26b115faf2800f66c26dacd6880d9fedd216033d49e393516e3d535660c3a0",
+        "predicted": "TRUE",
+        "source_id": "3b26b115faf2800f66c26dacd6880d9fedd216033d49e393516e3d535660c3a0"
+      },
+      {
+        "capability": "A.EDGE",
+        "gold": "FALSE",
+        "id": "eee7f9c4e1e7f1561b02b7a5b37d127488a0ca71ad74938ba8d669efeb820b9c",
+        "predicted": "TRUE",
+        "source_id": "eee7f9c4e1e7f1561b02b7a5b37d127488a0ca71ad74938ba8d669efeb820b9c"
+      },
+      {
+        "capability": "A.EDGE",
+        "gold": "FALSE",
+        "id": "0fe9274e62a659b85c592d658190036b702b4c40b1fee618daaad32d2065d5fe",
+        "predicted": "TRUE",
+        "source_id": "0fe9274e62a659b85c592d658190036b702b4c40b1fee618daaad32d2065d5fe"
+      },
+      {
+        "capability": "A.EDGE",
+        "gold": "FALSE",
+        "id": "1e199c48761b4aaff2ff13c5f39d9f7103bd80ffe973c190a2fb02d64774bfe9",
+        "predicted": "TRUE",
+        "source_id": "1e199c48761b4aaff2ff13c5f39d9f7103bd80ffe973c190a2fb02d64774bfe9"
+      },
+      {
+        "capability": "A.MAPS",
+        "gold": "FALSE",
+        "id": "e0d7bc661615319d5e44b4578bed836e901b744d5d7bc36f2ab4ca6a486b198b",
+        "predicted": "TRUE",
+        "source_id": "e0d7bc661615319d5e44b4578bed836e901b744d5d7bc36f2ab4ca6a486b198b"
+      },
+      {
+        "capability": "A.MAPS",
+        "gold": "FALSE",
+        "id": "41acc3ef7f5b8aae73152f3d67f99178430601fdce98b46ddc8c56685a028293",
+        "predicted": "TRUE",
+        "source_id": "41acc3ef7f5b8aae73152f3d67f99178430601fdce98b46ddc8c56685a028293"
+      },
+      {
+        "capability": "A.MAPS",
+        "gold": "FALSE",
+        "id": "988a2ce64d1f69f11f34279e72bea76392de9152c636c21e7899a7ba66e05ee0",
+        "predicted": "TRUE",
+        "source_id": "988a2ce64d1f69f11f34279e72bea76392de9152c636c21e7899a7ba66e05ee0"
+      },
+      {
+        "capability": "A.MAPS",
+        "gold": "FALSE",
+        "id": "3acfaa254cf6cba8f6ea2e9215e3785ed30954cc6db9afdadcaeb90558fa4ef8",
+        "predicted": "TRUE",
+        "source_id": "3acfaa254cf6cba8f6ea2e9215e3785ed30954cc6db9afdadcaeb90558fa4ef8"
+      },
+      {
+        "capability": "A.MAPS",
+        "gold": "FALSE",
+        "id": "ddd89dac6c97a85c576d1268add740abf4a105feb9f457d96b3be912abb6da79",
+        "predicted": "TRUE",
+        "source_id": "ddd89dac6c97a85c576d1268add740abf4a105feb9f457d96b3be912abb6da79"
+      },
+      {
+        "capability": "A.MAPS",
+        "gold": "FALSE",
+        "id": "dd51f4318bfbafdb98d7c7133afed2b4874668b0c81bf47472e25f55f251434e",
+        "predicted": "TRUE",
+        "source_id": "dd51f4318bfbafdb98d7c7133afed2b4874668b0c81bf47472e25f55f251434e"
+      }
+    ],
+    "optimizer_step": 118048,
+    "routine_cohort_file": "cohorts/789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579.json",
+    "routine_cohort_seed": 9763784253215341760,
+    "routine_cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+    "routine_learning_diagnostics": {
+      "active_warnings": [
+        {
+          "capability": "A.EDGE",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.IDENTITY",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.LINK",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.MAPS",
+          "signal": "REPETITIVE_ANSWERS",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.MAPS",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.MAPS",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.MEMBER",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A.PARENT",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "CAPABILITY"
+        },
+        {
+          "capability": "A",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "target": "GRADE"
+        }
+      ],
+      "assessment_cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+      "current_observation_usable": true,
+      "findings": [
+        {
+          "capability": "A.EDGE",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.EDGE",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness above the gold majority baseline",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.EDGE",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "Regression versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              8,
+              12
+            ],
+            [
+              118048,
+              7,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A.IDENTITY",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 9,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.IDENTITY",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness above the gold majority baseline",
+          "observed_correct": 9,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.IDENTITY",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "Regression versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 9,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              10,
+              12
+            ],
+            [
+              118048,
+              9,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A.LINK",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.LINK",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness above the gold majority baseline",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.LINK",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "Regression versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              8,
+              12
+            ],
+            [
+              118048,
+              7,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A.MAPS",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Constant output on both source-attested gold classes",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_IN_COHORT",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.MAPS",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness at or below the gold majority baseline",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_IN_COHORT",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.MAPS",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "No positive retained gain versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              6,
+              12
+            ],
+            [
+              118048,
+              6,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A.MEMBER",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.MEMBER",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness at or below the gold majority baseline",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_IN_COHORT",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.MEMBER",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "Positive retained gain versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 6,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              4,
+              12
+            ],
+            [
+              118048,
+              6,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A.PARENT",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.PARENT",
+          "evidence_count": 12,
+          "majority_baseline": 6,
+          "note": "Observed correctness above the gold majority baseline",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "CAPABILITY",
+          "trajectory": []
+        },
+        {
+          "capability": "A.PARENT",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "No positive retained gain versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 7,
+          "observed_total": 12,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "CAPABILITY",
+          "trajectory": [
+            [
+              118032,
+              7,
+              12
+            ],
+            [
+              118048,
+              7,
+              12
+            ]
+          ]
+        },
+        {
+          "capability": "A",
+          "evidence_count": 72,
+          "majority_baseline": 36,
+          "note": "No constant output across mixed-gold examples",
+          "observed_correct": 42,
+          "observed_total": 72,
+          "scope": "SINGLE_COHORT",
+          "signal": "REPETITIVE_ANSWERS",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "GRADE",
+          "trajectory": []
+        },
+        {
+          "capability": "A",
+          "evidence_count": 72,
+          "majority_baseline": 36,
+          "note": "Observed correctness above the gold majority baseline",
+          "observed_correct": 42,
+          "observed_total": 72,
+          "scope": "SINGLE_COHORT",
+          "signal": "CHANCE_LEVEL_OR_LAGGING",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "NOT_OBSERVED",
+          "target": "GRADE",
+          "trajectory": []
+        },
+        {
+          "capability": "A",
+          "evidence_count": 2,
+          "majority_baseline": null,
+          "note": "Regression versus immediate durable parent on this fresh shared cohort",
+          "observed_correct": 42,
+          "observed_total": 72,
+          "scope": "FIXED_COHORT_CHECKPOINT_SERIES",
+          "signal": "LACK_OF_DURABLE_GAIN",
+          "source_cohorts": [
+            "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579"
+          ],
+          "status": "OBSERVED_LONGITUDINALLY",
+          "target": "GRADE",
+          "trajectory": [
+            [
+              118032,
+              43,
+              72
+            ],
+            [
+              118048,
+              42,
+              72
+            ]
+          ]
+        }
+      ],
+      "history_issue": null,
+      "history_usable": true,
+      "optimizer_step": 118048,
+      "paired_s3": {
+        "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+        "current_optimizer_step": 118048,
+        "current_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+        "parent_optimizer_step": 118032,
+        "parent_sha256": "4859ff22c7b9fb4722aa2c653655049eada61baad3e1c8deae2a4a78bc19f21c",
+        "s3_usable": true,
+        "source_oracled_same_cohort_pair": true,
+        "unavailable_reason": null
+      },
+      "s3_usable": true,
+      "schema": "bilqis.grade-exam.learning-warnings/v1",
+      "student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284"
+    },
+    "routine_scores": {
+      "A.EDGE": {
+        "correct": 7,
+        "total": 12
+      },
+      "A.IDENTITY": {
+        "correct": 9,
+        "total": 12
+      },
+      "A.LINK": {
+        "correct": 7,
+        "total": 12
+      },
+      "A.MAPS": {
+        "correct": 6,
+        "total": 12
+      },
+      "A.MEMBER": {
+        "correct": 6,
+        "total": 12
+      },
+      "A.PARENT": {
+        "correct": 7,
+        "total": 12
+      }
+    },
+    "rubric_sha256": "005386a214b393fb4db1e321c2db7251270068d474e89329137bdb386761964f",
+    "scores": {
+      "A.EDGE": {
+        "correct": 7,
+        "total": 12
+      },
+      "A.IDENTITY": {
+        "correct": 9,
+        "total": 12
+      },
+      "A.LINK": {
+        "correct": 7,
+        "total": 12
+      },
+      "A.MAPS": {
+        "correct": 6,
+        "total": 12
+      },
+      "A.MEMBER": {
+        "correct": 6,
+        "total": 12
+      },
+      "A.PARENT": {
+        "correct": 7,
+        "total": 12
+      }
+    },
+    "source_sha256": "c8e6f7bb6a04c9dc323f01bb707d836dc0180e74c73ac728646335389f86a1d3",
+    "stagnation_quarantined": [],
+    "student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+    "teacher_outcomes": [
+      {
+        "after_correct": null,
+        "after_optimizer_step": 118048,
+        "attribution": "NOT_MEASURED_CHANGED_EXAM",
+        "before_correct": null,
+        "before_optimizer_step": 118032,
+        "capability": "A.EDGE",
+        "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+        "decision_ids": [
+          "7456ef87149453b34412f43016503570ffd00f5a5f6fd46caee98457c01b3588"
+        ],
+        "delta_correct": null,
+        "policy_keys": [
+          "5df98bf3a027"
+        ],
+        "schema": "bilqis.teacher-feedback/v1",
+        "total": null
+      },
+      {
+        "after_correct": null,
+        "after_optimizer_step": 118048,
+        "attribution": "NOT_MEASURED_CHANGED_EXAM",
+        "before_correct": null,
+        "before_optimizer_step": 118032,
+        "capability": "A.MEMBER",
+        "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+        "decision_ids": [
+          "133080138a147b3d780d73982722d5fdcbfcf3a179c0da846568a9a1ed922304"
+        ],
+        "delta_correct": null,
+        "policy_keys": [
+          "f045cfa8f8d6"
+        ],
+        "schema": "bilqis.teacher-feedback/v1",
+        "total": null
+      },
+      {
+        "after_correct": null,
+        "after_optimizer_step": 118048,
+        "attribution": "NOT_MEASURED_CHANGED_EXAM",
+        "before_correct": null,
+        "before_optimizer_step": 118032,
+        "capability": "A.PARENT",
+        "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+        "decision_ids": [
+          "ff20315bba5c70ade05ce6ac3eba361800e3070141a5ac3fa1bcd2fd2e1c2631"
+        ],
+        "delta_correct": null,
+        "policy_keys": [
+          "c0d92a80eada"
+        ],
+        "schema": "bilqis.teacher-feedback/v1",
+        "total": null
+      }
+    ],
+    "whole_student_retention": {
+      "best_checkpoint_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "best_correct": 42,
+      "best_optimizer_step": 118048,
+      "best_total": 72,
+      "exam_correct": 42,
+      "exam_total": 72,
+      "live_student_unchanged": true,
+      "promoted": true,
+      "scope_sha256": "41d823f462b2343f9400b845ab8dc4bcf92df7b45f2b4df874f853ecab834de1"
+    },
+    "withheld_capabilities": []
+  },
+  "transfer_before": "20261021-issue349-transfer-control-after-identity.json",
+  "transfer_after": "20261021-issue349-transfer-control-after-retention.json",
+  "same_probe_identities_gold_and_tokens": true,
+  "protected_primary_unchanged": true,
+  "protected_primary_files": {
+    "state.json": "6fca9091032b186b6aa110d89f0111f1451d037b6dec76d4b1bdc529449bd523",
+    "events.jsonl": "0f689c01ce9dfe235dff9249e4576535d70b7461722e7bf0ce65f893124866fb",
+    "bundles/working-120-d4a37442195e/model-and-own-adamw.safetensors": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+    "bundles/working-120-d4a37442195e/manifest.json": "3ed9de4d639d5203fc46aae4c53b9820e79ce4da7be5ef3ee4ef2f385f3cc788",
+    "bundles/working-120-d4a37442195e/semantic-catalog.json": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716"
+  },
+  "budget": {
+    "issue_number": 349,
+    "run_count": 2,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "used_bytes": 1915674624,
+    "within_budget": true,
+    "runs": [
+      "primary",
+      "plasticity-control"
+    ]
+  },
+  "training_log": "/Users/emilie/.codex/validation-logs/2026-10-21T17-38-16-190Z-15311.log",
+  "neural_ithkuil_learning": "NOT_MEASURED"
+}

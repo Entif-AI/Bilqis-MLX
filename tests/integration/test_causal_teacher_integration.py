@@ -50,6 +50,9 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         staircase_fixtures.NumericStaircaseTests.setUpClass()
+        _, historical, _, _, _, _ = storage.prepare_source(
+            fixtures.SOURCE, fixtures.PARENT, fixtures.MANIFEST)
+        cls.grade_a = storage.initial_course(historical)
 
     def setUp(self):
         self.fixture=staircase_fixtures.NumericStaircaseTests()
@@ -57,6 +60,11 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.addCleanup(self.fixture.doCleanups)
         self.mx = self.fixture.mx
         self.course, self.receipt = self.fixture.start()
+        from tests.support.executable_school import admit_executable_school
+        with redirect_stdout(io.StringIO()):
+            self.receipt, _, self.program = admit_executable_school(
+                self.fixture.root, self.receipt, self.course, self.grade_a,
+                fixtures.SOURCE, self.fixture.graph)
 
     def visit(self):
         return storage._take_visit(
@@ -69,7 +77,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
                                        introduction_extra_loss=2))
 
     def test_tighter_policy_resume_is_metadata_only_and_durable(self):
-        school = storage._state_from_json(self.receipt["school"], self.course)
+        school = storage._state_from_json(self.receipt["school"], self.program)
         old = asdict(Settings(mature_max_loss=2))
         previous = storage._advance(self.fixture.root,
             {**self.receipt, "learning_experiment": {
@@ -95,12 +103,13 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
             _, own, _, reloaded = storage._resume(
                 self.fixture.root, self.fixture.fixture.manifest, self.course,
                 self.fixture.fixture.policy_sha,
+                grade_a_course=self.grade_a, source_root=fixtures.SOURCE,
                 admitted_courses={self.course.version:self.course})
         self.assertEqual(reloaded, updated)
         self.assertEqual(int(own.state["step"].item()), student["optimizer_step"])
 
     def test_existing_exam_peak_is_seeded_before_any_new_training(self):
-        school = storage._state_from_json(self.receipt["school"], self.course)
+        school = storage._state_from_json(self.receipt["school"], self.program)
         pointer = dict(self.receipt["school"]["current_student"])
         prior = {"student_sha256": pointer["sha256"],
                  "optimizer_step": pointer["optimizer_step"],
@@ -141,6 +150,64 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
                     self.fixture.root, fixtures.SOURCE, fixtures.PARENT,
                     self.fixture.fixture.manifest, retention_enabled=True)
 
+    def test_metadata_advance_never_carries_prior_generation_outbox(self):
+        school = storage._state_from_json(self.receipt["school"], self.program)
+        prior = list(self.receipt["delivery_outbox"])
+        advanced = storage._advance(self.fixture.root, self.receipt, school)
+        storage._reconcile_delivery_outbox(self.fixture.root, advanced)
+        self.assertEqual(advanced["generation"], self.receipt["generation"] + 1)
+        self.assertEqual(advanced["school"]["current_student"],
+                         self.receipt["school"]["current_student"])
+        self.assertEqual(self.receipt["delivery_outbox"], prior)
+        self.assertEqual(advanced["delivery_outbox"][0]["generation"], advanced["generation"])
+
+    def test_retained_parent_refresh_is_durable_and_leaves_routine_history_intact(self):
+        from bilqis_mlx.generated_assessment import make_cohort
+        from bilqis_mlx.fixed_frontier import load_frontier
+
+        rows = [{"id": "fixed-0", "capability": "A.LINK", "gold": "TRUE"}]
+        cohort = make_cohort(rows, generator_version="fixture", seed=7,
+                             rubric_version="fixture-rubric")
+        path = self.fixture.root / "cohorts" / (cohort.digest + ".json")
+        path.parent.mkdir(exist_ok=True)
+        path.write_text(json.dumps(dict(schema="fixture-rubric", rows=rows, seed=7,
+            generator_version="fixture", cohort_sha256=cohort.digest)))
+        student = self.receipt["school"]["current_student"]
+        historical = dict(student_sha256="a"*64, optimizer_step=0,
+            scores={"A.LINK": {"correct": 1, "total": 1}}, misses_for_teacher=[],
+            cohort_sha256=cohort.digest, cohort_file=f"cohorts/{cohort.digest}.json")
+        saved = {**self.receipt, "last_exam": historical}
+        with patch.object(storage, "_predictions", return_value={"fixed-0": "FALSE"}):
+            updated = storage._refresh_fixed_frontier(
+                self.mx, self.fixture.root, saved, self.course,
+                self.fixture.params, self.fixture.optimizer)
+        self.assertEqual(updated["last_exam"], historical)
+        self.assertEqual(updated["school"]["current_student"], student)
+        self.assertEqual(updated, json.loads((self.fixture.root / "state.json").read_text()))
+        _, predictions = load_frontier(self.fixture.root, updated,
+            parent_sha256=student["sha256"], parent_optimizer_step=student["optimizer_step"])
+        self.assertEqual(predictions, {"fixed-0": "FALSE"})
+        self.assertEqual(storage._refresh_fixed_frontier(
+            self.mx, self.fixture.root, updated, self.course,
+            self.fixture.params, self.fixture.optimizer), updated)
+        school = storage._state_from_json(updated["school"], self.program)
+        replaced = storage._advance(self.fixture.root, updated, school,
+                                    last_exam=historical, persist=False)
+        self.assertNotIn("fixed_frontier_exam", replaced)
+
+    def test_registered_issue_custody_reaches_source_guard_from_external_checkout(self):
+        from bilqis_mlx.runtime.experiment_runs import ExperimentRunBudget
+        with tempfile.TemporaryDirectory() as directory:
+            owner = ExperimentRunBudget(Path(directory) / "issue349")
+            run = owner.create("primary")
+            with patch.object(storage, "prepare_source", side_effect=RuntimeError(
+                    "SOURCE_BOUNDARY_REACHED")):
+                with self.assertRaisesRegex(RuntimeError, "SOURCE_BOUNDARY_REACHED"):
+                    storage.operate(
+                        run, fixtures.SOURCE, fixtures.PARENT,
+                        self.fixture.fixture.manifest, experiment_budget=owner)
+            self.assertEqual({p.name for p in run.iterdir()}, {".experiment-run.json"})
+
     def test_first_staircase_visit_stop_and_resume_persists_context_and_own_adamw(self):
         # Regression for a pre-existing ff64 bug: before its first Grade C
         # exam, last_exam is legitimately None. A human stop must still
@@ -154,6 +221,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
             parameters,own_adamw,graph,reloaded=storage._resume(
                 self.fixture.root,self.fixture.fixture.manifest,self.course,
                 self.fixture.fixture.policy_sha,
+                grade_a_course=self.grade_a, source_root=fixtures.SOURCE,
                 admitted_courses={self.course.version:self.course})
         self.assertEqual(saved,reloaded)
         self.assertEqual(reloaded["teacher"]["causal_experiment"]["events"],1)
@@ -170,7 +238,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertGreater(actual,HISTORICAL_PREFIX_SIZE)
         # Deliberately reconstruct a historical pre-fix *receipt* in a
         # disposable run. New numeric admissions already set the live size.
-        school=storage._state_from_json(self.receipt["school"],self.course)
+        school=storage._state_from_json(self.receipt["school"],self.program)
         stale=storage._advance(
             self.fixture.root,
             {**self.receipt,"config":{**self.receipt["config"],
@@ -189,6 +257,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
             _,own,_,reloaded=storage._resume(
                 self.fixture.root,self.fixture.fixture.manifest,self.course,
                 self.fixture.fixture.policy_sha,
+                grade_a_course=self.grade_a, source_root=fixtures.SOURCE,
                 admitted_courses={self.course.version:self.course})
         self.assertEqual(corrected,reloaded)
         self.assertEqual(corrected["config"]["vocab_size"],actual)
@@ -203,7 +272,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
             self.fixture.optimizer,self.fixture.graph),corrected)
 
     def test_provisional_grade_c_candidate_has_context_and_real_old_rows(self):
-        school = storage._state_from_json(self.receipt["school"],self.course)
+        school = storage._state_from_json(self.receipt["school"],self.program)
         with patch.object(storage,"decide_learning_trial",
                           wraps=storage.decide_learning_trial) as gate,redirect_stdout(io.StringIO()):
             result=self.visit()
@@ -227,8 +296,8 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertEqual(event["typed_policy_controls"]["optimizer_batches_observed"],1)
         self.assertGreaterEqual(event["typed_policy_controls"]["old_grade_examples_delivered"],1)
         monitored=set(event["candidate_retention"]["deltas"])
-        eligible=set(storage.assessment_capabilities(self.course,
-                storage._state_from_json(self.receipt["school"],self.course))) | {"C.COUNT"}
+        eligible=set(storage.assessment_capabilities(self.program,
+                storage._state_from_json(self.receipt["school"],self.program))) | {"C.COUNT"}
         self.assertTrue(monitored <= eligible)
         self.assertIn("C.COUNT",monitored)
         self.assertLessEqual(len(monitored),9)
@@ -253,7 +322,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         from unittest.mock import patch
         source = storage._draw_live_rows
         requested = {}
-        school = storage._state_from_json(self.receipt["school"],self.course)
+        school = storage._state_from_json(self.receipt["school"],self.program)
         scores = {"C.COUNT": {"correct": 19, "total": 21}}
         latest = {**self.receipt, "last_exam": {"scores": scores}}
         def capture(*args,**kwargs):
@@ -262,7 +331,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         with patch.object(storage,"_draw_live_rows",side_effect=capture):
             rows,protected,_ = storage._learning_probe_rows(
                 fixtures.SOURCE,self.fixture.graph,latest,self.course,school,
-                "C.COUNT",Settings())
+                "C.COUNT", Settings(), schedule_program=self.program)
         self.assertEqual(requested["C.COUNT"],21)
         self.assertTrue(protected)
         self.assertTrue(all(requested[cap]==6 for cap in protected))

@@ -395,6 +395,24 @@ class OperatorTests(unittest.TestCase):
                                        "--run-dir", tmp]), 2)
             self.assertFalse(operate.call_args.kwargs["retention_enabled"])
 
+    def test_issue_launcher_passes_registered_budget_owner(self):
+        from bilqis_mlx import trainer
+        from bilqis_mlx.runtime.experiment_runs import ExperimentRunBudget
+
+        with tempfile.TemporaryDirectory() as directory:
+            owner = ExperimentRunBudget(Path(directory).resolve() / "issue349")
+            run = owner.create("primary")
+            with patch.object(trainer, "operate", side_effect=ValueError(
+                    "TEST_BLOCKS_ANY_NEURAL_WORK")) as operate, \
+                    redirect_stderr(io.StringIO()):
+                self.assertEqual(main([
+                    "train", "--human-run", "--resume", "--run-dir", str(run),
+                    "--issue-349-experiment-root", str(owner.root)]), 2)
+            passed = operate.call_args.kwargs["experiment_budget"]
+            self.assertIsInstance(passed, ExperimentRunBudget)
+            self.assertEqual(passed.register(run)["run_name"], "primary")
+            self.assertTrue(operate.call_args.kwargs["retention_enabled"])
+
     def test_human_operator_forwards_explicit_debt_grade_admission(self):
         from bilqis_mlx import trainer as trainer
         no_neural_work = "TEST_BLOCKS_ANY_NEURAL_WORK"

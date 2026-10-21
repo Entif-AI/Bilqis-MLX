@@ -63,6 +63,109 @@ unadopted and untaught. Tracked receipts:
 `20261021-issue349-transfer-control-before.json`. A subsequent bounded control
 visit and paired probe, if performed, must preserve these pre-visit receipts.
 
+## Retention/custody continuation
+
+The launcher now carries the typed ExperimentRunBudget owner rather than its
+anonymous allocation callback. Registered issue-owned data may be used with an
+independently tested executable checkout. Registration, measured cap and existing
+protected-lineage opt-out guards remain enforced before source loading. External
+unregistered runs retain the default refusal. ADR-077 and PM-2026-10-20-003 /
+RC-116 record the red/green repair; the native incident ledger was read back.
+
+Three additional unprotected 128-update visits establish actual acquisition and
+interference on an identical deduplicated source panel:
+
+| Control boundary | Native step | IDENTITY /113 | MAPS /139 |
+| --- | ---: | ---: | ---: |
+| Before | 117648 | 73 | 88 |
+| MAPS visit | 117776 | 68 | 95 |
+| LINK visit | 117904 | 67 | 87 |
+| IDENTITY visit | 118032 | 106 | 72 |
+| Three protected 16-step trials | 118048 | 104 | 79 |
+| Gold majority baseline | — | 70 | 70 |
+
+The initial protected phase attempted 48 updates and retained16. MEMBER improved
+its target by3, tied the fresh grade total and improved the fixed grade total by2.
+PARENT and EDGE were rejected; their own AdamW changes were discarded. These are
+ordinary existing aggregate retention rules, not a claim that every capability
+improved. The phase is sequential exploratory policy tightening, not a matched
+causal comparison. The control now persists protected retention policy; do not
+resume it with --no-retention. Both current prerequisites remain imperfect.
+D is unadopted and untaught; no neural Ithkuil learning is demonstrated.
+
+Tracked per-checkpoint receipts and `20261021-issue349-transfer-study.json`
+preserve exact predictions, source/token hashes, repairs/regressions and teacher
+strategies. `20261021-issue349-protected-control-phase.json` records the policy
+tightening, actual attempts/retained updates and untouched primary custody.
+Fresh-seeded panel construction does not establish wholly unseen training worlds.
+The autonomous controller then completed18 durable trials (288 attempted updates,
+32 retained), plus one uncommitted16-step trial that failed the frontier guard
+and retained nothing. All six direct obligations were eventually deferred.
+It returned to source preparation at generation91 / native step118080 /
+SHAe7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5.
+The final identical-panel probe is IDENTITY105/113 and MAPS77/139.
+
+Live execution exposed two more recoverable defects. Mid-cycle publication left
+last_exam on the old parent; a separate fixed_frontier_exam now remeasures the
+unchanged verified cohort for the current retained parent. Routine history stays
+intact. Metadata-only queue advances also inherited old sealed outboxes; they now
+reconcile prior delivery and publish their own generation-bound events. Exact
+parent and event-identity checks remain strict. A checked append-only repair
+matched immutable generations61/62, unchanged native student/AdamW and every
+published predecessor event before creating generation63. Resumed execution
+produced real zero-update frontier refreshes at118064 and118080.
+
+The test source archive initially lacked ignored Ithkuil artifacts. Its37 source
+files were independently copied and hash-verified before source fallback was
+retried. The final command exited normally with
+AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED, zero visits and zero optimizer updates.
+The current source work extracted Chapter3 into a fresh source-only snapshot.
+This is extraction evidence, not admission or learner mastery.
+
+Both runs are stopped. Control bundle: bundles/working-44-9bef30369806; ordinary
+retention is persisted. Collective measured allocation:2,240,933,888 bytes.
+Primary state, events and complete current bundle remain byte-identical.
+Tracked `20261021-issue349-autonomous-control-continuation.json` and
+`20261021-issue349-metadata-outbox-repair.json` preserve the detailed receipts.
+
+Next permitted action: use the current exact-parent evidence and failed-obligation
+receipts to investigate source-aligned alternative teaching choices; continue
+source qualification for the remaining239 candidates and later-chapter provenance.
+Repeated unsupported trials must remain bounded. Do not force D admission,
+weaken retention, or infer current mastery from historical titles. Further
+optimizer work is limited to the two registered issue-owned directories.
+
+Resume the protected control from the tested source checkout with:
+
+```sh
+python3 -B -m bilqis_mlx.cli train --human-run --resume --autonomous-curriculum \
+  --run-dir /Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/runs/issue-349-experiments/plasticity-control \
+  --issue-349-experiment-root /Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/runs/issue-349-experiments \
+  --minutes 3 --max-visits 6 --steps-per-visit 16 --source-prefetch-workers 0
+```
+
+Re-measure the collective budget and verify current native custody first. The
+last routine exam is intentionally historical; current fixed-frontier evidence
+has its own pointer. Current longitudinal diagnostics must report missing
+comparable routine evidence as NOT_MEASURED. Do not represent the derived frontier
+refresh as a new routine trajectory observation.
+
+## Latest verification
+
+The custody/frontier/outbox and causal-teacher slice passes93/93, including
+full-B-enabled A/B/Z systems. The broader isolated factory/runtime plus focused
+integration/system invocation passes517 tests, with1 expected skip and0 failures
+(518 total).
+Six stale causal-teacher fixtures now use real v2 admission and current resume
+keywords; their behavior and own-AdamW assertions remain enforced.
+The first broad invocation accidentally named two modules owned only by the
+separately staged migration. Its517 passes/1 skip and two import failures were
+preserved; the corrected invocation selects modules from the isolated source.
+This is separate from the preserved mixed worktree. Architecture, closure,
+semantic-boundary, docs and whitespace checks pass. Hygiene remains53 inherited
+findings, zero added; no baseline or ABI fingerprint was changed. Hosted ABI
+passed at the prior pushed head; portable CI still failed its hygiene gate.
+
 ## Publication and ownership
 
 The configured origin is `https://github.com/Entif-AI/Bilqis-MLX.git`.
@@ -128,7 +231,7 @@ and `candidate_staging.py`; then the release-driven teaching consumers and
 `trainer.py`. The detailed source witnesses and prior live failures are preserved
 in `ISSUE349_SOURCE_STAGING_HANDOFF_20261020.md` and ADR-075.
 
-## Verification and its limits
+## Earlier review verification (superseded by continued execution)
 
 Tests ran against an archive of the exact isolated source tree, excluding the
 separately staged migration. Ignored historical checkpoint and teacher fixtures
@@ -169,7 +272,7 @@ and pass those names to the runner. The system command uses
 Retained failure logs and the isolated tree/index identity are under the local
 review directory and `/Users/emilie/.codex/validation-logs/`.
 
-## Empirical evidence and custody
+## Earlier review empirical custody (historical snapshot)
 
 Both trainers are stopped. No optimizer work was launched during review
 preparation. Readback on 2026-10-21 confirms:

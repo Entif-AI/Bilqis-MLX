@@ -1,0 +1,2096 @@
+{
+  "schema": "bilqis.issue349.autonomous-control-continuation/v1",
+  "run": "plasticity-control",
+  "checkpoint": {
+    "filename": "bundles/working-44-9bef30369806",
+    "model_and_native_adamw": true,
+    "optimizer_step": 118080,
+    "sha256": "e7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5"
+  },
+  "generation": 91,
+  "stop_reason": "AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED",
+  "durable_visit_count": 18,
+  "durably_receipted_attempted_updates": 288,
+  "retained_updates": 32,
+  "additional_uncommitted_failed_trial_updates": 16,
+  "failed_trial_note": "Post-training fixed-frontier guard failed; provisional model/ownAdamW discarded. This trial has no committed teaching event.",
+  "event_counts": {
+    "SCHOOL_AUTONOMY_TEACHING_REROUTED": 15,
+    "SCHOOL_TEACHER_VISIT_COMMITTED": 18,
+    "SCHOOL_GRADE_SOUP_FROZEN": 21,
+    "SCHOOL_LIVE_CANDIDATE_COMPARED": 20,
+    "SCHOOL_CHECKPOINTS_RETIRED": 18,
+    "SCHOOL_AUTONOMY_TEACHING_REJECTED_RECORDED": 16,
+    "SCHOOL_AUTONOMY_REMEDIATION_DEFERRED": 27,
+    "SCHOOL_AUTONOMY_EVIDENCE_RECORDED": 7,
+    "SCHOOL_PERFECT_TARGET_VISIT_SKIPPED": 2,
+    "SCHOOL_SESSION_STOPPED": 2,
+    "SCHOOL_SESSION_STARTED": 3,
+    "SCHOOL_CAPABILITY_BEST_COMMITTED": 7,
+    "SCHOOL_AUTONOMY_TEACHING_RECORDED": 2,
+    "SCHOOL_METADATA_OUTBOX_REPAIRED": 1,
+    "SCHOOL_FIXED_FRONTIER_PARENT_REFRESHED": 2,
+    "SCHOOL_STATE_ADVANCED": 6,
+    "SCHOOL_LIVE_EXAM_COMMITTED": 1,
+    "SCHOOL_AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED": 1
+  },
+  "visits": [
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 35,
+      "event_id": "05e39b250158b3dc59aa82bdd1a75625e50cc9dee0e4ddadbd3a090a353a2087",
+      "capability": "A.MAPS",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118048,
+      "candidate_attempt_optimizer_step": 118064,
+      "recovered_at_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "candidate_retention": {
+        "active_capability": "A.MAPS",
+        "active_probe_after": 6,
+        "active_probe_before": 6,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.MAPS": 0.0
+        },
+        "discordance_similarity": null,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 0,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "fd4791802196fb7d652fdd67c88eb6c2680323c91d9208c2f3425d1de0fdc8c6",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": 0,
+        "same_grade_probed_capabilities": [
+          "A.MAPS"
+        ],
+        "source_cohort_sha256": "1a9758a81d5c7a33e97589b886d63e79d7fc4ff7ae39b34fc0de82e9d5fbc9e1",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 16,
+        "preview": 2
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 38,
+      "event_id": "8d8aa0d8275ee60fa1b99f9cc5231e7e814b1ef80b23b8d6a99e4755c6ed63eb",
+      "capability": "A.MAPS",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118048,
+      "candidate_attempt_optimizer_step": 118064,
+      "recovered_at_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "candidate_retention": {
+        "active_capability": "A.MAPS",
+        "active_probe_after": 4,
+        "active_probe_before": 6,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.MAPS": -0.1666667
+        },
+        "discordance_similarity": null,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": -2,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "ed3ac22dbdc9f25ce22665881220d6db04b6d88c47c1d3ad062661f4cb513df1",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": -2,
+        "same_grade_probed_capabilities": [
+          "A.MAPS"
+        ],
+        "source_cohort_sha256": "3bc828631a5a98acb60472edeef9b7469e960b1ea71f6b6486b7a29f20a5f1f5",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 3,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 16,
+        "preview": 2
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 41,
+      "event_id": "c901e01954085e9cefeb2b3cd816743b08d2eeb0ffb66dcdaa069ba21d3961d7",
+      "capability": "A.MAPS",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118048,
+      "candidate_attempt_optimizer_step": 118064,
+      "recovered_at_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "candidate_retention": {
+        "active_capability": "A.MAPS",
+        "active_probe_after": 8,
+        "active_probe_before": 9,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.MAPS": -0.0833333
+        },
+        "discordance_similarity": 1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": -1,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "2403291d2b5a2514ee3c466c476f269499753775715d850278f691061a57ec3b",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": -1,
+        "same_grade_probed_capabilities": [
+          "A.MAPS"
+        ],
+        "source_cohort_sha256": "ce69c07cff0efa447f7ed616e6a8eeb2a1e1a46cb8c517afcfa6174aa73ec3c4",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 2,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 20,
+        "preview": 2
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 46,
+      "event_id": "ec6f04403c7f3a3818b072ef0f9453deada80ce9c71976be65476d9d316e97aa",
+      "capability": "A.IDENTITY",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118048,
+      "candidate_attempt_optimizer_step": 118064,
+      "recovered_at_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "candidate_retention": {
+        "active_capability": "A.IDENTITY",
+        "active_probe_after": 11,
+        "active_probe_before": 11,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.IDENTITY": 0.0
+        },
+        "discordance_similarity": null,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 0,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "9e187d6bb27d2ccdccbbc2ae10554e8eec53b9c0493e897ec6982889cfce7bf9",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": 0,
+        "same_grade_probed_capabilities": [
+          "A.IDENTITY"
+        ],
+        "source_cohort_sha256": "05f726a0921f92219e42607992662b2e2f9a8332994a801f8f30881955aff974",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 3,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 20,
+        "preview": 2
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 52,
+      "event_id": "e92ea6245f6da5d82bd051d0c1cffb4aa4697b790479e45dd3391df7b6671a0c",
+      "capability": "A.IDENTITY",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118048,
+      "candidate_attempt_optimizer_step": 118064,
+      "recovered_at_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "candidate_retention": {
+        "active_capability": "A.IDENTITY",
+        "active_probe_after": 10,
+        "active_probe_before": 8,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.EDGE": -0.0833333,
+          "A.IDENTITY": 0.1666667,
+          "A.LINK": 0.0,
+          "A.MAPS": -0.0833333,
+          "A.MEMBER": -0.1666667,
+          "A.PARENT": 0.0
+        },
+        "discordance_similarity": 1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "SAME_GRADE_NET_REGRESSION",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "SAME_GRADE_NET_REGRESSION",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "SAME_GRADE_NET_REGRESSION",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 2,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "861dfb457e3883e60a80368f372da80cc8c25300bdd8c722ec7ed1f6e247c388",
+        "phase": "MAIN",
+        "protected_capabilities": [
+          "A.EDGE",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "protected_net_correct_delta": -4,
+        "protected_tolerances": {
+          "A.EDGE": 3,
+          "A.LINK": 3,
+          "A.MAPS": 3,
+          "A.MEMBER": 3,
+          "A.PARENT": 3
+        },
+        "qualification_stage": "GRADE_NET_REJECTED",
+        "reason": "SAME_GRADE_NET_REGRESSION",
+        "same_grade_net_correct_delta": -2,
+        "same_grade_probed_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "source_cohort_sha256": "cceb437e368b7b2e9278e7dbeb4984c7dc8dca283447fee6c47a18d996baf0da",
+        "unsampled_admitted_capabilities": 0,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 2
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 16,
+        "preview": 4
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.1666667
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 55,
+      "event_id": "6d6c430069092b5b4cf722adfc1a666ceba8974270c9389780039af3273ce6d3",
+      "capability": "A.IDENTITY",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118048,
+      "candidate_attempt_optimizer_step": 118064,
+      "recovered_at_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "candidate_retention": {
+        "active_capability": "A.IDENTITY",
+        "active_probe_after": 11,
+        "active_probe_before": 11,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.IDENTITY": 0.0
+        },
+        "discordance_similarity": null,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 0,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "9e187d6bb27d2ccdccbbc2ae10554e8eec53b9c0493e897ec6982889cfce7bf9",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": 0,
+        "same_grade_probed_capabilities": [
+          "A.IDENTITY"
+        ],
+        "source_cohort_sha256": "6836540c9539b6c8502bb284e4065d5e39776ae9ba8595a0a4a79fbebd7db48a",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 12,
+        "preview": 4
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 57,
+      "event_id": "80ac3d54f483d98e23fe9244c2b59343f9e67ef019fac49b72005c711b787a6e",
+      "capability": "A.PARENT",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118048,
+      "candidate_attempt_optimizer_step": 118064,
+      "recovered_at_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "candidate_retention": {
+        "active_capability": "A.PARENT",
+        "active_probe_after": 9,
+        "active_probe_before": 10,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.PARENT": -0.0833333
+        },
+        "discordance_similarity": -1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": -1,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "ea0dc97b38815f3f0551f4adbd6da506c0998122f151f849357e84556cdf5ec6",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": -1,
+        "same_grade_probed_capabilities": [
+          "A.PARENT"
+        ],
+        "source_cohort_sha256": "c140c2714d1379b1fe96165a472b19b948dc1281ee4a8a1eb0dc3fc9ccdc8186",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 12,
+        "preview": 4
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 60,
+      "event_id": "80884ccd99202bbf1db1b9d344308b3fc39eea13340590b849c86ee702f9698d",
+      "capability": "A.PARENT",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 16,
+      "optimizer_step": 118064,
+      "candidate_attempt_optimizer_step": 118064,
+      "recovered_at_student_sha256": "d148833382a2f70d9d0ee7458324ad335316d634d77105a95d6eda965b46dd74",
+      "candidate_retention": {
+        "active_capability": "A.PARENT",
+        "active_probe_after": 8,
+        "active_probe_before": 6,
+        "active_probe_total": 12,
+        "decision": "PROVISIONAL",
+        "deltas": {
+          "A.EDGE": 0.0,
+          "A.IDENTITY": 0.0,
+          "A.LINK": -0.0833333,
+          "A.MAPS": 0.0,
+          "A.MEMBER": -0.0833333,
+          "A.PARENT": 0.1666667
+        },
+        "discordance_similarity": 0.421637,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "after_correct": 44,
+          "before_correct": 42,
+          "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+          "grades": {
+            "A": {
+              "after": 44,
+              "before": 42,
+              "net_correct_delta": 2,
+              "total": 72
+            }
+          },
+          "net_correct_delta": 2,
+          "regressions": [
+            {
+              "capability": "A.PARENT",
+              "id": "238be467c65f063277fe529e00687a8e6cfd559488fe593861b7a38e3b318262"
+            },
+            {
+              "capability": "A.PARENT",
+              "id": "8cea7ab04a6bc2b88568f99349eec461100b01716de8fe9cf0be21309013b7cf"
+            },
+            {
+              "capability": "A.LINK",
+              "id": "25e0dccaad663fdb777aec07d97355730044aeb20357fcb3e90a501c36be979d"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "58233ce8f077caac9b7e23032f4d23bb9a86d253ea3de232dabe24507a8d2a43"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "ab773b66739b5925f9bae635da2606931f37adc716437c114235128e1d9b5406"
+            }
+          ],
+          "repaired": [
+            {
+              "capability": "A.IDENTITY",
+              "id": "eae118817da15b512c5e0cf5a9395de4b530da2c27232e478d257c27e7147c61"
+            },
+            {
+              "capability": "A.PARENT",
+              "id": "80f82a9f6fc23d80f3684f01eb100f29c2c527798355cd59ff164d3912b9dad2"
+            },
+            {
+              "capability": "A.PARENT",
+              "id": "55fc38f2dcd1cedd79329d526aa704e0c1beb2845156edcd6c8ab8a28b02cb91"
+            },
+            {
+              "capability": "A.PARENT",
+              "id": "25b3b93034ce2fe38f951d3824359cf983ead728948a0d778abe1b723bbcbcda"
+            },
+            {
+              "capability": "A.PARENT",
+              "id": "665452326e81cb5750dbe6d37038374199ca06bbb7bc3e7bf7c38ae5944e148c"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "6ee8a194ad12b588022c2e50824f4613d89ccc83ea260680f84965de4f078d3a"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "25afb94c4828d808fe1ff482b47b271cb33a29e8056272f5b949facfc91687f6"
+            }
+          ],
+          "rows": 72,
+          "status": "MEASURED"
+        },
+        "fixed_grade_replay": {
+          "after": 44,
+          "before": 42,
+          "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+          "grade": "A",
+          "net_correct_delta": 2,
+          "status": "MEASURED",
+          "total": 72
+        },
+        "fixed_whole_school_net_correct_delta": 2,
+        "fragile_replay": {
+          "reason": "FRAGILE_PRESERVATION_EXAM_NOT_YET_ADMITTED",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 2,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "def567418f5c573d7cfac57a6792380a0214ed6272c472cc652bdfe3e27fe4d5",
+        "phase": "MAIN",
+        "protected_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER"
+        ],
+        "protected_net_correct_delta": -2,
+        "protected_tolerances": {
+          "A.EDGE": 3,
+          "A.IDENTITY": 3,
+          "A.LINK": 3,
+          "A.MAPS": 3,
+          "A.MEMBER": 3
+        },
+        "qualification_stage": "COMPLETE_SAME_GRADE",
+        "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+        "same_grade_net_correct_delta": 0,
+        "same_grade_probed_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "source_cohort_sha256": "913cc94a5fec4e0995cdea28b4092b67855cd55b56e9c674fe401ca81b19ed25",
+        "unsampled_admitted_capabilities": 0,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 1
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 2,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 16,
+        "preview": 2
+      },
+      "teacher_reward": 0.19148936170212766,
+      "teacher_selection_reward": 0.10815606170212766
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 65,
+      "event_id": "6774e0cc06455cb30d85b51034bc959873d8ba1b2fad33879c08cbdc067e8746",
+      "capability": "A.PARENT",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118064,
+      "candidate_attempt_optimizer_step": 118080,
+      "recovered_at_student_sha256": "d148833382a2f70d9d0ee7458324ad335316d634d77105a95d6eda965b46dd74",
+      "candidate_retention": {
+        "active_capability": "A.PARENT",
+        "active_probe_after": 8,
+        "active_probe_before": 11,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.PARENT": -0.25
+        },
+        "discordance_similarity": 1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": -3,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "7cfaa1275602c0bce92c5bc7942ec4ee532c256c2ac0130e06f48b6a1369c31f",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": -3,
+        "same_grade_probed_capabilities": [
+          "A.PARENT"
+        ],
+        "source_cohort_sha256": "12f18ebce563efb409dd7c8cea2b0555bcc07c650b1a748865c2e6007734681f",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 12,
+        "preview": 4
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 67,
+      "event_id": "115ad93c7d881dc3b5662a6264aa0bd3c31f94035ffbd3087f1a0466609562f7",
+      "capability": "A.LINK",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118064,
+      "candidate_attempt_optimizer_step": 118080,
+      "recovered_at_student_sha256": "d148833382a2f70d9d0ee7458324ad335316d634d77105a95d6eda965b46dd74",
+      "candidate_retention": {
+        "active_capability": "A.LINK",
+        "active_probe_after": 6,
+        "active_probe_before": 6,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.LINK": 0.0
+        },
+        "discordance_similarity": null,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 0,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "43dfb34d6fe1e50edb22149b6a18b4d3f31ac5f9781bea8a1d10f9b334380cff",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": 0,
+        "same_grade_probed_capabilities": [
+          "A.LINK"
+        ],
+        "source_cohort_sha256": "0e5e338a15b7156a66a98ed65b0b5e8990e9e8a83cca757d49f3693e5b1ec684",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 16,
+        "preview": 2
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 70,
+      "event_id": "ee1a5dec425aa15032861e099f13a51fc93cf0132f96bf7f86f092f3c6920e03",
+      "capability": "A.LINK",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118064,
+      "candidate_attempt_optimizer_step": 118080,
+      "recovered_at_student_sha256": "d148833382a2f70d9d0ee7458324ad335316d634d77105a95d6eda965b46dd74",
+      "candidate_retention": {
+        "active_capability": "A.LINK",
+        "active_probe_after": 8,
+        "active_probe_before": 7,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.EDGE": -0.0833333,
+          "A.IDENTITY": 0.0,
+          "A.LINK": 0.0833333,
+          "A.MAPS": 0.0,
+          "A.MEMBER": 0.0833333,
+          "A.PARENT": 0.0833333
+        },
+        "discordance_similarity": 1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "after_correct": 42,
+          "before_correct": 44,
+          "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+          "grades": {
+            "A": {
+              "after": 42,
+              "before": 44,
+              "net_correct_delta": -2,
+              "total": 72
+            }
+          },
+          "net_correct_delta": -2,
+          "regressions": [
+            {
+              "capability": "A.PARENT",
+              "id": "25b3b93034ce2fe38f951d3824359cf983ead728948a0d778abe1b723bbcbcda"
+            },
+            {
+              "capability": "A.LINK",
+              "id": "5d8fbd9d5c0940d7b0bb957e0dd276efcef7d3f6e660ea2d7ca233e88fc7ebe9"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "56458f09c58dbe6818faef7efd3bd6e6d12c0d3e041eada35fd4932fc9995594"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "8a0468ce5c02db9df13b3e6b70042d782bfc66bd8c032348d7353fde517d45ae"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "dcf8dd933d5075f3f6366a96d11df0d9ad06bfcc2212d6230cf6999fcb40e441"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "4b3ef67aa1ff33d60553a62824ef1fa2ec87d22a02a1e6609a327aca9b9edad7"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "5b67698b048aee35c458d67dccffc3fbc6078539587fd5ce5867f278973540d3"
+            }
+          ],
+          "repaired": [
+            {
+              "capability": "A.PARENT",
+              "id": "238be467c65f063277fe529e00687a8e6cfd559488fe593861b7a38e3b318262"
+            },
+            {
+              "capability": "A.PARENT",
+              "id": "8cea7ab04a6bc2b88568f99349eec461100b01716de8fe9cf0be21309013b7cf"
+            },
+            {
+              "capability": "A.LINK",
+              "id": "5219e7c541157a069473ebd0e74983dcfa6254bf068014a84f7ca7ef07d2145f"
+            },
+            {
+              "capability": "A.LINK",
+              "id": "2090c08c725df6deac3a714fc3603ba777332380739804638e7491e7fd9f9a0a"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "dacc84a0842766987a8bcbc4be2f36fad308abb119fad39b96c896681fd1920f"
+            }
+          ],
+          "rows": 72,
+          "status": "MEASURED"
+        },
+        "fixed_grade_replay": {
+          "after": 42,
+          "before": 44,
+          "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+          "grade": "A",
+          "net_correct_delta": -2,
+          "status": "MEASURED",
+          "total": 72
+        },
+        "fixed_whole_school_net_correct_delta": -2,
+        "fragile_replay": {
+          "reason": "FRAGILE_PRESERVATION_EXAM_NOT_YET_ADMITTED",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 1,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "b30314f34831425e13e1132b46c8189d4ba1e7ed1e7319705d47e6b99f60106c",
+        "phase": "MAIN",
+        "protected_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "protected_net_correct_delta": 1,
+        "protected_tolerances": {
+          "A.EDGE": 3,
+          "A.IDENTITY": 3,
+          "A.MAPS": 3,
+          "A.MEMBER": 3,
+          "A.PARENT": 3
+        },
+        "qualification_stage": "COMPLETE_SAME_GRADE",
+        "reason": "FIXED_LESSON_GRADE_REGRESSION",
+        "same_grade_net_correct_delta": 2,
+        "same_grade_probed_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "source_cohort_sha256": "a949ee8bebd86e8bc02228a7b6e1fc472e85aec75a52eb10c059b6a7184c66e1",
+        "unsampled_admitted_capabilities": 0,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 1
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.0003,
+        "old": 16,
+        "preview": 4
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.0833333
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 73,
+      "event_id": "6627b629ea1e11d324effd7f1c79897b0a9bc135d17583ec134ab4c99eb92d6b",
+      "capability": "A.LINK",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118064,
+      "candidate_attempt_optimizer_step": 118080,
+      "recovered_at_student_sha256": "d148833382a2f70d9d0ee7458324ad335316d634d77105a95d6eda965b46dd74",
+      "candidate_retention": {
+        "active_capability": "A.LINK",
+        "active_probe_after": 10,
+        "active_probe_before": 10,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.LINK": 0.0
+        },
+        "discordance_similarity": null,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 0,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "89ca37cd97cc6a7d1a61e2dd4e1f3cd314521f485799836b7e9914fc90e7a03a",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": 0,
+        "same_grade_probed_capabilities": [
+          "A.LINK"
+        ],
+        "source_cohort_sha256": "481c5c25dda604720eab3a3c6d05a48e1c61cb8072c471a125c456fed19bc800",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 2,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 20,
+        "preview": 2
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 75,
+      "event_id": "7f868283a78215b2d4628722d2b37a07f6d197e97c6f9d27aa060311f6bbbee3",
+      "capability": "A.MEMBER",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118064,
+      "candidate_attempt_optimizer_step": 118080,
+      "recovered_at_student_sha256": "d148833382a2f70d9d0ee7458324ad335316d634d77105a95d6eda965b46dd74",
+      "candidate_retention": {
+        "active_capability": "A.MEMBER",
+        "active_probe_after": 6,
+        "active_probe_before": 7,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.MEMBER": -0.0833333
+        },
+        "discordance_similarity": 1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": -1,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "eae41ff86032a1df39c625f5b279499c21baca21fe1a8dc1edcd6c96c9044fe3",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": -1,
+        "same_grade_probed_capabilities": [
+          "A.MEMBER"
+        ],
+        "source_cohort_sha256": "3cc1c705e3ac6f9f981fa014955db1fc36deba5dbef7cb9d613015709b0ac146",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 3,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 16,
+        "preview": 2
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 78,
+      "event_id": "9011138082e973bb84d2776609f1f2d4170569e7d1ff9b3f2c147c33560f3238",
+      "capability": "A.MEMBER",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118064,
+      "candidate_attempt_optimizer_step": 118080,
+      "recovered_at_student_sha256": "d148833382a2f70d9d0ee7458324ad335316d634d77105a95d6eda965b46dd74",
+      "candidate_retention": {
+        "active_capability": "A.MEMBER",
+        "active_probe_after": 7,
+        "active_probe_before": 7,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.MEMBER": 0.0
+        },
+        "discordance_similarity": null,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 0,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "cde28c8c1da0892019ce928ee5e4518fe4beb3cf5e17df5282be53ef8b0942e6",
+        "phase": "MAIN",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": 0,
+        "same_grade_probed_capabilities": [
+          "A.MEMBER"
+        ],
+        "source_cohort_sha256": "fea23a37b766e94905cf8a7783d8b08dbf2f531ab68b6e5d3a6cc125ff7da7d4",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 2,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 16,
+        "preview": 2
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 81,
+      "event_id": "a79a8f57c2a5337fd4208975c806ff98be00f713b6338c684e761024965aea3d",
+      "capability": "A.MEMBER",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 16,
+      "optimizer_step": 118080,
+      "candidate_attempt_optimizer_step": 118080,
+      "recovered_at_student_sha256": "e7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5",
+      "candidate_retention": {
+        "active_capability": "A.MEMBER",
+        "active_probe_after": 7,
+        "active_probe_before": 4,
+        "active_probe_total": 12,
+        "decision": "PROVISIONAL",
+        "deltas": {
+          "A.EDGE": -0.1666667,
+          "A.IDENTITY": 0.0,
+          "A.LINK": 0.0833333,
+          "A.MAPS": 0.0,
+          "A.MEMBER": 0.25,
+          "A.PARENT": 0.1666667
+        },
+        "discordance_similarity": 1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "after_correct": 49,
+          "before_correct": 44,
+          "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+          "grades": {
+            "A": {
+              "after": 49,
+              "before": 44,
+              "net_correct_delta": 5,
+              "total": 72
+            }
+          },
+          "net_correct_delta": 5,
+          "regressions": [
+            {
+              "capability": "A.PARENT",
+              "id": "25b3b93034ce2fe38f951d3824359cf983ead728948a0d778abe1b723bbcbcda"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "56458f09c58dbe6818faef7efd3bd6e6d12c0d3e041eada35fd4932fc9995594"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "8a0468ce5c02db9df13b3e6b70042d782bfc66bd8c032348d7353fde517d45ae"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "25afb94c4828d808fe1ff482b47b271cb33a29e8056272f5b949facfc91687f6"
+            }
+          ],
+          "repaired": [
+            {
+              "capability": "A.PARENT",
+              "id": "238be467c65f063277fe529e00687a8e6cfd559488fe593861b7a38e3b318262"
+            },
+            {
+              "capability": "A.PARENT",
+              "id": "8cea7ab04a6bc2b88568f99349eec461100b01716de8fe9cf0be21309013b7cf"
+            },
+            {
+              "capability": "A.LINK",
+              "id": "2090c08c725df6deac3a714fc3603ba777332380739804638e7491e7fd9f9a0a"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "dacc84a0842766987a8bcbc4be2f36fad308abb119fad39b96c896681fd1920f"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "58233ce8f077caac9b7e23032f4d23bb9a86d253ea3de232dabe24507a8d2a43"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "f0a8694cabd5a3c049b9954875f0dd6cbe2a257268393af94dd37ea2e3041c9d"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "58ed81ccf71f8e784d28075d1ef3971febe4d94c3be844bd98b95134fb6da065"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "41acc3ef7f5b8aae73152f3d67f99178430601fdce98b46ddc8c56685a028293"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "dd51f4318bfbafdb98d7c7133afed2b4874668b0c81bf47472e25f55f251434e"
+            }
+          ],
+          "rows": 72,
+          "status": "MEASURED"
+        },
+        "fixed_grade_replay": {
+          "after": 49,
+          "before": 44,
+          "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+          "grade": "A",
+          "net_correct_delta": 5,
+          "status": "MEASURED",
+          "total": 72
+        },
+        "fixed_whole_school_net_correct_delta": 5,
+        "fragile_replay": {
+          "reason": "FRAGILE_PRESERVATION_EXAM_NOT_YET_ADMITTED",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 3,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "c8068784f1f365dfb20d65cbfe2fac69eb74caea9c949153452c4cbed663e65b",
+        "phase": "MAIN",
+        "protected_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.PARENT"
+        ],
+        "protected_net_correct_delta": 1,
+        "protected_tolerances": {
+          "A.EDGE": 3,
+          "A.IDENTITY": 3,
+          "A.LINK": 3,
+          "A.MAPS": 3,
+          "A.PARENT": 3
+        },
+        "qualification_stage": "COMPLETE_SAME_GRADE",
+        "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+        "same_grade_net_correct_delta": 4,
+        "same_grade_probed_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "source_cohort_sha256": "6731a2a096a23e3c9c0a991c56bc417d1b1cdc2a7287d51d78de52f0ca8e3adf",
+        "unsampled_admitted_capabilities": 0,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 2
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 4,
+        "preview": 4
+      },
+      "teacher_reward": 0.19047619047619052,
+      "teacher_selection_reward": 0.02380949047619052
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 83,
+      "event_id": "8ddd4766a059042b812d8c4879fb5630069faa3276afadb4cd23ece4538aea9b",
+      "capability": "A.EDGE",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118080,
+      "candidate_attempt_optimizer_step": 118096,
+      "recovered_at_student_sha256": "e7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5",
+      "candidate_retention": {
+        "active_capability": "A.EDGE",
+        "active_probe_after": 11,
+        "active_probe_before": 6,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.EDGE": 0.4166667,
+          "A.IDENTITY": 0.0,
+          "A.LINK": 0.0833333,
+          "A.MAPS": 0.0,
+          "A.MEMBER": 0.0833333,
+          "A.PARENT": -0.0833333
+        },
+        "discordance_similarity": 1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "after_correct": 48,
+          "before_correct": 49,
+          "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+          "grades": {
+            "A": {
+              "after": 48,
+              "before": 49,
+              "net_correct_delta": -1,
+              "total": 72
+            }
+          },
+          "net_correct_delta": -1,
+          "regressions": [
+            {
+              "capability": "A.PARENT",
+              "id": "ec768cfa6b6e3e578889c2a47b7a2e377178d1b4b41ddf235ba811aa041e79cf"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "3fa733f11566b4d742f1f3a8414aa4fd1f2ca67f9c08d269fac3b84beb47f297"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "6ee8a194ad12b588022c2e50824f4613d89ccc83ea260680f84965de4f078d3a"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "77301b37e72910e147b807b6fb1cd64616ecd8a138b84363e45849b5e28fa05c"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "695c57dbaae886562e3293f4fc05edba96f2cc49fdec9886c48304e94faf8bee"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "4b3ef67aa1ff33d60553a62824ef1fa2ec87d22a02a1e6609a327aca9b9edad7"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "f55340fcff84c90a312d46d2227a7cdf9606872fe2e089efdddfb34ba7edd499"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "00771a50a7fd93798bd3389ec804cc2459c52c74e90c85aee6b9c8ded24abb1a"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "5b67698b048aee35c458d67dccffc3fbc6078539587fd5ce5867f278973540d3"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "e2071f7622bfa7ffdae7f860b97ba95edfcd9fd1120c2336fee80f8b00d80e07"
+            }
+          ],
+          "repaired": [
+            {
+              "capability": "A.MEMBER",
+              "id": "f60d448d5150f5f29b2e9f6bb25866c023360c82015ecb1046c0bacd2cf26728"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "25afb94c4828d808fe1ff482b47b271cb33a29e8056272f5b949facfc91687f6"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "ab773b66739b5925f9bae635da2606931f37adc716437c114235128e1d9b5406"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "ffb5cc5d993b769dfef8c33db379c8067c69b0786586a9cdd2aacb495f315658"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "3b26b115faf2800f66c26dacd6880d9fedd216033d49e393516e3d535660c3a0"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "eee7f9c4e1e7f1561b02b7a5b37d127488a0ca71ad74938ba8d669efeb820b9c"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "0fe9274e62a659b85c592d658190036b702b4c40b1fee618daaad32d2065d5fe"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "1e199c48761b4aaff2ff13c5f39d9f7103bd80ffe973c190a2fb02d64774bfe9"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "3acfaa254cf6cba8f6ea2e9215e3785ed30954cc6db9afdadcaeb90558fa4ef8"
+            }
+          ],
+          "rows": 72,
+          "status": "MEASURED"
+        },
+        "fixed_grade_replay": {
+          "after": 48,
+          "before": 49,
+          "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+          "grade": "A",
+          "net_correct_delta": -1,
+          "status": "MEASURED",
+          "total": 72
+        },
+        "fixed_whole_school_net_correct_delta": -1,
+        "fragile_replay": {
+          "reason": "FRAGILE_PRESERVATION_EXAM_NOT_YET_ADMITTED",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 5,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 3,
+        "paired_scores_sha256": "7da6dc3a0bd1a5ce0566e4c16e9cb7927124f0bde472fca8317acc44a0a24627",
+        "phase": "MAIN",
+        "protected_capabilities": [
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "protected_net_correct_delta": 1,
+        "protected_tolerances": {
+          "A.IDENTITY": 3,
+          "A.LINK": 3,
+          "A.MAPS": 3,
+          "A.MEMBER": 3,
+          "A.PARENT": 3
+        },
+        "qualification_stage": "COMPLETE_SAME_GRADE",
+        "reason": "FIXED_LESSON_GRADE_REGRESSION",
+        "same_grade_net_correct_delta": 6,
+        "same_grade_probed_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "source_cohort_sha256": "df3f1a5bc55936a6cff811b6081655cf145fe1689f9250b4eb305e12fd8bb433",
+        "unsampled_admitted_capabilities": 0,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 1
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 4,
+        "preview": 4
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.0833333
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 87,
+      "event_id": "2b258c79e7d495740ec5e927469c5e7eeba600baf1410a82689c660a65473947",
+      "capability": "A.EDGE",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118080,
+      "candidate_attempt_optimizer_step": 118096,
+      "recovered_at_student_sha256": "e7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5",
+      "candidate_retention": {
+        "active_capability": "A.EDGE",
+        "active_probe_after": 6,
+        "active_probe_before": 5,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.EDGE": 0.0833333,
+          "A.IDENTITY": 0.0,
+          "A.LINK": -0.0833333,
+          "A.MAPS": 0.0833333,
+          "A.MEMBER": -0.0833333,
+          "A.PARENT": 0.0833333
+        },
+        "discordance_similarity": 1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "after_correct": 45,
+          "before_correct": 51,
+          "cohort_sha256": "5328f44b55bad22885e0144ddfffa2b7d14bdc64bab8cdadc52a6e26eacc5c7b",
+          "grades": {
+            "A": {
+              "after": 45,
+              "before": 51,
+              "net_correct_delta": -6,
+              "total": 72
+            }
+          },
+          "net_correct_delta": -6,
+          "regressions": [
+            {
+              "capability": "A.IDENTITY",
+              "id": "71cb4b5aee2f35d3a96ab68ccb9ca890a6bb77f77bba7cef761219d6eb288725"
+            },
+            {
+              "capability": "A.IDENTITY",
+              "id": "5ee6fdb61366cfa63dbee7eec6568fc4d22998b4f786b94708675cd2af0f47ab"
+            },
+            {
+              "capability": "A.PARENT",
+              "id": "62336cb3839183fc34432c81ecc8e3084ba08def1c881563d5d10930c6c0c9a0"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "8f671c92be162005ff05b3c29141918925a11919aad05e9478329517251fbbb3"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "c386b7ad07d31a160eaae75283081b5a3de89ca3e6c6e8e2b909b4c599837bb0"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "3fa733f11566b4d742f1f3a8414aa4fd1f2ca67f9c08d269fac3b84beb47f297"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "5720a04a1e6becbea68bf09729f605f1705ee9e806f49a427af608064b2231f9"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "fb02aa95999792904666345c5ecace1e00828a53e6d6e24ac04c76db0d28eb1c"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "a127c0ce9ecec2b26b7596910cbb528dc3b225ed130112b68919cc0175b0c077"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "77301b37e72910e147b807b6fb1cd64616ecd8a138b84363e45849b5e28fa05c"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "8901740fba7a71d96c541cb5fa0312505ad6a3f2df27e55b7a4f33f3171ec98b"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "70619266d28bd0349a4695468360353be0a81435e80a569b12eee06219618d5a"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "decb01286b131eea1145c9c6424754179ee6faaa8d92187f95157522a59fac54"
+            }
+          ],
+          "repaired": [
+            {
+              "capability": "A.IDENTITY",
+              "id": "150e8090b1aafe67b92d16bd0ed98c70ab57102583bc75c642e0c6cb4147903f"
+            },
+            {
+              "capability": "A.PARENT",
+              "id": "2bd277276bb1106ec843b9eeefcd591608b59601826bae5c5e64b3d530461803"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "1fdf5581c21bdc7f29e9b03f0be678d1e93aba122221e3c9b52f116a147ba889"
+            },
+            {
+              "capability": "A.MEMBER",
+              "id": "f60d448d5150f5f29b2e9f6bb25866c023360c82015ecb1046c0bacd2cf26728"
+            },
+            {
+              "capability": "A.EDGE",
+              "id": "513e793905a213714d07556a11e19cf18a3bd07f2f1929b5faa2639bfe252bd4"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "15ce401b7766a380f1300b1b9ef91a5f40332cc2480f7bde3bd5d4e0f97d1d59"
+            },
+            {
+              "capability": "A.MAPS",
+              "id": "38ff85398d771abeb52742c6b65bd57c17794fdab08fa0e2674d49e1d7354562"
+            }
+          ],
+          "rows": 72,
+          "status": "MEASURED"
+        },
+        "fixed_grade_replay": {
+          "after": 45,
+          "before": 51,
+          "cohort_sha256": "5328f44b55bad22885e0144ddfffa2b7d14bdc64bab8cdadc52a6e26eacc5c7b",
+          "grade": "A",
+          "net_correct_delta": -6,
+          "status": "MEASURED",
+          "total": 72
+        },
+        "fixed_whole_school_net_correct_delta": -6,
+        "fragile_replay": {
+          "reason": "FRAGILE_PRESERVATION_EXAM_NOT_YET_ADMITTED",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": 1,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 1,
+        "paired_scores_sha256": "b3b91d43ded5b064349e4e37f88c43912b8d75c8452f8d616e8b498a43a78e3e",
+        "phase": "RECOVERY_1",
+        "protected_capabilities": [
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {
+          "A.IDENTITY": 1,
+          "A.LINK": 1,
+          "A.MAPS": 1,
+          "A.MEMBER": 1,
+          "A.PARENT": 1
+        },
+        "qualification_stage": "COMPLETE_SAME_GRADE",
+        "reason": "FIXED_LESSON_GRADE_REGRESSION",
+        "same_grade_net_correct_delta": 1,
+        "same_grade_probed_capabilities": [
+          "A.EDGE",
+          "A.IDENTITY",
+          "A.LINK",
+          "A.MAPS",
+          "A.MEMBER",
+          "A.PARENT"
+        ],
+        "source_cohort_sha256": "b122405376255774364b4c8e4047aa247046441a770f6ec5b00560fd9f15adfa",
+        "unsampled_admitted_capabilities": 0,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 1
+      },
+      "strategy": {
+        "contrast": 1.0,
+        "depth": 1,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 4,
+        "preview": 4
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.0833333
+    },
+    {
+      "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+      "generation": 90,
+      "event_id": "12337b93c1e047a12afd8194af8b691b6b43c4e21ad4a0b37dbf2d18ef5baee2",
+      "capability": "A.EDGE",
+      "attempted_optimizer_updates": 16,
+      "retained_optimizer_updates": 0,
+      "optimizer_step": 118080,
+      "candidate_attempt_optimizer_step": 118096,
+      "recovered_at_student_sha256": "e7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5",
+      "candidate_retention": {
+        "active_capability": "A.EDGE",
+        "active_probe_after": 5,
+        "active_probe_before": 7,
+        "active_probe_total": 12,
+        "decision": "REJECT",
+        "deltas": {
+          "A.EDGE": -0.1666667
+        },
+        "discordance_similarity": 1.0,
+        "exact_complete_exam_qualification": false,
+        "exceeded": {},
+        "fixed_frontier_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_grade_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "fixed_whole_school_net_correct_delta": null,
+        "fragile_replay": {
+          "reason": "TARGET_DID_NOT_GAIN",
+          "status": "NOT_MEASURED"
+        },
+        "local_correct_delta": -2,
+        "matrix_strain": {
+          "reason": "MISSING_COMPARABLE_REFERENCE",
+          "status": "NOT_MEASURED"
+        },
+        "mature_protected_capabilities": [],
+        "max_tolerated_wrong_answer_delta": 1,
+        "paired_scores_sha256": "88aa45292f1fdb0a78c2cc8b3ca643c2037f96c27dde44828e48f15f83a3f9f2",
+        "phase": "RECOVERY_1",
+        "protected_capabilities": [],
+        "protected_net_correct_delta": 0,
+        "protected_tolerances": {},
+        "qualification_stage": "TARGET_ONLY_REJECTED",
+        "reason": "NO_MEASURABLE_TARGET_GAIN",
+        "same_grade_net_correct_delta": -2,
+        "same_grade_probed_capabilities": [
+          "A.EDGE"
+        ],
+        "source_cohort_sha256": "f9dce45598880bd910422679b02a3092ba845ba64722609434979a7f996d446f",
+        "unsampled_admitted_capabilities": 5,
+        "version": "bilqis.mlx.causal-teacher-experiment/v1",
+        "worst_protected_loss": 0
+      },
+      "strategy": {
+        "contrast": 0.5,
+        "depth": 2,
+        "distill": 0.35,
+        "lr": 0.00013,
+        "old": 16,
+        "preview": 2
+      },
+      "teacher_reward": 0.0,
+      "teacher_selection_reward": -0.05
+    }
+  ],
+  "frontier_refreshes": [
+    {
+      "actual_neural_updates": 0,
+      "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+      "event": "SCHOOL_FIXED_FRONTIER_PARENT_REFRESHED",
+      "event_id": "05a819facc5a2e6c3dc90b832b86b5d7d0d0d8eefcc336cb618dfb94450cd101",
+      "generation": 64,
+      "optimizer_step": 118064,
+      "scores": {
+        "A.EDGE": {
+          "correct": 7,
+          "total": 12
+        },
+        "A.IDENTITY": {
+          "correct": 10,
+          "total": 12
+        },
+        "A.LINK": {
+          "correct": 6,
+          "total": 12
+        },
+        "A.MAPS": {
+          "correct": 6,
+          "total": 12
+        },
+        "A.MEMBER": {
+          "correct": 6,
+          "total": 12
+        },
+        "A.PARENT": {
+          "correct": 9,
+          "total": 12
+        }
+      },
+      "source_student_sha256": "2e47a53550fff113f1eadc1fdb8dbdbaf8ae96e7ee2c26414f344b8f12acd284",
+      "student_sha256": "d148833382a2f70d9d0ee7458324ad335316d634d77105a95d6eda965b46dd74"
+    },
+    {
+      "actual_neural_updates": 0,
+      "checkpoint_status": "RECORDED_AT_BOUNDARY",
+      "cohort_sha256": "789676dce1c21fde04df26e325729a632c64811b6a9f57e981f1943c8afe7579",
+      "event": "SCHOOL_FIXED_FRONTIER_PARENT_REFRESHED",
+      "event_id": "33bca68b7e24bc031479fc2a507243f6dc55b4ca18e24d534f20bdf9fa412416",
+      "generation": 82,
+      "optimizer_step": 118080,
+      "recovered_at_student_sha256": "e7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5",
+      "scores": {
+        "A.EDGE": {
+          "correct": 7,
+          "total": 12
+        },
+        "A.IDENTITY": {
+          "correct": 10,
+          "total": 12
+        },
+        "A.LINK": {
+          "correct": 7,
+          "total": 12
+        },
+        "A.MAPS": {
+          "correct": 8,
+          "total": 12
+        },
+        "A.MEMBER": {
+          "correct": 7,
+          "total": 12
+        },
+        "A.PARENT": {
+          "correct": 10,
+          "total": 12
+        }
+      },
+      "source_student_sha256": "d148833382a2f70d9d0ee7458324ad335316d634d77105a95d6eda965b46dd74",
+      "student_sha256": "e7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5"
+    }
+  ],
+  "source_handoff": {
+    "candidate_gate_count": 240,
+    "deferred_obligations": [
+      "A.IDENTITY/direct",
+      "A.PARENT/direct",
+      "A.LINK/direct",
+      "A.MEMBER/direct",
+      "A.EDGE/direct",
+      "A.MAPS/direct"
+    ],
+    "event": "SCHOOL_AUTONOMY_SOURCE_DEVELOPMENT_REQUIRED",
+    "frontier_sha256": "055ab68470ab248c68b86090f1a5e277ec289472326b6bfb592a45727bb17381",
+    "generation": 91,
+    "grade": "A",
+    "model_and_optimizer_unchanged": true,
+    "optimizer_step": 118080,
+    "proposal_file": "autonomy/jit-proposals/d9e2b23667204d3b4c67296dc84b39c38a562f939a6b7204c77f241b80ea5ca6.json",
+    "proposal_sha256": "d9e2b23667204d3b4c67296dc84b39c38a562f939a6b7204c77f241b80ea5ca6",
+    "selected_candidate_ids": [],
+    "student_sha256": "e7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5"
+  },
+  "repair_receipt": "20261021-issue349-metadata-outbox-repair.json",
+  "transfer_receipt": "20261021-issue349-transfer-control-after-autonomy.json",
+  "transfer_scores": {
+    "A.IDENTITY": {
+      "correct": 105,
+      "total": 113
+    },
+    "A.MAPS": {
+      "correct": 77,
+      "total": 139
+    }
+  },
+  "protected_primary_unchanged": true,
+  "protected_primary_files": {
+    "state.json": "6fca9091032b186b6aa110d89f0111f1451d037b6dec76d4b1bdc529449bd523",
+    "events.jsonl": "0f689c01ce9dfe235dff9249e4576535d70b7461722e7bf0ce65f893124866fb",
+    "bundles/working-120-d4a37442195e/model-and-own-adamw.safetensors": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+    "bundles/working-120-d4a37442195e/manifest.json": "3ed9de4d639d5203fc46aae4c53b9820e79ce4da7be5ef3ee4ef2f385f3cc788",
+    "bundles/working-120-d4a37442195e/semantic-catalog.json": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716"
+  },
+  "budget": {
+    "issue_number": 349,
+    "run_count": 2,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "used_bytes": 2240933888,
+    "within_budget": true,
+    "runs": [
+      "primary",
+      "plasticity-control"
+    ]
+  },
+  "source_artifact_hydration_sha256": "352ed7da36771ecc40255e612fb63c81b22a2f07621149de1cfe7f97a295413f",
+  "d_adopted": false,
+  "d_taught": false,
+  "training_exposure_overlap": "NOT_MEASURED",
+  "source_development_receipts": [
+    {
+      "file": "autonomy/source-development/906d6e0e6982e07566f15270569306aa2afc69279d3fed20d11c38e8950ab3af.json",
+      "receipt": {
+        "actual_neural_updates": 0,
+        "checkpoint_sha256": "e7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5",
+        "optimizer_step": 118080,
+        "proposal_sha256": "d9e2b23667204d3b4c67296dc84b39c38a562f939a6b7204c77f241b80ea5ca6",
+        "schema": "bilqis.mlx.source-development/v1",
+        "source_work": {
+          "builder_sha256": "819b8c5b86842f3d1a691caa22ed695aba2224149f5441491f2712e5c7ef9842",
+          "manifest": {
+            "builder_sha256": "819b8c5b86842f3d1a691caa22ed695aba2224149f5441491f2712e5c7ef9842",
+            "canonical_page_equivalence": "NOT_MEASURED",
+            "canonical_source": {
+              "bytes": "4685069",
+              "content_type": "application/pdf",
+              "etag": "\"477d0d-5f4d3e43c7f00\"",
+              "fetched_at_utc": "2026-10-19T11:07:04+00:00",
+              "final_url": "https://ithkuil.net/New_Ithkuil_Lexicon.pdf",
+              "last_modified": "Thu, 16 Feb 2023 16:43:08 GMT",
+              "local_name": "New_Ithkuil_Lexicon.pdf",
+              "requested_url": "https://ithkuil.net/New_Ithkuil_Lexicon.pdf",
+              "sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+              "source_id": "NI-LEXICON-CURRICULUM",
+              "source_type": "lexicon",
+              "title": "New Ithkuil lexicon (Curriculum Registry URL variant)"
+            },
+            "chapters": [
+              "3"
+            ],
+            "disposition": "SOURCE_OBSERVATIONS_NOT_ADMITTED",
+            "evidence_count": 27,
+            "input_files": {
+              "New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0"
+            },
+            "output_files": {
+              "lexicon_root_evidence.csv": "e0d2283a23a44d0556990a5f41642d59305f440f94ae4182007c9572bb3e95f0",
+              "lexicon_root_senses.csv": "33c7ca0319b87b3ba29221f9f83d387d99512a79f8f53990c6ddfe0845e3df53",
+              "lexicon_roots.csv": "bd380c48b565a12fee1af92c09e37de6e0b82854c66ae867d8350a2735084f9b"
+            },
+            "root_count": 122,
+            "schema": "bilqis.ithkuil.lexicon-extraction/v1",
+            "sense_count": 189,
+            "unresolved_root_ids": [
+              "LEXROOT-09da3e0b0f03b4",
+              "LEXROOT-0badacdb20aaa2",
+              "LEXROOT-0c9cb27eda5dfa",
+              "LEXROOT-0e15353dbe1d11",
+              "LEXROOT-20762879a71ecf",
+              "LEXROOT-20770c18f7c084",
+              "LEXROOT-2113771bab65f7",
+              "LEXROOT-2159448bd0363d",
+              "LEXROOT-28e585e026f9a7",
+              "LEXROOT-2c2c5684b3843e",
+              "LEXROOT-2d810cfc6c4e41",
+              "LEXROOT-34afebbf405fc7",
+              "LEXROOT-3840d0c94a6c6e",
+              "LEXROOT-3af985562042a2",
+              "LEXROOT-3cadb23a580b5c",
+              "LEXROOT-3f31eeacfe555e",
+              "LEXROOT-4007c1e60a7562",
+              "LEXROOT-4410ada1ddd544",
+              "LEXROOT-453268bd4db4f4",
+              "LEXROOT-46392efc193e1f",
+              "LEXROOT-4a424e3ea5b135",
+              "LEXROOT-4d7ad088a3300f",
+              "LEXROOT-508fbd922b7d88",
+              "LEXROOT-5454750a157202",
+              "LEXROOT-58bc57007b0355",
+              "LEXROOT-5a39c05552c799",
+              "LEXROOT-5cea1be626abf1",
+              "LEXROOT-5f04c1fa62a2b1",
+              "LEXROOT-61e22af20cf657",
+              "LEXROOT-675ec09e8aa958",
+              "LEXROOT-67fcae12a212a7",
+              "LEXROOT-69c584c90cb6c4",
+              "LEXROOT-6a31167fd16e50",
+              "LEXROOT-7d4a7fdda8cd54",
+              "LEXROOT-7f79579d9ef602",
+              "LEXROOT-86dd7a17e2423a",
+              "LEXROOT-8a239ef6199914",
+              "LEXROOT-8a408d2cd9ffa1",
+              "LEXROOT-8c39a52e53d336",
+              "LEXROOT-8c845a82508a1f",
+              "LEXROOT-95a587ad7871fc",
+              "LEXROOT-98177064c41f6b",
+              "LEXROOT-9999f618ddde95",
+              "LEXROOT-a47399a13c8814",
+              "LEXROOT-a5449a495820d6",
+              "LEXROOT-a60e24def40a85",
+              "LEXROOT-a673b66cae2810",
+              "LEXROOT-a703726a49d40c",
+              "LEXROOT-abec77412ef8ae",
+              "LEXROOT-ad273621f968dd",
+              "LEXROOT-aedb65f3226e2e",
+              "LEXROOT-af110864c06d1a",
+              "LEXROOT-b18de97db70927",
+              "LEXROOT-b2e1193d8655be",
+              "LEXROOT-b631ef1fd91770",
+              "LEXROOT-b6e6b724f2b18e",
+              "LEXROOT-ba32922def25a4",
+              "LEXROOT-babbee6e3bba80",
+              "LEXROOT-bb9954137a7978",
+              "LEXROOT-c0044bf989a738",
+              "LEXROOT-c257d2ef07b380",
+              "LEXROOT-c2f25f8c3eac14",
+              "LEXROOT-c471475b4cdcf7",
+              "LEXROOT-c629100a4651a7",
+              "LEXROOT-cc85fb750dd844",
+              "LEXROOT-ce44a5c38889b6",
+              "LEXROOT-d319813251ea42",
+              "LEXROOT-d854a34f3c8867",
+              "LEXROOT-d8dcd78e1bea30",
+              "LEXROOT-daad57eeee8e57",
+              "LEXROOT-db810372e067be",
+              "LEXROOT-de8ae64e6e1cad",
+              "LEXROOT-dec417eb5b618b",
+              "LEXROOT-e03e44614b6419",
+              "LEXROOT-e68b3cbd34038e",
+              "LEXROOT-eb1e5f80b6f784",
+              "LEXROOT-ee22e5e95bf669",
+              "LEXROOT-f057ccdddb8470",
+              "LEXROOT-f0f7b3c4c8caff",
+              "LEXROOT-f281d5ae52b56f",
+              "LEXROOT-f2e8b8312e33d3",
+              "LEXROOT-f306b6f93034fa",
+              "LEXROOT-f3fb1b3f4f8524",
+              "LEXROOT-f6ea1d3a5ea7b1",
+              "LEXROOT-f71ff834f209cc",
+              "LEXROOT-fa4e3fe6a82fcc",
+              "LEXROOT-fc140c31e47362",
+              "LEXROOT-ff95b2c129702b"
+            ]
+          },
+          "output": "/Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/.local/issue349-budget-wave/proof-1q16xkqo/.local/issue-349-source-snapshots/chapter-3",
+          "status": "SOURCE_SNAPSHOT_EXTRACTED"
+        }
+      }
+    }
+  ]
+}

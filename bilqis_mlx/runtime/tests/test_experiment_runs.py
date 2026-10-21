@@ -3,10 +3,34 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from bilqis_mlx.runtime.experiment_runs import ExperimentRunBudget
+from bilqis_mlx.runtime.experiment_runs import ExperimentRunBudget, require_training_run
 
 
 class ExperimentRunBudgetTests(unittest.TestCase):
+    def test_registered_issue_run_can_use_a_separate_executable_checkout(self):
+        owner = self.budget()
+        run = owner.create("primary")
+        require_training_run(run, self.base / "code-checkout/runs", issue_budget=owner)
+        with self.assertRaisesRegex(ValueError, "ISOLATED_WORKTREE_RUN"):
+            require_training_run(run, self.base / "code-checkout/runs")
+
+    def test_external_historical_run_and_anonymous_guards_cannot_claim_issue_custody(self):
+        owner = self.budget()
+        owner.create("primary")
+        historical = self.base / "historical"
+        historical.mkdir()
+        with self.assertRaisesRegex(RuntimeError, "UNREGISTERED_PATH"):
+            require_training_run(historical, self.base / "code/runs", issue_budget=owner)
+        with self.assertRaisesRegex(TypeError, "EXPERIMENT_BUDGET_GUARD_INVALID"):
+            require_training_run(historical, self.base / "code/runs", issue_budget=lambda _: None)
+
+    def test_issue_custody_does_not_bypass_measured_disk_limit(self):
+        owner = self.budget()
+        run = owner.create("primary")
+        self.allocated_file(run / "scratch", 2_000_000)
+        with self.assertRaisesRegex(RuntimeError, "DISK_BUDGET_EXHAUSTED"):
+            require_training_run(run, self.base / "code/runs", issue_budget=owner)
+
     def setUp(self) -> None:
         self.temporary = TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

@@ -884,3 +884,52 @@ Focused red/green regressions and the combined511-test source-isolated run suppo
 the repair. PM-2026-10-20-003 / RC-116 was enriched with native readback. Existing
 issue-owned experiments alone remain authorized; no third run, canonical-run
 mutation, AdamW merge, synthetic lineage, main merge or issue closure.
+
+
+## ADR-077 | 2026-10-21 | Carry typed experiment custody through the training launcher
+
+A registered issue-owned control could train without retention from an isolated
+source archive, but normal retention resume refused its external data path before
+updates. Passing only a budget callback had discarded the ownership contract.
+Pass the existing ExperimentRunBudget owner through CLI and operate. The runtime
+owner requires prior registration and measured collective budget compliance
+before source/GPU loading; anonymous callables cannot authorize external runs.
+Without an issue owner, the existing checkout-local isolation rule still applies.
+Existing protected students still reject no-retention resume. No third run or
+canonical/historical mutation is authorized. PM-2026-10-20-003 / RC-116 records
+the integration gap and containment, with native ledger readback.
+
+The same independently seeded control may tighten from its earlier unprotected
+policy to ordinary causal retention without changing its student or own AdamW.
+This sequential exploratory phase is not a matched retention ablation. Preserve
+its original negative/interference evidence and report attempted and retained
+updates separately. Repeated transfer specimens measure changes on that panel;
+training-exposure overlap remains NOT_MEASURED and they never grant admission.
+
+
+## ADR-078 | 2026-10-21 | Preserve routine history and refresh exact-parent frontier evidence
+
+The live autonomous control retained a PARENT update at step118064, then the next
+trial failed FIXED_FRONTIER_PARENT_IDENTITY_DRIFT: a durable mid-cycle flush had
+advanced the student while last_exam still described step118048. Exact-parent
+validation correctly contained stale evidence. Preserve that validation.
+
+Retain last_exam as routine/diagnostic history. A separate fixed_frontier_exam
+measures the current retained parent on the unchanged verified source cohort.
+Validate the historical cohort, scores and misses first; then score actual current
+parent predictions and require native AdamW step agreement. Bind the refreshed
+pointer to the same cohort, rubric, scope, assessment grade and epoch. Persist its
+zero-update receipt atomically with the stop boundary, and repair older stopped
+issue state through the same measurement on resume. A newly committed routine
+exam replaces this derived pointer. Refreshes grant no graduation, title, source
+admission or diagnostic-history authority. Never copy historical predictions into
+a changed parent. PM-2026-10-20-003 / RC-116 records the live failure and controls.
+
+Restart also exposed a metadata publication defect: an autonomy queue reroute
+inherited the prior generation's sealed outbox. Metadata-only _advance now
+reconciles prior delivery, publishes its own generation-bound event and reads it
+back. It never rehashes old teaching as new evidence. The issue-owned control
+was repaired by matching immutable generations61/62 (only generation and queue
+differed), verifying every inherited event exactly once in the ledger and the
+unchanged native student/AdamW, then appending generation63. Historical snapshots
+and events remain intact. The repair receipt is tracked separately.

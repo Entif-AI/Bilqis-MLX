@@ -4,11 +4,45 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from bilqis_mlx.fixed_frontier import load_frontier, screen_frontier
+from bilqis_mlx.fixed_frontier import (
+    load_frontier, screen_frontier, refresh_frontier_exam, frontier_exam)
 from bilqis_mlx.generated_assessment import make_cohort
 
 
 class FixedFrontierTests(unittest.TestCase):
+    def test_new_parent_is_remeasured_on_original_cohort_without_rewriting_routine_exam(self):
+        from copy import deepcopy
+        rows = [{"id": "A.LINK:0", "capability": "A.LINK", "gold": "TRUE"}]
+        with tempfile.TemporaryDirectory() as directory:
+            run = Path(directory)
+            (run / "cohorts").mkdir()
+            cohort = make_cohort(rows, generator_version="generator", seed=7,
+                                 rubric_version="rubric")
+            artifact = dict(schema="rubric", generator_version="generator", seed=7,
+                            cohort_sha256=cohort.digest, rows=rows)
+            (run / "cohorts" / f"{cohort.digest}.json").write_text(json.dumps(artifact))
+            original = dict(student_sha256="a" * 64, optimizer_step=41,
+                cohort_sha256=cohort.digest, cohort_file=f"cohorts/{cohort.digest}.json",
+                scores={"A.LINK": {"correct": 1, "total": 1}}, misses_for_teacher=[])
+            saved = deepcopy(original)
+            current = dict(sha256="b" * 64, optimizer_step=42,
+                           model_and_native_adamw=True)
+            refreshed = refresh_frontier_exam(run, original, checkpoint=current,
+                                             predictions={"A.LINK:0": "FALSE"})
+            receipt = dict(last_exam=original, fixed_frontier_exam=refreshed)
+            fixed_rows, predictions = load_frontier(run, receipt,
+                parent_sha256=current["sha256"], parent_optimizer_step=42)
+            self.assertEqual(predictions, {"A.LINK:0": "FALSE"})
+            self.assertEqual(fixed_rows, tuple(cohort.rows))
+            self.assertEqual(original, saved)
+            self.assertEqual(frontier_exam(receipt)["cohort_sha256"], cohort.digest)
+            with self.assertRaisesRegex(ValueError, "SOURCE_EXAM_DRIFT"):
+                frontier_exam({**receipt, "last_exam": {**original, "cohort_sha256": "c"*64}})
+            with self.assertRaisesRegex(ValueError, "RECONSTRUCTED_SCORE_DRIFT"):
+                refresh_frontier_exam(run, {**original, "scores": {
+                    "A.LINK": {"correct": 0, "total": 1}}}, checkpoint=current,
+                    predictions={"A.LINK:0": "FALSE"})
+
     def test_perfect_saved_exam_accepts_empty_miss_list(self):
         rows = [
             {"id": "A.LINK:0", "capability": "A.LINK", "gold": "TRUE"},

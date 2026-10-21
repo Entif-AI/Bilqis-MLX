@@ -1,0 +1,29 @@
+{
+  "schema": "bilqis.issue349.metadata-outbox-repair/v1",
+  "event": {
+    "event": "SCHOOL_METADATA_OUTBOX_REPAIRED",
+    "generation": 63,
+    "source_generation": 62,
+    "verified_outbox_generation": 61,
+    "student_sha256": "d148833382a2f70d9d0ee7458324ad335316d634d77105a95d6eda965b46dd74",
+    "optimizer_step": 118064,
+    "source_state_sha256": "3dbd3dc2957540b1a814e1935ee373cbb4d1a17830544c2210e63938c10c95e8",
+    "verified_predecessor_sha256": "3811a0f2758af20cb084d441d1bf46c98003a3bdb3ea7d2d576627969ed5195b",
+    "actual_neural_updates": 0
+  },
+  "same_student_and_own_adamw": true,
+  "previous_generation_preserved": true,
+  "prior_events_verified_exactly_once": true,
+  "budget": {
+    "issue_number": 349,
+    "run_count": 2,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "used_bytes": 2190372864,
+    "within_budget": true,
+    "runs": [
+      "primary",
+      "plasticity-control"
+    ]
+  }
+}

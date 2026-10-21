@@ -71,10 +71,43 @@ def rebaseline_frontier_exam(run_dir: Path, source_exam: dict, *, checkpoint: di
     }
 
 
+def frontier_exam(receipt: dict) -> dict:
+    """Select current-parent evidence without replacing routine exam history."""
+    original = receipt.get("last_exam") or {}
+    refreshed = receipt.get("fixed_frontier_exam")
+    if refreshed is None:
+        return original
+    bindings = ("cohort_sha256", "exam_rubric_sha256", "assessment_scope_sha256",
+                "assessment_grade", "grade_exam_epoch")
+    if any(refreshed.get(key) != original.get(key) for key in bindings):
+        raise ValueError("FIXED_FRONTIER_SOURCE_EXAM_DRIFT")
+    return refreshed
+
+
+def refresh_frontier_exam(run_dir: Path, source_exam: dict, *, checkpoint: dict,
+                          predictions: dict) -> dict:
+    """Measure a retained parent on the unchanged, verified source cohort."""
+    load_frontier(run_dir, {"last_exam": source_exam},
+                  parent_sha256=source_exam.get("student_sha256"),
+                  parent_optimizer_step=source_exam.get("optimizer_step"))
+    cohort = load_frontier_cohort(run_dir, source_exam)
+    measured = score(cohort, predictions, checkpoint)
+    keys = ("cohort_sha256", "cohort_file", "cohort_seed", "generator_version",
+            "exam_rubric_sha256", "assessment_scope_sha256", "assessment_grade",
+            "grade_exam_epoch")
+    return {**{key: source_exam[key] for key in keys if key in source_exam},
+            "exam_plane": "FIXED_FRONTIER_CURRENT_PARENT",
+            "student_sha256": checkpoint["sha256"],
+            "optimizer_step": checkpoint["optimizer_step"],
+            "scores": measured["scores"],
+            "misses_for_teacher": list(measured["misses_for_teacher"]),
+            "source_student_sha256": source_exam.get("student_sha256")}
+
+
 def load_frontier(run_dir: Path, receipt: dict, *, parent_sha256: str,
                   parent_optimizer_step: int) -> tuple[tuple[dict, ...], dict[str, str]]:
     """Load the current fixed cohort and reconstruct the retained parent's outputs."""
-    exam = receipt.get("last_exam") or {}
+    exam = frontier_exam(receipt)
     scores = exam.get("scores")
     if not scores or exam.get("cohort_sha256") is None:
         return (), {}

@@ -24,6 +24,7 @@ import time
 import uuid
 
 from .backup import digest_file
+from .runtime.experiment_runs import ExperimentRunBudget, require_training_run
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.learning.champion_confidence import MAX_INFLUENCE as MAX_CHAMPION_INFLUENCE
 from bilqis_mlx.learning.champion_confidence import vote_targets_typed
@@ -1686,12 +1687,23 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
         record["model_bundle"] = model_bundle
     if last_exam is not None:
         record["last_exam"] = last_exam
+        record.pop("fixed_frontier_exam", None)
     if result is not None:
         record["result"] = result
     if frontier is not None:
         record["capability_best"] = frontier
     if persist:
         record.pop("_pending_visit_events", None)
+        if old.get("delivery_outbox") is not None:
+            _reconcile_delivery_outbox(run_dir, old)
+            event = {"event": "SCHOOL_STATE_ADVANCED",
+                     "generation": record["generation"],
+                     "source_generation": old["generation"],
+                     "student_sha256": school.current_student.sha256,
+                     "optimizer_step": school.current_student.optimizer_step}
+            record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
+            _reconcile_delivery_outbox(run_dir, record)
+            return record
         return _persist(run_dir, record)
     return json.loads(_canonical(record))
 
@@ -2176,7 +2188,8 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
     frontier = {"status": "NOT_MEASURED",
                 "reason": "NO_FIXED_WHOLE_SCHOOL_FRONTIER"}
     frontier_parent = frontier_candidate = {}
-    from .fixed_frontier import load_frontier, screen_frontier
+    from .fixed_frontier import load_frontier, screen_frontier, frontier_exam
+    fixed_exam = frontier_exam(receipt)
     frontier_rows, frontier_parent = load_frontier(
         run_dir, receipt,
         parent_sha256=school.current_student.sha256,
@@ -2195,7 +2208,7 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
                 grade_rows, grade_parent, grade_candidate)
             fixed = {
                 "status": "MEASURED", "grade": grade,
-                "cohort_sha256": receipt["last_exam"]["cohort_sha256"],
+                "cohort_sha256": fixed_exam["cohort_sha256"],
                 "before": sum(value["before"] for value in grade_scores.values()),
                 "after": sum(value["after"] for value in grade_scores.values()),
                 "total": sum(value["total"] for value in grade_scores.values()),
@@ -2213,7 +2226,7 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
                 mx, candidate, list(other_rows), config, answer_ids))
         frontier = screen_frontier(
             frontier_rows, frontier_parent, frontier_candidate,
-            receipt["last_exam"]["cohort_sha256"])
+            fixed_exam["cohort_sha256"])
     else:
         fixed_rows = _fixed_same_grade_rows(
             run_dir, receipt, course, school, capability, settings)
@@ -2227,7 +2240,7 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
             fixed = {
                 "status": "MEASURED",
                 "grade": capability.partition(".")[0],
-                "cohort_sha256": receipt["last_exam"]["cohort_sha256"],
+                "cohort_sha256": fixed_exam["cohort_sha256"],
                 "before": sum(value["before"] for value in scores.values()),
                 "after": sum(value["after"] for value in scores.values()),
                 "total": sum(value["total"] for value in scores.values()),
@@ -2251,7 +2264,7 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
             _predictions(mx, candidate, list(replay_rows), config, answer_ids))
         replay = screen_replay(
             replay_rows, replay_parent, replay_candidate,
-            receipt["last_exam"]["cohort_sha256"])
+            fixed_exam["cohort_sha256"])
     return fixed, replay, frontier
 
 
@@ -4366,6 +4379,45 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     return result
 
 
+def _refresh_fixed_frontier(mx, run_dir, receipt, course, parameters, optimizer,
+                            *, persist=True):
+    """Re-measure preserved questions when a durable retained parent changes."""
+    from .fixed_frontier import (frontier_exam, load_frontier_cohort,
+                                 refresh_frontier_exam)
+    exam = frontier_exam(receipt)
+    if not exam.get("scores") or not exam.get("cohort_sha256"):
+        return receipt
+    school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
+    checkpoint = asdict(school.current_student)
+    if (exam.get("student_sha256") == checkpoint["sha256"] and
+            exam.get("optimizer_step") == checkpoint["optimizer_step"]):
+        return receipt
+    if int(optimizer.state["step"].item()) != checkpoint["optimizer_step"]:
+        raise ValueError("FIXED_FRONTIER_NATIVE_PARENT_STEP_DRIFT")
+    cohort = load_frontier_cohort(run_dir, exam)
+    predictions = _predictions(mx, parameters, list(cohort.rows),
+                               receipt["config"], receipt["answer_ids"])
+    updated = {**receipt, "fixed_frontier_exam": refresh_frontier_exam(
+        run_dir, exam, checkpoint=checkpoint, predictions=predictions)}
+    if persist:
+        updated = _advance(run_dir, updated, school, persist=False)
+    event = {"event": "SCHOOL_FIXED_FRONTIER_PARENT_REFRESHED",
+             "generation": updated["generation"],
+             "student_sha256": checkpoint["sha256"],
+             "optimizer_step": checkpoint["optimizer_step"],
+             "cohort_sha256": cohort.digest,
+             "source_student_sha256": exam.get("student_sha256"),
+             "scores": updated["fixed_frontier_exam"]["scores"],
+             "actual_neural_updates": 0}
+    if not persist:
+        updated["_pending_visit_events"] = [
+            *updated.get("_pending_visit_events", ()), event]
+        return updated
+    updated = _persist(run_dir, _with_delivery_outbox(updated, (event,)))
+    _reconcile_delivery_outbox(run_dir, updated)
+    return updated
+
+
 def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
                            optimizer, graph, *, reserve_gib, source_root):
     """Protect an unfinished grade cycle when the human stops mid-cycle."""
@@ -4420,6 +4472,9 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
     record = _advance(run_dir, stop_receipt,
                       current, frontier=frontier,
                       model_bundle=current.current_student.filename, persist=False)
+    record = _refresh_fixed_frontier(
+        mx, run_dir, record, course, parameters, optimizer, persist=False)
+    pending = tuple(record.get("_pending_visit_events", pending))
     comparison_event = {
         "event": "SCHOOL_LIVE_CANDIDATE_COMPARED", "grade": school.grade,
         "generation": record["generation"],
@@ -4520,7 +4575,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             flash_mode: bool = False,
             boolean_association_bridge: bool = False,
             autonomous_curriculum: bool = False,
-            experiment_budget_guard=None) -> dict:
+            experiment_budget: ExperimentRunBudget | None = None) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
     trace_mark(
         "OPERATE_START", resume=resume, max_visits=max_visits,
@@ -4562,10 +4617,12 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         raise ValueError("AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION")
     if autonomous_curriculum and flash_mode:
         raise ValueError("AUTONOMOUS_CURRICULUM_INCOMPATIBLE_WITH_FLASH_MODE")
-    if experiment_budget_guard is not None and not callable(experiment_budget_guard):
-        raise TypeError("EXPERIMENT_BUDGET_GUARD_INVALID")
-    if experiment_budget_guard is not None:
-        experiment_budget_guard(600_000_000)
+    if retention_enabled or experiment_budget is not None:
+        require_training_run(
+            run_dir, Path(__file__).resolve().parents[1] / "runs",
+            issue_budget=experiment_budget)
+    if experiment_budget is not None:
+        experiment_budget.assert_can_allocate(600_000_000)
     if boolean_association_bridge:
         saved_path = Path(run_dir).expanduser().resolve() / "state.json"
         if not saved_path.is_file():
@@ -4576,14 +4633,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 Path(run_dir).expanduser().resolve(), saved_release,
                 BOOLEAN_ASSOCIATION_OPTION):
             raise ValueError("TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE")
-    if retention_enabled:
-        # Experiments never attach to the canonical run in another checkout.
-        # The independent snapshot/copy step is a deliberate operator action.
-        isolated_root = (Path(__file__).resolve().parents[1] / "runs").resolve()
-        target = Path(run_dir).expanduser().resolve()
-        if target == isolated_root or isolated_root not in target.parents:
-            raise ValueError("LEARNING_EXPERIMENT_REQUIRES_ISOLATED_WORKTREE_RUN")
-    elif resume:
+    if not retention_enabled and resume:
         # Fail before GPU loading, orphan recovery, or any state mutation when
         # a protected student's policy would otherwise be silently disabled.
         saved_path = Path(run_dir).expanduser().resolve() / "state.json"
@@ -4689,7 +4739,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 source_root=source_root, reserve_gib=reserve_gib,
                 permitted_preexisting=(
                     (".experiment-run.json",)
-                    if experiment_budget_guard is not None else ()))
+                    if experiment_budget is not None else ()))
         receipt, executable_release, schedule_program = _ensure_executable_release(
             run_dir, receipt, course, course_a, source_root, graph)
         with trace_span("RECONCILE_VOCABULARY"):
@@ -4708,6 +4758,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             with trace_span("SEED_WHOLE_STUDENT_PEAK"):
                 receipt = _seed_saved_whole_student_peak(
                     run_dir, receipt, course, optimizer)
+        if learning_settings is not None:
+            receipt = _refresh_fixed_frontier(
+                mx, run_dir, receipt, course, params, optimizer)
         autonomy_session = None
         if autonomous_curriculum:
             from .runtime.autonomy_live import LiveAutonomySession
@@ -4799,8 +4852,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         })
         visits = 0
         while True:
-            if experiment_budget_guard is not None:
-                experiment_budget_guard(600_000_000)
+            if experiment_budget is not None:
+                experiment_budget.assert_can_allocate(600_000_000)
             final_numeric_scope = receipt.get("numeric_scope_final_maximum")
             if final_numeric_scope is not None:
                 admitted_v2 = _require_executable_factory_admission(
@@ -4866,8 +4919,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         mx, run_dir, receipt, manifest, course, source_root,
                         source_checkpoint, params, optimizer, graph,
                         reserve_gib=reserve_gib, scheduler_only=True)
-                    if experiment_budget_guard is not None:
-                        experiment_budget_guard(0)
+                    if experiment_budget is not None:
+                        experiment_budget.assert_can_allocate(0)
                     school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
                     if school.stage.startswith("ASSESS_"):
                         # Scheduler-only evidence found no remaining imperfect
@@ -4883,8 +4936,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         mx, run_dir, receipt, manifest, course, source_root,
                         source_checkpoint, params, optimizer, graph,
                         reserve_gib=reserve_gib)
-                if experiment_budget_guard is not None:
-                    experiment_budget_guard(0)
+                if experiment_budget is not None:
+                    experiment_budget.assert_can_allocate(0)
                 continue
             if autonomous_curriculum:
                 from .factory.autonomy import (
@@ -5112,8 +5165,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     mx, run_dir, receipt, manifest, course,
                     params, optimizer, graph, reserve_gib=reserve_gib,
                     source_root=source_root)
-                if experiment_budget_guard is not None:
-                    experiment_budget_guard(0)
+                if experiment_budget is not None:
+                    experiment_budget.assert_can_allocate(0)
                 school_after_flush = _state_from_json(
                     receipt["school"],
                     _schedule_for_receipt(run_dir, receipt, course))
@@ -5196,8 +5249,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             after_visit = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
         with trace_span("FLUSH_FLASH_STUDENT" if flash_mode else "FLUSH_WORKING_STUDENT",
                         visits=visits):
-            if experiment_budget_guard is not None:
-                experiment_budget_guard(600_000_000)
+            if experiment_budget is not None:
+                experiment_budget.assert_can_allocate(600_000_000)
             if flash_mode:
                 receipt = _flush_flash_student(
                     run_dir, receipt, course, params, optimizer, graph,
@@ -5206,8 +5259,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 receipt = _flush_working_student(
                     mx, run_dir, receipt, manifest, course, params, optimizer, graph,
                     reserve_gib=reserve_gib, source_root=source_root)
-        if experiment_budget_guard is not None:
-            experiment_budget_guard(0)
+        if experiment_budget is not None:
+            experiment_budget.assert_can_allocate(0)
         school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
         budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
                                    reserve_gib=reserve_gib)

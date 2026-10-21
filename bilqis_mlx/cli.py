@@ -667,7 +667,7 @@ def _main(args):
             legacy_root, original_checkpoint = _source_paths(args.legacy_code_root, args.champion_checkpoint)
             trace_path, timing_context = _timing_context(args)
             with timing_context:
-                experiment_budget_guard = None
+                experiment_budget = None
                 if args.issue_349_experiment_root is not None:
                     from .runtime.experiment_runs import ExperimentRunBudget
                     root = args.issue_349_experiment_root.expanduser().resolve()
@@ -692,7 +692,7 @@ def _main(args):
                             owner.create(
                                 target.name, required_bytes=600_000_000)
                     owner.assert_within_budget()
-                    experiment_budget_guard = owner.assert_can_allocate
+                    experiment_budget = owner
                 result = operate(
                     args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
                     resume=args.resume, minutes=args.minutes,
@@ -714,7 +714,7 @@ def _main(args):
                     flash_mode=args.flash_mode,
                     boolean_association_bridge=args.boolean_association_bridge,
                     autonomous_curriculum=args.autonomous_curriculum,
-                    experiment_budget_guard=experiment_budget_guard)
+                    experiment_budget=experiment_budget)
             if trace_path is not None:
                 result["timing_trace_file"] = str(trace_path)
         if board is not None:

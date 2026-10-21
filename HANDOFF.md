@@ -1,3 +1,46 @@
+# Continued issue349 execution | retained frontier and empirical continuation | 2026-10-21
+
+Branch `codex/349-autonomous-jit-ithkuil-20261020`; draft PR11. Read actual HEAD
+and exact remote readback in the latest execution checkpoint. Governing
+https://github.com/socr8s/private-ip/issues/336 (#336 OPEN, IPR-0220); execution
+https://github.com/socr8s/private-ip/issues/349 (#349 OPEN). #346 remains excluded.
+The independent 36 staged paths remain preserved and excluded from this wave.
+
+New repairs carry typed experiment custody through CLI/operate, refresh exact-parent
+frontier evidence after retained boundary updates without rewriting routine
+history, and prevent metadata queue advances from inheriting a prior generation's
+sealed outbox. ADR-077/078 and PM-2026-10-20-003 / RC-116 describe the live failures,
+red/green tests and append-only state repair.
+
+Proof for this continuation:517 passed,1 skipped,0 failed across isolated
+factory/runtime and focused integration/A/B/Z systems;93/93 focused checks.
+Architecture, closure, source boundaries, docs, whitespace and advisory ABI checks
+pass.53 inherited hygiene findings still block portable CI; baseline unchanged.
+
+Both trainers are stopped. Protected primary remains generation356 / step116816 /
+SHA260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f.
+Control is generation91 / native step118080 /
+SHAe7cc3a187ba140da4f7af1593b151c2e22222467bd3a3b025eddeb4e5466ecb5,
+bundle `bundles/working-44-9bef30369806`, with ordinary retention now persisted.
+Do not resume this control with --no-retention. Exactly two issue-owned runs use
+2,240,933,888 measured allocated bytes, below100,000,000,000. Canonical/historical
+runs remain untouched; no AdamW merge, student reset, synthetic lineage, main
+merge or issue closure occurred.
+
+Three new unprotected128-step visits exposed acquisition/interference. Subsequent
+protected work retained48 updates:16 in the initial three-trial phase,32 during
+autonomous continuation. Final identical-panel transfer is IDENTITY105/113 and
+MAPS77/139; neither prerequisite is mastered. The controller deferred all six
+direct obligations and returned to source preparation with zero further updates.
+D remains unadopted/untaught; student vocabulary remains222.
+
+See `docs/evidence/development/ISSUE349_REVIEW_HANDOFF_20261021.md` and the tracked
+20261021 experiment receipts for proof, failures, custody, exact continuation
+commands and next permitted work. Source-only archives require independent
+hash-verified ignored vendor fixtures plus Ithkuil _data and frontier artifacts;
+missing artifacts are not permission to weaken their loaders. Older sections
+below retain earlier snapshots and are superseded by this continuation.
+
 # Continued issue349 execution | 2026-10-21
 
 The five legacy system errors are repaired. Isolated factory/runtime,
