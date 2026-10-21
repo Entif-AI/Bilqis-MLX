@@ -52,22 +52,60 @@ def _visit_release(program):
         capabilities=tuple(program.capability_map.values())))
 
 
+def _prefetch_visit_fixture():
+    policy = {"old": 0, "lr": 0.0001, "depth": 1,
+              "contrast": 1., "distill": 0., "preview": 0}
+    teacher = {"strategies": {"p": policy}}
+    engine = SimpleNamespace(pick=lambda *_: ("p", policy))
+    school = SimpleNamespace(
+        stage="MAIN", grade="B", visits=0,
+        champions={"A": {"optimizer_step": 1}},
+        current_student=SimpleNamespace(sha256="e" * 64))
+    receipt = {
+        "teacher": teacher, "generation": 7, "run_id": "prefetch-fixture",
+        "school": {}, "teacher_misses": [], "config": {},
+        "answer_ids": [6, 7], "curriculum_mode": "fixture-school",
+        "semantic_graph_sha256": "d" * 64,
+    }
+    optimizer = SimpleNamespace(
+        learning_rate=0.0001,
+        state={"step": SimpleNamespace(item=lambda: 1)})
+    return engine, school, _visit_program(), receipt, optimizer
+
+
+class _ReadyResult:
+    def __init__(self, value):
+        self.value = value
+
+    def result(self):
+        return self.value
+
+
+class _InlinePrefetchExecutor:
+    def __init__(self, submitted_requests):
+        self.submitted_requests = submitted_requests
+
+    def submit(self, _fn, request):
+        self.submitted_requests.append(request)
+        fresh = [
+            {"id": f"prefetch:{index}", "source_id": f"prefetch:{index}",
+             "capability": "B.XOR", "answer_kind": "binary",
+             "gold": "TRUE" if index % 2 else "FALSE", "tokens": [3, 4, index + 5]}
+            for index in range(12)
+        ]
+        return _ReadyResult({
+            "schema": "bilqis.mlx.source-prefetch/v1",
+            "identity": request["identity"],
+            "fresh": fresh,
+            "prior": [],
+            "preservation": [],
+            "teaching_enrichment_rows": [],
+        })
+
+
 class RetentionTeachingPathTests(unittest.TestCase):
     def test_visit_consumes_prefetched_source_packet_without_serial_step_redraw(self):
-        policy = {"old": 0, "lr": 0.0001, "depth": 1,
-                  "contrast": 1., "distill": 0., "preview": 0}
-        teacher = {"strategies": {"p": policy}}
-        engine = SimpleNamespace(pick=lambda *_: ("p", policy))
-        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
-                                 champions={"A": {"optimizer_step": 1}},
-                                 current_student=SimpleNamespace(sha256="e" * 64))
-        course = _visit_program()
-        receipt = {"teacher": teacher, "generation": 7, "run_id": "prefetch-fixture",
-                   "school": {}, "teacher_misses": [], "config": {},
-                   "answer_ids": [6, 7], "curriculum_mode": "fixture-school",
-                   "semantic_graph_sha256": "d" * 64}
-        optimizer = SimpleNamespace(learning_rate=0.0001,
-                                    state={"step": SimpleNamespace(item=lambda: 1)})
+        engine, school, course, receipt, optimizer = _prefetch_visit_fixture()
         captured = []
         serial_draws = []
         submitted_requests = []
@@ -77,30 +115,6 @@ class RetentionTeachingPathTests(unittest.TestCase):
             if len(serial_draws) > 1:
                 raise AssertionError("STEP_SOURCE_REDRAW_BYPASSED_PREFETCH")
             return _rows(kwargs["capability"])
-
-        class Ready:
-            def __init__(self, value):
-                self.value = value
-            def result(self):
-                return self.value
-
-        class InlineExecutor:
-            def submit(self, _fn, request):
-                submitted_requests.append(request)
-                fresh = [
-                    {"id": f"prefetch:{index}", "source_id": f"prefetch:{index}",
-                     "capability": "B.XOR", "answer_kind": "binary",
-                     "gold": "TRUE" if index % 2 else "FALSE", "tokens": [3, 4, index + 5]}
-                    for index in range(12)
-                ]
-                return Ready({
-                    "schema": "bilqis.mlx.source-prefetch/v1",
-                    "identity": request["identity"],
-                    "fresh": fresh,
-                    "prior": [],
-                    "preservation": [],
-                    "teaching_enrichment_rows": [],
-                })
 
         def inspect_batch(_mx, _parameters, _optimizer, rows, *_args, **_kwargs):
             captured.extend(rows)
@@ -134,7 +148,8 @@ class RetentionTeachingPathTests(unittest.TestCase):
                     None, Path("/never-opened"), receipt, {}, course, engine, {},
                     optimizer, {}, steps_per_visit=1, batch_size=8, reserve_gib=0.,
                     source_root=Path("/not-used"), learning_settings=Settings(),
-                    source_prefetch_executor=InlineExecutor(), source_prefetch_workers=1)
+                    source_prefetch_executor=_InlinePrefetchExecutor(submitted_requests),
+                    source_prefetch_workers=1)
 
         self.assertEqual(len(serial_draws), 1,
                          "Only the visit-level score draw should use the serial path")

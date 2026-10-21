@@ -34,6 +34,28 @@ SOURCE = ROOT / "runs/primitive-consolidation-v16-triplets/student-116760-7e9af4
 MANIFEST = Path(__file__).resolve().parents[2] / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
 
+def _historical_v1_receipt(*, manifest, school, base, frontier, teacher,
+                           teacher_sha, provenance, config, parameters, graph,
+                           answer_ids):
+    semantic_graph_sha256 = __import__(
+        "bilqis_mlx.trainer", fromlist=["_fingerprint"])._fingerprint(graph)
+    return {
+        "schema": "bilqis.mlx.human-grade-a-trainer/v1",
+        "generation": 1, "run_id": "historic-disposable",
+        "accepted_authority": AUTHORITY,
+        "source_manifest_sha256": manifest["manifest_sha256"],
+        "teacher_source_sha256": teacher_sha,
+        "school": asdict(school), "model_bundle": base.filename,
+        "capability_best": frontier, "teacher": teacher,
+        "teacher_provenance": provenance, "config": config,
+        "parameter_shapes": {name: list(value.shape)
+                             for name, value in parameters.items()},
+        "semantic_graph_sha256": semantic_graph_sha256,
+        "answer_ids": answer_ids, "result": "ACTIVE_GRADE_A",
+        "last_exam": None,
+    }
+
+
 class GradeATrainerContractTests(unittest.TestCase):
     def test_fixed_frontier_uses_newer_retained_parent_predictions(self):
         from bilqis_mlx.generated_assessment import make_cohort
@@ -526,22 +548,11 @@ class GradeATrainerContractTests(unittest.TestCase):
             frontier = promote({}, scores, manifest["exam_rubric_sha256"],
                                asdict(base), "historic-evaluation",
                                tuple(sorted(scores)))
-            historical = {
-                "schema": "bilqis.mlx.human-grade-a-trainer/v1",
-                "generation": 1, "run_id": "historic-disposable",
-                "accepted_authority": AUTHORITY,
-                "source_manifest_sha256": manifest["manifest_sha256"],
-                "teacher_source_sha256": sha,
-                "school": asdict(old_school), "model_bundle": base.filename,
-                "capability_best": frontier, "teacher": teacher,
-                "teacher_provenance": provenance, "config": config,
-                "parameter_shapes": {name: list(value.shape)
-                                     for name, value in parameters.items()},
-                "semantic_graph_sha256": __import__("bilqis_mlx.trainer",
-                    fromlist=["_fingerprint"])._fingerprint(graph),
-                "answer_ids": answer_ids, "result": "ACTIVE_GRADE_A",
-                "last_exam": None,
-            }
+            historical = _historical_v1_receipt(
+                manifest=manifest, school=old_school, base=base,
+                frontier=frontier, teacher=teacher, teacher_sha=sha,
+                provenance=provenance, config=config, parameters=parameters,
+                graph=graph, answer_ids=answer_ids)
             trainer._record(run_dir, {
                 "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
                 "generation": 1,

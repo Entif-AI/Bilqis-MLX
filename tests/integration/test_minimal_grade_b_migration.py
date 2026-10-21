@@ -38,6 +38,63 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "vendor" / "legacy-v16"
 
 
+def _source_context_repair_receipt(*, student, school, graph, course, cohort,
+                                   evidence, same_grade_capability,
+                                   same_grade_role, settlement):
+    a_rubric = course.grades[0].assessment_sha256
+    b_rubric = course.grades[-1].assessment_sha256
+    return {
+        "schema": VERSION,
+        "generation": 9,
+        "run_id": "source-context-repair-fixture",
+        "school": asdict(school),
+        "model_bundle": student.filename,
+        "curriculum_mode": course.version,
+        "result": "ACTIVE_GRADE_A",
+        "semantic_graph_sha256": _fingerprint(graph),
+        "championship_school_identity": {"fixture": True},
+        "capability_best": {},
+        "championship_epoch_history": [],
+        "mentor_epoch": {
+            "schema": "fixture",
+            "active_roles": {
+                "A.IDENTITY": {
+                    "capability": "A.IDENTITY",
+                    "rubric": a_rubric,
+                    "cohort_sha256": cohort.digest,
+                    "checkpoint": asdict(student),
+                    "qualification_witnesses": [evidence],
+                    "surviving_battery": [evidence],
+                },
+                same_grade_capability: same_grade_role,
+                "B.AND": {
+                    "capability": "B.AND", "rubric": b_rubric,
+                    "checkpoint": asdict(student),
+                    "qualification_witnesses": [],
+                    "surviving_battery": [],
+                },
+            },
+            "active_grade_soups": {"A": {"grade": "A"},
+                                   "B": {"grade": "B"}},
+            "settled_matchups": {"B.AND|first|second": settlement},
+        },
+    }
+
+
+def _write_source_context_cohort(root, *, course, manifest, rubric, cohort, rows):
+    cohorts = root / "cohorts"
+    cohorts.mkdir()
+    (cohorts / f"{cohort.digest}.json").write_text(json.dumps({
+        "schema": course.version,
+        "source_manifest_sha256": manifest["manifest_sha256"],
+        "rubric_sha256": rubric,
+        "generator_version": "minimal-b-source",
+        "seed": 19,
+        "cohort_sha256": cohort.digest,
+        "rows": list(rows),
+    }))
+
+
 class MinimalGradeBMigrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -323,55 +380,16 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             "surviving_battery": [],
         }
         settlement = {"capability": "B.AND", "winner": student.sha256}
-        receipt = {
-            "schema": VERSION,
-            "generation": 9,
-            "run_id": "source-context-repair-fixture",
-            "school": asdict(school),
-            "model_bundle": student.filename,
-            "curriculum_mode": self.new.version,
-            "result": "ACTIVE_GRADE_A",
-            "semantic_graph_sha256": _fingerprint(self.graph),
-            "championship_school_identity": {"fixture": True},
-            "capability_best": {},
-            "championship_epoch_history": [],
-            "mentor_epoch": {
-                "schema": "fixture",
-                "active_roles": {
-                    "A.IDENTITY": {
-                        "capability": "A.IDENTITY",
-                        "rubric": a_rubric,
-                        "cohort_sha256": cohort.digest,
-                        "checkpoint": asdict(student),
-                        "qualification_witnesses": [evidence],
-                        "surviving_battery": [evidence],
-                    },
-                    same_grade_capability: same_grade_role,
-                    "B.AND": {
-                        "capability": "B.AND", "rubric": b_rubric,
-                        "checkpoint": asdict(student),
-                        "qualification_witnesses": [],
-                        "surviving_battery": [],
-                    },
-                },
-                "active_grade_soups": {"A": {"grade": "A"},
-                                       "B": {"grade": "B"}},
-                "settled_matchups": {"B.AND|first|second": settlement},
-            },
-        }
+        receipt = _source_context_repair_receipt(
+            student=student, school=school, graph=self.graph, course=self.new,
+            cohort=cohort, evidence=evidence,
+            same_grade_capability=same_grade_capability,
+            same_grade_role=same_grade_role, settlement=settlement)
         with TemporaryDirectory() as temp:
             root = Path(temp)
-            cohorts = root / "cohorts"
-            cohorts.mkdir()
-            (cohorts / f"{cohort.digest}.json").write_text(json.dumps({
-                "schema": self.new.version,
-                "source_manifest_sha256": self.manifest["manifest_sha256"],
-                "rubric_sha256": b_rubric,
-                "generator_version": "minimal-b-source",
-                "seed": 19,
-                "cohort_sha256": cohort.digest,
-                "rows": list(rows),
-            }))
+            _write_source_context_cohort(
+                root, course=self.new, manifest=self.manifest, rubric=b_rubric,
+                cohort=cohort, rows=rows)
             repaired = _repair_championship_source_context(
                 root, receipt, self.new)
             repeated = _repair_championship_source_context(
