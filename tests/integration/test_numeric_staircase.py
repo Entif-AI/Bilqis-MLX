@@ -508,6 +508,22 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertEqual(
             narrowed.profile.profile_id.rsplit('-', 1)[-1], '3')
         self.assertTrue(storage._mentor_epoch_references(changed))
+        malformed = {
+            **changed,
+            'championship_epoch_history': [
+                *changed.get('championship_epoch_history', ()),
+                {'kind': 'profile-revision-school-identity-reset', 'event': True},
+                {'kind': 'unrelated-unknown-history-value'},
+            ],
+        }
+        cleaned, removed = (
+            storage._without_profile_revision_epoch_history_artifact(malformed))
+        self.assertEqual(removed, 1)
+        self.assertEqual(
+            cleaned['championship_epoch_history'][-1],
+            {'kind': 'unrelated-unknown-history-value'})
+        with self.assertRaisesRegex(ValueError, 'MENTOR_EPOCH_UNKNOWN_SCHEMA'):
+            storage._mentor_epoch_references(cleaned)
 
     def test_numeric_profile_sequence_cannot_skip_or_exceed_final_maximum(self):
         course, record = self.start()
