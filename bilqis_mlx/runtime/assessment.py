@@ -347,6 +347,14 @@ def _persist_live_cohort(run_dir, manifest, course, cohort):
     return str(path.relative_to(run_dir))
 
 
+def _current_cohort_metadata_drift(*, cause: ValueError | None = None) -> None:
+    """Raise the current reader's public metadata-drift wire error."""
+    error = ValueError("HUMAN_TRAINER_COHORT_POINTER_METADATA_DRIFT")
+    if cause is None:
+        raise error
+    raise error from cause
+
+
 def _load_current_cohort(run_dir, manifest, course, pointer):
     """Read back one current-release cohort without changing its qualification state."""
     if not isinstance(pointer, dict):
@@ -368,7 +376,7 @@ def _load_current_cohort(run_dir, manifest, course, pointer):
             stored.get("generator_code_sha256") != code_sha or
             stored.get("cohort_sha256") != sha or
             stored.get("seed") != pointer.get("cohort_seed")):
-        raise ValueError("HUMAN_TRAINER_COHORT_POINTER_METADATA_DRIFT")
+        _current_cohort_metadata_drift()
     try:
         return verify_stored_cohort(
             stored, sha, expected_rubric_sha256=rubric)
@@ -376,8 +384,7 @@ def _load_current_cohort(run_dir, manifest, course, pointer):
         if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
             raise ValueError(
                 "HUMAN_TRAINER_COHORT_POINTER_CONTENT_DRIFT") from exc
-        raise ValueError(
-            "HUMAN_TRAINER_COHORT_POINTER_METADATA_DRIFT") from exc
+        _current_cohort_metadata_drift(cause=exc)
 
 
 def load_championship_cohort(run_dir, witness):

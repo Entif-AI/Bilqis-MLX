@@ -7,6 +7,14 @@ from ..generated_assessment import verify_stored_cohort
 from ..live_curriculum import cohort_contract, lesson_contract
 
 
+def _saved_cohort_metadata_drift(*, cause: ValueError | None = None) -> None:
+    """Raise the legacy reader's public metadata-drift wire error."""
+    error = ValueError("HUMAN_TRAINER_SAVED_COHORT_METADATA_DRIFT")
+    if cause is None:
+        raise error
+    raise error from cause
+
+
 def sealed_v1_cohort_contract(release, grade):
     """Derive historical cohort provenance from its original signed adapter.
 
@@ -75,11 +83,11 @@ def verify_legacy_saved_cohort(run_dir, receipt, course, *, sealed_v1_release=No
             stored.get("cohort_sha256") != sha or
             stored.get("seed") != exam.get("cohort_seed") or
             stored.get("schema") != release):
-        raise ValueError("HUMAN_TRAINER_SAVED_COHORT_METADATA_DRIFT")
+        _saved_cohort_metadata_drift()
     try:
         return verify_stored_cohort(
             stored, sha, expected_rubric_sha256=rubric)
     except ValueError as exc:
         if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
             raise ValueError("HUMAN_TRAINER_SAVED_COHORT_CONTENT_DRIFT") from exc
-        raise ValueError("HUMAN_TRAINER_SAVED_COHORT_METADATA_DRIFT") from exc
+        _saved_cohort_metadata_drift(cause=exc)
