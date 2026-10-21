@@ -434,7 +434,7 @@ def human_stop_summary(result: dict) -> str:
         "VISIT_LIMIT_REACHED": "The explicitly configured --max-visits cap was reached.",
         "WHOLE_SCHOOL_MASTERED": "Every grade in the explicitly complete school program passed at one whole student.",
         "AWAITING_TEACHER_SOUP": "Whole-school consolidation requires a separately verified frozen teacher-soup continuation.",
-        "STAGNATION_REVIEW_REQUIRED": "The remaining required capabilities were withheld after repeated failed recovery rounds; they remain unqualified mastery debt for the next measured recovery run.",
+        "STAGNATION_REVIEW_REQUIRED": "The remaining required capabilities showed no fresh measured improvement for the full stagnation window and also failed repeated recovery rounds; they remain unqualified mastery debt for the next measured recovery run.",
         "DISK_RESERVE_REACHED": "Free space cannot cover the protected disk reserve plus another checkpoint.",
     }
     reason = result["stop_reason"]
@@ -772,7 +772,9 @@ def _main(args):
             raise ValueError("VERIFY_SOURCE_REQUIRES_DRY_RUN")
         if not args.human_run:
             print("TRAINING REQUIRES EXPLICIT HUMAN OPERATOR: add --human-run; "
-                  "agents may run only --dry-run and tests. "
+                  "ordinary and long-running training is human-operated. "
+                  "User-authorized agent repair tests must be explicitly finite "
+                  "and preserve the current student and own AdamW. "
                   "Use npm run train -- --dry-run for preflight.",file=sys.stderr)
             return 2
         if args.flash_mode and not args.resume:

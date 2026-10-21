@@ -1,6 +1,6 @@
 # Bilqis MLX
 
-Private, source-oracled MLX training for a compositional semantic transformer. **This is the one active repository:** `~/Code/bilqis-mlx`. The human operator alone launches real neural updates; CI, tests, and agents must not train or replace the human student.
+Private, source-oracled MLX training for a compositional semantic transformer. **This is the one active repository:** `~/Code/bilqis-mlx`. The human operator owns ordinary and long-running neural training. During trainer repair, the user's standing authorization also permits agents to run short, explicitly finite trainer tests against the current student when needed to reproduce and verify failures. Those bounded repair runs must preserve the student and its own AdamW, may not reset or replace the canonical lineage, and are not authority for unattended or open-ended training.
 
 The former Bilqis implementations are preserved as pinned, read-only source dependencies under `vendor/legacy-v16/`. They are not separate runtime repositories. The native historical bootstrap checkpoint and inherited teacher state live in the ignored `vendor/legacy-v16/runs/`. The current model, its matching AdamW, learning history, champions and soups live under ignored `runs/`. None of those binaries are committed to Git.
 
@@ -27,7 +27,7 @@ npm run train -- --dry-run --resume --verify-source
 npm run train -- --human-run --resume --minutes 90
 ```
 
-The first command is **read-only** and reports blockers. Only the second, explicitly run by the human, makes neural updates. Both use the default `runs/school-mlx-v1` and the internal historical oracle files. No `--legacy-code-root` flag, another checkout or checkpoint clone is needed. The actual progress and optimizer step always come from the latest `runs/school-mlx-v1/state.json`, not from dated documentation.
+The first command is **read-only** and reports blockers. The second is the ordinary human-operated training path. Under the standing repair authorization above, an agent may use the same `--human-run` gate only for a deliberately small debugging session with an explicit finite `--minutes` and/or `--max-visits` budget, then inspect the committed result before continuing. Both paths use the default `runs/school-mlx-v1` and the internal historical oracle files. No `--legacy-code-root` flag, another checkout or checkpoint clone is needed. The actual progress and optimizer step always come from the latest `runs/school-mlx-v1/state.json`, not from dated documentation.
 
 **Current reduced-B implementation is compatibility state, not the target factory abstraction.** Existing human-run history still contains reduced/minimal B release identities and resume behavior. Preserve those receipts and compatibility paths. New factory work must represent the AND/IFF experiment as a declarative execution profile over canonical B, using the same Boolean source providers with narrowed operator and answer domains. Do not extend the minimal-B release/provider lineage as new architecture. The target is described in the authority-convergence record and `docs/architecture/09_EXECUTABLE_CURRICULUM_CLOSURE.md`.
 

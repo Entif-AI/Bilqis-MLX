@@ -92,13 +92,15 @@ composition/prerequisite witness generation. Historical system tests were
 updated to exercise the actual executable factory instead of removed v1
 adapters. There were **18** full-suite failures in the initial sweep; a later
 1,162-test sweep had **two** obsolete fixture failures, repaired in their own
-tests. After the systemic evidence-ABI and quality refactors, the final
-repository-wide `npm test` run is **PASS**: **1,167 total, 1,129 passed, 0
-failed, 0 errors, 38 skipped**; **186.415 seconds** of test execution. The 38
+tests. After the systemic evidence-ABI and quality refactors, and the later
+runtime-provider compatibility regression below, the final repository-wide
+`npm test` run is **PASS**: **1,168 total, 1,130 passed, 0 failed, 0 errors,
+38 skipped**; **193.556 seconds** of test execution. The 38
 default skips are deliberate legacy/full Grade-B opt-ins. They were separately
 enabled and executed as a 43-test compatibility/trainer set: **43 passed, 0
-failed, 0 skipped**. Evidence is retained in `/tmp/bilqis-351-full-final.log`
-and `/tmp/bilqis-351-grade-b-optin-current.log` on the operator machine.
+failed, 0 skipped** after the compatibility repair. Evidence is retained in
+`/tmp/bilqis-351-adapter-full-suite.log` and
+`/tmp/bilqis-351-adapter-grade-b-optin.log` on the operator machine.
 
 The final `npm run quality:check` also **passes**. The static inventory still
 contains acknowledged historical findings, but there are **0 new
@@ -129,18 +131,94 @@ the exact custody, curriculum, assessment, championship, persistence, and
 restart combinations that produced the reported failures.
 
 It is **not** represented as a literal 180-minute wall-clock run of the
-canonical Prometheus student. Repository and CLI authority explicitly reserve
-`--human-run` neural execution for the human operator; agents may run tests and
-dry-runs only. The final neural-inert Prometheus source preflight exits **0**
-with no blockers. A human-owned 180-minute `npm start` remains the separate
-operational endurance observation if that wall-clock claim is required; it is
-not a missing software workaround and must not be fabricated by an agent.
+canonical Prometheus student. Ordinary and long-running training remains
+human-operated. The user's standing repair authorization separately permits
+short, explicitly finite agent-run trainer sessions when required to reproduce
+or verify a defect without resetting or replacing the current student. A full
+180-minute `npm start` remains a separate human-owned operational endurance
+observation if that wall-clock claim is required.
 
-`STAGNATION_REVIEW_REQUIRED` is an intentional human-review boundary after
-rejected recovery attempts, **not** evidence that the student mastered its
-remaining B/C debt. This work repaired evidence custody, restart behavior,
-scope authority, and examination throughput; it did not turn rejected
-candidate updates into successful learning or eliminate the need to review
-the teaching policy. The source hashes, immutable states, exams, event ledger,
+## Live B.AND provider-refactor drift and bounded repair verification
+
+A later operator restart exposed
+`FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT:B.AND`. A bounded reproduction
+failed immediately at generation **13,534** with the optimizer still at
+**138,792**. The admitted B.AND provider descriptor and the current registered
+descriptor agreed on adapter identity, generator, oracle set, profile domain,
+variation axes, and teaching options. Only the implementation digest differed:
+the admitted release carried `345f484b...`, while the current shared Boolean
+identification adapter computed `c065d0cf...` after later source refactoring.
+
+The exact current B.AND implementation then reproduced the admitted release's
+sealed B.AND verification specimens at the release's own verification seed:
+the specimen-ID digest and complete specimen-content digest matched
+byte-for-byte. The blocker therefore conflated a shared provider's source-code
+fingerprint change with capability-level semantic drift.
+
+Executable generation now keeps exact descriptor identity as its fast path.
+When only implementation/cohort-code evidence changed while the declared
+adapter contract is otherwise identical, the current implementation must first
+reproduce the affected capability's immutable sealed verification specimens.
+Only then may it execute the older admitted release. A changed implementation
+whose sealed specimen behavior differs still raises
+`FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT`. Released teaching options use
+the same compatibility proof rather than a second, contradictory digest-only
+interpretation.
+
+The regression was demonstrated red-before/green-after. Adjacent generation,
+evidence, autonomy, prefetch, and executable-assessment tests pass **36/36**.
+The complete repository suite and Grade-B opt-in suite pass as recorded above.
+
+Under the user's standing authorization for small trainer repair tests, **six
+consecutive bounded Prometheus sessions** then completed without an operator
+block. The first committed **4 visits**, advanced AdamW **138,792 -> 138,808**,
+and stopped normally at its explicit visit limit. Three chained restart
+sessions then committed **15 more visits and 7 exams**, crossed between Grades
+B and C, advanced the live student to AdamW **138,824**, and grew the permanent
+settlement ledger from **3,040 to 3,061**. After the repair was committed, two
+additional restarts committed **11 visits and 4 exams** with normal
+`TIME_LIMIT_REACHED` exits; they advanced AdamW to **138,840** and the
+settlement ledger to **3,072**.
+
+Across those six bounded sessions the repaired live path therefore committed
+**30 visits**, at least **11 explicitly counted exams**, multiple B/C scheduler
+transitions, and **48 retained optimizer steps** without reproducing adapter
+drift or another operator block. The final saved state is generation **13,582**,
+cumulative visits **10,236**, stage `RECOVERY_1`, active status
+`ACTIVE_GRADE_C`, **11** active championship roles, and **3,072** permanent
+settled matchups. `state.json` matches immutable `states/0013582.json`. A fresh
+post-commit source-verifying preflight exits **0**, reports
+`VERIFIED_ALL_PUBLISHED` outbox custody at AdamW **138,840**, and the quality
+gate reports **0 new baseline-relative findings**.
+
+The earlier `STAGNATION_REVIEW_REQUIRED` stops listed above were subsequently
+shown to be **premature policy stops**, not merely intentional review
+boundaries. The old controller could quarantine a capability after two failed
+recovery visits even when fresh held-out exams had shown recent improvement,
+and it had no elapsed-time requirement at all. In the same operator session,
+the dashboard's `GREW` baseline could also be re-anchored twice at the same
+session start, visibly resetting all growth percentages to zero.
+
+The repaired controller now requires **20 full minutes of capability-local
+measured no-progress** before quarantine is eligible. Any fresh measured
+accuracy improvement resets that capability's no-progress clock, including
+transfer gains caused by training another capability. The two failed recovery
+rounds remain necessary but are no longer sufficient by themselves. The live
+dashboard also refuses to re-anchor the same execution baseline twice at the
+same optimizer step.
+
+Live proof from the exact deferred Prometheus state: a bounded three-minute
+resume completed **26 visits and 7 exams**, advanced AdamW **139,016 ->
+139,080**, committed generation **13,769**, and stopped on
+`TIME_LIMIT_REACHED` after **180.442 seconds** with **zero stagnation
+quarantines and zero stagnation alerts**. During that run, fresh exams showed
+measured gains including B.AND **5/12 -> 9/12**, B.IFF **6/12 -> 9/12**, C.ADD
+**12/33 -> 14/33**, and C.COUNT **19/33 -> 20/33**. The final `state.json`
+matches immutable `states/0013769.json`.
+
+`STAGNATION_REVIEW_REQUIRED` therefore remains a legitimate review boundary
+only after the sustained no-progress window **and** repeated recovery failures
+are both proven. It is still not evidence that the student mastered its
+remaining B/C debt. The source hashes, immutable states, exams, event ledger,
 and timing traces remain in the existing protected run. Do not overwrite
 those artifacts, rebase the student's optimizer, or claim a new graduation.
