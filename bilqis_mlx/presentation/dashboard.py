@@ -16,73 +16,105 @@ from ..compatibility.historical_live_release import historical_rubric_descriptio
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 
 
-def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard:
-    run_dir = Path(run_dir)
-    board = Dashboard(stream=stream, redraw=False,
-                      title="BILQIS", compact_header=True,
-                      show_all_panels=True, tables=LETTER_TABLES)
-    board.run_name = run_dir.name
-    board.mode = "READ-ONLY"
+def _dashboard_state(run_dir: Path):
     state_path = run_dir / "state.json"
     state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else None
     school = state["school"] if state else {}
-    step = school.get("current_student", {}).get("optimizer_step", AUDITED_PARENT.optimizer_step)
-    visits = school.get("visits", 0)
-    phase = school.get("stage", "READY_FOR_HUMAN_START")
     active = school.get("active_grades", ())
     grade_index = school.get("grade_index", 0)
     current_grade = active[grade_index] if 0 <= grade_index < len(active) else "NOT_ADMITTED"
-    board.push("state", {"mastery": {"phase": phase, "prefix": current_grade, "position": 0},
-                         "optimizer_step": step, "grade_visits": visits,
-                         "teacher": state.get("teacher") if state else None,
-                         "last_run_status": state.get("result", "NOT_STARTED") if state else "NOT_STARTED"},
-               redraw=False)
-    board.school_telemetry = SchoolTelemetry(board, active_grades=active,
-                                              champions=school.get("champions"))
-    if state_path.exists() and isinstance((state or {}).get("mentor_epoch"), dict):
-        board.attach_champion_source(run_dir)
-    budget = headroom_snapshot(run_dir, required_bytes=600_000_000,
-                               reserve_gib=reserve_gib)
-    ingest(board, {"event": "SCHOOL_RESOURCE_OBSERVED",
-                  "grade": current_grade if active else None, **{k: budget[k] for k in
-                  ("free_bytes", "reserve_bytes", "estimated_write_bytes")}})
-    board.push("system", {"kind": "SOURCE", "detail": "Source-bound FP32 + own AdamW | immutable receipts"}, redraw=False)
+    return state_path, state, school, active, current_grade
+
+
+def _initialize_board(board: Dashboard, run_dir: Path, state, school, active,
+                      current_grade: str) -> tuple[int, str]:
+    step = school.get(
+        "current_student", {}).get("optimizer_step", AUDITED_PARENT.optimizer_step)
+    phase = school.get("stage", "READY_FOR_HUMAN_START")
+    board.run_name = run_dir.name
+    board.mode = "READ-ONLY"
+    board.push("state", {
+        "mastery": {"phase": phase, "prefix": current_grade, "position": 0},
+        "optimizer_step": step,
+        "grade_visits": school.get("visits", 0),
+        "teacher": state.get("teacher") if state else None,
+        "last_run_status": state.get("result", "NOT_STARTED") if state else "NOT_STARTED",
+    }, redraw=False)
+    board.school_telemetry = SchoolTelemetry(
+        board, active_grades=active, champions=school.get("champions"))
+    return step, phase
+
+
+def _push_resource_and_contract(
+        board: Dashboard, run_dir: Path, state, active, current_grade: str,
+        *, reserve_gib: float) -> None:
+    budget = headroom_snapshot(
+        run_dir, required_bytes=600_000_000, reserve_gib=reserve_gib)
+    ingest(board, {
+        "event": "SCHOOL_RESOURCE_OBSERVED",
+        "grade": current_grade if active else None,
+        **{k: budget[k] for k in
+           ("free_bytes", "reserve_bytes", "estimated_write_bytes")},
+    })
+    board.push("system", {
+        "kind": "SOURCE",
+        "detail": "Source-bound FP32 + own AdamW | immutable receipts",
+    }, redraw=False)
     released = bool(state and state.get("factory_release_sha256"))
-    board.push("system", {"kind": "RUBRIC", "detail":
-               ("Grades " + "+".join(active) +
-                ": fresh routine; fixed promotion; independent fresh generalization; cumulative 100%"
-                if released else historical_rubric_description(state))},
-               redraw=False)
+    board.push("system", {
+        "kind": "RUBRIC",
+        "detail": (
+            "Grades " + "+".join(active) +
+            ": fresh routine; fixed promotion; independent fresh generalization; cumulative 100%"
+            if released else historical_rubric_description(state)),
+    }, redraw=False)
     if state and (state.get("last_exam") or {}).get("cohort_sha256"):
         exam = state["last_exam"]
-        board.push("system", {"kind": "COHORT", "detail":
-                   f"Seed {exam['cohort_seed']} | SHA {exam['cohort_sha256'][:16]} | "
-                   f"rubric {exam['exam_rubric_sha256'][:12]}"}, redraw=False)
-    board.push("system", {"kind": "METRIC", "detail":
-               "NOT MEASURED: independent sentinel/CE/P(C)/margin; "
-               "frozen soups advise training only, never examination scoring"},
-               redraw=False)
+        board.push("system", {
+            "kind": "COHORT",
+            "detail": (
+                f"Seed {exam['cohort_seed']} | SHA {exam['cohort_sha256'][:16]} | "
+                f"rubric {exam['exam_rubric_sha256'][:12]}"),
+        }, redraw=False)
+    board.push("system", {
+        "kind": "METRIC",
+        "detail": (
+            "NOT MEASURED: independent sentinel/CE/P(C)/margin; "
+            "frozen soups advise training only, never examination scoring"),
+    }, redraw=False)
+
+
+def _push_saved_school_evidence(
+        board: Dashboard, state, active, current_grade: str) -> None:
     if state and state.get("grade_soups"):
         from bilqis_mlx.learning.grade_soup import soup_vote_count, soup_shards
         for grade, soup in sorted(state["grade_soups"].items()):
             effective = soup_vote_count(soup, current_grade, len(active))
             shards = soup_shards(soup)
             active_catalogs = "/".join(str(shard["token_count"]) for shard in shards)
-            board.push("system", {"kind": "GRADE SOUP", "grade": grade,
-                       "detail": (f"Frozen {grade} recipe: "
-                                  f"{soup['vote_count']} mastered capability votes; "
-                                  f"{effective:.2f} votes for {current_grade} lessons | "
-                                  f"ingredient vocabularies {active_catalogs} | "
-                                  f"recipe {soup['recipe_sha256'][:12]}")}, redraw=False)
+            board.push("system", {
+                "kind": "GRADE SOUP", "grade": grade,
+                "detail": (
+                    f"Frozen {grade} recipe: "
+                    f"{soup['vote_count']} mastered capability votes; "
+                    f"{effective:.2f} votes for {current_grade} lessons | "
+                    f"ingredient vocabularies {active_catalogs} | "
+                    f"recipe {soup['recipe_sha256'][:12]}"),
+            }, redraw=False)
     if state and state.get("capability_best"):
-        bests = state["capability_best"]
-        for item in sorted(bests.values(), key=lambda x: x["capability"]):
+        for item in sorted(
+                state["capability_best"].values(), key=lambda x: x["capability"]):
             model = item["checkpoint"]
-            board.push("system", {"kind": "CAP BEST", "grade": item["capability"].split(".")[0],
-                        "detail": (f"{item['capability']} {item['correct']}/{item['total']} "
-                                   f"at step {model['optimizer_step']} | {model['sha256'][:10]}")},
-                       redraw=False)
-    board.push("system", {"kind": "RESTART", "detail": "Saved run: train --human-run --resume"}, redraw=False)
+            board.push("system", {
+                "kind": "CAP BEST",
+                "grade": item["capability"].split(".")[0],
+                "detail": (
+                    f"{item['capability']} {item['correct']}/{item['total']} "
+                    f"at step {model['optimizer_step']} | {model['sha256'][:10]}"),
+            }, redraw=False)
+
+
+def _replay_dashboard_journal(board: Dashboard, run_dir: Path) -> None:
     board.log_hint = str(run_dir / "events.jsonl")
     # A detached observer must resume at the byte immediately after the last
     # event actually consumed, not a later stat().st_size. Otherwise events
@@ -90,23 +122,43 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
     board.journal_offset = 0
     board.journal_identity = None
     events = run_dir / "events.jsonl"
-    if events.exists():
-        # Bounded visual history, streaming replay: no whole-log materialization
-        # as the school eventually expands through many letter grades.
-        with events.open("rb") as log:
-            identity = os.fstat(log.fileno())
-            board.journal_identity = (identity.st_dev, identity.st_ino)
-            while line := log.readline():
-                if not line.endswith(b"\n"):
-                    # Preserve a partially appended JSON line for the follower.
-                    break
-                board.journal_offset = log.tell()
-                if line.strip():
-                    try:
-                        ingest(board, json.loads(line))
-                    except (ValueError, TypeError, KeyError) as exc:
-                        board.push("system", {"kind": "LOG", "detail":
-                                   f"Invalid telemetry event ignored: {str(exc)[:62]}"}, redraw=False)
+    if not events.exists():
+        return
+    # Bounded visual history, streaming replay: no whole-log materialization
+    # as the school eventually expands through many letter grades.
+    with events.open("rb") as log:
+        identity = os.fstat(log.fileno())
+        board.journal_identity = (identity.st_dev, identity.st_ino)
+        while line := log.readline():
+            if not line.endswith(b"\n"):
+                # Preserve a partially appended JSON line for the follower.
+                break
+            board.journal_offset = log.tell()
+            if line.strip():
+                try:
+                    ingest(board, json.loads(line))
+                except (ValueError, TypeError, KeyError) as exc:
+                    board.push("system", {
+                        "kind": "LOG",
+                        "detail": f"Invalid telemetry event ignored: {str(exc)[:62]}",
+                    }, redraw=False)
+
+
+def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard:
+    run_dir = Path(run_dir)
+    board = Dashboard(stream=stream, redraw=False,
+                      title="BILQIS", compact_header=True,
+                      show_all_panels=True, tables=LETTER_TABLES)
+    state_path, state, school, active, current_grade = _dashboard_state(run_dir)
+    step, phase = _initialize_board(
+        board, run_dir, state, school, active, current_grade)
+    if state_path.exists() and isinstance((state or {}).get("mentor_epoch"), dict):
+        board.attach_champion_source(run_dir)
+    _push_resource_and_contract(
+        board, run_dir, state, active, current_grade, reserve_gib=reserve_gib)
+    _push_saved_school_evidence(board, state, active, current_grade)
+    board.push("system", {"kind": "RESTART", "detail": "Saved run: train --human-run --resume"}, redraw=False)
+    _replay_dashboard_journal(board, run_dir)
     if active and not board.rows["GRADES & MASTERY"]:
         board.rows["GRADES & MASTERY"].append({"grade": current_grade, "step": step,
                  "attempt": "-",

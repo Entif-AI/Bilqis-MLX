@@ -94,94 +94,130 @@ class Course:
                    for grade in self.grades for c in grade.capabilities))
 
 
-def validate(course: Course, *, answer_kinds: tuple[str, ...] | None = None) -> None:
-    """Validate *structure*, not independently assert that cited sources are true."""
-    external_answer_contracts = answer_kinds is not None
-    allowed_answer_kinds = (
+def _allowed_answer_kinds(answer_kinds: tuple[str, ...] | None) -> set[str]:
+    allowed = (
         {"binary", "integer_0_3", "numeric_active", "boolean_operator"}
         if answer_kinds is None else set(answer_kinds))
-    if (not allowed_answer_kinds or
-            any(not isinstance(kind, str) or not kind for kind in allowed_answer_kinds)):
+    if (not allowed or
+            any(not isinstance(kind, str) or not kind for kind in allowed)):
         raise ValueError("ANSWER_FAMILY_AUTHORITY_INVALID")
+    return allowed
+
+
+def _validate_course_header(course: Course) -> None:
     if type(course.program_complete) is not bool:
         raise ValueError("COURSE_COMPLETE_FLAG_MUST_BE_BOOLEAN")
     if not course.version or not course.grades:
         raise ValueError("COURSE_VERSION_OR_GRADES_MISSING")
+
+
+def _validate_grade_header(grade: Grade, grade_ids_seen: set[str]) -> dict[str, int]:
+    if grade.assessment_sha256 is not None and (
+            not isinstance(grade.assessment_sha256, str) or
+            len(grade.assessment_sha256) != 64 or
+            any(c not in "0123456789abcdef" for c in grade.assessment_sha256)):
+        raise ValueError("GRADE_ASSESSMENT_SEAL_INVALID")
+    if grade.exam_item_counts and (
+            len(grade.exam_item_counts) != len(grade.capabilities) or
+            tuple(name for name, _ in grade.exam_item_counts) !=
+            tuple(cap.id for cap in grade.capabilities) or
+            any(type(count) is not int or count < 1
+                for _, count in grade.exam_item_counts)):
+        raise ValueError("GRADE_ASSESSMENT_COUNTS_NOT_BOUND_TO_CAPABILITIES")
+    if grade.id not in GRADE_IDS or grade.id in grade_ids_seen:
+        raise ValueError("INVALID_OR_DUPLICATE_LETTER_GRADE")
+    grade_ids_seen.add(grade.id)
+    # Course is the legacy authoring/compatibility shape. Canonical factory
+    # admission enforces the 6-9 capability grade invariant in
+    # CurriculumDefinition; historical releases may contain narrower
+    # executable projections and are normalized before v2 compilation.
+    if not 1 <= len(grade.capabilities) <= 9:
+        raise ValueError("GRADE_CAPABILITY_COUNT_OUTSIDE_SIX_TO_NINE")
+    if len({cap.difficulty for cap in grade.capabilities}) != 1:
+        raise ValueError("GRADE_MIXES_DIFFICULTY_LEVELS")
+    stages = {
+        name: index
+        for index, names in enumerate(grade.teaching_stages)
+        for name in names
+    }
+    if grade.teaching_stages and (
+            any(not names for names in grade.teaching_stages) or
+            tuple(name for names in grade.teaching_stages for name in names) !=
+            tuple(cap.id for cap in grade.capabilities)):
+        raise ValueError("GRADE_TEACHING_STAGES_MUST_PARTITION_CAPABILITIES_IN_ORDER")
+    return stages
+
+
+def _validate_answer_families(
+        cap: Capability, allowed_answer_kinds: set[str], *,
+        external_answer_contracts: bool) -> None:
+    kinds = {family.kind for family in cap.answer_families}
+    if not kinds or len(kinds) != len(cap.answer_families):
+        raise ValueError("MISSING_OR_DUPLICATE_ANSWER_FAMILY")
+    if not kinds <= allowed_answer_kinds:
+        raise ValueError("UNKNOWN_CAPABILITY_ANSWER_FAMILY")
+    for family in cap.answer_families:
+        if (not family.kind or not 2 <= len(family.values) <= 32 or
+                len(set(family.values)) != len(family.values)):
+            raise ValueError("INVALID_BOUNDED_ANSWER_FAMILY")
+        if (not external_answer_contracts and
+                family.kind == "binary" and family.values != BINARY):
+            raise ValueError("INVALID_BINARY_ANSWER_LABELS")
+        if (not external_answer_contracts and
+                family.kind == "integer_0_3" and family.values != INT_0_3):
+            raise ValueError("INVALID_INTEGER_0_3_ANSWER_LABELS")
+        if not external_answer_contracts and family.kind == "boolean_operator":
+            if (len(family.values) < 2 or
+                    any(value not in BOOLEAN_OPERATORS for value in family.values) or
+                    family.values != tuple(
+                        value for value in BOOLEAN_OPERATORS
+                        if value in family.values)):
+                raise ValueError("INVALID_BOOLEAN_OPERATOR_ANSWER_LABELS")
+
+
+def _validate_capability(
+        cap: Capability, all_ids: set[str], grade_ids: set[str],
+        past_roots: set[str], stages: dict[str, int],
+        allowed_answer_kinds: set[str], *, external_answer_contracts: bool) -> None:
+    if (not re.fullmatch(r"[A-Za-z][A-Za-z0-9._-]+", cap.id) or
+            cap.id in all_ids or cap.id in grade_ids):
+        raise ValueError("INVALID_OR_DUPLICATE_CAPABILITY_ID")
+    if not cap.source_anchor or not cap.taught_roots or not cap.examined_roots:
+        raise ValueError("CAPABILITY_ROOT_OR_PROVENANCE_MISSING")
+    if not set(cap.examined_roots) <= set(cap.taught_roots) | past_roots:
+        raise ValueError("UNTAUGHT_ROOT_IN_EXAM")
+    if len(set(cap.taught_roots)) != len(cap.taught_roots):
+        raise ValueError("DUPLICATE_TAUGHT_ROOT")
+    if any(pre not in all_ids and not (
+            pre in grade_ids and stages.get(pre, 0) < stages.get(cap.id, 0))
+           for pre in cap.prerequisites):
+        raise ValueError("CAPABILITY_PREREQUISITE_NOT_MASTERED_IN_EARLIER_GRADE")
+    if cap.composed_of and (
+            len(cap.composed_of) < 2 or
+            not set(cap.composed_of) <= set(cap.prerequisites)):
+        raise ValueError("COMPOSITION_CONSTITUENTS_NOT_PREVIOUSLY_MASTERED")
+    _validate_answer_families(
+        cap, allowed_answer_kinds,
+        external_answer_contracts=external_answer_contracts)
+
+
+def validate(course: Course, *, answer_kinds: tuple[str, ...] | None = None) -> None:
+    """Validate *structure*, not independently assert that cited sources are true."""
+    external_answer_contracts = answer_kinds is not None
+    allowed_answer_kinds = _allowed_answer_kinds(answer_kinds)
+    _validate_course_header(course)
     all_ids: set[str] = set()
     grade_ids_seen: set[str] = set()
     past_roots: set[str] = set()
-    for idx, grade in enumerate(course.grades):
-        if grade.assessment_sha256 is not None and (
-                not isinstance(grade.assessment_sha256, str) or
-                len(grade.assessment_sha256) != 64 or
-                any(c not in "0123456789abcdef" for c in grade.assessment_sha256)):
-            raise ValueError("GRADE_ASSESSMENT_SEAL_INVALID")
-        if grade.exam_item_counts:
-            if (len(grade.exam_item_counts) != len(grade.capabilities) or
-                    tuple(name for name, _ in grade.exam_item_counts) !=
-                    tuple(cap.id for cap in grade.capabilities) or
-                    any(type(count) is not int or count < 1
-                        for _, count in grade.exam_item_counts)):
-                raise ValueError("GRADE_ASSESSMENT_COUNTS_NOT_BOUND_TO_CAPABILITIES")
-        if grade.id not in GRADE_IDS or grade.id in grade_ids_seen:
-            raise ValueError("INVALID_OR_DUPLICATE_LETTER_GRADE")
-        grade_ids_seen.add(grade.id)
-        # Course is the legacy authoring/compatibility shape. Canonical factory
-        # admission enforces the 6-9 capability grade invariant in
-        # CurriculumDefinition; historical releases may contain narrower
-        # executable projections and are normalized before v2 compilation.
-        if not 1 <= len(grade.capabilities) <= 9:
-            raise ValueError("GRADE_CAPABILITY_COUNT_OUTSIDE_SIX_TO_NINE")
-        difficulties = {cap.difficulty for cap in grade.capabilities}
-        if len(difficulties) != 1:
-            raise ValueError("GRADE_MIXES_DIFFICULTY_LEVELS")
+    for grade in course.grades:
+        stages = _validate_grade_header(grade, grade_ids_seen)
         seen_roots_in_grade: set[str] = set()
         grade_ids: set[str] = set()
-        stages = {name: index for index, names in enumerate(grade.teaching_stages)
-                  for name in names}
-        if grade.teaching_stages and (
-                any(not names for names in grade.teaching_stages) or
-                tuple(name for names in grade.teaching_stages for name in names) !=
-                tuple(cap.id for cap in grade.capabilities)):
-            raise ValueError("GRADE_TEACHING_STAGES_MUST_PARTITION_CAPABILITIES_IN_ORDER")
         for cap in grade.capabilities:
-            if not re.fullmatch(r"[A-Za-z][A-Za-z0-9._-]+", cap.id) or cap.id in all_ids or cap.id in grade_ids:
-                raise ValueError("INVALID_OR_DUPLICATE_CAPABILITY_ID")
-            if not cap.source_anchor or not cap.taught_roots or not cap.examined_roots:
-                raise ValueError("CAPABILITY_ROOT_OR_PROVENANCE_MISSING")
-            if not set(cap.examined_roots) <= set(cap.taught_roots) | past_roots:
-                raise ValueError("UNTAUGHT_ROOT_IN_EXAM")
-            if len(set(cap.taught_roots)) != len(cap.taught_roots):
-                raise ValueError("DUPLICATE_TAUGHT_ROOT")
-            if any(pre not in all_ids and not (
-                    pre in grade_ids and stages.get(pre, 0) < stages.get(cap.id, 0))
-                   for pre in cap.prerequisites):
-                raise ValueError("CAPABILITY_PREREQUISITE_NOT_MASTERED_IN_EARLIER_GRADE")
-            if cap.composed_of:
-                if len(cap.composed_of) < 2 or not set(cap.composed_of) <= set(cap.prerequisites):
-                    raise ValueError("COMPOSITION_CONSTITUENTS_NOT_PREVIOUSLY_MASTERED")
-            kinds = {family.kind for family in cap.answer_families}
-            if not kinds or len(kinds) != len(cap.answer_families):
-                raise ValueError("MISSING_OR_DUPLICATE_ANSWER_FAMILY")
-            if not kinds <= allowed_answer_kinds:
-                raise ValueError("UNKNOWN_CAPABILITY_ANSWER_FAMILY")
-            for family in cap.answer_families:
-                if (not family.kind or not 2 <= len(family.values) <= 32 or
-                        len(set(family.values)) != len(family.values)):
-                    raise ValueError("INVALID_BOUNDED_ANSWER_FAMILY")
-                if (not external_answer_contracts and
-                        family.kind == "binary" and family.values != BINARY):
-                    raise ValueError("INVALID_BINARY_ANSWER_LABELS")
-                if (not external_answer_contracts and
-                        family.kind == "integer_0_3" and family.values != INT_0_3):
-                    raise ValueError("INVALID_INTEGER_0_3_ANSWER_LABELS")
-                if not external_answer_contracts and family.kind == "boolean_operator":
-                    if (len(family.values) < 2 or
-                            any(value not in BOOLEAN_OPERATORS for value in family.values) or
-                            family.values != tuple(
-                                value for value in BOOLEAN_OPERATORS
-                                if value in family.values)):
-                        raise ValueError("INVALID_BOOLEAN_OPERATOR_ANSWER_LABELS")
+            _validate_capability(
+                cap, all_ids, grade_ids, past_roots, stages,
+                allowed_answer_kinds,
+                external_answer_contracts=external_answer_contracts)
             grade_ids.add(cap.id)
             seen_roots_in_grade.update(cap.taught_roots)
         all_ids.update(grade_ids)
