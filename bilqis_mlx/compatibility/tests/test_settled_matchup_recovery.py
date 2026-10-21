@@ -10,6 +10,7 @@ import unittest
 from bilqis_mlx.compatibility.settled_matchup_recovery import (
     recover_scope_rubric_settled_matchups,
 )
+from bilqis_mlx.runtime.state import _fingerprint
 
 
 def _sha(symbol: str) -> str:
@@ -91,7 +92,6 @@ class SettledMatchupRecoveryTests(unittest.TestCase):
         }
         event = {
             "event": "SCHOOL_SCOPE_RUBRIC_EVIDENCE_REPAIRED",
-            "event_id": _sha("e"),
             "generation": 11,
             "source_generation": 10,
             "student_sha256": student["sha256"],
@@ -100,6 +100,13 @@ class SettledMatchupRecoveryTests(unittest.TestCase):
             "actual_neural_updates": 0,
             "model_and_own_adamw_unchanged": True,
         }
+        run_id = "immutable-settlement-repair-fixture"
+        for state in (source, repair, current):
+            state["run_id"] = run_id
+        event["event_id"] = _fingerprint([
+            "school-generation-event/v1", run_id, event["generation"],
+            0, event])
+        repair["delivery_outbox"] = [deepcopy(event)]
         states = root / "states"
         states.mkdir(parents=True)
         for state in (source, repair, current):
@@ -181,6 +188,16 @@ class SettledMatchupRecoveryTests(unittest.TestCase):
 
             with self.assertRaisesRegex(
                     ValueError, "SETTLED_MATCHUP_RECOVERY_TRANSITION_NOT_PROVEN"):
+                recover_scope_rubric_settled_matchups(root, current)
+
+    def test_rejects_forged_or_unpublished_event_id(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            current, _, event = self._fixture(root)
+            event["event_id"] = _sha("0")
+            (root / "events.jsonl").write_text(
+                json.dumps(event, sort_keys=True) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "REPAIR_EVENT_CUSTODY_DRIFT"):
                 recover_scope_rubric_settled_matchups(root, current)
 
 

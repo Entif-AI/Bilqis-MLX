@@ -10,6 +10,7 @@ from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
+from ..runtime.state import _fingerprint
 
 
 REPAIR_EVENT = "SCHOOL_SCOPE_RUBRIC_EVIDENCE_REPAIRED"
@@ -201,6 +202,25 @@ def recover_scope_rubric_settled_matchups(
     source_generation = event["source_generation"]
     repair_generation = event["generation"]
     repair = _read_state(run_dir, repair_generation)
+    run_id = source.get("run_id")
+    if (not isinstance(run_id, str) or not run_id or
+            run_id != repair.get("run_id") or
+            run_id != current_state.get("run_id")):
+        raise ValueError("SETTLED_MATCHUP_RECOVERY_REPAIR_EVENT_CUSTODY_DRIFT")
+    committed_events = repair.get("delivery_outbox")
+    if not isinstance(committed_events, list):
+        raise ValueError("SETTLED_MATCHUP_RECOVERY_REPAIR_EVENT_CUSTODY_DRIFT")
+    matches = [index for index, published in enumerate(committed_events)
+               if published == event]
+    if len(matches) != 1:
+        raise ValueError("SETTLED_MATCHUP_RECOVERY_REPAIR_EVENT_CUSTODY_DRIFT")
+    payload = {key: value for key, value in event.items()
+               if key != "event_id"}
+    expected_id = _fingerprint([
+        "school-generation-event/v1", run_id, repair_generation,
+        matches[0], payload])
+    if event.get("event_id") != expected_id:
+        raise ValueError("SETTLED_MATCHUP_RECOVERY_REPAIR_EVENT_CUSTODY_DRIFT")
     source_epoch = source["mentor_epoch"]
     repair_epoch = repair.get("mentor_epoch")
     if not isinstance(repair_epoch, dict):
