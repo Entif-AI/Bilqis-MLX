@@ -94,11 +94,23 @@ def grace_suppressed_capabilities(
         if capability.startswith(prefix)))
 
 
+def _valid_checkpoint(pointer: dict | None) -> bool:
+    return bool(
+        isinstance(pointer, dict) and
+        isinstance(pointer.get("filename"), str) and pointer["filename"] and
+        isinstance(pointer.get("sha256"), str) and len(pointer["sha256"]) == 64 and
+        type(pointer.get("optimizer_step")) is int and pointer["optimizer_step"] >= 0 and
+        pointer.get("model_and_native_adamw") is True)
+
+
 def start_session(*, session_id: str, generation: int,
-                  required_capabilities: tuple[str, ...]) -> dict:
+                  required_capabilities: tuple[str, ...],
+                  progress_checkpoint: dict | None = None) -> dict:
     if (not session_id or type(generation) is not int or generation < 0 or
             not required_capabilities or
-            len(set(required_capabilities)) != len(required_capabilities)):
+            len(set(required_capabilities)) != len(required_capabilities) or
+            (progress_checkpoint is not None and
+             not _valid_checkpoint(progress_checkpoint))):
         raise ValueError("STAGNATION_SESSION_INVALID_START")
     return {
         "schema": SCHEMA,
@@ -113,6 +125,7 @@ def start_session(*, session_id: str, generation: int,
         "score_peaks": {},
         "last_progress_elapsed_seconds": {},
         "minimum_no_progress_seconds": MINIMUM_NO_PROGRESS_SECONDS,
+        "progress_checkpoint": deepcopy(progress_checkpoint),
     }
 
 
@@ -131,6 +144,8 @@ def _validate(control: dict) -> None:
             not isinstance(control.get("alerts"), list) or
             not isinstance(control.get("score_peaks", {}), dict) or
             not isinstance(control.get("last_progress_elapsed_seconds", {}), dict) or
+            (control.get("progress_checkpoint") is not None and
+             not _valid_checkpoint(control.get("progress_checkpoint"))) or
             type(control.get("minimum_no_progress_seconds",
                              MINIMUM_NO_PROGRESS_SECONDS)) is not int or
             control.get("minimum_no_progress_seconds",
@@ -307,37 +322,45 @@ def _validated_score(score: dict) -> dict:
     return {"correct": score["correct"], "total": score["total"]}
 
 
-def observe_scores(control: dict, *, scores: dict[str, dict],
-                   elapsed_seconds: float) -> dict:
-    """Remember fresh measured improvement so it cannot be called stagnation.
+def observe_paired_progress(
+        control: dict, *, measured_capabilities: tuple[str, ...],
+        improved_capabilities: tuple[str, ...], measurement_usable: bool,
+        elapsed_seconds: float, progress_checkpoint: dict) -> dict:
+    """Advance the no-progress clock only from same-cohort checkpoint evidence.
 
-    Progress is capability-local and session-local.  A higher fresh measured
-    accuracy resets that capability's no-progress clock even when the gain was
-    caused by transfer from another lesson rather than by its own recovery
-    visit.  Ratios are compared exactly by cross multiplication.
+    Routine cohorts intentionally redraw at every assessment boundary, so raw
+    scores from two different cohorts are not longitudinal evidence.  The
+    trainer instead scores the previous assessment checkpoint and current
+    checkpoint on the *same fresh cohort*.  A strict current>previous result
+    resets only that capability's clock.  If the paired comparison is
+    unavailable, the unknown interval cannot prove stagnation and therefore
+    resets the measured capabilities' clocks conservatively.
     """
     _validate(control)
-    if (not isinstance(scores, dict) or
+    required = set(control["required_capabilities"])
+    measured = set(measured_capabilities)
+    improved = set(improved_capabilities)
+    if (type(measurement_usable) is not bool or
+            not measured_capabilities or
+            len(measured) != len(measured_capabilities) or
+            len(improved) != len(improved_capabilities) or
+            not measured <= required or not improved <= measured or
+            not _valid_checkpoint(progress_checkpoint) or
             not isinstance(elapsed_seconds, (int, float)) or
             elapsed_seconds < 0):
-        raise ValueError("STAGNATION_SCORE_OBSERVATION_CONTEXT_INVALID")
+        raise ValueError("STAGNATION_PAIRED_PROGRESS_INVALID")
     updated = deepcopy(control)
-    peaks = updated.setdefault("score_peaks", {})
     progress = updated.setdefault("last_progress_elapsed_seconds", {})
-    required = set(updated["required_capabilities"])
-    for capability, score in scores.items():
-        if capability not in required:
-            continue
-        current = _validated_score(score)
-        prior = peaks.get(capability)
-        if prior is None:
-            peaks[capability] = current
-            progress.setdefault(capability, float(elapsed_seconds))
-            continue
-        improved = current["correct"] * prior["total"] > prior["correct"] * current["total"]
-        if improved:
-            peaks[capability] = current
-            progress[capability] = float(elapsed_seconds)
+    resets = improved if measurement_usable else measured
+    for capability in resets:
+        progress[capability] = float(elapsed_seconds)
+    updated["progress_checkpoint"] = deepcopy(progress_checkpoint)
+    updated["last_paired_progress_observation"] = {
+        "elapsed_seconds": float(elapsed_seconds),
+        "measurement_usable": measurement_usable,
+        "measured_capabilities": sorted(measured),
+        "improved_capabilities": sorted(improved) if measurement_usable else [],
+    }
     return updated
 
 

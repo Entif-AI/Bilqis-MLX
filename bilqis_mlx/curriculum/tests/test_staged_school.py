@@ -5,7 +5,9 @@ import json
 import unittest
 
 from bilqis_mlx.curriculum import ExamItem, validate, validate_exam_item
-from bilqis_mlx.curriculum.scheduler import assess, assessment_capabilities, start_new, visit
+from bilqis_mlx.curriculum.scheduler import (
+    _enter_grade, assess, assessment_capabilities, start_new, visit,
+)
 from bilqis_mlx.trainer import _state_from_json
 from bilqis_mlx.curriculum.tests.test_school import all_scores, cp, grade_loop, snapshot, three_grade_course
 
@@ -78,6 +80,19 @@ class StagedSchoolTests(unittest.TestCase):
         state = assess(course, state, snapshot(course, pointer, scores))
         self.assertEqual(state.introduction_stage, 1)
         self.assertNotIn("c.2", assessment_capabilities(course, state))
+
+    def test_incomplete_staged_grade_restores_frontier_after_cross_grade_spiral(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = replace(state, introduction_stage=3, stage="MAIN", queue=("c.3",))
+
+        elsewhere = _enter_grade(course, state, 0, stage="MAIN", first_recovery=())
+        returned = _enter_grade(course, elsewhere, 2, stage="MAIN", first_recovery=())
+
+        self.assertEqual(returned.grade, "C")
+        self.assertEqual(returned.introduction_stage, 3)
+        self.assertEqual(returned.queue, ("c.3",))
+        self.assertNotIn("c.4", assessment_capabilities(course, returned))
 
     def test_full_c_pass_runs_a_b_c_replay_without_reintroducing_stages(self):
         course = staged_course()

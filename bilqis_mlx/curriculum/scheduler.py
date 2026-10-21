@@ -126,6 +126,12 @@ class SchoolState:
     # A pass ends one enrollment. A return to the grade owns a fresh test.
     grade_exam_epoch: int = 0
     introduction_stage: int = 0
+    # A staged grade can temporarily yield the teaching spiral to another
+    # grade before mastery.  Preserve each grade's introduced frontier so
+    # re-entry resumes the same semantic stage instead of silently rewinding
+    # to stage zero.  The scalar above remains the active-grade projection for
+    # backward-compatible saved states and operator surfaces.
+    introduction_frontiers: tuple[tuple[str, int], ...] = ()
     # Grades that already received their ordinary full MAIN pass in the
     # current cross-grade sweep. Global weakest-three recovery is due only
     # after every currently imperfect eligible grade has had that pass.
@@ -184,13 +190,45 @@ def _main_queue(program, state: SchoolState) -> tuple[str, ...]:
                  if c in _caps(program, (state.grade,)))
 
 
+def _frontiers_with(state: SchoolState, grade: str, stage: int) -> tuple[tuple[str, int], ...]:
+    frontiers = dict(state.introduction_frontiers)
+    frontiers[grade] = stage
+    return tuple((grade_id, frontiers[grade_id])
+                 for grade_id in state.active_grades if grade_id in frontiers)
+
+
+def _at_introduction_stage(state: SchoolState, introduction_stage: int,
+                           **changes) -> SchoolState:
+    return replace(
+        state,
+        introduction_stage=introduction_stage,
+        introduction_frontiers=_frontiers_with(
+            state, state.grade, introduction_stage),
+        **changes,
+    )
+
+
 def _enter_grade(program, state: SchoolState, grade_index: int, **changes) -> SchoolState:
     program = _program(program)
     grade_id = state.active_grades[grade_index]
     grade = next(g for g in program.grades if g.id == grade_id)
-    index = len(grade.teaching_stages)-1 if grade_id in state.champions and grade.teaching_stages else 0
-    entered = replace(state, grade_index=grade_index, introduction_stage=index, **changes)
-    return replace(entered, queue=_main_queue(program, entered))
+    frontiers = dict(state.introduction_frontiers)
+    if 0 <= state.grade_index < len(state.active_grades):
+        frontiers[state.grade] = state.introduction_stage
+    index = (len(grade.teaching_stages)-1
+             if grade_id in state.champions and grade.teaching_stages
+             else frontiers.get(grade_id, 0))
+    frontiers[grade_id] = index
+    entered = replace(
+        state, grade_index=grade_index, introduction_stage=index,
+        introduction_frontiers=tuple(
+            (active_grade, frontiers[active_grade])
+            for active_grade in state.active_grades if active_grade in frontiers),
+        **changes)
+    queue = _main_queue(program, entered)
+    if grade.teaching_stages and grade_id not in entered.champions:
+        queue = grade.teaching_stages[index]
+    return replace(entered, queue=queue)
 
 
 def start_new(program, initial_student: Checkpoint) -> SchoolState:
@@ -238,6 +276,14 @@ def verify_state(program, state: SchoolState):
             type(state.grade_exam_epoch) is not int or state.grade_exam_epoch < 0 or
             type(state.introduction_stage) is not int or state.introduction_stage < 0):
         raise ValueError("INVALID_SCHOOL_COUNTER")
+    frontiers = state.introduction_frontiers
+    grade_lookup = {grade.id: grade for grade in program.grades}
+    if (len({grade for grade, _ in frontiers}) != len(frontiers) or
+            any(grade not in state.active_grades or type(stage) is not int or stage < 0
+                for grade, stage in frontiers) or
+            any(stage >= max(1, len(grade_lookup[grade].teaching_stages))
+                for grade, stage in frontiers)):
+        raise ValueError("INVALID_INTRODUCTION_FRONTIER_HISTORY")
     if (len(set(state.main_sweep_visited)) != len(state.main_sweep_visited) or
             not set(state.main_sweep_visited) <= set(state.active_grades)):
         raise ValueError("INVALID_MAIN_SWEEP_HISTORY")
@@ -352,21 +398,26 @@ def _resume_ordinary_spiral(program, state: SchoolState,
                             snapshot: Assessment, *,
                             allowed_capabilities: tuple[str, ...] | None = None,
                             reset_sweep: bool = True) -> SchoolState | None:
-    index = _next_imperfect_grade_index(
-        program, state, snapshot.scores, allowed_capabilities=allowed_capabilities)
-    if index is None:
-        return None
-    entered = _enter_grade(
-        program, state, index, stage="MAIN", first_recovery=(),
-        main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
-        latest_rubric_digest=snapshot.rubric_digest)
-    if allowed_capabilities is None:
-        return entered
-    allowed = set(allowed_capabilities)
-    queue = tuple(cap for cap in entered.queue if cap in allowed)
-    if not queue:
-        return None
-    return replace(entered, queue=queue)
+    excluded: tuple[str, ...] = ()
+    while len(excluded) < len(state.active_grades):
+        index = _next_imperfect_grade_index(
+            program, state, snapshot.scores,
+            allowed_capabilities=allowed_capabilities,
+            excluded_grades=excluded)
+        if index is None:
+            return None
+        entered = _enter_grade(
+            program, state, index, stage="MAIN", first_recovery=(),
+            main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
+            latest_rubric_digest=snapshot.rubric_digest)
+        if allowed_capabilities is None:
+            return entered
+        allowed = set(allowed_capabilities)
+        queue = tuple(cap for cap in entered.queue if cap in allowed)
+        if queue:
+            return replace(entered, queue=queue)
+        excluded = (*excluded, entered.grade)
+    return None
 
 
 def _continue_main_sweep(program, state: SchoolState,
@@ -388,23 +439,26 @@ def _continue_main_sweep(program, state: SchoolState,
     visited = state.main_sweep_visited
     if state.grade not in visited:
         visited = visited + (state.grade,)
-    index = _next_imperfect_grade_index(
-        program, state, snapshot.scores,
-        allowed_capabilities=allowed_capabilities,
-        excluded_grades=visited)
-    if index is None:
-        return None
-    entered = _enter_grade(
-        program, state, index, stage="MAIN", first_recovery=(),
-        main_sweep_visited=visited,
-        latest_rubric_digest=snapshot.rubric_digest)
-    if allowed_capabilities is None:
-        return entered
-    allowed = set(allowed_capabilities)
-    queue = tuple(cap for cap in entered.queue if cap in allowed)
-    if not queue:
-        return None
-    return replace(entered, queue=queue)
+    excluded = visited
+    while len(excluded) < len(state.active_grades):
+        index = _next_imperfect_grade_index(
+            program, state, snapshot.scores,
+            allowed_capabilities=allowed_capabilities,
+            excluded_grades=excluded)
+        if index is None:
+            return None
+        entered = _enter_grade(
+            program, state, index, stage="MAIN", first_recovery=(),
+            main_sweep_visited=visited,
+            latest_rubric_digest=snapshot.rubric_digest)
+        if allowed_capabilities is None:
+            return entered
+        allowed = set(allowed_capabilities)
+        queue = tuple(cap for cap in entered.queue if cap in allowed)
+        if queue:
+            return replace(entered, queue=queue)
+        excluded = (*excluded, entered.grade)
+    return None
 
 
 def _finish_grade_series(program, state: SchoolState, assessment: Assessment,
@@ -561,9 +615,10 @@ def assess(program, state: SchoolState, snapshot: Assessment) -> SchoolState:
         own = set(_main_queue(program, state))
         if all(snapshot.scores[c].perfect for c in own):
             next_stage = state.introduction_stage + 1
-            return replace(state, introduction_stage=next_stage, stage="MAIN",
-                           queue=grade.teaching_stages[next_stage], first_recovery=(),
-                           latest_rubric_digest=snapshot.rubric_digest)
+            return _at_introduction_stage(
+                state, next_stage, stage="MAIN",
+                queue=grade.teaching_stages[next_stage], first_recovery=(),
+                latest_rubric_digest=snapshot.rubric_digest)
     if _perfect_in_grade(program, state.grade, snapshot.scores):
         return replace(_promote(program, state, snapshot),
                        grade_exam_epoch=state.grade_exam_epoch + 1)
@@ -611,9 +666,10 @@ def assess_flash(program, state: SchoolState, snapshot: Assessment) -> SchoolSta
         own = set(_main_queue(program, state))
         if all(snapshot.scores[c].perfect for c in own):
             next_stage = state.introduction_stage + 1
-            return replace(state, introduction_stage=next_stage, stage="MAIN",
-                           queue=grade.teaching_stages[next_stage], first_recovery=(),
-                           latest_rubric_digest=snapshot.rubric_digest)
+            return _at_introduction_stage(
+                state, next_stage, stage="MAIN",
+                queue=grade.teaching_stages[next_stage], first_recovery=(),
+                latest_rubric_digest=snapshot.rubric_digest)
 
     if _perfect_in_grade(program, state.grade, snapshot.scores):
         if state.stage == "ASSESS_MAIN":
@@ -695,8 +751,9 @@ def assess_withheld(program, state: SchoolState, snapshot: Assessment,
         own = tuple(c for c in _main_queue(program, state) if c in active_pool)
         if own and all(snapshot.scores[c].perfect for c in own):
             next_stage = state.introduction_stage + 1
-            entered = replace(state, introduction_stage=next_stage, stage="MAIN",
-                              first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
+            entered = _at_introduction_stage(
+                state, next_stage, stage="MAIN", first_recovery=(),
+                latest_rubric_digest=snapshot.rubric_digest)
             queue = tuple(c for c in grade.teaching_stages[next_stage]
                           if c not in set(blocked))
             if queue:
@@ -950,6 +1007,8 @@ def read_state(path: Path, program) -> SchoolState:
     raw["pending_failures"] = tuple(raw["pending_failures"])
     raw["main_sweep_visited"] = tuple(raw.get("main_sweep_visited", ()))
     raw["carried_mastery_debt"] = tuple(raw.get("carried_mastery_debt", ()))
+    raw["introduction_frontiers"] = tuple(
+        (grade, stage) for grade, stage in raw.get("introduction_frontiers", ()))
     raw["current_student"] = Checkpoint(**raw["current_student"])
     raw["champions"] = {grade: Checkpoint(**cp)
                         for grade, cp in raw["champions"].items()}

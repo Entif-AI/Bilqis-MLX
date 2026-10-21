@@ -46,9 +46,12 @@ def _state_from_json(value: dict, course) -> SchoolState:
     school = dict(value)
     school.setdefault("main_sweep_visited", ())
     school.setdefault("carried_mastery_debt", ())
+    school.setdefault("introduction_frontiers", ())
     for name in ("active_grades", "queue", "first_recovery", "pending_failures",
                  "main_sweep_visited", "carried_mastery_debt"):
         school[name] = tuple(school[name])
+    school["introduction_frontiers"] = tuple(
+        (grade, stage) for grade, stage in school["introduction_frontiers"])
     school["current_student"] = Checkpoint(**school["current_student"])
     school["champions"] = {key: Checkpoint(**item)
                            for key, item in school["champions"].items()}
