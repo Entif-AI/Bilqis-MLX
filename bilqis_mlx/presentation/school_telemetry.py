@@ -442,6 +442,7 @@ class SchoolTelemetry:
         self.cumulative_latest = None  # (key, correct, total, step, status)
         self.visits = 0
         self.last_exam_grade = None
+        self.execution_start_step = None
         self.live_projected_generations = set()
         self.board.grade_program = tuple(self.grades)
 
@@ -539,8 +540,15 @@ class SchoolTelemetry:
 
     def begin_execution(self, *, grade=None, step=None):
         """Re-anchor START to the scores that exist when this command begins."""
+        if (type(step) is int and self.execution_start_step == step and
+                self.start == self.latest):
+            self.board.state.update(
+                step=step, prefix=grade or self.board.state.get("prefix"),
+                _rate_sample_eligible=True)
+            return
         self.start = dict(self.latest)
         self.start_cap = dict(self.last_cap)
+        self.execution_start_step = step if type(step) is int else None
         # Emit current snapshots immediately so START is truthful before the
         # first new exam in this execution command.
         latest_by_grade = {}

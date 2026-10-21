@@ -118,7 +118,7 @@ from bilqis_mlx.learning.stagnation_control import (
     activate_sole_grade_rehabilitation,
     begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
     grace_suppressed_capabilities, reconcile_optimizer_step_grace,
-    reconcile_required_scope,
+    observe_scores, reconcile_required_scope,
     quarantined_capabilities, record_visit as record_stagnation_visit,
     start_session as start_stagnation_session,
 )
@@ -2078,11 +2078,16 @@ def _reconcile_stagnation_scope(run_dir, receipt, course, school):
 def _advance_stagnation_after_routine(
         *, program, school, routine_assessment, routine_advanced,
         stagnation, blocked_before, active_scope, routine_measured,
-        routine_warnings, generation, quarantine_suppressed=()):
+        routine_warnings, generation, quarantine_suppressed=(),
+        session_elapsed_seconds=None):
     """Apply one completed routine boundary to the current session containment."""
     events = ()
     if stagnation is None:
         return stagnation, events, routine_advanced, ()
+    if session_elapsed_seconds is not None:
+        stagnation = observe_scores(
+            stagnation, scores=routine_measured["scores"],
+            elapsed_seconds=session_elapsed_seconds)
     if (school.stage == "ASSESS_MAIN" and
             routine_advanced.stage == "RECOVERY_1"):
         stagnation = begin_recovery_cycle(
@@ -2094,7 +2099,9 @@ def _advance_stagnation_after_routine(
             scores=routine_measured["scores"],
             generation=generation,
             active_warnings=tuple(routine_warnings.get("active_warnings", ())),
-            quarantine_suppressed=tuple(quarantine_suppressed))
+            quarantine_suppressed=tuple(quarantine_suppressed),
+            **({"elapsed_seconds": session_elapsed_seconds}
+               if session_elapsed_seconds is not None else {}))
         blocked_after = quarantined_capabilities(stagnation)
         if set(blocked_after) != set(blocked_before):
             retained_scores = {
@@ -4123,7 +4130,8 @@ def _measure_debt_admission_boundary(mx, run_dir, receipt, manifest, course,
 
 def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                source_checkpoint, parameters, optimizer, graph, *, reserve_gib,
-               scheduler_only: bool = False):
+               scheduler_only: bool = False,
+               session_elapsed_seconds=None):
     executable_release = _read_executable_factory_release_artifact(
         run_dir, receipt)
     program = schedule_program_from_executable_release(executable_release)
@@ -4243,7 +4251,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             active_scope=active_scope, routine_measured=routine_measured,
             routine_warnings=routine_warnings,
             generation=receipt["generation"] + 1,
-            quarantine_suppressed=quarantine_suppressed))
+            quarantine_suppressed=quarantine_suppressed,
+            session_elapsed_seconds=session_elapsed_seconds))
 
     qualification = None
     generalization = None
@@ -5031,7 +5040,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     receipt = _take_exam(
                         mx, run_dir, receipt, manifest, course, source_root,
                         source_checkpoint, params, optimizer, graph,
-                        reserve_gib=reserve_gib, scheduler_only=True)
+                        reserve_gib=reserve_gib, scheduler_only=True,
+                        session_elapsed_seconds=time.monotonic() - start)
                     if experiment_budget_guard is not None:
                         experiment_budget_guard(0)
                     school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
@@ -5048,7 +5058,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     receipt = _take_exam(
                         mx, run_dir, receipt, manifest, course, source_root,
                         source_checkpoint, params, optimizer, graph,
-                        reserve_gib=reserve_gib)
+                        reserve_gib=reserve_gib,
+                        session_elapsed_seconds=time.monotonic() - start)
                 if experiment_budget_guard is not None:
                     experiment_budget_guard(0)
                 continue

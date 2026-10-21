@@ -191,11 +191,34 @@ post-commit source-verifying preflight exits **0**, reports
 `VERIFIED_ALL_PUBLISHED` outbox custody at AdamW **138,840**, and the quality
 gate reports **0 new baseline-relative findings**.
 
-`STAGNATION_REVIEW_REQUIRED` is an intentional human-review boundary after
-rejected recovery attempts, **not** evidence that the student mastered its
-remaining B/C debt. This work repaired evidence custody, restart behavior,
-scope authority, and examination throughput; it did not turn rejected
-candidate updates into successful learning or eliminate the need to review
-the teaching policy. The source hashes, immutable states, exams, event ledger,
+The earlier `STAGNATION_REVIEW_REQUIRED` stops listed above were subsequently
+shown to be **premature policy stops**, not merely intentional review
+boundaries. The old controller could quarantine a capability after two failed
+recovery visits even when fresh held-out exams had shown recent improvement,
+and it had no elapsed-time requirement at all. In the same operator session,
+the dashboard's `GREW` baseline could also be re-anchored twice at the same
+session start, visibly resetting all growth percentages to zero.
+
+The repaired controller now requires **20 full minutes of capability-local
+measured no-progress** before quarantine is eligible. Any fresh measured
+accuracy improvement resets that capability's no-progress clock, including
+transfer gains caused by training another capability. The two failed recovery
+rounds remain necessary but are no longer sufficient by themselves. The live
+dashboard also refuses to re-anchor the same execution baseline twice at the
+same optimizer step.
+
+Live proof from the exact deferred Prometheus state: a bounded three-minute
+resume completed **26 visits and 7 exams**, advanced AdamW **139,016 ->
+139,080**, committed generation **13,769**, and stopped on
+`TIME_LIMIT_REACHED` after **180.442 seconds** with **zero stagnation
+quarantines and zero stagnation alerts**. During that run, fresh exams showed
+measured gains including B.AND **5/12 -> 9/12**, B.IFF **6/12 -> 9/12**, C.ADD
+**12/33 -> 14/33**, and C.COUNT **19/33 -> 20/33**. The final `state.json`
+matches immutable `states/0013769.json`.
+
+`STAGNATION_REVIEW_REQUIRED` therefore remains a legitimate review boundary
+only after the sustained no-progress window **and** repeated recovery failures
+are both proven. It is still not evidence that the student mastered its
+remaining B/C debt. The source hashes, immutable states, exams, event ledger,
 and timing traces remain in the existing protected run. Do not overwrite
 those artifacts, rebase the student's optimizer, or claim a new graduation.
