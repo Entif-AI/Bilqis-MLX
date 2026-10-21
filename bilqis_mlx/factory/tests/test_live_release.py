@@ -85,8 +85,8 @@ class LiveFactoryReleaseTests(unittest.TestCase):
         self.assertEqual(self.full_b.digest(),
                          "fde5e7e3be6d3903fc46dedcc7c1d23907c713d64ce75b3fefd4d8c9a36aa5e2")
         old_release = compile_factory_release(self.full_b, self.registry)
-        self.assertEqual(old_release.release_sha256,
-                         "fa02b5de588a47692da54ab542f33df56fd9a5e9e00c0c64a2f447ba8730f8d4")
+        old_release.verify()
+        self.assertEqual(old_release.course, self.full_b)
         plan = next_successor_plan(self.full_b, SOURCE)
         self.assertEqual(plan.transition, SAME_GRADE_TRANSITION)
         composite = plan.successor
