@@ -11,11 +11,13 @@ unadopted and untaught. The independent control reached only 7/12 on each fixed-
 probe after 888 updates. Both authorized runs are stopped. See the review handoff
 for exact custody, measured disk use, proof commands and remaining work.
 
-Publication is held: on 2026-10-21 GitHub reported the configured origin
-`Entif-AI/Bilqis-MLX` PUBLIC, while AGENTS.md classifies this implementation and
-its authority references as private. Resolve a private destination or explicit
-public disclosure scope before pushing/opening a PR. PM-2026-10-21-001 / RC-053 /
-PAT-039 records the conflict. No visibility change or new publication is implied.
+Publication authority: on 2026-10-21 the user confirmed that
+`Entif-AI/Bilqis-MLX` is public now and explicitly authorized this feature push.
+That direct decision resolves the earlier publication hold and supersedes the
+older private-implementation posture for this branch. Public PR prose screens
+private authority links. PM-2026-10-21-001 preserves the preflight observation;
+no repository visibility change is required. Read the exact remote head and PR
+receipt from the latest execution checkpoint.
 The independent 36-path staged migration remains preserved and excluded.
 Older sections below are historical; this section and the linked review control.
 

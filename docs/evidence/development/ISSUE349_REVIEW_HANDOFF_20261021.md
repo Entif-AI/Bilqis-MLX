@@ -15,11 +15,13 @@ Branch: `codex/349-autonomous-jit-ithkuil-20261020`.
 
 The configured origin is `https://github.com/Entif-AI/Bilqis-MLX.git`.
 GitHub's repository API returned `private=false`, `visibility=public` on
-2026-10-21. AGENTS.md states that implementation is private and public projections
-must screen protected references. Therefore this wave is held locally pending a
-private destination or explicit public disclosure scope. No visibility setting,
-remote history, main branch or issue state was changed. The last verified remote
-feature head is `5ea41b90ab1873b65dcec4c41303fcd987c9fdf2`.
+2026-10-21. The user then confirmed: “It's public now. You can push.” That direct
+publication authorization resolves the earlier hold and supersedes the older
+private-implementation posture for this branch. Public PR prose screens private
+authority links. No visibility change, history rewrite, main merge or issue
+closure is required. Source wave `8c0de35a03d2ad8f2b089a35d60e2e99b0b38714` is
+followed by this documentation correction. The final execution checkpoint and
+remote readback bind the publication head.
 
 The latest source commit must be read with `git rev-parse HEAD`; the private issue
 checkpoint binds its exact SHA. A prepared PR body and publication receipt are in
@@ -55,7 +57,7 @@ and patch recovery material is in `.local/issue349-source-wave/`.
   interpreted oracle, exhaustive finite-world agreement and balanced seeded
   counterfactual specimens support the package. Other uses of “be” are unsupported.
   Natural Ithkuil morphology remains NOT_REALIZED.
-- Token Atlas index227 was appended with native readback, preserving all prior
+- Token Atlas index 227 was appended with native readback, preserving all prior
   rows. Immutable birth receipts remain distinct from current provider hashes.
   Repeated vocabulary growth preserves earlier allocation provenance.
 - `D.COPULAR_IDENTITY` compiles through the ordinary factory into a thin A+D
@@ -85,7 +87,7 @@ were copied independently and verified; no canonical/historical run was written.
 | Factory and runtime suites, importable module names | 433 total: 430 passed, 3 skipped, 0 failed |
 | Source/oracle, vocabulary and prefetch/typed-answer slice | 33 passed, 0 skipped |
 | Grade A/B and generic Grade Z system slice, B opt-in enabled | 29 total: 24 passed, 5 errors |
-| Same system slice on pre-wave HEAD `5ea41b9` |The same5 errors; 24 passed |
+| Same system slice on pre-wave HEAD `5ea41b9` | The same 5 errors; 24 passed |
 | Factory architecture, closure, semantic boundaries and docs |Passed |
 | Historical ABI guard |Passed in advisory mode; external expected digest absent |
 | Release metadata |0.2.0 passes; no release/tag created |
@@ -139,9 +141,10 @@ Tracked receipts are under `docs/evidence/experiments/20261020-issue349-*.json`.
 
 ## Next work after progress review
 
-1. Resolve publication destination/disclosure before push and draft PR creation.
-   Push non-force, read back exact remote SHA, append/read back #349 checkpoint,
-   link it in the PR and attach the PR to the Codex task. Do not merge or close #349.
+1. Publish under the user's explicit public-repository authorization. Push
+   non-force, read back exact remote SHA, append/read back the execution checkpoint,
+   open a draft PR with screened references and attach it to the Codex task.
+   Do not merge or close the execution issue.
 2. Migrate the five legacy system fixtures to admitted v2 release/runtime contracts
    without weakening custody checks. Preserve the independent staged migration.
 3. Investigate current prerequisite learnability/transfer in the two existing
