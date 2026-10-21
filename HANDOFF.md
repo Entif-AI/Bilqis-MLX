@@ -1,4 +1,37 @@
-# Issue349 candidate staging and productive source fallback | 2026-10-20
+# Issue349 progress review | 2026-10-21
+
+Review entry point: `docs/evidence/development/ISSUE349_REVIEW_HANDOFF_20261021.md`.
+Branch: `codex/349-autonomous-jit-ithkuil-20261020`. This is a progress checkpoint;
+#349 and governing https://github.com/socr8s/private-ip/issues/336 (#336 OPEN,
+IPR-0220) remain open. #346 remains excluded.
+
+The first source-grounded Ithkuil realization is factory-qualified and wired for
+JIT uptake. The primary checkpoint still fails both current prerequisites; D is
+unadopted and untaught. The independent control reached only 7/12 on each fixed-seed
+probe after 888 updates. Both authorized runs are stopped. See the review handoff
+for exact custody, measured disk use, proof commands and remaining work.
+
+Publication is held: on 2026-10-21 GitHub reported the configured origin
+`Entif-AI/Bilqis-MLX` PUBLIC, while AGENTS.md classifies this implementation and
+its authority references as private. Resolve a private destination or explicit
+public disclosure scope before pushing/opening a PR. PM-2026-10-21-001 / RC-053 /
+PAT-039 records the conflict. No visibility change or new publication is implied.
+The independent 36-path staged migration remains preserved and excluded.
+Older sections below are historical; this section and the linked review control.
+
+# Issue349 first source realization and JIT uptake | 2026-10-20
+
+Current continuation: `docs/evidence/development/ISSUE349_SOURCE_STAGING_HANDOFF_20261020.md`,
+section **First real Ithkuil realization**. One of the 240 candidates now has a
+qualified finite formal adapter, independent oracle, native token readback and
+factory package. Automatic staging and student-bound adoption wiring are implemented.
+The primary student's fresh A.IDENTITY and A.MAPS probes are both **6/12** at
+native AdamW 116816; D remains unadopted and untaught. A second issue-owned
+plasticity control has been initialized independently through the verified loader.
+See the continuation and tracked empirical receipts for its bounded trial outcome.
+All older sections below are history; the newer section controls current state.
+
+# Earlier source-staging checkpoint | 2026-10-20
 
 Continuation: `docs/evidence/development/ISSUE349_SOURCE_STAGING_HANDOFF_20261020.md`.
 An explicit-definition-to-staged-successor compiler and real Chapter-3 source

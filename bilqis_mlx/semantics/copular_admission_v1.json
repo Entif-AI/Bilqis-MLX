@@ -1,0 +1,52 @@
+{
+  "authority": "https://github.com/socr8s/private-ip/issues/349",
+  "version": "bilqis.ithkuil-reference-identity/20261020-v1",
+  "source_sense": "LEXSENSE-5286ade9db42c7",
+  "source_text_sha256": "e3fa6604b5892a9095955e152cca40a441a56ccbff394a4bd411bf41e318da9e",
+  "definition": {
+    "capability_id": "D.COPULAR_IDENTITY",
+    "difficulty": "finite-reference-identity",
+    "taught_roots": [
+      "ithkuil.op.COPULAR_IDENTITY"
+    ],
+    "examined_roots": [
+      "ithkuil.op.COPULAR_IDENTITY"
+    ],
+    "prerequisites": [
+      "A.IDENTITY",
+      "A.MAPS"
+    ],
+    "composed_of": [
+      "A.IDENTITY",
+      "A.MAPS"
+    ],
+    "answer_families": [
+      {
+        "kind": "binary",
+        "values": [
+          "FALSE",
+          "TRUE"
+        ]
+      }
+    ]
+  },
+  "provider": {
+    "adapter_id": "source.ithkuil-reference-identity/v1",
+    "generator_id": "bilqis.ithkuil-reference-identity-constructor/v1",
+    "accepted_oracle_ids": [
+      "bilqis.ithkuil-reference-identity-oracle/v1"
+    ],
+    "implementation_sha256": "85a6178cc74ee7c90ed07815add837d3604f61d6529c73467412edd724cf265f",
+    "cohort_generator_id": null,
+    "cohort_releases": [],
+    "variation_axes": [
+      "reference-identity",
+      "denotation",
+      "universe-size",
+      "fact-order",
+      "fresh-seed"
+    ],
+    "teaching_option_ids": [],
+    "profile_dimensions": []
+  }
+}

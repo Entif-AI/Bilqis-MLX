@@ -13,6 +13,20 @@ def content_digest(rows) -> str:
                                      ensure_ascii=False, allow_nan=False).encode()).hexdigest()
 
 
+def optional_teaching_rows(source_root, graph, release, registry, *,
+                           capability, seed, enabled, legacy_course=None):
+    if not enabled:
+        return ()
+    execution = release.execution_plan.capability_map[capability]
+    descriptor = next(item for item in release.source_adapters
+                      if item.adapter_id == execution.provider_id)
+    return tuple(row for option in descriptor.teaching_option_ids
+                 for row in draw_teaching_option_rows(
+                     source_root, graph, release, registry, capability=capability,
+                     option_id=option, seed=seed, each=execution.exam_item_count,
+                     legacy_course=legacy_course))
+
+
 def draw_teaching_option_rows(source_root, graph, release, registry, *,
                               capability, option_id, seed, each, legacy_course=None):
     release.verify()

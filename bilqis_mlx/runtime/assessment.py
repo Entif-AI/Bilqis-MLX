@@ -289,8 +289,14 @@ def _candidate_executable_cohort(
     return cohort, pointer
 
 
-def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None, course=None):
+def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None, course=None,
+                    release=None):
     """Draw only through the verified course/factory source boundary."""
+    if release is not None:
+        from ..source_adapters.school import live_source_registry
+        return list(draw_executable_release_rows(
+            source_root, graph, release, live_source_registry(), seed=seed,
+            capability=capability, each=each, legacy_course=course))
     if course is None:
         raise ValueError("FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION")
     return draw_course_rows(source_root, graph, course, seed=seed,

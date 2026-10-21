@@ -1,7 +1,9 @@
 from dataclasses import replace
 import unittest
 
-from bilqis_mlx.factory.curriculum_definition import from_legacy_course
+from bilqis_mlx.factory.curriculum_definition import (
+    from_legacy_course, validate_curriculum_definition, GradeSpec,
+)
 from bilqis_mlx.factory.execution import CurriculumProfile, compile_execution_plan
 from bilqis_mlx.factory.tests.test_execution_plan import (
     _synthetic_course, _synthetic_registry,
@@ -9,6 +11,16 @@ from bilqis_mlx.factory.tests.test_execution_plan import (
 
 
 class CurriculumDefinitionTests(unittest.TestCase):
+    def test_jit_canonical_slice_can_start_with_one_real_capability(self):
+        curriculum, _ = from_legacy_course(_synthetic_course(6))
+        first = curriculum.grades[0].capabilities[0]
+        thin = replace(curriculum, grades=(GradeSpec(
+            "Z", (first,), ((first.capability_id, 4),), ((first.capability_id,),)),))
+        validate_curriculum_definition(thin, answer_kinds=("binary",))
+        with self.assertRaisesRegex(ValueError, "GRADE_INVALID"):
+            validate_curriculum_definition(replace(thin, grades=(GradeSpec("Z", (), ()),)),
+                                           answer_kinds=("binary",))
+
     def test_source_implementation_change_does_not_change_semantic_curriculum_digest(self):
         course = _synthetic_course(6)
         curriculum, bindings = from_legacy_course(course)

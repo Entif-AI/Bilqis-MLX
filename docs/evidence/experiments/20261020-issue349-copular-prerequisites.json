@@ -1,0 +1,162 @@
+{
+  "schema": "bilqis.issue349.copular-prerequisite-probe/v1",
+  "run": "/Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/runs/issue-349-experiments/primary",
+  "generation": 356,
+  "checkpoint": {
+    "sha256": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+    "filename": "bundles/working-120-d4a37442195e",
+    "optimizer_step": 116816,
+    "model_and_native_adamw": true
+  },
+  "factory_release_sha256": "d03e076179524fe9b7098ed308b8f09ebf721d41003d1445966b1e0ce81211ba",
+  "code_parent_sha": "5ea41b90ab1873b65dcec4c41303fcd987c9fdf2",
+  "source_worktree_observation": true,
+  "measurements": {
+    "A.IDENTITY": {
+      "total": 12,
+      "correct": 6,
+      "specimen_ids": [
+        "105545d3461223c3e97039f947b38a36b6998178f4ffaaef3c0235628171dc12",
+        "1270a2059f22ad91ee43cc5d78eb6186076f082891fcab8367be6925b0d8c93c",
+        "392a172785164c6b6a2f6b0b25f13db5955cb310539cc714b279d6757e4b672b",
+        "445435dee3c5341c95b82ab9db235cd4f2beaa9cbf3bb5e01ac7dd5ba33ae166",
+        "a2d4ee9d32385582fbf2d67cf3cbb0fcb9b5983274bdd415e58ce9faf2bf50ac",
+        "a94117e8755f424f3afa69074566111174d554fbfd8929ed97e24b19616031c6",
+        "b99cd363bb65dcff56094f9b6da944bbc1255919c369c8782b2ffa506894d1f7",
+        "c11ccfa79cf66dcc90625e4dd10cc2a56df26ca4558bc27d90da2b53a4757392",
+        "d1baa6c6bb62c7bbb8b9d93cc5a362aa2ab7b89cbc77f9c38930b95c32bab018",
+        "eae118817da15b512c5e0cf5a9395de4b530da2c27232e478d257c27e7147c61",
+        "f5c7da89824deb503ad568d81775de3d9b6a979b3c9a1f406a34586835a7a0b4",
+        "ff312caf864f64fe018dbbb139ee7dd13badcd7f0f3fe4c91ef44dcceff2e343"
+      ],
+      "predictions": {
+        "105545d3461223c3e97039f947b38a36b6998178f4ffaaef3c0235628171dc12": "TRUE",
+        "1270a2059f22ad91ee43cc5d78eb6186076f082891fcab8367be6925b0d8c93c": "TRUE",
+        "392a172785164c6b6a2f6b0b25f13db5955cb310539cc714b279d6757e4b672b": "FALSE",
+        "445435dee3c5341c95b82ab9db235cd4f2beaa9cbf3bb5e01ac7dd5ba33ae166": "FALSE",
+        "a2d4ee9d32385582fbf2d67cf3cbb0fcb9b5983274bdd415e58ce9faf2bf50ac": "TRUE",
+        "a94117e8755f424f3afa69074566111174d554fbfd8929ed97e24b19616031c6": "TRUE",
+        "b99cd363bb65dcff56094f9b6da944bbc1255919c369c8782b2ffa506894d1f7": "FALSE",
+        "c11ccfa79cf66dcc90625e4dd10cc2a56df26ca4558bc27d90da2b53a4757392": "TRUE",
+        "d1baa6c6bb62c7bbb8b9d93cc5a362aa2ab7b89cbc77f9c38930b95c32bab018": "TRUE",
+        "eae118817da15b512c5e0cf5a9395de4b530da2c27232e478d257c27e7147c61": "FALSE",
+        "f5c7da89824deb503ad568d81775de3d9b6a979b3c9a1f406a34586835a7a0b4": "FALSE",
+        "ff312caf864f64fe018dbbb139ee7dd13badcd7f0f3fe4c91ef44dcceff2e343": "FALSE"
+      },
+      "evidence": {
+        "obligation_id": "A.IDENTITY/direct",
+        "evidence_id": "16c1ecdf08fa63387c8baee50eae68f831754a2bdc7236051980ff4a0fac1ba0",
+        "checkpoint_sha256": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+        "optimizer_step": 116816,
+        "cohort_sha256": "9664cb57f877f9c6422dbf627ba219ad02d595566ccddd6af930fb20302468a3",
+        "specimen_count": 12,
+        "passed": false
+      }
+    },
+    "A.MAPS": {
+      "total": 12,
+      "correct": 6,
+      "specimen_ids": [
+        "0927ded5665209f11673c86fe944d737b37fcdb27d192ab03967d492208dc241",
+        "14c0a2632573622e61e25c0031ef421062722aa167d52c6285b4f5344b26f9a8",
+        "1ee81f9e0061c580fde4bda275a9cea3cbfa049223e8d5445826332234b1b5bf",
+        "2cdce7f1aa5ebfc78dded4106e25b78d9b7919aeac6d0283b1f44bb7395e4167",
+        "4234ce54e3a8bf248e919cd3cd9cbfc633c8fced95cc5072a7a64828cd5c2835",
+        "4e7182519a89e54b8751c97205c2f4306cac8af099cea4996997668a85881ce5",
+        "5591ffcfa8271e88506912af5118324faa0445d3002c1a2edfcbb059010a17af",
+        "5a04e056fb3ada109c88f2ca27e8a161b0cc4f78b88525814ffb3e97a51e89c8",
+        "867d08a3a25fb1ac62029473e18b290c20cfd21d7a70cebbd15673ba12dda396",
+        "88a54b2320b5276eb2384c5852468dd1bb9aa3876936088f1f27021fe6a0264e",
+        "acd9417c67e1367e8e7285292094f7285b327ee8a65bf7d2965aafab65732de6",
+        "e0d7bc661615319d5e44b4578bed836e901b744d5d7bc36f2ab4ca6a486b198b"
+      ],
+      "predictions": {
+        "0927ded5665209f11673c86fe944d737b37fcdb27d192ab03967d492208dc241": "FALSE",
+        "14c0a2632573622e61e25c0031ef421062722aa167d52c6285b4f5344b26f9a8": "FALSE",
+        "1ee81f9e0061c580fde4bda275a9cea3cbfa049223e8d5445826332234b1b5bf": "FALSE",
+        "2cdce7f1aa5ebfc78dded4106e25b78d9b7919aeac6d0283b1f44bb7395e4167": "FALSE",
+        "4234ce54e3a8bf248e919cd3cd9cbfc633c8fced95cc5072a7a64828cd5c2835": "FALSE",
+        "4e7182519a89e54b8751c97205c2f4306cac8af099cea4996997668a85881ce5": "FALSE",
+        "5591ffcfa8271e88506912af5118324faa0445d3002c1a2edfcbb059010a17af": "FALSE",
+        "5a04e056fb3ada109c88f2ca27e8a161b0cc4f78b88525814ffb3e97a51e89c8": "FALSE",
+        "867d08a3a25fb1ac62029473e18b290c20cfd21d7a70cebbd15673ba12dda396": "FALSE",
+        "88a54b2320b5276eb2384c5852468dd1bb9aa3876936088f1f27021fe6a0264e": "FALSE",
+        "acd9417c67e1367e8e7285292094f7285b327ee8a65bf7d2965aafab65732de6": "FALSE",
+        "e0d7bc661615319d5e44b4578bed836e901b744d5d7bc36f2ab4ca6a486b198b": "FALSE"
+      },
+      "evidence": {
+        "obligation_id": "A.MAPS/direct",
+        "evidence_id": "6d4a7bfa3869f59c01d5a66d712f6016b4ade6ee2b69c6756a19a7839409e3e2",
+        "checkpoint_sha256": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+        "optimizer_step": 116816,
+        "cohort_sha256": "aac6e97a548a8b4c22acb4c396f048a7af5bc62497cb3b4ce41193d24851463c",
+        "specimen_count": 12,
+        "passed": false
+      }
+    }
+  },
+  "jit_proposal": {
+    "disposition": "SOURCE_DEVELOPMENT",
+    "frontier_sha256": "055ab68470ab248c68b86090f1a5e277ec289472326b6bfb592a45727bb17381",
+    "current_release_sha256": "d03e076179524fe9b7098ed308b8f09ebf721d41003d1445966b1e0ce81211ba",
+    "autonomy_plan_sha256": "9a764277222424b0aea1fb08761a1047e7039da2ea41642e1288cb8acb88623e",
+    "checkpoint_sha256": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+    "optimizer_step": 116816,
+    "evidence_digest": "bf286a303f667533c5e93926e95b7a23644ee1784a436fd5c26686fe6b16b127",
+    "current_mastery": [],
+    "selected_candidate_ids": [],
+    "selected_successor_sha256": null,
+    "intended_profile_id": null,
+    "abi_geometry": null,
+    "candidate_gates": [
+      {
+        "candidate_id": "D-01",
+        "eligible": false,
+        "required_source_work": [
+          "CURRENT_PREREQUISITE_EVIDENCE_REQUIRED"
+        ],
+        "rationale": [
+          "missing=A.IDENTITY,A.MAPS"
+        ],
+        "operation_cost": [
+          1,
+          0,
+          1,
+          4
+        ]
+      }
+    ],
+    "deferred_candidate_ids": [],
+    "proposal_sha256": "4628cae8d42254c6febf4b081c4cda4e14d4f95209c7623806feb17cd9e5e146",
+    "candidate_gate_count": 240,
+    "candidate_gates_projection": "STAGED_TARGETS_ONLY"
+  },
+  "proposal_file": "autonomy/jit-proposals/4628cae8d42254c6febf4b081c4cda4e14d4f95209c7623806feb17cd9e5e146.json",
+  "protected_files_before": {
+    "state.json": "6fca9091032b186b6aa110d89f0111f1451d037b6dec76d4b1bdc529449bd523",
+    "events.jsonl": "0f689c01ce9dfe235dff9249e4576535d70b7461722e7bf0ce65f893124866fb",
+    "bundles/working-120-d4a37442195e/model-and-own-adamw.safetensors": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+    "bundles/working-120-d4a37442195e/manifest.json": "3ed9de4d639d5203fc46aae4c53b9820e79ce4da7be5ef3ee4ef2f385f3cc788",
+    "bundles/working-120-d4a37442195e/semantic-catalog.json": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716"
+  },
+  "protected_files_after": {
+    "state.json": "6fca9091032b186b6aa110d89f0111f1451d037b6dec76d4b1bdc529449bd523",
+    "events.jsonl": "0f689c01ce9dfe235dff9249e4576535d70b7461722e7bf0ce65f893124866fb",
+    "bundles/working-120-d4a37442195e/model-and-own-adamw.safetensors": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f",
+    "bundles/working-120-d4a37442195e/manifest.json": "3ed9de4d639d5203fc46aae4c53b9820e79ce4da7be5ef3ee4ef2f385f3cc788",
+    "bundles/working-120-d4a37442195e/semantic-catalog.json": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716"
+  },
+  "actual_neural_updates": 0,
+  "learned_ithkuil": "NOT_MEASURED",
+  "budget": {
+    "issue_number": 349,
+    "run_count": 1,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "used_bytes": 749760512,
+    "within_budget": true,
+    "runs": [
+      "primary"
+    ]
+  }
+}

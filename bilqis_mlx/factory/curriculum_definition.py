@@ -106,7 +106,7 @@ def validate_curriculum_definition(
     seen_grades = set()
     for grade in curriculum.grades:
         if (grade.grade_id not in GRADE_IDS or grade.grade_id in seen_grades or
-                not 6 <= len(grade.capabilities) <= 9):
+                not 1 <= len(grade.capabilities) <= 9):
             raise ValueError("FACTORY_CURRICULUM_GRADE_INVALID")
         seen_grades.add(grade.grade_id)
         ids = tuple(cap.capability_id for cap in grade.capabilities)

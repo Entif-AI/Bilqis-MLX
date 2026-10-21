@@ -28,6 +28,26 @@ The historical failure addressed here is therefore **not absence of specificatio
 
 ## 1. Purpose
 
+### Issue #349 JIT slice refinement — 2026-10-20
+
+The user's autonomous JIT mandate permits a new v2 canonical grade to begin with
+one justified capability and grow through later verified deltas. V2 declarations
+accept 1–9 capabilities; the historical v1 Course contract and its manifests keep
+their existing cardinality. Do not invent filler capabilities to complete a tranche.
+A thin profile may skip an unrelated disabled grade. Every enabled prerequisite
+and constituent must remain in the enabled closure. Canonical stage order, source
+and answer bindings, factory verification, current-checkpoint evidence, student
+admission, cumulative qualification and championship identity rules still apply.
+
+Source/token admission, proposal readiness and student adoption are separate.
+Autonomous adoption must revalidate the exact proposal against the current
+checkpoint, native optimizer step, evidence ledger, frontier, source implementations
+and answer implementations immediately before using the existing admission owner.
+Append-only vocabulary growth requires the native Registry readback and preserves
+previous token indices, node contracts and allocation-source provenance. New-grade
+adoption uses the normal complete-prefix boundary; this refinement grants no
+automatic mastery-debt override.
+
 Bilqis must have one curriculum system. New grades and capabilities must be data- and contract-driven instances of that system, not new runtime architectures.
 
 The repository currently contains a partially generic semantic/compiler path beside a handwritten live-school path. Grade A accumulated dedicated probe, manifest, oracle, baseline, evaluator, release, live-constructor, compatibility, and trainer machinery. Grade B and Grade C then entered through narrower grade-specific paths. This split allowed different grades to receive different evidence, assessment, release, and generalization safeguards.

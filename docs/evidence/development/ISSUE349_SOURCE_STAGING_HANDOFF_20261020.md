@@ -129,3 +129,119 @@ other writer's staged typed-error migration emits
 `SCHOOL.STATE.COURSE_DIGEST_MISMATCH`. Preserve this for that migration's writer;
 it is outside this source slice. The two prefetch tests pass separately under
 their importable module name. No full-repository-green claim is made.
+
+## First real Ithkuil realization
+
+Continuation authority: https://github.com/socr8s/private-ip/issues/349 (#349 OPEN)
+and https://github.com/socr8s/private-ip/issues/336 (#336 OPEN, IPR-0220).
+Branch `codex/349-autonomous-jit-ithkuil-20261020`; pre-wave verified HEAD
+`5ea41b90ab1873b65dcec4c41303fcd987c9fdf2`. Read current local/remote HEAD for
+the subsequent commit. Issue #346 stays excluded. The independently staged
+typed-error/control-plane migration remains preserved and separate.
+
+- The official lexicon downloaded again from
+  https://ithkuil.net/New_Ithkuil_Lexicon.pdf matches pinned SHA
+  `d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21`.
+  Section 1.3, printed page5, Chapter-1 split-PDF page2, -Č-, Stem1/BSC,
+  sense `LEXSENSE-5286ade9db42c7`: ontologically the self-same entity.
+- `semantics/copular.py` realizes identity across references in a total finite
+  map. The independent oracle interprets serialized source records separately.
+  Exhaustive three-entity worlds, codec round trips, malformed worlds, scope
+  exclusions, token drift, balanced/fresh generation and one-fact counterfactual
+  pairs are tested. Other uses of “be” are unsupported, never false training gold.
+  This is a scoped formal adapter; natural Ithkuil morphology is NOT_REALIZED.
+- `source_adapters/copular_curriculum.py` declares ordinary factory data for
+  D.COPULAR_IDENTITY with both A.IDENTITY and A.MAPS prerequisites. A v2 grade
+  may start with one capability and skip unrelated disabled grades; enabled
+  prerequisite/constituent closure and normal graduation remain enforced.
+- The native Token Atlas append occupies index227, preserving all227 existing
+  rows. `semantics/copular_registry_v1.json` contains verified native readback.
+  Its birth contract and hash-reproducible original source are immutable sidecars;
+  later provider layout changes cannot rewrite the allocated node's birth receipt.
+  The primary student still has222 rows. Actual growth to228 must allocate the
+  already-admitted five numeric rows first, then this root, preserving own AdamW.
+- Repeated vocabulary allocation preserves earlier source-graph provenance in
+  `allocation_source_graph_sha256`; the original numeric graph is unchanged.
+  This repairs the native-identity conflict exposed by second allocation without
+  weakening token/node checks. Incident PM-2026-10-20-003 / RC-116 was enriched
+  and read back in the canonical native Sheet.
+- `factory/candidate_realizations.py` supplies registered source realizations.
+  The live boundary automatically stages them through the existing factory.
+  Valid packages from older provider implementations remain immutable history
+  and are excluded from current selection; tampered artifacts still fail closed.
+- `runtime/jit_adoption.py` recomputes the proposal against current checkpoint,
+  own-AdamW step, evidence and frontier. The trainer verifies current source and
+  answer implementations and invokes its existing profile/catalog transactions.
+  New-grade automation still requires the normal complete perfect prefix. No
+  automatic mastery-debt exception was introduced. Current scoped evidence is
+  reconciled after release changes, then remeasured at the expanded checkpoint.
+- A further code trace found legacy teaching draws beneath v2 adoption. Ordinary
+  draws, retention probes, rehearsal, host packets, optional teaching and visit
+  generator provenance now consume the admitted v2 release. Host packets carry
+  only source authority and exact future-step identities; MLX, native AdamW,
+  teacher state, scheduler state and writable run paths remain in the main lane.
+  The red/green regressions and migration gap are recorded under the same RC-116.
+
+### Empirical custody and outcomes
+
+`scripts/issue349_copular_probe.py` is a reproducible neural-inert probe/staging
+command. It accepts only already registered issue-owned runs, holds the actual
+operator lock, verifies the complete bundle/AdamW and hashes state/events/bundle
+files before/after. Matching repeated evidence is idempotent. Full immutable JIT
+proposals remain in the run; tracked receipts project only staged-target gates.
+
+Primary remains generation356, native step116816, checkpoint
+`260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f`.
+Fresh fixed-seed source probes: A.IDENTITY **6/12**, A.MAPS **6/12**. Current-code
+automatic source uptake passed with that exact unchanged causal checkpoint.
+The source package is available, while JIT correctly refuses learner admission.
+No D teaching or Ithkuil neural mastery was demonstrated.
+
+The second authorized directory is `runs/issue-349-experiments/plasticity-control`.
+It was initialized independently through the normal verified historical checkpoint
+loader, with its own matching native AdamW at116760. Canonical/historical runs and
+the protected primary were never used as writable experiments. This explicitly
+unprotected control tests learnability under inherited teacher choices; it cannot
+establish retention safety or a matched causal comparison with primary.
+
+| Control updates since seed | Native step | A.IDENTITY | A.MAPS |
+| --- | --- | --- | --- |
+| 0 | 116760 | 5/12 | 6/12 |
+| 24 | 116784 | 6/12 | 6/12 |
+| 120 | 116880 | 6/12 | 5/12 |
+| 888 | 117648 | 7/12 | 7/12 |
+
+Training used three bounded six-visit sweeps at4,16,128 steps per visit with the
+existing teacher and source answers. No states were merged. Control now has
+generation23, checkpoint
+`73c432433b7716e04fee9cf63f82683945708c967d85243f179bb06c3a89ba02`,
+native step117648, bundle `bundles/best-18-75f35a96bb72`. These are modest changes
+on the same source probe, insufficient for prerequisite mastery or generalization.
+Both runs remain stopped, recoverable and registered. See the2026-10-21 review
+handoff for the latest measured allocation. Measured collective
+allocation at the2026-10-20 control-summary snapshot: **1,441,021,952 bytes**, two runs, below100,000,000,000 bytes. No third
+directory may be created. Individual receipts are
+`20261020-issue349-{copular-*,plasticity-*}.json` under `docs/evidence/experiments/`.
+
+### Remaining permitted work
+
+1. Preserve the other writer's staged migration and exact student/optimizer
+   custody. Read live branch, remote and actual operator locks before more work.
+2. Investigate prerequisite learnability/transfer using the existing issue-owned
+   runs. The unprotected control did not make either prerequisite perfect after
+   888updates. Do not call7/12 mastery or automatically bypass graduation/debt rules.
+3. Exercise an actual student-bound D adoption and teaching/generalization run
+   only after current evidence justifies it. Wiring/source/factory/host tests do
+   not substitute for this missing empirical result. Unsupported D diagnostics
+   currently report NOT_MEASURED through the existing observational fallback.
+4. Qualify additional frontier semantics;239 of240 candidates still have no real
+   qualified package. D's other senses and broader composition remain unimplemented.
+   Tracked source extraction is exhausted; inherited-sense and later canonical-PDF
+   provenance debt remains. No all-Ithkuil or whole-project completion claim.
+5. The external expected ABI repository variable is absent. The unchanged ABI
+   guard passes in advisory mode; independent hosted enforcement is not claimed.
+
+No main merge, issue closure, release or memory mutation occurred. Roll back source
+with ordinary revert, retaining all experiment bundles, evidence epochs, native
+allocation provenance and immutable proposal history. Never replay the initial
+control initializer against either existing directory.

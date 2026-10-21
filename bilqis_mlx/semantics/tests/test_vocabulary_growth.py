@@ -49,6 +49,22 @@ class VocabularyTests(unittest.TestCase):
     def setUp(self):
         mx.set_default_device(mx.cpu)
 
+    def test_later_allocations_preserve_native_provenance_of_earlier_tokens(self):
+        from bilqis_mlx.token_atlas import COLUMNS, rows_for_graph
+        from bilqis_mlx.registry_versions import reconcile_live_ledger
+        first, _ = append_catalog(root_graph(), (admission('candidate.first'),),
+                                  allow_disposable_fixtures=True)
+        old_rows = rows_for_graph(first)
+        second, _ = append_catalog(first, (admission('candidate.second'),),
+                                   allow_disposable_fixtures=True)
+        self.assertEqual(rows_for_graph(second)[:len(old_rows)], old_rows)
+        third, _ = append_catalog(second, (admission('candidate.third'),),
+                                  allow_disposable_fixtures=True)
+        self.assertEqual(rows_for_graph(third)[:len(second['tokens'])], rows_for_graph(second))
+        native = [list(COLUMNS), *old_rows, *rows_for_graph(third)[len(old_rows):]]
+        self.assertFalse(reconcile_live_ledger(third, native,
+            pinned_version='fixture/three-allocations')['identity_conflicts'])
+
     def test_research_seeds_do_not_automatically_become_tokens(self):
         roots=candidate_examples()
         self.assertEqual({r.gloss for r in roots},{'enshittification','shibboleth'})

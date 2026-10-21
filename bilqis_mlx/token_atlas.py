@@ -89,7 +89,8 @@ def rows_for_graph(graph: dict) -> list[list[str]]:
             node["signature"],node["family"],node["subtype"],
             str(node["arity"]),str(node["stage"]),
             graph["row_contract_sha256"][node["id"]],
-            graph_sha if new else historical_graph_sha,
+            graph.get('allocation_source_graph_sha256', {}).get(
+                node['id'], graph_sha if new else historical_graph_sha),
             "UNMAPPED_TO_NI_NOT_ASSERTED",
             "ADMITTED_NOT_YET_TAUGHT" if new else "HISTORICAL_SOURCE_DEFINED",
             "NO_SAME_CHECKPOINT_TOKEN_MASTERY_PROOF",

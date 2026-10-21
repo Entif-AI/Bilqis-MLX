@@ -10,6 +10,23 @@ from bilqis_mlx.runtime.candidate_staging import load_staged_candidates, persist
 
 
 class StagedCandidateCustodyTests(CandidateStagingFixture, unittest.TestCase):
+    def test_previous_provider_package_is_preserved_but_cannot_compete_with_current_code(self):
+        from dataclasses import replace
+        from bilqis_mlx.factory.adapters import SourceAdapterRegistry, RegisteredSourceAdapter
+        staged = self.stage()
+        original = self.fixture.fixture.registry.require("fixture.z-generator/v1", "fixture.z-oracle/v1")
+        changed = SourceAdapterRegistry((RegisteredSourceAdapter(
+            replace(original.descriptor, implementation_sha256="f" * 64),
+            original.draw, original.check),))
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            path = persist_staged_candidate(root, staged, self.frontier, self.current)
+            self.assertEqual(load_staged_candidates(root, self.frontier, self.current,
+                                                   source_registry=changed), ())
+            self.assertTrue(path.is_file())
+            self.assertEqual(load_staged_candidates(root, self.frontier, self.current,
+                source_registry=self.fixture.fixture.registry), (staged,))
+
     def test_cold_read_is_idempotent_and_detects_content_tampering(self):
         staged = self.stage()
         with tempfile.TemporaryDirectory() as temp:
@@ -47,7 +64,9 @@ class StagedCandidateCustodyTests(CandidateStagingFixture, unittest.TestCase):
             persist_staged_candidate(root, staged, self.frontier, self.current)
             session = LiveAutonomySession(root, root, self.current, plan, ledger)
             with patch("bilqis_mlx.factory.candidate_frontier.load_candidate_frontier",
-                       return_value=self.frontier):
+                       return_value=self.frontier), patch(
+                       "bilqis_mlx.runtime.autonomy_live.live_source_registry",
+                       return_value=self.fixture.fixture.registry):
                 proposal, relative = session.propose_source_frontier_work(
                     Checkpoint("e" * 64, "bundles/fixture", 0, True))
             self.assertEqual(proposal.disposition, ProposalDisposition.PROPOSAL)

@@ -519,7 +519,7 @@ class LiveAutonomySession:
     ) -> SchoolState:
         return reroute_failed_teaching(self.release, school, capability_id)
 
-    def propose_source_frontier_work(self, checkpoint):
+    def propose_source_frontier_work(self, checkpoint, graph=None):
         """Project a learner-exhaustion boundary into the verified JIT frontier."""
         from ..factory.candidate_frontier import load_candidate_frontier
         from ..factory.executable_release import ExecutableFactoryRelease
@@ -537,9 +537,22 @@ class LiveAutonomySession:
         frontier = load_candidate_frontier(
             artifact_dir, source_dir,
             expected_builder_sha256=builder_sha256)
-        from .candidate_staging import load_staged_candidates
+        from .candidate_staging import load_staged_candidates, persist_staged_candidate
 
-        staged = load_staged_candidates(self.run_dir, frontier, self.release)
+        registry = live_source_registry()
+        staged = load_staged_candidates(self.run_dir, frontier, self.release,
+                                        source_registry=registry)
+        if graph is not None:
+            from ..factory.candidate_realizations import prepare_realized_candidates
+            from ..factory.live_answers import live_answer_registry
+            known = {item.candidate_id for item in staged}
+            for item in prepare_realized_candidates(
+                    frontier, self.release, graph, source_root=self.source_root,
+                    source_registry=registry, answer_registry=live_answer_registry()):
+                if item.candidate_id not in known:
+                    persist_staged_candidate(self.run_dir, item, frontier, self.release)
+            staged = load_staged_candidates(self.run_dir, frontier, self.release,
+                                            source_registry=registry)
         proposal = propose_curriculum_delta(
             frontier, self.release, self.ledger, self.plan,
             checkpoint.sha256, checkpoint.optimizer_step,
@@ -570,3 +583,17 @@ class LiveAutonomySession:
             persist_source_development(
                 self.run_dir, result, proposal=proposal, checkpoint=checkpoint)
         return proposal, relative.as_posix()
+
+    def resolve_ready_proposal(self, checkpoint, proposal):
+        from ..factory.candidate_frontier import load_candidate_frontier
+        from .candidate_staging import load_staged_candidates
+        from .jit_adoption import resolve_ready_candidate
+        root = Path(__file__).resolve().parents[2]
+        frontier = load_candidate_frontier(
+            root / "lib/ithkuil/_private/curriculum_frontier",
+            root / "lib/ithkuil/_data/csv",
+            expected_builder_sha256=hashlib.sha256(
+                (root / "lib/ithkuil/src/build_curriculum_frontier.py").read_bytes()).hexdigest())
+        return resolve_ready_candidate(frontier, self.release, self.ledger, self.plan,
+            checkpoint, proposal, load_staged_candidates(self.run_dir, frontier, self.release,
+                                                       source_registry=live_source_registry()))

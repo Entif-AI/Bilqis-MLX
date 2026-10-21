@@ -33,7 +33,7 @@ def persist_staged_candidate(run_dir, staged, frontier, current) -> Path:
     return path
 
 
-def load_staged_candidates(run_dir, frontier, current) -> tuple[StagedCandidate, ...]:
+def load_staged_candidates(run_dir, frontier, current, *, source_registry=None) -> tuple[StagedCandidate, ...]:
     directory = _directory(run_dir)
     if not directory.exists():
         return ()
@@ -47,6 +47,22 @@ def load_staged_candidates(run_dir, frontier, current) -> tuple[StagedCandidate,
                 staged.successor.predecessor_release_sha256 != current.release_sha256):
             continue
         staged.verify(frontier, current)
+        if source_registry is not None:
+            sealed = {item.adapter_id: item for item in staged.successor.source_adapters}
+            current_sources = []
+            for execution in staged.successor.execution_plan.capabilities:
+                binding = staged.successor.source_bindings.by_capability[execution.capability_id]
+                try:
+                    actual = source_registry.require(binding.generator_id, binding.oracle_id).descriptor
+                except ValueError:
+                    break
+                current_sources.append(actual == sealed.get(execution.provider_id))
+            else:
+                if all(current_sources):
+                    result.append(staged)
+            # A valid older implementation package remains immutable history;
+            # it cannot compete with the newly verified implementation epoch.
+            continue
         result.append(staged)
     if len({item.candidate_id for item in result}) != len(result):
         raise ValueError("CANDIDATE_STAGING_AMBIGUOUS_SUCCESSOR")

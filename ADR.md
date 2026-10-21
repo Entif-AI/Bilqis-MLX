@@ -828,3 +828,34 @@ The next grade is admitted through its normal release and transition machinery. 
 While debt exists, cumulative assessment keeps all admitted grades in scope. Ordinary MAIN sweeps and the existing two global weakest-three rounds continue across every imperfect admitted grade. A later grade may earn a capability/grade champion without erasing earlier debt. The debt epoch closes only when one intact causal student and its own AdamW produce complete active-school mastery at one checkpoint; at that moment all active grade pointers may be rebound to that complete student and the ordinary next-grade boundary resumes.
 
 This supersedes IPR-0220 / ADR-061 only where they make 100% prior-course mastery an absolute prerequisite to *opening* the next human-authorized learning grade. It does **not** weaken cumulative mastery as the condition for clearing carried debt, clean graduation, final qualification, or automatically opening subsequent grades. It also does not turn “two recovery rounds,” elapsed wall time, exam count, or optimizer steps into an automatic abandonment threshold. Choosing to carry debt forward remains an explicit human experimental decision until a separately evidenced adaptive policy is authorized.
+
+## ADR-075 | 2026-10-20 | Source-realized thin JIT slices and stable token allocation provenance
+
+Issue #349's direct user mandate selects the smallest currently justified semantic
+slice. The v2 canonical definition may therefore begin a grade with one real
+capability, up to the existing nine-capability upper bound. Profiles can skip
+unrelated inactive grades while preserving prerequisite/constituent closure.
+Historical v1 Course cardinality and release manifests are unchanged. SPEC-0001
+records the refinement. A new source realization is factory data and an adapter,
+never a new grade trainer or evaluator.
+
+The first realization binds lexicon -Č-, Stem 1/BSC, sense
+LEXSENSE-5286ade9db42c7, to total finite reference-map identity. It positively
+compares denotations, requires current A.IDENTITY and A.MAPS, and claims no
+Ithkuil morphology. A distinct token occupies index 227 after the separately
+admitted numeric prefix; the native Token Atlas append was read back with all
+227 previous rows unchanged. Source qualification is separate from student
+adoption and learned mastery.
+
+A second vocabulary allocation exposed a provenance defect: regenerating Token
+Atlas rows assigned the new container hash to earlier tokens. Later graph versions
+now carry prior allocation-source hashes as a sidecar. Node hashes and indices
+remain immutable, native identity checks remain strict, and the original numeric
+graph artifact is reproduced unchanged. PM-2026-10-20-003 / RC-116 records the
+reproduction and containment.
+
+JIT readiness is recomputed before adoption. Registered source/answer implementations
+must match the sealed package. The normal student/own-AdamW transaction performs
+catalog growth, scheduler adoption, identity reset, outbox persistence and fresh
+evidence reconciliation. New-grade automation retains complete-prefix qualification;
+the source frontier cannot grant itself a mastery-debt exception.

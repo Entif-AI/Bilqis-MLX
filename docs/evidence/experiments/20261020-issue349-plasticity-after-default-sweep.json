@@ -1,0 +1,163 @@
+{
+  "schema": "bilqis.issue349.copular-prerequisite-probe/v1",
+  "run": "/Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/runs/issue-349-experiments/plasticity-control",
+  "generation": 16,
+  "checkpoint": {
+    "sha256": "19ce35299ba97bf3e7d8d20e7a6bf48ab3f0ade38a887e82b13a8e666bc68097",
+    "filename": "bundles/best-12-bb54f64de0a8",
+    "optimizer_step": 116880,
+    "model_and_native_adamw": true
+  },
+  "factory_release_sha256": "d03e076179524fe9b7098ed308b8f09ebf721d41003d1445966b1e0ce81211ba",
+  "code_parent_sha": "5ea41b90ab1873b65dcec4c41303fcd987c9fdf2",
+  "source_worktree_observation": true,
+  "measurements": {
+    "A.IDENTITY": {
+      "total": 12,
+      "correct": 6,
+      "specimen_ids": [
+        "105545d3461223c3e97039f947b38a36b6998178f4ffaaef3c0235628171dc12",
+        "1270a2059f22ad91ee43cc5d78eb6186076f082891fcab8367be6925b0d8c93c",
+        "392a172785164c6b6a2f6b0b25f13db5955cb310539cc714b279d6757e4b672b",
+        "445435dee3c5341c95b82ab9db235cd4f2beaa9cbf3bb5e01ac7dd5ba33ae166",
+        "a2d4ee9d32385582fbf2d67cf3cbb0fcb9b5983274bdd415e58ce9faf2bf50ac",
+        "a94117e8755f424f3afa69074566111174d554fbfd8929ed97e24b19616031c6",
+        "b99cd363bb65dcff56094f9b6da944bbc1255919c369c8782b2ffa506894d1f7",
+        "c11ccfa79cf66dcc90625e4dd10cc2a56df26ca4558bc27d90da2b53a4757392",
+        "d1baa6c6bb62c7bbb8b9d93cc5a362aa2ab7b89cbc77f9c38930b95c32bab018",
+        "eae118817da15b512c5e0cf5a9395de4b530da2c27232e478d257c27e7147c61",
+        "f5c7da89824deb503ad568d81775de3d9b6a979b3c9a1f406a34586835a7a0b4",
+        "ff312caf864f64fe018dbbb139ee7dd13badcd7f0f3fe4c91ef44dcceff2e343"
+      ],
+      "predictions": {
+        "105545d3461223c3e97039f947b38a36b6998178f4ffaaef3c0235628171dc12": "TRUE",
+        "1270a2059f22ad91ee43cc5d78eb6186076f082891fcab8367be6925b0d8c93c": "TRUE",
+        "392a172785164c6b6a2f6b0b25f13db5955cb310539cc714b279d6757e4b672b": "FALSE",
+        "445435dee3c5341c95b82ab9db235cd4f2beaa9cbf3bb5e01ac7dd5ba33ae166": "FALSE",
+        "a2d4ee9d32385582fbf2d67cf3cbb0fcb9b5983274bdd415e58ce9faf2bf50ac": "TRUE",
+        "a94117e8755f424f3afa69074566111174d554fbfd8929ed97e24b19616031c6": "FALSE",
+        "b99cd363bb65dcff56094f9b6da944bbc1255919c369c8782b2ffa506894d1f7": "FALSE",
+        "c11ccfa79cf66dcc90625e4dd10cc2a56df26ca4558bc27d90da2b53a4757392": "TRUE",
+        "d1baa6c6bb62c7bbb8b9d93cc5a362aa2ab7b89cbc77f9c38930b95c32bab018": "FALSE",
+        "eae118817da15b512c5e0cf5a9395de4b530da2c27232e478d257c27e7147c61": "FALSE",
+        "f5c7da89824deb503ad568d81775de3d9b6a979b3c9a1f406a34586835a7a0b4": "FALSE",
+        "ff312caf864f64fe018dbbb139ee7dd13badcd7f0f3fe4c91ef44dcceff2e343": "FALSE"
+      },
+      "evidence": {
+        "obligation_id": "A.IDENTITY/direct",
+        "evidence_id": "a26e11c359a7cdd31a2ad6d4cc08e71e372cbba94da28c1e42ec45db6cfda82f",
+        "checkpoint_sha256": "19ce35299ba97bf3e7d8d20e7a6bf48ab3f0ade38a887e82b13a8e666bc68097",
+        "optimizer_step": 116880,
+        "cohort_sha256": "9664cb57f877f9c6422dbf627ba219ad02d595566ccddd6af930fb20302468a3",
+        "specimen_count": 12,
+        "passed": false
+      }
+    },
+    "A.MAPS": {
+      "total": 12,
+      "correct": 5,
+      "specimen_ids": [
+        "0927ded5665209f11673c86fe944d737b37fcdb27d192ab03967d492208dc241",
+        "14c0a2632573622e61e25c0031ef421062722aa167d52c6285b4f5344b26f9a8",
+        "1ee81f9e0061c580fde4bda275a9cea3cbfa049223e8d5445826332234b1b5bf",
+        "2cdce7f1aa5ebfc78dded4106e25b78d9b7919aeac6d0283b1f44bb7395e4167",
+        "4234ce54e3a8bf248e919cd3cd9cbfc633c8fced95cc5072a7a64828cd5c2835",
+        "4e7182519a89e54b8751c97205c2f4306cac8af099cea4996997668a85881ce5",
+        "5591ffcfa8271e88506912af5118324faa0445d3002c1a2edfcbb059010a17af",
+        "5a04e056fb3ada109c88f2ca27e8a161b0cc4f78b88525814ffb3e97a51e89c8",
+        "867d08a3a25fb1ac62029473e18b290c20cfd21d7a70cebbd15673ba12dda396",
+        "88a54b2320b5276eb2384c5852468dd1bb9aa3876936088f1f27021fe6a0264e",
+        "acd9417c67e1367e8e7285292094f7285b327ee8a65bf7d2965aafab65732de6",
+        "e0d7bc661615319d5e44b4578bed836e901b744d5d7bc36f2ab4ca6a486b198b"
+      ],
+      "predictions": {
+        "0927ded5665209f11673c86fe944d737b37fcdb27d192ab03967d492208dc241": "FALSE",
+        "14c0a2632573622e61e25c0031ef421062722aa167d52c6285b4f5344b26f9a8": "TRUE",
+        "1ee81f9e0061c580fde4bda275a9cea3cbfa049223e8d5445826332234b1b5bf": "FALSE",
+        "2cdce7f1aa5ebfc78dded4106e25b78d9b7919aeac6d0283b1f44bb7395e4167": "TRUE",
+        "4234ce54e3a8bf248e919cd3cd9cbfc633c8fced95cc5072a7a64828cd5c2835": "FALSE",
+        "4e7182519a89e54b8751c97205c2f4306cac8af099cea4996997668a85881ce5": "FALSE",
+        "5591ffcfa8271e88506912af5118324faa0445d3002c1a2edfcbb059010a17af": "FALSE",
+        "5a04e056fb3ada109c88f2ca27e8a161b0cc4f78b88525814ffb3e97a51e89c8": "TRUE",
+        "867d08a3a25fb1ac62029473e18b290c20cfd21d7a70cebbd15673ba12dda396": "FALSE",
+        "88a54b2320b5276eb2384c5852468dd1bb9aa3876936088f1f27021fe6a0264e": "TRUE",
+        "acd9417c67e1367e8e7285292094f7285b327ee8a65bf7d2965aafab65732de6": "FALSE",
+        "e0d7bc661615319d5e44b4578bed836e901b744d5d7bc36f2ab4ca6a486b198b": "TRUE"
+      },
+      "evidence": {
+        "obligation_id": "A.MAPS/direct",
+        "evidence_id": "1121602a76eec439055cff5aa1e7557297c43e06ed14c3469e04c34227eae965",
+        "checkpoint_sha256": "19ce35299ba97bf3e7d8d20e7a6bf48ab3f0ade38a887e82b13a8e666bc68097",
+        "optimizer_step": 116880,
+        "cohort_sha256": "aac6e97a548a8b4c22acb4c396f048a7af5bc62497cb3b4ce41193d24851463c",
+        "specimen_count": 12,
+        "passed": false
+      }
+    }
+  },
+  "jit_proposal": {
+    "disposition": "SOURCE_DEVELOPMENT",
+    "frontier_sha256": "055ab68470ab248c68b86090f1a5e277ec289472326b6bfb592a45727bb17381",
+    "current_release_sha256": "d03e076179524fe9b7098ed308b8f09ebf721d41003d1445966b1e0ce81211ba",
+    "autonomy_plan_sha256": "9a764277222424b0aea1fb08761a1047e7039da2ea41642e1288cb8acb88623e",
+    "checkpoint_sha256": "19ce35299ba97bf3e7d8d20e7a6bf48ab3f0ade38a887e82b13a8e666bc68097",
+    "optimizer_step": 116880,
+    "evidence_digest": "d91d3221c092c752c77a7d99a7ea1f743b2fa63fd195ab1ddf9825dfa58db733",
+    "current_mastery": [],
+    "selected_candidate_ids": [],
+    "selected_successor_sha256": null,
+    "intended_profile_id": null,
+    "abi_geometry": null,
+    "candidate_gates": [
+      {
+        "candidate_id": "D-01",
+        "eligible": false,
+        "required_source_work": [
+          "CURRENT_PREREQUISITE_EVIDENCE_REQUIRED"
+        ],
+        "rationale": [
+          "missing=A.IDENTITY,A.MAPS"
+        ],
+        "operation_cost": [
+          1,
+          0,
+          1,
+          4
+        ]
+      }
+    ],
+    "deferred_candidate_ids": [],
+    "proposal_sha256": "ae81f8cd0c4b5cf08e0802c6b868a10427dda2b3e3ba15c452e1111c45fee07b",
+    "candidate_gate_count": 240,
+    "candidate_gates_projection": "STAGED_TARGETS_ONLY"
+  },
+  "proposal_file": "autonomy/jit-proposals/ae81f8cd0c4b5cf08e0802c6b868a10427dda2b3e3ba15c452e1111c45fee07b.json",
+  "protected_files_before": {
+    "state.json": "8163a95fc4ba7a491c2c0d7512b5b8e8bf09780b661a5393f09eff1ccae35ba5",
+    "events.jsonl": "5413e3f4cb4822b65397e40f0a8003675d71c08d93558c1d8b77bb9ff6c8d4ac",
+    "bundles/best-12-bb54f64de0a8/model-and-own-adamw.safetensors": "19ce35299ba97bf3e7d8d20e7a6bf48ab3f0ade38a887e82b13a8e666bc68097",
+    "bundles/best-12-bb54f64de0a8/manifest.json": "cd6b06662c875b7a0a46a8f664559ae3b66e5a3cd18d396117540544cc158d5d",
+    "bundles/best-12-bb54f64de0a8/semantic-catalog.json": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716"
+  },
+  "protected_files_after": {
+    "state.json": "8163a95fc4ba7a491c2c0d7512b5b8e8bf09780b661a5393f09eff1ccae35ba5",
+    "events.jsonl": "5413e3f4cb4822b65397e40f0a8003675d71c08d93558c1d8b77bb9ff6c8d4ac",
+    "bundles/best-12-bb54f64de0a8/model-and-own-adamw.safetensors": "19ce35299ba97bf3e7d8d20e7a6bf48ab3f0ade38a887e82b13a8e666bc68097",
+    "bundles/best-12-bb54f64de0a8/manifest.json": "cd6b06662c875b7a0a46a8f664559ae3b66e5a3cd18d396117540544cc158d5d",
+    "bundles/best-12-bb54f64de0a8/semantic-catalog.json": "765bd080a92c9221b3a86e39361e17f99143f8fdaf13a23d0a2381fef3aaa716"
+  },
+  "actual_neural_updates": 0,
+  "learned_ithkuil": "NOT_MEASURED",
+  "budget": {
+    "issue_number": 349,
+    "run_count": 2,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "used_bytes": 1268514816,
+    "within_budget": true,
+    "runs": [
+      "primary",
+      "plasticity-control"
+    ]
+  }
+}

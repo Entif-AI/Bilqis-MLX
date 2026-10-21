@@ -1,0 +1,122 @@
+{
+  "schema": "bilqis.issue349.plasticity-control-summary/v1",
+  "authority": "https://github.com/socr8s/private-ip/issues/349",
+  "run": "runs/issue-349-experiments/plasticity-control",
+  "retention": "EXPLICIT_INDEPENDENT_UNPROTECTED_CONTROL",
+  "sweeps": [
+    {
+      "visits": 6,
+      "steps_per_visit": 4
+    },
+    {
+      "visits": 6,
+      "steps_per_visit": 16
+    },
+    {
+      "visits": 6,
+      "steps_per_visit": 128
+    }
+  ],
+  "observations": [
+    {
+      "receipt": "plasticity-before",
+      "checkpoint": {
+        "sha256": "da50cef3617a4050c06bbd1be3dc2383299046c778774a519ad226fc8890f4a4",
+        "filename": "bundles/initial-13b2af230dd2",
+        "optimizer_step": 116760,
+        "model_and_native_adamw": true
+      },
+      "scores": {
+        "A.IDENTITY": {
+          "correct": 5,
+          "total": 12
+        },
+        "A.MAPS": {
+          "correct": 6,
+          "total": 12
+        }
+      },
+      "neural_updates_since_seed": 0
+    },
+    {
+      "receipt": "plasticity-after",
+      "checkpoint": {
+        "sha256": "2143d1875741c2cccf9b2a4bda2d7df247e5be488cf2bc5a2ec48432cde9886f",
+        "filename": "bundles/best-6-f0acc3eabc1d",
+        "optimizer_step": 116784,
+        "model_and_native_adamw": true
+      },
+      "scores": {
+        "A.IDENTITY": {
+          "correct": 6,
+          "total": 12
+        },
+        "A.MAPS": {
+          "correct": 6,
+          "total": 12
+        }
+      },
+      "neural_updates_since_seed": 24
+    },
+    {
+      "receipt": "plasticity-after-default-sweep",
+      "checkpoint": {
+        "sha256": "19ce35299ba97bf3e7d8d20e7a6bf48ab3f0ade38a887e82b13a8e666bc68097",
+        "filename": "bundles/best-12-bb54f64de0a8",
+        "optimizer_step": 116880,
+        "model_and_native_adamw": true
+      },
+      "scores": {
+        "A.IDENTITY": {
+          "correct": 6,
+          "total": 12
+        },
+        "A.MAPS": {
+          "correct": 5,
+          "total": 12
+        }
+      },
+      "neural_updates_since_seed": 120
+    },
+    {
+      "receipt": "plasticity-after-long-sweep",
+      "checkpoint": {
+        "sha256": "73c432433b7716e04fee9cf63f82683945708c967d85243f179bb06c3a89ba02",
+        "filename": "bundles/best-18-75f35a96bb72",
+        "optimizer_step": 117648,
+        "model_and_native_adamw": true
+      },
+      "scores": {
+        "A.IDENTITY": {
+          "correct": 7,
+          "total": 12
+        },
+        "A.MAPS": {
+          "correct": 7,
+          "total": 12
+        }
+      },
+      "neural_updates_since_seed": 888
+    }
+  ],
+  "limitations": [
+    "same fixed-seed source probe",
+    "no prerequisite mastery",
+    "no generalization qualification",
+    "no matched primary comparison",
+    "no retention safety claim",
+    "no D teaching"
+  ],
+  "budget": {
+    "issue_number": 349,
+    "run_count": 2,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "used_bytes": 1441021952,
+    "within_budget": true,
+    "runs": [
+      "primary",
+      "plasticity-control"
+    ]
+  }
+}

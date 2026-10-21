@@ -89,6 +89,10 @@ def _check_catalog(catalog: dict) -> None:
     for node in nodes:
         if receipts[node['id']] != digest(node):
             raise ValueError("VOCAB_CATALOG_EXISTING_ROW_CHANGED")
+    provenance = catalog.get('allocation_source_graph_sha256', {})
+    if (not isinstance(provenance, dict) or not set(provenance) <= set(tokens) or
+            any(not _sha(value) for value in provenance.values())):
+        raise ValueError('VOCAB_ALLOCATION_PROVENANCE_INVALID')
 
 
 def _check_admission(entry: AdmittedToken, prior: set[str], additional: set[str]):
@@ -157,6 +161,12 @@ def append_catalog(prior: dict, admissions: tuple[AdmittedToken,...], *,
             'edges':[{'kind':'prerequisite','target':p} for p in entry.prerequisite_tokens],
         })
     result=copy.deepcopy(prior)
+    # After the first allocation, native rows retain their allocation epoch's
+    # source graph. Storing only *prior* hashes avoids a self-referential digest.
+    if any('semantic_id' in node for node in prior['nodes']):
+        from .token_atlas import rows_for_graph
+        result['allocation_source_graph_sha256'] = {
+            row[1]: row[10] for row in rows_for_graph(prior)}
     result['tokens'].extend([entry.token_id for entry in admissions])
     result['nodes'].extend(nodes)
     result['row_contract_sha256'].update({n['id']:digest(n) for n in nodes})

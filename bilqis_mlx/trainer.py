@@ -1256,14 +1256,15 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor,
 
 
 def _adopt_executable_profile(
-        run_dir, receipt, grade_a_course, source_root, graph, profile):
+        run_dir, receipt, grade_a_course, source_root, graph, profile, *,
+        compiled_successor=None):
     """Adopt one same-ABI v2 profile change without release-name dispatch."""
     predecessor = _require_executable_factory_admission(run_dir, receipt, graph)
     previous_program = schedule_program_from_executable_release(predecessor)
     school = _state_from_json(receipt["school"], previous_program)
     compatibility_course = legacy_course_for_profile(
         grade_a_course, source_root, profile)
-    successor = compile_successor_profile_release(
+    successor = compiled_successor or compile_successor_profile_release(
         predecessor,
         profile,
         live_source_registry(),
@@ -1272,6 +1273,10 @@ def _adopt_executable_profile(
         graph=graph,
         verification_seed=2026101906,
         legacy_course=compatibility_course)
+    successor.verify_successor_of(predecessor)
+    successor.verify_semantic_catalog(graph)
+    if successor.profile != profile:
+        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH")
     successor_program = schedule_program_from_executable_release(successor)
     appended = len(successor_program.grades) == len(previous_program.grades) + 1
     revised = (
@@ -1394,7 +1399,8 @@ def _require_complete_profile_boundary(program, school, receipt):
 
 def _adopt_catalog_profile(
         mx, run_dir, receipt, grade_a_course, source_root, graph,
-        parameters, optimizer, transition, *, reserve_gib, allow_mastery_debt=False):
+        parameters, optimizer, transition, *, reserve_gib, allow_mastery_debt=False,
+        compiled_successor=None):
     """Adopt one append-only semantic ABI/profile expansion with zero updates."""
     predecessor = _require_executable_factory_admission(run_dir, receipt, graph)
     previous_program = schedule_program_from_executable_release(predecessor)
@@ -1421,7 +1427,7 @@ def _adopt_catalog_profile(
         mastery_debt = ()
     compatibility_course = legacy_course_for_profile(
         grade_a_course, source_root, transition.profile)
-    successor = compile_successor_profile_release(
+    successor = compiled_successor or compile_successor_profile_release(
         predecessor,
         transition.profile,
         live_source_registry(),
@@ -1430,6 +1436,10 @@ def _adopt_catalog_profile(
         graph=transition.graph,
         verification_seed=2026101907,
         legacy_course=compatibility_course)
+    successor.verify_successor_of(predecessor)
+    successor.verify_semantic_catalog(transition.graph)
+    if successor.profile != transition.profile:
+        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH")
     if (successor.transition is None or
             successor.transition.semantic_geometry != "APPEND_ONLY_EXPANSION"):
         raise ValueError("FACTORY_CATALOG_TRANSITION_NOT_APPEND_ONLY")
@@ -1540,6 +1550,32 @@ def _adopt_catalog_profile(
         run_dir, _with_delivery_outbox(record, (event,)))
     _reconcile_delivery_outbox(run_dir, record)
     return grown, own_optimizer, transition.graph, record, compatibility_course
+
+
+def _adopt_jit_proposal(mx, run_dir, receipt, grade_a_course, source_root, graph,
+                       parameters, optimizer, session, proposal, *, reserve_gib):
+    """Use the existing student/own-AdamW admission transaction for a fresh JIT choice."""
+    from .factory.candidate_realizations import admitted_candidate_graph
+    from .runtime.jit_adoption import verify_current_implementations
+    predecessor = _require_executable_factory_admission(run_dir, receipt, graph)
+    program = schedule_program_from_executable_release(predecessor)
+    school = _state_from_json(receipt["school"], program)
+    staged = session.resolve_ready_proposal(school.current_student, proposal)
+    successor = staged.successor
+    verify_current_implementations(successor, live_source_registry(), live_answer_registry())
+    appended = len(successor.execution_plan.grades) > len(predecessor.execution_plan.grades)
+    if appended:
+        _require_complete_profile_boundary(program, school, receipt)
+    if successor.transition.semantic_geometry == "APPEND_ONLY_EXPANSION":
+        from .profiles.catalog import CatalogProfileTransition
+        next_graph = admitted_candidate_graph(staged, graph)
+        return _adopt_catalog_profile(mx, run_dir, receipt, grade_a_course, source_root,
+            graph, parameters, optimizer, CatalogProfileTransition(successor.profile, next_graph),
+            reserve_gib=reserve_gib, compiled_successor=successor)
+    record, course, _, _ = _adopt_executable_profile(
+        run_dir, receipt, grade_a_course, source_root, graph, successor.profile,
+        compiled_successor=successor)
+    return parameters, optimizer, graph, record, course
 
 
 def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successor,
@@ -1914,8 +1950,12 @@ def _seed_saved_whole_student_peak(run_dir, receipt, course, optimizer):
 
 
 def _teaching_enrichment_rows(source_root, graph, course, capability, *,
-                              seed: int, enabled: bool):
+                              seed: int, enabled: bool, release=None):
     """Ask the capability's source adapter for optional source-grounded teaching."""
+    if release is not None:
+        from .factory.teaching import optional_teaching_rows
+        return optional_teaching_rows(source_root, graph, release, live_source_registry(),
+            capability=capability, seed=seed, enabled=enabled, legacy_course=course)
     return live_source_registry().optional_teaching_rows(
         course, capability=capability, source_root=source_root, graph=graph,
         seed=seed, enabled=enabled)
@@ -2040,7 +2080,7 @@ def _advance_stagnation_after_routine(
 
 
 def _learning_probe_rows(source_root, graph, receipt, course, school, capability,
-                         settings, *, schedule_program=None):
+                         settings, *, schedule_program=None, release=None):
     """Complete admitted target grade plus bounded cross-grade protection."""
     eligible = set(assessment_capabilities(
         schedule_program if schedule_program is not None else course,
@@ -2064,7 +2104,7 @@ def _learning_probe_rows(source_root, graph, receipt, course, school, capability
     rows = []
     for name in sorted(sampled):
         rows.extend(_draw_live_rows(
-            source_root, graph, course=course, capability=name,
+            source_root, graph, course=course, release=release, capability=name,
             each=(target_each if name.partition(".")[0] ==
                   capability.partition(".")[0] else settings.probe_each),
             seed=_seed(receipt, capability="LEARNING_PROBE:"+name)))
@@ -2302,6 +2342,7 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
         for attempt in range(3):
             fresh.extend(_draw_live_rows(
                 source_root, graph,
+                release=_read_executable_factory_release_artifact(run_dir, receipt),
                 seed=_seed(
                     receipt,
                     capability=f"FRAGILE_PRESERVE:{name}:{attempt}",
@@ -2451,7 +2492,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     with trace_span("VISIT_SOURCE_DRAW", capability=cap):
         rows = _draw_live_rows(source_root, graph,
                                seed=_seed(receipt, capability=cap),
-                               capability=cap, each=max(32, batch_size), course=course)
+                               capability=cap, each=max(32, batch_size), course=course,
+                               release=executable_release)
     # Active maxed capability roles advise only inside their own grade.
     # Frozen grade soups remain the separately diluted cross-grade voice.
     with trace_span("MENTOR_SOURCES_LOAD", capability=cap):
@@ -2494,7 +2536,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             probe_rows, protected_caps, unsampled_caps = _learning_probe_rows(
                 source_root, graph, receipt, course, school, cap, learning_settings,
                 schedule_program=_schedule_for_receipt(
-                    run_dir, receipt, course))
+                    run_dir, receipt, course), release=executable_release)
         target_rows = [row for row in probe_rows if row["capability"] == cap]
         with trace_span("RETENTION_PARENT_PREDICT", capability=cap,
                         row_count=len(target_rows)):
@@ -2569,6 +2611,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 "generation": receipt["generation"],
                 "source_manifest_sha256": receipt.get("source_manifest_sha256"),
                 "course_digest": course_digest,
+                "factory_release_sha256": executable_release.release_sha256,
                 "graph_digest": graph_digest,
                 "durable_parent_sha256": school.current_student.sha256,
                 "parent_optimizer_step": step_before,
@@ -2588,6 +2631,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 "source_root": str(Path(source_root).resolve()),
                 "graph": graph,
                 "course": course,
+                "factory_release": executable_release,
                 "capability": cap,
                 "batch_size": batch_size,
                 "fresh_seed": fresh_seed,
@@ -2634,7 +2678,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 if autonomy_teaching_option is None:
                     fresh = _draw_live_rows(source_root, graph,
                         seed=_seed(receipt, capability=cap, step=step+1),
-                        capability=cap, each=max(32, batch_size), course=course)
+                        capability=cap, each=max(32, batch_size), course=course,
+                        release=executable_release)
                 else:
                     from .factory.teaching import draw_teaching_option_rows
                     fresh = list(draw_teaching_option_rows(
@@ -2654,6 +2699,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 if prepared is None and int(policy.get("old", 0)) > 0 and old_capabilities:
                     selected = old_capabilities[(school.visits + step) % len(old_capabilities)]
                     prior = _draw_live_rows(source_root, graph, course=course,
+                        release=executable_release,
                         capability=selected, each=max(batch_size, 6),
                         seed=_seed(receipt, capability="EXPERIMENT_OLD:"+selected, step=step))
                 picked, control = select_source_lesson(
@@ -2705,7 +2751,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     source_root, graph, course, cap,
                     seed=_seed(receipt, capability="TEACHING_ENRICHMENT:" + cap,
                                step=step + 1),
-                    enabled=boolean_association_bridge)
+                    enabled=boolean_association_bridge, release=executable_release)
         enrichment_examples += len(enrichment_rows)
         if lesson_control is not None:
             lesson_control["planned_old_grade_examples"] = lesson_control[
@@ -2904,8 +2950,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         },
         **({"teaching_enrichment": {
             "enabled": True,
-            "active_for_visit": bool(live_source_registry().teaching_option_ids(course, cap)),
-            "option_ids": list(live_source_registry().teaching_option_ids(course, cap)),
+            "active_for_visit": len(executable_release.execution_plan.capability_map[cap].teaching_option_ids) > 1,
+            "option_ids": list(executable_release.execution_plan.capability_map[cap].teaching_option_ids[1:]),
             "delivered_examples": enrichment_examples,
             "exam_rubric_changed": False,
         }} if boolean_association_bridge else {}),
@@ -2928,8 +2974,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             "candidate_attempt_optimizer_step": attempted_step,
             "retained_optimizer_updates": retained_optimizer_updates}
            if outcome is not None else {}),
-        "generator_version": lesson_contract(course, lesson_grade)[2],
-        "generator_code_sha256": lesson_contract(course, lesson_grade)[3],
+        "generator_version": executable_release.source_bindings.by_capability[cap].generator_id,
+        "generator_code_sha256": executable_release.execution_plan.capability_map[cap].provider_implementation_sha256,
         "lesson_source_sha256": manifest["manifest_sha256"],
         "lesson_seed": _seed(receipt, capability=cap),
         "prior_exam_misses_available": len(priority),
@@ -4584,7 +4630,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 course_a, source_root, admitted_v2.profile)
             active_grade_count = len(admitted_v2.execution_plan.grades)
             target_boolean_profile = None
-            if active_grade_count <= 2:
+            if active_grade_count <= 2 and not autonomous_curriculum:
                 target_boolean_profile = with_disabled_future_grades(
                     boolean_entry_profile(full=full_grade_b),
                     tuple(
@@ -4611,6 +4657,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 run_dir, receipt, graph)
             if ((receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" or
                  admit_next_grade_with_debt) and
+                    (not autonomous_curriculum or admit_next_grade_with_debt) and
                     len(admitted_v2.execution_plan.grades) == 2 and
                     len(admitted_v2.curriculum.grades) > 2):
                 if admit_next_grade_with_debt:
@@ -4771,8 +4818,34 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 run_dir, receipt, course, school)
             school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
             autonomy_teaching_work = None
+            budget_reason = session_stop_reason(
+                stage="MAIN", elapsed_seconds=time.monotonic() - start, minutes=minutes,
+                visits=visits, max_visits=max_visits)
+            if (autonomy_session is not None and school.stage == "AWAITING_NEXT_GRADE" and
+                    budget_reason is None):
+                autonomy_session.refresh_release(
+                    _read_executable_factory_release_artifact(run_dir, receipt))
+                proposal, proposal_file = autonomy_session.propose_source_frontier_work(
+                    school.current_student, graph)
+                if proposal.disposition.value == "PROPOSAL":
+                    params, optimizer, graph, receipt, course = _adopt_jit_proposal(
+                        mx, run_dir, receipt, course_a, source_root, graph, params, optimizer,
+                        autonomy_session, proposal, reserve_gib=reserve_gib)
+                    autonomy_session.refresh_release(
+                        _read_executable_factory_release_artifact(run_dir, receipt))
+                    _record(run_dir, {
+                        "event": "SCHOOL_AUTONOMY_JIT_PROPOSAL_ADOPTED",
+                        "generation": receipt["generation"],
+                        "proposal_sha256": proposal.proposal_sha256,
+                        "proposal_file": proposal_file,
+                        "factory_release_sha256": receipt["factory_release_sha256"],
+                        "actual_neural_updates": 0,
+                    })
+                    continue
             reason = session_stop_reason(
-                stage=school.stage, elapsed_seconds=time.monotonic() - start,
+                stage=("MAIN" if autonomy_session is not None and
+                       school.stage == "AWAITING_NEXT_GRADE" else school.stage),
+                elapsed_seconds=time.monotonic() - start,
                 minutes=minutes, visits=visits, max_visits=max_visits,
                 grade=school.grade, flash_mode=flash_mode)
             if reason is not None:
@@ -4840,7 +4913,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 if action.kind is AutonomyActionKind.SAFE_HOLD:
                     frontier_result = (
                         autonomy_session.propose_source_frontier_work(
-                            school.current_student))
+                            school.current_student, graph))
                     if frontier_result is not None:
                         proposal, proposal_file = frontier_result
                         reason = (

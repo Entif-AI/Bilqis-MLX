@@ -327,6 +327,7 @@ def boolean_evidence_dependencies(*, course, capability):
 
 
 def live_source_registry() -> SourceAdapterRegistry:
+    from .copular import registered_adapter as copular_adapter
     return SourceAdapterRegistry((
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.predicates/v1", "bilqis_mlx.grade_a_probe.make_record",
@@ -370,5 +371,6 @@ def live_source_registry() -> SourceAdapterRegistry:
             cohort_releases=((C_RELEASE, c_digest()),
                              (STAIRCASE_RELEASE, staircase_digest()))), draw_c, check_numeric,
             witness=witness_numeric_obligation),
+        copular_adapter(),
     ))
 

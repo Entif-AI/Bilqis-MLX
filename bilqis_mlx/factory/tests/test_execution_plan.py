@@ -252,17 +252,39 @@ class ExecutionPlanTests(unittest.TestCase):
             {item.grade_id for item in plan.capabilities},
             {"A"})
 
-    def test_profile_cannot_leave_active_grade_after_disabled_prefix(self):
+    def test_profile_cannot_disable_required_earlier_capabilities(self):
         course, registry = _synthetic_boolean_course()
         with self.assertRaisesRegex(
                 ValueError,
-                "FACTORY_PROFILE_ACTIVE_GRADE_AFTER_DISABLED_GRADE:B"):
+                "FACTORY_PROFILE_DISABLED_PREREQUISITE:B.NOT"):
             compile_execution_plan(
                 course,
                 CurriculumProfile(
                     "invalid-gap",
                     grades=(GradeProfile("A", enabled_capabilities=()),)),
                 registry)
+
+    def test_jit_profile_can_skip_unrelated_inactive_grade(self):
+        from bilqis_mlx.factory.curriculum_definition import (
+            from_legacy_course, GradeSpec, CapabilitySourceBinding,
+        )
+        from bilqis_mlx.factory.tests.test_executable_release import _boolean_answers
+        course, registry = _synthetic_boolean_course()
+        curriculum, bindings = from_legacy_course(course)
+        cap = replace(curriculum.grades[0].capabilities[0],
+                      capability_id="D.COPULAR_IDENTITY", prerequisites=("A.C0",))
+        curriculum = replace(curriculum, grades=(*curriculum.grades,
+            GradeSpec("D", (cap,), ((cap.capability_id, 12),), ((cap.capability_id,),))))
+        source = bindings.bindings[0]
+        bindings = replace(bindings, bindings=(*bindings.bindings,
+            CapabilitySourceBinding(cap.capability_id, source.source_anchor,
+                                    source.generator_id, source.oracle_id)))
+        plan = compile_execution_plan(curriculum, CurriculumProfile("thin-jit", grades=(
+            GradeProfile("B", enabled_capabilities=()),)), registry,
+            source_bindings=bindings, answer_registry=_boolean_answers())
+        self.assertEqual(tuple(g.grade_id for g in plan.grades), ("A", "D"))
+        self.assertEqual(plan.grades[-1].cumulative_scope,
+                         (*plan.grades[0].capabilities, "D.COPULAR_IDENTITY"))
 
     def test_profile_cannot_invent_capability_or_answer_value(self):
         course = _synthetic_course(6)
