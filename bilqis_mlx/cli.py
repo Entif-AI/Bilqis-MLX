@@ -772,7 +772,9 @@ def _main(args):
             raise ValueError("VERIFY_SOURCE_REQUIRES_DRY_RUN")
         if not args.human_run:
             print("TRAINING REQUIRES EXPLICIT HUMAN OPERATOR: add --human-run; "
-                  "agents may run only --dry-run and tests. "
+                  "ordinary and long-running training is human-operated. "
+                  "User-authorized agent repair tests must be explicitly finite "
+                  "and preserve the current student and own AdamW. "
                   "Use npm run train -- --dry-run for preflight.",file=sys.stderr)
             return 2
         if args.flash_mode and not args.resume:
