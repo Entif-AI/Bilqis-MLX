@@ -5,7 +5,7 @@ They never own model parameters, AdamW state, scheduler mutation, or teacher pol
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from enum import Enum
 import hashlib
 import json
@@ -105,6 +105,7 @@ class SourceAdapter:
     cohort_releases: tuple[tuple[str, str], ...] = ()
     variation_axes: tuple[str, ...] = ("source-valid", "balanced-gold", "fresh-seed")
     teaching_option_ids: tuple[str, ...] = ()
+    profile_dimensions: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
     def __post_init__(self) -> None:
         if (not self.adapter_id or not self.generator_id or
@@ -130,6 +131,13 @@ class SourceAdapter:
                 any(not isinstance(item, str) or not item
                     for item in self.teaching_option_ids)):
             raise ValueError("FACTORY_SOURCE_ADAPTER_TEACHING_OPTIONS_INVALID")
+        names = tuple(name for name, _ in self.profile_dimensions)
+        if (len(set(names)) != len(names) or
+                any(not isinstance(name, str) or not name or
+                    not values or len(set(values)) != len(values) or
+                    any(not isinstance(value, str) or not value for value in values)
+                    for name, values in self.profile_dimensions)):
+            raise ValueError("FACTORY_SOURCE_ADAPTER_PROFILE_DIMENSIONS_INVALID")
 
     @property
     def cohort_generator(self) -> str:
@@ -138,6 +146,21 @@ class SourceAdapter:
     def cohort_code_sha256(self, release: str) -> str:
         mapping = dict(self.cohort_releases)
         return mapping.get(release, self.implementation_sha256)
+
+    def validate_profile_parameters(
+            self, parameters: tuple[tuple[str, tuple[str, ...]], ...]) -> None:
+        declared = dict(self.profile_dimensions)
+        supplied = dict(parameters)
+        if set(supplied) - set(declared):
+            raise ValueError(
+                "FACTORY_PROFILE_PROVIDER_DIMENSION_UNDECLARED:" + self.adapter_id)
+        for name, values in parameters:
+            domain = declared[name]
+            if (not set(values) <= set(domain) or
+                    values != tuple(value for value in domain if value in values)):
+                raise ValueError(
+                    "FACTORY_PROFILE_PROVIDER_VALUES_NOT_CANONICAL_SUBSET:"
+                    + self.adapter_id + ":" + name)
 
 
 @dataclass(frozen=True)
@@ -177,6 +200,10 @@ class FactoryRelease:
     teaching_options: tuple[TeachingOption, ...]
     assessments: tuple[AssessmentPlan, ...]
     release_sha256: str
+    # The original v1 wire contract predates the optional profile_dimensions
+    # descriptor. Preserve its exact signed form on legacy readback, rather
+    # than accidentally minting a different hash from dataclass defaults.
+    _legacy_adapter_wire: bool = field(default=False, compare=False, repr=False)
 
     def __post_init__(self) -> None:
         _sha256(self.release_sha256, "FACTORY_RELEASE_DIGEST_INVALID")
@@ -185,17 +212,28 @@ class FactoryRelease:
     def source_adapter_map(self) -> dict[str, SourceAdapter]:
         return {adapter.adapter_id: adapter for adapter in self.source_adapters}
 
+    @property
+    def assessment_rubric_sha256s(self) -> tuple[str, ...]:
+        """Expose signed v1 assessment identities without leaking Course traversal."""
+        return tuple(grade.assessment_sha256 for grade in self.course.grades)
+
     def expected_digest(self) -> str:
         return _digest(self.manifest())
 
     def manifest(self) -> dict:
+        adapters = [asdict(item) for item in self.source_adapters]
+        if self._legacy_adapter_wire:
+            for adapter in adapters:
+                if adapter["profile_dimensions"]:
+                    raise ValueError("FACTORY_RELEASE_LEGACY_ADAPTER_SCOPE_DRIFT")
+                del adapter["profile_dimensions"]
         return {
             "semantic_release": asdict(self.semantic_release),
             "course": asdict(self.course),
             "course_sha256": self.course.digest(),
             "capabilities": [asdict(item) for item in self.capabilities],
             "grades": [asdict(item) for item in self.grades],
-            "source_adapters": [asdict(item) for item in self.source_adapters],
+            "source_adapters": adapters,
             "construction_programs": [asdict(item) for item in self.construction_programs],
             "coverage_plans": [asdict(item) for item in self.coverage_plans],
             "teaching_options": [asdict(item) for item in self.teaching_options],
@@ -215,6 +253,11 @@ class FactoryRelease:
 
         try:
             declared = payload["course"]
+            adapters = payload["source_adapters"]
+            adapter_wire = tuple("profile_dimensions" in item for item in adapters)
+            if adapter_wire and len(set(adapter_wire)) != 1:
+                raise ValueError("FACTORY_RELEASE_ADAPTER_WIRE_MIXED")
+            legacy_adapter_wire = bool(adapter_wire) and not adapter_wire[0]
             grades = []
             for grade in declared["grades"]:
                 caps = tuple(record(Capability, {
@@ -236,6 +279,7 @@ class FactoryRelease:
                     **value, "assessment_class": AssessmentClass(value["assessment_class"]),
                 }) for value in payload["assessments"]),
                 release_sha256=release_sha256,
+                _legacy_adapter_wire=legacy_adapter_wire,
             )
         except (KeyError, TypeError, AttributeError) as exc:
             raise ValueError("FACTORY_RELEASE_MANIFEST_INVALID") from exc

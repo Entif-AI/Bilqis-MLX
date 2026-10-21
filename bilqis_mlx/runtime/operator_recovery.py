@@ -16,6 +16,9 @@ class RecoveryAdvice:
     code: str
     disposition: str
     next_action: str
+    explanation: str = ""
+    safe_check: str = ""
+    manual_ref: str = "docs/operations/OPERATOR_FIELD_MANUAL.md"
 
 
 _EXACT = MappingProxyType({
@@ -44,6 +47,19 @@ _EXACT = MappingProxyType({
         "INTERNAL_RECOVERY_REQUIRED",
         "An internal path attempted to materialize an empty assessment cohort. "
         "The durable checkpoint remains the resume authority; do not invent questions or bypass the cohort guard.",
+    ),
+    "INVALID_OR_DRIFTED_SCHOOL_STATE": RecoveryAdvice(
+        "INVALID_OR_DRIFTED_SCHOOL_STATE",
+        "PRESERVE_AND_DIAGNOSE",
+        "Run the neural-inert preflight against the same run directory: "
+        "npm run train -- --dry-run --resume --verify-source [--run-dir <same-run-dir>]. "
+        "Read the mismatch printed after the error code. Do not hand-edit state.json. "
+        "If the course digest differs, resume through the release/compatibility path that owns "
+        "that saved state or repair the producing code so it reconstructs the saved program identity. "
+        "See docs/operations/OPERATOR_FIELD_MANUAL.md#invalid_or_drifted_school_state.",
+        "The saved school identity failed one of its structural predicates. This does not by itself "
+        "mean the student checkpoint or AdamW state is corrupt.",
+        "npm run train -- --dry-run --resume --verify-source",
     ),
     "CHAMPIONSHIP_TITLE_MATCH_CURRENT_PANEL_UNMEASURED": RecoveryAdvice(
         "CHAMPIONSHIP_TITLE_MATCH_CURRENT_PANEL_UNMEASURED",

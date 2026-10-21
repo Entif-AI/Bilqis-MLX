@@ -67,7 +67,31 @@ def _expression(micro, operators: tuple[str, ...], leaves: tuple[dict, ...]):
                        micro.logic(right, leaves[2], leaves[3]))
 
 
-def _schedule(rng: random.Random) -> tuple[tuple[int, int, tuple[str, ...]], ...]:
+def _operator_domain(operators) -> tuple[str, ...]:
+    operators = tuple(operators)
+    if (len(operators) < 2 or len(set(operators)) != len(operators) or
+            not set(operators) <= set(CONNECTIVES) or
+            operators != tuple(op for op in CONNECTIVES if op in operators)):
+        raise ValueError("GRADE_B_COMPOSITE_OPERATOR_DOMAIN_INVALID")
+    return operators
+
+
+def _schedule(rng: random.Random, operators=CONNECTIVES
+              ) -> tuple[tuple[int, int, tuple[str, ...]], ...]:
+    operators = _operator_domain(operators)
+    if operators != tuple(CONNECTIVES):
+        pairs = [(left, right) for left in operators for right in operators]
+        rows = []
+        pass_index = 0
+        while len(rows) < ASSESSMENT_ITEMS:
+            current = list(pairs)
+            rng.shuffle(current)
+            for pair in current:
+                rows.append((2, pass_index, tuple(pair)))
+                if len(rows) == ASSESSMENT_ITEMS:
+                    break
+            pass_index += 1
+        return tuple(rows)
     rows = []
     for pass_index in range(2):
         operators = list(CONNECTIVES)
@@ -82,15 +106,22 @@ def _schedule(rng: random.Random) -> tuple[tuple[int, int, tuple[str, ...]], ...
     return tuple(rows)
 
 
-def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int) -> tuple[dict, ...]:
+def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
+           operators=CONNECTIVES) -> tuple[dict, ...]:
+    operators = _operator_domain(operators)
     micro, _, source_graph, _, _ = read_sources(legacy_root)
     if (graph["tokens"][:len(source_graph["tokens"])] != source_graph["tokens"] or
             len(graph["tokens"]) < len(source_graph["tokens"])):
         raise ValueError("GRADE_B_COMPOSITE_FROZEN_TOKEN_PREFIX_MISMATCH")
-    rng = random.Random(_digest([GENERATOR, seed, cycle]))
-    schedule = _schedule(rng)
+    material = ([GENERATOR, seed, cycle] if operators == tuple(CONNECTIVES)
+                else [GENERATOR, "profile", list(operators), seed, cycle])
+    rng = random.Random(_digest(material))
+    schedule = _schedule(rng, operators)
     appearances = Counter(op for _, _, operators in schedule for op in operators)
-    if appearances != Counter({op: 5 for op in CONNECTIVES}):
+    default_coverage_is_exact = (
+        operators != tuple(CONNECTIVES) or
+        appearances == Counter({op: 5 for op in CONNECTIVES}))
+    if not default_coverage_is_exact or set(appearances) != set(operators):
         raise ValueError("GRADE_B_COMPOSITE_OPERATOR_COVERAGE_DRIFT")
     true_count = rng.choice((4, 5, 7, 8))
     expected = [True] * true_count + [False] * (ASSESSMENT_ITEMS - true_count)
@@ -132,15 +163,19 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int) -> tuple[di
 
 def draw_composite(legacy_root: Path, graph: dict, *, seed: int,
                    each: int = ASSESSMENT_ITEMS,
-                   capability: str | None = CAPABILITY) -> tuple[dict, ...]:
+                   capability: str | None = CAPABILITY,
+                   operators=CONNECTIVES) -> tuple[dict, ...]:
     if type(seed) is not int or type(each) is not int or each < 1:
         raise ValueError("GRADE_B_COMPOSITE_INVALID_DRAW")
     if capability not in (None, CAPABILITY):
         raise ValueError("GRADE_B_COMPOSITE_UNKNOWN_CAPABILITY")
+    operators = _operator_domain(operators)
     rows = []
     cycle = 0
     while len(rows) < each:
-        rows.extend(_cycle(legacy_root, graph, seed=seed, cycle=cycle))
+        rows.extend(_cycle(
+            legacy_root, graph, seed=seed, cycle=cycle,
+            operators=operators))
         cycle += 1
     return tuple(rows[:each])
 

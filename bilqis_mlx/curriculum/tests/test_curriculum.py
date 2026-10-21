@@ -3,6 +3,9 @@ from dataclasses import replace
 import unittest
 from bilqis_mlx.curriculum import (AnswerFamily, BINARY, BOOLEAN_OPERATORS, INT_0_3,
     Capability, Grade, Course, ExamItem, validate, validate_exam_item)
+from bilqis_mlx.factory.curriculum_definition import (
+    from_legacy_course, validate_curriculum_definition,
+)
 
 
 def sample_course():
@@ -110,9 +113,15 @@ class CourseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "UNTAUGHT_ROOT"):
             validate(replace(course,grades=(replace(a,capabilities=(cap,)+a.capabilities[1:]),
                                             course.grades[1])))
-        with self.assertRaisesRegex(ValueError, "SIX_TO_NINE"):
-            validate(replace(course,grades=(replace(a,capabilities=a.capabilities[:5]),
-                                            course.grades[1])))
+        compact_legacy = replace(
+            course,
+            grades=(replace(a, capabilities=a.capabilities[:5]), course.grades[1]))
+        validate(compact_legacy)
+        curriculum, _ = from_legacy_course(compact_legacy)
+        with self.assertRaisesRegex(ValueError, "GRADE_INVALID"):
+            validate_curriculum_definition(
+                curriculum,
+                answer_kinds=("binary", "integer_0_3"))
 
     def test_per_grade_exam_count_shape_is_guarded(self):
         course = sample_course()

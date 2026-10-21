@@ -4,6 +4,9 @@ import unittest
 from unittest.mock import patch
 
 import numpy as np
+from bilqis_mlx.factory.schedule import (
+    ScheduleCapability, ScheduleGrade, ScheduleProgram,
+)
 
 from bilqis_mlx.learning.learning_experiment import (
     Settings, paired_outcomes, decide, contextual_pick, observe_context,
@@ -24,6 +27,20 @@ def rows():
 def predicted(rows_, wrong):
     return {row["id"]: ("TRUE" if row["gold"] == "FALSE" else "FALSE")
             if row["id"] in wrong else row["gold"] for row in rows_}
+
+
+def schedule_program(*grades):
+    return ScheduleProgram(
+        program_digest="a" * 64,
+        grades=tuple(ScheduleGrade(
+            grade,
+            tuple(ScheduleCapability(capability, 12)
+                  for capability in capabilities),
+            (),
+            "b" * 64,
+        ) for grade, capabilities in grades),
+        program_complete=False,
+    )
 
 
 class CausalTeacherExperimentTests(unittest.TestCase):
@@ -52,9 +69,13 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                     return_value=())):
             school = type("School", (), {"current_student": type(
                 "Student", (), {"sha256": "a" * 64, "optimizer_step": 1})()})()
+            program = schedule_program(
+                ("A", ("A.EDGE",)),
+                ("B", grade),
+            )
             pair, protected, required, _, _, _, stage = trainer._candidate_grade_evidence(
                 None, Path("/not-used"), {"config": {}, "answer_ids": []},
-                object(), school, "B.XOR", "parent", "candidate", rows,
+                program, school, "B.XOR", "parent", "candidate", rows,
                 {"B.XOR0": parent["B.XOR0"], "B.XOR1": parent["B.XOR1"]},
                 Settings())
         self.assertEqual(stage, "COMPLETE_SAME_GRADE")
@@ -89,10 +110,14 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                            {row["id"]: parent[row["id"]] for row in selected}),
               patch.object(trainer, "_fixed_same_grade_rows",
                            side_effect=AssertionError("no extra grade test"))):
+            program = schedule_program(
+                ("A", ("A.EDGE",)),
+                ("B", grade),
+            )
             small, protected, required, fixed, replay, _, stage = (
                 trainer._candidate_grade_evidence(
                     None, Path("/not-used"), {"config": {}, "answer_ids": []},
-                    object(), object(), "B.XOR", "parent", "candidate", rows,
+                    program, object(), "B.XOR", "parent", "candidate", rows,
                     {"B.XOR0": parent["B.XOR0"], "B.XOR1": parent["B.XOR1"]},
                     Settings()))
         self.assertEqual(stage, "TARGET_ONLY_REJECTED")
@@ -120,7 +145,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             incomplete, controls, required, fixed, replay, _, stage = (
                 trainer._candidate_grade_evidence(
                     None, Path("/not-used"), {"config": {}, "answer_ids": []},
-                    object(), object(), "B.XOR", "parent", "candidate", rows,
+                    program, object(), "B.XOR", "parent", "candidate", rows,
                     {"B.XOR0": parent["B.XOR0"], "B.XOR1": parent["B.XOR1"]},
                     Settings()))
         self.assertEqual(stage, "GRADE_NET_REJECTED")
@@ -164,7 +189,9 @@ class CausalTeacherExperimentTests(unittest.TestCase):
 
         receipt = {
             "config": {}, "answer_ids": [],
-            "last_exam": {"cohort_sha256": "a" * 64},
+            "last_exam": {"cohort_sha256": "a" * 64,
+                          "student_sha256": "a" * 64,
+                          "optimizer_step": 1},
         }
         school = type("School", (), {
             "grade": "C",
@@ -178,9 +205,14 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                     return_value=(tuple(frontier_rows), frontier_parent)),
               patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
                     return_value=())):
+            program = schedule_program(
+                ("A", ("A.EDGE",)),
+                ("B", ("B.IFF", "B.NOT")),
+                ("C", ("C.DIV",)),
+            )
             pair, protected, required, fixed, _, frontier, stage = (
                 trainer._candidate_grade_evidence(
-                    None, Path("/unused"), receipt, object(), school,
+                    None, Path("/unused"), receipt, program, school,
                     "B.IFF", "parent", "candidate", probe,
                     {row["id"]: probe_parent[row["id"]]
                      for row in probe if row["capability"] == "B.IFF"},

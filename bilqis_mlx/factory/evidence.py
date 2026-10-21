@@ -7,7 +7,7 @@ import json
 from ..generated_assessment import make_cohort, score
 from .adapters import SourceAdapterRegistry
 from .autonomy import EvidenceKind, EvidenceObligation, EvidenceReceipt
-from .generation import draw_release_rows
+from .generation import draw_release_rows, draw_executable_release_rows
 from .model import FactoryRelease
 
 
@@ -27,7 +27,10 @@ def draw_evidence_rows(source_root, graph, release: FactoryRelease,
         raise TypeError("FACTORY_EVIDENCE_REGISTRY_REQUIRED")
     if not isinstance(obligation, EvidenceObligation):
         raise TypeError("FACTORY_EVIDENCE_OBLIGATION_REQUIRED")
-    if obligation.capability_id not in release.course.capability_map:
+    legacy = isinstance(release, FactoryRelease)
+    capability_map = (release.course.capability_map if legacy else
+                      release.execution_plan.capability_map)
+    if obligation.capability_id not in capability_map:
         raise ValueError("FACTORY_EVIDENCE_UNKNOWN_CAPABILITY")
     if type(seed) is not int or type(max_rounds) is not int or max_rounds < 1:
         raise ValueError("FACTORY_EVIDENCE_DRAW_ARGUMENT_INVALID")
@@ -36,7 +39,7 @@ def draw_evidence_rows(source_root, graph, release: FactoryRelease,
     each = target if obligation.kind is EvidenceKind.DIRECT else max(8, target * 4)
     found: dict[str, dict] = {}
     for round_index in range(max_rounds):
-        rows = draw_release_rows(
+        rows = (draw_release_rows if legacy else draw_executable_release_rows)(
             source_root, graph, release, registry,
             seed=seed + round_index,
             capability=obligation.capability_id,
@@ -44,9 +47,11 @@ def draw_evidence_rows(source_root, graph, release: FactoryRelease,
         )
         for row in rows:
             if registry.obligation_witness(
-                    release.course, capability=obligation.capability_id,
+                    release.course if legacy else release.curriculum,
+                    capability=obligation.capability_id,
                     row=row, obligation=obligation,
-                    source_root=source_root, graph=graph):
+                    source_root=source_root, graph=graph,
+                    release=None if legacy else release):
                 found[row["id"]] = row
                 if len(found) >= target:
                     return tuple(found[key] for key in sorted(found)[:target])
@@ -63,10 +68,13 @@ def measure_evidence(source_root, graph, release: FactoryRelease,
         raise TypeError("FACTORY_EVIDENCE_PREDICTOR_REQUIRED")
     rows = draw_evidence_rows(
         source_root, graph, release, registry, obligation, seed=seed)
-    cap = release.course.capability_map[obligation.capability_id]
+    legacy = isinstance(release, FactoryRelease)
+    generator = (release.course.capability_map[obligation.capability_id].lesson_generator
+                 if legacy else release.source_bindings.by_capability[
+                     obligation.capability_id].generator_id)
     cohort = make_cohort(
         rows,
-        generator_version=cap.lesson_generator,
+        generator_version=generator,
         seed=seed,
         rubric_version=(
             release.release_sha256 + "/" + obligation.obligation_id),

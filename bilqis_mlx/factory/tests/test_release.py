@@ -1,4 +1,5 @@
 from dataclasses import replace
+import hashlib
 import json
 import unittest
 
@@ -16,6 +17,9 @@ class FactoryReleaseTests(unittest.TestCase):
     def test_release_binds_semantics_adapters_and_three_assessment_classes(self):
         release = compile_factory_release(self.course, self.registry)
         release.verify()
+        self.assertEqual(
+            release.release_sha256,
+            "e288a8ec96ed9323fc1f0ed2cb30eabdd16deddf6c64ce5ae7306cf84fd37c28")
         self.assertEqual(tuple(item.capability_id for item in release.capabilities),
                          tuple(cap.id for cap in self.course.grades[0].capabilities))
         self.assertEqual({plan.assessment_class for plan in release.assessments},
@@ -65,6 +69,23 @@ class FactoryReleaseTests(unittest.TestCase):
         payload["course"]["grades"][0]["capabilities"][0]["prerequisites"] = ["unknown"]
         with self.assertRaises(ValueError):
             FactoryRelease.from_manifest(payload, release.release_sha256)
+
+    def test_prior_v1_release_without_added_adapter_field_preserves_original_digest(self):
+        release = compile_factory_release(self.course, self.registry)
+        payload = json.loads(json.dumps(release.manifest()))
+        for adapter in payload["source_adapters"]:
+            self.assertEqual(adapter.pop("profile_dimensions"), [])
+        prior_digest = hashlib.sha256(json.dumps(
+            payload, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False).encode("utf-8")).hexdigest()
+        restored = FactoryRelease.from_manifest(payload, prior_digest)
+        self.assertEqual(restored.course, release.course)
+        self.assertEqual(restored.expected_digest(), prior_digest)
+        self.assertEqual(json.loads(json.dumps(restored.manifest())), payload)
+        restored.verify()
+        payload["course"]["grades"][0]["capabilities"][0]["prerequisites"] = ["fake"]
+        with self.assertRaises(ValueError):
+            FactoryRelease.from_manifest(payload, prior_digest)
 
     def test_rehashed_incomplete_or_inconsistent_release_is_rejected(self):
         release = compile_factory_release(self.course, self.registry)

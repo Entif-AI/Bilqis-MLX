@@ -80,7 +80,10 @@ def _comparable_history(root: Path, observed) -> tuple[tuple, str | None]:
     if not (root / "events.jsonl").exists():
         return (), None
     try:
-        history = load_archived_exam_history(root, grade=None, incremental=True)
+        history = load_archived_exam_history(
+            root, grade=None, incremental=True,
+            rubric_sha256=observed.rubric_sha256,
+            generator_version=observed.generator_version)
         comparable = tuple(item for item in history if item.contract == observed.contract)
         if any(item.inventory != observed.inventory for item in comparable):
             raise ValueError("DIAGNOSTIC_INVENTORY_DRIFT")

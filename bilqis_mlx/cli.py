@@ -10,16 +10,12 @@ import sys
 
 from bilqis_mlx.runtime.disk import assert_headroom
 from .source import AUDITED_PARENT
-from .grade_a_release import RELEASE as GRADE_A_RELEASE
-from .factory.live_releases import (
-    INITIAL_RELEASE as LIVE_GRADE_A_RELEASE,
-    BOOLEAN_RELEASE as LIVE_GRADE_B_RELEASE,
-    BOOLEAN_COMPOSITE_RELEASE as LIVE_GRADE_B_COMPOSITE_RELEASE,
-    BOOLEAN_IDENTIFICATION_RELEASE as LIVE_GRADE_B_IDBOOLOPS_RELEASE,
-    MINIMAL_BOOLEAN_RELEASE as LIVE_GRADE_B_MINIMAL_RELEASE,
-    NUMERIC_RELEASE as LIVE_GRADE_C_RELEASE,
+from .compatibility.cli_preflight import (
+    legacy_new_run_status_fields,
+    legacy_numeric_scope,
+    legacy_profile_label,
+    legacy_status_fields,
 )
-from .numeric_staircase import RELEASE as STAIRCASE_RELEASE
 from .paths import REPO_ROOT, LEGACY_SOURCE, LEGACY_CHECKPOINTS, active_run_dir
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard, TABLES
 
@@ -66,6 +62,52 @@ def _latest_session_stop(run_dir: Path, generation: int, step: int) -> dict | No
             "max_visits": event["max_visits"],
             "disk_free_gib": round(event["free_bytes"]/1024**3, 3)
                 if "free_bytes" in event else None}
+
+
+def _executable_release_summary(run_dir: Path, saved: dict) -> dict | None:
+    """Read current executable authority without reconstructing a Course."""
+    if saved.get("factory_admission_v2") is None:
+        return None
+    from .runtime.admission import _read_executable_factory_release_artifact
+    release = _read_executable_factory_release_artifact(run_dir, saved)
+    plan = release.execution_plan
+    return {
+        "schema": release.schema,
+        "release_sha256": release.release_sha256,
+        "profile_id": release.profile.profile_id,
+        "curriculum_sha256": plan.curriculum_sha256,
+        "source_binding_sha256": plan.source_binding_sha256,
+        "semantic_catalog_sha256": release.semantic_catalog_sha256,
+        "active_grades": [grade.grade_id for grade in plan.grades],
+        "canonical_grades": [
+            {
+                "id": grade.grade_id,
+                "capabilities": [
+                    capability.capability_id
+                    for capability in grade.capabilities],
+            }
+            for grade in release.curriculum.grades
+        ],
+        "active_capabilities": [
+            capability.capability_id for capability in plan.capabilities],
+        "answer_domains": {
+            head.kind: list(head.values) for head in release.answer_heads},
+        "projection_digests": {
+            name: getattr(plan.projection_digests, name)
+            for name in (
+                "roster", "schedule", "assessment", "source",
+                "answer_schema", "coverage", "teaching")},
+        "transition": (
+            None if release.transition is None else {
+                "semantic_geometry": release.transition.semantic_geometry,
+                "added_grades": list(release.transition.added_grades),
+                "revised_grades": list(release.transition.revised_grades),
+                "added_capabilities": list(
+                    release.transition.added_capabilities),
+                "removed_capabilities": list(
+                    release.transition.removed_capabilities),
+            }),
+    }
 
 
 def _inspect(run_dir: Path) -> dict:
@@ -144,15 +186,10 @@ def _inspect(run_dir: Path) -> dict:
                 "last_exam": saved["last_exam"],
                 "last_session_stop": _latest_session_stop(
                     run_dir, saved["generation"], student["optimizer_step"]),
-                "grade_a_release": LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE) else saved.get("curriculum_mode") or GRADE_A_RELEASE,
-                "historical_source_release": GRADE_A_RELEASE,
-                "grade_a_curriculum_mode": (LIVE_GRADE_A_RELEASE if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE)
-                                             else saved.get("curriculum_mode", "HISTORICAL_FIXED_72")),
-                "grade_b_curriculum_mode": saved.get("curriculum_mode") if saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE) else None,
-                "grade_b_source_admitted": saved.get("curriculum_mode") in (LIVE_GRADE_B_RELEASE, LIVE_GRADE_B_COMPOSITE_RELEASE, LIVE_GRADE_B_IDBOOLOPS_RELEASE, LIVE_GRADE_B_MINIMAL_RELEASE, LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE),
-                "grade_c_curriculum_mode": saved.get("curriculum_mode") if saved.get("curriculum_mode") in (LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE) else None,
+                **legacy_status_fields(saved),
                 "introduction_stage": school.get("introduction_stage", 0),
                 "numeric_maximum": saved.get("numeric_maximum"),
+                "factory": _executable_release_summary(run_dir, saved),
                 "assessment_cohort_sha256": (saved.get("last_exam") or {}).get("cohort_sha256"),
                 "source_grounded_grade_a_admitted": True,
                 **_qualification_scope(),
@@ -179,10 +216,8 @@ def _inspect(run_dir: Path) -> dict:
     return {"status":"GRADE_A_EXPERIMENTAL_HUMAN_LAUNCH_AVAILABLE",
             "grade":"A","phase":"READY_FOR_HUMAN_GRADE_A_START",
             "historical_seed":AUDITED_PARENT.__dict__,
-            "grade_a_release": LIVE_GRADE_A_RELEASE,
-            "historical_source_release": GRADE_A_RELEASE,
+            **legacy_new_run_status_fields(),
             "grade_a_curriculum": "SIX_SOURCE_TYPED_PREDICATES_FRESH_GENERATED_COHORTS",
-            "grade_a_curriculum_mode": LIVE_GRADE_A_RELEASE,
             **_qualification_scope(),
             "source_grounded_grade_a_admitted":True,
             "neural_training_started_by_this_command":False,
@@ -209,7 +244,7 @@ def _source_paths(legacy_code_root: Path | None, champion_checkpoint: Path | Non
 def _boolean_revision_preflight(run_dir: Path, legacy_root: Path, *, resume: bool,
                                 boolean_composite: bool, boolean_idboolops: bool,
                                 checkpoint_sha256: str | None) -> dict:
-    """Describe optional same-grade Boolean revisions without neural mutation."""
+    """Describe legacy flags now represented by canonical teaching stages."""
     if not boolean_composite and not boolean_idboolops:
         return {}
     if not resume:
@@ -218,54 +253,16 @@ def _boolean_revision_preflight(run_dir: Path, legacy_root: Path, *, resume: boo
         raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_RESUME")
     if not isinstance(checkpoint_sha256, str) or not checkpoint_sha256:
         raise ValueError("BOOLEAN_REVISION_SOURCE_STUDENT_MISSING")
-
-    from .boolean_composite import CAPABILITY as COMPOSITE_CAPABILITY
-    from .boolean_composite import RELEASE as COMPOSITE_RELEASE
-    from .boolean_composite import build_course as build_composite
-    from .boolean_identification import CAPABILITY as ID_CAPABILITY
-    from .boolean_identification import RELEASE as ID_RELEASE
-    from .boolean_identification import build_course as build_identification
-    from .curriculum import BOOLEAN_OPERATORS
-    from .factory.live_releases import initial_course, boolean_successor
-    from .grade_a_release import accepted_grade_a
-
-    saved = json.loads((run_dir / "state.json").read_text())
-    mode = saved.get("curriculum_mode")
-    accepted = accepted_grade_a(json.loads(GRADE_A_MANIFEST.read_text()))
-    parent_b = boolean_successor(initial_course(accepted), legacy_root)
-    composite = build_composite(parent_b, legacy_root)
-    result = {}
-    if boolean_composite:
-        if mode not in (LIVE_GRADE_B_RELEASE, COMPOSITE_RELEASE):
-            raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_EXISTING_GRADE_B")
-        result["boolean_composite"] = {
-            "release": composite.version,
-            "already_enrolled": mode == COMPOSITE_RELEASE,
-            "next_capability": None if mode == COMPOSITE_RELEASE else COMPOSITE_CAPABILITY,
-            "grade_b_exam_items": sum(count for _, count in composite.grades[-1].exam_item_counts),
-            "cumulative_exam_items": sum(count for grade in composite.grades
-                                         for _, count in grade.exam_item_counts),
+    return {
+        "legacy_boolean_revision_flags": {
+            "composite_requested": boolean_composite,
+            "idboolops_requested": boolean_idboolops,
+            "authority": "CANONICAL_PROFILE_TEACHING_STAGES",
+            "separate_release_enrollment": False,
             "source_student_sha256": checkpoint_sha256,
             "neural_updates": 0,
         }
-    if boolean_idboolops:
-        allowed = (LIVE_GRADE_B_COMPOSITE_RELEASE, ID_RELEASE)
-        if mode not in allowed and not (boolean_composite and mode == LIVE_GRADE_B_RELEASE):
-            raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_COMPOSITE_GRADE_B")
-        proposal = build_identification(composite, legacy_root)
-        result["boolean_idboolops"] = {
-            "release": proposal.version,
-            "already_enrolled": mode == ID_RELEASE,
-            "next_capability": None if mode == ID_RELEASE else ID_CAPABILITY,
-            "answer_choices": len(BOOLEAN_OPERATORS),
-            "random_guess_probability": 1 / len(BOOLEAN_OPERATORS),
-            "grade_b_exam_items": sum(count for _, count in proposal.grades[-1].exam_item_counts),
-            "cumulative_exam_items": sum(count for grade in proposal.grades
-                                         for _, count in grade.exam_item_counts),
-            "source_student_sha256": checkpoint_sha256,
-            "neural_updates": 0,
-        }
-    return result
+    }
 
 
 def preflight(run_dir: Path, *, resume=False, verify_source=False,
@@ -292,111 +289,67 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
                                            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"],
                      "operator_constraint":"HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES"})
     if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE":
-        # Source-only preflight is release/provider driven. The CLI never picks
-        # a successor from a hard-coded grade letter.
-        from .factory.live_releases import (
-            course_for_mode, initial_course, preflight_successor,
-            resolve_admitted_courses,
-        )
-        from .grade_a_release import accepted_grade_a
-        manifest = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
         saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
-        accepted = accepted_grade_a(manifest)
-        initial = initial_course(accepted)
-        admitted = resolve_admitted_courses(
-            accepted, legacy_root, saved, include_prospective=False)
-        current = course_for_mode(admitted, saved.get("curriculum_mode"), initial)
-        successor = preflight_successor(
-            current, legacy_root, manifest, saved, full_grade_b=full_grade_b)
-        snapshot.update(successor["details"])
-        snapshot["blockers"].extend(successor["blockers"])
+        factory = snapshot.get("factory")
+        if factory is not None:
+            active_count = len(factory["active_grades"])
+            canonical = factory["canonical_grades"]
+            snapshot["next_profile_transition"] = {
+                "next_grade": (
+                    canonical[active_count]["id"]
+                    if active_count < len(canonical) else None),
+                "authority": "EXECUTABLE_FACTORY_PROFILE",
+                "semantic_catalog_growth": (
+                    active_count >= 2 and active_count < len(canonical)),
+                "neural_updates_before_teaching": 0,
+            }
+        else:
+            snapshot["legacy_profile"] = legacy_profile_label(
+                saved, full_grade_b=full_grade_b)
     snapshot["grade_a_source_manifest"] = "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
     if numeric_staircase:
         if not resume:
             raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
-        from .factory.live_releases import (
-            course_for_mode, initial_course, numeric_registry_graph as registry_graph,
-            predecessor_course, resolve_admitted_courses,
-        )
-        from .numeric_staircase import build_course, INITIAL_MAXIMUM, FINAL_MAXIMUM
-        from .grade_a_release import accepted_grade_a
         saved = json.loads((run_dir/'state.json').read_text())
-        if saved.get('curriculum_mode') not in (LIVE_GRADE_C_RELEASE, STAIRCASE_RELEASE):
-            raise ValueError('NUMERIC_STAIRCASE_REQUIRES_EXISTING_C')
-        accepted = accepted_grade_a(json.loads(GRADE_A_MANIFEST.read_text()))
-        initial = initial_course(accepted)
-        admitted = resolve_admitted_courses(
-            accepted, legacy_root, saved, include_prospective=False)
-        current = course_for_mode(admitted, saved.get('curriculum_mode'), initial)
-        parent_b = predecessor_course(admitted, current)
-        maximum = saved['numeric_maximum'] if saved['curriculum_mode'] == STAIRCASE_RELEASE else INITIAL_MAXIMUM
-        proposal = build_course(parent_b, registry_graph(), maximum=maximum)
-        snapshot['numeric_staircase'] = {'release': proposal.version,
-            'initial_maximum': INITIAL_MAXIMUM, 'final_maximum': FINAL_MAXIMUM,
-            'resume_maximum': maximum, 'source_student_sha256': snapshot['checkpoint_sha256'],
-            'neural_updates': 0, 'next_capability': 'C.COUNT' if saved['curriculum_mode'] != STAIRCASE_RELEASE else None,
-            'parent_course_sha256': parent_b.digest(),
-            'grade_b_capabilities': [cap.id for cap in parent_b.grades[-1].capabilities],
-            'cumulative_exam_items': sum(
-                count for grade in proposal.grades for _, count in grade.exam_item_counts)}
+        factory = snapshot.get("factory")
+        maximum = saved.get("numeric_maximum")
+        legacy_scope = legacy_numeric_scope(saved)
+        snapshot["numeric_staircase"] = {
+            "authority": "EXECUTABLE_FACTORY_NUMERIC_PROFILE",
+            "initial_maximum": 3,
+            "final_maximum": 6,
+            "resume_maximum": (
+                maximum if isinstance(maximum, int)
+                else legacy_scope.get("resume_maximum", 3)),
+            "source_student_sha256": snapshot["checkpoint_sha256"],
+            "neural_updates": 0,
+            "profile_id": (
+                factory.get("profile_id") if factory is not None else None),
+        }
     snapshot.update(_boolean_revision_preflight(
         run_dir, legacy_root, resume=resume,
         boolean_composite=(boolean_composite if full_grade_b else False),
         boolean_idboolops=(boolean_idboolops if full_grade_b else False),
         checkpoint_sha256=snapshot.get("checkpoint_sha256")))
     if resume:
-        from .factory.live_releases import (
-            FULL_BOOLEAN_RELEASES, MINIMAL_BOOLEAN_RELEASE,
-            course_for_mode, default_resume_replacement, initial_course,
-            resolve_admitted_courses,
-        )
-        from .grade_a_release import accepted_grade_a
         saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
-        accepted = accepted_grade_a(json.loads(GRADE_A_MANIFEST.read_text()))
-        initial = initial_course(accepted)
-        admitted = resolve_admitted_courses(
-            accepted, legacy_root, saved, include_prospective=False)
-        current = course_for_mode(admitted, saved.get("curriculum_mode"), initial)
-        replacement = default_resume_replacement(
-            current, initial, legacy_root, full_grade_b=full_grade_b)
-        if replacement is not None:
-            old_caps = tuple(cap.id for cap in current.grades[-1].capabilities)
-            new_caps = tuple(cap.id for cap in replacement.grades[-1].capabilities)
-            snapshot["grade_b_profile"] = {
-                "profile": "MINIMAL_DEFAULT",
-                "migration_required": True,
-                "previous_release": current.version,
-                "release": replacement.version,
-                "active_capabilities": list(new_caps),
-                "withheld_capabilities": [
-                    cap for cap in old_caps if cap not in set(new_caps)],
-                "grade_b_exam_items": sum(
-                    count for _, count in replacement.grades[-1].exam_item_counts),
-                "source_student_sha256": snapshot.get("checkpoint_sha256"),
-                "championship_field_reset_required": True,
-                "stale_geometry_evidence_deactivated": True,
+        factory = snapshot.get("factory")
+        requested_profile = (
+            "school/boolean/full" if full_grade_b
+            else "school/boolean-kernel/and-iff")
+        if factory is not None:
+            snapshot["execution_profile"] = {
+                "active_profile_id": factory["profile_id"],
+                "requested_boolean_profile_id": requested_profile,
+                "migration_required": (
+                    len(factory["active_grades"]) <= 2 and
+                    factory["profile_id"] != requested_profile),
+                "active_capabilities": list(factory["active_capabilities"]),
                 "neural_updates": 0,
             }
-        elif current.version == MINIMAL_BOOLEAN_RELEASE:
-            snapshot["grade_b_profile"] = {
-                "profile": "MINIMAL_DEFAULT",
-                "migration_required": False,
-                "release": current.version,
-                "active_capabilities": [
-                    cap.id for cap in current.grades[-1].capabilities],
-                "grade_b_exam_items": sum(
-                    count for _, count in current.grades[-1].exam_item_counts),
-                "neural_updates": 0,
-            }
-        elif full_grade_b and current.version in FULL_BOOLEAN_RELEASES:
-            snapshot["grade_b_profile"] = {
-                "profile": "FULL_OPT_IN",
-                "migration_required": False,
-                "release": current.version,
-                "active_capabilities": [
-                    cap.id for cap in current.grades[-1].capabilities],
-                "neural_updates": 0,
-            }
+        else:
+            snapshot["legacy_profile"] = legacy_profile_label(
+                saved, full_grade_b=full_grade_b)
         if (not full_grade_b and (boolean_composite or boolean_idboolops)):
             snapshot["legacy_boolean_revision_flags"] = {
                 "ignored": True,
@@ -413,6 +366,33 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
             "original_candidate_manifest_release_flag": False,
             "grade_a_user_acceptance_is_separate": True,
         }
+        if resume:
+            from .trainer import _reconcile_delivery_outbox
+            from .compatibility.executable_projection import preflight_sealed_v1_migration
+            saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+            outbox = saved.get("delivery_outbox")
+            delivered = _reconcile_delivery_outbox(
+                run_dir, saved, publish_missing=False)
+            snapshot["outbox_preflight"] = (
+                "NO_OUTBOX" if outbox is None else
+                "VERIFIED_ALL_PUBLISHED" if delivered else
+                "PENDING_DELIVERY_REPLAY_ON_RESUME")
+            compatibility = preflight_sealed_v1_migration(
+                run_dir, saved, source, legacy_root)
+            if compatibility is not None:
+                snapshot["resume_compatibility"] = compatibility
+            elif saved.get("factory_admission_v2") is not None:
+                from .runtime.admission import _read_executable_factory_release_artifact
+                from .runtime.assessment import _verify_saved_cohort
+                executable = _read_executable_factory_release_artifact(
+                    run_dir, saved)
+                cohort = _verify_saved_cohort(run_dir, saved, None)
+                snapshot["resume_compatibility"] = {
+                    "status": "VERIFIED_EXISTING_V2_WITH_SAVED_EVIDENCE",
+                    "factory_release_sha256": executable.release_sha256,
+                    "last_cohort_sha256": None if cohort is None else cohort.digest,
+                    "neural_updates": 0,
+                }
     else:
         snapshot["source_manifest_preflight"] = "NOT_RERUN_USE_--verify-source"
     if boolean_association_bridge:
@@ -452,16 +432,21 @@ def human_stop_summary(result: dict) -> str:
     explanations = {
         "TIME_LIMIT_REACHED": "The requested time budget was reached.",
         "VISIT_LIMIT_REACHED": "The explicitly configured --max-visits cap was reached.",
-        "GRADE_A_AWAITING_NEXT_GRADE": "Grade A is mastered; the admitted Grade B starts when the human operator resumes.",
-        "GRADE_B_AWAITING_NEXT_GRADE": "Grades A and B passed cumulative revalidation; awaiting Grade C admission.",
         "WHOLE_SCHOOL_MASTERED": "Every grade in the explicitly complete school program passed at one whole student.",
         "AWAITING_TEACHER_SOUP": "Whole-school consolidation requires a separately verified frozen teacher-soup continuation.",
         "STAGNATION_REVIEW_REQUIRED": "The remaining required capabilities were withheld after repeated failed recovery rounds; they remain unqualified mastery debt for the next measured recovery run.",
         "DISK_RESERVE_REACHED": "Free space cannot cover the protected disk reserve plus another checkpoint.",
     }
     reason = result["stop_reason"]
+    grade_wait = (
+        reason.startswith("GRADE_") and
+        reason.endswith("_AWAITING_NEXT_GRADE"))
+    explanation = (
+        "The current admitted grade is mastered; awaiting the next "
+        "factory-admitted curriculum grade."
+        if grade_wait else explanations[reason])
     message = ("TRAINING STOPPED NORMALLY: " + reason + "\n" +
-               explanations[reason] +
+               explanation +
                f" Completed {result['visits_this_command']} visits in "
                f"{result['elapsed_seconds']:.1f} seconds, "
                f"optimizer step {result['optimizer_step']}.")
@@ -488,8 +473,8 @@ def human_stop_summary(result: dict) -> str:
                     "A saved ASSESS_* boundary remains real debt and will be evaluated on resume. "
                     "If flash reaches an all-perfect curriculum, a non-flash authoritative exam "
                     "is still required before qualification can advance.")
-    if reason not in ("GRADE_A_AWAITING_NEXT_GRADE", "GRADE_B_AWAITING_NEXT_GRADE",
-                      "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
+    if not grade_wait and reason not in (
+            "WHOLE_SCHOOL_MASTERED", "AWAITING_TEACHER_SOUP"):
         message += ("\nTo continue: " +
                     result.get("safe_resume_command",
                                "npm run train -- --human-run --resume") +
@@ -543,6 +528,9 @@ def parse_args(argv=None):
                            help="Explicitly authorizes actual optimizer steps by the human operator")
             p.add_argument("--autonomous-curriculum", action="store_true",
                            help="After --human-run authorization, autonomously measure, teach, and remeasure factory evidence while preserving the school scheduler")
+            p.add_argument(
+                "--issue-349-experiment-root", type=Path,
+                help="Register/enforce this run under issue #349's <=2-run, 100-GB collective experiment custody root")
             p.add_argument("--minutes",type=int,default=90)
             p.add_argument("--steps-per-visit",type=int,default=16)
             p.add_argument("--max-visits",type=int,default=0,
@@ -565,6 +553,12 @@ def parse_args(argv=None):
                            help="Human-authorized one-time next-grade admission after substantial rehabilitation; preserves unresolved prior mastery debt")
             p.add_argument("--triplets","--triples",dest="triples",action="store_true",
                            help="Global weakest-three recovery is intrinsic to the new scheduler")
+    # The npm explain script is an operator contract, not an experimental
+    # feature. Register it in the same CLI that npm invokes from this checkout.
+    for name in ("explain", "explain-error"):
+        explain = actions.add_parser(name)
+        explain.add_argument(
+            "code", help="Typed error, legacy error, stop reason, or blocker code")
     return parser.parse_args(argv)
 
 
@@ -668,12 +662,99 @@ def _human_sigint_guard():
         signal.signal(signal.SIGINT, previous)
 
 
+def _explain_code(code: str) -> int:
+    from .operator_vocabulary import BY_OPERATIONAL_CODE
+    term = BY_OPERATIONAL_CODE.get(code)
+    if term is not None:
+        print("OPERATIONAL TERM: " + term.code)
+        print("KIND: " + term.kind.value)
+        print("OWNER: " + term.owner)
+        print("MEANING: " + term.meaning)
+        print("NEURAL EFFECT: " + term.neural_effect)
+        print("NEXT ACTION: " + term.next_action)
+        if term.aliases:
+            print("ALIASES: " + ", ".join(term.aliases))
+        return 0
+    from .errors import ErrorBus
+    reports = ErrorBus.explain(code)
+    if len(reports) > 1:
+        print(
+            "LEGACY ERROR AMBIGUITY: " + code + " historically collapsed " +
+            str(len(reports)) + " distinct invariants.")
+    for index, report in enumerate(reports):
+        if index:
+            print()
+        for line in report.cli_lines():
+            print(line)
+    return 0
+
+
+def _experiment_budget_guard(args):
+    if args.issue_349_experiment_root is None:
+        return None
+    from .runtime.experiment_runs import ExperimentRunBudget
+    root = args.issue_349_experiment_root.expanduser().resolve()
+    target = args.run_dir.expanduser().resolve()
+    if target.parent != root:
+        raise ValueError("ISSUE349_EXPERIMENT_RUN_MUST_BE_DIRECT_CHILD")
+    owner = ExperimentRunBudget(root)
+    if args.resume:
+        owner.register(target)
+    elif target.exists():
+        owner.register(target)
+        unexpected = tuple(
+            entry.name for entry in target.iterdir()
+            if entry.name != ".experiment-run.json")
+        if unexpected:
+            raise ValueError("ISSUE349_EXISTING_RUN_REQUIRES_RESUME")
+        owner.assert_can_allocate(600_000_000)
+    else:
+        owner.create(target.name, required_bytes=600_000_000)
+    owner.assert_within_budget()
+    return owner.assert_can_allocate
+
+
+def _render_stopped_board(board, build, args, result: dict) -> int | None:
+    if board is None:
+        return None
+    board = build(args.run_dir, reserve_gib=args.reserve_gib)
+    board.time_budget_seconds = (
+        args.minutes * 60 if type(args.minutes) is int and args.minutes > 0
+        else None)
+    elapsed = result.get("elapsed_seconds")
+    if isinstance(elapsed, (int, float)) and elapsed >= 0:
+        board.started = board.clock() - elapsed
+    board.mode = "STOPPED | " + result["stop_reason"]
+    board.draw()
+    print("\n" + human_stop_summary(result), flush=True)
+    _report_timing_trace(result.get("timing_trace_file"), stream=sys.stdout)
+    return 0
+
+
+def _report_operator_blocked(err, trace_path) -> int:
+    print("OPERATOR BLOCKED: " + str(err), file=sys.stderr)
+    from .runtime.operator_recovery import recovery_advice
+    advice = recovery_advice(err)
+    if advice.explanation:
+        print("CAUSE: " + advice.explanation, file=sys.stderr)
+    if advice.safe_check:
+        print("SAFE CHECK: " + advice.safe_check, file=sys.stderr)
+    print("RECOVERY: " + advice.disposition + " | " + advice.next_action,
+          file=sys.stderr)
+    if advice.manual_ref:
+        print("FIELD MANUAL: " + advice.manual_ref, file=sys.stderr)
+    _report_timing_trace(trace_path, stream=sys.stderr)
+    return 2
+
+
 def _main(args):
     trace_path = None
     try:
         if args.action=="status":return status(args.run_dir)
         if args.action=="dashboard":return dashboard(args.run_dir)
         if args.action=="diagnostics":return diagnostics(args.run_dir)
+        if args.action in ("explain", "explain-error"):
+            return _explain_code(args.code)
         _guard_independent_no_retention(args)
         if args.dry_run:
             _report_retention_plan(args)
@@ -706,6 +787,7 @@ def _main(args):
             legacy_root, original_checkpoint = _source_paths(args.legacy_code_root, args.champion_checkpoint)
             trace_path, timing_context = _timing_context(args)
             with timing_context:
+                experiment_budget_guard = _experiment_budget_guard(args)
                 result = operate(
                     args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
                     resume=args.resume, minutes=args.minutes,
@@ -726,23 +808,13 @@ def _main(args):
                     source_prefetch_workers=args.source_prefetch_workers,
                     flash_mode=args.flash_mode,
                     boolean_association_bridge=args.boolean_association_bridge,
-                    autonomous_curriculum=args.autonomous_curriculum)
+                    autonomous_curriculum=args.autonomous_curriculum,
+                    experiment_budget_guard=experiment_budget_guard)
             if trace_path is not None:
                 result["timing_trace_file"] = str(trace_path)
-        if board is not None:
-            board = build(args.run_dir, reserve_gib=args.reserve_gib)
-            board.time_budget_seconds = (
-                args.minutes * 60 if type(args.minutes) is int and args.minutes > 0
-                else None
-            )
-            elapsed = result.get("elapsed_seconds")
-            if isinstance(elapsed, (int, float)) and elapsed >= 0:
-                board.started = board.clock() - elapsed
-            board.mode = "STOPPED | " + result["stop_reason"]
-            board.draw()
-            print("\n" + human_stop_summary(result), flush=True)
-            _report_timing_trace(result.get("timing_trace_file"), stream=sys.stdout)
-            return 0
+        rendered = _render_stopped_board(board, build, args, result)
+        if rendered is not None:
+            return rendered
         return _print_status(result)
     except KeyboardInterrupt:
         print("HUMAN TRAINING INTERRUPTED: the last completed visit/checkpoint "
@@ -751,13 +823,7 @@ def _main(args):
         _report_timing_trace(trace_path, stream=sys.stderr)
         return 130
     except (ValueError,RuntimeError,OSError,KeyError,IndexError) as err:
-        print("OPERATOR BLOCKED: "+str(err),file=sys.stderr)
-        from .runtime.operator_recovery import recovery_advice
-        advice = recovery_advice(err)
-        print("RECOVERY: " + advice.disposition + " | " + advice.next_action,
-              file=sys.stderr)
-        _report_timing_trace(trace_path, stream=sys.stderr)
-        return 2
+        return _report_operator_blocked(err, trace_path)
 
 
 def main(argv=None):

@@ -93,8 +93,11 @@ class HumanSessionStopTests(unittest.TestCase):
         result["stop_reason"] = "GRADE_A_AWAITING_NEXT_GRADE"
         self.assertNotIn("--human-run --resume", human_stop_summary(result))
         result["stop_reason"] = "GRADE_B_AWAITING_NEXT_GRADE"
-        self.assertIn("awaiting Grade C",human_stop_summary(result))
+        self.assertIn("awaiting the next", human_stop_summary(result))
         self.assertNotIn("--human-run --resume",human_stop_summary(result))
+        result["stop_reason"] = "GRADE_Z_AWAITING_NEXT_GRADE"
+        self.assertIn("awaiting the next", human_stop_summary(result))
+        self.assertNotIn("--human-run --resume", human_stop_summary(result))
         result["stop_reason"] = "AWAITING_TEACHER_SOUP"
         self.assertIn("separately verified",human_stop_summary(result))
         self.assertNotIn("--human-run --resume",human_stop_summary(result))

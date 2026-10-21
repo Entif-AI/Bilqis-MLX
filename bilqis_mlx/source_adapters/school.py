@@ -7,9 +7,9 @@ import random
 from ..factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from ..factory.autonomy import SupplementalEvidenceSpec
 from ..factory.model import SourceAdapter
+from ..curriculum import BOOLEAN_OPERATORS
 from ..factory.verification import (
-    check_boolean_composite, check_boolean_identification, check_connective,
-    check_numeric, check_predicate,
+    check_boolean_composite, check_connective, check_numeric, check_predicate,
 )
 from .structure import inspect_boolean_identification, inspect_source_query
 
@@ -53,17 +53,6 @@ from ..numeric_curriculum import ORACLE as C_ORACLE, draw_numeric
 
 
 from ..numeric_staircase import RELEASE as STAIRCASE_RELEASE, constructor_digest as staircase_digest
-
-from ..minimal_grade_b import (
-    GENERATOR as B_MINIMAL_GENERATOR,
-    OPERATORS as B_MINIMAL_OPERATORS,
-    RELEASE as B_MINIMAL_RELEASE,
-    constructor_digest as b_minimal_digest,
-    draw_minimal,
-)
-from ..minimal_boolean_identification_oracle import (
-    VERSION as B_MINIMAL_IDBOOLOPS_ORACLE,
-)
 
 from ..boolean_association import (
     VERSION as BOOLEAN_ASSOCIATION_OPTION,
@@ -145,10 +134,25 @@ def draw_b(*, source_root, graph, course, capability, seed, each):
     return _sample_boolean_runtime(rows, capability=capability, seed=seed, each=each)
 
 
-def draw_b_composite_release(*, source_root, graph, course, capability, seed, each):
+def _boolean_profile_operators(
+        profile_parameters, *, capability, scoped_capabilities) -> tuple[str, ...]:
+    parameters = profile_parameters or {}
+    if set(parameters) - {"operators"}:
+        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN")
+    if parameters and capability not in scoped_capabilities:
+        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT")
+    return tuple(parameters.get("operators", BOOLEAN_OPERATORS))
+
+
+def draw_b_composite_release(*, source_root, graph, course, capability, seed, each,
+                             profile_parameters=None):
+    operators = _boolean_profile_operators(
+        profile_parameters, capability=capability,
+        scoped_capabilities={B_COMPOSITE_CAPABILITY})
     if capability == B_COMPOSITE_CAPABILITY:
         return draw_composite(source_root, graph, seed=seed,
-                              capability=capability, each=each)
+                              capability=capability, each=each,
+                              operators=operators)
     return draw_b(source_root=source_root, graph=graph, course=course,
                   capability=capability, seed=seed, each=each)
 
@@ -159,49 +163,54 @@ def check_b_composite_release(row, **kwargs):
     return check_connective(row, **kwargs)
 
 
-def draw_b_idboolops_release(*, source_root, graph, course, capability, seed, each):
+def draw_b_idboolops_release(*, source_root, graph, course, capability, seed, each,
+                             profile_parameters=None):
+    operators = _boolean_profile_operators(
+        profile_parameters, capability=capability,
+        scoped_capabilities={B_COMPOSITE_CAPABILITY, B_IDBOOLOPS_CAPABILITY})
     if capability == B_IDBOOLOPS_CAPABILITY:
         return draw_identification(source_root, graph, seed=seed,
-                                   capability=capability, each=each)
+                                   capability=capability, each=each,
+                                   operators=operators)
     if capability == B_COMPOSITE_CAPABILITY:
         return draw_composite(source_root, graph, seed=seed,
-                              capability=capability, each=each)
+                              capability=capability, each=each,
+                              operators=operators)
     return draw_b(source_root=source_root, graph=graph, course=course,
                   capability=capability, seed=seed, each=each)
 
 
 def check_b_idboolops_release(row, **kwargs):
     if row.get("capability") == B_IDBOOLOPS_CAPABILITY:
-        return check_boolean_identification(row, **kwargs)
-    if row.get("capability") == B_COMPOSITE_CAPABILITY:
-        return check_boolean_composite(row, **kwargs)
-    return check_connective(row, **kwargs)
-
-
-def draw_b_minimal_release(*, source_root, graph, course, capability, seed, each):
-    return draw_minimal(
-        source_root, graph, seed=seed, capability=capability, each=each)
-
-
-def check_b_minimal_release(row, **kwargs):
-    if row.get("capability") == B_IDBOOLOPS_CAPABILITY:
-        from ..minimal_boolean_identification_oracle import evaluate
         from ..boolean_identification import encode_record
-        return (evaluate(row["record"], row["capability"]) == row["gold"] and
-                encode_record(row["record"], kwargs["source_root"], kwargs["graph"]) ==
-                row["tokens"])
+        from ..boolean_identification_oracle import evaluate
+        return (
+            evaluate(row["record"], row["capability"]) == row["gold"] and
+            encode_record(
+                row["record"], kwargs["source_root"], kwargs["graph"]) ==
+            row["tokens"])
     if row.get("capability") == B_COMPOSITE_CAPABILITY:
         return check_boolean_composite(row, **kwargs)
     return check_connective(row, **kwargs)
 
 
-def draw_c(*, source_root, graph, course, capability, seed, each):
-    cap = course.capability_map[capability]
-    numeric = next((family for family in cap.answer_families
-                    if family.kind == "numeric_active"), None)
-    if numeric is None:
-        raise ValueError("FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN")
-    maximum = len(numeric.values) - 1
+def draw_c(*, source_root, graph, course, capability, seed, each,
+           profile_parameters=None):
+    parameters = profile_parameters or {}
+    if set(parameters) - {"numbers"}:
+        raise ValueError("FACTORY_NUMERIC_PROFILE_PARAMETER_UNKNOWN")
+    if "numbers" in parameters:
+        numbers = tuple(parameters["numbers"])
+        if numbers != tuple(str(index) for index in range(len(numbers))):
+            raise ValueError("FACTORY_NUMERIC_PROFILE_DOMAIN_INVALID")
+        maximum = len(numbers) - 1
+    else:
+        cap = course.capability_map[capability]
+        numeric = next((family for family in cap.answer_families
+                        if family.kind == "numeric_active"), None)
+        if numeric is None:
+            raise ValueError("FACTORY_NUMERIC_CAPABILITY_HAS_NO_ACTIVE_DOMAIN")
+        maximum = len(numeric.values) - 1
     return draw_numeric(PLANS, graph, seed=seed, maximum=maximum,
                         capability=capability, each=each)
 
@@ -235,6 +244,11 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
     producer = course.capability_map.get(required[0])
     if producer is None or len(producer.examined_roots) != 1:
         raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED")
+    declared_producer_id = getattr(producer, "id", None)
+    if declared_producer_id is None:
+        declared_producer_id = getattr(producer, "capability_id", None)
+    if not isinstance(declared_producer_id, str) or not declared_producer_id:
+        raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_ID_UNRESOLVED")
     producer_root = producer.examined_roots[0]
     record = row.get("record")
     if not isinstance(record, dict):
@@ -251,7 +265,7 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
     if kind == "COMPOSITION":
         key = getattr(obligation, "key", "")
         if "@" not in key:
-            if key != producer.id:
+            if key != declared_producer_id:
                 raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
             if record.get("task") == "identify_boolean_operator":
                 shape = inspect_boolean_identification(record, row.get("root"))
@@ -264,7 +278,7 @@ def witness_micro_obligation(row, obligation, *, source_root, graph, course):
             slot = int(slot_raw)
         except (AttributeError, ValueError) as exc:
             raise ValueError("FACTORY_MICRO_EVIDENCE_COMPOSITION_KEY_INVALID") from exc
-        if producer_id != producer.id:
+        if producer_id != declared_producer_id:
             raise ValueError("FACTORY_MICRO_EVIDENCE_PRODUCER_KEY_DRIFT")
         query = record.get("query")
         args = query.get("args") if isinstance(query, dict) else None
@@ -320,21 +334,6 @@ def boolean_evidence_dependencies(*, course, capability):
     return ()
 
 
-def minimal_boolean_evidence_dependencies(*, course, capability):
-    """Require composition proof only for operators admitted by reduced Grade B."""
-    del course
-    if capability != B_COMPOSITE_CAPABILITY:
-        return ()
-    return tuple(
-        SupplementalEvidenceSpec(
-            capability_id=capability,
-            kind="COMPOSITION",
-            key="B." + operator,
-            requires_capabilities=("B." + operator,),
-        )
-        for operator in B_MINIMAL_OPERATORS
-    )
-
 
 def live_source_registry() -> SourceAdapterRegistry:
     return SourceAdapterRegistry((
@@ -355,6 +354,7 @@ def live_source_registry() -> SourceAdapterRegistry:
             cohort_generator_id=B_COMPOSITE_GENERATOR,
             variation_axes=("source-valid", "fresh-seed", "operator-composition",
                             "runtime-answer-balance"),
+            profile_dimensions=(("operators", BOOLEAN_OPERATORS),),
             cohort_releases=((B_COMPOSITE_RELEASE, b_composite_digest()),)),
             draw_b_composite_release, check_b_composite_release,
             witness=witness_micro_obligation,
@@ -365,25 +365,17 @@ def live_source_registry() -> SourceAdapterRegistry:
             cohort_generator_id=B_IDBOOLOPS_GENERATOR,
             variation_axes=("source-valid", "fresh-seed", "inverse-operator-identification",
                             "balanced-operator-targets", "masked-operator-input"),
+            profile_dimensions=(("operators", BOOLEAN_OPERATORS),),
             cohort_releases=((B_IDBOOLOPS_RELEASE, b_idboolops_digest()),)),
             draw_b_idboolops_release, check_b_idboolops_release,
             witness=witness_micro_obligation,
             dependencies=boolean_evidence_dependencies),
         RegisteredSourceAdapter(SourceAdapter(
-            "source.micro.boolean-minimal/v1", B_MINIMAL_GENERATOR,
-            (B_ORACLE, B_COMPOSITE_ORACLE, B_MINIMAL_IDBOOLOPS_ORACLE),
-            b_minimal_digest(), cohort_generator_id=B_MINIMAL_GENERATOR,
-            variation_axes=("source-valid", "fresh-seed", "balanced-gold",
-                            "and-iff-only", "operator-composition"),
-            cohort_releases=((B_MINIMAL_RELEASE, b_minimal_digest()),)),
-            draw_b_minimal_release, check_b_minimal_release,
-            witness=witness_micro_obligation,
-            dependencies=minimal_boolean_evidence_dependencies),
-        RegisteredSourceAdapter(SourceAdapter(
             "source.finite-numeric/v1", "bilqis_mlx.numeric_curriculum.draw_numeric",
             (C_ORACLE,), c_digest(), cohort_generator_id=C_COHORT_GENERATOR,
             variation_axes=("source-valid", "fresh-seed", "typed-answer",
                             "numeric-scope", "construction-shape"),
+            profile_dimensions=(("numbers", tuple(str(i) for i in range(11))),),
             cohort_releases=((C_RELEASE, c_digest()),
                              (STAIRCASE_RELEASE, staircase_digest()))), draw_c, check_numeric,
             witness=witness_numeric_obligation),

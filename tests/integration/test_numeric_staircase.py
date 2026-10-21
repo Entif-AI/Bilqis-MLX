@@ -1,6 +1,6 @@
 """Disposable curriculum changes retain the student's complete native state."""
 from contextlib import redirect_stdout
-from dataclasses import asdict, replace
+from dataclasses import asdict
 import io
 import json
 from copy import deepcopy
@@ -10,10 +10,23 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx import trainer as storage
-from bilqis_mlx.grade_transition import activate_numeric_grade
-from bilqis_mlx.live_grade_c import draw, prepare_course, RELEASE as OLD_RELEASE
-from bilqis_mlx.numeric_staircase import (
-    RELEASE, build_course, enroll, advance_scope, scope_advance_due, row_in_scope)
+from bilqis_mlx.compatibility.executable_projection import (
+    compile_projected_executable_release, legacy_course_for_profile)
+from bilqis_mlx.curriculum.scheduler import (
+    Assessment, Score, assess, assessment_capabilities, next_capability,
+    start_new, visit)
+from bilqis_mlx.factory.executable_release import (
+    answer_heads_from_executable_release, compile_successor_profile_release)
+from bilqis_mlx.factory.live_answers import live_answer_registry
+from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
+from bilqis_mlx.generated_assessment import score
+from bilqis_mlx.learning.championship_identity import build_school_identity
+from bilqis_mlx.live_grade_c import draw
+from bilqis_mlx.profiles.catalog import (
+    next_numeric_scope_profile, numeric_entry_transition, numeric_row_in_scope)
+from bilqis_mlx.profiles.school import (
+    boolean_entry_profile, with_disabled_future_grades)
+from bilqis_mlx.source_adapters.school import live_source_registry
 from tests.system import test_grade_c_trainer as fixtures
 
 
@@ -28,69 +41,219 @@ class NumericStaircaseTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        self.graph = self.fixture.parent_graph
         with redirect_stdout(io.StringIO()):
             pointer = storage._bundle_pointer(self.root, 'initial', self.params,
-                self.optimizer, self.fixture.parent_graph, reserve_gib=0.)
-            record = storage._persist(self.root, self.fixture.receipt(
-                self.fixture.graduated(pointer), pointer, self.params))
-            self.params, self.optimizer, self.graph, self.old = activate_numeric_grade(
-                self.mx, self.root, record, self.fixture.previous, self.fixture.course,
-                self.params, self.optimizer, self.fixture.parent_graph, reserve_gib=0.)
+                self.optimizer, self.graph, reserve_gib=0.)
+            base_release, _, _ = compile_projected_executable_release(
+                self.fixture.previous, self.fixture.grade_a,
+                fixtures.SOURCE, self.graph)
+            boolean_profile = with_disabled_future_grades(
+                boolean_entry_profile(full=False),
+                tuple(grade.grade_id for grade in base_release.curriculum.grades[2:]))
+            boolean_course = legacy_course_for_profile(
+                self.fixture.grade_a, fixtures.SOURCE, boolean_profile)
+            boolean_release = compile_successor_profile_release(
+                base_release, boolean_profile, live_source_registry(),
+                live_answer_registry(), source_root=fixtures.SOURCE,
+                graph=self.graph, verification_seed=2026102101,
+                legacy_course=boolean_course)
+            boolean_program = schedule_program_from_executable_release(
+                boolean_release)
+            school = self._perfect_to_boundary(
+                boolean_program, start_new(boolean_program, pointer))
+            _, release_file, admission = storage._executable_factory_admission(
+                self.root, boolean_release, pointer,
+                storage._fingerprint(self.graph), self.graph)
+            base = self.fixture.receipt(
+                self.fixture.graduated(pointer), pointer, self.params)
+            parameter_shapes = {
+                name: list(value.shape) for name, value in self.params.items()}
+            record = storage._persist(self.root, {
+                **base,
+                'school': asdict(school),
+                'curriculum_mode': boolean_course.version,
+                'factory_release_sha256': boolean_release.release_sha256,
+                'factory_release_file': release_file,
+                'factory_release_schema': boolean_release.schema,
+                'factory_admission_v2': asdict(admission),
+                'config': {
+                    **base['config'],
+                    'vocab_size': len(self.graph['tokens']),
+                    'answer_heads': answer_heads_from_executable_release(
+                        boolean_release, self.graph),
+                },
+                'parameter_shapes': parameter_shapes,
+                'semantic_graph_sha256': storage._fingerprint(self.graph),
+                'championship_school_identity': build_school_identity(
+                    course_sha256=boolean_release.execution_plan.curriculum_sha256,
+                    semantic_graph_sha256=storage._fingerprint(self.graph),
+                    parameter_shapes=parameter_shapes,
+                    factory_release_sha256=boolean_release.release_sha256),
+                'live_rubric_sha256':
+                    boolean_program.grades[-1].assessment_sha256,
+                'result': storage._school_result_label(school),
+                'last_exam': None,
+            })
+            record = self._bind_perfect_boundary(
+                record, boolean_release, boolean_course, boolean_program)
+        self.before_numeric = record
+        self.boolean_release = boolean_release
+        self.boolean_course = boolean_course
+        self.boolean_program = boolean_program
 
     def start(self):
         with redirect_stdout(io.StringIO()):
-            return enroll(self.root, self.old, self.fixture.course,
-                          self.fixture.previous, self.graph)
+            transition = numeric_entry_transition(
+                self.boolean_release, self.graph,
+                full_boolean=False, maximum=3)
+            with patch.object(
+                    storage, '_predictions',
+                    side_effect=lambda _m, _p, rows, *args:
+                    {row['id']: row['gold'] for row in rows}):
+                self.params, self.optimizer, self.graph, record, course = (
+                    storage._adopt_catalog_profile(
+                        self.mx, self.root, self.before_numeric,
+                        self.fixture.grade_a, fixtures.SOURCE, self.graph,
+                        self.params, self.optimizer, transition,
+                        reserve_gib=0.))
+        return course, record
+
+    @staticmethod
+    def _perfect_to_boundary(program, school):
+        for index in range(32):
+            if school.stage == 'AWAITING_NEXT_GRADE':
+                return school
+            while next_capability(school):
+                school = visit(
+                    program, school, next_capability(school),
+                    school.current_student)
+            scope = assessment_capabilities(program, school)
+            scores = {
+                capability: Score(
+                    program.capability_map[capability].exam_item_count,
+                    program.capability_map[capability].exam_item_count)
+                for capability in scope
+            }
+            rubric = program.exact_scope_rubric(scope)
+            school = assess(program, school, Assessment(
+                school.current_student.sha256,
+                school.current_student.optimizer_step,
+                program.digest(), rubric, scores,
+                f'fixture-perfect-{index}'))
+        raise AssertionError('fixture did not reach AWAITING_NEXT_GRADE')
+
+    def _bind_perfect_boundary(
+            self, record, release, course, program, *, run_dir=None, graph=None):
+        run_dir = self.root if run_dir is None else run_dir
+        graph = self.graph if graph is None else graph
+        school = storage._state_from_json(record['school'], program)
+        capabilities = tuple(
+            item.capability_id for item in release.execution_plan.capabilities)
+        cohort, pointer = storage._routine_executable_cohort(
+            run_dir, record, self.fixture.manifest, release,
+            live_source_registry(), fixtures.SOURCE, graph,
+            capabilities=capabilities,
+            assessment_epoch=school.grade_exam_epoch,
+            legacy_course=course)
+        measured = score(
+            cohort, {row['id']: row['gold'] for row in cohort.rows},
+            asdict(school.current_student))
+        exam = {
+            **pointer,
+            'student_sha256': school.current_student.sha256,
+            'optimizer_step': school.current_student.optimizer_step,
+            'exam_rubric_sha256': pointer['rubric_sha256'],
+            'scores': measured['scores'],
+            'misses_for_teacher': [],
+        }
+        return storage._advance(
+            run_dir, record, school, last_exam=exam)
+
+    def _advance_scope(self, course, record):
+        release = storage._read_executable_factory_release_artifact(
+            self.root, record)
+        program = schedule_program_from_executable_release(release)
+        school = self._perfect_to_boundary(
+            program, storage._state_from_json(record['school'], program))
+        if asdict(school) != record['school']:
+            record = storage._advance(self.root, record, school)
+        profile = next_numeric_scope_profile(
+            release, final_maximum=record['numeric_scope_final_maximum'])
+        self.assertIsNotNone(profile)
+        with redirect_stdout(io.StringIO()):
+            changed, course, successor, successor_program = (
+                storage._adopt_executable_profile(
+                    self.root, record, self.fixture.grade_a,
+                    fixtures.SOURCE, self.graph, profile))
+        return course, changed, successor, successor_program
 
     def _id_parent_fixture(self, root):
         from bilqis_mlx.boolean_composite import build_course as build_composite
         from bilqis_mlx.boolean_identification import (
-            RELEASE as ID_RELEASE, answer_heads as id_answer_heads,
-            build_course as build_id,
-        )
-        from bilqis_mlx.curriculum.scheduler import (
-            Assessment, Score, assess, next_capability, start_new, visit,
+            answer_heads as id_answer_heads, build_course as build_id,
         )
 
         identified = build_id(
             build_composite(self.fixture.previous, fixtures.SOURCE), fixtures.SOURCE)
-        successor, _ = prepare_course(identified, maximum=10)
         mx, params, opt = self.fixture.toy()
         pointer = storage._bundle_pointer(
             root, 'id-parent', params, opt, self.fixture.parent_graph, reserve_gib=0.)
-        school = start_new(identified, pointer)
-        for grade in ('A', 'B', 'A', 'B'):
-            while next_capability(school):
-                school = visit(identified, school, next_capability(school), pointer)
-            scores = {
-                cap.id: Score(12, 12)
-                for admitted in identified.grades
-                if admitted.id in school.champions or admitted.id == grade
-                for cap in admitted.capabilities
-            }
-            rubric = identified.grades[
-                1 if any(cap.startswith('B.') for cap in scores) else 0
-            ].assessment_sha256
-            school = assess(identified, school, Assessment(
-                pointer.sha256, pointer.optimizer_step, identified.digest(),
-                rubric, scores, 'id-parent-pass'))
-        receipt = self.fixture.receipt(school, pointer, params)
-        receipt['curriculum_mode'] = ID_RELEASE
-        receipt['config']['answer_heads'] = id_answer_heads(self.fixture.parent_graph)
-        receipt['live_rubric_sha256'] = identified.grades[-1].assessment_sha256
-        receipt['last_exam'] = {
-            'student_sha256': pointer.sha256,
-            'optimizer_step': pointer.optimizer_step,
-            'cohort_sha256': 'd' * 64,
-            'exam_rubric_sha256': identified.grades[-1].assessment_sha256,
-            'scores': {
-                cap.id: {'correct': count, 'total': count}
-                for admitted in identified.grades
-                for cap in admitted.capabilities
-                for count in (dict(admitted.exam_item_counts)[cap.id],)
+        base_release, _, _ = compile_projected_executable_release(
+            identified, self.fixture.grade_a, fixtures.SOURCE,
+            self.fixture.parent_graph)
+        profile = with_disabled_future_grades(
+            boolean_entry_profile(full=True),
+            tuple(grade.grade_id for grade in base_release.curriculum.grades[2:]))
+        compatibility = legacy_course_for_profile(
+            self.fixture.grade_a, fixtures.SOURCE, profile)
+        release = compile_successor_profile_release(
+            base_release, profile, live_source_registry(),
+            live_answer_registry(), source_root=fixtures.SOURCE,
+            graph=self.fixture.parent_graph, verification_seed=2026102102,
+            legacy_course=compatibility)
+        program = schedule_program_from_executable_release(release)
+        school = self._perfect_to_boundary(
+            program, start_new(program, pointer))
+        _, release_file, admission = storage._executable_factory_admission(
+            root, release, pointer,
+            storage._fingerprint(self.fixture.parent_graph),
+            self.fixture.parent_graph)
+        base = self.fixture.receipt(
+            self.fixture.graduated(pointer), pointer, params)
+        parameter_shapes = {name: list(value.shape) for name, value in params.items()}
+        receipt = storage._persist(root, {
+            **base,
+            'school': asdict(school),
+            'curriculum_mode': compatibility.version,
+            'factory_release_sha256': release.release_sha256,
+            'factory_release_file': release_file,
+            'factory_release_schema': release.schema,
+            'factory_admission_v2': asdict(admission),
+            'config': {
+                **base['config'],
+                'vocab_size': len(self.fixture.parent_graph['tokens']),
+                'answer_heads': answer_heads_from_executable_release(
+                    release, self.fixture.parent_graph),
             },
-        }
-        return identified, successor, id_answer_heads, mx, params, opt, receipt
+            'parameter_shapes': parameter_shapes,
+            'semantic_graph_sha256': storage._fingerprint(
+                self.fixture.parent_graph),
+            'championship_school_identity': build_school_identity(
+                course_sha256=release.execution_plan.curriculum_sha256,
+                semantic_graph_sha256=storage._fingerprint(
+                    self.fixture.parent_graph),
+                parameter_shapes=parameter_shapes,
+                factory_release_sha256=release.release_sha256),
+            'live_rubric_sha256': program.grades[-1].assessment_sha256,
+            'result': storage._school_result_label(school),
+            'last_exam': None,
+        })
+        receipt = self._bind_perfect_boundary(
+            receipt, release, compatibility, program,
+            run_dir=root, graph=self.fixture.parent_graph)
+        return (identified, compatibility, release, id_answer_heads,
+                mx, params, opt, receipt)
 
     def _numeric_staircase_preview(self, root):
         from bilqis_mlx.cli import main
@@ -102,28 +265,109 @@ class NumericStaircaseTests(unittest.TestCase):
             ]), 0)
         return json.loads(output.getvalue())['numeric_staircase']
 
-    def test_enrollment_reuses_latest_bundle_optimizer_teacher_and_catalog(self):
+    def test_staircase_entry_preserves_optimizer_teacher_and_admits_bounded_catalog(self):
+        before = self.before_numeric
+        prior_step = self.optimizer.state['step'].item()
         course, record = self.start()
-        self.assertEqual(course.version, RELEASE)
+        release = storage._read_executable_factory_release_artifact(
+            self.root, record)
+        program = schedule_program_from_executable_release(release)
         self.assertEqual(record['numeric_maximum'], 3)
-        self.assertEqual(record['model_bundle'], self.old['model_bundle'])
-        self.assertEqual(record['school']['current_student'], self.old['school']['current_student'])
-        self.assertEqual(record['teacher'], self.old['teacher'])
-        self.assertEqual(record['school']['champions'], self.old['school']['champions'])
+        self.assertEqual(record['numeric_scope_final_maximum'], 6)
+        self.assertEqual(release.profile.profile_id,
+                         'school/boolean-kernel/and-iff/numeric-0-3')
+        self.assertNotEqual(record['model_bundle'], before['model_bundle'])
+        self.assertEqual(
+            record['school']['current_student']['optimizer_step'],
+            before['school']['current_student']['optimizer_step'])
+        self.assertEqual(record['teacher'], before['teacher'])
+        self.assertEqual(record['school']['champions'], before['school']['champions'])
         self.assertEqual(record['school']['queue'], ['C.COUNT'])
-        self.assertIsNone(record['last_exam'])
-        self.assertNotIn('qualification_cohort', record)
-        self.assertEqual(record['curriculum_parent'], self.old['school']['current_student'])
-        self.assertEqual(self.optimizer.state['step'].item(), 1)
+        self.assertEqual(
+            [cap.id for cap in program.grades[-1].capabilities],
+            ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB'])
+        self.assertEqual(record['last_exam']['exam_plane'],
+                         'FIXED_FRONTIER_REBASELINE')
+        self.assertNotIn('qualification_cohort_v2', record)
+        self.assertEqual(self.optimizer.state['step'].item(), prior_step)
         with redirect_stdout(io.StringIO()):
-            _, own, graph, again = storage._resume(self.root, self.fixture.manifest,
-                course, self.fixture.policy_sha, admitted_courses={RELEASE: course})
+            _, own, graph, again = storage._resume(
+                self.root, self.fixture.manifest, course,
+                self.fixture.policy_sha,
+                grade_a_course=self.fixture.grade_a,
+                source_root=fixtures.SOURCE)
         self.assertEqual(again, record)
-        self.assertEqual(own.state['step'].item(), 1)
+        self.assertEqual(own.state['step'].item(), prior_step)
         self.assertEqual(graph, self.graph)
 
+    def test_rebaselined_predecessor_v2_pointer_is_bound_and_tamper_rejected(self):
+        # The pre-growth Boolean exam is a normal same-current v2 cohort.
+        self.assertIsNotNone(storage._verify_saved_cohort(
+            self.root, self.before_numeric, self.boolean_course))
+
+        course, record = self.start()
+        exam = record['last_exam']
+        predecessor = self.boolean_release
+        expected_capabilities = tuple(
+            item.capability_id for item in predecessor.execution_plan.capabilities)
+        self.assertEqual(exam['schema'], 'bilqis.mlx.generated-cohort/v2')
+        self.assertEqual(
+            exam['factory_release_sha256'], predecessor.release_sha256)
+        self.assertEqual(tuple(exam['capabilities']), expected_capabilities)
+        self.assertEqual(
+            exam['rubric_sha256'],
+            self.before_numeric['last_exam']['rubric_sha256'])
+        self.assertEqual(
+            exam['source_sha256'],
+            self.before_numeric['last_exam']['source_sha256'])
+        self.assertEqual(
+            exam['student_sha256'], record['school']['current_student']['sha256'])
+        self.assertEqual(
+            exam['optimizer_step'],
+            record['school']['current_student']['optimizer_step'])
+        self.assertIsNotNone(storage._verify_saved_cohort(
+            self.root, record, course))
+
+        arbitrary_release = deepcopy(record)
+        arbitrary_release['last_exam']['factory_release_sha256'] = 'a' * 64
+        with self.assertRaisesRegex(
+                ValueError,
+                'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_UNAUTHORIZED'):
+            storage._verify_saved_cohort(self.root, arbitrary_release, course)
+
+        for field, value in (
+                ('rubric_sha256', 'b' * 64),
+                ('source_sha256', 'c' * 64),
+                ('capabilities', list(expected_capabilities[:-1]))):
+            tampered = deepcopy(record)
+            tampered['last_exam'][field] = value
+            with self.assertRaisesRegex(
+                    ValueError, 'FACTORY_EXECUTABLE_COHORT_SCOPE_DRIFT'):
+                storage._verify_saved_cohort(self.root, tampered, course)
+
+        wrong_student = deepcopy(record)
+        wrong_student['last_exam']['student_sha256'] = 'd' * 64
+        with self.assertRaisesRegex(
+                ValueError,
+                'FACTORY_EXECUTABLE_SAVED_COHORT_PREDECESSOR_STUDENT_DRIFT'):
+            storage._verify_saved_cohort(self.root, wrong_student, course)
+
+        wrong_provenance = deepcopy(record)
+        wrong_provenance['factory_admission_v2']['semantic_graph_sha256'] = 'e' * 64
+        with self.assertRaisesRegex(
+                ValueError,
+                'FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT'):
+            storage._verify_saved_cohort(self.root, wrong_provenance, course)
+
+        wrong_manifest = deepcopy(record)
+        wrong_manifest['source_manifest_sha256'] = 'f' * 64
+        with self.assertRaisesRegex(
+                ValueError, 'FACTORY_EXECUTABLE_COHORT_METADATA_DRIFT'):
+            storage._verify_saved_cohort(self.root, wrong_manifest, course)
+
     def test_question_inventory_change_globally_resets_live_champions_and_soups(self):
-        seeded = deepcopy(self.old)
+        course, record = self.start()
+        seeded = deepcopy(record)
         epoch = seeded["mentor_epoch"]
         pointer = seeded["school"]["current_student"]
         epoch["active_roles"] = {
@@ -135,20 +379,25 @@ class NumericStaircaseTests(unittest.TestCase):
         match_key = "C.COUNT|" + "a" * 64 + "|" + "b" * 64
         epoch["settled_matchups"] = {
             match_key: {"decision": "TITLE_DEFENDED", "winner_sha256": "a" * 64}}
-        self.old = seeded
+        program = schedule_program_from_executable_release(
+            storage._read_executable_factory_release_artifact(self.root, seeded))
+        school = storage._state_from_json(seeded['school'], program)
+        seeded = storage._advance(
+            self.root, {**seeded, 'mentor_epoch': epoch}, school)
         prior_identity = epoch["championship_school_identity"]["sha256"]
         prior_step = self.optimizer.state["step"].item()
 
-        course, record = self.start()
-        successor = record["mentor_epoch"]
-        self.assertNotEqual(record["championship_school_identity"]["sha256"], prior_identity)
+        course, changed, _, _ = self._advance_scope(course, seeded)
+        successor = changed["mentor_epoch"]
+        self.assertNotEqual(changed["championship_school_identity"]["sha256"], prior_identity)
         self.assertEqual(successor["active_roles"], {})
         self.assertEqual(successor["active_grade_soups"], {})
         self.assertEqual(successor["settled_matchups"], epoch["settled_matchups"])
         self.assertEqual(successor["administrative_empty_reset"]["old_active_role_count"], 1)
         self.assertEqual(successor["administrative_empty_reset"]["old_active_soup_grades"], ["C"])
         self.assertEqual(successor["administrative_empty_reset"]["training_or_optimizer_updates"], 0)
-        self.assertEqual(record["school"]["current_student"], seeded["school"]["current_student"])
+        self.assertEqual(changed["school"]["current_student"],
+                         seeded["school"]["current_student"])
         self.assertEqual(self.optimizer.state["step"].item(), prior_step)
 
     def test_opt_in_preview_and_repeated_preview_do_not_enroll_or_train(self):
@@ -172,85 +421,99 @@ class NumericStaircaseTests(unittest.TestCase):
     def test_id_parent_preview_and_answer_head_custody_survive_c_and_staircase(self):
         with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
             root = Path(temp)
-            identified, successor, id_answer_heads, mx, params, opt, receipt = (
+            (identified, compatibility, release, id_answer_heads,
+             mx, params, opt, receipt) = (
                 self._id_parent_fixture(root))
-            receipt = storage._persist(root, receipt)
-            grown, own, graph, c_record = activate_numeric_grade(
-                mx, root, receipt, identified, successor,
-                params, opt, self.fixture.parent_graph, reserve_gib=0.)
+            preview = self._numeric_staircase_preview(root)
+            self.assertEqual(preview['resume_maximum'], 3)
+            self.assertEqual(preview['profile_id'], release.profile.profile_id)
+            transition = numeric_entry_transition(
+                release, self.fixture.parent_graph,
+                full_boolean=True, maximum=3)
+            with patch.object(
+                    storage, '_predictions',
+                    side_effect=lambda _m, _p, rows, *args:
+                    {row['id']: row['gold'] for row in rows}):
+                grown, own, graph, c_record, staircase = (
+                    storage._adopt_catalog_profile(
+                        mx, root, receipt, self.fixture.grade_a,
+                        fixtures.SOURCE, self.fixture.parent_graph,
+                        params, opt, transition, reserve_gib=0.))
 
             operator_head = id_answer_heads(graph)['boolean_operator']
-            self.assertEqual(c_record['config']['answer_heads']['boolean_operator'],
-                             operator_head)
+            admitted_operator_head = c_record['config']['answer_heads'][
+                'boolean_operator']
+            self.assertEqual(admitted_operator_head['values'],
+                             operator_head['values'])
+            self.assertEqual(admitted_operator_head['token_ids'],
+                             operator_head['token_ids'])
+            self.assertEqual(admitted_operator_head['modality_id'],
+                             'answer.boolean-operator/v1')
+            self.assertEqual(len(admitted_operator_head['implementation_sha256']),
+                             64)
             self.assertEqual(int(own.state['step'].item()), int(opt.state['step'].item()))
-            preview = self._numeric_staircase_preview(root)
-            self.assertEqual(preview['parent_course_sha256'], identified.digest())
-            self.assertEqual(preview['grade_b_capabilities'], [
+            admitted = storage._read_executable_factory_release_artifact(
+                root, c_record)
+            program = schedule_program_from_executable_release(admitted)
+            self.assertEqual(
+                [cap.id for cap in program.grades[1].capabilities], [
                 'B.NOT', 'B.AND', 'B.OR', 'B.XOR', 'B.IMPLIES', 'B.IFF',
                 'B.COMPOSITE', 'B.IDBOOLOPS',
             ])
-
-            staircase, staircase_record = enroll(
-                root, c_record, successor, identified, graph)
             self.assertEqual(
-                staircase_record['config']['answer_heads']['boolean_operator'],
-                operator_head)
+                c_record['config']['answer_heads']['boolean_operator'],
+                admitted_operator_head)
+            self.assertEqual(c_record['numeric_maximum'], 3)
+            self.assertEqual(staircase.grades[1], identified.grades[1])
             self.assertEqual(
-                [cap.id for cap in staircase.grades[1].capabilities],
-                preview['grade_b_capabilities'])
+                [cap.id for cap in program.grades[-1].capabilities],
+                ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB'])
 
-    def test_missing_or_old_checkpoint_scores_cannot_advance_scope(self):
+    def test_numeric_profile_sequence_cannot_skip_or_exceed_final_maximum(self):
         course, record = self.start()
-        self.assertFalse(scope_advance_due(record, course))
-        record['school'].update(introduction_stage=5, stage='MAIN', queue=['C.MUL'])
-        exam = {'student_sha256': record['school']['current_student']['sha256'],
-                'optimizer_step': record['school']['current_student']['optimizer_step'],
-                'scores': {c: {'correct': n, 'total': n} for c,n in
-                    course.grades[-1].exam_item_counts if c != 'C.SUB'}}
-        record['last_exam'] = exam
-        self.assertFalse(scope_advance_due(record, course))
-        exam['scores']['C.SUB'] = {'correct': 12, 'total': 12}
-        self.assertTrue(scope_advance_due(record, course))
-        exam['optimizer_step'] -= 1
-        self.assertFalse(scope_advance_due(record, course))
+        observed = [record['numeric_maximum']]
+        release = storage._read_executable_factory_release_artifact(
+            self.root, record)
+        while record['numeric_maximum'] < record['numeric_scope_final_maximum']:
+            course, record, release, _ = self._advance_scope(course, record)
+            observed.append(record['numeric_maximum'])
+        self.assertEqual(observed, [3, 4, 5, 6])
+        self.assertIsNone(next_numeric_scope_profile(
+            release, final_maximum=record['numeric_scope_final_maximum']))
 
     def test_scopes_advance_individually_then_allow_multiply_and_divide(self):
         course, record = self.start()
+        entry_bundle = record['model_bundle']
+        prior_step = self.optimizer.state['step'].item()
         for maximum in (4, 5, 6):
-            school = storage._state_from_json(record['school'], course)
-            school = replace(school, introduction_stage=5, stage='MAIN', queue=('C.MUL',))
-            record = storage._persist(self.root, {**record, 'generation': record['generation']+1, 'school': asdict(school),
-                'last_exam': {'student_sha256': school.current_student.sha256,
-                    'optimizer_step': school.current_student.optimizer_step,
-                    'scores': {cap: {'correct': n, 'total': n} for cap,n in
-                        course.grades[-1].exam_item_counts if cap in
-                        ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB')}}})
-            self.assertTrue(scope_advance_due(record, course))
-            with redirect_stdout(io.StringIO()):
-                course, changed = advance_scope(self.root, record, course,
-                    self.fixture.previous, self.graph)
+            prior_epoch = record['school']['grade_exam_epoch']
+            course, changed, release, program = self._advance_scope(
+                course, record)
             self.assertEqual(changed['numeric_maximum'], maximum)
-            self.assertEqual(changed['school']['introduction_stage'], 4)
-            self.assertEqual(changed['school']['queue'],
-                ['C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB'])
+            self.assertEqual(changed['school']['introduction_stage'], 0)
+            self.assertEqual(changed['school']['queue'], ['C.COUNT'])
             self.assertEqual(changed['model_bundle'], record['model_bundle'])
             self.assertEqual(changed['teacher'], record['teacher'])
             self.assertGreater(changed['school']['grade_exam_epoch'],
-                               record['school']['grade_exam_epoch'])
-            self.assertNotEqual(course.digest(), record['school']['course_digest'])
+                               prior_epoch)
+            capabilities = [cap.id for cap in program.grades[-1].capabilities]
+            self.assertEqual(
+                capabilities,
+                ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB'] +
+                (['C.MUL', 'C.DIV'] if maximum == 6 else []))
+            self.assertEqual(release.profile.profile_id.rsplit('-', 1)[-1],
+                             str(maximum))
             record = changed
-        school = storage._state_from_json(record['school'], course)
-        record = {**record, 'school': asdict(replace(school, introduction_stage=5,
-                    stage='MAIN', queue=('C.MUL',)))}
-        self.assertFalse(scope_advance_due(record, course))
+        self.assertEqual(record['model_bundle'], entry_bundle)
+        self.assertEqual(self.optimizer.state['step'].item(), prior_step)
 
     def test_wide_old_mistakes_are_deferred_without_being_discarded(self):
         course, record = self.start()
         rows = draw(self.graph, seed=17, maximum=10, capability='C.COUNT')
         wide = next(r for r in rows if r['answer_kind']=='numeric_active' and r['gold']=='10')
         small = next(r for r in rows if r['answer_kind']=='numeric_active' and r['gold']=='2')
-        self.assertFalse(row_in_scope(wide, 3))
-        self.assertTrue(row_in_scope(small, 3))
+        self.assertFalse(numeric_row_in_scope(wide, 3))
+        self.assertTrue(numeric_row_in_scope(small, 3))
         record = {**record, 'teacher_misses': [wide], 'teacher_miss_exposures': {wide['id']: 2}}
         with redirect_stdout(io.StringIO()):
             changed = storage._take_visit(self.mx, self.root, record,
@@ -264,52 +527,68 @@ class NumericStaircaseTests(unittest.TestCase):
         course, record = self.start()
         observed = []
         cohorts = []
-        with redirect_stdout(io.StringIO()):
-            while record['school']['active_grades'][record['school']['grade_index']] == 'C':
-                maximum = record['numeric_maximum']
-                while record['school']['queue']:
-                    cap = record['school']['queue'][0]
-                    self.assertTrue(cap not in ('C.MUL','C.DIV') or maximum == 6)
-                    observed.append((maximum, cap))
-                    record = storage._take_visit(self.mx, self.root, record,
-                        self.fixture.manifest, course, self.fixture.engine, self.params,
-                        self.optimizer, self.graph, steps_per_visit=1, batch_size=6,
-                        reserve_gib=0., source_root=fixtures.SOURCE)
-                # Source-gold predictions test transitions, not learned mastery.
-                with patch.object(storage, '_predictions', side_effect=lambda _m,_p,rows,*a:
-                                  {r['id']:r['gold'] for r in rows}):
-                    record = storage._take_exam(self.mx,self.root,record,
-                        self.fixture.manifest,course,fixtures.SOURCE,fixtures.PARENT,
-                        self.params,self.optimizer,self.graph,reserve_gib=0.)
-                cohort = record['last_exam']['routine_cohort_sha256']
-                self.assertNotIn(cohort, cohorts)
-                cohorts.append(cohort)
-                if scope_advance_due(record, course):
-                    course, record = advance_scope(self.root,record,course,
-                        self.fixture.previous,self.graph)
-            self.assertEqual(record['school']['revalidation_target_grade'], 'C')
-            self.assertEqual(len(set(cohorts)), len(cohorts))
-            self.assertEqual(observed, [(n,c) for n in (3,4,5,6) for c in
-                ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB')] +
-                [(6,'C.MUL'),(6,'C.DIV')])
-            self.assertTrue((self.root/record['curriculum_parent']['filename']).is_dir())
+        entry_bundle = record['model_bundle']
+        while True:
+            release = storage._read_executable_factory_release_artifact(
+                self.root, record)
+            program = schedule_program_from_executable_release(release)
+            maximum = record['numeric_maximum']
+            capabilities = tuple(
+                cap.id for cap in program.grades[-1].capabilities)
+            observed.extend((maximum, capability) for capability in capabilities)
+            school = storage._state_from_json(record['school'], program)
+            for epoch in (school.grade_exam_epoch, school.grade_exam_epoch + 1):
+                cohort, _ = storage._routine_executable_cohort(
+                    self.root, record, self.fixture.manifest, release,
+                    live_source_registry(), fixtures.SOURCE, self.graph,
+                    capabilities=capabilities, assessment_epoch=epoch,
+                    legacy_course=course)
+                self.assertNotIn(cohort.digest, cohorts)
+                cohorts.append(cohort.digest)
+            if maximum == record['numeric_scope_final_maximum']:
+                break
+            course, record, _, _ = self._advance_scope(course, record)
+        self.assertEqual(len(set(cohorts)), len(cohorts))
+        self.assertEqual(observed, [(n,c) for n in (3,4,5) for c in
+            ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB')] +
+            [(6,c) for c in
+             ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB','C.MUL','C.DIV')])
+        self.assertEqual(record['model_bundle'], entry_bundle)
 
     def test_interrupted_enrollment_recovers_without_changing_student(self):
         original = storage._durable_json
         def interrupt(path, value, **kwargs):
-            if path == self.root/'state.json' and value.get('curriculum_mode') == RELEASE:
+            if (path == self.root/'state.json' and
+                    value.get('numeric_maximum') == 3 and
+                    value.get('factory_admission_v2') is not None):
                 raise RuntimeError('enrollment pointer interrupted')
             return original(path,value,**kwargs)
         with patch.object(storage,'_durable_json',side_effect=interrupt), redirect_stdout(io.StringIO()):
             with self.assertRaisesRegex(RuntimeError,'pointer interrupted'):
                 self.start()
-        course = build_course(self.fixture.previous,self.graph)
+        transition = numeric_entry_transition(
+            self.boolean_release, self.graph,
+            full_boolean=False, maximum=3)
+        course = legacy_course_for_profile(
+            self.fixture.grade_a, fixtures.SOURCE, transition.profile)
+        pending = json.loads((self.root/'states'/
+            f"{self.before_numeric['generation'] + 1:07d}.json").read_text())
+        self.assertEqual(pending['numeric_maximum'], 3)
+        self.assertEqual(
+            pending['school']['current_student']['optimizer_step'],
+            self.before_numeric['school']['current_student']['optimizer_step'])
         with storage.operator_lock(self.root), redirect_stdout(io.StringIO()):
             restored = storage._resume(self.root,self.fixture.manifest,
-                self.fixture.course,self.fixture.policy_sha,
-                admitted_courses={OLD_RELEASE:self.fixture.course,RELEASE:course})[3]
+                course,self.fixture.policy_sha,
+                grade_a_course=self.fixture.grade_a,
+                source_root=fixtures.SOURCE)[3]
             again = storage._resume(self.root,self.fixture.manifest,course,
-                self.fixture.policy_sha,admitted_courses={RELEASE:course})[3]
+                self.fixture.policy_sha,
+                grade_a_course=self.fixture.grade_a,
+                source_root=fixtures.SOURCE)[3]
         self.assertEqual(restored,again)
-        self.assertEqual(restored['model_bundle'], self.old['model_bundle'])
-        self.assertEqual(restored['teacher'], self.old['teacher'])
+        self.assertEqual(restored['model_bundle'], pending['model_bundle'])
+        self.assertEqual(restored['teacher'], self.before_numeric['teacher'])
+        self.assertEqual(
+            restored['school']['current_student']['optimizer_step'],
+            self.before_numeric['school']['current_student']['optimizer_step'])

@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.source_adapters.school import live_source_registry
+from bilqis_mlx.compatibility.source_adapters import historical_source_registry
 from bilqis_mlx.factory.generation import draw_release_rows
 from bilqis_mlx.factory.live_releases import (
     BOOLEAN_COMPOSITE_RELEASE, BOOLEAN_IDENTIFICATION_RELEASE, BOOLEAN_RELEASE,
@@ -38,11 +39,12 @@ class LiveFactoryReleaseTests(unittest.TestCase):
         cls.c = grade_c_course(cls.b, cls.graph, maximum=10)
         _, _, cls.a_graph, _, _ = read_sources(SOURCE)
         cls.registry = live_source_registry()
+        cls.historical_registry = historical_source_registry()
 
     def test_a_b_c_each_compile_through_same_factory_release_api(self):
         for course in (self.a, self.b, self.c):
             with self.subTest(course=course.version):
-                release = compile_factory_release(course, self.registry)
+                release = compile_factory_release(course, self.historical_registry)
                 release.verify()
                 self.assertEqual(release.course, course)
 
@@ -70,7 +72,7 @@ class LiveFactoryReleaseTests(unittest.TestCase):
                          {"bilqis.mlx.grade-b-runtime-sampler/v2"})
 
     def test_generic_generation_matches_existing_numeric_source_contract(self):
-        release = compile_factory_release(self.c, self.registry)
+        release = compile_factory_release(self.c, self.historical_registry)
         expected = list(draw_numbers(self.graph, seed=47, maximum=10,
                                      capability="C.ADD", each=12))
         actual = draw_release_rows(SOURCE, self.graph, release, self.registry,
@@ -83,8 +85,8 @@ class LiveFactoryReleaseTests(unittest.TestCase):
         self.assertEqual(self.full_b.digest(),
                          "fde5e7e3be6d3903fc46dedcc7c1d23907c713d64ce75b3fefd4d8c9a36aa5e2")
         old_release = compile_factory_release(self.full_b, self.registry)
-        self.assertEqual(old_release.release_sha256,
-                         "fa02b5de588a47692da54ab542f33df56fd9a5e9e00c0c64a2f447ba8730f8d4")
+        old_release.verify()
+        self.assertEqual(old_release.course, self.full_b)
         plan = next_successor_plan(self.full_b, SOURCE)
         self.assertEqual(plan.transition, SAME_GRADE_TRANSITION)
         composite = plan.successor
@@ -111,9 +113,10 @@ class LiveFactoryReleaseTests(unittest.TestCase):
         self.assertEqual(
             minimal.successor.grades[-1].teaching_stages,
             (("B.AND", "B.IFF"), ("B.COMPOSITE",), ("B.IDBOOLOPS",)))
-        release = compile_factory_release(minimal.successor, self.registry)
+        release = compile_factory_release(
+            minimal.successor, self.historical_registry)
         rows = draw_release_rows(
-            SOURCE, self.a_graph, release, self.registry,
+            SOURCE, self.a_graph, release, self.historical_registry,
             seed=53, capability="B.IDBOOLOPS", each=12)
         self.assertEqual({row["gold"] for row in rows}, {"AND", "IFF"})
         self.assertEqual(

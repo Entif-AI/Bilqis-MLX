@@ -21,6 +21,14 @@ class OperatorRecoveryTests(TestCase):
         self.assertEqual(advice.disposition, "PRESERVE_AND_REPAIR")
         self.assertIn("durable checkpoint", advice.next_action)
 
+    def test_school_state_drift_has_specific_operator_diagnostics(self):
+        advice = recovery_advice(ValueError(
+            "INVALID_OR_DRIFTED_SCHOOL_STATE: course_digest saved=abc expected=def"))
+        self.assertEqual(advice.disposition, "PRESERVE_AND_DIAGNOSE")
+        self.assertIn("--dry-run --resume --verify-source", advice.next_action)
+        self.assertIn("Do not hand-edit state.json", advice.next_action)
+        self.assertIn("OPERATOR_FIELD_MANUAL", advice.next_action)
+
     def test_exhaustion_and_missing_artifact_have_distinct_recovery_postures(self):
         self.assertEqual(
             recovery_advice("HUMAN_TRAINER_FRESH_GENERALIZATION_COHORT_EXHAUSTED").disposition,

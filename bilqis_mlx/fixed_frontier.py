@@ -4,7 +4,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .generated_assessment import make_cohort, score
+from .generated_assessment import (
+    EXECUTABLE_COHORT_SCHEMA, score, verify_stored_cohort,
+)
+
+_COHORT_METADATA_DRIFT = "FIXED_FRONTIER_COHORT_METADATA_DRIFT"
 
 
 def _valid_sha(value) -> bool:
@@ -27,12 +31,17 @@ def load_frontier_cohort(run_dir: Path, exam: dict):
     if (stored.get("cohort_sha256") != sha or
             not stored.get("generator_version") or not stored.get("schema") or
             type(stored.get("seed")) is not int):
-        raise ValueError("FIXED_FRONTIER_COHORT_METADATA_DRIFT")
-    cohort = make_cohort(
-        stored["rows"], generator_version=stored["generator_version"],
-        seed=stored["seed"], rubric_version=stored["schema"])
-    if cohort.digest != sha:
-        raise ValueError("FIXED_FRONTIER_COHORT_CONTENT_DRIFT")
+        raise ValueError(_COHORT_METADATA_DRIFT)
+    try:
+        cohort = verify_stored_cohort(
+            stored, sha,
+            expected_rubric_sha256=exam.get("rubric_sha256"),
+            expected_factory_release_sha256=exam.get(
+                "factory_release_sha256"))
+    except ValueError as exc:
+        if str(exc) == "STORED_COHORT_CONTENT_DRIFT":
+            raise ValueError("FIXED_FRONTIER_COHORT_CONTENT_DRIFT") from exc
+        raise ValueError(_COHORT_METADATA_DRIFT) from exc
     return cohort
 
 
@@ -47,7 +56,7 @@ def rebaseline_frontier_exam(run_dir: Path, source_exam: dict, *, checkpoint: di
     source_scores = source_exam.get("scores")
     if isinstance(source_scores, dict) and measured["scores"] != source_scores:
         raise ValueError("FIXED_FRONTIER_REBASELINE_SCORE_DRIFT")
-    return {
+    pointer = {
         "assessment_grade": assessment_grade or source_exam.get("assessment_grade"),
         "grade_exam_epoch": (grade_exam_epoch if grade_exam_epoch is not None
                              else source_exam.get("grade_exam_epoch")),
@@ -69,6 +78,18 @@ def rebaseline_frontier_exam(run_dir: Path, source_exam: dict, *, checkpoint: di
         "rebaselined_from_student_sha256": source_exam.get("student_sha256"),
         "rebaseline_reason": "APPEND_ONLY_SEMANTIC_GRAPH_GROWTH",
     }
+    if source_exam.get("schema") == EXECUTABLE_COHORT_SCHEMA:
+        required = (
+            "factory_release_sha256", "capabilities", "rubric_sha256",
+            "source_sha256",
+        )
+        if any(source_exam.get(key) is None for key in required):
+            raise ValueError("FIXED_FRONTIER_V2_POINTER_INCOMPLETE")
+        pointer.update({
+            "schema": EXECUTABLE_COHORT_SCHEMA,
+            **{key: source_exam[key] for key in required},
+        })
+    return pointer
 
 
 def load_frontier(run_dir: Path, receipt: dict, *, parent_sha256: str,

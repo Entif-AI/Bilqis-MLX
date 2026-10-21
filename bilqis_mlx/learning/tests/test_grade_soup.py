@@ -3,6 +3,9 @@ import unittest
 import numpy as np
 from pathlib import Path
 import tempfile
+from bilqis_mlx.factory.schedule import (
+    ScheduleCapability, ScheduleGrade, ScheduleProgram,
+)
 
 from bilqis_mlx.learning.grade_soup import (
     grade_soup_recipe, needs_refresh, soup_vote_count, weighted_average,
@@ -45,8 +48,14 @@ class GradeSoupTests(unittest.TestCase):
         old=perfect("A.OLD","1")
         new=perfect("A.NEW","2")
         roles={"old":old,"new":new}
-        course=SimpleNamespace(grades=[SimpleNamespace(id="A",capabilities=[
-            SimpleNamespace(id="A.OLD"),SimpleNamespace(id="A.NEW")])])
+        course=ScheduleProgram(
+            program_digest="a"*64,
+            grades=(ScheduleGrade(
+                "A",
+                (ScheduleCapability("A.OLD", 12),
+                 ScheduleCapability("A.NEW", 12)),
+                (), "b"*64),),
+            program_complete=False)
         weights_by_sha={
             old["checkpoint"]["sha256"]:(
                 {"embedding.weight":mx.ones((2,3)), "norm.weight":mx.ones((3,))},
