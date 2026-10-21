@@ -134,18 +134,25 @@ def draw_b(*, source_root, graph, course, capability, seed, each):
     return _sample_boolean_runtime(rows, capability=capability, seed=seed, each=each)
 
 
-def draw_b_composite_release(*, source_root, graph, course, capability, seed, each,
-                             profile_parameters=None):
+def _boolean_profile_operators(
+        profile_parameters, *, capability, scoped_capabilities) -> tuple[str, ...]:
     parameters = profile_parameters or {}
     if set(parameters) - {"operators"}:
         raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN")
-    operators = tuple(parameters.get("operators", BOOLEAN_OPERATORS))
+    if parameters and capability not in scoped_capabilities:
+        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT")
+    return tuple(parameters.get("operators", BOOLEAN_OPERATORS))
+
+
+def draw_b_composite_release(*, source_root, graph, course, capability, seed, each,
+                             profile_parameters=None):
+    operators = _boolean_profile_operators(
+        profile_parameters, capability=capability,
+        scoped_capabilities={B_COMPOSITE_CAPABILITY})
     if capability == B_COMPOSITE_CAPABILITY:
         return draw_composite(source_root, graph, seed=seed,
                               capability=capability, each=each,
                               operators=operators)
-    if parameters:
-        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT")
     return draw_b(source_root=source_root, graph=graph, course=course,
                   capability=capability, seed=seed, each=each)
 
@@ -158,10 +165,9 @@ def check_b_composite_release(row, **kwargs):
 
 def draw_b_idboolops_release(*, source_root, graph, course, capability, seed, each,
                              profile_parameters=None):
-    parameters = profile_parameters or {}
-    if set(parameters) - {"operators"}:
-        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN")
-    operators = tuple(parameters.get("operators", BOOLEAN_OPERATORS))
+    operators = _boolean_profile_operators(
+        profile_parameters, capability=capability,
+        scoped_capabilities={B_COMPOSITE_CAPABILITY, B_IDBOOLOPS_CAPABILITY})
     if capability == B_IDBOOLOPS_CAPABILITY:
         return draw_identification(source_root, graph, seed=seed,
                                    capability=capability, each=each,
@@ -170,8 +176,6 @@ def draw_b_idboolops_release(*, source_root, graph, course, capability, seed, ea
         return draw_composite(source_root, graph, seed=seed,
                               capability=capability, each=each,
                               operators=operators)
-    if parameters:
-        raise ValueError("FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT")
     return draw_b(source_root=source_root, graph=graph, course=course,
                   capability=capability, seed=seed, each=each)
 

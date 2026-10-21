@@ -12,6 +12,8 @@ from typing import Callable
 from .autonomy import SupplementalEvidenceSpec
 from .model import SourceAdapter
 
+_DEPENDENCY_SCOPE_DRIFT = "FACTORY_EVIDENCE_DEPENDENCY_SCOPE_DRIFT"
+
 
 Draw = Callable[..., tuple[dict, ...]]
 Enrich = Callable[..., tuple[dict, ...]]
@@ -159,7 +161,7 @@ class SourceAdapterRegistry:
                 for item in supplied:
                     if (not isinstance(item, SupplementalEvidenceSpec) or
                             item.capability_id != execution.capability_id):
-                        raise ValueError("FACTORY_EVIDENCE_DEPENDENCY_SCOPE_DRIFT")
+                        raise ValueError(_DEPENDENCY_SCOPE_DRIFT)
                     if set(item.requires_capabilities) <= active:
                         result.append(item)
             return tuple(result)
@@ -176,8 +178,7 @@ class SourceAdapterRegistry:
                     raise ValueError(
                         "FACTORY_EVIDENCE_DEPENDENCY_RESULT_INVALID")
                 if any(item.capability_id != cap.id for item in supplied):
-                    raise ValueError(
-                        "FACTORY_EVIDENCE_DEPENDENCY_SCOPE_DRIFT")
+                    raise ValueError(_DEPENDENCY_SCOPE_DRIFT)
                 result.extend(supplied)
         identities = [
             (item.capability_id, item.kind, item.key) for item in result]

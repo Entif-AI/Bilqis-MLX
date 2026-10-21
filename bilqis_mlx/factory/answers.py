@@ -14,6 +14,7 @@ from .execution import ExecutionPlan
 
 Canonicalize = Callable[[tuple[str, ...]], tuple[str, ...]]
 ResolveIdentity = Callable[[str], str]
+_VALUE_DOMAIN_DRIFT = "FACTORY_ANSWER_MODALITY_VALUE_DOMAIN_DRIFT"
 
 
 @dataclass(frozen=True)
@@ -89,7 +90,7 @@ def fixed_domain(values: tuple[str, ...]) -> Canonicalize:
         active = tuple(active)
         if (not active or not set(active) <= set(canonical) or
                 active != tuple(value for value in canonical if value in active)):
-            raise ValueError("FACTORY_ANSWER_MODALITY_VALUE_DOMAIN_DRIFT")
+            raise ValueError(_VALUE_DOMAIN_DRIFT)
         return active
 
     return validate
@@ -99,7 +100,7 @@ def merge_prefix_domain(active: tuple[str, ...]) -> tuple[str, ...]:
     """Validate zero-based numeric labels used by an active bounded numeric head."""
     active = tuple(active)
     if (len(active) < 2 or active != tuple(str(i) for i in range(len(active)))):
-        raise ValueError("FACTORY_ANSWER_MODALITY_VALUE_DOMAIN_DRIFT")
+        raise ValueError(_VALUE_DOMAIN_DRIFT)
     return active
 
 

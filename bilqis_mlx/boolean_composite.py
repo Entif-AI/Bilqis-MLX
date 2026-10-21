@@ -118,10 +118,10 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
     rng = random.Random(_digest(material))
     schedule = _schedule(rng, operators)
     appearances = Counter(op for _, _, operators in schedule for op in operators)
-    if (operators == tuple(CONNECTIVES) and
-            appearances != Counter({op: 5 for op in CONNECTIVES})):
-        raise ValueError("GRADE_B_COMPOSITE_OPERATOR_COVERAGE_DRIFT")
-    if set(appearances) != set(operators):
+    default_coverage_is_exact = (
+        operators != tuple(CONNECTIVES) or
+        appearances == Counter({op: 5 for op in CONNECTIVES}))
+    if not default_coverage_is_exact or set(appearances) != set(operators):
         raise ValueError("GRADE_B_COMPOSITE_OPERATOR_COVERAGE_DRIFT")
     true_count = rng.choice((4, 5, 7, 8))
     expected = [True] * true_count + [False] * (ASSESSMENT_ITEMS - true_count)
