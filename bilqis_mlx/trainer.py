@@ -118,7 +118,7 @@ from bilqis_mlx.learning.stagnation_control import (
     activate_sole_grade_rehabilitation,
     begin_recovery_cycle, complete_recovery_cycle, end_of_run_alerts,
     grace_suppressed_capabilities, reconcile_optimizer_step_grace,
-    observe_scores, reconcile_required_scope,
+    observe_paired_progress, reconcile_required_scope,
     quarantined_capabilities, record_visit as record_stagnation_visit,
     start_session as start_stagnation_session,
 )
@@ -2079,15 +2079,22 @@ def _advance_stagnation_after_routine(
         *, program, school, routine_assessment, routine_advanced,
         stagnation, blocked_before, active_scope, routine_measured,
         routine_warnings, generation, quarantine_suppressed=(),
-        session_elapsed_seconds=None):
+        session_elapsed_seconds=None, paired_progressed=(),
+        paired_progress_usable=None, progress_checkpoint=None):
     """Apply one completed routine boundary to the current session containment."""
     events = ()
     if stagnation is None:
         return stagnation, events, routine_advanced, ()
-    if session_elapsed_seconds is not None:
-        stagnation = observe_scores(
-            stagnation, scores=routine_measured["scores"],
-            elapsed_seconds=session_elapsed_seconds)
+    if (session_elapsed_seconds is not None and
+            paired_progress_usable is not None and
+            progress_checkpoint is not None):
+        stagnation = observe_paired_progress(
+            stagnation,
+            measured_capabilities=tuple(routine_measured["scores"]),
+            improved_capabilities=tuple(paired_progressed),
+            measurement_usable=paired_progress_usable,
+            elapsed_seconds=session_elapsed_seconds,
+            progress_checkpoint=progress_checkpoint)
     if (school.stage == "ASSESS_MAIN" and
             routine_advanced.stage == "RECOVERY_1"):
         stagnation = begin_recovery_cycle(
@@ -3227,6 +3234,36 @@ def _score_parent_for_paired_s3(mx, run_dir, receipt, parent, cohort, graph,
         return None, str(exc)
 
 
+def _paired_stagnation_progress(mx, run_dir, receipt, stagnation, cohort, graph,
+                                current_checkpoint, current_scores):
+    """Compare consecutive assessment checkpoints on this same fresh cohort."""
+    pointer = (stagnation or {}).get("progress_checkpoint")
+    if pointer is None:
+        return (), False
+    try:
+        previous = Checkpoint(**pointer)
+    except (TypeError, ValueError):
+        return (), False
+    if (previous.sha256 == current_checkpoint.sha256 and
+            previous.optimizer_step == current_checkpoint.optimizer_step):
+        return (), True
+    previous_scores, issue = _score_parent_for_paired_s3(
+        mx, run_dir, receipt, previous, cohort, graph, current_scores)
+    if issue is not None or previous_scores is None:
+        return (), False
+    improved = []
+    for capability, current in current_scores.items():
+        prior = previous_scores.get(capability)
+        if (not isinstance(prior, dict) or
+                type(prior.get("correct")) is not int or
+                type(prior.get("total")) is not int or
+                prior["total"] != current.get("total")):
+            return (), False
+        if current["correct"] > prior["correct"]:
+            improved.append(capability)
+    return tuple(improved), True
+
+
 def _epoch_paired_examinations(mx, run_dir, receipt, course, school,
                                cohort, scores, predictions, graph, *,
                                challenge_grade=None):
@@ -4187,6 +4224,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         mx, parameters, routine_rows, receipt["config"], receipt["answer_ids"])
     routine_measured = score_cohort(
         routine_cohort, routine_guesses, asdict(school.current_student))
+    paired_progressed, paired_progress_usable = _paired_stagnation_progress(
+        mx, run_dir, receipt, stagnation, routine_cohort, graph,
+        school.current_student, routine_measured["scores"])
     championship_exams = ([] if scheduler_only else [
         (candidate_cohort, candidate_measured, candidate_guesses),
         (routine_cohort, routine_measured, routine_guesses)])
@@ -4252,7 +4292,10 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             routine_warnings=routine_warnings,
             generation=receipt["generation"] + 1,
             quarantine_suppressed=quarantine_suppressed,
-            session_elapsed_seconds=session_elapsed_seconds))
+            session_elapsed_seconds=session_elapsed_seconds,
+            paired_progressed=paired_progressed,
+            paired_progress_usable=paired_progress_usable,
+            progress_checkpoint=asdict(school.current_student)))
 
     qualification = None
     generalization = None
@@ -4967,7 +5010,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         receipt["stagnation_history"] = history[-16:]
         receipt["stagnation_session"] = start_stagnation_session(
             session_id=uuid.uuid4().hex, generation=receipt["generation"],
-            required_capabilities=assessment_capabilities(_schedule_for_receipt(run_dir, receipt, course), school))
+            required_capabilities=assessment_capabilities(
+                _schedule_for_receipt(run_dir, receipt, course), school),
+            progress_checkpoint=asdict(school.current_student))
         debt_grades = {capability.partition(".")[0] for capability in prior_debt}
         grace_reentry = grace_suppressed_capabilities(
             receipt.get("stagnation_grace"), required_capabilities=tuple(prior_debt),
