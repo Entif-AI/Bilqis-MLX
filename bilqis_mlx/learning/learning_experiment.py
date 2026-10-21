@@ -553,8 +553,9 @@ def commit_trial(parameters: dict, optimizer, trial_parameters: dict, trial_opti
     optimizer.learning_rate = trial_optimizer.learning_rate
 
 
-def earlier_grade_capabilities(program, graduated_grades, target: str) -> tuple[str, ...]:
-    """Only already-graduated grades preceding the target supply old lessons.
+def earlier_grade_capabilities(program, graduated_grades, target: str, *,
+                               carried_mastery_debt=()) -> tuple[str, ...]:
+    """Earlier graduated skills and explicitly carried debt supply old lessons.
 
     A champion for the active grade does not make its own rows earlier-grade
     rehearsal; future grades must not leak into the pool during recovery.
@@ -568,14 +569,13 @@ def earlier_grade_capabilities(program, graduated_grades, target: str) -> tuple[
     ), None)
     if target_index is None:
         raise ValueError("LEARNING_EXPERIMENT_UNKNOWN_TARGET_GRADE")
-    earlier = {
-        grade.id for grade in program.grades[:target_index]
-        if grade.id in set(graduated_grades)
-    }
+    graduated = set(graduated_grades)
+    debt = set(carried_mastery_debt)
     return tuple(sorted(
         capability.id
-        for grade in program.grades if grade.id in earlier
-        for capability in grade.capabilities))
+        for grade in program.grades[:target_index]
+        for capability in grade.capabilities
+        if grade.id in graduated or capability.id in debt))
 
 
 def _choose_binary_rows(source, count, policy, rng):
@@ -661,8 +661,8 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
                          *, seed: int, batch_size: int) -> tuple[list[dict], dict]:
     """Make inherited old/contrast/depth knobs effective for every answer type.
 
-    'old' means actual examples originating in already-graduated grades, not
-    embedded prerequisites or a source-unverified fixed teaching mix.
+    'old' draws from earlier graduated skills or explicitly carried debt.
+    The teacher selects the amount; source rows supply the examples.
     'depth' uses token-count emphasis only when that proxy is named as such.
     Future-grade preview is intentionally inapplicable: never teach new roots.
     """

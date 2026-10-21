@@ -1,0 +1,211 @@
+{
+  "schema": "bilqis.issue349.refactored-event-continuation/v1",
+  "recorded_at": "2026-10-21T23:13:53.753589+00:00",
+  "branch": "codex/349-autonomous-jit-ithkuil-20261020",
+  "base_sha": "01952202103b025c545035076d273e290cce0b95",
+  "source_sha256": {
+    "bilqis_mlx/learning/student_ops.py": "e3e20cf4e1dee95e49725f2cc6ebb83df33ec147ad4e2dc39878f1cc17ff7460",
+    "bilqis_mlx/learning/learning_experiment.py": "0eafe5b8ffb80be42e5984db453314bd5ea4342d2c57362395903f1fda8840bf",
+    "bilqis_mlx/runtime/visits.py": "0e2223d1ff9dea86daa82303e0dc911cc720e20c15d9d5e6f1a8aa2aa998018b",
+    "bilqis_mlx/source_adapters/event_frames.py": "cb20604fb9eeb37e2b4411073197159cc594c2b8784aed719610994714a8a08e"
+  },
+  "prototype_scope": "Finite Boolean before/after event frames; not full root realization or morphology.",
+  "initial_checkpoint": {
+    "optimizer_step": 118080,
+    "sha256": "12d5c26063047e3afed80756a2586aace49a55159d21b0de45068645e7ca6c44",
+    "bundle": "bundles/catalog-admission-05289175e0d7"
+  },
+  "final_checkpoint": {
+    "filename": "bundles/best-89-c4d13a3fafaa",
+    "model_and_native_adamw": true,
+    "optimizer_step": 118560,
+    "sha256": "cfcc6bb2dc300c7f6a46848640b7e8d5adac441670f4d3758abbd98099056cff"
+  },
+  "final_generation": 163,
+  "factory_release_sha256": "86656bbc4307d1b586c78b236bae6870d6d6e92e886f2ef155f8e4f915fe6d6b",
+  "phases": [
+    {
+      "log": "2026-10-21T23-02-36-142Z-63239.log",
+      "visits": 3,
+      "attempted_updates": 384,
+      "retained_updates": 256,
+      "retention_reasons": {
+        "WHOLE_SCHOOL_NET_REGRESSION": 1,
+        "PAIRED_SCREEN_WITHIN_BUDGET": 2
+      },
+      "capabilities": {
+        "D.EVENT_OCCURRENCE": 2,
+        "A.EDGE": 1
+      },
+      "old_examples_delivered": 0
+    },
+    {
+      "log": "2026-10-21T23-04-06-270Z-97655.log",
+      "visits": 6,
+      "attempted_updates": 768,
+      "retained_updates": 0,
+      "retention_reasons": {
+        "PROTECTED_CAPABILITY_REGRESSION": 4,
+        "NO_MEASURABLE_TARGET_GAIN": 1,
+        "FIXED_LESSON_GRADE_REGRESSION": 1
+      },
+      "capabilities": {
+        "A.MAPS": 2,
+        "A.MEMBER": 1,
+        "A.PARENT": 2,
+        "A.IDENTITY": 1
+      },
+      "old_examples_delivered": 0
+    },
+    {
+      "log": "2026-10-21T23-06-24-278Z-51111.log",
+      "visits": 12,
+      "attempted_updates": 1536,
+      "retained_updates": 128,
+      "retention_reasons": {
+        "SAME_GRADE_NET_REGRESSION": 2,
+        "FIXED_LESSON_GRADE_REGRESSION": 5,
+        "PAIRED_SCREEN_WITHIN_BUDGET": 1,
+        "NO_MEASURABLE_TARGET_GAIN": 3,
+        "PROTECTED_CAPABILITY_REGRESSION": 1
+      },
+      "capabilities": {
+        "A.LINK": 2,
+        "A.MEMBER": 3,
+        "A.EDGE": 1,
+        "A.MAPS": 3,
+        "D.EVENT_OCCURRENCE": 1,
+        "A.PARENT": 1,
+        "A.IDENTITY": 1
+      },
+      "old_examples_delivered": 2039
+    },
+    {
+      "log": "2026-10-21T23-10-44-048Z-39296.log",
+      "visits": 24,
+      "attempted_updates": 768,
+      "retained_updates": 96,
+      "retention_reasons": {
+        "NO_MEASURABLE_TARGET_GAIN": 14,
+        "SAME_GRADE_NET_REGRESSION": 1,
+        "PAIRED_SCREEN_WITHIN_BUDGET": 3,
+        "PROTECTED_CAPABILITY_REGRESSION": 4,
+        "ACTIVE_SCHOOL_GRADE_REGRESSION": 1,
+        "FIXED_LESSON_GRADE_REGRESSION": 1
+      },
+      "capabilities": {
+        "A.PARENT": 4,
+        "A.LINK": 2,
+        "A.MEMBER": 5,
+        "A.EDGE": 4,
+        "A.MAPS": 3,
+        "D.EVENT_OCCURRENCE": 4,
+        "A.IDENTITY": 2
+      },
+      "old_examples_delivered": 2135
+    }
+  ],
+  "probe_seeds": [
+    349201,
+    349202,
+    349203
+  ],
+  "baseline_scores": {
+    "D.EVENT_OCCURRENCE": {
+      "correct": 96,
+      "total": 192
+    },
+    "D.COMMENCEMENT": {
+      "correct": 92,
+      "total": 192
+    },
+    "D.TERMINATION": {
+      "correct": 106,
+      "total": 192
+    }
+  },
+  "final_scores": {
+    "D.EVENT_OCCURRENCE": {
+      "correct": 128,
+      "total": 192
+    },
+    "D.COMMENCEMENT": {
+      "correct": 115,
+      "total": 192
+    },
+    "D.TERMINATION": {
+      "correct": 80,
+      "total": 192
+    }
+  },
+  "intermediate_scores": {
+    "D.EVENT_OCCURRENCE": {
+      "correct": 125,
+      "total": 192
+    },
+    "D.COMMENCEMENT": {
+      "correct": 119,
+      "total": 192
+    },
+    "D.TERMINATION": {
+      "correct": 73,
+      "total": 192
+    }
+  },
+  "training_exposure_overlap": "NOT_MEASURED",
+  "mastery_demonstrated": false,
+  "untaught_candidates": [
+    "D.COMMENCEMENT",
+    "D.TERMINATION"
+  ],
+  "carried_mastery_debt": [
+    "A.PARENT",
+    "A.LINK",
+    "A.MEMBER",
+    "A.EDGE",
+    "A.MAPS",
+    "D.EVENT_OCCURRENCE",
+    "D.COMMENCEMENT",
+    "D.TERMINATION"
+  ],
+  "scheduler": {
+    "stage": "RECOVERY_2",
+    "queue": [
+      "A.LINK"
+    ],
+    "introduction_stage": 0,
+    "visits": 89
+  },
+  "primary_checkpoint": {
+    "filename": "bundles/working-120-d4a37442195e",
+    "model_and_native_adamw": true,
+    "optimizer_step": 116816,
+    "sha256": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f"
+  },
+  "budget": {
+    "issue_number": 349,
+    "run_count": 2,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "used_bytes": 4276518912,
+    "within_budget": true,
+    "runs": [
+      "primary",
+      "plasticity-control"
+    ]
+  },
+  "validation": {
+    "focused_tests": 47,
+    "failures": 0,
+    "quality": "PASS",
+    "semantic_boundaries": "PASS",
+    "abi": "ADVISORY_EXTERNAL_EXPECTED_DIGEST_ABSENT"
+  },
+  "incident": "PM-2026-10-20-003 / RC-116; canonical native ledger enriched and read back",
+  "remaining": [
+    "Occurrence acquisition remains incomplete; test simpler instruction construction before adding infrastructure.",
+    "Commencement and termination wait behind the existing staged prerequisite contract.",
+    "Fresh seed panel does not establish absence of training exposure or composition mastery.",
+    "Relative CLI run paths failed registered-path validation; use absolute run and experiment-root paths."
+  ]
+}

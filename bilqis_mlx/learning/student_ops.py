@@ -89,6 +89,14 @@ def _compatible_answer_config(config, graph):
         compatible = _compatibility_live_releases.numeric_answer_heads(graph, maximum, prior_heads=heads)
     elif "boolean_operator" in heads and readable("boolean_operator"):
         compatible = _compatibility_live_releases.boolean_identification_answer_heads(graph)
+    elif (heads.get("semantic_token", {}).get("values", ())[:vocabulary] == graph["tokens"] and
+          heads["semantic_token"].get("token_ids") ==
+          list(range(len(heads["semantic_token"]["values"])))):
+        compatible = {kind: head for kind, head in heads.items()
+                      if kind != "semantic_token" and readable(kind)}
+        compatible["semantic_token"] = {
+            **heads["semantic_token"], "values": list(graph["tokens"]),
+            "token_ids": list(range(vocabulary))}
     else:
         raise ValueError("HUMAN_TRAINER_UNKNOWN_TYPED_ANSWER_CONFIG")
     return {**config, "answer_heads": compatible}

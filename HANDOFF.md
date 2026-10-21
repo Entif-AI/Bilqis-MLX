@@ -1,3 +1,54 @@
+# Issue 349 resumed after main integration | 2026-10-21
+
+Active branch: `codex/349-autonomous-jit-ithkuil-20261020`, draft PR11.
+Worktree: `/Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020`.
+Pulled/refactored base: `01952202103b025c545035076d273e290cce0b95`.
+Read actual HEAD and the latest protected execution checkpoint for pushed SHA.
+IPR-0220 / governing issue 336 and execution issue 349 remain OPEN; 346 is excluded.
+The former 36 staged paths are integrated, not pending work. Older instructions
+below describing a separate fork or an unadopted D are historical snapshots.
+
+Two small runtime repairs: frozen earlier models can project verified v2 binary
+answer heads onto their exact vocabulary prefix; teacher-requested rehearsal
+includes explicitly carried earlier-grade debt even without a graduated champion.
+Own/future grades stay excluded, old=0 stays zero, and retention guards remain.
+The event probe now accepts `--probe-seed`; default panels remain reproducible.
+47 focused tests, quality, semantic boundaries and whitespace pass. ABI remains
+advisory without an independent expected digest. Existing integration full-suite
+proof below is historical; this wave did not repeat the whole suite.
+
+Actual experiment: 45 visits attempted, 480 updates retained, native step118080→118560.
+Only occurrence received direct D teaching. On a new seeded 192-row panel:
+occurrence 96→128, commencement 92→115, termination 106→80. This is finite-task
+acquisition with interference; no stage graduation or full Ithkuil mastery.
+Training-exposure overlap is NOT_MEASURED. Shorter 32-update trials retained 96
+updates in earlier skills but no further occurrence trial.128-step trials retained
+256 occurrence updates and 128 A.EDGE updates. No source gold or teacher policy
+was overridden. PM-2026-10-20-003 / RC-116 was enriched and read back natively.
+
+Control stopped at generation 163 / step 118560, SHA
+`cfcc6bb2dc300c7f6a46848640b7e8d5adac441670f4d3758abbd98099056cff`,
+bundle `bundles/best-89-c4d13a3fafaa`; its own AdamW matches. Primary remains
+step 116816 / SHA 260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f.
+Two registered issue-owned directories measure 4,276,518,912 allocated bytes
+against 100,000,000,000. No canonical/historical run was mutated. No third run,
+AdamW merge, main merge or issue closure. Other human-owned trainers are separate.
+
+Next: inspect the receipt's exact scheduler queue and current parent; resume only
+plasticity-control with ordinary retention and absolute run/root paths. The last
+trial used minutes=4/max-visits=24/steps-per-visit=32/source-prefetch-workers=0.
+Try simpler event instruction construction if occurrence remains flat; reuse the
+factory/source owner and version any changed generator through normal admission.
+Commencement/termination are admitted prototypes, still awaiting stage readiness.
+Do not add per-candidate trainers or a new qualification framework. The existing
+shared adapter owns all three candidates. Prototype first, observe, keep/discard.
+Receipt: `docs/evidence/experiments/20261021-issue 349-refactored-event-continuation.json`.
+Raw local panels: `.local/issue 349-refactored-continuation/`; old source archives
+are provenance, not the source for new training. This checkpoint supersedes only
+the current branch/runtime/experiment facts in older sections below.
+
+---
+
 # Issue 352 main integration | 2026-10-21
 
 Worktree remains the user-selected managed #349 checkout, now on fork

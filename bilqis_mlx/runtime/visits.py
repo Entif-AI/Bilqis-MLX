@@ -223,8 +223,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 capabilities=_profiles_retention.fragile_preservation_capabilities())
     old_capabilities = (
         _learning_learning_experiment.earlier_grade_capabilities(
-            _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course),
-            school.champions, cap)
+            _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school.champions,
+            cap, carried_mastery_debt=getattr(school, "carried_mastery_debt", ()))
         if learning_settings is not None else ())
     delivered_autonomy_rows = []
     autonomy_option_specimen_ids = set()

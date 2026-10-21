@@ -159,13 +159,14 @@ class RetentionTeachingPathTests(unittest.TestCase):
         self.assertEqual(len(captured), 8)
         self.assertTrue(all(row["id"].startswith("prefetch:") for row in captured))
 
-    def _visit_selection(self, old):
+    def _visit_selection(self, old, *, carried_debt=False):
         policy = {"old": old, "lr": 0.0001, "depth": 1,
                   "contrast": 1., "distill": 0., "preview": 0}
         teacher = {"strategies": {"p": policy}}
         engine = SimpleNamespace(pick=lambda *_: ("p", policy))
         school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
-                                 champions={"A": {"optimizer_step": 1}})
+                                 champions={} if carried_debt else {"A": {"optimizer_step": 1}},
+                                 carried_mastery_debt=("A.IDENTITY",) if carried_debt else ())
         course = _visit_program()
         receipt = {"teacher": teacher, "generation": 1, "run_id": "disposable",
                    "school": {}, "teacher_misses": [], "config": {},
@@ -217,6 +218,12 @@ class RetentionTeachingPathTests(unittest.TestCase):
         delivered = self._visit_selection(old=16)
         self.assertIn("A.IDENTITY", delivered)
         self.assertIn("B.XOR", delivered)
+
+    def test_ungraduated_debt_gets_requested_rehearsal_without_a_champion(self):
+        delivered = self._visit_selection(old=16, carried_debt=True)
+        self.assertIn("A.IDENTITY", delivered)
+        self.assertIn("B.XOR", delivered)
+        self.assertEqual(set(self._visit_selection(old=0, carried_debt=True)), {"B.XOR"})
 
     def test_binary_grade_b_visit_does_not_invent_old_examples_at_zero_policy(self):
         self.assertEqual(set(self._visit_selection(old=0)), {"B.XOR"})

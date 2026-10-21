@@ -19,13 +19,13 @@ from bilqis_mlx.source_adapters.school import live_source_registry
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _probe_event_capabilities(mx, source, graph, current, params, saved):
+def _probe_event_capabilities(mx, source, graph, current, params, saved, *, seed=349101):
     scores={}
     for cap in event_frames.SPECS:
         rows=[]
-        for seed in (349101,349102,349103):
+        for draw_seed in range(seed, seed + 3):
             rows.extend(draw_executable_release_rows(source,graph,current,
-                live_source_registry(),capability=cap,seed=seed,each=64))
+                live_source_registry(),capability=cap,seed=draw_seed,each=64))
         unique={r['id']:r for r in rows};rows=list(unique.values())
         predictions=trainer._predictions(mx,params,rows,saved['config'],saved['answer_ids'])
         scores[cap]=dict(correct=sum(predictions[r['id']]==r['gold'] for r in rows),
@@ -33,13 +33,18 @@ def _probe_event_capabilities(mx, source, graph, current, params, saved):
     return scores
 
 
-def main():
+def _arguments():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-dir',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--probe-seed',type=int,default=349101)
     parser.add_argument('--admit',action='store_true')
     parser.add_argument('--refresh-boundary',action='store_true')
-    args=parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    args = _arguments()
     run=args.run_dir.resolve(strict=True)
     budget=ExperimentRunBudget(run.parent);budget.register(run);budget.assert_can_allocate(600_000_000)
     if args.output.exists():
@@ -105,10 +110,12 @@ def main():
                 scores=measured['scores'],actual_neural_updates=0)
             saved=trainer._persist(run,trainer._with_delivery_outbox(saved,(event,)))
             trainer._reconcile_delivery_outbox(run,saved)
-        scores = _probe_event_capabilities(mx, source, graph, current, params, saved)
+        scores = _probe_event_capabilities(mx, source, graph, current, params, saved,
+            seed=args.probe_seed)
         assert int(opt.state['step'].item())==saved['school']['current_student']['optimizer_step']
         result=dict(schema='bilqis.issue349.event-trial/v1',prototype_not_canonical=True,
-            admitted=args.admit,before=before,checkpoint=saved['school']['current_student'],
+            admitted=args.admit,probe_seeds=list(range(args.probe_seed,args.probe_seed+3)),
+            before=before,checkpoint=saved['school']['current_student'],
             generation=saved['generation'],factory_release_sha256=current.release_sha256,
             mastery_debt=saved['school']['carried_mastery_debt'],scores=scores,
             budget=budget.enforce())
