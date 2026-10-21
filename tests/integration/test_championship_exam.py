@@ -73,6 +73,15 @@ def _synthetic_program(grades):
 
 
 class ChampionshipExamTests(TestCase):
+    def test_spiral_grade_transition_cannot_promote_from_withheld_assessment(self):
+        # An incomplete cross-grade assessment may legitimately move the
+        # scheduler from C to A without conferring a new graduation right.
+        before = SimpleNamespace(grade="C", revalidation_target_grade=None)
+        after = SimpleNamespace(grade="A", revalidation_target_grade=None,
+                                stage="MAIN")
+        self.assertTrue(trainer._promotion_due_after_routine(before, after))
+        self.assertFalse(trainer._promotion_due_after_routine(
+            before, after, complete_assessment=False))
     def test_c_era_config_rebuilds_only_idboolops_heads_for_prefix_incumbent(self):
         root = Path(__file__).resolve().parents[2]
         source = root / "vendor/legacy-v16"
@@ -417,7 +426,7 @@ class ChampionshipExamTests(TestCase):
                         candidate, _cohort_pointer(candidate, program)),
                 "quarantined_capabilities": lambda *_: (),
                 "_advance_stagnation_after_routine": advance_after,
-                "_promotion_due_after_routine": lambda *_: False,
+                "_promotion_due_after_routine": lambda *_a, **_k: False,
                 "_predictions": predict,
                 "_commit_scored_student": lambda *_a, **_k: (school, {}, (), []),
                 "_score_parent_for_paired_s3": lambda *_: (None, "INERT_FIXTURE"),

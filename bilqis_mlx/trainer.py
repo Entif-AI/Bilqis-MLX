@@ -3945,14 +3945,15 @@ def _school_result_label(school):
             "ACTIVE_GRADE_" + school.grade)
 
 
-def _promotion_due_after_routine(before, after) -> bool:
+def _promotion_due_after_routine(
+        before, after, *, complete_assessment: bool = True) -> bool:
     """Whether a perfect routine evaluation would advance the school state.
 
-    Passing an intermediate introduction tranche is not graduation. Moving to
-    another grade, beginning/advancing a cumulative revalidation sweep, or
-    reaching a curriculum boundary is.
+    An incomplete assessment can legitimately move the scheduler to a new
+    grade during a stagnation spiral, but it cannot create a qualification
+    instrument. Distinguish *teaching progression* from *graduation authority*.
     """
-    return (
+    return complete_assessment and (
         after.grade != before.grade
         or after.revalidation_target_grade != before.revalidation_target_grade
         or after.stage in {
@@ -4136,7 +4137,13 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     measured = routine_measured
     assessment = routine_assessment
     advanced = routine_advanced
-    if not scheduler_only and _promotion_due_after_routine(school, routine_advanced):
+    complete_assessment = (
+        not blocked_before and not blocked_after and
+        tuple(active_scope) == tuple(full_scope))
+    if (not scheduler_only and
+            _promotion_due_after_routine(
+                school, routine_advanced,
+                complete_assessment=complete_assessment)):
         promotion_cohort, qualification = _promotion_executable_cohort(
             run_dir, receipt, manifest, executable_release, source_registry,
             source_root, graph, capabilities=active_scope,
@@ -4169,7 +4176,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         assessment = promotion_assessment
         promotion_advanced = assess(program, school, promotion_assessment)
         advanced = promotion_advanced
-        if _promotion_due_after_routine(school, promotion_advanced):
+        if _promotion_due_after_routine(
+                school, promotion_advanced,
+                complete_assessment=complete_assessment):
             promotion_evidence = LearningEvidence(
                 AssessmentClass.PROMOTION,
                 promotion_cohort.digest,
@@ -4221,7 +4230,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                 generalization_cohort.digest,
                 generalization_assessment.checkpoint_sha256,
                 generalization_assessment.optimizer_step,
-                _promotion_due_after_routine(school, advanced),
+                _promotion_due_after_routine(
+                    school, advanced,
+                    complete_assessment=complete_assessment),
             )
             generalization_passed = qualification_complete(
                 promotion_evidence, generalization_evidence)
