@@ -8,6 +8,7 @@ from bilqis_mlx.factory.tests.support import synthetic_release_inputs
 from bilqis_mlx.factory.release import compile_factory_release, admit_factory_release
 from bilqis_mlx.runtime.admission import (
     _persist_factory_release, _verified_legacy_upgrade_release,
+    _verified_historical_cohort_release,
 )
 from bilqis_mlx.compatibility.assessment import sealed_v1_cohort_contract
 
@@ -61,6 +62,24 @@ class LegacyUpgradeTests(unittest.TestCase):
                        "current_student": {"sha256": "c" * 64, "optimizer_step": 4}}}
             with self.assertRaises(ValueError):
                 _verified_legacy_upgrade_release(Path(tmp), drifted)
+
+    def test_v2_receipt_can_verify_its_retained_historical_v1_exam(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            original, state = self._stored(Path(tmp))
+            migrated = {
+                **state,
+                "school": {**state["school"], "course_digest": "e" * 64},
+                "factory_release_sha256": "e" * 64,
+                "factory_release_file": "factory-releases/" + "e" * 64 + ".json",
+                "factory_admission_v2": {"factory_release_sha256": "e" * 64},
+                "last_exam": {"cohort_sha256": "f" * 64},
+            }
+            historical = _verified_historical_cohort_release(Path(tmp), migrated)
+            self.assertEqual(historical.release_sha256, original.release_sha256)
+            tampered = {**migrated, "factory_admission": {
+                **migrated["factory_admission"], "course_sha256": "0" * 64}}
+            with self.assertRaises(ValueError):
+                _verified_historical_cohort_release(Path(tmp), tampered)
 
 
 if __name__ == "__main__":

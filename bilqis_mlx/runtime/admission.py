@@ -151,6 +151,43 @@ def _verified_legacy_upgrade_release(run_dir: Path, receipt: dict) -> FactoryRel
     return release
 
 
+def _verified_historical_cohort_release(run_dir: Path, receipt: dict) -> FactoryRelease | None:
+    """Resolve a retained v1 exam's original signed authority after v2 admission.
+
+    An admitted v2 curriculum may still reference its most recent historical
+    exam. Only the separately signed v1 admission can validate those cohort
+    bytes. The v2 release remains authoritative for *new* training and exams.
+    """
+    exam = receipt.get("last_exam") or {}
+    if (receipt.get("factory_admission_v2") is None or
+            exam.get("cohort_sha256") is None or
+            exam.get("factory_release_sha256") is not None):
+        return None
+    prior = receipt.get("factory_admission")
+    if not isinstance(prior, dict):
+        raise ValueError("HUMAN_TRAINER_HISTORICAL_EXAM_ADMISSION_REQUIRED")
+    sha = prior.get("factory_release_sha256")
+    if not isinstance(sha, str) or len(sha) != 64:
+        raise ValueError("HUMAN_TRAINER_HISTORICAL_EXAM_RELEASE_INVALID")
+    historical = _read_factory_release(Path(run_dir), {
+        "factory_release_sha256": sha,
+        "factory_release_file": f"factory-releases/{sha}.json",
+    })
+    try:
+        admission = AdmissionReceipt(**prior)
+    except TypeError as exc:
+        raise ValueError("HUMAN_TRAINER_HISTORICAL_EXAM_ADMISSION_INVALID") from exc
+    admission.verify(historical)
+    latest = receipt["school"]["current_student"]
+    if (historical.course.version != receipt.get("curriculum_mode") or
+            receipt.get("semantic_graph_sha256") != admission.semantic_graph_sha256 or
+            admission.optimizer_step > latest["optimizer_step"] or
+            (admission.optimizer_step == latest["optimizer_step"] and
+             admission.student_sha256 != latest["sha256"])):
+        raise ValueError("HUMAN_TRAINER_HISTORICAL_EXAM_LINEAGE_DRIFT")
+    return historical
+
+
 def _read_executable_factory_release_artifact(
         run_dir: Path, receipt: dict) -> ExecutableFactoryRelease:
     """Cold-read and structurally verify the immutable v2 artifact."""

@@ -37,6 +37,10 @@ def sealed_v1_cohort_contract(release, grade):
 
 def verify_legacy_saved_cohort(run_dir, receipt, course, *, sealed_v1_release=None):
     """Cold-verify one historical Course-bound cohort."""
+    if sealed_v1_release is not None:
+        # A post-migration v2 profile is not the authority that minted this
+        # historical exam. Its original signed v1 course and adapter are.
+        course = sealed_v1_release.course
     exam = receipt.get("last_exam") or {}
     sha = exam.get("cohort_sha256")
     if sha is None:

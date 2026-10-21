@@ -367,12 +367,32 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
             "grade_a_user_acceptance_is_separate": True,
         }
         if resume:
+            from .trainer import _reconcile_delivery_outbox
             from .compatibility.executable_projection import preflight_sealed_v1_migration
             saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+            outbox = saved.get("delivery_outbox")
+            delivered = _reconcile_delivery_outbox(
+                run_dir, saved, publish_missing=False)
+            snapshot["outbox_preflight"] = (
+                "NO_OUTBOX" if outbox is None else
+                "VERIFIED_ALL_PUBLISHED" if delivered else
+                "PENDING_DELIVERY_REPLAY_ON_RESUME")
             compatibility = preflight_sealed_v1_migration(
                 run_dir, saved, source, legacy_root)
             if compatibility is not None:
                 snapshot["resume_compatibility"] = compatibility
+            elif saved.get("factory_admission_v2") is not None:
+                from .runtime.admission import _read_executable_factory_release_artifact
+                from .runtime.assessment import _verify_saved_cohort
+                executable = _read_executable_factory_release_artifact(
+                    run_dir, saved)
+                cohort = _verify_saved_cohort(run_dir, saved, None)
+                snapshot["resume_compatibility"] = {
+                    "status": "VERIFIED_EXISTING_V2_WITH_SAVED_EVIDENCE",
+                    "factory_release_sha256": executable.release_sha256,
+                    "last_cohort_sha256": None if cohort is None else cohort.digest,
+                    "neural_updates": 0,
+                }
     else:
         snapshot["source_manifest_preflight"] = "NOT_RERUN_USE_--verify-source"
     if boolean_association_bridge:

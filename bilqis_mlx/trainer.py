@@ -1644,7 +1644,23 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
              teacher=None, model_bundle=None, last_exam=None, result=None,
              frontier=None, persist=True):
     # One snapshot captures teacher learning, school progress and model pointer.
+    if old.get("delivery_outbox") is not None:
+        # A generation's event IDs cannot be inherited by a successor. First
+        # prove this generation was durably committed, then reconcile the
+        # original intent or fail before state mutation. Uncommitted event
+        # intents must never be published on the strength of a transient dict.
+        old_path = (Path(run_dir) / "states" /
+                    f"{old['generation']:07d}.json")
+        if old_path.is_symlink() or not old_path.is_file():
+            raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_UNCOMMITTED_SOURCE")
+        durable = json.loads(old_path.read_text(encoding="utf-8"))
+        if (durable.get("run_id") != old.get("run_id") or
+                durable.get("generation") != old.get("generation") or
+                durable.get("delivery_outbox") != old["delivery_outbox"]):
+            raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_SOURCE_DRIFT")
+        _reconcile_delivery_outbox(run_dir, old)
     record = dict(old)
+    record.pop("delivery_outbox", None)
     record["generation"] = old["generation"] + 1
     record["school"] = asdict(school)
     if teacher is not None:
@@ -3655,7 +3671,8 @@ def _with_delivery_outbox(record: dict, events) -> dict:
     return prepared
 
 
-def _reconcile_delivery_outbox(run_dir: Path, record: dict):
+def _reconcile_delivery_outbox(
+        run_dir: Path, record: dict, *, publish_missing: bool = True):
     """Replay missing events; never duplicate or amend prior ledger history.
 
     Caller must hold the exclusive operator lock. JSONL write+fsync can succeed
@@ -3667,17 +3684,38 @@ def _reconcile_delivery_outbox(run_dir: Path, record: dict):
         return False
     if not isinstance(outbox, list) or not outbox:
         raise ValueError("HUMAN_TRAINER_OUTBOX_INVALID")
+    source_generation = record["generation"]
+    # Ordinarily all outbox IDs are bound to the current generation. A single
+    # historical v1->v2 migration erroneously copied the previous outbox into
+    # an otherwise valid immutable successor; accept that *only* with proven
+    # signed predecessor identity and fully published, unmodified journal rows.
+    inherited = None
+    # Most valid generations are not compatibility migrations. Avoid rereading
+    # a 47 MB immutable predecessor when the ordinary current-generation IDs
+    # already validate; verify an inherited predecessor only upon actual drift.
+    if any(
+        not isinstance(event, dict) or "event_id" not in event or
+        event["event_id"] != _fingerprint([
+            "school-generation-event/v1", record["run_id"], source_generation,
+            index, {k: v for k, v in event.items() if k != "event_id"}])
+        for index, event in enumerate(outbox)
+    ):
+        from .runtime.outbox_lineage import verified_inherited_v1_generation
+        inherited = verified_inherited_v1_generation(run_dir, record)
+        if inherited is not None:
+            source_generation = inherited
     expected = {}
     for index, event in enumerate(outbox):
         if not isinstance(event, dict) or "event_id" not in event:
             raise ValueError("HUMAN_TRAINER_OUTBOX_EVENT_ID_MISSING")
         payload = {k:v for k,v in event.items() if k != "event_id"}
         identity = _fingerprint(["school-generation-event/v1", record["run_id"],
-                                 record["generation"], index, payload])
+                                 source_generation, index, payload])
         if event["event_id"] != identity or identity in expected:
             raise ValueError("HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT")
         expected[identity] = event
     observed = set()
+    observed_counts = {}
     journal = run_dir / "events.jsonl"
     if journal.exists():
         if journal.is_symlink() or not journal.is_file():
@@ -3690,6 +3728,16 @@ def _reconcile_delivery_outbox(run_dir: Path, record: dict):
                     if item != expected[identity]:
                         raise ValueError("HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT")
                     observed.add(identity)
+                    observed_counts[identity] = observed_counts.get(identity, 0) + 1
+    if inherited is not None:
+        if (observed != set(expected) or
+                any(count != 1 for count in observed_counts.values())):
+            raise ValueError("HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT")
+        return True
+    if not publish_missing:
+        # Neural-inert operator preflight may inspect custody, but must never
+        # replay missing events or alter the append-only journal.
+        return observed == set(expected)
     for event in outbox:
         if event["event_id"] not in observed:
             _record(run_dir, event)
