@@ -507,6 +507,7 @@ class NumericStaircaseTests(unittest.TestCase):
             ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB'])
         self.assertEqual(
             narrowed.profile.profile_id.rsplit('-', 1)[-1], '3')
+        self.assertTrue(storage._mentor_epoch_references(changed))
 
     def test_numeric_profile_sequence_cannot_skip_or_exceed_final_maximum(self):
         course, record = self.start()

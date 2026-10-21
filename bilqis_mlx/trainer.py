@@ -324,7 +324,19 @@ def _migrate_championship_governance(run_dir, receipt, course):
     proven, ambiguous, historical_settled, duplicate_count = (
         _historical_championship_authority(run_dir))
     updated = deepcopy(receipt)
-    changed = updated.get("championship_school_identity") != identity
+    history = list(updated.get("championship_epoch_history", ()))
+    cleaned_history = [
+        entry for entry in history
+        if entry != {
+            "kind": "profile-revision-school-identity-reset",
+            "event": True,
+        }
+    ]
+    changed = cleaned_history != history
+    if changed:
+        updated["championship_epoch_history"] = cleaned_history
+    changed = (changed or
+               updated.get("championship_school_identity") != identity)
     updated["championship_school_identity"] = identity
 
     origin_map = dict(updated.get("championship_checkpoint_origins", {}))
@@ -1320,11 +1332,6 @@ def _profile_championship_state(
             epoch, identity,
             generation=receipt["generation"] + 1,
             student=asdict(school.current_student))
-        if identity_event is not None:
-            history.append({
-                "kind": "profile-revision-school-identity-reset",
-                "event": identity_event,
-            })
     return identity, epoch, history
 
 
