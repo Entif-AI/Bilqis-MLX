@@ -263,6 +263,7 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             "evaluation_id": "capability-evaluation/original",
         }
         role = {**leader, "cohort_sha256": "c" * 64}
+        settlement = {"capability": "A.IDENTITY", "winner_sha256": student.sha256}
         receipt = {
             "generation": 10, "run_id": "valid-v2-cross-scope",
             "school": asdict(school),
@@ -273,6 +274,7 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             "mentor_epoch": {
                 "active_roles": {"A.IDENTITY": role},
                 "active_grade_soups": {"A": {"grade": "A"}},
+                "settled_matchups": {"A.IDENTITY|first|second": settlement},
             },
             "last_exam": {
                 "factory_release_sha256": "e" * 64,
@@ -290,6 +292,11 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
                          leader)
         self.assertEqual(result["mentor_epoch"]["active_roles"]["A.IDENTITY"],
                          role)
+        self.assertEqual(result["mentor_epoch"]["active_grade_soups"],
+                         {"A": {"grade": "A"}})
+        self.assertEqual(result["mentor_epoch"]["settled_matchups"],
+                         {"A.IDENTITY|first|second": settlement})
+        self.assertEqual(result["championship_epoch_history"], [])
 
     def test_resume_resets_titles_missing_distinct_cohort_source_rubric(self):
         student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
@@ -305,6 +312,17 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             "rubric_sha256": a_rubric,
             "source_oracle_sha256": self.manifest["manifest_sha256"],
         }
+        same_grade_capability = next(
+            cap.id for cap in self.new.grades[0].capabilities
+            if cap.id != "A.IDENTITY")
+        same_grade_role = {
+            "capability": same_grade_capability,
+            "rubric": a_rubric,
+            "checkpoint": asdict(student),
+            "qualification_witnesses": [],
+            "surviving_battery": [],
+        }
+        settlement = {"capability": "B.AND", "winner": student.sha256}
         receipt = {
             "schema": VERSION,
             "generation": 9,
@@ -328,6 +346,7 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
                         "qualification_witnesses": [evidence],
                         "surviving_battery": [evidence],
                     },
+                    same_grade_capability: same_grade_role,
                     "B.AND": {
                         "capability": "B.AND", "rubric": b_rubric,
                         "checkpoint": asdict(student),
@@ -337,8 +356,7 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
                 },
                 "active_grade_soups": {"A": {"grade": "A"},
                                        "B": {"grade": "B"}},
-                "settled_matchups": {"B.AND|first|second": {
-                    "capability": "B.AND", "winner": student.sha256}},
+                "settled_matchups": {"B.AND|first|second": settlement},
             },
         }
         with TemporaryDirectory() as temp:
@@ -356,6 +374,8 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             }))
             repaired = _repair_championship_source_context(
                 root, receipt, self.new)
+            repeated = _repair_championship_source_context(
+                root, repaired, self.new)
             events = [
                 json.loads(line)
                 for line in (root / "events.jsonl").read_text().splitlines()
@@ -363,13 +383,18 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
         self.assertEqual(repaired["generation"], 10)
         self.assertEqual(repaired["school"]["current_student"], asdict(student))
         self.assertEqual(set(repaired["mentor_epoch"]["active_roles"]),
-                         {"B.AND"})
+                         {same_grade_capability, "B.AND"})
+        self.assertEqual(
+            repaired["mentor_epoch"]["active_roles"][same_grade_capability],
+            same_grade_role)
         self.assertEqual(repaired["mentor_epoch"]["active_grade_soups"],
                          {"B": {"grade": "B"}})
         self.assertEqual(repaired["mentor_epoch"]["settled_matchups"],
-                         {"B.AND|first|second": {
-                             "capability": "B.AND", "winner": student.sha256}})
+                         {"B.AND|first|second": settlement})
         self.assertEqual(len(repaired["championship_epoch_history"]), 1)
+        self.assertIs(repeated, repaired)
+        self.assertEqual(repeated["generation"], 10)
+        self.assertEqual(len(events), 1)
         self.assertEqual(
             events[-1]["event"],
             "SCHOOL_CHAMPIONSHIP_SOURCE_CONTEXT_REPAIRED")
