@@ -485,6 +485,10 @@ class NumericStaircaseTests(unittest.TestCase):
                     self.params, self.optimizer, transition, reserve_gib=0.))
         self.assertEqual(wide['numeric_maximum'], 10)
         wide_student = wide['school']['current_student']
+        wide = {**wide, 'school': {
+            **wide['school'],
+            'carried_mastery_debt': ['C.COUNT', 'C.MUL', 'C.DIV'],
+        }}
         release = storage._read_executable_factory_release_artifact(
             self.root, wide)
         with redirect_stdout(io.StringIO()):
@@ -495,6 +499,7 @@ class NumericStaircaseTests(unittest.TestCase):
                 numeric_scope_profile(release, 3))
         self.assertEqual(changed['numeric_maximum'], 3)
         self.assertEqual(changed['numeric_scope_final_maximum'], 4)
+        self.assertEqual(changed['school']['carried_mastery_debt'], ['C.COUNT'])
         self.assertEqual(changed['school']['current_student'], wide_student)
         self.assertEqual(int(self.optimizer.state['step'].item()), prior_step)
         self.assertEqual(

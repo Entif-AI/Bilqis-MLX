@@ -917,6 +917,10 @@ def adopt_revised_program(previous: ScheduleProgram,
         raise ValueError("FACTORY_SCHEDULE_REVISION_REQUIRES_ACTIVE_GRADE")
     champions = dict(state.champions)
     champions.pop(revised_grade, None)
+    successor_caps = set(_caps(successor, state.active_grades))
+    active_debt = tuple(
+        capability for capability in state.carried_mastery_debt
+        if capability in successor_caps)
     rebound = replace(
         state,
         course_digest=successor.digest(),
@@ -924,6 +928,7 @@ def adopt_revised_program(previous: ScheduleProgram,
         queue=(),
         first_recovery=(),
         champions=champions,
+        carried_mastery_debt=active_debt,
         grade_exam_epoch=state.grade_exam_epoch + 1,
         introduction_stage=0,
         main_sweep_visited=(),
