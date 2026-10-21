@@ -212,6 +212,11 @@ class FactoryRelease:
     def source_adapter_map(self) -> dict[str, SourceAdapter]:
         return {adapter.adapter_id: adapter for adapter in self.source_adapters}
 
+    @property
+    def assessment_rubric_sha256s(self) -> tuple[str, ...]:
+        """Expose signed v1 assessment identities without leaking Course traversal."""
+        return tuple(grade.assessment_sha256 for grade in self.course.grades)
+
     def expected_digest(self) -> str:
         return _digest(self.manifest())
 

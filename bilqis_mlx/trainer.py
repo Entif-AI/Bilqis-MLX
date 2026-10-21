@@ -3575,8 +3575,8 @@ def _verify_live_rubric_lineage(run_dir, receipt, program) -> None:
         return
     from .runtime.admission import _verified_historical_cohort_release
     previous = _verified_historical_cohort_release(run_dir, receipt)
-    if (previous is not None and live_rubric in {
-            grade.assessment_sha256 for grade in previous.course.grades}):
+    if (previous is not None and
+            live_rubric in set(previous.assessment_rubric_sha256s)):
         return
     raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_IDENTITY_DRIFT")
 
