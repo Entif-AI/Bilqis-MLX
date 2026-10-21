@@ -140,4 +140,6 @@ def numeric_row_in_scope(row: dict, maximum: int) -> bool:
             return True
         return all(bounded(child) for child in node.arguments)
 
-    return bounded(decode(symbols))
+    # The numeric prefix codec accepts a list of catalog symbols, not the
+    # immutable tuple used for the scope precheck above.
+    return bounded(decode(list(symbols)))

@@ -146,6 +146,7 @@ from .runtime.assessment import (
     _candidate_executable_cohort, _generalization_executable_cohort,
     _promotion_executable_cohort, _routine_executable_cohort,
     _draw_live_rows, _persist_live_cohort, _load_current_cohort,
+    released_lesson_source_identity,
     _verify_saved_cohort, _grade_test_cohort, _promotion_cohort,
     _generalization_cohort, _candidate_cohort, _introduced_cohort,
     _without_stagnant_capabilities, _require_active_stagnation_scope,
@@ -1658,7 +1659,11 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
                 durable.get("generation") != old.get("generation") or
                 durable.get("delivery_outbox") != old["delivery_outbox"]):
             raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_SOURCE_DRIFT")
-        _reconcile_delivery_outbox(run_dir, old)
+        # Reconcile the *committed* owner, not the caller's proposed in-memory
+        # next-generation metadata. A resume-time championship repair can
+        # legitimately change unrelated fields before _advance is invoked;
+        # using that transient dict would falsely fail signed v1->v2 lineage.
+        _reconcile_delivery_outbox(run_dir, durable)
     record = dict(old)
     record.pop("delivery_outbox", None)
     record["generation"] = old["generation"] + 1
@@ -2062,7 +2067,8 @@ def _advance_stagnation_after_routine(
 
 
 def _learning_probe_rows(source_root, graph, receipt, course, school, capability,
-                         settings, *, schedule_program=None):
+                         settings, *, schedule_program=None,
+                         executable_release=None):
     """Complete admitted target grade plus bounded cross-grade protection."""
     eligible = set(assessment_capabilities(
         schedule_program if schedule_program is not None else course,
@@ -2087,6 +2093,7 @@ def _learning_probe_rows(source_root, graph, receipt, course, school, capability
     for name in sorted(sampled):
         rows.extend(_draw_live_rows(
             source_root, graph, course=course, capability=name,
+            executable_release=executable_release,
             each=(target_each if name.partition(".")[0] ==
                   capability.partition(".")[0] else settings.probe_each),
             seed=_seed(receipt, capability="LEARNING_PROBE:"+name)))
@@ -2294,7 +2301,8 @@ def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
 
 def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
                                      course, school, capability, *, step,
-                                     batch_size, fixed_rows=None):
+                                     batch_size, fixed_rows=None,
+                                     executable_release=None):
     """Generate fresh semantic siblings for the configured fragile safety rows.
 
     Rehearsal is active only after a source-verified B replay exam exists.
@@ -2324,6 +2332,7 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
         for attempt in range(3):
             fresh.extend(_draw_live_rows(
                 source_root, graph,
+                executable_release=executable_release,
                 seed=_seed(
                     receipt,
                     capability=f"FRAGILE_PRESERVE:{name}:{attempt}",
@@ -2473,7 +2482,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     with trace_span("VISIT_SOURCE_DRAW", capability=cap):
         rows = _draw_live_rows(source_root, graph,
                                seed=_seed(receipt, capability=cap),
-                               capability=cap, each=max(32, batch_size), course=course)
+                               capability=cap, each=max(32, batch_size),
+                               course=course, executable_release=executable_release)
     # Active maxed capability roles advise only inside their own grade.
     # Frozen grade soups remain the separately diluted cross-grade voice.
     with trace_span("MENTOR_SOURCES_LOAD", capability=cap):
@@ -2516,7 +2526,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             probe_rows, protected_caps, unsampled_caps = _learning_probe_rows(
                 source_root, graph, receipt, course, school, cap, learning_settings,
                 schedule_program=_schedule_for_receipt(
-                    run_dir, receipt, course))
+                    run_dir, receipt, course),
+                executable_release=executable_release)
         target_rows = [row for row in probe_rows if row["capability"] == cap]
         with trace_span("RETENTION_PARENT_PREDICT", capability=cap,
                         row_count=len(target_rows)):
@@ -2587,6 +2598,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 step=step_index + 1)
             identity = _fingerprint({
                 "schema": SOURCE_PREFETCH_SCHEMA,
+                "factory_release_sha256": executable_release.release_sha256,
                 "run_id": receipt["run_id"],
                 "generation": receipt["generation"],
                 "source_manifest_sha256": receipt.get("source_manifest_sha256"),
@@ -2610,6 +2622,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 "source_root": str(Path(source_root).resolve()),
                 "graph": graph,
                 "course": course,
+                "executable_release": executable_release,
                 "capability": cap,
                 "batch_size": batch_size,
                 "fresh_seed": fresh_seed,
@@ -2656,7 +2669,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 if autonomy_teaching_option is None:
                     fresh = _draw_live_rows(source_root, graph,
                         seed=_seed(receipt, capability=cap, step=step+1),
-                        capability=cap, each=max(32, batch_size), course=course)
+                        capability=cap, each=max(32, batch_size), course=course,
+                        executable_release=executable_release)
                 else:
                     from .factory.teaching import draw_teaching_option_rows
                     fresh = list(draw_teaching_option_rows(
@@ -2677,6 +2691,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     selected = old_capabilities[(school.visits + step) % len(old_capabilities)]
                     prior = _draw_live_rows(source_root, graph, course=course,
                         capability=selected, each=max(batch_size, 6),
+                        executable_release=executable_release,
                         seed=_seed(receipt, capability="EXPERIMENT_OLD:"+selected, step=step))
                 picked, control = select_source_lesson(
                     fresh, prior, policy, seed=lesson_seed, batch_size=batch_size)
@@ -2696,7 +2711,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     preservation = _fresh_fragile_preservation_rows(
                         run_dir, source_root, graph, receipt, course, school, cap,
                         step=step + 1, batch_size=batch_size,
-                        fixed_rows=fragile_fixed_rows)
+                        fixed_rows=fragile_fixed_rows,
+                        executable_release=executable_release)
             with trace_span("STEP_FRAGILE_PRESERVATION_INJECT", capability=cap,
                             visit_step=step + 1):
                 picked, delivered_preservation = _inject_preservation_rows(
@@ -2903,6 +2919,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         champion_prioritized=0,
         seed=_seed(receipt, capability=cap),
     ))
+    lesson_generator, lesson_source_digest = released_lesson_source_identity(
+        executable_release, cap)
     event = {
         "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
         "grade": lesson_grade,
@@ -2950,8 +2968,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             "candidate_attempt_optimizer_step": attempted_step,
             "retained_optimizer_updates": retained_optimizer_updates}
            if outcome is not None else {}),
-        "generator_version": lesson_contract(course, lesson_grade)[2],
-        "generator_code_sha256": lesson_contract(course, lesson_grade)[3],
+        "generator_version": lesson_generator,
+        "generator_code_sha256": lesson_source_digest,
         "lesson_source_sha256": manifest["manifest_sha256"],
         "lesson_seed": _seed(receipt, capability=cap),
         "prior_exam_misses_available": len(priority),
@@ -3496,8 +3514,13 @@ def _live_exam_factors_complete(executable_release, cohort, expected) -> bool:
     Source/construction-specific invariants belong to the registered provider
     and its independent oracle.  The generic trainer verifies only what the
     executable plan declares: exact cohort size, admitted answer kind, admitted
-    gold label, and at least one observation of every declared answer value.
+    gold label, representation of every declared answer modality, and complete
+    target coverage only when the admitted provider declares a balancing axis.
+    A numeric output *vocabulary* is not a guarantee that every arithmetic
+    result appears in every finite exam.
     """
+    balancing_axes = frozenset((
+        "balanced-gold", "balanced-operator-targets", "runtime-answer-balance"))
     capability_map = executable_release.execution_plan.capability_map
     for cap, total in expected.items():
         rows = [row for row in cohort.rows if row["capability"] == cap]
@@ -3515,9 +3538,29 @@ def _live_exam_factors_complete(executable_release, cohort, expected) -> bool:
             observed = {
                 row["gold"] for row in rows
                 if row.get("answer_kind", "binary") == family.kind}
-            if observed != set(family.values):
+            if (not observed or
+                    (balancing_axes.intersection(capability_map[cap].variation_axes)
+                     and observed != set(family.values))):
                 return False
     return True
+
+
+def _verify_live_rubric_lineage(run_dir, receipt, program) -> None:
+    """Distinguish preserved signed v1 assessment evidence from new v2 exams.
+
+    A migrated student retains its last v1 rubric until it has fresh v2
+    evidence. Historical authority is never relabeled into a v2 qualification.
+    """
+    live_rubric = receipt.get("live_rubric_sha256")
+    known_rubrics = {grade.assessment_sha256 for grade in program.grades}
+    if live_rubric is None or live_rubric in known_rubrics:
+        return
+    from .runtime.admission import _verified_historical_cohort_release
+    previous = _verified_historical_cohort_release(run_dir, receipt)
+    if (previous is not None and live_rubric in {
+            grade.assessment_sha256 for grade in previous.course.grades}):
+        return
+    raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_IDENTITY_DRIFT")
 
 
 def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
@@ -3539,11 +3582,7 @@ def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
     from .factory.assessment import assessment_scope_contract
     rubric = assessment_scope_contract(
         executable_release, allowed).rubric_sha256
-    known_rubrics = {
-        grade.assessment_sha256 for grade in program.grades}
-    live_rubric = receipt.get("live_rubric_sha256")
-    if live_rubric is not None and live_rubric not in known_rubrics:
-        raise ValueError("HUMAN_TRAINER_LIVE_RUBRIC_IDENTITY_DRIFT")
+    _verify_live_rubric_lineage(run_dir, receipt, program)
     expected = {
         capability.id: capability.exam_item_count
         for grade in program.grades

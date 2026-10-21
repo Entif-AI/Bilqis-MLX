@@ -73,6 +73,28 @@ class SourcePrefetchTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "SOURCE_PREFETCH_FORBIDDEN_AUTHORITY"):
                     prepare_step_sources({**request, forbidden: object()})
 
+    def test_active_v2_packet_uses_executable_release_instead_of_legacy_course(self):
+        request = {
+            "identity": "b" * 64, "source_root": "/source",
+            "graph": {"tokens": []}, "course": SimpleNamespace(),
+            "executable_release": SimpleNamespace(release_sha256="c" * 64),
+            "capability": "B.AND", "batch_size": 4,
+            "fresh_seed": 15, "prior_capability": None,
+            "prior_seed": None, "fragile_fixed_rows": (),
+            "fragile_requested": (), "fragile_seeds": {},
+            "fragile_rotation": 0, "teaching_seed": 16,
+            "teaching_enrichment_enabled": False,
+        }
+        expected = [{"id": "v2", "capability": "B.AND", "gold": "TRUE"}]
+        with (patch("bilqis_mlx.runtime.source_prefetch.draw_course_rows",
+                    side_effect=AssertionError("Legacy v1 generation forbidden")),
+              patch("bilqis_mlx.factory.generation.draw_executable_release_rows",
+                    return_value=expected) as executable):
+            result = prepare_step_sources(request)
+        self.assertEqual(result["fresh"], expected)
+        self.assertEqual(executable.call_args.kwargs["legacy_course"],
+                         request["course"])
+
     @unittest.skipUnless(CHECKPOINT.is_file(), "Original source not mounted")
     def test_real_source_packet_survives_spawned_process_boundary(self):
         import torch

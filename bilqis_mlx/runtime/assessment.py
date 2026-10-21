@@ -289,12 +289,36 @@ def _candidate_executable_cohort(
     return cohort, pointer
 
 
-def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None, course=None):
-    """Draw only through the verified course/factory source boundary."""
+def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None,
+                    course=None, executable_release=None):
+    """Draw through the admitted v2 source whenever an active release exists.
+
+    A compatibility Course is only metadata for v2 execution. Its historical
+    generator names are not runtime provider authority, and may be retired.
+    """
     if course is None:
         raise ValueError("FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION")
+    if executable_release is not None:
+        from ..source_adapters.school import live_source_registry
+        return draw_executable_release_rows(
+            source_root, graph, executable_release, live_source_registry(),
+            seed=seed, legacy_course=course, capability=capability, each=each)
     return draw_course_rows(source_root, graph, course, seed=seed,
                             capability=capability, each=each)
+
+
+def released_lesson_source_identity(release, capability: str) -> tuple[str, str]:
+    """Give teaching telemetry its actual admitted v2 provider provenance."""
+    execution = release.execution_plan.capability_map.get(capability)
+    binding = release.source_bindings.by_capability.get(capability)
+    if execution is None or binding is None:
+        raise ValueError("FACTORY_LESSON_CAPABILITY_NOT_ADMITTED")
+    descriptor = next((item for item in release.source_adapters
+                       if item.adapter_id == execution.provider_id), None)
+    if (descriptor is None or descriptor.generator_id != binding.generator_id or
+            binding.oracle_id not in descriptor.accepted_oracle_ids):
+        raise ValueError("FACTORY_LESSON_PROVIDER_BINDING_DRIFT")
+    return descriptor.cohort_generator, descriptor.implementation_sha256
 
 
 def _persist_live_cohort(run_dir, manifest, course, cohort):

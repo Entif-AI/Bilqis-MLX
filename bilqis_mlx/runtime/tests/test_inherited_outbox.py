@@ -111,6 +111,22 @@ class InheritedOutboxTests(unittest.TestCase):
         self.assertNotIn("delivery_outbox", next_record)
         self.assertEqual(journal.read_bytes(), before)
 
+    def test_advancing_transient_governance_edit_uses_committed_outbox_source(self):
+        journal = self._publish()
+        original_bytes = journal.read_bytes()
+        (self.root / "states" / "0000008.json").write_text(
+            json.dumps(self.current))
+        # Resume legitimately repairs governance *before* advancing. That
+        # proposed record must not be mistaken for the immutable event owner.
+        edited = {**self.current, "championship_checkpoint_origin_ambiguities": {
+            "test-origin": ["A", "B"]}}
+        successor = _advance(self.root, edited, _School(), persist=False)
+        self.assertEqual(successor["generation"], 9)
+        self.assertEqual(successor["championship_checkpoint_origin_ambiguities"],
+                         edited["championship_checkpoint_origin_ambiguities"])
+        self.assertNotIn("delivery_outbox", successor)
+        self.assertEqual(journal.read_bytes(), original_bytes)
+
     def test_uncommitted_successor_cannot_publish_inherited_outbox(self):
         journal = self._publish()
         before = journal.read_bytes()

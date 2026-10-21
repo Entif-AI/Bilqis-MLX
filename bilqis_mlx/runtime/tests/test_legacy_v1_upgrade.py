@@ -3,6 +3,7 @@ from dataclasses import asdict
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 from bilqis_mlx.factory.tests.support import synthetic_release_inputs
 from bilqis_mlx.factory.release import compile_factory_release, admit_factory_release
@@ -11,6 +12,7 @@ from bilqis_mlx.runtime.admission import (
     _verified_historical_cohort_release,
 )
 from bilqis_mlx.compatibility.assessment import sealed_v1_cohort_contract
+from bilqis_mlx.trainer import _verify_live_rubric_lineage
 
 
 class LegacyUpgradeTests(unittest.TestCase):
@@ -80,6 +82,26 @@ class LegacyUpgradeTests(unittest.TestCase):
                 **migrated["factory_admission"], "course_sha256": "0" * 64}}
             with self.assertRaises(ValueError):
                 _verified_historical_cohort_release(Path(tmp), tampered)
+
+    def test_scoring_v2_evidence_does_not_relabel_a_signed_historical_v1_rubric(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            release, state = self._stored(Path(tmp))
+            old_rubric = release.course.grades[-1].assessment_sha256
+            new_rubric = "e" * 64
+            state = {
+                **state,
+                "live_rubric_sha256": old_rubric,
+                "last_exam": {"cohort_sha256": "f" * 64},
+                "factory_admission_v2": {"factory_release_sha256": new_rubric},
+            }
+            program = SimpleNamespace(grades=(SimpleNamespace(
+                assessment_sha256=new_rubric),))
+            self.assertIsNone(_verify_live_rubric_lineage(
+                Path(tmp), state, program))
+            self.assertEqual(state["live_rubric_sha256"], old_rubric)
+            with self.assertRaisesRegex(ValueError, "LIVE_RUBRIC_IDENTITY_DRIFT"):
+                _verify_live_rubric_lineage(Path(tmp), {
+                    **state, "live_rubric_sha256": "d" * 64}, program)
 
 
 if __name__ == "__main__":
