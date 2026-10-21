@@ -18,6 +18,9 @@ older private-implementation posture for this branch. Public PR prose screens
 private authority links. PM-2026-10-21-001 preserves the preflight observation;
 no repository visibility change is required. Read the exact remote head and PR
 receipt from the latest execution checkpoint.
+The source wave adds zero hygiene findings after its two owned findings were
+repaired. Portable CI remains blocked by53 inherited baseline-relative findings;
+hosted semantic-ABI verification passed. See the linked review for proof limits.
 The independent 36-path staged migration remains preserved and excluded.
 Older sections below are historical; this section and the linked review control.
 

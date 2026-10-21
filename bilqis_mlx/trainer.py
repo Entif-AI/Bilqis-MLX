@@ -1255,6 +1255,14 @@ def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor,
         run_dir, receipt, previous_course, successor, graph)
 
 
+def _verify_profile_successor(predecessor, successor, graph, profile):
+    """Require the compiled successor to match the requested catalog and profile."""
+    successor.verify_successor_of(predecessor)
+    successor.verify_semantic_catalog(graph)
+    if successor.profile != profile:
+        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH")
+
+
 def _adopt_executable_profile(
         run_dir, receipt, grade_a_course, source_root, graph, profile, *,
         compiled_successor=None):
@@ -1273,10 +1281,7 @@ def _adopt_executable_profile(
         graph=graph,
         verification_seed=2026101906,
         legacy_course=compatibility_course)
-    successor.verify_successor_of(predecessor)
-    successor.verify_semantic_catalog(graph)
-    if successor.profile != profile:
-        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH")
+    _verify_profile_successor(predecessor, successor, graph, profile)
     successor_program = schedule_program_from_executable_release(successor)
     appended = len(successor_program.grades) == len(previous_program.grades) + 1
     revised = (
@@ -1436,10 +1441,7 @@ def _adopt_catalog_profile(
         graph=transition.graph,
         verification_seed=2026101907,
         legacy_course=compatibility_course)
-    successor.verify_successor_of(predecessor)
-    successor.verify_semantic_catalog(transition.graph)
-    if successor.profile != transition.profile:
-        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH")
+    _verify_profile_successor(predecessor, successor, transition.graph, transition.profile)
     if (successor.transition is None or
             successor.transition.semantic_geometry != "APPEND_ONLY_EXPANSION"):
         raise ValueError("FACTORY_CATALOG_TRANSITION_NOT_APPEND_ONLY")

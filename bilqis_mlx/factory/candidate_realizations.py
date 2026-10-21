@@ -1,10 +1,12 @@
 """Code-owned source realizations that can supply ordinary factory successors."""
+from types import MappingProxyType
+
 from ..source_adapters import copular_curriculum as ithkuil_identity
 
 
 # Entries carry source meaning, not grade scheduling authority. Frontier and
 # factory checks still govern scope; JIT still governs learner readiness.
-REALIZATIONS = {ithkuil_identity.SENSE_ID: ithkuil_identity}
+REALIZATIONS = MappingProxyType({ithkuil_identity.SENSE_ID: ithkuil_identity})
 
 
 def prepare_realized_candidates(frontier, current, parent_graph, *,

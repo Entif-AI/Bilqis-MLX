@@ -84,13 +84,20 @@ were copied independently and verified; no canonical/historical run was written.
 
 | Proof | Result |
 | --- | --- |
-| Factory and runtime suites, importable module names | 433 total: 430 passed, 3 skipped, 0 failed |
+| Factory and runtime suites, importable module names | 434 total: 431 passed, 3 skipped, 0 failed |
 | Source/oracle, vocabulary and prefetch/typed-answer slice | 33 passed, 0 skipped |
 | Grade A/B and generic Grade Z system slice, B opt-in enabled | 29 total: 24 passed, 5 errors |
 | Same system slice on pre-wave HEAD `5ea41b9` | The same 5 errors; 24 passed |
 | Factory architecture, closure, semantic boundaries and docs |Passed |
 | Historical ABI guard |Passed in advisory mode; external expected digest absent |
 | Release metadata |0.2.0 passes; no release/tag created |
+
+Hosted semantic-ABI verification passed at the first publication head. Portable
+CI stopped at the hygiene gate:53 baseline-relative findings reproduce on the
+pre-wave source. The source wave initially added two findings; a red/green
+immutability regression and shared profile-validation helper remove those two.
+No baseline was regenerated or exemption added. The remaining53 are inherited
+branch review debt, so hosted portable verification remains unqualified.
 
 The five baseline system errors are unmigrated fixtures: two calls omit the
 required `grade_a_course`/`source_root` resume keywords; three legacy fixtures lack

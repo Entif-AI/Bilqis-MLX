@@ -60,6 +60,11 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
             source_root=LEGACY, source_registry=cls.registry,
             answer_registry=live_answer_registry())
 
+    def test_registered_source_meanings_cannot_be_rebound(self):
+        from bilqis_mlx.factory.candidate_realizations import REALIZATIONS
+        with self.assertRaises(TypeError):
+            REALIZATIONS["unqualified-sense"] = object()
+
     def test_source_realization_compiles_one_thin_grade_through_factory(self):
         self.staged.verify(self.frontier, self.current)
         successor = self.staged.successor
