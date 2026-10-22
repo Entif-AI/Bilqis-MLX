@@ -71,7 +71,7 @@ from .profiles.school import (
 from .profiles.catalog import (
     next_numeric_scope_profile,
     numeric_scope_profile,
-    numeric_row_in_scope,
+    partition_numeric_scope,
     numeric_entry_transition,
 )
 from .profiles.retention import fragile_preservation_capabilities
@@ -2673,12 +2673,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 if r["capability"] == cap]
     deferred_misses = []
     if receipt.get("numeric_maximum") is not None:
-        deferred_misses = [
-            row for row in priority
-            if not numeric_row_in_scope(row, receipt["numeric_maximum"])]
-        priority = [
-            row for row in priority
-            if numeric_row_in_scope(row, receipt["numeric_maximum"])]
+        priority, deferred_misses = partition_numeric_scope(
+            priority, receipt["numeric_maximum"])
     miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
     if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
         raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
