@@ -617,6 +617,9 @@ def _prepare_live_board(args, build, ingest):
     live_mode = "FLASH" if args.flash_mode else "LIVE"
     def on_event(event):
         ingest(board, event)
+        runtime_phase = event.get("_runtime_phase")
+        if isinstance(runtime_phase, str) and runtime_phase:
+            board.state["phase"] = runtime_phase
         if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
             board.mode = live_mode
             board.state["stop"] = "RUNNING"

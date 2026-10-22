@@ -520,10 +520,12 @@ class MentorEpochTests(unittest.TestCase):
         with (patch.object(trainer, "_boundary_delivery_events", return_value=()),
               patch.object(trainer, "_quarantine_newer_uncommitted_bundles"),
               patch.object(trainer, "retire_bundles", return_value=()) as retire,
-              patch.object(trainer, "retire_stale_soups", return_value=())):
+              patch.object(trainer, "retire_stale_soups", return_value=()) as retire_soups):
             trainer._publish_boundary(Path("/not-created"), record, (), ())
         self.assertTrue({"bundles/a", "bundles/b", "bundles/f"} <=
                         retire.call_args.args[1])
+        retire_soups.assert_called_once_with(
+            Path("/not-created"), self.epoch["active_grade_soups"])
 
 
 if __name__ == "__main__":

@@ -7,8 +7,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from bilqis_mlx.presentation.dashboard import build
+from bilqis_mlx.presentation.dashboard import _replay_dashboard_journal, build
+from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 from bilqis_mlx.presentation.dashboard_watch import JournalReplaced, JournalTail, watch
 from bilqis_mlx.presentation.run_discovery import (
     AmbiguousActiveRun, operator_lock_held, select_run,
@@ -16,6 +18,26 @@ from bilqis_mlx.presentation.run_discovery import (
 
 
 class DashboardWatchTests(unittest.TestCase):
+    def test_initial_replay_decodes_only_the_dashboard_record_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "events.jsonl"
+            events = [
+                {"event": "OLD", "n": 1},
+                {"event": "RECENT", "n": 2},
+                {"event": "LATEST", "n": 3},
+            ]
+            path.write_text("".join(json.dumps(event) + "\n" for event in events))
+            board = Dashboard(stream=io.StringIO(), max_records=2)
+            seen = []
+
+            with patch("bilqis_mlx.presentation.dashboard.ingest",
+                       side_effect=lambda _board, event: seen.append(event)):
+                _replay_dashboard_journal(board, root)
+
+            self.assertEqual(seen, events[-2:])
+            self.assertEqual(board.journal_offset, path.stat().st_size)
+
     def test_automatically_selects_the_only_active_cross_worktree_run(self):
         with tempfile.TemporaryDirectory() as tmp:
             roots = (Path(tmp) / "canonical", Path(tmp) / "codex")

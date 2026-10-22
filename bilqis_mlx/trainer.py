@@ -4062,10 +4062,14 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
         _record(run_dir, {"event": "SCHOOL_CHECKPOINTS_RETIRED", "grade": active_grade,
                           "generation": record["generation"],
                           "count": len(removed), "protected_count": len(retained)})
-    # The old frozen recipes are unique experiment evidence, not debris.
-    # Do not delete either historical or new-epoch soup bytes from this fork.
-    retired_soups = (retire_stale_soups(run_dir, record.get("grade_soups", {}))
-                     if record.get("mentor_epoch") is None else ())
+    # Historical recipes remain durable in immutable receipts, but soup bytes
+    # obey the bounded runtime-storage contract: active + one previous per
+    # grade.  Mentor-epoch adoption must not disable that retirement policy.
+    epoch = record.get("mentor_epoch")
+    active_soups = (
+        epoch.get("active_grade_soups", {})
+        if isinstance(epoch, dict) else record.get("grade_soups", {}))
+    retired_soups = retire_stale_soups(run_dir, active_soups)
     if retired_soups:
         _record(run_dir, {"event": "SCHOOL_OLD_GRADE_SOUPS_RETIRED",
                           "generation": record["generation"],
@@ -4318,6 +4322,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "optimizer_step": routine_assessment.optimizer_step,
         "scores": routine_measured["scores"],
     }
+    _notify_viewer({"_runtime_phase": "DIAGNOSTICS",
+                    "_dashboard_redraw": True})
     routine_warnings = summarize_completed_exam_safely(
         run_dir, receipt, routine_last_exam)
     routine_warnings = apply_paired_checkpoint_s3(
@@ -4556,6 +4562,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         scores=scores, checkpoint=asdict(school.current_student))
     last_exam["whole_student_retention"] = retention_status
     pending = (*receipt.get("_pending_visit_events", ()), *stagnation_events)
+    _notify_viewer({"_runtime_phase": "DIAGNOSTICS",
+                    "_dashboard_redraw": True})
     exam_warnings = summarize_completed_exam_safely(run_dir, receipt, last_exam)
     if cohort.digest == routine_cohort.digest:
         paired_parent_scores = parent_routine_scores
@@ -5146,6 +5154,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             if reason is not None:
                 break
             if school.stage.startswith("ASSESS_"):
+                _notify_viewer({"_runtime_phase": "ASSESSING",
+                                "_dashboard_redraw": True})
                 if flash_mode:
                     # Flash may skip expensive championship/promotion work, but
                     # it may not skip the fresh cumulative evidence needed to
@@ -5383,6 +5393,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     grade=school.grade):
                 parent_for_visit = school
                 pending_before = len(receipt.get("_pending_visit_events", ()))
+                _notify_viewer({"_runtime_phase": "VISITING",
+                                "_dashboard_redraw": True})
                 receipt = _take_visit(
                     mx, run_dir, receipt, manifest, course, engine,
                     params, optimizer, graph, steps_per_visit=steps_per_visit,
