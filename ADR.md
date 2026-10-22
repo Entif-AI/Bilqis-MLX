@@ -840,3 +840,8 @@ This proportional capability guard is additive to, not a replacement for, ADR-05
 
 This supersedes ADR-057 and SPEC-0003 only where they made protected-capability over-budget loss diagnostic-only after fixed-frontier admission. It does not roll back the live student, alter graduation/championship authority, weaken source-gold requirements, or authorize agent-owned neural training. The preserved current student and own AdamW recover forward under the corrected admission rule.
 
+## ADR-080 | 2026-10-22 | Repeated no-target-gain trials must lose teacher-selection priority
+
+The live Prometheus run showed hundreds of rejected visits with `NO_MEASURABLE_TARGET_GAIN`. Retention already sent each rejection to the inherited strategy bandit as `teacher_selection_reward=-0.05`, but the contextual UCB exploration term could still dominate that flat negative mean and repeatedly select the same policy. The human requires useless strategies to receive a small but effective negative incentive rather than remain neutral in practice.
+
+Keep the existing per-trial negative credit. In addition, each capability/phase/curriculum-scope/policy context records a consecutive no-target-gain streak. Contextual strategy ranking subtracts `0.05` per consecutive no-target-gain result from that policy's score. Any later trial that produces measurable target gain resets the streak immediately, including candidates later rejected for a different retention reason. This is a selection preference, not a neural update, quarantine, permanent strategy ban, or rewrite of historical teacher statistics. Untried strategies may still be explored; repeated demonstrated uselessness must progressively reduce reselection pressure.
