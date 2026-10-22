@@ -77,6 +77,32 @@ class ExecutableSchedulerTests(unittest.TestCase):
         )
         return program, assess(program, state, snapshot)
 
+    def test_debt_does_not_retake_instruction_from_frontier(self):
+        from bilqis_mlx.curriculum.scheduler import (
+            _instructional_pool, _resume_ordinary_spiral, weakest_three,
+        )
+        program, state = self._finish_a(self.full)
+        # A prior-grade failure remains scored while the admitted frontier
+        # has outstanding instruction; it must not win the lesson queue.
+        frontier = program.grades[-1].id
+        caps = tuple(c.id for g in program.grades for c in g.capabilities)
+        scores = {cap: Score(0, 12) for cap in caps}
+        state = replace(state, grade_index=len(state.active_grades)-1,
+                        carried_mastery_debt=caps)
+        pool = tuple(scores)
+        due = _instructional_pool(program, state, scores, pool)
+        self.assertTrue(due)
+        self.assertTrue(all(cap.startswith(frontier + ".") for cap in due))
+        self.assertEqual(set(weakest_three(scores, due)), set(sorted(due)[:3]))
+        snapshot = Assessment(state.current_student.sha256,
+                              state.current_student.optimizer_step,
+                              program.digest(), program.grades[-1].assessment_sha256,
+                              scores, evaluation_id="frontier-debt-test")
+        advanced = _resume_ordinary_spiral(program, state, snapshot)
+        self.assertEqual(advanced.grade, frontier)
+        self.assertTrue(all(c.startswith(frontier + ".") for c in advanced.queue))
+        self.assertEqual(advanced.carried_mastery_debt, caps)
+
     def test_same_scheduler_obeys_full_and_reduced_v2_rosters(self):
         full_program, full_state = self._finish_a(self.full)
         reduced_program, reduced_state = self._finish_a(self.reduced)

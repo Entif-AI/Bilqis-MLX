@@ -394,10 +394,39 @@ def _next_imperfect_grade_index(program, state: SchoolState,
     return None
 
 
+def _instructional_pool(program, state: SchoolState, scores: dict[str, Score],
+                        pool: tuple[str, ...]) -> tuple[str, ...]:
+    """Prioritize the admitted frontier without concealing prior-grade debt."""
+    if not state.carried_mastery_debt:
+        return pool
+    frontier = state.active_grades[-1]
+    grade = next(g for g in _program(program).grades if g.id == frontier)
+    current = set(_caps(program, (frontier,)))
+    if grade.teaching_stages and frontier not in state.champions:
+        frontier_stage = dict(state.introduction_frontiers).get(
+            frontier, state.introduction_stage if state.grade == frontier else 0)
+        current &= set(cap for stage in grade.teaching_stages[:frontier_stage + 1]
+                       for cap in stage)
+    due = tuple(cap for cap in pool if cap in current and
+                cap in scores and not scores[cap].perfect)
+    return due or pool
+
+
 def _resume_ordinary_spiral(program, state: SchoolState,
                             snapshot: Assessment, *,
                             allowed_capabilities: tuple[str, ...] | None = None,
                             reset_sweep: bool = True) -> SchoolState | None:
+    due = _instructional_pool(
+        program, state, snapshot.scores,
+        allowed_capabilities or _score_pool(program, state))
+    frontier = state.active_grades[-1]
+    if (state.carried_mastery_debt and due and
+            all(cap in set(_caps(program, (frontier,))) for cap in due)):
+        entered = _enter_grade(program, state, len(state.active_grades) - 1,
+                               stage="MAIN", first_recovery=(),
+                               main_sweep_visited=(),
+                               latest_rubric_digest=snapshot.rubric_digest)
+        return replace(entered, queue=due)
     excluded: tuple[str, ...] = ()
     while len(excluded) < len(state.active_grades):
         index = _next_imperfect_grade_index(
@@ -436,6 +465,16 @@ def _continue_main_sweep(program, state: SchoolState,
         # An incompletely introduced staged grade is not yet an ordinary
         # cross-grade sweep member. Its current stage must pass/remediate first.
         return None
+    due = _instructional_pool(program, state, snapshot.scores,
+                              allowed_capabilities or _score_pool(program, state))
+    frontier = state.active_grades[-1]
+    if (state.carried_mastery_debt and due and
+            all(cap in set(_caps(program, (frontier,))) for cap in due)):
+        entered = _enter_grade(program, state, len(state.active_grades) - 1,
+                               stage="MAIN", first_recovery=(),
+                               main_sweep_visited=(),
+                               latest_rubric_digest=snapshot.rubric_digest)
+        return replace(entered, queue=due)
     visited = state.main_sweep_visited
     if state.grade not in visited:
         visited = visited + (state.grade,)
@@ -626,7 +665,7 @@ def assess(program, state: SchoolState, snapshot: Assessment) -> SchoolState:
         continued = _continue_main_sweep(program, state, snapshot)
         if continued is not None:
             return continued
-        trio = weakest_three(snapshot.scores, pool)
+        trio = weakest_three(snapshot.scores, _instructional_pool(program, state, snapshot.scores, pool))
         return replace(state, stage="RECOVERY_1", queue=trio,
                        first_recovery=trio,
                        main_sweep_visited=(state.main_sweep_visited + (state.grade,)
@@ -636,7 +675,7 @@ def assess(program, state: SchoolState, snapshot: Assessment) -> SchoolState:
     if state.stage == "ASSESS_RECOVERY_1":
         # The second ranking is fresh, not disjoint. An unresolved weakness
         # must not become ineligible merely because round one selected it.
-        trio = weakest_three(snapshot.scores, pool)
+        trio = weakest_three(snapshot.scores, _instructional_pool(program, state, snapshot.scores, pool))
         return replace(state, stage="RECOVERY_2", queue=trio,
                        latest_rubric_digest=snapshot.rubric_digest)
     # weakest_three is deliberately bounded to two rounds. After round two,
@@ -679,7 +718,7 @@ def assess_flash(program, state: SchoolState, snapshot: Assessment) -> SchoolSta
             # If another grade visited earlier in this sweep is still imperfect,
             # the ordinary sweep is complete and the two global recovery rounds
             # are due before regular progression resumes.
-            trio = weakest_three(snapshot.scores, pool)
+            trio = weakest_three(snapshot.scores, _instructional_pool(program, state, snapshot.scores, pool))
             if trio:
                 visited = state.main_sweep_visited
                 if state.grade not in visited:
@@ -698,7 +737,7 @@ def assess_flash(program, state: SchoolState, snapshot: Assessment) -> SchoolSta
         continued = _continue_main_sweep(program, state, snapshot)
         if continued is not None:
             return continued
-        trio = weakest_three(snapshot.scores, pool)
+        trio = weakest_three(snapshot.scores, _instructional_pool(program, state, snapshot.scores, pool))
         return replace(state, stage="RECOVERY_1", queue=trio,
                        first_recovery=trio,
                        main_sweep_visited=(state.main_sweep_visited + (state.grade,)
@@ -706,7 +745,7 @@ def assess_flash(program, state: SchoolState, snapshot: Assessment) -> SchoolSta
                                            else state.main_sweep_visited),
                        latest_rubric_digest=snapshot.rubric_digest)
     if state.stage == "ASSESS_RECOVERY_1":
-        trio = weakest_three(snapshot.scores, pool)
+        trio = weakest_three(snapshot.scores, _instructional_pool(program, state, snapshot.scores, pool))
         return replace(state, stage="RECOVERY_2", queue=trio,
                        latest_rubric_digest=snapshot.rubric_digest)
     resumed = _resume_ordinary_spiral(program, state, snapshot, reset_sweep=True)
@@ -766,7 +805,7 @@ def assess_withheld(program, state: SchoolState, snapshot: Assessment,
             program, state, snapshot, allowed_capabilities=active_pool)
         if continued is not None:
             return continued
-        trio = weakest_three(snapshot.scores, active_pool)
+        trio = weakest_three(snapshot.scores, _instructional_pool(program, state, snapshot.scores, active_pool))
         if trio:
             visited = state.main_sweep_visited
             if state.grade not in visited:
@@ -778,7 +817,7 @@ def assess_withheld(program, state: SchoolState, snapshot: Assessment,
         return replace(state, stage="DEFERRED_STAGNATION", queue=(),
                        first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
     if state.stage == "ASSESS_RECOVERY_1":
-        trio = weakest_three(snapshot.scores, active_pool)
+        trio = weakest_three(snapshot.scores, _instructional_pool(program, state, snapshot.scores, active_pool))
         if trio:
             return replace(state, stage="RECOVERY_2", queue=trio,
                            latest_rubric_digest=snapshot.rubric_digest)
@@ -917,6 +956,10 @@ def adopt_revised_program(previous: ScheduleProgram,
         raise ValueError("FACTORY_SCHEDULE_REVISION_REQUIRES_ACTIVE_GRADE")
     champions = dict(state.champions)
     champions.pop(revised_grade, None)
+    successor_caps = set(_caps(successor, state.active_grades))
+    active_debt = tuple(
+        capability for capability in state.carried_mastery_debt
+        if capability in successor_caps)
     rebound = replace(
         state,
         course_digest=successor.digest(),
@@ -924,6 +967,7 @@ def adopt_revised_program(previous: ScheduleProgram,
         queue=(),
         first_recovery=(),
         champions=champions,
+        carried_mastery_debt=active_debt,
         grade_exam_epoch=state.grade_exam_epoch + 1,
         introduction_stage=0,
         main_sweep_visited=(),

@@ -23,7 +23,8 @@ from bilqis_mlx.generated_assessment import score
 from bilqis_mlx.learning.championship_identity import build_school_identity
 from bilqis_mlx.live_grade_c import draw
 from bilqis_mlx.profiles.catalog import (
-    next_numeric_scope_profile, numeric_entry_transition, numeric_row_in_scope)
+    next_numeric_scope_profile, numeric_entry_transition, numeric_row_in_scope,
+    numeric_scope_profile)
 from bilqis_mlx.profiles.school import (
     boolean_entry_profile, with_disabled_future_grades)
 from bilqis_mlx.source_adapters.school import live_source_registry
@@ -273,7 +274,7 @@ class NumericStaircaseTests(unittest.TestCase):
             self.root, record)
         program = schedule_program_from_executable_release(release)
         self.assertEqual(record['numeric_maximum'], 3)
-        self.assertEqual(record['numeric_scope_final_maximum'], 6)
+        self.assertEqual(record['numeric_scope_final_maximum'], 4)
         self.assertEqual(release.profile.profile_id,
                          'school/boolean-kernel/and-iff/numeric-0-3')
         self.assertNotEqual(record['model_bundle'], before['model_bundle'])
@@ -414,7 +415,7 @@ class NumericStaircaseTests(unittest.TestCase):
                     '--legacy-code-root', str(fixtures.SOURCE)]), 0)
             report = json.loads(output.getvalue())
             self.assertEqual(report['numeric_staircase']['resume_maximum'], 3)
-            self.assertEqual(report['numeric_staircase']['final_maximum'], 6)
+            self.assertEqual(report['numeric_staircase']['final_maximum'], 4)
             self.assertFalse(report['neural_training_started_by_this_command'])
             self.assertEqual((self.root/'state.json').read_bytes(), original)
 
@@ -469,6 +470,61 @@ class NumericStaircaseTests(unittest.TestCase):
                 [cap.id for cap in program.grades[-1].capabilities],
                 ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB'])
 
+    def test_existing_wide_c_rebinds_to_small_staircase_without_neural_updates(self):
+        prior_step = int(self.optimizer.state['step'].item())
+        transition = numeric_entry_transition(
+            self.boolean_release, self.graph, full_boolean=False, maximum=10)
+        with redirect_stdout(io.StringIO()), patch.object(
+                storage, '_predictions',
+                side_effect=lambda _m, _p, rows, *args:
+                {row['id']: row['gold'] for row in rows}):
+            self.params, self.optimizer, graph, wide, _ = (
+                storage._adopt_catalog_profile(
+                    self.mx, self.root, self.before_numeric,
+                    self.fixture.grade_a, fixtures.SOURCE, self.graph,
+                    self.params, self.optimizer, transition, reserve_gib=0.))
+        self.assertEqual(wide['numeric_maximum'], 10)
+        wide_student = wide['school']['current_student']
+        wide = {**wide, 'school': {
+            **wide['school'],
+            'carried_mastery_debt': ['C.COUNT', 'C.MUL', 'C.DIV'],
+        }}
+        release = storage._read_executable_factory_release_artifact(
+            self.root, wide)
+        with redirect_stdout(io.StringIO()):
+            changed, _, narrowed, program = storage._adopt_executable_profile(
+                self.root,
+                {**wide, 'numeric_scope_final_maximum': 4},
+                self.fixture.grade_a, fixtures.SOURCE, graph,
+                numeric_scope_profile(release, 3))
+        self.assertEqual(changed['numeric_maximum'], 3)
+        self.assertEqual(changed['numeric_scope_final_maximum'], 4)
+        self.assertEqual(changed['school']['carried_mastery_debt'], ['C.COUNT'])
+        self.assertEqual(changed['school']['current_student'], wide_student)
+        self.assertEqual(int(self.optimizer.state['step'].item()), prior_step)
+        self.assertEqual(
+            [cap.id for cap in program.grades[-1].capabilities],
+            ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB'])
+        self.assertEqual(
+            narrowed.profile.profile_id.rsplit('-', 1)[-1], '3')
+        self.assertTrue(storage._mentor_epoch_references(changed))
+        malformed = {
+            **changed,
+            'championship_epoch_history': [
+                *changed.get('championship_epoch_history', ()),
+                {'kind': 'profile-revision-school-identity-reset', 'event': True},
+                {'kind': 'unrelated-unknown-history-value'},
+            ],
+        }
+        cleaned, removed = (
+            storage._without_profile_revision_epoch_history_artifact(malformed))
+        self.assertEqual(removed, 1)
+        self.assertEqual(
+            cleaned['championship_epoch_history'][-1],
+            {'kind': 'unrelated-unknown-history-value'})
+        with self.assertRaisesRegex(ValueError, 'MENTOR_EPOCH_UNKNOWN_SCHEMA'):
+            storage._mentor_epoch_references(cleaned)
+
     def test_numeric_profile_sequence_cannot_skip_or_exceed_final_maximum(self):
         course, record = self.start()
         observed = [record['numeric_maximum']]
@@ -477,33 +533,27 @@ class NumericStaircaseTests(unittest.TestCase):
         while record['numeric_maximum'] < record['numeric_scope_final_maximum']:
             course, record, release, _ = self._advance_scope(course, record)
             observed.append(record['numeric_maximum'])
-        self.assertEqual(observed, [3, 4, 5, 6])
+        self.assertEqual(observed, [3, 4])
         self.assertIsNone(next_numeric_scope_profile(
             release, final_maximum=record['numeric_scope_final_maximum']))
 
-    def test_scopes_advance_individually_then_allow_multiply_and_divide(self):
+    def test_final_scope_four_adds_multiply_and_divide_without_widening_numbers(self):
         course, record = self.start()
         entry_bundle = record['model_bundle']
         prior_step = self.optimizer.state['step'].item()
-        for maximum in (4, 5, 6):
-            prior_epoch = record['school']['grade_exam_epoch']
-            course, changed, release, program = self._advance_scope(
-                course, record)
-            self.assertEqual(changed['numeric_maximum'], maximum)
-            self.assertEqual(changed['school']['introduction_stage'], 0)
-            self.assertEqual(changed['school']['queue'], ['C.COUNT'])
-            self.assertEqual(changed['model_bundle'], record['model_bundle'])
-            self.assertEqual(changed['teacher'], record['teacher'])
-            self.assertGreater(changed['school']['grade_exam_epoch'],
-                               prior_epoch)
-            capabilities = [cap.id for cap in program.grades[-1].capabilities]
-            self.assertEqual(
-                capabilities,
-                ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB'] +
-                (['C.MUL', 'C.DIV'] if maximum == 6 else []))
-            self.assertEqual(release.profile.profile_id.rsplit('-', 1)[-1],
-                             str(maximum))
-            record = changed
+        prior_epoch = record['school']['grade_exam_epoch']
+        course, changed, release, program = self._advance_scope(course, record)
+        self.assertEqual(changed['numeric_maximum'], 4)
+        self.assertEqual(changed['school']['introduction_stage'], 0)
+        self.assertEqual(changed['school']['queue'], ['C.COUNT'])
+        self.assertEqual(changed['model_bundle'], record['model_bundle'])
+        self.assertEqual(changed['teacher'], record['teacher'])
+        self.assertGreater(changed['school']['grade_exam_epoch'], prior_epoch)
+        self.assertEqual(
+            [cap.id for cap in program.grades[-1].capabilities],
+            ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB',
+             'C.MUL', 'C.DIV'])
+        self.assertEqual(release.profile.profile_id.rsplit('-', 1)[-1], '4')
         self.assertEqual(record['model_bundle'], entry_bundle)
         self.assertEqual(self.optimizer.state['step'].item(), prior_step)
 
@@ -549,9 +599,10 @@ class NumericStaircaseTests(unittest.TestCase):
                 break
             course, record, _, _ = self._advance_scope(course, record)
         self.assertEqual(len(set(cohorts)), len(cohorts))
-        self.assertEqual(observed, [(n,c) for n in (3,4,5) for c in
-            ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB')] +
-            [(6,c) for c in
+        self.assertEqual(observed,
+            [(3,c) for c in
+             ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB')] +
+            [(4,c) for c in
              ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB','C.MUL','C.DIV')])
         self.assertEqual(record['model_bundle'], entry_bundle)
 
