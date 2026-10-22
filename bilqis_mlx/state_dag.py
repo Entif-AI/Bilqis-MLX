@@ -577,6 +577,19 @@ def migrate_current_head(run_dir: Path, receipt: dict | None = None) -> dict:
     return normalized
 
 
+def _verified_persisted_receipt(run_dir: Path, pointer: dict,
+                                receipt: dict) -> tuple[dict, dict, dict]:
+    """Decode a durable node without caching a candidate that might be rejected."""
+    node = json.loads(data_plane().get_node(pointer["node_sha256"]))
+    fields = node.get("fields")
+    if not isinstance(fields, dict):
+        raise ValueError(StateDagError.NODE_POINTER_DRIFT.value)
+    stored = _load_pointer_fields(run_dir, pointer, tuple(fields))
+    if _canonical(stored) != _canonical(receipt):
+        raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+    return node, fields, stored
+
+
 def _replay_immutable_generation(run_dir: Path, receipt: dict,
                                  generation_path: Path) -> dict | None:
     """Reuse an identical durable generation without reparenting its Merkle node."""
@@ -592,13 +605,7 @@ def _replay_immutable_generation(run_dir: Path, receipt: dict,
     if current is None or (current != pointer and
                            current["generation"] >= generation):
         raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
-    node = json.loads(data_plane().get_node(pointer["node_sha256"]))
-    fields = node.get("fields")
-    if not isinstance(fields, dict):
-        raise ValueError(StateDagError.NODE_POINTER_DRIFT.value)
-    stored = _load_pointer_fields(run_dir, pointer, tuple(fields))
-    if _canonical(stored) != _canonical(receipt):
-        raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+    node, fields, stored = _verified_persisted_receipt(run_dir, pointer, receipt)
     if current != pointer:
         if (current["generation"] + 1 != generation or
                 node.get("parent_sha256") != current["node_sha256"]):
@@ -606,15 +613,13 @@ def _replay_immutable_generation(run_dir: Path, receipt: dict,
         _durable(run_dir / "state.json", _canonical(pointer), replace=True)
         if _read_pointer(run_dir / "state.json") != pointer:
             raise ValueError(StateDagError.LATEST_POINTER_NOT_DURABLE.value)
-    # Cache only verified, published field identities. Never retain a failed
-    # candidate or mutate a durable generation on an identical retry.
     _FIELD_CACHE[str(run_dir.resolve())] = {
         key: (stored[key], spec) for key, spec in fields.items()}
     return stored
 
 
 def persist(run_dir: Path, receipt: dict) -> dict:
-    """Persist one logical generation, or return its identical durable receipt."""
+    """Persist a new generation or reuse identical current/immutable evidence."""
     run_dir = Path(run_dir)
     generation = receipt.get("generation")
     if type(generation) is not int or generation < 0:
@@ -628,7 +633,21 @@ def persist(run_dir: Path, receipt: dict) -> dict:
             raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
     current = _read_pointer(run_dir / "state.json")
     if current is not None and current["generation"] >= generation:
-        raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+        if current["generation"] != generation:
+            raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+        # A legacy head can already have a committed node before its immutable
+        # generation pointer is materialized. Reuse that node, not itself as parent.
+        _, fields, stored = _verified_persisted_receipt(run_dir, current, receipt)
+        if generation_path.exists():
+            if _canonical(read_generation(run_dir, generation)) != _canonical(stored):
+                raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+        else:
+            _durable(generation_path, _canonical(current))
+            if _read_pointer(generation_path) != current:
+                raise ValueError(StateDagError.GENERATION_POINTER_DRIFT.value)
+        _FIELD_CACHE[str(run_dir.resolve())] = {
+            key: (stored[key], spec) for key, spec in fields.items()}
+        return stored
     parent = current["node_sha256"] if current is not None else None
     with data_plane().transaction():
         pointer, fields, normalized = _write_node(run_dir, receipt, parent=parent)
