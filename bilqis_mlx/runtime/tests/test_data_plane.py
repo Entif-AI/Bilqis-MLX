@@ -3,7 +3,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from bilqis_mlx.data_plane import close_data_planes, data_plane, verify_file_digest
+from bilqis_mlx.data_plane import (
+    close_data_planes, data_plane, referenced_custody_files, verify_file_digest,
+)
 
 
 class DataPlaneTests(unittest.TestCase):
@@ -42,6 +44,21 @@ class DataPlaneTests(unittest.TestCase):
         plane.put_object(digest, raw)
         self.assertEqual(plane.get_object(digest), raw)
         self.assertEqual(plane.stats()["objects"], 1)
+
+    def test_custody_file_discovery_is_bounded_to_bundle_and_soup_payloads(self):
+        receipt = {
+            "school": {"current_student": {
+                "filename": "bundles/working-1", "sha256": "a" * 64}},
+            "mentor_epoch": {"active_grade_soups": {"C": {
+                "filename": "soups/C-abc.safetensors", "sha256": "b" * 64}}},
+            "unrelated": {"filename": "cohorts/x.json", "sha256": "c" * 64},
+        }
+        found = referenced_custody_files(self.root, receipt)
+        self.assertEqual(found, (
+            ((self.root / "bundles/working-1/model-and-own-adamw.safetensors").resolve(),
+             "a" * 64),
+            ((self.root / "soups/C-abc.safetensors").resolve(), "b" * 64),
+        ))
 
 
 if __name__ == "__main__":
