@@ -77,6 +77,14 @@ class GradeCTrainerTests(unittest.TestCase):
             rubric = self.previous.grades[1 if any(c.startswith("B.") for c in scores) else 0].assessment_sha256
             school = assess(self.previous, school, Assessment(pointer.sha256,pointer.optimizer_step,
                 self.previous.digest(),rubric,scores,"toy-pass"))
+            while school.stage == "PROMOTION_SWEEP":
+                school = visit(
+                    self.previous, school, next_capability(school), pointer)
+                school = assess(
+                    self.previous, school,
+                    Assessment(pointer.sha256, pointer.optimizer_step,
+                               self.previous.digest(), rubric, scores,
+                               "toy-stability-pass"))
         return school
 
     def receipt(self, school, pointer, params):

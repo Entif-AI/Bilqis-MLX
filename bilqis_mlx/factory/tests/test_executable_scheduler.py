@@ -16,6 +16,7 @@ from bilqis_mlx.factory.tests.test_executable_release import _boolean_answers
 from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_boolean_course
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.profiles.school import boolean_kernel_profile
+from bilqis_mlx.trainer import _profile_transition
 
 
 def _checkpoint():
@@ -75,7 +76,11 @@ class ExecutableSchedulerTests(unittest.TestCase):
             },
             evaluation_id="v2-scheduler-fixture",
         )
-        return program, assess(program, state, snapshot)
+        state = assess(program, state, snapshot)
+        while state.stage == "PROMOTION_SWEEP":
+            state = visit(program, state, state.queue[0], student)
+            state = assess(program, state, snapshot)
+        return program, state
 
     def test_debt_does_not_retake_instruction_from_frontier(self):
         from bilqis_mlx.curriculum.scheduler import (
@@ -191,6 +196,55 @@ class ExecutableSchedulerTests(unittest.TestCase):
         self.assertEqual(successor.transition.semantic_geometry, "UNCHANGED")
         self.assertEqual(adopted.grade, "B")
         self.assertEqual(adopted.queue, ("B.AND", "B.IFF"))
+
+    def test_profile_successor_appends_after_stable_mean_with_mastery_debt(self):
+        curriculum, bindings = from_legacy_course(self.course)
+        answers = _boolean_answers()
+        a_only = compile_executable_factory_release(
+            curriculum, bindings,
+            CurriculumProfile(
+                "a-only-debt",
+                grades=(GradeProfile("B", enabled_capabilities=()),)),
+            self.providers, answers,
+            source_root=None, graph=self.graph,
+            verification_seed=79, legacy_course=self.course)
+        a_program = schedule_program_from_executable_release(a_only)
+        student = _checkpoint()
+        state = start_new(a_program, student)
+        for capability in tuple(state.queue):
+            state = visit(a_program, state, capability, student)
+        grade = a_program.grades[0]
+        scores = {
+            capability.id: Score(capability.exam_item_count,
+                                 capability.exam_item_count)
+            for capability in grade.capabilities
+        }
+        weak = grade.capabilities[0]
+        scores[weak.id] = Score(weak.exam_item_count // 2,
+                                weak.exam_item_count)
+        exam = Assessment(
+            student.sha256, student.optimizer_step, a_program.digest(),
+            grade.assessment_sha256, scores,
+            evaluation_id="stable-mean-debt-boundary")
+        state = assess(a_program, state, exam)
+        while state.stage == "PROMOTION_SWEEP":
+            state = visit(a_program, state, state.queue[0], student)
+            state = assess(a_program, state, exam)
+        self.assertEqual(state.stage, "AWAITING_NEXT_GRADE_WITH_DEBT")
+
+        successor = compile_successor_profile_release(
+            a_only, boolean_kernel_profile(), self.providers, answers,
+            source_root=None, graph=self.graph,
+            verification_seed=83, legacy_course=self.course)
+        b_program = schedule_program_from_executable_release(successor)
+        adopted, revised_grade, appended = _profile_transition(
+            a_program, b_program, state)
+
+        self.assertTrue(appended)
+        self.assertIsNone(revised_grade)
+        self.assertEqual(adopted.grade, "B")
+        self.assertIn(weak.id, adopted.carried_mastery_debt)
+        self.assertNotIn("A", adopted.champions)
 
     def test_profile_revision_rebinds_active_grade_without_release_dispatch(self):
         program = schedule_program_from_executable_release(self.full)

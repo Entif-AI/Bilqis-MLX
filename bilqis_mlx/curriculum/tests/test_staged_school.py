@@ -6,7 +6,7 @@ import unittest
 
 from bilqis_mlx.curriculum import ExamItem, validate, validate_exam_item
 from bilqis_mlx.curriculum.scheduler import (
-    _enter_grade, assess, assessment_capabilities, start_new, visit,
+    _enter_grade, assess, assessment_capabilities, next_capability, start_new, visit,
 )
 from bilqis_mlx.trainer import _state_from_json
 from bilqis_mlx.curriculum.tests.test_school import all_scores, cp, grade_loop, snapshot, three_grade_course
@@ -22,6 +22,13 @@ def staged_course():
     return replace(course, grades=(*course.grades[:-1], third))
 
 
+def finish_promotion_sweep(course, state, pointer, scores):
+    while state.stage == "PROMOTION_SWEEP":
+        state = visit(course, state, next_capability(state), pointer)
+        state = assess(course, state, snapshot(course, pointer, scores))
+    return state
+
+
 def enter_c(course):
     pointer = cp("whole-student")
     state = start_new(course, pointer)
@@ -29,8 +36,10 @@ def enter_c(course):
     for grade in ("A", "B", "A", "B"):
         assert state.grade == grade
         state = grade_loop(course, state, pointer)
-        state = assess(course, state, snapshot(course, pointer,
-            all_scores(course, through=grade if grade == "A" and not state.champions else "B")))
+        scores = all_scores(
+            course, through=grade if grade == "A" and not state.champions else "B")
+        state = assess(course, state, snapshot(course, pointer, scores))
+        state = finish_promotion_sweep(course, state, pointer, scores)
     return state, pointer
 
 
@@ -69,6 +78,7 @@ class StagedSchoolTests(unittest.TestCase):
         state = grade_loop(course, state, pointer)
         scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
         state = assess(course, state, snapshot(course, pointer, scores))
+        state = finish_promotion_sweep(course, state, pointer, scores)
         self.assertEqual(state.queue, ("c.1",))
         self.assertEqual(state.introduction_stage, 1)
         self.assertEqual(state.grade_exam_epoch, epoch)
@@ -80,6 +90,123 @@ class StagedSchoolTests(unittest.TestCase):
         state = assess(course, state, snapshot(course, pointer, scores))
         self.assertEqual(state.introduction_stage, 1)
         self.assertNotIn("c.2", assessment_capabilities(course, state))
+
+    def test_grade_mean_promotion_sweep_allows_one_semantic_below_ninety(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        self.assertEqual(state.introduction_stage, 1)
+
+        state = grade_loop(course, state, pointer)
+        scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        scores["c.1"] = (17, 20)
+        state = assess(course, state, snapshot(course, pointer, scores))
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.queue, ("c.0", "c.1"))
+
+        state = visit(course, state, "c.0", pointer)
+        state = assess(course, state, snapshot(course, pointer, scores))
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.queue, ("c.1",))
+
+        state = visit(course, state, "c.1", pointer)
+        exactly_ninety = dict(scores)
+        exactly_ninety["c.1"] = (16, 20)
+        state = assess(course, state, snapshot(course, pointer, exactly_ninety))
+        self.assertEqual(state.introduction_stage, 2)
+        self.assertEqual(state.queue, ("c.2",))
+        self.assertIn("c.1", state.carried_mastery_debt)
+        self.assertNotIn("C", state.champions)
+
+    def test_exactly_ninety_mean_does_not_start_promotion_sweep(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        state = grade_loop(course, state, pointer)
+        exactly_ninety = {
+            c: (8, 8) for c in assessment_capabilities(course, state)
+        }
+        exactly_ninety["c.1"] = (16, 20)
+
+        state = assess(
+            course, state, snapshot(course, pointer, exactly_ninety))
+
+        self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.introduction_stage, 1)
+        self.assertNotIn("c.2", assessment_capabilities(course, state))
+
+    def test_grade_mean_promotion_sweep_aborts_only_when_mean_falls_below_ninety(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        state = grade_loop(course, state, pointer)
+        scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        scores["c.1"] = (17, 20)
+        state = assess(course, state, snapshot(course, pointer, scores))
+
+        state = visit(course, state, "c.0", pointer)
+        state = assess(course, state, snapshot(course, pointer, scores))
+        state = visit(course, state, "c.1", pointer)
+        below_ninety = dict(scores)
+        below_ninety["c.1"] = (15, 20)
+        state = assess(course, state, snapshot(course, pointer, below_ninety))
+
+        self.assertEqual(state.introduction_stage, 1)
+        self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertNotEqual(state.stage, "ASSESS_PROMOTION_SWEEP")
+        self.assertNotIn("c.2", assessment_capabilities(course, state))
+
+    def test_promotion_sweep_uses_fresh_scores_for_every_semantic_each_step(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        state = grade_loop(course, state, pointer)
+        baseline = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        baseline["c.1"] = (17, 20)
+        state = assess(course, state, snapshot(course, pointer, baseline))
+        self.assertEqual(state.queue, ("c.0", "c.1"))
+
+        state = visit(course, state, "c.0", pointer)
+        fresh_regression_elsewhere = dict(baseline)
+        fresh_regression_elsewhere["c.1"] = (15, 20)
+        state = assess(
+            course, state,
+            snapshot(course, pointer, fresh_regression_elsewhere))
+
+        self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.introduction_stage, 1)
+        self.assertNotIn("c.2", assessment_capabilities(course, state))
+
+    def test_promotion_sweep_state_round_trips_through_runtime_receipt(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        state = grade_loop(course, state, pointer)
+        scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        scores["c.1"] = (17, 20)
+        state = assess(course, state, snapshot(course, pointer, scores))
+
+        restored = _state_from_json(
+            json.loads(json.dumps(asdict(state))), course)
+
+        self.assertEqual(restored, state)
+        self.assertEqual(restored.stage, "PROMOTION_SWEEP")
+        self.assertEqual(restored.queue, ("c.0", "c.1"))
 
     def test_incomplete_staged_grade_restores_frontier_after_cross_grade_spiral(self):
         course = staged_course()
@@ -101,6 +228,7 @@ class StagedSchoolTests(unittest.TestCase):
             state = grade_loop(course, state, pointer)
             scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
             state = assess(course, state, snapshot(course, pointer, scores))
+            state = finish_promotion_sweep(course, state, pointer, scores)
             if stage < 5:
                 self.assertEqual(state.introduction_stage, stage+1)
         self.assertEqual(state.grade, "A")
@@ -109,6 +237,7 @@ class StagedSchoolTests(unittest.TestCase):
             state = grade_loop(course, state, pointer)
             scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
             state = assess(course, state, snapshot(course, pointer, scores))
+            state = finish_promotion_sweep(course, state, pointer, scores)
         self.assertEqual(state.grade, "C")
         self.assertEqual(state.queue, tuple(f"c.{i}" for i in range(6)))
         self.assertEqual(_state_from_json(json.loads(json.dumps(asdict(state))), course), state)

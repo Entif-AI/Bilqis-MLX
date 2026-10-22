@@ -1306,6 +1306,14 @@ def _profile_transition(previous_program, successor_program, school):
         tuple(grade.id for grade in successor_program.grades) ==
         tuple(grade.id for grade in previous_program.grades))
     if appended:
+        if school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
+            return (
+                append_next_grade_with_debt(
+                    previous_program, successor_program, school,
+                    school.carried_mastery_debt),
+                None,
+                True,
+            )
         return (
             adopt_appended_program(previous_program, successor_program, school),
             None,
@@ -1328,21 +1336,34 @@ def _profile_championship_state(
         parameter_shapes=receipt["parameter_shapes"],
         factory_release_sha256=successor.release_sha256)
     if appended:
-        from bilqis_mlx.learning.mentor_epoch import begin_epoch
-        epoch = begin_epoch(
-            previous_graduate=asdict(school.current_student),
-            admitted_baseline=asdict(next_state.current_student),
-            introduced_grade=next_state.grade,
-            source_graph_sha256=receipt["semantic_graph_sha256"],
-            previous_capabilities=tuple(
-                item.capability_id
-                for item in predecessor.execution_plan.capabilities),
-            previous_graduation_exam={
-                "checkpoint_sha256": exam.get("student_sha256"),
-                "rubric_sha256": exam.get("exam_rubric_sha256"),
-                "cohort_sha256": exam.get("cohort_sha256"),
-                "scores": exam.get("scores"),
-            })
+        previous_capabilities = tuple(
+            item.capability_id
+            for item in predecessor.execution_plan.capabilities)
+        boundary_exam = {
+            "checkpoint_sha256": exam.get("student_sha256"),
+            "rubric_sha256": exam.get("exam_rubric_sha256"),
+            "cohort_sha256": exam.get("cohort_sha256"),
+            "scores": exam.get("scores"),
+        }
+        if school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
+            from bilqis_mlx.learning.mentor_epoch import begin_debt_epoch
+            epoch = begin_debt_epoch(
+                previous_checkpoint=asdict(school.current_student),
+                admitted_baseline=asdict(next_state.current_student),
+                introduced_grade=next_state.grade,
+                source_graph_sha256=receipt["semantic_graph_sha256"],
+                previous_capabilities=previous_capabilities,
+                previous_boundary_exam=boundary_exam,
+                previous_mastery_debt=school.carried_mastery_debt)
+        else:
+            from bilqis_mlx.learning.mentor_epoch import begin_epoch
+            epoch = begin_epoch(
+                previous_graduate=asdict(school.current_student),
+                admitted_baseline=asdict(next_state.current_student),
+                introduced_grade=next_state.grade,
+                source_graph_sha256=receipt["semantic_graph_sha256"],
+                previous_capabilities=previous_capabilities,
+                previous_graduation_exam=boundary_exam)
         if receipt.get("mentor_epoch") is not None:
             history.append(receipt["mentor_epoch"])
         epoch["settled_matchups"] = deepcopy(
@@ -1432,6 +1453,46 @@ def _adopt_executable_profile(
         run_dir, _with_delivery_outbox(record, (event,)))
     _reconcile_delivery_outbox(run_dir, record)
     return record, compatibility_course, successor, successor_program
+
+
+def _auto_adopt_known_grade_boundary(
+        mx, run_dir, receipt, course, grade_a_course, source_root, manifest,
+        parameters, optimizer, graph, *, reserve_gib, full_grade_b,
+        numeric_staircase):
+    """Consume a canonical grade boundary when its sanctioned transition exists."""
+    release = _require_executable_factory_admission(run_dir, receipt, graph)
+    program = schedule_program_from_executable_release(release)
+    school = _state_from_json(receipt["school"], program)
+    if school.stage not in (
+            "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"):
+        return parameters, optimizer, graph, receipt, course, False
+
+    active_count = len(release.execution_plan.grades)
+    canonical_count = len(release.curriculum.grades)
+    if active_count == 1 and canonical_count > 1:
+        target = with_disabled_future_grades(
+            boolean_entry_profile(full=full_grade_b),
+            tuple(grade.grade_id for grade in release.curriculum.grades[2:]))
+        receipt, course, _, _ = _adopt_executable_profile(
+            run_dir, receipt, grade_a_course, source_root, graph, target)
+        return parameters, optimizer, graph, receipt, course, True
+
+    if active_count == 2 and canonical_count > 2:
+        allow_debt = school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT"
+        if allow_debt:
+            receipt = _measure_debt_admission_boundary(
+                mx, run_dir, receipt, manifest, course, source_root,
+                parameters, graph)
+        transition = numeric_entry_transition(
+            release, graph, full_boolean=full_grade_b,
+            maximum=3 if numeric_staircase else 10)
+        parameters, optimizer, graph, receipt, course = _adopt_catalog_profile(
+            mx, run_dir, receipt, grade_a_course, source_root, graph,
+            parameters, optimizer, transition, reserve_gib=reserve_gib,
+            allow_mastery_debt=allow_debt)
+        return parameters, optimizer, graph, receipt, course, True
+
+    return parameters, optimizer, graph, receipt, course, False
 
 
 def _require_complete_profile_boundary(program, school, receipt):
@@ -4137,6 +4198,8 @@ def _resume_command(run_dir: Path, source_root: Path,
 def _school_result_label(school):
     return (("GRADE_" + school.grade + "_MASTERED_AWAITING_NEXT_GRADE")
             if school.stage == "AWAITING_NEXT_GRADE" else
+            ("GRADE_" + school.grade + "_PROMOTED_WITH_DEBT_AWAITING_NEXT_GRADE")
+            if school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT" else
             ("GRADE_" + school.revalidation_target_grade +
              "_REVALIDATING_" + school.grade)
             if school.revalidation_target_grade else
@@ -4151,11 +4214,15 @@ def _promotion_due_after_routine(
     grade during a stagnation spiral, but it cannot create a qualification
     instrument. Distinguish *teaching progression* from *graduation authority*.
     """
+    if (getattr(before, "stage", None) == "ASSESS_PROMOTION_SWEEP" and
+            before.grade not in getattr(after, "champions", {})):
+        return False
     return complete_assessment and (
         after.grade != before.grade
         or after.revalidation_target_grade != before.revalidation_target_grade
         or after.stage in {
-            "AWAITING_NEXT_GRADE", "AWAITING_TEACHER_SOUP",
+            "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT",
+            "AWAITING_TEACHER_SOUP",
             "WHOLE_SCHOOL_MASTERED",
         }
     )
@@ -4771,6 +4838,8 @@ def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
         return "AWAITING_TEACHER_SOUP"
     if stage == "AWAITING_NEXT_GRADE":
         return "GRADE_" + grade + "_AWAITING_NEXT_GRADE"
+    if stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
+        return "GRADE_" + grade + "_PROMOTED_WITH_DEBT_AWAITING_NEXT_GRADE"
     if stage == "DEFERRED_STAGNATION":
         return "STAGNATION_REVIEW_REQUIRED"
     if stage.startswith("ASSESS_") and not flash_mode:
@@ -4923,7 +4992,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         grade.grade_id
                         for grade in admitted_v2.curriculum.grades[2:]))
             if (target_boolean_profile is not None and
-                    receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" and
+                    receipt["school"]["stage"] in (
+                        "AWAITING_NEXT_GRADE",
+                        "AWAITING_NEXT_GRADE_WITH_DEBT") and
                     active_grade_count == 1):
                 receipt, course, admitted_v2, _ = _adopt_executable_profile(
                     run_dir, receipt, course_a, source_root, graph,
@@ -4941,11 +5012,17 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         target_boolean_profile)
             admitted_v2 = _require_executable_factory_admission(
                 run_dir, receipt, graph)
-            if ((receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" or
+            automatic_debt_admission = (
+                receipt["school"]["stage"] == "AWAITING_NEXT_GRADE_WITH_DEBT")
+            if ((receipt["school"]["stage"] in (
+                    "AWAITING_NEXT_GRADE",
+                    "AWAITING_NEXT_GRADE_WITH_DEBT") or
                  admit_next_grade_with_debt) and
                     len(admitted_v2.execution_plan.grades) == 2 and
                     len(admitted_v2.curriculum.grades) > 2):
-                if admit_next_grade_with_debt:
+                allow_mastery_debt = (
+                    admit_next_grade_with_debt or automatic_debt_admission)
+                if allow_mastery_debt:
                     receipt = _measure_debt_admission_boundary(
                         mx, run_dir, receipt, manifest, course, source_root,
                         params, graph)
@@ -4958,7 +5035,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         mx, run_dir, receipt, course_a, source_root, graph,
                         params, optimizer, catalog_transition,
                         reserve_gib=reserve_gib,
-                        allow_mastery_debt=admit_next_grade_with_debt))
+                        allow_mastery_debt=allow_mastery_debt))
             receipt = _repair_championship_source_context(run_dir, receipt, course)
         else:
             if numeric_staircase:
@@ -5113,11 +5190,19 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 next_numeric_profile = next_numeric_scope_profile(
                     admitted_v2, final_maximum=final_numeric_scope)
                 if (next_numeric_profile is not None and
-                        active_school.stage == "AWAITING_NEXT_GRADE"):
+                        active_school.stage in (
+                            "AWAITING_NEXT_GRADE",
+                            "AWAITING_NEXT_GRADE_WITH_DEBT")):
                     receipt, course, executable_release, schedule_program = (
                         _adopt_executable_profile(
                             run_dir, receipt, course_a, source_root, graph,
                             next_numeric_profile))
+            params, optimizer, graph, receipt, course, _ = (
+                _auto_adopt_known_grade_boundary(
+                    mx, run_dir, receipt, course, course_a, source_root,
+                    manifest, params, optimizer, graph,
+                    reserve_gib=reserve_gib, full_grade_b=full_grade_b,
+                    numeric_staircase=numeric_staircase))
             school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
             receipt = _reconcile_stagnation_scope(
                 run_dir, receipt, course, school)
@@ -5510,7 +5595,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "flash_mode": flash_mode,
             "boolean_association_bridge": boolean_association_bridge,
             "autonomous_curriculum": autonomous_curriculum,
-            "resume_required": school.stage != "AWAITING_NEXT_GRADE",
+            "resume_required": school.stage not in (
+                "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"),
             "stagnation_session_id": receipt.get("stagnation_session", {}).get(
                 "session_id"),
             "stagnation_quarantined": list(stagnation_quarantined),

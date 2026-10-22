@@ -79,6 +79,9 @@ class GenericGenerationTests(unittest.TestCase):
             scores={cap.id: Score(4, 4) for cap in caps},
             evaluation_id="fixture-z-perfect")
         finished = assess(course, state, snapshot)
+        while finished.stage == "PROMOTION_SWEEP":
+            finished = visit(course, finished, finished.queue[0], student)
+            finished = assess(course, finished, snapshot)
         self.assertEqual(finished.stage, "AWAITING_NEXT_GRADE")
 
 
