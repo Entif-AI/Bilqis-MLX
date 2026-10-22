@@ -247,5 +247,62 @@ class StateDagTests(unittest.TestCase):
         self.assertEqual(head_pointer, second_pointer)
 
 
+    def test_persist_identical_generation_retry_does_not_reparent(self):
+        first = self.receipt()
+        (self.root / "state.json").write_text(json.dumps(first))
+        migrate_current_head(self.root, first)
+        successor = self.receipt(8)
+        self.assertEqual(persist(self.root, successor), successor)
+        head_before = (self.root / "state.json").read_bytes()
+        generation_before = (self.root / "states/0000008.json").read_bytes()
+        from bilqis_mlx.data_plane import data_plane
+        nodes_before = data_plane().stats()["nodes"]
+
+        self.assertEqual(persist(self.root, json.loads(json.dumps(successor))), successor)
+        self.assertEqual((self.root / "state.json").read_bytes(), head_before)
+        self.assertEqual((self.root / "states/0000008.json").read_bytes(),
+                         generation_before)
+        self.assertEqual(data_plane().stats()["nodes"], nodes_before)
+
+    def test_persist_changed_or_stale_generation_never_rewinds_head(self):
+        first = self.receipt()
+        (self.root / "state.json").write_text(json.dumps(first))
+        migrate_current_head(self.root, first)
+        second = self.receipt(8)
+        persist(self.root, second)
+        head_eight = (self.root / "state.json").read_bytes()
+        changed = self.receipt(8)
+        changed["school"] = {"grade": "C", "queue": ["C.NUMBER"]}
+        with self.assertRaisesRegex(ValueError, "STATE_DAG_IMMUTABLE_GENERATION_COLLISION"):
+            persist(self.root, changed)
+        self.assertEqual((self.root / "state.json").read_bytes(), head_eight)
+
+        third = self.receipt(9)
+        third["school"] = {"grade": "C", "queue": ["C.NUMBER"]}
+        persist(self.root, third)
+        head_nine = (self.root / "state.json").read_bytes()
+        with self.assertRaisesRegex(ValueError, "STATE_DAG_IMMUTABLE_GENERATION_COLLISION"):
+            persist(self.root, second)
+        self.assertEqual((self.root / "state.json").read_bytes(), head_nine)
+        self.assertEqual(read_current(self.root), third)
+
+    def test_persist_replays_existing_orphan_generation_without_new_node(self):
+        first = self.receipt()
+        (self.root / "state.json").write_text(json.dumps(first))
+        migrate_current_head(self.root, first)
+        first_head = (self.root / "state.json").read_bytes()
+        second = self.receipt(8)
+        persist(self.root, second)
+        second_head = (self.root / "state.json").read_bytes()
+        from bilqis_mlx.data_plane import data_plane
+        nodes_before = data_plane().stats()["nodes"]
+
+        (self.root / "state.json").write_bytes(first_head)
+        self.assertEqual(persist(self.root, second), second)
+        self.assertEqual((self.root / "state.json").read_bytes(), second_head)
+        self.assertEqual(read_current(self.root), second)
+        self.assertEqual(data_plane().stats()["nodes"], nodes_before)
+
+
 if __name__ == "__main__":
     unittest.main()
