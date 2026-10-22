@@ -75,9 +75,12 @@ def enrich(*, graph, capability, seed, option_id, prerequisites=None, **_):
         ordered = list(pair)
         rng.shuffle(ordered)
         result.extend(ordered)
+    target_rows = tuple(result)
     for prior in (frames.SPECS[capability][1] if prerequisites is None else prerequisites):
         if prior in frames.SPECS and prior != capability:
-            result.extend(rng.choice(_contrast_pairs(_pools(graph, prior))))
+            lookup = {row['id']: row for pool in _pools(graph, prior).values() for row in pool}
+            result.extend(lookup[digest({**row['record'], 'capability': prior})]
+                          for row in target_rows)
     return tuple(result)
 
 

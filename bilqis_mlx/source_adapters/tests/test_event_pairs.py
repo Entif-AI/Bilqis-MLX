@@ -58,6 +58,11 @@ class EventPairTests(unittest.TestCase):
             prerequisites=('D.EVENT_OCCURRENCE', 'D.COMMENCEMENT', 'A.IDENTITY'))
         self.assertEqual({cap: sum(r['capability'] == cap for r in rows)
                           for cap in event_frames.SPECS},
-                         {'D.EVENT_OCCURRENCE': 2, 'D.COMMENCEMENT': 2,
+                         {'D.EVENT_OCCURRENCE': 16, 'D.COMMENCEMENT': 16,
                           'D.TERMINATION': 16})
         self.assertTrue(all(event_pairs.check(row, graph=graph) for row in rows))
+        contexts = {cap: {(repr(r['record']['events']), r['record']['query'])
+                          for r in rows if r['capability'] == cap}
+                    for cap in event_frames.SPECS}
+        self.assertEqual(contexts['D.TERMINATION'], contexts['D.EVENT_OCCURRENCE'])
+        self.assertEqual(contexts['D.TERMINATION'], contexts['D.COMMENCEMENT'])
