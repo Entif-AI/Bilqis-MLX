@@ -6,8 +6,8 @@ import unittest
 
 from bilqis_mlx.curriculum import ExamItem, validate, validate_exam_item
 from bilqis_mlx.curriculum.scheduler import (
-    _at_introduction_stage, _enter_grade, assess, assessment_capabilities,
-    next_capability, start_new, visit,
+    _at_introduction_stage, _enter_grade, assess, assess_withheld,
+    assessment_capabilities, next_capability, start_new, visit,
 )
 from bilqis_mlx.trainer import _state_from_json
 from bilqis_mlx.curriculum.tests.test_school import all_scores, cp, grade_loop, snapshot, three_grade_course
@@ -94,6 +94,33 @@ class StagedSchoolTests(unittest.TestCase):
                 self.assertEqual(state.stage, "RECOVERY_1")
                 self.assertIn("b.0", state.queue)
                 self.assertIn(current, state.queue)
+
+    def test_c_withheld_does_not_stop_ongoing_b_teaching(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        last_stage = len(course.grades[-1].teaching_stages) - 1
+        state = _at_introduction_stage(
+            state, last_stage, stage="ASSESS_RECOVERY_2", queue=(),
+            first_recovery=("b.0", f"c.{last_stage}"))
+        state = replace(
+            state, champions={"A": state.champions["A"]},
+            carried_mastery_debt=("b.0", f"c.{last_stage}"))
+        withheld = (f"c.{last_stage}",)
+        scores = {
+            capability: (8, 8)
+            for capability in assessment_capabilities(course, state)
+            if capability not in withheld
+        }
+        scores["b.0"] = (4, 8)
+
+        resumed = assess_withheld(
+            course, state, snapshot(course, pointer, scores), withheld)
+
+        self.assertEqual((resumed.grade, resumed.stage), ("B", "MAIN"))
+        self.assertIn("b.0", resumed.queue)
+        self.assertIn(f"c.{last_stage}", resumed.carried_mastery_debt)
+        self.assertEqual(
+            dict(resumed.introduction_frontiers)["C"], last_stage)
 
     def test_future_c_concepts_are_neither_taught_nor_examined(self):
         course = staged_course()

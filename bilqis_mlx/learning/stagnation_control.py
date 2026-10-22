@@ -14,6 +14,9 @@ from copy import deepcopy
 SCHEMA = "bilqis.mlx.stagnation-session/v1"
 GRACE_SCHEMA = "bilqis.mlx.stagnation-grace/v1"
 RECOVERY_PHASES = ("RECOVERY_1", "RECOVERY_2")
+# Grade B is developmental learning territory: it may be scored as unfinished
+# mastery debt and repeatedly taught, but it never actuates run containment.
+NON_TERMINAL_STAGNATION_GRADES = frozenset(("B",))
 MINIMUM_NO_PROGRESS_SECONDS = 20 * 60
 
 
@@ -472,7 +475,9 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
             elapsed_seconds=elapsed_seconds)
         if evidence is None:
             continue
-        if capability in set(quarantine_suppressed):
+        developmental = (
+            capability.partition(".")[0] in NON_TERMINAL_STAGNATION_GRADES)
+        if developmental or capability in set(quarantine_suppressed):
             events.append({
                 "event": "SCHOOL_CAPABILITY_STAGNATION_QUARANTINE_SUPPRESSED",
                 **evidence,
@@ -480,6 +485,8 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
                 "would_quarantine": True,
                 "diagnostic_only": True,
                 "quarantine_suppressed": True,
+                **({"suppression_reason": "GRADE_B_DEVELOPMENTAL_LEARNING"}
+                   if developmental else {}),
             })
             continue
         updated["quarantined"][capability] = evidence
