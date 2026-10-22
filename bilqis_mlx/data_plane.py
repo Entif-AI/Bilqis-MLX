@@ -47,7 +47,6 @@ class DataPlaneError(str, Enum):
     EVENT_LEDGER_UNSAFE = "DATA_PLANE_EVENT_LEDGER_UNSAFE"
     EVENT_LEDGER_TRUNCATED = "DATA_PLANE_EVENT_LEDGER_TRUNCATED"
     EVENT_LEDGER_JSON_INVALID = "DATA_PLANE_EVENT_LEDGER_JSON_INVALID"
-    EVENT_ID_INVALID = "DATA_PLANE_EVENT_ID_INVALID"
 
 
 def _error(code: DataPlaneError, detail=None) -> str:
@@ -71,7 +70,7 @@ def _read_event_tail(ledger: Path, start: int) -> tuple[list[tuple[str, str]], i
                 continue
             if (not isinstance(event_id, str) or
                     len(event_id) != SHA256_HEX_LENGTH):
-                raise ValueError(_error(DataPlaneError.EVENT_ID_INVALID, event_id))
+                continue
             observed.append((event_id, event_payload_digest(item)))
         return observed, stream.tell()
 
