@@ -8,6 +8,7 @@ import bilqis_mlx.factory.live_answers as _factory_live_answers
 import bilqis_mlx.factory.schedule as _factory_schedule
 import bilqis_mlx.learning.championship_identity as _learning_championship_identity
 import bilqis_mlx.learning.student_ops as _learning_student_ops
+import bilqis_mlx.profiles.catalog as _profiles_catalog
 import bilqis_mlx.runtime.admission as _runtime_admission
 import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
 import bilqis_mlx.runtime.state as _runtime_state
@@ -511,3 +512,32 @@ def _activate_replaced_admitted_grade(run_dir, receipt, previous_course, success
     from bilqis_mlx.compatibility.trainer_transitions import activate_replaced_admitted_grade
     return activate_replaced_admitted_grade(
         run_dir, receipt, previous_course, successor, graph)
+
+
+def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, graph,
+                             course, release, program, *, numeric_staircase):
+    """Rebind a wide historical scope, then advance the admitted staircase."""
+    if numeric_staircase:
+        from bilqis_mlx.numeric_staircase import INITIAL_MAXIMUM, FINAL_MAXIMUM
+        if receipt.get("numeric_maximum", 0) > FINAL_MAXIMUM:
+            current = _runtime_admission._require_executable_factory_admission(
+                run_dir, receipt, graph)
+            active = _factory_schedule.schedule_program_from_executable_release(current)
+            school = _runtime_state._state_from_json(receipt["school"], active)
+            if school.grade == active.grades[-1].id:
+                receipt, course, release, program = _adopt_executable_profile(
+                    run_dir, {**receipt, "numeric_scope_final_maximum": FINAL_MAXIMUM},
+                    grade_a_course, source_root, graph,
+                    _profiles_catalog.numeric_scope_profile(current, INITIAL_MAXIMUM))
+    final_scope = receipt.get("numeric_scope_final_maximum")
+    if final_scope is not None:
+        current = _runtime_admission._require_executable_factory_admission(
+            run_dir, receipt, graph)
+        active = _factory_schedule.schedule_program_from_executable_release(current)
+        school = _runtime_state._state_from_json(receipt["school"], active)
+        next_profile = _profiles_catalog.next_numeric_scope_profile(
+            current, final_maximum=final_scope)
+        if next_profile is not None and school.stage == "AWAITING_NEXT_GRADE":
+            receipt, course, release, program = _adopt_executable_profile(
+                run_dir, receipt, grade_a_course, source_root, graph, next_profile)
+    return receipt, course, release, program

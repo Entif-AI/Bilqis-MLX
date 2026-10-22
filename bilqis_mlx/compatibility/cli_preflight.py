@@ -81,10 +81,11 @@ def legacy_profile_label(saved: dict, *, full_grade_b: bool) -> dict:
 def legacy_numeric_scope(saved: dict) -> dict:
     if saved.get("curriculum_mode") != NUMERIC_STAIRCASE_RELEASE:
         return {}
+    from ..numeric_staircase import INITIAL_MAXIMUM, FINAL_MAXIMUM
     return {
-        "initial_maximum": 3,
-        "final_maximum": 6,
-        "resume_maximum": saved.get("numeric_maximum", 3),
+        "initial_maximum": INITIAL_MAXIMUM,
+        "final_maximum": FINAL_MAXIMUM,
+        "resume_maximum": saved.get("numeric_maximum", INITIAL_MAXIMUM),
         "neural_updates": 0,
         "legacy_release": NUMERIC_STAIRCASE_RELEASE,
     }

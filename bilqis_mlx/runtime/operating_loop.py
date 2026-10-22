@@ -333,22 +333,10 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
         while True:
             if experiment_budget is not None:
                 experiment_budget.assert_can_allocate(600_000_000)
-            final_numeric_scope = receipt.get("numeric_scope_final_maximum")
-            if final_numeric_scope is not None:
-                admitted_v2 = _runtime_admission._require_executable_factory_admission(
-                    run_dir, receipt, graph)
-                active_program = _factory_schedule.schedule_program_from_executable_release(
-                    admitted_v2)
-                active_school = _runtime_state._state_from_json(
-                    receipt["school"], active_program)
-                next_numeric_profile = _profiles_catalog.next_numeric_scope_profile(
-                    admitted_v2, final_maximum=final_numeric_scope)
-                if (next_numeric_profile is not None and
-                        active_school.stage == "AWAITING_NEXT_GRADE"):
-                    receipt, course, executable_release, schedule_program = (
-                        _runtime_release_adoption._adopt_executable_profile(
-                            run_dir, receipt, course_a, source_root, graph,
-                            next_numeric_profile))
+            receipt, course, executable_release, schedule_program = (
+                _runtime_release_adoption._advance_numeric_profile(
+                    run_dir, receipt, course_a, source_root, graph, course,
+                    executable_release, schedule_program, numeric_staircase=numeric_staircase))
             school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
             receipt = _runtime_reconciliation._reconcile_stagnation_scope(
                 run_dir, receipt, course, school)

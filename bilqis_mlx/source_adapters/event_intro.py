@@ -17,6 +17,7 @@ from ..vocabulary_growth import digest
 
 GENERATOR = 'bilqis.issue349.event-frames-introduction/v1'
 OPTION = 'source.event-single-observation/v1'
+OPTION_NOT_RELEASED = 'FACTORY_TEACHING_OPTION_NOT_RELEASED'
 
 
 def draw(source_root, graph, **kwargs):
@@ -31,7 +32,7 @@ def check(row, **kwargs):
 
 def enrich(*, graph, capability, seed, option_id, **_):
     if option_id != OPTION or capability not in frames.SPECS:
-        raise ValueError('FACTORY_TEACHING_OPTION_NOT_RELEASED')
+        raise ValueError(OPTION_NOT_RELEASED)
     frames.source_senses()
     ids = {token: index for index, token in enumerate(graph['tokens'])}
     rows = []

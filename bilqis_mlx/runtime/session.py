@@ -242,6 +242,8 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
     active_course = course if old_mode else old_course
     receipt, _, _ = _runtime_release_adoption._ensure_executable_release(
         run_dir, receipt, active_course, grade_a_course, source_root, graph)
+    receipt = _learning_championship_runtime._repair_profile_revision_epoch_history(
+        run_dir, receipt, active_course)
     _runtime_checkpoints._verify_best_custody(run_dir, receipt)
     # Also finishes a retirement interrupted after the prior state commit.
     _runtime_checkpoints._publish_boundary(run_dir, receipt, (), ())

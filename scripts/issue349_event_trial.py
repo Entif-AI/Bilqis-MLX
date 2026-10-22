@@ -38,8 +38,9 @@ def _adopt_source_revision(run, saved, current, graph, source, adapter):
     from bilqis_mlx.runtime.session import prepare_source
     from bilqis_mlx.runtime.release_adoption import _adopt_executable_profile
 
-    if all(current.source_bindings.by_capability[cap].generator_id == adapter.GENERATOR
-           for cap in event_frames.SPECS):
+    if (adapter.registered_adapter().descriptor in current.source_adapters and
+            all(current.source_bindings.by_capability[cap].generator_id == adapter.GENERATOR
+                for cap in event_frames.SPECS)):
         return saved, current
     _, historical, _, _, _, _ = prepare_source(source,
         source/'runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt',

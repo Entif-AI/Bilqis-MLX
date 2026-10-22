@@ -66,6 +66,7 @@ from .profiles.school import (
 )
 from .profiles.catalog import (
     next_numeric_scope_profile,
+    numeric_scope_profile,
     numeric_row_in_scope,
     numeric_entry_transition,
 )
@@ -160,6 +161,9 @@ from bilqis_mlx.learning.championship_runtime import (
     _live_championship_identity,
     _championship_pair_key,
     _historical_championship_authority,
+    _is_profile_revision_epoch_history_artifact,
+    _without_profile_revision_epoch_history_artifact,
+    _repair_profile_revision_epoch_history,
     _migrate_championship_governance,
     _bind_checkpoint_origin,
     _compare_incumbents,

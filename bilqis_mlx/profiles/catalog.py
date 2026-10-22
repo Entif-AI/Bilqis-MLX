@@ -20,6 +20,16 @@ from .school import (
 )
 
 
+NUMERIC_PROFILE_MAXIMUM = 10
+
+
+class _NumericProfileError:
+    """Stable input-contract wire codes for bounded numeric profiles."""
+
+    TARGET_INVALID = "FACTORY_NUMERIC_SCOPE_TARGET_INVALID"
+    ACTIVE_GRADE_REQUIRED = "FACTORY_NUMERIC_SCOPE_TARGET_REQUIRES_ACTIVE_GRADE"
+
+
 @dataclass(frozen=True)
 class CatalogProfileTransition:
     profile: CurriculumProfile
@@ -50,17 +60,64 @@ def numeric_entry_transition(
         grade.grade_id
         for grade in release.curriculum.grades[next_index + 1:])
     profile = with_disabled_future_grades(profile, future)
+    from ..numeric_staircase import FINAL_MAXIMUM
     return CatalogProfileTransition(
         profile=profile,
         graph=expanded_graph(graph),
-        numeric_scope_final_maximum=(6 if maximum < 6 else None),
+        numeric_scope_final_maximum=(
+            FINAL_MAXIMUM if maximum < FINAL_MAXIMUM else None),
+    )
+
+
+def numeric_scope_profile(
+        release: ExecutableFactoryRelease, maximum: int) -> CurriculumProfile:
+    """Project one exact bounded numeric domain over the active numeric grade."""
+    if (not isinstance(release, ExecutableFactoryRelease) or
+            type(maximum) is not int or not 1 <= maximum <= NUMERIC_PROFILE_MAXIMUM):
+        raise ValueError(_NumericProfileError.TARGET_INVALID)
+    release.verify()
+    if not release.execution_plan.grades:
+        raise ValueError(_NumericProfileError.ACTIVE_GRADE_REQUIRED)
+    active_grade = release.execution_plan.grades[-1]
+    canonical_grade = next(
+        grade for grade in release.curriculum.grades
+        if grade.grade_id == active_grade.grade_id)
+    all_ids = tuple(
+        capability.capability_id for capability in canonical_grade.capabilities)
+    from ..numeric_staircase import FINAL_MAXIMUM, FOUNDATIONS
+    enabled = (all_ids if maximum >= FINAL_MAXIMUM else
+               all_ids[:len(FOUNDATIONS)])
+    numbers = tuple(str(index) for index in range(maximum + 1))
+    numeric_grade = GradeProfile(
+        active_grade.grade_id,
+        enabled_capabilities=enabled,
+        capabilities=tuple(CapabilityProfile(
+            capability_id,
+            provider_parameters=(("numbers", numbers),),
+            answer_family_values=(("numeric_active", numbers),),
+        ) for capability_id in enabled),
+    )
+    prior = tuple(
+        grade for grade in release.profile.grades
+        if grade.grade_id != active_grade.grade_id)
+    future = tuple(
+        GradeProfile(grade.grade_id, enabled_capabilities=())
+        for grade in release.curriculum.grades[len(release.execution_plan.grades):]
+        if grade.grade_id != active_grade.grade_id)
+    return CurriculumProfile(
+        f"{release.profile.profile_id.rsplit('/numeric-0-', 1)[0]}"
+        f"/numeric-0-{maximum}",
+        grades=(*prior, numeric_grade, *future),
     )
 
 
 def next_numeric_scope_profile(
-        release: ExecutableFactoryRelease, *, final_maximum: int = 6
+        release: ExecutableFactoryRelease, *, final_maximum: int | None = None
         ) -> CurriculumProfile | None:
     """Return the next bounded numeric-domain profile, preserving other grades."""
+    from ..numeric_staircase import FINAL_MAXIMUM
+    if final_maximum is None:
+        final_maximum = FINAL_MAXIMUM
     if (not isinstance(release, ExecutableFactoryRelease) or
             type(final_maximum) is not int or not 1 <= final_maximum <= 10):
         raise ValueError("FACTORY_NUMERIC_SCOPE_ADVANCE_INVALID")
@@ -87,35 +144,7 @@ def next_numeric_scope_profile(
     maximum = len(values) - 1
     if maximum >= final_maximum:
         return None
-    target = maximum + 1
-    canonical_grade = next(
-        grade for grade in release.curriculum.grades
-        if grade.grade_id == active_grade.grade_id)
-    all_ids = tuple(
-        capability.capability_id for capability in canonical_grade.capabilities)
-    enabled = all_ids if target >= 6 else all_ids[:5]
-    numbers = tuple(str(index) for index in range(target + 1))
-    numeric_grade = GradeProfile(
-        active_grade.grade_id,
-        enabled_capabilities=enabled,
-        capabilities=tuple(CapabilityProfile(
-            capability_id,
-            provider_parameters=(("numbers", numbers),),
-            answer_family_values=(("numeric_active", numbers),),
-        ) for capability_id in enabled),
-    )
-    prior = tuple(
-        grade for grade in release.profile.grades
-        if grade.grade_id != active_grade.grade_id)
-    future = tuple(
-        GradeProfile(grade.grade_id, enabled_capabilities=())
-        for grade in release.curriculum.grades[len(release.execution_plan.grades):]
-        if grade.grade_id != active_grade.grade_id)
-    return CurriculumProfile(
-        f"{release.profile.profile_id.rsplit('/numeric-0-', 1)[0]}"
-        f"/numeric-0-{target}",
-        grades=(*prior, numeric_grade, *future),
-    )
+    return numeric_scope_profile(release, maximum + 1)
 
 
 def numeric_row_in_scope(row: dict, maximum: int) -> bool:

@@ -13,7 +13,7 @@ from .source_adapters.numeric import decode
 
 RELEASE = 'bilqis.mlx.numeric-staircase/20261017-v1'
 INITIAL_MAXIMUM = 3
-FINAL_MAXIMUM = 6
+FINAL_MAXIMUM = 4
 FOUNDATIONS = ('C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB')
 
 
