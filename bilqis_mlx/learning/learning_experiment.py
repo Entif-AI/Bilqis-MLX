@@ -18,7 +18,7 @@ import numpy as np
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
 MAX_FAILURE_ARCHETYPES = 24
-NO_TARGET_GAIN_STREAK_PENALTY = 0.05
+TEACHER_UCB_EXPLORATION_WEIGHT = 0.6
 
 
 @dataclass(frozen=True)
@@ -408,6 +408,35 @@ def _channel(teacher: dict) -> dict:
     return channel
 
 
+def _stagnation_key(capability: str, curriculum_scope: str) -> str:
+    return capability+"|"+curriculum_scope
+
+
+def _shared_no_gain_streak(channel: dict, capability: str,
+                           curriculum_scope: str, policy_key: str) -> int:
+    return int(channel.get("stagnation", {})
+                      .get(_stagnation_key(capability, curriculum_scope), {})
+                      .get(policy_key, {})
+                      .get("no_target_gain_streak", 0))
+
+
+def _shared_stagnation_record(channel: dict, capability: str,
+                              curriculum_scope: str, policy_key: str) -> dict:
+    scope = channel.setdefault("stagnation", {}).setdefault(
+        _stagnation_key(capability, curriculum_scope), {})
+    return scope.setdefault(policy_key, {"no_target_gain_streak": 0})
+
+
+def _inherited_exploration(teacher: dict, grade: str, policy_key: str) -> float:
+    local = teacher.get("grade_stats", {}).get(str(grade), {})
+    info = local.get(policy_key) or teacher.get("global_stats", {}).get(policy_key)
+    if not info or not info.get("trials"):
+        return 0.
+    total = int(teacher.get("events", 0)) + 1
+    return TEACHER_UCB_EXPLORATION_WEIGHT * math.sqrt(
+        math.log(total+2)/(1+info["trials"]))
+
+
 def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                     *, curriculum_scope: str = ""):
     """Preserve the inherited bandit's exploration; prefer proven safe context."""
@@ -425,9 +454,11 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         if not record:
             return float("-inf")
         mean = record["reward_sum"] / record["trials"]
-        exploration = math.sqrt(math.log(trials+2)/(record["trials"]+1))
-        stagnation = record.get("no_target_gain_streak", 0)
-        return mean + exploration - NO_TARGET_GAIN_STREAK_PENALTY * stagnation
+        exploration = (TEACHER_UCB_EXPLORATION_WEIGHT *
+                       math.sqrt(math.log(trials+2)/(record["trials"]+1)))
+        stagnation = _shared_no_gain_streak(
+            channel, capability, curriculum_scope, key)
+        return mean + exploration/(1+stagnation)
     best = max(scope, key=score)
     if best not in teacher["strategies"]:
         raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
@@ -437,6 +468,25 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             score(best) > score(original_key)):
         return best, teacher["strategies"][best]
     return original_key, original_policy
+
+
+def _stagnation_feedback(teacher: dict, capability: str, policy_key: str,
+                         decision: dict, reward: float, record: dict,
+                         shared_stagnation: dict) -> tuple[float, float]:
+    no_target_gain = decision.get("reason") == "NO_MEASURABLE_TARGET_GAIN"
+    inherited_exploration = _inherited_exploration(
+        teacher, capability.partition(".")[0], policy_key)
+    selection_reward = reward
+    repayment = 0.-inherited_exploration
+    if no_target_gain and repayment < selection_reward:
+        selection_reward = repayment
+    if no_target_gain:
+        record["no_target_gain_streak"] += 1
+        shared_stagnation["no_target_gain_streak"] += 1
+    else:
+        record["no_target_gain_streak"] = 0
+        shared_stagnation["no_target_gain_streak"] = 0
+    return inherited_exploration, selection_reward
 
 
 def observe_context(teacher: dict, *, capability: str, phase: str,
@@ -455,6 +505,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                                             "unsafe": 0, "latest": None,
                                             "no_target_gain_streak": 0})
     record.setdefault("no_target_gain_streak", 0)
+    shared_stagnation = _shared_stagnation_record(
+        channel, capability, curriculum_scope, policy_key)
     # Normalized worst-case retention cost stops many small wins concealing
     # a substantial single-capability loss. Provisional experimental metric.
     relative_loss = max((max(0., -v) for k, v in decision["deltas"].items()
@@ -483,10 +535,9 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             del entries[:-MAX_FAILURE_ARCHETYPES]
     if decision["decision"] == "REJECT":
         record["unsafe"] += 1
-    if decision.get("reason") == "NO_MEASURABLE_TARGET_GAIN":
-        record["no_target_gain_streak"] += 1
-    else:
-        record["no_target_gain_streak"] = 0
+    inherited_exploration, selection_reward = _stagnation_feedback(
+        teacher, capability, policy_key, decision, reward, record,
+        shared_stagnation)
     record["trials"] += 1
     record["reward_sum"] += reward
     record["latest"] = reward
@@ -514,6 +565,10 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     channel["events"] += 1
     return {"version": VERSION, "teacher_context_reward": reward,
             "no_target_gain_streak": record["no_target_gain_streak"],
+            "shared_no_target_gain_streak":
+                shared_stagnation["no_target_gain_streak"],
+            "inherited_exploration_credit": inherited_exploration,
+            "teacher_selection_reward": selection_reward,
             "legacy_reward_reinterpreted": False,
             "negative_archetype_count": len(channel["negative_archetypes"])}
 
@@ -528,7 +583,9 @@ def selection_credit(lesson_reward: float, retention: dict | None,
     """
     if retention is None:
         return lesson_reward
-    reward = contextual.get("teacher_context_reward") if isinstance(contextual, dict) else None
+    reward = contextual.get("teacher_selection_reward") if isinstance(contextual, dict) else None
+    if reward is None and isinstance(contextual, dict):
+        reward = contextual.get("teacher_context_reward")
     if (not isinstance(reward, (float, int)) or not math.isfinite(reward) or
             (retention.get("decision") == "REJECT" and reward >= 0)):
         raise ValueError("LEARNING_EXPERIMENT_INVALID_SELECTION_CREDIT")
