@@ -129,6 +129,8 @@ class DataPlane:
             verified_ns INTEGER NOT NULL,
             PRIMARY KEY(path, expected_sha256)
         ) WITHOUT ROWID;
+        CREATE INDEX IF NOT EXISTS verified_files_identity
+        ON verified_files(expected_sha256,st_dev,st_ino,size_bytes,mtime_ns,ctime_ns);
         CREATE TABLE IF NOT EXISTS event_ledgers(
             run_dir TEXT PRIMARY KEY,
             st_dev INTEGER NOT NULL,
@@ -230,7 +232,14 @@ class DataPlane:
                 "SELECT st_dev,st_ino,size_bytes,mtime_ns,ctime_ns "
                 "FROM verified_files WHERE path=? AND expected_sha256=?",
                 (str(path), expected_sha256)).fetchone()
-        return row == identity
+            if row == identity:
+                return True
+            alias = self._db.execute(
+                "SELECT 1 FROM verified_files WHERE expected_sha256=? AND "
+                "st_dev=? AND st_ino=? AND size_bytes=? AND mtime_ns=? AND ctime_ns=? "
+                "LIMIT 1",
+                (expected_sha256, *identity)).fetchone()
+        return alias is not None
 
     def remember_verified_file(self, path: Path, expected_sha256: str) -> None:
         path = Path(path).resolve(strict=True)

@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.data_plane import (
     close_data_planes, data_plane, dedupe_bundle_payloads,
@@ -36,6 +37,19 @@ class DataPlaneTests(unittest.TestCase):
         self.assertEqual(data_plane().stats()["verified_files"], 1)
         target.write_bytes(b"abd" * 1000)
         self.assertFalse(verify_file_digest(target, expected))
+
+    def test_verified_file_cache_reuses_same_inode_across_hardlink_aliases(self):
+        import hashlib
+        first = self.root / "first.bin"
+        second = self.root / "second.bin"
+        first.write_bytes(b"shared immutable payload" * 1000)
+        os.link(first, second)
+        expected = hashlib.sha256(first.read_bytes()).hexdigest()
+        self.assertTrue(verify_file_digest(first, expected))
+
+        with patch("bilqis_mlx.data_plane._digest_file",
+                   side_effect=AssertionError("duplicate inode rehash")):
+            self.assertTrue(verify_file_digest(second, expected))
 
     def test_objects_deduplicate_by_content_hash(self):
         import hashlib
