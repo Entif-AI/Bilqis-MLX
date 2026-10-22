@@ -18,6 +18,8 @@ SQLITE_MMAP_BYTES = 256 * 1024 * 1024
 SQLITE_CACHE_KIB = 64 * 1024
 HASH_CHUNK_BYTES = 4 * 1024 * 1024
 SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
+MIN_OPTIMIZER_STEP = 0
+MIN_DEDUPE_GROUP_SIZE = 2
 _CONNECTIONS: dict[str, "DataPlane"] = dict()
 _CONNECTIONS_LOCK = threading.Lock()
 
@@ -35,6 +37,12 @@ class DataPlaneError(str, Enum):
     HUMAN_TRAINING_ACTIVE = "DATA_PLANE_WARM_HUMAN_TRAINING_ACTIVE"
     CUSTODY_ARTIFACT_MISSING = "DATA_PLANE_WARM_CUSTODY_ARTIFACT_MISSING"
     CUSTODY_DIGEST_DRIFT = "DATA_PLANE_WARM_CUSTODY_DIGEST_DRIFT"
+    BUNDLE_ROOT_UNSAFE = "DATA_PLANE_BUNDLE_ROOT_UNSAFE"
+    BUNDLE_ENTRY_UNSAFE = "DATA_PLANE_BUNDLE_ENTRY_UNSAFE"
+    BUNDLE_MANIFEST_INVALID = "DATA_PLANE_BUNDLE_MANIFEST_INVALID"
+    BUNDLE_PAYLOAD_DRIFT = "DATA_PLANE_BUNDLE_PAYLOAD_DRIFT"
+    BUNDLE_IDENTITY_CONFLICT = "DATA_PLANE_BUNDLE_IDENTITY_CONFLICT"
+    BUNDLE_DEDUPE_TEMP_COLLISION = "DATA_PLANE_BUNDLE_DEDUPE_TEMP_COLLISION"
 
 
 def _error(code: DataPlaneError, detail=None) -> str:
@@ -276,13 +284,82 @@ def referenced_custody_files(run_dir: Path, receipt: dict) -> tuple[tuple[Path, 
     return tuple(found[key] for key in sorted(found))
 
 
+def dedupe_bundle_payloads(run_dir: Path) -> dict:
+    """Hardlink byte-identical immutable bundle payload aliases in one run."""
+    import json
+    root = Path(run_dir).resolve(strict=True)
+    bundles = root / "bundles"
+    if bundles.is_symlink() or not bundles.is_dir():
+        raise ValueError(DataPlaneError.BUNDLE_ROOT_UNSAFE.value)
+    groups: dict[str, list[Path]] = {}
+    optimizer_step_by_digest: dict[str, int] = {}
+    for folder in sorted(bundles.iterdir()):
+        if folder.is_symlink() or not folder.is_dir():
+            raise ValueError(_error(DataPlaneError.BUNDLE_ENTRY_UNSAFE, folder))
+        manifest_path = folder / "manifest.json"
+        payload = folder / "model-and-own-adamw.safetensors"
+        if (manifest_path.is_symlink() or payload.is_symlink() or
+                not manifest_path.is_file() or not payload.is_file()):
+            raise ValueError(_error(DataPlaneError.BUNDLE_ENTRY_UNSAFE, folder))
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise ValueError(_error(DataPlaneError.BUNDLE_MANIFEST_INVALID, folder)) from exc
+        digest = manifest.get("safetensors_sha256")
+        step = manifest.get("optimizer_step")
+        if (not isinstance(digest, str) or len(digest) != SHA256_HEX_LENGTH or
+                type(step) is not int or step < MIN_OPTIMIZER_STEP):
+            raise ValueError(_error(DataPlaneError.BUNDLE_MANIFEST_INVALID, folder))
+        prior_step = optimizer_step_by_digest.setdefault(digest, step)
+        if prior_step != step:
+            raise ValueError(_error(DataPlaneError.BUNDLE_IDENTITY_CONFLICT, digest))
+        if not verify_file_digest(payload, digest):
+            raise ValueError(_error(DataPlaneError.BUNDLE_PAYLOAD_DRIFT, folder))
+        groups.setdefault(digest, []).append(payload)
+
+    linked = reclaimed = 0
+    for paths in groups.values():
+        if len(paths) < MIN_DEDUPE_GROUP_SIZE:
+            continue
+        canonical = paths[0]
+        canonical_identity = (canonical.stat().st_dev, canonical.stat().st_ino)
+        for target in paths[1:]:
+            stat = target.stat()
+            if (stat.st_dev, stat.st_ino) == canonical_identity:
+                continue
+            temporary = target.with_name("." + target.name + ".dedupe-link")
+            if temporary.exists() or temporary.is_symlink():
+                raise ValueError(_error(DataPlaneError.BUNDLE_DEDUPE_TEMP_COLLISION,
+                                        temporary))
+            os.link(canonical, temporary)
+            try:
+                os.replace(temporary, target)
+                directory = os.open(target.parent, os.O_RDONLY)
+                try:
+                    os.fsync(directory)
+                finally:
+                    os.close(directory)
+            finally:
+                if temporary.exists() or temporary.is_symlink():
+                    temporary.unlink()
+            linked += 1
+            reclaimed += stat.st_size
+    return {
+        "mode": "BUNDLE_PAYLOADS_DEDUPED",
+        "bundle_payloads": sum(len(paths) for paths in groups.values()),
+        "unique_payloads": len(groups),
+        "linked_aliases": linked,
+        "reclaimed_bytes": reclaimed,
+    }
+
+
 def main(argv=None) -> int:
     """Inspect or prewarm the shared workstation data plane."""
     import argparse
     import fcntl
     import json
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("status", "warm-custody"))
+    parser.add_argument("action", choices=("status", "warm-custody", "dedupe-bundles"))
     parser.add_argument("--run-dir", type=Path)
     args = parser.parse_args(argv)
     if args.action == "status":
@@ -301,6 +378,9 @@ def main(argv=None) -> int:
             fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise ValueError(DataPlaneError.HUMAN_TRAINING_ACTIVE.value) from None
+        if args.action == "dedupe-bundles":
+            print(json.dumps(dedupe_bundle_payloads(root), sort_keys=True))
+            return 0
         from .state_dag import read_current
         before = data_plane().stats()
         started = time.perf_counter()

@@ -4,7 +4,8 @@ import tempfile
 import unittest
 
 from bilqis_mlx.data_plane import (
-    close_data_planes, data_plane, referenced_custody_files, verify_file_digest,
+    close_data_planes, data_plane, dedupe_bundle_payloads,
+    referenced_custody_files, verify_file_digest,
 )
 
 
@@ -59,6 +60,32 @@ class DataPlaneTests(unittest.TestCase):
              "a" * 64),
             ((self.root / "soups/C-abc.safetensors").resolve(), "b" * 64),
         ))
+
+    def test_bundle_deduper_preserves_alias_paths_and_shares_identical_payload(self):
+        import hashlib
+        import json
+        bundles = self.root / "bundles"
+        payload = b"same-model-and-adamw" * 100
+        digest = hashlib.sha256(payload).hexdigest()
+        paths = []
+        for name in ("best-one", "best-two"):
+            folder = bundles / name
+            folder.mkdir(parents=True)
+            blob = folder / "model-and-own-adamw.safetensors"
+            blob.write_bytes(payload)
+            (folder / "manifest.json").write_text(json.dumps({
+                "safetensors_sha256": digest, "optimizer_step": 17,
+            }))
+            paths.append(blob)
+
+        result = dedupe_bundle_payloads(self.root)
+
+        self.assertEqual(result["linked_aliases"], 1)
+        self.assertEqual(result["reclaimed_bytes"], len(payload))
+        self.assertEqual(paths[0].read_bytes(), payload)
+        self.assertEqual(paths[1].read_bytes(), payload)
+        self.assertEqual(paths[0].stat().st_ino, paths[1].stat().st_ino)
+        self.assertEqual(dedupe_bundle_payloads(self.root)["linked_aliases"], 0)
 
 
 if __name__ == "__main__":

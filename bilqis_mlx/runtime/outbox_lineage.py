@@ -6,10 +6,10 @@ event journal is mandatory; this module cannot invent or rewrite past events.
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from .admission import _verified_legacy_upgrade_release
+from ..state_dag import read_generation
 
 
 _V2_SCHEMA = "bilqis.mlx.factory-release/v2"
@@ -34,7 +34,7 @@ def verified_inherited_v1_generation(run_dir: Path, record: dict) -> int | None:
     path = Path(run_dir) / "states" / f"{current - 1:07d}.json"
     if path.is_symlink() or not path.is_file():
         return None
-    previous = json.loads(path.read_text(encoding="utf-8"))
+    previous = read_generation(run_dir, current - 1)
     if (not isinstance(previous, dict) or
             previous.get("generation") != current - 1 or
             previous.get("factory_admission_v2") is not None or

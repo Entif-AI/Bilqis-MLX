@@ -548,7 +548,10 @@ class SchoolTelemetryTests(unittest.TestCase):
                     migrate_current_head(root, receipt)
                     board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                                       tables=LETTER_TABLES)
-                    board.attach_champion_source(root)
+                    with patch(
+                            "bilqis_mlx.presentation.spiral_dashboard.read_current",
+                            side_effect=AssertionError("full state read")):
+                        board.attach_champion_source(root)
                 finally:
                     close_data_planes()
 

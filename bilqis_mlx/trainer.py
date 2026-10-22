@@ -135,6 +135,7 @@ from bilqis_mlx.runtime.timing_trace import trace_mark, trace_span
 from bilqis_mlx.data_plane import verify_file_digest
 from bilqis_mlx.state_dag import (
     migrate_current_head, persist as persist_state, read_current, read_generation,
+    read_generation_fields,
 )
 from .runtime.state import (
     _canonical, _fingerprint, _durable_json, _state_from_json, _seed,
@@ -161,6 +162,10 @@ from .runtime.assessment import (
 VERSION = "bilqis.mlx.human-grade-a-trainer/v1"
 LOCKFILE = ".grade-a-operator.lock"
 _event_view = ContextVar("grade_a_event_view", default=None)
+_ADVANCE_SOURCE_FIELDS = (
+    "delivery_outbox", "generation", "model_bundle", "run_id", "school",
+    "source_manifest_sha256", "teacher_source_sha256",
+)
 
 
 @contextmanager
@@ -1751,7 +1756,10 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
                     f"{old['generation']:07d}.json")
         if old_path.is_symlink() or not old_path.is_file():
             raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_UNCOMMITTED_SOURCE")
-        durable = read_generation(run_dir, old["generation"])
+        durable = read_generation_fields(
+            run_dir, old["generation"], _ADVANCE_SOURCE_FIELDS)
+        if not _ordinary_outbox_lineage(durable, durable.get("delivery_outbox")):
+            durable = read_generation(run_dir, old["generation"])
         # Only *durable* outbox events have delivery authority. Transient
         # callers may carry a subsequently edited copy of a committed event;
         # requiring payload-object equality here mistakes a working copy for
@@ -3913,17 +3921,24 @@ def _require_outbox_lineage(condition: bool) -> None:
         raise ValueError("HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT")
 
 
-def _outbox_source_generation(run_dir: Path, record: dict, outbox: list):
-    source_generation = record["generation"]
-    ordinary_lineage = all(
+def _ordinary_outbox_lineage(record: dict, outbox) -> bool:
+    if not isinstance(outbox, list):
+        return False
+    source_generation = record.get("generation")
+    run_id = record.get("run_id")
+    return type(source_generation) is int and bool(run_id) and all(
         isinstance(event, dict) and "event_id" in event and
         event["event_id"] == _fingerprint([
-            "school-generation-event/v1", record["run_id"], source_generation,
+            "school-generation-event/v1", run_id, source_generation,
             index, {k: v for k, v in event.items() if k != "event_id"}])
         for index, event in enumerate(outbox)
     )
+
+
+def _outbox_source_generation(run_dir: Path, record: dict, outbox: list):
+    source_generation = record["generation"]
     inherited = None
-    if not ordinary_lineage:
+    if not _ordinary_outbox_lineage(record, outbox):
         from .runtime.outbox_lineage import verified_inherited_v1_generation
         inherited = verified_inherited_v1_generation(run_dir, record)
         if inherited is not None:

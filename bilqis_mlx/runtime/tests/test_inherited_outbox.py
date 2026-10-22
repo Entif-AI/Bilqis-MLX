@@ -5,6 +5,7 @@ from pathlib import Path
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.trainer import (
     _advance, _reconcile_delivery_outbox, _with_delivery_outbox,
@@ -111,6 +112,21 @@ class InheritedOutboxTests(unittest.TestCase):
         self.assertEqual(next_record["generation"], 9)
         self.assertNotIn("delivery_outbox", next_record)
         self.assertEqual(journal.read_bytes(), before)
+
+    def test_advancing_ordinary_outbox_does_not_rehydrate_full_generation(self):
+        ordinary = _with_delivery_outbox(
+            {key: value for key, value in self.current.items()
+             if key != "delivery_outbox"},
+            ({"event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+              "generation": 8, "optimizer_step": 9},),
+        )
+        (self.root / "states" / "0000008.json").write_text(
+            json.dumps(ordinary))
+        with patch(
+                "bilqis_mlx.trainer.read_generation",
+                side_effect=AssertionError("full generation read")):
+            next_record = _advance(self.root, ordinary, _School(), persist=False)
+        self.assertEqual(next_record["generation"], 9)
 
     def test_advancing_transient_governance_edit_uses_committed_outbox_source(self):
         journal = self._publish()
