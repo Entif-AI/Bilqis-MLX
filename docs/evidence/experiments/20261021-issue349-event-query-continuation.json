@@ -1,0 +1,493 @@
+{
+  "schema": "bilqis.issue349.event-query-continuation/v1",
+  "recorded_at": "2026-10-22T04:00:07.510889+00:00",
+  "governance": "IPR-0220; issue349 remains open; PM-2026-10-20-003 / RC-116",
+  "main_integrated_sha": "917c0be4f4e8f898f30da38e2b33c5b5182c70c1",
+  "remote_feature_integrated_sha": "6796270af6110cd40c5d39db96d6a05209584484",
+  "source_sha256": {
+    "bilqis_mlx/source_adapters/event_frames.py": "cb20604fb9eeb37e2b4411073197159cc594c2b8784aed719610994714a8a08e",
+    "bilqis_mlx/source_adapters/event_intro.py": "b52e3a8dcf405518221a2c1d1ee2f4d56e144939a73bdc2161ed656ffbad5558",
+    "bilqis_mlx/source_adapters/event_pairs.py": "1f58f520db6da24fc69273fafe6d025aad7b8e613a6c3d69256e8f3c74f06520",
+    "scripts/issue349_query_probe.py": "5564af4ac955ddb9851e82740fee30c37a6adb917eece1df746776752e14cb74",
+    "docs/evidence/experiments/20261021-issue349-query-worlds.json": "8b0d082f52de723810eaec845783d9826b75ab620779373ffa5f8d866b1356f0"
+  },
+  "prototype_scope": "Three source senses sharing a finite Boolean event-state adapter; no morphology or full-root realization.",
+  "factory_release_sha256": "f7e7ef82a20cbff10e2ef45e421fad2c79d49ab1256d13fdb23b2c49258ea410",
+  "final_generation": 400,
+  "final_checkpoint": {
+    "filename": "bundles/best-225-6cb8bed91012",
+    "model_and_native_adamw": true,
+    "optimizer_step": 119296,
+    "sha256": "46ae57b87efd95b149c88888fe87a7aa2c1c6293a441bbe1bb09c9627f0658df"
+  },
+  "phases": [
+    {
+      "generation_start_exclusive": 163,
+      "generation_end": 191,
+      "optimizer_visits": 15,
+      "attempted_updates": 1920,
+      "retained_updates": 0,
+      "targets": {
+        "A.LINK": 4,
+        "A.IDENTITY": 1,
+        "A.PARENT": 2,
+        "A.MEMBER": 2,
+        "A.EDGE": 2,
+        "A.MAPS": 2,
+        "D.EVENT_OCCURRENCE": 2
+      },
+      "retained_by_target": {
+        "A.EDGE": 0,
+        "A.IDENTITY": 0,
+        "A.LINK": 0,
+        "A.MAPS": 0,
+        "A.MEMBER": 0,
+        "A.PARENT": 0,
+        "D.EVENT_OCCURRENCE": 0
+      },
+      "reasons": {
+        "PROTECTED_CAPABILITY_REGRESSION": 8,
+        "FIXED_LESSON_GRADE_REGRESSION": 2,
+        "SAME_GRADE_NET_REGRESSION": 2,
+        "NO_MEASURABLE_TARGET_GAIN": 2,
+        "WHOLE_SCHOOL_NET_REGRESSION": 1
+      },
+      "intervention": "four-event plus single-event instruction"
+    },
+    {
+      "generation_start_exclusive": 191,
+      "generation_end": 229,
+      "optimizer_visits": 23,
+      "attempted_updates": 1472,
+      "retained_updates": 64,
+      "targets": {
+        "A.LINK": 4,
+        "A.MEMBER": 2,
+        "A.EDGE": 5,
+        "A.MAPS": 5,
+        "D.EVENT_OCCURRENCE": 5,
+        "A.PARENT": 2
+      },
+      "retained_by_target": {
+        "A.EDGE": 0,
+        "A.LINK": 0,
+        "A.MAPS": 0,
+        "A.MEMBER": 0,
+        "A.PARENT": 0,
+        "D.EVENT_OCCURRENCE": 64
+      },
+      "reasons": {
+        "NO_MEASURABLE_TARGET_GAIN": 11,
+        "FIXED_LESSON_GRADE_REGRESSION": 1,
+        "WHOLE_SCHOOL_NET_REGRESSION": 2,
+        "PROTECTED_CAPABILITY_REGRESSION": 5,
+        "SAME_GRADE_NET_REGRESSION": 3,
+        "PAIRED_SCREEN_WITHIN_BUDGET": 1
+      },
+      "intervention": "two-event slice"
+    },
+    {
+      "generation_start_exclusive": 229,
+      "generation_end": 277,
+      "optimizer_visits": 24,
+      "attempted_updates": 768,
+      "retained_updates": 64,
+      "targets": {
+        "A.IDENTITY": 1,
+        "A.PARENT": 1,
+        "A.LINK": 1,
+        "A.MEMBER": 1,
+        "A.EDGE": 1,
+        "A.MAPS": 1,
+        "D.EVENT_OCCURRENCE": 18
+      },
+      "retained_by_target": {
+        "A.EDGE": 0,
+        "A.IDENTITY": 0,
+        "A.LINK": 0,
+        "A.MAPS": 0,
+        "A.MEMBER": 0,
+        "A.PARENT": 0,
+        "D.EVENT_OCCURRENCE": 64
+      },
+      "reasons": {
+        "PROTECTED_CAPABILITY_REGRESSION": 1,
+        "NO_MEASURABLE_TARGET_GAIN": 15,
+        "FIXED_LESSON_GRADE_REGRESSION": 3,
+        "SAME_GRADE_NET_REGRESSION": 1,
+        "WHOLE_SCHOOL_NET_REGRESSION": 2,
+        "PAIRED_SCREEN_WITHIN_BUDGET": 2
+      },
+      "intervention": "main frontier-priority plus paired instruction"
+    },
+    {
+      "generation_start_exclusive": 277,
+      "generation_end": 324,
+      "optimizer_visits": 22,
+      "attempted_updates": 704,
+      "retained_updates": 160,
+      "targets": {
+        "D.EVENT_OCCURRENCE": 17,
+        "D.COMMENCEMENT": 5
+      },
+      "retained_by_target": {
+        "D.COMMENCEMENT": 32,
+        "D.EVENT_OCCURRENCE": 128
+      },
+      "reasons": {
+        "NO_MEASURABLE_TARGET_GAIN": 13,
+        "PAIRED_SCREEN_WITHIN_BUDGET": 5,
+        "FIXED_LESSON_GRADE_REGRESSION": 2,
+        "WHOLE_SCHOOL_NET_REGRESSION": 1,
+        "PROTECTED_CAPABILITY_REGRESSION": 1
+      },
+      "intervention": "ordinary probe query witness"
+    },
+    {
+      "generation_start_exclusive": 324,
+      "generation_end": 362,
+      "optimizer_visits": 21,
+      "attempted_updates": 672,
+      "retained_updates": 192,
+      "targets": {
+        "D.COMMENCEMENT": 8,
+        "D.EVENT_OCCURRENCE": 13
+      },
+      "retained_by_target": {
+        "D.COMMENCEMENT": 96,
+        "D.EVENT_OCCURRENCE": 96
+      },
+      "reasons": {
+        "NO_MEASURABLE_TARGET_GAIN": 8,
+        "PAIRED_SCREEN_WITHIN_BUDGET": 6,
+        "PROTECTED_CAPABILITY_REGRESSION": 3,
+        "WHOLE_SCHOOL_NET_REGRESSION": 2,
+        "FIXED_LESSON_GRADE_REGRESSION": 2
+      },
+      "intervention": "query-witness continuation"
+    },
+    {
+      "generation_start_exclusive": 362,
+      "generation_end": 400,
+      "optimizer_visits": 18,
+      "attempted_updates": 576,
+      "retained_updates": 256,
+      "targets": {
+        "D.EVENT_OCCURRENCE": 8,
+        "D.COMMENCEMENT": 10
+      },
+      "retained_by_target": {
+        "D.COMMENCEMENT": 96,
+        "D.EVENT_OCCURRENCE": 160
+      },
+      "reasons": {
+        "PAIRED_SCREEN_WITHIN_BUDGET": 8,
+        "WHOLE_SCHOOL_NET_REGRESSION": 1,
+        "PROTECTED_CAPABILITY_REGRESSION": 5,
+        "NO_MEASURABLE_TARGET_GAIN": 2,
+        "SAME_GRADE_NET_REGRESSION": 1,
+        "FIXED_LESSON_GRADE_REGRESSION": 1
+      },
+      "intervention": "query-witness continuation"
+    }
+  ],
+  "query_swap_snapshots": {
+    "before_query_witness": {
+      "checkpoint": {
+        "filename": "bundles/working-153-dc34c85e7ec4",
+        "model_and_native_adamw": true,
+        "optimizer_step": 118688,
+        "sha256": "78a2602b899ae2c02abbd34c9c7e1b98890c6016cb477b3daeae87b1e9f4cbe0"
+      },
+      "scores": {
+        "D.EVENT_OCCURRENCE": {
+          "correct": 84,
+          "total": 114,
+          "opposite_query_pairs": 31,
+          "both_queries_correct": 2,
+          "predictions_flip": 3
+        },
+        "D.COMMENCEMENT": {
+          "correct": 67,
+          "total": 118,
+          "opposite_query_pairs": 28,
+          "both_queries_correct": 2,
+          "predictions_flip": 3
+        },
+        "D.TERMINATION": {
+          "correct": 38,
+          "total": 120,
+          "opposite_query_pairs": 29,
+          "both_queries_correct": 1,
+          "predictions_flip": 5
+        }
+      },
+      "four_event_scores": {
+        "D.EVENT_OCCURRENCE": {
+          "correct": 118,
+          "total": 192
+        },
+        "D.COMMENCEMENT": {
+          "correct": 125,
+          "total": 192
+        },
+        "D.TERMINATION": {
+          "correct": 87,
+          "total": 192
+        }
+      }
+    },
+    "after_query_witness": {
+      "checkpoint": {
+        "filename": "bundles/best-177-c0125045fccd",
+        "model_and_native_adamw": true,
+        "optimizer_step": 118848,
+        "sha256": "7c1dc7e43e79347f172275ba82f0e1eac9f76f54b836ab3a3f43fd472fb67b7e"
+      },
+      "scores": {
+        "D.EVENT_OCCURRENCE": {
+          "correct": 82,
+          "total": 114,
+          "opposite_query_pairs": 31,
+          "both_queries_correct": 6,
+          "predictions_flip": 6
+        },
+        "D.COMMENCEMENT": {
+          "correct": 89,
+          "total": 118,
+          "opposite_query_pairs": 28,
+          "both_queries_correct": 8,
+          "predictions_flip": 10
+        },
+        "D.TERMINATION": {
+          "correct": 50,
+          "total": 120,
+          "opposite_query_pairs": 29,
+          "both_queries_correct": 0,
+          "predictions_flip": 3
+        }
+      },
+      "four_event_scores": {
+        "D.EVENT_OCCURRENCE": {
+          "correct": 101,
+          "total": 192
+        },
+        "D.COMMENCEMENT": {
+          "correct": 110,
+          "total": 192
+        },
+        "D.TERMINATION": {
+          "correct": 83,
+          "total": 192
+        }
+      }
+    },
+    "continuation_1": {
+      "checkpoint": {
+        "filename": "bundles/best-201-8f0d28dbf212",
+        "model_and_native_adamw": true,
+        "optimizer_step": 119040,
+        "sha256": "042f40d87f563a7e9706e64920ea9931bcb9e3fc07a7fa0245ed425069643676"
+      },
+      "scores": {
+        "D.EVENT_OCCURRENCE": {
+          "correct": 102,
+          "total": 114,
+          "opposite_query_pairs": 31,
+          "both_queries_correct": 19,
+          "predictions_flip": 19
+        },
+        "D.COMMENCEMENT": {
+          "correct": 86,
+          "total": 118,
+          "opposite_query_pairs": 28,
+          "both_queries_correct": 15,
+          "predictions_flip": 15
+        },
+        "D.TERMINATION": {
+          "correct": 30,
+          "total": 120,
+          "opposite_query_pairs": 29,
+          "both_queries_correct": 0,
+          "predictions_flip": 14
+        }
+      },
+      "four_event_scores": {
+        "D.EVENT_OCCURRENCE": {
+          "correct": 95,
+          "total": 192
+        },
+        "D.COMMENCEMENT": {
+          "correct": 97,
+          "total": 192
+        },
+        "D.TERMINATION": {
+          "correct": 98,
+          "total": 192
+        }
+      }
+    },
+    "final": {
+      "checkpoint": {
+        "filename": "bundles/best-225-6cb8bed91012",
+        "model_and_native_adamw": true,
+        "optimizer_step": 119296,
+        "sha256": "46ae57b87efd95b149c88888fe87a7aa2c1c6293a441bbe1bb09c9627f0658df"
+      },
+      "scores": {
+        "D.EVENT_OCCURRENCE": {
+          "correct": 110,
+          "total": 114,
+          "opposite_query_pairs": 31,
+          "both_queries_correct": 27,
+          "predictions_flip": 27
+        },
+        "D.COMMENCEMENT": {
+          "correct": 85,
+          "total": 118,
+          "opposite_query_pairs": 28,
+          "both_queries_correct": 15,
+          "predictions_flip": 15
+        },
+        "D.TERMINATION": {
+          "correct": 23,
+          "total": 120,
+          "opposite_query_pairs": 29,
+          "both_queries_correct": 0,
+          "predictions_flip": 20
+        }
+      },
+      "four_event_scores": {
+        "D.EVENT_OCCURRENCE": {
+          "correct": 96,
+          "total": 192
+        },
+        "D.COMMENCEMENT": {
+          "correct": 95,
+          "total": 192
+        },
+        "D.TERMINATION": {
+          "correct": 99,
+          "total": 192
+        }
+      }
+    }
+  },
+  "query_blind_correction": {
+    "earlier_four_event_occurrence_student": 128,
+    "query_blind_majority": 126,
+    "total": 192,
+    "interpretation": "Earlier headline accuracy did not establish query binding."
+  },
+  "final_seeded_two_event_panel": {
+    "seeds": [
+      349401,
+      349402,
+      349403
+    ],
+    "scores": {
+      "D.EVENT_OCCURRENCE": {
+        "correct": 160,
+        "total": 163
+      },
+      "D.COMMENCEMENT": {
+        "correct": 125,
+        "total": 157
+      },
+      "D.TERMINATION": {
+        "correct": 37,
+        "total": 157
+      }
+    }
+  },
+  "final_routine_exam": {
+    "student_sha256": "46ae57b87efd95b149c88888fe87a7aa2c1c6293a441bbe1bb09c9627f0658df",
+    "optimizer_step": 119296,
+    "scores": {
+      "A.EDGE": {
+        "correct": 11,
+        "total": 12
+      },
+      "A.IDENTITY": {
+        "correct": 10,
+        "total": 12
+      },
+      "A.LINK": {
+        "correct": 10,
+        "total": 12
+      },
+      "A.MAPS": {
+        "correct": 8,
+        "total": 12
+      },
+      "A.MEMBER": {
+        "correct": 5,
+        "total": 12
+      },
+      "A.PARENT": {
+        "correct": 12,
+        "total": 12
+      },
+      "D.COMMENCEMENT": {
+        "correct": 11,
+        "total": 12
+      },
+      "D.EVENT_OCCURRENCE": {
+        "correct": 12,
+        "total": 12
+      }
+    }
+  },
+  "training_exposure_overlap": "NOT_MEASURED",
+  "custody": {
+    "budget": {
+      "issue_number": 349,
+      "run_count": 2,
+      "max_bytes": 100000000000,
+      "reserve_bytes": 0,
+      "used_bytes": 9897218048,
+      "within_budget": true,
+      "runs": [
+        "primary",
+        "plasticity-control"
+      ]
+    },
+    "primary_checkpoint": {
+      "filename": "bundles/working-120-d4a37442195e",
+      "model_and_native_adamw": true,
+      "optimizer_step": 116816,
+      "sha256": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f"
+    },
+    "both_issue_trainers_stopped": true,
+    "native_adamw_step_verified_by_probe": true,
+    "no_canonical_or_historical_run_mutation": true
+  },
+  "recovery": {
+    "repair_generation": 166,
+    "preserved_generations": [
+      163,
+      164,
+      165
+    ],
+    "student_and_adamw_unchanged_by_repair": true,
+    "receipt_local": ".local/issue349-refactored-continuation/event-intro-epoch-repair.json"
+  },
+  "validation": {
+    "affected_suite_tests": 139,
+    "affected_suite": "PASS",
+    "diagnostic_regression_tests": 1,
+    "diagnostic_regression": "PASS",
+    "quality": "PASS",
+    "semantic_boundaries": "PASS",
+    "release_metadata": "PASS",
+    "abi": "ADVISORY_EXTERNAL_EXPECTED_DIGEST_ABSENT",
+    "factory_closure": "2 inherited concrete numeric-provider import sites; one moved to release_adoption owner"
+  },
+  "interpretation": [
+    "Occurrence query binding improves within the two-event domain; wider four-event transfer remains near chance.",
+    "Commencement now receives direct teaching; termination remains untaught and shows negative transfer.",
+    "Earlier skills are imperfect: final routine A.MEMBER is5/12; aggregate retention is not per-capability mastery.",
+    "Sequential exploratory trials are not matched ablations or proof of unexposed generalization."
+  ],
+  "next_action": "Continue the registered control with ordinary retention; inspect commencement binding and prior-skill recovery before expanding event complexity. Keep C capped at4."
+}
