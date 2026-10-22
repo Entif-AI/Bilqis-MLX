@@ -1680,14 +1680,26 @@ def _mentor_epoch_references(receipt):
                      *(item["checkpoint"] for item in epoch_active_frontier(epoch).values())))
 
 
+_GRADE_SOUP_CUSTODY_MAP_DRIFT = "GRADE_SOUP_CUSTODY_MAP_DRIFT"
+
+
+def _live_grade_soups(receipt):
+    """Return the only soup tensors that still carry live runtime custody."""
+    epoch = receipt.get("mentor_epoch")
+    if epoch is None:
+        soups = receipt.get("grade_soups", {})
+    elif isinstance(epoch, dict):
+        soups = epoch.get("active_grade_soups", {})
+    else:
+        raise ValueError(_GRADE_SOUP_CUSTODY_MAP_DRIFT)
+    if not isinstance(soups, dict):
+        raise ValueError(_GRADE_SOUP_CUSTODY_MAP_DRIFT)
+    return soups
+
+
 def _verify_frozen_soup_custody(run_dir, receipt):
-    """Verify both archived and earned soups without blending their rosters."""
-    epoch_soups = (entry.get("active_grade_soups", {})
-                   for entry in (*receipt.get("championship_epoch_history", ()),
-                                 receipt["mentor_epoch"])
-                   ) if receipt.get("mentor_epoch") is not None else ()
-    for grade, soup in (*receipt.get("grade_soups", {}).items(),
-                        *(pair for soups in epoch_soups for pair in soups.items())):
+    """Verify current soup bytes and rollback predecessor; history is metadata."""
+    for grade, soup in sorted(_live_grade_soups(receipt).items()):
         if grade != soup.get("grade"):
             raise ValueError("GRADE_SOUP_CUSTODY_GRADE_DRIFT")
         verify_frozen_soup(run_dir, soup)
@@ -4065,11 +4077,7 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
     # Historical recipes remain durable in immutable receipts, but soup bytes
     # obey the bounded runtime-storage contract: active + one previous per
     # grade.  Mentor-epoch adoption must not disable that retirement policy.
-    epoch = record.get("mentor_epoch")
-    active_soups = (
-        epoch.get("active_grade_soups", {})
-        if isinstance(epoch, dict) else record.get("grade_soups", {}))
-    retired_soups = retire_stale_soups(run_dir, active_soups)
+    retired_soups = retire_stale_soups(run_dir, _live_grade_soups(record))
     if retired_soups:
         _record(run_dir, {"event": "SCHOOL_OLD_GRADE_SOUPS_RETIRED",
                           "generation": record["generation"],

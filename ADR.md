@@ -418,6 +418,8 @@ commands: `docs/architecture/TYPED_INTEGER_GENERATED_TESTS_20261015.md`.
 
 Historical championship receipts preserve superseded soup recipe identities and provenance; they do not exempt superseded tensor blobs from the bounded binary-retention rule above. Mentor-epoch storage therefore retains at most the active and immediately previous managed soup artifacts per grade unless a later explicit human storage policy changes that ceiling.
 
+Resume custody verifies tensor bytes only for that live active-plus-previous set. Archived championship epochs remain immutable provenance and checkpoint authority, but their superseded soup tensors are not binary-retention roots and may be absent after governed retirement.
+
 **Evidence and scope:** `grade_soup.py` owns the immutable recipe, vote and model-averaging contracts, while `grade_a_trainer.py` orchestrates the human-owned exam boundary, confidence inputs, storage and delivery outbox. Disposable regression tests cover role multiplicity, one-grade/three-grade scoped voting, unchanged frozen soup across repeated examinations, equal-coverage incumbent replacement, atomic/no-overwrite storage, hash drift, native MLX averaged values, safe retirement and full Grade B source-scored lifecycle. The 8% confidence influence cap inherited from ADR-033 remains a provisional engineering setting, **not** measured evidence of neural learning or the optimum calibration. Only the human starts/resumes real training. Protected issue #336 stays OPEN until empirical cumulative A+B 144/144 and other source/diagnostic gates are observed.
 
 

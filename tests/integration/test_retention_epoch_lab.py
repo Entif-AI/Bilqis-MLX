@@ -527,6 +527,30 @@ class MentorEpochTests(unittest.TestCase):
         retire_soups.assert_called_once_with(
             Path("/not-created"), self.epoch["active_grade_soups"])
 
+    def test_archived_epoch_soup_receipts_do_not_require_retired_tensor_bytes(self):
+        archived_soup = {"grade": "A", "filename": "soups/archived.safetensors"}
+        current_soup = {"grade": "B", "filename": "soups/current.safetensors"}
+        receipt = {
+            "grade_soups": {},
+            "championship_epoch_history": [
+                {**self.epoch, "active_grade_soups": {"A": archived_soup}}],
+            "mentor_epoch": {**self.epoch, "active_grade_soups": {"B": current_soup}},
+        }
+        with patch.object(trainer, "verify_frozen_soup") as verify:
+            trainer._verify_frozen_soup_custody(Path("/run"), receipt)
+        verify.assert_called_once_with(Path("/run"), current_soup)
+
+    def test_current_epoch_soup_still_requires_its_tensor_bytes(self):
+        current_soup = {"grade": "B", "filename": "soups/current.safetensors"}
+        receipt = {"grade_soups": {},
+                   "mentor_epoch": {**self.epoch,
+                                    "active_grade_soups": {"B": current_soup}}}
+        with (patch.object(
+                trainer, "verify_frozen_soup",
+                side_effect=ValueError("GRADE_SOUP_SAVED_ARTIFACT_MISSING")),
+              self.assertRaisesRegex(ValueError, "GRADE_SOUP_SAVED_ARTIFACT_MISSING")):
+            trainer._verify_frozen_soup_custody(Path("/run"), receipt)
+
 
 if __name__ == "__main__":
     unittest.main()
