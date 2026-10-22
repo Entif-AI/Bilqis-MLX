@@ -11,6 +11,7 @@ from pathlib import Path
 
 from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TABLES
 from bilqis_mlx.runtime.disk import headroom_snapshot
+from bilqis_mlx.state_dag import read_current
 from bilqis_mlx.source import AUDITED_PARENT
 from ..compatibility.historical_live_release import historical_rubric_description
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard
@@ -18,7 +19,7 @@ from bilqis_mlx.presentation.spiral_dashboard import Dashboard
 
 def _dashboard_state(run_dir: Path):
     state_path = run_dir / "state.json"
-    state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else None
+    state = read_current(run_dir) if state_path.exists() else None
     school = state["school"] if state else {}
     active = school.get("active_grades", ())
     grade_index = school.get("grade_index", 0)

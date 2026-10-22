@@ -132,6 +132,10 @@ from bilqis_mlx.learning.teacher_feedback import (
     summarize_teacher_outcomes,
 )
 from bilqis_mlx.runtime.timing_trace import trace_mark, trace_span
+from bilqis_mlx.data_plane import verify_file_digest
+from bilqis_mlx.state_dag import (
+    migrate_current_head, persist as persist_state, read_current, read_generation,
+)
 from .runtime.state import (
     _canonical, _fingerprint, _durable_json, _state_from_json, _seed,
 )
@@ -973,21 +977,8 @@ def _train_step(mx, parameters, optimizer, rows, config, answer_ids,
 
 
 def _persist(run_dir: Path, receipt: dict):
-    """One linearizable state pointer; immutable sequence copies remain."""
-    receipt = json.loads(_canonical(receipt))
-    generation = receipt["generation"]
-    path = run_dir / "states" / f"{generation:07d}.json"
-    if path.exists():
-        if path.is_symlink() or json.loads(path.read_text(encoding="utf-8")) != receipt:
-            raise ValueError("HUMAN_TRAINER_IMMUTABLE_GENERATION_COLLISION")
-    else:
-        _durable_json(path, receipt)
-    if json.loads(path.read_text(encoding="utf-8")) != receipt:
-        raise ValueError("HUMAN_TRAINER_SNAPSHOT_POSTWRITE_MISMATCH")
-    _durable_json(run_dir / "state.json", receipt, replace_existing=True)
-    if json.loads((run_dir / "state.json").read_text(encoding="utf-8")) != receipt:
-        raise ValueError("HUMAN_TRAINER_LATEST_POINTER_NOT_DURABLE")
-    return receipt
+    """Persist one logical generation through the immutable Merkle state DAG."""
+    return persist_state(run_dir, receipt)
 
 
 def _recover_orphaned_commit(run_dir: Path, latest: dict) -> dict:
@@ -1001,7 +992,7 @@ def _recover_orphaned_commit(run_dir: Path, latest: dict) -> dict:
         return latest
     if target.is_symlink() or not target.is_file():
         raise ValueError("HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION")
-    proposed = json.loads(target.read_text(encoding="utf-8"))
+    proposed = read_generation(run_dir, latest["generation"] + 1)
     if (proposed.get("generation") != latest["generation"] + 1 or
             proposed.get("run_id") != latest.get("run_id") or
             proposed.get("schema") != latest.get("schema") or
@@ -1011,9 +1002,7 @@ def _recover_orphaned_commit(run_dir: Path, latest: dict) -> dict:
         raise ValueError("HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE")
     # Verify every retained old/new whole-student pointer before publication.
     _verify_best_custody(run_dir, proposed)
-    _durable_json(run_dir / "state.json", proposed, replace_existing=True)
-    if json.loads((run_dir / "state.json").read_text()) != proposed:
-        raise ValueError("HUMAN_TRAINER_RECOVERY_POINTER_NOT_DURABLE")
+    proposed = persist_state(run_dir, proposed)
     # Publish the recovered generation's original causal events before its
     # recovery annotation, retaining a legible ordered School50 history.
     _reconcile_delivery_outbox(run_dir, proposed)
@@ -1206,7 +1195,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
     path = run_dir / "state.json"
     if not path.is_file():
         raise ValueError("HUMAN_TRAINER_RESUME_REQUIRES_PRIOR_RUN")
-    receipt = json.loads(path.read_text(encoding="utf-8"))
+    receipt = read_current(run_dir)
     if (receipt.get("schema") != VERSION or receipt.get("accepted_authority") != AUTHORITY
             or receipt.get("source_manifest_sha256") != manifest["manifest_sha256"]
             or receipt.get("teacher_source_sha256") != policy_sha):
@@ -1250,8 +1239,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
             receipt["parameter_shapes"] or
             len(parameters) != 39):
         raise ValueError("HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT")
-    if json.loads((run_dir / "states" /
-                   f"{receipt['generation']:07d}.json").read_text()) != receipt:
+    if read_generation(run_dir, receipt["generation"]) != receipt:
         raise ValueError("HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED")
     if not old_mode:
         _verify_saved_cohort(
@@ -1304,6 +1292,9 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
     # Re-run custody verification against that enlarged immutable reference set
     # before this resumed state is allowed to proceed to any lesson or exam.
     _verify_best_custody(run_dir, receipt)
+    # Convert only the mutable latest pointer after the legacy receipt has
+    # passed every resume check. The immutable historical generation remains.
+    migrate_current_head(run_dir, receipt)
     return parameters, optimizer, graph, receipt
 
 
@@ -1698,7 +1689,7 @@ def _verify_frozen_soup_custody(run_dir, receipt):
             for old in older:
                 previous = run_dir / old["filename"]
                 if (previous.parent != run_dir / "soups" or previous.is_symlink() or
-                        not previous.is_file() or digest_file(previous) != old["sha256"]):
+                        not previous.is_file() or not verify_file_digest(previous, old["sha256"])):
                     raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
 
 
@@ -1737,7 +1728,7 @@ def _verify_best_custody(run_dir, receipt):
         if root.is_symlink() or root.parent != run_dir / "bundles":
             raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT")
         manifest = json.loads((root / "manifest.json").read_text())
-        if digest_file(root / "model-and-own-adamw.safetensors") != manifest["safetensors_sha256"]:
+        if not verify_file_digest(root / "model-and-own-adamw.safetensors", manifest["safetensors_sha256"]):
             raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT")
         for ref in sources:
             if (ref["filename"] == name and
@@ -1760,7 +1751,7 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
                     f"{old['generation']:07d}.json")
         if old_path.is_symlink() or not old_path.is_file():
             raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_UNCOMMITTED_SOURCE")
-        durable = json.loads(old_path.read_text(encoding="utf-8"))
+        durable = read_generation(run_dir, old["generation"])
         # Only *durable* outbox events have delivery authority. Transient
         # callers may carry a subsequently edited copy of a committed event;
         # requiring payload-object equality here mistakes a working copy for
@@ -4880,7 +4871,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         # Fail before GPU loading, orphan recovery, or any state mutation when
         # a protected student's policy would otherwise be silently disabled.
         saved_path = Path(run_dir).expanduser().resolve() / "state.json"
-        if (saved_path.is_file() and json.loads(saved_path.read_text()).get(
+        if (saved_path.is_file() and read_current(Path(run_dir)).get(
                 "learning_experiment") is not None):
             raise ValueError("LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION")
     import mlx.core as mx
@@ -4900,11 +4891,11 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
     with operator_lock(run_dir), ExitStack() as resources:
         trace_mark("OPERATOR_LOCK_ACQUIRED")
         if resume:
-            saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+            saved = read_current(run_dir)
             pending = run_dir / "states" / f"{saved['generation'] + 1:07d}.json"
             if pending.exists() and (pending.is_symlink() or not pending.is_file()):
                 raise ValueError("HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH")
-            pending_state = (json.loads(pending.read_text(encoding="utf-8"))
+            pending_state = (read_generation(run_dir, saved["generation"] + 1)
                              if pending.exists() else None)
             if saved.get("factory_admission_v2") is not None:
                 saved_release = _read_executable_factory_release_artifact(

@@ -15,6 +15,7 @@ import re
 import uuid
 
 from bilqis_mlx.backup import digest_file
+from bilqis_mlx.data_plane import verify_file_digest
 from bilqis_mlx.runtime.disk import assert_headroom
 from .championship_witnesses import maxed_role
 
@@ -250,7 +251,7 @@ def verify_frozen_soup(run_dir: Path, snapshot: dict) -> Path:
     path = run_dir / expected
     if path.parent.is_symlink() or path.is_symlink() or not path.is_file():
         raise ValueError("GRADE_SOUP_SAVED_ARTIFACT_MISSING")
-    if digest_file(path) != snapshot["sha256"]:
+    if not verify_file_digest(path, snapshot["sha256"]):
         raise ValueError("GRADE_SOUP_SAVED_ARTIFACT_CHANGED")
     return path
 
@@ -273,7 +274,7 @@ def retire_stale_soups(run_dir: Path, active_soups: dict) -> tuple[str, ...]:
             for backup in backups:
                 former = run_dir / backup["filename"]
                 if (former.parent != root or former.is_symlink() or not former.is_file() or
-                        digest_file(former) != backup["sha256"]):
+                        not verify_file_digest(former, backup["sha256"])):
                     raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
                 keep.add(backup["filename"])
     files = []

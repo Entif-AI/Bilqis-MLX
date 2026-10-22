@@ -9,6 +9,7 @@ import signal
 import sys
 
 from bilqis_mlx.runtime.disk import assert_headroom
+from bilqis_mlx.state_dag import read_current
 from .source import AUDITED_PARENT
 from .compatibility.cli_preflight import (
     legacy_new_run_status_fields,
@@ -289,7 +290,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
                                            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"],
                      "operator_constraint":"HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES"})
     if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE":
-        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        saved = read_current(run_dir)
         factory = snapshot.get("factory")
         if factory is not None:
             active_count = len(factory["active_grades"])
@@ -310,7 +311,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     if numeric_staircase:
         if not resume:
             raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
-        saved = json.loads((run_dir/'state.json').read_text())
+        saved = read_current(run_dir)
         factory = snapshot.get("factory")
         maximum = saved.get("numeric_maximum")
         legacy_scope = legacy_numeric_scope(saved)
@@ -333,7 +334,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         boolean_idboolops=(boolean_idboolops if full_grade_b else False),
         checkpoint_sha256=snapshot.get("checkpoint_sha256")))
     if resume:
-        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        saved = read_current(run_dir)
         factory = snapshot.get("factory")
         requested_profile = (
             "school/boolean/full" if full_grade_b
@@ -370,7 +371,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         if resume:
             from .trainer import _reconcile_delivery_outbox
             from .compatibility.executable_projection import preflight_sealed_v1_migration
-            saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+            saved = read_current(run_dir)
             outbox = saved.get("delivery_outbox")
             delivered = _reconcile_delivery_outbox(
                 run_dir, saved, publish_missing=False)
@@ -399,7 +400,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     if boolean_association_bridge:
         from .boolean_association import VERSION, constructor_digest
         from .runtime.admission import admitted_release_supports_teaching_option
-        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        saved = read_current(run_dir)
         if not admitted_release_supports_teaching_option(run_dir, saved, VERSION):
             snapshot["blockers"].append("TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE")
         snapshot["boolean_association_bridge"] = {
