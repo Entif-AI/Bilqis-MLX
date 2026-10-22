@@ -31,6 +31,32 @@ class TeacherFeedbackTests(unittest.TestCase):
             prior, rows, {"retested":"FALSE", "new-miss":"FALSE"})
         self.assertEqual([row["id"] for row in result], ["new-miss", "old-only"])
 
+    def test_unresolved_misses_dedupe_same_semantics_across_cohort_ids(self):
+        semantic = {
+            "capability": "C.NUMBER", "gold": "3",
+            "source_id": "number-three",
+            "record": {"task": "number", "symbols": ["NUMBER", "3"]},
+            "tokens": [1, 3, 9],
+        }
+        prior = [
+            {"id": "old-a", "integer_max": 3, **semantic},
+            {"id": "old-b", "integer_max": 10, **semantic},
+            {"id": "other", "capability": "C.NUMBER", "gold": "2",
+             "source_id": "number-two",
+             "record": {"task": "number", "symbols": ["NUMBER", "2"]},
+             "tokens": [1, 2, 9]},
+        ]
+        current = [{"id": "new-c", "integer_max": 3, **semantic}]
+
+        still_wrong = reconcile_unresolved_misses(
+            prior, current, {"new-c": "2"})
+        self.assertEqual([row["id"] for row in still_wrong],
+                         ["old-a", "other"])
+
+        now_correct = reconcile_unresolved_misses(
+            still_wrong, current, {"new-c": "3"})
+        self.assertEqual([row["id"] for row in now_correct], ["other"])
+
     def test_fair_miss_selection_covers_backlog_without_a_fixed_batch_ratio(self):
         misses = [{"id":f"miss-{index:02d}", "capability":"B.NOT",
                    "gold":"TRUE" if index % 2 else "FALSE"}

@@ -132,6 +132,20 @@ def _miss_sort_key(row: dict) -> tuple[str, str]:
     return str(row.get("capability", "")), row["id"]
 
 
+def _miss_semantic_identity(row: dict) -> str:
+    source_id = row.get("source_id")
+    record = row.get("record")
+    tokens = row.get("tokens")
+    if (not isinstance(source_id, str) or not source_id or
+            not isinstance(record, dict) or
+            not isinstance(tokens, list)):
+        return "id:" + row["id"]
+    return "semantic:" + _digest({
+        key: value for key, value in row.items()
+        if key not in {"id", "integer_max"}
+    })
+
+
 def reconcile_unresolved_misses(previous: list[dict] | tuple[dict, ...],
                                 rows: list[dict] | tuple[dict, ...],
                                 predictions: dict[str, str]) -> list[dict]:
@@ -139,10 +153,11 @@ def reconcile_unresolved_misses(previous: list[dict] | tuple[dict, ...],
     unresolved = {}
     historical_ids = set()
     for row in previous:
-        identity = _row_identity(row, historical_ids,
-                                 "TEACHER_MISS_HISTORY_IDENTITY_CONFLICT")
-        unresolved[identity] = row
+        _row_identity(row, historical_ids,
+                      "TEACHER_MISS_HISTORY_IDENTITY_CONFLICT")
+        unresolved.setdefault(_miss_semantic_identity(row), row)
     current = set()
+    current_semantics = {}
     for row in rows:
         identity = _row_identity(row, current, "TEACHER_MISS_CURRENT_COHORT_INVALID")
         gold = row.get("gold") if isinstance(row, dict) else None
@@ -150,10 +165,16 @@ def reconcile_unresolved_misses(previous: list[dict] | tuple[dict, ...],
             raise ValueError("TEACHER_MISS_CURRENT_COHORT_INVALID")
         if identity not in predictions:
             raise ValueError("TEACHER_MISS_PREDICTION_MISSING")
-        if predictions[identity] == gold:
-            unresolved.pop(identity, None)
+        current_semantics.setdefault(_miss_semantic_identity(row), []).append(row)
+    for semantic_identity, equivalent_rows in current_semantics.items():
+        wrong = [
+            row for row in equivalent_rows
+            if predictions[row["id"]] != row["gold"]
+        ]
+        if wrong:
+            unresolved.setdefault(semantic_identity, wrong[0])
         else:
-            unresolved[identity] = row
+            unresolved.pop(semantic_identity, None)
     return sorted(unresolved.values(), key=_miss_sort_key)
 
 
