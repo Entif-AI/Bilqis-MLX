@@ -12,7 +12,7 @@ from ..factory.model import SourceAdapter
 from ..vocabulary_growth import digest
 
 GENERATOR = 'bilqis.issue349.event-pairs/v1'
-OPTION = 'source.event-query-contrast/v1'
+OPTION = 'source.event-query-and-prerequisite-contrast/v1'
 QUERY_PAIR_SIZE = 2
 
 
@@ -65,7 +65,7 @@ def check(row, **kwargs):
             frames.check({**row, 'generator': frames.GENERATOR}, **kwargs))
 
 
-def enrich(*, graph, capability, seed, option_id, **_):
+def enrich(*, graph, capability, seed, option_id, prerequisites=None, **_):
     if option_id != OPTION:
         raise ValueError(intro.OPTION_NOT_RELEASED)
     pairs = _contrast_pairs(_pools(graph, capability))
@@ -75,6 +75,9 @@ def enrich(*, graph, capability, seed, option_id, **_):
         ordered = list(pair)
         rng.shuffle(ordered)
         result.extend(ordered)
+    for prior in (frames.SPECS[capability][1] if prerequisites is None else prerequisites):
+        if prior in frames.SPECS and prior != capability:
+            result.extend(rng.choice(_contrast_pairs(_pools(graph, prior))))
     return tuple(result)
 
 
@@ -84,7 +87,7 @@ def registered_adapter():
                           hashlib.sha256(Path(__file__).read_bytes()).hexdigest()))
     return RegisteredSourceAdapter(SourceAdapter(
         'source.issue349.event-pairs/v1', GENERATOR, previous.accepted_oracle_ids,
-        fingerprint, variation_axes=('two-event-lookup', 'query-contrast', *previous.variation_axes),
+        fingerprint, variation_axes=('two-event-lookup', 'query-contrast', 'declared-prerequisite-contrast', *previous.variation_axes),
         teaching_option_ids=(OPTION,)), draw, check, enrich=enrich,
         witness=lambda row, obligation, **kwargs: check(row, **kwargs) and
             obligation.key in frames.SPECS[row['capability']][1])

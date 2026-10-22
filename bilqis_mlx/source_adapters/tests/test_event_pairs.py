@@ -28,7 +28,7 @@ class EventPairTests(unittest.TestCase):
         graph = event_frames.expanded_graph(registry_graph())
         for cap in event_frames.SPECS:
             rows = event_pairs.enrich(source_root=None, graph=graph, capability=cap,
-                                      seed=349, option_id=event_pairs.OPTION)
+                                      seed=349, option_id=event_pairs.OPTION, prerequisites=())
             self.assertEqual(len(rows), 16)
             for left, right in zip(rows[::2], rows[1::2]):
                 self.assertEqual(len(left['record']['events']), 2)
@@ -50,3 +50,14 @@ class EventPairTests(unittest.TestCase):
                 self.assertTrue(any(labels == {'TRUE', 'FALSE'} for labels in worlds.values()))
                 self.assertEqual(len({r['id'] for r in rows}), 12)
                 self.assertEqual(sum(r['gold'] == 'TRUE' for r in rows), 6)
+
+    def test_joint_option_preserves_declared_event_prerequisites(self):
+        graph = event_frames.expanded_graph(registry_graph())
+        rows = event_pairs.enrich(graph=graph, capability='D.TERMINATION', seed=349,
+            option_id=event_pairs.OPTION,
+            prerequisites=('D.EVENT_OCCURRENCE', 'D.COMMENCEMENT', 'A.IDENTITY'))
+        self.assertEqual({cap: sum(r['capability'] == cap for r in rows)
+                          for cap in event_frames.SPECS},
+                         {'D.EVENT_OCCURRENCE': 2, 'D.COMMENCEMENT': 2,
+                          'D.TERMINATION': 16})
+        self.assertTrue(all(event_pairs.check(row, graph=graph) for row in rows))

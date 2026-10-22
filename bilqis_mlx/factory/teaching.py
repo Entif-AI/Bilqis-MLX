@@ -48,9 +48,15 @@ def draw_teaching_option_rows(source_root, graph, release, registry, *,
                                option_id=option_id, seed=seed))
     if not rows:
         raise ValueError("FACTORY_TEACHING_OPTION_EMPTY")
-    answers = {family.kind: family.values for family in execution.answer_families}
+    allowed = {capability, *execution.prerequisites}
     for row in rows:
-        if (row.get("capability") != capability or not row.get("id") or
+        constituent = release.execution_plan.capability_map.get(row.get("capability"))
+        answers = ({family.kind: family.values for family in constituent.answer_families}
+                   if constituent is not None else {})
+        if (row.get("capability") not in allowed or constituent is None or
+                constituent.provider_id != execution.provider_id or
+                constituent.provider_implementation_sha256 != execution.provider_implementation_sha256 or
+                not row.get("id") or
                 row.get("gold") not in answers.get(row.get("answer_kind", "binary"), ()) or
                 adapter.check(row, source_root=source_root, graph=graph,
                               course=legacy_course) is not True):
