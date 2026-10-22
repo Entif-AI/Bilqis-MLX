@@ -339,15 +339,14 @@ class SchoolTests(unittest.TestCase):
             main_sweep_visited=("A", "B"),
         )
         withheld = ("c.0",)
+        self.assertNotIn("c.1", assessment_capabilities(course, state))
         active = {
-            cap.id: (8, 8)
-            for grade in course.grades
-            for cap in grade.capabilities
-            if cap.id not in withheld
+            cap: (8, 8)
+            for cap in assessment_capabilities(course, state)
+            if cap not in withheld
         }
         active["a.0"] = (7, 8)
         active["b.0"] = (7, 8)
-        active["c.1"] = (7, 8)
 
         continued = assess_withheld(
             course, state, snapshot(course, self.init, active), withheld)

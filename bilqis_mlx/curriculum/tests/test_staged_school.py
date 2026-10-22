@@ -6,7 +6,8 @@ import unittest
 
 from bilqis_mlx.curriculum import ExamItem, validate, validate_exam_item
 from bilqis_mlx.curriculum.scheduler import (
-    _enter_grade, assess, assessment_capabilities, next_capability, start_new, visit,
+    _at_introduction_stage, _enter_grade, assess, assessment_capabilities,
+    next_capability, start_new, visit,
 )
 from bilqis_mlx.trainer import _state_from_json
 from bilqis_mlx.curriculum.tests.test_school import all_scores, cp, grade_loop, snapshot, three_grade_course
@@ -56,6 +57,44 @@ class StagedSchoolTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "FUTURE_OR_SAME_STAGE"):
             validate_exam_item(course, "C", item, mastered_grade_ids=("A", "B"),
                                mastered_capability_ids=("c.0", "c.2"))
+    def test_unfinished_b_debt_gets_taught_during_incomplete_and_final_c_stages(self):
+        course = staged_course()
+        for stage in (0, len(course.grades[-1].teaching_stages) - 1):
+            with self.subTest(c_stage=stage):
+                state, pointer = enter_c(course)
+                current = f"c.{stage}"
+                state = _at_introduction_stage(
+                    state, stage, queue=(current,))
+                state = replace(
+                    state, champions={"A": state.champions["A"]},
+                    carried_mastery_debt=("b.0", "b.1", current))
+                scores = {
+                    cap: (8, 8)
+                    for cap in assessment_capabilities(course, state)
+                }
+                scores["b.0"] = (4, 8)
+                scores["b.1"] = (4, 8)
+                scores[current] = (0, 8)
+
+                state = grade_loop(course, state, pointer)
+                state = assess(
+                    course, state, snapshot(course, pointer, scores))
+                self.assertEqual((state.grade, state.stage), ("B", "MAIN"))
+                self.assertIn("b.0", state.queue)
+                self.assertIn("b.1", state.queue)
+                if stage == 0:
+                    self.assertNotIn(
+                        "c.1", assessment_capabilities(course, state))
+                self.assertEqual(
+                    dict(state.introduction_frontiers)["C"], stage)
+
+                state = grade_loop(course, state, pointer)
+                state = assess(
+                    course, state, snapshot(course, pointer, scores))
+                self.assertEqual(state.stage, "RECOVERY_1")
+                self.assertIn("b.0", state.queue)
+                self.assertIn(current, state.queue)
+
     def test_future_c_concepts_are_neither_taught_nor_examined(self):
         course = staged_course()
         state, pointer = enter_c(course)
@@ -71,7 +110,8 @@ class StagedSchoolTests(unittest.TestCase):
         state, pointer = enter_c(course)
         epoch = state.grade_exam_epoch
         state = grade_loop(course, state, pointer)
-        scores = {c: (7, 8) for c in assessment_capabilities(course, state)}
+        scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        scores["c.0"] = (7, 8)
         state = assess(course, state, snapshot(course, pointer, scores))
         self.assertEqual(state.introduction_stage, 0)
         self.assertEqual(state.grade_exam_epoch, epoch)
