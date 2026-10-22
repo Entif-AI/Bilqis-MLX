@@ -221,6 +221,76 @@ class RetentionTeachingPathTests(unittest.TestCase):
     def test_binary_grade_b_visit_does_not_invent_old_examples_at_zero_policy(self):
         self.assertEqual(set(self._visit_selection(old=0)), {"B.XOR"})
 
+    def test_one_unresolved_semantic_is_present_in_every_optimizer_batch(self):
+        policy = {"old": 0, "lr": 0.0001, "depth": 1,
+                  "contrast": 1., "distill": 0., "preview": 0}
+        teacher = {"strategies": {"p": policy}}
+        engine = SimpleNamespace(pick=lambda *_: ("p", policy))
+        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
+                                 champions={"A": {"optimizer_step": 1}})
+        course = _visit_program()
+        target = {
+            "id": "weak:xor:true", "source_id": "weak:xor:true",
+            "capability": "B.XOR", "answer_kind": "binary",
+            "gold": "TRUE", "tokens": [8, 9, 10],
+        }
+        receipt = {
+            "teacher": teacher, "generation": 1, "run_id": "weakness-target",
+            "school": {}, "teacher_misses": [target],
+            "teacher_miss_exposures": {target["id"]: 0},
+            "config": {}, "answer_ids": [6, 7],
+            "curriculum_mode": "fixture-school",
+        }
+        optimizer = SimpleNamespace(
+            learning_rate=0.0001,
+            state={"step": SimpleNamespace(item=lambda: 1)})
+        batches = []
+
+        def source_rows(*_args, **kwargs):
+            return _rows(kwargs["capability"])
+
+        def capture_three_batches(_mx, _parameters, _optimizer, rows,
+                                  *_args, **_kwargs):
+            batches.append(tuple(row["id"] for row in rows))
+            if len(batches) == 3:
+                raise _BatchCaptured("THREE_TARGETED_BATCHES_CAPTURED")
+            return 0.1, 0.1
+
+        def wrong_predictions(_mx, _params, rows, *_args):
+            return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
+                    for row in rows}
+
+        with (patch.object(trainer, "_state_from_json", return_value=school),
+              patch.object(trainer, "_read_executable_factory_release_artifact",
+                           return_value=_visit_release(course)),
+              patch.object(trainer, "schedule_program_from_executable_release",
+                           return_value=course),
+              patch.object(trainer, "next_capability", return_value="B.XOR"),
+              patch.object(trainer, "_draw_live_rows", side_effect=source_rows),
+              patch.object(trainer, "_frozen_confidence_champions", return_value=()),
+              patch.object(trainer, "_frozen_grade_soup_votes", return_value=((), ())),
+              patch.object(trainer, "_train_score", return_value=0.5),
+              patch.object(trainer, "_learning_probe_rows",
+                           return_value=(_rows("B.XOR")[:6], set(), 0)),
+              patch.object(trainer, "_predictions", side_effect=wrong_predictions),
+              patch.object(trainer, "fork_student", return_value=({}, optimizer)),
+              patch.object(trainer, "inspect_lesson_step",
+                           side_effect=ValueError("fixture methodology unavailable")),
+              patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
+                    return_value=()),
+              patch.object(trainer, "_train_step",
+                           side_effect=capture_three_batches)):
+            with self.assertRaisesRegex(
+                    _BatchCaptured, "THREE_TARGETED_BATCHES_CAPTURED"):
+                trainer._take_visit(
+                    None, Path("/never-opened"), receipt, {}, course, engine, {},
+                    optimizer, {}, steps_per_visit=3, batch_size=8,
+                    reserve_gib=0., source_root=Path("/not-used"),
+                    learning_settings=Settings())
+
+        self.assertEqual(len(batches), 3)
+        self.assertTrue(all(target["id"] in batch for batch in batches))
+
     def test_real_visit_path_emits_coarse_write_ahead_timing_markers(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "trace.jsonl"
@@ -317,7 +387,7 @@ class RetentionTeachingPathTests(unittest.TestCase):
              for bits in ((False, False), (False, True), (True, False), (True, True))},
         )
 
-    def test_fragile_preservation_reserves_batch_capacity_before_miss_replay(self):
+    def test_fragile_preservation_shares_batch_capacity_with_weakness_targets(self):
         policy = {"old": 0, "lr": 0.0001, "depth": 1,
                   "contrast": 1., "distill": 0., "preview": 0}
         teacher = {"strategies": {"p": policy}}

@@ -56,12 +56,9 @@ class TeacherDecisionInput:
 
 
 @dataclass(frozen=True)
-class FairMissRequest:
+class WeaknessTargetRequest:
     exposures: dict[str, int]
-    selected_this_visit: frozenset[str]
-    remaining_steps: int
-    batch_size: int
-    gold_capacity: dict[str, int]
+    capacity: int
 
 
 @dataclass(frozen=True)
@@ -178,80 +175,38 @@ def reconcile_unresolved_misses(previous: list[dict] | tuple[dict, ...],
     return sorted(unresolved.values(), key=_miss_sort_key)
 
 
-def _valid_gold_capacity(gold_capacity: dict[str, int], batch_size: int) -> bool:
-    if not isinstance(gold_capacity, dict) or not gold_capacity:
-        return False
-    valid_entries = all(
-        isinstance(label, str) and label and
-        type(capacity) is int and capacity >= 0
-        for label, capacity in gold_capacity.items())
-    return valid_entries and sum(gold_capacity.values()) <= batch_size
+def _validate_weakness_target_request(request: WeaknessTargetRequest) -> None:
+    invalid_capacity = type(request.capacity) is not int or request.capacity < 0
+    invalid_exposures = any(
+        type(value) is not int or value < 0 for value in request.exposures.values())
+    if invalid_capacity or invalid_exposures:
+        raise ValueError("TEACHER_WEAKNESS_TARGET_INPUT_INVALID")
 
 
-def _validate_fair_miss_request(request: FairMissRequest) -> None:
-    if type(request.remaining_steps) is not int or request.remaining_steps < 1:
-        raise ValueError("TEACHER_MISS_FAIRNESS_INPUT_INVALID")
-    if type(request.batch_size) is not int or request.batch_size < 2 or request.batch_size % 2:
-        raise ValueError("TEACHER_MISS_FAIRNESS_INPUT_INVALID")
-    if any(type(value) is not int or value < 0 for value in request.exposures.values()):
-        raise ValueError("TEACHER_MISS_FAIRNESS_INPUT_INVALID")
-    if not _valid_gold_capacity(request.gold_capacity, request.batch_size):
-        raise ValueError("TEACHER_MISS_FAIRNESS_INPUT_INVALID")
-
-
-def _available_misses(misses: list[dict] | tuple[dict, ...],
-                      selected_this_visit: set[str]) -> list[dict]:
+def _validated_misses(misses: list[dict] | tuple[dict, ...]) -> list[dict]:
     available = []
     seen = set()
     for row in misses:
-        identity = _row_identity(row, seen, "TEACHER_MISS_FAIRNESS_IDENTITY_CONFLICT")
-        if identity not in selected_this_visit:
-            available.append(row)
+        _row_identity(row, seen, "TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT")
+        available.append(row)
     return available
 
 
-def _fairness_key(row: dict, request: FairMissRequest) -> tuple[int, str, str]:
+def _weakness_target_key(row: dict,
+                         request: WeaknessTargetRequest) -> tuple[int, str, str]:
     return (request.exposures.get(row["id"], 0), *_miss_sort_key(row))
 
 
-def _misses_by_gold(rows: list[dict]) -> dict[str, list[dict]]:
-    grouped = {}
-    for row in rows:
-        gold = row.get("gold")
-        if not isinstance(gold, str) or not gold:
-            raise ValueError("TEACHER_MISS_FAIRNESS_GOLD_INVALID")
-        grouped.setdefault(gold, []).append(row)
-    return grouped
-
-
-def _select_gold_window(gold: str, rows: list[dict],
-                        request: FairMissRequest) -> list[dict]:
-    capacity = request.gold_capacity.get(gold, 0)
-    if not capacity:
+def select_weakness_targets(misses: list[dict] | tuple[dict, ...],
+                            request: WeaknessTargetRequest) -> list[dict]:
+    """Use available current-capability slots on the least-exposed weak semantics."""
+    _validate_weakness_target_request(request)
+    if not request.capacity:
         return []
-    ordered = sorted(rows, key=lambda row: _fairness_key(row, request))
-    target = (len(ordered) + request.remaining_steps - 1) // request.remaining_steps
-    return ordered[:min(capacity, target)]
-
-
-def select_fair_miss_window(misses: list[dict] | tuple[dict, ...],
-                            request: FairMissRequest) -> list[dict]:
-    """Cover unresolved errors fairly with capacity derived from backlog size.
-
-    There is no universal rehearsal percentage: the requested count follows
-    each answer-class backlog and remaining visit budget, bounded by the
-    replaceable answer classes in the already selected batch.
-    """
-    _validate_fair_miss_request(request)
-    available = _available_misses(misses, set(request.selected_this_visit))
-    if not available:
-        return []
-    selected = [
-        row
-        for gold, rows in sorted(_misses_by_gold(available).items())
-        for row in _select_gold_window(gold, rows, request)
-    ]
-    return sorted(selected, key=lambda row: _fairness_key(row, request))
+    available = _validated_misses(misses)
+    ordered = sorted(
+        available, key=lambda row: _weakness_target_key(row, request))
+    return ordered[:min(request.capacity, len(ordered))]
 
 
 def _validate_decision_input(request: TeacherDecisionInput) -> None:

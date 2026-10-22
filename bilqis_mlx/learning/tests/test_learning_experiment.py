@@ -13,7 +13,7 @@ from bilqis_mlx.learning.learning_experiment import (
     Settings, paired_outcomes, decide, contextual_pick, observe_context,
     fork_student, commit_trial, sampled_protection, whole_grade_protection,
     missing_grade_capabilities,
-    selection_credit,
+    selection_credit, select_source_lesson,
 )
 
 
@@ -90,6 +90,43 @@ def live_scale_teacher():
 
 
 class CausalTeacherExperimentTests(unittest.TestCase):
+    def test_source_lesson_reserves_weak_semantic_before_policy_fill(self):
+        target = {
+            "id": "number-three", "capability": "C.NUMBER", "gold": "3",
+            "source_id": "source-three", "tokens": [1, 3, 9],
+            "answer_kind": "numeric_active",
+        }
+        current = [
+            target,
+            {"id": "number-two", "capability": "C.NUMBER", "gold": "2",
+             "source_id": "source-two", "tokens": [1, 2, 9],
+             "answer_kind": "numeric_active"},
+            {"id": "eq-two", "capability": "C.NUMBER", "gold": "TRUE",
+             "source_id": "source-two", "tokens": [1, 8, 2, 2, 9],
+             "answer_kind": "binary"},
+        ]
+        prior = [
+            {"id": "old-true", "capability": "B.NOT", "gold": "TRUE",
+             "source_id": "old-true", "tokens": [1, 4, 9],
+             "answer_kind": "binary"},
+            {"id": "old-false", "capability": "B.NOT", "gold": "FALSE",
+             "source_id": "old-false", "tokens": [1, 5, 9],
+             "answer_kind": "binary"},
+        ]
+
+        exposures = {target["id"]: 0}
+        for seed in range(11, 15):
+            picked, control = select_source_lesson(
+                current, prior, {"old": 16, "depth": 1, "contrast": 0.},
+                targets=[target], target_exposures=exposures,
+                reserved_support_slots=2, seed=seed, batch_size=8)
+            self.assertIn(target["id"], {row["id"] for row in picked})
+            self.assertEqual(control["weakness_targets_requested"], 1)
+            self.assertEqual(control["weakness_targets_delivered"], 1)
+            exposures[target["id"]] += 1
+
+        self.assertEqual(exposures[target["id"]], 4)
+
     def test_trainer_defers_missing_peer_inference_until_candidate_target_passes(self):
         from pathlib import Path
         from bilqis_mlx import trainer as trainer

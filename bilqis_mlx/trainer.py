@@ -37,7 +37,8 @@ from bilqis_mlx.learning.learning_experiment import (
     VERSION as LEARNING_EXPERIMENT_VERSION, Settings as LearningSettings,
     contextual_pick, paired_outcomes, decide as decide_learning_trial,
     observe_context, selection_credit, fork_student, commit_trial,
-    earlier_grade_capabilities, select_source_lesson, sampled_protection,
+    earlier_grade_capabilities, reserve_weakness_targets, select_source_lesson,
+    sampled_protection,
     missing_grade_capabilities,
 )
 from bilqis_mlx.learning.whole_student_retention import advance_peaks
@@ -129,8 +130,8 @@ from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .source import AUDITED_PARENT
 from .vocabulary_growth import extend_mlx_student
 from bilqis_mlx.learning.teacher_feedback import (
-    FairMissRequest, TeacherDecisionInput, active_warning_signals, reconcile_unresolved_misses,
-    select_fair_miss_window, summarize_teacher_decision,
+    TeacherDecisionInput, WeaknessTargetRequest, active_warning_signals,
+    reconcile_unresolved_misses, select_weakness_targets, summarize_teacher_decision,
     summarize_teacher_outcomes,
 )
 from bilqis_mlx.runtime.timing_trace import trace_mark, trace_span
@@ -637,25 +638,6 @@ def choose_lesson_batch(rows: list[dict], policy: dict,
         chosen = [rng.choice(rows) for _ in range(batch_size)]
     rng.shuffle(chosen)
     return chosen
-
-
-def replay_missed_lessons(chosen: list[dict], missed: list[dict], *,
-                          reserved_ids=()) -> list[dict]:
-    """Guarantee every requested missed construction reaches this optimizer batch."""
-    if len(missed) > len(chosen):
-        raise ValueError("HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH")
-    result = list(chosen)
-    reserved = set(reserved_ids)
-    consumed = {index for index, row in enumerate(result)
-                if row.get("id") in reserved}
-    for item in missed:
-        replacement = next((i for i, row in enumerate(result)
-                            if i not in consumed and row["gold"] == item["gold"]), None)
-        if replacement is None:
-            raise ValueError("HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY")
-        result[replacement] = item
-        consumed.add(replacement)
-    return result
 
 
 @lru_cache(maxsize=16)
@@ -2534,11 +2516,15 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
 
 
 def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):
-    """Reserve optimizer slots for preservation without displacing exam misses."""
+    """Reserve preservation slots without displacing selected weakness targets."""
     result = list(chosen)
     reserved = set(reserved_ids)
-    consumed = {index for index, row in enumerate(result)
-                if row.get("id") in reserved}
+    consumed = set()
+    for index, row in enumerate(result):
+        identity = row.get("id")
+        if identity in reserved:
+            consumed.add(index)
+            reserved.remove(identity)
     delivered = []
     for item in preservation:
         replacement = next((
@@ -2678,7 +2664,6 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
     if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
         raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
-    selected_misses = set()
     rows.extend(priority)
     with trace_span("TRAIN_SCORE_BEFORE", capability=cap, row_count=len(rows)):
         before = _train_score(mx, params, rows, receipt["config"],
@@ -2845,6 +2830,18 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     autonomy_option_specimen_ids.update(
                         row["id"] for row in fresh)
         fresh.extend(priority)
+        preservation = ()
+        if learning_settings is not None:
+            if prepared is not None:
+                preservation = tuple(prepared["preservation"])
+            else:
+                with trace_span("STEP_FRAGILE_PRESERVATION", capability=cap,
+                                visit_step=step + 1):
+                    preservation = _fresh_fragile_preservation_rows(
+                        run_dir, source_root, graph, receipt, course, school, cap,
+                        step=step + 1, batch_size=batch_size,
+                        fixed_rows=fragile_fixed_rows,
+                        executable_release=executable_release)
         lesson_seed = _seed(receipt, capability=cap, step=step+1)
         with trace_span("STEP_LESSON_SELECT", capability=cap, visit_step=step + 1):
             if learning_settings is not None:
@@ -2858,47 +2855,30 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                         executable_release=executable_release,
                         seed=_seed(receipt, capability="EXPERIMENT_OLD:"+selected, step=step))
                 picked, control = select_source_lesson(
-                    fresh, prior, policy, seed=lesson_seed, batch_size=batch_size)
+                    fresh, prior, policy, seed=lesson_seed, batch_size=batch_size,
+                    targets=priority, target_exposures=miss_exposures,
+                    reserved_support_slots=len(preservation))
                 lesson_control = {**control, "eligible_prior_capabilities":
                                   len(old_capabilities)}
+                target_ids = set(control["weakness_target_ids"])
+                window = [row for row in priority if row["id"] in target_ids]
             else:
                 picked = choose_lesson_batch(
                     fresh, policy, lesson_seed, batch_size=batch_size)
-        preservation = ()
+                target_capacity = sum(row["capability"] == cap for row in picked)
+                window = select_weakness_targets(
+                    priority, WeaknessTargetRequest(
+                        exposures=miss_exposures,
+                        capacity=target_capacity))
+                picked, delivered_targets = reserve_weakness_targets(picked, window)
+                window = list(delivered_targets)
+                target_ids = {row["id"] for row in window}
         delivered_preservation = ()
         if learning_settings is not None:
-            if prepared is not None:
-                preservation = tuple(prepared["preservation"])
-            else:
-                with trace_span("STEP_FRAGILE_PRESERVATION", capability=cap,
-                                visit_step=step + 1):
-                    preservation = _fresh_fragile_preservation_rows(
-                        run_dir, source_root, graph, receipt, course, school, cap,
-                        step=step + 1, batch_size=batch_size,
-                        fixed_rows=fragile_fixed_rows,
-                        executable_release=executable_release)
             with trace_span("STEP_FRAGILE_PRESERVATION_INJECT", capability=cap,
                             visit_step=step + 1):
                 picked, delivered_preservation = _inject_preservation_rows(
-                    picked, preservation)
-        preservation_ids = {row["id"] for row in delivered_preservation}
-        gold_capacity = {
-            gold: sum(row["gold"] == gold and row.get("id") not in preservation_ids
-                      for row in picked)
-            for gold in {row["gold"] for row in picked}
-        }
-        with trace_span("STEP_MISS_REPLAY", capability=cap, visit_step=step + 1,
-                        available_misses=len(priority)):
-            window = select_fair_miss_window(
-                priority, FairMissRequest(
-                    exposures=miss_exposures,
-                    selected_this_visit=frozenset(selected_misses),
-                    remaining_steps=steps_per_visit-step,
-                    batch_size=batch_size,
-                    gold_capacity=gold_capacity,
-                ))
-            picked = replay_missed_lessons(
-                picked, window, reserved_ids=preservation_ids)
+                    picked, preservation, reserved_ids=target_ids)
         if prepared is not None:
             enrichment_rows = tuple(prepared["teaching_enrichment_rows"])
         else:
@@ -2932,7 +2912,6 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         for row in window:
             identity = row["id"]
             miss_exposures[identity] = miss_exposures.get(identity, 0) + 1
-            selected_misses.add(identity)
         replayed_misses += len(window)
         with trace_span("STEP_DIAGNOSTIC_AND_GUIDANCE", capability=cap,
                         visit_step=step + 1):
