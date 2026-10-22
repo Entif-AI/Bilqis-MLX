@@ -1047,3 +1047,13 @@ Continue with bounded foundation/Boolean introductions, then open the designed
 C foundation sequence at 0..3, capped at4 for this issue. This is a progression
 decision, not a new automatic timeout or lesson quota. Keep ordinary source,
 factory, retention, teacher, vocabulary and cumulative assessment owners.
+
+
+ADR-084 execution readback: the issue-owned primary admitted A→thin B→C through
+complete source-scored debt boundaries, with no admission optimizer updates.
+NOT/AND remained imperfect. Subsequent0..3 COUNT teaching retained192 updates;
+the preserved pre-teaching checkpoint scored69/180 on the same seeded panel,
+versus154/180 afterward (numeric15/60→56/60; equality views54/120→98/120).
+This is bounded task learning, not unexposed generalization or grade mastery.
+Exact custody, failed-first cohort-schema repair and remaining storage-test debt
+are in HANDOFF.md and the20261022 foundations-through-counting receipt.

@@ -1,0 +1,251 @@
+{
+  "schema": "bilqis.issue349.foundations-through-counting/v1",
+  "recorded_date": "2026-10-22",
+  "authority": "Direct user correction; ADR-083/084; IPR-0220",
+  "code_head_before_receipt": "e29fd91cdef118be82b000b37956ed0d344b8d2a",
+  "incident_ids": [
+    "PM-2026-10-22-005",
+    "PM-2026-10-20-003 / RC-116"
+  ],
+  "run": "primary",
+  "initial_step": 116816,
+  "final_checkpoint": {
+    "filename": "bundles/best-154-d8601131c7d3",
+    "model_and_native_adamw": true,
+    "optimizer_step": 117104,
+    "sha256": "9201dfa89fc30700a8f73588b2c15d95dc430c1e672de73b503043f4868a2cc4"
+  },
+  "generation": 421,
+  "release_sha256": "48bde559d301964ee012acd48e2606ac0e7dc725f52d22032afac65427ec454e",
+  "active_grades": [
+    "A",
+    "B",
+    "C"
+  ],
+  "current_capability": "C.COUNT",
+  "numeric_maximum": 3,
+  "numeric_scope_final_maximum": 4,
+  "mastery_debt": [
+    "A.IDENTITY",
+    "A.PARENT",
+    "A.LINK",
+    "A.MEMBER",
+    "A.EDGE",
+    "A.MAPS",
+    "B.NOT",
+    "B.AND"
+  ],
+  "phases": [
+    {
+      "phase": "A repair",
+      "log": "2026-10-22T09-46-25-939Z-46766.log",
+      "log_sha256": "0e344b8bad26ee1290346ed53956de77c0fd88a12391ea7a74e878886d224666",
+      "optimizer_visits": 6,
+      "attempted_updates": 192,
+      "retained_updates": 64,
+      "retained_by_capability": {
+        "A.LINK": 0,
+        "A.IDENTITY": 32,
+        "A.EDGE": 0,
+        "A.MAPS": 32
+      },
+      "normal_stop": true
+    },
+    {
+      "phase": "NOT/AND introduction",
+      "log": "2026-10-22T10-05-42-766Z-31347.log",
+      "log_sha256": "ede0630db9162eb47e7b9f7af095cdf83a10efe2acd84d5a595ed8fabc07092d",
+      "optimizer_visits": 4,
+      "attempted_updates": 128,
+      "retained_updates": 32,
+      "retained_by_capability": {
+        "B.NOT": 0,
+        "B.AND": 32
+      },
+      "normal_stop": true
+    },
+    {
+      "phase": "COUNT first pass",
+      "log": "2026-10-22T10-07-30-860Z-54124.log",
+      "log_sha256": "ced28dec6b0508ec6ec410004cb5e9fdae6e9e67f8be1d660d6370e038a4036b",
+      "optimizer_visits": 12,
+      "attempted_updates": 384,
+      "retained_updates": 128,
+      "retained_by_capability": {
+        "C.COUNT": 128
+      },
+      "normal_stop": true
+    },
+    {
+      "phase": "COUNT continuation",
+      "log": "2026-10-22T10-12-27-831Z-15437.log",
+      "log_sha256": "73e27b1b2dcfe7b3763bff4b6e5a17f10b66bf12d1e9d3b5f643ddc73620c433",
+      "optimizer_visits": 12,
+      "attempted_updates": 384,
+      "retained_updates": 64,
+      "retained_by_capability": {
+        "C.COUNT": 64
+      },
+      "normal_stop": true
+    }
+  ],
+  "retained_updates_total": 288,
+  "count_same_panel_baseline_comparison": {
+    "baseline": {
+      "filename": "bundles/catalog-admission-08258bdeea56",
+      "model_and_native_adamw": true,
+      "optimizer_step": 116912,
+      "sha256": "10d2f2dcff1a500caf7443b8302f1486ac4bc1be0614e56ec78aa93f9d8ec925"
+    },
+    "final": {
+      "filename": "bundles/best-154-d8601131c7d3",
+      "model_and_native_adamw": true,
+      "optimizer_step": 117104,
+      "sha256": "9201dfa89fc30700a8f73588b2c15d95dc430c1e672de73b503043f4868a2cc4"
+    },
+    "release_sha256": "48bde559d301964ee012acd48e2606ac0e7dc725f52d22032afac65427ec454e",
+    "capability": "C.COUNT",
+    "seeds": [
+      2026102101,
+      2026102102,
+      2026102103
+    ],
+    "actual_neural_updates": 0,
+    "exposure_overlap": "NOT_MEASURED",
+    "views": {
+      "numeric_active": {
+        "total": 60,
+        "baseline_correct": 15,
+        "final_correct": 56
+      },
+      "binary": {
+        "total": 120,
+        "baseline_correct": 54,
+        "final_correct": 98
+      }
+    }
+  },
+  "count_second_pass_panel": {
+    "before": {
+      "correct": 138,
+      "total": 180
+    },
+    "after": {
+      "correct": 154,
+      "total": 180
+    }
+  },
+  "final_seeded_scores": {
+    "A.IDENTITY": {
+      "correct": 80,
+      "total": 113
+    },
+    "A.PARENT": {
+      "correct": 78,
+      "total": 132
+    },
+    "A.LINK": {
+      "correct": 75,
+      "total": 147
+    },
+    "A.MEMBER": {
+      "correct": 62,
+      "total": 121
+    },
+    "A.EDGE": {
+      "correct": 75,
+      "total": 142
+    },
+    "A.MAPS": {
+      "correct": 73,
+      "total": 139
+    },
+    "B.NOT": {
+      "correct": 91,
+      "total": 180
+    },
+    "B.AND": {
+      "correct": 95,
+      "total": 180
+    },
+    "C.COUNT": {
+      "correct": 154,
+      "total": 180
+    }
+  },
+  "final_routine_scores": {
+    "A.EDGE": {
+      "correct": 6,
+      "total": 12
+    },
+    "A.IDENTITY": {
+      "correct": 9,
+      "total": 12
+    },
+    "A.LINK": {
+      "correct": 5,
+      "total": 12
+    },
+    "A.MAPS": {
+      "correct": 6,
+      "total": 12
+    },
+    "A.MEMBER": {
+      "correct": 7,
+      "total": 12
+    },
+    "A.PARENT": {
+      "correct": 8,
+      "total": 12
+    },
+    "B.AND": {
+      "correct": 6,
+      "total": 12
+    },
+    "B.NOT": {
+      "correct": 5,
+      "total": 12
+    },
+    "C.COUNT": {
+      "correct": 28,
+      "total": 33
+    }
+  },
+  "control_preserved": {
+    "generation": 676,
+    "checkpoint": {
+      "filename": "bundles/best-405-274b6cc5502f",
+      "model_and_native_adamw": true,
+      "optimizer_step": 119940,
+      "sha256": "9f5b196a559929a211ce10e1878def3ac89b5222dc6eee4c47085d4bf00c525a"
+    },
+    "operator_lock_verified": true
+  },
+  "budget": {
+    "issue_number": 349,
+    "run_count": 2,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "used_bytes": 16923582464,
+    "within_budget": true,
+    "runs": [
+      "primary",
+      "plasticity-control"
+    ]
+  },
+  "verification": {
+    "targeted_tests_passed": 41,
+    "source_pipeline": "real-provider A\u2192thin B\u2192C with debt and saved-cohort cold read",
+    "quality": "architecture/docs/error/size checks pass; ABI advisory without external expected digest",
+    "broader_suite": "Not green: legacy A/C Merkle readers and recovery/diagnostic fixtures failed; see logs2026-10-22T09-59-49-507Z-49026,10-01-36-963Z-80273,10-03-12-121Z-580",
+    "actual_cold_resume": "PASS; generation421 and logical receipt unchanged; native step117104; zero updates"
+  },
+  "limits": [
+    "COUNT is a finite0..3 symbolic set-cardinality task, with numeric and equality views.",
+    "Exposure overlap NOT_MEASURED; seeded panels are not unexposed generalization proof.",
+    "NOT and AND remain unmastered; their debt did not block C admission.",
+    "COUNT routine28/33 remains imperfect; NUMBER and later C stages have not been introduced.",
+    "No grade graduation or all-Ithkuil mastery. Canonical and historical runs unchanged."
+  ],
+  "next_action": "Continue normal primary C.COUNT teaching; progress through the existing numeric stages when their own criteria are met. Keep A/B debt, max4 and the event control stopped."
+}
