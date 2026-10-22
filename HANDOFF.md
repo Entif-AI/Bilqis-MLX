@@ -78,6 +78,14 @@ without an independent expected digest. Extra factory-closure check reports two
 inherited concrete numeric-provider imports (CLI and release adoption); it is not
 green. The full-suite result from earlier integration is historical, not rerun here.
 
+
+Hosted portable CI exposed an eager NumPy import through a migration test's trainer
+facade. The test now uses the actual release/state owners; release adoption loads
+student inference only inside catalog expansion. The exact portable command passes
+47/47 under `python3 -S` with all site packages disabled. Affected admission,
+release-adoption and catalog-transaction tests pass. PM-2026-10-20-003 was enriched
+and exact native-cell readback verified. Hosted rerun must be read separately.
+
 Reproduce the fixed query diagnostic from the repo root:
 
 ```sh

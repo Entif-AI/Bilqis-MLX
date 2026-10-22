@@ -7,7 +7,6 @@ import bilqis_mlx.factory.executable_release as _factory_executable_release
 import bilqis_mlx.factory.live_answers as _factory_live_answers
 import bilqis_mlx.factory.schedule as _factory_schedule
 import bilqis_mlx.learning.championship_identity as _learning_championship_identity
-import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.profiles.catalog as _profiles_catalog
 import bilqis_mlx.runtime.admission as _runtime_admission
 import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
@@ -409,6 +408,7 @@ def _adopt_catalog_profile(
         parameters, optimizer, transition, *, reserve_gib, allow_mastery_debt=False,
         compiled_successor=None):
     """Adopt one append-only semantic ABI/profile expansion with zero updates."""
+    import bilqis_mlx.learning.student_ops as _learning_student_ops
     predecessor = _runtime_admission._require_executable_factory_admission(run_dir, receipt, graph)
     previous_program = _factory_schedule.schedule_program_from_executable_release(predecessor)
     school = _runtime_state._state_from_json(receipt["school"], previous_program)

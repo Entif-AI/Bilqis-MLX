@@ -481,7 +481,13 @@
     "semantic_boundaries": "PASS",
     "release_metadata": "PASS",
     "abi": "ADVISORY_EXTERNAL_EXPECTED_DIGEST_ABSENT",
-    "factory_closure": "2 inherited concrete numeric-provider import sites; one moved to release_adoption owner"
+    "factory_closure": "2 inherited concrete numeric-provider import sites; one moved to release_adoption owner",
+    "portable_without_site_packages": {
+      "total": 47,
+      "passed": 47,
+      "failed": 0
+    },
+    "hosted_portable_original_failure": "Trainer-facade test imported NumPy; fixed by owner-based test imports and lazy student inference dependency in release_adoption."
   },
   "interpretation": [
     "Occurrence query binding improves within the two-event domain; wider four-event transfer remains near chance.",

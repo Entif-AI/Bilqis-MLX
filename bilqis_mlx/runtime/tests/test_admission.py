@@ -55,7 +55,8 @@ def _executable_fixture(seed=17):
 
 class ExecutableMigrationTests(unittest.TestCase):
     def test_legacy_live_rubric_rebinds_without_changing_parent_evidence(self):
-        from bilqis_mlx import trainer
+        from bilqis_mlx.runtime.release_adoption import _migrate_executable_release
+        from bilqis_mlx.runtime.state import _fingerprint
         from bilqis_mlx.curriculum.scheduler import start_new
         from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
         release, graph = _executable_fixture()
@@ -63,12 +64,12 @@ class ExecutableMigrationTests(unittest.TestCase):
         course = _synthetic_course(6)
         student = Checkpoint("c" * 64, "bundles/parent", 23, True)
         school = start_new(course, student)
-        receipt = dict(school=asdict(school), semantic_graph_sha256=trainer._fingerprint(graph),
+        receipt = dict(school=asdict(school), semantic_graph_sha256=_fingerprint(graph),
                        live_rubric_sha256="d" * 64, last_exam={"historical": "unchanged"})
         original = deepcopy(receipt)
         with tempfile.TemporaryDirectory() as temporary, patch('bilqis_mlx.compatibility.executable_projection.compile_projected_executable_release',
                 return_value=(release, program, None)):
-            migrated, _, _, rebound = trainer._migrate_executable_release(
+            migrated, _, _, rebound = _migrate_executable_release(
                 Path(temporary), receipt, course, course, None, graph)
         self.assertEqual(migrated["live_rubric_sha256"], program.grades[0].assessment_sha256)
         self.assertEqual(rebound.current_student, student)
