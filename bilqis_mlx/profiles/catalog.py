@@ -38,7 +38,7 @@ def numeric_entry_transition(
     if not 0 <= next_index < len(release.curriculum.grades):
         raise ValueError("FACTORY_CATALOG_NO_DISABLED_GRADE")
     next_grade = release.curriculum.grades[next_index]
-    boolean = boolean_entry_profile(full=full_boolean)
+    boolean = boolean_entry_profile(full=True) if full_boolean else release.profile
     profile = numeric_foundation_profile(
         boolean,
         maximum=maximum,

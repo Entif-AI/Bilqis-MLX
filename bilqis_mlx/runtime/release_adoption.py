@@ -124,21 +124,24 @@ def _verify_profile_successor(predecessor, successor, graph, profile):
         raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH")
 
 
-def _profile_transition(previous_program, successor_program, school):
-    if previous_program == successor_program:
-        return school, None, False
+def _profile_transition(previous_program, successor_program, school, *, mastery_debt=None):
     appended = len(successor_program.grades) == len(previous_program.grades) + 1
+    if previous_program == successor_program and mastery_debt is None:
+        return school, None, False
     revised = (
         len(successor_program.grades) == len(previous_program.grades) and
         tuple(grade.id for grade in successor_program.grades) ==
         tuple(grade.id for grade in previous_program.grades))
     if appended:
         return (
-            _curriculum_scheduler.adopt_appended_program(previous_program, successor_program, school),
+            (_curriculum_scheduler.append_next_grade_with_debt(
+                previous_program, successor_program, school, mastery_debt)
+             if mastery_debt is not None else
+             _curriculum_scheduler.adopt_appended_program(previous_program, successor_program, school)),
             None,
             True,
         )
-    if revised:
+    if revised and mastery_debt is None:
         next_state, revised_grade = _curriculum_scheduler.adopt_revised_program(
             previous_program, successor_program, school)
         return next_state, revised_grade, False
@@ -146,8 +149,10 @@ def _profile_transition(previous_program, successor_program, school):
 
 
 def _profile_championship_state(
-        receipt, predecessor, successor, school, next_state, *, appended):
-    exam = receipt.get("last_exam") or {}
+        receipt, predecessor, successor, school, next_state, *, appended,
+        mastery_debt=None):
+    exam = (receipt.get("debt_admission_boundary_exam") if mastery_debt is not None
+            else receipt.get("last_exam")) or {}
     history = list(receipt.get("championship_epoch_history", ()))
     identity = _learning_championship_identity.build_school_identity(
         course_sha256=successor.execution_plan.curriculum_sha256,
@@ -155,21 +160,27 @@ def _profile_championship_state(
         parameter_shapes=receipt["parameter_shapes"],
         factory_release_sha256=successor.release_sha256)
     if appended:
-        from bilqis_mlx.learning.mentor_epoch import begin_epoch
-        epoch = begin_epoch(
-            previous_graduate=_dataclasses.asdict(school.current_student),
+        from bilqis_mlx.learning.mentor_epoch import begin_epoch, begin_debt_epoch
+        boundary = {
+            "checkpoint_sha256": exam.get("student_sha256"),
+            "rubric_sha256": exam.get("exam_rubric_sha256"),
+            "cohort_sha256": exam.get("cohort_sha256"),
+            "scores": exam.get("scores"),
+        }
+        arguments = dict(
             admitted_baseline=_dataclasses.asdict(next_state.current_student),
             introduced_grade=next_state.grade,
             source_graph_sha256=receipt["semantic_graph_sha256"],
             previous_capabilities=tuple(
-                item.capability_id
-                for item in predecessor.execution_plan.capabilities),
-            previous_graduation_exam={
-                "checkpoint_sha256": exam.get("student_sha256"),
-                "rubric_sha256": exam.get("exam_rubric_sha256"),
-                "cohort_sha256": exam.get("cohort_sha256"),
-                "scores": exam.get("scores"),
-            })
+                item.capability_id for item in predecessor.execution_plan.capabilities))
+        if mastery_debt is not None:
+            epoch = begin_debt_epoch(**arguments,
+                previous_checkpoint=_dataclasses.asdict(school.current_student),
+                previous_boundary_exam=boundary, previous_mastery_debt=mastery_debt)
+        else:
+            epoch = begin_epoch(**arguments,
+                previous_graduate=_dataclasses.asdict(school.current_student),
+                previous_graduation_exam=boundary)
         if receipt.get("mentor_epoch") is not None:
             history.append(receipt["mentor_epoch"])
         epoch["settled_matchups"] = _copy.deepcopy(
@@ -214,7 +225,8 @@ def _profile_adoption_receipt(
 
 
 def _adopt_executable_profile(
-        run_dir, receipt, grade_a_course, source_root, graph, profile, *, compiled_successor=None):
+        run_dir, receipt, grade_a_course, source_root, graph, profile, *,
+        compiled_successor=None, allow_mastery_debt=False):
     """Adopt one same-ABI v2 profile change without release-name dispatch."""
     predecessor = _runtime_admission._require_executable_factory_admission(run_dir, receipt, graph)
     previous_program = _factory_schedule.schedule_program_from_executable_release(predecessor)
@@ -232,13 +244,18 @@ def _adopt_executable_profile(
         legacy_course=compatibility_course)
     _verify_profile_successor(predecessor, successor, graph, profile)
     successor_program = _factory_schedule.schedule_program_from_executable_release(successor)
+    mastery_debt = None
+    if allow_mastery_debt:
+        _, mastery_debt = _catalog_boundary_evidence(
+            predecessor, previous_program, school, receipt, allow_mastery_debt=True)
     next_state, revised_grade, appended = _profile_transition(
-        previous_program, successor_program, school)
+        previous_program, successor_program, school, mastery_debt=mastery_debt)
     successor, release_file, admission = _runtime_admission._executable_factory_admission(
         run_dir, successor, next_state.current_student,
         receipt["semantic_graph_sha256"], graph)
     identity, epoch, history = _profile_championship_state(
-        receipt, predecessor, successor, school, next_state, appended=appended)
+        receipt, predecessor, successor, school, next_state, appended=appended,
+        mastery_debt=mastery_debt)
     candidate = _profile_adoption_receipt(
         receipt, compatibility_course, successor, successor_program,
         release_file, admission, identity, epoch, history, revised_grade, graph)
@@ -252,6 +269,8 @@ def _adopt_executable_profile(
         "profile_id": successor.profile.profile_id,
         "transition_kind": "APPEND_GRADE" if appended else "REVISE_PROFILE",
         "revised_grade": revised_grade,
+        "debt_admission": allow_mastery_debt,
+        "carried_mastery_debt": list(next_state.carried_mastery_debt),
         "previous_factory_release_sha256": predecessor.release_sha256,
         "factory_release_sha256": successor.release_sha256,
         "student_sha256": school.current_student.sha256,

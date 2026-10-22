@@ -9,7 +9,7 @@ from dataclasses import replace
 
 from ..boolean_composite import build_course as build_boolean_composite
 from ..boolean_identification import build_course as build_boolean_identification
-from ..curriculum import BOOLEAN_OPERATORS, Course
+from ..curriculum import BOOLEAN_OPERATORS, Course, validate
 from ..factory.curriculum_definition import from_legacy_course
 from ..factory.execution import (
     CapabilityProfile, CurriculumProfile, GradeProfile,
@@ -265,7 +265,21 @@ def legacy_course_for_profile(
         elif enabled == ("B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS"):
             base = build_minimal_boolean(grade_a, source_root)
         else:
-            raise ValueError("FACTORY_COMPATIBILITY_PROFILE_VIEW_UNSUPPORTED")
+            # Preserve the canonical source seal as historical provenance;
+            # the admitted v2 release owns the narrowed assessment seal.
+            grade = canonical.grades[-1]
+            selected = tuple(cap for cap in grade.capabilities if cap.id in enabled)
+            if (tuple(cap.id for cap in selected) != enabled or
+                    grade_profile.capabilities):
+                raise ValueError("FACTORY_COMPATIBILITY_PROFILE_VIEW_UNSUPPORTED")
+            stages = tuple(tuple(cap for cap in stage if cap in enabled)
+                           for stage in grade.teaching_stages)
+            narrowed = replace(grade, capabilities=selected,
+                exam_item_counts=tuple((cap, count) for cap, count in grade.exam_item_counts
+                                       if cap in enabled),
+                teaching_stages=tuple(stage for stage in stages if stage))
+            base = replace(canonical, grades=(*canonical.grades[:-1], narrowed))
+            validate(base)
     numeric_profile = next(
         (item for item in profile.grades
          if item.grade_id == "C" and item.enabled_capabilities not in ((), None)),
@@ -293,5 +307,10 @@ def legacy_course_for_profile(
 
 
 def profile_has_legacy_inventory(release, course) -> bool:
-    """Limit legacy operator profile coercion to its reconstructible inventory."""
-    return set(release.execution_plan.capability_map) <= set(course.capability_map)
+    """Keep legacy resume defaults from replacing an explicitly narrowed slice."""
+    active = set(release.execution_plan.capability_map)
+    boolean = {cap for cap in active if cap.startswith("B.")}
+    basic = {"B." + operator for operator in BOOLEAN_OPERATORS}
+    legacy_scopes = (set(), basic, basic | {"B.COMPOSITE", "B.IDBOOLOPS"},
+                     {"B.AND", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS"})
+    return active <= set(course.capability_map) and boolean in legacy_scopes

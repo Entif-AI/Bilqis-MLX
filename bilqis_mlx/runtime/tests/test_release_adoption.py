@@ -50,3 +50,26 @@ class TeachingOnlyTransitionTests(unittest.TestCase):
         _, _, repeated_history = _profile_championship_state(
             unchanged, None, successor, self.school, self.school, appended=False)
         self.assertEqual(repeated_history, history)
+
+
+class ExplicitProfileDebtTests(unittest.TestCase):
+    def setUp(self):
+        self.previous = ScheduleProgram('a' * 64, (
+            ScheduleGrade('A', (ScheduleCapability('A.IDENTITY', 12),), (), 'b' * 64),), False)
+        self.successor = ScheduleProgram('c' * 64, (*self.previous.grades,
+            ScheduleGrade('B', (ScheduleCapability('B.NOT', 12),), (), 'd' * 64)), False)
+        self.school = start_new(self.previous, Checkpoint('e' * 64, 'bundles/student', 10, True))
+
+    def test_explicit_debt_admits_a_same_abi_next_grade_without_fabricating_mastery(self):
+        state, revised, appended = _profile_transition(
+            self.previous, self.successor, self.school, mastery_debt=('A.IDENTITY',))
+        self.assertTrue(appended)
+        self.assertIsNone(revised)
+        self.assertEqual(state.grade, 'B')
+        self.assertEqual(state.carried_mastery_debt, ('A.IDENTITY',))
+        self.assertEqual(state.current_student, self.school.current_student)
+        self.assertEqual(state.champions, {})
+
+    def test_ordinary_append_still_requires_the_graduated_boundary(self):
+        with self.assertRaises(ValueError):
+            _profile_transition(self.previous, self.successor, self.school)
