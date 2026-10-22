@@ -13,6 +13,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from bilqis_mlx import trainer as trainer
+from bilqis_mlx.state_dag import read_current
 from bilqis_mlx.grade_a_release import accepted_grade_a, RELEASE, AUTHORITY
 from bilqis_mlx.live_grade_a import live_course, RELEASE as LIVE_RELEASE
 from bilqis_mlx.trainer import (
@@ -468,7 +469,7 @@ class GradeATrainerContractTests(unittest.TestCase):
             self.assertEqual(sum(score["total"] for score in
                                  completed["last_exam"]["scores"].values()),72)
             self.assertEqual(completed["school"]["current_student"]["optimizer_step"],7)
-            self.assertEqual(json.loads((run_dir/"state.json").read_text()),
+            self.assertEqual(read_current(run_dir),
                              completed)
             self.assertEqual(len(list((run_dir/"bundles").iterdir())),1)
             self.assertEqual(len(completed["capability_best"]),6)
@@ -477,6 +478,7 @@ class GradeATrainerContractTests(unittest.TestCase):
                              saved_cohort["generator_version"])
             self.assertEqual(saved_cohort["generator_version"],
                              saved_cohort["source_sha256"])
+            self.assertEqual(completed["last_exam"]["schema"], saved_cohort["schema"])
             self.assertEqual(len(saved_cohort["rows"]), 72)
             self.assertEqual(saved_cohort["cohort_sha256"],
                              completed["last_exam"]["cohort_sha256"])

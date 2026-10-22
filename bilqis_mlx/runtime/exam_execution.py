@@ -135,7 +135,7 @@ def _measure_debt_admission_boundary(mx, run_dir, receipt, manifest, course,
     measured = _bilqis_mlx_generated_assessment.score(cohort, guesses, _dataclasses.asdict(school.current_student))
     return {**receipt, "debt_admission_boundary_exam": {
         **pointer,
-        "schema": "bilqis.mlx.debt-admission-boundary/v2",
+        "boundary_schema": "bilqis.mlx.debt-admission-boundary/v2",
         "student_sha256": school.current_student.sha256,
         "optimizer_step": school.current_student.optimizer_step,
         "exam_rubric_sha256": pointer["rubric_sha256"],
@@ -433,6 +433,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         perfect = receipt.get("graduation_perfect", {})
         frozen_soups = receipt.get("grade_soups", {})
     last_exam = {
+        **cohort_pointer,
         "assessment_grade": school.grade,
         "grade_exam_epoch": school.grade_exam_epoch,
         "exam_plane": exam_plane,

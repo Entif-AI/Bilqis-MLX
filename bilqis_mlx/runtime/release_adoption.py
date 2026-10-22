@@ -259,6 +259,9 @@ def _adopt_executable_profile(
     candidate = _profile_adoption_receipt(
         receipt, compatibility_course, successor, successor_program,
         release_file, admission, identity, epoch, history, revised_grade, graph)
+    if allow_mastery_debt:
+        candidate["last_exam"] = receipt["debt_admission_boundary_exam"]
+        candidate.pop("fixed_frontier_exam", None)
     record = _runtime_checkpoints._advance(
         run_dir, candidate, next_state,
         result="ACTIVE_GRADE_" + next_state.grade, persist=False)

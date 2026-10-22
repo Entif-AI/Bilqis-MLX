@@ -57,14 +57,16 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                 self.assertEqual(admitted['school']['current_student'], base['school']['current_student'])
                 self.assertIsNone(admitted['mentor_epoch']['previous_graduate'])
                 self.assertFalse(admitted['school']['champions'])
+                self.assertIsNotNone(trainer._verify_saved_cohort(run, admitted, course))
                 # Take the complete current exam even though B has not graduated.
                 measured = _measure_debt_admission_boundary(
                     mx, run, admitted, fixture.manifest, course, SOURCE, params, graph)
                 transition = replace(numeric_entry_transition(
                     release, graph, full_boolean=False, maximum=3), numeric_scope_final_maximum=4)
-                _, grown_own, _, numeric, _ = _adopt_catalog_profile(
+                _, grown_own, _, numeric, numeric_course = _adopt_catalog_profile(
                     mx, run, measured, fixture.grade_a, SOURCE, graph, params, own,
                     transition, reserve_gib=0., allow_mastery_debt=True)
+                self.assertIsNotNone(trainer._verify_saved_cohort(run, numeric, numeric_course))
 
         self.assertEqual(numeric['school']['active_grades'], ['A', 'B', 'C'])
         self.assertEqual(numeric['school']['queue'], ['C.COUNT'])
