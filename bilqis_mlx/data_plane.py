@@ -228,6 +228,33 @@ def verify_file_digest(path: Path, expected_sha256: str, *, deep: bool = False) 
     return True
 
 
+def referenced_custody_files(run_dir: Path, receipt: dict) -> tuple[tuple[Path, str], ...]:
+    """Resolve immutable bundle/soup payloads named by one logical school receipt."""
+    root = Path(run_dir).resolve(strict=True)
+    found: dict[str, tuple[Path, str]] = {}
+
+    def visit(value) -> None:
+        if isinstance(value, dict):
+            filename = value.get("filename")
+            digest = value.get("sha256")
+            if isinstance(filename, str) and isinstance(digest, str) and len(digest) == 64:
+                relative = Path(filename)
+                if relative.parts and relative.parts[0] == "bundles":
+                    target = root / relative / "model-and-own-adamw.safetensors"
+                    found[str(target)] = (target, digest)
+                elif relative.parts and relative.parts[0] == "soups":
+                    target = root / relative
+                    found[str(target)] = (target, digest)
+            for member in value.values():
+                visit(member)
+        elif isinstance(value, (list, tuple)):
+            for member in value:
+                visit(member)
+
+    visit(receipt)
+    return tuple(found[key] for key in sorted(found))
+
+
 def main(argv=None) -> int:
     """Inspect or prewarm the shared workstation data plane."""
     import argparse
@@ -254,14 +281,19 @@ def main(argv=None) -> int:
         except BlockingIOError:
             raise ValueError("DATA_PLANE_WARM_HUMAN_TRAINING_ACTIVE") from None
         from .state_dag import read_current
-        from .trainer import _verify_best_custody
         before = data_plane().stats()
         started = time.perf_counter()
-        _verify_best_custody(root, read_current(root))
+        files = referenced_custody_files(root, read_current(root))
+        for path, expected in files:
+            if path.is_symlink() or not path.is_file():
+                raise ValueError("DATA_PLANE_WARM_CUSTODY_ARTIFACT_MISSING:" + str(path))
+            if not verify_file_digest(path, expected):
+                raise ValueError("DATA_PLANE_WARM_CUSTODY_DIGEST_DRIFT:" + str(path))
         after = data_plane().stats()
         print(json.dumps({
             "mode": "CUSTODY_CACHE_WARMED",
             "elapsed_seconds": round(time.perf_counter() - started, 3),
+            "referenced_files": len(files),
             "verified_before": before["verified_files"],
             "verified_after": after["verified_files"],
             "data_plane": after,
