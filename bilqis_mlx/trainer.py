@@ -1824,7 +1824,13 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
     if persist:
         record.pop("_pending_visit_events", None)
         return _persist(run_dir, record)
-    return json.loads(_canonical(record))
+    # `record` already owns its top-level successor map.  Unchanged receipt
+    # fields are immutable-by-convention values and may be structurally shared
+    # until a caller replaces that top-level field.  Canonical JSON round-trip
+    # here used to copy the entire logical School50 receipt on every teaching
+    # visit, including tens of thousands of teacher misses, even though the
+    # durable Merkle data plane already performs canonical encoding at commit.
+    return record
 
 
 
