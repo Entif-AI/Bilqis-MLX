@@ -132,7 +132,9 @@ from bilqis_mlx.learning.teacher_feedback import (
     summarize_teacher_outcomes,
 )
 from bilqis_mlx.runtime.timing_trace import trace_mark, trace_span
-from bilqis_mlx.data_plane import verify_file_digest
+from bilqis_mlx.data_plane import (
+    event_observations, event_payload_digest, verify_file_digest,
+)
 from bilqis_mlx.state_dag import (
     migrate_current_head, persist as persist_state, read_current, read_generation,
     read_generation_fields,
@@ -3969,15 +3971,12 @@ def _observed_outbox_events(run_dir: Path, expected: dict):
         return observed, observed_counts
     if journal.is_symlink() or not journal.is_file():
         raise ValueError("HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER")
-    with journal.open(encoding="utf-8") as stream:
-        for line in stream:
-            item = json.loads(line)
-            identity = item.get("event_id")
-            if identity in expected:
-                if item != expected[identity]:
-                    raise ValueError("HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT")
-                observed.add(identity)
-                observed_counts[identity] = observed_counts.get(identity, 0) + 1
+    indexed = event_observations(run_dir, expected)
+    for identity, (digest, count, conflicted) in indexed.items():
+        if conflicted or digest != event_payload_digest(expected[identity]):
+            raise ValueError("HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT")
+        observed.add(identity)
+        observed_counts[identity] = count
     return observed, observed_counts
 
 

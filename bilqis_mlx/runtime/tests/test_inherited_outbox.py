@@ -3,13 +3,16 @@ from dataclasses import asdict, dataclass
 from copy import deepcopy
 from pathlib import Path
 import json
+import os
 import tempfile
 import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.trainer import (
-    _advance, _reconcile_delivery_outbox, _with_delivery_outbox,
+    _advance, _observed_outbox_events, _reconcile_delivery_outbox,
+    _with_delivery_outbox,
 )
+from bilqis_mlx.data_plane import close_data_planes
 from bilqis_mlx.factory.tests.support import synthetic_release_inputs
 from bilqis_mlx.factory.release import (
     admit_factory_release, compile_factory_release,
@@ -27,6 +30,10 @@ class InheritedOutboxTests(unittest.TestCase):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
+        self.previous_data_plane = os.environ.get("BILQIS_DATA_PLANE")
+        os.environ["BILQIS_DATA_PLANE"] = str(self.root / "plane.sqlite3")
+        close_data_planes()
+        self.addCleanup(self._restore_data_plane)
         (self.root / "states").mkdir()
         self.event = {"event": "SCHOOL_TEACHER_VISIT_COMMITTED",
                       "generation": 7, "optimizer_step": 9}
@@ -66,6 +73,13 @@ class InheritedOutboxTests(unittest.TestCase):
         (self.root / "states" / "0000007.json").write_text(
             json.dumps(self.previous))
 
+    def _restore_data_plane(self):
+        close_data_planes()
+        if self.previous_data_plane is None:
+            os.environ.pop("BILQIS_DATA_PLANE", None)
+        else:
+            os.environ["BILQIS_DATA_PLANE"] = self.previous_data_plane
+
     def _publish(self):
         journal = self.root / "events.jsonl"
         journal.write_text(json.dumps(self.previous["delivery_outbox"][0]) + "\n")
@@ -89,6 +103,22 @@ class InheritedOutboxTests(unittest.TestCase):
             output.write(json.dumps(self.previous["delivery_outbox"][0]) + "\n")
         with self.assertRaises(ValueError):
             _reconcile_delivery_outbox(self.root, self.current)
+
+    def test_warmed_outbox_lookup_does_not_json_decode_full_ledger_again(self):
+        self._publish()
+        event = self.previous["delivery_outbox"][0]
+        expected = {event["event_id"]: event}
+        observed, counts = _observed_outbox_events(self.root, expected)
+        self.assertEqual(observed, set(expected))
+        self.assertEqual(counts[event["event_id"]], 1)
+
+        with patch(
+                "bilqis_mlx.trainer.json.loads",
+                side_effect=AssertionError("full ledger decode")):
+            observed, counts = _observed_outbox_events(self.root, expected)
+
+        self.assertEqual(observed, set(expected))
+        self.assertEqual(counts[event["event_id"]], 1)
 
     def test_preflight_reads_without_publishing_unwritten_normal_receipts(self):
         self.assertFalse((self.root / "events.jsonl").exists())
