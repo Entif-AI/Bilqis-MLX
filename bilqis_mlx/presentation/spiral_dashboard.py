@@ -22,7 +22,6 @@ import signal
 import sys
 import time
 
-
 @dataclass(frozen=True)
 class Column:
     name: str
