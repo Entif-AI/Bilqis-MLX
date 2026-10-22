@@ -133,7 +133,8 @@ from bilqis_mlx.learning.teacher_feedback import (
 )
 from bilqis_mlx.runtime.timing_trace import trace_mark, trace_span
 from bilqis_mlx.data_plane import (
-    event_observations, event_payload_digest, verify_file_digest,
+    event_observations, event_payload_digest, live_grade_soups,
+    verify_file_digest,
 )
 from bilqis_mlx.state_dag import (
     migrate_current_head, persist as persist_state, read_current, read_generation,
@@ -1680,26 +1681,9 @@ def _mentor_epoch_references(receipt):
                      *(item["checkpoint"] for item in epoch_active_frontier(epoch).values())))
 
 
-_GRADE_SOUP_CUSTODY_MAP_DRIFT = "GRADE_SOUP_CUSTODY_MAP_DRIFT"
-
-
-def _live_grade_soups(receipt):
-    """Return the only soup tensors that still carry live runtime custody."""
-    epoch = receipt.get("mentor_epoch")
-    if epoch is None:
-        soups = receipt.get("grade_soups", {})
-    elif isinstance(epoch, dict):
-        soups = epoch.get("active_grade_soups", {})
-    else:
-        raise ValueError(_GRADE_SOUP_CUSTODY_MAP_DRIFT)
-    if not isinstance(soups, dict):
-        raise ValueError(_GRADE_SOUP_CUSTODY_MAP_DRIFT)
-    return soups
-
-
 def _verify_frozen_soup_custody(run_dir, receipt):
     """Verify current soup bytes and rollback predecessor; history is metadata."""
-    for grade, soup in sorted(_live_grade_soups(receipt).items()):
+    for grade, soup in sorted(live_grade_soups(receipt).items()):
         if grade != soup.get("grade"):
             raise ValueError("GRADE_SOUP_CUSTODY_GRADE_DRIFT")
         verify_frozen_soup(run_dir, soup)
@@ -4083,7 +4067,7 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
     # Historical recipes remain durable in immutable receipts, but soup bytes
     # obey the bounded runtime-storage contract: active + one previous per
     # grade.  Mentor-epoch adoption must not disable that retirement policy.
-    retired_soups = retire_stale_soups(run_dir, _live_grade_soups(record))
+    retired_soups = retire_stale_soups(run_dir, live_grade_soups(record))
     if retired_soups:
         _record(run_dir, {"event": "SCHOOL_OLD_GRADE_SOUPS_RETIRED",
                           "generation": record["generation"],

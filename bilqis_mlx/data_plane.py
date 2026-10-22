@@ -47,6 +47,7 @@ class DataPlaneError(str, Enum):
     EVENT_LEDGER_UNSAFE = "DATA_PLANE_EVENT_LEDGER_UNSAFE"
     EVENT_LEDGER_TRUNCATED = "DATA_PLANE_EVENT_LEDGER_TRUNCATED"
     EVENT_LEDGER_JSON_INVALID = "DATA_PLANE_EVENT_LEDGER_JSON_INVALID"
+    SOUP_CUSTODY_MAP_DRIFT = "GRADE_SOUP_CUSTODY_MAP_DRIFT"
 
 
 def _error(code: DataPlaneError, detail=None) -> str:
@@ -409,12 +410,26 @@ def event_observations(run_dir: Path, event_ids) -> dict:
     return data_plane().event_observations(run_dir, event_ids)
 
 
+def live_grade_soups(receipt: dict) -> dict:
+    """Return the only soup tensors that still carry live runtime custody."""
+    epoch = receipt.get("mentor_epoch")
+    if epoch is None:
+        soups = receipt.get("grade_soups", {})
+    elif isinstance(epoch, dict):
+        soups = epoch.get("active_grade_soups", {})
+    else:
+        raise ValueError(DataPlaneError.SOUP_CUSTODY_MAP_DRIFT.value)
+    if not isinstance(soups, dict):
+        raise ValueError(DataPlaneError.SOUP_CUSTODY_MAP_DRIFT.value)
+    return soups
+
+
 def referenced_custody_files(run_dir: Path, receipt: dict) -> tuple[tuple[Path, str], ...]:
     """Resolve immutable bundle/soup payloads named by one logical school receipt."""
     root = Path(run_dir).resolve(strict=True)
     found: dict[str, tuple[Path, str]] = {}
 
-    def visit(value) -> None:
+    def visit(value, *, include_soups: bool) -> None:
         if isinstance(value, dict):
             filename = value.get("filename")
             digest = value.get("sha256")
@@ -423,16 +438,20 @@ def referenced_custody_files(run_dir: Path, receipt: dict) -> tuple[tuple[Path, 
                 if relative.parts and relative.parts[0] == "bundles":
                     target = root / relative / "model-and-own-adamw.safetensors"
                     found[str(target)] = (target, digest)
-                elif relative.parts and relative.parts[0] == "soups":
+                elif (include_soups and relative.parts and
+                      relative.parts[0] == "soups"):
                     target = root / relative
                     found[str(target)] = (target, digest)
             for member in value.values():
-                visit(member)
+                visit(member, include_soups=include_soups)
         elif isinstance(value, (list, tuple)):
             for member in value:
-                visit(member)
+                visit(member, include_soups=include_soups)
 
-    visit(receipt)
+    # Bundle custody can legitimately be rooted by archival provenance, but
+    # superseded soup tensors obey the bounded active+rollback retention rule.
+    visit(receipt, include_soups=False)
+    visit(live_grade_soups(receipt), include_soups=True)
     return tuple(found[key] for key in sorted(found))
 
 
