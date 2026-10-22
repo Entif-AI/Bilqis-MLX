@@ -3,6 +3,7 @@ import argparse
 from dataclasses import asdict
 import json
 from pathlib import Path
+from bilqis_mlx.state_dag import read_current
 
 from bilqis_mlx import trainer
 from bilqis_mlx.compatibility.executable_projection import legacy_course_for_profile
@@ -75,7 +76,7 @@ def main():
     import mlx.core as mx
     mx.set_default_device(mx.gpu)
     with trainer.operator_lock(run):
-        saved=json.loads((run/'state.json').read_text())
+        saved=read_current(run)
         params,opt,meta,graph=load_semantically_bound_bundle(run/saved['model_bundle'])
         current=trainer._require_executable_factory_admission(run,saved,graph)
         before=dict(saved['school']['current_student'])

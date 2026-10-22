@@ -13,7 +13,6 @@ from collections import deque
 from contextlib import redirect_stdout
 from dataclasses import dataclass
 from fractions import Fraction
-import json
 import re
 from pathlib import Path
 from bilqis_mlx.state_dag import read_current
@@ -501,7 +500,7 @@ class Dashboard:
         try:
             stamp=source.stat().st_mtime_ns
             if stamp==self._champion_mtime_ns:return
-            state=json.loads(source.read_text(encoding='utf-8'))
+            state=read_current(source.parent)
             epoch=state.get('mentor_epoch')
             if isinstance(epoch,dict) and isinstance(epoch.get('active_roles'),dict):
                 grouped={}
@@ -601,7 +600,7 @@ class Dashboard:
         from bilqis_mlx import school50_progress as scores, school50_champions
         source=Path(run_dir).expanduser()/'state.json'
         if state is None:
-            state=json.loads(source.read_text(encoding='utf-8'))
+            state=read_current(source.parent)
         if cutoff_visit is None:cutoff_visit=state['visits']
         current=scores.from_run_state(state,cutoff_visit=cutoff_visit)
         program=tuple(state.get('config',{}).get('grade_program') or
@@ -655,7 +654,7 @@ class Dashboard:
         if self.progress is None or self._progress_source is None:return None
         from bilqis_mlx import school50_progress as scores
         try:
-            state=json.loads(self._progress_source.read_text(encoding='utf-8'))
+            state=read_current(self._progress_source.parent)
             record=state['grade_ledger'][-1]
             if (record['visit']!=payload.get('grade_visit') or
                     record['grade']!=payload.get('grade')):return None
@@ -1253,7 +1252,7 @@ def train(args,*,log_file,stream=None):
         dashboard.state["max_failures"]=args[args.index("--max-frontier-failures")+1]
     existing=run_dir/"state.json"
     if existing.is_file():
-        try:dashboard.push("state",json.loads(existing.read_text()),redraw=False)
+        try:dashboard.push("state",read_current(run_dir),redraw=False)
         except (OSError,ValueError):pass
     dashboard.push("system",{"kind":"START","detail":"FP32 checkpoint and teacher remain managed by original runner"})
     previous=signal.getsignal(signal.SIGWINCH)
@@ -1274,7 +1273,7 @@ def train(args,*,log_file,stream=None):
             finally:
                 path=run_dir/"state.json"
                 if path.is_file():
-                    try:dashboard.push("state",json.loads(path.read_text()),redraw=False)
+                    try:dashboard.push("state",read_current(run_dir),redraw=False)
                     except (OSError,ValueError):pass
                 dashboard.mode="FINISHED" if dashboard.mode!="ERROR" else dashboard.mode
                 dashboard.draw()
@@ -1298,7 +1297,7 @@ def watch(run_dir,*,tail=12,follow=False,poll=1.5,stream=None):
                 fresh=(stat.st_mtime_ns,stat.st_size)
                 if fresh!=signature:
                     signature=fresh
-                    state=json.loads(path.read_text(encoding="utf-8"))
+                    state=read_current(path.parent)
                     dashboard.push("state",state,redraw=False)
                     visits=state.get("grade_ledger",[])
                     candidates=state.get("candidate_ledger",[])

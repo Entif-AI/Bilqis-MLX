@@ -6,6 +6,7 @@ import hashlib
 import inspect
 import json
 from pathlib import Path
+from bilqis_mlx.state_dag import read_current
 
 from bilqis_mlx.factory.generation import draw_executable_release_rows
 from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
@@ -36,7 +37,7 @@ def probe(run_dir, output):
     import mlx.core as mx
     mx.set_default_device(mx.gpu)
     with operator_lock(run_dir):
-        saved = json.loads((run_dir / "state.json").read_text())
+        saved = read_current(run_dir)
         bundle = (run_dir / saved["model_bundle"]).resolve(strict=True)
         if bundle.parent != run_dir / "bundles":
             raise ValueError("ISSUE349_TRANSFER_BUNDLE_ESCAPES_RUN")

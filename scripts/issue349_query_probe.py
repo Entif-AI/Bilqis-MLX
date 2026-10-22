@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from bilqis_mlx.state_dag import read_current
 
 from bilqis_mlx.source_adapters import event_frames as frames, event_pairs
 from bilqis_mlx.vocabulary_growth import digest
@@ -34,7 +35,7 @@ def main():
     frames.source_senses()
     mx.set_default_device(mx.gpu)
     with operator_lock(run):
-        saved = json.loads((run / 'state.json').read_text())
+        saved = read_current(run)
         params, _, _, graph = load_semantically_bound_bundle(run / saved['model_bundle'])
         ids = {symbol: index for index, symbol in enumerate(graph['tokens'])}
         scores = {}

@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from bilqis_mlx.state_dag import read_current
 import subprocess
 
 from bilqis_mlx.factory.autonomy import obligations_for_capability, record_evidence
@@ -40,7 +41,7 @@ def probe(run_dir, output):
     if output.exists():
         raise ValueError("ISSUE349_PROBE_RECEIPT_ALREADY_EXISTS")
     with operator_lock(run_dir):
-        saved = json.loads((run_dir / "state.json").read_text())
+        saved = read_current(run_dir)
         bundle = (run_dir / saved["model_bundle"]).resolve(strict=True)
         if bundle.parent != (run_dir / "bundles").resolve(strict=True):
             raise ValueError("ISSUE349_PROBE_BUNDLE_ESCAPES_RUN")

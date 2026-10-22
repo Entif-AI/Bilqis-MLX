@@ -1,6 +1,7 @@
 """Grade-neutral School50 evidence, including future grades and empty channels."""
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -21,6 +22,25 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_merkle_state_keeps_champion_inventory_visible(self):
+        from bilqis_mlx.data_plane import close_data_planes
+        from bilqis_mlx.state_dag import persist
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch.dict(os.environ, BILQIS_DATA_PLANE=str(root / "plane.sqlite3")):
+                try:
+                    persist(root, {"generation": 1, "mentor_epoch": {"active_roles": {
+                        "D.COMMENCEMENT": {"correct": 12, "total": 12, "breadth": 1,
+                            "checkpoint": {"sha256": "a" * 64, "optimizer_step": 100}},
+                    }}})
+                    board = Dashboard(stream=io.StringIO())
+                    board.attach_champion_source(root)
+                    self.assertEqual([(row["capability"], row["best"])
+                                      for row in board._champion_rows],
+                                     [("D.COMMENCEMENT", "12/12")])
+                finally:
+                    close_data_planes()
+
     def test_grade_release_replacement_removes_obsolete_curriculum_from_live_view(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())
