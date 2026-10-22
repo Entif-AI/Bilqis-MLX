@@ -1,3 +1,25 @@
+# In-progress continuation before fresh main integration | 2026-10-21
+
+User directs all Grade C experiments to integer maximum4. This continuation is
+A+D and uses BILQIS_INTEGER_MAX=4 for focused tests and experiment commands.
+Same issue349 branch/worktree, IPR-0220 and execution issue349 remain OPEN.
+Current new code adds optional single-event source lessons and a smaller two-event
+learning slice; original four-event providers remain executable as diagnostics.
+75 focused tests and quality pass. Source-only profile adoption, v2 enrichment
+launch, typed mentor history and historical burned-exam release readback were
+repaired at their runtime owners. Native PM-2026-10-20-003 / RC-116 was enriched.
+
+The four-event+single-event trial retained no updates. The two-event64-step trial
+retained one occurrence lesson (64 updates); full results are pending final probes.
+Control is stopped at the checkpoint printed in the latest issue checkpoint.
+A query-blind majority baseline scores126/192 against the earlier four-event
+student128/192: the earlier accuracy gain does not establish query understanding.
+Next: integrate newly fetched main917c0be, reconcile overlapping runtime fixes,
+then run paired query-swap diagnostics and continue the small learning experiment.
+The prior handoff below remains historical; final receipts/pushed SHA will follow.
+
+---
+
 # Issue 349 resumed after main integration | 2026-10-21
 
 Active branch: `codex/349-autonomous-jit-ithkuil-20261020`, draft PR11.
