@@ -293,7 +293,7 @@ def record_visit(control: dict, *, capability: str, phase: str,
                  generation: int) -> dict:
     """Record one actual teaching attempt without changing the learned teacher."""
     _validate(control)
-    if (not capability or phase not in ("MAIN", *RECOVERY_PHASES) or
+    if (not capability or phase not in ("MAIN", "PROMOTION_SWEEP", *RECOVERY_PHASES) or
             type(retained_optimizer_updates) is not int or
             retained_optimizer_updates < 0 or type(generation) is not int):
         raise ValueError("STAGNATION_VISIT_RECEIPT_INVALID")
