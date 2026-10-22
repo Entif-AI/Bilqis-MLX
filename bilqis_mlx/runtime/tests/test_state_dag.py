@@ -10,6 +10,7 @@ from bilqis_mlx.state_dag import (
     HEAD_SCHEMA, head_summary, migrate_current_head, migrate_history, persist,
     read_current, read_generation,
 )
+from bilqis_mlx.cli import _inspect
 
 
 class StateDagTests(unittest.TestCase):
@@ -59,6 +60,37 @@ class StateDagTests(unittest.TestCase):
         self.assertEqual(immutable.read_bytes(), before)
         self.assertEqual(head_summary(self.root)["mode"], "MERKLE_DAG")
         self.assertLess((self.root / "state.json").stat().st_size, 512)
+
+    def test_cli_inspection_resolves_migrated_head(self):
+        receipt = {
+            "schema": "bilqis.mlx.human-grade-a-trainer/v1",
+            "generation": 7,
+            "result": "ACTIVE_GRADE_C",
+            "school": {
+                "active_grades": ["A", "B", "C"], "grade_index": 2,
+                "current_student": {
+                    "filename": "bundles/student", "model_and_native_adamw": True,
+                    "optimizer_step": 123, "sha256": "1" * 64,
+                },
+                "stage": "MAIN", "visits": 9, "champions": {},
+                "introduction_stage": 0,
+            },
+            "parameter_shapes": {"embedding.weight": [222, 8]},
+            "config": {"vocab_size": 222},
+            "teacher": {"events": 0, "strategies": {}},
+            "last_exam": None,
+            "mentor_epoch": None,
+            "capability_best": {},
+            "whole_student_peaks": [],
+        }
+        (self.root / "state.json").write_text(json.dumps(receipt))
+        migrate_current_head(self.root, receipt)
+
+        inspected = _inspect(self.root)
+
+        self.assertEqual(inspected["status"], "ACTIVE_GRADE_C")
+        self.assertEqual(inspected["grade"], "C")
+        self.assertEqual(inspected["optimizer_step"], 123)
 
     def test_successor_node_shares_unchanged_objects_and_roundtrips(self):
         first = self.receipt()
