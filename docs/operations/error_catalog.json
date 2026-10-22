@@ -1,6 +1,6 @@
 {
   "legacy_raw_file_count": 166,
-  "legacy_raw_raise_count": 2026,
+  "legacy_raw_raise_count": 2018,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -9831,20 +9831,6 @@
       "path": "bilqis_mlx/runtime/checkpoints.py"
     },
     {
-      "code_hint": "HUMAN_TRAINER_IMMUTABLE_GENERATION_COLLISION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_IMMUTABLE_GENERATION_COLLISION'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_LATEST_POINTER_NOT_DURABLE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_LATEST_POINTER_NOT_DURABLE'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
       "code_hint": "HUMAN_TRAINER_OUTBOX_ADVANCE_SOURCE_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -9936,24 +9922,10 @@
       "path": "bilqis_mlx/runtime/checkpoints.py"
     },
     {
-      "code_hint": "HUMAN_TRAINER_RECOVERY_POINTER_NOT_DURABLE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_RECOVERY_POINTER_NOT_DURABLE'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
       "code_hint": "HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION",
       "count": 1,
       "exception": "ValueError",
       "expression": "'HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION'",
-      "path": "bilqis_mlx/runtime/checkpoints.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_SNAPSHOT_POSTWRITE_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_SNAPSHOT_POSTWRITE_MISMATCH'",
       "path": "bilqis_mlx/runtime/checkpoints.py"
     },
     {
@@ -12656,34 +12628,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'STATE_ARCHIVE_EXISTING_CONTENT_DRIFT'",
-      "path": "bilqis_mlx/state_archive.py"
-    },
-    {
-      "code_hint": "STATE_ARCHIVE_GENERATION_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'STATE_ARCHIVE_GENERATION_DRIFT'",
-      "path": "bilqis_mlx/state_archive.py"
-    },
-    {
-      "code_hint": "STATE_ARCHIVE_GENERATION_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'STATE_ARCHIVE_GENERATION_INVALID'",
-      "path": "bilqis_mlx/state_archive.py"
-    },
-    {
-      "code_hint": "STATE_ARCHIVE_GENERATION_NOT_FOUND",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'STATE_ARCHIVE_GENERATION_NOT_FOUND'",
-      "path": "bilqis_mlx/state_archive.py"
-    },
-    {
-      "code_hint": "STATE_ARCHIVE_GENERATION_SHA_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'STATE_ARCHIVE_GENERATION_SHA_DRIFT'",
       "path": "bilqis_mlx/state_archive.py"
     },
     {

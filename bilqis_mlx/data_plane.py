@@ -10,14 +10,35 @@ import threading
 import time
 import zlib
 from contextlib import contextmanager
+from enum import Enum
 
 SCHEMA_VERSION = 1
 SQLITE_BUSY_TIMEOUT_MS = 30_000
 SQLITE_MMAP_BYTES = 256 * 1024 * 1024
 SQLITE_CACHE_KIB = 64 * 1024
 HASH_CHUNK_BYTES = 4 * 1024 * 1024
+SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
 _CONNECTIONS: dict[str, "DataPlane"] = dict()
 _CONNECTIONS_LOCK = threading.Lock()
+
+
+class DataPlaneError(str, Enum):
+    SCHEMA_UNSUPPORTED = "BILQIS_DATA_PLANE_SCHEMA_UNSUPPORTED"
+    OBJECT_DIGEST_INVALID = "BILQIS_DATA_PLANE_OBJECT_DIGEST_INVALID"
+    OBJECT_MISSING = "BILQIS_DATA_PLANE_OBJECT_MISSING"
+    OBJECT_CORRUPTED = "BILQIS_DATA_PLANE_OBJECT_CORRUPTED"
+    NODE_DIGEST_INVALID = "BILQIS_DATA_PLANE_NODE_DIGEST_INVALID"
+    NODE_MISSING = "BILQIS_DATA_PLANE_NODE_MISSING"
+    NODE_CORRUPTED = "BILQIS_DATA_PLANE_NODE_CORRUPTED"
+    EXPECTED_DIGEST_INVALID = "BILQIS_DATA_PLANE_EXPECTED_DIGEST_INVALID"
+    OPERATOR_LOCK_UNSAFE = "DATA_PLANE_OPERATOR_LOCK_UNSAFE"
+    HUMAN_TRAINING_ACTIVE = "DATA_PLANE_WARM_HUMAN_TRAINING_ACTIVE"
+    CUSTODY_ARTIFACT_MISSING = "DATA_PLANE_WARM_CUSTODY_ARTIFACT_MISSING"
+    CUSTODY_DIGEST_DRIFT = "DATA_PLANE_WARM_CUSTODY_DIGEST_DRIFT"
+
+
+def _error(code: DataPlaneError, detail=None) -> str:
+    return code.value if detail is None else code.value + ":" + str(detail)
 
 
 def default_path() -> Path:
@@ -82,7 +103,7 @@ class DataPlane:
                 "INSERT INTO meta(key,value) VALUES('schema_version',?)",
                 (str(SCHEMA_VERSION),))
         elif int(row[0]) != SCHEMA_VERSION:
-            raise ValueError("BILQIS_DATA_PLANE_SCHEMA_UNSUPPORTED")
+            raise ValueError(DataPlaneError.SCHEMA_UNSUPPORTED.value)
 
     def close(self) -> None:
         with self._lock:
@@ -106,7 +127,7 @@ class DataPlane:
 
     def put_object(self, digest: str, raw: bytes) -> None:
         if hashlib.sha256(raw).hexdigest() != digest:
-            raise ValueError("BILQIS_DATA_PLANE_OBJECT_DIGEST_INVALID")
+            raise ValueError(DataPlaneError.OBJECT_DIGEST_INVALID.value)
         payload = zlib.compress(raw, level=6)
         with self._lock:
             self._db.execute(
@@ -119,16 +140,16 @@ class DataPlane:
                 "SELECT payload,raw_bytes FROM objects WHERE sha256=?", (digest,)
             ).fetchone()
         if row is None:
-            raise ValueError("BILQIS_DATA_PLANE_OBJECT_MISSING:" + digest)
+            raise ValueError(_error(DataPlaneError.OBJECT_MISSING, digest))
         raw = zlib.decompress(row[0])
         if len(raw) != row[1] or hashlib.sha256(raw).hexdigest() != digest:
-            raise ValueError("BILQIS_DATA_PLANE_OBJECT_CORRUPTED:" + digest)
+            raise ValueError(_error(DataPlaneError.OBJECT_CORRUPTED, digest))
         return raw
 
     def put_node(self, digest: str, raw: bytes, generation: int,
                  parent_sha256: str | None) -> None:
         if hashlib.sha256(raw).hexdigest() != digest:
-            raise ValueError("BILQIS_DATA_PLANE_NODE_DIGEST_INVALID")
+            raise ValueError(DataPlaneError.NODE_DIGEST_INVALID.value)
         with self._lock:
             self._db.execute(
                 "INSERT OR IGNORE INTO nodes(sha256,payload,generation,parent_sha256) "
@@ -140,10 +161,10 @@ class DataPlane:
             row = self._db.execute(
                 "SELECT payload FROM nodes WHERE sha256=?", (digest,)).fetchone()
         if row is None:
-            raise ValueError("BILQIS_DATA_PLANE_NODE_MISSING:" + digest)
+            raise ValueError(_error(DataPlaneError.NODE_MISSING, digest))
         raw = row[0]
         if hashlib.sha256(raw).hexdigest() != digest:
-            raise ValueError("BILQIS_DATA_PLANE_NODE_CORRUPTED:" + digest)
+            raise ValueError(_error(DataPlaneError.NODE_CORRUPTED, digest))
         return raw
 
     @staticmethod
@@ -215,8 +236,8 @@ def _digest_file(path: Path) -> str:
 
 def verify_file_digest(path: Path, expected_sha256: str, *, deep: bool = False) -> bool:
     """Verify immutable file content, reusing a workstation-local stat-bound proof."""
-    if not isinstance(expected_sha256, str) or len(expected_sha256) != 64:
-        raise ValueError("BILQIS_DATA_PLANE_EXPECTED_DIGEST_INVALID")
+    if not isinstance(expected_sha256, str) or len(expected_sha256) != SHA256_HEX_LENGTH:
+        raise ValueError(DataPlaneError.EXPECTED_DIGEST_INVALID.value)
     plane = data_plane()
     path = Path(path)
     if not deep and plane.verified_file(path, expected_sha256):
@@ -237,7 +258,7 @@ def referenced_custody_files(run_dir: Path, receipt: dict) -> tuple[tuple[Path, 
         if isinstance(value, dict):
             filename = value.get("filename")
             digest = value.get("sha256")
-            if isinstance(filename, str) and isinstance(digest, str) and len(digest) == 64:
+            if isinstance(filename, str) and isinstance(digest, str) and len(digest) == SHA256_HEX_LENGTH:
                 relative = Path(filename)
                 if relative.parts and relative.parts[0] == "bundles":
                     target = root / relative / "model-and-own-adamw.safetensors"
@@ -274,21 +295,21 @@ def main(argv=None) -> int:
         root = args.run_dir.expanduser().resolve(strict=True)
     lock = root / ".grade-a-operator.lock"
     if lock.is_symlink():
-        raise ValueError("DATA_PLANE_OPERATOR_LOCK_UNSAFE")
+        raise ValueError(DataPlaneError.OPERATOR_LOCK_UNSAFE.value)
     with lock.open("a+b") as stream:
         try:
             fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
-            raise ValueError("DATA_PLANE_WARM_HUMAN_TRAINING_ACTIVE") from None
+            raise ValueError(DataPlaneError.HUMAN_TRAINING_ACTIVE.value) from None
         from .state_dag import read_current
         before = data_plane().stats()
         started = time.perf_counter()
         files = referenced_custody_files(root, read_current(root))
         for path, expected in files:
             if path.is_symlink() or not path.is_file():
-                raise ValueError("DATA_PLANE_WARM_CUSTODY_ARTIFACT_MISSING:" + str(path))
+                raise ValueError(_error(DataPlaneError.CUSTODY_ARTIFACT_MISSING, path))
             if not verify_file_digest(path, expected):
-                raise ValueError("DATA_PLANE_WARM_CUSTODY_DIGEST_DRIFT:" + str(path))
+                raise ValueError(_error(DataPlaneError.CUSTODY_DIGEST_DRIFT, path))
         after = data_plane().stats()
         print(json.dumps({
             "mode": "CUSTODY_CACHE_WARMED",

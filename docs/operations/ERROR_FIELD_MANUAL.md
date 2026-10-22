@@ -192,7 +192,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2026** raw raises across **166** files. The baseline gate permits only reduction.
+Current production scan: **2018** raw raises across **166** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -1396,12 +1396,10 @@ Current production scan: **2026** raw raises across **166** files. The baseline 
 | `HUMAN_TRAINER_HISTORICAL_EXAM_RELEASE_INVALID` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `HUMAN_TRAINER_HISTORICAL_SEMANTIC_ABI_INVALID` | 1 | `bilqis_mlx/learning/student_ops.py` |
 | `HUMAN_TRAINER_HISTORICAL_TEACHER_STATE_INCOMPLETE` | 1 | `bilqis_mlx/runtime/session.py` |
-| `HUMAN_TRAINER_IMMUTABLE_GENERATION_COLLISION` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_INCUMBENT_CHECKPOINT_DRIFT` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `HUMAN_TRAINER_INCUMBENT_UNSAFE_PATH` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `HUMAN_TRAINER_INVALID_LESSON_BATCH_SIZE` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `HUMAN_TRAINER_INVALID_OPERATOR_LIMITS` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
-| `HUMAN_TRAINER_LATEST_POINTER_NOT_DURABLE` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_LIVE_EXAM_INCOMPLETE_FACTORS` | 1 | `bilqis_mlx/runtime/boundary_commit.py` |
 | `HUMAN_TRAINER_LIVE_RUBRIC_EVIDENCE_MISSING` | 1 | `bilqis_mlx/runtime/boundary_commit.py` |
 | `HUMAN_TRAINER_LIVE_RUBRIC_IDENTITY_DRIFT` | 1 | `bilqis_mlx/runtime/boundary_commit.py` |
@@ -1432,7 +1430,6 @@ Current production scan: **2026** raw raises across **166** files. The baseline 
 | `HUMAN_TRAINER_PINNED_SOURCE_NOT_VERIFIED` | 1 | `bilqis_mlx/runtime/session.py` |
 | `HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION` | 2 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
-| `HUMAN_TRAINER_RECOVERY_POINTER_NOT_DURABLE` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED` | 1 | `bilqis_mlx/runtime/session.py` |
 | `HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT` | 2 | `bilqis_mlx/compatibility/executable_projection.py`, `bilqis_mlx/runtime/session.py` |
@@ -1445,7 +1442,6 @@ Current production scan: **2026** raw raises across **166** files. The baseline 
 | `HUMAN_TRAINER_SAVED_COHORT_REFERENCE_DRIFT` | 1 | `bilqis_mlx/compatibility/assessment.py` |
 | `HUMAN_TRAINER_SAVED_COHORT_RELEASE_NOT_ADMITTED` | 1 | `bilqis_mlx/compatibility/assessment.py` |
 | `HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT` | 1 | `bilqis_mlx/learning/student_ops.py` |
-| `HUMAN_TRAINER_SNAPSHOT_POSTWRITE_MISMATCH` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT` | 1 | `bilqis_mlx/runtime/visits.py` |
 | `HUMAN_TRAINER_TEACHER_IMPLEMENTATION_ROOT_MISMATCH` | 1 | `bilqis_mlx/runtime/session.py` |
 | `HUMAN_TRAINER_TYPED_GRADE_REVISION_CONFIG_MISSING` | 1 | `bilqis_mlx/compatibility/trainer_transitions.py` |
@@ -1985,10 +1981,6 @@ Current production scan: **2026** raw raises across **166** files. The baseline 
 | `STAGNATION_WITHHELD_CAPABILITY_OUTSIDE_ACTIVE_POOL` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `STATE_ARCHIVE_DESTINATION_COLLISION` | 1 | `bilqis_mlx/state_archive.py` |
 | `STATE_ARCHIVE_EXISTING_CONTENT_DRIFT` | 1 | `bilqis_mlx/state_archive.py` |
-| `STATE_ARCHIVE_GENERATION_DRIFT` | 1 | `bilqis_mlx/state_archive.py` |
-| `STATE_ARCHIVE_GENERATION_INVALID` | 1 | `bilqis_mlx/state_archive.py` |
-| `STATE_ARCHIVE_GENERATION_NOT_FOUND` | 1 | `bilqis_mlx/state_archive.py` |
-| `STATE_ARCHIVE_GENERATION_SHA_DRIFT` | 1 | `bilqis_mlx/state_archive.py` |
 | `STATE_ARCHIVE_HUMAN_TRAINING_ACTIVE` | 1 | `bilqis_mlx/state_archive.py` |
 | `STATE_ARCHIVE_INVALID_BUDGET` | 1 | `bilqis_mlx/state_archive.py` |
 | `STATE_ARCHIVE_LATEST_IMMUTABLE_DRIFT` | 1 | `bilqis_mlx/state_archive.py` |
