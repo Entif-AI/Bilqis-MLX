@@ -37,7 +37,8 @@ from bilqis_mlx.learning.learning_experiment import (
     VERSION as LEARNING_EXPERIMENT_VERSION, Settings as LearningSettings,
     contextual_pick, paired_outcomes, decide as decide_learning_trial,
     observe_context, selection_credit, fork_student, commit_trial,
-    earlier_grade_capabilities, select_source_lesson, sampled_protection,
+    earlier_grade_capabilities, reserve_weakness_targets, select_source_lesson,
+    sampled_protection,
     missing_grade_capabilities,
 )
 from bilqis_mlx.learning.whole_student_retention import advance_peaks
@@ -71,7 +72,7 @@ from .profiles.school import (
 from .profiles.catalog import (
     next_numeric_scope_profile,
     numeric_scope_profile,
-    numeric_row_in_scope,
+    partition_numeric_scope,
     numeric_entry_transition,
 )
 from .profiles.retention import fragile_preservation_capabilities
@@ -105,8 +106,10 @@ from .live_curriculum import (
     lesson_contract, numeric_maximum,
 )
 from bilqis_mlx.runtime.mlx_checkpoint import save_new_bundle, load_semantically_bound_bundle
-from bilqis_mlx.runtime.mlx_parity import (clip_gradients, forward_arrays,
-                         native_optimizer_to_mlx)
+from bilqis_mlx.runtime.mlx_parity import (
+    clip_gradients, forward_arrays, inference_batch_rows,
+    native_optimizer_to_mlx,
+)
 from bilqis_mlx.curriculum.scheduler import (start_new, visit, assess, assess_withheld, next_capability,
                      adopt_appended_program, adopt_revised_program,
                      append_next_grade_with_debt,
@@ -127,11 +130,19 @@ from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .source import AUDITED_PARENT
 from .vocabulary_growth import extend_mlx_student
 from bilqis_mlx.learning.teacher_feedback import (
-    FairMissRequest, TeacherDecisionInput, active_warning_signals, reconcile_unresolved_misses,
-    select_fair_miss_window, summarize_teacher_decision,
+    TeacherDecisionInput, WeaknessTargetRequest, active_warning_signals,
+    reconcile_unresolved_misses, select_weakness_targets, summarize_teacher_decision,
     summarize_teacher_outcomes,
 )
 from bilqis_mlx.runtime.timing_trace import trace_mark, trace_span
+from bilqis_mlx.data_plane import (
+    event_observations, event_payload_digest, live_grade_soups,
+    verify_file_digest,
+)
+from bilqis_mlx.state_dag import (
+    migrate_current_head, persist as persist_state, read_current, read_generation,
+    read_generation_fields,
+)
 from .runtime.state import (
     _canonical, _fingerprint, _durable_json, _state_from_json, _seed,
 )
@@ -157,6 +168,10 @@ from .runtime.assessment import (
 VERSION = "bilqis.mlx.human-grade-a-trainer/v1"
 LOCKFILE = ".grade-a-operator.lock"
 _event_view = ContextVar("grade_a_event_view", default=None)
+_ADVANCE_SOURCE_FIELDS = (
+    "delivery_outbox", "generation", "model_bundle", "run_id", "school",
+    "source_manifest_sha256", "teacher_source_sha256",
+)
 
 
 @contextmanager
@@ -570,8 +585,9 @@ def _predictions(mx, parameters, rows, config, answer_ids):
         return predict_rows(mx, parameters, rows, config["answer_heads"], config)
     import numpy as np
     result = {}
-    for offset in range(0, len(rows), 24):
-        batch = rows[offset:offset+24]
+    batch_rows = inference_batch_rows(rows)
+    for offset in range(0, len(rows), batch_rows):
+        batch = rows[offset:offset+batch_rows]
         ids, lengths, _ = _make_batch(batch)
         logits = forward_arrays(mx, parameters, ids, lengths,
                                 heads=config["heads"], layers=config["layers"],
@@ -622,25 +638,6 @@ def choose_lesson_batch(rows: list[dict], policy: dict,
         chosen = [rng.choice(rows) for _ in range(batch_size)]
     rng.shuffle(chosen)
     return chosen
-
-
-def replay_missed_lessons(chosen: list[dict], missed: list[dict], *,
-                          reserved_ids=()) -> list[dict]:
-    """Guarantee every requested missed construction reaches this optimizer batch."""
-    if len(missed) > len(chosen):
-        raise ValueError("HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH")
-    result = list(chosen)
-    reserved = set(reserved_ids)
-    consumed = {index for index, row in enumerate(result)
-                if row.get("id") in reserved}
-    for item in missed:
-        replacement = next((i for i, row in enumerate(result)
-                            if i not in consumed and row["gold"] == item["gold"]), None)
-        if replacement is None:
-            raise ValueError("HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY")
-        result[replacement] = item
-        consumed.add(replacement)
-    return result
 
 
 @lru_cache(maxsize=16)
@@ -973,21 +970,8 @@ def _train_step(mx, parameters, optimizer, rows, config, answer_ids,
 
 
 def _persist(run_dir: Path, receipt: dict):
-    """One linearizable state pointer; immutable sequence copies remain."""
-    receipt = json.loads(_canonical(receipt))
-    generation = receipt["generation"]
-    path = run_dir / "states" / f"{generation:07d}.json"
-    if path.exists():
-        if path.is_symlink() or json.loads(path.read_text(encoding="utf-8")) != receipt:
-            raise ValueError("HUMAN_TRAINER_IMMUTABLE_GENERATION_COLLISION")
-    else:
-        _durable_json(path, receipt)
-    if json.loads(path.read_text(encoding="utf-8")) != receipt:
-        raise ValueError("HUMAN_TRAINER_SNAPSHOT_POSTWRITE_MISMATCH")
-    _durable_json(run_dir / "state.json", receipt, replace_existing=True)
-    if json.loads((run_dir / "state.json").read_text(encoding="utf-8")) != receipt:
-        raise ValueError("HUMAN_TRAINER_LATEST_POINTER_NOT_DURABLE")
-    return receipt
+    """Persist one logical generation through the immutable Merkle state DAG."""
+    return persist_state(run_dir, receipt)
 
 
 def _recover_orphaned_commit(run_dir: Path, latest: dict) -> dict:
@@ -1001,7 +985,7 @@ def _recover_orphaned_commit(run_dir: Path, latest: dict) -> dict:
         return latest
     if target.is_symlink() or not target.is_file():
         raise ValueError("HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION")
-    proposed = json.loads(target.read_text(encoding="utf-8"))
+    proposed = read_generation(run_dir, latest["generation"] + 1)
     if (proposed.get("generation") != latest["generation"] + 1 or
             proposed.get("run_id") != latest.get("run_id") or
             proposed.get("schema") != latest.get("schema") or
@@ -1011,9 +995,7 @@ def _recover_orphaned_commit(run_dir: Path, latest: dict) -> dict:
         raise ValueError("HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE")
     # Verify every retained old/new whole-student pointer before publication.
     _verify_best_custody(run_dir, proposed)
-    _durable_json(run_dir / "state.json", proposed, replace_existing=True)
-    if json.loads((run_dir / "state.json").read_text()) != proposed:
-        raise ValueError("HUMAN_TRAINER_RECOVERY_POINTER_NOT_DURABLE")
+    proposed = persist_state(run_dir, proposed)
     # Publish the recovered generation's original causal events before its
     # recovery annotation, retaining a legible ordered School50 history.
     _reconcile_delivery_outbox(run_dir, proposed)
@@ -1206,7 +1188,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
     path = run_dir / "state.json"
     if not path.is_file():
         raise ValueError("HUMAN_TRAINER_RESUME_REQUIRES_PRIOR_RUN")
-    receipt = json.loads(path.read_text(encoding="utf-8"))
+    receipt = read_current(run_dir)
     if (receipt.get("schema") != VERSION or receipt.get("accepted_authority") != AUTHORITY
             or receipt.get("source_manifest_sha256") != manifest["manifest_sha256"]
             or receipt.get("teacher_source_sha256") != policy_sha):
@@ -1250,8 +1232,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
             receipt["parameter_shapes"] or
             len(parameters) != 39):
         raise ValueError("HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT")
-    if json.loads((run_dir / "states" /
-                   f"{receipt['generation']:07d}.json").read_text()) != receipt:
+    if read_generation(run_dir, receipt["generation"]) != receipt:
         raise ValueError("HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED")
     if not old_mode:
         _verify_saved_cohort(
@@ -1304,6 +1285,9 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
     # Re-run custody verification against that enlarged immutable reference set
     # before this resumed state is allowed to proceed to any lesson or exam.
     _verify_best_custody(run_dir, receipt)
+    # Convert only the mutable latest pointer after the legacy receipt has
+    # passed every resume check. The immutable historical generation remains.
+    migrate_current_head(run_dir, receipt)
     return parameters, optimizer, graph, receipt
 
 
@@ -1322,6 +1306,14 @@ def _profile_transition(previous_program, successor_program, school):
         tuple(grade.id for grade in successor_program.grades) ==
         tuple(grade.id for grade in previous_program.grades))
     if appended:
+        if school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
+            return (
+                append_next_grade_with_debt(
+                    previous_program, successor_program, school,
+                    school.carried_mastery_debt),
+                None,
+                True,
+            )
         return (
             adopt_appended_program(previous_program, successor_program, school),
             None,
@@ -1344,21 +1336,34 @@ def _profile_championship_state(
         parameter_shapes=receipt["parameter_shapes"],
         factory_release_sha256=successor.release_sha256)
     if appended:
-        from bilqis_mlx.learning.mentor_epoch import begin_epoch
-        epoch = begin_epoch(
-            previous_graduate=asdict(school.current_student),
-            admitted_baseline=asdict(next_state.current_student),
-            introduced_grade=next_state.grade,
-            source_graph_sha256=receipt["semantic_graph_sha256"],
-            previous_capabilities=tuple(
-                item.capability_id
-                for item in predecessor.execution_plan.capabilities),
-            previous_graduation_exam={
-                "checkpoint_sha256": exam.get("student_sha256"),
-                "rubric_sha256": exam.get("exam_rubric_sha256"),
-                "cohort_sha256": exam.get("cohort_sha256"),
-                "scores": exam.get("scores"),
-            })
+        previous_capabilities = tuple(
+            item.capability_id
+            for item in predecessor.execution_plan.capabilities)
+        boundary_exam = {
+            "checkpoint_sha256": exam.get("student_sha256"),
+            "rubric_sha256": exam.get("exam_rubric_sha256"),
+            "cohort_sha256": exam.get("cohort_sha256"),
+            "scores": exam.get("scores"),
+        }
+        if school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
+            from bilqis_mlx.learning.mentor_epoch import begin_debt_epoch
+            epoch = begin_debt_epoch(
+                previous_checkpoint=asdict(school.current_student),
+                admitted_baseline=asdict(next_state.current_student),
+                introduced_grade=next_state.grade,
+                source_graph_sha256=receipt["semantic_graph_sha256"],
+                previous_capabilities=previous_capabilities,
+                previous_boundary_exam=boundary_exam,
+                previous_mastery_debt=school.carried_mastery_debt)
+        else:
+            from bilqis_mlx.learning.mentor_epoch import begin_epoch
+            epoch = begin_epoch(
+                previous_graduate=asdict(school.current_student),
+                admitted_baseline=asdict(next_state.current_student),
+                introduced_grade=next_state.grade,
+                source_graph_sha256=receipt["semantic_graph_sha256"],
+                previous_capabilities=previous_capabilities,
+                previous_graduation_exam=boundary_exam)
         if receipt.get("mentor_epoch") is not None:
             history.append(receipt["mentor_epoch"])
         epoch["settled_matchups"] = deepcopy(
@@ -1448,6 +1453,46 @@ def _adopt_executable_profile(
         run_dir, _with_delivery_outbox(record, (event,)))
     _reconcile_delivery_outbox(run_dir, record)
     return record, compatibility_course, successor, successor_program
+
+
+def _auto_adopt_known_grade_boundary(
+        mx, run_dir, receipt, course, grade_a_course, source_root, manifest,
+        parameters, optimizer, graph, *, reserve_gib, full_grade_b,
+        numeric_staircase):
+    """Consume a canonical grade boundary when its sanctioned transition exists."""
+    release = _require_executable_factory_admission(run_dir, receipt, graph)
+    program = schedule_program_from_executable_release(release)
+    school = _state_from_json(receipt["school"], program)
+    if school.stage not in (
+            "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"):
+        return parameters, optimizer, graph, receipt, course, False
+
+    active_count = len(release.execution_plan.grades)
+    canonical_count = len(release.curriculum.grades)
+    if active_count == 1 and canonical_count > 1:
+        target = with_disabled_future_grades(
+            boolean_entry_profile(full=full_grade_b),
+            tuple(grade.grade_id for grade in release.curriculum.grades[2:]))
+        receipt, course, _, _ = _adopt_executable_profile(
+            run_dir, receipt, grade_a_course, source_root, graph, target)
+        return parameters, optimizer, graph, receipt, course, True
+
+    if active_count == 2 and canonical_count > 2:
+        allow_debt = school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT"
+        if allow_debt:
+            receipt = _measure_debt_admission_boundary(
+                mx, run_dir, receipt, manifest, course, source_root,
+                parameters, graph)
+        transition = numeric_entry_transition(
+            release, graph, full_boolean=full_grade_b,
+            maximum=3 if numeric_staircase else 10)
+        parameters, optimizer, graph, receipt, course = _adopt_catalog_profile(
+            mx, run_dir, receipt, grade_a_course, source_root, graph,
+            parameters, optimizer, transition, reserve_gib=reserve_gib,
+            allow_mastery_debt=allow_debt)
+        return parameters, optimizer, graph, receipt, course, True
+
+    return parameters, optimizer, graph, receipt, course, False
 
 
 def _require_complete_profile_boundary(program, school, receipt):
@@ -1683,13 +1728,8 @@ def _mentor_epoch_references(receipt):
 
 
 def _verify_frozen_soup_custody(run_dir, receipt):
-    """Verify both archived and earned soups without blending their rosters."""
-    epoch_soups = (entry.get("active_grade_soups", {})
-                   for entry in (*receipt.get("championship_epoch_history", ()),
-                                 receipt["mentor_epoch"])
-                   ) if receipt.get("mentor_epoch") is not None else ()
-    for grade, soup in (*receipt.get("grade_soups", {}).items(),
-                        *(pair for soups in epoch_soups for pair in soups.items())):
+    """Verify current soup bytes and rollback predecessor; history is metadata."""
+    for grade, soup in sorted(live_grade_soups(receipt).items()):
         if grade != soup.get("grade"):
             raise ValueError("GRADE_SOUP_CUSTODY_GRADE_DRIFT")
         verify_frozen_soup(run_dir, soup)
@@ -1698,7 +1738,7 @@ def _verify_frozen_soup_custody(run_dir, receipt):
             for old in older:
                 previous = run_dir / old["filename"]
                 if (previous.parent != run_dir / "soups" or previous.is_symlink() or
-                        not previous.is_file() or digest_file(previous) != old["sha256"]):
+                        not previous.is_file() or not verify_file_digest(previous, old["sha256"])):
                     raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
 
 
@@ -1737,7 +1777,7 @@ def _verify_best_custody(run_dir, receipt):
         if root.is_symlink() or root.parent != run_dir / "bundles":
             raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT")
         manifest = json.loads((root / "manifest.json").read_text())
-        if digest_file(root / "model-and-own-adamw.safetensors") != manifest["safetensors_sha256"]:
+        if not verify_file_digest(root / "model-and-own-adamw.safetensors", manifest["safetensors_sha256"]):
             raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT")
         for ref in sources:
             if (ref["filename"] == name and
@@ -1760,7 +1800,10 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
                     f"{old['generation']:07d}.json")
         if old_path.is_symlink() or not old_path.is_file():
             raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_UNCOMMITTED_SOURCE")
-        durable = json.loads(old_path.read_text(encoding="utf-8"))
+        durable = read_generation_fields(
+            run_dir, old["generation"], _ADVANCE_SOURCE_FIELDS)
+        if not _ordinary_outbox_lineage(durable, durable.get("delivery_outbox")):
+            durable = read_generation(run_dir, old["generation"])
         # Only *durable* outbox events have delivery authority. Transient
         # callers may carry a subsequently edited copy of a committed event;
         # requiring payload-object equality here mistakes a working copy for
@@ -1811,7 +1854,13 @@ def _advance(run_dir, old: dict, school: SchoolState, *,
     if persist:
         record.pop("_pending_visit_events", None)
         return _persist(run_dir, record)
-    return json.loads(_canonical(record))
+    # `record` already owns its top-level successor map.  Unchanged receipt
+    # fields are immutable-by-convention values and may be structurally shared
+    # until a caller replaces that top-level field.  Canonical JSON round-trip
+    # here used to copy the entire logical School50 receipt on every teaching
+    # visit, including tens of thousands of teacher misses, even though the
+    # durable Merkle data plane already performs canonical encoding at commit.
+    return record
 
 
 
@@ -2528,11 +2577,15 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
 
 
 def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):
-    """Reserve optimizer slots for preservation without displacing exam misses."""
+    """Reserve preservation slots without displacing selected weakness targets."""
     result = list(chosen)
     reserved = set(reserved_ids)
-    consumed = {index for index, row in enumerate(result)
-                if row.get("id") in reserved}
+    consumed = set()
+    for index, row in enumerate(result):
+        identity = row.get("id")
+        if identity in reserved:
+            consumed.add(index)
+            reserved.remove(identity)
     delivered = []
     for item in preservation:
         replacement = next((
@@ -2667,16 +2720,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 if r["capability"] == cap]
     deferred_misses = []
     if receipt.get("numeric_maximum") is not None:
-        deferred_misses = [
-            row for row in priority
-            if not numeric_row_in_scope(row, receipt["numeric_maximum"])]
-        priority = [
-            row for row in priority
-            if numeric_row_in_scope(row, receipt["numeric_maximum"])]
+        priority, deferred_misses = partition_numeric_scope(
+            priority, receipt["numeric_maximum"])
     miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
     if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
         raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
-    selected_misses = set()
     rows.extend(priority)
     with trace_span("TRAIN_SCORE_BEFORE", capability=cap, row_count=len(rows)):
         before = _train_score(mx, params, rows, receipt["config"],
@@ -2843,6 +2891,18 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     autonomy_option_specimen_ids.update(
                         row["id"] for row in fresh)
         fresh.extend(priority)
+        preservation = ()
+        if learning_settings is not None:
+            if prepared is not None:
+                preservation = tuple(prepared["preservation"])
+            else:
+                with trace_span("STEP_FRAGILE_PRESERVATION", capability=cap,
+                                visit_step=step + 1):
+                    preservation = _fresh_fragile_preservation_rows(
+                        run_dir, source_root, graph, receipt, course, school, cap,
+                        step=step + 1, batch_size=batch_size,
+                        fixed_rows=fragile_fixed_rows,
+                        executable_release=executable_release)
         lesson_seed = _seed(receipt, capability=cap, step=step+1)
         with trace_span("STEP_LESSON_SELECT", capability=cap, visit_step=step + 1):
             if learning_settings is not None:
@@ -2856,47 +2916,30 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                         executable_release=executable_release,
                         seed=_seed(receipt, capability="EXPERIMENT_OLD:"+selected, step=step))
                 picked, control = select_source_lesson(
-                    fresh, prior, policy, seed=lesson_seed, batch_size=batch_size)
+                    fresh, prior, policy, seed=lesson_seed, batch_size=batch_size,
+                    targets=priority, target_exposures=miss_exposures,
+                    reserved_support_slots=len(preservation))
                 lesson_control = {**control, "eligible_prior_capabilities":
                                   len(old_capabilities)}
+                target_ids = set(control["weakness_target_ids"])
+                window = [row for row in priority if row["id"] in target_ids]
             else:
                 picked = choose_lesson_batch(
                     fresh, policy, lesson_seed, batch_size=batch_size)
-        preservation = ()
+                target_capacity = sum(row["capability"] == cap for row in picked)
+                window = select_weakness_targets(
+                    priority, WeaknessTargetRequest(
+                        exposures=miss_exposures,
+                        capacity=target_capacity))
+                picked, delivered_targets = reserve_weakness_targets(picked, window)
+                window = list(delivered_targets)
+                target_ids = {row["id"] for row in window}
         delivered_preservation = ()
         if learning_settings is not None:
-            if prepared is not None:
-                preservation = tuple(prepared["preservation"])
-            else:
-                with trace_span("STEP_FRAGILE_PRESERVATION", capability=cap,
-                                visit_step=step + 1):
-                    preservation = _fresh_fragile_preservation_rows(
-                        run_dir, source_root, graph, receipt, course, school, cap,
-                        step=step + 1, batch_size=batch_size,
-                        fixed_rows=fragile_fixed_rows,
-                        executable_release=executable_release)
             with trace_span("STEP_FRAGILE_PRESERVATION_INJECT", capability=cap,
                             visit_step=step + 1):
                 picked, delivered_preservation = _inject_preservation_rows(
-                    picked, preservation)
-        preservation_ids = {row["id"] for row in delivered_preservation}
-        gold_capacity = {
-            gold: sum(row["gold"] == gold and row.get("id") not in preservation_ids
-                      for row in picked)
-            for gold in {row["gold"] for row in picked}
-        }
-        with trace_span("STEP_MISS_REPLAY", capability=cap, visit_step=step + 1,
-                        available_misses=len(priority)):
-            window = select_fair_miss_window(
-                priority, FairMissRequest(
-                    exposures=miss_exposures,
-                    selected_this_visit=frozenset(selected_misses),
-                    remaining_steps=steps_per_visit-step,
-                    batch_size=batch_size,
-                    gold_capacity=gold_capacity,
-                ))
-            picked = replay_missed_lessons(
-                picked, window, reserved_ids=preservation_ids)
+                    picked, preservation, reserved_ids=target_ids)
         if prepared is not None:
             enrichment_rows = tuple(prepared["teaching_enrichment_rows"])
         else:
@@ -2930,7 +2973,6 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         for row in window:
             identity = row["id"]
             miss_exposures[identity] = miss_exposures.get(identity, 0) + 1
-            selected_misses.add(identity)
         replayed_misses += len(window)
         with trace_span("STEP_DIAGNOSTIC_AND_GUIDANCE", capability=cap,
                         visit_step=step + 1):
@@ -3922,17 +3964,24 @@ def _require_outbox_lineage(condition: bool) -> None:
         raise ValueError("HUMAN_TRAINER_OUTBOX_LINEAGE_DRIFT")
 
 
-def _outbox_source_generation(run_dir: Path, record: dict, outbox: list):
-    source_generation = record["generation"]
-    ordinary_lineage = all(
+def _ordinary_outbox_lineage(record: dict, outbox) -> bool:
+    if not isinstance(outbox, list):
+        return False
+    source_generation = record.get("generation")
+    run_id = record.get("run_id")
+    return type(source_generation) is int and bool(run_id) and all(
         isinstance(event, dict) and "event_id" in event and
         event["event_id"] == _fingerprint([
-            "school-generation-event/v1", record["run_id"], source_generation,
+            "school-generation-event/v1", run_id, source_generation,
             index, {k: v for k, v in event.items() if k != "event_id"}])
         for index, event in enumerate(outbox)
     )
+
+
+def _outbox_source_generation(run_dir: Path, record: dict, outbox: list):
+    source_generation = record["generation"]
     inherited = None
-    if not ordinary_lineage:
+    if not _ordinary_outbox_lineage(record, outbox):
         from .runtime.outbox_lineage import verified_inherited_v1_generation
         inherited = verified_inherited_v1_generation(run_dir, record)
         if inherited is not None:
@@ -3963,15 +4012,12 @@ def _observed_outbox_events(run_dir: Path, expected: dict):
         return observed, observed_counts
     if journal.is_symlink() or not journal.is_file():
         raise ValueError("HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER")
-    with journal.open(encoding="utf-8") as stream:
-        for line in stream:
-            item = json.loads(line)
-            identity = item.get("event_id")
-            if identity in expected:
-                if item != expected[identity]:
-                    raise ValueError("HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT")
-                observed.add(identity)
-                observed_counts[identity] = observed_counts.get(identity, 0) + 1
+    indexed = event_observations(run_dir, expected)
+    for identity, (digest, count, conflicted) in indexed.items():
+        if conflicted or digest != event_payload_digest(expected[identity]):
+            raise ValueError("HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT")
+        observed.add(identity)
+        observed_counts[identity] = count
     return observed, observed_counts
 
 
@@ -4057,10 +4103,10 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
         _record(run_dir, {"event": "SCHOOL_CHECKPOINTS_RETIRED", "grade": active_grade,
                           "generation": record["generation"],
                           "count": len(removed), "protected_count": len(retained)})
-    # The old frozen recipes are unique experiment evidence, not debris.
-    # Do not delete either historical or new-epoch soup bytes from this fork.
-    retired_soups = (retire_stale_soups(run_dir, record.get("grade_soups", {}))
-                     if record.get("mentor_epoch") is None else ())
+    # Historical recipes remain durable in immutable receipts, but soup bytes
+    # obey the bounded runtime-storage contract: active + one previous per
+    # grade.  Mentor-epoch adoption must not disable that retirement policy.
+    retired_soups = retire_stale_soups(run_dir, live_grade_soups(record))
     if retired_soups:
         _record(run_dir, {"event": "SCHOOL_OLD_GRADE_SOUPS_RETIRED",
                           "generation": record["generation"],
@@ -4152,6 +4198,8 @@ def _resume_command(run_dir: Path, source_root: Path,
 def _school_result_label(school):
     return (("GRADE_" + school.grade + "_MASTERED_AWAITING_NEXT_GRADE")
             if school.stage == "AWAITING_NEXT_GRADE" else
+            ("GRADE_" + school.grade + "_PROMOTED_WITH_DEBT_AWAITING_NEXT_GRADE")
+            if school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT" else
             ("GRADE_" + school.revalidation_target_grade +
              "_REVALIDATING_" + school.grade)
             if school.revalidation_target_grade else
@@ -4166,11 +4214,15 @@ def _promotion_due_after_routine(
     grade during a stagnation spiral, but it cannot create a qualification
     instrument. Distinguish *teaching progression* from *graduation authority*.
     """
+    if (getattr(before, "stage", None) == "ASSESS_PROMOTION_SWEEP" and
+            before.grade not in getattr(after, "champions", {})):
+        return False
     return complete_assessment and (
         after.grade != before.grade
         or after.revalidation_target_grade != before.revalidation_target_grade
         or after.stage in {
-            "AWAITING_NEXT_GRADE", "AWAITING_TEACHER_SOUP",
+            "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT",
+            "AWAITING_TEACHER_SOUP",
             "WHOLE_SCHOOL_MASTERED",
         }
     )
@@ -4313,6 +4365,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "optimizer_step": routine_assessment.optimizer_step,
         "scores": routine_measured["scores"],
     }
+    _notify_viewer({"_runtime_phase": "DIAGNOSTICS",
+                    "_dashboard_redraw": True})
     routine_warnings = summarize_completed_exam_safely(
         run_dir, receipt, routine_last_exam)
     routine_warnings = apply_paired_checkpoint_s3(
@@ -4551,6 +4605,8 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         scores=scores, checkpoint=asdict(school.current_student))
     last_exam["whole_student_retention"] = retention_status
     pending = (*receipt.get("_pending_visit_events", ()), *stagnation_events)
+    _notify_viewer({"_runtime_phase": "DIAGNOSTICS",
+                    "_dashboard_redraw": True})
     exam_warnings = summarize_completed_exam_safely(run_dir, receipt, last_exam)
     if cohort.digest == routine_cohort.digest:
         paired_parent_scores = parent_routine_scores
@@ -4782,6 +4838,8 @@ def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
         return "AWAITING_TEACHER_SOUP"
     if stage == "AWAITING_NEXT_GRADE":
         return "GRADE_" + grade + "_AWAITING_NEXT_GRADE"
+    if stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
+        return "GRADE_" + grade + "_PROMOTED_WITH_DEBT_AWAITING_NEXT_GRADE"
     if stage == "DEFERRED_STAGNATION":
         return "STAGNATION_REVIEW_REQUIRED"
     if stage.startswith("ASSESS_") and not flash_mode:
@@ -4880,7 +4938,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
         # Fail before GPU loading, orphan recovery, or any state mutation when
         # a protected student's policy would otherwise be silently disabled.
         saved_path = Path(run_dir).expanduser().resolve() / "state.json"
-        if (saved_path.is_file() and json.loads(saved_path.read_text()).get(
+        if (saved_path.is_file() and read_current(Path(run_dir)).get(
                 "learning_experiment") is not None):
             raise ValueError("LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION")
     import mlx.core as mx
@@ -4900,11 +4958,11 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
     with operator_lock(run_dir), ExitStack() as resources:
         trace_mark("OPERATOR_LOCK_ACQUIRED")
         if resume:
-            saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+            saved = read_current(run_dir)
             pending = run_dir / "states" / f"{saved['generation'] + 1:07d}.json"
             if pending.exists() and (pending.is_symlink() or not pending.is_file()):
                 raise ValueError("HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH")
-            pending_state = (json.loads(pending.read_text(encoding="utf-8"))
+            pending_state = (read_generation(run_dir, saved["generation"] + 1)
                              if pending.exists() else None)
             if saved.get("factory_admission_v2") is not None:
                 saved_release = _read_executable_factory_release_artifact(
@@ -4934,7 +4992,9 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         grade.grade_id
                         for grade in admitted_v2.curriculum.grades[2:]))
             if (target_boolean_profile is not None and
-                    receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" and
+                    receipt["school"]["stage"] in (
+                        "AWAITING_NEXT_GRADE",
+                        "AWAITING_NEXT_GRADE_WITH_DEBT") and
                     active_grade_count == 1):
                 receipt, course, admitted_v2, _ = _adopt_executable_profile(
                     run_dir, receipt, course_a, source_root, graph,
@@ -4952,11 +5012,17 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         target_boolean_profile)
             admitted_v2 = _require_executable_factory_admission(
                 run_dir, receipt, graph)
-            if ((receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" or
+            automatic_debt_admission = (
+                receipt["school"]["stage"] == "AWAITING_NEXT_GRADE_WITH_DEBT")
+            if ((receipt["school"]["stage"] in (
+                    "AWAITING_NEXT_GRADE",
+                    "AWAITING_NEXT_GRADE_WITH_DEBT") or
                  admit_next_grade_with_debt) and
                     len(admitted_v2.execution_plan.grades) == 2 and
                     len(admitted_v2.curriculum.grades) > 2):
-                if admit_next_grade_with_debt:
+                allow_mastery_debt = (
+                    admit_next_grade_with_debt or automatic_debt_admission)
+                if allow_mastery_debt:
                     receipt = _measure_debt_admission_boundary(
                         mx, run_dir, receipt, manifest, course, source_root,
                         params, graph)
@@ -4969,7 +5035,7 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                         mx, run_dir, receipt, course_a, source_root, graph,
                         params, optimizer, catalog_transition,
                         reserve_gib=reserve_gib,
-                        allow_mastery_debt=admit_next_grade_with_debt))
+                        allow_mastery_debt=allow_mastery_debt))
             receipt = _repair_championship_source_context(run_dir, receipt, course)
         else:
             if numeric_staircase:
@@ -5124,11 +5190,19 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                 next_numeric_profile = next_numeric_scope_profile(
                     admitted_v2, final_maximum=final_numeric_scope)
                 if (next_numeric_profile is not None and
-                        active_school.stage == "AWAITING_NEXT_GRADE"):
+                        active_school.stage in (
+                            "AWAITING_NEXT_GRADE",
+                            "AWAITING_NEXT_GRADE_WITH_DEBT")):
                     receipt, course, executable_release, schedule_program = (
                         _adopt_executable_profile(
                             run_dir, receipt, course_a, source_root, graph,
                             next_numeric_profile))
+            params, optimizer, graph, receipt, course, _ = (
+                _auto_adopt_known_grade_boundary(
+                    mx, run_dir, receipt, course, course_a, source_root,
+                    manifest, params, optimizer, graph,
+                    reserve_gib=reserve_gib, full_grade_b=full_grade_b,
+                    numeric_staircase=numeric_staircase))
             school = _state_from_json(receipt["school"], _schedule_for_receipt(run_dir, receipt, course))
             receipt = _reconcile_stagnation_scope(
                 run_dir, receipt, course, school)
@@ -5141,6 +5215,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             if reason is not None:
                 break
             if school.stage.startswith("ASSESS_"):
+                _notify_viewer({"_runtime_phase": "ASSESSING",
+                                "_dashboard_redraw": True})
                 if flash_mode:
                     # Flash may skip expensive championship/promotion work, but
                     # it may not skip the fresh cumulative evidence needed to
@@ -5378,6 +5454,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
                     grade=school.grade):
                 parent_for_visit = school
                 pending_before = len(receipt.get("_pending_visit_events", ()))
+                _notify_viewer({"_runtime_phase": "VISITING",
+                                "_dashboard_redraw": True})
                 receipt = _take_visit(
                     mx, run_dir, receipt, manifest, course, engine,
                     params, optimizer, graph, steps_per_visit=steps_per_visit,
@@ -5517,7 +5595,8 @@ def operate(run_dir: Path, source_root: Path, source_checkpoint: Path,
             "flash_mode": flash_mode,
             "boolean_association_bridge": boolean_association_bridge,
             "autonomous_curriculum": autonomous_curriculum,
-            "resume_required": school.stage != "AWAITING_NEXT_GRADE",
+            "resume_required": school.stage not in (
+                "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"),
             "stagnation_session_id": receipt.get("stagnation_session", {}).get(
                 "session_id"),
             "stagnation_quarantined": list(stagnation_quarantined),

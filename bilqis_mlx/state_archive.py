@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from bilqis_mlx.state_dag import HEAD_SCHEMA, read_current, read_generation as _dag_read_generation
 import tempfile
 
 
@@ -51,27 +52,8 @@ def _durable(path: Path, content: bytes) -> None:
 
 
 def read_generation(run_dir: Path, generation: int) -> dict:
-    """Read either original JSON or verified compressed JSON transparently."""
-    if type(generation) is not int or generation < 0:
-        raise ValueError("STATE_ARCHIVE_GENERATION_INVALID")
-    folder = Path(run_dir) / "states"
-    original = folder / f"{generation:07d}.json"
-    zipped = folder / f"{generation:07d}.json.gz"
-    proof = folder / f"{generation:07d}.json.sha256"
-    if _regular(original):
-        data = original.read_bytes()
-    else:
-        if not _regular(zipped) or not _regular(proof):
-            raise ValueError("STATE_ARCHIVE_GENERATION_NOT_FOUND")
-        # Every zipped snapshot has a separate SHA over the *original* bytes.
-        with gzip.open(zipped, "rb") as stream:
-            data = stream.read()
-        if _sha(data) != proof.read_text(encoding="ascii").strip():
-            raise ValueError("STATE_ARCHIVE_GENERATION_SHA_DRIFT")
-    value = json.loads(data)
-    if value.get("generation") != generation:
-        raise ValueError("STATE_ARCHIVE_GENERATION_DRIFT")
-    return value
+    """Read legacy snapshots or immutable DAG generation pointers."""
+    return _dag_read_generation(run_dir, generation)
 
 
 def _gzip(data: bytes) -> bytes:
@@ -92,7 +74,7 @@ def compact_states(run_dir: Path, *, keep_latest: int = 4,
     latest_path = root / "state.json"
     if not _regular(latest_path):
         raise ValueError("STATE_ARCHIVE_LATEST_STATE_MISSING")
-    latest = json.loads(latest_path.read_text(encoding="utf-8"))
+    latest = read_current(root)
     generation = latest["generation"]
     if read_generation(root, generation) != latest:
         raise ValueError("STATE_ARCHIVE_LATEST_IMMUTABLE_DRIFT")
@@ -116,8 +98,11 @@ def compact_states(run_dir: Path, *, keep_latest: int = 4,
                 f"states/{old.name}" in protected):
             continue
         data = old.read_bytes()
-        if json.loads(data).get("generation") != number:
+        stored = json.loads(data)
+        if stored.get("generation") != number:
             raise ValueError("STATE_ARCHIVE_SOURCE_GENERATION_DRIFT")
+        if stored.get("schema") == HEAD_SCHEMA:
+            continue
         proof = old.with_name(old.name + ".sha256")
         zipped = old.with_name(old.name + ".gz")
         _durable(proof, (_sha(data) + "\n").encode("ascii"))
@@ -154,7 +139,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     root = args.run_dir.expanduser().resolve(strict=True)
     if not args.apply:
-        latest = json.loads((root / "state.json").read_text())
+        latest = read_current(root)
         candidates = sum(1 for p in (root / "states").glob("*.json")
                          if p.stem.isdecimal() and
                          int(p.stem) < latest["generation"] - 3)

@@ -313,8 +313,34 @@ def test_b_grace_does_not_disable_other_grade_containment():
     assert by_capability["C.SUB"]["event"] == "SCHOOL_CAPABILITY_STAGNATION_QUARANTINED"
 
 
+def test_promotion_sweep_visit_is_recorded_without_recovery_evidence():
+    state = start_session(
+        session_id="grade-c-promotion-visit", generation=18863,
+        required_capabilities=("C.COUNT", "C.NUMBER"))
+    state = record_visit(
+        state, capability="C.NUMBER", phase="PROMOTION_SWEEP",
+        decision="REJECT", retained_optimizer_updates=0, generation=18864)
+    assert state["cycle_visits"]["C.NUMBER"]["PROMOTION_SWEEP"] == {
+        "attempts": 1, "rejected": 1, "retained_updates": 0,
+        "last_generation": 18864,
+    }
+
+    # A promotion-phase rejection cannot count as either recovery round.
+    state = begin_recovery_cycle(
+        state, first_recovery=("C.NUMBER",))
+    state, events = complete_recovery_cycle(
+        state, weakest_tail=("C.NUMBER",),
+        scores={"C.NUMBER": {"correct": 31, "total": 33}},
+        generation=18865)
+    assert events == ()
+    assert quarantined_capabilities(state) == ()
+
+
 class StagnationControlUnittestCoverage(unittest.TestCase):
     """Keep the repository's unittest-based npm test command authoritative."""
+
+    def test_promotion_sweep_visit_does_not_trigger_quarantine(self):
+        test_promotion_sweep_visit_is_recorded_without_recovery_evidence()
 
     def test_two_rejected_recovery_rounds(self):
         test_two_rejected_recovery_rounds_and_repeated_tail_quarantine_without_new_threshold()

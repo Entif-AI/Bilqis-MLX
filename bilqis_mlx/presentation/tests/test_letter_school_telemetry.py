@@ -1,6 +1,7 @@
 """Grade-neutral School50 evidence, including future grades and empty channels."""
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -10,6 +11,7 @@ from types import SimpleNamespace
 from bilqis_mlx.presentation.dashboard import build, ingest
 from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES, SchoolTelemetry
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard, TABLES
+from bilqis_mlx.state_dag import migrate_current_head
 
 
 def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
@@ -523,6 +525,37 @@ class SchoolTelemetryTests(unittest.TestCase):
             # Champion child rows must not replace grade summaries in the
             # dashboard's whole-school latest score calculation.
             self.assertEqual(board._latest_all_grade_score(), (120, 144))
+
+    def test_champion_source_resolves_merkle_dag_head(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "states").mkdir()
+            receipt = {
+                "generation": 7,
+                "mentor_epoch": {"active_roles": {
+                    "C.COUNT": {
+                        "capability": "C.COUNT", "correct": 12, "total": 12,
+                        "breadth": 4,
+                        "checkpoint": {"sha256": "a" * 64, "optimizer_step": 123},
+                    },
+                }},
+            }
+            (root / "state.json").write_text(json.dumps(receipt))
+            with patch.dict(os.environ, {"BILQIS_DATA_PLANE": str(root / "plane.sqlite3")}):
+                from bilqis_mlx.data_plane import close_data_planes
+                close_data_planes()
+                try:
+                    migrate_current_head(root, receipt)
+                    board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                                      tables=LETTER_TABLES)
+                    with patch(
+                            "bilqis_mlx.presentation.spiral_dashboard.read_current",
+                            side_effect=AssertionError("full state read")):
+                        board.attach_champion_source(root)
+                finally:
+                    close_data_planes()
+
+            self.assertEqual(board._champion_rows[0]["capability"], "C.COUNT")
 
     def test_champion_child_latest_scores_match_latest_family_cohort(self):
         with tempfile.TemporaryDirectory() as tmp:

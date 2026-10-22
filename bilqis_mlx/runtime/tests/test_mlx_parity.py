@@ -5,6 +5,13 @@ from bilqis_mlx.runtime import mlx_parity as parity
 
 
 class MlxMappingTests(unittest.TestCase):
+    def test_inference_batch_rows_preserves_legacy_worst_case_memory_envelope(self):
+        rows = lambda length, count=1000: [{"tokens": [1] * length}] * count
+        self.assertEqual(parity.inference_batch_rows(rows(96)), 24)
+        self.assertEqual(parity.inference_batch_rows(rows(48)), 48)
+        self.assertEqual(parity.inference_batch_rows(rows(6)), 384)
+        self.assertEqual(parity.inference_batch_rows(rows(3)), 768)
+
     def test_causal_forward_matches_torch_for_small_synthetic_model(self):
         import mlx.core as mx
         import torch

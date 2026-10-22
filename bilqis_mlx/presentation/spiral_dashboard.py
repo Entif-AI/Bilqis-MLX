@@ -16,6 +16,7 @@ from fractions import Fraction
 import json
 import re
 from pathlib import Path
+from bilqis_mlx.state_dag import read_current, read_current_fields
 import shutil
 import signal
 import sys
@@ -500,7 +501,7 @@ class Dashboard:
         try:
             stamp=source.stat().st_mtime_ns
             if stamp==self._champion_mtime_ns:return
-            state=json.loads(source.read_text(encoding='utf-8'))
+            state=read_current_fields(source.parent, ('mentor_epoch',))
             epoch=state.get('mentor_epoch')
             if isinstance(epoch,dict) and isinstance(epoch.get('active_roles'),dict):
                 grouped={}
@@ -550,6 +551,7 @@ class Dashboard:
                 self.champion_line=None
                 self._champion_mtime_ns=stamp
                 return
+            state=read_current(source.parent)
             from bilqis_mlx import school50_champions
             if state.get('mode')=='--triplets':
                 self.champion_line=(
@@ -1193,7 +1195,7 @@ class RawLogStream:
 
     def _sync_grade(self):
         try:
-            state=json.loads((self.run_dir/"state.json").read_text(encoding="utf-8"))
+            state=read_current(self.run_dir)
             self.dashboard.push("state",state,redraw=False)
             visit=state["grade_ledger"][-1]
             mastery_event=state["mastery_events"][-1]

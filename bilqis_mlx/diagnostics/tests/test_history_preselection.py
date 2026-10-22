@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.diagnostics.exam_events import _comparable_history
 from bilqis_mlx.diagnostics.observations import (
@@ -223,6 +224,22 @@ class HistoryPreselectionTests(unittest.TestCase):
                 load_archived_exam_history(
                     root, grade=None, incremental=True,
                     rubric_sha256=RUBRIC, generator_version=GENERATOR)
+
+    def test_live_history_uses_selected_generation_fields_not_full_receipts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            _save_exam(root, 1)
+            _save_exam(root, 2)
+            state = root / "states" / "0000002.json"
+
+            with patch(
+                    "bilqis_mlx.state_archive.read_generation",
+                    side_effect=AssertionError("full generation rehydration")):
+                observed = load_saved_exam(root, state_file=state)
+                history, issue = _comparable_history(root, observed)
+
+            self.assertIsNone(issue)
+            self.assertEqual([item.optimizer_step for item in history], [101, 102])
 
 
 if __name__ == "__main__":

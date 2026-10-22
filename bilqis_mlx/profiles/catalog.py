@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cache
 
 from ..factory.executable_release import ExecutableFactoryRelease
 from ..factory.execution import (
@@ -137,28 +138,43 @@ def next_numeric_scope_profile(
     return numeric_scope_profile(release, maximum + 1)
 
 
+@cache
+def _numeric_scope_requirement(symbols: tuple[str, ...]) -> int | None:
+    """Return the highest numeric value encoded by one immutable source record."""
+    numeric_symbols = tuple(
+        symbol for symbol in symbols
+        if isinstance(symbol, str) and symbol.startswith("school.number."))
+    if not numeric_symbols:
+        return None
+    explicit_maximum = max(
+        int(symbol.removeprefix("school.number.")) for symbol in numeric_symbols)
+
+    def required(node) -> int:
+        values = []
+        if node.type_name == "Number":
+            values.append(evaluate(node))
+        if not isinstance(node, Literal):
+            values.extend(required(child) for child in node.arguments)
+        return max(values, default=-1)
+
+    # The numeric prefix codec accepts a list of catalog symbols, not the
+    # immutable tuple used as the content-addressed memoization key.
+    return max(explicit_maximum, required(decode(list(symbols))))
+
+
 def numeric_row_in_scope(row: dict, maximum: int) -> bool:
     """Keep wider numeric mistakes deferred without grade-ID dispatch."""
     if type(maximum) is not int or maximum < 0:
         raise ValueError("FACTORY_NUMERIC_SCOPE_MAXIMUM_INVALID")
     symbols = tuple((row.get("record") or {}).get("symbols", ()))
-    numeric_symbols = tuple(
-        symbol for symbol in symbols
-        if isinstance(symbol, str) and symbol.startswith("school.number."))
-    if not numeric_symbols:
-        return True
-    if any(
-            int(symbol.removeprefix("school.number.")) > maximum
-            for symbol in numeric_symbols):
-        return False
+    requirement = _numeric_scope_requirement(symbols)
+    return requirement is None or requirement <= maximum
 
-    def bounded(node):
-        if node.type_name == "Number" and evaluate(node) > maximum:
-            return False
-        if isinstance(node, Literal):
-            return True
-        return all(bounded(child) for child in node.arguments)
 
-    # The numeric prefix codec accepts a list of catalog symbols, not the
-    # immutable tuple used for the scope precheck above.
-    return bounded(decode(list(symbols)))
+def partition_numeric_scope(rows, maximum: int) -> tuple[list[dict], list[dict]]:
+    """Partition immutable numeric evidence with one semantic scope check per row."""
+    active = []
+    deferred = []
+    for row in rows:
+        (active if numeric_row_in_scope(row, maximum) else deferred).append(row)
+    return active, deferred

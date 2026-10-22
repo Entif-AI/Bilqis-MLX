@@ -188,14 +188,16 @@ def resolve_admitted_courses(historical_course, source_root, saved: dict,
             NUMERIC_RELEASE in modes or
             NUMERIC_STAIRCASE_RELEASE in modes or
             (include_prospective and
-             saved.get("school", {}).get("stage") == "AWAITING_NEXT_GRADE")):
+             saved.get("school", {}).get("stage") in (
+                 "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"))):
         course_b = course_b or boolean_successor(course_a, source_root)
         courses[course_b.version] = course_b
     minimal_b = None
     parent_digest = saved.get("grade_c_parent_course_digest")
     if (MINIMAL_BOOLEAN_RELEASE in modes or parent_digest is not None or
             (include_prospective and
-             saved.get("school", {}).get("stage") == "AWAITING_NEXT_GRADE" and
+             saved.get("school", {}).get("stage") in (
+                 "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT") and
              saved.get("curriculum_mode") == INITIAL_RELEASE)):
         minimal_b = minimal_boolean_successor(course_a, source_root)
         courses[minimal_b.version] = minimal_b
@@ -218,7 +220,8 @@ def resolve_admitted_courses(historical_course, source_root, saved: dict,
         courses[identified_b.version] = identified_b
     if (NUMERIC_RELEASE in modes or NUMERIC_STAIRCASE_RELEASE in modes or
             (include_prospective and saved.get("curriculum_mode") == BOOLEAN_IDENTIFICATION_RELEASE and
-             saved.get("school", {}).get("stage") == "AWAITING_NEXT_GRADE")):
+             saved.get("school", {}).get("stage") in (
+                 "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"))):
         parent_b = course_b
         if composite_b is None and parent_digest is not None:
             composite_b = boolean_composite_successor(course_b, source_root)

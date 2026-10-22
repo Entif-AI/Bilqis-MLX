@@ -9,6 +9,7 @@ import signal
 import sys
 
 from bilqis_mlx.runtime.disk import assert_headroom
+from bilqis_mlx.state_dag import read_current
 from .source import AUDITED_PARENT
 from .compatibility.cli_preflight import (
     legacy_new_run_status_fields,
@@ -113,7 +114,7 @@ def _executable_release_summary(run_dir: Path, saved: dict) -> dict | None:
 def _inspect(run_dir: Path) -> dict:
     state = run_dir / "state.json"
     if state.is_file():
-        saved = json.loads(state.read_text(encoding="utf-8"))
+        saved = read_current(run_dir)
         if saved.get("schema") == "bilqis.mlx.human-grade-a-trainer/v1":
             school = saved["school"]
             active = school["active_grades"]
@@ -288,8 +289,9 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
                      "experimental_risks":["FIRST_HUMAN_RUN_NOT_YET_OBSERVED",
                                            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"],
                      "operator_constraint":"HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES"})
-    if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE":
-        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+    if resume and snapshot.get("phase") in (
+            "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"):
+        saved = read_current(run_dir)
         factory = snapshot.get("factory")
         if factory is not None:
             active_count = len(factory["active_grades"])
@@ -310,7 +312,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     if numeric_staircase:
         if not resume:
             raise ValueError('NUMERIC_STAIRCASE_REQUIRES_RESUME')
-        saved = json.loads((run_dir/'state.json').read_text())
+        saved = read_current(run_dir)
         factory = snapshot.get("factory")
         maximum = saved.get("numeric_maximum")
         legacy_scope = legacy_numeric_scope(saved)
@@ -333,7 +335,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         boolean_idboolops=(boolean_idboolops if full_grade_b else False),
         checkpoint_sha256=snapshot.get("checkpoint_sha256")))
     if resume:
-        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        saved = read_current(run_dir)
         factory = snapshot.get("factory")
         requested_profile = (
             "school/boolean/full" if full_grade_b
@@ -370,7 +372,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         if resume:
             from .trainer import _reconcile_delivery_outbox
             from .compatibility.executable_projection import preflight_sealed_v1_migration
-            saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+            saved = read_current(run_dir)
             outbox = saved.get("delivery_outbox")
             delivered = _reconcile_delivery_outbox(
                 run_dir, saved, publish_missing=False)
@@ -399,7 +401,7 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     if boolean_association_bridge:
         from .boolean_association import VERSION, constructor_digest
         from .runtime.admission import admitted_release_supports_teaching_option
-        saved = json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+        saved = read_current(run_dir)
         if not admitted_release_supports_teaching_option(run_dir, saved, VERSION):
             snapshot["blockers"].append("TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE")
         snapshot["boolean_association_bridge"] = {
@@ -442,9 +444,14 @@ def human_stop_summary(result: dict) -> str:
     grade_wait = (
         reason.startswith("GRADE_") and
         reason.endswith("_AWAITING_NEXT_GRADE"))
+    debt_wait = "_PROMOTED_WITH_DEBT_" in reason
     explanation = (
-        "The current admitted grade is mastered; awaiting the next "
-        "factory-admitted curriculum grade."
+        ("The current admitted grade earned automatic progression from a "
+         "stable >=90% promotion sweep while retaining imperfect semantics "
+         "as mastery debt; awaiting the next factory-admitted curriculum grade.")
+        if debt_wait else
+        ("The current admitted grade is mastered; awaiting the next "
+         "factory-admitted curriculum grade.")
         if grade_wait else explanations[reason])
     message = ("TRAINING STOPPED NORMALLY: " + reason + "\n" +
                explanation +
@@ -616,6 +623,9 @@ def _prepare_live_board(args, build, ingest):
     live_mode = "FLASH" if args.flash_mode else "LIVE"
     def on_event(event):
         ingest(board, event)
+        runtime_phase = event.get("_runtime_phase")
+        if isinstance(runtime_phase, str) and runtime_phase:
+            board.state["phase"] = runtime_phase
         if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
             board.mode = live_mode
             board.state["stop"] = "RUNNING"

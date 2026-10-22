@@ -24,7 +24,14 @@ npm run train -- --dry-run --resume --verify-source --run-dir <same-run-dir>
 If the run uses the default `runs/school-mlx-v1`, `--run-dir` may be omitted.
 
 Do not delete a bundle, copy another checkpoint over the live one, edit `state.json`,
-reset an optimizer step, or invent a missing receipt merely to get past a guard.
+modify the workstation state data plane directly, reset an optimizer step, or invent
+a missing receipt merely to get past a guard. `state.json` may be a tiny Merkle-DAG
+head rather than the full logical receipt; use `npm run storage:dag-status` for its
+resolved state/data-plane status and `npm run storage:dag-migrate -- --run-dir PATH`
+only while human training is stopped.
+
+For a large existing event ledger, run `npm run storage:plane-warm-events -- --run-dir PATH`
+once before resume so outbox membership starts from the shared SQLite index instead of a cold JSONL scan. `npm run storage:plane-dedupe-bundles -- --run-dir PATH` safely hardlinks byte-identical bundle payload aliases; both commands refuse an active human-training lock.
 
 ## Recovery dispositions
 

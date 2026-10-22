@@ -158,6 +158,22 @@ class ChampionshipExamTests(TestCase):
         self.assertTrue(trainer._promotion_due_after_routine(before, after))
         self.assertFalse(trainer._promotion_due_after_routine(
             before, after, complete_assessment=False))
+
+    def test_mean_stability_debt_progression_is_not_championship_promotion(self):
+        before = SimpleNamespace(
+            grade="A", stage="ASSESS_PROMOTION_SWEEP",
+            revalidation_target_grade=None)
+        debt_advanced = SimpleNamespace(
+            grade="B", stage="MAIN", revalidation_target_grade=None,
+            champions={})
+        mastered = SimpleNamespace(
+            grade="B", stage="MAIN", revalidation_target_grade=None,
+            champions={"A": SimpleNamespace()})
+
+        self.assertFalse(
+            trainer._promotion_due_after_routine(before, debt_advanced))
+        self.assertTrue(
+            trainer._promotion_due_after_routine(before, mastered))
     def test_c_era_config_rebuilds_only_idboolops_heads_for_prefix_incumbent(self):
         root = Path(__file__).resolve().parents[2]
         source = root / "vendor/legacy-v16"
