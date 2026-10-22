@@ -247,6 +247,22 @@ class StateDagTests(unittest.TestCase):
         self.assertEqual(head_pointer, second_pointer)
 
 
+    def test_persist_materializes_missing_generation_pointer_without_new_node(self):
+        receipt = self.receipt()
+        (self.root / "state.json").write_text(json.dumps(receipt))
+        migrate_current_head(self.root, receipt)
+        head_before = (self.root / "state.json").read_bytes()
+        self.assertFalse((self.root / "states/0000007.json").exists())
+        from bilqis_mlx.data_plane import data_plane
+        nodes_before = data_plane().stats()["nodes"]
+
+        self.assertEqual(persist(self.root, receipt), receipt)
+        self.assertEqual((self.root / "state.json").read_bytes(), head_before)
+        self.assertEqual((self.root / "states/0000007.json").read_bytes(),
+                         head_before)
+        self.assertEqual(read_generation(self.root, 7), receipt)
+        self.assertEqual(data_plane().stats()["nodes"], nodes_before)
+
     def test_persist_identical_generation_retry_does_not_reparent(self):
         first = self.receipt()
         (self.root / "state.json").write_text(json.dumps(first))
