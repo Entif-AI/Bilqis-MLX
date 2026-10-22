@@ -13,6 +13,7 @@ from ..vocabulary_growth import digest
 
 GENERATOR = 'bilqis.issue349.event-pairs/v1'
 OPTION = 'source.event-query-and-prerequisite-contrast/v1'
+SIMPLE_OPTION = 'source.event-single-and-prerequisite-observation/v1'
 QUERY_PAIR_SIZE = 2
 
 
@@ -66,6 +67,12 @@ def check(row, **kwargs):
 
 
 def enrich(*, graph, capability, seed, option_id, prerequisites=None, **_):
+    prior_capabilities = frames.SPECS[capability][1] if prerequisites is None else prerequisites
+    if option_id == SIMPLE_OPTION:
+        return tuple({**row, 'generator': GENERATOR}
+                     for sense in (capability, *prior_capabilities) if sense in frames.SPECS
+                     for row in intro.enrich(graph=graph, capability=sense, seed=seed,
+                                             option_id=intro.OPTION))
     if option_id != OPTION:
         raise ValueError(intro.OPTION_NOT_RELEASED)
     pairs = _contrast_pairs(_pools(graph, capability))
@@ -76,7 +83,7 @@ def enrich(*, graph, capability, seed, option_id, prerequisites=None, **_):
         rng.shuffle(ordered)
         result.extend(ordered)
     target_rows = tuple(result)
-    for prior in (frames.SPECS[capability][1] if prerequisites is None else prerequisites):
+    for prior in prior_capabilities:
         if prior in frames.SPECS and prior != capability:
             lookup = {row['id']: row for pool in _pools(graph, prior).values() for row in pool}
             result.extend(lookup[digest({**row['record'], 'capability': prior})]
@@ -87,11 +94,12 @@ def enrich(*, graph, capability, seed, option_id, prerequisites=None, **_):
 def registered_adapter():
     previous = frames.registered_adapter().descriptor
     fingerprint = digest((previous.implementation_sha256,
+                          intro.registered_adapter().descriptor.implementation_sha256,
                           hashlib.sha256(Path(__file__).read_bytes()).hexdigest()))
     return RegisteredSourceAdapter(SourceAdapter(
         'source.issue349.event-pairs/v1', GENERATOR, previous.accepted_oracle_ids,
-        fingerprint, variation_axes=('two-event-lookup', 'query-contrast', 'declared-prerequisite-contrast', *previous.variation_axes),
-        teaching_option_ids=(OPTION,)), draw, check, enrich=enrich,
+        fingerprint, variation_axes=('two-event-lookup', 'query-contrast', 'declared-prerequisite-contrast', 'single-event-introduction', *previous.variation_axes),
+        teaching_option_ids=(OPTION, SIMPLE_OPTION)), draw, check, enrich=enrich,
         witness=lambda row, obligation, **kwargs: check(row, **kwargs) and
             obligation.key in frames.SPECS[row['capability']][1])
 
