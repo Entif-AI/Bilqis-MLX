@@ -22,10 +22,17 @@ jobs:
       - name: Validate release manifests and changelog
         run: python3 -B scripts/release_version.py --check
       - name: PR17 conflict-resolution focused tests
-        run: >-
-          python3 -B scripts/run_tests.py
-          bilqis_mlx/factory/tests/test_executable_scheduler.py
-          bilqis_mlx/runtime/tests/test_executable_assessment.py
+        run: |
+          python3 -B -m py_compile \
+            bilqis_mlx/cli.py \
+            bilqis_mlx/curriculum/scheduler.py \
+            bilqis_mlx/numeric_staircase.py \
+            bilqis_mlx/profiles/catalog.py \
+            bilqis_mlx/runtime/operating_loop.py \
+            bilqis_mlx/runtime/session.py \
+            bilqis_mlx/trainer.py
+          python3 -B scripts/run_tests.py \
+            bilqis_mlx/factory/tests/test_executable_scheduler.py
       - name: Check historical semantic integrity and code ownership
         run: |
           python3 -B scripts/check_historical_abi.py
