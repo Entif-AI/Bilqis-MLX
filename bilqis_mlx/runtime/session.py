@@ -155,6 +155,56 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
     return parameters, optimizer, graph, receipt
 
 
+def _is_profile_revision_epoch_history_artifact(entry):
+    return entry == {
+        "kind": "profile-revision-school-identity-reset",
+        "event": True,
+    }
+
+
+def _without_profile_revision_epoch_history_artifact(receipt):
+    """Remove only the malformed administrative receipt emitted by 413239a.
+
+    `championship_epoch_history` is typed mentor-epoch history.  One short-lived
+    profile-revision producer incorrectly appended this non-epoch marker there.
+    Preserve every real epoch and every other unknown value so unrelated drift
+    still fails closed at its normal verifier.
+    """
+    history = list(receipt.get("championship_epoch_history", ()))
+    cleaned = [
+        entry for entry in history
+        if not _is_profile_revision_epoch_history_artifact(entry)
+    ]
+    removed = len(history) - len(cleaned)
+    if not removed:
+        return receipt, 0
+    return {**receipt, "championship_epoch_history": cleaned}, removed
+
+
+def _repair_profile_revision_epoch_history(run_dir, receipt, course):
+    """Persist the exact malformed-history cleanup before custody verification."""
+    repaired, removed = _without_profile_revision_epoch_history_artifact(receipt)
+    if not removed:
+        return receipt
+    program = _runtime_release_adoption._schedule_for_receipt(run_dir, repaired, course)
+    school = _runtime_state._state_from_json(repaired["school"], program)
+    record = _runtime_checkpoints._advance(run_dir, repaired, school, persist=False)
+    event = {
+        "event": "SCHOOL_PROFILE_REVISION_EPOCH_HISTORY_REPAIRED",
+        "generation": record["generation"],
+        "grade": school.grade,
+        "removed_malformed_entries": removed,
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "actual_neural_updates": 0,
+        "model_and_own_adamw_unchanged": True,
+    }
+    record = _runtime_checkpoints._persist(run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
+    return record
+
+
+
 def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
             source_root, successor_course=None, admitted_courses=None):
     import mlx.core as mx
@@ -242,6 +292,8 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
     active_course = course if old_mode else old_course
     receipt, _, _ = _runtime_release_adoption._ensure_executable_release(
         run_dir, receipt, active_course, grade_a_course, source_root, graph)
+    receipt = _repair_profile_revision_epoch_history(
+        run_dir, receipt, active_course)
     _runtime_checkpoints._verify_best_custody(run_dir, receipt)
     # Also finishes a retirement interrupted after the prior state commit.
     _runtime_checkpoints._publish_boundary(run_dir, receipt, (), ())

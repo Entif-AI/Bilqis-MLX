@@ -314,10 +314,11 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         factory = snapshot.get("factory")
         maximum = saved.get("numeric_maximum")
         legacy_scope = legacy_numeric_scope(saved)
+        from .numeric_staircase import INITIAL_MAXIMUM, FINAL_MAXIMUM
         snapshot["numeric_staircase"] = {
             "authority": "EXECUTABLE_FACTORY_NUMERIC_PROFILE",
-            "initial_maximum": 3,
-            "final_maximum": 6,
+            "initial_maximum": INITIAL_MAXIMUM,
+            "final_maximum": FINAL_MAXIMUM,
             "resume_maximum": (
                 maximum if isinstance(maximum, int)
                 else legacy_scope.get("resume_maximum", 3)),

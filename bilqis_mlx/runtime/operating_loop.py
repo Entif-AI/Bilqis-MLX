@@ -333,6 +333,27 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
         while True:
             if experiment_budget is not None:
                 experiment_budget.assert_can_allocate(600_000_000)
+            if numeric_staircase:
+                from bilqis_mlx.numeric_staircase import (
+                    INITIAL_MAXIMUM, FINAL_MAXIMUM,
+                )
+            if (numeric_staircase and
+                    receipt.get("numeric_maximum", 0) > FINAL_MAXIMUM):
+                admitted_v2 = _runtime_admission._require_executable_factory_admission(
+                    run_dir, receipt, graph)
+                active_program = _factory_schedule.schedule_program_from_executable_release(
+                    admitted_v2)
+                active_school = _runtime_state._state_from_json(
+                    receipt["school"], active_program)
+                if active_school.grade == active_program.grades[-1].id:
+                    receipt, course, executable_release, schedule_program = (
+                        _runtime_release_adoption._adopt_executable_profile(
+                            run_dir,
+                            {**receipt,
+                             "numeric_scope_final_maximum": FINAL_MAXIMUM},
+                            course_a, source_root, graph,
+                            _profiles_catalog.numeric_scope_profile(
+                                admitted_v2, INITIAL_MAXIMUM)))
             final_numeric_scope = receipt.get("numeric_scope_final_maximum")
             if final_numeric_scope is not None:
                 admitted_v2 = _runtime_admission._require_executable_factory_admission(

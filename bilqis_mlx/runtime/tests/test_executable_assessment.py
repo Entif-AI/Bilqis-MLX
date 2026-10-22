@@ -293,6 +293,33 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             self.assertEqual(pointer['factory_release_sha256'], self.reduced.release_sha256)
             self.assertEqual(receipt['burned_generalization_cohorts_v2'], [burned_pointer])
 
+    def test_generalization_verifies_burned_cohort_under_its_historical_release(self):
+        receipt = self.receipt()
+        current_scope = tuple(
+            item.capability_id for item in self.reduced.execution_plan.capabilities)
+        historical_scope = tuple(
+            item.capability_id for item in self.full.execution_plan.capabilities)
+        self.assertTrue(set(historical_scope) - set(current_scope))
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _persist_executable_factory_release(root, self.full)
+            _persist_executable_factory_release(root, self.reduced)
+            historical, contract = self.draw(self.full, historical_scope, seed=73)
+            burned_pointer = _persist_executable_cohort(
+                root, self.manifest, contract, historical)
+            promotion, promotion_pointer = _promotion_executable_cohort(
+                root, receipt, self.manifest, self.reduced, self.registry,
+                None, self.graph, capabilities=current_scope, assessment_epoch=13,
+                legacy_course=self.course)
+            receipt["burned_generalization_cohorts_v2"] = [burned_pointer]
+            fresh, _ = _generalization_executable_cohort(
+                root, receipt, self.manifest, self.reduced, self.registry,
+                None, self.graph, capabilities=current_scope, assessment_epoch=13,
+                promotion_pointer=promotion_pointer,
+                legacy_course=self.course)
+            self.assertNotEqual(fresh.digest, promotion.digest)
+            self.assertNotEqual(fresh.digest, historical.digest)
+
     def test_fixed_frontier_reads_v2_cohort_without_using_schema_as_rubric(self):
         from bilqis_mlx.fixed_frontier import load_frontier_cohort
         cohort, contract = self.draw(self.full, self.a_scope)

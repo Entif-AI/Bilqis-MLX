@@ -291,6 +291,8 @@ from bilqis_mlx.runtime.session import (
     prepare_source,
     _init,
     _resume,
+    _without_profile_revision_epoch_history_artifact,
+    _repair_profile_revision_epoch_history,
     _resume_command,
     session_stop_reason,
 )
