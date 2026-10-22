@@ -254,11 +254,11 @@ def _retention_reason(*, no_target_gain, same_grade_net_gain,
                       fragile_losses, exceeded):
     if no_target_gain:
         return "NO_MEASURABLE_TARGET_GAIN"
+    if not frontier_measured and fragile_losses:
+        return "FRAGILE_COMPOSITION_REPLAY_REGRESSION"
+    if exceeded:
+        return "PROTECTED_CAPABILITY_REGRESSION"
     if not frontier_measured:
-        if fragile_losses:
-            return "FRAGILE_COMPOSITION_REPLAY_REGRESSION"
-        if exceeded:
-            return "PROTECTED_CAPABILITY_REGRESSION"
         if same_grade_net_gain < 0:
             return "SAME_GRADE_NET_REGRESSION"
         if same_grade_net_gain == 0:
@@ -284,9 +284,18 @@ def _protected_diagnostics(paired, protected, active_capability, phase,
     introduction = phase == "MAIN"
     allowed = settings.mature_max_loss + (
         settings.introduction_extra_loss if introduction else 0)
-    tolerances = {
+    reference_losses = {
         cap: (settings.mature_max_loss
               if cap.partition(".")[0] in mature_grades else allowed)
+        for cap in sorted(regressions)
+    }
+    # Loss budgets are rates expressed against the configured reference probe,
+    # not absolute answer counts. Preserve the original 1/6 (or MAIN 3/6)
+    # risk appetite when a capability is measured on a larger paired panel.
+    tolerances = {
+        cap: min(
+            paired[cap]["total"],
+            paired[cap]["total"] * reference_losses[cap] // settings.probe_each)
         for cap in sorted(regressions)
     }
     exceeded = {

@@ -679,6 +679,42 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(outcome["local_correct_delta"], -1)
         self.assertEqual(outcome["decision"], "REJECT")
 
+    def test_late_stage_protection_scales_with_probe_and_vetoes_concentrated_loss(self):
+        settings = Settings(probe_each=6, mature_max_loss=1,
+                            introduction_extra_loss=2)
+        fixed = {"status": "MEASURED", "grade": "C",
+                 "cohort_sha256": "a" * 64,
+                 "before": 50, "after": 53, "total": 66}
+        frontier = {"status": "MEASURED", "before_correct": 151,
+                    "after_correct": 154, "rows": 186,
+                    "regressions": [], "repaired": [],
+                    "grades": {"C": {"before": 50, "after": 53,
+                                      "total": 66}}}
+        acceptable = decide({
+            "C.COUNT": {"before": 14, "after": 23, "total": 33},
+            "C.NUMBER": {"before": 31, "after": 29, "total": 33},
+        }, active_capability="C.COUNT", phase="RECOVERY_1",
+            protected={"C.NUMBER"}, settings=settings,
+            same_grade_capabilities=("C.COUNT", "C.NUMBER"),
+            fixed_grade_replay=fixed, fixed_frontier_replay=frontier,
+            active_school_grade="C")
+        self.assertEqual(acceptable["protected_tolerances"], {"C.NUMBER": 5})
+        self.assertEqual(acceptable["exceeded"], {})
+        self.assertEqual(acceptable["decision"], "PROVISIONAL")
+
+        concentrated = decide({
+            "C.COUNT": {"before": 14, "after": 23, "total": 33},
+            "C.NUMBER": {"before": 33, "after": 27, "total": 33},
+        }, active_capability="C.COUNT", phase="RECOVERY_1",
+            protected={"C.NUMBER"}, settings=settings,
+            same_grade_capabilities=("C.COUNT", "C.NUMBER"),
+            fixed_grade_replay=fixed, fixed_frontier_replay=frontier,
+            active_school_grade="C")
+        self.assertEqual(concentrated["protected_tolerances"], {"C.NUMBER": 5})
+        self.assertEqual(concentrated["exceeded"], {"C.NUMBER": 6})
+        self.assertEqual(concentrated["reason"], "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertEqual(concentrated["decision"], "REJECT")
+
     def test_mature_grades_never_inherit_developmental_loss_budget(self):
         rows = {
             "C.ADD": {"before": 3, "after": 4, "total": 6},

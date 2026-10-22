@@ -933,3 +933,14 @@ was repaired by matching immutable generations61/62 (only generation and queue
 differed), verifying every inherited event exactly once in the ledger and the
 unchanged native student/AdamW, then appending generation63. Historical snapshots
 and events remain intact. The repair receipt is tracked separately.
+
+
+## ADR-079 | 2026-10-22 | Protected candidate loss budgets scale with measured evidence
+
+The live Prometheus run exposed a dimensional error in candidate retention. A retained `C.NUMBER` update improved its target by nine paired answers while degrading `C.COUNT` by six; later recovery repeatedly found candidates that improved `C.COUNT` but were classified against a raw one-answer protected-loss budget even when the protected capability was measured on a 33-question panel. The human rejected both extremes: neither unrestricted aggregate cannibalization nor a fixed one-answer veto matches the intended tradeoff. A two-answer loss must not automatically discard a substantially larger gain merely because the cohort is larger.
+
+The configured loss counts are therefore reference-probe budgets, not absolute ceilings. For every protected capability, scale the applicable reference loss by that capability's actual paired-question total: `floor(actual_total * reference_loss / probe_each)`. Mature grades use `mature_max_loss`; non-mature MAIN instruction uses `mature_max_loss + introduction_extra_loss`; non-MAIN recovery uses `mature_max_loss`. With the current default recovery budget of 1 loss per 6 reference questions, a 33-question protected panel permits 5 losses. Thus a `+9 / -2` trade remains eligible, while the observed `+9 / -6` concentrated regression exceeds the proportional budget.
+
+This proportional capability guard is additive to, not a replacement for, ADR-057's aggregate controls. The target fresh probe must improve, the fresh lesson grade must not regress in the late-stage regime, and fixed lesson-grade, active-school-grade and whole-school totals must remain non-regressing when the exact-parent fixed frontier is measurable. Individual rows may move and capabilities may trade bounded error mass, but any protected capability that exceeds its proportional budget rejects the candidate with `PROTECTED_CAPABILITY_REGRESSION` in both pre-frontier and late-stage evidence regimes. Late-stage B.OR/B.XOR item flips remain diagnostic-only.
+
+This supersedes ADR-057 and SPEC-0003 only where they made protected-capability over-budget loss diagnostic-only after fixed-frontier admission. It does not roll back the live student, alter graduation/championship authority, weaken source-gold requirements, or authorize agent-owned neural training. The preserved current student and own AdamW recover forward under the corrected admission rule.
