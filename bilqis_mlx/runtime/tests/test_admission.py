@@ -119,6 +119,25 @@ class RuntimeAdmissionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "FACTORY_RELEASE_DURABLE_SCHEMA_INVALID"):
                 _require_factory_admission(root, receipt, self.course, registry=self.registry)
 
+    def test_optional_teaching_gate_reads_v2_and_checks_the_released_options(self):
+        from bilqis_mlx.runtime.admission import admitted_release_supports_teaching_option
+        from types import SimpleNamespace
+
+        source = SimpleNamespace(teaching_option_ids=("source.single-event/v1",))
+        release = SimpleNamespace(source_adapters=(source,))
+        with patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
+                   return_value=release), patch('bilqis_mlx.runtime.admission._read_factory_release',
+                   side_effect=AssertionError('v2 must not enter the legacy decoder')):
+            receipt = {"factory_admission_v2": {}}
+            self.assertTrue(admitted_release_supports_teaching_option(Path('/unused'), receipt))
+            self.assertTrue(admitted_release_supports_teaching_option(
+                Path('/unused'), receipt, "source.single-event/v1"))
+            self.assertFalse(admitted_release_supports_teaching_option(
+                Path('/unused'), receipt, "unreleased"))
+        from bilqis_mlx.cli import parse_args
+        args = parse_args(['train', '--human-run', '--source-teaching-enrichment'])
+        self.assertTrue(args.boolean_association_bridge)
+
     def test_v2_executable_release_persists_and_cold_reads_without_course_rebuild(self):
         release, graph = _executable_fixture()
         with tempfile.TemporaryDirectory() as temp:

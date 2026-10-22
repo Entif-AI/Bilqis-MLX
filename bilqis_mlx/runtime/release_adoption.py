@@ -125,6 +125,8 @@ def _verify_profile_successor(predecessor, successor, graph, profile):
 
 
 def _profile_transition(previous_program, successor_program, school):
+    if previous_program == successor_program:
+        return school, None, False
     appended = len(successor_program.grades) == len(previous_program.grades) + 1
     revised = (
         len(successor_program.grades) == len(previous_program.grades) and
@@ -180,11 +182,8 @@ def _profile_championship_state(
             epoch, identity,
             generation=receipt["generation"] + 1,
             student=_dataclasses.asdict(school.current_student))
-        if identity_event is not None:
-            history.append({
-                "kind": "profile-revision-school-identity-reset",
-                "event": identity_event,
-            })
+        if identity_event:
+            history.append(receipt["mentor_epoch"])
     return identity, epoch, history
 
 

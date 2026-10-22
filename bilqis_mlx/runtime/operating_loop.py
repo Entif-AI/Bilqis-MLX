@@ -106,11 +106,9 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
         saved_path = _pathlib.Path(run_dir).expanduser().resolve() / "state.json"
         if not saved_path.is_file():
             raise ValueError("TEACHING_ENRICHMENT_REQUIRES_ADMITTED_FACTORY_RELEASE")
-        from bilqis_mlx.boolean_association import VERSION as BOOLEAN_ASSOCIATION_OPTION
         saved_release = _json.loads(saved_path.read_text(encoding="utf-8"))
         if not _runtime_admission.admitted_release_supports_teaching_option(
-                _pathlib.Path(run_dir).expanduser().resolve(), saved_release,
-                BOOLEAN_ASSOCIATION_OPTION):
+                _pathlib.Path(run_dir).expanduser().resolve(), saved_release):
             raise ValueError("TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE")
     if not retention_enabled and resume:
         # Fail before GPU loading, orphan recovery, or any state mutation when

@@ -271,8 +271,13 @@ def _require_factory_admission(run_dir, receipt, course, *, registry=None):
 
 
 def admitted_release_supports_teaching_option(run_dir: Path, receipt: dict,
-                                               option_id: str) -> bool:
-    if not isinstance(option_id, str) or not option_id:
+                                               option_id: str | None = None) -> bool:
+    if option_id is not None and (not isinstance(option_id, str) or not option_id):
         raise ValueError("FACTORY_TEACHING_OPTION_ID_REQUIRED")
+    if receipt.get("factory_admission_v2") is not None:
+        release = _read_executable_factory_release_artifact(run_dir, receipt)
+        return any(option_id is None or option_id in adapter.teaching_option_ids
+                   for adapter in release.source_adapters if adapter.teaching_option_ids)
     release = _read_factory_release(run_dir, receipt)
-    return any(item.option_id == option_id for item in release.teaching_options)
+    return any(option_id is None or item.option_id == option_id
+               for item in release.teaching_options)

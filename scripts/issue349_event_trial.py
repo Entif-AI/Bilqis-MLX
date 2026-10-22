@@ -33,12 +33,34 @@ def _probe_event_capabilities(mx, source, graph, current, params, saved, *, seed
     return scores
 
 
+def _adopt_source_revision(run, saved, current, graph, source, adapter):
+    from bilqis_mlx.compatibility.live_releases import initial_course
+    from bilqis_mlx.runtime.session import prepare_source
+    from bilqis_mlx.runtime.release_adoption import _adopt_executable_profile
+
+    if all(current.source_bindings.by_capability[cap].generator_id == adapter.GENERATOR
+           for cap in event_frames.SPECS):
+        return saved, current
+    _, historical, _, _, _, _ = prepare_source(source,
+        source/'runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt',
+        ROOT/'docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json')
+    successor = adapter.compile_successor(current, graph, source_root=source,
+        source_registry=live_source_registry(), answer_registry=live_answer_registry())
+    saved, _, current, _ = _adopt_executable_profile(
+        run, saved, initial_course(historical), source, graph, current.profile,
+        compiled_successor=successor)
+    return saved, current
+
+
 def _arguments():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-dir',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--probe-seed',type=int,default=349101)
-    parser.add_argument('--admit',action='store_true')
+    admission = parser.add_mutually_exclusive_group()
+    admission.add_argument('--admit',action='store_true')
+    admission.add_argument('--adopt-introduction',action='store_true')
+    admission.add_argument('--adopt-pairs',action='store_true')
     parser.add_argument('--refresh-boundary',action='store_true')
     return parser.parse_args()
 
@@ -88,6 +110,10 @@ def main():
                 source,graph,params,opt,CatalogProfileTransition(successor.profile,grown),
                 reserve_gib=0.,allow_mastery_debt=True,compiled_successor=successor)
             current=successor
+        if args.adopt_introduction or args.adopt_pairs:
+            from bilqis_mlx.source_adapters import event_intro, event_pairs
+            adapter = event_pairs if args.adopt_pairs else event_intro
+            saved, current = _adopt_source_revision(run, saved, current, graph, source, adapter)
         if args.admit or args.refresh_boundary:
             program=schedule_program_from_executable_release(current)
             school=trainer._state_from_json(saved['school'],program)
@@ -114,7 +140,7 @@ def main():
             seed=args.probe_seed)
         assert int(opt.state['step'].item())==saved['school']['current_student']['optimizer_step']
         result=dict(schema='bilqis.issue349.event-trial/v1',prototype_not_canonical=True,
-            admitted=args.admit,probe_seeds=list(range(args.probe_seed,args.probe_seed+3)),
+            admitted=args.admit,adopted_introduction=args.adopt_introduction,adopted_pairs=args.adopt_pairs,probe_seeds=list(range(args.probe_seed,args.probe_seed+3)),
             before=before,checkpoint=saved['school']['current_student'],
             generation=saved['generation'],factory_release_sha256=current.release_sha256,
             mastery_debt=saved['school']['carried_mastery_debt'],scores=scores,

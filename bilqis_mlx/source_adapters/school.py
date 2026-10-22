@@ -338,6 +338,8 @@ def boolean_evidence_dependencies(*, course, capability):
 def live_source_registry() -> SourceAdapterRegistry:
     from .copular import registered_adapter as copular_adapter
     from .event_frames import registered_adapter as event_adapter
+    from .event_intro import registered_adapter as event_intro_adapter
+    from .event_pairs import registered_adapter as event_pairs_adapter
     return SourceAdapterRegistry((
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.predicates/v1", "bilqis_mlx.grade_a_probe.make_record",
@@ -383,5 +385,7 @@ def live_source_registry() -> SourceAdapterRegistry:
             witness=witness_numeric_obligation),
         copular_adapter(),
         event_adapter(),
+        event_intro_adapter(),
+        event_pairs_adapter(),
     ))
 

@@ -220,8 +220,15 @@ def _generalization_executable_cohort(
         # A burned generalization cohort is permanent instrument history,
         # not a promise that its old assessment scope equals today's. Verify
         # it under its own signed source scope before checking non-reuse.
+        historical_release = release
+        if pointer.get("factory_release_sha256") != release.release_sha256:
+            from .admission import _read_executable_factory_release_artifact
+            historical_sha = pointer.get("factory_release_sha256")
+            historical_release = _read_executable_factory_release_artifact(run_dir, {
+                "factory_release_sha256": historical_sha,
+                "factory_release_file": f"factory-releases/{historical_sha}.json"})
         previous = _load_executable_cohort(
-            run_dir, manifest, release, tuple(pointer.get("capabilities", ())),
+            run_dir, manifest, historical_release, tuple(pointer.get("capabilities", ())),
             pointer)
         burned_digests.add(previous.digest)
         burned_specimen_sets.add(

@@ -541,8 +541,9 @@ def parse_args(argv=None):
                            help="Pure host-side lesson prep workers; 2 workers + main MLX lane = 3 lanes")
             p.add_argument("--flash-mode", action="store_true",
                            help="Defer expensive assessments while training; stop owing a real assessment")
-            p.add_argument("--boolean-association-bridge", action="store_true",
-                           help="Add 8 B-owned bridge questions per B step: 4 borrowing A assertions and 4 borrowing C assertions")
+            p.add_argument("--source-teaching-enrichment", "--boolean-association-bridge",
+                           dest="boolean_association_bridge", action="store_true",
+                           help="Add optional source-owned lessons declared by the admitted factory release")
             p.add_argument("--batch-size",type=int,default=32)
             p.add_argument("--reserve-gib",type=float,default=100.)
             p.add_argument("--stagnation-grace-grade",type=str,default=None,
