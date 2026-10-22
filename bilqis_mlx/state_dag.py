@@ -20,6 +20,7 @@ HEAD_SCHEMA = "bilqis.state-head/v1"
 NODE_SCHEMA = "bilqis.state-node/v1"
 INLINE_FIELD_LIMIT_BYTES = 32 * 1024
 EXPOSURE_SHARD_PREFIX_LENGTH = 2
+TEACHER_MISS_SHARD_PREFIX_LENGTH = 2
 _FIELD_CACHE: dict[str, dict[str, tuple[object, dict]]] = dict()
 class StateDagError(str, Enum):
     DESTINATION_COLLISION = "STATE_DAG_DESTINATION_COLLISION"
@@ -27,6 +28,7 @@ class StateDagError(str, Enum):
     TEACHER_MISS_INVALID = "STATE_DAG_TEACHER_MISS_INVALID"
     TEACHER_MISS_CAPABILITY_INVALID = "STATE_DAG_TEACHER_MISS_CAPABILITY_INVALID"
     TEACHER_MISS_SHARD_DRIFT = "STATE_DAG_TEACHER_MISS_SHARD_DRIFT"
+    TEACHER_MISS_PREFIX_DRIFT = "STATE_DAG_TEACHER_MISS_PREFIX_DRIFT"
     TEACHER_MISS_COUNT_DRIFT = "STATE_DAG_TEACHER_MISS_COUNT_DRIFT"
     EXPOSURE_ID_INVALID = "STATE_DAG_EXPOSURE_ID_INVALID"
     EXPOSURE_SHARD_DRIFT = "STATE_DAG_EXPOSURE_SHARD_DRIFT"
@@ -117,35 +119,62 @@ def _teacher_miss_shards(rows: list) -> dict[str, list]:
     return shards
 
 
+def _teacher_miss_subshards(rows: list) -> dict[str, dict[str, list]]:
+    result: dict[str, dict[str, list]] = {}
+    for capability, members in _teacher_miss_shards(rows).items():
+        prefixes: dict[str, list] = {}
+        for row in members:
+            identity = row["id"]
+            if len(identity) < TEACHER_MISS_SHARD_PREFIX_LENGTH:
+                raise ValueError(StateDagError.TEACHER_MISS_INVALID.value)
+            prefixes.setdefault(
+                identity[:TEACHER_MISS_SHARD_PREFIX_LENGTH], []).append(row)
+        result[capability] = prefixes
+    return result
+
+
 def _encode_teacher_misses(run_dir: Path, rows: list, *, prior_spec=None,
                            prior_rows=None) -> tuple[dict, list]:
-    shards = _teacher_miss_shards(rows)
-    prior_shards = _teacher_miss_shards(prior_rows or [])
+    shards = _teacher_miss_subshards(rows)
+    prior_shards = _teacher_miss_subshards(prior_rows or [])
+    prior_encoded = (prior_spec.get("shards", {})
+                     if isinstance(prior_spec, dict) and
+                     prior_spec.get("kind") == "teacher-misses/v2" else {})
     encoded = {}
     normalized = []
-    for capability, members in sorted(shards.items()):
-        if (isinstance(prior_spec, dict) and
-                prior_spec.get("kind") == "teacher-misses/v1" and
-                capability in prior_spec.get("shards", {}) and
-                prior_shards.get(capability) == members):
-            encoded[capability] = prior_spec["shards"][capability]
-            normalized.extend(prior_shards[capability])
-            continue
-        canonical_members = json.loads(_canonical(members))
-        encoded[capability] = _put_object(run_dir, canonical_members)
-        normalized.extend(canonical_members)
+    for capability, prefixes in sorted(shards.items()):
+        encoded[capability] = {}
+        for prefix, members in sorted(prefixes.items()):
+            if (prior_shards.get(capability, {}).get(prefix) == members and
+                    prefix in prior_encoded.get(capability, {})):
+                encoded[capability][prefix] = prior_encoded[capability][prefix]
+                normalized.extend(prior_shards[capability][prefix])
+                continue
+            canonical_members = json.loads(_canonical(members))
+            encoded[capability][prefix] = _put_object(run_dir, canonical_members)
+            normalized.extend(canonical_members)
     normalized.sort(key=lambda row: (row["capability"], row["id"]))
-    return ({"kind": "teacher-misses/v1", "count": len(normalized),
+    return ({"kind": "teacher-misses/v2", "count": len(normalized),
              "shards": encoded}, normalized)
 
 
 def _decode_teacher_misses(run_dir: Path, spec: dict) -> list:
     rows = []
-    for capability, digest in sorted(spec["shards"].items()):
-        members = _get_object(run_dir, digest)
-        if any(row.get("capability") != capability for row in members):
-            raise ValueError(StateDagError.TEACHER_MISS_SHARD_DRIFT.value)
-        rows.extend(members)
+    if spec.get("kind") == "teacher-misses/v1":
+        for capability, digest in sorted(spec["shards"].items()):
+            members = _get_object(run_dir, digest)
+            if any(row.get("capability") != capability for row in members):
+                raise ValueError(StateDagError.TEACHER_MISS_SHARD_DRIFT.value)
+            rows.extend(members)
+    else:
+        for capability, prefixes in sorted(spec["shards"].items()):
+            for prefix, digest in sorted(prefixes.items()):
+                members = _get_object(run_dir, digest)
+                if any(row.get("capability") != capability for row in members):
+                    raise ValueError(StateDagError.TEACHER_MISS_SHARD_DRIFT.value)
+                if any(not row.get("id", "").startswith(prefix) for row in members):
+                    raise ValueError(StateDagError.TEACHER_MISS_PREFIX_DRIFT.value)
+                rows.extend(members)
     rows.sort(key=lambda row: (row["capability"], row["id"]))
     if len(rows) != spec["count"]:
         raise ValueError(StateDagError.TEACHER_MISS_COUNT_DRIFT.value)
@@ -242,7 +271,7 @@ def _decode_field(run_dir: Path, spec: dict):
         return spec["value"]
     if kind == "object/v1":
         return _get_object(run_dir, spec["sha256"])
-    if kind == "teacher-misses/v1":
+    if kind in ("teacher-misses/v1", "teacher-misses/v2"):
         return _decode_teacher_misses(run_dir, spec)
     if kind == "teacher-miss-exposures/v1":
         return _decode_exposures(run_dir, spec)
@@ -317,21 +346,29 @@ def _write_node(run_dir: Path, receipt: dict, *, parent: str | None) -> tuple[di
     return pointer, fields, normalized
 
 
-def _load_pointer(run_dir: Path, pointer: dict) -> dict:
+def _load_pointer_fields(run_dir: Path, pointer: dict, keys=None) -> dict:
     digest = pointer.get("node_sha256")
     raw = data_plane().get_node(digest)
     node = json.loads(raw)
     if (node.get("schema") != NODE_SCHEMA or
             node.get("generation") != pointer.get("generation")):
         raise ValueError(StateDagError.NODE_POINTER_DRIFT.value)
-    receipt = {key: _decode_field(run_dir, spec)
-               for key, spec in node["fields"].items()}
-    _FIELD_CACHE[str(run_dir.resolve())] = {
-        key: (receipt[key], spec) for key, spec in node["fields"].items()}
     if (_sha(_canonical(node["fields"])) != node.get("receipt_sha256") or
             node.get("receipt_sha256") != pointer.get("receipt_sha256")):
         raise ValueError(StateDagError.RECEIPT_DIGEST_DRIFT.value)
+    fields = node["fields"]
+    selected = fields if keys is None else {
+        key: fields[key] for key in keys if key in fields}
+    receipt = {key: _decode_field(run_dir, spec)
+               for key, spec in selected.items()}
+    if keys is None:
+        _FIELD_CACHE[str(run_dir.resolve())] = {
+            key: (receipt[key], spec) for key, spec in fields.items()}
     return receipt
+
+
+def _load_pointer(run_dir: Path, pointer: dict) -> dict:
+    return _load_pointer_fields(run_dir, pointer)
 
 
 def read_current(run_dir: Path) -> dict:
@@ -341,6 +378,18 @@ def read_current(run_dir: Path) -> dict:
         raise ValueError(StateDagError.CURRENT_STATE_MISSING.value)
     value = json.loads(path.read_text(encoding="utf-8"))
     return _load_pointer(run_dir, value) if value.get("schema") == HEAD_SCHEMA else value
+
+
+def read_current_fields(run_dir: Path, keys) -> dict:
+    """Read only selected logical fields from the current state head."""
+    run_dir = Path(run_dir)
+    path = run_dir / "state.json"
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(StateDagError.CURRENT_STATE_MISSING.value)
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if value.get("schema") == HEAD_SCHEMA:
+        return _load_pointer_fields(run_dir, value, tuple(keys))
+    return {key: value[key] for key in keys if key in value}
 
 
 def _legacy_or_pointer(path: Path):
@@ -370,6 +419,30 @@ def read_generation(run_dir: Path, generation: int) -> dict:
     if receipt.get("generation") != generation:
         raise ValueError(StateDagError.GENERATION_DRIFT.value)
     return receipt
+
+
+def read_generation_fields(run_dir: Path, generation: int, keys) -> dict:
+    """Read selected fields from one immutable generation without full rehydration."""
+    if type(generation) is not int or generation < 0:
+        raise ValueError(StateDagError.GENERATION_INVALID.value)
+    root = Path(run_dir) / "states"
+    path = root / f"{generation:07d}.json"
+    value = _legacy_or_pointer(path)
+    if value is None:
+        zipped = root / f"{generation:07d}.json.gz"
+        proof = root / f"{generation:07d}.json.sha256"
+        if zipped.is_symlink() or proof.is_symlink() or not zipped.is_file() or not proof.is_file():
+            raise ValueError(StateDagError.GENERATION_NOT_FOUND.value)
+        with gzip.open(zipped, "rb") as stream:
+            raw = stream.read()
+        if _sha(raw) != proof.read_text(encoding="ascii").strip():
+            raise ValueError(StateDagError.LEGACY_ARCHIVE_SHA_DRIFT.value)
+        value = json.loads(raw)
+    if value.get("generation") != generation:
+        raise ValueError(StateDagError.GENERATION_DRIFT.value)
+    if value.get("schema") == HEAD_SCHEMA:
+        return _load_pointer_fields(Path(run_dir), value, tuple(keys))
+    return {key: value[key] for key in keys if key in value}
 
 
 def migrate_current_head(run_dir: Path, receipt: dict | None = None) -> dict:

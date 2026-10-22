@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 import re
 from pathlib import Path
-from bilqis_mlx.state_dag import read_current
+from bilqis_mlx.state_dag import read_current, read_current_fields
 import shutil
 import signal
 import sys
@@ -499,7 +499,7 @@ class Dashboard:
         try:
             stamp=source.stat().st_mtime_ns
             if stamp==self._champion_mtime_ns:return
-            state=read_current(source.parent)
+            state=read_current_fields(source.parent, ('mentor_epoch',))
             epoch=state.get('mentor_epoch')
             if isinstance(epoch,dict) and isinstance(epoch.get('active_roles'),dict):
                 grouped={}
@@ -549,6 +549,7 @@ class Dashboard:
                 self.champion_line=None
                 self._champion_mtime_ns=stamp
                 return
+            state=read_current(source.parent)
             from bilqis_mlx import school50_champions
             if state.get('mode')=='--triplets':
                 self.champion_line=(
