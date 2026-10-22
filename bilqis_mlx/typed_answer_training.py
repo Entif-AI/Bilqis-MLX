@@ -12,7 +12,9 @@ from __future__ import annotations
 import numpy as np
 
 from bilqis_mlx.curriculum import BOOLEAN_OPERATORS
-from bilqis_mlx.runtime.mlx_parity import clip_gradients, forward_arrays
+from bilqis_mlx.runtime.mlx_parity import (
+    clip_gradients, forward_arrays, inference_batch_rows,
+)
 
 _NOT_ADMITTED = "ANSWER_CASTE_NOT_ADMITTED_FOR_TRAINING"
 _UNTRUSTED_HEAD_ABI = "ANSWER_CASTE_UNTRUSTED_HEAD_ABI"
@@ -131,8 +133,9 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
 def predict_rows(mx, weights, rows, heads, config) -> dict[str, str]:
     """Inference reads tokens and declared answer mode, never specimen gold."""
     result = {}
-    for offset in range(0, len(rows), 24):
-        group = rows[offset:offset+24]
+    batch_rows = inference_batch_rows(rows)
+    for offset in range(0, len(rows), batch_rows):
+        group = rows[offset:offset+batch_rows]
         for kind in {row["answer_kind"] for row in group}:
             if kind not in heads:
                 raise ValueError("ANSWER_CASTE_NOT_ADMITTED_FOR_INFERENCE")

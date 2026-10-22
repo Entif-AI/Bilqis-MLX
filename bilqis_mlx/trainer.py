@@ -105,8 +105,10 @@ from .live_curriculum import (
     lesson_contract, numeric_maximum,
 )
 from bilqis_mlx.runtime.mlx_checkpoint import save_new_bundle, load_semantically_bound_bundle
-from bilqis_mlx.runtime.mlx_parity import (clip_gradients, forward_arrays,
-                         native_optimizer_to_mlx)
+from bilqis_mlx.runtime.mlx_parity import (
+    clip_gradients, forward_arrays, inference_batch_rows,
+    native_optimizer_to_mlx,
+)
 from bilqis_mlx.curriculum.scheduler import (start_new, visit, assess, assess_withheld, next_capability,
                      adopt_appended_program, adopt_revised_program,
                      append_next_grade_with_debt,
@@ -582,8 +584,9 @@ def _predictions(mx, parameters, rows, config, answer_ids):
         return predict_rows(mx, parameters, rows, config["answer_heads"], config)
     import numpy as np
     result = {}
-    for offset in range(0, len(rows), 24):
-        batch = rows[offset:offset+24]
+    batch_rows = inference_batch_rows(rows)
+    for offset in range(0, len(rows), batch_rows):
+        batch = rows[offset:offset+batch_rows]
         ids, lengths, _ = _make_batch(batch)
         logits = forward_arrays(mx, parameters, ids, lengths,
                                 heads=config["heads"], layers=config["layers"],
