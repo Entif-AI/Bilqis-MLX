@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections import deque
 from pathlib import Path
 
 from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TABLES
@@ -125,16 +126,23 @@ def _replay_dashboard_journal(board: Dashboard, run_dir: Path) -> None:
     events = run_dir / "events.jsonl"
     if not events.exists():
         return
-    # Bounded visual history, streaming replay: no whole-log materialization
-    # as the school eventually expands through many letter grades.
+    # The renderer itself retains only bounded row buffers. Read the journal
+    # once without decoding old JSON, then decode only the same recent-record
+    # window the dashboard is capable of displaying.
     with events.open("rb") as log:
         identity = os.fstat(log.fileno())
         board.journal_identity = (identity.st_dev, identity.st_ino)
+        replay_limit = max(
+            (rows.maxlen or 0 for rows in board.rows.values()), default=0)
+        recent = deque(maxlen=max(1, replay_limit))
         while line := log.readline():
+            recent.append((log.tell(), line))
+        for end, line in recent:
             if not line.endswith(b"\n"):
                 # Preserve a partially appended JSON line for the follower.
+                board.journal_offset = end - len(line)
                 break
-            board.journal_offset = log.tell()
+            board.journal_offset = end
             if line.strip():
                 try:
                     ingest(board, json.loads(line))

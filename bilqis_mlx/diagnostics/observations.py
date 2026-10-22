@@ -14,6 +14,30 @@ import json
 import os
 import stat
 
+from ..state_dag import read_current_fields, read_generation_fields
+
+_DIAGNOSTIC_GENERATION_FIELDS = (
+    "delivery_outbox",
+    "experimental_baseline_rebase",
+    "generation",
+    "last_exam",
+    "run_id",
+)
+_STATE_GENERATION_DRIFT = "DIAGNOSTIC_STATE_GENERATION_DRIFT"
+
+
+def _read_diagnostic_generation(root: Path, generation: int) -> dict:
+    """Read only diagnostic evidence while preserving diagnostic error ABI."""
+    try:
+        return read_generation_fields(
+            root, generation, _DIAGNOSTIC_GENERATION_FIELDS)
+    except ValueError as exc:
+        if str(exc) == "STATE_DAG_GENERATION_DRIFT":
+            raise ValueError(_STATE_GENERATION_DRIFT) from exc
+        raise
+
+
+
 from ..curriculum import BOOLEAN_OPERATORS
 from ..generated_assessment import EXECUTABLE_COHORT_SCHEMA, verify_stored_cohort
 
@@ -263,22 +287,24 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
         raise ValueError("DIAGNOSTIC_STATE_OUTSIDE_RUN")
     archived_generation = path.parent == root / "states" and path.suffix == ".json"
     if archived_generation:
-        from ..state_archive import read_generation
+        _require_evidence_file(root, path)
         if not path.stem.isdecimal():
-            raise ValueError("DIAGNOSTIC_STATE_GENERATION_DRIFT")
+            raise ValueError(_STATE_GENERATION_DRIFT)
         try:
-            receipt = read_generation(root, int(path.stem))
+            receipt = _read_diagnostic_generation(root, int(path.stem))
         except ValueError as exc:
             # Preserve the diagnostic contract when a generation is stored
             # in the new verified compression format.
             if str(exc).startswith("STATE_ARCHIVE_SYMLINK_FORBIDDEN"):
                 raise ValueError("DIAGNOSTIC_EVIDENCE_NOT_REGULAR") from exc
             if str(exc) == "STATE_ARCHIVE_GENERATION_DRIFT":
-                raise ValueError("DIAGNOSTIC_STATE_GENERATION_DRIFT") from exc
+                raise ValueError(_STATE_GENERATION_DRIFT) from exc
             raise
     else:
         _require_evidence_file(root, path)
-        receipt = json.loads(path.read_text(encoding="utf-8"))
+        receipt = (read_current_fields(root, _DIAGNOSTIC_GENERATION_FIELDS)
+                   if path == root / "state.json" else
+                   json.loads(path.read_text(encoding="utf-8")))
     exam = receipt.get("last_exam")
     if not isinstance(exam, dict):
         raise ValueError("DIAGNOSTIC_EXAM_NOT_MEASURED")
@@ -293,7 +319,7 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
         generation = receipt.get("generation")
         if (type(generation) is not int or generation < 0 or
                 path.name != f"{generation:07d}.json"):
-            raise ValueError("DIAGNOSTIC_STATE_GENERATION_DRIFT")
+            raise ValueError(_STATE_GENERATION_DRIFT)
     run_id = _require_run_id(receipt)
     return replace(observe_exam(
         json.loads(cohort_file.read_text(encoding="utf-8")), exam),
@@ -465,8 +491,7 @@ def _load_verified_history_event(root: Path, event: dict, run_id: str | None,
         raise ValueError("DIAGNOSTIC_NON_MONOTONIC_EVENT_HISTORY")
     saved = root / "states" / f"{generation:07d}.json"
     observation = load_saved_exam(root, state_file=saved)
-    from ..state_archive import read_generation
-    receipt = read_generation(root, generation)
+    receipt = _read_diagnostic_generation(root, generation)
     if (not receipt.get("run_id") or
             (run_id is not None and receipt["run_id"] != run_id)):
         raise ValueError("DIAGNOSTIC_EVENT_RUN_CONFLICT")

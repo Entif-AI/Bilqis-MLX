@@ -57,6 +57,11 @@ class HumanSessionStopTests(unittest.TestCase):
         self.assertEqual(session_stop_reason(stage="AWAITING_NEXT_GRADE",
                          elapsed_seconds=20, minutes=90, visits=2, max_visits=48,
                          grade="B"),"GRADE_B_AWAITING_NEXT_GRADE")
+        self.assertEqual(
+            session_stop_reason(
+                stage="AWAITING_NEXT_GRADE_WITH_DEBT", elapsed_seconds=20,
+                minutes=90, visits=2, max_visits=48, grade="B"),
+            "GRADE_B_PROMOTED_WITH_DEBT_AWAITING_NEXT_GRADE")
         self.assertEqual(session_stop_reason(stage="WHOLE_SCHOOL_MASTERED",
                          elapsed_seconds=0,minutes=90,visits=0,max_visits=0),
                          "WHOLE_SCHOOL_MASTERED")
@@ -95,6 +100,9 @@ class HumanSessionStopTests(unittest.TestCase):
         result["stop_reason"] = "GRADE_B_AWAITING_NEXT_GRADE"
         self.assertIn("awaiting the next", human_stop_summary(result))
         self.assertNotIn("--human-run --resume",human_stop_summary(result))
+        result["stop_reason"] = "GRADE_B_PROMOTED_WITH_DEBT_AWAITING_NEXT_GRADE"
+        self.assertIn("mastery debt", human_stop_summary(result))
+        self.assertNotIn("--human-run --resume", human_stop_summary(result))
         result["stop_reason"] = "GRADE_Z_AWAITING_NEXT_GRADE"
         self.assertIn("awaiting the next", human_stop_summary(result))
         self.assertNotIn("--human-run --resume", human_stop_summary(result))

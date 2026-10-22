@@ -47,8 +47,9 @@ def _predictions(mx, parameters, rows, config, answer_ids):
         return predict_rows(mx, parameters, rows, config["answer_heads"], config)
     import numpy as np
     result = {}
-    for offset in range(0, len(rows), 24):
-        batch = rows[offset:offset+24]
+    batch_rows = _runtime_mlx_parity.inference_batch_rows(rows)
+    for offset in range(0, len(rows), batch_rows):
+        batch = rows[offset:offset+batch_rows]
         ids, lengths, _ = _make_batch(batch)
         logits = _runtime_mlx_parity.forward_arrays(mx, parameters, ids, lengths,
                                 heads=config["heads"], layers=config["layers"],

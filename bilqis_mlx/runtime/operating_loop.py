@@ -135,27 +135,8 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
     with _runtime_session.operator_lock(run_dir), _contextlib.ExitStack() as resources:
         _runtime_timing_trace.trace_mark("OPERATOR_LOCK_ACQUIRED")
         if resume:
-            saved = _state_dag.read_current(run_dir)
-            pending = run_dir / "states" / f"{saved['generation'] + 1:07d}.json"
-            if pending.exists() and (pending.is_symlink() or not pending.is_file()):
-                raise ValueError("HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH")
-            pending_state = (_state_dag.read_generation(run_dir, saved["generation"] + 1)
-                             if pending.exists() else None)
-            if saved.get("factory_admission_v2") is not None:
-                saved_release = _runtime_admission._read_executable_factory_release_artifact(
-                    run_dir, saved)
-                course = _compatibility_executable_projection.legacy_course_for_profile(
-                    course_a, source_root, saved_release.profile)
-                admitted_courses = None
-            else:
-                course, admitted_courses = _compatibility_executable_projection.resolve_legacy_resume_course(
-                    historical_course, source_root, saved, course_a,
-                    pending=pending_state)
-            with _runtime_timing_trace.trace_span("RESUME_STUDENT"):
-                params, optimizer, graph, receipt = _runtime_session._resume(
-                    run_dir, manifest, course, teacher_sha,
-                    grade_a_course=course_a, source_root=source_root,
-                    admitted_courses=admitted_courses)
+            params, optimizer, graph, receipt, course = _runtime_session._resume_admitted_student(
+                run_dir, manifest, historical_course, course_a, source_root, teacher_sha)
             admitted_v2 = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
             course = _compatibility_executable_projection.legacy_course_for_profile(
@@ -188,9 +169,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                         target_boolean_profile)
             admitted_v2 = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
-            if ((receipt["school"]["stage"] == "AWAITING_NEXT_GRADE" or
-                 admit_next_grade_with_debt) and
-                    (not autonomous_curriculum or admit_next_grade_with_debt) and
+            if (admit_next_grade_with_debt and
                     len(admitted_v2.execution_plan.grades) == 2 and
                     len(admitted_v2.curriculum.grades) > 2):
                 if admit_next_grade_with_debt:
@@ -200,7 +179,10 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 catalog_transition = _profiles_catalog.numeric_entry_transition(
                     admitted_v2, graph,
                     full_boolean=full_grade_b,
-                    maximum=3 if numeric_staircase else 10)
+                    maximum=3 if numeric_staircase or experiment_budget is not None else 10)
+                if experiment_budget is not None:
+                    catalog_transition = _dataclasses.replace(
+                        catalog_transition, numeric_scope_final_maximum=4)
                 params, optimizer, graph, receipt, course = (
                     _runtime_release_adoption._adopt_catalog_profile(
                         mx, run_dir, receipt, course_a, source_root, graph,
@@ -218,6 +200,13 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 permitted_preexisting=(
                     (".experiment-run.json",)
                     if experiment_budget is not None else ()))
+        if experiment_budget is not None and receipt.get("numeric_scope_final_maximum") is None:
+            receipt = {**receipt, "numeric_scope_final_maximum": 4}
+        params, optimizer, graph, receipt, course, _ = (
+            _runtime_release_adoption._auto_adopt_known_grade_boundary(
+                mx, run_dir, receipt, course, course_a, source_root, manifest,
+                params, optimizer, graph, reserve_gib=reserve_gib,
+                full_grade_b=full_grade_b, numeric_staircase=numeric_staircase))
         receipt, executable_release, schedule_program = _runtime_release_adoption._ensure_executable_release(
             run_dir, receipt, course, course_a, source_root, graph)
         with _runtime_timing_trace.trace_span("RECONCILE_VOCABULARY"):
@@ -338,6 +327,16 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 _runtime_release_adoption._advance_numeric_profile(
                     run_dir, receipt, course_a, source_root, graph, course,
                     executable_release, schedule_program, numeric_staircase=numeric_staircase))
+            params, optimizer, graph, receipt, course, adopted_boundary = (
+                _runtime_release_adoption._auto_adopt_known_grade_boundary(
+                    mx, run_dir, receipt, course, course_a, source_root, manifest,
+                    params, optimizer, graph, reserve_gib=reserve_gib,
+                    full_grade_b=full_grade_b, numeric_staircase=numeric_staircase))
+            if adopted_boundary:
+                executable_release = _runtime_admission._read_executable_factory_release_artifact(run_dir, receipt)
+                schedule_program = _factory_schedule.schedule_program_from_executable_release(executable_release)
+                if autonomy_session is not None:
+                    autonomy_session.refresh_release(executable_release)
             school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
             receipt = _runtime_reconciliation._reconcile_stagnation_scope(
                 run_dir, receipt, course, school)
@@ -376,6 +375,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
             if reason is not None:
                 break
             if school.stage.startswith("ASSESS_"):
+                _runtime_checkpoints._notify_viewer({"_runtime_phase": "ASSESSING", "_dashboard_redraw": True})
                 if flash_mode:
                     # Flash may skip expensive championship/promotion work, but
                     # it may not skip the fresh cumulative evidence needed to
@@ -613,6 +613,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                     grade=school.grade):
                 parent_for_visit = school
                 pending_before = len(receipt.get("_pending_visit_events", ()))
+                _runtime_checkpoints._notify_viewer({"_runtime_phase": "VISITING", "_dashboard_redraw": True})
                 receipt = _runtime_visits._take_visit(
                     mx, run_dir, receipt, manifest, course, engine,
                     params, optimizer, graph, steps_per_visit=steps_per_visit,
@@ -752,7 +753,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
             "flash_mode": flash_mode,
             "boolean_association_bridge": boolean_association_bridge,
             "autonomous_curriculum": autonomous_curriculum,
-            "resume_required": school.stage != "AWAITING_NEXT_GRADE",
+            "resume_required": school.stage not in ("AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"),
             "stagnation_session_id": receipt.get("stagnation_session", {}).get(
                 "session_id"),
             "stagnation_quarantined": list(stagnation_quarantined),

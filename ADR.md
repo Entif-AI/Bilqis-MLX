@@ -953,7 +953,13 @@ This supersedes ADR-057 and SPEC-0003 only where they made protected-capability 
 
 The live Prometheus run showed hundreds of rejected visits with `NO_MEASURABLE_TARGET_GAIN`. Retention already sent each rejection to the inherited strategy bandit as `teacher_selection_reward=-0.05`, but the contextual UCB exploration term could still dominate that flat negative mean and repeatedly select the same policy. The human requires useless strategies to receive a small but effective negative incentive rather than remain neutral in practice.
 
-Keep the existing per-trial negative credit. In addition, each capability/phase/curriculum-scope/policy context records a consecutive no-target-gain streak. Contextual strategy ranking subtracts `0.05` per consecutive no-target-gain result from that policy's score. Any later trial that produces measurable target gain resets the streak immediately, including candidates later rejected for a different retention reason. This is a selection preference, not a neural update, quarantine, permanent strategy ban, or rewrite of historical teacher statistics. Untried strategies may still be explored; repeated demonstrated uselessness must progressively reduce reselection pressure.
+**Amended by direct user approval on 2026-10-22 after live-scale audit.** The original additive `0.05 * phase-local streak` mechanism is empirically inadequate and is superseded prospectively. Do not replace it with a larger arbitrary coefficient.
+
+Contextual ranking MUST use the same `0.6` UCB exploration scale as the inherited teacher. Keep phase-specific contextual outcome statistics, but maintain an additional consecutive no-target-gain debt keyed by **capability + curriculum scope + policy**, independent of MAIN / RECOVERY_1 / RECOVERY_2. Scheduler phase rotation MUST NOT erase that debt. Historical phase-local statistics remain immutable evidence; the shared debt begins prospectively when this amendment is first executed.
+
+Repeated no-target-gain evidence MUST consume exploration privilege structurally: contextual exploration is divided by `1 + shared_no_target_gain_streak` rather than offset by another fixed penalty. A trial with `NO_MEASURABLE_TARGET_GAIN` must also send the inherited strategy bandit forward-only negative selection credit at least as large in magnitude as the inherited UCB exploration contribution that justified another trial, while preserving any stronger measured retention/interference penalty. This prevents the base bandit from immediately resurrecting a repeatedly useless policy merely because exploration dominates a flat `-0.05` mean.
+
+Any later trial that produces measurable target gain resets the shared no-target-gain debt immediately, including a candidate later rejected for a different retention reason. Phase-local diagnostic streaks retain their existing reset behavior. This is selection evidence only: it is not a neural update, quarantine, permanent strategy ban, historical-statistics rewrite, or license to suppress all future exploration. Untried policies remain explorable and previously stagnant policies may naturally regain eligibility after real gain.
 
 ## ADR-081 | 2026-10-22 | Workstation-shared immutable state data plane
 
@@ -976,7 +982,53 @@ Model bundles, frozen soups and assessment cohorts have separate logical identit
 This supersedes prior operational language only where `state.json` and every `states/<generation>.json` were required to contain full logical receipts. Their authority is preserved as immutable DAG pointers to the exact logical state. The event ledger, checkpoint/AdamW ownership, outbox crash semantics, source evidence and human-only neural-update boundary are unchanged.
 
 
-## ADR-083 | 2026-10-22 | Teach new concepts explicitly from understood foundations
+## ADR-083 | 2026-10-22 | Weakness chooses what to teach; teacher policy chooses how
+
+**Direct user approval after live Prometheus evidence.** Capability-level recovery already selects weak capabilities, but the lesson path still treated source-verified unresolved semantic misses as an incidental replay obligation after generic lesson selection. Live C.NUMBER evidence showed that, after semantic miss deduplication, one current unresolved target could receive zero or one appearances across a 16-step teaching visit while hundreds of generic examples were optimized around it. This violates the intended no-starvation contract even though the capability itself was correctly selected as weak.
+
+Teaching is therefore explicitly two-stage. **Weakness selection owns WHAT to teach.** Fresh source-scored unresolved semantic misses for the selected capability are first-class teaching targets. **Teacher policy owns HOW to teach those targets.** Strategy dimensions such as old-grade rehearsal, contrast, depth, learning rate and champion/distillation guidance may shape the surrounding lesson, but they may not displace all direct exposure to the active weak semantics.
+
+For every optimizer batch in a visit, reserve source-grounded target slots before generic current-capability and old-grade material is filled. The reservation size is derived from the number of unresolved semantic targets and the available current-capability capacity; there is no fixed replay percentage or arbitrary quota. When all active targets fit, each target remains eligible on every optimizer step until later source-scored evidence shows it correct. When active targets exceed available target slots, rotate fairly by durable exposure count so the least-exposed targets are selected first. A target being selected earlier in the same visit does **not** make it ineligible later in that visit.
+
+The remaining batch continues to provide source-grounded current-capability variation, prerequisite/old-grade retention material, structural preservation and any other already-governed support evidence. Direct target exposure must never synthesize golds, leak an unscored examination before scoring completes, weaken candidate-retention gates, or permit a rejected candidate to mutate the causal student/AdamW. Once a target is corrected by authoritative reassessment/reconciliation it leaves the unresolved-target set naturally; no permanent memorization list is created.
+
+## ADR-084 | 2026-10-22 | Stable grade mean above 90% automatically opens the next tier
+
+**Direct user approval, clarified in the same session.** A staged grade must not remain trapped behind one imperfect semantic when the grade-wide representation is already strong and stable. Promotion eligibility is therefore based on the **mean score across the complete currently introduced semantic set for that grade**, not on every individual semantic exceeding the threshold. An individual semantic may score below 90%. For example, `100, 100, 100, 85` is eligible because the grade mean remains above the floor.
+
+A fresh complete assessment whose current-grade mean is **strictly greater than 90%** starts one automatic promotion sweep. The sweep visits every currently introduced semantic in that grade exactly once in canonical order. After **each** semantic visit, the runtime performs a fresh authoritative assessment of the complete currently introduced grade and recomputes the grade mean from that whole fresh snapshot. No stale score from an earlier sweep step may substitute for a freshly measured semantic score. The **fresh whole-grade mean must never fall below 90%**. Equality at exactly 90% is allowed; only a mean below 90% aborts the sweep.
+
+If the running grade mean falls below 90% at any point, the promotion sweep ends immediately and the scheduler returns to the ordinary MAIN / weakest-three recovery routine with no tier advancement and no fabricated mastery. A later fresh assessment above 90% may start another promotion sweep.
+
+If the sweep completes every currently introduced semantic without the grade mean falling below 90%, advance exactly one curriculum tier immediately. For a staged grade this opens the next semantic stage. At the last semantic stage it crosses the ordinary next-grade boundary. Promotion is **not mastery**: any capability that is not perfect remains explicit mastery debt and must continue to participate in cumulative assessment, targeted teaching, retention protection and later recovery. The sweep must never mint a grade champion, perfect score, or historical mastery claim from a merely >=90% mean.
+
+This policy is automatic for every operator and Codex path using the canonical scheduler; it is not a run-local flag or human-only exception. It supersedes earlier staged-grade progression language only where 100% current-stage mastery was the sole prerequisite for opening the next semantic or grade, and supersedes ADR-074 only where that ADR required **explicit human authorization** before carrying mastery debt into the next grade. ADR-074's truth-preserving debt semantics remain binding. Perfect mastery remains the authority for championship, debt clearance and final whole-school mastery.
+
+## ADR-085 | 2026-10-22 | Imperfect earlier grades receive teaching passes during staged later-grade instruction
+
+**Direct user correction:** advancing to C with unfinished B semantics does not mean B can be left as permanent assessment-only debt. At the observed C.ADD/C.SUB frontier, B.AND, B.IFF, and B.COMPOSITE remained explicitly carried as mastery debt and continued to receive cumulative examination scores, but no direct B teaching passes were scheduled. The active prior-grade mean was roughly 64.6%. This was not an intentional waiver of B mastery.
+
+The scheduler had three overlapping frontier monopolies: a partially introduced staged C grade could not yield its ordinary MAIN sequence to an earlier grade; both ordinary continuation and recovery resumption could force a return to the newest C frontier whenever it was imperfect; and the weakest-three instructional pool could filter out imperfect B simply because unfinished C existed. These are inconsistent with ADR-061's full imperfect-grade passes between bounded global recovery rounds.
+
+**Decision:** after each complete ordinary MAIN pass over the currently introduced semantic stage, rotate through every other imperfect eligible admitted grade before running the two global weakest-three recovery rounds, even if a later grade has additional stages still to introduce. Record and retain each grade's introduction frontier so returning to C resumes its current stage without silently resetting or teaching future concepts. Recovery ranks the complete currently eligible cumulative pool, including earlier-grade debt, rather than hiding B behind a frontier-only filter. A qualifying ADR-084 promotion sweep remains uninterrupted and retains its strictly >90% trigger, fresh full-grade mean check after each semantic, and >=90% continuation floor. No grade champion or debt clearance is inferred from cross-grade visits.
+
+**Source/exam safety:** when the active teaching grade changes, assessment eligibility for every represented staged grade follows that grade's own introduced stage or existing full-grade champion. Never test C.SUCCESSOR, C.ADD, or C.SUB merely because B is the current teaching grade when those C semantics have not yet been introduced. Explicit quarantine/withheld semantics and human-only causal student/AdamW ownership are unchanged.
+
+This supersedes the prior newest-frontier instruction monopoly, including the assumption that a partially introduced later grade cannot participate in a cross-grade teaching spiral. It retains staged prerequisite ordering and the invariant that mastery debt is not graduation. The existing normal grade-rotation cadence supplies fairness; there is no new fixed B lesson percentage or invented number of visits.
+
+## ADR-086 | 2026-10-22 | Grade B stagnation is diagnostic, never an exit actuator
+
+**Direct user correction following a human-run stagnation review stop.** Grade B is still developmental learning territory. Incomplete or repeatedly unsuccessful B semantics must be revisited and taught, not treated as a reason to withhold instruction or end a training command. This applies automatically to all B semantics in the canonical trainer for every operator and Codex execution path, including after any finite historical grade-B grace budget expires.
+
+The per-command stagnation controller continues to measure B scores, consecutive rejected recovery visits, lack of retained progress, source-grounded warnings, and unqualified mastery debt. However, after the normal two-round and time-window checks, a B capability **can only emit diagnostic evidence**. It may not enter the quarantined set, create a WITHHELD_FOR_REMAINDER_OF_SESSION alert, reduce the eligible teaching pool, or cause DEFERRED_STAGNATION / STAGNATION_REVIEW_REQUIRED. Record the distinction with suppression_reason=GRADE_B_DEVELOPMENTAL_LEARNING. Prior B failures remain unresolved; no perfect result, championship, score improvement, or promotion is manufactured. ADR-085's ordinary cross-grade teaching circuit keeps B receiving real lessons as other grades advance.
+
+This exemption is specific to B. A different grade, including C, may still activate the existing repeated-recovery stagnation containment when its independent evidence supports it. A C quarantine must not stop the run while unquarantined B lessons remain eligible; the cumulative grade scheduler returns to B. Normal human-invoked time/visit/disk limits and student/AdamW retention safeguards remain intact. Historical alerts describing older B withhold decisions are provenance and must not be rewritten. Earlier optional finite Grade-B stagnation grace remains a readable historical setting but is not the authority for this unconditional B policy.
+
+<!-- Incoming ADR-083–086 retain trunk identities. The two feature decisions below
+were originally ADR-083/084 at b73f47e; canonical IDs reconciled without changing
+their decisions. Historical receipts retain their original source-local references. -->
+
+## ADR-087 | 2026-10-22 | Teach new concepts explicitly from understood foundations
 
 **Authority:** direct user correction in the active issue349 conversation. The
 user states: “We are not building tiny world models at this stage” and asks for
@@ -1029,11 +1081,11 @@ read-back verified as PM-2026-10-22-005, reusing RC-047/RC-096 and PAT-076. The
 previous PM-2026-10-20-003 / RC-116 covers separate runtime migration defects.
 
 
-## ADR-084 | 2026-10-22 | Introduce Boolean concepts without blocking designed numeric progression
+## ADR-088 | 2026-10-22 | Introduce Boolean concepts without blocking designed numeric progression
 
 The user explicitly directs continuation while noting that NOT and AND have
 proved difficult to master: they may be introduced, but must not become
-prerequisites for moving to Grade C as designed. This refines ADR-083; it does
+prerequisites for moving to Grade C as designed. This refines ADR-087; it does
 not restore event-world training.
 
 C.COUNT depends on A.IDENTITY/A.MEMBER; subsequent numeric capabilities retain
@@ -1049,7 +1101,7 @@ decision, not a new automatic timeout or lesson quota. Keep ordinary source,
 factory, retention, teacher, vocabulary and cumulative assessment owners.
 
 
-ADR-084 execution readback: the issue-owned primary admitted A→thin B→C through
+ADR-088 execution readback: the issue-owned primary admitted A→thin B→C through
 complete source-scored debt boundaries, with no admission optimizer updates.
 NOT/AND remained imperfect. Subsequent0..3 COUNT teaching retained192 updates;
 the preserved pre-teaching checkpoint scored69/180 on the same seeded panel,

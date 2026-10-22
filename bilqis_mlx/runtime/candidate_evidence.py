@@ -349,11 +349,15 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
 
 
 def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):
-    """Reserve optimizer slots for preservation without displacing exam misses."""
+    """Reserve preservation slots without displacing selected weakness targets."""
     result = list(chosen)
     reserved = set(reserved_ids)
-    consumed = {index for index, row in enumerate(result)
-                if row.get("id") in reserved}
+    consumed = set()
+    for index, row in enumerate(result):
+        identity = row.get("id")
+        if identity in reserved:
+            consumed.add(index)
+            reserved.remove(identity)
     delivered = []
     for item in preservation:
         replacement = next((

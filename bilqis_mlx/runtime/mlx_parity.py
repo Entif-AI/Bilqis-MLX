@@ -18,6 +18,32 @@ from bilqis_mlx.backup import digest_file
 from bilqis_mlx.source import AUDITED_PARENT
 
 
+LEGACY_INFERENCE_BATCH_ROWS = 24
+MAX_INFERENCE_SEQUENCE_TOKENS = 96
+
+
+def inference_batch_rows(rows) -> int:
+    """Scale read-only inference batches without exceeding the old memory envelope.
+
+    The former fixed 24-row batch was safe even at the maximum 96-token input.
+    Preserve both its token-activation and quadratic-attention budgets while
+    allowing many more short examples to share one GPU launch.
+    """
+    if not rows:
+        return 1
+    longest = max(len(row.get("tokens", ())) for row in rows)
+    if longest < 1:
+        return 1
+    token_budget = LEGACY_INFERENCE_BATCH_ROWS * MAX_INFERENCE_SEQUENCE_TOKENS
+    attention_budget = (LEGACY_INFERENCE_BATCH_ROWS *
+                        MAX_INFERENCE_SEQUENCE_TOKENS ** 2)
+    return max(1, min(
+        len(rows),
+        token_budget // longest,
+        attention_budget // (longest ** 2),
+    ))
+
+
 def _norm(mx, values, gamma):
     mean = mx.mean(values, axis=-1, keepdims=True)
     delta = values - mean

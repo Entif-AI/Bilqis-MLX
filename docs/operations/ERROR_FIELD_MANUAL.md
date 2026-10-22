@@ -192,7 +192,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2018** raw raises across **166** files. The baseline gate permits only reduction.
+Current production scan: **2009** raw raises across **166** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -748,7 +748,6 @@ Current production scan: **2018** raw raises across **166** files. The baseline 
 | `DIAGNOSTIC_RUN_CHANGED_DURING_READ_RETRY` | 1 | `bilqis_mlx/diagnostics/audit.py` |
 | `DIAGNOSTIC_SAME_STEP_CHECKPOINT_CONFLICT` | 1 | `bilqis_mlx/diagnostics/observations.py` |
 | `DIAGNOSTIC_SCORE_EVIDENCE_DRIFT` | 2 | `bilqis_mlx/diagnostics/observations.py` |
-| `DIAGNOSTIC_STATE_GENERATION_DRIFT` | 3 | `bilqis_mlx/diagnostics/observations.py` |
 | `DIAGNOSTIC_STATE_OUTSIDE_RUN` | 1 | `bilqis_mlx/diagnostics/observations.py` |
 | `DIAGNOSTIC_STATE_RUN_ID_MISSING` | 1 | `bilqis_mlx/diagnostics/observations.py` |
 | `DIAGNOSTIC_TEACHER_DECISION_DRIFT` | 1 | `bilqis_mlx/diagnostics/audit.py` |
@@ -1426,7 +1425,6 @@ Current production scan: **2018** raw raises across **166** files. The baseline 
 | `HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_OUTBOX_UNTRUSTED_EVENT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_PARTIAL_EVALUATION_SCOPE_DRIFT` | 1 | `bilqis_mlx/runtime/boundary_commit.py` |
-| `HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
 | `HUMAN_TRAINER_PINNED_SOURCE_NOT_VERIFIED` | 1 | `bilqis_mlx/runtime/session.py` |
 | `HUMAN_TRAINER_QUARANTINE_IDENTITY_COLLISION` | 2 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
@@ -1998,8 +1996,6 @@ Current production scan: **2018** raw raises across **166** files. The baseline 
 | `TEACHER_DECISION_INPUT_INVALID` | 1 | `bilqis_mlx/learning/teacher_feedback.py` |
 | `TEACHER_EMPTY_BALLOT` | 1 | `bilqis_mlx/learning/teacher_votes.py` |
 | `TEACHER_MISS_CURRENT_COHORT_INVALID` | 1 | `bilqis_mlx/learning/teacher_feedback.py` |
-| `TEACHER_MISS_FAIRNESS_GOLD_INVALID` | 1 | `bilqis_mlx/learning/teacher_feedback.py` |
-| `TEACHER_MISS_FAIRNESS_INPUT_INVALID` | 4 | `bilqis_mlx/learning/teacher_feedback.py` |
 | `TEACHER_MISS_PREDICTION_MISSING` | 1 | `bilqis_mlx/learning/teacher_feedback.py` |
 | `TEACHER_SOUP_NOT_DUE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `TEACHER_SOUP_RECEIPT_MISSING` | 1 | `bilqis_mlx/curriculum/scheduler.py` |

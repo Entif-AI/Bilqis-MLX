@@ -17,6 +17,7 @@ import mlx.core as mx
 import numpy as np
 
 from bilqis_mlx import trainer as storage
+from bilqis_mlx.state_dag import read_current, _durable
 from bilqis_mlx.runtime.disk import headroom_snapshot
 from bilqis_mlx.runtime.mlx_checkpoint import load_semantically_bound_bundle
 from bilqis_mlx.vocabulary_growth import append_catalog, extend_mlx_student
@@ -96,21 +97,21 @@ class DisposableCutoverContractTests(unittest.TestCase):
                 storage._bundle_pointer(self.root, "fixture-candidate", parameters, optimizer, graph, reserve_gib=100)
         self.assertFalse((self.root / "bundles/fixture-candidate").exists())
         self.assertTrue((self.root / ".bundle-staging/fixture-candidate/model-and-own-adamw.safetensors").exists())
-        self.assertEqual(json.loads((self.root / "state.json").read_text()), self.receipt)
+        self.assertEqual(read_current(self.root), self.receipt)
         self.assert_parent_unchanged()
 
     def test_generation_written_before_pointer_is_recovered_without_another_model_allocation(self):
         pointer, _, _, _ = self.candidate()
         record = self.successor(pointer)
-        original_write = storage._durable_json
+        original_write = _durable
         def fail_pointer(path, value, **kwargs):
             if path.name == "state.json":
                 raise RuntimeError("crash before pointer")
             return original_write(path, value, **kwargs)
-        with storage.operator_lock(self.root), patch('bilqis_mlx.runtime.state._durable_json', side_effect=fail_pointer):
+        with storage.operator_lock(self.root), patch('bilqis_mlx.state_dag._durable', side_effect=fail_pointer):
             with self.assertRaisesRegex(RuntimeError, "crash before pointer"):
                 storage._persist(self.root, record)
-        self.assertEqual(json.loads((self.root / "state.json").read_text())["generation"], 1)
+        self.assertEqual(read_current(self.root)["generation"], 1)
         with redirect_stdout(io.StringIO()), storage.operator_lock(self.root), \
                 patch('bilqis_mlx.runtime.checkpoints._bundle_pointer', side_effect=AssertionError("duplicate allocation")):
             recovered = storage._recover_orphaned_commit(self.root, self.receipt)
@@ -136,6 +137,6 @@ class DisposableCutoverContractTests(unittest.TestCase):
         self.assertEqual(len(events), 1)
         events[0]["optimizer_step"] = 99
         (self.root / "events.jsonl").write_text(json.dumps(events[0]) + "\n")
-        with storage.operator_lock(self.root), self.assertRaisesRegex(ValueError, "LEDGER_CONTENT_DRIFT"):
+        with storage.operator_lock(self.root), self.assertRaisesRegex(ValueError, "LEDGER_CONTENT_DRIFT|DATA_PLANE_EVENT_LEDGER_JSON_INVALID"):
             storage._reconcile_delivery_outbox(self.root, record)
         self.assert_parent_unchanged()

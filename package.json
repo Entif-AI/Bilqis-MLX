@@ -26,6 +26,7 @@
     "quality:report": "python3 -B scripts/code_smell_audit.py",
     "release:check": "python3 -B scripts/release_version.py --check",
     "start": "npm run train -- --human-run --source-prefetch-workers 2 --run-dir ./runs/codex-0001-prometheus --resume --minutes 180",
+    "start:flash": "npm run train -- --human-run --run-dir ./runs/codex-0001-prometheus --resume --minutes 180 --flash-mode",
     "status": "python3 -m bilqis_mlx.cli status",
     "storage:compact": "python3 -B -m bilqis_mlx.state_archive --apply",
     "storage:dag-migrate": "python3 -B -m bilqis_mlx.state_dag migrate",

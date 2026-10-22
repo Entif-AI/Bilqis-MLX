@@ -219,14 +219,78 @@ class RetentionTeachingPathTests(unittest.TestCase):
         self.assertIn("A.IDENTITY", delivered)
         self.assertIn("B.XOR", delivered)
 
-    def test_ungraduated_debt_gets_requested_rehearsal_without_a_champion(self):
-        delivered = self._visit_selection(old=16, carried_debt=True)
-        self.assertIn("A.IDENTITY", delivered)
-        self.assertIn("B.XOR", delivered)
-        self.assertEqual(set(self._visit_selection(old=0, carried_debt=True)), {"B.XOR"})
-
     def test_binary_grade_b_visit_does_not_invent_old_examples_at_zero_policy(self):
         self.assertEqual(set(self._visit_selection(old=0)), {"B.XOR"})
+
+    def test_one_unresolved_semantic_is_present_in_every_optimizer_batch(self):
+        policy = {"old": 0, "lr": 0.0001, "depth": 1,
+                  "contrast": 1., "distill": 0., "preview": 0}
+        teacher = {"strategies": {"p": policy}}
+        engine = SimpleNamespace(pick=lambda *_: ("p", policy))
+        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
+                                 champions={"A": {"optimizer_step": 1}})
+        course = _visit_program()
+        target = {
+            "id": "weak:xor:true", "source_id": "weak:xor:true",
+            "capability": "B.XOR", "answer_kind": "binary",
+            "gold": "TRUE", "tokens": [8, 9, 10],
+        }
+        receipt = {
+            "teacher": teacher, "generation": 1, "run_id": "weakness-target",
+            "school": {}, "teacher_misses": [target],
+            "teacher_miss_exposures": {target["id"]: 0},
+            "config": {}, "answer_ids": [6, 7],
+            "curriculum_mode": "fixture-school",
+        }
+        optimizer = SimpleNamespace(
+            learning_rate=0.0001,
+            state={"step": SimpleNamespace(item=lambda: 1)})
+        batches = []
+
+        def source_rows(*_args, **kwargs):
+            return _rows(kwargs["capability"])
+
+        def capture_three_batches(_mx, _parameters, _optimizer, rows,
+                                  *_args, **_kwargs):
+            batches.append(tuple(row["id"] for row in rows))
+            if len(batches) == 3:
+                raise _BatchCaptured("THREE_TARGETED_BATCHES_CAPTURED")
+            return 0.1, 0.1
+
+        def wrong_predictions(_mx, _params, rows, *_args):
+            return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
+                    for row in rows}
+
+        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+              patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
+                           return_value=_visit_release(course)),
+              patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
+                           return_value=course),
+              patch('bilqis_mlx.curriculum.scheduler.next_capability', return_value="B.XOR"),
+              patch('bilqis_mlx.runtime.assessment._draw_live_rows', side_effect=source_rows),
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_confidence_champions', return_value=()),
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_grade_soup_votes', return_value=((), ())),
+              patch('bilqis_mlx.learning.student_ops._train_score', return_value=0.5),
+              patch('bilqis_mlx.runtime.candidate_evidence._learning_probe_rows',
+                           return_value=(_rows("B.XOR")[:6], set(), 0)),
+              patch('bilqis_mlx.learning.student_ops._predictions', side_effect=wrong_predictions),
+              patch('bilqis_mlx.learning.learning_experiment.fork_student', return_value=({}, optimizer)),
+              patch('bilqis_mlx.diagnostics.teaching.inspect_lesson_step',
+                           side_effect=ValueError("fixture methodology unavailable")),
+              patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
+                    return_value=()),
+              patch('bilqis_mlx.learning.student_ops._train_step',
+                           side_effect=capture_three_batches)):
+            with self.assertRaisesRegex(
+                    _BatchCaptured, "THREE_TARGETED_BATCHES_CAPTURED"):
+                trainer._take_visit(
+                    None, Path("/never-opened"), receipt, {}, course, engine, {},
+                    optimizer, {}, steps_per_visit=3, batch_size=8,
+                    reserve_gib=0., source_root=Path("/not-used"),
+                    learning_settings=Settings())
+
+        self.assertEqual(len(batches), 3)
+        self.assertTrue(all(target["id"] in batch for batch in batches))
 
     def test_real_visit_path_emits_coarse_write_ahead_timing_markers(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -323,6 +387,89 @@ class RetentionTeachingPathTests(unittest.TestCase):
              for capability in ("B.OR", "B.XOR")
              for bits in ((False, False), (False, True), (True, False), (True, True))},
         )
+
+    def test_fragile_preservation_shares_batch_capacity_with_weakness_targets(self):
+        policy = {"old": 0, "lr": 0.0001, "depth": 1,
+                  "contrast": 1., "distill": 0., "preview": 0}
+        teacher = {"strategies": {"p": policy}}
+        engine = SimpleNamespace(pick=lambda *_: ("p", policy))
+        school = SimpleNamespace(stage="MAIN", grade="B", visits=0,
+                                 champions={"A": {"optimizer_step": 1}})
+        course = _visit_program()
+        misses = [
+            {"id": f"miss:{index}", "source_id": f"miss:{index}",
+             "capability": "B.XOR", "answer_kind": "binary",
+             "gold": "TRUE" if index % 2 else "FALSE",
+             "tokens": [8, 9, index + 10]}
+            for index in range(30)
+        ]
+        preservation = tuple(
+            {"id": f"preserve:{index}", "capability": "B.XOR",
+             "answer_kind": "binary",
+             "gold": "TRUE" if index % 2 else "FALSE",
+             "operand_truths": [bool(index & 1), bool(index & 2)],
+             "tokens": [20, 21, index + 22]}
+            for index in range(8)
+        )
+        receipt = {"teacher": teacher, "generation": 1, "run_id": "capacity",
+                   "school": {}, "teacher_misses": misses, "config": {},
+                   "answer_ids": [6, 7], "curriculum_mode": "fixture-school"}
+        optimizer = SimpleNamespace(learning_rate=0.0001,
+                                    state={"step": SimpleNamespace(item=lambda: 1)})
+        captured = []
+
+        def source_rows(*_args, **kwargs):
+            return _rows(kwargs["capability"])
+
+        def inspect_batch(_mx, _parameters, _optimizer, rows, *_args, **_kwargs):
+            captured.extend(rows)
+            raise _BatchCaptured("STOP_BEFORE_ANY_OPTIMIZER")
+
+        def wrong_predictions(_mx, _params, rows, *_args):
+            return {row["id"]: ("FALSE" if row["gold"] == "TRUE" else "TRUE")
+                    for row in rows}
+
+        with (patch('bilqis_mlx.runtime.state._state_from_json', return_value=school),
+              patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
+                           return_value=_visit_release(course)),
+              patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
+                           return_value=course),
+              patch('bilqis_mlx.curriculum.scheduler.next_capability', return_value="B.XOR"),
+              patch('bilqis_mlx.runtime.assessment._draw_live_rows', side_effect=source_rows),
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_confidence_champions', return_value=()),
+              patch('bilqis_mlx.learning.lesson_guidance._frozen_grade_soup_votes', return_value=((), ())),
+              patch('bilqis_mlx.learning.student_ops._train_score', return_value=0.5),
+              patch('bilqis_mlx.runtime.candidate_evidence._learning_probe_rows',
+                           return_value=(_rows("B.XOR")[:6], set(), 0)),
+              patch('bilqis_mlx.learning.student_ops._predictions', side_effect=wrong_predictions),
+              patch('bilqis_mlx.learning.learning_experiment.fork_student', return_value=({}, optimizer)),
+              patch('bilqis_mlx.diagnostics.teaching.inspect_lesson_step',
+                           side_effect=ValueError("fixture methodology unavailable")),
+              patch("bilqis_mlx.learning.fragile_replay.load_replay_rows",
+                    return_value=({"id": "fixed"},)),
+              patch('bilqis_mlx.runtime.candidate_evidence._fresh_fragile_preservation_rows',
+                           return_value=preservation),
+              patch('bilqis_mlx.learning.student_ops._train_step', side_effect=inspect_batch)):
+            with self.assertRaisesRegex(_BatchCaptured, "STOP_BEFORE_ANY_OPTIMIZER"):
+                trainer._take_visit(None, Path("/never-opened"), receipt, {},
+                                    course, engine, {}, optimizer, {},
+                                    steps_per_visit=1, batch_size=32,
+                                    reserve_gib=0., source_root=Path("/not-used"),
+                                    learning_settings=Settings())
+
+        self.assertEqual(len(captured), 32)
+        self.assertEqual({row["id"] for row in preservation} &
+                         {row["id"] for row in captured},
+                         {row["id"] for row in preservation})
+        delivered_misses = {row["id"] for row in captured if row["id"].startswith("miss:")}
+        self.assertEqual(len(delivered_misses), 24)
+
+
+    def test_ungraduated_debt_gets_requested_rehearsal_without_a_champion(self):
+        delivered = self._visit_selection(old=16, carried_debt=True)
+        self.assertIn("A.IDENTITY", delivered)
+        self.assertIn("B.XOR", delivered)
+        self.assertEqual(set(self._visit_selection(old=0, carried_debt=True)), {"B.XOR"})
 
     def test_fragile_preservation_reserves_batch_capacity_before_miss_replay(self):
         policy = {"old": 0, "lr": 0.0001, "depth": 1,
@@ -527,10 +674,36 @@ class MentorEpochTests(unittest.TestCase):
         with (patch('bilqis_mlx.runtime.checkpoints._boundary_delivery_events', return_value=()),
               patch('bilqis_mlx.runtime.checkpoints._quarantine_newer_uncommitted_bundles'),
               patch('bilqis_mlx.learning.capability_frontier.retire_bundles', return_value=()) as retire,
-              patch('bilqis_mlx.learning.grade_soup.retire_stale_soups', return_value=())):
+              patch('bilqis_mlx.learning.grade_soup.retire_stale_soups', return_value=()) as retire_soups):
             trainer._publish_boundary(Path("/not-created"), record, (), ())
         self.assertTrue({"bundles/a", "bundles/b", "bundles/f"} <=
                         retire.call_args.args[1])
+        retire_soups.assert_called_once_with(
+            Path("/not-created"), self.epoch["active_grade_soups"])
+
+    def test_archived_epoch_soup_receipts_do_not_require_retired_tensor_bytes(self):
+        archived_soup = {"grade": "A", "filename": "soups/archived.safetensors"}
+        current_soup = {"grade": "B", "filename": "soups/current.safetensors"}
+        receipt = {
+            "grade_soups": {},
+            "championship_epoch_history": [
+                {**self.epoch, "active_grade_soups": {"A": archived_soup}}],
+            "mentor_epoch": {**self.epoch, "active_grade_soups": {"B": current_soup}},
+        }
+        with patch('bilqis_mlx.learning.grade_soup.verify_frozen_soup') as verify:
+            trainer._verify_frozen_soup_custody(Path("/run"), receipt)
+        verify.assert_called_once_with(Path("/run"), current_soup)
+
+    def test_current_epoch_soup_still_requires_its_tensor_bytes(self):
+        current_soup = {"grade": "B", "filename": "soups/current.safetensors"}
+        receipt = {"grade_soups": {},
+                   "mentor_epoch": {**self.epoch,
+                                    "active_grade_soups": {"B": current_soup}}}
+        with (patch(
+                "bilqis_mlx.learning.grade_soup.verify_frozen_soup",
+                side_effect=ValueError("GRADE_SOUP_SAVED_ARTIFACT_MISSING")),
+              self.assertRaisesRegex(ValueError, "GRADE_SOUP_SAVED_ARTIFACT_MISSING")):
+            trainer._verify_frozen_soup_custody(Path("/run"), receipt)
 
 
 if __name__ == "__main__":

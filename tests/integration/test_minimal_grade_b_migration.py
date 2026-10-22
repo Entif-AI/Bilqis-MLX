@@ -1,4 +1,5 @@
 """Neural-inert winnowing of an already-admitted full Grade B."""
+from bilqis_mlx.state_dag import read_current
 from dataclasses import asdict, replace
 import json
 from pathlib import Path
@@ -155,7 +156,7 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
             root = Path(temp)
             revised = _activate_replaced_admitted_grade(
                 root, receipt, self.old, self.new, self.graph)
-            self.assertEqual(json.loads((root / "state.json").read_text()), revised)
+            self.assertEqual(read_current(root), revised)
             self.assertTrue((root / "states" / "0000022.json").is_file())
             events = [json.loads(line) for line in (
                 root / "events.jsonl").read_text().splitlines()]

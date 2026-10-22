@@ -1,6 +1,7 @@
 """Executable release, profile and JIT adoption transactions."""
 from __future__ import annotations
 
+
 import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.factory.executable_release as _factory_executable_release
@@ -133,6 +134,8 @@ def _profile_transition(previous_program, successor_program, school, *, mastery_
         tuple(grade.id for grade in successor_program.grades) ==
         tuple(grade.id for grade in previous_program.grades))
     if appended:
+        if mastery_debt is None and school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
+            mastery_debt = school.carried_mastery_debt
         return (
             (_curriculum_scheduler.append_next_grade_with_debt(
                 previous_program, successor_program, school, mastery_debt)
@@ -559,7 +562,13 @@ def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, grap
         school = _runtime_state._state_from_json(receipt["school"], active)
         next_profile = _profiles_catalog.next_numeric_scope_profile(
             current, final_maximum=final_scope)
-        if next_profile is not None and school.stage == "AWAITING_NEXT_GRADE":
+        if next_profile is not None and school.stage in ("AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"):
             receipt, course, release, program = _adopt_executable_profile(
                 run_dir, receipt, grade_a_course, source_root, graph, next_profile)
     return receipt, course, release, program
+
+
+def _auto_adopt_known_grade_boundary(*args, **kwargs):
+    """Route sanctioned historical grade transitions through compatibility policy."""
+    from bilqis_mlx.compatibility.trainer_transitions import _auto_adopt_known_grade_boundary as adopt
+    return adopt(*args, **kwargs)

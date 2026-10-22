@@ -1,6 +1,6 @@
 {
   "legacy_raw_file_count": 166,
-  "legacy_raw_raise_count": 2018,
+  "legacy_raw_raise_count": 2009,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -2485,13 +2485,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'DIAGNOSTIC_SCORE_EVIDENCE_DRIFT:' + name",
-      "path": "bilqis_mlx/diagnostics/observations.py"
-    },
-    {
-      "code_hint": "DIAGNOSTIC_STATE_GENERATION_DRIFT",
-      "count": 3,
-      "exception": "ValueError",
-      "expression": "'DIAGNOSTIC_STATE_GENERATION_DRIFT'",
       "path": "bilqis_mlx/diagnostics/observations.py"
     },
     {
@@ -7416,20 +7409,6 @@
       "path": "bilqis_mlx/learning/teacher_feedback.py"
     },
     {
-      "code_hint": "TEACHER_MISS_FAIRNESS_GOLD_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'TEACHER_MISS_FAIRNESS_GOLD_INVALID'",
-      "path": "bilqis_mlx/learning/teacher_feedback.py"
-    },
-    {
-      "code_hint": "TEACHER_MISS_FAIRNESS_INPUT_INVALID",
-      "count": 4,
-      "exception": "ValueError",
-      "expression": "'TEACHER_MISS_FAIRNESS_INPUT_INVALID'",
-      "path": "bilqis_mlx/learning/teacher_feedback.py"
-    },
-    {
       "code_hint": "TEACHER_MISS_PREDICTION_MISSING",
       "count": 1,
       "exception": "ValueError",
@@ -10570,13 +10549,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'HUMAN_TRAINER_INVALID_OPERATOR_LIMITS'",
-      "path": "bilqis_mlx/runtime/operating_loop.py"
-    },
-    {
-      "code_hint": "HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH'",
       "path": "bilqis_mlx/runtime/operating_loop.py"
     },
     {

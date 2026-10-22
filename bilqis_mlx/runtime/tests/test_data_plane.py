@@ -66,14 +66,19 @@ class DataPlaneTests(unittest.TestCase):
             "school": {"current_student": {
                 "filename": "bundles/working-1", "sha256": "a" * 64}},
             "mentor_epoch": {"active_grade_soups": {"C": {
-                "filename": "soups/C-abc.safetensors", "sha256": "b" * 64}}},
+                "filename": "soups/C-current.safetensors", "sha256": "b" * 64,
+                "previous": {"filename": "soups/C-previous.safetensors",
+                             "sha256": "d" * 64}}}},
+            "championship_epoch_history": [{"active_grade_soups": {"C": {
+                "filename": "soups/C-archived.safetensors", "sha256": "e" * 64}}}],
             "unrelated": {"filename": "cohorts/x.json", "sha256": "c" * 64},
         }
         found = referenced_custody_files(self.root, receipt)
         self.assertEqual(found, (
             ((self.root / "bundles/working-1/model-and-own-adamw.safetensors").resolve(),
              "a" * 64),
-            ((self.root / "soups/C-abc.safetensors").resolve(), "b" * 64),
+            ((self.root / "soups/C-current.safetensors").resolve(), "b" * 64),
+            ((self.root / "soups/C-previous.safetensors").resolve(), "d" * 64),
         ))
 
     def test_bundle_deduper_preserves_alias_paths_and_shares_identical_payload(self):

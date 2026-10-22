@@ -1,4 +1,5 @@
 """Read-only and disposable proof of parent-vs-trial teacher feedback."""
+import math
 import random
 import unittest
 from unittest.mock import patch
@@ -12,7 +13,7 @@ from bilqis_mlx.learning.learning_experiment import (
     Settings, paired_outcomes, decide, contextual_pick, observe_context,
     fork_student, commit_trial, sampled_protection, whole_grade_protection,
     missing_grade_capabilities,
-    selection_credit,
+    selection_credit, select_source_lesson,
 )
 
 
@@ -43,31 +44,89 @@ def schedule_program(*grades):
     )
 
 
-class DebtRehearsalTests(unittest.TestCase):
-    def test_only_recorded_earlier_debt_joins_graduated_rehearsal(self):
-        from bilqis_mlx.learning.learning_experiment import earlier_grade_capabilities
-
-        program = schedule_program(
-            ("A", ("A.IDENTITY", "A.MAPS")),
-            ("B", ("B.XOR",)),
-            ("D", ("D.EVENT_OCCURRENCE",)),
-        )
-        debt = ("A.MAPS", "B.XOR", "D.EVENT_OCCURRENCE", "E.UNKNOWN")
-        self.assertEqual(
-            earlier_grade_capabilities(
-                program, {}, "B.XOR", carried_mastery_debt=debt),
-            ("A.MAPS",),
-        )
-        self.assertEqual(
-            earlier_grade_capabilities(
-                program, {"A": object()}, "D.EVENT_OCCURRENCE",
-                carried_mastery_debt=debt),
-            ("A.IDENTITY", "A.MAPS", "B.XOR"),
-        )
-        self.assertEqual(earlier_grade_capabilities(program, {}, "B.XOR"), ())
+def live_scale_teacher():
+    strategies = {
+        f"filler-{index:03d}": {"lr": .0001}
+        for index in range(492)
+    }
+    strategies.update({
+        "stagnant": {"lr": .0002},
+        "alternate": {"lr": .0003},
+    })
+    return {
+        "strategies": strategies,
+        "global_stats": {
+            "stagnant": {"trials": 28, "reward_sum": -1.91},
+            "alternate": {"trials": 41, "reward_sum": 4.34},
+        },
+        "grade_stats": {
+            "C": {
+                "stagnant": {"trials": 14, "reward_sum": -.7},
+                "alternate": {"trials": 41, "reward_sum": 4.34},
+            },
+        },
+        "events": 14278,
+        "causal_experiment": {
+            "version": "bilqis.mlx.causal-teacher-experiment/v1",
+            "negative_archetypes": [], "events": 10,
+            "stagnation": {
+                "C.ADD|scope": {
+                    "stagnant": {"no_target_gain_streak": 5},
+                    "alternate": {"no_target_gain_streak": 0},
+                },
+            },
+            "contexts": {
+                "C.ADD|MAIN|scope": {
+                    "stagnant": {"trials": 5, "reward_sum": -.25,
+                                 "unsafe": 5, "latest": -.05,
+                                 "no_target_gain_streak": 5},
+                    "alternate": {"trials": 5, "reward_sum": -.5,
+                                  "unsafe": 0, "latest": -.1,
+                                  "no_target_gain_streak": 0},
+                }
+            },
+        },
+    }
 
 
 class CausalTeacherExperimentTests(unittest.TestCase):
+    def test_source_lesson_reserves_weak_semantic_before_policy_fill(self):
+        target = {
+            "id": "number-three", "capability": "C.NUMBER", "gold": "3",
+            "source_id": "source-three", "tokens": [1, 3, 9],
+            "answer_kind": "numeric_active",
+        }
+        current = [
+            target,
+            {"id": "number-two", "capability": "C.NUMBER", "gold": "2",
+             "source_id": "source-two", "tokens": [1, 2, 9],
+             "answer_kind": "numeric_active"},
+            {"id": "eq-two", "capability": "C.NUMBER", "gold": "TRUE",
+             "source_id": "source-two", "tokens": [1, 8, 2, 2, 9],
+             "answer_kind": "binary"},
+        ]
+        prior = [
+            {"id": "old-true", "capability": "B.NOT", "gold": "TRUE",
+             "source_id": "old-true", "tokens": [1, 4, 9],
+             "answer_kind": "binary"},
+            {"id": "old-false", "capability": "B.NOT", "gold": "FALSE",
+             "source_id": "old-false", "tokens": [1, 5, 9],
+             "answer_kind": "binary"},
+        ]
+
+        exposures = {target["id"]: 0}
+        for seed in range(11, 15):
+            picked, control = select_source_lesson(
+                current, prior, {"old": 16, "depth": 1, "contrast": 0.},
+                targets=[target], target_exposures=exposures,
+                reserved_support_slots=2, seed=seed, batch_size=8)
+            self.assertIn(target["id"], {row["id"] for row in picked})
+            self.assertEqual(control["weakness_targets_requested"], 1)
+            self.assertEqual(control["weakness_targets_delivered"], 1)
+            exposures[target["id"]] += 1
+
+        self.assertEqual(exposures[target["id"]], 4)
+
     def test_trainer_defers_missing_peer_inference_until_candidate_target_passes(self):
         from pathlib import Path
         from bilqis_mlx import trainer as trainer
@@ -621,35 +680,13 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(pick, "positive")
 
     def test_repeated_no_target_gain_demotes_policy_until_real_gain_resets_streak(self):
-        teacher = {
-            "strategies": {
-                "stagnant": {"lr": .0001},
-                "alternate": {"lr": .0002},
-            },
-            "global_stats": {
-                "stagnant": {"trials": 20, "reward_sum": 0.},
-                "alternate": {"trials": 20, "reward_sum": 0.},
-            },
-            "causal_experiment": {
-                "version": "bilqis.mlx.causal-teacher-experiment/v1",
-                "negative_archetypes": [], "events": 10,
-                "contexts": {
-                    "C.ADD|MAIN|scope": {
-                        "stagnant": {"trials": 5, "reward_sum": -.25,
-                                     "unsafe": 5, "latest": -.05,
-                                     "no_target_gain_streak": 5},
-                        "alternate": {"trials": 5, "reward_sum": -.5,
-                                      "unsafe": 0, "latest": -.1,
-                                      "no_target_gain_streak": 0},
-                    }
-                },
-            },
-        }
+        teacher = live_scale_teacher()
         class Legacy:
             @staticmethod
             def pick(_teacher, _grade, _rng):
                 return "stagnant", _teacher["strategies"]["stagnant"]
 
+        self.assertEqual(len(teacher["strategies"]), 494)
         picked, _ = contextual_pick(
             Legacy, teacher, "C.ADD", "MAIN", random.Random(2),
             curriculum_scope="scope")
@@ -659,22 +696,56 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             "C.ADD": {"before": 3, "after": 3, "total": 6},
         }, active_capability="C.ADD", phase="MAIN", protected=set(),
             settings=Settings())
-        observe_context(teacher, capability="C.ADD", phase="MAIN",
-                        policy_key="stagnant", decision=no_gain,
-                        local_gain=0., curriculum_scope="scope")
+        no_gain_credit = observe_context(
+            teacher, capability="C.ADD", phase="MAIN",
+            policy_key="stagnant", decision=no_gain,
+            local_gain=0., curriculum_scope="scope")
+        self.assertLessEqual(
+            no_gain_credit["teacher_selection_reward"],
+            0.-no_gain_credit["inherited_exploration_credit"])
+        self.assertEqual(
+            selection_credit(0., no_gain, no_gain_credit),
+            no_gain_credit["teacher_selection_reward"])
+        next_log = math.log(teacher["events"] + 4)
+        stagnant_rank = (
+            (-.7 + no_gain_credit["teacher_selection_reward"]) / 15
+            + .6 * math.sqrt(next_log / 16)
+        )
+        productive_rank = (
+            4.34 / 41 + .6 * math.sqrt(next_log / 42)
+        )
+        self.assertLess(stagnant_rank, productive_rank)
         self.assertEqual(
             teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
                    ["stagnant"]["no_target_gain_streak"], 6)
+        self.assertEqual(
+            teacher["causal_experiment"]["stagnation"]["C.ADD|scope"]
+                   ["stagnant"]["no_target_gain_streak"], 6)
+
+        recovery_no_gain = dict(no_gain, phase="RECOVERY_1")
+        observe_context(teacher, capability="C.ADD", phase="RECOVERY_1",
+                        policy_key="stagnant", decision=recovery_no_gain,
+                        local_gain=0., curriculum_scope="scope")
+        self.assertEqual(
+            teacher["causal_experiment"]["stagnation"]["C.ADD|scope"]
+                   ["stagnant"]["no_target_gain_streak"], 7)
 
         gain = decide({
             "C.ADD": {"before": 3, "after": 4, "total": 6},
         }, active_capability="C.ADD", phase="MAIN", protected=set(),
             settings=Settings())
-        observe_context(teacher, capability="C.ADD", phase="MAIN",
-                        policy_key="stagnant", decision=gain,
+        recovery_gain = dict(gain, phase="RECOVERY_2")
+        observe_context(teacher, capability="C.ADD", phase="RECOVERY_2",
+                        policy_key="stagnant", decision=recovery_gain,
                         local_gain=.1, curriculum_scope="scope")
         self.assertEqual(
             teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
+                   ["stagnant"]["no_target_gain_streak"], 6)
+        self.assertEqual(
+            teacher["causal_experiment"]["contexts"]["C.ADD|RECOVERY_2|scope"]
+                   ["stagnant"]["no_target_gain_streak"], 0)
+        self.assertEqual(
+            teacher["causal_experiment"]["stagnation"]["C.ADD|scope"]
                    ["stagnant"]["no_target_gain_streak"], 0)
 
     def test_provisional_protected_loss_becomes_typed_negative_evidence(self):
@@ -862,6 +933,31 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         commit_trial(weights, parent, branch, branch_opt)
         self.assertEqual(int(parent.state["step"].item()), parent_step+1)
         self.assertFalse(np.array_equal(np.asarray(weights["embedding.weight"]), parent_weight))
+
+
+
+class DebtRehearsalTests(unittest.TestCase):
+    def test_only_recorded_earlier_debt_joins_graduated_rehearsal(self):
+        from bilqis_mlx.learning.learning_experiment import earlier_grade_capabilities
+
+        program = schedule_program(
+            ("A", ("A.IDENTITY", "A.MAPS")),
+            ("B", ("B.XOR",)),
+            ("D", ("D.EVENT_OCCURRENCE",)),
+        )
+        debt = ("A.MAPS", "B.XOR", "D.EVENT_OCCURRENCE", "E.UNKNOWN")
+        self.assertEqual(
+            earlier_grade_capabilities(
+                program, {}, "B.XOR", carried_mastery_debt=debt),
+            ("A.MAPS",),
+        )
+        self.assertEqual(
+            earlier_grade_capabilities(
+                program, {"A": object()}, "D.EVENT_OCCURRENCE",
+                carried_mastery_debt=debt),
+            ("A.IDENTITY", "A.MAPS", "B.XOR"),
+        )
+        self.assertEqual(earlier_grade_capabilities(program, {}, "B.XOR"), ())
 
 
 if __name__ == "__main__":

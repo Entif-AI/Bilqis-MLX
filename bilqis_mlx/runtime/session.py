@@ -18,6 +18,7 @@ import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
 import bilqis_mlx.runtime.disk as _runtime_disk
 import bilqis_mlx.runtime.mlx_checkpoint as _runtime_mlx_checkpoint
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
+import bilqis_mlx.runtime.timing_trace as _runtime_timing_trace
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.state_dag as _state_dag
 import bilqis_mlx.source as _bilqis_mlx_source
@@ -33,6 +34,7 @@ import uuid as _uuid
 
 VERSION = "bilqis.mlx.human-grade-a-trainer/v1"
 LOCKFILE = ".grade-a-operator.lock"
+_PENDING_GENERATION_UNSAFE_PATH = "HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH"
 
 
 @_contextlib.contextmanager
@@ -308,6 +310,8 @@ def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
         return "AWAITING_TEACHER_SOUP"
     if stage == "AWAITING_NEXT_GRADE":
         return "GRADE_" + grade + "_AWAITING_NEXT_GRADE"
+    if stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
+        return "GRADE_" + grade + "_PROMOTED_WITH_DEBT_AWAITING_NEXT_GRADE"
     if stage == "DEFERRED_STAGNATION":
         return "STAGNATION_REVIEW_REQUIRED"
     if stage.startswith("ASSESS_") and not flash_mode:
@@ -317,3 +321,30 @@ def session_stop_reason(*, stage: str, elapsed_seconds: float, minutes: int,
     if max_visits and visits >= max_visits:
         return "VISIT_LIMIT_REACHED"
     return None
+
+
+def _resume_admitted_student(run_dir, manifest, historical_course, course_a,
+                             source_root, teacher_sha):
+    """Resolve the saved source profile and resume under the caller's operator lock."""
+    saved = _state_dag.read_current(run_dir)
+    pending = run_dir / "states" / f"{saved['generation'] + 1:07d}.json"
+    if pending.exists() and (pending.is_symlink() or not pending.is_file()):
+        raise ValueError(_PENDING_GENERATION_UNSAFE_PATH)
+    pending_state = (_state_dag.read_generation(run_dir, saved["generation"] + 1)
+                     if pending.exists() else None)
+    if saved.get("factory_admission_v2") is not None:
+        saved_release = _runtime_admission._read_executable_factory_release_artifact(
+            run_dir, saved)
+        course = _compatibility_executable_projection.legacy_course_for_profile(
+            course_a, source_root, saved_release.profile)
+        admitted_courses = None
+    else:
+        course, admitted_courses = _compatibility_executable_projection.resolve_legacy_resume_course(
+            historical_course, source_root, saved, course_a,
+            pending=pending_state)
+    with _runtime_timing_trace.trace_span("RESUME_STUDENT"):
+        params, optimizer, graph, receipt = _resume(
+            run_dir, manifest, course, teacher_sha,
+            grade_a_course=course_a, source_root=source_root,
+            admitted_courses=admitted_courses)
+    return params, optimizer, graph, receipt, course

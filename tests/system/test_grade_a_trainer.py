@@ -13,17 +13,18 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from bilqis_mlx import trainer as trainer
-from bilqis_mlx.state_dag import read_current
+from bilqis_mlx.state_dag import read_current, read_generation
 from bilqis_mlx.grade_a_release import accepted_grade_a, RELEASE, AUTHORITY
 from bilqis_mlx.live_grade_a import live_course, RELEASE as LIVE_RELEASE
 from bilqis_mlx.trainer import (
     _make_batch, _persist, _seed, _state_from_json, _train_step,
     _take_visit, _take_exam,
-    choose_lesson_batch, replay_missed_lessons,
+    choose_lesson_batch,
     operator_lock, prepare_source,
     _initial_model, _bundle_pointer, _resume, _durable_json,
     _clean_staged_bundles, _quarantine_newer_uncommitted_bundles,
 )
+from bilqis_mlx.learning.learning_experiment import reserve_weakness_targets
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.source import AUDITED_PARENT
 from bilqis_mlx.curriculum.scheduler import start_new, visit
@@ -213,12 +214,14 @@ class GradeATrainerContractTests(unittest.TestCase):
         chosen = ([{"id": f"t{i}", "gold": "TRUE"} for i in range(8)] +
                   [{"id": f"f{i}", "gold": "FALSE"} for i in range(8)])
         priority = [{"id": f"miss-{i}", "gold": "TRUE"} for i in range(3)]
-        mixed = replay_missed_lessons(chosen, priority)
+        mixed, delivered = reserve_weakness_targets(chosen, priority)
+        self.assertEqual(tuple(priority), delivered)
         self.assertEqual({p["id"] for p in priority} & {p["id"] for p in mixed},
                          {p["id"] for p in priority})
         self.assertEqual(sum(r["gold"] == "TRUE" for r in mixed), 8)
         full_class = [{"id": f"miss-all-{i}", "gold": "TRUE"} for i in range(8)]
-        no_quarter_ceiling = replay_missed_lessons(chosen, full_class)
+        no_quarter_ceiling, delivered = reserve_weakness_targets(chosen, full_class)
+        self.assertEqual(tuple(full_class), delivered)
         self.assertEqual({p["id"] for p in full_class} &
                          {p["id"] for p in no_quarter_ceiling},
                          {p["id"] for p in full_class})
@@ -304,12 +307,12 @@ class GradeATrainerContractTests(unittest.TestCase):
                      "school":self._serial(state)}
             _persist(root, first)
             normalized = json.loads(json.dumps(first))
-            self.assertEqual(json.loads((root/"state.json").read_text()),normalized)
+            self.assertEqual(read_current(root),normalized)
             second = {**first, "generation":2}
             _persist(root, second)
-            self.assertEqual(json.loads((root/"state.json").read_text()),
+            self.assertEqual(read_current(root),
                              json.loads(json.dumps(second)))
-            self.assertEqual(json.loads((root/"states/0000001.json").read_text()),
+            self.assertEqual(read_generation(root, 1),
                              normalized)
             self.assertEqual(_state_from_json(second["school"], course),state)
             self.assertEqual(_persist(root, second), json.loads(json.dumps(second)))
@@ -585,7 +588,7 @@ class GradeATrainerContractTests(unittest.TestCase):
                 resumed["school"]["course_digest"],
                 trainer.schedule_program_from_executable_release(
                     admitted_release).digest())
-            self.assertEqual(json.loads((run_dir/"states/0000001.json").read_text()),
+            self.assertEqual(read_generation(run_dir, 1),
                              json.loads(json.dumps(historical)))
             self.assertIn("factory_admission_v2", resumed)
             self.assertEqual(resumed["factory_release_schema"],

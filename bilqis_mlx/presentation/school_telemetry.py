@@ -945,7 +945,9 @@ class SchoolTelemetry:
         if best is None or correct * best[1] > best[0] * total:
             best = (correct, total, step)
             self.cumulative_best[key] = best
-        status = ("GATE MET" if correct == total and phase in
+        status = ("PROGRESSION GATE MET / MASTERY DEBT"
+                  if phase == "AWAITING_NEXT_GRADE_WITH_DEBT" else
+                  "GATE MET" if correct == total and phase in
                   ("AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED") else
                   "REVALIDATION PENDING" if correct == total else
                   f"{total}/{total} REQUIRED")

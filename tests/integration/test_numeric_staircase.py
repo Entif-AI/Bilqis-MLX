@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx import trainer as storage
+from bilqis_mlx.state_dag import read_generation, _durable
 from bilqis_mlx.compatibility.executable_projection import (
     compile_projected_executable_release, legacy_course_for_profile)
 from bilqis_mlx.curriculum.scheduler import (
@@ -605,14 +606,13 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertEqual(record['model_bundle'], entry_bundle)
 
     def test_interrupted_enrollment_recovers_without_changing_student(self):
-        original = storage._durable_json
+        original = _durable
         def interrupt(path, value, **kwargs):
             if (path == self.root/'state.json' and
-                    value.get('numeric_maximum') == 3 and
-                    value.get('factory_admission_v2') is not None):
+                    json.loads(value).get('generation') == self.before_numeric['generation'] + 1):
                 raise RuntimeError('enrollment pointer interrupted')
             return original(path,value,**kwargs)
-        with patch('bilqis_mlx.runtime.state._durable_json',side_effect=interrupt), redirect_stdout(io.StringIO()):
+        with patch('bilqis_mlx.state_dag._durable',side_effect=interrupt), redirect_stdout(io.StringIO()):
             with self.assertRaisesRegex(RuntimeError,'pointer interrupted'):
                 self.start()
         transition = numeric_entry_transition(
@@ -620,8 +620,7 @@ class NumericStaircaseTests(unittest.TestCase):
             full_boolean=False, maximum=3)
         course = legacy_course_for_profile(
             self.fixture.grade_a, fixtures.SOURCE, transition.profile)
-        pending = json.loads((self.root/'states'/
-            f"{self.before_numeric['generation'] + 1:07d}.json").read_text())
+        pending = read_generation(self.root, self.before_numeric['generation'] + 1)
         self.assertEqual(pending['numeric_maximum'], 3)
         self.assertEqual(
             pending['school']['current_student']['optimizer_step'],

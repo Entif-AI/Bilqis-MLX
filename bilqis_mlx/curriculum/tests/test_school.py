@@ -33,6 +33,25 @@ def grade_loop(course, state, candidate):
     return state
 
 
+def settle_promotion_sweep(course, state, candidate, answers, *,
+                           from_rubric="a"*64):
+    while state.stage == "PROMOTION_SWEEP":
+        state = visit(course, state, next_capability(state), candidate)
+        state = assess(
+            course, state,
+            snapshot(course, candidate, answers, from_rubric=from_rubric))
+    return state
+
+
+def assess_and_settle(course, state, candidate, answers, *,
+                      from_rubric="a"*64):
+    state = assess(
+        course, state,
+        snapshot(course, candidate, answers, from_rubric=from_rubric))
+    return settle_promotion_sweep(
+        course, state, candidate, answers, from_rubric=from_rubric)
+
+
 def all_scores(course, *, imperfect=(), through=None):
     return {cap.id: (7 if cap.id in imperfect else 8, 8)
             for grade in course.grades if through is None or grade.id <= through
@@ -69,6 +88,36 @@ def four_grade_course():
 
 
 class SchoolTests(unittest.TestCase):
+    def test_stable_above_ninety_grade_mean_enters_next_grade_with_debt(self):
+        course = self.course
+        student = cp("mean-promoted-A", 105)
+        state = grade_loop(course, start_new(course, self.init), student)
+        scores = {f"a.{i}": (8, 8) for i in range(6)}
+        scores["a.0"] = (4, 8)
+
+        state = assess_and_settle(course, state, student, scores)
+
+        self.assertEqual((state.grade, state.stage), ("B", "MAIN"))
+        self.assertEqual(state.carried_mastery_debt, ("a.0",))
+        self.assertNotIn("A", state.champions)
+
+    def test_stable_above_ninety_partial_grade_waits_at_debt_boundary(self):
+        full = self.course
+        a_only = replace(
+            full, grades=(full.grades[0],), version="partial-A-mean/v1",
+            program_complete=False,
+            assessment_manifest_sha256=full.grades[0].assessment_sha256)
+        student = cp("mean-promoted-partial-A", 106)
+        state = grade_loop(a_only, start_new(a_only, self.init), student)
+        scores = {f"a.{i}": (8, 8) for i in range(6)}
+        scores["a.0"] = (4, 8)
+
+        state = assess_and_settle(a_only, state, student, scores)
+
+        self.assertEqual(state.stage, "AWAITING_NEXT_GRADE_WITH_DEBT")
+        self.assertEqual(state.carried_mastery_debt, ("a.0",))
+        self.assertNotIn("A", state.champions)
+
     def test_school_state_drift_reports_the_failed_identity_predicate(self):
         course = three_grade_course()
         state = start_new(course, self.init)
@@ -290,15 +339,14 @@ class SchoolTests(unittest.TestCase):
             main_sweep_visited=("A", "B"),
         )
         withheld = ("c.0",)
+        self.assertNotIn("c.1", assessment_capabilities(course, state))
         active = {
-            cap.id: (8, 8)
-            for grade in course.grades
-            for cap in grade.capabilities
-            if cap.id not in withheld
+            cap: (8, 8)
+            for cap in assessment_capabilities(course, state)
+            if cap not in withheld
         }
         active["a.0"] = (7, 8)
         active["b.0"] = (7, 8)
-        active["c.1"] = (7, 8)
 
         continued = assess_withheld(
             course, state, snapshot(course, self.init, active), withheld)
@@ -438,7 +486,8 @@ class SchoolTests(unittest.TestCase):
         course=self.course
         a=cp("A",110)
         state=grade_loop(course,start_new(course,self.init),a)
-        state=assess(course,state,snapshot(course,a,{f"a.{i}":(8,8) for i in range(6)}))
+        state=assess_and_settle(
+            course,state,a,{f"a.{i}":(8,8) for i in range(6)})
         self.assertEqual(state.grade,"B")
         self.assertEqual(state.champions["A"],a)
         self.assertEqual(teacher_vote_weights(course,state),{a.sha256:1})
@@ -446,7 +495,7 @@ class SchoolTests(unittest.TestCase):
         state=grade_loop(course,state,b)
         scores={**{f"a.{i}":(5,8) for i in range(6)},
                 **{f"b.{i}":(8,8) for i in range(6)}}
-        state=assess(course,state,snapshot(course,b,scores))
+        state=assess_and_settle(course,state,b,scores)
         self.assertEqual(state.grade, "A")
         self.assertEqual(state.revalidation_target_grade, "B")
         self.assertEqual(state.stage, "MAIN")
@@ -472,12 +521,13 @@ class SchoolTests(unittest.TestCase):
         course=self.course
         a=cp("A",200)
         state=grade_loop(course,start_new(course,self.init),a)
-        state=assess(course,state,snapshot(course,a,{f"a.{i}":(8,8) for i in range(6)}))
+        state=assess_and_settle(
+            course,state,a,{f"a.{i}":(8,8) for i in range(6)})
         b=cp("B",210)
         state=grade_loop(course,state,b)
         scores={**{f"a.{i}":(8,8) for i in range(6)},
                 **{f"b.{i}":(8,8) for i in range(6)}}
-        state=assess(course,state,snapshot(course,b,scores))
+        state=assess_and_settle(course,state,b,scores)
         self.assertEqual(state.grade, "A")
         self.assertEqual(state.revalidation_target_grade, "B")
         state = grade_loop(course, state, b)
@@ -542,8 +592,8 @@ class SchoolTests(unittest.TestCase):
         perfect = {f"a.{i}": (8,8) for i in range(6)}
         with self.assertRaisesRegex(ValueError, "GRADE_SEALED_RUBRIC"):
             assess(course, state, snapshot(course, student, perfect))
-        moved = assess(course, state, snapshot(course, student, perfect,
-                                             from_rubric="c"*64))
+        moved = assess_and_settle(
+            course, state, student, perfect, from_rubric="c"*64)
         self.assertEqual(moved.grade, "B")
 
     def test_next_grade_may_use_new_cumulative_rubric_without_mutating_a(self):
@@ -554,8 +604,8 @@ class SchoolTests(unittest.TestCase):
                          assessment_manifest_sha256="b"*64)
         student = cp("advanced", 119000)
         state = grade_loop(course, start_new(course, self.init), student)
-        state = assess(course, state, snapshot(
-            course, student, {f"a.{i}": (8,8) for i in range(6)}))
+        state = assess_and_settle(
+            course, state, student, {f"a.{i}": (8,8) for i in range(6)})
         self.assertEqual(state.grade, "B")
         self.assertIsNone(state.latest_rubric_digest)
         state = grade_loop(course, state, student)
@@ -564,8 +614,8 @@ class SchoolTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "GRADE_SEALED_RUBRIC"):
             assess(course, state, snapshot(course, student, scores,
                                            from_rubric="a"*64))
-        state = assess(course, state, snapshot(course, student, scores,
-                                               from_rubric="b"*64))
+        state = assess_and_settle(
+            course, state, student, scores, from_rubric="b"*64)
         self.assertEqual(state.revalidation_target_grade, "B")
         self.assertEqual(state.grade, "A")
         state = grade_loop(course, state, student)
@@ -586,11 +636,10 @@ class SchoolTests(unittest.TestCase):
         )
         student = self.init
         state = grade_loop(course, start_new(course, student), student)
-        state = assess(
-            course, state,
-            snapshot(course, student, {f"a.{i}": (8, 8) for i in range(6)},
-                     from_rubric="a" * 64),
-        )
+        state = assess_and_settle(
+            course, state, student,
+            {f"a.{i}": (8, 8) for i in range(6)},
+            from_rubric="a" * 64)
         self.assertEqual(state.grade, "B")
 
         state = grade_loop(course, state, student)
@@ -620,12 +669,13 @@ class SchoolTests(unittest.TestCase):
         course = three_grade_course()
         a, b, reviewed = cp("A",110), cp("B",120), cp("reviewed",130)
         state = grade_loop(course, start_new(course,self.init), a)
-        state = assess(course, state, snapshot(course, a, {
-            f"a.{i}": (8,8) for i in range(6)}))
+        state = assess_and_settle(course, state, a, {
+            f"a.{i}": (8,8) for i in range(6)})
         state = grade_loop(course, state, b)
-        state = assess(course, state, snapshot(course, b,
+        state = assess_and_settle(
+            course, state, b,
             {**{f"a.{i}": (7,8) for i in range(6)},
-             **{f"b.{i}": (8,8) for i in range(6)}}))
+             **{f"b.{i}": (8,8) for i in range(6)}})
         self.assertEqual((state.grade,state.revalidation_target_grade), ("A","B"))
         self.assertEqual(state.queue, tuple(f"a.{i}" for i in range(6)))
         self.assertEqual(teacher_vote_weights(course,state),
@@ -655,12 +705,13 @@ class SchoolTests(unittest.TestCase):
         course = three_grade_course()
         students = (cp("A"), cp("B"), cp("recheck-B"), cp("C"), cp("recheck-C"))
         state = grade_loop(course, start_new(course, self.init), students[0])
-        state = assess(course, state, snapshot(course, students[0], {
-            f"a.{i}": (8,8) for i in range(6)}))
+        state = assess_and_settle(course, state, students[0], {
+            f"a.{i}": (8,8) for i in range(6)})
         state = grade_loop(course, state, students[1])
-        state = assess(course, state, snapshot(course, students[1],
+        state = assess_and_settle(
+            course, state, students[1],
             {**{f"a.{i}": (8,8) for i in range(6)},
-             **{f"b.{i}": (8,8) for i in range(6)}}))
+             **{f"b.{i}": (8,8) for i in range(6)}})
         for grade in ("A", "B"):
             self.assertEqual(state.grade, grade)
             state = grade_loop(course, state, students[2])
@@ -669,7 +720,8 @@ class SchoolTests(unittest.TestCase):
                  **{f"b.{i}": (8,8) for i in range(6)}}))
         self.assertEqual(state.grade, "C")
         state = grade_loop(course, state, students[3])
-        state = assess(course, state, snapshot(course, students[3], all_scores(course)))
+        state = assess_and_settle(
+            course, state, students[3], all_scores(course))
         self.assertEqual(state.revalidation_target_grade, "C")
         for grade in ("A", "B", "C"):
             self.assertEqual(state.grade, grade)
@@ -686,8 +738,8 @@ class SchoolTests(unittest.TestCase):
             self.assertEqual(state.grade, grade)
             model = cp(grade, step=200+index)
             state = grade_loop(course, state, model)
-            state = assess(course, state, snapshot(
-                course, model, all_scores(course, through=grade)))
+            state = assess_and_settle(
+                course, state, model, all_scores(course, through=grade))
             if index:
                 self.assertEqual(state.revalidation_target_grade, grade)
                 for earlier in "ABCD"[:index+1]:
@@ -705,12 +757,13 @@ class SchoolTests(unittest.TestCase):
         course = three_grade_course()
         model = self.init
         state = grade_loop(course, start_new(course, model), model)
-        state = assess(course, state, snapshot(course, model,
-            {f"a.{i}": (8,8) for i in range(6)}))
+        state = assess_and_settle(
+            course, state, model, {f"a.{i}": (8,8) for i in range(6)})
         state = grade_loop(course, state, model)
-        state = assess(course, state, snapshot(course, model,
+        state = assess_and_settle(
+            course, state, model,
             {**{f"a.{i}": (8,8) for i in range(6)},
-             **{f"b.{i}": (8,8) for i in range(6)}}))
+             **{f"b.{i}": (8,8) for i in range(6)}})
         state = grade_loop(course, state, model)
         state = assess(course, state, snapshot(course, model,
             {**{f"a.{i}": (8,8) for i in range(6)},
@@ -747,11 +800,11 @@ class SchoolTests(unittest.TestCase):
             verify_state(course, replace(state, revalidation_target_grade="C"))
         a, b = cp("a"), cp("b")
         state = grade_loop(course, state, a)
-        state = assess(course, state, snapshot(course, a,
-            {f"a.{i}": (8,8) for i in range(6)}))
+        state = assess_and_settle(
+            course, state, a, {f"a.{i}": (8,8) for i in range(6)})
         state = grade_loop(course, state, b)
-        state = assess(course, state, snapshot(course, b,
-            all_scores(course, through="B")))
+        state = assess_and_settle(
+            course, state, b, all_scores(course, through="B"))
         with self.assertRaisesRegex(ValueError, "REVALIDATION"):
             verify_state(course, replace(state, grade_index=2))
 
@@ -759,11 +812,11 @@ class SchoolTests(unittest.TestCase):
         course = three_grade_course()
         student = self.init
         state = grade_loop(course, start_new(course, student), student)
-        state = assess(course, state, snapshot(course, student,
-            all_scores(course, through="A")))
+        state = assess_and_settle(
+            course, state, student, all_scores(course, through="A"))
         state = grade_loop(course, state, student)
-        state = assess(course, state, snapshot(course, student,
-            all_scores(course, through="B")))
+        state = assess_and_settle(
+            course, state, student, all_scores(course, through="B"))
         self.assertEqual(state.revalidation_target_grade, "B")
         state = grade_loop(course, state, student)
         imperfect = all_scores(course, through="B", imperfect=("a.0", "a.1"))
@@ -842,8 +895,8 @@ class SchoolTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "SEALED_ITEM_COUNT"):
             assess(course, state, snapshot(
                 course, self.init, {f"a.{i}": (1,1) for i in range(6)}))
-        moved = assess(course, state, snapshot(
-            course, self.init, {f"a.{i}": (12,12) for i in range(6)}))
+        moved = assess_and_settle(
+            course, state, self.init, {f"a.{i}": (12,12) for i in range(6)})
         self.assertEqual(moved.grade, "B")
 
     def test_partial_grade_a_waits_and_future_grade_appends_without_relearning(self):
@@ -853,8 +906,8 @@ class SchoolTests(unittest.TestCase):
                          program_complete=False, assessment_manifest_sha256="a"*64)
         student = cp("human-A", 116800)
         state = grade_loop(a_only, start_new(a_only, self.init), student)
-        state = assess(a_only, state, snapshot(
-            a_only, student, {f"a.{i}": (12,12) for i in range(6)}))
+        state = assess_and_settle(
+            a_only, state, student, {f"a.{i}": (12,12) for i in range(6)})
         self.assertEqual(state.stage, "AWAITING_NEXT_GRADE")
         self.assertNotEqual(state.stage, "WHOLE_SCHOOL_MASTERED")
         self.assertEqual(state.champions["A"], student)
@@ -925,22 +978,19 @@ class SchoolTests(unittest.TestCase):
             previous, successor, state, ("b.0",))
 
         state = grade_loop(successor, state, student)
-        state = assess(
-            successor, state,
-            snapshot(
-                successor, student, all_scores(successor, imperfect=("b.0",)),
-                from_rubric=successor.grades[-1].assessment_sha256))
+        state = assess_and_settle(
+            successor, state, student,
+            all_scores(successor, imperfect=("b.0",)),
+            from_rubric=successor.grades[-1].assessment_sha256)
         self.assertEqual((state.grade, state.stage), ("B", "MAIN"))
         self.assertEqual(state.carried_mastery_debt, ("b.0",))
         self.assertIn("C", state.champions)
         self.assertNotIn("B", state.champions)
 
         state = grade_loop(successor, state, student)
-        state = assess(
-            successor, state,
-            snapshot(
-                successor, student, all_scores(successor),
-                from_rubric=successor.grades[-1].assessment_sha256))
+        state = assess_and_settle(
+            successor, state, student, all_scores(successor),
+            from_rubric=successor.grades[-1].assessment_sha256)
         self.assertEqual(state.stage, "AWAITING_NEXT_GRADE")
         self.assertEqual(state.grade, "C")
         self.assertEqual(state.carried_mastery_debt, ())

@@ -194,13 +194,8 @@ def _mentor_epoch_references(receipt):
 
 
 def _verify_frozen_soup_custody(run_dir, receipt):
-    """Verify both archived and earned soups without blending their rosters."""
-    epoch_soups = (entry.get("active_grade_soups", {})
-                   for entry in (*receipt.get("championship_epoch_history", ()),
-                                 receipt["mentor_epoch"])
-                   ) if receipt.get("mentor_epoch") is not None else ()
-    for grade, soup in (*receipt.get("grade_soups", {}).items(),
-                        *(pair for soups in epoch_soups for pair in soups.items())):
+    """Verify current soup bytes and rollback predecessor; history is metadata."""
+    for grade, soup in sorted(_data_plane.live_grade_soups(receipt).items()):
         if grade != soup.get("grade"):
             raise ValueError("GRADE_SOUP_CUSTODY_GRADE_DRIFT")
         _learning_grade_soup.verify_frozen_soup(run_dir, soup)
@@ -209,8 +204,7 @@ def _verify_frozen_soup_custody(run_dir, receipt):
             for old in older:
                 previous = run_dir / old["filename"]
                 if (previous.parent != run_dir / "soups" or previous.is_symlink() or
-                        not previous.is_file() or
-                        not _data_plane.verify_file_digest(previous, old["sha256"])):
+                        not previous.is_file() or not _data_plane.verify_file_digest(previous, old["sha256"])):
                     raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
 
 
@@ -338,7 +332,7 @@ def _advance(run_dir, old: dict, school: _curriculum_scheduler.SchoolState, *,
             _reconcile_delivery_outbox(run_dir, record)
             return record
         return _persist(run_dir, record)
-    return _json.loads(_runtime_state._canonical(record))
+    return record
 
 
 def _boundary_delivery_events(record, pending, roles, exam_event):
@@ -571,8 +565,8 @@ def _publish_boundary(run_dir, record, pending, roles, *, exam_event=None):
                           "count": len(removed), "protected_count": len(retained)})
     # The old frozen recipes are unique experiment evidence, not debris.
     # Do not delete either historical or new-epoch soup bytes from this fork.
-    retired_soups = (_learning_grade_soup.retire_stale_soups(run_dir, record.get("grade_soups", {}))
-                     if record.get("mentor_epoch") is None else ())
+    retired_soups = _learning_grade_soup.retire_stale_soups(
+        run_dir, _data_plane.live_grade_soups(record))
     if retired_soups:
         _record(run_dir, {"event": "SCHOOL_OLD_GRADE_SOUPS_RETIRED",
                           "generation": record["generation"],

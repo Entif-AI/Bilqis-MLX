@@ -113,7 +113,7 @@ class InheritedOutboxTests(unittest.TestCase):
         self.assertEqual(counts[event["event_id"]], 1)
 
         with patch(
-                "bilqis_mlx.runtime.checkpoints._json.loads",
+                "bilqis_mlx.trainer.json.loads",
                 side_effect=AssertionError("full ledger decode")):
             observed, counts = _observed_outbox_events(self.root, expected)
 
@@ -153,7 +153,7 @@ class InheritedOutboxTests(unittest.TestCase):
         (self.root / "states" / "0000008.json").write_text(
             json.dumps(ordinary))
         with patch(
-                "bilqis_mlx.runtime.checkpoints._state_dag.read_generation",
+                "bilqis_mlx.state_dag.read_generation",
                 side_effect=AssertionError("full generation read")):
             next_record = _advance(self.root, ordinary, _School(), persist=False)
         self.assertEqual(next_record["generation"], 9)

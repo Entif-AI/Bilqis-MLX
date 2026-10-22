@@ -227,6 +227,9 @@ class DisposableGradeZSystemProof(unittest.TestCase):
             evaluation_id="grade-z-perfect",
         )
         mastered = assess(program, school, perfect)
+        while mastered.stage == "PROMOTION_SWEEP":
+            mastered = visit(program, mastered, mastered.queue[0], student)
+            mastered = assess(program, mastered, perfect)
         self.assertEqual(mastered.stage, "WHOLE_SCHOOL_MASTERED")
         self.assertEqual(
             session_stop_reason(

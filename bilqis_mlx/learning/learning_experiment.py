@@ -15,10 +15,14 @@ from typing import Mapping
 
 import numpy as np
 
+from bilqis_mlx.learning.teacher_feedback import (
+    WeaknessTargetError, WeaknessTargetRequest, select_weakness_targets,
+)
+
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
 MAX_FAILURE_ARCHETYPES = 24
-NO_TARGET_GAIN_STREAK_PENALTY = 0.05
+TEACHER_UCB_EXPLORATION_WEIGHT = 0.6
 
 
 @dataclass(frozen=True)
@@ -408,6 +412,35 @@ def _channel(teacher: dict) -> dict:
     return channel
 
 
+def _stagnation_key(capability: str, curriculum_scope: str) -> str:
+    return capability+"|"+curriculum_scope
+
+
+def _shared_no_gain_streak(channel: dict, capability: str,
+                           curriculum_scope: str, policy_key: str) -> int:
+    return int(channel.get("stagnation", {})
+                      .get(_stagnation_key(capability, curriculum_scope), {})
+                      .get(policy_key, {})
+                      .get("no_target_gain_streak", 0))
+
+
+def _shared_stagnation_record(channel: dict, capability: str,
+                              curriculum_scope: str, policy_key: str) -> dict:
+    scope = channel.setdefault("stagnation", {}).setdefault(
+        _stagnation_key(capability, curriculum_scope), {})
+    return scope.setdefault(policy_key, {"no_target_gain_streak": 0})
+
+
+def _inherited_exploration(teacher: dict, grade: str, policy_key: str) -> float:
+    local = teacher.get("grade_stats", {}).get(str(grade), {})
+    info = local.get(policy_key) or teacher.get("global_stats", {}).get(policy_key)
+    if not info or not info.get("trials"):
+        return 0.
+    total = int(teacher.get("events", 0)) + 1
+    return TEACHER_UCB_EXPLORATION_WEIGHT * math.sqrt(
+        math.log(total+2)/(1+info["trials"]))
+
+
 def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                     *, curriculum_scope: str = ""):
     """Preserve the inherited bandit's exploration; prefer proven safe context."""
@@ -425,9 +458,11 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         if not record:
             return float("-inf")
         mean = record["reward_sum"] / record["trials"]
-        exploration = math.sqrt(math.log(trials+2)/(record["trials"]+1))
-        stagnation = record.get("no_target_gain_streak", 0)
-        return mean + exploration - NO_TARGET_GAIN_STREAK_PENALTY * stagnation
+        exploration = (TEACHER_UCB_EXPLORATION_WEIGHT *
+                       math.sqrt(math.log(trials+2)/(record["trials"]+1)))
+        stagnation = _shared_no_gain_streak(
+            channel, capability, curriculum_scope, key)
+        return mean + exploration/(1+stagnation)
     best = max(scope, key=score)
     if best not in teacher["strategies"]:
         raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
@@ -437,6 +472,25 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             score(best) > score(original_key)):
         return best, teacher["strategies"][best]
     return original_key, original_policy
+
+
+def _stagnation_feedback(teacher: dict, capability: str, policy_key: str,
+                         decision: dict, reward: float, record: dict,
+                         shared_stagnation: dict) -> tuple[float, float]:
+    no_target_gain = decision.get("reason") == "NO_MEASURABLE_TARGET_GAIN"
+    inherited_exploration = _inherited_exploration(
+        teacher, capability.partition(".")[0], policy_key)
+    selection_reward = reward
+    repayment = 0.-inherited_exploration
+    if no_target_gain and repayment < selection_reward:
+        selection_reward = repayment
+    if no_target_gain:
+        record["no_target_gain_streak"] += 1
+        shared_stagnation["no_target_gain_streak"] += 1
+    else:
+        record["no_target_gain_streak"] = 0
+        shared_stagnation["no_target_gain_streak"] = 0
+    return inherited_exploration, selection_reward
 
 
 def observe_context(teacher: dict, *, capability: str, phase: str,
@@ -455,6 +509,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                                             "unsafe": 0, "latest": None,
                                             "no_target_gain_streak": 0})
     record.setdefault("no_target_gain_streak", 0)
+    shared_stagnation = _shared_stagnation_record(
+        channel, capability, curriculum_scope, policy_key)
     # Normalized worst-case retention cost stops many small wins concealing
     # a substantial single-capability loss. Provisional experimental metric.
     relative_loss = max((max(0., -v) for k, v in decision["deltas"].items()
@@ -483,10 +539,9 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             del entries[:-MAX_FAILURE_ARCHETYPES]
     if decision["decision"] == "REJECT":
         record["unsafe"] += 1
-    if decision.get("reason") == "NO_MEASURABLE_TARGET_GAIN":
-        record["no_target_gain_streak"] += 1
-    else:
-        record["no_target_gain_streak"] = 0
+    inherited_exploration, selection_reward = _stagnation_feedback(
+        teacher, capability, policy_key, decision, reward, record,
+        shared_stagnation)
     record["trials"] += 1
     record["reward_sum"] += reward
     record["latest"] = reward
@@ -514,6 +569,10 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     channel["events"] += 1
     return {"version": VERSION, "teacher_context_reward": reward,
             "no_target_gain_streak": record["no_target_gain_streak"],
+            "shared_no_target_gain_streak":
+                shared_stagnation["no_target_gain_streak"],
+            "inherited_exploration_credit": inherited_exploration,
+            "teacher_selection_reward": selection_reward,
             "legacy_reward_reinterpreted": False,
             "negative_archetype_count": len(channel["negative_archetypes"])}
 
@@ -528,7 +587,9 @@ def selection_credit(lesson_reward: float, retention: dict | None,
     """
     if retention is None:
         return lesson_reward
-    reward = contextual.get("teacher_context_reward") if isinstance(contextual, dict) else None
+    reward = contextual.get("teacher_selection_reward") if isinstance(contextual, dict) else None
+    if reward is None and isinstance(contextual, dict):
+        reward = contextual.get("teacher_context_reward")
     if (not isinstance(reward, (float, int)) or not math.isfinite(reward) or
             (retention.get("decision") == "REJECT" and reward >= 0)):
         raise ValueError("LEARNING_EXPERIMENT_INVALID_SELECTION_CREDIT")
@@ -675,17 +736,71 @@ def _choose_typed_rows(source, count, policy, rng):
     return result[:count]
 
 
+def reserve_weakness_targets(chosen: list[dict],
+                             targets: list[dict]) -> tuple[list[dict], tuple[dict, ...]]:
+    """Replace generic current rows with weak semantics without changing batch size."""
+    result = list(chosen)
+    consumed = set()
+    delivered = []
+    for target in targets:
+        existing = next((
+            index for index, row in enumerate(result)
+            if index not in consumed and row["id"] == target["id"]
+        ), None)
+        if existing is not None:
+            consumed.add(existing)
+            delivered.append(target)
+            continue
+
+        pattern = target.get("operand_truths")
+        answer_kind = target.get("answer_kind", "binary")
+        replacement = None
+        if isinstance(pattern, list):
+            replacement = next((
+                index for index, row in enumerate(result)
+                if index not in consumed and row.get("operand_truths") == pattern
+            ), None)
+        if replacement is None and answer_kind == "binary":
+            replacement = next((
+                index for index, row in enumerate(result)
+                if index not in consumed and row.get("gold") == target.get("gold")
+            ), None)
+        if replacement is None:
+            replacement = next((
+                index for index, row in enumerate(result)
+                if index not in consumed and
+                row.get("answer_kind", "binary") == answer_kind
+            ), None)
+        if replacement is None:
+            replacement = next((
+                index for index in range(len(result)) if index not in consumed
+            ), None)
+        if replacement is None:
+            raise ValueError(WeaknessTargetError.LEARNING_EXPERIMENT_WEAKNESS_TARGET_CAPACITY_DRIFT.value)
+        result[replacement] = target
+        consumed.add(replacement)
+        delivered.append(target)
+    return result, tuple(delivered)
+
+
 def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
-                         *, seed: int, batch_size: int) -> tuple[list[dict], dict]:
+                         *, seed: int, batch_size: int,
+                         targets: list[dict] | tuple[dict, ...] = (),
+                         target_exposures: Mapping[str, int] | None = None,
+                         reserved_support_slots: int = 0
+                         ) -> tuple[list[dict], dict]:
     """Make inherited old/contrast/depth knobs effective for every answer type.
 
-    'old' draws from earlier graduated skills or explicitly carried debt.
-    The teacher selects the amount; source rows supply the examples.
+    'old' means actual examples originating in already-graduated grades, not
+    embedded prerequisites or a source-unverified fixed teaching mix.
     'depth' uses token-count emphasis only when that proxy is named as such.
     Future-grade preview is intentionally inapplicable: never teach new roots.
     """
     if not current or type(batch_size) is not int or batch_size < 2:
         raise ValueError("LEARNING_EXPERIMENT_EMPTY_TYPED_LESSON")
+    if (type(reserved_support_slots) is not int or
+            not 0 <= reserved_support_slots <= batch_size):
+        raise ValueError(WeaknessTargetError.LEARNING_EXPERIMENT_SUPPORT_CAPACITY_INVALID.value)
     rng = random.Random(seed)
     requested_old = int(policy.get("old", 0))
     if not 0 <= requested_old <= 32:
@@ -701,8 +816,23 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
                     round(requested_old*batch_size/32)) if prior else 0
     present_count = batch_size-old_count
     choose_current = _choose_binary_rows if structured_binary else _choose_typed_rows
-    result = choose_current(current, present_count, policy, rng) + _choose_typed_rows(
-        prior, old_count, policy, rng)
+    current_ids = {row["id"] for row in current}
+    if any(row.get("id") not in current_ids for row in targets):
+        raise ValueError(WeaknessTargetError.LEARNING_EXPERIMENT_WEAKNESS_TARGET_OUTSIDE_CURRENT.value)
+    target_capacity = max(
+        0, present_count - min(reserved_support_slots, present_count))
+    if targets and not target_capacity:
+        target_capacity = 1
+    selected_targets = select_weakness_targets(
+        targets,
+        WeaknessTargetRequest(
+            exposures=dict(target_exposures or {}),
+            capacity=target_capacity,
+        ))
+    current_rows = choose_current(current, present_count, policy, rng)
+    current_rows, delivered_targets = reserve_weakness_targets(
+        current_rows, selected_targets)
+    result = current_rows + _choose_typed_rows(prior, old_count, policy, rng)
     rng.shuffle(result)
     delivered_patterns = ({tuple(row["operand_truths"]) for row in result
                            if isinstance(row.get("operand_truths"), list)}
@@ -711,6 +841,11 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
              for row in result],
             {"effective_old_grade_examples": old_count,
              "requested_old_per_32": requested_old,
+             "weakness_targets_available": len(targets),
+             "weakness_targets_requested": len(selected_targets),
+             "weakness_targets_delivered": len(delivered_targets),
+             "weakness_target_ids": [row["id"] for row in delivered_targets],
+             "reserved_support_slots": reserved_support_slots,
              "current_semantic_patterns_required": len(semantic_patterns),
              "current_semantic_patterns_delivered": len(delivered_patterns),
              "depth_control": "SOURCE_TOKEN_LENGTH_PROXY" if policy.get("depth", 1) >= 3

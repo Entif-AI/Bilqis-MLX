@@ -1,4 +1,6 @@
 """Source-bound disposable Grade C learning trial, parent ownership unchanged."""
+from bilqis_mlx.state_dag import read_current
+from bilqis_mlx.state_dag import read_generation
 from contextlib import redirect_stdout
 import io
 import json
@@ -154,7 +156,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertEqual(storage._seed_saved_whole_student_peak(
             self.fixture.root, seeded, self.course, self.fixture.optimizer), seeded)
         storage._verify_best_custody(self.fixture.root, seeded)
-        self.assertEqual(json.loads((self.fixture.root / "state.json").read_text()), seeded)
+        self.assertEqual(read_current(self.fixture.root), seeded)
 
     def test_retention_peak_is_protected_at_retirement_boundary(self):
         pointer = dict(self.receipt["school"]["current_student"])
@@ -211,7 +213,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
                 self.fixture.params, self.fixture.optimizer)
         self.assertEqual(updated["last_exam"], historical)
         self.assertEqual(updated["school"]["current_student"], student)
-        self.assertEqual(updated, json.loads((self.fixture.root / "state.json").read_text()))
+        self.assertEqual(updated, read_current(self.fixture.root))
         _, predictions = load_frontier(self.fixture.root, updated,
             parent_sha256=student["sha256"], parent_optimizer_step=student["optimizer_step"])
         self.assertEqual(predictions, {"fixed-0": "FALSE"})
@@ -285,8 +287,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         self.assertEqual(corrected["school"]["current_student"],before[0])
         self.assertEqual(int(own.state["step"].item()),before[1])
         self.assertEqual(corrected["generation"],stale["generation"]+1)
-        self.assertEqual(json.loads((self.fixture.root/"states"/
-                          f"{stale['generation']:07d}.json").read_text())[
+        self.assertEqual(read_generation(self.fixture.root, stale["generation"])[
                           "config"]["vocab_size"],HISTORICAL_PREFIX_SIZE)
         self.assertEqual(storage._reconcile_vocabulary_metadata(
             self.fixture.root,corrected,self.course,self.fixture.params,

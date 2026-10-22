@@ -86,6 +86,8 @@ def _paired_stagnation_progress(mx, run_dir, receipt, stagnation, cohort, graph,
 def _school_result_label(school):
     return (("GRADE_" + school.grade + "_MASTERED_AWAITING_NEXT_GRADE")
             if school.stage == "AWAITING_NEXT_GRADE" else
+            ("GRADE_" + school.grade + "_PROMOTED_WITH_DEBT_AWAITING_NEXT_GRADE")
+            if school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT" else
             ("GRADE_" + school.revalidation_target_grade +
              "_REVALIDATING_" + school.grade)
             if school.revalidation_target_grade else
@@ -100,11 +102,15 @@ def _promotion_due_after_routine(
     grade during a stagnation spiral, but it cannot create a qualification
     instrument. Distinguish *teaching progression* from *graduation authority*.
     """
+    if (getattr(before, "stage", None) == "ASSESS_PROMOTION_SWEEP" and
+            before.grade not in getattr(after, "champions", {})):
+        return False
     return complete_assessment and (
         after.grade != before.grade
         or after.revalidation_target_grade != before.revalidation_target_grade
         or after.stage in {
-            "AWAITING_NEXT_GRADE", "AWAITING_TEACHER_SOUP",
+            "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT",
+            "AWAITING_TEACHER_SOUP",
             "WHOLE_SCHOOL_MASTERED",
         }
     )
@@ -248,6 +254,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "optimizer_step": routine_assessment.optimizer_step,
         "scores": routine_measured["scores"],
     }
+    _runtime_checkpoints._notify_viewer({"_runtime_phase": "DIAGNOSTICS", "_dashboard_redraw": True})
     routine_warnings = _diagnostics_exam_events.summarize_completed_exam_safely(
         run_dir, receipt, routine_last_exam)
     routine_warnings = _diagnostics_exam_events.apply_paired_checkpoint_s3(
@@ -483,6 +490,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         scores=scores, checkpoint=_dataclasses.asdict(school.current_student))
     last_exam["whole_student_retention"] = retention_status
     pending = (*receipt.get("_pending_visit_events", ()), *stagnation_events)
+    _runtime_checkpoints._notify_viewer({"_runtime_phase": "DIAGNOSTICS", "_dashboard_redraw": True})
     exam_warnings = _diagnostics_exam_events.summarize_completed_exam_safely(run_dir, receipt, last_exam)
     if cohort.digest == routine_cohort.digest:
         paired_parent_scores = parent_routine_scores

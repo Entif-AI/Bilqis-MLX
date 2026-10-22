@@ -33,7 +33,7 @@ from bilqis_mlx.learning.learning_experiment import (
     VERSION as LEARNING_EXPERIMENT_VERSION, Settings as LearningSettings,
     contextual_pick, paired_outcomes, decide as decide_learning_trial,
     observe_context, selection_credit, fork_student, commit_trial,
-    earlier_grade_capabilities, select_source_lesson, sampled_protection,
+    earlier_grade_capabilities, reserve_weakness_targets, select_source_lesson, sampled_protection,
     missing_grade_capabilities,
 )
 from bilqis_mlx.learning.whole_student_retention import advance_peaks
@@ -126,8 +126,8 @@ from .semantics.abi import HISTORICAL_PREFIX_SIZE
 from .source import AUDITED_PARENT
 from .vocabulary_growth import extend_mlx_student
 from bilqis_mlx.learning.teacher_feedback import (
-    FairMissRequest, TeacherDecisionInput, active_warning_signals, reconcile_unresolved_misses,
-    select_fair_miss_window, summarize_teacher_decision,
+    WeaknessTargetRequest, TeacherDecisionInput, active_warning_signals, reconcile_unresolved_misses,
+    select_weakness_targets, summarize_teacher_decision,
     summarize_teacher_outcomes,
 )
 from bilqis_mlx.runtime.timing_trace import trace_mark, trace_span

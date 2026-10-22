@@ -22,6 +22,12 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
         GradeCTrainerTests.setUpClass()
 
     def test_unmastered_not_and_do_not_block_designed_counting_entry(self):
+        self._progress(automatic=False)
+
+    def test_automatic_debt_boundaries_preserve_thin_b_and_numeric_ceiling(self):
+        self._progress(automatic=True)
+
+    def _progress(self, *, automatic):
         fixture = GradeCTrainerTests()
         mx, params, own = fixture.toy()
         graph = fixture.parent_graph
@@ -52,8 +58,22 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'DEBT_ADMISSION_REQUIRES_EXACT_COMPLETE_BOUNDARY'):
                     _adopt_executable_profile(run, stale, fixture.grade_a, SOURCE, graph,
                                               profile, allow_mastery_debt=True)
-                admitted, course, release, _ = _adopt_executable_profile(
-                    run, measured, fixture.grade_a, SOURCE, graph, profile, allow_mastery_debt=True)
+                if automatic:
+                    measured = {**measured, 'school': {**measured['school'],
+                        'stage': 'AWAITING_NEXT_GRADE_WITH_DEBT', 'queue': [],
+                        'carried_mastery_debt': list(measured['debt_admission_boundary_exam']['scores'])},
+                        'numeric_scope_final_maximum': 4}
+                    from bilqis_mlx.runtime.release_adoption import _auto_adopt_known_grade_boundary
+                    with patch('bilqis_mlx.profiles.school.boolean_entry_profile', return_value=profile):
+                        _, _, _, admitted, course, changed = _auto_adopt_known_grade_boundary(
+                            mx, run, measured, fixture.grade_a, fixture.grade_a, SOURCE,
+                            fixture.manifest, params, own, graph, reserve_gib=0.,
+                            full_grade_b=False, numeric_staircase=False)
+                    self.assertTrue(changed)
+                    release = trainer._read_executable_factory_release_artifact(run, admitted)
+                else:
+                    admitted, course, release, _ = _adopt_executable_profile(
+                        run, measured, fixture.grade_a, SOURCE, graph, profile, allow_mastery_debt=True)
                 self.assertEqual(admitted['school']['current_student'], base['school']['current_student'])
                 self.assertIsNone(admitted['mentor_epoch']['previous_graduate'])
                 self.assertFalse(admitted['school']['champions'])
@@ -63,9 +83,19 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                     mx, run, admitted, fixture.manifest, course, SOURCE, params, graph)
                 transition = replace(numeric_entry_transition(
                     release, graph, full_boolean=False, maximum=3), numeric_scope_final_maximum=4)
-                _, grown_own, _, numeric, numeric_course = _adopt_catalog_profile(
-                    mx, run, measured, fixture.grade_a, SOURCE, graph, params, own,
-                    transition, reserve_gib=0., allow_mastery_debt=True)
+                if automatic:
+                    measured = {**measured, 'school': {**measured['school'],
+                        'stage': 'AWAITING_NEXT_GRADE_WITH_DEBT', 'queue': [],
+                        'carried_mastery_debt': list(measured['debt_admission_boundary_exam']['scores'])}}
+                    _, grown_own, _, numeric, numeric_course, changed = _auto_adopt_known_grade_boundary(
+                        mx, run, measured, course, fixture.grade_a, SOURCE, fixture.manifest,
+                        params, own, graph, reserve_gib=0., full_grade_b=False,
+                        numeric_staircase=False)
+                    self.assertTrue(changed)
+                else:
+                    _, grown_own, _, numeric, numeric_course = _adopt_catalog_profile(
+                        mx, run, measured, fixture.grade_a, SOURCE, graph, params, own,
+                        transition, reserve_gib=0., allow_mastery_debt=True)
                 self.assertIsNotNone(trainer._verify_saved_cohort(run, numeric, numeric_course))
 
         self.assertEqual(numeric['school']['active_grades'], ['A', 'B', 'C'])

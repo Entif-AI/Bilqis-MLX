@@ -289,7 +289,8 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
                      "experimental_risks":["FIRST_HUMAN_RUN_NOT_YET_OBSERVED",
                                            "FULL_NEW_ITHKUIL_MORPHOLOGY_NOT_YET_CERTIFIED"],
                      "operator_constraint":"HUMAN_ONLY_NEURAL_OPTIMIZER_UPDATES"})
-    if resume and snapshot.get("phase") == "AWAITING_NEXT_GRADE":
+    if resume and snapshot.get("phase") in (
+            "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"):
         saved = read_current(run_dir)
         factory = snapshot.get("factory")
         if factory is not None:
@@ -443,9 +444,14 @@ def human_stop_summary(result: dict) -> str:
     grade_wait = (
         reason.startswith("GRADE_") and
         reason.endswith("_AWAITING_NEXT_GRADE"))
+    debt_wait = "_PROMOTED_WITH_DEBT_" in reason
     explanation = (
-        "The current admitted grade is mastered; awaiting the next "
-        "factory-admitted curriculum grade."
+        ("The current admitted grade earned automatic progression from a "
+         "stable >=90% promotion sweep while retaining imperfect semantics "
+         "as mastery debt; awaiting the next factory-admitted curriculum grade.")
+        if debt_wait else
+        ("The current admitted grade is mastered; awaiting the next "
+         "factory-admitted curriculum grade.")
         if grade_wait else explanations[reason])
     message = ("TRAINING STOPPED NORMALLY: " + reason + "\n" +
                explanation +
@@ -618,6 +624,9 @@ def _prepare_live_board(args, build, ingest):
     live_mode = "FLASH" if args.flash_mode else "LIVE"
     def on_event(event):
         ingest(board, event)
+        runtime_phase = event.get("_runtime_phase")
+        if isinstance(runtime_phase, str) and runtime_phase:
+            board.state["phase"] = runtime_phase
         if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
             board.mode = live_mode
             board.state["stop"] = "RUNNING"

@@ -29,7 +29,8 @@ def _grade_c_pre_admission_state(run_dir, admission, previous):
     pre_path = run_dir / "states" / f"{admission['generation'] - 1:07d}.json"
     if pre_path.is_symlink() or not pre_path.is_file():
         raise ValueError("FIXED_FRONTIER_GRADE_C_PRE_ADMISSION_STATE_MISSING")
-    pre = json.loads(pre_path.read_text(encoding="utf-8"))
+    from ..state_dag import read_generation
+    pre = read_generation(run_dir, admission["generation"] - 1)
     pre_student = (pre.get("school") or {}).get("current_student") or {}
     if (pre_student.get("sha256") != previous.get("sha256") or
             pre_student.get("optimizer_step") != previous.get("optimizer_step")):

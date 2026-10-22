@@ -14,7 +14,7 @@ their evidence; do not resume them as the next curriculum.
 **NOT and AND may be introduced, but mastery of them must not gate Grade C.**
 The user explicitly authorized that progression. C keeps its designed numeric
 prerequisites and stages. Carry unresolved A/B debt; do not fabricate graduation
-or add a blanket perfect-school gate. ADR-083/084 record these decisions. AGENTS.md
+or add a blanket perfect-school gate. ADR-087/088 record these decisions. AGENTS.md
 and README.md lead with the same direction. Earlier D–O and event-first plans are
 historical research, not current sequencing authority.
 
@@ -22,8 +22,10 @@ historical research, not current sequencing authority.
 
 Branch `codex/349-autonomous-jit-ithkuil-20261020`; [draft PR11](https://github.com/Entif-AI/Bilqis-MLX/pull/11).
 Managed worktree `/Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020`.
-Main `917c0be4f4e8f898f30da38e2b33c5b5182c70c1` is integrated; final fetch found no
-additional main commits. Read actual HEAD/PR for the final documentation SHA.
+Main `025bca51c78509acd0b1b898f16e9fcf84d25941` is integrated through staging
+`94c2e500523b45472ee257cf4021730309f5b848`, including the B-stagnation fix and DAG
+retry correction. Read actual HEAD/PR for the final merge SHA. Feature preservation
+ref: `codex/349-before-premerge-20261022` at b73f47e.
 IPR-0220 remediation and execution issues remain OPEN; read their protected current
 checkpoints before changing semantics or custody. Issue346 remains excluded.
 Publication of this feature is user-authorized; keep protected URLs out of public prose.
@@ -42,6 +44,37 @@ not enabled. **COUNT and NUMBER are introduced**, introduction_stage1, queue C.N
 RECOVERY_1. A perfect COUNT routine panel opened NUMBER through the existing stage
 rule. SUCCESSOR and later stages await C's own constituent criteria, not B mastery.
 All six A capabilities plus B.NOT/B.AND remain carried mastery debt.
+
+## Current software integration (no new learning)
+
+The pre-merge packet's storage, performance, weakness-target, no-gain, mean-promotion
+and earlier-grade spiral behavior is ported into the extracted owners. `trainer.py`
+remains a 307-line compatibility facade. Pure promotion invariants live beside the
+scheduler in `curriculum/promotion.py`; size/error ratchets remain active.
+
+Known A/B/C automatic debt transitions remeasure exact checkpoint boundaries,
+retain thin NOT/AND and saved numeric ceiling4. Unsupported JIT grades keep their
+existing complete-prefix/factory gate. B stays measured and taught but cannot
+actuate quarantine or a stagnation-review exit; C containment stays independent.
+Incoming ADR083–086 keep their IDs; feature foundations083→087 and Boolean
+non-gating084→088, with provenance recorded in ADR.md. Earlier receipts retain
+source-local historical references.
+
+An additional red/green test caught orphan DAG recovery from a verified legacy
+JSON head. The retry path now accepts only identical immutable receipts linked
+to the verified current legacy generation or its direct successor; changed or
+stale receipts still fail closed. No run history was rewritten.
+
+Read-only actual primary `_resume` passed at492/117296 with the entire logical
+receipt unchanged. Publication failed closed and stale-soup retirement was
+disabled for that protocol; this is not a normal writable-resume/cleanup trial.
+No --human-run, experimental/canonical neural update, optimizer reset or new
+lineage was launched during integration. **Current validation:1,276 passed /41 skipped /0 failed**, plus final56/56
+focused checks after the saved-profile resume extraction. Architecture/size/docs/
+error-plane/code-smell guards pass; external ABI enforcement remains advisory.
+This supersedes the prior wave's red-suite status below; its failure logs remain
+historical. [Integration receipt](docs/evidence/development/ISSUE349_MAIN_INTEGRATION_20261022.md)
+records limits. Prior learning observations below remain historical evidence.
 
 ## Latest continuation: actual learning, no product-code changes
 
