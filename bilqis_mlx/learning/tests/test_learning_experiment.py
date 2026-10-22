@@ -620,6 +620,63 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         pick, _ = contextual_pick(Legacy, teacher, "C.ADD", "RECOVERY_2", random.Random(2))
         self.assertEqual(pick, "positive")
 
+    def test_repeated_no_target_gain_demotes_policy_until_real_gain_resets_streak(self):
+        teacher = {
+            "strategies": {
+                "stagnant": {"lr": .0001},
+                "alternate": {"lr": .0002},
+            },
+            "global_stats": {
+                "stagnant": {"trials": 20, "reward_sum": 0.},
+                "alternate": {"trials": 20, "reward_sum": 0.},
+            },
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "negative_archetypes": [], "events": 10,
+                "contexts": {
+                    "C.ADD|MAIN|scope": {
+                        "stagnant": {"trials": 5, "reward_sum": -.25,
+                                     "unsafe": 5, "latest": -.05,
+                                     "no_target_gain_streak": 5},
+                        "alternate": {"trials": 5, "reward_sum": -.5,
+                                      "unsafe": 0, "latest": -.1,
+                                      "no_target_gain_streak": 0},
+                    }
+                },
+            },
+        }
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "stagnant", _teacher["strategies"]["stagnant"]
+
+        picked, _ = contextual_pick(
+            Legacy, teacher, "C.ADD", "MAIN", random.Random(2),
+            curriculum_scope="scope")
+        self.assertEqual(picked, "alternate")
+
+        no_gain = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        observe_context(teacher, capability="C.ADD", phase="MAIN",
+                        policy_key="stagnant", decision=no_gain,
+                        local_gain=0., curriculum_scope="scope")
+        self.assertEqual(
+            teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
+                   ["stagnant"]["no_target_gain_streak"], 6)
+
+        gain = decide({
+            "C.ADD": {"before": 3, "after": 4, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        observe_context(teacher, capability="C.ADD", phase="MAIN",
+                        policy_key="stagnant", decision=gain,
+                        local_gain=.1, curriculum_scope="scope")
+        self.assertEqual(
+            teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
+                   ["stagnant"]["no_target_gain_streak"], 0)
+
     def test_provisional_protected_loss_becomes_typed_negative_evidence(self):
         scores = paired_outcomes(self.rows, self.before,
                                  predicted(self.rows, {"B.XOR0", "C.ADD0"}))

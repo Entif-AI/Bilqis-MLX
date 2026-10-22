@@ -18,6 +18,7 @@ import numpy as np
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
 MAX_FAILURE_ARCHETYPES = 24
+NO_TARGET_GAIN_STREAK_PENALTY = 0.05
 
 
 @dataclass(frozen=True)
@@ -425,7 +426,8 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             return float("-inf")
         mean = record["reward_sum"] / record["trials"]
         exploration = math.sqrt(math.log(trials+2)/(record["trials"]+1))
-        return mean + exploration
+        stagnation = record.get("no_target_gain_streak", 0)
+        return mean + exploration - NO_TARGET_GAIN_STREAK_PENALTY * stagnation
     best = max(scope, key=score)
     if best not in teacher["strategies"]:
         raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
@@ -450,7 +452,9 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     channel = _channel(teacher)
     scope = channel["contexts"].setdefault(capability+"|"+phase+"|"+curriculum_scope, {})
     record = scope.setdefault(policy_key, {"trials": 0, "reward_sum": 0.,
-                                            "unsafe": 0, "latest": None})
+                                            "unsafe": 0, "latest": None,
+                                            "no_target_gain_streak": 0})
+    record.setdefault("no_target_gain_streak", 0)
     # Normalized worst-case retention cost stops many small wins concealing
     # a substantial single-capability loss. Provisional experimental metric.
     relative_loss = max((max(0., -v) for k, v in decision["deltas"].items()
@@ -479,6 +483,10 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             del entries[:-MAX_FAILURE_ARCHETYPES]
     if decision["decision"] == "REJECT":
         record["unsafe"] += 1
+    if decision.get("reason") == "NO_MEASURABLE_TARGET_GAIN":
+        record["no_target_gain_streak"] += 1
+    else:
+        record["no_target_gain_streak"] = 0
     record["trials"] += 1
     record["reward_sum"] += reward
     record["latest"] = reward
@@ -505,6 +513,7 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         }
     channel["events"] += 1
     return {"version": VERSION, "teacher_context_reward": reward,
+            "no_target_gain_streak": record["no_target_gain_streak"],
             "legacy_reward_reinterpreted": False,
             "negative_archetype_count": len(channel["negative_archetypes"])}
 
