@@ -500,7 +500,7 @@ class Dashboard:
         try:
             stamp=source.stat().st_mtime_ns
             if stamp==self._champion_mtime_ns:return
-            state=json.loads(source.read_text(encoding='utf-8'))
+            state=read_current(source.parent)
             epoch=state.get('mentor_epoch')
             if isinstance(epoch,dict) and isinstance(epoch.get('active_roles'),dict):
                 grouped={}
