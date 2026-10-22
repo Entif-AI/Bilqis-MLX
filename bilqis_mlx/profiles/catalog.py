@@ -20,16 +20,6 @@ from .school import (
 )
 
 
-NUMERIC_PROFILE_MAXIMUM = 10
-
-
-class _NumericProfileError:
-    """Stable input-contract wire codes for bounded numeric profiles."""
-
-    TARGET_INVALID = "FACTORY_NUMERIC_SCOPE_TARGET_INVALID"
-    ACTIVE_GRADE_REQUIRED = "FACTORY_NUMERIC_SCOPE_TARGET_REQUIRES_ACTIVE_GRADE"
-
-
 @dataclass(frozen=True)
 class CatalogProfileTransition:
     profile: CurriculumProfile
@@ -69,15 +59,25 @@ def numeric_entry_transition(
     )
 
 
+def _validate_numeric_scope_target(
+        release: ExecutableFactoryRelease, maximum: int, *,
+        require_active_grade: bool) -> None:
+    """Keep the historical numeric-scope boundary contract in one owner."""
+    is_release = isinstance(release, ExecutableFactoryRelease)
+    if is_release:
+        release.verify()
+    active_grade_missing = (
+        is_release and require_active_grade and not release.execution_plan.grades)
+    if (not is_release or type(maximum) is not int or
+            not 1 <= maximum <= 10 or active_grade_missing):
+        raise ValueError("FACTORY_NUMERIC_SCOPE_ADVANCE_INVALID")
+
+
 def numeric_scope_profile(
         release: ExecutableFactoryRelease, maximum: int) -> CurriculumProfile:
     """Project one exact bounded numeric domain over the active numeric grade."""
-    if (not isinstance(release, ExecutableFactoryRelease) or
-            type(maximum) is not int or not 1 <= maximum <= NUMERIC_PROFILE_MAXIMUM):
-        raise ValueError(_NumericProfileError.TARGET_INVALID)
-    release.verify()
-    if not release.execution_plan.grades:
-        raise ValueError(_NumericProfileError.ACTIVE_GRADE_REQUIRED)
+    _validate_numeric_scope_target(
+        release, maximum, require_active_grade=True)
     active_grade = release.execution_plan.grades[-1]
     canonical_grade = next(
         grade for grade in release.curriculum.grades
@@ -118,10 +118,8 @@ def next_numeric_scope_profile(
     from ..numeric_staircase import FINAL_MAXIMUM
     if final_maximum is None:
         final_maximum = FINAL_MAXIMUM
-    if (not isinstance(release, ExecutableFactoryRelease) or
-            type(final_maximum) is not int or not 1 <= final_maximum <= 10):
-        raise ValueError("FACTORY_NUMERIC_SCOPE_ADVANCE_INVALID")
-    release.verify()
+    _validate_numeric_scope_target(
+        release, final_maximum, require_active_grade=False)
     if not release.execution_plan.grades:
         return None
     active_grade = release.execution_plan.grades[-1]
