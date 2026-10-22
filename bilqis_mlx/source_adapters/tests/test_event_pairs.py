@@ -23,3 +23,30 @@ class EventPairTests(unittest.TestCase):
             self.assertFalse(event_pairs.check(wrong, graph=graph))
             self.assertNotEqual([r['id'] for r in rows], [r['id'] for r in
                 event_pairs.draw(None, graph, seed=350, each=64, capability=cap)])
+
+    def test_supplemental_lessons_pair_opposite_queries_in_the_same_world(self):
+        graph = event_frames.expanded_graph(registry_graph())
+        for cap in event_frames.SPECS:
+            rows = event_pairs.enrich(source_root=None, graph=graph, capability=cap,
+                                      seed=349, option_id=event_pairs.OPTION)
+            self.assertEqual(len(rows), 16)
+            for left, right in zip(rows[::2], rows[1::2]):
+                self.assertEqual(len(left['record']['events']), 2)
+                self.assertEqual(left['record']['events'], right['record']['events'])
+                self.assertNotEqual(left['record']['query'], right['record']['query'])
+                self.assertNotEqual(left['gold'], right['gold'])
+                self.assertTrue(event_pairs.check(left, graph=graph))
+                self.assertTrue(event_pairs.check(right, graph=graph))
+
+    def test_each_assessment_contains_an_opposite_query_pair(self):
+        graph = event_frames.expanded_graph(registry_graph())
+        for cap in event_frames.SPECS:
+            for seed in (349, 350, 351, 352):
+                rows = event_pairs.draw(None, graph, seed=seed, each=12, capability=cap)
+                worlds = {}
+                for row in rows:
+                    key = repr(row['record']['events'])
+                    worlds.setdefault(key, set()).add(row['gold'])
+                self.assertTrue(any(labels == {'TRUE', 'FALSE'} for labels in worlds.values()))
+                self.assertEqual(len({r['id'] for r in rows}), 12)
+                self.assertEqual(sum(r['gold'] == 'TRUE' for r in rows), 6)

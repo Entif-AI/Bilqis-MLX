@@ -12,9 +12,11 @@ from ..factory.model import SourceAdapter
 from ..vocabulary_growth import digest
 
 GENERATOR = 'bilqis.issue349.event-pairs/v1'
+OPTION = 'source.event-query-contrast/v1'
+QUERY_PAIR_SIZE = 2
 
 
-def draw(source_root, graph, *, seed, each=12, capability, **_):
+def _pools(graph, capability):
     frames.source_senses()
     ids = {token: index for index, token in enumerate(graph['tokens'])}
     pools = {True: [], False: []}
@@ -30,10 +32,32 @@ def draw(source_root, graph, *, seed, each=12, capability, **_):
                     tokens=[ids[symbol] for symbol in frames.encode(record)],
                     root=frames.SYMBOLS[capability], generator=GENERATOR, oracle=frames.ORACLE,
                     source_sense_id=frames.SPECS[capability][0]))
+    return pools
+
+
+def draw(source_root, graph, *, seed, each=12, capability, **_):
+    pools = _pools(graph, capability)
     rng = random.Random(digest((GENERATOR, seed, capability)))
-    selected = {gold: iter(rng.sample(pool, (each + int(gold)) // 2))
+    paired = list(rng.choice(_contrast_pairs(pools))) if each >= QUERY_PAIR_SIZE else []
+    rng.shuffle(paired)
+    used = {row['id'] for row in paired}
+    selected = {gold: iter(rng.sample([row for row in pool if row['id'] not in used],
+                                    (each + int(gold)) // 2 - int(bool(paired))))
                 for gold, pool in pools.items()}
-    return tuple(next(selected[index % 2 == 0]) for index in range(each))
+    return (*paired, *(next(selected[index % 2 == 0])
+                       for index in range(each - len(paired))))
+
+
+def _contrast_pairs(pools):
+    by_id = {row['id']: row for pool in pools.values() for row in pool}
+    result = []
+    for row in pools[True]:
+        record = row['record']
+        other = next(event[0] for event in record['events'] if event[0] != record['query'])
+        opposite = by_id[digest({**record, 'query': other})]
+        if opposite['gold'] != row['gold']:
+            result.append((row, opposite))
+    return result
 
 
 def check(row, **kwargs):
@@ -41,18 +65,27 @@ def check(row, **kwargs):
             frames.check({**row, 'generator': frames.GENERATOR}, **kwargs))
 
 
-def enrich(**kwargs):
-    return tuple({**row, 'generator': GENERATOR} for row in intro.enrich(**kwargs))
+def enrich(*, graph, capability, seed, option_id, **_):
+    if option_id != OPTION:
+        raise ValueError(intro.OPTION_NOT_RELEASED)
+    pairs = _contrast_pairs(_pools(graph, capability))
+    rng = random.Random(seed)
+    result = []
+    for pair in rng.sample(pairs, 8):
+        ordered = list(pair)
+        rng.shuffle(ordered)
+        result.extend(ordered)
+    return tuple(result)
 
 
 def registered_adapter():
-    previous = intro.registered_adapter().descriptor
+    previous = frames.registered_adapter().descriptor
     fingerprint = digest((previous.implementation_sha256,
                           hashlib.sha256(Path(__file__).read_bytes()).hexdigest()))
     return RegisteredSourceAdapter(SourceAdapter(
         'source.issue349.event-pairs/v1', GENERATOR, previous.accepted_oracle_ids,
-        fingerprint, variation_axes=('two-event-lookup', *previous.variation_axes),
-        teaching_option_ids=previous.teaching_option_ids), draw, check, enrich=enrich,
+        fingerprint, variation_axes=('two-event-lookup', 'query-contrast', *previous.variation_axes),
+        teaching_option_ids=(OPTION,)), draw, check, enrich=enrich,
         witness=lambda row, obligation, **kwargs: check(row, **kwargs) and
             obligation.key in frames.SPECS[row['capability']][1])
 
