@@ -1,0 +1,268 @@
+{
+  "schema": "bilqis.issue349.count-to-number/v1",
+  "recorded_date": "2026-10-22",
+  "authority": "Direct user progression; ADR-083/084; IPR-0220",
+  "code_head": "b4d761386d8b367d6167667b85daa06ca1b697ae",
+  "run": "primary",
+  "initial_checkpoint": {
+    "sha256": "9201dfa89fc30700a8f73588b2c15d95dc430c1e672de73b503043f4868a2cc4",
+    "filename": "bundles/best-154-d8601131c7d3",
+    "optimizer_step": 117104,
+    "model_and_native_adamw": true
+  },
+  "final_checkpoint": {
+    "filename": "bundles/working-190-4316e72c43f8",
+    "model_and_native_adamw": true,
+    "optimizer_step": 117296,
+    "sha256": "756061ff78f931be96987af430fbc16dbca66f476d00c8c9ea67d30811387a2a"
+  },
+  "generation": 492,
+  "release_sha256": "48bde559d301964ee012acd48e2606ac0e7dc725f52d22032afac65427ec454e",
+  "numeric_maximum": 3,
+  "numeric_scope_final_maximum": 4,
+  "school": {
+    "grade_index": 2,
+    "active_grades": [
+      "A",
+      "B",
+      "C"
+    ],
+    "introduction_stage": 1,
+    "queue": [
+      "C.NUMBER"
+    ],
+    "stage": "RECOVERY_1",
+    "carried_mastery_debt": [
+      "A.IDENTITY",
+      "A.PARENT",
+      "A.LINK",
+      "A.MEMBER",
+      "A.EDGE",
+      "A.MAPS",
+      "B.NOT",
+      "B.AND"
+    ]
+  },
+  "phases": [
+    {
+      "phase": "COUNT continuation",
+      "log": "2026-10-22T11-07-30-992Z-15026.log",
+      "log_sha256": "ff340435e739611adc7fd0587c4c9c81a2dfab32be96f0d1dd2d6aa407ef0083",
+      "normal_stop": true,
+      "stop_reason": "VISIT_LIMIT_REACHED",
+      "command_visits": 12,
+      "optimizer_visits": 11,
+      "attempted_updates": 352,
+      "retained_updates": 128,
+      "retained_by_capability": {
+        "C.COUNT": 128,
+        "C.NUMBER": 0
+      },
+      "retention_reasons": {
+        "PAIRED_SCREEN_WITHIN_BUDGET": 4,
+        "NO_MEASURABLE_TARGET_GAIN": 5,
+        "WHOLE_SCHOOL_NET_REGRESSION": 1,
+        "FIXED_LESSON_GRADE_REGRESSION": 1
+      }
+    },
+    {
+      "phase": "NUMBER introduction",
+      "log": "2026-10-22T11-09-52-034Z-69843.log",
+      "log_sha256": "8a9b4f9092c664860e63aaa34dac5589daada62785a35c816230cb40e1ac03d7",
+      "normal_stop": true,
+      "stop_reason": "VISIT_LIMIT_REACHED",
+      "command_visits": 12,
+      "optimizer_visits": 11,
+      "attempted_updates": 352,
+      "retained_updates": 64,
+      "retained_by_capability": {
+        "C.COUNT": 32,
+        "C.NUMBER": 32
+      },
+      "retention_reasons": {
+        "PROTECTED_CAPABILITY_REGRESSION": 6,
+        "SAME_GRADE_NET_REGRESSION": 2,
+        "WHOLE_SCHOOL_NET_REGRESSION": 1,
+        "PAIRED_SCREEN_WITHIN_BUDGET": 2
+      }
+    },
+    {
+      "phase": "NUMBER continuation",
+      "log": "2026-10-22T11-11-59-372Z-13948.log",
+      "log_sha256": "8f6c8ef44e1f23c19b8d5992dfdc43da1b0e38da15009d632399caebd63ffcf2",
+      "normal_stop": true,
+      "stop_reason": "VISIT_LIMIT_REACHED",
+      "command_visits": 12,
+      "optimizer_visits": 12,
+      "attempted_updates": 384,
+      "retained_updates": 0,
+      "retained_by_capability": {
+        "C.NUMBER": 0
+      },
+      "retention_reasons": {
+        "SAME_GRADE_NET_REGRESSION": 2,
+        "NO_MEASURABLE_TARGET_GAIN": 10
+      }
+    }
+  ],
+  "seeded_panel": {
+    "seeds": [
+      2026102101,
+      2026102102,
+      2026102103
+    ],
+    "initial": {
+      "C.COUNT": {
+        "correct": 154,
+        "total": 180,
+        "unique_inputs": 27,
+        "unique_correct": 20
+      }
+    },
+    "after_count": {
+      "C.COUNT": {
+        "correct": 178,
+        "total": 180,
+        "unique_inputs": 27,
+        "unique_correct": 26
+      }
+    },
+    "after_number": {
+      "C.COUNT": {
+        "correct": 180,
+        "total": 180,
+        "unique_inputs": 27,
+        "unique_correct": 27
+      },
+      "C.NUMBER": {
+        "correct": 165,
+        "total": 180,
+        "unique_inputs": 12,
+        "unique_correct": 11
+      }
+    },
+    "final": {
+      "A.IDENTITY": {
+        "correct": 86,
+        "total": 113,
+        "unique_inputs": 113,
+        "unique_correct": 86
+      },
+      "A.PARENT": {
+        "correct": 72,
+        "total": 132,
+        "unique_inputs": 132,
+        "unique_correct": 72
+      },
+      "A.LINK": {
+        "correct": 73,
+        "total": 147,
+        "unique_inputs": 147,
+        "unique_correct": 73
+      },
+      "A.MEMBER": {
+        "correct": 66,
+        "total": 121,
+        "unique_inputs": 121,
+        "unique_correct": 66
+      },
+      "A.EDGE": {
+        "correct": 80,
+        "total": 142,
+        "unique_inputs": 142,
+        "unique_correct": 80
+      },
+      "A.MAPS": {
+        "correct": 70,
+        "total": 139,
+        "unique_inputs": 139,
+        "unique_correct": 70
+      },
+      "B.NOT": {
+        "correct": 100,
+        "total": 180,
+        "unique_inputs": 180,
+        "unique_correct": 100
+      },
+      "B.AND": {
+        "correct": 90,
+        "total": 180,
+        "unique_inputs": 180,
+        "unique_correct": 90
+      },
+      "C.COUNT": {
+        "correct": 180,
+        "total": 180,
+        "unique_inputs": 27,
+        "unique_correct": 27
+      },
+      "C.NUMBER": {
+        "correct": 165,
+        "total": 180,
+        "unique_inputs": 12,
+        "unique_correct": 11
+      }
+    }
+  },
+  "count_views": {
+    "initial_numeric_correct": 56,
+    "initial_binary_correct": 98,
+    "final_numeric_correct": 60,
+    "final_numeric_total": 60,
+    "final_binary_correct": 120,
+    "final_binary_total": 120
+  },
+  "number_remaining_error": {
+    "input": [
+      "school.syntax.math",
+      "school.number.3",
+      "syntax.end"
+    ],
+    "gold": "3",
+    "predicted": "2",
+    "repeated_seeded_rows": 15,
+    "unique_input_errors": 1
+  },
+  "proof_limits": [
+    "Finite 0..3 symbolic task; repeated inputs across seeds are counted explicitly.",
+    "Training exposure overlap NOT_MEASURED; these are not unexposed generalization results.",
+    "No graduation; A/B debt remains. SUCCESSOR, ADD and SUB not introduced.",
+    "No product code or policy changes in this continuation; existing runtime reused.",
+    "Prior full-suite storage/diagnostics failures and inherited factory import debt remain unresolved."
+  ],
+  "cold_resume": {
+    "logical_state_unchanged": true,
+    "actual_neural_updates": 0
+  },
+  "control": {
+    "generation": 676,
+    "checkpoint": {
+      "filename": "bundles/best-405-274b6cc5502f",
+      "model_and_native_adamw": true,
+      "optimizer_step": 119940,
+      "sha256": "9f5b196a559929a211ce10e1878def3ac89b5222dc6eee4c47085d4bf00c525a"
+    }
+  },
+  "budget": {
+    "issue_number": 349,
+    "run_count": 2,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "used_bytes": 18153443328,
+    "within_budget": true,
+    "runs": [
+      "primary",
+      "plasticity-control"
+    ]
+  },
+  "raw_receipts": {
+    ".local/issue349-count-continuation/probe.json": "2153761f2363dcd06be45beafec99cce184836b0d38006854debfccf90eb1bb5",
+    ".local/issue349-count-continuation/after-number/probe.json": "5cc285855f1e6c3972504c58b73fc9b97c4b2d0930846c57f7a7ba1d2d4e7635",
+    ".local/issue349-count-continuation/final/probe.json": "1eba81000d3cfa2b144cac428e14604827157cb7c40ae40c24461c557f70ec45",
+    ".local/issue349-count-continuation/cold-resume.json": "7847d9851b310b45bace70054c7336b352706c0cbd0686ec7e3b23d77033548c"
+  },
+  "incident_context": [
+    "PM-2026-10-22-005",
+    "PM-2026-10-20-003 / RC-116"
+  ]
+}

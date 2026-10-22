@@ -1,4 +1,4 @@
-# Issue349 handoff | 2026-10-22 | foundations through counting
+# Issue349 handoff | 2026-10-22 | COUNT opens NUMBER
 
 ## Read this first: the user's controlling course
 
@@ -28,21 +28,51 @@ IPR-0220 remediation and execution issues remain OPEN; read their protected curr
 checkpoints before changing semantics or custody. Issue346 remains excluded.
 Publication of this feature is user-authorized; keep protected URLs out of public prose.
 
-Selected run: `runs/issue-349-experiments/primary`, generation **421**.
-Native step **117104**, student + own AdamW SHA
-`9201dfa89fc30700a8f73588b2c15d95dc430c1e672de73b503043f4868a2cc4`,
-bundle `bundles/best-154-d8601131c7d3`.
+Selected run: `runs/issue-349-experiments/primary`, generation **492**.
+Native step **117296**, student + own AdamW SHA
+`756061ff78f931be96987af430fbc16dbca66f476d00c8c9ea67d30811387a2a`,
+bundle `bundles/working-190-4316e72c43f8`.
 Executable release `48bde559d301964ee012acd48e2606ac0e7dc725f52d22032afac65427ec454e`.
 Both issue runs are stopped; operator locks were checked. No canonical/historical
 run was modified, no student reset, third lineage or AdamW merge occurred.
 
 Active grades **A+B+C**. B exposes only **NOT/AND**. C exposes COUNT → NUMBER →
 SUCCESSOR → ADD → SUB at **0..3**, with persisted final ceiling **4**; MUL/DIV are
-not enabled. **Only C.COUNT has been introduced**; its MAIN queue remains COUNT.
-NUMBER and later stages await C's own designed constituent criteria, not B mastery.
+not enabled. **COUNT and NUMBER are introduced**, introduction_stage1, queue C.NUMBER,
+RECOVERY_1. A perfect COUNT routine panel opened NUMBER through the existing stage
+rule. SUCCESSOR and later stages await C's own constituent criteria, not B mastery.
 All six A capabilities plus B.NOT/B.AND remain carried mastery debt.
 
-## Actual learning observations
+## Latest continuation: actual learning, no product-code changes
+
+Three further bounded commands stopped normally: **34 optimizer visits /1,088
+attempted updates /192 retained** (COUNT160, NUMBER32). Two perfect-target visits
+were skipped. No teacher policy, retention threshold, generator or release changed.
+The third command retained zero updates: NUMBER candidates either failed to improve
+the target or regressed the same-grade panel. Preserve this plateau as evidence.
+
+On the same seeded panel, COUNT **154/180 →178/180 →180/180**; direct numbers
+**56/60→60/60**, equality **98/120→120/120**. These180 rows contain **27 unique
+input token sequences:20/27→26/27→27/27**. NUMBER is **165/180**, representing
+**11/12 unique inputs**. Its one error is literal3→2; all120 equality rows pass.
+NUMBER currently presents a literal numeral and equality true/false contrasts;
+COUNT presents visible finite sets. This is finite0..3 symbol learning, not broad
+number understanding or unexposed generalization. Exposure overlap NOT_MEASURED.
+
+Final seeded A: IDENTITY86/113, PARENT72/132, LINK73/147, MEMBER66/121,
+EDGE80/142, MAPS70/139. B.NOT100/180 and B.AND90/180 remain debt. SUCCESSOR,
+ADD and SUB have not been introduced. No graduation is claimed.
+
+Actual final cold `_resume` at492/117296 preserved the **entire logical state** and
+native optimizer step. Both operator locks checked; preserved event control still
+676/119940/9f5b196a. Current measured collective use **18,153,443,328 bytes**.
+
+Receipt: `docs/evidence/experiments/20261022-issue349-count-to-number.json`.
+Raw probes, scripts and cold-resume readback: `.local/issue349-count-continuation/`.
+The receipt binds exact logs, checkpoints, per-phase decisions and unique-input
+counts. Prior full-suite/storage limitations and incidents below remain unchanged.
+
+## Prior wave observations (historical generation421)
 
 Four bounded commands: **34 optimizer visits / 1,088 attempted updates / 288 retained**.
 A repair retained64; the two Boolean introductions retained32 (AND); C.COUNT
@@ -71,7 +101,7 @@ Raw local admissions, recovery and paired probes: `.local/issue349-debt-continua
 The earlier `20261022-issue349-foundation-realignment.json` is the historical
 pre-adoption selection, not current state.
 
-## Engineered and verified this wave
+## Prior implementation and verification
 
 The compatibility Course view can project a legal thin Boolean roster, and legacy
 resume defaults no longer replace this selection with AND/IFF. Numeric entry
@@ -87,7 +117,7 @@ release/source/student guards remain. Generation365 was preserved; generation366
 appended a newly source-scored A+B boundary at the unchanged checkpoint before
 normal training resumed. No historical scores or checkpoints were rewritten.
 
-Actual cold `_resume` also verified the complete saved state at generation421 /
+Actual cold `_resume` also verified the complete saved state at historical generation421 /
 step117104 without any logical receipt change or optimizer update.
 
 **41 focused tests pass**, including real-provider A→thinB→C with unresolved
@@ -106,8 +136,10 @@ and exact native Sheet readbacks verified. Preserve their separate meanings.
 
 ## Next permitted action
 
-Continue a bounded ordinary C.COUNT pass, inspect numeric versus equality-view
-mistakes, and let the existing C stages progress on their own evidence. Keep
+Continue from NUMBER, inspecting its literal3→2 error and delivered teacher
+strategies. The latest12 NUMBER attempts retained nothing; prefer a small useful
+trial informed by those receipts over blindly enlarging scope. Let existing C
+stages progress on their own evidence. Keep
 NOT/AND and earlier A mistakes in debt/rehearsal. No event-control resume, new
 qualification framework, teacher-policy override or invented Boolean prerequisite.
 
@@ -131,5 +163,5 @@ The preserved event control remains generation676 / step119940 / SHA
 `9f5b196a559929a211ce10e1878def3ac89b5222dc6eee4c47085d4bf00c525a`.
 It has its **own** data plane under plasticity-control, which must be selected for
 any read of that run. Exactly two registered directories measure
-**16,923,447,296 allocated bytes /100,000,000,000**. Keep both current
+**18,153,443,328 allocated bytes /100,000,000,000**. Keep both current
 students and required recovery evidence. Do not merge main or close the execution issue.
