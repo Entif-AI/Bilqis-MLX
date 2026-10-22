@@ -577,16 +577,61 @@ def migrate_current_head(run_dir: Path, receipt: dict | None = None) -> dict:
     return normalized
 
 
+def _replay_immutable_generation(run_dir: Path, receipt: dict,
+                                 generation_path: Path) -> dict | None:
+    """Reuse an identical durable generation without reparenting its Merkle node."""
+    pointer = _read_pointer(generation_path)
+    if pointer is None:
+        return None
+    generation = receipt["generation"]
+    current = _read_pointer(run_dir / "state.json")
+    if pointer.get("generation") != generation:
+        raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+    # A genuine retry may retain the current head or restore its immediate
+    # orphan successor. An older generation must never rewind a newer head.
+    if current is None or (current != pointer and
+                           current["generation"] >= generation):
+        raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+    node = json.loads(data_plane().get_node(pointer["node_sha256"]))
+    fields = node.get("fields")
+    if not isinstance(fields, dict):
+        raise ValueError(StateDagError.NODE_POINTER_DRIFT.value)
+    stored = _load_pointer_fields(run_dir, pointer, tuple(fields))
+    if _canonical(stored) != _canonical(receipt):
+        raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+    if current != pointer:
+        if (current["generation"] + 1 != generation or
+                node.get("parent_sha256") != current["node_sha256"]):
+            raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+        _durable(run_dir / "state.json", _canonical(pointer), replace=True)
+        if _read_pointer(run_dir / "state.json") != pointer:
+            raise ValueError(StateDagError.LATEST_POINTER_NOT_DURABLE.value)
+    # Cache only verified, published field identities. Never retain a failed
+    # candidate or mutate a durable generation on an identical retry.
+    _FIELD_CACHE[str(run_dir.resolve())] = {
+        key: (stored[key], spec) for key, spec in fields.items()}
+    return stored
+
+
 def persist(run_dir: Path, receipt: dict) -> dict:
-    """Persist one logical state as an immutable Merkle node plus tiny pointers."""
+    """Persist one logical generation, or return its identical durable receipt."""
     run_dir = Path(run_dir)
-    parent = _current_parent(run_dir)
+    generation = receipt.get("generation")
+    if type(generation) is not int or generation < 0:
+        raise ValueError(StateDagError.GENERATION_INVALID.value)
+    generation_path = run_dir / "states" / f"{generation:07d}.json"
+    if generation_path.exists() or generation_path.is_symlink():
+        previous = _replay_immutable_generation(run_dir, receipt, generation_path)
+        if previous is not None:
+            return previous
+        if generation_path.is_symlink():
+            raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+    current = _read_pointer(run_dir / "state.json")
+    if current is not None and current["generation"] >= generation:
+        raise ValueError(StateDagError.IMMUTABLE_GENERATION_COLLISION.value)
+    parent = current["node_sha256"] if current is not None else None
     with data_plane().transaction():
         pointer, fields, normalized = _write_node(run_dir, receipt, parent=parent)
-    _FIELD_CACHE[str(run_dir.resolve())] = {
-        key: (normalized[key], spec) for key, spec in fields.items()}
-    generation = normalized["generation"]
-    generation_path = run_dir / "states" / f"{generation:07d}.json"
     pointer_raw = _canonical(pointer)
     if generation_path.exists() or generation_path.is_symlink():
         existing_pointer = _read_pointer(generation_path)
@@ -602,6 +647,8 @@ def persist(run_dir: Path, receipt: dict) -> dict:
         raise ValueError(StateDagError.LATEST_POINTER_NOT_DURABLE.value)
     if _read_pointer(generation_path) not in (None, pointer):
         raise ValueError(StateDagError.GENERATION_POINTER_DRIFT.value)
+    _FIELD_CACHE[str(run_dir.resolve())] = {
+        key: (normalized[key], spec) for key, spec in fields.items()}
     return normalized
 
 
