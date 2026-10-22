@@ -149,6 +149,46 @@ class StateDagTests(unittest.TestCase):
         self.assertIn("cc", after["shards"]["C.COUNT"])
         self.assertEqual(read_current(self.root), second)
 
+    def test_teacher_v2_reuses_unchanged_causal_contexts(self):
+        first = self.receipt()
+        first["teacher"] = {
+            "events": 7,
+            "strategies": {"main": {"wins": 1}},
+            "causal_experiment": {
+                "version": "v1",
+                "contexts": {
+                    "A|MAIN": {"attempts": [1, 2, 3]},
+                    "B|MAIN": {"attempts": [4, 5, 6]},
+                },
+                "negative_archetypes": {},
+            },
+        }
+        (self.root / "state.json").write_text(json.dumps(first))
+        migrate_current_head(self.root, first)
+        from bilqis_mlx.data_plane import data_plane
+        first_pointer = json.loads((self.root / "state.json").read_text())
+        first_node = json.loads(data_plane().get_node(first_pointer["node_sha256"]))
+
+        second = self.receipt(8)
+        second["teacher"] = json.loads(json.dumps(first["teacher"]))
+        second["teacher"]["events"] = 8
+        second["teacher"]["causal_experiment"]["contexts"]["B|MAIN"] = {
+            "attempts": [4, 5, 6, 7]}
+        persist(self.root, second)
+        second_pointer = json.loads((self.root / "state.json").read_text())
+        second_node = json.loads(data_plane().get_node(second_pointer["node_sha256"]))
+
+        before = first_node["fields"]["teacher"]
+        after = second_node["fields"]["teacher"]
+        self.assertEqual(before["kind"], "teacher/v2")
+        before_contexts = before["fields"]["causal_experiment"]["fields"]["contexts"]
+        after_contexts = after["fields"]["causal_experiment"]["fields"]["contexts"]
+        self.assertEqual(before_contexts["items"]["A|MAIN"],
+                         after_contexts["items"]["A|MAIN"])
+        self.assertNotEqual(before_contexts["items"]["B|MAIN"],
+                            after_contexts["items"]["B|MAIN"])
+        self.assertEqual(read_current(self.root), second)
+
     def test_partial_current_read_decodes_only_requested_fields(self):
         receipt = self.receipt()
         (self.root / "state.json").write_text(json.dumps(receipt))
