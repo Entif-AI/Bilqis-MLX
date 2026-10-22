@@ -15,6 +15,10 @@ from typing import Mapping
 
 import numpy as np
 
+from bilqis_mlx.learning.teacher_feedback import (
+    WeaknessTargetRequest, select_weakness_targets,
+)
+
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
 MAX_FAILURE_ARCHETYPES = 24
@@ -732,8 +736,59 @@ def _choose_typed_rows(source, count, policy, rng):
     return result[:count]
 
 
+def reserve_weakness_targets(chosen: list[dict],
+                             targets: list[dict]) -> tuple[list[dict], tuple[dict, ...]]:
+    """Replace generic current rows with weak semantics without changing batch size."""
+    result = list(chosen)
+    consumed = set()
+    delivered = []
+    for target in targets:
+        existing = next((
+            index for index, row in enumerate(result)
+            if index not in consumed and row["id"] == target["id"]
+        ), None)
+        if existing is not None:
+            consumed.add(existing)
+            delivered.append(target)
+            continue
+
+        pattern = target.get("operand_truths")
+        answer_kind = target.get("answer_kind", "binary")
+        replacement = None
+        if isinstance(pattern, list):
+            replacement = next((
+                index for index, row in enumerate(result)
+                if index not in consumed and row.get("operand_truths") == pattern
+            ), None)
+        if replacement is None and answer_kind == "binary":
+            replacement = next((
+                index for index, row in enumerate(result)
+                if index not in consumed and row.get("gold") == target.get("gold")
+            ), None)
+        if replacement is None:
+            replacement = next((
+                index for index, row in enumerate(result)
+                if index not in consumed and
+                row.get("answer_kind", "binary") == answer_kind
+            ), None)
+        if replacement is None:
+            replacement = next((
+                index for index in range(len(result)) if index not in consumed
+            ), None)
+        if replacement is None:
+            raise ValueError("LEARNING_EXPERIMENT_WEAKNESS_TARGET_CAPACITY_DRIFT")
+        result[replacement] = target
+        consumed.add(replacement)
+        delivered.append(target)
+    return result, tuple(delivered)
+
+
 def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
-                         *, seed: int, batch_size: int) -> tuple[list[dict], dict]:
+                         *, seed: int, batch_size: int,
+                         targets: list[dict] | tuple[dict, ...] = (),
+                         target_exposures: Mapping[str, int] | None = None,
+                         reserved_support_slots: int = 0
+                         ) -> tuple[list[dict], dict]:
     """Make inherited old/contrast/depth knobs effective for every answer type.
 
     'old' means actual examples originating in already-graduated grades, not
@@ -743,6 +798,9 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
     """
     if not current or type(batch_size) is not int or batch_size < 2:
         raise ValueError("LEARNING_EXPERIMENT_EMPTY_TYPED_LESSON")
+    if (type(reserved_support_slots) is not int or
+            not 0 <= reserved_support_slots <= batch_size):
+        raise ValueError("LEARNING_EXPERIMENT_SUPPORT_CAPACITY_INVALID")
     rng = random.Random(seed)
     requested_old = int(policy.get("old", 0))
     if not 0 <= requested_old <= 32:
@@ -758,8 +816,23 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
                     round(requested_old*batch_size/32)) if prior else 0
     present_count = batch_size-old_count
     choose_current = _choose_binary_rows if structured_binary else _choose_typed_rows
-    result = choose_current(current, present_count, policy, rng) + _choose_typed_rows(
-        prior, old_count, policy, rng)
+    current_ids = {row["id"] for row in current}
+    if any(row.get("id") not in current_ids for row in targets):
+        raise ValueError("LEARNING_EXPERIMENT_WEAKNESS_TARGET_OUTSIDE_CURRENT")
+    target_capacity = max(
+        0, present_count - min(reserved_support_slots, present_count))
+    if targets and not target_capacity:
+        target_capacity = 1
+    selected_targets = select_weakness_targets(
+        targets,
+        WeaknessTargetRequest(
+            exposures=dict(target_exposures or {}),
+            capacity=target_capacity,
+        ))
+    current_rows = choose_current(current, present_count, policy, rng)
+    current_rows, delivered_targets = reserve_weakness_targets(
+        current_rows, selected_targets)
+    result = current_rows + _choose_typed_rows(prior, old_count, policy, rng)
     rng.shuffle(result)
     delivered_patterns = ({tuple(row["operand_truths"]) for row in result
                            if isinstance(row.get("operand_truths"), list)}
@@ -768,6 +841,11 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
              for row in result],
             {"effective_old_grade_examples": old_count,
              "requested_old_per_32": requested_old,
+             "weakness_targets_available": len(targets),
+             "weakness_targets_requested": len(selected_targets),
+             "weakness_targets_delivered": len(delivered_targets),
+             "weakness_target_ids": [row["id"] for row in delivered_targets],
+             "reserved_support_slots": reserved_support_slots,
              "current_semantic_patterns_required": len(semantic_patterns),
              "current_semantic_patterns_delivered": len(delivered_patterns),
              "depth_control": "SOURCE_TOKEN_LENGTH_PROXY" if policy.get("depth", 1) >= 3

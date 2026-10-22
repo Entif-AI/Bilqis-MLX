@@ -5,13 +5,13 @@ import unittest
 
 from bilqis_mlx.diagnostics import DiagnosticStatus, LearningSignal
 from bilqis_mlx.learning.teacher_feedback import (
-    FairMissRequest,
     OutcomeAttribution,
     TeacherDecisionInput,
     TeachingOpportunity,
+    WeaknessTargetRequest,
     active_warning_signals,
     reconcile_unresolved_misses,
-    select_fair_miss_window,
+    select_weakness_targets,
     summarize_teacher_decision,
     summarize_teacher_outcomes,
 )
@@ -57,49 +57,35 @@ class TeacherFeedbackTests(unittest.TestCase):
             still_wrong, current, {"new-c": "3"})
         self.assertEqual([row["id"] for row in now_correct], ["other"])
 
-    def test_fair_miss_selection_covers_backlog_without_a_fixed_batch_ratio(self):
+    def test_weakness_target_selection_rotates_least_exposed_semantics(self):
         misses = [{"id":f"miss-{index:02d}", "capability":"B.NOT",
                    "gold":"TRUE" if index % 2 else "FALSE"}
                   for index in range(22)]
         exposures = {row["id"]: 0 for row in misses}
-        selected_this_visit = set()
-        for remaining_steps in range(6, 0, -1):
-            window = select_fair_miss_window(
-                misses, FairMissRequest(
-                    exposures=exposures,
-                    selected_this_visit=frozenset(selected_this_visit),
-                    remaining_steps=remaining_steps, batch_size=8,
-                    gold_capacity={"TRUE":4, "FALSE":4}))
-            self.assertLessEqual(len(window), 8)
-            self.assertLessEqual(sum(row["gold"] == "TRUE" for row in window), 4)
-            self.assertLessEqual(sum(row["gold"] == "FALSE" for row in window), 4)
+        seen = set()
+        for _ in range(6):
+            window = select_weakness_targets(
+                misses, WeaknessTargetRequest(
+                    exposures=exposures, capacity=4))
+            self.assertEqual(len(window), 4)
             for row in window:
                 exposures[row["id"]] += 1
-                selected_this_visit.add(row["id"])
-        self.assertEqual(selected_this_visit, {row["id"] for row in misses})
-        self.assertEqual(set(exposures.values()), {1})
-        large_backlog = misses + [
-            {"id":f"more-{index:02d}", "capability":"B.NOT",
-             "gold":"TRUE" if index % 2 else "FALSE"}
-            for index in range(18)]
-        self.assertEqual(len(select_fair_miss_window(
-            large_backlog, FairMissRequest(
-                exposures={}, selected_this_visit=frozenset(),
-                remaining_steps=2, batch_size=8,
-                gold_capacity={"TRUE":4, "FALSE":4}))), 8)
-        all_true = [{"id":f"true-{index:02d}", "capability":"B.NOT", "gold":"TRUE"}
-                    for index in range(22)]
-        seen_true = set()
-        for remaining_steps in range(6, 0, -1):
-            window = select_fair_miss_window(
-                all_true, FairMissRequest(
-                    exposures={}, selected_this_visit=frozenset(seen_true),
-                    remaining_steps=remaining_steps, batch_size=8,
-                    gold_capacity={"TRUE":4, "FALSE":4}))
-            self.assertLessEqual(len(window), 4)
-            self.assertTrue(all(row["gold"] == "TRUE" for row in window))
-            seen_true.update(row["id"] for row in window)
-        self.assertEqual(seen_true, {row["id"] for row in all_true})
+                seen.add(row["id"])
+        self.assertEqual(seen, {row["id"] for row in misses})
+        self.assertLessEqual(max(exposures.values()) - min(exposures.values()), 1)
+
+    def test_single_weak_semantic_remains_eligible_every_optimizer_step(self):
+        miss = {"id": "number-three", "capability": "C.NUMBER", "gold": "3"}
+        exposures = {miss["id"]: 0}
+
+        for _ in range(4):
+            window = select_weakness_targets(
+                [miss], WeaknessTargetRequest(
+                    exposures=exposures, capacity=1))
+            self.assertEqual([row["id"] for row in window], [miss["id"]])
+            exposures[miss["id"]] += 1
+
+        self.assertEqual(exposures[miss["id"]], 4)
 
     def test_only_observed_diagnostics_enter_teacher_warning_context(self):
         exam = {"learning_diagnostics":{"findings":[
