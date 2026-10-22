@@ -19,6 +19,7 @@ import bilqis_mlx.runtime.disk as _runtime_disk
 import bilqis_mlx.runtime.mlx_checkpoint as _runtime_mlx_checkpoint
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
+import bilqis_mlx.state_dag as _state_dag
 import bilqis_mlx.source as _bilqis_mlx_source
 import contextlib as _contextlib
 import dataclasses as _dataclasses
@@ -161,7 +162,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
     path = run_dir / "state.json"
     if not path.is_file():
         raise ValueError("HUMAN_TRAINER_RESUME_REQUIRES_PRIOR_RUN")
-    receipt = _json.loads(path.read_text(encoding="utf-8"))
+    receipt = _state_dag.read_current(run_dir)
     if (receipt.get("schema") != VERSION or receipt.get("accepted_authority") != _compatibility_source_bootstrap.AUTHORITY
             or receipt.get("source_manifest_sha256") != manifest["manifest_sha256"]
             or receipt.get("teacher_source_sha256") != policy_sha):
@@ -206,8 +207,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
             receipt["parameter_shapes"] or
             len(parameters) != 39):
         raise ValueError("HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT")
-    if _json.loads((run_dir / "states" /
-                   f"{receipt['generation']:07d}.json").read_text()) != receipt:
+    if _state_dag.read_generation(run_dir, receipt["generation"]) != receipt:
         raise ValueError("HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED")
     if not old_mode:
         _runtime_assessment._verify_saved_cohort(
@@ -260,6 +260,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
     # Re-run custody verification against that enlarged immutable reference set
     # before this resumed state is allowed to proceed to any lesson or exam.
     _runtime_checkpoints._verify_best_custody(run_dir, receipt)
+    _state_dag.migrate_current_head(run_dir, receipt)
     return parameters, optimizer, graph, receipt
 
 

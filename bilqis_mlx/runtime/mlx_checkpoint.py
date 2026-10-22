@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Mapping
 
 from bilqis_mlx.backup import digest_file
+from bilqis_mlx.data_plane import verify_file_digest
 from bilqis_mlx.runtime.disk import assert_headroom
 
 SCHEMA = "bilqis.mlx.fp32-adamw-bundle/v1"
@@ -143,7 +144,7 @@ def load_bundle(destination: Path):
     if _json_hash(names) != manifest["name_order_sha256"]:
         raise ValueError("MLX_BUNDLE_PARAMETER_ORDER_DRIFT")
     blob = destination / "model-and-own-adamw.safetensors"
-    if digest_file(blob) != manifest["safetensors_sha256"]:
+    if not verify_file_digest(blob, manifest["safetensors_sha256"]):
         raise ValueError("MLX_BUNDLE_TENSOR_FILE_CORRUPTED")
     arrays = mx.load(str(blob))
     expected = {f"p{i:04d}_{part}" for i in range(len(names))
@@ -184,7 +185,7 @@ def _read_catalog(destination: Path, binding: dict) -> dict:
             binding.get("filename") != "semantic-catalog.json"):
         raise ValueError("MLX_BUNDLE_UNRECOGNIZED_CATALOG_BINDING")
     catalog_file = destination / binding["filename"]
-    if digest_file(catalog_file) != binding.get("file_sha256"):
+    if not verify_file_digest(catalog_file, binding.get("file_sha256")):
         raise ValueError("MLX_BUNDLE_SEMANTIC_CATALOG_FILE_CHANGED")
     catalog = json.loads(catalog_file.read_text(encoding="utf-8"))
     _check_catalog(catalog)

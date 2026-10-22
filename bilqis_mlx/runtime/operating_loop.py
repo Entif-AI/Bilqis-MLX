@@ -26,6 +26,7 @@ import bilqis_mlx.runtime.session as _runtime_session
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.runtime.timing_trace as _runtime_timing_trace
 import bilqis_mlx.runtime.visits as _runtime_visits
+import bilqis_mlx.state_dag as _state_dag
 import contextlib as _contextlib
 import dataclasses as _dataclasses
 import json as _json
@@ -106,7 +107,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
         saved_path = _pathlib.Path(run_dir).expanduser().resolve() / "state.json"
         if not saved_path.is_file():
             raise ValueError("TEACHING_ENRICHMENT_REQUIRES_ADMITTED_FACTORY_RELEASE")
-        saved_release = _json.loads(saved_path.read_text(encoding="utf-8"))
+        saved_release = _state_dag.read_current(_pathlib.Path(run_dir))
         if not _runtime_admission.admitted_release_supports_teaching_option(
                 _pathlib.Path(run_dir).expanduser().resolve(), saved_release):
             raise ValueError("TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE")
@@ -114,7 +115,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
         # Fail before GPU loading, orphan recovery, or any state mutation when
         # a protected student's policy would otherwise be silently disabled.
         saved_path = _pathlib.Path(run_dir).expanduser().resolve() / "state.json"
-        if (saved_path.is_file() and _json.loads(saved_path.read_text()).get(
+        if (saved_path.is_file() and _state_dag.read_current(_pathlib.Path(run_dir)).get(
                 "learning_experiment") is not None):
             raise ValueError("LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION")
     import mlx.core as mx
@@ -134,11 +135,11 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
     with _runtime_session.operator_lock(run_dir), _contextlib.ExitStack() as resources:
         _runtime_timing_trace.trace_mark("OPERATOR_LOCK_ACQUIRED")
         if resume:
-            saved = _json.loads((run_dir / "state.json").read_text(encoding="utf-8"))
+            saved = _state_dag.read_current(run_dir)
             pending = run_dir / "states" / f"{saved['generation'] + 1:07d}.json"
             if pending.exists() and (pending.is_symlink() or not pending.is_file()):
                 raise ValueError("HUMAN_TRAINER_PENDING_GENERATION_UNSAFE_PATH")
-            pending_state = (_json.loads(pending.read_text(encoding="utf-8"))
+            pending_state = (_state_dag.read_generation(run_dir, saved["generation"] + 1)
                              if pending.exists() else None)
             if saved.get("factory_admission_v2") is not None:
                 saved_release = _runtime_admission._read_executable_factory_release_artifact(

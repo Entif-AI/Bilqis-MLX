@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import bilqis_mlx.backup as _bilqis_mlx_backup
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
+import bilqis_mlx.data_plane as _data_plane
 import bilqis_mlx.learning.capability_frontier as _learning_capability_frontier
 import bilqis_mlx.learning.champions as _learning_champions
 import bilqis_mlx.learning.epoch_championships as _learning_epoch_championships
 import bilqis_mlx.learning.grade_soup as _learning_grade_soup
 import bilqis_mlx.runtime.mlx_checkpoint as _runtime_mlx_checkpoint
 import bilqis_mlx.runtime.state as _runtime_state
+import bilqis_mlx.state_dag as _state_dag
 import bilqis_mlx.source as _bilqis_mlx_source
 import contextlib as _contextlib
 import dataclasses as _dataclasses
@@ -32,21 +34,8 @@ def operator_view(callback):
 
 
 def _persist(run_dir: _pathlib.Path, receipt: dict):
-    """One linearizable state pointer; immutable sequence copies remain."""
-    receipt = _json.loads(_runtime_state._canonical(receipt))
-    generation = receipt["generation"]
-    path = run_dir / "states" / f"{generation:07d}.json"
-    if path.exists():
-        if path.is_symlink() or _json.loads(path.read_text(encoding="utf-8")) != receipt:
-            raise ValueError("HUMAN_TRAINER_IMMUTABLE_GENERATION_COLLISION")
-    else:
-        _runtime_state._durable_json(path, receipt)
-    if _json.loads(path.read_text(encoding="utf-8")) != receipt:
-        raise ValueError("HUMAN_TRAINER_SNAPSHOT_POSTWRITE_MISMATCH")
-    _runtime_state._durable_json(run_dir / "state.json", receipt, replace_existing=True)
-    if _json.loads((run_dir / "state.json").read_text(encoding="utf-8")) != receipt:
-        raise ValueError("HUMAN_TRAINER_LATEST_POINTER_NOT_DURABLE")
-    return receipt
+    """Persist one logical generation through the immutable Merkle state DAG."""
+    return _state_dag.persist(run_dir, receipt)
 
 
 def _recover_orphaned_commit(run_dir: _pathlib.Path, latest: dict) -> dict:
@@ -60,7 +49,7 @@ def _recover_orphaned_commit(run_dir: _pathlib.Path, latest: dict) -> dict:
         return latest
     if target.is_symlink() or not target.is_file():
         raise ValueError("HUMAN_TRAINER_RECOVERY_UNSAFE_GENERATION")
-    proposed = _json.loads(target.read_text(encoding="utf-8"))
+    proposed = _state_dag.read_generation(run_dir, latest["generation"] + 1)
     if (proposed.get("generation") != latest["generation"] + 1 or
             proposed.get("run_id") != latest.get("run_id") or
             proposed.get("schema") != latest.get("schema") or
@@ -70,9 +59,7 @@ def _recover_orphaned_commit(run_dir: _pathlib.Path, latest: dict) -> dict:
         raise ValueError("HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE")
     # Verify every retained old/new whole-student pointer before publication.
     _verify_best_custody(run_dir, proposed)
-    _runtime_state._durable_json(run_dir / "state.json", proposed, replace_existing=True)
-    if _json.loads((run_dir / "state.json").read_text()) != proposed:
-        raise ValueError("HUMAN_TRAINER_RECOVERY_POINTER_NOT_DURABLE")
+    proposed = _state_dag.persist(run_dir, proposed)
     # Publish the recovered generation's original causal events before its
     # recovery annotation, retaining a legible ordered School50 history.
     _reconcile_delivery_outbox(run_dir, proposed)
@@ -218,7 +205,8 @@ def _verify_frozen_soup_custody(run_dir, receipt):
             for old in older:
                 previous = run_dir / old["filename"]
                 if (previous.parent != run_dir / "soups" or previous.is_symlink() or
-                        not previous.is_file() or _bilqis_mlx_backup.digest_file(previous) != old["sha256"]):
+                        not previous.is_file() or
+                        not _data_plane.verify_file_digest(previous, old["sha256"])):
                     raise ValueError("GRADE_SOUP_PREVIOUS_BACKUP_DRIFT")
 
 
@@ -257,7 +245,9 @@ def _verify_best_custody(run_dir, receipt):
         if root.is_symlink() or root.parent != run_dir / "bundles":
             raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_PATH_DRIFT")
         manifest = _json.loads((root / "manifest.json").read_text())
-        if _bilqis_mlx_backup.digest_file(root / "model-and-own-adamw.safetensors") != manifest["safetensors_sha256"]:
+        if not _data_plane.verify_file_digest(
+                root / "model-and-own-adamw.safetensors",
+                manifest["safetensors_sha256"]):
             raise ValueError("HUMAN_TRAINER_CAPABILITY_CUSTODY_SHA_DRIFT")
         for ref in sources:
             if (ref["filename"] == name and
@@ -280,7 +270,7 @@ def _advance(run_dir, old: dict, school: _curriculum_scheduler.SchoolState, *,
                     f"{old['generation']:07d}.json")
         if old_path.is_symlink() or not old_path.is_file():
             raise ValueError("HUMAN_TRAINER_OUTBOX_ADVANCE_UNCOMMITTED_SOURCE")
-        durable = _json.loads(old_path.read_text(encoding="utf-8"))
+        durable = _state_dag.read_generation(run_dir, old["generation"])
         # Only *durable* outbox events have delivery authority. Transient
         # callers may carry a subsequently edited copy of a committed event;
         # requiring payload-object equality here mistakes a working copy for
