@@ -1,6 +1,37 @@
 # Bilqis MLX
 
-Private, source-oracled MLX training for a compositional semantic transformer. **This is the one active repository:** `~/Code/bilqis-mlx`. The human operator owns ordinary and long-running neural training. During trainer repair, the user's standing authorization also permits agents to run short, explicitly finite trainer tests against the current student when needed to reproduce and verify failures. Those bounded repair runs must preserve the student and its own AdamW, may not reset or replace the canonical lineage, and are not authority for unattended or open-ended training.
+## CONTROLLING USER CORRECTION — 2026-10-22: foundations before worlds
+
+**Teach what a concept is through fundamentals the student already understands.**
+The course is **logic and basic cognitive algebra → mathematics → physics**, with
+selective New Ithkuil Lexicon Chapters **2, 3 and 6** supplying concepts when their
+foundations make them expressible. This is a **narrow staircase built exclusively
+upon its foundations**: each step adds one small semantic distinction, explicitly
+constructed from earlier understood ingredients. Show that construction in the
+actual lessons; a prerequisite label or a correct Python oracle is insufficient.
+Start with positive identification; then use context and contrasts where useful.
+
+**We are not building tiny world models at this stage.** Do not substitute event
+lookup, before/after-state classification, extra distractors or longer worlds for
+concept formation. Occurrence/commencement/termination event prototypes are a
+historical detour, not the next curriculum. Preserve their receipts, token meanings,
+checkpoints and own AdamW; do not continue those lessons by default. Do not treat
+source order, the provisional D–O map, or availability of an easy generator as
+pedagogical readiness. Transfer checks should test the taught construction at the
+current step, not demand untaught cognitive machinery.
+
+**Next work:** repair the existing A foundations in the registered A-only `primary`
+experiment; measure current understanding before opening a thin canonical B slice
+(NOT, then AND over understood A propositions). Later Boolean compositions need
+understood constituents; numeric work follows COUNT → NUMBER → SUCCESSOR → ADD →
+SUB, initially 0..3 and at most 0..4 for current issue trials. Physics and further
+lexical admissions wait for their actual conceptual ingredients. This is not a
+new blanket perfect-score gate or a qualification project: use small lessons,
+cheap observations and the existing teacher/factory/retention owners. See ADR-083
+and HANDOFF.md for the selected run and next action. Canonical training boundaries
+and the issue-owned two-run/100-GB exception remain unchanged.
+
+Source-oracled MLX training for a compositional semantic transformer. **This is the one active repository:** `~/Code/bilqis-mlx`. The human operator owns ordinary and long-running neural training. During trainer repair, the user's standing authorization also permits agents to run short, explicitly finite trainer tests against the current student when needed to reproduce and verify failures. Those bounded repair runs must preserve the student and its own AdamW, may not reset or replace the canonical lineage, and are not authority for unattended or open-ended training.
 
 The former Bilqis implementations are preserved as pinned, read-only source dependencies under `vendor/legacy-v16/`. They are not separate runtime repositories. The native historical bootstrap checkpoint and inherited teacher state live in the ignored `vendor/legacy-v16/runs/`. The current model, its matching AdamW, learning history, champions and soups live under ignored `runs/`. None of those binaries are committed to Git.
 
@@ -18,7 +49,7 @@ The former Bilqis implementations are preserved as pinned, read-only source depe
 
 **Championship authority:** [Championship lifecycle specification](docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md) governs curriculum-boundary resets, capability champions, defended title succession, advisory rights and frozen soup eligibility. Normal examinations establish earned capability roles before graduation, including on fresh runs. Flash continues to defer title qualification.
 
-**Near-term New Ithkuil curriculum research boundary (2026-10-20):** The next curriculum-design horizon is a **provisional, revisable Grades D–O map**, beginning with the official New Ithkuil Lexicon **Chapter 1 (Roots Associated with Grammatical Functions)** and **Chapter 2 (Common States and Acts)**. The existing Curriculum Registry / `Grade Tranches` ordering is **not** ordering authority for this work, although its source, semantic and contextual information remains useful evidence. Researchers must build and retain a candidate pool materially larger than the 144 D–O slots, order candidates by prerequisite closure, semantic slope, compositional leverage and downstream unlock value rather than PDF/root order, and keep pedagogical rank/grade metadata outside canonical source CSVs. Source ingestion must preserve stem/Specification distinctions, examples, exclusions, caveats and reproducible provenance. Proposed D–O assignments remain **PROPOSED / NOT ADMITTED** until the normal semantic-authority and factory-release gates admit them. The human-only neural-update boundary is unchanged.
+**Historical research horizon (2026-10-20; sequencing superseded by ADR-083):** The next curriculum-design horizon is a **provisional, revisable Grades D–O map**, beginning with the official New Ithkuil Lexicon **Chapter 1 (Roots Associated with Grammatical Functions)** and **Chapter 2 (Common States and Acts)**. The existing Curriculum Registry / `Grade Tranches` ordering is **not** ordering authority for this work, although its source, semantic and contextual information remains useful evidence. Researchers must build and retain a candidate pool materially larger than the 144 D–O slots, order candidates by prerequisite closure, semantic slope, compositional leverage and downstream unlock value rather than PDF/root order, and keep pedagogical rank/grade metadata outside canonical source CSVs. Source ingestion must preserve stem/Specification distinctions, examples, exclusions, caveats and reproducible provenance. Proposed D–O assignments remain **PROPOSED / NOT ADMITTED** until the normal semantic-authority and factory-release gates admit them. The human-only neural-update boundary is unchanged.
 
 
 ```bash

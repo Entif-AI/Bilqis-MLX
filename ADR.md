@@ -1,5 +1,9 @@
 # Architecture Decision Record
 
+**Current curriculum direction: ADR-083 (2026-10-22), foundations before worlds.**
+Logic/cognitive algebra → mathematics → physics; selective lexicon Chapters 2, 3, 6.
+The event-state experiment is historical, not the next teaching objective.
+
 Append-only decisions from the user. New decisions get a dated entry; do not rewrite historical decisions into new authority. This log is private to the Bilqis MLX implementation.
 
 ## ADR-001 | 2026-10-15 | Private MLX successor
@@ -970,3 +974,56 @@ The append-only `events.jsonl` remains the human-readable audit authority, but i
 Model bundles, frozen soups and assessment cohorts have separate logical identity from their physical storage. Active training keeps only the artifacts required by current teaching, assessment, rollback and custody checks in its hot namespace. Historical bytes may be moved into workstation-shared content-addressed archival storage and hydrated on explicit historical replay, provided every existing logical pointer, digest, optimizer identity and exact readback remains valid. Do not delete historical evidence merely because it is cold, and do not require hundreds of obsolete tensor/JSON artifacts to remain physically duplicated inside one run directory.
 
 This supersedes prior operational language only where `state.json` and every `states/<generation>.json` were required to contain full logical receipts. Their authority is preserved as immutable DAG pointers to the exact logical state. The event ledger, checkpoint/AdamW ownership, outbox crash semantics, source evidence and human-only neural-update boundary are unchanged.
+
+
+## ADR-083 | 2026-10-22 | Teach new concepts explicitly from understood foundations
+
+**Authority:** direct user correction in the active issue349 conversation. The
+user states: “We are not building tiny world models at this stage” and asks for
+“a narrow staircase built exclusively upon its foundations.” The intended course
+is logic and basic cognitive algebra, leading to mathematics and subsequently
+physics with selective concepts from Lexicon Chapters 2, 3 and 6.
+
+**Observed drift:** the issue experiment taught occurrence as the after Boolean,
+commencement as NOT-before AND-after, and termination as before AND-NOT-after,
+inside named event lists. The model saw encoded records and answer labels, not
+an explicit construction through understood Boolean constituents. The declared
+A.IDENTITY → occurrence → commencement → termination chain did not establish
+Boolean or temporal prerequisites. Query contrasts and more events increased
+record-processing demands without supplying the missing conceptual explanation.
+Source-checked answers did not establish developmental suitability.
+
+**Decision:** teach a positive definition through previously understood operands
+and operations. Each step must make the constituent construction visible in its
+instructional examples and check that same small meaning. Prerequisite metadata
+alone is insufficient. Do not introduce temporal worlds, event identities or
+physical interpretations before their constituent concepts are available. Extra
+world size is not the current success criterion. This supersedes event-first
+sequencing and Chapter-1/2-first or fixed D–O ordering as next-step authority;
+historical prose and source records remain preserved.
+
+**Immediate selection:** use the existing registered A-only `primary` lineage for
+foundation repair (A.IDENTITY, A.PARENT, A.LINK, A.MEMBER, A.EDGE, A.MAPS), with
+current-checkpoint observations guiding the actual targets. Next new learning is
+a thin profile of canonical B: B.NOT followed by B.AND over understood A
+propositions, using existing source/oracle/teacher/runtime owners. Check the
+actual provider's constituent presentation before adoption; do not assume that
+this selection has already taught a concept. The event-trained `plasticity-control`
+stays stopped with its A+D release and debt intact. Do not reset it, remove its
+vocabulary, erase debt or claim that a normal resume follows this new selection.
+
+After logical foundations, use the existing numeric staircase COUNT → NUMBER →
+SUCCESSOR → ADD → SUB, initially 0..3 and capped at 4 in present issue trials.
+Broader algebraic and physical concepts are selected only as their ingredients
+become available, not by chapter order. No filler grade, new qualification
+framework, mandatory immediate transfer result, or automatic perfect-school gate
+is added. Existing explicit debt-admission rules remain available; future
+concepts may use only foundations actually understood by the learner.
+
+**Custody and evidence:** preserve both registered runs, their own AdamW, frozen
+releases and historical results. Exactly two issue-owned experiments remain the
+limit; no third lineage, canonical mutation or optimizer merge is authorized.
+This decision selects future work; it does not graduate A/B, admit a replacement D,
+or establish understanding of any Ithkuil root. Selection drift is filed and
+read-back verified as PM-2026-10-22-005, reusing RC-047/RC-096 and PAT-076. The
+previous PM-2026-10-20-003 / RC-116 covers separate runtime migration defects.

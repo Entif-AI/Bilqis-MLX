@@ -1,5 +1,93 @@
 # Issue 349 continuation | 2026-10-22
 
+## CONTROLLING USER CORRECTION — 2026-10-22: foundations before worlds
+
+**Teach what a concept is through fundamentals the student already understands.**
+The course is **logic and basic cognitive algebra → mathematics → physics**, with
+selective New Ithkuil Lexicon Chapters **2, 3 and 6** supplying concepts when their
+foundations make them expressible. This is a **narrow staircase built exclusively
+upon its foundations**: each step adds one small semantic distinction, explicitly
+constructed from earlier understood ingredients. Show that construction in the
+actual lessons; a prerequisite label or a correct Python oracle is insufficient.
+Start with positive identification; then use context and contrasts where useful.
+
+**We are not building tiny world models at this stage.** Do not substitute event
+lookup, before/after-state classification, extra distractors or longer worlds for
+concept formation. Occurrence/commencement/termination event prototypes are a
+historical detour, not the next curriculum. Preserve their receipts, token meanings,
+checkpoints and own AdamW; do not continue those lessons by default. Do not treat
+source order, the provisional D–O map, or availability of an easy generator as
+pedagogical readiness. Transfer checks should test the taught construction at the
+current step, not demand untaught cognitive machinery.
+
+**Next work:** repair the existing A foundations in the registered A-only `primary`
+experiment; measure current understanding before opening a thin canonical B slice
+(NOT, then AND over understood A propositions). Later Boolean compositions need
+understood constituents; numeric work follows COUNT → NUMBER → SUCCESSOR → ADD →
+SUB, initially 0..3 and at most 0..4 for current issue trials. Physics and further
+lexical admissions wait for their actual conceptual ingredients. This is not a
+new blanket perfect-score gate or a qualification project: use small lessons,
+cheap observations and the existing teacher/factory/retention owners. See ADR-083
+and HANDOFF.md for the selected run and next action. Canonical training boundaries
+and the issue-owned two-run/100-GB exception remain unchanged.
+
+## Selected next teaching work (not yet new mastery)
+
+Use `runs/issue-349-experiments/primary`, the existing A-only lineage at generation
+356 / step116816. Do not copy or reset a student. Its saved routine scores are
+IDENTITY6/12, PARENT7/12, LINK4/12, MEMBER7/12, EDGE7/12, MAPS7/12; these are historical
+cohort observations. The new same-checkpoint three-seed panel is also weak:
+IDENTITY58/113, PARENT71/132, LINK68/147, MEMBER64/121, EDGE72/142, MAPS70/139.
+Five of six are at or below their panel majority baseline; do not call these
+foundations mastered or proceed directly to B on the basis of saved 12-row scores.
+The existing six A meanings remain repair scope; B's declared operand prerequisites
+are specifically A.IDENTITY, A.PARENT and A.LINK. Select B.NOT then B.AND as the
+next new semantics, not occurrence/commencement/termination or physics. Keep the
+other B operators, B.COMPOSITE and B.IDBOOLOPS disabled for that first slice.
+
+A positive teaching example for NOT: evaluate a known A proposition P, then show
+NOT(P), which reverses its truth. For AND: evaluate understood P and Q, then show
+AND(P,Q), true exactly when both constituents are true. Cover the two unary or four
+binary truth cases without extra temporal/event semantics. Reuse existing typed
+AST/source checks and teacher-owned choices; inspect actual delivered rows.
+A successful Boolean trial would establish only those taught constructions.
+
+The selected NOT/AND profile has been source-compiled and cold-read verified; its
+generated rows cover both NOT inputs and all four AND truth cases. It is **not
+adopted**. The legacy Course view currently rejects this thin selection with
+`FACTORY_COMPATIBILITY_PROFILE_VIEW_UNSUPPORTED`; extend that compatibility
+projection before B adoption, without introducing a new trainer or weakening
+prerequisites. Immediate A repair uses its already admitted A-only release.
+Receipt: `docs/evidence/experiments/20261022-issue349-foundation-realignment.json`.
+The new selection incident PM-2026-10-22-005 reuses RC-047/RC-096 and PAT-076;
+canonical native Sheet write and exact readbacks are verified. Earlier RC-116
+remains the separate runtime migration incident.
+
+For any command on `primary`, bind its own data plane (never the control's or the
+workstation default):
+
+```sh
+export BILQIS_DATA_PLANE=/Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/runs/issue-349-experiments/primary/data-plane.sqlite3
+export BILQIS_INTEGER_MAX=4
+```
+
+The control-specific environment below applies only to historical control probes.
+Read-only ordinary resume preflight exits0 with ACTIVE_GRADE_A and retention enabled;
+it did not rerun the source-manifest preflight (`--verify-source` remains available).
+No neural update or new release adoption occurred. For the next bounded A trial,
+after the primary environment above and a fresh budget check:
+
+```sh
+python3 -B -m bilqis_mlx.cli train --human-run --resume \
+  --run-dir "$PWD/runs/issue-349-experiments/primary" \
+  --issue-349-experiment-root "$PWD/runs/issue-349-experiments" \
+  --minutes 2 --max-visits 6 --steps-per-visit 32 --source-prefetch-workers 0
+```
+
+This command continues the existing A schedule and learned teacher. It does not
+admit B or resume the event control. Inspect the resulting retained checkpoint
+and source-scored mistakes before choosing the next small step.
+
 Branch `codex/349-autonomous-jit-ithkuil-20261020`, draft PR11.
 Worktree `/Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020`.
 Current main `917c0be4f4e8f898f30da38e2b33c5b5182c70c1` is integrated. Pulled the
@@ -11,10 +99,12 @@ Read their current checkpoints before changing semantics or custody. Issue346 is
 excluded. Public branch publication is user-authorized; keep protected URLs out
 of public prose. Earlier handoffs remain in Git history; prior receipts are historical.
 
-## Engineered
+## Historical event experiment — preserve; do not resume
+
+### Engineered
 
 The same factory/runtime handles all three finite event prototypes: occurrence,
-commencement and termination. No new per-candidate trainer or token meanings.
+commencement and termination. No per-candidate trainer was added; experimental token meanings remain fixed.
 
 The generic optional-teaching gate now permits an existing declared prerequisite
 from the same verified provider, checking its own answer family and source gold.
@@ -91,30 +181,11 @@ independent expected digest. The extra closure check has two inherited numeric
 provider imports; it is not green. Earlier whole-suite proof is historical.
 Hosted checks and exact pushed SHA are recorded in PR11 and the protected checkpoint.
 
-Next: inspect termination's wrong source patterns and root/query sensitivity;
-choose another small source-owned teaching change from that evidence. Do not add
-a qualification framework, erase earlier-skill debt or relax retention to make it
-look learned. Broader candidate uptake, composition, inversion and communication
-remain unfinished. Any Grade C work stays capped at 4.
-
-After setting the environment above, reproduce the fixed query diagnostic:
-
-```sh
-PYTHONPATH=. python3 -B scripts/issue349_query_probe.py \
-  --run-dir runs/issue-349-experiments/plasticity-control \
-  --panel docs/evidence/experiments/20261021-issue349-query-worlds.json \
-  --output /tmp/bilqis349-query-result.json
-```
-
-Bounded resume, only inside the registered issue control:
-
-```sh
-python3 -B -m bilqis_mlx.cli train --human-run --resume \
-  --run-dir /Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/runs/issue-349-experiments/plasticity-control \
-  --issue-349-experiment-root /Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/runs/issue-349-experiments \
-  --minutes 4 --max-visits 24 --steps-per-visit 32 \
-  --source-prefetch-workers 0 --source-teaching-enrichment
-```
+The former termination/query-sensitivity next action is superseded by ADR-083.
+Do not resume the A+D control using the old bounded-resume command. Its current
+executable schedule still contains D; a plain resume would continue the detour.
+The earlier event probe remains reproducible historical evidence, not readiness
+for the intended next course.
 
 Recheck measured budget before continuation. Never use --no-retention on this
 lineage, hot-edit active providers, merge to main or close the execution issue.

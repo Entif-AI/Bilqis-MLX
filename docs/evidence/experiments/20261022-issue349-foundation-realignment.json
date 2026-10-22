@@ -1,0 +1,208 @@
+{
+  "schema": "bilqis.issue349.foundation-realignment/v1",
+  "authority": "Direct user correction20261022; ADR-083; IPR-0220",
+  "incident": "PM-2026-10-22-005",
+  "selected_run": "primary",
+  "current_grade": "A",
+  "current_capabilities": [
+    "A.IDENTITY",
+    "A.PARENT",
+    "A.LINK",
+    "A.MEMBER",
+    "A.EDGE",
+    "A.MAPS"
+  ],
+  "checkpoint": {
+    "filename": "bundles/working-120-d4a37442195e",
+    "model_and_native_adamw": true,
+    "optimizer_step": 116816,
+    "sha256": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f"
+  },
+  "generation": 356,
+  "current_release_sha256": "d03e076179524fe9b7098ed308b8f09ebf721d41003d1445966b1e0ce81211ba",
+  "fresh_A": {
+    "A.IDENTITY": {
+      "correct": 58,
+      "total": 113,
+      "majority_baseline": 70
+    },
+    "A.PARENT": {
+      "correct": 71,
+      "total": 132,
+      "majority_baseline": 68
+    },
+    "A.LINK": {
+      "correct": 68,
+      "total": 147,
+      "majority_baseline": 79
+    },
+    "A.MEMBER": {
+      "correct": 64,
+      "total": 121,
+      "majority_baseline": 64
+    },
+    "A.EDGE": {
+      "correct": 72,
+      "total": 142,
+      "majority_baseline": 74
+    },
+    "A.MAPS": {
+      "correct": 70,
+      "total": 139,
+      "majority_baseline": 70
+    }
+  },
+  "fresh_A_seeds": [
+    2026102101,
+    2026102102,
+    2026102103
+  ],
+  "next_new_grade": "B",
+  "next_capabilities": [
+    "B.NOT",
+    "B.AND"
+  ],
+  "profile": {
+    "profile_id": "issue349/foundations/not-and/v1",
+    "grades": [
+      {
+        "grade_id": "B",
+        "enabled_capabilities": [
+          "B.NOT",
+          "B.AND"
+        ],
+        "capabilities": []
+      },
+      {
+        "grade_id": "C",
+        "enabled_capabilities": [],
+        "capabilities": []
+      }
+    ]
+  },
+  "proposed_release_sha256": "70b18286e44da117b3eb78334c3cfae017dce81778659a70bf0f6c7c9516ebff",
+  "proposal_status": "SOURCE_COMPILED_NOT_ADOPTED",
+  "legacy_profile_view": "FACTORY_COMPATIBILITY_PROFILE_VIEW_UNSUPPORTED",
+  "truth_patterns": {
+    "B.NOT": [
+      [
+        false
+      ],
+      [
+        true
+      ]
+    ],
+    "B.AND": [
+      [
+        false,
+        false
+      ],
+      [
+        false,
+        true
+      ],
+      [
+        true,
+        false
+      ],
+      [
+        true,
+        true
+      ]
+    ]
+  },
+  "examples": {
+    "B.NOT": {
+      "query": {
+        "kind": "apply",
+        "operator": "NOT",
+        "args": [
+          {
+            "kind": "relation",
+            "name": "PARENT",
+            "args": [
+              {
+                "kind": "entity",
+                "name": "E"
+              },
+              {
+                "kind": "entity",
+                "name": "A"
+              }
+            ]
+          }
+        ]
+      },
+      "gold": "TRUE",
+      "operand_truths": [
+        false
+      ]
+    },
+    "B.AND": {
+      "query": {
+        "kind": "apply",
+        "operator": "AND",
+        "args": [
+          {
+            "kind": "compare",
+            "operator": "EQ",
+            "args": [
+              {
+                "kind": "entity",
+                "name": "A"
+              },
+              {
+                "kind": "entity",
+                "name": "D"
+              }
+            ]
+          },
+          {
+            "kind": "compare",
+            "operator": "EQ",
+            "args": [
+              {
+                "kind": "entity",
+                "name": "A"
+              },
+              {
+                "kind": "entity",
+                "name": "D"
+              }
+            ]
+          }
+        ]
+      },
+      "gold": "FALSE",
+      "operand_truths": [
+        false,
+        false
+      ]
+    }
+  },
+  "next_action": "Repair A foundations in primary. Before B adoption, teach its operators through understood A constituents and support the thin profile in the legacy Course view. No event-control resume.",
+  "actual_neural_updates": 0,
+  "admission_evidence_written": false,
+  "training_exposure_overlap": "NOT_MEASURED",
+  "control_preserved": "generation676/step119940; A+D stays stopped; debt retained",
+  "numeric_trial_maximum": 4,
+  "budget": {
+    "issue_number": 349,
+    "run_count": 2,
+    "max_bytes": 100000000000,
+    "reserve_bytes": 0,
+    "used_bytes": 14454431744,
+    "within_budget": true,
+    "runs": [
+      "primary",
+      "plasticity-control"
+    ]
+  },
+  "resume_preflight": {
+    "exit_code": 0,
+    "status": "ACTIVE_GRADE_A",
+    "source_manifest_preflight": "NOT_RERUN_USE_--verify-source",
+    "retention": "DEFAULT_ENABLED",
+    "actual_neural_updates": 0
+  }
+}

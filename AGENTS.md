@@ -1,5 +1,36 @@
 # Bilqis MLX | Agent operating rules
 
+## CONTROLLING USER CORRECTION — 2026-10-22: foundations before worlds
+
+**Teach what a concept is through fundamentals the student already understands.**
+The course is **logic and basic cognitive algebra → mathematics → physics**, with
+selective New Ithkuil Lexicon Chapters **2, 3 and 6** supplying concepts when their
+foundations make them expressible. This is a **narrow staircase built exclusively
+upon its foundations**: each step adds one small semantic distinction, explicitly
+constructed from earlier understood ingredients. Show that construction in the
+actual lessons; a prerequisite label or a correct Python oracle is insufficient.
+Start with positive identification; then use context and contrasts where useful.
+
+**We are not building tiny world models at this stage.** Do not substitute event
+lookup, before/after-state classification, extra distractors or longer worlds for
+concept formation. Occurrence/commencement/termination event prototypes are a
+historical detour, not the next curriculum. Preserve their receipts, token meanings,
+checkpoints and own AdamW; do not continue those lessons by default. Do not treat
+source order, the provisional D–O map, or availability of an easy generator as
+pedagogical readiness. Transfer checks should test the taught construction at the
+current step, not demand untaught cognitive machinery.
+
+**Next work:** repair the existing A foundations in the registered A-only `primary`
+experiment; measure current understanding before opening a thin canonical B slice
+(NOT, then AND over understood A propositions). Later Boolean compositions need
+understood constituents; numeric work follows COUNT → NUMBER → SUCCESSOR → ADD →
+SUB, initially 0..3 and at most 0..4 for current issue trials. Physics and further
+lexical admissions wait for their actual conceptual ingredients. This is not a
+new blanket perfect-score gate or a qualification project: use small lessons,
+cheap observations and the existing teacher/factory/retention owners. See ADR-083
+and HANDOFF.md for the selected run and next action. Canonical training boundaries
+and the issue-owned two-run/100-GB exception remain unchanged.
+
 ## Current canonical operator binding (2026-10-17)
 
 This repository's authoritative working root is `~/Code/bilqis-mlx`. The old codex and Chat-On-Steroids worktree paths are historical provenance, not current operator instructions. The active teacher/student code is `bilqis_mlx/`, the historical source-oracle and policy inputs are pinned under `vendor/legacy-v16/`, the actual student and its AdamW are under ignored `runs/school-mlx-v1/`, and all old experimental state is retained without making it an active runtime dependency. Human-run alone may update live neural state. See `README.md` and `docs/operations/CANONICAL_REPOSITORY_AND_RELEASE_20261017.md` for the current tested command, storage and release procedures. Conflicting older location or command examples below are superseded; source-semantic identity, cumulative whole-student graduation and protection requirements remain binding.
