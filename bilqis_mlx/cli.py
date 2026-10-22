@@ -114,7 +114,7 @@ def _executable_release_summary(run_dir: Path, saved: dict) -> dict | None:
 def _inspect(run_dir: Path) -> dict:
     state = run_dir / "state.json"
     if state.is_file():
-        saved = json.loads(state.read_text(encoding="utf-8"))
+        saved = read_current(run_dir)
         if saved.get("schema") == "bilqis.mlx.human-grade-a-trainer/v1":
             school = saved["school"]
             active = school["active_grades"]
