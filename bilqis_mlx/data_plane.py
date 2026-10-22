@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 from pathlib import Path
 import sqlite3
@@ -43,10 +44,36 @@ class DataPlaneError(str, Enum):
     BUNDLE_PAYLOAD_DRIFT = "DATA_PLANE_BUNDLE_PAYLOAD_DRIFT"
     BUNDLE_IDENTITY_CONFLICT = "DATA_PLANE_BUNDLE_IDENTITY_CONFLICT"
     BUNDLE_DEDUPE_TEMP_COLLISION = "DATA_PLANE_BUNDLE_DEDUPE_TEMP_COLLISION"
+    EVENT_LEDGER_UNSAFE = "DATA_PLANE_EVENT_LEDGER_UNSAFE"
+    EVENT_LEDGER_TRUNCATED = "DATA_PLANE_EVENT_LEDGER_TRUNCATED"
+    EVENT_LEDGER_JSON_INVALID = "DATA_PLANE_EVENT_LEDGER_JSON_INVALID"
+    EVENT_ID_INVALID = "DATA_PLANE_EVENT_ID_INVALID"
 
 
 def _error(code: DataPlaneError, detail=None) -> str:
     return code.value if detail is None else code.value + ":" + str(detail)
+
+
+def _read_event_tail(ledger: Path, start: int) -> tuple[list[tuple[str, str]], int]:
+    observed = []
+    with ledger.open("rb") as stream:
+        stream.seek(start)
+        while line := stream.readline():
+            if not line.endswith(b"\n"):
+                raise ValueError(_error(DataPlaneError.EVENT_LEDGER_TRUNCATED, ledger))
+            try:
+                item = json.loads(line)
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise ValueError(_error(
+                    DataPlaneError.EVENT_LEDGER_JSON_INVALID, ledger)) from exc
+            event_id = item.get("event_id") if isinstance(item, dict) else None
+            if event_id is None:
+                continue
+            if (not isinstance(event_id, str) or
+                    len(event_id) != SHA256_HEX_LENGTH):
+                raise ValueError(_error(DataPlaneError.EVENT_ID_INVALID, event_id))
+            observed.append((event_id, event_payload_digest(item)))
+        return observed, stream.tell()
 
 
 def default_path() -> Path:
@@ -102,6 +129,22 @@ class DataPlane:
             ctime_ns INTEGER NOT NULL,
             verified_ns INTEGER NOT NULL,
             PRIMARY KEY(path, expected_sha256)
+        ) WITHOUT ROWID;
+        CREATE TABLE IF NOT EXISTS event_ledgers(
+            run_dir TEXT PRIMARY KEY,
+            st_dev INTEGER NOT NULL,
+            st_ino INTEGER NOT NULL,
+            indexed_bytes INTEGER NOT NULL,
+            mtime_ns INTEGER NOT NULL,
+            ctime_ns INTEGER NOT NULL
+        ) WITHOUT ROWID;
+        CREATE TABLE IF NOT EXISTS event_index(
+            run_dir TEXT NOT NULL,
+            event_id TEXT NOT NULL,
+            payload_sha256 TEXT NOT NULL,
+            occurrences INTEGER NOT NULL,
+            conflicted INTEGER NOT NULL,
+            PRIMARY KEY(run_dir, event_id)
         ) WITHOUT ROWID;
         """)
         row = self._db.execute(
@@ -209,11 +252,98 @@ class DataPlane:
             nodes = self._db.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
             verified = self._db.execute(
                 "SELECT COUNT(*) FROM verified_files").fetchone()[0]
+            event_ledgers = self._db.execute(
+                "SELECT COUNT(*) FROM event_ledgers").fetchone()[0]
+            indexed_events = self._db.execute(
+                "SELECT COUNT(*) FROM event_index").fetchone()[0]
         return {
             "path": str(self.path), "objects": objects[0],
             "compressed_object_bytes": objects[1], "raw_object_bytes": objects[2],
             "nodes": nodes, "verified_files": verified,
+            "event_ledgers": event_ledgers, "indexed_events": indexed_events,
         }
+
+    def sync_event_ledger(self, run_dir: Path) -> dict:
+        """Index only the unseen append-only JSONL tail for one run."""
+        root = Path(run_dir).resolve(strict=True)
+        key = str(root)
+        ledger = root / "events.jsonl"
+        if ledger.is_symlink():
+            raise ValueError(_error(DataPlaneError.EVENT_LEDGER_UNSAFE, ledger))
+        if not ledger.exists():
+            with self.transaction():
+                self._db.execute("DELETE FROM event_index WHERE run_dir=?", (key,))
+                self._db.execute("DELETE FROM event_ledgers WHERE run_dir=?", (key,))
+            return {"run_dir": key, "indexed_bytes": 0, "scanned_bytes": 0,
+                    "indexed_events": 0, "rebuilt": False}
+        if not ledger.is_file():
+            raise ValueError(_error(DataPlaneError.EVENT_LEDGER_UNSAFE, ledger))
+        stat = ledger.stat()
+        with self._lock:
+            prior = self._db.execute(
+                "SELECT st_dev,st_ino,indexed_bytes,mtime_ns,ctime_ns "
+                "FROM event_ledgers WHERE run_dir=?", (key,)).fetchone()
+        rebuild = (
+            prior is None or prior[0] != stat.st_dev or prior[1] != stat.st_ino or
+            prior[2] > stat.st_size or
+            (prior[2] == stat.st_size and
+             (prior[3] != stat.st_mtime_ns or prior[4] != stat.st_ctime_ns))
+        )
+        start = 0 if rebuild else prior[2]
+        if start == stat.st_size and not rebuild:
+            with self._lock:
+                count = self._db.execute(
+                    "SELECT COUNT(*) FROM event_index WHERE run_dir=?", (key,)
+                ).fetchone()[0]
+            return {"run_dir": key, "indexed_bytes": start, "scanned_bytes": 0,
+                    "indexed_events": count, "rebuilt": False}
+
+        observed, end = _read_event_tail(ledger, start)
+
+        fresh = ledger.stat()
+        with self.transaction():
+            if rebuild:
+                self._db.execute("DELETE FROM event_index WHERE run_dir=?", (key,))
+            for event_id, digest in observed:
+                row = self._db.execute(
+                    "SELECT payload_sha256,occurrences,conflicted FROM event_index "
+                    "WHERE run_dir=? AND event_id=?", (key, event_id)).fetchone()
+                if row is None:
+                    self._db.execute(
+                        "INSERT INTO event_index(run_dir,event_id,payload_sha256,"
+                        "occurrences,conflicted) VALUES(?,?,?,?,?)",
+                        (key, event_id, digest, 1, False))
+                else:
+                    conflicted = bool(row[2]) or row[0] != digest
+                    self._db.execute(
+                        "UPDATE event_index SET occurrences=?,conflicted=? "
+                        "WHERE run_dir=? AND event_id=?",
+                        (row[1] + 1, conflicted, key, event_id))
+            self._db.execute(
+                "INSERT OR REPLACE INTO event_ledgers("
+                "run_dir,st_dev,st_ino,indexed_bytes,mtime_ns,ctime_ns"
+                ") VALUES(?,?,?,?,?,?)",
+                (key, fresh.st_dev, fresh.st_ino, end,
+                 fresh.st_mtime_ns, fresh.st_ctime_ns))
+            count = self._db.execute(
+                "SELECT COUNT(*) FROM event_index WHERE run_dir=?", (key,)
+            ).fetchone()[0]
+        return {"run_dir": key, "indexed_bytes": end,
+                "scanned_bytes": end - start, "indexed_events": count,
+                "rebuilt": rebuild}
+
+    def event_observations(self, run_dir: Path, event_ids) -> dict:
+        self.sync_event_ledger(run_dir)
+        key = str(Path(run_dir).resolve(strict=True))
+        result = {}
+        with self._lock:
+            for event_id in event_ids:
+                row = self._db.execute(
+                    "SELECT payload_sha256,occurrences,conflicted FROM event_index "
+                    "WHERE run_dir=? AND event_id=?", (key, event_id)).fetchone()
+                if row is not None:
+                    result[event_id] = (row[0], row[1], bool(row[2]))
+        return result
 
 
 def data_plane() -> DataPlane:
@@ -255,6 +385,20 @@ def verify_file_digest(path: Path, expected_sha256: str, *, deep: bool = False) 
         return False
     plane.remember_verified_file(path, expected_sha256)
     return True
+
+
+def event_payload_digest(event: dict) -> str:
+    raw = json.dumps(event, sort_keys=True, separators=(",", ":"),
+                     ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def sync_event_ledger(run_dir: Path) -> dict:
+    return data_plane().sync_event_ledger(run_dir)
+
+
+def event_observations(run_dir: Path, event_ids) -> dict:
+    return data_plane().event_observations(run_dir, event_ids)
 
 
 def referenced_custody_files(run_dir: Path, receipt: dict) -> tuple[tuple[Path, str], ...]:
@@ -357,9 +501,9 @@ def main(argv=None) -> int:
     """Inspect or prewarm the shared workstation data plane."""
     import argparse
     import fcntl
-    import json
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("status", "warm-custody", "dedupe-bundles"))
+    parser.add_argument("action", choices=(
+        "status", "warm-custody", "warm-events", "dedupe-bundles"))
     parser.add_argument("--run-dir", type=Path)
     args = parser.parse_args(argv)
     if args.action == "status":
@@ -380,6 +524,14 @@ def main(argv=None) -> int:
             raise ValueError(DataPlaneError.HUMAN_TRAINING_ACTIVE.value) from None
         if args.action == "dedupe-bundles":
             print(json.dumps(dedupe_bundle_payloads(root), sort_keys=True))
+            return 0
+        if args.action == "warm-events":
+            started = time.perf_counter()
+            result = sync_event_ledger(root)
+            print(json.dumps({**result,
+                              "mode": "EVENT_LEDGER_INDEX_WARMED",
+                              "elapsed_seconds": round(
+                                  time.perf_counter() - started, 3)}, sort_keys=True))
             return 0
         from .state_dag import read_current
         before = data_plane().stats()

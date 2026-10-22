@@ -477,15 +477,13 @@ def _observed_outbox_events(run_dir: _pathlib.Path, expected: dict):
         return observed, observed_counts
     if journal.is_symlink() or not journal.is_file():
         raise ValueError("HUMAN_TRAINER_OUTBOX_UNSAFE_LEDGER")
-    with journal.open(encoding="utf-8") as stream:
-        for line in stream:
-            item = _json.loads(line)
-            identity = item.get("event_id")
-            if identity in expected:
-                if item != expected[identity]:
-                    raise ValueError("HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT")
-                observed.add(identity)
-                observed_counts[identity] = observed_counts.get(identity, 0) + 1
+    indexed = _data_plane.event_observations(run_dir, expected)
+    for identity, (digest, count, conflicted) in indexed.items():
+        if (conflicted or
+                digest != _data_plane.event_payload_digest(expected[identity])):
+            raise ValueError("HUMAN_TRAINER_OUTBOX_LEDGER_CONTENT_DRIFT")
+        observed.add(identity)
+        observed_counts[identity] = count
     return observed, observed_counts
 
 
