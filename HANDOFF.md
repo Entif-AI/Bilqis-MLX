@@ -2,116 +2,120 @@
 
 Branch `codex/349-autonomous-jit-ithkuil-20261020`, draft PR11.
 Worktree `/Users/emilie/Code/.worktrees/Bilqis-MLX/349-autonomous-jit-ithkuil-20261020`.
-`main` through `917c0be4f4e8f898f30da38e2b33c5b5182c70c1` and remote feature
-repair `6796270af6110cd40c5d39db96d6a05209584484` are integrated. Read actual
-HEAD / PR11 for the final pushed SHA. Earlier handoff snapshots remain in Git
-history and `docs/evidence/development/ISSUE349_REVIEW_HANDOFF_20261021.md`.
+Current main `917c0be4f4e8f898f30da38e2b33c5b5182c70c1` is integrated. Pulled the
+feature's retention/teacher/storage work through `385296d`, then merged remote CLI
+and champion-display fixes through `efd73cc`. Read actual HEAD / PR11 for final SHA.
 
-IPR-0220 and protected governing remediation issue336 remain OPEN; execution
-issue349 remains OPEN. Read their complete protected authority/checkpoints before
-changing semantics or custody. Issue346 is excluded. User-authorized publication
-supersedes the older private-implementation restriction for this feature branch.
-Keep protected issue URLs out of newly written public prose.
+IPR-0220 governs; the protected remediation and execution issues remain OPEN.
+Read their current checkpoints before changing semantics or custody. Issue346 is
+excluded. Public branch publication is user-authorized; keep protected URLs out
+of public prose. Earlier handoffs remain in Git history; prior receipts are historical.
 
-## What changed
+## Engineered
 
-The refactored factory/runtime remains the execution owner; `trainer.py` is a
-compatibility facade. Preserved main's max4 numeric staircase, admitted-frontier
-priority and exact historical-release burn-cohort verification. Numeric scope
-validation keeps its original wire error. Resume repairs exact known malformed
-mentor-history records before custody checks; new profile revisions archive the
-actual prior epoch. The experiment's append-only generation166 repair preserved
-immutable generations163–165 and the same student/own AdamW. Existing incident
-PM-2026-10-20-003 / RC-116 was enriched and native-ledger readback verified.
+The same factory/runtime handles all three finite event prototypes: occurrence,
+commencement and termination. No new per-candidate trainer or token meanings.
 
-Three finite event senses share one adapter family: occurrence (-PS-), commencement
-(-TĻ-) and termination (-MPR-). No per-candidate trainer. The current smaller slice
-uses two events and paired opposite queries for teaching. Each ordinary panel of
-at least two rows includes an opposite-query witness; the same world must support
-different gold answers. Source meanings and gold remain unchanged. All provider
-revisions went through ordinary compiled factory adoption. The original four-event
-provider remains executable for transfer diagnostics.
+The generic optional-teaching gate now permits an existing declared prerequisite
+from the same verified provider, checking its own answer family and source gold.
+Unrelated capabilities, foreign providers and wrong answers remain rejected.
+A joint source option contrasts roots over identical two-event worlds and queries.
+A second option reuses all 16 single-event before/after observations per root.
+During termination lessons both options include its declared occurrence and
+commencement prerequisites. Teacher old-grade allocation and retention gates remain
+unchanged. Source revisions were normally compiled/adopted with zero updates;
+the reused introductory provider's fingerprint is included in the pair descriptor.
 
-## What the student actually did
+DAG state readers now cover all four issue probes and dashboard refresh/watch
+paths. Preserved the remote CLI/champion fixes and added a failing-before DAG
+champion-display regression. PM-2026-10-20-003 / RC-116 was enriched and exact native
+Sheet readbacks verified for reader propagation and dependency fingerprinting.
 
-After the earlier step118560 checkpoint, six bounded continuations attempted6112
-updates and retained736. The last three query-witness trials retained608 updates.
-Occurrence and commencement now receive direct teaching; termination is admitted
-but still untaught. No full grade graduation or all-Ithkuil learning is established.
+## Actual observations
 
-Fixed two-event query-swap pairs, with both queries required correct:
+Eight bounded continuations: 145 optimizer visits, 4,492 attempted updates, 644
+retained; native step119296→119940. Termination received its first direct teaching
+and 160 retained updates. The first 32/64/4-step variants retained no termination
+updates; aligned joint teaching subsequently retained 160. This is a sequential
+exploration with several changed variables, not a matched ablation.
 
-| Capability | Before query witness | Final |
+Fixed two-event query-swap pairs, requiring both opposite answers correct:
+
+| Capability | Start of this continuation | Final |
 | --- | ---: | ---: |
-| Occurrence | 2/31 | 27/31 |
-| Commencement | 2/28 | 15/28 |
-| Termination, untaught | 1/29 | 0/29 |
+| Occurrence | 27/31 | 25/31 |
+| Commencement | 15/28 | 28/28 |
+| Termination | 0/29 | 0/29 |
 
-Final newly seeded two-event panel: occurrence160/163, commencement125/157,
-termination37/157. Original four-event panel:96/192,95/192,99/192 respectively.
-This is useful narrow-domain acquisition with weak transfer and interference.
-Training-exposure overlap is NOT_MEASURED; fresh seeds do not prove unexposed
-examples. Earlier headline occurrence128/192 was close to a query-blind126/192
-baseline. Final routine A.MEMBER is5/12: aggregate retention does not mean every
-prior capability is mastered. Sequential trials are not matched ablations.
+Final seeded two-event panel: 149/161,153/155,56/156 respectively. Four-event
+transfer: 105/192,110/192,91/192. Commencement shows useful narrow-domain progress;
+termination still lacks demonstrated query binding despite retained target gains.
+Final routine termination is 4/12 and A.MEMBER 8/12. No grade graduation, composition,
+full-root realization, morphology or all-Ithkuil mastery is established.
+Training-exposure overlap is NOT_MEASURED. V2-only constituent methodology can also
+remain NOT_MEASURED where the legacy Course diagnostic lacks those capabilities.
 
-Compact receipt: `docs/evidence/experiments/20261021-issue349-event-query-continuation.json`.
-Raw local receipts/log pointers: `.local/issue349-refactored-continuation/`.
+Receipt: `docs/evidence/experiments/20261022-issue349-joint-event-continuation.json`.
+Raw local evidence: `.local/issue349-refactored-continuation/`.
 
 ## Exact stopped custody
 
-Control `runs/issue-349-experiments/plasticity-control`: generation400, step119296,
-SHA `46ae57b87efd95b149c88888fe87a7aa2c1c6293a441bbe1bb09c9627f0658df`,
-bundle `bundles/best-225-6cb8bed91012`, matching native AdamW.
-Factory release `f7e7ef82a20cbff10e2ef45e421fad2c79d49ab1256d13fdb23b2c49258ea410`.
-Primary remains generation356 / step116816 / SHA
+Control: generation 676 / native step 119940 / SHA
+`9f5b196a559929a211ce10e1878def3ac89b5222dc6eee4c47085d4bf00c525a`,
+bundle `bundles/best-405-274b6cc5502f`, matching own AdamW.
+Factory release `374c055870c2a3bf325979aa6d2f11d349f6f44698ebb7e7ab5418b56a2a375b`.
+Primary remains generation 356 / step 116816 / SHA
 `260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f`.
-Both issue trainers are stopped. Exactly two registered runs measure9,897,218,048
-allocated bytes against100,000,000,000. No third run, canonical/historical mutation,
-student reset, AdamW merge or fabricated lineage. Other human-owned runs are separate.
+Both issue trainers stopped. Exactly two registered runs measure 14,455,250,944
+allocated bytes against 100,000,000,000. No canonical/historical mutation, third
+run, student reset, AdamW merge or fabricated lineage.
 
-## Proof and next useful step
-
-139-test affected suite and one diagnostic regression pass. Quality, size ratchet,
-semantic boundaries, release metadata and whitespace pass. ABI remains advisory
-without an independent expected digest. Extra factory-closure check reports two
-inherited concrete numeric-provider imports (CLI and release adoption); it is not
-green. The full-suite result from earlier integration is historical, not rerun here.
-
-
-Hosted portable CI exposed an eager NumPy import through a migration test's trainer
-facade. The test now uses the actual release/state owners; release adoption loads
-student inference only inside catalog expansion. The exact portable command passes
-47/47 under `python3 -S` with all site packages disabled. Affected admission,
-release-adoption and catalog-transaction tests pass. PM-2026-10-20-003 was enriched
-and exact native-cell readback verified. Hosted rerun must be read separately.
-
-Reproduce the fixed query diagnostic from the repo root:
+The new state store is durable state, inside the control directory so its SQLite
+and WAL bytes count toward the cap. Keep it with the run; heads require its objects.
+**Set this variable for every probe, status command and resume:**
 
 ```sh
-BILQIS_INTEGER_MAX=4 PYTHONPATH=. python3 -B scripts/issue349_query_probe.py \
+export BILQIS_DATA_PLANE=/Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/runs/issue-349-experiments/plasticity-control/data-plane.sqlite3
+export BILQIS_INTEGER_MAX=4
+```
+
+Do not read state.json as a full receipt. Use `state_dag.read_current` and
+`read_generation`, which also support immutable legacy JSON/gzip evidence.
+
+## Proof and next action
+
+120 focused tests pass, covering state, presentation, retention, source preparation,
+joint teaching and query diagnostics. Quality/size/docs/error-plane, semantic
+boundaries, release metadata and whitespace pass. ABI remains advisory without an
+independent expected digest. The extra closure check has two inherited numeric
+provider imports; it is not green. Earlier whole-suite proof is historical.
+Hosted checks and exact pushed SHA are recorded in PR11 and the protected checkpoint.
+
+Next: inspect termination's wrong source patterns and root/query sensitivity;
+choose another small source-owned teaching change from that evidence. Do not add
+a qualification framework, erase earlier-skill debt or relax retention to make it
+look learned. Broader candidate uptake, composition, inversion and communication
+remain unfinished. Any Grade C work stays capped at 4.
+
+After setting the environment above, reproduce the fixed query diagnostic:
+
+```sh
+PYTHONPATH=. python3 -B scripts/issue349_query_probe.py \
   --run-dir runs/issue-349-experiments/plasticity-control \
   --panel docs/evidence/experiments/20261021-issue349-query-worlds.json \
   --output /tmp/bilqis349-query-result.json
 ```
 
-Next: inspect current commencement binding and earlier-skill recovery, then continue
-a cheap bounded trial. Broader event complexity needs actual transfer progress.
-Use the existing source/factory/teacher owners; do not add qualification scaffolding.
-Remaining candidates, semantic composition, inversion, counterfactual competence,
-and communication remain unfinished. Grade C tests/trials stay capped at4.
-
-Only resume the registered control with ordinary retention and absolute CLI paths:
+Bounded resume, only inside the registered issue control:
 
 ```sh
-BILQIS_INTEGER_MAX=4 python3 -B -m bilqis_mlx.cli train --human-run --resume \
+python3 -B -m bilqis_mlx.cli train --human-run --resume \
   --run-dir /Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/runs/issue-349-experiments/plasticity-control \
   --issue-349-experiment-root /Users/emilie/Code/.worktrees/bilqis-mlx/349-autonomous-jit-ithkuil-20261020/runs/issue-349-experiments \
   --minutes 4 --max-visits 24 --steps-per-visit 32 \
   --source-prefetch-workers 0 --source-teaching-enrichment
 ```
 
-Never use `--no-retention` on this persisted lineage. Recheck measured budget before
-each continuation. Do not hot-edit active providers. Do not merge to main or close
-issue349. The two isolated experiments have explicit agent-training authorization;
-ordinary canonical/historical students remain outside that exception.
+Recheck measured budget before continuation. Never use --no-retention on this
+lineage, hot-edit active providers, merge to main or close the execution issue.
+Canonical/historical students remain outside the two-run training exception.

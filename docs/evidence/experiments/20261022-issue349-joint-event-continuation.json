@@ -1,0 +1,134 @@
+{
+  "schema": "bilqis.issue349.joint-event-continuation/v1",
+  "recorded_at": "2026-10-22T06:26:58.187553+00:00",
+  "authority": "IPR-0220; issue349 remains open; PM-2026-10-20-003 / RC-116",
+  "integrated_main": "917c0be4f4e8f898f30da38e2b33c5b5182c70c1",
+  "integrated_feature_base": "385296dbc566250193e0dced4e10a7e263169f5a",
+  "integrated_remote_followups": [
+    "8c9897b5628cd26c333feacd62c84d5d385401a8",
+    "efd73cc54edf2fadc3a62aaa7123349cfb091636"
+  ],
+  "source_sha256": {
+    "bilqis_mlx/factory/teaching.py": "cdec965155105ade380b00c14a942269296061974fb041b120d2503385ad7d76",
+    "bilqis_mlx/source_adapters/event_pairs.py": "0c61b8228ba9015aaf624a448e1e938a317cc08e3914b54d86f94dc24b5f069d",
+    "bilqis_mlx/source_adapters/event_intro.py": "b52e3a8dcf405518221a2c1d1ee2f4d56e144939a73bdc2161ed656ffbad5558",
+    "scripts/issue349_query_probe.py": "d84b1b4c93292a49fad5094301cdc4534a604554c98fc4f3d383b6483e8a57a7"
+  },
+  "initial_checkpoint": {
+    "filename": "bundles/best-225-6cb8bed91012",
+    "model_and_native_adamw": true,
+    "optimizer_step": 119296,
+    "sha256": "46ae57b87efd95b149c88888fe87a7aa2c1c6293a441bbe1bb09c9627f0658df"
+  },
+  "final_checkpoint": {
+    "filename": "bundles/best-405-274b6cc5502f",
+    "model_and_native_adamw": true,
+    "optimizer_step": 119940,
+    "sha256": "9f5b196a559929a211ce10e1878def3ac89b5222dc6eee4c47085d4bf00c525a"
+  },
+  "generation": 676,
+  "state_head": {
+    "generation": 676,
+    "node_sha256": "090e886acbbf3e0b31fb402deeb5a1d62dbd2d0f568c66eb711d40b9321ef3e8",
+    "receipt_sha256": "1c27d486e69957370b88e4160973c21176944c48c027c7a145d76477c16f93e8",
+    "schema": "bilqis.state-head/v1"
+  },
+  "factory_release_sha256": "374c055870c2a3bf325979aa6d2f11d349f6f44698ebb7e7ab5418b56a2a375b",
+  "phases": [
+    {"intervention": "query contrasts / updated retention and teacher", "generations": [400, 440], "scheduled_visits": 24, "optimizer_visits": 19, "attempted": 608, "retained": 96, "retained_by_capability": {"D.COMMENCEMENT": 64, "D.EVENT_OCCURRENCE": 32, "D.TERMINATION": 0}, "reasons": {"PAIRED_SCREEN_WITHIN_BUDGET": 3, "NO_MEASURABLE_TARGET_GAIN": 3, "FIXED_LESSON_GRADE_REGRESSION": 3, "SAME_GRADE_NET_REGRESSION": 8, "PROTECTED_CAPABILITY_REGRESSION": 2}},
+    {"intervention": "query contrasts / continuation", "generations": [440, 476], "scheduled_visits": 24, "optimizer_visits": 18, "attempted": 576, "retained": 0, "retained_by_capability": {"D.COMMENCEMENT": 0, "D.EVENT_OCCURRENCE": 0, "D.TERMINATION": 0}, "reasons": {"SAME_GRADE_NET_REGRESSION": 7, "PROTECTED_CAPABILITY_REGRESSION": 5, "NO_MEASURABLE_TARGET_GAIN": 2, "FIXED_LESSON_GRADE_REGRESSION": 4}},
+    {"intervention": "query contrasts /64-step visits", "generations": [476, 494], "scheduled_visits": 12, "optimizer_visits": 12, "attempted": 768, "retained": 0, "retained_by_capability": {"D.COMMENCEMENT": 0, "D.EVENT_OCCURRENCE": 0, "D.TERMINATION": 0}, "reasons": {"PROTECTED_CAPABILITY_REGRESSION": 4, "WHOLE_SCHOOL_NET_REGRESSION": 2, "SAME_GRADE_NET_REGRESSION": 6}},
+    {"intervention": "query contrasts /4-step visits", "generations": [494, 530], "scheduled_visits": 24, "optimizer_visits": 19, "attempted": 76, "retained": 4, "retained_by_capability": {"D.COMMENCEMENT": 0, "D.EVENT_OCCURRENCE": 4, "D.TERMINATION": 0}, "reasons": {"PAIRED_SCREEN_WITHIN_BUDGET": 1, "FIXED_LESSON_GRADE_REGRESSION": 3, "NO_MEASURABLE_TARGET_GAIN": 12, "SAME_GRADE_NET_REGRESSION": 3}},
+    {"intervention": "one prerequisite witness pair", "generations": [530, 567], "scheduled_visits": 24, "optimizer_visits": 20, "attempted": 640, "retained": 64, "retained_by_capability": {"D.COMMENCEMENT": 32, "D.EVENT_OCCURRENCE": 32, "D.TERMINATION": 0}, "reasons": {"PROTECTED_CAPABILITY_REGRESSION": 3, "FIXED_LESSON_GRADE_REGRESSION": 2, "SAME_GRADE_NET_REGRESSION": 9, "PAIRED_SCREEN_WITHIN_BUDGET": 2, "NO_MEASURABLE_TARGET_GAIN": 3, "WHOLE_SCHOOL_NET_REGRESSION": 1}},
+    {"intervention": "root-aligned prerequisite panels", "generations": [567, 602], "scheduled_visits": 24, "optimizer_visits": 20, "attempted": 640, "retained": 288, "retained_by_capability": {"D.COMMENCEMENT": 128, "D.EVENT_OCCURRENCE": 64, "D.TERMINATION": 96}, "reasons": {"SAME_GRADE_NET_REGRESSION": 5, "PAIRED_SCREEN_WITHIN_BUDGET": 9, "FIXED_LESSON_GRADE_REGRESSION": 3, "NO_MEASURABLE_TARGET_GAIN": 3}},
+    {"intervention": "root-aligned continuation", "generations": [602, 636], "scheduled_visits": 24, "optimizer_visits": 16, "attempted": 512, "retained": 64, "retained_by_capability": {"D.COMMENCEMENT": 32, "D.EVENT_OCCURRENCE": 0, "D.TERMINATION": 32}, "reasons": {"PAIRED_SCREEN_WITHIN_BUDGET": 2, "FIXED_LESSON_GRADE_REGRESSION": 4, "NO_MEASURABLE_TARGET_GAIN": 3, "SAME_GRADE_NET_REGRESSION": 6, "WHOLE_SCHOOL_NET_REGRESSION": 1}},
+    {"intervention": "root-aligned plus single-event observations", "generations": [636, 676], "scheduled_visits": 24, "optimizer_visits": 21, "attempted": 672, "retained": 128, "retained_by_capability": {"D.COMMENCEMENT": 64, "D.EVENT_OCCURRENCE": 32, "D.TERMINATION": 32}, "reasons": {"SAME_GRADE_NET_REGRESSION": 8, "PAIRED_SCREEN_WITHIN_BUDGET": 4, "WHOLE_SCHOOL_NET_REGRESSION": 1, "NO_MEASURABLE_TARGET_GAIN": 4, "FIXED_LESSON_GRADE_REGRESSION": 2, "PROTECTED_CAPABILITY_REGRESSION": 2}}
+  ],
+  "query_panel_sha256": "8b0d082f52de723810eaec845783d9826b75ab620779373ffa5f8d866b1356f0",
+  "initial_query_scores": {
+    "D.EVENT_OCCURRENCE": {"correct": 110, "total": 114, "opposite_query_pairs": 31, "both_queries_correct": 27, "predictions_flip": 27},
+    "D.COMMENCEMENT": {"correct": 85, "total": 118, "opposite_query_pairs": 28, "both_queries_correct": 15, "predictions_flip": 15},
+    "D.TERMINATION": {"correct": 23, "total": 120, "opposite_query_pairs": 29, "both_queries_correct": 0, "predictions_flip": 20}
+  },
+  "final_query_scores": {
+    "D.EVENT_OCCURRENCE": {"correct": 107, "total": 114, "opposite_query_pairs": 31, "both_queries_correct": 25, "predictions_flip": 25},
+    "D.COMMENCEMENT": {"correct": 116, "total": 118, "opposite_query_pairs": 28, "both_queries_correct": 28, "predictions_flip": 28},
+    "D.TERMINATION": {"correct": 57, "total": 120, "opposite_query_pairs": 29, "both_queries_correct": 0, "predictions_flip": 13}
+  },
+  "commencement_intermediate_peak": {
+    "step": 119392,
+    "both_queries_correct": 27,
+    "opposite_query_pairs": 28
+  },
+  "final_seeded_scores": {
+    "D.EVENT_OCCURRENCE": {"correct": 149, "total": 161},
+    "D.COMMENCEMENT": {"correct": 153, "total": 155},
+    "D.TERMINATION": {"correct": 56, "total": 156}
+  },
+  "final_seeded_seeds": [
+    349501,
+    349502,
+    349503
+  ],
+  "four_event_scores": {
+    "D.EVENT_OCCURRENCE": {"correct": 105, "total": 192},
+    "D.COMMENCEMENT": {"correct": 110, "total": 192},
+    "D.TERMINATION": {"correct": 91, "total": 192}
+  },
+  "four_event_release": "86656bbc4307d1b586c78b236bae6870d6d6e92e886f2ef155f8e4f915fe6d6b",
+  "final_routine_scores": {
+    "A.EDGE": {"correct": 10, "total": 12},
+    "A.IDENTITY": {"correct": 12, "total": 12},
+    "A.LINK": {"correct": 11, "total": 12},
+    "A.MAPS": {"correct": 12, "total": 12},
+    "A.MEMBER": {"correct": 8, "total": 12},
+    "A.PARENT": {"correct": 11, "total": 12},
+    "D.COMMENCEMENT": {"correct": 12, "total": 12},
+    "D.EVENT_OCCURRENCE": {"correct": 11, "total": 12},
+    "D.TERMINATION": {"correct": 4, "total": 12}
+  },
+  "custody": {
+    "budget": {
+      "issue_number": 349,
+      "run_count": 2,
+      "max_bytes": 100000000000,
+      "reserve_bytes": 0,
+      "used_bytes": 14455250944,
+      "within_budget": true,
+      "runs": [
+        "primary",
+        "plasticity-control"
+      ]
+    },
+    "data_plane_relative": "plasticity-control/data-plane.sqlite3",
+    "data_plane_is_durable_required_state": true,
+    "primary_checkpoint": {
+      "filename": "bundles/working-120-d4a37442195e",
+      "model_and_native_adamw": true,
+      "optimizer_step": 116816,
+      "sha256": "260b56c5e194d7b204beceec716cfcbe0d80c52225006fbb1ee0041ccf7d3d1f"
+    },
+    "issue_trainers_stopped": true,
+    "native_step_verified_by_final_probe": true,
+    "no_canonical_or_historical_run_mutation": true
+  },
+  "validation": {
+    "focused_tests": 120,
+    "focused_result": "PASS",
+    "portable_no_site_packages_tests": 47,
+    "portable_result": "PASS current source without site packages",
+    "quality": "PASS",
+    "semantic_boundaries": "PASS",
+    "release_metadata": "PASS",
+    "abi": "ADVISORY_INDEPENDENT_EXPECTED_DIGEST_ABSENT"
+  },
+  "limits": [
+    "Finite Boolean formal realizations; not complete root meanings or morphology.",
+    "Training exposure overlap NOT_MEASURED; seeded panels are not unexposed generalization proof.",
+    "Termination retained160 updates but is0/29 on the final fixed query-pair diagnostic.",
+    "Sequential trials changed pedagogy, visit length and source versions; not matched ablations.",
+    "Four-event transfer remains weak; earlier-skill mastery remains incomplete.",
+    "Legacy Course-based constituent methodology may remain NOT_MEASURED for these v2-only capabilities."
+  ],
+  "next_action": "Inspect termination root/query confusion and actual delivered source rows; try a targeted source-owned teaching revision only when that evidence suggests one. Preserve existing factory and retention owners."
+}
