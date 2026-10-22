@@ -2,6 +2,14 @@
 
 ## CONTROLLING USER CORRECTION — 2026-10-22: foundations before worlds
 
+**2026-10-22 follow-up — progression with Boolean debt:** NOT and AND may be
+introduced and revisited, but their mastery must not gate Grade C. C keeps its
+designed prerequisites and COUNT → NUMBER → SUCCESSOR → ADD → SUB progression;
+it does not gain a B.NOT/B.AND prerequisite. Carry unresolved A/B debt through
+the existing explicit debt-admission path and cumulative assessment. Do not wait
+for Boolean perfection or label that debt graduation. Current issue numeric scope
+starts at 0..3 and remains capped at 4. See ADR-084.
+
 **Teach what a concept is through fundamentals the student already understands.**
 The course is **logic and basic cognitive algebra → mathematics → physics**, with
 selective New Ithkuil Lexicon Chapters **2, 3 and 6** supplying concepts when their
@@ -20,16 +28,15 @@ source order, the provisional D–O map, or availability of an easy generator as
 pedagogical readiness. Transfer checks should test the taught construction at the
 current step, not demand untaught cognitive machinery.
 
-**Next work:** repair the existing A foundations in the registered A-only `primary`
-experiment; measure current understanding before opening a thin canonical B slice
-(NOT, then AND over understood A propositions). Later Boolean compositions need
-understood constituents; numeric work follows COUNT → NUMBER → SUCCESSOR → ADD →
-SUB, initially 0..3 and at most 0..4 for current issue trials. Physics and further
-lexical admissions wait for their actual conceptual ingredients. This is not a
-new blanket perfect-score gate or a qualification project: use small lessons,
-cheap observations and the existing teacher/factory/retention owners. See ADR-083
-and HANDOFF.md for the selected run and next action. Canonical training boundaries
-and the issue-owned two-run/100-GB exception remain unchanged.
+**Current work:** the registered `primary` experiment now has A, thin B (NOT and
+AND), and the designed C foundation sequence admitted. Continue COUNT → NUMBER →
+SUCCESSOR → ADD → SUB, initially 0..3 and at most 0..4 in current issue trials.
+Unresolved A/B skills remain cumulative debt and teaching targets; NOT/AND mastery
+must not gate C access. Teach the actual numeric constituents as each C stage opens.
+Physics and further lexical admissions wait for their conceptual ingredients.
+Use small lessons, cheap observations and the existing teacher/factory/retention
+owners. See ADR-083/084 and HANDOFF.md for exact state and the next action. Canonical
+training boundaries and the issue-owned two-run/100-GB exception remain unchanged.
 
 Source-oracled MLX training for a compositional semantic transformer. **This is the one active repository:** `~/Code/bilqis-mlx`. The human operator owns ordinary and long-running neural training. During trainer repair, the user's standing authorization also permits agents to run short, explicitly finite trainer tests against the current student when needed to reproduce and verify failures. Those bounded repair runs must preserve the student and its own AdamW, may not reset or replace the canonical lineage, and are not authority for unattended or open-ended training.
 

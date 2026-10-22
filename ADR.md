@@ -1,6 +1,6 @@
 # Architecture Decision Record
 
-**Current curriculum direction: ADR-083 (2026-10-22), foundations before worlds.**
+**Current curriculum direction: ADR-083/084 (2026-10-22), foundations before worlds; Boolean mastery does not gate C.**
 Logic/cognitive algebra → mathematics → physics; selective lexicon Chapters 2, 3, 6.
 The event-state experiment is historical, not the next teaching objective.
 
@@ -1027,3 +1027,23 @@ This decision selects future work; it does not graduate A/B, admit a replacement
 or establish understanding of any Ithkuil root. Selection drift is filed and
 read-back verified as PM-2026-10-22-005, reusing RC-047/RC-096 and PAT-076. The
 previous PM-2026-10-20-003 / RC-116 covers separate runtime migration defects.
+
+
+## ADR-084 | 2026-10-22 | Introduce Boolean concepts without blocking designed numeric progression
+
+The user explicitly directs continuation while noting that NOT and AND have
+proved difficult to master: they may be introduced, but must not become
+prerequisites for moving to Grade C as designed. This refines ADR-083; it does
+not restore event-world training.
+
+C.COUNT depends on A.IDENTITY/A.MEMBER; subsequent numeric capabilities retain
+their existing count/number/successor/arithmetic dependencies. Do not add Boolean
+mastery to those definitions or wait for cumulative A/B perfection before this
+user-authorized C admission. Use the existing exact-checkpoint complete-boundary
+measurement and explicit debt-carry admission, preserving all unresolved A/B
+capabilities, the causal student and its own AdamW. Opening C does not graduate B.
+
+Continue with bounded foundation/Boolean introductions, then open the designed
+C foundation sequence at 0..3, capped at4 for this issue. This is a progression
+decision, not a new automatic timeout or lesson quota. Keep ordinary source,
+factory, retention, teacher, vocabulary and cumulative assessment owners.
