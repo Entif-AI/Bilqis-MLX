@@ -333,6 +333,21 @@ class GradeCTrainerTests(unittest.TestCase):
                            lambda _m,_p,rows,*args: {r["id"]:r["gold"] for r in rows}):
                     receipt = _take_exam(mx,root,receipt,self.manifest,self.course,SOURCE,PARENT,
                                          params,opt,graph,reserve_gib=0.)
+                swept = 0
+                while receipt["school"]["stage"] == "PROMOTION_SWEEP":
+                    swept += 1
+                    self.assertLessEqual(swept, stage + 1)
+                    receipt = _take_visit(
+                        mx, root, receipt, self.manifest, self.course, self.engine,
+                        params, opt, graph, steps_per_visit=1, batch_size=6,
+                        reserve_gib=0., source_root=SOURCE)
+                    with patch("bilqis_mlx.trainer._predictions", side_effect=
+                               lambda _m, _p, rows, *args:
+                               {row["id"]: row["gold"] for row in rows}):
+                        receipt = _take_exam(
+                            mx, root, receipt, self.manifest, self.course,
+                            SOURCE, PARENT, params, opt, graph, reserve_gib=0.)
+                self.assertEqual(swept, stage + 1)
                 routine = receipt["last_exam"]["routine_cohort_sha256"]
                 routine_cohorts.append(routine)
                 self.assertEqual(len(set(routine_cohorts)), len(routine_cohorts))
@@ -357,7 +372,10 @@ class GradeCTrainerTests(unittest.TestCase):
             self.assertEqual(receipt["school"]["active_grades"][receipt["school"]["grade_index"]],"A")
             self.assertEqual(receipt["school"]["revalidation_target_grade"],"C")
             self.assertEqual(len(set(routine_cohorts)), len(PLANS))
-            self.assertEqual(int(opt.state["step"].item()),8)
-            self.assertEqual(receipt["teacher"]["events"],self.teacher["events"]+7)
+            expected_visits = len(PLANS) + sum(range(1, len(PLANS) + 1))
+            self.assertEqual(int(opt.state["step"].item()), 1 + expected_visits)
+            self.assertEqual(
+                receipt["teacher"]["events"],
+                self.teacher["events"] + expected_visits)
             report = audit_saved_run(root)
-            self.assertEqual(report["verified_teacher_decision_count"],7)
+            self.assertEqual(report["verified_teacher_decision_count"], expected_visits)

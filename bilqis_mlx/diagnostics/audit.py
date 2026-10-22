@@ -13,6 +13,7 @@ from .event_evidence import (SHA256_HEX_LENGTH, load_verified_lesson_methodology
                              latest_methodology_findings)
 from .signals import (DiagnosticStatus, DiagnosticTarget, LearningSignal,
                       diagnose_exam, diagnose_history)
+from ..state_dag import read_current_fields
 
 
 VERSION: Final = "bilqis.school.learning-diagnostic-audit/v1"
@@ -157,7 +158,9 @@ def _collect_evidence(root: Path, paths: tuple[Path, ...],
     latest, history, comparable, findings, longitudinal = _exam_evidence(root)
     method_visits = load_verified_lesson_methodology(root)
     method = latest_methodology_findings(method_visits)
-    saved = json.loads(paths[0].read_text(encoding="utf-8"))
+    saved = read_current_fields(
+        root, ("last_exam", "delivery_outbox", "teacher_misses",
+               "teacher_miss_exposures"))
     decisions, latest_decisions, teacher_outcomes = _teacher_evidence(
         saved, method_visits)
     current = _current_findings(findings, longitudinal, method)

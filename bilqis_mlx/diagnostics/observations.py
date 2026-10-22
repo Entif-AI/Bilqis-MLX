@@ -16,7 +16,7 @@ import stat
 
 from ..curriculum import BOOLEAN_OPERATORS
 from ..generated_assessment import verify_stored_cohort
-from ..state_dag import read_generation_fields
+from ..state_dag import read_current_fields, read_generation_fields
 
 
 _DIAGNOSTIC_GENERATION_FIELDS = (
@@ -278,6 +278,7 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
         raise ValueError("DIAGNOSTIC_STATE_OUTSIDE_RUN")
     archived_generation = path.parent == root / "states" and path.suffix == ".json"
     if archived_generation:
+        _require_evidence_file(root, path)
         if not path.stem.isdecimal():
             raise ValueError(_STATE_GENERATION_DRIFT)
         try:
@@ -292,7 +293,9 @@ def load_saved_exam(run_dir: Path, *, state_file: Path | None = None) -> ExamObs
             raise
     else:
         _require_evidence_file(root, path)
-        receipt = json.loads(path.read_text(encoding="utf-8"))
+        receipt = (read_current_fields(root, _DIAGNOSTIC_GENERATION_FIELDS)
+                   if path == root / "state.json" else
+                   json.loads(path.read_text(encoding="utf-8")))
     exam = receipt.get("last_exam")
     if not isinstance(exam, dict):
         raise ValueError("DIAGNOSTIC_EXAM_NOT_MEASURED")
