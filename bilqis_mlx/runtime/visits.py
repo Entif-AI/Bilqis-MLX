@@ -27,11 +27,14 @@ import pathlib as _pathlib
 import random as _random
 
 
+RETENTION_REQUIRES_ACTIVE_GRADE_ERROR = "RETENTION_REQUIRES_ACTIVE_GRADE"
+
+
 def _retention_frontier_grade(school) -> str:
     """Return the latest admitted grade that anchors aggregate retention."""
     active = tuple(school.active_grades)
     if not active:
-        raise ValueError("RETENTION_REQUIRES_ACTIVE_GRADE")
+        raise ValueError(RETENTION_REQUIRES_ACTIVE_GRADE_ERROR)
     return active[-1]
 
 
