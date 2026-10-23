@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import bilqis_mlx.backup as _bilqis_mlx_backup
 import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
+import bilqis_mlx.compatibility.historical_teacher_policy as _historical_teacher_policy
 import bilqis_mlx.compatibility.source_bootstrap as _compatibility_source_bootstrap
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.factory.schedule as _factory_schedule
@@ -66,10 +67,7 @@ def prepare_source(legacy_root: _pathlib.Path, source_checkpoint: _pathlib.Path,
     if str(legacy_root) not in _sys.path:
         _sys.path.insert(0, str(legacy_root))
     _sys.dont_write_bytecode = True
-    from bilqis_school import engine
     policy_path = legacy_root / "bilqis_school" / "engine.py"
-    if _pathlib.Path(engine.__file__).resolve() != policy_path:
-        raise ValueError("HUMAN_TRAINER_TEACHER_IMPLEMENTATION_ROOT_MISMATCH")
     # Pin the original adaptive policy and preserve its learned strategies.
     teacher_sha = _bilqis_mlx_backup.digest_file(policy_path)
     teacher_path = (legacy_root / "runs" /
@@ -87,7 +85,7 @@ def prepare_source(legacy_root: _pathlib.Path, source_checkpoint: _pathlib.Path,
         "teacher_origin_events": teacher["events"],
         "teacher_origin_strategy_count": len(teacher["strategies"]),
     }
-    return manifest, course, engine, teacher_sha, teacher, provenance
+    return manifest, course, _historical_teacher_policy, teacher_sha, teacher, provenance
 
 
 def _init(run_dir, manifest, course, policy_sha, historical_teacher,

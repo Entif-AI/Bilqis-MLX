@@ -1,0 +1,96 @@
+"""Torch-free projection of the historical teacher's pure bandit policy.
+
+The legacy bilqis_school.engine module couples these small policy functions
+to the retired PyTorch training stack at import time. The MLX runtime only
+needs pick and observe, with mutate behind pick, so keep that behavior in a
+stdlib-only compatibility surface.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+
+
+KNOBS = {
+    "old": [4, 8, 12, 16, 20],
+    "preview": [0, 2, 4],
+    "depth": [1, 2, 3, 4],
+    "contrast": [0.0, 0.5, 1.0],
+    "lr": [0.00004, 0.00008, 0.00013, 0.0002, 0.0003],
+    "distill": [0.0, 0.15, 0.35, 0.65],
+}
+MAX_STRATEGIES = 512
+
+
+def _policy_key(policy):
+    return hashlib.sha256(json.dumps(policy, sort_keys=True).encode()).hexdigest()[:12]
+
+
+def _stats():
+    return {"trials": 0, "reward_sum": 0.0, "reward_ema": 0.0, "latest": None}
+
+
+def mutate(teacher, rng):
+    if len(teacher["strategies"]) >= MAX_STRATEGIES:
+        return None
+    viable = [(key, info) for key, info in teacher["global_stats"].items()
+              if info["trials"]]
+    base = (teacher["strategies"][max(viable, key=lambda v: v[1]["reward_ema"])[0]]
+            if viable else rng.choice(list(teacher["strategies"].values())))
+    for _ in range(24):
+        variant = dict(base)
+        field = rng.choice(list(KNOBS))
+        candidates = [value for value in KNOBS[field] if value != variant[field]]
+        variant[field] = rng.choice(candidates)
+        if variant["old"] + variant["preview"] > 24:
+            continue
+        identity = _policy_key(variant)
+        if identity not in teacher["strategies"]:
+            teacher["strategies"][identity] = variant
+            teacher["global_stats"][identity] = _stats()
+            teacher["mutations"] += 1
+            return identity
+    return None
+
+
+def pick(teacher, grade, rng, exclude=None):
+    if teacher["events"] and teacher["events"] % 3 == 0:
+        mutate(teacher, rng)
+    local = teacher["grade_stats"].get(str(grade), {})
+    total = teacher["events"] + 1
+    excluded = set(exclude or ())
+
+    def rank(item):
+        key, _policy = item
+        info = local.get(key) or teacher["global_stats"][key]
+        if info["trials"] == 0:
+            return 10 + rng.random()
+        exploitation = info["reward_sum"] / info["trials"]
+        exploration = 0.6 * math.sqrt(math.log(total + 2) / (1 + info["trials"]))
+        return exploitation + exploration
+
+    choices = [
+        item for item in teacher["strategies"].items()
+        if item[0] not in excluded
+    ]
+    if not choices:
+        raise ValueError("NO_UNTRIED_TEACHER_STRATEGY_FOR_GRADE_ATTEMPT")
+    return max(choices, key=rank)
+
+
+def observe(teacher, grade, policy_key, reward):
+    if not math.isfinite(reward):
+        raise ValueError("NONFINITE_TEACHER_REWARD")
+    for entry in (
+        teacher["global_stats"][policy_key],
+        teacher["grade_stats"].setdefault(str(grade), {}).setdefault(policy_key, _stats()),
+    ):
+        entry["trials"] += 1
+        entry["reward_sum"] += reward
+        entry["reward_ema"] = (
+            reward if entry["latest"] is None
+            else 0.8 * entry["reward_ema"] + 0.2 * reward
+        )
+        entry["latest"] = reward
+    teacher["events"] += 1

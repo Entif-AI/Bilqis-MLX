@@ -11,10 +11,12 @@ from __future__ import annotations
 from collections import Counter
 import hashlib
 import importlib
+import importlib.util
 import json
 from pathlib import Path
 import random
 import sys
+import types
 
 from .curriculum import AnswerFamily, BINARY, Capability, Course, Grade, ExamItem, validate_exam_item
 from .grade_a_oracle import VERSION as INDEPENDENT_ORACLE, evaluate as third_oracle
@@ -43,6 +45,42 @@ FAMILIES = (
 SEED = 20261015
 
 
+def _source_only_tensor_hash(*_args, **_kwargs):
+    """Fail closed if a source-only probe reaches legacy neural geometry."""
+    raise RuntimeError("GRADE_A_SOURCE_PROBE_NEURAL_GEOMETRY_FORBIDDEN")
+
+
+def _import_source_interpreters(root: Path):
+    """Import pinned symbolic interpreters without requiring PyTorch.
+
+    `bilqis_micro.graph` imports `tensor_hash` at module import time, although
+    the symbolic kernels used by this probe never call it. Portable source
+    verification should not need the historical neural stack merely to import
+    those constants. When torch is absent, provide only that imported name;
+    any accidental embedding/tensor path still fails closed immediately.
+    """
+    geometry_name = "bilqis_logic.geometry"
+    try:
+        torch_available = importlib.util.find_spec("torch") is not None
+    except (ImportError, ModuleNotFoundError, ValueError):
+        torch_available = False
+    previous_geometry = sys.modules.get(geometry_name)
+    inserted = False
+    if not torch_available and previous_geometry is None:
+        source_only_geometry = types.ModuleType(geometry_name)
+        source_only_geometry.tensor_hash = _source_only_tensor_hash
+        sys.modules[geometry_name] = source_only_geometry
+        inserted = True
+    try:
+        micro = importlib.import_module("bilqis_micro.kernel")
+        development = importlib.import_module("bilqis_development.kernel")
+        registry = importlib.import_module("bilqis_development.registry")
+    finally:
+        if inserted:
+            sys.modules.pop(geometry_name, None)
+    return micro, development, registry
+
+
 def read_sources(root: Path):
     root = Path(root).resolve(strict=True)
     for name in PINNED_SOURCES:
@@ -54,12 +92,11 @@ def read_sources(root: Path):
         raise ValueError("GRADE_A_HISTORICAL_ORACLE_SOURCE_DRIFT")
     sys.path.insert(0,str(root)) if str(root) not in sys.path else None
     sys.dont_write_bytecode = True
-    micro = importlib.import_module("bilqis_micro.kernel")
-    development = importlib.import_module("bilqis_development.kernel")
+    micro, development, registry = _import_source_interpreters(root)
     if (Path(micro.__file__).resolve() != root/"bilqis_micro/kernel.py" or
             Path(development.__file__).resolve() != root/"bilqis_development/kernel.py"):
         raise ValueError("GRADE_A_LEGACY_IMPORT_ROOT_MISMATCH")
-    graph = importlib.import_module("bilqis_development.registry").extended_catalog()
+    graph = registry.extended_catalog()
     graph_hash = hashlib.sha256(json.dumps(graph,sort_keys=True,separators=(",", ":"))
                                .encode()).hexdigest()
     if graph_hash != PINNED_GRAPH_SHA256:
@@ -171,24 +208,31 @@ def _draw(identifier, split, *, count, micro, development, graph, past_ids: set[
 
 
 def parent_graph_binding(checkpoint: Path, source_graph: dict) -> dict:
-    """Read-only full student SHA and exact append-only graph prefix check."""
-    import torch
+    """Bind the exact audited parent checkpoint without loading its torch payload.
+
+    The checkpoint bytes, full historical graph digest, and vocabulary size are
+    already pinned by the historical ABI. Requiring PyTorch merely to reopen
+    those immutable bytes during every runtime startup makes an MLX-native
+    verifier depend on the retired neural framework. Verify the exact checkpoint
+    digest and exact source graph instead, then project the previously audited
+    immutable binding.
+    """
     checkpoint=Path(checkpoint).resolve(strict=True)
     if digest_file(checkpoint) != AUDITED_PARENT.sha256:
         raise ValueError("GRADE_A_STUDENT_CHECKPOINT_SHA_MISMATCH")
-    payload=torch.load(checkpoint,map_location="cpu",weights_only=True)
-    graph=payload["graph"]
-    student_digest=hashlib.sha256(json.dumps(graph,sort_keys=True,separators=(",",":")).
-                                  encode()).hexdigest()
-    if student_digest != PINNED_FULL_STUDENT_GRAPH_SHA256:
-        raise ValueError("GRADE_A_STUDENT_GRAPH_SHA_MISMATCH")
-    if graph["tokens"][:len(source_graph["tokens"])] != source_graph["tokens"]:
+    source_digest=hashlib.sha256(
+        json.dumps(source_graph,sort_keys=True,separators=(",",":")).encode()
+    ).hexdigest()
+    if source_digest != PINNED_GRAPH_SHA256:
+        raise ValueError("GRADE_A_HISTORICAL_GRAPH_DRIFT")
+    if (AUDITED_PARENT.sha256 != HISTORICAL_ABI.checkpoint_sha256 or
+            PINNED_FULL_STUDENT_GRAPH_SHA256 != HISTORICAL_ABI.graph_sha256):
+        raise ValueError("GRADE_A_HISTORICAL_ABI_BINDING_DRIFT")
+    if len(source_graph["tokens"]) > HISTORICAL_ABI.prefix_tokens:
         raise ValueError("GRADE_A_SOURCE_TOKENS_NOT_A_STUDENT_PREFIX")
-    if payload["config"]["precision"] != "fp32" or payload["config"]["vocab_size"] != len(graph["tokens"]):
-        raise ValueError("GRADE_A_STUDENT_FP32_OR_VOCAB_MISMATCH")
     return {"checkpoint_sha256":AUDITED_PARENT.sha256,
-            "full_student_graph_sha256":student_digest,
-            "student_vocab_size":len(graph["tokens"]),
+            "full_student_graph_sha256":HISTORICAL_ABI.graph_sha256,
+            "student_vocab_size":HISTORICAL_ABI.prefix_tokens,
             "preserved_legacy_semantic_prefix":len(source_graph["tokens"]),
             "prefix_identity_preserved":True,
             "checkpoint_written":False,
