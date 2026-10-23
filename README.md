@@ -1,5 +1,15 @@
 # Bilqis MLX
 
+## CONTROLLING USER CORRECTION — 2026-10-23: full U7C Grade B
+
+The active Prometheus curriculum now admits the complete direct-U7C Boolean set:
+`B.NOT`, `B.AND`, `B.OR`, `B.XOR`, `B.IMPLIES`, `B.IFF`, plus derived
+`B.COMPOSITE` and `B.IDBOOLOPS`. These are direct typed Boolean-AST lessons, not
+world-model lessons. Grade B remains nongating developmental debt while Grade C is
+the progression frontier; the existing <=20% B teaching/test allocation policy
+remains binding. Do not narrow Prometheus back to a historical reduced Boolean
+profile, and do not add Boolean mastery as a Grade-C prerequisite.
+
 ## CONTROLLING USER CORRECTION — 2026-10-22: foundations before worlds
 
 **2026-10-22 follow-up — progression with Boolean debt:** NOT and AND may be
@@ -28,11 +38,10 @@ source order, the provisional D–O map, or availability of an easy generator as
 pedagogical readiness. Transfer checks should test the taught construction at the
 current step, not demand untaught cognitive machinery.
 
-**Current work:** the registered `primary` experiment now has A, thin B (NOT and
-AND), and the designed C foundation sequence admitted. Continue COUNT → NUMBER →
-SUCCESSOR → ADD → SUB, initially 0..3 and at most 0..4 in current issue trials.
-Unresolved A/B skills remain cumulative debt and teaching targets; NOT/AND mastery
-must not gate C access. Teach the actual numeric constituents as each C stage opens.
+**Current work:** Prometheus now has A, the complete direct-U7C Grade B roster,
+and the designed C foundation sequence admitted. Continue COUNT → NUMBER →
+SUCCESSOR → ADD → SUB at the current bounded numeric scope. Unresolved A/B skills
+remain cumulative debt and teaching targets; Boolean mastery must not gate C access. Teach the actual numeric constituents as each C stage opens.
 Physics and further lexical admissions wait for their conceptual ingredients.
 Use small lessons, cheap observations and the existing teacher/factory/retention
 owners. See ADR-087/088 and HANDOFF.md for exact state and the next action. Canonical

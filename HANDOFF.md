@@ -1,3 +1,23 @@
+# CURRENT SUPERSESSION | 2026-10-23 | Prometheus full-U7C Grade B
+
+This supersedes the issue-349 run snapshot below for current operator state. The active
+run is `runs/codex-0001-prometheus`, generation **27117**, factory release
+`83f9f052e40983b879a9e0495ad93d3d3fce31d10e0d12395e0b12499b17c654`.
+The causal student remains SHA `84dec126a37e24b7045212959b692d943780757e8b8b78fc65f158d94fe9ee36`
+at native AdamW step **142704**. It remains in Grade C `RECOVERY_1`; the release
+revision made **zero neural updates** and preserved the current queue and visit count.
+
+Grade B now admits `NOT, AND, OR, XOR, IMPLIES, IFF`, plus `COMPOSITE` and
+`IDBOOLOPS`, all through direct typed Boolean-AST/U7C source construction with no
+world records. B remains nongating debt and may consume at most 20% of the C-frontier
+training/test lane. Commit `2ed45db` also separates capability-scoped row identity
+from record-scoped source identity, repairing the teacher-miss collision that caused
+`TEACHER_MISS_HISTORY_IDENTITY_CONFLICT`. Generation 27116 removed obsolete
+world-based B miss debt and rekeyed direct-U7C misses; immutable historical evidence
+was not rewritten. Resume preflight after generation 27117 reports no blockers.
+
+---
+
 # Issue349 handoff | 2026-10-22 | COUNT opens NUMBER
 
 ## Read this first: the user's controlling course
