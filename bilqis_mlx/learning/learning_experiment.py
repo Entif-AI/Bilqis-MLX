@@ -515,6 +515,36 @@ def _effective_context_scope(teacher: dict, scope: dict) -> dict:
     return groups
 
 
+def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
+                          *, curriculum_scope: str = "") -> int:
+    """Shrink disposable candidate horizon under sustained retention failure.
+
+    The configured horizon remains authoritative in the healthy regime.
+    Once a capability has gone half a configured candidate-horizon without a
+    retained update, halve the disposable trial. After a full horizon of
+    rejected candidates, quarter it. This keeps the adaptation relative to
+    the operator-selected default rather than introducing a second absolute
+    step-count policy.
+    """
+    if type(default_steps) is not int or default_steps < 1:
+        raise ValueError("LEARNING_EXPERIMENT_CANDIDATE_STEPS_INVALID")
+    channel = teacher.get("causal_experiment")
+    if not isinstance(channel, dict):
+        return default_steps
+    stagnation = _capability_stagnation(
+        channel, capability, curriculum_scope)
+    attempts = stagnation.get("attempts_since_retained", 0)
+    if type(attempts) is not int or attempts < 0:
+        raise ValueError("LEARNING_EXPERIMENT_CANDIDATE_STAGNATION_INVALID")
+    half = max(1, default_steps // 2)
+    quarter = max(1, default_steps // 4)
+    if attempts >= default_steps:
+        return quarter
+    if attempts >= half:
+        return half
+    return default_steps
+
+
 def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                     *, curriculum_scope: str = ""):
     """Preserve the inherited bandit's exploration; prefer proven safe context."""

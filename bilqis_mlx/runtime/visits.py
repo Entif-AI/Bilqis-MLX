@@ -141,6 +141,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     rng = _random.Random(_runtime_state._seed(receipt, capability=cap))
     teacher_curriculum_scope = (str(receipt.get("curriculum_mode", "")) + "/" +
                                 str(receipt.get("numeric_maximum", "")))
+    candidate_steps = _learning_learning_experiment.candidate_step_budget(
+        steps_per_visit, teacher, cap,
+        curriculum_scope=teacher_curriculum_scope)
     with _runtime_timing_trace.trace_span("POLICY_SELECT", capability=cap):
         if learning_settings is not None:
             policy_key, policy = _learning_learning_experiment.contextual_pick(
@@ -313,9 +316,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             prefetch_futures[step_index] = (
                 request, source_prefetch_executor.submit(prepare_step_sources, request))
 
-        for step_index in range(min(source_prefetch_workers, steps_per_visit)):
+        for step_index in range(min(source_prefetch_workers, candidate_steps)):
             submit_source_request(step_index)
-    for step in range(steps_per_visit):
+    for step in range(candidate_steps):
         _runtime_timing_trace.trace_mark("OPTIMIZER_STEP_START", capability=cap, visit_step=step + 1,
                    optimizer_step=int(optimizer.state["step"].item()))
         lesson_control = None
@@ -330,7 +333,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     prepared.get("identity") != request["identity"]):
                 raise ValueError("HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT")
             next_step = step + source_prefetch_workers
-            if next_step < steps_per_visit:
+            if next_step < candidate_steps:
                 submit_source_request(next_step)
             fresh = list(prepared["fresh"])
         else:
@@ -479,7 +482,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         after = _learning_student_ops._train_score(mx, params, rows, receipt["config"],
                              receipt["answer_ids"])
     attempted_step = int(optimizer.state["step"].item())
-    if attempted_step != step_before+steps_per_visit:
+    if attempted_step != step_before+candidate_steps:
         raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
     candidate_gain = after-before
     outcome = context_credit = None
@@ -576,7 +579,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         prerequisite_capabilities=(
             executable_release.execution_plan.capability_map[cap].prerequisites),
         methodology=methodology,
-        delivered_examples=steps_per_visit*batch_size,
+        delivered_examples=candidate_steps*batch_size,
         replayed_misses=replayed_misses,
         resolved_exam_misses=len(resolved_priority_ids),
         champion_prioritized=0,
@@ -596,12 +599,17 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
         "attempted_optimizer_updates": attempted_optimizer_updates,
+        "candidate_step_control": {
+            "configured_steps": steps_per_visit,
+            "effective_steps": candidate_steps,
+            "adaptive": candidate_steps != steps_per_visit,
+        },
         "source_prefetch": {
             "schema": "bilqis.mlx.source-prefetch/v1",
             "mode": "PROCESS_POOL" if prefetch_enabled else "SERIAL",
             "workers": source_prefetch_workers if prefetch_enabled else 0,
-            "prepared_steps": steps_per_visit if prefetch_enabled else 0,
-            "serial_steps": 0 if prefetch_enabled else steps_per_visit,
+            "prepared_steps": candidate_steps if prefetch_enabled else 0,
+            "serial_steps": 0 if prefetch_enabled else candidate_steps,
             "packet_identity_verified": prefetch_enabled,
             "neural_owner": "MAIN_LANE_ONLY",
         },

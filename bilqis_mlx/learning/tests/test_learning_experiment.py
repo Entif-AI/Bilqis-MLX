@@ -13,7 +13,7 @@ from bilqis_mlx.learning.learning_experiment import (
     Settings, paired_outcomes, decide, contextual_pick, observe_context,
     fork_student, commit_trial, sampled_protection, whole_grade_protection,
     missing_grade_capabilities,
-    selection_credit, select_source_lesson,
+    selection_credit, select_source_lesson, candidate_step_budget,
 )
 
 
@@ -863,6 +863,35 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             Legacy, teacher, "C.SUB", "RECOVERY_2", random.Random(2),
             curriculum_scope="scope")
         self.assertIn(picked, {"preview0", "preview4"})
+
+    def test_candidate_step_budget_shrinks_with_unretained_capability_pressure(self):
+        teacher = {
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "capability_stagnation": {
+                    "C.SUB|scope": {
+                        "attempts_since_retained": 0,
+                    },
+                },
+            },
+        }
+        record = teacher["causal_experiment"]["capability_stagnation"][
+            "C.SUB|scope"]
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 16)
+        record["attempts_since_retained"] = 8
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 8)
+        record["attempts_since_retained"] = 16
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 4)
+        record["attempts_since_retained"] = 269
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 4)
 
     def test_repeated_no_target_gain_demotes_policy_until_real_gain_resets_streak(self):
         teacher = live_scale_teacher()
