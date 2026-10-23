@@ -148,13 +148,26 @@ def vote_targets_typed(votes, labels, *, classes: int,
         raise ValueError("CHAMPION_CONFIDENCE_INVALID_INPUT")
     target = np.zeros((len(labels), classes), dtype=np.float64)
     weight = np.zeros(len(labels), dtype=np.float64)
-    for breadth, raw in votes:
+    for vote in votes:
+        if len(vote) == 2:
+            breadth, raw = vote
+            eligible_mask = None
+        elif len(vote) == 3:
+            breadth, raw, eligible_mask = vote
+        else:
+            raise ValueError("CHAMPION_CONFIDENCE_INVALID_VOTE")
         raw = np.asarray(raw, dtype=np.float64)
         if (type(breadth) not in (int, float) or
                 not np.isfinite(breadth) or not 0 < breadth <= eligible_capabilities or
                 raw.shape != (len(labels), classes) or not np.isfinite(raw).all()):
             raise ValueError("CHAMPION_CONFIDENCE_INVALID_VOTE")
         accepted = np.argmax(raw, axis=-1) == labels
+        if eligible_mask is not None:
+            eligible_mask = np.asarray(eligible_mask)
+            if (eligible_mask.shape != (len(labels),) or
+                    eligible_mask.dtype.kind != "b"):
+                raise ValueError("CHAMPION_CONFIDENCE_INVALID_VOTE_MASK")
+            accepted &= eligible_mask
         if not accepted.any():
             continue
         scaled = raw / TEMPERATURE

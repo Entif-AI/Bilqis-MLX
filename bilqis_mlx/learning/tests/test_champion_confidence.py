@@ -4,7 +4,9 @@ import numpy as np
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-from bilqis_mlx.learning.champion_confidence import vote_targets, champion_roster
+from bilqis_mlx.learning.champion_confidence import (
+    vote_targets, vote_targets_typed, champion_roster,
+)
 
 
 def record(cap, sha, perfect):
@@ -223,3 +225,40 @@ class ChampionConfidenceTests(unittest.TestCase):
         zero = vote_targets([(3, correct_logits)], labels, eligible_capabilities=12,
                             teacher_distill=0.)
         self.assertEqual(float(zero[1].sum()), 0.)
+
+    def test_vote_mask_limits_direct_advice_to_owned_rows(self):
+        labels = np.array([1, 1], dtype=np.int64)
+        correct_logits = np.array([[0., 2.], [0., 2.]], dtype=np.float32)
+        target, weight = vote_targets_typed(
+            [(1, correct_logits, np.array([True, False]))],
+            labels, classes=2, eligible_capabilities=4, teacher_distill=.5)
+        self.assertGreater(float(weight[0]), 0.)
+        self.assertEqual(float(weight[1]), 0.)
+        np.testing.assert_allclose(target[1], [.5, .5], atol=1e-6)
+
+    def test_role_owner_votes_are_capability_routed_and_same_grade_soup_falls_back(self):
+        from bilqis_mlx.learning.lesson_guidance import _mentor_vote_specs
+
+        row_capabilities = ("C.ADD", "C.SUB", "B.AND")
+        direct = _mentor_vote_specs(
+            {"capabilities": ("C.ADD", "C.SUCCESSOR"), "breadth": 2},
+            row_capabilities, lesson_grade="C",
+            direct_capabilities={"C.ADD", "C.SUCCESSOR"})
+        self.assertEqual(len(direct), 2)
+        self.assertEqual(direct[0][0], 1)
+        np.testing.assert_array_equal(direct[0][1], [True, False, False])
+
+        same_grade_soup = _mentor_vote_specs(
+            {"soup_grade": "C", "breadth": 5},
+            row_capabilities, lesson_grade="C",
+            direct_capabilities={"C.ADD", "C.SUCCESSOR"})
+        self.assertEqual(same_grade_soup[0][0], 5)
+        np.testing.assert_array_equal(
+            same_grade_soup[0][1], [False, True, True])
+
+        foreign_soup = _mentor_vote_specs(
+            {"soup_grade": "A", "breadth": 2},
+            row_capabilities, lesson_grade="C",
+            direct_capabilities={"C.ADD", "C.SUCCESSOR"})
+        np.testing.assert_array_equal(
+            foreign_soup[0][1], [True, True, True])

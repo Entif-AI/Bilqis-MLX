@@ -451,13 +451,15 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 guidance = _learning_lesson_guidance._typed_confidence_guidance(
                     mx, (*confidence_champions, *frozen_soups), picked, receipt["config"],
                     scope_size=len(executable_release.execution_plan.capabilities),
-                    teacher_distill=float(policy.get("distill", 0.0)))
+                    teacher_distill=float(policy.get("distill", 0.0)),
+                    lesson_grade=lesson_grade)
             else:
                 guidance = _learning_lesson_guidance._confidence_guidance(
                     mx, (*confidence_champions, *frozen_soups), picked, receipt["config"],
                     receipt["answer_ids"],
                     scope_size=len(executable_release.execution_plan.capabilities),
-                    teacher_distill=float(policy.get("distill", 0.0)))
+                    teacher_distill=float(policy.get("distill", 0.0)),
+                    lesson_grade=lesson_grade)
         if guidance is not None:
             import numpy as np
             influences = ([item[1] for item in guidance.values()]
