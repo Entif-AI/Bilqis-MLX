@@ -13,7 +13,7 @@ from bilqis_mlx.learning.learning_experiment import (
     Settings, paired_outcomes, decide, contextual_pick, observe_context,
     fork_student, commit_trial, sampled_protection, whole_grade_protection,
     missing_grade_capabilities,
-    selection_credit, select_source_lesson,
+    selection_credit, select_source_lesson, candidate_step_budget,
 )
 
 
@@ -126,6 +126,35 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             exposures[target["id"]] += 1
 
         self.assertEqual(exposures[target["id"]], 4)
+
+    def test_champion_priority_target_wins_limited_weakness_slot(self):
+        champion = {
+            "id": "z-champion", "capability": "C.SUB", "gold": "3",
+            "source_id": "champion", "tokens": [1, 3, 9],
+            "answer_kind": "numeric_active",
+        }
+        ordinary = {
+            "id": "a-ordinary", "capability": "C.SUB", "gold": "2",
+            "source_id": "ordinary", "tokens": [1, 2, 9],
+            "answer_kind": "numeric_active",
+        }
+        current = [
+            champion, ordinary,
+            {"id": "n1", "capability": "C.SUB", "gold": "1",
+             "source_id": "n1", "tokens": [1, 1, 9],
+             "answer_kind": "numeric_active"},
+            {"id": "n0", "capability": "C.SUB", "gold": "0",
+             "source_id": "n0", "tokens": [1, 0, 9],
+             "answer_kind": "numeric_active"},
+        ]
+        _picked, control = select_source_lesson(
+            current, [], {"old": 0, "depth": 1, "contrast": 0.},
+            targets=[ordinary, champion],
+            priority_target_ids={champion["id"]},
+            target_exposures={ordinary["id"]: 0, champion["id"]: 0},
+            reserved_support_slots=3, seed=7, batch_size=4)
+        self.assertEqual(control["weakness_target_ids"], [champion["id"]])
+        self.assertEqual(control["priority_weakness_targets_delivered"], 1)
 
     def test_trainer_defers_missing_peer_inference_until_candidate_target_passes(self):
         from pathlib import Path
@@ -712,6 +741,305 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                             policy_key="positive", decision=accepted, local_gain=.4)
         pick, _ = contextual_pick(Legacy, teacher, "C.ADD", "RECOVERY_2", random.Random(2))
         self.assertEqual(pick, "positive")
+
+    def test_single_retained_context_success_is_immediately_exploitable(self):
+        teacher = {
+            "strategies": {
+                "legacy": {"lr": .0002},
+                "retained": {"lr": .00008},
+            },
+            "global_stats": {
+                "legacy": {"trials": 20, "reward_sum": 2., "reward_ema": .1,
+                           "latest": .1},
+                "retained": {"trials": 20, "reward_sum": 2., "reward_ema": .1,
+                             "latest": .1},
+            },
+            "grade_stats": {},
+            "events": 40,
+        }
+
+        rejected = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="RECOVERY_2", protected=set(),
+            settings=Settings())
+        observe_context(
+            teacher, capability="C.ADD", phase="RECOVERY_2",
+            policy_key="legacy", decision=rejected, local_gain=0.,
+            curriculum_scope="scope")
+
+        retained = decide({
+            "C.ADD": {"before": 3, "after": 5, "total": 6},
+        }, active_capability="C.ADD", phase="RECOVERY_2", protected=set(),
+            settings=Settings())
+        self.assertEqual(retained["decision"], "PROVISIONAL")
+        observe_context(
+            teacher, capability="C.ADD", phase="RECOVERY_2",
+            policy_key="retained", decision=retained, local_gain=.4,
+            curriculum_scope="scope")
+
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "legacy", _teacher["strategies"]["legacy"]
+
+        picked, _ = contextual_pick(
+            Legacy, teacher, "C.ADD", "RECOVERY_2", random.Random(2),
+            curriculum_scope="scope")
+        self.assertEqual(picked, "retained")
+
+    def test_capability_stagnation_spans_policy_ids_and_suppresses_novelty(self):
+        teacher = {
+            "strategies": {
+                "winner": {"lr": .00008},
+                "failed_a": {"lr": .0002},
+                "failed_b": {"lr": .0003},
+                "novel": {"lr": .00013},
+            },
+            "global_stats": {
+                key: {"trials": 20, "reward_sum": 2., "reward_ema": .1,
+                      "latest": .1}
+                for key in ("winner", "failed_a", "failed_b", "novel")
+            },
+            "grade_stats": {},
+            "events": 80,
+        }
+        retained = decide({
+            "C.SUB": {"before": 18, "after": 22, "total": 33},
+        }, active_capability="C.SUB", phase="RECOVERY_2", protected=set(),
+            settings=Settings())
+        observe_context(
+            teacher, capability="C.SUB", phase="RECOVERY_2",
+            policy_key="winner", decision=retained, local_gain=.4,
+            curriculum_scope="scope")
+
+        no_gain = decide({
+            "C.SUB": {"before": 22, "after": 22, "total": 33},
+        }, active_capability="C.SUB", phase="RECOVERY_2", protected=set(),
+            settings=Settings())
+        observe_context(
+            teacher, capability="C.SUB", phase="RECOVERY_2",
+            policy_key="failed_a", decision=no_gain, local_gain=0.,
+            curriculum_scope="scope")
+        observe_context(
+            teacher, capability="C.SUB", phase="RECOVERY_1",
+            policy_key="failed_b", decision=dict(no_gain, phase="RECOVERY_1"),
+            local_gain=0., curriculum_scope="scope")
+
+        capability = teacher["causal_experiment"]["capability_stagnation"][
+            "C.SUB|scope"]
+        self.assertEqual(capability["rejection_streak"], 2)
+        self.assertEqual(capability["no_target_gain_streak"], 2)
+        self.assertEqual(capability["attempts_since_retained"], 2)
+
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "novel", _teacher["strategies"]["novel"]
+
+        picked, _ = contextual_pick(
+            Legacy, teacher, "C.SUB", "RECOVERY_2", random.Random(2),
+            curriculum_scope="scope")
+        self.assertEqual(picked, "winner")
+
+    def test_preview_only_variants_share_effective_context_evidence(self):
+        common = {
+            "contrast": .5, "depth": 2, "distill": .15,
+            "lr": .00008, "old": 12,
+        }
+        teacher = {
+            "strategies": {
+                "preview0": {**common, "preview": 0},
+                "preview4": {**common, "preview": 4},
+                "legacy": {
+                    "contrast": 1., "depth": 4, "distill": .65,
+                    "lr": .0003, "old": 4, "preview": 2,
+                },
+            },
+            "global_stats": {
+                key: {"trials": 20, "reward_sum": 0., "reward_ema": 0.,
+                      "latest": 0.}
+                for key in ("preview0", "preview4", "legacy")
+            },
+            "grade_stats": {},
+            "events": 60,
+        }
+        mild_reject = decide({
+            "C.SUB": {"before": 22, "after": 22, "total": 33},
+        }, active_capability="C.SUB", phase="RECOVERY_2", protected=set(),
+            settings=Settings())
+        for key in ("preview0", "preview4"):
+            observe_context(
+                teacher, capability="C.SUB", phase="RECOVERY_2",
+                policy_key=key, decision=mild_reject, local_gain=0.,
+                curriculum_scope="scope")
+
+        worse_reject = decide({
+            "C.SUB": {"before": 22, "after": 18, "total": 33},
+        }, active_capability="C.SUB", phase="RECOVERY_2", protected=set(),
+            settings=Settings())
+        for _ in range(2):
+            observe_context(
+                teacher, capability="C.SUB", phase="RECOVERY_2",
+                policy_key="legacy", decision=worse_reject, local_gain=-.4,
+                curriculum_scope="scope")
+
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "legacy", _teacher["strategies"]["legacy"]
+
+        picked, _ = contextual_pick(
+            Legacy, teacher, "C.SUB", "RECOVERY_2", random.Random(2),
+            curriculum_scope="scope")
+        self.assertIn(picked, {"preview0", "preview4"})
+
+    def test_candidate_step_budget_shrinks_with_unretained_capability_pressure(self):
+        teacher = {
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "capability_stagnation": {
+                    "C.SUB|scope": {
+                        "attempts_since_retained": 0,
+                    },
+                },
+            },
+        }
+        record = teacher["causal_experiment"]["capability_stagnation"][
+            "C.SUB|scope"]
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 16)
+        record["attempts_since_retained"] = 8
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 8)
+        record["attempts_since_retained"] = 16
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 4)
+        record["attempts_since_retained"] = 269
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 4)
+
+    def test_rejection_pressure_pools_learning_rate_evidence_across_phases(self):
+        teacher = {
+            "strategies": {
+                "low": {
+                    "contrast": .5, "depth": 2, "distill": .15,
+                    "lr": .00008, "old": 12, "preview": 0,
+                },
+                "high": {
+                    "contrast": .5, "depth": 2, "distill": .15,
+                    "lr": .0003, "old": 12, "preview": 0,
+                },
+            },
+            "global_stats": {
+                key: {"trials": 20, "reward_sum": 0., "reward_ema": 0.,
+                      "latest": 0.}
+                for key in ("low", "high")
+            },
+            "grade_stats": {},
+            "events": 80,
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "contexts": {
+                    "C.SUB|MAIN|scope": {
+                        "low": {
+                            "trials": 4, "reward_sum": 2.,
+                            "unsafe": 0, "retained": 4,
+                            "latest": .5, "no_target_gain_streak": 0,
+                        },
+                        "high": {
+                            "trials": 4, "reward_sum": -2.,
+                            "unsafe": 4, "retained": 0,
+                            "latest": -.5, "no_target_gain_streak": 4,
+                        },
+                    },
+                    "C.SUB|RECOVERY_2|scope": {
+                        "low": {
+                            "trials": 2, "reward_sum": .1,
+                            "unsafe": 1, "retained": 1,
+                            "latest": .05, "no_target_gain_streak": 0,
+                        },
+                        "high": {
+                            "trials": 2, "reward_sum": .2,
+                            "unsafe": 1, "retained": 1,
+                            "latest": .1, "no_target_gain_streak": 0,
+                        },
+                    },
+                },
+                "capability_stagnation": {
+                    "C.SUB|scope": {
+                        "rejection_streak": 6,
+                        "no_target_gain_streak": 3,
+                        "attempts_since_retained": 6,
+                        "total_rejections": 8,
+                        "total_retained": 2,
+                    },
+                },
+            },
+        }
+
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "high", _teacher["strategies"]["high"]
+
+        picked, _ = contextual_pick(
+            Legacy, teacher, "C.SUB", "RECOVERY_2", random.Random(2),
+            curriculum_scope="scope")
+        self.assertEqual(picked, "low")
+
+    def test_diagnostic_context_prefers_policy_proven_under_current_signal(self):
+        teacher = {
+            "strategies": {
+                "diagnostic": {"lr": .00008},
+                "legacy": {"lr": .00013},
+            },
+            "global_stats": {
+                key: {"trials": 20, "reward_sum": 0., "reward_ema": 0.,
+                      "latest": 0.}
+                for key in ("diagnostic", "legacy")
+            },
+            "grade_stats": {},
+            "events": 40,
+        }
+        retained = decide({
+            "C.SUB": {"before": 20, "after": 22, "total": 33},
+        }, active_capability="C.SUB", phase="RECOVERY_2", protected=set(),
+            settings=Settings())
+        matching = {
+            "warnings": ("CHANCE_LEVEL_OR_LAGGING",),
+            "unresolved_miss_count": 12,
+            "champion_candidate_count": 3,
+        }
+        other = {
+            "warnings": (),
+            "unresolved_miss_count": 0,
+            "champion_candidate_count": 0,
+        }
+        observe_context(
+            teacher, capability="C.SUB", phase="RECOVERY_2",
+            policy_key="diagnostic", decision=retained, local_gain=.2,
+            curriculum_scope="scope", diagnostics=matching)
+        observe_context(
+            teacher, capability="C.SUB", phase="RECOVERY_2",
+            policy_key="legacy", decision=retained, local_gain=.8,
+            curriculum_scope="scope", diagnostics=other)
+
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "legacy", _teacher["strategies"]["legacy"]
+
+        picked, _policy, selection = contextual_pick(
+            Legacy, teacher, "C.SUB", "RECOVERY_2", random.Random(2),
+            curriculum_scope="scope", diagnostics=matching,
+            return_metadata=True)
+        self.assertEqual(picked, "diagnostic")
+        self.assertTrue(selection["diagnostic_context_consumed"])
+        self.assertIsInstance(selection["diagnostic_context_key"], str)
 
     def test_repeated_no_target_gain_demotes_policy_until_real_gain_resets_streak(self):
         teacher = live_scale_teacher()

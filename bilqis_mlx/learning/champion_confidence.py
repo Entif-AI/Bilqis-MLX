@@ -7,6 +7,7 @@ contributes one direct vote; a shared checkpoint is counted once per role.
 """
 from __future__ import annotations
 
+from enum import Enum
 import numpy as np
 from .championship_witnesses import maxed_role
 
@@ -14,6 +15,14 @@ from .championship_witnesses import maxed_role
 POLICY = "bilqis.mlx.champion-confidence/v1"
 MAX_INFLUENCE = 0.08
 TEMPERATURE = 1.5
+MIN_TYPED_CLASSES = 2
+UNMASKED_VOTE_FIELDS = 2
+MASKED_VOTE_FIELDS = 3
+
+
+class ChampionConfidenceError(str, Enum):
+    INVALID_VOTE = "CHAMPION_CONFIDENCE_INVALID_VOTE"
+    INVALID_VOTE_MASK = "CHAMPION_CONFIDENCE_INVALID_VOTE_MASK"
 
 
 def _active_roles(snapshot, grade):
@@ -140,7 +149,7 @@ def vote_targets_typed(votes, labels, *, classes: int,
     contributes no advice; independent scorer logits remain untouched.
     """
     labels = np.asarray(labels, dtype=np.int64)
-    if (type(classes) is not int or classes < 2 or
+    if (type(classes) is not int or classes < MIN_TYPED_CLASSES or
             labels.ndim != 1 or (labels < 0).any() or
             (labels >= classes).any() or
             type(eligible_capabilities) is not int or eligible_capabilities < 1 or
@@ -148,13 +157,26 @@ def vote_targets_typed(votes, labels, *, classes: int,
         raise ValueError("CHAMPION_CONFIDENCE_INVALID_INPUT")
     target = np.zeros((len(labels), classes), dtype=np.float64)
     weight = np.zeros(len(labels), dtype=np.float64)
-    for breadth, raw in votes:
+    for vote in votes:
+        if len(vote) == UNMASKED_VOTE_FIELDS:
+            breadth, raw = vote
+            eligible_mask = None
+        elif len(vote) == MASKED_VOTE_FIELDS:
+            breadth, raw, eligible_mask = vote
+        else:
+            raise ValueError(ChampionConfidenceError.INVALID_VOTE.value)
         raw = np.asarray(raw, dtype=np.float64)
         if (type(breadth) not in (int, float) or
                 not np.isfinite(breadth) or not 0 < breadth <= eligible_capabilities or
                 raw.shape != (len(labels), classes) or not np.isfinite(raw).all()):
-            raise ValueError("CHAMPION_CONFIDENCE_INVALID_VOTE")
+            raise ValueError(ChampionConfidenceError.INVALID_VOTE.value)
         accepted = np.argmax(raw, axis=-1) == labels
+        if eligible_mask is not None:
+            eligible_mask = np.asarray(eligible_mask)
+            if (eligible_mask.shape != (len(labels),) or
+                    eligible_mask.dtype.kind != "b"):
+                raise ValueError(ChampionConfidenceError.INVALID_VOTE_MASK.value)
+            accepted &= eligible_mask
         if not accepted.any():
             continue
         scaled = raw / TEMPERATURE

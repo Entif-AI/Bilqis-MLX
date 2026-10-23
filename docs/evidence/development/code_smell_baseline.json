@@ -53,6 +53,11 @@
       "GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS: used 2 times"
     ],
     [
+      "bilqis_mlx/curriculum/scheduler.py",
+      "long-function",
+      "_promote"
+    ],
+    [
       "bilqis_mlx/curriculum_compiler.py",
       "branch-density",
       "compile_typed_candidate_package"
@@ -276,6 +281,36 @@
       "bilqis_mlx/learning/grade_soup.py",
       "duplicate-error-code",
       "GRADE_SOUP_SAVED_SCHEMA_DRIFT: used 2 times"
+    ],
+    [
+      "bilqis_mlx/learning/champion_confidence.py",
+      "duplicate-error-code",
+      "CHAMPION_CONFIDENCE_INVALID_VOTE: used 2 times"
+    ],
+    [
+      "bilqis_mlx/learning/learning_experiment.py",
+      "long-function",
+      "decide"
+    ],
+    [
+      "bilqis_mlx/learning/learning_experiment.py",
+      "duplicate-error-code",
+      "LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT: used 3 times"
+    ],
+    [
+      "bilqis_mlx/learning/learning_experiment.py",
+      "long-function",
+      "contextual_pick"
+    ],
+    [
+      "bilqis_mlx/learning/learning_experiment.py",
+      "long-function",
+      "observe_context"
+    ],
+    [
+      "bilqis_mlx/learning/learning_experiment.py",
+      "long-function",
+      "select_source_lesson"
     ],
     [
       "bilqis_mlx/learning/learning_experiment.py",

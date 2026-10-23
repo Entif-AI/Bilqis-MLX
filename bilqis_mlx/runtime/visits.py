@@ -27,11 +27,14 @@ import pathlib as _pathlib
 import random as _random
 
 
+RETENTION_REQUIRES_ACTIVE_GRADE_ERROR = "RETENTION_REQUIRES_ACTIVE_GRADE"
+
+
 def _retention_frontier_grade(school) -> str:
     """Return the latest admitted grade that anchors aggregate retention."""
     active = tuple(school.active_grades)
     if not active:
-        raise ValueError("RETENTION_REQUIRES_ACTIVE_GRADE")
+        raise ValueError(RETENTION_REQUIRES_ACTIVE_GRADE_ERROR)
     return active[-1]
 
 
@@ -138,15 +141,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     rng = _random.Random(_runtime_state._seed(receipt, capability=cap))
     teacher_curriculum_scope = (str(receipt.get("curriculum_mode", "")) + "/" +
                                 str(receipt.get("numeric_maximum", "")))
-    with _runtime_timing_trace.trace_span("POLICY_SELECT", capability=cap):
-        if learning_settings is not None:
-            policy_key, policy = _learning_learning_experiment.contextual_pick(
-                engine, teacher, cap, school.stage, rng,
-                curriculum_scope=teacher_curriculum_scope)
-        else:
-            policy_key, policy = engine.pick(teacher, lesson_grade, rng)
-    original_learning_rate = optimizer.learning_rate
-    optimizer.learning_rate = float(policy["lr"])
+    candidate_steps = _learning_learning_experiment.candidate_step_budget(
+        steps_per_visit, teacher, cap,
+        curriculum_scope=teacher_curriculum_scope)
     if source_root is None:
         raise ValueError("HUMAN_TRAINER_LIVE_SOURCE_REQUIRED")
     with _runtime_timing_trace.trace_span("VISIT_SOURCE_DRAW", capability=cap):
@@ -169,6 +166,12 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             direct_capability_votes[source_grade] = (
                 direct_capability_votes.get(source_grade, 0) + votes)
         direct_capabilities.extend(mentor.get("capabilities", ()))
+    with _runtime_timing_trace.trace_span(
+            "CHAMPION_WEAKNESS_DISCOVERY", capability=cap):
+        champion_candidates = _learning_lesson_guidance._champion_directed_rows(
+            mx, confidence_champions, params, rows, receipt["config"],
+            receipt["answer_ids"])
+    champion_candidate_ids = {row["id"] for row in champion_candidates}
     # Every unsuccessful examination construction can become direct teaching
     # material once scoring has completed. No held-out embargo survives.
     priority = [r for r in receipt.get("teacher_misses", ())
@@ -177,10 +180,42 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     if receipt.get("numeric_maximum") is not None:
         priority, deferred_misses = _profiles_catalog.partition_numeric_scope(
             priority, receipt["numeric_maximum"])
+    priority_ids = {row["id"] for row in priority}
+    priority.extend(
+        row for row in champion_candidates if row["id"] not in priority_ids)
     miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
     if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
         raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
-    rows.extend(priority)
+    previous_methodology = next((
+        member.get("lesson_methodology")
+        for member in reversed(receipt.get("delivery_outbox", ()))
+        if member.get("capability") == cap and "lesson_methodology" in member
+    ), None)
+    warnings = _learning_teacher_feedback.active_warning_signals(
+        receipt.get("last_exam"), previous_methodology, cap)
+    previsit_diagnostics = {
+        "warnings": warnings,
+        "unresolved_miss_count": len(priority),
+        "champion_candidate_count": len(champion_candidate_ids),
+    }
+    with _runtime_timing_trace.trace_span("POLICY_SELECT", capability=cap):
+        if learning_settings is not None:
+            policy_key, policy, policy_selection = (
+                _learning_learning_experiment.contextual_pick(
+                    engine, teacher, cap, school.stage, rng,
+                    curriculum_scope=teacher_curriculum_scope,
+                    diagnostics=previsit_diagnostics,
+                    return_metadata=True))
+        else:
+            policy_key, policy = engine.pick(teacher, lesson_grade, rng)
+            policy_selection = {
+                "diagnostic_context_consumed": False,
+                "diagnostic_context_key": None,
+            }
+    original_learning_rate = optimizer.learning_rate
+    optimizer.learning_rate = float(policy["lr"])
+    row_ids = {row["id"] for row in rows}
+    rows.extend(row for row in priority if row["id"] not in row_ids)
     with _runtime_timing_trace.trace_span("TRAIN_SCORE_BEFORE", capability=cap, row_count=len(rows)):
         before = _learning_student_ops._train_score(mx, params, rows, receipt["config"],
                               receipt["answer_ids"])
@@ -214,6 +249,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     methodology_steps = []
     methodology_unavailable = None
     replayed_misses = 0
+    champion_prioritized = 0
     enrichment_examples = 0
     policy_control_receipts = []
     step_before = int(optimizer.state["step"].item())
@@ -310,9 +346,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             prefetch_futures[step_index] = (
                 request, source_prefetch_executor.submit(prepare_step_sources, request))
 
-        for step_index in range(min(source_prefetch_workers, steps_per_visit)):
+        for step_index in range(min(source_prefetch_workers, candidate_steps)):
             submit_source_request(step_index)
-    for step in range(steps_per_visit):
+    for step in range(candidate_steps):
         _runtime_timing_trace.trace_mark("OPTIMIZER_STEP_START", capability=cap, visit_step=step + 1,
                    optimizer_step=int(optimizer.state["step"].item()))
         lesson_control = None
@@ -327,7 +363,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     prepared.get("identity") != request["identity"]):
                 raise ValueError("HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT")
             next_step = step + source_prefetch_workers
-            if next_step < steps_per_visit:
+            if next_step < candidate_steps:
                 submit_source_request(next_step)
             fresh = list(prepared["fresh"])
         else:
@@ -374,11 +410,14 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 picked, control = _learning_learning_experiment.select_source_lesson(
                     fresh, prior, policy, seed=lesson_seed, batch_size=batch_size,
                     targets=priority, target_exposures=miss_exposures,
+                    priority_target_ids=champion_candidate_ids,
                     reserved_support_slots=len(preservation))
                 lesson_control = {**control, "eligible_prior_capabilities":
                                   len(old_capabilities)}
                 target_ids = set(control["weakness_target_ids"])
                 window = [row for row in priority if row["id"] in target_ids]
+                champion_prioritized += sum(
+                    row["id"] in champion_candidate_ids for row in window)
             else:
                 picked = _learning_lesson_guidance.choose_lesson_batch(
                     fresh, policy, lesson_seed, batch_size=batch_size)
@@ -445,13 +484,15 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 guidance = _learning_lesson_guidance._typed_confidence_guidance(
                     mx, (*confidence_champions, *frozen_soups), picked, receipt["config"],
                     scope_size=len(executable_release.execution_plan.capabilities),
-                    teacher_distill=float(policy.get("distill", 0.0)))
+                    teacher_distill=float(policy.get("distill", 0.0)),
+                    lesson_grade=lesson_grade)
             else:
                 guidance = _learning_lesson_guidance._confidence_guidance(
                     mx, (*confidence_champions, *frozen_soups), picked, receipt["config"],
                     receipt["answer_ids"],
                     scope_size=len(executable_release.execution_plan.capabilities),
-                    teacher_distill=float(policy.get("distill", 0.0)))
+                    teacher_distill=float(policy.get("distill", 0.0)),
+                    lesson_grade=lesson_grade)
         if guidance is not None:
             import numpy as np
             influences = ([item[1] for item in guidance.values()]
@@ -476,7 +517,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         after = _learning_student_ops._train_score(mx, params, rows, receipt["config"],
                              receipt["answer_ids"])
     attempted_step = int(optimizer.state["step"].item())
-    if attempted_step != step_before+steps_per_visit:
+    if attempted_step != step_before+candidate_steps:
         raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
     candidate_gain = after-before
     outcome = context_credit = None
@@ -513,7 +554,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             context_credit = _learning_learning_experiment.observe_context(
                 teacher, capability=cap, phase=school.stage, policy_key=policy_key,
                 decision=outcome, local_gain=candidate_gain,
-                curriculum_scope=teacher_curriculum_scope)
+                curriculum_scope=teacher_curriculum_scope,
+                diagnostics=previsit_diagnostics)
             if outcome["decision"] == "PROVISIONAL":
                 _learning_learning_experiment.commit_trial(parent_parameters, parent_optimizer, params, optimizer)
             else:
@@ -560,24 +602,21 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         course, cap, tuple(methodology_steps),
         introductory=introduction_pass,
         unmeasured_reason=methodology_unavailable)
-    previous_methodology = next((
-        member.get("lesson_methodology")
-        for member in reversed(receipt.get("delivery_outbox", ()))
-        if member.get("capability") == cap and "lesson_methodology" in member
-    ), None)
-    warnings = _learning_teacher_feedback.active_warning_signals(receipt.get("last_exam"), previous_methodology, cap)
     teacher_decision = _learning_teacher_feedback.summarize_teacher_decision(_learning_teacher_feedback.TeacherDecisionInput(
         capability=cap, policy_key=policy_key, warnings=warnings,
         unresolved_miss_count=len(priority),
-        champion_candidate_count=0,
+        champion_candidate_count=len(champion_candidate_ids),
         prerequisite_capabilities=(
             executable_release.execution_plan.capability_map[cap].prerequisites),
         methodology=methodology,
-        delivered_examples=steps_per_visit*batch_size,
+        delivered_examples=candidate_steps*batch_size,
         replayed_misses=replayed_misses,
         resolved_exam_misses=len(resolved_priority_ids),
-        champion_prioritized=0,
+        champion_prioritized=champion_prioritized,
         seed=_runtime_state._seed(receipt, capability=cap),
+        diagnostic_context_consumed=policy_selection[
+            "diagnostic_context_consumed"],
+        diagnostic_context_key=policy_selection["diagnostic_context_key"],
     ))
     lesson_generator, lesson_source_digest = _runtime_assessment.released_lesson_source_identity(
         executable_release, cap)
@@ -593,12 +632,17 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
         "attempted_optimizer_updates": attempted_optimizer_updates,
+        "candidate_step_control": {
+            "configured_steps": steps_per_visit,
+            "effective_steps": candidate_steps,
+            "adaptive": candidate_steps != steps_per_visit,
+        },
         "source_prefetch": {
             "schema": "bilqis.mlx.source-prefetch/v1",
             "mode": "PROCESS_POOL" if prefetch_enabled else "SERIAL",
             "workers": source_prefetch_workers if prefetch_enabled else 0,
-            "prepared_steps": steps_per_visit if prefetch_enabled else 0,
-            "serial_steps": 0 if prefetch_enabled else steps_per_visit,
+            "prepared_steps": candidate_steps if prefetch_enabled else 0,
+            "serial_steps": 0 if prefetch_enabled else candidate_steps,
             "packet_identity_verified": prefetch_enabled,
             "neural_owner": "MAIN_LANE_ONLY",
         },
@@ -638,7 +682,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "prior_grade_champion_votes": {
             source_grade: votes for source_grade, votes in direct_capability_votes.items()
             if source_grade != lesson_grade},
-        "champion_directed_examples_available": 0,
+        "champion_directed_examples_available": len(champion_candidate_ids),
         "champion_confidence": {
             "policy": _learning_champion_confidence.POLICY,
             "frozen_unique_champions": len(confidence_champions),

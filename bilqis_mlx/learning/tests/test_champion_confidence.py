@@ -4,7 +4,9 @@ import numpy as np
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-from bilqis_mlx.learning.champion_confidence import vote_targets, champion_roster
+from bilqis_mlx.learning.champion_confidence import (
+    vote_targets, vote_targets_typed, champion_roster,
+)
 
 
 def record(cap, sha, perfect):
@@ -223,3 +225,70 @@ class ChampionConfidenceTests(unittest.TestCase):
         zero = vote_targets([(3, correct_logits)], labels, eligible_capabilities=12,
                             teacher_distill=0.)
         self.assertEqual(float(zero[1].sum()), 0.)
+
+    def test_vote_mask_limits_direct_advice_to_owned_rows(self):
+        labels = np.array([1, 1], dtype=np.int64)
+        correct_logits = np.array([[0., 2.], [0., 2.]], dtype=np.float32)
+        target, weight = vote_targets_typed(
+            [(1, correct_logits, np.array([True, False]))],
+            labels, classes=2, eligible_capabilities=4, teacher_distill=.5)
+        self.assertGreater(float(weight[0]), 0.)
+        self.assertEqual(float(weight[1]), 0.)
+        np.testing.assert_allclose(target[1], [.5, .5], atol=1e-6)
+
+    def test_role_owner_votes_are_capability_routed_and_same_grade_soup_falls_back(self):
+        from bilqis_mlx.learning.lesson_guidance import _mentor_vote_specs
+
+        row_capabilities = ("C.ADD", "C.SUB", "B.AND")
+        direct = _mentor_vote_specs(
+            {"capabilities": ("C.ADD", "C.SUCCESSOR"), "breadth": 2},
+            row_capabilities, lesson_grade="C",
+            direct_capabilities={"C.ADD", "C.SUCCESSOR"})
+        self.assertEqual(len(direct), 2)
+        self.assertEqual(direct[0][0], 1)
+        np.testing.assert_array_equal(direct[0][1], [True, False, False])
+
+        same_grade_soup = _mentor_vote_specs(
+            {"soup_grade": "C", "breadth": 5},
+            row_capabilities, lesson_grade="C",
+            direct_capabilities={"C.ADD", "C.SUCCESSOR"})
+        self.assertEqual(same_grade_soup[0][0], 5)
+        np.testing.assert_array_equal(
+            same_grade_soup[0][1], [False, True, True])
+
+        foreign_soup = _mentor_vote_specs(
+            {"soup_grade": "A", "breadth": 2},
+            row_capabilities, lesson_grade="C",
+            direct_capabilities={"C.ADD", "C.SUCCESSOR"})
+        np.testing.assert_array_equal(
+            foreign_soup[0][1], [True, True, True])
+
+    def test_champion_directed_rows_require_student_miss_and_source_correct_owner(self):
+        from bilqis_mlx.learning.lesson_guidance import _champion_directed_rows
+
+        rows = [
+            {"id": "miss", "capability": "C.ADD", "gold": "3",
+             "tokens": [1, 2], "answer_kind": "numeric_active"},
+            {"id": "known", "capability": "C.ADD", "gold": "4",
+             "tokens": [1, 3], "answer_kind": "numeric_active"},
+            {"id": "other", "capability": "C.SUB", "gold": "2",
+             "tokens": [1, 4], "answer_kind": "numeric_active"},
+        ]
+        mentors = ({
+            "weights": {"synthetic": True},
+            "graph": {"tokens": list(range(16)), "nodes": [],
+                      "row_contract_sha256": {}},
+            "capabilities": ("C.ADD",),
+            "breadth": 1,
+        },)
+        with patch(
+            "bilqis_mlx.learning.lesson_guidance._learning_student_ops._predictions",
+            side_effect=[
+                {"miss": "2", "known": "4", "other": "1"},
+                {"miss": "3", "known": "4"},
+            ],
+        ):
+            directed = _champion_directed_rows(
+                None, mentors, {"student": True}, rows,
+                {"heads": 1, "layers": 1}, [1, 2])
+        self.assertEqual([row["id"] for row in directed], ["miss"])

@@ -5,8 +5,6 @@ selector, mutate neural state, invent semantic identities, or assign golds.
 """
 from __future__ import annotations
 
-from enum import Enum
-
 from dataclasses import dataclass
 from enum import Enum
 import hashlib
@@ -48,6 +46,20 @@ class WeaknessTargetError(str, Enum):
     LEARNING_EXPERIMENT_WEAKNESS_TARGET_OUTSIDE_CURRENT = "LEARNING_EXPERIMENT_WEAKNESS_TARGET_OUTSIDE_CURRENT"
 
 
+class LearningExperimentError(str, Enum):
+    CANDIDATE_STAGNATION_INVALID = "LEARNING_EXPERIMENT_CANDIDATE_STAGNATION_INVALID"
+    CANDIDATE_STEPS_INVALID = "LEARNING_EXPERIMENT_CANDIDATE_STEPS_INVALID"
+    CONTEXT_ID_DRIFT = "LEARNING_EXPERIMENT_CONTEXT_ID_DRIFT"
+    DIAGNOSTIC_CONTEXT_COLLISION = "LEARNING_EXPERIMENT_DIAGNOSTIC_CONTEXT_COLLISION"
+    DIAGNOSTIC_REASON_DRIFT = "LEARNING_EXPERIMENT_DIAGNOSTIC_REASON_DRIFT"
+    EFFECTIVE_POLICY_LR_DRIFT = "LEARNING_EXPERIMENT_EFFECTIVE_POLICY_LR_DRIFT"
+    POLICY_INVALID = "LEARNING_EXPERIMENT_POLICY_INVALID"
+    POLICY_LR_INVALID = "LEARNING_EXPERIMENT_POLICY_LR_INVALID"
+    PRIORITY_TARGET_INVALID = "LEARNING_EXPERIMENT_PRIORITY_TARGET_INVALID"
+    REJECTION_REASON_INVALID = "LEARNING_EXPERIMENT_REJECTION_REASON_INVALID"
+    STRATEGY_ID_DRIFT = "LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT"
+
+
 @dataclass(frozen=True)
 class TeacherDecisionInput:
     capability: str
@@ -62,6 +74,8 @@ class TeacherDecisionInput:
     resolved_exam_misses: int
     champion_prioritized: int
     seed: int
+    diagnostic_context_consumed: bool = False
+    diagnostic_context_key: str | None = None
 
 
 @dataclass(frozen=True)
@@ -225,7 +239,12 @@ def _validate_decision_input(request: TeacherDecisionInput) -> None:
     valid_identity = bool(request.capability and request.policy_key)
     valid_seed = type(request.seed) is int
     valid_counts = all(type(value) is int and value >= 0 for value in counts)
-    if not (valid_identity and valid_seed and valid_counts):
+    valid_diagnostics = (
+        type(request.diagnostic_context_consumed) is bool and
+        (request.diagnostic_context_key is None or
+         isinstance(request.diagnostic_context_key, str) and
+         bool(request.diagnostic_context_key)))
+    if not (valid_identity and valid_seed and valid_counts and valid_diagnostics):
         raise ValueError("TEACHER_DECISION_INPUT_INVALID")
 
 
@@ -261,14 +280,17 @@ def _selected_actions(request: TeacherDecisionInput) -> dict:
 
 
 def _decision_payload(request: TeacherDecisionInput) -> dict:
+    policy_selection = {
+        "origin": "INHERITED_LEGACY_UCB",
+        "diagnostic_context_consumed": request.diagnostic_context_consumed,
+    }
+    if request.diagnostic_context_key is not None:
+        policy_selection["diagnostic_context_key"] = request.diagnostic_context_key
     return {
         "schema": VERSION,
         "capability": request.capability,
         "policy_key": request.policy_key,
-        "policy_selection": {
-            "origin": "INHERITED_LEGACY_UCB",
-            "diagnostic_context_consumed": False,
-        },
+        "policy_selection": policy_selection,
         "warning_signals": list(request.warnings),
         "opportunities": _opportunities(request),
         "prerequisite_capabilities": list(request.prerequisite_capabilities),

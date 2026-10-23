@@ -1,6 +1,6 @@
 {
   "legacy_raw_file_count": 167,
-  "legacy_raw_raise_count": 2006,
+  "legacy_raw_raise_count": 2004,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -5792,13 +5792,6 @@
       "path": "bilqis_mlx/learning/champion_confidence.py"
     },
     {
-      "code_hint": "CHAMPION_CONFIDENCE_INVALID_VOTE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CHAMPION_CONFIDENCE_INVALID_VOTE'",
-      "path": "bilqis_mlx/learning/champion_confidence.py"
-    },
-    {
       "code_hint": "CHAMPION_CONFIDENCE_PERFECT_ROLE_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -6867,13 +6860,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'LEARNING_EXPERIMENT_PROTECTED_CAPABILITY_NOT_MEASURED'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT'",
       "path": "bilqis_mlx/learning/learning_experiment.py"
     },
     {
