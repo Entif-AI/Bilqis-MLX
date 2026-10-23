@@ -192,7 +192,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2006** raw raises across **167** files. The baseline gate permits only reduction.
+Current production scan: **2004** raw raises across **167** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -519,7 +519,6 @@ Current production scan: **2006** raw raises across **167** files. The baseline 
 | `CHAMPION_CONFIDENCE_BUNDLE_DRIFT` | 2 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `CHAMPION_CONFIDENCE_GRADE_SOUPS_MISSING_FOR_ACTIVE_ROLES` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `CHAMPION_CONFIDENCE_INVALID_INPUT` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
-| `CHAMPION_CONFIDENCE_INVALID_VOTE` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
 | `CHAMPION_CONFIDENCE_PERFECT_ROLE_DRIFT` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
 | `CHAMPION_CONFIDENCE_RANK_NOT_VERIFIED` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
 | `CHAMPION_CONFIDENCE_ROLE_ROSTER_INVALID` | 1 | `bilqis_mlx/learning/champion_confidence.py` |
@@ -1549,7 +1548,6 @@ Current production scan: **2006** raw raises across **167** files. The baseline 
 | `LEARNING_EXPERIMENT_RESUME_REQUIRES_IDENTICAL_OPT_IN` | 3 | `bilqis_mlx/cli.py`, `bilqis_mlx/runtime/reconciliation.py` |
 | `LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT` | 1 | `bilqis_mlx/runtime/visits.py` |
 | `LEARNING_EXPERIMENT_SCHEDULE_PROGRAM_REQUIRED` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
-| `LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_UNKNOWN_OPTIMIZER_STATE` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_UNKNOWN_TARGET_GRADE` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_REPORT_REQUIRES_COMPLETE_SCORED_EXAM_EVENTS` | 1 | `bilqis_mlx/diagnostics/learning_report.py` |
