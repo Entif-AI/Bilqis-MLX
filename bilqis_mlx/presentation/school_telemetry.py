@@ -445,6 +445,8 @@ class SchoolTelemetry:
         # Whole-student exam scores are distinct from separate per-grade bests.
         self.cumulative_best = {}  # (grades, rubric, scope) -> (correct, total, step)
         self.cumulative_latest = None  # (key, correct, total, step, status)
+        self.score_era = 0
+        self.era_cohorts = defaultdict(set)
         self.visits = 0
         self.last_exam_grade = None
         self.execution_start_step = None
@@ -455,6 +457,21 @@ class SchoolTelemetry:
         if name not in self.grades:
             self.grades.append(name)
             self.board.grade_program = tuple(self.grades)
+
+    def _reset_score_era(self, *, reason: str, grade: str | None) -> None:
+        """Start a new longitudinal-score era without deleting event history."""
+        self.score_era += 1
+        self.best.clear()
+        self.cumulative_best.clear()
+        self.cumulative_latest = None
+        self.exam_cohorts.clear()
+        self.era_cohorts.clear()
+        self.last_cap.clear()
+        self.start_cap.clear()
+        self.board.push("system", {
+            "kind": "SCORE ERA", "grade": grade or "-",
+            "detail": f"ERA {self.score_era} | RESET {reason}",
+        }, redraw=False)
 
     def ingest(self, event: dict):
         if (event.get("event", "").startswith("SCHOOL_") and
@@ -487,11 +504,21 @@ class SchoolTelemetry:
         }[kind](grade, event)
 
     def _init(self, grade, event):
+        if event.get("event") in {
+                "SCHOOL_NEXT_GRADE_COURSE_ADMITTED",
+                "SCHOOL_GRADE_B_COURSE_ADMITTED",
+                "SCHOOL_COURSE_ADMITTED"}:
+            self._reset_score_era(
+                reason=("NEXT_GRADE_ADMITTED"
+                        if event.get("event") == "SCHOOL_NEXT_GRADE_COURSE_ADMITTED"
+                        else "COURSE_ADMITTED"),
+                grade=grade)
         self.board.state["step"] = event.get("optimizer_step", self.board.state.get("step"))
         self.board.state["_rate_sample_eligible"] = True
 
     def _curriculum(self, grade, event):
         """Make a release replacement a hard boundary in the active dashboard view."""
+        self._reset_score_era(reason=event["event"], grade=grade)
         old_caps = tuple(event.get("old_capabilities") or ())
         new_caps = tuple(event.get("new_capabilities") or ())
         if (not grade or not old_caps or not new_caps or
@@ -824,6 +851,8 @@ class SchoolTelemetry:
             best = self.best[key]
             self.latest[key] = report
             same_cohort = not live or self.exam_cohorts.get(key) == cohort_sha
+            if live:
+                self.era_cohorts[key].add(cohort_sha)
             for cap, (score, count) in sorted(caps.items()):
                 cap_key = (cap, rubric, effective_scope)
                 baseline = self.start_cap.setdefault(cap_key, (score, count))
@@ -998,6 +1027,12 @@ class SchoolTelemetry:
             f"TO100 {latest.total-latest.correct}/{latest.total} wrong ({'fresh sampled cohort' if live else 'sealed rubric'}) | "
             f"Source-train rewards are in-sample; independent sentinel NOT MEASURED",
         ]
+        if live:
+            count = len(self.era_cohorts.get(key, ()))
+            self.board.operator_lines.append(
+                f"HISTORY ERA {self.score_era} | {count} cohort{'s' if count != 1 else ''} | "
+                f"TOP {best.correct}/{best.total} @step {best.step or '-'} | "
+                "cross-cohort context, not a paired delta")
         if self.cumulative_latest is not None:
             key, correct, total, step, status = self.cumulative_latest
             best = self.cumulative_best[key]

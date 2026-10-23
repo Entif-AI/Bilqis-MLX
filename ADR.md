@@ -1135,3 +1135,10 @@ Candidate panels label championship evidence as CHP; mastery panels retain
 TOP for historical-best evidence. WAS and NOW remain the directly paired same-probe
 values inside a candidate row. Cross-cohort title or best evidence remains useful
 context but is not represented as a comparable maximum.
+
+Mastery TOP remains intentionally cross-cohort context within one developmental
+score era. Ordinary fresh cohort rotation does not reset it. Admitting the next
+grade or replacing the active semantic program starts a new score era, clears
+the active TOP/cumulative-best projection, and leaves the immutable historical
+events intact. Operator telemetry names the era, cohort count, and the fact that
+TOP is cross-cohort context rather than a paired delta.
