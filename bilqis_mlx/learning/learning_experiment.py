@@ -477,7 +477,9 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
     # Require evidence, but keep inherited exploration alive. The base pick
     # still gets a chance whenever it lacks direct context observations.
-    if (scope[best]["trials"] >= 2 and original_key in scope and
+    best_record = scope[best]
+    proven_retained = best_record.get("retained", 0) > 0
+    if ((best_record["trials"] >= 2 or proven_retained) and original_key in scope and
             score(best) > score(original_key)):
         return best, teacher["strategies"][best]
     return original_key, original_policy
@@ -515,9 +517,11 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     channel = _channel(teacher)
     scope = channel["contexts"].setdefault(capability+"|"+phase+"|"+curriculum_scope, {})
     record = scope.setdefault(policy_key, {"trials": 0, "reward_sum": 0.,
-                                            "unsafe": 0, "latest": None,
+                                            "unsafe": 0, "retained": 0,
+                                            "latest": None,
                                             "no_target_gain_streak": 0})
     record.setdefault("no_target_gain_streak", 0)
+    record.setdefault("retained", 0)
     shared_stagnation = _shared_stagnation_record(
         channel, capability, curriculum_scope, policy_key)
     # Normalized worst-case retention cost stops many small wins concealing
@@ -548,6 +552,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             del entries[:-MAX_FAILURE_ARCHETYPES]
     if decision["decision"] == "REJECT":
         record["unsafe"] += 1
+    else:
+        record["retained"] += 1
     inherited_exploration, selection_reward = _stagnation_feedback(
         teacher, capability, policy_key, decision, reward, record,
         shared_stagnation)

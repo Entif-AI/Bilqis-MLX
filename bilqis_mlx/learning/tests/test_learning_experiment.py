@@ -713,6 +713,51 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         pick, _ = contextual_pick(Legacy, teacher, "C.ADD", "RECOVERY_2", random.Random(2))
         self.assertEqual(pick, "positive")
 
+    def test_single_retained_context_success_is_immediately_exploitable(self):
+        teacher = {
+            "strategies": {
+                "legacy": {"lr": .0002},
+                "retained": {"lr": .00008},
+            },
+            "global_stats": {
+                "legacy": {"trials": 20, "reward_sum": 2., "reward_ema": .1,
+                           "latest": .1},
+                "retained": {"trials": 20, "reward_sum": 2., "reward_ema": .1,
+                             "latest": .1},
+            },
+            "grade_stats": {},
+            "events": 40,
+        }
+
+        rejected = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="RECOVERY_2", protected=set(),
+            settings=Settings())
+        observe_context(
+            teacher, capability="C.ADD", phase="RECOVERY_2",
+            policy_key="legacy", decision=rejected, local_gain=0.,
+            curriculum_scope="scope")
+
+        retained = decide({
+            "C.ADD": {"before": 3, "after": 5, "total": 6},
+        }, active_capability="C.ADD", phase="RECOVERY_2", protected=set(),
+            settings=Settings())
+        self.assertEqual(retained["decision"], "PROVISIONAL")
+        observe_context(
+            teacher, capability="C.ADD", phase="RECOVERY_2",
+            policy_key="retained", decision=retained, local_gain=.4,
+            curriculum_scope="scope")
+
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "legacy", _teacher["strategies"]["legacy"]
+
+        picked, _ = contextual_pick(
+            Legacy, teacher, "C.ADD", "RECOVERY_2", random.Random(2),
+            curriculum_scope="scope")
+        self.assertEqual(picked, "retained")
+
     def test_repeated_no_target_gain_demotes_policy_until_real_gain_resets_streak(self):
         teacher = live_scale_teacher()
         class Legacy:
