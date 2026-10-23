@@ -440,6 +440,24 @@ def _shared_stagnation_record(channel: dict, capability: str,
     return scope.setdefault(policy_key, {"no_target_gain_streak": 0})
 
 
+def _capability_stagnation(channel: dict, capability: str,
+                           curriculum_scope: str) -> dict:
+    return channel.get("capability_stagnation", {}).get(
+        _stagnation_key(capability, curriculum_scope), {})
+
+
+def _capability_stagnation_record(channel: dict, capability: str,
+                                  curriculum_scope: str) -> dict:
+    return channel.setdefault("capability_stagnation", {}).setdefault(
+        _stagnation_key(capability, curriculum_scope), {
+            "rejection_streak": 0,
+            "no_target_gain_streak": 0,
+            "attempts_since_retained": 0,
+            "total_rejections": 0,
+            "total_retained": 0,
+        })
+
+
 def _inherited_exploration(teacher: dict, grade: str, policy_key: str) -> float:
     local = teacher.get("grade_stats", {}).get(str(grade), {})
     info = local.get(policy_key) or teacher.get("global_stats", {}).get(policy_key)
@@ -460,6 +478,9 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     if not scope:
         return original_key, original_policy
     trials = sum(v["trials"] for v in scope.values())
+    capability_stagnation = _capability_stagnation(
+        channel, capability, curriculum_scope)
+    rejection_pressure = int(capability_stagnation.get("rejection_streak", 0))
     # Priors stay owned by the inherited bandit. Context decides only when its
     # observed safety preference is demonstrably better than the current pick.
     def score(key):
@@ -471,7 +492,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                        math.sqrt(math.log(trials+2)/(record["trials"]+1)))
         stagnation = _shared_no_gain_streak(
             channel, capability, curriculum_scope, key)
-        return mean + exploration/(1+stagnation)
+        return mean + exploration/(1+stagnation+rejection_pressure)
     best = max(scope, key=score)
     if best not in teacher["strategies"]:
         raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
@@ -479,6 +500,9 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     # still gets a chance whenever it lacks direct context observations.
     best_record = scope[best]
     proven_retained = best_record.get("retained", 0) > 0
+    if (proven_retained and rejection_pressure > 0 and
+            (original_key not in scope or score(best) > score(original_key))):
+        return best, teacher["strategies"][best]
     if ((best_record["trials"] >= 2 or proven_retained) and original_key in scope and
             score(best) > score(original_key)):
         return best, teacher["strategies"][best]
@@ -514,6 +538,7 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             decision.get("active_capability") != capability or
             decision.get("phase") != phase):
         raise ValueError("LEARNING_EXPERIMENT_INVALID_CAUSAL_OUTCOME")
+    no_target_gain = decision.get("reason") == "NO_MEASURABLE_TARGET_GAIN"
     channel = _channel(teacher)
     scope = channel["contexts"].setdefault(capability+"|"+phase+"|"+curriculum_scope, {})
     record = scope.setdefault(policy_key, {"trials": 0, "reward_sum": 0.,
@@ -524,6 +549,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     record.setdefault("retained", 0)
     shared_stagnation = _shared_stagnation_record(
         channel, capability, curriculum_scope, policy_key)
+    capability_stagnation = _capability_stagnation_record(
+        channel, capability, curriculum_scope)
     # Normalized worst-case retention cost stops many small wins concealing
     # a substantial single-capability loss. Provisional experimental metric.
     relative_loss = max((max(0., -v) for k, v in decision["deltas"].items()
@@ -552,8 +579,18 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             del entries[:-MAX_FAILURE_ARCHETYPES]
     if decision["decision"] == "REJECT":
         record["unsafe"] += 1
+        capability_stagnation["rejection_streak"] += 1
+        capability_stagnation["attempts_since_retained"] += 1
+        capability_stagnation["total_rejections"] += 1
     else:
         record["retained"] += 1
+        capability_stagnation["rejection_streak"] = 0
+        capability_stagnation["attempts_since_retained"] = 0
+        capability_stagnation["total_retained"] += 1
+    if no_target_gain:
+        capability_stagnation["no_target_gain_streak"] += 1
+    else:
+        capability_stagnation["no_target_gain_streak"] = 0
     inherited_exploration, selection_reward = _stagnation_feedback(
         teacher, capability, policy_key, decision, reward, record,
         shared_stagnation)
@@ -586,6 +623,12 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             "no_target_gain_streak": record["no_target_gain_streak"],
             "shared_no_target_gain_streak":
                 shared_stagnation["no_target_gain_streak"],
+            "capability_rejection_streak":
+                capability_stagnation["rejection_streak"],
+            "capability_no_target_gain_streak":
+                capability_stagnation["no_target_gain_streak"],
+            "attempts_since_retained":
+                capability_stagnation["attempts_since_retained"],
             "inherited_exploration_credit": inherited_exploration,
             "teacher_selection_reward": selection_reward,
             "legacy_reward_reinterpreted": False,
