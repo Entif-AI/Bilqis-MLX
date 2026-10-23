@@ -192,7 +192,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2009** raw raises across **166** files. The baseline gate permits only reduction.
+Current production scan: **2006** raw raises across **167** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -1164,7 +1164,6 @@ Current production scan: **2009** raw raises across **166** files. The baseline 
 | `GRADE_A_EVALUATOR_WRONG_ANSWER_TYPE` | 1 | `bilqis_mlx/grade_a_evaluator.py` |
 | `GRADE_A_EXAM_HAS_UNTAUGHT_WORLD_STRUCTURE` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_EXHAUSTED_DISTINCT_SEMANTIC_RECORDS` | 1 | `bilqis_mlx/grade_a_probe.py` |
-| `GRADE_A_HISTORICAL_GRAPH_DRIFT` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_HISTORICAL_ORACLE_SOURCE_DRIFT` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_INDEPENDENT_ORACLE_OR_PREDICATE_DRIFT` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_LEGACY_IMPORT_ROOT_MISMATCH` | 1 | `bilqis_mlx/grade_a_probe.py` |
@@ -1189,8 +1188,6 @@ Current production scan: **2009** raw raises across **166** files. The baseline 
 | `GRADE_A_REQUIRES_EVEN_POSITIVE_AND_NEGATIVE_EXAMPLES` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_SOURCE_TOKENS_NOT_A_STUDENT_PREFIX` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_STUDENT_CHECKPOINT_SHA_MISMATCH` | 1 | `bilqis_mlx/grade_a_probe.py` |
-| `GRADE_A_STUDENT_FP32_OR_VOCAB_MISMATCH` | 1 | `bilqis_mlx/grade_a_probe.py` |
-| `GRADE_A_STUDENT_GRAPH_SHA_MISMATCH` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_UNKNOWN_SPLIT` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_UNTAUGHT_WORLD_SIZE` | 1 | `bilqis_mlx/grade_a_probe.py` |
@@ -1441,7 +1438,6 @@ Current production scan: **2009** raw raises across **166** files. The baseline 
 | `HUMAN_TRAINER_SAVED_COHORT_RELEASE_NOT_ADMITTED` | 1 | `bilqis_mlx/compatibility/assessment.py` |
 | `HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT` | 1 | `bilqis_mlx/learning/student_ops.py` |
 | `HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT` | 1 | `bilqis_mlx/runtime/visits.py` |
-| `HUMAN_TRAINER_TEACHER_IMPLEMENTATION_ROOT_MISMATCH` | 1 | `bilqis_mlx/runtime/session.py` |
 | `HUMAN_TRAINER_TYPED_GRADE_REVISION_CONFIG_MISSING` | 1 | `bilqis_mlx/compatibility/trainer_transitions.py` |
 | `HUMAN_TRAINER_UNCOMMITTED_BUNDLE_SOURCE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH` | 2 | `bilqis_mlx/runtime/checkpoints.py` |
@@ -2061,6 +2057,7 @@ Current production scan: **2009** raw raises across **166** files. The baseline 
 | `_DIGEST_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `_STALE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
+| `boom` | 1 | `bilqis_mlx/runtime/tests/test_mlx_memory.py` |
 | `undefined` | 1 | `bilqis_mlx/semantics/tests/test_source_memo.py` |
 | `unreachable` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `unsupported fixture operator` | 1 | `bilqis_mlx/verification/tests/test_verification_laws.py` |

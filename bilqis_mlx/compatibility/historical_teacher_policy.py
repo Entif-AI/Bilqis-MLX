@@ -21,6 +21,13 @@ KNOBS = {
     "distill": [0.0, 0.15, 0.35, 0.65],
 }
 MAX_STRATEGIES = 512
+MAX_MUTATION_ATTEMPTS = 24
+MAX_TEACHER_CONTEXT_ITEMS = 24
+MUTATION_EVENT_INTERVAL = 3
+
+# Legacy exception identities are part of the historical teacher contract.
+NONFINITE_TEACHER_REWARD_ERROR = "NONFINITE_TEACHER_REWARD"
+NO_UNTRIED_TEACHER_STRATEGY_ERROR = "NO_UNTRIED_TEACHER_STRATEGY_FOR_GRADE_ATTEMPT"
 
 
 def _policy_key(policy):
@@ -38,12 +45,12 @@ def mutate(teacher, rng):
               if info["trials"]]
     base = (teacher["strategies"][max(viable, key=lambda v: v[1]["reward_ema"])[0]]
             if viable else rng.choice(list(teacher["strategies"].values())))
-    for _ in range(24):
+    for _ in range(MAX_MUTATION_ATTEMPTS):
         variant = dict(base)
         field = rng.choice(list(KNOBS))
         candidates = [value for value in KNOBS[field] if value != variant[field]]
         variant[field] = rng.choice(candidates)
-        if variant["old"] + variant["preview"] > 24:
+        if variant["old"] + variant["preview"] > MAX_TEACHER_CONTEXT_ITEMS:
             continue
         identity = _policy_key(variant)
         if identity not in teacher["strategies"]:
@@ -55,7 +62,7 @@ def mutate(teacher, rng):
 
 
 def pick(teacher, grade, rng, exclude=None):
-    if teacher["events"] and teacher["events"] % 3 == 0:
+    if teacher["events"] and teacher["events"] % MUTATION_EVENT_INTERVAL == 0:
         mutate(teacher, rng)
     local = teacher["grade_stats"].get(str(grade), {})
     total = teacher["events"] + 1
@@ -75,13 +82,13 @@ def pick(teacher, grade, rng, exclude=None):
         if item[0] not in excluded
     ]
     if not choices:
-        raise ValueError("NO_UNTRIED_TEACHER_STRATEGY_FOR_GRADE_ATTEMPT")
+        raise ValueError(NO_UNTRIED_TEACHER_STRATEGY_ERROR)
     return max(choices, key=rank)
 
 
 def observe(teacher, grade, policy_key, reward):
     if not math.isfinite(reward):
-        raise ValueError("NONFINITE_TEACHER_REWARD")
+        raise ValueError(NONFINITE_TEACHER_REWARD_ERROR)
     for entry in (
         teacher["global_stats"][policy_key],
         teacher["grade_stats"].setdefault(str(grade), {}).setdefault(policy_key, _stats()),

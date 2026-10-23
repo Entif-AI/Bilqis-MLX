@@ -44,10 +44,15 @@ FAMILIES = (
 )
 SEED = 20261015
 
+# Preserve source-probe error identities while making their contracts explicit.
+SOURCE_PROBE_NEURAL_GEOMETRY_ERROR = "GRADE_A_SOURCE_PROBE_NEURAL_GEOMETRY_FORBIDDEN"
+HISTORICAL_GRAPH_DRIFT_ERROR = "GRADE_A_HISTORICAL_GRAPH_DRIFT"
+HISTORICAL_ABI_BINDING_DRIFT_ERROR = "GRADE_A_HISTORICAL_ABI_BINDING_DRIFT"
+
 
 def _source_only_tensor_hash(*_args, **_kwargs):
     """Fail closed if a source-only probe reaches legacy neural geometry."""
-    raise RuntimeError("GRADE_A_SOURCE_PROBE_NEURAL_GEOMETRY_FORBIDDEN")
+    raise RuntimeError(SOURCE_PROBE_NEURAL_GEOMETRY_ERROR)
 
 
 def _import_source_interpreters(root: Path):
@@ -100,7 +105,7 @@ def read_sources(root: Path):
     graph_hash = hashlib.sha256(json.dumps(graph,sort_keys=True,separators=(",", ":"))
                                .encode()).hexdigest()
     if graph_hash != PINNED_GRAPH_SHA256:
-        raise ValueError("GRADE_A_HISTORICAL_GRAPH_DRIFT")
+        raise ValueError(HISTORICAL_GRAPH_DRIFT_ERROR)
     return micro,development,graph,sources,graph_hash
 
 
@@ -224,10 +229,10 @@ def parent_graph_binding(checkpoint: Path, source_graph: dict) -> dict:
         json.dumps(source_graph,sort_keys=True,separators=(",",":")).encode()
     ).hexdigest()
     if source_digest != PINNED_GRAPH_SHA256:
-        raise ValueError("GRADE_A_HISTORICAL_GRAPH_DRIFT")
+        raise ValueError(HISTORICAL_GRAPH_DRIFT_ERROR)
     if (AUDITED_PARENT.sha256 != HISTORICAL_ABI.checkpoint_sha256 or
             PINNED_FULL_STUDENT_GRAPH_SHA256 != HISTORICAL_ABI.graph_sha256):
-        raise ValueError("GRADE_A_HISTORICAL_ABI_BINDING_DRIFT")
+        raise ValueError(HISTORICAL_ABI_BINDING_DRIFT_ERROR)
     if len(source_graph["tokens"]) > HISTORICAL_ABI.prefix_tokens:
         raise ValueError("GRADE_A_SOURCE_TOKENS_NOT_A_STUDENT_PREFIX")
     return {"checkpoint_sha256":AUDITED_PARENT.sha256,
