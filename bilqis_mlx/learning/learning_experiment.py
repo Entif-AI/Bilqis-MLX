@@ -24,6 +24,9 @@ from bilqis_mlx.learning.teacher_feedback import (
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
 MAX_FAILURE_ARCHETYPES = 24
 TEACHER_UCB_EXPLORATION_WEIGHT = 0.6
+REJECTION_PRESSURE_HALF_HORIZON = 2
+REJECTION_PRESSURE_QUARTER_HORIZON = 4
+REJECTION_PRESSURE_NOVELTY_CUTOFF = 2
 
 
 @dataclass(frozen=True)
@@ -621,11 +624,11 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
     """Shrink disposable candidate horizon under sustained retention failure.
 
     The configured horizon remains authoritative in the healthy regime.
-    Once a capability has gone half a configured candidate-horizon without a
-    retained update, halve the disposable trial. After a full horizon of
-    rejected candidates, quarter it. This keeps the adaptation relative to
-    the operator-selected default rather than introducing a second absolute
-    step-count policy.
+    Candidate attempts and optimizer steps are different units: a rejected
+    16-step candidate is one failed candidate, not one sixteenth of a failure.
+    After two consecutive rejected candidates, halve the next disposable
+    trial. After four, quarter it. A retained candidate resets the rejection
+    streak through the existing capability-stagnation owner.
     """
     if type(default_steps) is not int or default_steps < 1:
         raise ValueError(LearningExperimentError.CANDIDATE_STEPS_INVALID.value)
@@ -634,14 +637,15 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
         return default_steps
     stagnation = _capability_stagnation(
         channel, capability, curriculum_scope)
-    attempts = stagnation.get("attempts_since_retained", 0)
-    if type(attempts) is not int or attempts < 0:
+    rejections = stagnation.get(
+        "rejection_streak", stagnation.get("attempts_since_retained", 0))
+    if type(rejections) is not int or rejections < 0:
         raise ValueError(LearningExperimentError.CANDIDATE_STAGNATION_INVALID.value)
     half = max(1, default_steps // 2)
     quarter = max(1, default_steps // 4)
-    if attempts >= default_steps:
+    if rejections >= REJECTION_PRESSURE_QUARTER_HORIZON:
         return quarter
-    if attempts >= half:
+    if rejections >= REJECTION_PRESSURE_HALF_HORIZON:
         return half
     return default_steps
 
@@ -727,6 +731,13 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         return result(
             best, teacher["strategies"][best],
             diagnostic_context_consumed=True)
+    # Once one capability has produced repeated consecutive rejects, stop
+    # treating an unseen inherited-UCB policy as more valuable merely because
+    # it is novel. Reuse the best observed contextual behavior until a retain
+    # resets pressure and reopens normal exploration.
+    if (rejection_pressure >= REJECTION_PRESSURE_NOVELTY_CUTOFF and
+            original_effective not in effective_scope):
+        return result(best, teacher["strategies"][best])
     # Require evidence, but keep inherited exploration alive. The base pick
     # still gets a chance whenever it lacks direct context observations.
     proven_retained = best_record.get("retained", 0) > 0
