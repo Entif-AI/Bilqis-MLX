@@ -26,9 +26,9 @@ Main `025bca51c78509acd0b1b898f16e9fcf84d25941` is integrated through staging
 `94c2e500523b45472ee257cf4021730309f5b848`, including the B-stagnation fix and DAG
 retry correction. Read actual HEAD/PR for the final merge SHA. Feature preservation
 ref: `codex/349-before-premerge-20261022` at b73f47e.
-IPR-0220 remediation and execution issues remain OPEN; read their protected current
+IPR-0220 remediation and execution authorities remain relevant; when authorized, read their protected current
 checkpoints before changing semantics or custody. Issue346 remains excluded.
-Publication of this feature is user-authorized; keep protected URLs out of public prose.
+**Bilqis-MLX and its implementation are public.** Publish repository-owned code, tests, architecture, and ordinary handoffs directly; keep private-only source text, credentials, attachments, and protected repository URLs out of tracked public artifacts unless separately released.
 
 Selected run: `runs/issue-349-experiments/primary`, generation **492**.
 Native step **117296**, student + own AdamW SHA

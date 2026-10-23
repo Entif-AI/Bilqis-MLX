@@ -1213,3 +1213,28 @@ target, same-grade, fixed-grade, protected-frontier and whole-school retention
 gates remain unchanged. This repairs the training geometry that was producing
 validly rejected destructive candidates rather than weakening admission to make
 the retention percentage look healthier.
+
+
+## ADR-092 | 2026-10-23 | Bilqis-MLX repository and implementation are public
+
+**Direct user governance change.** `Entif-AI/bilqis-mlx` is now a public
+repository and its implementation posture is public. Repository-owned source
+code, tests, architecture, specifications, implementation notes, evidence, and
+ordinary project handoffs may be published directly without compiling a separate
+screened implementation projection. This supersedes the earlier private-
+implementation posture recorded in historical ADRs and agent instructions.
+
+Protected source authority remains a distinct boundary. `IPR-0220` and any other
+still-private source repository, message, attachment, credential, or verbatim
+private instruction remain protected unless the user separately releases that
+source material. Public repository artifacts should cite such authority by an
+opaque stable identifier when needed and must not require or reproduce a private
+repository URL. Public implementation derived from protected requirements is
+permitted; protected source text is not thereby declassified.
+
+Going forward, publication classification for ordinary Bilqis-MLX repository
+work is **public by default**. A private/split classification is required only
+when the artifact itself contains still-protected source material or another
+independently private datum. This change does not alter human-only neural-update
+authority, student/AdamW custody, source-truth requirements, or historical
+provenance.

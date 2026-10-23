@@ -45,7 +45,7 @@ No generic runtime subsystem may maintain an independent curriculum ontology.
 These sources do not have equal jobs. They remain aligned by preserving those roles.
 
 1. **Latest direct user instruction** controls when it explicitly changes an earlier decision.
-2. **Protected IPR-0220 requirements** preserve private curriculum, trainer, custody, and remediation requirements.
+2. **Protected IPR-0220 requirements** preserve protected source authority and historical custody/remediation requirements. The Bilqis-MLX repository and its implementation are public; repository-owned code, tests, architecture, and implementation documentation do not require a private publication projection.
 3. **Current repository specifications** define executable desired state for this codebase.
 4. **Specs and Failures Ledger** normalizes decisions, supersessions, failures, and evidence. It is a requirements index, not a runtime allocator.
 5. **Code-resident semantic definitions and immutable ABI manifests** own executable semantic identity after admission.
