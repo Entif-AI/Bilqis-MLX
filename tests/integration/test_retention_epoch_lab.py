@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from bilqis_mlx import trainer as trainer
 from bilqis_mlx.learning.learning_experiment import Settings, earlier_grade_capabilities
+from bilqis_mlx.runtime import visits as runtime_visits
 from bilqis_mlx.factory.schedule import (
     ScheduleCapability, ScheduleGrade, ScheduleProgram,
 )
@@ -104,6 +105,21 @@ class _InlinePrefetchExecutor:
 
 
 class RetentionTeachingPathTests(unittest.TestCase):
+    def test_rejected_candidate_preserves_teacher_exposure_history(self):
+        receipt = {"teacher_miss_exposures": {
+            "weak:a": 2,
+            "weak:b": 0,
+        }}
+        attempted = {
+            "weak:a": 3,
+            "weak:b": 1,
+        }
+        self.assertEqual(
+            runtime_visits._teacher_exposures_after_candidate(
+                receipt, attempted, decision="REJECT"),
+            attempted,
+        )
+
     def test_visit_consumes_prefetched_source_packet_without_serial_step_redraw(self):
         engine, school, course, receipt, optimizer = _prefetch_visit_fixture()
         captured = []
