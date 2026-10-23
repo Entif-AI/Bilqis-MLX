@@ -1,0 +1,21 @@
+{
+  "schema": "bilqis.ithkuil.frontier-manifest/v1",
+  "builder_file_sha256": "f6bd679498ea952572bdff1b28fe24e6611d3ef82e870903b35865a0141b27f4",
+  "input_files": {
+    "lexicon_roots.csv": "7cdb5df8266c7c8b815392cf3333fc5e3d05876b1c79277494c925e24559e0cc",
+    "lexicon_root_senses.csv": "0e9cfefe9e1c4e25901f8b70af5d180290419804f658502bd6f38c862b1898a0",
+    "lexicon_root_evidence.csv": "fb205c21d51764706a22682e9d991e2c257e0cf2090082dcf31229eb3d4d83f7",
+    "bilqis_ithkuil_crosswalk.csv": "afb61f90602cf8bf631fdb0191dcde723722327e4456f6e462694f1768d1c6ec"
+  },
+  "input_digest": "17e060aa88428ecd2072653903e7829c3d07266ccfd30eb6c17672abbe558ec1",
+  "output_files": {
+    "candidate_pool.csv": "717a48d465a1594188a566ad32f93336968d620040a0243667fad1f50a268e08",
+    "grade_map.csv": "dbfceddb3a852429d940cc121482a12f9c99368a07d347f3ffb13cc198cd7058",
+    "sense_candidate_pool.csv": "e07dbbe7f299fa5f3e5dc169243ebacc545482dc9bd5f22e76ec2fa6d8707cb2",
+    "source_inventory.csv": "31b7e05ecebe97d5f748303a7f8915743c9a618227db61de2eb75d7da4241506",
+    "deferred_codec.csv": "474b5a1ed4655f8d2b9948e6ed696ba3ff16a57502df9ef54532d1a1d6c96cc9",
+    "grade_rationale.csv": "926b058bc4ee8dd18094a52d6015e7e9bac676924663d2a4f751785c31e7446d",
+    "frontier_plan.json": "5f0e4fc06e59a6020134b51d4d73de1202ed7bd875f84fae5eb27d7d79f313a7"
+  },
+  "output_digest": "a21759d93ccdb3efc9104ddfe3d5469b97ca5ac9594f42fa3a04709845848574"
+}
