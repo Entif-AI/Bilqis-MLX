@@ -152,7 +152,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             targets=[ordinary, champion],
             priority_target_ids={champion["id"]},
             target_exposures={ordinary["id"]: 0, champion["id"]: 0},
-            reserved_support_slots=3, seed=7, batch_size=4)
+            reserved_support_slots=2, seed=7, batch_size=4)
         self.assertEqual(control["weakness_target_ids"], [champion["id"]])
         self.assertEqual(control["priority_weakness_targets_delivered"], 1)
 
@@ -205,6 +205,39 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertGreaterEqual(
             len([row for row in picked if row["id"] in {r["id"] for r in current}]),
             3)
+
+    def test_weakness_replay_yields_when_fresh_support_fills_current_slice(self):
+        source_id = "fresh-complete-family"
+        fresh_family = [
+            {"id": f"{source_id}-{index}", "capability": "C.SUCCESSOR",
+             "gold": str(index), "source_id": source_id,
+             "tokens": [1, index, 9], "answer_kind": "numeric_active"}
+            for index in range(8)
+        ]
+        target = {
+            "id": "historic-miss", "capability": "C.SUCCESSOR",
+            "gold": "FALSE", "source_id": "historic-miss",
+            "tokens": [1, 99, 9], "answer_kind": "binary",
+        }
+        prior = [
+            {"id": f"old-{index}", "capability": "B.AND",
+             "gold": "TRUE" if index % 2 else "FALSE",
+             "source_id": f"old-{index}", "tokens": [1, index, 9],
+             "answer_kind": "binary"}
+            for index in range(32)
+        ]
+
+        picked, control = select_source_lesson(
+            [*fresh_family, target], prior,
+            {"old": 24, "depth": 1, "contrast": 0.},
+            targets=[target], target_exposures={target["id"]: 0},
+            seed=43, batch_size=32)
+
+        self.assertEqual(len(picked), 32)
+        self.assertEqual(control["fresh_support_delivered"], 8)
+        self.assertEqual(control["weakness_targets_requested"], 0)
+        self.assertEqual(control["weakness_targets_delivered"], 0)
+        self.assertNotIn(target["id"], {row["id"] for row in picked})
 
     def test_trainer_defers_missing_peer_inference_until_candidate_target_passes(self):
         from pathlib import Path

@@ -1211,11 +1211,15 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
             semantic_patterns=semantic_patterns,
             present_count=present_count)
         if targets else ())
-    target_capacity = max(
-        0, present_count - len(fresh_support) -
-        min(reserved_support_slots, present_count))
-    if targets and not target_capacity:
-        target_capacity = 1
+    # Weakness replay replaces current-capability rows, while preservation
+    # support is injected later into the whole batch and may displace old-grade
+    # rows.  Bound replay by both constraints instead of charging every future
+    # support row against the current slice.
+    free_current_slots = max(0, present_count - len(fresh_support))
+    free_batch_slots_after_support = max(
+        0, batch_size - len(fresh_support) - reserved_support_slots)
+    target_capacity = min(
+        free_current_slots, free_batch_slots_after_support)
     priority_targets = [
         row for row in targets if row["id"] in priority_target_ids]
     ordinary_targets = [
