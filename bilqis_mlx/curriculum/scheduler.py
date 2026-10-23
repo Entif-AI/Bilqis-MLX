@@ -563,7 +563,31 @@ def _promote(program, state: SchoolState, assessment: Assessment) -> SchoolState
     if state.carried_mastery_debt:
         all_caps = _caps(program, state.active_grades)
         if not set(all_caps) <= set(assessment.scores):
-            raise ValueError("DEBT_PROMOTION_REQUIRES_COMPLETE_ACTIVE_ASSESSMENT")
+            # A staged grade deliberately withholds unintroduced capabilities
+            # from routine assessment. A perfect earlier grade may still be
+            # recorded, but partial evidence cannot close the debt epoch.
+            debt = tuple(cap for cap in all_caps if (
+                cap in state.carried_mastery_debt or
+                (cap in assessment.scores and not assessment.scores[cap].perfect)))
+            next_index = _next_imperfect_grade_index(
+                program, state, assessment.scores)
+            if next_index is None:
+                # The remaining work may be the next unintroduced stage, not
+                # an imperfect score in the currently measurable subset.
+                for offset in range(1, len(state.active_grades) + 1):
+                    index = (state.grade_index + offset) % len(state.active_grades)
+                    grade = state.active_grades[index]
+                    if not set(_caps(program, (grade,))) <= set(assessment.scores):
+                        next_index = index
+                        break
+            if next_index is None:
+                raise ValueError("DEBT_PROMOTION_REQUIRES_COMPLETE_ACTIVE_ASSESSMENT")
+            return _enter_grade(
+                program, replace(state, carried_mastery_debt=debt),
+                next_index, stage="MAIN", first_recovery=(),
+                champions=pointers, main_sweep_visited=(),
+                revalidation_target_grade=None,
+                latest_rubric_digest=assessment.rubric_digest)
         debt = tuple(capability for capability in all_caps
                      if not assessment.scores[capability].perfect)
         if not debt:

@@ -324,3 +324,21 @@ class StagedSchoolTests(unittest.TestCase):
         expected = hashlib.sha256(json.dumps(legacy, sort_keys=True,
             separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
         self.assertEqual(course.digest(), expected)
+
+class DebtPromotionPartialAssessmentRegression(unittest.TestCase):
+    def test_perfect_revisited_b_keeps_debt_and_returns_to_unfinished_c(self):
+        course = staged_course()
+        student = cp('partial-debt-success')
+        state, _ = enter_c(course)
+        state = _enter_grade(course, state, 1, stage='ASSESS_MAIN',
+                             first_recovery=(),
+                             carried_mastery_debt=('a.0', 'b.0'),
+                             latest_rubric_digest=None)
+        state = replace(state, queue=(), current_student=student)
+        scores = {cap: (8, 8) for cap in assessment_capabilities(course, state)}
+        self.assertNotIn('c.1', scores)
+        next_state = assess(course, state, snapshot(course, student, scores))
+        self.assertEqual((next_state.grade, next_state.stage), ('C', 'MAIN'))
+        self.assertEqual(next_state.introduction_stage, 0)
+        self.assertEqual(next_state.carried_mastery_debt, ('a.0', 'b.0'))
+        self.assertNotEqual(next_state.stage, 'AWAITING_NEXT_GRADE')
