@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 166,
-  "legacy_raw_raise_count": 2009,
+  "legacy_raw_file_count": 167,
+  "legacy_raw_raise_count": 2006,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -5190,13 +5190,6 @@
       "path": "bilqis_mlx/grade_a_probe.py"
     },
     {
-      "code_hint": "GRADE_A_HISTORICAL_GRAPH_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_A_HISTORICAL_GRAPH_DRIFT'",
-      "path": "bilqis_mlx/grade_a_probe.py"
-    },
-    {
       "code_hint": "GRADE_A_HISTORICAL_ORACLE_SOURCE_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -5257,20 +5250,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_A_STUDENT_CHECKPOINT_SHA_MISMATCH'",
-      "path": "bilqis_mlx/grade_a_probe.py"
-    },
-    {
-      "code_hint": "GRADE_A_STUDENT_FP32_OR_VOCAB_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_A_STUDENT_FP32_OR_VOCAB_MISMATCH'",
-      "path": "bilqis_mlx/grade_a_probe.py"
-    },
-    {
-      "code_hint": "GRADE_A_STUDENT_GRAPH_SHA_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_A_STUDENT_GRAPH_SHA_MISMATCH'",
       "path": "bilqis_mlx/grade_a_probe.py"
     },
     {
@@ -10804,13 +10783,6 @@
       "path": "bilqis_mlx/runtime/session.py"
     },
     {
-      "code_hint": "HUMAN_TRAINER_TEACHER_IMPLEMENTATION_ROOT_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'HUMAN_TRAINER_TEACHER_IMPLEMENTATION_ROOT_MISMATCH'",
-      "path": "bilqis_mlx/runtime/session.py"
-    },
-    {
       "code_hint": "AUTONOMY_SOURCE_BUILDER_CHANGED_DURING_EXTRACTION",
       "count": 1,
       "exception": "ValueError",
@@ -10872,6 +10844,13 @@
       "exception": "ValueError",
       "expression": "'SOURCE_PREFETCH_REQUEST_SCHEMA_DRIFT'",
       "path": "bilqis_mlx/runtime/source_prefetch.py"
+    },
+    {
+      "code_hint": "boom",
+      "count": 1,
+      "exception": "RuntimeError",
+      "expression": "'boom'",
+      "path": "bilqis_mlx/runtime/tests/test_mlx_memory.py"
     },
     {
       "code_hint": "TIMING_TRACE_PATH_ALREADY_EXISTS",
