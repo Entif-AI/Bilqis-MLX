@@ -86,6 +86,20 @@ class LiveGradeBTests(unittest.TestCase):
         self.assertEqual(first, draw_connectives(LEGACY,self.graph,seed=413,
                                                  each=32,capability="B.AND"))
 
+    def test_row_identity_is_capability_scoped_while_source_identity_is_record_scoped(self):
+        row = draw_connectives(
+            LEGACY, self.graph, seed=2026102310, each=12,
+            capability="B.AND")[0]
+        canonical = lambda value: json.dumps(
+            value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+            allow_nan=False).encode()
+        source_id = hashlib.sha256(canonical(row["record"])).hexdigest()
+        row_id = hashlib.sha256(canonical([
+            row["capability"], row["record"]])).hexdigest()
+        self.assertEqual(row["source_id"], source_id)
+        self.assertEqual(row["id"], row_id)
+        self.assertNotEqual(row["id"], row["source_id"])
+
     def test_factory_runtime_uses_u7c_balanced_truth_cells(self):
         for seed in range(20):
             for op in CONNECTIVES:

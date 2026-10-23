@@ -1193,6 +1193,47 @@ def append_next_grade_with_debt(
     return _enter_grade(successor, extended, len(previous.grades))
 
 
+def adopt_expanded_prior_grade(previous: ScheduleProgram,
+                               successor: ScheduleProgram,
+                               state: SchoolState) -> tuple[SchoolState, str]:
+    """Add capability debt to an earlier admitted grade without leaving the active frontier."""
+    if (not isinstance(previous, ScheduleProgram) or
+            not isinstance(successor, ScheduleProgram)):
+        raise TypeError("FACTORY_SCHEDULE_PROGRAM_REQUIRED")
+    verify_state(previous, state)
+    previous_ids = tuple(grade.id for grade in previous.grades)
+    successor_ids = tuple(grade.id for grade in successor.grades)
+    changed = tuple(
+        index for index, (old, new) in enumerate(zip(previous.grades, successor.grades))
+        if (old.capabilities != new.capabilities or
+            old.teaching_stages != new.teaching_stages))
+    if (previous_ids != successor_ids or len(changed) != 1 or
+            changed[0] >= state.grade_index):
+        raise ValueError("FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_INVALID")
+    index = changed[0]
+    old_grade, new_grade = previous.grades[index], successor.grades[index]
+    old_caps = tuple(cap.id for cap in old_grade.capabilities)
+    new_caps = tuple(cap.id for cap in new_grade.capabilities)
+    if (not set(old_caps) < set(new_caps) or
+            tuple(cap for cap in new_caps if cap in set(old_caps)) != old_caps):
+        raise ValueError("FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_NOT_ADDITIVE")
+    old_by_id = {cap.id: cap for cap in old_grade.capabilities}
+    new_by_id = {cap.id: cap for cap in new_grade.capabilities}
+    if any(new_by_id[cap] != old for cap, old in old_by_id.items()):
+        raise ValueError("FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY")
+    added = tuple(cap for cap in new_caps if cap not in old_by_id)
+    debt = tuple((*state.carried_mastery_debt,
+                  *(cap for cap in added if cap not in state.carried_mastery_debt)))
+    champions = dict(state.champions)
+    champions.pop(old_grade.id, None)
+    rebound = replace(
+        state, course_digest=successor.digest(), champions=champions,
+        carried_mastery_debt=debt, grade_exam_epoch=state.grade_exam_epoch + 1,
+        latest_rubric_digest=None, teacher_soup_digest=None)
+    verify_state(successor, rebound)
+    return rebound, old_grade.id
+
+
 def adopt_revised_program(previous: ScheduleProgram,
                           successor: ScheduleProgram,
                           state: SchoolState) -> tuple[SchoolState, str]:

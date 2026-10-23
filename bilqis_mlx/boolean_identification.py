@@ -15,7 +15,10 @@ from .boolean_identification_oracle import TASK, VERSION as ORACLE
 from .boolean_identification_oracle import evaluate as independent_evaluate
 from .curriculum import AnswerFamily, BINARY, BOOLEAN_OPERATORS, Capability, Course
 from .grade_a_probe import read_sources
-from .live_grade_b import PREREQUISITES, source_attestation
+from .live_grade_b import (
+    PREREQUISITES, capability_row_identity, source_attestation,
+    source_record_identity,
+)
 
 
 CAPABILITY = "B.IDBOOLOPS"
@@ -175,13 +178,14 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
             if gold != target:
                 raise ValueError("GRADE_B_IDBOOLOPS_INDEPENDENT_ORACLE_DISAGREEMENT")
             tokens = encode_record(record, legacy_root, graph)
-            identity = _digest(record)
+            source_id = source_record_identity(record)
+            identity = capability_row_identity(CAPABILITY, record)
             if identity not in {row["id"] for row in rows}:
                 break
         else:
             raise ValueError("GRADE_B_IDBOOLOPS_VARIATION_EXHAUSTED")
         rows.append({
-            "id": identity, "source_id": identity, "capability": CAPABILITY,
+            "id": identity, "source_id": source_id, "capability": CAPABILITY,
             "answer_kind": ANSWER_KIND, "gold": gold, "record": record,
             "tokens": tokens, "oracle": ORACLE, "generator": GENERATOR,
             "operator_options": list(operators),

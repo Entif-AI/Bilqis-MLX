@@ -145,8 +145,17 @@ def _profile_transition(previous_program, successor_program, school, *, mastery_
             True,
         )
     if revised and mastery_debt is None:
-        next_state, revised_grade = _curriculum_scheduler.adopt_revised_program(
-            previous_program, successor_program, school)
+        changed = tuple(
+            index for index, (old_grade, new_grade) in
+            enumerate(zip(previous_program.grades, successor_program.grades))
+            if (old_grade.capabilities != new_grade.capabilities or
+                old_grade.teaching_stages != new_grade.teaching_stages))
+        if len(changed) == 1 and changed[0] < school.grade_index:
+            next_state, revised_grade = _curriculum_scheduler.adopt_expanded_prior_grade(
+                previous_program, successor_program, school)
+        else:
+            next_state, revised_grade = _curriculum_scheduler.adopt_revised_program(
+                previous_program, successor_program, school)
         return next_state, revised_grade, False
     raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
 

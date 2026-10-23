@@ -14,7 +14,8 @@ from .grade_a_probe import read_sources
 from .grade_b_oracle import CONNECTIVES
 from .live_grade_b import (
     PREREQUISITES, RELEASE as PARENT_RELEASE,
-    _encode_logic_record, _logic_source,
+    _encode_logic_record, _logic_source, capability_row_identity,
+    source_record_identity,
     constructor_digest as parent_boolean_constructor_digest,
 )
 
@@ -159,7 +160,8 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
                     gold_bool != wanted):
                 continue
             tokens = _encode_logic_record(logic, record, graph)
-            identity = _digest(record)
+            source_id = source_record_identity(record)
+            identity = capability_row_identity(CAPABILITY, record)
             if identity in seen:
                 continue
             break
@@ -167,7 +169,7 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
             raise ValueError("GRADE_B_COMPOSITE_VARIATION_EXHAUSTED")
         seen.add(identity)
         result.append({
-            "id": identity, "source_id": identity, "capability": CAPABILITY,
+            "id": identity, "source_id": source_id, "capability": CAPABILITY,
             "answer_kind": "binary", "gold": gold, "record": record,
             "tokens": tokens, "oracle": ORACLE,
             "generator": GENERATOR, "operators": list(operators),

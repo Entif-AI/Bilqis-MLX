@@ -1,5 +1,6 @@
 """Contract tests for the user-approved B.COMPOSITE derived capability."""
 from collections import Counter
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -84,6 +85,18 @@ class BooleanCompositeTests(unittest.TestCase):
             self.assertEqual(row["tokens"], _encode_logic_record(logic, row["record"], self.graph))
             self.assertTrue(1 <= len(row["tokens"]) <= 96)
             self.assertEqual(len(row["operators"]), row["composition_width"])
+
+    def test_composite_row_identity_is_capability_scoped(self):
+        row = draw_composite(SOURCE, self.graph, seed=2026102311, each=12)[0]
+        canonical = lambda value: json.dumps(
+            value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+            allow_nan=False).encode()
+        source_id = hashlib.sha256(canonical(row["record"])).hexdigest()
+        row_id = hashlib.sha256(canonical([
+            row["capability"], row["record"]])).hexdigest()
+        self.assertEqual(row["source_id"], source_id)
+        self.assertEqual(row["id"], row_id)
+        self.assertNotEqual(row["id"], row["source_id"])
 
     def test_answer_balance_varies_without_returning_to_six_six(self):
         balances = set()

@@ -73,3 +73,34 @@ class ExplicitProfileDebtTests(unittest.TestCase):
     def test_ordinary_append_still_requires_the_graduated_boundary(self):
         with self.assertRaises(ValueError):
             _profile_transition(self.previous, self.successor, self.school)
+
+
+class EarlierGradeExpansionTests(unittest.TestCase):
+    def setUp(self):
+        student = Checkpoint('f' * 64, 'bundles/student', 42, True)
+        self.previous = ScheduleProgram('1' * 64, (
+            ScheduleGrade('A', (ScheduleCapability('A.IDENTITY', 12),), (), '2' * 64),
+            ScheduleGrade('B', (ScheduleCapability('B.AND', 12), ScheduleCapability('B.IFF', 12)), (), '3' * 64),
+            ScheduleGrade('C', (ScheduleCapability('C.COUNT', 12), ScheduleCapability('C.NUMBER', 12)), (), '4' * 64),
+        ), False)
+        self.successor = ScheduleProgram('5' * 64, (
+            self.previous.grades[0],
+            ScheduleGrade('B', tuple(ScheduleCapability(cap, 12) for cap in (
+                'B.NOT', 'B.AND', 'B.OR', 'B.XOR', 'B.IMPLIES', 'B.IFF', 'B.COMPOSITE', 'B.IDBOOLOPS')), (), '6' * 64),
+            self.previous.grades[2],
+        ), False)
+        base = start_new(self.previous, student)
+        self.school = replace(base, active_grades=('A', 'B', 'C'), grade_index=2,
+            stage='RECOVERY_1', queue=('C.NUMBER', 'B.AND'), visits=123,
+            carried_mastery_debt=('B.AND', 'C.COUNT'),
+            frontier_priority_visits=17, nongating_b_visits=4)
+
+    def test_additive_prior_grade_revision_preserves_frontier_and_adds_debt(self):
+        state, revised, appended = _profile_transition(self.previous, self.successor, self.school)
+        self.assertFalse(appended)
+        self.assertEqual(revised, 'B')
+        self.assertEqual((state.grade, state.stage, state.queue), ('C', 'RECOVERY_1', ('C.NUMBER', 'B.AND')))
+        self.assertEqual(state.current_student, self.school.current_student)
+        self.assertEqual((state.visits, state.frontier_priority_visits, state.nongating_b_visits), (123, 17, 4))
+        self.assertEqual(state.carried_mastery_debt, ('B.AND', 'C.COUNT', 'B.NOT', 'B.OR', 'B.XOR', 'B.IMPLIES', 'B.COMPOSITE', 'B.IDBOOLOPS'))
+        self.assertEqual(state.course_digest, self.successor.digest())

@@ -31,6 +31,14 @@ def _digest(value):
         separators=(",", ":"), allow_nan=False).encode()).hexdigest()
 
 
+def source_record_identity(record: dict) -> str:
+    return _digest(record)
+
+
+def capability_row_identity(capability: str, record: dict) -> str:
+    return _digest([capability, record])
+
+
 def constructor_digest():
     home = Path(__file__).resolve().parent
     return _digest({p: hashlib.sha256((home / p).read_bytes()).hexdigest()
@@ -221,7 +229,8 @@ def draw_connectives(legacy_root: Path, graph: dict, *, seed: int,
                 expression = logic.apply(op, *operands)
                 record = logic.evaluation_record(expression, env)
                 record["query"] = expression
-                identity = _digest(record)
+                source_id = source_record_identity(record)
+                identity = capability_row_identity("B." + op, record)
                 if identity in seen:
                     continue
                 gold_bool = logic.gold(record)
@@ -232,7 +241,7 @@ def draw_connectives(legacy_root: Path, graph: dict, *, seed: int,
                     raise ValueError("GRADE_B_THREE_ORACLE_DISAGREEMENT")
                 seen.add(identity)
                 op_rows.append({
-                    "id": identity, "source_id": identity,
+                    "id": identity, "source_id": source_id,
                     "capability": "B." + op, "answer_kind": "binary",
                     "gold": gold, "record": record,
                     "tokens": _encode_logic_record(logic, record, graph),
