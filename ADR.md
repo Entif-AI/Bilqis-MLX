@@ -1131,7 +1131,7 @@ remain unchanged. This is deliberately not item-level monotonicity and does not
 make historical best or title scores admission gates.
 
 Telemetry must also stop presenting unlike score roles under one TOP label.
-Candidate panels label championship evidence as TITLE; mastery panels label
-historical evidence as BEST. WAS and NOW remain the directly paired same-probe
+Candidate panels label championship evidence as CHP; mastery panels label
+historical evidence as BST. WAS and NOW remain the directly paired same-probe
 values inside a candidate row. Cross-cohort title or best evidence remains useful
 context but is not represented as a comparable maximum.

@@ -191,7 +191,7 @@ class SchoolTelemetryTests(unittest.TestCase):
                 [(c.name, c.width) for c in tables["CANDIDATES"]],
                 [
                     ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
-                    ("LR", 2), ("WAS/TITLE/NOW/ALL", 17), ("REWARD", 6),
+                    ("LR", 2), ("WAS/CHP/NOW/ALL", 15), ("REWARD", 6),
                     ("LOSS", 5), ("GRAD", 5), ("METHOD", 6),
                     ("OLD pp", 6), ("RESULT", 6), ("REASON", 27),
                     ("WARNINGS", 12),
@@ -214,6 +214,11 @@ class SchoolTelemetryTests(unittest.TestCase):
             )
             self.assertEqual(tables["GRADES & MASTERY"][0].name, "CAPABILITY")
             self.assertEqual(tables["GRADES & MASTERY"][0].width, 10)
+            self.assertEqual(
+                (tables["GRADES & MASTERY"][1].name,
+                 tables["GRADES & MASTERY"][1].width),
+                ("WAS/BST/NOW/ALL", 15),
+            )
             growth = next(
                 column for column in tables["GRADES & MASTERY"]
                 if column.key == "right_grew"
@@ -798,7 +803,7 @@ class SchoolTelemetryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())
             labels = [column.name for column in dict(board.tables)["CANDIDATES"]]
-            self.assertIn("WAS/TITLE/NOW/ALL", labels)
+            self.assertIn("WAS/CHP/NOW/ALL", labels)
             self.assertNotIn("LESSON% BFR>AFTER", labels)
             self.assertNotIn("TRAIN BEFORE>AFTER", labels)
 
@@ -1375,7 +1380,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             display = board.render(width=276, height=40)
             self.assertIn("LOSS", display)
             self.assertIn("GRAD", display)
-            self.assertIn("WAS/TITLE/NOW/ALL", display)
+            self.assertIn("WAS/CHP/NOW/ALL", display)
             self.assertIn("GOOD [GREW]", display)
             self.assertIn("67% [+17%]", display)
             self.assertNotIn("BRIDGE FAMILIES", display)

@@ -263,7 +263,7 @@ LETTER_TABLES = (
         Column("VISIT", 5, "attempt", right=True),
         Column("POLICY", 10, "strategy", optional=True),
         Column("LR", 2, "lr", optional=True, right=True),
-        Column("WAS/TITLE/NOW/ALL", 17, "score_line", right=True),
+        Column("WAS/CHP/NOW/ALL", 15, "score_line", right=True),
         Column("REWARD", 6, "reward", right=True),
         Column("LOSS", 5, "loss"),
         Column("GRAD", 5, "gradient", right=True),
@@ -293,7 +293,7 @@ LETTER_TABLES = (
         Column("CREDIT", 7, "credit", right=True))),
     ("GRADES & MASTERY", (
         Column("CAPABILITY", 10, "subject"),
-        Column("WAS/BEST/NOW/ALL", 16, "score_line", right=True),
+        Column("WAS/BST/NOW/ALL", 15, "score_line", right=True),
         Column("GOOD [GREW]", 11, "right_grew", right=True),
         Column("OUTCOME", 26, "outcome"))),
     ("SYSTEM & QUALIFICATION", (
