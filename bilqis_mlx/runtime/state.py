@@ -8,7 +8,9 @@ from pathlib import Path
 import uuid
 
 from bilqis_mlx.learning.champions import Checkpoint
-from bilqis_mlx.curriculum.scheduler import SchoolState, verify_state
+from bilqis_mlx.curriculum.scheduler import (
+    SchoolState, migrate_c_frontier_priority_epoch, verify_state,
+)
 
 def _canonical(data: object) -> str:
     return json.dumps(data, sort_keys=True, ensure_ascii=False,
@@ -44,11 +46,16 @@ def _durable_json(path: Path, data: dict, *, replace_existing=False):
 
 def _state_from_json(value: dict, course) -> SchoolState:
     school = dict(value)
+    legacy_frontier_priority_epoch = (
+        "frontier_priority_visits" not in school and
+        "nongating_b_visits" not in school)
     school.setdefault("main_sweep_visited", ())
     school.setdefault("carried_mastery_debt", ())
     school.setdefault("introduction_frontiers", ())
     school.setdefault("promotion_sweep_scope", ())
     school.setdefault("promotion_sweep_return_stage", None)
+    school.setdefault("frontier_priority_visits", 0)
+    school.setdefault("nongating_b_visits", 0)
     for name in ("active_grades", "queue", "first_recovery", "pending_failures",
                  "main_sweep_visited", "carried_mastery_debt",
                  "promotion_sweep_scope"):
@@ -59,6 +66,8 @@ def _state_from_json(value: dict, course) -> SchoolState:
     school["champions"] = {key: Checkpoint(**item)
                            for key, item in school["champions"].items()}
     result = SchoolState(**school)
+    if legacy_frontier_priority_epoch:
+        result = migrate_c_frontier_priority_epoch(course, result)
     verify_state(course, result)
     return result
 

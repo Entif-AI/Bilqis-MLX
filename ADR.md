@@ -1142,3 +1142,34 @@ grade or replacing the active semantic program starts a new score era, clears
 the active TOP/cumulative-best projection, and leaves the immutable historical
 events intact. Operator telemetry names the era, cohort count, and the fact that
 TOP is cross-cohort context rather than a paired delta.
+
+## ADR-090 | 2026-10-23 | C progression owns at least 80% of candidate work while B is nongating debt
+
+**Direct user correction after live Prometheus evidence.** Grade B remains
+developmental mastery debt and must continue receiving occasional instruction,
+but the currently admitted B capabilities are explicitly not prerequisites for
+opening the next C semantic stages. They therefore may not dominate the
+candidate/retention-probe budget while C is the active progression frontier.
+
+While C is the latest active grade and both unfinished B debt and unfinished C
+progression debt remain, C owns the primary learning lane. B may consume **no
+more than one candidate visit in five (20%)** from the start of this policy
+epoch. Four C visits must accrue before each supplemental B visit becomes
+eligible. The budget is prefix-safe rather than an eventual average, so a short
+window cannot begin with a burst of B work and claim later compensation.
+
+This cap applies to the candidate-level training and paired retention-testing
+work induced by those visits. Routine cumulative assessment may continue to
+measure B as explicit debt, provided B does not become the scheduling actuator
+for C progression; in the observed A+B+C rubric B already accounts for less
+than 20% of scored exam rows. Promotion sweeps remain C-only progression
+authority. B debt is neither forgiven nor marked mastered, and its scores,
+mistakes and eventual bounded supplemental visits remain durable evidence.
+
+This supersedes ADR-085 only where that decision required every imperfect
+earlier grade to receive a full ordinary MAIN pass during staged C instruction,
+and supersedes ADR-086 only where unrestricted B fallback would exceed the 20%
+budget when C is unavailable. B remains non-quarantining developmental debt;
+once four frontier visits have earned one B visit, that visit may still occur.
+Source-gold authority, candidate retention gates, student/AdamW custody,
+stagnation evidence, and the C promotion criteria are unchanged.

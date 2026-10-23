@@ -45,6 +45,77 @@ def enter_c(course):
 
 
 class StagedSchoolTests(unittest.TestCase):
+    def test_c_frontier_caps_nongating_b_debt_at_one_visit_per_five(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        last_stage = len(course.grades[-1].teaching_stages) - 1
+        state = _at_introduction_stage(
+            state, last_stage, stage="MAIN",
+            queue=course.grades[-1].teaching_stages[last_stage])
+        introduced_c = tuple(
+            capability
+            for stage in course.grades[-1].teaching_stages
+            for capability in stage)
+        state = replace(
+            state,
+            champions={"A": state.champions["A"]},
+            carried_mastery_debt=("b.0", "b.1", *introduced_c),
+            main_sweep_visited=(),
+        )
+        scores = {
+            capability: (8, 8)
+            for capability in assessment_capabilities(course, state)
+        }
+        for capability in ("b.0", "b.1", *introduced_c):
+            scores[capability] = (4, 8)
+
+        scheduled_grades = []
+        while len(scheduled_grades) < 15:
+            capability = next_capability(state)
+            self.assertIsNotNone(capability)
+            scheduled_grades.append(capability.split(".", 1)[0])
+            state = visit(course, state, capability, pointer)
+            if state.stage.startswith("ASSESS_"):
+                state = assess(
+                    course, state, snapshot(course, pointer, scores))
+
+        self.assertIn("b", scheduled_grades)
+        for length in range(1, len(scheduled_grades) + 1):
+            prefix = scheduled_grades[:length]
+            self.assertLessEqual(
+                prefix.count("b") * 5,
+                length,
+                f"B exceeded 20% of candidate visits in prefix {prefix}",
+            )
+        self.assertGreaterEqual(scheduled_grades.count("c"), 12)
+
+    def test_legacy_b_queue_reanchors_to_saved_c_frontier_on_resume(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        last_stage = len(course.grades[-1].teaching_stages) - 1
+        state = _at_introduction_stage(
+            state, last_stage, stage="MAIN",
+            queue=course.grades[-1].teaching_stages[last_stage])
+        state = replace(
+            state,
+            champions={"A": state.champions["A"]},
+            carried_mastery_debt=("b.0", "b.1", f"c.{last_stage}"),
+        )
+        state = _enter_grade(
+            course, state, 1, stage="MAIN", first_recovery=(),
+            main_sweep_visited=())
+        payload = asdict(state)
+        payload.pop("frontier_priority_visits")
+        payload.pop("nongating_b_visits")
+
+        restored = _state_from_json(payload, course)
+
+        self.assertEqual(restored.grade, "C")
+        self.assertEqual(restored.stage, "MAIN")
+        self.assertEqual(restored.queue, (f"c.{last_stage}",))
+        self.assertEqual(restored.frontier_priority_visits, 0)
+        self.assertEqual(restored.nongating_b_visits, 0)
+
     def test_canonical_exam_item_requires_explicit_earlier_stage_mastery(self):
         course = staged_course()
         cap = course.grades[-1].capabilities[1]
@@ -57,7 +128,7 @@ class StagedSchoolTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "FUTURE_OR_SAME_STAGE"):
             validate_exam_item(course, "C", item, mastered_grade_ids=("A", "B"),
                                mastered_capability_ids=("c.0", "c.2"))
-    def test_unfinished_b_debt_gets_taught_during_incomplete_and_final_c_stages(self):
+    def test_unfinished_b_debt_does_not_take_over_incomplete_or_final_c_stages(self):
         course = staged_course()
         for stage in (0, len(course.grades[-1].teaching_stages) - 1):
             with self.subTest(c_stage=stage):
@@ -79,23 +150,20 @@ class StagedSchoolTests(unittest.TestCase):
                 state = grade_loop(course, state, pointer)
                 state = assess(
                     course, state, snapshot(course, pointer, scores))
-                self.assertEqual((state.grade, state.stage), ("B", "MAIN"))
-                self.assertIn("b.0", state.queue)
-                self.assertIn("b.1", state.queue)
+                self.assertEqual((state.grade, state.stage), ("C", "RECOVERY_1"))
+                self.assertNotIn("b.0", state.queue)
+                self.assertNotIn("b.1", state.queue)
+                self.assertIn(current, state.queue)
                 if stage == 0:
                     self.assertNotIn(
                         "c.1", assessment_capabilities(course, state))
                 self.assertEqual(
                     dict(state.introduction_frontiers)["C"], stage)
 
-                state = grade_loop(course, state, pointer)
-                state = assess(
-                    course, state, snapshot(course, pointer, scores))
-                self.assertEqual(state.stage, "RECOVERY_1")
-                self.assertIn("b.0", state.queue)
-                self.assertIn(current, state.queue)
+                self.assertIn("b.0", state.carried_mastery_debt)
+                self.assertIn("b.1", state.carried_mastery_debt)
 
-    def test_c_withheld_does_not_stop_ongoing_b_teaching(self):
+    def test_c_withheld_allows_b_only_after_four_frontier_visits(self):
         course = staged_course()
         state, pointer = enter_c(course)
         last_stage = len(course.grades[-1].teaching_stages) - 1
@@ -116,11 +184,17 @@ class StagedSchoolTests(unittest.TestCase):
         resumed = assess_withheld(
             course, state, snapshot(course, pointer, scores), withheld)
 
-        self.assertEqual((resumed.grade, resumed.stage), ("B", "MAIN"))
-        self.assertIn("b.0", resumed.queue)
+        self.assertEqual(resumed.stage, "DEFERRED_STAGNATION")
+        self.assertNotIn("b.0", resumed.queue)
         self.assertIn(f"c.{last_stage}", resumed.carried_mastery_debt)
         self.assertEqual(
             dict(resumed.introduction_frontiers)["C"], last_stage)
+
+        budgeted = replace(state, frontier_priority_visits=4)
+        resumed = assess_withheld(
+            course, budgeted, snapshot(course, pointer, scores), withheld)
+        self.assertEqual((resumed.grade, resumed.stage), ("C", "RECOVERY_1"))
+        self.assertEqual(resumed.queue, ("b.0",))
 
     def test_future_c_concepts_are_neither_taught_nor_examined(self):
         course = staged_course()
