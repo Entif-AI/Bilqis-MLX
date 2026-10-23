@@ -28,6 +28,7 @@ import random as _random
 
 
 RETENTION_REQUIRES_ACTIVE_GRADE_ERROR = "RETENTION_REQUIRES_ACTIVE_GRADE"
+TEACHER_EXPOSURE_HISTORY_INVALID = "TEACHER_EXPOSURE_HISTORY_INVALID"
 
 
 def _retention_frontier_grade(school) -> str:
@@ -36,6 +37,28 @@ def _retention_frontier_grade(school) -> str:
     if not active:
         raise ValueError(RETENTION_REQUIRES_ACTIVE_GRADE_ERROR)
     return active[-1]
+
+
+def _teacher_exposures_after_candidate(receipt: dict, attempted: dict,
+                                       *, decision: str) -> dict:
+    """Preserve teacher-observed target exposure even when neural state rejects.
+
+    Candidate weights and native AdamW are disposable. Which source-grounded
+    unresolved rows the teacher actually delivered is observation history and
+    must survive a rejected candidate so least-exposed targeting can rotate.
+    """
+    if decision not in {"REJECT", "PROVISIONAL"}:
+        raise ValueError(TEACHER_EXPOSURE_HISTORY_INVALID)
+    prior = receipt.get("teacher_miss_exposures", {})
+    if (not isinstance(prior, dict) or not isinstance(attempted, dict) or
+            any(not isinstance(identity, str) or type(count) is not int or count < 0
+                for mapping in (prior, attempted)
+                for identity, count in mapping.items())):
+        raise ValueError(TEACHER_EXPOSURE_HISTORY_INVALID)
+    if any(attempted.get(identity, 0) < count
+           for identity, count in prior.items()):
+        raise ValueError(TEACHER_EXPOSURE_HISTORY_INVALID)
+    return dict(attempted)
 
 
 def _teaching_enrichment_rows(source_root, graph, course, capability, *,
@@ -560,9 +583,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 _learning_learning_experiment.commit_trial(parent_parameters, parent_optimizer, params, optimizer)
             else:
                 # The rejected candidate never owned the causal model, its
-                # optimizer or the unresolved miss queue.
+                # optimizer or the unresolved miss queue. Teacher-observed
+                # target exposure is not neural state and remains durable.
                 parent_optimizer.learning_rate = original_learning_rate
-                miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
+                miss_exposures = _teacher_exposures_after_candidate(
+                    receipt, miss_exposures, decision=outcome["decision"])
                 after = before
         params, optimizer = parent_parameters, parent_optimizer
     remaining_priority = priority

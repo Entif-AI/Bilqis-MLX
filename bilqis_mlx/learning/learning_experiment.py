@@ -24,9 +24,10 @@ from bilqis_mlx.learning.teacher_feedback import (
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
 MAX_FAILURE_ARCHETYPES = 24
 TEACHER_UCB_EXPLORATION_WEIGHT = 0.6
-REJECTION_PRESSURE_HALF_HORIZON = 2
-REJECTION_PRESSURE_QUARTER_HORIZON = 4
-REJECTION_PRESSURE_NOVELTY_CUTOFF = 2
+INTERFERENCE_REJECTIONS_FOR_HALF_BUDGET = 2
+INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET = 4
+REJECTION_PRESSURE_CONTEXTUAL_START = 2
+REJECTION_PRESSURE_EXPLORATION_INTERVAL = 4
 
 
 @dataclass(frozen=True)
@@ -637,15 +638,19 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
         return default_steps
     stagnation = _capability_stagnation(
         channel, capability, curriculum_scope)
-    rejections = stagnation.get(
-        "rejection_streak", stagnation.get("attempts_since_retained", 0))
-    if type(rejections) is not int or rejections < 0:
+    reasons = stagnation.get("current_rejection_reasons", {})
+    if (not isinstance(reasons, dict) or any(
+            not isinstance(reason, str) or type(count) is not int or count < 0
+            for reason, count in reasons.items())):
         raise ValueError(LearningExperimentError.CANDIDATE_STAGNATION_INVALID.value)
+    interference_rejections = sum(
+        count for reason, count in reasons.items()
+        if reason != "NO_MEASURABLE_TARGET_GAIN")
     half = max(1, default_steps // 2)
     quarter = max(1, default_steps // 4)
-    if rejections >= REJECTION_PRESSURE_QUARTER_HORIZON:
+    if interference_rejections >= INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET:
         return quarter
-    if rejections >= REJECTION_PRESSURE_HALF_HORIZON:
+    if interference_rejections >= INTERFERENCE_REJECTIONS_FOR_HALF_BUDGET:
         return half
     return default_steps
 
@@ -655,7 +660,6 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                     return_metadata: bool = False):
     """Preserve the inherited bandit's exploration; prefer proven safe context."""
     grade = capability.partition(".")[0]
-    original_key, original_policy = engine.pick(teacher, grade, rng)
     channel = _channel(teacher)
     diagnostic_key, _diagnostic_payload = _diagnostic_context(
         channel, capability, curriculum_scope, diagnostics)
@@ -671,6 +675,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     context_key = capability+"|"+phase+"|"+curriculum_scope
     scope = channel["contexts"].get(context_key, {})
     if not scope:
+        original_key, original_policy = engine.pick(teacher, grade, rng)
         return result(original_key, original_policy)
     effective_scope = _effective_context_scope(teacher, scope)
     diagnostic_scope = _diagnostic_effective_scope(
@@ -722,22 +727,24 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         return (record.get("retained", 0), mean, record["trials"], key)
 
     best = max(best_record["members"], key=member_rank)
+    pressure_exploit = (
+        rejection_pressure >= REJECTION_PRESSURE_CONTEXTUAL_START and
+        rejection_pressure % REJECTION_PRESSURE_EXPLORATION_INTERVAL != 0)
+    if diagnostic_consumed or pressure_exploit:
+        return result(
+            best, teacher["strategies"][best],
+            diagnostic_context_consumed=diagnostic_consumed)
+
+    # Healthy operation and a bounded pressure cadence still consult the
+    # inherited bandit. Avoid calling it on pressure-exploitation visits:
+    # pick() may mutate the strategy inventory, and discarded mutations would
+    # otherwise consume the finite 512-strategy budget without being tried.
+    original_key, original_policy = engine.pick(teacher, grade, rng)
     original_effective = _effective_policy_key(original_policy)
     if original_effective == best_effective:
         return result(
             original_key, original_policy,
             diagnostic_context_consumed=diagnostic_consumed)
-    if diagnostic_consumed:
-        return result(
-            best, teacher["strategies"][best],
-            diagnostic_context_consumed=True)
-    # Once one capability has produced repeated consecutive rejects, stop
-    # treating an unseen inherited-UCB policy as more valuable merely because
-    # it is novel. Reuse the best observed contextual behavior until a retain
-    # resets pressure and reopens normal exploration.
-    if (rejection_pressure >= REJECTION_PRESSURE_NOVELTY_CUTOFF and
-            original_effective not in effective_scope):
-        return result(best, teacher["strategies"][best])
     # Require evidence, but keep inherited exploration alive. The base pick
     # still gets a chance whenever it lacks direct context observations.
     proven_retained = best_record.get("retained", 0) > 0
