@@ -27,6 +27,14 @@ import pathlib as _pathlib
 import random as _random
 
 
+def _retention_frontier_grade(school) -> str:
+    """Return the latest admitted grade that anchors aggregate retention."""
+    active = tuple(school.active_grades)
+    if not active:
+        raise ValueError("RETENTION_REQUIRES_ACTIVE_GRADE")
+    return active[-1]
+
+
 def _teaching_enrichment_rows(source_root, graph, course, capability, *,
                               seed: int, enabled: bool, release=None):
     """Ask the capability's source adapter for optional source-grounded teaching."""
@@ -486,7 +494,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 same_grade_capabilities=current_grade,
                 fixed_grade_replay=fixed_grade_evidence,
                 fixed_frontier_replay=frontier,
-                active_school_grade=school.grade,
+                protected_frontier_grade=_retention_frontier_grade(school),
                 mature_grades=frozenset(school.champions),
                 negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
                 source_cohort_sha256=_runtime_state._fingerprint([

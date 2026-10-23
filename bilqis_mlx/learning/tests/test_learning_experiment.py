@@ -463,7 +463,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                           "net_correct_delta": 1},
                 },
             },
-            active_school_grade="B")
+            protected_frontier_grade="B")
         self.assertEqual(result["decision"], "PROVISIONAL")
         self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
 
@@ -491,7 +491,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                           "net_correct_delta": 0},
                 },
             },
-            active_school_grade="C")
+            protected_frontier_grade="C")
         self.assertEqual(result["decision"], "PROVISIONAL")
         self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
 
@@ -522,9 +522,43 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                           "net_correct_delta": -1},
                 },
             },
-            active_school_grade="C")
+            protected_frontier_grade="C")
         self.assertEqual(result["decision"], "REJECT")
         self.assertEqual(result["reason"], "ACTIVE_SCHOOL_GRADE_REGRESSION")
+
+    def test_frontier_allows_item_flux_when_frontier_aggregate_holds(self):
+        paired = {
+            "B.IFF": {"before": 8, "after": 9, "total": 12},
+            "B.NOT": {"before": 10, "after": 10, "total": 12},
+        }
+        result = decide(
+            paired, active_capability="B.IFF", phase="RECOVERY_2",
+            protected={"B.NOT"}, settings=Settings(),
+            same_grade_capabilities=("B.IFF", "B.NOT"),
+            fixed_grade_replay={"status": "MEASURED", "grade": "B",
+                                "before": 68, "after": 69, "total": 72,
+                                "cohort_sha256": "a" * 64},
+            fixed_frontier_replay={
+                "status": "MEASURED", "cohort_sha256": "a" * 64,
+                "rows": 291, "before_correct": 287, "after_correct": 288,
+                "regressions": [{"id": "c-old-right-now-wrong",
+                                 "capability": "C.DIV"}],
+                "repaired": [{"id": "c-old-wrong-now-right",
+                              "capability": "C.MUL"},
+                             {"id": "b-target-repair",
+                              "capability": "B.IFF"}],
+                "grades": {
+                    "B": {"before": 68, "after": 69, "total": 72,
+                          "net_correct_delta": 1},
+                    "C": {"before": 146, "after": 146, "total": 147,
+                          "net_correct_delta": 0},
+                },
+            },
+            protected_frontier_grade="C")
+        self.assertEqual(result["decision"], "PROVISIONAL")
+        self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
+        self.assertEqual(result["protected_frontier_grade"], "C")
+        self.assertEqual(result["protected_frontier_grade_net_correct_delta"], 0)
 
     def test_late_stage_allows_frontier_without_fully_withheld_logical_grade(self):
         paired = {
@@ -550,7 +584,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                           "net_correct_delta": 1},
                 },
             },
-            active_school_grade="B")
+            protected_frontier_grade="B")
         self.assertEqual(result["decision"], "PROVISIONAL")
         self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
 
@@ -825,7 +859,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             protected={"C.NUMBER"}, settings=settings,
             same_grade_capabilities=("C.COUNT", "C.NUMBER"),
             fixed_grade_replay=fixed, fixed_frontier_replay=frontier,
-            active_school_grade="C")
+            protected_frontier_grade="C")
         self.assertEqual(acceptable["protected_tolerances"], {"C.NUMBER": 5})
         self.assertEqual(acceptable["exceeded"], {})
         self.assertEqual(acceptable["decision"], "PROVISIONAL")
@@ -837,7 +871,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             protected={"C.NUMBER"}, settings=settings,
             same_grade_capabilities=("C.COUNT", "C.NUMBER"),
             fixed_grade_replay=fixed, fixed_frontier_replay=frontier,
-            active_school_grade="C")
+            protected_frontier_grade="C")
         self.assertEqual(concentrated["protected_tolerances"], {"C.NUMBER": 5})
         self.assertEqual(concentrated["exceeded"], {"C.NUMBER": 6})
         self.assertEqual(concentrated["reason"], "PROTECTED_CAPABILITY_REGRESSION")

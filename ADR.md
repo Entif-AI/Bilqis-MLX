@@ -1109,3 +1109,29 @@ versus154/180 afterward (numeric15/60→56/60; equality views54/120→98/120).
 This is bounded task learning, not unexposed generalization or grade mastery.
 Exact custody, failed-first cohort-schema repair and remaining storage-test debt
 are in HANDOFF.md and the20261022 foundations-through-counting receipt.
+
+## ADR-089 | 2026-10-23 | Cross-grade debt visits protect the developmental frontier without freezing local learning
+
+ADR-085 made earlier imperfect grades first-class teaching stops during a later
+staged grade. That scheduler correction changed the meaning of the current
+school grade from a stable developmental-frontier identity into the grade
+currently receiving instruction. ADR-057 retention still treated that temporary
+teaching grade as the protected school frontier. In the live Prometheus run, a
+retained B.COMPOSITE candidate therefore improved fixed B by +10 while fixed C
+fell by -10, tied the whole-school total, and was admitted.
+
+**Decision:** preserve ADR-057's aggregate plasticity. Individual fixed rows and
+capabilities may still trade bounded error mass, and earlier-grade debt remains
+teachable. During cross-grade rotation, however, the protected aggregate
+frontier is the latest admitted grade, not merely the temporary lesson grade.
+The fixed lesson grade, latest admitted developmental-frontier grade, and
+whole-school total must each remain non-regressing when the exact-parent fixed
+frontier is measurable. Existing proportional protected-capability budgets
+remain unchanged. This is deliberately not item-level monotonicity and does not
+make historical best or title scores admission gates.
+
+Telemetry must also stop presenting unlike score roles under one TOP label.
+Candidate panels label championship evidence as TITLE; mastery panels label
+historical evidence as BEST. WAS and NOW remain the directly paired same-probe
+values inside a candidate row. Cross-cohort title or best evidence remains useful
+context but is not represented as a comparable maximum.

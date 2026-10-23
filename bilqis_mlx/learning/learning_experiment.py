@@ -211,7 +211,7 @@ def _paired_screen(paired, protected, active_capability):
     return deltas, regressions
 
 
-def _fixed_frontier_retention_evidence(value, active_school_grade):
+def _fixed_frontier_retention_evidence(value, protected_frontier_grade):
     frontier = value or {
         "status": "NOT_MEASURED",
         "reason": "NO_FIXED_WHOLE_SCHOOL_FRONTIER",
@@ -233,10 +233,10 @@ def _fixed_frontier_retention_evidence(value, active_school_grade):
             not isinstance(repaired, list)):
         raise ValueError("LEARNING_EXPERIMENT_INVALID_FIXED_FRONTIER_SCORE")
     active_grade_regression = False
-    if active_school_grade is not None:
+    if protected_frontier_grade is not None:
         grades = frontier.get("grades")
         invalid = not isinstance(grades, dict)
-        grade = None if invalid else grades.get(active_school_grade)
+        grade = None if invalid else grades.get(protected_frontier_grade)
         if grade is not None:
             invalid = (
                 not isinstance(grade, dict) or
@@ -330,7 +330,7 @@ def decide(paired: dict, *, active_capability: str, phase: str,
            same_grade_capabilities: tuple[str, ...] | None = None,
            fixed_grade_replay: dict | None = None,
            fixed_frontier_replay: dict | None = None,
-           active_school_grade: str | None = None) -> dict:
+           protected_frontier_grade: str | None = None) -> dict:
     """Retain only target gains that do not sacrifice their own grade.
 
     The parent/student and native AdamW remain untouched on rejection.
@@ -351,8 +351,15 @@ def decide(paired: dict, *, active_capability: str, phase: str,
     no_target_gain = active_gain <= 0
     frontier, whole_school_regression, active_grade_regression, frontier_net = (
         _fixed_frontier_retention_evidence(
-            fixed_frontier_replay, active_school_grade))
+            fixed_frontier_replay, protected_frontier_grade))
     frontier_measured = frontier.get("status") == "MEASURED"
+    protected_frontier_delta = None
+    if frontier_measured and protected_frontier_grade is not None:
+        grades = frontier.get("grades")
+        grade = (grades.get(protected_frontier_grade)
+                 if isinstance(grades, dict) else None)
+        if isinstance(grade, dict):
+            protected_frontier_delta = grade["after"] - grade["before"]
     fixed_grade_regression = (
         fixed.get("status") == "MEASURED" and
         fixed["net_correct_delta"] < 0)
@@ -381,6 +388,8 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         "fixed_grade_replay": fixed,
         "fixed_frontier_replay": frontier,
         "fixed_whole_school_net_correct_delta": frontier_net,
+        "protected_frontier_grade": protected_frontier_grade,
+        "protected_frontier_grade_net_correct_delta": protected_frontier_delta,
         "phase": phase, "active_capability": active_capability,
         "active_probe_before": active["before"],
         "active_probe_after": active["after"],

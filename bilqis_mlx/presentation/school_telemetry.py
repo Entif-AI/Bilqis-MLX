@@ -55,6 +55,7 @@ _REASON_LABELS = {
     "NO_MEASURABLE_TARGET_GAIN": "NO TARGET GAIN",
     "FRAGILE_COMPOSITION_REPLAY_REGRESSION": "OR/XOR LOSS",
     "PROTECTED_CAPABILITY_REGRESSION": "PROTECTED LOSS",
+    "ACTIVE_SCHOOL_GRADE_REGRESSION": "FRONTIER LOSS",
     "PAIRED_SCREEN_WITHIN_BUDGET": "WITHIN BUDGET",
 }
 
@@ -174,6 +175,10 @@ def _candidate_retention_row(event: dict, grade: str, attempt: int) -> dict | No
     evidence = reason
     if type(unsampled) is int:
         evidence += f" | unsampled {unsampled}"
+    frontier_grade = retention.get("protected_frontier_grade")
+    frontier_delta = retention.get("protected_frontier_grade_net_correct_delta")
+    if isinstance(frontier_grade, str) and type(frontier_delta) is int:
+        evidence += f" | frontier {frontier_grade} {frontier_delta:+d}"
     return {
         "grade": grade,
         "capability": capability,
@@ -258,7 +263,7 @@ LETTER_TABLES = (
         Column("VISIT", 5, "attempt", right=True),
         Column("POLICY", 10, "strategy", optional=True),
         Column("LR", 2, "lr", optional=True, right=True),
-        Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
+        Column("WAS/TITLE/NOW/ALL", 17, "score_line", right=True),
         Column("REWARD", 6, "reward", right=True),
         Column("LOSS", 5, "loss"),
         Column("GRAD", 5, "gradient", right=True),
@@ -288,7 +293,7 @@ LETTER_TABLES = (
         Column("CREDIT", 7, "credit", right=True))),
     ("GRADES & MASTERY", (
         Column("CAPABILITY", 10, "subject"),
-        Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
+        Column("WAS/BEST/NOW/ALL", 16, "score_line", right=True),
         Column("GOOD [GREW]", 11, "right_grew", right=True),
         Column("OUTCOME", 26, "outcome"))),
     ("SYSTEM & QUALIFICATION", (
