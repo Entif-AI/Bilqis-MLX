@@ -284,6 +284,39 @@ def _mentor_vote_specs(mentor, row_capabilities, *, lesson_grade,
     return ((breadth, mask),)
 
 
+def _champion_directed_rows(mx, mentors, student_weights, rows, config,
+                            answer_ids):
+    """Source-gated rows where an owning champion is right and student is wrong."""
+    if not mentors or not rows:
+        return ()
+    student_predictions = _learning_student_ops._predictions(
+        mx, student_weights, rows, config, answer_ids)
+    directed = set()
+    for mentor in mentors:
+        capabilities = set(mentor.get("capabilities", ()))
+        graph = mentor.get("graph")
+        if not capabilities or not isinstance(graph, dict):
+            continue
+        vocabulary = len(graph.get("tokens", ()))
+        eligible = [
+            row for row in rows
+            if row.get("capability") in capabilities and
+            row.get("tokens") and max(row["tokens"]) < vocabulary
+        ]
+        if not eligible:
+            continue
+        mentor_config = _learning_student_ops._compatible_answer_config(
+            config, graph)
+        predictions = _learning_student_ops._predictions(
+            mx, mentor["weights"], eligible, mentor_config, answer_ids)
+        for row in eligible:
+            identity = row["id"]
+            if (student_predictions[identity] != row["gold"] and
+                    predictions[identity] == row["gold"]):
+                directed.add(identity)
+    return tuple(row for row in rows if row["id"] in directed)
+
+
 def _confidence_guidance(mx, mentors, picked, config, answer_ids,
                          *, scope_size, teacher_distill, lesson_grade=None):
     """Gold-agreeing frozen logits are small, policy-shaped gradient advice."""

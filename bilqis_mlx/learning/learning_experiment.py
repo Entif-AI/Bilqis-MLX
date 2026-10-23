@@ -982,6 +982,7 @@ def reserve_weakness_targets(chosen: list[dict],
 def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
                          *, seed: int, batch_size: int,
                          targets: list[dict] | tuple[dict, ...] = (),
+                         priority_target_ids: set[str] | frozenset[str] = frozenset(),
                          target_exposures: Mapping[str, int] | None = None,
                          reserved_support_slots: int = 0
                          ) -> tuple[list[dict], dict]:
@@ -1015,16 +1016,33 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
     current_ids = {row["id"] for row in current}
     if any(row.get("id") not in current_ids for row in targets):
         raise ValueError(WeaknessTargetError.LEARNING_EXPERIMENT_WEAKNESS_TARGET_OUTSIDE_CURRENT.value)
+    priority_target_ids = set(priority_target_ids)
+    target_ids = {row["id"] for row in targets}
+    if (any(not isinstance(identity, str) or not identity
+            for identity in priority_target_ids) or
+            not priority_target_ids <= target_ids):
+        raise ValueError("LEARNING_EXPERIMENT_PRIORITY_TARGET_INVALID")
     target_capacity = max(
         0, present_count - min(reserved_support_slots, present_count))
     if targets and not target_capacity:
         target_capacity = 1
-    selected_targets = select_weakness_targets(
-        targets,
+    priority_targets = [
+        row for row in targets if row["id"] in priority_target_ids]
+    ordinary_targets = [
+        row for row in targets if row["id"] not in priority_target_ids]
+    selected_priority = select_weakness_targets(
+        priority_targets,
         WeaknessTargetRequest(
             exposures=dict(target_exposures or {}),
             capacity=target_capacity,
         ))
+    selected_ordinary = select_weakness_targets(
+        ordinary_targets,
+        WeaknessTargetRequest(
+            exposures=dict(target_exposures or {}),
+            capacity=max(0, target_capacity-len(selected_priority)),
+        ))
+    selected_targets = [*selected_priority, *selected_ordinary]
     current_rows = choose_current(current, present_count, policy, rng)
     current_rows, delivered_targets = reserve_weakness_targets(
         current_rows, selected_targets)
@@ -1041,6 +1059,10 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
              "weakness_targets_requested": len(selected_targets),
              "weakness_targets_delivered": len(delivered_targets),
              "weakness_target_ids": [row["id"] for row in delivered_targets],
+             "priority_weakness_targets_available": len(priority_targets),
+             "priority_weakness_targets_requested": len(selected_priority),
+             "priority_weakness_targets_delivered": sum(
+                 row["id"] in priority_target_ids for row in delivered_targets),
              "reserved_support_slots": reserved_support_slots,
              "current_semantic_patterns_required": len(semantic_patterns),
              "current_semantic_patterns_delivered": len(delivered_patterns),

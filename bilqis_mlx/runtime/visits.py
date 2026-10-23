@@ -175,6 +175,12 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             direct_capability_votes[source_grade] = (
                 direct_capability_votes.get(source_grade, 0) + votes)
         direct_capabilities.extend(mentor.get("capabilities", ()))
+    with _runtime_timing_trace.trace_span(
+            "CHAMPION_WEAKNESS_DISCOVERY", capability=cap):
+        champion_candidates = _learning_lesson_guidance._champion_directed_rows(
+            mx, confidence_champions, params, rows, receipt["config"],
+            receipt["answer_ids"])
+    champion_candidate_ids = {row["id"] for row in champion_candidates}
     # Every unsuccessful examination construction can become direct teaching
     # material once scoring has completed. No held-out embargo survives.
     priority = [r for r in receipt.get("teacher_misses", ())
@@ -183,10 +189,14 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     if receipt.get("numeric_maximum") is not None:
         priority, deferred_misses = _profiles_catalog.partition_numeric_scope(
             priority, receipt["numeric_maximum"])
+    priority_ids = {row["id"] for row in priority}
+    priority.extend(
+        row for row in champion_candidates if row["id"] not in priority_ids)
     miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
     if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
         raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
-    rows.extend(priority)
+    row_ids = {row["id"] for row in rows}
+    rows.extend(row for row in priority if row["id"] not in row_ids)
     with _runtime_timing_trace.trace_span("TRAIN_SCORE_BEFORE", capability=cap, row_count=len(rows)):
         before = _learning_student_ops._train_score(mx, params, rows, receipt["config"],
                               receipt["answer_ids"])
@@ -220,6 +230,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     methodology_steps = []
     methodology_unavailable = None
     replayed_misses = 0
+    champion_prioritized = 0
     enrichment_examples = 0
     policy_control_receipts = []
     step_before = int(optimizer.state["step"].item())
@@ -380,11 +391,14 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 picked, control = _learning_learning_experiment.select_source_lesson(
                     fresh, prior, policy, seed=lesson_seed, batch_size=batch_size,
                     targets=priority, target_exposures=miss_exposures,
+                    priority_target_ids=champion_candidate_ids,
                     reserved_support_slots=len(preservation))
                 lesson_control = {**control, "eligible_prior_capabilities":
                                   len(old_capabilities)}
                 target_ids = set(control["weakness_target_ids"])
                 window = [row for row in priority if row["id"] in target_ids]
+                champion_prioritized += sum(
+                    row["id"] in champion_candidate_ids for row in window)
             else:
                 picked = _learning_lesson_guidance.choose_lesson_batch(
                     fresh, policy, lesson_seed, batch_size=batch_size)
@@ -577,14 +591,14 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     teacher_decision = _learning_teacher_feedback.summarize_teacher_decision(_learning_teacher_feedback.TeacherDecisionInput(
         capability=cap, policy_key=policy_key, warnings=warnings,
         unresolved_miss_count=len(priority),
-        champion_candidate_count=0,
+        champion_candidate_count=len(champion_candidate_ids),
         prerequisite_capabilities=(
             executable_release.execution_plan.capability_map[cap].prerequisites),
         methodology=methodology,
         delivered_examples=candidate_steps*batch_size,
         replayed_misses=replayed_misses,
         resolved_exam_misses=len(resolved_priority_ids),
-        champion_prioritized=0,
+        champion_prioritized=champion_prioritized,
         seed=_runtime_state._seed(receipt, capability=cap),
     ))
     lesson_generator, lesson_source_digest = _runtime_assessment.released_lesson_source_identity(
@@ -651,7 +665,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "prior_grade_champion_votes": {
             source_grade: votes for source_grade, votes in direct_capability_votes.items()
             if source_grade != lesson_grade},
-        "champion_directed_examples_available": 0,
+        "champion_directed_examples_available": len(champion_candidate_ids),
         "champion_confidence": {
             "policy": _learning_champion_confidence.POLICY,
             "frozen_unique_champions": len(confidence_champions),

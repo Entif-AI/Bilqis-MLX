@@ -127,6 +127,35 @@ class CausalTeacherExperimentTests(unittest.TestCase):
 
         self.assertEqual(exposures[target["id"]], 4)
 
+    def test_champion_priority_target_wins_limited_weakness_slot(self):
+        champion = {
+            "id": "z-champion", "capability": "C.SUB", "gold": "3",
+            "source_id": "champion", "tokens": [1, 3, 9],
+            "answer_kind": "numeric_active",
+        }
+        ordinary = {
+            "id": "a-ordinary", "capability": "C.SUB", "gold": "2",
+            "source_id": "ordinary", "tokens": [1, 2, 9],
+            "answer_kind": "numeric_active",
+        }
+        current = [
+            champion, ordinary,
+            {"id": "n1", "capability": "C.SUB", "gold": "1",
+             "source_id": "n1", "tokens": [1, 1, 9],
+             "answer_kind": "numeric_active"},
+            {"id": "n0", "capability": "C.SUB", "gold": "0",
+             "source_id": "n0", "tokens": [1, 0, 9],
+             "answer_kind": "numeric_active"},
+        ]
+        _picked, control = select_source_lesson(
+            current, [], {"old": 0, "depth": 1, "contrast": 0.},
+            targets=[ordinary, champion],
+            priority_target_ids={champion["id"]},
+            target_exposures={ordinary["id"]: 0, champion["id"]: 0},
+            reserved_support_slots=3, seed=7, batch_size=4)
+        self.assertEqual(control["weakness_target_ids"], [champion["id"]])
+        self.assertEqual(control["priority_weakness_targets_delivered"], 1)
+
     def test_trainer_defers_missing_peer_inference_until_candidate_target_passes(self):
         from pathlib import Path
         from bilqis_mlx import trainer as trainer

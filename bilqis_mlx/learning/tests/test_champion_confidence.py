@@ -262,3 +262,33 @@ class ChampionConfidenceTests(unittest.TestCase):
             direct_capabilities={"C.ADD", "C.SUCCESSOR"})
         np.testing.assert_array_equal(
             foreign_soup[0][1], [True, True, True])
+
+    def test_champion_directed_rows_require_student_miss_and_source_correct_owner(self):
+        from bilqis_mlx.learning.lesson_guidance import _champion_directed_rows
+
+        rows = [
+            {"id": "miss", "capability": "C.ADD", "gold": "3",
+             "tokens": [1, 2], "answer_kind": "numeric_active"},
+            {"id": "known", "capability": "C.ADD", "gold": "4",
+             "tokens": [1, 3], "answer_kind": "numeric_active"},
+            {"id": "other", "capability": "C.SUB", "gold": "2",
+             "tokens": [1, 4], "answer_kind": "numeric_active"},
+        ]
+        mentors = ({
+            "weights": {"synthetic": True},
+            "graph": {"tokens": list(range(16)), "nodes": [],
+                      "row_contract_sha256": {}},
+            "capabilities": ("C.ADD",),
+            "breadth": 1,
+        },)
+        with patch(
+            "bilqis_mlx.learning.lesson_guidance._learning_student_ops._predictions",
+            side_effect=[
+                {"miss": "2", "known": "4", "other": "1"},
+                {"miss": "3", "known": "4"},
+            ],
+        ):
+            directed = _champion_directed_rows(
+                None, mentors, {"student": True}, rows,
+                {"heads": 1, "layers": 1}, [1, 2])
+        self.assertEqual([row["id"] for row in directed], ["miss"])
