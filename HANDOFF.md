@@ -1,16 +1,23 @@
 # CURRENT SUPERSESSION | 2026-10-23 | Prometheus direct-U7C + C promotion sweep
 
 This supersedes the issue-349 run snapshot below for current operator state. The active
-run is `runs/codex-0001-prometheus`, generation **27187**, factory release
+run is `runs/codex-0001-prometheus`, generation **27189**, factory release
 `83f9f052e40983b879a9e0495ad93d3d3fce31d10e0d12395e0b12499b17c654`.
 The causal student is SHA `4621f6802315c6ed8b6d96ad0a1f8a7755bb110be8863c77422e268e71675d67`
-at native AdamW step **142728**, Grade C `MAIN`, queue `C.MUL`, visit **19352**.
+at native AdamW step **142728**, Grade C `PROMOTION_SWEEP`, queue
+`C.COUNT → C.NUMBER → C.SUCCESSOR → C.ADD → C.SUB → C.MUL`, visit **19353**.
 The latest agent repair is neural-inert; canonical optimization remains human-only.
 
 Grade B now admits `NOT, AND, OR, XOR, IMPLIES, IFF`, plus `COMPOSITE` and
 `IDBOOLOPS`, all through direct typed Boolean-AST/U7C source construction with no
-world records. B remains nongating debt and may consume at most 20% of the C-frontier
-training/test lane. Commit `2ed45db` also separates capability-scoped row identity
+world records. B remains nongating debt. Historical ADR-090's at-most-20% candidate-
+visit policy is superseded by **ADR-094's bounded grade-turn cadence**: after at most four completed non-B
+training turns, B receives one complete pass over every currently imperfect admitted
+B capability, then yields for four further non-B turns. At generation 27189, the
+next reconstructed B pass is already due and contains all eight admitted B capabilities;
+the latest cumulative B slice is 49/96 (51.0%). The active C promotion sweep remains
+uninterrupted and B takes the next ordinary training turn after it resolves. Commit
+`2ed45db` also separates capability-scoped row identity
 from record-scoped source identity, repairing the teacher-miss collision that caused
 `TEACHER_MISS_HISTORY_IDENTITY_CONFLICT`. Generation 27116 removed obsolete
 world-based B miss debt and rekeyed direct-U7C misses; immutable historical evidence

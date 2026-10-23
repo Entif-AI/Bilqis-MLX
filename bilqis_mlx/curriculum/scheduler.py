@@ -27,7 +27,7 @@ STAGES = frozenset(("MAIN", "ASSESS_MAIN", "RECOVERY_1", "ASSESS_RECOVERY_1",
                     "ASSESS_PROMOTION_SWEEP", "AWAITING_TEACHER_SOUP",
                     "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT",
                     "WHOLE_SCHOOL_MASTERED", "DEFERRED_STAGNATION"))
-B_DEBT_MAX_SHARE_DENOMINATOR = 5
+B_DEBT_RUN_INTERVAL = 4
 
 
 def _program(value) -> ScheduleProgram:
@@ -154,12 +154,14 @@ class SchoolState:
     # assessment freezes the baseline; each sweep visit replaces only the
     # semantic that was just rescored.
     promotion_sweep_scores: tuple[tuple[str, int, int], ...] = ()
-    # While C is the active progression frontier, unfinished B is explicitly
-    # nongating developmental debt.  Track the post-policy visit budget so B
-    # can remain in circulation without consuming more than one candidate in
-    # five.  Missing fields in older receipts begin a fresh policy epoch.
+    # Historical ADR-090 candidate-visit counters are retained as telemetry and
+    # backward-compatible receipt state. ADR-094 moves scheduling authority to
+    # grade-level training turns instead of individual B candidate crumbs.
     frontier_priority_visits: int = 0
     nongating_b_visits: int = 0
+    # Number of completed non-B training queues since B last received one
+    # complete currently-imperfect grade pass. Four such turns make B due.
+    non_b_training_turns_since_b_run: int = 0
 
     @property
     def grade(self) -> str:
@@ -183,15 +185,43 @@ def _c_frontier_priority_mode(program, state: SchoolState) -> bool:
         debt & set(_caps(program, ("C",))))
 
 
-def _b_debt_visit_due(program, state: SchoolState) -> bool:
+def _b_debt_run_due(program, state: SchoolState) -> bool:
+    return (_c_frontier_priority_mode(program, state) and
+            state.non_b_training_turns_since_b_run >= B_DEBT_RUN_INTERVAL)
+
+
+def _b_debt_run_queue(program, state: SchoolState,
+                      scores: dict[str, Score],
+                      allowed_capabilities: tuple[str, ...] | None = None
+                      ) -> tuple[str, ...]:
+    """Return every currently imperfect admitted B debt capability, canonically."""
     if not _c_frontier_priority_mode(program, state):
-        return False
-    # Require four frontier visits before each supplemental B visit.  This
-    # preserves <=20% B share for every prefix of the policy epoch, not merely
-    # in an eventual average.
-    return state.frontier_priority_visits >= (
-        (state.nongating_b_visits + 1) *
-        (B_DEBT_MAX_SHARE_DENOMINATOR - 1))
+        return ()
+    allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
+    debt = set(state.carried_mastery_debt)
+    return tuple(
+        capability for capability in _caps(program, ("B",))
+        if capability in allowed and capability in debt and
+        capability in scores and not scores[capability].perfect)
+
+
+def _enter_due_b_debt_run(program, state: SchoolState,
+                          snapshot: Assessment, *,
+                          allowed_capabilities: tuple[str, ...] | None = None,
+                          reset_sweep: bool = True) -> SchoolState | None:
+    if not _b_debt_run_due(program, state):
+        return None
+    queue = _b_debt_run_queue(
+        program, state, snapshot.scores,
+        allowed_capabilities=allowed_capabilities)
+    if not queue:
+        return None
+    entered = _enter_grade(
+        program, state, state.active_grades.index("B"),
+        stage="MAIN", first_recovery=(),
+        main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
+        latest_rubric_digest=snapshot.rubric_digest)
+    return replace(entered, queue=queue)
 
 
 def _imperfect_ranked(scores: dict[str, Score],
@@ -206,20 +236,31 @@ def _imperfect_ranked(scores: dict[str, Score],
 def _frontier_recovery_queue(program, state: SchoolState,
                              scores: dict[str, Score],
                              pool: tuple[str, ...]) -> tuple[str, ...]:
-    """Prefer C recovery; admit at most one budget-earned B debt visit."""
+    """Keep C recovery C-only; B receives bounded complete grade turns."""
     if not _c_frontier_priority_mode(program, state):
         return weakest_three(scores, pool)
     allowed = set(pool)
     c_ranked = _imperfect_ranked(
         scores, tuple(cap for cap in _caps(program, ("C",)) if cap in allowed))
-    b_ranked = _imperfect_ranked(
-        scores, tuple(cap for cap in _caps(program, ("B",))
-                      if cap in allowed and cap in state.carried_mastery_debt))
-    if _b_debt_visit_due(program, state) and b_ranked:
-        # C remains the primary lane.  Put the debt visit after up to two
-        # frontier visits so the instantaneous prefix stays at or below 20%.
-        return (*c_ranked[:2], b_ranked[0])
     return c_ranked[:3]
+
+
+def migrate_b_full_run_epoch(program, state: SchoolState) -> SchoolState:
+    """Adopt ADR-094 without inventing learning or preserving single-B crumbs."""
+    program = _program(program)
+    if not _c_frontier_priority_mode(program, state):
+        return replace(state, non_b_training_turns_since_b_run=0)
+    migrated = replace(
+        state, non_b_training_turns_since_b_run=B_DEBT_RUN_INTERVAL)
+    if migrated.stage not in ("MAIN", "RECOVERY_1", "RECOVERY_2"):
+        return migrated
+    b_caps = set(_caps(program, ("B",)))
+    if migrated.grade != "B" and any(cap in b_caps for cap in migrated.queue):
+        return _enter_grade(
+            program, migrated, migrated.active_grades.index("C"),
+            stage="MAIN", first_recovery=(), main_sweep_visited=(),
+            latest_rubric_digest=migrated.latest_rubric_digest)
+    return migrated
 
 
 def migrate_c_frontier_priority_epoch(program, state: SchoolState) -> SchoolState:
@@ -401,7 +442,9 @@ def verify_state(program, state: SchoolState):
             type(state.frontier_priority_visits) is not int or
             state.frontier_priority_visits < 0 or
             type(state.nongating_b_visits) is not int or
-            state.nongating_b_visits < 0):
+            state.nongating_b_visits < 0 or
+            type(state.non_b_training_turns_since_b_run) is not int or
+            state.non_b_training_turns_since_b_run < 0):
         raise ValueError("INVALID_SCHOOL_COUNTER")
     frontiers = state.introduction_frontiers
     grade_lookup = {grade.id: grade for grade in program.grades}
@@ -469,11 +512,17 @@ def visit(program, state: SchoolState, capability: str,
     rest = state.queue[1:]
     frontier_priority_visits = state.frontier_priority_visits
     nongating_b_visits = state.nongating_b_visits
+    non_b_training_turns_since_b_run = state.non_b_training_turns_since_b_run
     if _c_frontier_priority_mode(program, state):
         if capability in set(_caps(program, ("C",))):
             frontier_priority_visits += 1
         elif capability in set(_caps(program, ("B",))):
             nongating_b_visits += 1
+        if not rest:
+            if state.grade == "B":
+                non_b_training_turns_since_b_run = 0
+            else:
+                non_b_training_turns_since_b_run += 1
     if state.stage == "PROMOTION_SWEEP":
         after = "ASSESS_PROMOTION_SWEEP"
     else:
@@ -482,7 +531,9 @@ def visit(program, state: SchoolState, capability: str,
     return replace(state, queue=rest, stage=after, visits=state.visits+1,
                    current_student=student_after_visit,
                    frontier_priority_visits=frontier_priority_visits,
-                   nongating_b_visits=nongating_b_visits)
+                   nongating_b_visits=nongating_b_visits,
+                   non_b_training_turns_since_b_run=(
+                       non_b_training_turns_since_b_run))
 
 
 def require_assessment_after_flash(program, state: SchoolState) -> SchoolState:
@@ -552,6 +603,12 @@ def _resume_ordinary_spiral(program, state: SchoolState,
                             allowed_capabilities: tuple[str, ...] | None = None,
                             reset_sweep: bool = True) -> SchoolState | None:
     if _c_frontier_priority_mode(program, state):
+        due_b = _enter_due_b_debt_run(
+            program, state, snapshot,
+            allowed_capabilities=allowed_capabilities,
+            reset_sweep=reset_sweep)
+        if due_b is not None:
+            return due_b
         allowed = (set(snapshot.scores) if allowed_capabilities is None
                    else set(allowed_capabilities))
         c_caps = tuple(cap for cap in _caps(program, ("C",)) if cap in allowed)
@@ -561,18 +618,6 @@ def _resume_ordinary_spiral(program, state: SchoolState,
                 stage="MAIN", first_recovery=(),
                 main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
                 latest_rubric_digest=snapshot.rubric_digest)
-        if _b_debt_visit_due(program, state):
-            b_caps = tuple(
-                cap for cap in _caps(program, ("B",))
-                if cap in allowed and cap in state.carried_mastery_debt)
-            b_ranked = _imperfect_ranked(snapshot.scores, b_caps)
-            if b_ranked:
-                entered = _enter_grade(
-                    program, state, state.active_grades.index("C"),
-                    stage="RECOVERY_1", first_recovery=(b_ranked[0],),
-                    main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
-                    latest_rubric_digest=snapshot.rubric_digest)
-                return replace(entered, queue=(b_ranked[0],))
         return None
     excluded: tuple[str, ...] = ()
     while len(excluded) < len(state.active_grades):
@@ -610,9 +655,12 @@ def _continue_main_sweep(program, state: SchoolState,
     if state.grade not in visited:
         visited = visited + (state.grade,)
     if _c_frontier_priority_mode(program, state):
-        # B remains explicit debt but no longer owns a full ordinary pass while
-        # C is the progression frontier.  It re-enters only through the bounded
-        # recovery lane below.
+        due_b = _enter_due_b_debt_run(
+            program, state, snapshot,
+            allowed_capabilities=allowed_capabilities,
+            reset_sweep=False)
+        if due_b is not None:
+            return due_b
         if state.grade == "C":
             return None
         allowed = (set(snapshot.scores) if allowed_capabilities is None
@@ -859,6 +907,9 @@ def _assess_ordinary(program, state: SchoolState,
                            else state.main_sweep_visited),
                        latest_rubric_digest=snapshot.rubric_digest)
     if state.stage == "ASSESS_RECOVERY_1":
+        due_b = _enter_due_b_debt_run(program, state, snapshot)
+        if due_b is not None:
+            return due_b
         trio = _frontier_recovery_queue(
             program, state, snapshot.scores, pool)
         return replace(state, stage="RECOVERY_2", queue=trio,
@@ -880,9 +931,11 @@ def _advance_after_promotion_sweep(program, state: SchoolState,
     grade = next(g for g in program.grades if g.id == state.grade)
     if grade.teaching_stages and state.introduction_stage < len(grade.teaching_stages)-1:
         next_stage = state.introduction_stage + 1
-        return _at_introduction_stage(
+        advanced = _at_introduction_stage(
             cleared, next_stage, stage="MAIN",
             queue=grade.teaching_stages[next_stage], first_recovery=())
+        due_b = _enter_due_b_debt_run(program, advanced, snapshot)
+        return due_b if due_b is not None else advanced
     if _perfect_in_grade(program, state.grade, snapshot.scores):
         return replace(_promote(program, cleared, snapshot),
                        grade_exam_epoch=state.grade_exam_epoch + 1)
@@ -1095,6 +1148,10 @@ def assess_withheld(program, state: SchoolState, snapshot: Assessment,
         return replace(state, stage="DEFERRED_STAGNATION", queue=(),
                        first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
     if state.stage == "ASSESS_RECOVERY_1":
+        due_b = _enter_due_b_debt_run(
+            program, state, snapshot, allowed_capabilities=active_pool)
+        if due_b is not None:
+            return due_b
         trio = _frontier_recovery_queue(
             program, state, snapshot.scores, active_pool)
         if trio:
@@ -1371,18 +1428,23 @@ def read_state(path: Path, program) -> SchoolState:
     raw["pending_failures"] = tuple(raw["pending_failures"])
     raw["main_sweep_visited"] = tuple(raw.get("main_sweep_visited", ()))
     raw["carried_mastery_debt"] = tuple(raw.get("carried_mastery_debt", ()))
+    legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in raw
     raw["promotion_sweep_scope"] = tuple(raw.get("promotion_sweep_scope", ()))
     raw["promotion_sweep_return_stage"] = raw.get(
         "promotion_sweep_return_stage")
     raw["promotion_sweep_scores"] = tuple(
         (capability, correct, total)
         for capability, correct, total in raw.get("promotion_sweep_scores", ()))
+    raw["non_b_training_turns_since_b_run"] = raw.get(
+        "non_b_training_turns_since_b_run", 0)
     raw["introduction_frontiers"] = tuple(
         (grade, stage) for grade, stage in raw.get("introduction_frontiers", ()))
     raw["current_student"] = Checkpoint(**raw["current_student"])
     raw["champions"] = {grade: Checkpoint(**cp)
                         for grade, cp in raw["champions"].items()}
     result = SchoolState(**raw)
+    if legacy_b_full_run_epoch:
+        result = migrate_b_full_run_epoch(program, result)
     verify_state(program, result)
     return result
 

@@ -1266,3 +1266,43 @@ clear debt, or fabricate mastery. This ADR supersedes ADR-084 and the ADR-085
 cross-reference only for how scores are updated *during* a promotion sweep; the
 strict >90% trigger, canonical one-pass order, >=90% continuation floor, staged
 progression, cumulative evidence, and human-only neural custody remain unchanged.
+
+
+## ADR-094 | 2026-10-23 | Nongating Grade B receives bounded complete training turns
+
+**Direct user correction after continued Prometheus starvation.** ADR-090 solved a
+real failure mode, namely Grade B consuming most of the run while C was the actual
+progression frontier, but it bounded the wrong unit. Its one-B-candidate-per-five
+candidate-visits rule gave B only isolated crumbs. Because the scheduler always
+selected the weakest eligible B capability, `B.IDBOOLOPS` could repeatedly consume
+those crumbs while the rest of the admitted Boolean grade received little or no
+direct instruction. At generation 27187 all eight admitted B capabilities were
+imperfect and the fresh cumulative B score was 51/96 (53.1%), so treating one weak
+capability visit as an adequate Grade-B turn was not serving the developmental debt.
+
+While C is the latest active progression grade and both unfinished B debt and
+unfinished C debt remain, scheduling fairness is measured in **grade training
+turns**, not candidate-capability visits. A training turn is one scheduled teaching
+queue that reaches its assessment boundary. After **no more than four completed
+non-B training turns**, B becomes due for one contiguous `MAIN` pass over **every
+currently imperfect, admitted, eligible B capability** in canonical B order. A
+temporarily perfect B capability need not be retrained merely to pad the pass. If an
+otherwise imperfect B capability is explicitly withheld, it remains debt and is
+not synthesized into the runnable queue.
+
+Completing that B pass resets the cadence. B may not receive another ordinary
+training pass until four additional non-B turns complete. C-frontier weakest-three
+recovery is therefore C-only; it must not smuggle a single weakest B capability into
+the recovery queue. This produces a hard anti-monopoly boundary at the grade-turn
+level while still giving weak B semantics enough contiguous training time to learn.
+The number of candidate visits inside a B pass may exceed ADR-090's former 20%
+candidate-share ceiling because a full grade pass intentionally contains multiple
+capabilities. ADR-090 is superseded on that allocation metric.
+
+This cadence does **not** make B a promotion gate, C prerequisite, championship
+shortcut, stagnation actuator, or permission to weaken retention/source-gold
+requirements. Promotion sweeps remain owned by the active progression grade. B
+scores, misses and mastery debt remain cumulative evidence. Existing pre-ADR-094
+receipts migrate neural-inertly with one B pass due at the next safe assessment
+boundary, avoiding another starvation epoch without rewriting historical visits or
+claiming neural progress.

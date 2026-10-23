@@ -6,9 +6,12 @@ The active Prometheus curriculum now admits the complete direct-U7C Boolean set:
 `B.NOT`, `B.AND`, `B.OR`, `B.XOR`, `B.IMPLIES`, `B.IFF`, plus derived
 `B.COMPOSITE` and `B.IDBOOLOPS`. These are direct typed Boolean-AST lessons, not
 world-model lessons. Grade B remains nongating developmental debt while Grade C is
-the progression frontier; the existing <=20% B teaching/test allocation policy
-remains binding. Do not narrow Prometheus back to a historical reduced Boolean
-profile, and do not add Boolean mastery as a Grade-C prerequisite.
+the progression frontier. **ADR-094 replaces the old one-B-candidate-per-five cap
+with a bounded grade-turn cadence:** after at most four completed non-B training
+turns, B receives one contiguous pass over every currently imperfect admitted B
+capability, then yields for four more non-B turns before another B pass can occur.
+Do not narrow Prometheus back to a historical reduced Boolean profile, and do not
+add Boolean mastery as a Grade-C prerequisite.
 
 ## CONTROLLING USER CORRECTION — 2026-10-22: foundations before worlds
 
