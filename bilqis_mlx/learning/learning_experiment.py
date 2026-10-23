@@ -1066,10 +1066,22 @@ def _choose_typed_rows(source, count, policy, rng):
 
 
 def reserve_weakness_targets(chosen: list[dict],
-                             targets: list[dict]) -> tuple[list[dict], tuple[dict, ...]]:
+                             targets: list[dict], *,
+                             protected_ids: set[str] | frozenset[str] = frozenset()
+                             ) -> tuple[list[dict], tuple[dict, ...]]:
     """Replace generic current rows with weak semantics without changing batch size."""
     result = list(chosen)
+    protected = set(protected_ids)
+    remaining_protected = set(protected)
     consumed = set()
+    for index, row in enumerate(result):
+        identity = row.get("id")
+        if identity in remaining_protected:
+            consumed.add(index)
+            remaining_protected.remove(identity)
+    if remaining_protected:
+        raise ValueError(
+            WeaknessTargetError.LEARNING_EXPERIMENT_WEAKNESS_TARGET_CAPACITY_DRIFT.value)
     delivered = []
     for target in targets:
         existing = next((
@@ -1112,6 +1124,39 @@ def reserve_weakness_targets(chosen: list[dict],
     return result, tuple(delivered)
 
 
+def _fresh_support_rows(current: list[dict], policy: dict, rng,
+                        *, structured_binary: bool,
+                        semantic_patterns: list[tuple],
+                        present_count: int) -> tuple[dict, ...]:
+    """Keep one source-grounded fresh construction bundle beside replay.
+
+    Exact historical misses are evidence, not a replacement curriculum. Binary
+    lessons keep one newly drawn row for every truth pattern. Typed lessons keep
+    one complete newly drawn source family (for numeric constructions this is
+    the direct answer plus its TRUE/FALSE contrast views).
+    """
+    if not current or present_count < 1:
+        return ()
+    if structured_binary:
+        count = min(present_count, len(semantic_patterns))
+        return tuple(_choose_binary_rows(current, count, policy, rng))
+    groups = {}
+    for row in current:
+        groups.setdefault(row.get("source_id", row["id"]), []).append(row)
+    chunks = list(groups.values())
+    if not chunks:
+        return ()
+    if policy.get("depth", 1) >= 3:
+        chunks.sort(
+            key=lambda group: (
+                -max(len(row["tokens"]) for row in group),
+                str(group[0].get("source_id", group[0]["id"]))))
+        chosen = chunks[0]
+    else:
+        chosen = rng.choice(chunks)
+    return tuple(chosen[:present_count])
+
+
 def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
                          *, seed: int, batch_size: int,
                          targets: list[dict] | tuple[dict, ...] = (),
@@ -1135,12 +1180,17 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
     requested_old = int(policy.get("old", 0))
     if not 0 <= requested_old <= 32:
         raise ValueError("LEARNING_EXPERIMENT_INVALID_OLD_POLICY")
+    target_ids = {row["id"] for row in targets}
+    generic_current = [
+        row for row in current if row.get("id") not in target_ids]
+    if not generic_current:
+        raise ValueError("LEARNING_EXPERIMENT_MISSING_FRESH_CURRENT_ROWS")
     semantic_patterns = sorted({
-        tuple(row["operand_truths"]) for row in current
+        tuple(row["operand_truths"]) for row in generic_current
         if isinstance(row.get("operand_truths"), list)
     })
     structured_binary = bool(semantic_patterns) and all(
-        isinstance(row.get("operand_truths"), list) for row in current)
+        isinstance(row.get("operand_truths"), list) for row in generic_current)
     minimum_current = len(semantic_patterns) if structured_binary else 2
     old_count = min(batch_size-minimum_current,
                     round(requested_old*batch_size/32)) if prior else 0
@@ -1150,13 +1200,20 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
     if any(row.get("id") not in current_ids for row in targets):
         raise ValueError(WeaknessTargetError.LEARNING_EXPERIMENT_WEAKNESS_TARGET_OUTSIDE_CURRENT.value)
     priority_target_ids = set(priority_target_ids)
-    target_ids = {row["id"] for row in targets}
     if (any(not isinstance(identity, str) or not identity
             for identity in priority_target_ids) or
             not priority_target_ids <= target_ids):
         raise ValueError(LearningExperimentError.PRIORITY_TARGET_INVALID.value)
+    fresh_support = (
+        _fresh_support_rows(
+            generic_current, policy, rng,
+            structured_binary=structured_binary,
+            semantic_patterns=semantic_patterns,
+            present_count=present_count)
+        if targets else ())
     target_capacity = max(
-        0, present_count - min(reserved_support_slots, present_count))
+        0, present_count - len(fresh_support) -
+        min(reserved_support_slots, present_count))
     if targets and not target_capacity:
         target_capacity = 1
     priority_targets = [
@@ -1176,9 +1233,12 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
             capacity=max(0, target_capacity-len(selected_priority)),
         ))
     selected_targets = [*selected_priority, *selected_ordinary]
-    current_rows = choose_current(current, present_count, policy, rng)
+    current_rows = choose_current(generic_current, present_count, policy, rng)
+    current_rows, delivered_support = reserve_weakness_targets(
+        current_rows, list(fresh_support))
+    support_ids = {row["id"] for row in delivered_support}
     current_rows, delivered_targets = reserve_weakness_targets(
-        current_rows, selected_targets)
+        current_rows, selected_targets, protected_ids=support_ids)
     result = current_rows + _choose_typed_rows(prior, old_count, policy, rng)
     rng.shuffle(result)
     delivered_patterns = ({tuple(row["operand_truths"]) for row in result
@@ -1192,6 +1252,8 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
              "weakness_targets_requested": len(selected_targets),
              "weakness_targets_delivered": len(delivered_targets),
              "weakness_target_ids": [row["id"] for row in delivered_targets],
+             "fresh_support_ids": [row["id"] for row in delivered_support],
+             "fresh_support_delivered": len(delivered_support),
              "priority_weakness_targets_available": len(priority_targets),
              "priority_weakness_targets_requested": len(selected_priority),
              "priority_weakness_targets_delivered": sum(

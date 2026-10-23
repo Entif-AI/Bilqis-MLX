@@ -152,6 +152,109 @@ def _miss_sort_key(row: dict) -> tuple[str, str]:
     return str(row.get("capability", "")), row["id"]
 
 
+def _numeric_witness_signature(row: dict) -> tuple:
+    witness = row.get("witness")
+    if not isinstance(witness, dict):
+        return ()
+    parts = []
+    for name in ("ordinal_members", "before", "after",
+                 "left_members", "right_members"):
+        value = witness.get(name)
+        if isinstance(value, list):
+            parts.append((name + "_count", len(value)))
+    groups = witness.get("groups")
+    if isinstance(groups, list) and all(isinstance(group, list) for group in groups):
+        parts.append(("group_sizes", tuple(sorted(len(group) for group in groups))))
+    relation = witness.get("relation")
+    if isinstance(relation, str) and relation:
+        parts.append(("relation", relation))
+    return tuple(parts)
+
+
+def _source_structural_miss_identity(row: dict) -> dict | None:
+    """Project a source-owned teaching class without exact specimen identity.
+
+    Exact failed rows remain durable in their immutable exam/cohort evidence.
+    The active miss queue instead needs a class that can be re-tested by a
+    fresh, source-equivalent construction; otherwise every generated world is
+    an immortal new "semantic" merely because its entity order or row ID
+    changed.
+    """
+    capability = row.get("capability")
+    gold = row.get("gold")
+    answer_kind = row.get("answer_kind", "binary")
+    record = row.get("record")
+    if (not isinstance(capability, str) or not capability or
+            not isinstance(gold, str) or
+            not isinstance(answer_kind, str) or
+            not isinstance(record, dict)):
+        return None
+    if capability.startswith("B."):
+        try:
+            raw = row.get("operand_truths")
+            if isinstance(raw, list) and len(raw) == 2:
+                from bilqis_mlx.learning.fragile_replay import structural_signature
+                return {
+                    "family": "boolean-connective",
+                    "signature": structural_signature(row),
+                    "answer_kind": answer_kind,
+                    "gold": gold,
+                }
+            from bilqis_mlx.source_adapters.structure import (
+                inspect_boolean_identification, inspect_source_query,
+            )
+            if capability == "B.IDBOOLOPS":
+                shape = inspect_boolean_identification(record, row.get("root"))
+                extras = {
+                    "operator_options": tuple(row.get("operator_options", ())),
+                    "observation_count": row.get("observation_count"),
+                }
+            else:
+                query = record.get("query")
+                shape = inspect_source_query(query)
+                extras = {
+                    "operators": tuple(row.get("operators", ())),
+                    "composition_width": row.get("composition_width"),
+                    "universe_size": row.get("universe_size"),
+                }
+            return {
+                "family": "boolean-structured",
+                "capability": capability,
+                "answer_kind": answer_kind,
+                "gold": gold,
+                "root": shape.root,
+                "rooted_operators": shape.rooted_operators,
+                "semantic_operations": shape.semantic_operations,
+                "operator_depth": shape.operator_depth,
+                **extras,
+            }
+        except (KeyError, TypeError, ValueError):
+            return None
+    if capability.startswith("C."):
+        try:
+            from bilqis_mlx.source_adapters.numeric import inspect_record
+            shape = inspect_record(record)
+        except (KeyError, TypeError, ValueError):
+            return None
+        native = row.get("native_output")
+        native_identity = (
+            native.get("identity") if isinstance(native, dict) else None)
+        return {
+            "family": "finite-numeric",
+            "capability": capability,
+            "lesson_id": row.get("lesson_id"),
+            "answer_kind": answer_kind,
+            "gold": gold,
+            "native_output_identity": native_identity,
+            "root": shape.root,
+            "rooted_operators": shape.rooted_operators,
+            "semantic_operations": shape.semantic_operations,
+            "operator_depth": shape.operator_depth,
+            "witness": _numeric_witness_signature(row),
+        }
+    return None
+
+
 def _miss_semantic_identity(row: dict) -> str:
     source_id = row.get("source_id")
     record = row.get("record")
@@ -160,6 +263,9 @@ def _miss_semantic_identity(row: dict) -> str:
             not isinstance(record, dict) or
             not isinstance(tokens, list)):
         return "id:" + row["id"]
+    structural = _source_structural_miss_identity(row)
+    if structural is not None:
+        return "structural:" + _digest(structural)
     return "semantic:" + _digest({
         key: value for key, value in row.items()
         if key not in {"id", "integer_max"}

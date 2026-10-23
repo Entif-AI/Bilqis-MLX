@@ -57,6 +57,67 @@ class TeacherFeedbackTests(unittest.TestCase):
             still_wrong, current, {"new-c": "3"})
         self.assertEqual([row["id"] for row in now_correct], ["other"])
 
+    def test_boolean_miss_reconciles_across_fresh_worlds_by_source_structure(self):
+        def row(identity, *, universe=3, kinds=("PARENT", "EQ")):
+            def operand(kind, left, right):
+                return ({
+                    "kind": "compare", "operator": "EQ",
+                    "args": [{"kind": "entity", "name": left},
+                             {"kind": "entity", "name": right}],
+                } if kind == "EQ" else {
+                    "kind": "relation", "name": kind,
+                    "args": [{"kind": "entity", "name": left},
+                             {"kind": "entity", "name": right}],
+                })
+            return {
+                "id": identity, "source_id": identity,
+                "capability": "B.AND", "answer_kind": "binary",
+                "gold": "FALSE", "operand_truths": [False, True],
+                "universe_size": universe, "tokens": [1, 2, 3],
+                "record": {"query": {
+                    "kind": "apply", "operator": "AND",
+                    "args": [operand(kinds[0], "A", "B"),
+                             operand(kinds[1], "C", "A")]},
+                    "world": {"entities": ["A", "B", "C"]}},
+            }
+
+        prior = [row("old-world")]
+        equivalent = row("new-world")
+        distinct = row("different-shape", kinds=("LINK", "EQ"))
+        result = reconcile_unresolved_misses(
+            prior, [equivalent, distinct],
+            {"new-world": "FALSE", "different-shape": "TRUE"})
+
+        self.assertEqual([item["id"] for item in result], ["different-shape"])
+
+    def test_numeric_miss_reconciles_across_permuted_source_construction(self):
+        def count_row(identity, members):
+            symbols = [
+                "school.syntax.math", "school.op.EQ", "school.op.COUNT",
+                "school.syntax.number_set",
+                *(f"school.number.{value}" for value in members),
+                "syntax.end", "school.number.0", "syntax.end",
+            ]
+            return {
+                "id": identity, "source_id": identity,
+                "capability": "C.COUNT", "answer_kind": "binary",
+                "gold": "FALSE", "integer_max": 4,
+                "lesson_id": "LESSON-058",
+                "generator": "bilqis.finite-numeric-constructions/v1",
+                "oracle": "bilqis.independent-finite-numeric/v1",
+                "record": {"task": "bilqis.finite-number-prefix/v1",
+                           "symbols": symbols},
+                "tokens": list(range(len(symbols))),
+                "witness": {"ordinal_members": list(members)},
+            }
+
+        prior = [count_row("old-count", [0, 1, 2, 3])]
+        equivalent = count_row("new-count", [3, 1, 0, 2])
+        result = reconcile_unresolved_misses(
+            prior, [equivalent], {"new-count": "FALSE"})
+
+        self.assertEqual(result, [])
+
     def test_weakness_target_selection_rotates_least_exposed_semantics(self):
         misses = [{"id":f"miss-{index:02d}", "capability":"B.NOT",
                    "gold":"TRUE" if index % 2 else "FALSE"}

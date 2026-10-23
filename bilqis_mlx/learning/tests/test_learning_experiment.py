@@ -156,6 +156,56 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(control["weakness_target_ids"], [champion["id"]])
         self.assertEqual(control["priority_weakness_targets_delivered"], 1)
 
+    def test_typed_weakness_replay_preserves_one_complete_fresh_source_bundle(self):
+        current = []
+        for group in range(6):
+            source_id = f"fresh-{group}"
+            current.extend([
+                {"id": f"{source_id}-numeric", "capability": "C.COUNT",
+                 "gold": str(group), "source_id": source_id,
+                 "tokens": [1, group, 9], "answer_kind": "numeric_active"},
+                {"id": f"{source_id}-true", "capability": "C.COUNT",
+                 "gold": "TRUE", "source_id": source_id,
+                 "tokens": [1, group, 7, 9], "answer_kind": "binary"},
+                {"id": f"{source_id}-false", "capability": "C.COUNT",
+                 "gold": "FALSE", "source_id": source_id,
+                 "tokens": [1, group, 8, 9], "answer_kind": "binary"},
+            ])
+        targets = [
+            {"id": f"miss-{index}", "capability": "C.COUNT",
+             "gold": "FALSE", "source_id": f"historic-{index}",
+             "tokens": [1, 99, index, 9], "answer_kind": "binary"}
+            for index in range(24)
+        ]
+        prior = [
+            {"id": f"old-{index}", "capability": "A.IDENTITY",
+             "gold": "TRUE" if index % 2 else "FALSE",
+             "source_id": f"old-{index}", "tokens": [1, index, 9],
+             "answer_kind": "binary"}
+            for index in range(32)
+        ]
+
+        picked, control = select_source_lesson(
+            [*current, *targets], prior,
+            {"old": 16, "depth": 1, "contrast": 0.},
+            targets=targets,
+            target_exposures={row["id"]: 0 for row in targets},
+            seed=41, batch_size=32)
+
+        support_ids = set(control["fresh_support_ids"])
+        self.assertEqual(len(support_ids), 3)
+        support = [row for row in current if row["id"] in support_ids]
+        self.assertEqual(len({row["source_id"] for row in support}), 1)
+        self.assertEqual(
+            {(row["answer_kind"], row["gold"]) for row in support},
+            {("numeric_active", support[0]["source_id"].split("-")[-1]),
+             ("binary", "TRUE"), ("binary", "FALSE")})
+        self.assertTrue(support_ids <= {row["id"] for row in picked})
+        self.assertLessEqual(control["weakness_targets_delivered"], 13)
+        self.assertGreaterEqual(
+            len([row for row in picked if row["id"] in {r["id"] for r in current}]),
+            3)
+
     def test_trainer_defers_missing_peer_inference_until_candidate_target_passes(self):
         from pathlib import Path
         from bilqis_mlx import trainer as trainer

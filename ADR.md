@@ -1173,3 +1173,43 @@ budget when C is unavailable. B remains non-quarantining developmental debt;
 once four frontier visits have earned one B visit, that visit may still occur.
 Source-gold authority, candidate retention gates, student/AdamW custody,
 stagnation evidence, and the C promotion criteria are unchanged.
+
+## ADR-091 | 2026-10-23 | Weakness evidence biases fresh teaching; it does not replace the curriculum
+
+**Repair decision from live candidate-retention evidence.** The teacher's
+unresolved-miss ledger had conflated an exact generated specimen with a semantic
+teaching target. Freshly seeded worlds, entity orderings and numeric
+permutations therefore accumulated as thousands of nominally distinct misses.
+Exact replay could consume every current-capability slot in an optimizer batch,
+and visit-local teacher reward was measured on a cohort polluted by those same
+historical replay rows. In the live C.COUNT case, 40 consecutive candidates
+improved that mixed training score while every candidate worsened the fresh
+target probe.
+
+Exact failed rows remain immutable evidence in their scored exam/cohort
+provenance. Active teaching debt is instead reconciled by a source-grounded
+structural class. Boolean connective classes preserve truth pattern, operand
+kind and universe structure; composite/identification classes preserve their
+source-expression/operator structure; numeric classes preserve capability,
+answer kind/gold, operation shape and witness geometry. Unknown providers fail
+back to exact identity rather than receiving a guessed equivalence. A freshly
+scored source-equivalent construction can therefore clear an older teaching
+miss even when its exact generated row ID differs.
+
+Weakness replay may bias a lesson but may not erase fresh current-capability
+variation. With replay active, structured Boolean lessons retain fresh coverage
+of their source truth patterns and typed lessons retain one complete fresh
+source family. Historical replay rows remain eligible in the remaining
+capacity. Teacher local-gain/selection reward is measured only on the newly
+drawn source cohort, never on exact historical replay rows, so memorizing the
+ledger cannot masquerade as fresh capability acquisition.
+
+Candidate preservation is aligned with what the optimizer sees. A B debt lesson
+under a C frontier receives rotating fresh C source support; a C lesson receives
+rotating fresh non-target C sibling support. Support uses newly generated
+source-oracled rows, never fixed exam rows, and preserves one complete source
+family rather than inventing an arbitrary replay percentage. Existing fresh
+target, same-grade, fixed-grade, protected-frontier and whole-school retention
+gates remain unchanged. This repairs the training geometry that was producing
+validly rejected destructive candidates rather than weakening admission to make
+the retention percentage look healthier.

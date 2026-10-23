@@ -237,8 +237,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             }
     original_learning_rate = optimizer.learning_rate
     optimizer.learning_rate = float(policy["lr"])
-    row_ids = {row["id"] for row in rows}
-    rows.extend(row for row in priority if row["id"] not in row_ids)
+    # Teacher reward must measure transfer on the newly drawn source cohort,
+    # not improvement on the exact historical misses that are separately
+    # replayed inside optimizer batches below. Otherwise memorizing the replay
+    # ledger looks like fresh capability acquisition to the policy learner.
     with _runtime_timing_trace.trace_span("TRAIN_SCORE_BEFORE", capability=cap, row_count=len(rows)):
         before = _learning_student_ops._train_score(mx, params, rows, receipt["config"],
                               receipt["answer_ids"])
@@ -288,6 +290,16 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school.champions,
             cap, carried_mastery_debt=getattr(school, "carried_mastery_debt", ()))
         if learning_settings is not None else ())
+    retention_support_capabilities = ()
+    if (learning_settings is not None and
+            getattr(school, "active_grades", ()) and
+            getattr(school, "schema", None) is not None):
+        admitted_for_support = _curriculum_scheduler.assessment_capabilities(
+            _runtime_release_adoption._schedule_for_receipt(
+                run_dir, receipt, course), school)
+        retention_support_capabilities = (
+            _runtime_candidate_evidence._retention_support_capabilities(
+                admitted_for_support, getattr(school, "active_grades", ()), cap))
     delivered_autonomy_rows = []
     autonomy_option_specimen_ids = set()
     prefetch_futures = {}
@@ -307,6 +319,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             selected = None
             if int(policy.get("old", 0)) > 0 and old_capabilities:
                 selected = old_capabilities[(school.visits + step_index) % len(old_capabilities)]
+            retention_support_capability = (
+                retention_support_capabilities[
+                    (school.visits + step_index) %
+                    len(retention_support_capabilities)]
+                if retention_support_capabilities else None)
             fresh_seed = _runtime_state._seed(receipt, capability=cap, step=step_index + 1)
             prior_seed = (_runtime_state._seed(
                 receipt, capability="EXPERIMENT_OLD:" + selected, step=step_index)
@@ -319,6 +336,13 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             }
             teaching_seed = _runtime_state._seed(
                 receipt, capability="TEACHING_ENRICHMENT:" + cap,
+                step=step_index + 1)
+            retention_support_seed = _runtime_state._seed(
+                receipt,
+                capability=(
+                    "RETENTION_SUPPORT:" + retention_support_capability
+                    if retention_support_capability is not None
+                    else "RETENTION_SUPPORT:NONE"),
                 step=step_index + 1)
             identity = _runtime_state._fingerprint({
                 "schema": SOURCE_PREFETCH_SCHEMA,
@@ -339,6 +363,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 "fresh_seed": fresh_seed,
                 "prior_seed": prior_seed,
                 "fragile_seeds": fragile_seeds,
+                "retention_support_capability": retention_support_capability,
+                "retention_support_seed": retention_support_seed,
+                "retention_support_rotation": school.visits + step_index,
                 "teaching_seed": teaching_seed,
                 "teaching_enrichment_enabled": boolean_association_bridge,
             })
@@ -357,6 +384,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 "fragile_requested": fragile_requested,
                 "fragile_seeds": fragile_seeds,
                 "fragile_rotation": step_index * 4,
+                "retention_support_capability": retention_support_capability,
+                "retention_support_seed": retention_support_seed,
+                "retention_support_rotation": school.visits + step_index,
                 "teaching_seed": teaching_seed,
                 "teaching_enrichment_enabled": boolean_association_bridge,
             }
@@ -407,9 +437,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                         row["id"] for row in fresh)
         fresh.extend(priority)
         preservation = ()
+        retention_support = ()
         if learning_settings is not None:
             if prepared is not None:
                 preservation = tuple(prepared["preservation"])
+                retention_support = tuple(prepared["retention_support"])
             else:
                 with _runtime_timing_trace.trace_span("STEP_FRAGILE_PRESERVATION", capability=cap,
                                 visit_step=step + 1):
@@ -418,6 +450,27 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                         step=step + 1, batch_size=batch_size,
                         fixed_rows=fragile_fixed_rows,
                         executable_release=executable_release)
+                if retention_support_capabilities:
+                    support_capability = retention_support_capabilities[
+                        (school.visits + step) %
+                        len(retention_support_capabilities)]
+                    with _runtime_timing_trace.trace_span(
+                            "STEP_RETENTION_SUPPORT", capability=cap,
+                            support_capability=support_capability,
+                            visit_step=step + 1):
+                        support_rows = _runtime_assessment._draw_live_rows(
+                            source_root, graph, course=course,
+                            executable_release=executable_release,
+                            capability=support_capability,
+                            each=max(batch_size, 6),
+                            seed=_runtime_state._seed(
+                                receipt,
+                                capability="RETENTION_SUPPORT:" + support_capability,
+                                step=step + 1))
+                        retention_support = (
+                            _runtime_candidate_evidence.
+                            _select_fresh_retention_support_rows(
+                                support_rows, rotation=school.visits + step))
         lesson_seed = _runtime_state._seed(receipt, capability=cap, step=step+1)
         with _runtime_timing_trace.trace_span("STEP_LESSON_SELECT", capability=cap, visit_step=step + 1):
             if learning_settings is not None:
@@ -434,7 +487,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                     fresh, prior, policy, seed=lesson_seed, batch_size=batch_size,
                     targets=priority, target_exposures=miss_exposures,
                     priority_target_ids=champion_candidate_ids,
-                    reserved_support_slots=len(preservation))
+                    reserved_support_slots=(
+                        len(preservation) + len(retention_support)))
                 lesson_control = {**control, "eligible_prior_capabilities":
                                   len(old_capabilities)}
                 target_ids = set(control["weakness_target_ids"])
@@ -453,11 +507,23 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 window = list(delivered_targets)
                 target_ids = {row["id"] for row in window}
         delivered_preservation = ()
+        delivered_retention_support = ()
         if learning_settings is not None:
+            fresh_support_ids = set(
+                lesson_control.get("fresh_support_ids", ())
+                if lesson_control is not None else ())
+            support_rows = (*preservation, *retention_support)
             with _runtime_timing_trace.trace_span("STEP_FRAGILE_PRESERVATION_INJECT", capability=cap,
                             visit_step=step + 1):
-                picked, delivered_preservation = _runtime_candidate_evidence._inject_preservation_rows(
-                    picked, preservation, reserved_ids=target_ids)
+                picked, delivered_support = _runtime_candidate_evidence._inject_preservation_rows(
+                    picked, support_rows,
+                    reserved_ids=target_ids | fresh_support_ids)
+            fragile_ids = {row["id"] for row in preservation}
+            retention_ids = {row["id"] for row in retention_support}
+            delivered_preservation = tuple(
+                row for row in delivered_support if row["id"] in fragile_ids)
+            delivered_retention_support = tuple(
+                row for row in delivered_support if row["id"] in retention_ids)
         if prepared is not None:
             enrichment_rows = tuple(prepared["teaching_enrichment_rows"])
         else:
@@ -487,6 +553,14 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 for row in delivered_preservation})
             lesson_control["fragile_preservation_source"] = (
                 "FRESH_SOURCE_TRUTH_TABLE_SIBLINGS")
+            lesson_control["retention_support_requested"] = len(
+                retention_support)
+            lesson_control["retention_support_delivered"] = len(
+                delivered_retention_support)
+            lesson_control["retention_support_capabilities"] = sorted({
+                row["capability"] for row in delivered_retention_support})
+            lesson_control["retention_support_source"] = (
+                "FRESH_SOURCE_FAMILY")
             policy_control_receipts.append(lesson_control)
         for row in window:
             identity = row["id"]

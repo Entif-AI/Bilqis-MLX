@@ -49,6 +49,9 @@ class SourcePrefetchTests(unittest.TestCase):
             "fragile_requested": (),
             "fragile_seeds": {},
             "fragile_rotation": 0,
+            "retention_support_capability": None,
+            "retention_support_seed": 12,
+            "retention_support_rotation": 0,
             "teaching_seed": 13,
             "teaching_enrichment_enabled": False,
         }
@@ -82,7 +85,10 @@ class SourcePrefetchTests(unittest.TestCase):
             "fresh_seed": 15, "prior_capability": None,
             "prior_seed": None, "fragile_fixed_rows": (),
             "fragile_requested": (), "fragile_seeds": {},
-            "fragile_rotation": 0, "teaching_seed": 16,
+            "fragile_rotation": 0,
+            "retention_support_capability": None,
+            "retention_support_seed": 17,
+            "retention_support_rotation": 0, "teaching_seed": 16,
             "teaching_enrichment_enabled": False,
         }
         expected = [{"id": "v2", "capability": "B.AND", "gold": "TRUE"}]
@@ -94,6 +100,53 @@ class SourcePrefetchTests(unittest.TestCase):
         self.assertEqual(result["fresh"], expected)
         self.assertEqual(executable.call_args.kwargs["legacy_course"],
                          request["course"])
+
+    def test_step_packet_prepares_fresh_retention_support_family(self):
+        request = {
+            "identity": "d" * 64,
+            "source_root": "/source",
+            "graph": {"tokens": []},
+            "course": SimpleNamespace(grades=(SimpleNamespace(id="B"),)),
+            "capability": "B.XOR",
+            "batch_size": 8,
+            "fresh_seed": 21,
+            "prior_capability": None,
+            "prior_seed": None,
+            "fragile_fixed_rows": (),
+            "fragile_requested": (),
+            "fragile_seeds": {},
+            "fragile_rotation": 0,
+            "retention_support_capability": "C.COUNT",
+            "retention_support_seed": 22,
+            "retention_support_rotation": 0,
+            "teaching_seed": 23,
+            "teaching_enrichment_enabled": False,
+        }
+        current = [
+            {"id": f"b{i}", "source_id": f"b{i}", "capability": "B.XOR",
+             "gold": "TRUE" if i % 2 else "FALSE", "tokens": [1, i + 2]}
+            for i in range(8)
+        ]
+        support = [
+            {"id": "c:n", "source_id": "count-two", "capability": "C.COUNT",
+             "answer_kind": "numeric_active", "gold": "2", "tokens": [1, 2]},
+            {"id": "c:t", "source_id": "count-two", "capability": "C.COUNT",
+             "answer_kind": "binary", "gold": "TRUE", "tokens": [1, 3]},
+            {"id": "c:f", "source_id": "count-two", "capability": "C.COUNT",
+             "answer_kind": "binary", "gold": "FALSE", "tokens": [1, 4]},
+        ]
+
+        def draw(_root, _graph, _course, *, capability, **_kwargs):
+            return support if capability == "C.COUNT" else current
+
+        with patch("bilqis_mlx.runtime.source_prefetch.draw_course_rows",
+                   side_effect=draw):
+            result = prepare_step_sources(request)
+
+        self.assertEqual({row["id"] for row in result["retention_support"]},
+                         {"c:n", "c:t", "c:f"})
+        self.assertEqual({row["capability"] for row in result["fresh"]},
+                         {"B.XOR"})
 
     @unittest.skipUnless(CHECKPOINT.is_file(), "Original source not mounted")
     def test_real_source_packet_survives_spawned_process_boundary(self):
@@ -120,6 +173,9 @@ class SourcePrefetchTests(unittest.TestCase):
             "fragile_requested": (),
             "fragile_seeds": {},
             "fragile_rotation": 0,
+            "retention_support_capability": None,
+            "retention_support_seed": 121,
+            "retention_support_rotation": 0,
             "teaching_seed": 120,
             "teaching_enrichment_enabled": False,
         }
