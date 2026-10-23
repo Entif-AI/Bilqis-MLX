@@ -57,7 +57,9 @@ def _apply(operator: str, values: tuple[bool, ...]) -> bool:
 def evaluate(record: dict, capability: str = CAPABILITY) -> str:
     """Return the one admitted operator compatible with every shown observation."""
     if (not isinstance(record, dict) or record.get("task") != TASK or
-            capability != CAPABILITY or set(record) != {"task", "world", "observations", "options"}):
+            capability != CAPABILITY or set(record) not in (
+                {"task", "world", "observations", "options"},
+                {"task", "observations", "options"})):
         raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
     options = record["options"]
     if (not isinstance(options, list) or len(options) < 2 or
@@ -77,8 +79,15 @@ def evaluate(record: dict, capability: str = CAPABILITY) -> str:
                 len(observation["operands"]) != 2 or
                 type(observation["result"]) is not bool):
             raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_OBSERVATION_SHAPE")
-        values = tuple(_primitive_truth(record["world"], operand)
-                       for operand in observation["operands"])
+        if "world" in record:
+            values = tuple(_primitive_truth(record["world"], operand)
+                           for operand in observation["operands"])
+        else:
+            values = tuple(operand["value"] for operand in observation["operands"]
+                           if isinstance(operand, dict) and operand.get("kind") == "literal"
+                           and type(operand.get("value")) is bool)
+            if len(values) != 2:
+                raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID")
         truth_patterns.add(values)
         parsed.append((values, observation["result"]))
     required = {(False, False), (False, True), (True, False), (True, True)}

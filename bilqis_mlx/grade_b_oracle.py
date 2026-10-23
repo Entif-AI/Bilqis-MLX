@@ -40,12 +40,47 @@ def operand_truth(world: dict, node: dict) -> bool:
     raise ValueError("GRADE_B_ORACLE_UNMASTERED_RELATION")
 
 
+
+def _direct_truth(node: dict, assignments: dict) -> bool:
+    if not isinstance(assignments, dict):
+        raise ValueError("GRADE_B_ORACLE_ASSIGNMENTS_INVALID")
+    kind = node.get("kind") if isinstance(node, dict) else None
+    if kind == "literal" and type(node.get("value")) is bool:
+        return node["value"]
+    if (kind == "variable" and node.get("name") in assignments and
+            type(assignments[node["name"]]) is bool):
+        return assignments[node["name"]]
+    if (kind != "apply" or node.get("operator") not in CONNECTIVES or
+            not isinstance(node.get("args"), list)):
+        raise ValueError("GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID")
+    op = node["operator"]
+    expected = 1 if op == "NOT" else 2
+    if len(node["args"]) != expected:
+        raise ValueError("GRADE_B_ORACLE_CONNECTIVE_SHAPE")
+    values = [_direct_truth(arg, assignments) for arg in node["args"]]
+    if op == "NOT": return not values[0]
+    left, right = values
+    if op == "AND": return left and right
+    if op == "OR": return left or right
+    if op == "XOR": return left != right
+    if op == "IMPLIES": return (not left) or right
+    if op == "IFF": return left == right
+    raise ValueError("GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID")
+
 def evaluate(record: dict, capability: str) -> str:
-    if (not isinstance(record, dict) or record.get("task") != "micro" or
+    if (not isinstance(record, dict) or
             capability not in {"B." + name for name in CONNECTIVES}):
         raise ValueError("GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
-    query = record["query"]
     operation = capability.split(".", 1)[1]
+    if record.get("task") == "evaluate":
+        expression = record.get("expression")
+        if (not isinstance(expression, dict) or expression.get("kind") != "apply" or
+                expression.get("operator") != operation):
+            raise ValueError("GRADE_B_ORACLE_CONNECTIVE_SHAPE")
+        return "TRUE" if _direct_truth(expression, record.get("assignments")) else "FALSE"
+    if record.get("task") != "micro":
+        raise ValueError("GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
+    query = record["query"]
     if (not isinstance(query, dict) or set(query) != {"kind", "operator", "args"} or
             query["kind"] != "apply" or query["operator"] != operation or
             not isinstance(query["args"], list) or

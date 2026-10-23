@@ -15,8 +15,7 @@ from .boolean_identification_oracle import TASK, VERSION as ORACLE
 from .boolean_identification_oracle import evaluate as independent_evaluate
 from .curriculum import AnswerFamily, BINARY, BOOLEAN_OPERATORS, Capability, Course
 from .grade_a_probe import read_sources
-from .grade_b_oracle import operand_truth
-from .live_grade_b import PREREQUISITES, _operand, _random_world, source_attestation
+from .live_grade_b import PREREQUISITES, source_attestation
 
 
 CAPABILITY = "B.IDBOOLOPS"
@@ -99,50 +98,31 @@ def _apply(operator: str, values: tuple[bool, ...]) -> bool:
     }[operator]()
 
 
-def _operand_with_truth(micro, rng, world, wanted: bool):
-    for _ in range(512):
-        candidate = _operand(micro, rng, world)
-        if operand_truth(world, candidate) == wanted:
-            return candidate
-    raise ValueError("GRADE_B_IDBOOLOPS_OPERAND_TRUTH_EXHAUSTED")
-
-
-def _operand_prefix(micro, graph, world, operand):
-    encoded = list(micro.encode(micro.record(world, operand)))
-    query = graph["tokens"].index("micro.syntax.query")
-    end = graph["tokens"].index("syntax.end")
-    try:
-        index = encoded.index(query)
-    except ValueError as exc:
-        raise ValueError("GRADE_B_IDBOOLOPS_QUERY_MARKER_MISSING") from exc
-    if encoded[-1] != end:
-        raise ValueError("GRADE_B_IDBOOLOPS_SOURCE_ENCODING_DRIFT")
-    return encoded[:index + 1], encoded[index + 1:-1]
-
-
 def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
-    """Serialize shown evidence with no operator token present in the input."""
-    micro, _, _, _, _ = read_sources(legacy_root)
+    """Serialize direct Boolean truth signatures with the operator hidden."""
     _require_historical_graph(legacy_root, graph)
+    if (record.get("task") != TASK or "world" in record or
+            set(record) != {"task", "observations", "options"}):
+        raise ValueError("GRADE_B_IDBOOLOPS_RECORD_SHAPE")
+    names = graph["tokens"]
+    premise = names.index("micro.proof.premise")
+    conclusion = names.index("micro.proof.conclusion")
+    separator = names.index("syntax.separator")
+    end = names.index("syntax.end")
+    false_id = names.index("cogal.value.false")
+    true_id = names.index("cogal.value.true")
+    tokens = [names.index("task.evaluate")]
     observations = record.get("observations") or []
     if not observations:
         raise ValueError("GRADE_B_IDBOOLOPS_OBSERVATIONS_MISSING")
-    first = observations[0]["operands"][0]
-    prefix, _ = _operand_prefix(micro, graph, record["world"], first)
-    premise = graph["tokens"].index("micro.proof.premise")
-    conclusion = graph["tokens"].index("micro.proof.conclusion")
-    separator = graph["tokens"].index("syntax.separator")
-    end = graph["tokens"].index("syntax.end")
-    false_id = graph["tokens"].index("cogal.value.false")
-    true_id = graph["tokens"].index("cogal.value.true")
-    tokens = list(prefix)
     for observation in observations:
-        for operand in observation["operands"]:
-            current_prefix, encoded_operand = _operand_prefix(
-                micro, graph, record["world"], operand)
-            if current_prefix != prefix:
-                raise ValueError("GRADE_B_IDBOOLOPS_WORLD_ENCODING_DRIFT")
-            tokens.extend((premise, *encoded_operand))
+        operands = observation.get("operands")
+        if (not isinstance(operands, list) or len(operands) != 2 or
+                any(not isinstance(item, dict) or item.get("kind") != "literal" or
+                    type(item.get("value")) is not bool for item in operands)):
+            raise ValueError("GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE")
+        for operand in operands:
+            tokens.extend((premise, true_id if operand["value"] else false_id))
         tokens.extend((conclusion, true_id if observation["result"] else false_id,
                        separator))
     tokens[-1] = end
@@ -154,7 +134,6 @@ def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
 def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
            operators=BOOLEAN_OPERATORS) -> tuple[dict, ...]:
     operators = _operator_domain(operators)
-    micro, _, _, _, _ = read_sources(legacy_root)
     _require_historical_graph(legacy_root, graph)
     logic = _logic_source(legacy_root)
     material = ([GENERATOR, seed, cycle]
@@ -176,10 +155,9 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
         patterns = [(False, False), (False, True), (True, False), (True, True)]
         rng.shuffle(patterns)
         for _ in range(5000):
-            world = _random_world(micro, rng, rng.choice((3, 4)))
+            rng.shuffle(patterns)
             observations = []
             for pattern in patterns:
-                operands = [_operand_with_truth(micro, rng, world, bit) for bit in pattern]
                 generator_truth = _apply(target, pattern)
                 source_values = ((pattern[0],) if target == "NOT" else pattern)
                 source_expr = logic.apply(
@@ -187,9 +165,12 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
                 if (logic.evaluate(source_expr, {}) != generator_truth or
                         logic.independent_evaluate(source_expr, {}) != generator_truth):
                     raise ValueError("GRADE_B_IDBOOLOPS_SOURCE_TRUTH_DISAGREEMENT")
-                observations.append({"operands": operands, "result": generator_truth})
-            record = {"task": TASK, "world": world,
-                      "observations": observations, "options": list(operators)}
+                observations.append({
+                    "operands": [logic.literal(bit) for bit in pattern],
+                    "result": generator_truth,
+                })
+            record = {"task": TASK, "observations": observations,
+                      "options": list(operators)}
             gold = independent_evaluate(record)
             if gold != target:
                 raise ValueError("GRADE_B_IDBOOLOPS_INDEPENDENT_ORACLE_DISAGREEMENT")

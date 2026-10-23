@@ -13,8 +13,10 @@ from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_b_oracle import CONNECTIVES, evaluate as independent_oracle
 from bilqis_mlx.live_grade_a import live_course as live_a_course
-from bilqis_mlx.live_grade_b import (GENERATOR, RELEASE, draw_connectives,
-                                    live_course, constructor_digest, source_attestation)
+from bilqis_mlx.live_grade_b import (
+    GENERATOR, RELEASE, _encode_logic_record, _logic_source, _u7c_pattern_counts,
+    draw_connectives, live_course, constructor_digest, source_attestation,
+)
 from bilqis_mlx.source_adapters.school import draw_b
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -43,10 +45,9 @@ class LiveGradeBTests(unittest.TestCase):
         self.assertTrue(self.course.executable)
         self.assertEqual(len(constructor_digest()), 64)
         self.assertEqual(source_attestation(LEGACY)["semantic_mode"],
-                         "PINNED_TYPED_FORMAL_ADAPTER_NOT_NI_WORDFORM")
+                         "DIRECT_TYPED_BOOLEAN_AST")
         for cap in self.course.grades[1].capabilities:
-            self.assertEqual(cap.prerequisites,
-                             ("A.IDENTITY", "A.PARENT", "A.LINK"))
+            self.assertEqual(cap.prerequisites, ())
             self.assertEqual(cap.answer_families[0].kind, "binary")
 
     def test_full_seventy_two_is_seeded_balanced_source_oracle_agreed(self):
@@ -61,14 +62,14 @@ class LiveGradeBTests(unittest.TestCase):
             subset = [r for r in rows if r["capability"] == "B." + op]
             self.assertEqual(Counter(r["gold"] for r in subset),
                              Counter({"TRUE":6, "FALSE":6}))
-            self.assertEqual({r["universe_size"] for r in subset}, {3,4})
-            self.assertEqual({r["record"]["query"]["operator"] for r in subset}, {op})
+            self.assertTrue(all("world" not in r["record"] for r in subset))
+            self.assertEqual({r["record"]["task"] for r in subset}, {"evaluate"})
+            self.assertEqual({r["record"]["expression"]["operator"] for r in subset}, {op})
+            logic = _logic_source(LEGACY)
             for r in subset:
-                self.assertEqual(r["gold"], self.micro.evaluate(r["record"]))
-                self.assertEqual(r["gold"], self.micro.independent_evaluate(r["record"]))
                 self.assertEqual(r["gold"], independent_oracle(r["record"],r["capability"]))
-                self.assertEqual(tuple(r["tokens"]),tuple(self.micro.encode(r["record"])))
-                self.assertLessEqual(max(r["tokens"]), 221)
+                self.assertEqual(r["tokens"], _encode_logic_record(logic, r["record"], self.graph))
+                self.assertLess(max(r["tokens"]), len(self.graph["tokens"]))
                 self.assertGreaterEqual(min(r["tokens"]), 0)
                 validate_exam_item(self.course, "B", ExamItem(
                     r["capability"], "binary", r["gold"],
@@ -85,39 +86,31 @@ class LiveGradeBTests(unittest.TestCase):
         self.assertEqual(first, draw_connectives(LEGACY,self.graph,seed=413,
                                                  each=32,capability="B.AND"))
 
-    def test_factory_runtime_randomizes_answer_balance_without_losing_truth_table(self):
-        balance_signatures = set()
+    def test_factory_runtime_uses_u7c_balanced_truth_cells(self):
         for seed in range(20):
-            signature = []
             for op in CONNECTIVES:
                 capability = "B." + op
                 rows = draw_b(source_root=LEGACY, graph=self.graph, course=self.course,
                               capability=capability, seed=seed, each=12)
-                counts = Counter(r["gold"] for r in rows)
-                signature.append((counts["TRUE"], counts["FALSE"]))
                 self.assertEqual(len(rows), 12)
-                self.assertNotEqual(counts["TRUE"], counts["FALSE"])
-                self.assertGreaterEqual(counts["TRUE"], 4)
-                self.assertGreaterEqual(counts["FALSE"], 4)
-                expected_patterns = ({(False,), (True,)} if op == "NOT" else
-                                     {(False,False), (False,True), (True,False), (True,True)})
-                self.assertEqual({tuple(r["operand_truths"]) for r in rows},
-                                 expected_patterns)
+                self.assertEqual(Counter(r["gold"] for r in rows),
+                                 Counter({"TRUE": 6, "FALSE": 6}))
+                self.assertEqual(
+                    Counter(tuple(r["operand_truths"]) for r in rows),
+                    Counter(_u7c_pattern_counts(op, 12)))
                 self.assertEqual({r["runtime_sampler"] for r in rows},
-                                 {"bilqis.mlx.grade-b-runtime-sampler/v2"})
-            balance_signatures.add(tuple(signature))
-        self.assertGreater(len(balance_signatures), 1)
+                                 {"bilqis.mlx.grade-b-u7c-runtime-sampler/v3"})
 
     def test_oracle_rejects_undeclared_operator_and_wrong_arity(self):
         row = draw_connectives(LEGACY,self.graph,seed=1,each=4,capability="B.NOT")[0]
         with self.assertRaisesRegex(ValueError,"UNKNOWN_TASK"):
             independent_oracle(row["record"],"B.XNOR")
         wrong = json.loads(json.dumps(row["record"]))
-        wrong["query"]["operator"] = "AND"
+        wrong["expression"]["operator"] = "AND"
         with self.assertRaisesRegex(ValueError,"CONNECTIVE_SHAPE"):
             independent_oracle(wrong,"B.NOT")
-        wrong["query"]["operator"] = "NOT"
-        wrong["query"]["args"] = []
+        wrong["expression"]["operator"] = "NOT"
+        wrong["expression"]["args"] = []
         with self.assertRaisesRegex(ValueError,"CONNECTIVE_SHAPE"):
             independent_oracle(wrong,"B.NOT")
 

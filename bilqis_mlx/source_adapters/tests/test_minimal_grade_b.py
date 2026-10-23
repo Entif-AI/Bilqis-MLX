@@ -88,18 +88,21 @@ class MinimalGradeBTests(unittest.TestCase):
         plan = build_live_autonomy_plan(self.release, SOURCE)
         composite = obligations_for_capability(
             self.release, "B.COMPOSITE", plan=plan)
-        prerequisite = next(
-            item for item in composite
-            if item.kind is EvidenceKind.PREREQUISITE and item.key == "A.IDENTITY")
-        rows = draw_evidence_rows(
-            SOURCE, self.graph, self.release, self.registry,
-            prerequisite, seed=14)
-        self.assertEqual(len(rows), prerequisite.minimum_specimens)
+        self.assertFalse(any(
+            item.kind is EvidenceKind.PREREQUISITE and item.key.startswith("A.")
+            for item in composite))
         self.assertEqual(
             {item.key for item in composite if item.kind is EvidenceKind.COMPOSITION
              and "@" not in item.key},
             {"B.AND", "B.IFF"},
         )
+        obligation = next(
+            item for item in composite
+            if item.kind is EvidenceKind.COMPOSITION and item.key == "B.AND")
+        rows = draw_evidence_rows(
+            SOURCE, self.graph, self.release, self.registry,
+            obligation, seed=14)
+        self.assertEqual(len(rows), obligation.minimum_specimens)
 
 
 if __name__ == "__main__":

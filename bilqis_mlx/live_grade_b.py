@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import hashlib
+import importlib
 import json
 from pathlib import Path
 import random
@@ -16,12 +17,12 @@ import random
 from .curriculum import AnswerFamily, BINARY, Capability, Course, Grade
 from .grade_a_probe import PINNED_SOURCES, read_sources
 from .grade_b_oracle import CONNECTIVES, VERSION as ORACLE_VERSION
-from .grade_b_oracle import evaluate as independent_oracle, operand_truth
+from .grade_b_oracle import evaluate as independent_oracle
 
 GENERATOR = "bilqis.mlx.grade-b-connectives-constructor/v1"
 RELEASE = "bilqis.mlx.grade-a-b-live/20261015-v1"
 ASSESSMENT_ITEMS_PER_CAPABILITY = 12
-PREREQUISITES = ("A.IDENTITY", "A.PARENT", "A.LINK")
+PREREQUISITES = ()
 PINNED_BOOLEAN_SOURCE = PINNED_SOURCES["bilqis_logic/kernel.py"]
 
 
@@ -39,11 +40,11 @@ def constructor_digest():
 def source_attestation(legacy_root: Path) -> dict:
     """Fail closed unless the exact old source and graph are still available."""
     root = Path(legacy_root).resolve(strict=True)
-    micro, _, graph, sha, graph_sha = read_sources(root)
+    _, _, graph, sha, graph_sha = read_sources(root)
     source = root / "bilqis_logic/kernel.py"
     if hashlib.sha256(source.read_bytes()).hexdigest() != PINNED_BOOLEAN_SOURCE:
         raise ValueError("GRADE_B_BOOLEAN_TRUTH_TABLE_SOURCE_DRIFT")
-    required = ("micro.compare.EQ", "micro.relation.PARENT", "micro.relation.LINK")
+    required = ("task.evaluate", "syntax.end", "cogal.value.false", "cogal.value.true")
     identities = tuple("cogal.operator." + op for op in CONNECTIVES)
     if not set(required + identities) <= set(graph["tokens"]):
         raise ValueError("GRADE_B_SOURCE_TOKEN_IDENTITIES_UNAVAILABLE")
@@ -51,8 +52,7 @@ def source_attestation(legacy_root: Path) -> dict:
             "boolean_sha256": PINNED_BOOLEAN_SOURCE,
             "operators": list(CONNECTIVES),
             "prerequisites": list(PREREQUISITES),
-            "semantic_mode": "PINNED_TYPED_FORMAL_ADAPTER_NOT_NI_WORDFORM",
-            "parent_source": micro.VERSION}
+            "semantic_mode": "DIRECT_TYPED_BOOLEAN_AST"}
 
 
 def live_course(grade_a: Course, legacy_root: Path) -> Course:
@@ -75,7 +75,7 @@ def live_course(grade_a: Course, legacy_root: Path) -> Course:
         raise ValueError("GRADE_B_SOURCE_ADMISSION_COHORT_NOT_COMPREHENSIVE")
     caps = tuple(Capability(
         id="B." + op, difficulty="first-boolean-composition",
-        source_anchor="repo:bilqis_micro/kernel.py::_operation+_table",
+        source_anchor="repo:bilqis_logic/kernel.py::TABLES+encode",
         taught_roots=("cogal.operator." + op,),
         examined_roots=("cogal.operator." + op,),
         prerequisites=PREREQUISITES,
@@ -104,25 +104,78 @@ def live_course(grade_a: Course, legacy_root: Path) -> Course:
     return course
 
 
-def _random_world(micro, rng, n):
-    universe = sorted(rng.sample(tuple("ABCDE"), n))
-    facts = []
-    for i, a in enumerate(universe):
-        for b in universe[i+1:]:
-            if rng.randrange(3) == 0:
-                facts.append(("PARENT", a, b) if rng.randrange(2) else ("PARENT", b, a))
-            if rng.randrange(2) == 0:
-                facts.append(("LINK", a, b) if rng.randrange(2) else ("LINK", b, a))
-    return micro.world(universe, facts)
+def _logic_source(legacy_root: Path):
+    source_attestation(legacy_root)
+    logic = importlib.import_module("bilqis_logic.kernel")
+    expected = Path(legacy_root).resolve() / "bilqis_logic/kernel.py"
+    if Path(logic.__file__).resolve() != expected:
+        raise ValueError("GRADE_B_BOOLEAN_SOURCE_ROOT_MISMATCH")
+    return logic
 
 
-def _operand(micro, rng, world):
-    a, b = rng.sample(world["entities"], 2)
-    kind = rng.choice(("EQ", "PARENT", "LINK"))
-    if kind == "EQ":
-        return micro.compare("EQ", micro.entity(a), micro.entity(
-            a if rng.randrange(2) else b))
-    return micro.relation(kind, micro.entity(a), micro.entity(b))
+def _encode_logic_record(logic, record: dict, graph: dict) -> list[int]:
+    names = graph["tokens"]
+    try:
+        tokens = [names.index(logic.TOKENS[index]) for index in logic.encode(record)]
+    except (IndexError, ValueError) as exc:
+        raise ValueError("GRADE_B_BOOLEAN_TOKEN_ABI_DRIFT") from exc
+    if not 1 <= len(tokens) <= 96:
+        raise ValueError("GRADE_B_BOOLEAN_CONTEXT_LENGTH")
+    return tokens
+
+
+def _truth_expressions(logic, truth: bool, operator: str) -> tuple[tuple[dict, dict], ...]:
+    result = []
+    if operator == "NOT":
+        for source in ("literal", "P", "Q"):
+            for depth in range(7):
+                base_truth = truth if depth % 2 == 0 else not truth
+                if source == "literal":
+                    expression, env = logic.literal(base_truth), {}
+                else:
+                    expression, env = logic.variable(source), {source: base_truth}
+                for _ in range(depth):
+                    expression = logic.apply("NOT", expression)
+                result.append((expression, env))
+        return tuple(result)
+    wrappers = {
+        "AND": lambda x: logic.apply("AND", x, logic.literal(True)),
+        "OR": lambda x: logic.apply("OR", x, logic.literal(False)),
+        "XOR": lambda x: logic.apply("XOR", x, logic.literal(False)),
+        "IFF": lambda x: logic.apply("IFF", x, logic.literal(True)),
+        "IMPLIES": lambda x: logic.apply("IMPLIES", logic.literal(True), x),
+    }
+    wrap = wrappers[operator]
+    for source in ("literal", "P", "Q"):
+        if source == "literal":
+            base, env = logic.literal(truth), {}
+        else:
+            base, env = logic.variable(source), {source: truth}
+        expression = base
+        for _ in range(6):
+            result.append((expression, dict(env)))
+            expression = wrap(expression)
+    return tuple(result)
+
+
+def _u7c_pattern_counts(op: str, each: int) -> dict[tuple[bool, ...], int]:
+    half = each // 2
+    low, high = half // 2, half - half // 2
+    if op == "NOT":
+        return {(False,): half, (True,): half}
+    if op == "AND":
+        return {(True, True): half, (True, False): low, (False, True): high}
+    if op == "OR":
+        return {(False, False): half, (True, False): low, (False, True): high}
+    if op == "IMPLIES":
+        return {(True, False): half, (True, True): low, (False, False): high}
+    if op == "XOR":
+        return {(False, True): low, (True, False): high,
+                (False, False): low, (True, True): high}
+    if op == "IFF":
+        return {(False, False): low, (True, True): high,
+                (False, True): low, (True, False): high}
+    raise ValueError("GRADE_B_UNKNOWN_OPERATOR")
 
 
 def draw_connectives(legacy_root: Path, graph: dict, *, seed: int,
@@ -130,7 +183,8 @@ def draw_connectives(legacy_root: Path, graph: dict, *, seed: int,
                      capability: str | None = None) -> tuple[dict, ...]:
     if type(seed) is not int or type(each) is not int or each < 4 or each % 2:
         raise ValueError("GRADE_B_BALANCED_EVEN_SAMPLE_REQUIRED")
-    micro, _, source_graph, _, _ = read_sources(legacy_root)
+    logic = _logic_source(legacy_root)
+    _, _, source_graph, _, _ = read_sources(legacy_root)
     if (graph["tokens"][:len(source_graph["tokens"])] != source_graph["tokens"] or
             len(graph["tokens"]) < len(source_graph["tokens"])):
         raise ValueError("GRADE_B_FROZEN_TOKEN_PREFIX_MISMATCH")
@@ -138,47 +192,60 @@ def draw_connectives(legacy_root: Path, graph: dict, *, seed: int,
                 (capability.removeprefix("B."),))
     if not selected or any(op not in CONNECTIVES for op in selected):
         raise ValueError("GRADE_B_UNKNOWN_OPERATOR")
-    result, seen = [], set()
+    result = []
     for op in selected:
         rng = random.Random(_digest([GENERATOR, seed, op]))
-        patterns = [(False,), (True,)] if op == "NOT" else [
-            (False,False), (False,True), (True,False), (True,True)]
-        truth_groups = {gold: [bits for bits in patterns if independent_truth(op,bits) == gold]
-                        for gold in (False, True)}
-        if not all(truth_groups.values()):
-            raise ValueError("GRADE_B_OPERATOR_NOT_BINARY_DISCRIMINATING")
-        for index in range(each):
-            expected = index % 2 == 0
-            candidates = truth_groups[expected]
-            pattern = candidates[(index // 2) % len(candidates)]
-            n = 3 if (index // 2) % 2 == 0 else 4
-            for _ in range(5000):
-                world = _random_world(micro, rng, n)
-                operands = tuple(_operand(micro, rng, world) for _ in pattern)
-                if tuple(operand_truth(world, q) for q in operands) != pattern:
+        pools = {truth: list(_truth_expressions(logic, truth, op))
+                 for truth in (False, True)}
+        op_rows = []
+        seen = set()
+        for pattern, count in _u7c_pattern_counts(op, each).items():
+            candidates = ([(term,) for term in pools[pattern[0]]]
+                          if len(pattern) == 1 else
+                          [(left, right) for left in pools[pattern[0]]
+                           for right in pools[pattern[1]]])
+            rng.shuffle(candidates)
+            for terms in candidates:
+                operands = []
+                env = {}
+                conflict = False
+                for operand, bindings in terms:
+                    if any(name in env and env[name] != value
+                           for name, value in bindings.items()):
+                        conflict = True
+                        break
+                    env.update(bindings)
+                    operands.append(operand)
+                if conflict:
                     continue
-                record = micro.record(world, micro.logic(op, *operands))
-                gold = micro.evaluate(record)
-                if (gold != micro.independent_evaluate(record) or
-                        gold != independent_oracle(record, "B." + op) or
-                        gold != ("TRUE" if expected else "FALSE")):
-                    raise ValueError("GRADE_B_THREE_ORACLE_DISAGREEMENT")
-                tokens = list(micro.encode(record))
+                expression = logic.apply(op, *operands)
+                record = logic.evaluation_record(expression, env)
+                record["query"] = expression
                 identity = _digest(record)
-                if (identity in seen or not 1 <= len(tokens) <= 96 or
-                        min(tokens) < 0 or max(tokens) >= len(graph["tokens"])):
+                if identity in seen:
                     continue
-                break
+                gold_bool = logic.gold(record)
+                gold = "TRUE" if gold_bool else "FALSE"
+                if (gold_bool != logic.gold(record, independent=True) or
+                        independent_oracle(record, "B." + op) != gold or
+                        gold_bool != independent_truth(op, pattern)):
+                    raise ValueError("GRADE_B_THREE_ORACLE_DISAGREEMENT")
+                seen.add(identity)
+                op_rows.append({
+                    "id": identity, "source_id": identity,
+                    "capability": "B." + op, "answer_kind": "binary",
+                    "gold": gold, "record": record,
+                    "tokens": _encode_logic_record(logic, record, graph),
+                    "oracle": ORACLE_VERSION, "generator": GENERATOR,
+                    "operand_truths": list(pattern),
+                    "root": "cogal.operator." + op,
+                })
+                if sum(tuple(row["operand_truths"]) == pattern for row in op_rows) == count:
+                    break
             else:
                 raise ValueError("GRADE_B_OPERATOR_VARIATION_EXHAUSTED:" + op)
-            seen.add(identity)
-            result.append({"id": identity, "source_id": identity,
-                           "capability": "B." + op, "answer_kind": "binary",
-                           "gold": gold, "record": record, "tokens": tokens,
-                           "universe_size": n, "oracle": ORACLE_VERSION,
-                           "generator": GENERATOR,
-                           "operand_truths": list(pattern),
-                           "root": "cogal.operator." + op})
+        rng.shuffle(op_rows)
+        result.extend(op_rows)
     return tuple(result)
 
 

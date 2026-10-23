@@ -8,8 +8,8 @@ from bilqis_mlx.semantics import TypedError
 from bilqis_mlx.source_adapters import bind_source_catalog, from_micro_query
 from bilqis_mlx.verification import verify
 from bilqis_mlx.grade_a_probe import read_sources
-from bilqis_mlx.grade_b_oracle import CONNECTIVES, operand_truth
-from bilqis_mlx.live_grade_b import draw_connectives
+from bilqis_mlx.grade_b_oracle import CONNECTIVES, evaluate as boolean_oracle, operand_truth
+from bilqis_mlx.live_grade_b import _encode_logic_record, _logic_source, draw_connectives
 from bilqis_mlx.registry_ast import load_registry
 from bilqis_mlx.token_atlas import ORIGINAL_GRAPH_DIGEST
 
@@ -93,21 +93,18 @@ class MicroSourceAdapterTests(unittest.TestCase):
             if cls.graph["tokens"][operation.token_index] != identity:
                 raise AssertionError("Pinned original token identity drift")
 
-    def test_real_generated_b_records_compile_to_source_verified_generic_ast(self):
+    def test_real_generated_b_records_use_direct_boolean_source_ast(self):
         rows = draw_connectives(SOURCE_ROOT, self.graph, seed=2026101619)
         self.assertEqual(len(rows), 72)
+        logic = _logic_source(SOURCE_ROOT)
         for row in rows:
             record = row["record"]
-            expression = from_micro_query(
-                self.catalog, record["query"], world_contract="micro")
-            self.assertEqual(expression.type_name, "Boolean")
-            self.assertEqual(expression.world_contract, "micro")
-            receipt = verify(
-                expression,
-                source=MicroSource(self.micro, record["world"]),
-                independent=IndependentFiniteSymbolic(record["world"]))
-            self.assertEqual(receipt.result, row["gold"] == "TRUE")
-            self.assertEqual(row["gold"], self.micro.evaluate(record))
+            self.assertEqual(record["task"], "evaluate")
+            self.assertNotIn("world", record)
+            self.assertEqual(row["gold"],
+                             boolean_oracle(record, row["capability"]))
+            self.assertEqual(row["tokens"],
+                             _encode_logic_record(logic, record, self.graph))
 
     def test_unrecognized_source_forms_never_gain_guessed_gold(self):
         with self.assertRaisesRegex(TypedError, "UNKNOWN_EXTERNAL_ALIAS"):

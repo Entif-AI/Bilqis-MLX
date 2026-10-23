@@ -42,43 +42,40 @@ class V2StructuralWitnessTests(unittest.TestCase):
             item for item in self.composite
             if item.kind is kind and item.key == key)
 
-    def test_v2_prerequisite_and_composition_witnesses_use_curriculum(self):
-        prerequisite = self._obligation(EvidenceKind.PREREQUISITE, "A.IDENTITY")
+    def test_v2_direct_b_has_no_a_prerequisite_and_keeps_b_composition_witness(self):
+        self.assertFalse(any(
+            item.kind is EvidenceKind.PREREQUISITE and item.key.startswith("A.")
+            for item in self.composite))
         composition = self._obligation(EvidenceKind.COMPOSITION, "B.AND")
-
-        prerequisite_rows = draw_evidence_rows(
-            SOURCE, self.graph, self.release, self.registry,
-            prerequisite, seed=31)
         composition_rows = draw_evidence_rows(
             SOURCE, self.graph, self.release, self.registry,
             composition, seed=32)
-
-        self.assertEqual(len(prerequisite_rows), prerequisite.minimum_specimens)
         self.assertEqual(len(composition_rows), composition.minimum_specimens)
 
     def test_v2_witness_fails_closed_when_producer_root_is_missing(self):
-        prerequisite = self._obligation(EvidenceKind.PREREQUISITE, "A.IDENTITY")
-        grade_a = self.release.curriculum.grades[0]
+        composition = self._obligation(EvidenceKind.COMPOSITION, "B.AND")
+        grade_b = self.release.curriculum.grades[1]
         producer = next(
-            item for item in grade_a.capabilities
-            if item.capability_id == "A.IDENTITY")
+            item for item in grade_b.capabilities
+            if item.capability_id == "B.AND")
         broken_producer = replace(producer, examined_roots=())
         broken_grade = replace(
-            grade_a,
+            grade_b,
             capabilities=tuple(
-                broken_producer if item.capability_id == "A.IDENTITY" else item
-                for item in grade_a.capabilities))
+                broken_producer if item.capability_id == "B.AND" else item
+                for item in grade_b.capabilities))
         broken_curriculum = replace(
             self.release.curriculum,
-            grades=(broken_grade, *self.release.curriculum.grades[1:]))
+            grades=(self.release.curriculum.grades[0], broken_grade,
+                    *self.release.curriculum.grades[2:]))
 
         row = draw_evidence_rows(
             SOURCE, self.graph, self.release, self.registry,
-            prerequisite, seed=33)[0]
+            composition, seed=33)[0]
         with self.assertRaisesRegex(
                 ValueError, "FACTORY_MICRO_EVIDENCE_PRODUCER_ROOT_UNRESOLVED"):
             witness_micro_obligation(
-                row, prerequisite, source_root=SOURCE, graph=self.graph,
+                row, composition, source_root=SOURCE, graph=self.graph,
                 course=broken_curriculum)
 
 

@@ -63,8 +63,15 @@ def _operation_count(node: dict) -> int:
 
 
 def evaluate(record: dict, capability: str = CAPABILITY) -> str:
-    if (not isinstance(record, dict) or record.get("task") != "micro" or
-            capability != CAPABILITY):
+    if not isinstance(record, dict) or capability != CAPABILITY:
+        raise ValueError("GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
+    if record.get("task") == "evaluate":
+        from .grade_b_oracle import _direct_truth
+        query = record.get("expression")
+        if not isinstance(query, dict) or _operation_count(query) not in (2, 3):
+            raise ValueError("GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH")
+        return "TRUE" if _direct_truth(query, record.get("assignments")) else "FALSE"
+    if record.get("task") != "micro":
         raise ValueError("GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
     query = record.get("query")
     if not isinstance(query, dict) or _operation_count(query) not in (2, 3):

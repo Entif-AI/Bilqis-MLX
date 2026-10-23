@@ -1,32 +1,26 @@
 """Reduced Grade-B release: AND, IFF, COMPOSITE and IDBOOLOPS only."""
 from __future__ import annotations
 
-from collections import Counter
 from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
-import random
 
 from .boolean_composite import (
-    _expression,
+    draw_composite,
     constructor_digest as parent_composite_constructor_digest,
 )
 from .boolean_composite_oracle import VERSION as COMPOSITE_ORACLE
 from .boolean_composite_oracle import evaluate as evaluate_composite
 from .boolean_identification import (
-    encode_record,
-    _operand_with_truth,
+    draw_identification,
     constructor_digest as parent_identification_constructor_digest,
 )
-from .boolean_identification_oracle import TASK
 from .curriculum import AnswerFamily, BINARY, Capability, Course, Grade
 from .grade_a_probe import read_sources
 from .grade_b_oracle import VERSION as BOOLEAN_ORACLE
 from .live_grade_b import (
     PREREQUISITES,
-    _operand,
-    _random_world,
     draw_connectives,
     constructor_digest as parent_boolean_constructor_digest,
     source_attestation,
@@ -96,99 +90,22 @@ def _atomic_rows(source_root: Path, graph: dict, *, capability: str,
 
 def _composite_rows(source_root: Path, graph: dict, *, seed: int,
                     each: int) -> tuple[dict, ...]:
-    micro, _, source_graph, _, _ = read_sources(source_root)
-    if (graph["tokens"][:len(source_graph["tokens"])] != source_graph["tokens"] or
-            len(graph["tokens"]) < len(source_graph["tokens"])):
-        raise ValueError("GRADE_B_MINIMAL_FROZEN_TOKEN_PREFIX_MISMATCH")
-    rng = random.Random(_digest([GENERATOR, "COMPOSITE", seed]))
-    schedule = list((("AND", "AND"), ("AND", "IFF"),
-                     ("IFF", "AND"), ("IFF", "IFF")) * 3)
-    rng.shuffle(schedule)
-    expected = [True, False] * ((each + 1) // 2)
-    rng.shuffle(expected)
-    rows = []
-    seen = set()
-    for index in range(each):
-        operators = schedule[index % len(schedule)]
-        wanted = expected[index]
-        n = 3 if index % 2 == 0 else 4
-        for _ in range(5000):
-            world = _random_world(micro, rng, n)
-            leaves = tuple(_operand(micro, rng, world) for _ in range(3))
-            query = _expression(micro, operators, leaves)
-            record = micro.record(world, query)
-            gold = micro.evaluate(record)
-            identity = _digest(record)
-            if (gold != micro.independent_evaluate(record) or
-                    gold != evaluate_composite(record) or
-                    (gold == "TRUE") != wanted or identity in seen):
-                continue
-            tokens = list(micro.encode(record))
-            if not 1 <= len(tokens) <= 96:
-                continue
-            break
-        else:
-            raise ValueError("GRADE_B_MINIMAL_COMPOSITE_VARIATION_EXHAUSTED")
-        seen.add(identity)
-        rows.append({
-            "id": identity, "source_id": identity, "capability": COMPOSITE,
-            "answer_kind": "binary", "gold": gold, "record": record,
-            "tokens": tokens, "universe_size": n, "oracle": COMPOSITE_ORACLE,
-            "generator": GENERATOR, "operators": list(operators),
-            "operator_roots": ["cogal.operator." + op for op in operators],
-            "composition_width": 2, "composition_pass": index // 4,
-            "root": "cogal.operator." + operators[0],
-        })
-    return tuple(rows)
+    rows = draw_composite(
+        source_root, graph, seed=seed, each=each,
+        capability=COMPOSITE, operators=OPERATORS)
+    return tuple({**row, "generator": GENERATOR} for row in rows)
 
 
 def _identification_rows(source_root: Path, graph: dict, *, seed: int,
                          each: int) -> tuple[dict, ...]:
-    micro, _, source_graph, _, _ = read_sources(source_root)
-    if (graph["tokens"][:len(source_graph["tokens"])] != source_graph["tokens"] or
-            len(graph["tokens"]) < len(source_graph["tokens"])):
-        raise ValueError("GRADE_B_MINIMAL_FROZEN_TOKEN_PREFIX_MISMATCH")
-    if each % len(OPERATORS):
-        raise ValueError("GRADE_B_MINIMAL_IDBOOLOPS_BALANCED_COUNT_REQUIRED")
-    rng = random.Random(_digest([GENERATOR, "IDBOOLOPS", seed]))
-    schedule = list(OPERATORS) * (each // len(OPERATORS))
-    rng.shuffle(schedule)
-    if Counter(schedule) != Counter({operator: each // len(OPERATORS)
-                                     for operator in OPERATORS}):
-        raise ValueError("GRADE_B_MINIMAL_IDBOOLOPS_BALANCE_DRIFT")
-    rows = []
-    seen = set()
-    patterns = [(False, False), (False, True), (True, False), (True, True)]
-    for target in schedule:
-        for _ in range(5000):
-            world = _random_world(micro, rng, rng.choice((3, 4)))
-            observations = []
-            for pattern in patterns:
-                operands = [_operand_with_truth(micro, rng, world, bit)
-                            for bit in pattern]
-                result = ((pattern[0] and pattern[1]) if target == "AND"
-                          else pattern[0] == pattern[1])
-                observations.append({"operands": operands, "result": result})
-            record = {"task": TASK, "world": world, "observations": observations,
-                      "options": list(OPERATORS)}
-            gold = evaluate_identification(record)
-            tokens = encode_record(record, source_root, graph)
-            identity = _digest(record)
-            if identity not in seen:
-                break
-        else:
-            raise ValueError("GRADE_B_MINIMAL_IDBOOLOPS_VARIATION_EXHAUSTED")
-        seen.add(identity)
-        rows.append({
-            "id": identity, "source_id": identity, "capability": IDENTIFICATION,
-            "answer_kind": ANSWER_KIND, "gold": gold, "record": record,
-            "tokens": tokens, "oracle": IDENTIFICATION_ORACLE,
-            "generator": GENERATOR, "operator_options": list(OPERATORS),
-            "observation_count": len(observations),
-            "root": "cogal.operator." + target,
-            "operator_roots": ["cogal.operator." + operator for operator in OPERATORS],
-        })
-    return tuple(rows)
+    rows = draw_identification(
+        source_root, graph, seed=seed, each=each,
+        capability=IDENTIFICATION, operators=OPERATORS)
+    result = tuple({**row, "generator": GENERATOR,
+                    "oracle": IDENTIFICATION_ORACLE} for row in rows)
+    if any(evaluate_identification(row["record"]) != row["gold"] for row in result):
+        raise ValueError("GRADE_B_MINIMAL_IDBOOLOPS_ORACLE_DRIFT")
+    return result
 
 
 def draw_minimal(source_root: Path, graph: dict, *, seed: int,
@@ -225,7 +142,7 @@ def build_course(grade_a: Course, source_root: Path) -> Course:
     difficulty = "first-boolean-composition"
     atomic = tuple(Capability(
         id=cap, difficulty=difficulty,
-        source_anchor="repo:bilqis_micro/kernel.py::_operation+_table",
+        source_anchor="repo:bilqis_logic/kernel.py::TABLES+encode",
         taught_roots=("cogal.operator." + cap.removeprefix("B."),),
         examined_roots=("cogal.operator." + cap.removeprefix("B."),),
         prerequisites=PREREQUISITES, composed_of=(),
@@ -235,7 +152,7 @@ def build_course(grade_a: Course, source_root: Path) -> Course:
     roots = tuple("cogal.operator." + op for op in OPERATORS)
     composite = Capability(
         id=COMPOSITE, difficulty=difficulty,
-        source_anchor="repo:bilqis_micro/kernel.py::_operation+_table",
+        source_anchor="repo:bilqis_logic/kernel.py::TABLES+encode",
         taught_roots=roots, examined_roots=roots,
         prerequisites=(*PREREQUISITES, "B.AND", "B.IFF"), composed_of=(),
         answer_families=(AnswerFamily("binary", BINARY),),

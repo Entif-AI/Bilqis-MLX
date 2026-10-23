@@ -15,6 +15,7 @@ from bilqis_mlx.factory.release import compile_factory_release
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_b_oracle import CONNECTIVES
+from bilqis_mlx.live_grade_b import _encode_logic_record, _logic_source
 from bilqis_mlx.diagnostics.teaching import inspect_lesson_step
 from bilqis_mlx.source_adapters.school import live_source_registry
 
@@ -46,7 +47,7 @@ class BooleanCompositeTests(unittest.TestCase):
         self.assertEqual(len(grade.capabilities), 7)
         self.assertEqual(cap.taught_roots, roots)
         self.assertEqual(cap.examined_roots, roots)
-        self.assertEqual(cap.prerequisites, ("A.IDENTITY", "A.PARENT", "A.LINK"))
+        self.assertEqual(cap.prerequisites, ())
         self.assertEqual(cap.composed_of, ())
         self.assertEqual(cap.lesson_generator, GENERATOR)
         self.assertEqual(cap.independent_oracle, ORACLE)
@@ -76,10 +77,11 @@ class BooleanCompositeTests(unittest.TestCase):
             self.assertEqual(row["capability"], CAPABILITY)
             self.assertEqual(row["generator"], GENERATOR)
             self.assertEqual(row["oracle"], ORACLE)
-            self.assertEqual(row["gold"], self.micro.evaluate(row["record"]))
-            self.assertEqual(row["gold"], self.micro.independent_evaluate(row["record"]))
+            self.assertNotIn("world", row["record"])
+            self.assertEqual(row["record"]["task"], "evaluate")
             self.assertEqual(row["gold"], independent_evaluate(row["record"]))
-            self.assertEqual(tuple(row["tokens"]), tuple(self.micro.encode(row["record"])))
+            logic = _logic_source(SOURCE)
+            self.assertEqual(row["tokens"], _encode_logic_record(logic, row["record"], self.graph))
             self.assertTrue(1 <= len(row["tokens"]) <= 96)
             self.assertEqual(len(row["operators"]), row["composition_width"])
 

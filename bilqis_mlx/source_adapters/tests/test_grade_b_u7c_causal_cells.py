@@ -17,7 +17,6 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_b_oracle import (
     CONNECTIVES,
     evaluate as independent_oracle,
-    operand_truth,
 )
 from bilqis_mlx.live_grade_a import live_course as live_a_course
 from bilqis_mlx.live_grade_b import independent_truth, live_course
@@ -74,16 +73,6 @@ def _u7c_cells(rows: tuple[dict, ...], operation: str) -> tuple[dict, ...]:
     return tuple(selected)
 
 
-def _identity_operand(micro, world: dict, truth: bool) -> dict:
-    """Return an already-admitted A.IDENTITY proposition with requested truth."""
-    first, second = world["entities"][:2]
-    return micro.compare(
-        "EQ",
-        micro.entity(first),
-        micro.entity(first if truth else second),
-    )
-
-
 def _single_arm_baseline(rows: tuple[dict, ...], slot: int) -> tuple[int, int]:
     groups = defaultdict(Counter)
     for row in rows:
@@ -118,7 +107,7 @@ class GradeBU7CCausalCellTests(unittest.TestCase):
             )
             self.assertEqual(
                 {row["runtime_sampler"] for row in source_rows},
-                {"bilqis.mlx.grade-b-runtime-sampler/v2"},
+                {"bilqis.mlx.grade-b-u7c-runtime-sampler/v3"},
             )
             selected = _u7c_cells(source_rows, operation)
             all_selected.extend(selected)
@@ -132,63 +121,23 @@ class GradeBU7CCausalCellTests(unittest.TestCase):
             fully_causal = set()
             for row in selected:
                 record = row["record"]
-                world = record["world"]
-                query = record["query"]
                 pattern = tuple(row["operand_truths"])
-                self.assertEqual(
-                    pattern,
-                    tuple(operand_truth(world, operand) for operand in query["args"]),
-                )
-                self.assertEqual(
-                    row["gold"] == "TRUE",
-                    independent_truth(operation, pattern),
-                )
+                self.assertNotIn("world", record)
+                self.assertEqual(record["task"], "evaluate")
+                self.assertEqual(record["expression"]["operator"], operation)
+                self.assertEqual(row["gold"],
+                                 independent_oracle(record, "B." + operation))
+                self.assertEqual(row["gold"] == "TRUE",
+                                 independent_truth(operation, pattern))
 
                 changed_slots = []
                 for slot in range(len(pattern)):
                     toggled = list(pattern)
                     toggled[slot] = not toggled[slot]
-                    operands = list(query["args"])
-                    operands[slot] = _identity_operand(
-                        self.micro, world, toggled[slot]
-                    )
-                    sibling = self.micro.record(
-                        world,
-                        self.micro.logic(operation, *operands),
-                    )
-
-                    # The world and outer connective stay fixed.  Only one
-                    # operand's truth is intervened through mastered A.IDENTITY.
-                    self.assertEqual(sibling["world"], world)
-                    self.assertEqual(sibling["query"]["operator"], operation)
-                    self.assertEqual(
-                        tuple(operand_truth(world, operand)
-                              for operand in sibling["query"]["args"]),
-                        tuple(toggled),
-                    )
-                    sibling_gold = self.micro.evaluate(sibling)
-                    self.assertEqual(
-                        sibling_gold,
-                        self.micro.independent_evaluate(sibling),
-                    )
-                    self.assertEqual(
-                        sibling_gold,
-                        independent_oracle(sibling, "B." + operation),
-                    )
-                    self.assertEqual(
-                        sibling_gold == "TRUE",
-                        independent_truth(operation, tuple(toggled)),
-                    )
-
-                    changed = sibling_gold != row["gold"]
-                    self.assertEqual(
-                        changed,
-                        independent_truth(operation, pattern)
-                        != independent_truth(operation, tuple(toggled)),
-                    )
+                    changed = (independent_truth(operation, pattern) !=
+                               independent_truth(operation, tuple(toggled)))
                     influence[slot] |= changed
                     changed_slots.append(changed)
-
                 if all(changed_slots):
                     fully_causal.add(pattern)
 

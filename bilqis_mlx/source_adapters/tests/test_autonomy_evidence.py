@@ -3,7 +3,7 @@ import json
 import unittest
 
 from bilqis_mlx.factory.autonomy import (
-    EvidenceKind, EvidenceObligation,
+    EvidenceKind, EvidenceObligation, obligations_for_capability,
 )
 from bilqis_mlx.factory.evidence import draw_evidence_rows
 from bilqis_mlx.factory.live_releases import (
@@ -14,6 +14,7 @@ from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.live_grade_c import REGISTRY_COUNTING_TARGET, registry_graph
+from bilqis_mlx.runtime.autonomy_live import build_live_autonomy_plan
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -32,38 +33,17 @@ class LiveMicroAutonomyEvidenceTests(unittest.TestCase):
         _, _, cls.graph, _, _ = read_sources(LEGACY)
         cls.registry = live_source_registry()
 
-    def test_live_boolean_adapter_witnesses_exact_a_operand_slot(self):
-        obligation = EvidenceObligation(
-            obligation_id="B.AND/typed-composition/A.IDENTITY/slot/0",
-            capability_id="B.AND",
-            kind=EvidenceKind.COMPOSITION,
-            key="A.IDENTITY@0",
-            minimum_specimens=1,
-            generation_axes=("source-valid", "fresh-seed"),
-            requires_capabilities=("A.IDENTITY",),
-        )
-        rows = draw_evidence_rows(
-            LEGACY, self.graph, self.release, self.registry,
-            obligation, seed=20261019)
-        self.assertEqual(len(rows), 1)
-        operand = rows[0]["record"]["query"]["args"][0]
-        self.assertEqual(operand["kind"], "compare")
-        self.assertEqual(operand["operator"], "EQ")
+    def test_live_boolean_adapter_has_no_a_operand_obligations(self):
+        plan = build_live_autonomy_plan(self.release, LEGACY)
+        obligations = obligations_for_capability(
+            self.release, "B.AND", plan=plan)
+        self.assertFalse(any(
+            required.startswith("A.")
+            for obligation in obligations
+            for required in obligation.requires_capabilities))
 
-    def test_live_boolean_adapter_rejects_wrong_operand_root(self):
-        obligation = EvidenceObligation(
-            obligation_id="B.AND/typed-composition/A.MEMBER/slot/0",
-            capability_id="B.AND",
-            kind=EvidenceKind.COMPOSITION,
-            key="A.MEMBER@0",
-            minimum_specimens=1,
-            generation_axes=("source-valid", "fresh-seed"),
-            requires_capabilities=("A.MEMBER",),
-        )
-        with self.assertRaisesRegex(ValueError, "EVIDENCE_WITNESS_EXHAUSTED"):
-            draw_evidence_rows(
-                LEGACY, self.graph, self.release, self.registry,
-                obligation, seed=20261019, max_rounds=2)
+    def test_live_boolean_capability_declares_no_a_prerequisite(self):
+        self.assertEqual(self.course.capability_map["B.AND"].prerequisites, ())
 
     def test_numeric_adapter_witnesses_declared_prerequisite_transfer(self):
         composite = boolean_composite_successor(self.course, LEGACY)
