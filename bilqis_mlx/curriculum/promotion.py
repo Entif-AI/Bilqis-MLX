@@ -44,6 +44,7 @@ def _promotion_sweep_fields_cleared(state: SchoolState, **changes) -> SchoolStat
         state,
         promotion_sweep_scope=(),
         promotion_sweep_return_stage=None,
+        promotion_sweep_scores=(),
         **changes,
     )
 
@@ -52,8 +53,9 @@ def _verify_promotion_sweep_state(program, state: SchoolState) -> None:
     sweep_active = state.stage in ("PROMOTION_SWEEP", "ASSESS_PROMOTION_SWEEP")
     scope = state.promotion_sweep_scope
     return_stage = state.promotion_sweep_return_stage
+    scores = state.promotion_sweep_scores
     if not sweep_active:
-        if scope or return_stage is not None:
+        if scope or return_stage is not None or scores:
             raise ValueError(PromotionError.PROMOTION_SWEEP_STATE_OUTSIDE_SWEEP.value)
         return
 
@@ -67,8 +69,19 @@ def _verify_promotion_sweep_state(program, state: SchoolState) -> None:
         (state.stage == "PROMOTION_SWEEP" and bool(state.queue)) or
         (state.stage == "ASSESS_PROMOTION_SWEEP" and
          len(state.queue) < len(scope)))
+    valid_scores = (
+        len(scores) == len(scope) and
+        tuple(item[0] for item in scores) == scope and
+        all(
+            isinstance(item, tuple) and len(item) == 3 and
+            isinstance(item[0], str) and type(item[1]) is int and
+            type(item[2]) is int and 0 <= item[1] <= item[2] and item[2] > 0
+            for item in scores)
+    )
     if (not scope or scope != introduced or
             not valid_return_stage or not valid_queue or not valid_phase_queue):
+        raise ValueError(PromotionError.INVALID_PROMOTION_SWEEP_STATE.value)
+    if not valid_scores:
         raise ValueError(PromotionError.INVALID_PROMOTION_SWEEP_STATE.value)
 
 
@@ -87,6 +100,10 @@ def _start_promotion_sweep(program, state: SchoolState,
         state, stage="PROMOTION_SWEEP", queue=scope,
         promotion_sweep_scope=scope,
         promotion_sweep_return_stage=state.stage,
+        promotion_sweep_scores=tuple(
+            (capability, snapshot.scores[capability].correct,
+             snapshot.scores[capability].total)
+            for capability in scope),
         latest_rubric_digest=snapshot.rubric_digest,
     )
 

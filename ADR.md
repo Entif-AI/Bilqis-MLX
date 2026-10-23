@@ -1238,3 +1238,31 @@ when the artifact itself contains still-protected source material or another
 independently private datum. This change does not alter human-only neural-update
 authority, student/AdamW custody, source-truth requirements, or historical
 provenance.
+
+
+## ADR-093 | 2026-10-23 | Promotion sweeps update one semantic at a time
+
+**Direct user correction of ADR-084's sweep interpretation.** The >90% trigger
+remains a fresh complete assessment of the currently introduced active grade,
+but that assessment also freezes the initial score vector for the promotion
+sweep. The sweep then revisits each introduced semantic exactly once in canonical
+order. After a semantic visit, only that semantic receives a fresh authoritative
+score in the running sweep vector. Unswept semantics retain their score from the
+triggering vector, and already swept semantics retain their most recent sweep
+score.
+
+The running grade mean is recomputed after each replacement. A mean of at least
+90% continues the sweep; a mean below 90% aborts it. This means a semantic may
+individually remain below 90% so long as the grade mean stays at or above the
+floor. A rejected candidate with zero retained optimizer updates must not appear
+to regress unrelated semantics merely because a new whole-grade cohort happened
+to be harder. Fresh cumulative exams remain truthful evidence and may still be
+recorded, but unrelated fresh-cohort variance does not overwrite unswept entries
+inside the promotion-sweep decision vector.
+
+Completing the sweep still opens exactly one next semantic stage or grade and
+carries every imperfect semantic as mastery debt. It does not mint a champion,
+clear debt, or fabricate mastery. This ADR supersedes ADR-084 and the ADR-085
+cross-reference only for how scores are updated *during* a promotion sweep; the
+strict >90% trigger, canonical one-pass order, >=90% continuation floor, staged
+progression, cumulative evidence, and human-only neural custody remain unchanged.

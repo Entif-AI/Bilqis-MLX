@@ -306,7 +306,7 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertNotEqual(state.stage, "ASSESS_PROMOTION_SWEEP")
         self.assertNotIn("c.2", assessment_capabilities(course, state))
 
-    def test_promotion_sweep_uses_fresh_scores_for_every_semantic_each_step(self):
+    def test_promotion_sweep_only_replaces_the_semantic_just_rescored(self):
         course = staged_course()
         state, pointer = enter_c(course)
         state = grade_loop(course, state, pointer)
@@ -326,9 +326,9 @@ class StagedSchoolTests(unittest.TestCase):
             course, state,
             snapshot(course, pointer, fresh_regression_elsewhere))
 
-        self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.queue, ("c.1",))
         self.assertEqual(state.introduction_stage, 1)
-        self.assertNotIn("c.2", assessment_capabilities(course, state))
 
     def test_promotion_sweep_state_round_trips_through_runtime_receipt(self):
         course = staged_course()

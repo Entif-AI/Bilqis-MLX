@@ -150,6 +150,10 @@ class SchoolState:
     # A >90% grade mean opens a one-pass semantic stability sweep.
     promotion_sweep_scope: tuple[str, ...] = ()
     promotion_sweep_return_stage: str | None = None
+    # Running current-grade score vector for ADR-093. The threshold-crossing
+    # assessment freezes the baseline; each sweep visit replaces only the
+    # semantic that was just rescored.
+    promotion_sweep_scores: tuple[tuple[str, int, int], ...] = ()
     # While C is the active progression frontier, unfinished B is explicitly
     # nongating developmental debt.  Track the post-policy visit budget so B
     # can remain in circulation without consuming more than one candidate in
@@ -904,18 +908,34 @@ def _assess_promotion_sweep(program, state: SchoolState,
     completed = len(scope) - len(state.queue)
     if completed < 1:
         raise ValueError(PromotionError.PROMOTION_SWEEP_ASSESSMENT_WITHOUT_VISIT.value)
-    if _mean_accuracy(snapshot.scores, scope) < PROMOTION_MEAN_FLOOR:
+    visited = scope[completed - 1]
+    running = {
+        capability: Score(correct, total)
+        for capability, correct, total in state.promotion_sweep_scores
+    }
+    running[visited] = snapshot.scores[visited]
+    effective_scores = dict(snapshot.scores)
+    effective_scores.update(running)
+    effective_snapshot = replace(snapshot, scores=effective_scores)
+    running_state = replace(
+        state,
+        promotion_sweep_scores=tuple(
+            (capability, running[capability].correct, running[capability].total)
+            for capability in scope),
+    )
+    if _mean_accuracy(running, scope) < PROMOTION_MEAN_FLOOR:
         return_stage = state.promotion_sweep_return_stage
         ordinary = _promotion_sweep_fields_cleared(
-            state, stage=return_stage, queue=(),
-            latest_rubric_digest=snapshot.rubric_digest)
-        ordinary = _refresh_mastery_debt(program, ordinary, snapshot)
-        return _assess_ordinary(program, ordinary, snapshot)
+            running_state, stage=return_stage, queue=(),
+            latest_rubric_digest=effective_snapshot.rubric_digest)
+        ordinary = _refresh_mastery_debt(program, ordinary, effective_snapshot)
+        return _assess_ordinary(program, ordinary, effective_snapshot)
     if state.queue:
         return replace(
-            state, stage="PROMOTION_SWEEP",
-            latest_rubric_digest=snapshot.rubric_digest)
-    return _advance_after_promotion_sweep(program, state, snapshot)
+            running_state, stage="PROMOTION_SWEEP",
+            latest_rubric_digest=effective_snapshot.rubric_digest)
+    return _advance_after_promotion_sweep(
+        program, running_state, effective_snapshot)
 
 
 def assess(program, state: SchoolState, snapshot: Assessment) -> SchoolState:
@@ -1354,6 +1374,9 @@ def read_state(path: Path, program) -> SchoolState:
     raw["promotion_sweep_scope"] = tuple(raw.get("promotion_sweep_scope", ()))
     raw["promotion_sweep_return_stage"] = raw.get(
         "promotion_sweep_return_stage")
+    raw["promotion_sweep_scores"] = tuple(
+        (capability, correct, total)
+        for capability, correct, total in raw.get("promotion_sweep_scores", ()))
     raw["introduction_frontiers"] = tuple(
         (grade, stage) for grade, stage in raw.get("introduction_frontiers", ()))
     raw["current_student"] = Checkpoint(**raw["current_student"])

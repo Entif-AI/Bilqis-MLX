@@ -1127,7 +1127,8 @@ def reserve_weakness_targets(chosen: list[dict],
 def _fresh_support_rows(current: list[dict], policy: dict, rng,
                         *, structured_binary: bool,
                         semantic_patterns: list[tuple],
-                        present_count: int) -> tuple[dict, ...]:
+                        present_count: int,
+                        max_rows: int) -> tuple[dict, ...]:
     """Keep one source-grounded fresh construction bundle beside replay.
 
     Exact historical misses are evidence, not a replacement curriculum. Binary
@@ -1135,15 +1136,17 @@ def _fresh_support_rows(current: list[dict], policy: dict, rng,
     one complete newly drawn source family (for numeric constructions this is
     the direct answer plus its TRUE/FALSE contrast views).
     """
-    if not current or present_count < 1:
+    if not current or present_count < 1 or max_rows < 1:
         return ()
     if structured_binary:
-        count = min(present_count, len(semantic_patterns))
+        if len(semantic_patterns) > max_rows:
+            return ()
+        count = min(present_count, max_rows, len(semantic_patterns))
         return tuple(_choose_binary_rows(current, count, policy, rng))
     groups = {}
     for row in current:
         groups.setdefault(row.get("source_id", row["id"]), []).append(row)
-    chunks = list(groups.values())
+    chunks = [group for group in groups.values() if len(group) <= max_rows]
     if not chunks:
         return ()
     if policy.get("depth", 1) >= 3:
@@ -1154,7 +1157,7 @@ def _fresh_support_rows(current: list[dict], policy: dict, rng,
         chosen = chunks[0]
     else:
         chosen = rng.choice(chunks)
-    return tuple(chosen[:present_count])
+    return tuple(chosen) if len(chosen) <= present_count else ()
 
 
 def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
@@ -1209,7 +1212,8 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
             generic_current, policy, rng,
             structured_binary=structured_binary,
             semantic_patterns=semantic_patterns,
-            present_count=present_count)
+            present_count=present_count,
+            max_rows=max(0, batch_size-reserved_support_slots))
         if targets else ())
     # Weakness replay replaces current-capability rows, while preservation
     # support is injected later into the whole batch and may displace old-grade

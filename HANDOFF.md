@@ -1,11 +1,11 @@
-# CURRENT SUPERSESSION | 2026-10-23 | Prometheus full-U7C Grade B
+# CURRENT SUPERSESSION | 2026-10-23 | Prometheus direct-U7C + C promotion sweep
 
 This supersedes the issue-349 run snapshot below for current operator state. The active
-run is `runs/codex-0001-prometheus`, generation **27117**, factory release
+run is `runs/codex-0001-prometheus`, generation **27187**, factory release
 `83f9f052e40983b879a9e0495ad93d3d3fce31d10e0d12395e0b12499b17c654`.
-The causal student remains SHA `84dec126a37e24b7045212959b692d943780757e8b8b78fc65f158d94fe9ee36`
-at native AdamW step **142704**. It remains in Grade C `RECOVERY_1`; the release
-revision made **zero neural updates** and preserved the current queue and visit count.
+The causal student is SHA `4621f6802315c6ed8b6d96ad0a1f8a7755bb110be8863c77422e268e71675d67`
+at native AdamW step **142728**, Grade C `MAIN`, queue `C.MUL`, visit **19352**.
+The latest agent repair is neural-inert; canonical optimization remains human-only.
 
 Grade B now admits `NOT, AND, OR, XOR, IMPLIES, IFF`, plus `COMPOSITE` and
 `IDBOOLOPS`, all through direct typed Boolean-AST/U7C source construction with no
@@ -14,7 +14,19 @@ training/test lane. Commit `2ed45db` also separates capability-scoped row identi
 from record-scoped source identity, repairing the teacher-miss collision that caused
 `TEACHER_MISS_HISTORY_IDENTITY_CONFLICT`. Generation 27116 removed obsolete
 world-based B miss debt and rekeyed direct-U7C misses; immutable historical evidence
-was not rewritten. Resume preflight after generation 27117 reports no blockers.
+was not rewritten. Fragile OR/XOR replay now understands direct-U7C records and
+reserves mandatory preservation capacity before optional fresh support, preventing
+`FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED` without weakening source truth.
+
+ADR-093 clarifies the automatic C mean-stability sweep. A fresh complete grade mean
+strictly above 90% freezes the initial current-grade score vector. The canonical
+one-pass sweep then replaces only the semantic just rescored; unrelated fresh-cohort
+variance cannot overwrite unswept entries. Generation 27151 did enter this sweep at
+179/198 = 90.404%. Its first `C.COUNT` rescore moved 32/33 to 31/33 with zero retained
+optimizer updates, which alone would move the running mean to 178/198 = 89.899% and
+correctly abort. The old implementation additionally replaced all other C scores from
+the new cohort, exaggerating that apparent drop to 84.848%. Resume preflight at the
+current generation reports no blockers, no migration, and zero neural updates.
 
 ---
 
