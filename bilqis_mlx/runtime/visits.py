@@ -144,15 +144,6 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     candidate_steps = _learning_learning_experiment.candidate_step_budget(
         steps_per_visit, teacher, cap,
         curriculum_scope=teacher_curriculum_scope)
-    with _runtime_timing_trace.trace_span("POLICY_SELECT", capability=cap):
-        if learning_settings is not None:
-            policy_key, policy = _learning_learning_experiment.contextual_pick(
-                engine, teacher, cap, school.stage, rng,
-                curriculum_scope=teacher_curriculum_scope)
-        else:
-            policy_key, policy = engine.pick(teacher, lesson_grade, rng)
-    original_learning_rate = optimizer.learning_rate
-    optimizer.learning_rate = float(policy["lr"])
     if source_root is None:
         raise ValueError("HUMAN_TRAINER_LIVE_SOURCE_REQUIRED")
     with _runtime_timing_trace.trace_span("VISIT_SOURCE_DRAW", capability=cap):
@@ -195,6 +186,34 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
     if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
         raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
+    previous_methodology = next((
+        member.get("lesson_methodology")
+        for member in reversed(receipt.get("delivery_outbox", ()))
+        if member.get("capability") == cap and "lesson_methodology" in member
+    ), None)
+    warnings = _learning_teacher_feedback.active_warning_signals(
+        receipt.get("last_exam"), previous_methodology, cap)
+    previsit_diagnostics = {
+        "warnings": warnings,
+        "unresolved_miss_count": len(priority),
+        "champion_candidate_count": len(champion_candidate_ids),
+    }
+    with _runtime_timing_trace.trace_span("POLICY_SELECT", capability=cap):
+        if learning_settings is not None:
+            policy_key, policy, policy_selection = (
+                _learning_learning_experiment.contextual_pick(
+                    engine, teacher, cap, school.stage, rng,
+                    curriculum_scope=teacher_curriculum_scope,
+                    diagnostics=previsit_diagnostics,
+                    return_metadata=True))
+        else:
+            policy_key, policy = engine.pick(teacher, lesson_grade, rng)
+            policy_selection = {
+                "diagnostic_context_consumed": False,
+                "diagnostic_context_key": None,
+            }
+    original_learning_rate = optimizer.learning_rate
+    optimizer.learning_rate = float(policy["lr"])
     row_ids = {row["id"] for row in rows}
     rows.extend(row for row in priority if row["id"] not in row_ids)
     with _runtime_timing_trace.trace_span("TRAIN_SCORE_BEFORE", capability=cap, row_count=len(rows)):
@@ -535,7 +554,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             context_credit = _learning_learning_experiment.observe_context(
                 teacher, capability=cap, phase=school.stage, policy_key=policy_key,
                 decision=outcome, local_gain=candidate_gain,
-                curriculum_scope=teacher_curriculum_scope)
+                curriculum_scope=teacher_curriculum_scope,
+                diagnostics=previsit_diagnostics)
             if outcome["decision"] == "PROVISIONAL":
                 _learning_learning_experiment.commit_trial(parent_parameters, parent_optimizer, params, optimizer)
             else:
@@ -582,12 +602,6 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         course, cap, tuple(methodology_steps),
         introductory=introduction_pass,
         unmeasured_reason=methodology_unavailable)
-    previous_methodology = next((
-        member.get("lesson_methodology")
-        for member in reversed(receipt.get("delivery_outbox", ()))
-        if member.get("capability") == cap and "lesson_methodology" in member
-    ), None)
-    warnings = _learning_teacher_feedback.active_warning_signals(receipt.get("last_exam"), previous_methodology, cap)
     teacher_decision = _learning_teacher_feedback.summarize_teacher_decision(_learning_teacher_feedback.TeacherDecisionInput(
         capability=cap, policy_key=policy_key, warnings=warnings,
         unresolved_miss_count=len(priority),
@@ -600,6 +614,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         resolved_exam_misses=len(resolved_priority_ids),
         champion_prioritized=champion_prioritized,
         seed=_runtime_state._seed(receipt, capability=cap),
+        diagnostic_context_consumed=policy_selection[
+            "diagnostic_context_consumed"],
+        diagnostic_context_key=policy_selection["diagnostic_context_key"],
     ))
     lesson_generator, lesson_source_digest = _runtime_assessment.released_lesson_source_identity(
         executable_release, cap)

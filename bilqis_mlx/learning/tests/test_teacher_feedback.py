@@ -140,6 +140,22 @@ class TeacherFeedbackTests(unittest.TestCase):
         self.assertEqual(decision["selected"]["prerequisite_connections"],
                          ["A.IDENTITY"])
         self.assertEqual(decision["selected"]["simplest_delivered_first_batch"], [1, 5])
+
+    def test_decision_records_diagnostic_conditioning_when_selector_used_it(self):
+        decision = summarize_teacher_decision(TeacherDecisionInput(
+            capability="C.SUB", policy_key="policy-2", warnings=(),
+            unresolved_miss_count=2, champion_candidate_count=1,
+            prerequisite_capabilities=(), methodology={},
+            delivered_examples=16, replayed_misses=1,
+            resolved_exam_misses=0, champion_prioritized=1, seed=45,
+            diagnostic_context_consumed=True,
+            diagnostic_context_key="abc123",
+        ))
+        self.assertEqual(decision["policy_selection"], {
+            "origin": "INHERITED_LEGACY_UCB",
+            "diagnostic_context_consumed": True,
+            "diagnostic_context_key": "abc123",
+        })
         self.assertEqual(len(decision["decision_id"]), 64)
 
     def test_same_fixed_exam_gives_exact_delayed_outcome_and_ambiguity_control(self):

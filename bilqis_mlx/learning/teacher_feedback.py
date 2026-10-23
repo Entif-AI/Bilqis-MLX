@@ -62,6 +62,8 @@ class TeacherDecisionInput:
     resolved_exam_misses: int
     champion_prioritized: int
     seed: int
+    diagnostic_context_consumed: bool = False
+    diagnostic_context_key: str | None = None
 
 
 @dataclass(frozen=True)
@@ -225,7 +227,12 @@ def _validate_decision_input(request: TeacherDecisionInput) -> None:
     valid_identity = bool(request.capability and request.policy_key)
     valid_seed = type(request.seed) is int
     valid_counts = all(type(value) is int and value >= 0 for value in counts)
-    if not (valid_identity and valid_seed and valid_counts):
+    valid_diagnostics = (
+        type(request.diagnostic_context_consumed) is bool and
+        (request.diagnostic_context_key is None or
+         isinstance(request.diagnostic_context_key, str) and
+         bool(request.diagnostic_context_key)))
+    if not (valid_identity and valid_seed and valid_counts and valid_diagnostics):
         raise ValueError("TEACHER_DECISION_INPUT_INVALID")
 
 
@@ -261,14 +268,17 @@ def _selected_actions(request: TeacherDecisionInput) -> dict:
 
 
 def _decision_payload(request: TeacherDecisionInput) -> dict:
+    policy_selection = {
+        "origin": "INHERITED_LEGACY_UCB",
+        "diagnostic_context_consumed": request.diagnostic_context_consumed,
+    }
+    if request.diagnostic_context_key is not None:
+        policy_selection["diagnostic_context_key"] = request.diagnostic_context_key
     return {
         "schema": VERSION,
         "capability": request.capability,
         "policy_key": request.policy_key,
-        "policy_selection": {
-            "origin": "INHERITED_LEGACY_UCB",
-            "diagnostic_context_consumed": False,
-        },
+        "policy_selection": policy_selection,
         "warning_signals": list(request.warnings),
         "opportunities": _opportunities(request),
         "prerequisite_capabilities": list(request.prerequisite_capabilities),
