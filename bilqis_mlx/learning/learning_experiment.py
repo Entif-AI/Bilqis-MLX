@@ -468,6 +468,53 @@ def _inherited_exploration(teacher: dict, grade: str, policy_key: str) -> float:
         math.log(total+2)/(1+info["trials"]))
 
 
+_CONTEXT_INEFFECTIVE_POLICY_FIELDS = frozenset({"preview"})
+
+
+def _effective_policy_key(policy: dict) -> str:
+    """Identity for knobs that actually change the current source lesson.
+
+    Future-grade preview is deliberately unavailable in the admitted-source
+    trainer, so preview-only legacy variants are one effective contextual
+    strategy even though their historical policy IDs remain distinct.
+    """
+    if not isinstance(policy, dict):
+        raise ValueError("LEARNING_EXPERIMENT_POLICY_INVALID")
+    effective = {
+        key: value for key, value in sorted(policy.items())
+        if key not in _CONTEXT_INEFFECTIVE_POLICY_FIELDS
+    }
+    return hashlib.sha256(
+        json.dumps(effective, sort_keys=True).encode()).hexdigest()[:12]
+
+
+def _effective_context_scope(teacher: dict, scope: dict) -> dict:
+    """Aggregate contextual evidence across behaviorally identical policies."""
+    groups = {}
+    strategies = teacher.get("strategies", {})
+    for policy_key, record in scope.items():
+        policy = strategies.get(policy_key)
+        if policy is None:
+            raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
+        effective_key = _effective_policy_key(policy)
+        group = groups.setdefault(effective_key, {
+            "trials": 0,
+            "reward_sum": 0.,
+            "unsafe": 0,
+            "retained": 0,
+            "no_target_gain_streak": 0,
+            "members": [],
+        })
+        group["trials"] += int(record.get("trials", 0))
+        group["reward_sum"] += float(record.get("reward_sum", 0.))
+        group["unsafe"] += int(record.get("unsafe", 0))
+        group["retained"] += int(record.get("retained", 0))
+        group["no_target_gain_streak"] += int(
+            record.get("no_target_gain_streak", 0))
+        group["members"].append(policy_key)
+    return groups
+
+
 def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                     *, curriculum_scope: str = ""):
     """Preserve the inherited bandit's exploration; prefer proven safe context."""
@@ -477,34 +524,45 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     scope = channel["contexts"].get(capability+"|"+phase+"|"+curriculum_scope, {})
     if not scope:
         return original_key, original_policy
-    trials = sum(v["trials"] for v in scope.values())
+    effective_scope = _effective_context_scope(teacher, scope)
+    trials = sum(v["trials"] for v in effective_scope.values())
     capability_stagnation = _capability_stagnation(
         channel, capability, curriculum_scope)
     rejection_pressure = int(capability_stagnation.get("rejection_streak", 0))
     # Priors stay owned by the inherited bandit. Context decides only when its
     # observed safety preference is demonstrably better than the current pick.
-    def score(key):
-        record = scope.get(key)
+    def score_effective(key):
+        record = effective_scope.get(key)
         if not record:
             return float("-inf")
         mean = record["reward_sum"] / record["trials"]
         exploration = (TEACHER_UCB_EXPLORATION_WEIGHT *
                        math.sqrt(math.log(trials+2)/(record["trials"]+1)))
-        stagnation = _shared_no_gain_streak(
-            channel, capability, curriculum_scope, key)
+        stagnation = record["no_target_gain_streak"]
         return mean + exploration/(1+stagnation+rejection_pressure)
-    best = max(scope, key=score)
-    if best not in teacher["strategies"]:
-        raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
+    best_effective = max(effective_scope, key=score_effective)
+    best_record = effective_scope[best_effective]
+
+    def member_rank(key):
+        record = scope[key]
+        mean = record["reward_sum"] / record["trials"]
+        return (record.get("retained", 0), mean, record["trials"], key)
+
+    best = max(best_record["members"], key=member_rank)
+    original_effective = _effective_policy_key(original_policy)
+    if original_effective == best_effective:
+        return original_key, original_policy
     # Require evidence, but keep inherited exploration alive. The base pick
     # still gets a chance whenever it lacks direct context observations.
-    best_record = scope[best]
     proven_retained = best_record.get("retained", 0) > 0
     if (proven_retained and rejection_pressure > 0 and
-            (original_key not in scope or score(best) > score(original_key))):
+            (original_effective not in effective_scope or
+             score_effective(best_effective) >
+             score_effective(original_effective))):
         return best, teacher["strategies"][best]
-    if ((best_record["trials"] >= 2 or proven_retained) and original_key in scope and
-            score(best) > score(original_key)):
+    if ((best_record["trials"] >= 2 or proven_retained) and
+            original_effective in effective_scope and
+            score_effective(best_effective) > score_effective(original_effective)):
         return best, teacher["strategies"][best]
     return original_key, original_policy
 
