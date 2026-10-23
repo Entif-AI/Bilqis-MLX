@@ -16,7 +16,8 @@ from typing import Mapping
 import numpy as np
 
 from bilqis_mlx.learning.teacher_feedback import (
-    WeaknessTargetError, WeaknessTargetRequest, select_weakness_targets,
+    LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
+    select_weakness_targets,
 )
 
 
@@ -482,7 +483,7 @@ def _effective_policy_key(policy: dict) -> str:
     strategy even though their historical policy IDs remain distinct.
     """
     if not isinstance(policy, dict):
-        raise ValueError("LEARNING_EXPERIMENT_POLICY_INVALID")
+        raise ValueError(LearningExperimentError.POLICY_INVALID.value)
     effective = {
         key: value for key, value in sorted(policy.items())
         if key not in _CONTEXT_INEFFECTIVE_POLICY_FIELDS
@@ -498,7 +499,7 @@ def _effective_context_scope(teacher: dict, scope: dict) -> dict:
     for policy_key, record in scope.items():
         policy = strategies.get(policy_key)
         if policy is None:
-            raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
+            raise ValueError(LearningExperimentError.STRATEGY_ID_DRIFT.value)
         effective_key = _effective_policy_key(policy)
         group = groups.setdefault(effective_key, {
             "trials": 0,
@@ -531,7 +532,7 @@ def _diagnostic_context(channel: dict, capability: str, curriculum_scope: str,
     if not isinstance(reasons, dict) or any(
             not isinstance(key, str) or type(value) is not int or value < 0
             for key, value in reasons.items()):
-        raise ValueError("LEARNING_EXPERIMENT_DIAGNOSTIC_REASON_DRIFT")
+        raise ValueError(LearningExperimentError.DIAGNOSTIC_REASON_DRIFT.value)
     dominant = (
         max(reasons, key=lambda reason: (reasons[reason], reason))
         if reasons and int(stagnation.get("rejection_streak", 0)) > 0
@@ -550,7 +551,7 @@ def _diagnostic_context(channel: dict, capability: str, curriculum_scope: str,
     known = channel.setdefault("diagnostic_contexts", {})
     previous = known.get(identity)
     if previous is not None and previous != payload:
-        raise ValueError("LEARNING_EXPERIMENT_DIAGNOSTIC_CONTEXT_COLLISION")
+        raise ValueError(LearningExperimentError.DIAGNOSTIC_CONTEXT_COLLISION.value)
     known[identity] = payload
     return identity, payload
 
@@ -562,7 +563,7 @@ def _diagnostic_effective_scope(teacher: dict, scope: dict,
     for policy_key, record in scope.items():
         policy = strategies.get(policy_key)
         if policy is None:
-            raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
+            raise ValueError(LearningExperimentError.STRATEGY_ID_DRIFT.value)
         diagnostic = record.get("diagnostic_stats", {}).get(diagnostic_key)
         if not isinstance(diagnostic, dict) or not diagnostic.get("trials"):
             continue
@@ -595,7 +596,7 @@ def _learning_rate_prior_scope(teacher: dict, channel: dict, capability: str,
         try:
             context_capability, _phase, context_scope = context_key.split("|", 2)
         except ValueError:
-            raise ValueError("LEARNING_EXPERIMENT_CONTEXT_ID_DRIFT")
+            raise ValueError(LearningExperimentError.CONTEXT_ID_DRIFT.value)
         if (context_capability != capability or
                 context_scope != curriculum_scope or
                 not isinstance(scope, dict)):
@@ -603,10 +604,10 @@ def _learning_rate_prior_scope(teacher: dict, channel: dict, capability: str,
         for policy_key, record in scope.items():
             policy = strategies.get(policy_key)
             if policy is None:
-                raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
+                raise ValueError(LearningExperimentError.STRATEGY_ID_DRIFT.value)
             lr = policy.get("lr")
             if not isinstance(lr, (int, float)) or not math.isfinite(lr) or lr <= 0:
-                raise ValueError("LEARNING_EXPERIMENT_POLICY_LR_INVALID")
+                raise ValueError(LearningExperimentError.POLICY_LR_INVALID.value)
             prior = priors.setdefault(float(lr), {
                 "trials": 0, "reward_sum": 0.,
             })
@@ -627,7 +628,7 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
     step-count policy.
     """
     if type(default_steps) is not int or default_steps < 1:
-        raise ValueError("LEARNING_EXPERIMENT_CANDIDATE_STEPS_INVALID")
+        raise ValueError(LearningExperimentError.CANDIDATE_STEPS_INVALID.value)
     channel = teacher.get("causal_experiment")
     if not isinstance(channel, dict):
         return default_steps
@@ -635,7 +636,7 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
         channel, capability, curriculum_scope)
     attempts = stagnation.get("attempts_since_retained", 0)
     if type(attempts) is not int or attempts < 0:
-        raise ValueError("LEARNING_EXPERIMENT_CANDIDATE_STAGNATION_INVALID")
+        raise ValueError(LearningExperimentError.CANDIDATE_STAGNATION_INVALID.value)
     half = max(1, default_steps // 2)
     quarter = max(1, default_steps // 4)
     if attempts >= default_steps:
@@ -696,7 +697,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                 for member in record["members"]
             }
             if len(member_lrs) != 1:
-                raise ValueError("LEARNING_EXPERIMENT_EFFECTIVE_POLICY_LR_DRIFT")
+                raise ValueError(LearningExperimentError.EFFECTIVE_POLICY_LR_DRIFT.value)
             prior = learning_rate_priors.get(next(iter(member_lrs)))
             if prior and prior["trials"]:
                 mean = (
@@ -819,7 +820,7 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         capability_stagnation["total_rejections"] += 1
         reason = decision.get("reason")
         if not isinstance(reason, str) or not reason:
-            raise ValueError("LEARNING_EXPERIMENT_REJECTION_REASON_INVALID")
+            raise ValueError(LearningExperimentError.REJECTION_REASON_INVALID.value)
         reasons = capability_stagnation["current_rejection_reasons"]
         reasons[reason] = reasons.get(reason, 0) + 1
     else:
@@ -1135,7 +1136,7 @@ def select_source_lesson(current: list[dict], prior: list[dict], policy: dict,
     if (any(not isinstance(identity, str) or not identity
             for identity in priority_target_ids) or
             not priority_target_ids <= target_ids):
-        raise ValueError("LEARNING_EXPERIMENT_PRIORITY_TARGET_INVALID")
+        raise ValueError(LearningExperimentError.PRIORITY_TARGET_INVALID.value)
     target_capacity = max(
         0, present_count - min(reserved_support_slots, present_count))
     if targets and not target_capacity:
