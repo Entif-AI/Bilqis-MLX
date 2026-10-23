@@ -114,6 +114,38 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertNotIn("START", display)
             self.assertNotIn("FIRST", display)
 
+    def test_begin_execution_resets_replayed_visit_counter(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            for generation in (10, 11):
+                ingest(board, {
+                    "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                    "grade": "B",
+                    "generation": generation,
+                    "capability": "B.AND",
+                    "optimizer_step": 100,
+                    "attempted_optimizer_updates": 16,
+                    "retained_optimizer_updates": 0,
+                })
+            self.assertEqual(board.school_telemetry.visits, 2)
+            self.assertEqual(board.state["visits"], 2)
+
+            board.school_telemetry.begin_execution(grade="B", step=100)
+
+            self.assertEqual(board.school_telemetry.visits, 0)
+            self.assertEqual(board.state["visits"], 0)
+            ingest(board, {
+                "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                "grade": "B",
+                "generation": 12,
+                "capability": "B.AND",
+                "optimizer_step": 100,
+                "attempted_optimizer_updates": 4,
+                "retained_optimizer_updates": 0,
+            })
+            self.assertEqual(board.school_telemetry.visits, 1)
+            self.assertEqual(board.state["visits"], 1)
+
     def test_method_column_projects_actual_instruction_mechanism(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())
