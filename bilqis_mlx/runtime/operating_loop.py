@@ -20,6 +20,7 @@ import bilqis_mlx.runtime.disk as _runtime_disk
 import bilqis_mlx.runtime.exam_execution as _runtime_exam_execution
 import bilqis_mlx.runtime.experiment_runs as _runtime_experiment_runs
 import bilqis_mlx.runtime.frontier_refresh as _runtime_frontier_refresh
+import bilqis_mlx.runtime.mlx_memory as _runtime_mlx_memory
 import bilqis_mlx.runtime.reconciliation as _runtime_reconciliation
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.session as _runtime_session
@@ -134,6 +135,9 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
     start = _time.monotonic()
     with _runtime_session.operator_lock(run_dir), _contextlib.ExitStack() as resources:
         _runtime_timing_trace.trace_mark("OPERATOR_LOCK_ACQUIRED")
+        memory_policy = resources.enter_context(
+            _runtime_mlx_memory.training_memory_policy(mx))
+        _runtime_timing_trace.trace_mark("MLX_MEMORY_POLICY", **memory_policy)
         if resume:
             params, optimizer, graph, receipt, course = _runtime_session._resume_admitted_student(
                 run_dir, manifest, historical_course, course_a, source_root, teacher_sha)
