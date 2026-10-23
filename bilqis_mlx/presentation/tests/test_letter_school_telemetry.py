@@ -217,7 +217,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(
                 (tables["GRADES & MASTERY"][1].name,
                  tables["GRADES & MASTERY"][1].width),
-                ("WAS/BST/NOW/ALL", 15),
+                ("WAS/TOP/NOW/ALL", 15),
             )
             growth = next(
                 column for column in tables["GRADES & MASTERY"]
