@@ -10,16 +10,17 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from types import MappingProxyType
 
 
-KNOBS = {
+KNOBS = MappingProxyType({
     "old": [4, 8, 12, 16, 20],
     "preview": [0, 2, 4],
     "depth": [1, 2, 3, 4],
     "contrast": [0.0, 0.5, 1.0],
     "lr": [0.00004, 0.00008, 0.00013, 0.0002, 0.0003],
     "distill": [0.0, 0.15, 0.35, 0.65],
-}
+})
 MAX_STRATEGIES = 512
 MAX_MUTATION_ATTEMPTS = 24
 MAX_TEACHER_CONTEXT_ITEMS = 24
