@@ -50,6 +50,14 @@ _EXACT = MappingProxyType({
         "An internal path attempted to materialize an empty assessment cohort. "
         "The durable checkpoint remains the resume authority; do not invent questions or bypass the cohort guard.",
     ),
+    "LEARNING_EXPERIMENT_WEAKNESS_TARGET_CAPACITY_DRIFT": RecoveryAdvice(
+        "LEARNING_EXPERIMENT_WEAKNESS_TARGET_CAPACITY_DRIFT",
+        "INTERNAL_RECOVERY_REQUIRED",
+        "The lesson builder overcommitted its finite batch capacity between fresh support, "
+        "weakness replay, and preservation support. Preserve the durable checkpoint and "
+        "repair the lesson capacity allocator before retrying; this error does not by itself "
+        "indicate source identity, student, or AdamW custody drift.",
+    ),
     "INVALID_OR_DRIFTED_SCHOOL_STATE": RecoveryAdvice(
         "INVALID_OR_DRIFTED_SCHOOL_STATE",
         "PRESERVE_AND_DIAGNOSE",
