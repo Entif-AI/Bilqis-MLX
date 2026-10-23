@@ -893,6 +893,75 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             candidate_step_budget(
                 16, teacher, "C.SUB", curriculum_scope="scope"), 4)
 
+    def test_rejection_pressure_pools_learning_rate_evidence_across_phases(self):
+        teacher = {
+            "strategies": {
+                "low": {
+                    "contrast": .5, "depth": 2, "distill": .15,
+                    "lr": .00008, "old": 12, "preview": 0,
+                },
+                "high": {
+                    "contrast": .5, "depth": 2, "distill": .15,
+                    "lr": .0003, "old": 12, "preview": 0,
+                },
+            },
+            "global_stats": {
+                key: {"trials": 20, "reward_sum": 0., "reward_ema": 0.,
+                      "latest": 0.}
+                for key in ("low", "high")
+            },
+            "grade_stats": {},
+            "events": 80,
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "contexts": {
+                    "C.SUB|MAIN|scope": {
+                        "low": {
+                            "trials": 4, "reward_sum": 2.,
+                            "unsafe": 0, "retained": 4,
+                            "latest": .5, "no_target_gain_streak": 0,
+                        },
+                        "high": {
+                            "trials": 4, "reward_sum": -2.,
+                            "unsafe": 4, "retained": 0,
+                            "latest": -.5, "no_target_gain_streak": 4,
+                        },
+                    },
+                    "C.SUB|RECOVERY_2|scope": {
+                        "low": {
+                            "trials": 2, "reward_sum": .1,
+                            "unsafe": 1, "retained": 1,
+                            "latest": .05, "no_target_gain_streak": 0,
+                        },
+                        "high": {
+                            "trials": 2, "reward_sum": .2,
+                            "unsafe": 1, "retained": 1,
+                            "latest": .1, "no_target_gain_streak": 0,
+                        },
+                    },
+                },
+                "capability_stagnation": {
+                    "C.SUB|scope": {
+                        "rejection_streak": 6,
+                        "no_target_gain_streak": 3,
+                        "attempts_since_retained": 6,
+                        "total_rejections": 8,
+                        "total_retained": 2,
+                    },
+                },
+            },
+        }
+
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "high", _teacher["strategies"]["high"]
+
+        picked, _ = contextual_pick(
+            Legacy, teacher, "C.SUB", "RECOVERY_2", random.Random(2),
+            curriculum_scope="scope")
+        self.assertEqual(picked, "low")
+
     def test_repeated_no_target_gain_demotes_policy_until_real_gain_resets_streak(self):
         teacher = live_scale_teacher()
         class Legacy:

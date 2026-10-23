@@ -515,6 +515,38 @@ def _effective_context_scope(teacher: dict, scope: dict) -> dict:
     return groups
 
 
+def _learning_rate_prior_scope(teacher: dict, channel: dict, capability: str,
+                               curriculum_scope: str,
+                               current_context_key: str) -> dict:
+    """Pool same-capability reward evidence by LR across sibling phases."""
+    priors = {}
+    strategies = teacher.get("strategies", {})
+    for context_key, scope in channel.get("contexts", {}).items():
+        if context_key == current_context_key:
+            continue
+        try:
+            context_capability, _phase, context_scope = context_key.split("|", 2)
+        except ValueError:
+            raise ValueError("LEARNING_EXPERIMENT_CONTEXT_ID_DRIFT")
+        if (context_capability != capability or
+                context_scope != curriculum_scope or
+                not isinstance(scope, dict)):
+            continue
+        for policy_key, record in scope.items():
+            policy = strategies.get(policy_key)
+            if policy is None:
+                raise ValueError("LEARNING_EXPERIMENT_STRATEGY_ID_DRIFT")
+            lr = policy.get("lr")
+            if not isinstance(lr, (int, float)) or not math.isfinite(lr) or lr <= 0:
+                raise ValueError("LEARNING_EXPERIMENT_POLICY_LR_INVALID")
+            prior = priors.setdefault(float(lr), {
+                "trials": 0, "reward_sum": 0.,
+            })
+            prior["trials"] += int(record.get("trials", 0))
+            prior["reward_sum"] += float(record.get("reward_sum", 0.))
+    return priors
+
+
 def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
                           *, curriculum_scope: str = "") -> int:
     """Shrink disposable candidate horizon under sustained retention failure.
@@ -551,7 +583,8 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     grade = capability.partition(".")[0]
     original_key, original_policy = engine.pick(teacher, grade, rng)
     channel = _channel(teacher)
-    scope = channel["contexts"].get(capability+"|"+phase+"|"+curriculum_scope, {})
+    context_key = capability+"|"+phase+"|"+curriculum_scope
+    scope = channel["contexts"].get(context_key, {})
     if not scope:
         return original_key, original_policy
     effective_scope = _effective_context_scope(teacher, scope)
@@ -559,6 +592,9 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     capability_stagnation = _capability_stagnation(
         channel, capability, curriculum_scope)
     rejection_pressure = int(capability_stagnation.get("rejection_streak", 0))
+    learning_rate_priors = (_learning_rate_prior_scope(
+        teacher, channel, capability, curriculum_scope, context_key)
+        if rejection_pressure > 0 else {})
     # Priors stay owned by the inherited bandit. Context decides only when its
     # observed safety preference is demonstrably better than the current pick.
     def score_effective(key):
@@ -566,6 +602,20 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         if not record:
             return float("-inf")
         mean = record["reward_sum"] / record["trials"]
+        if learning_rate_priors:
+            member_lrs = {
+                float(teacher["strategies"][member]["lr"])
+                for member in record["members"]
+            }
+            if len(member_lrs) != 1:
+                raise ValueError("LEARNING_EXPERIMENT_EFFECTIVE_POLICY_LR_DRIFT")
+            prior = learning_rate_priors.get(next(iter(member_lrs)))
+            if prior and prior["trials"]:
+                mean = (
+                    record["reward_sum"] + prior["reward_sum"]
+                ) / (
+                    record["trials"] + prior["trials"]
+                )
         exploration = (TEACHER_UCB_EXPLORATION_WEIGHT *
                        math.sqrt(math.log(trials+2)/(record["trials"]+1)))
         stagnation = record["no_target_gain_streak"]
