@@ -1,0 +1,49 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix scheme: <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/> .
+@prefix config: <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/> .
+@prefix case: <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CASE/> .
+@prefix register: <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/REGISTER/> .
+@prefix level: <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/LEVEL/> .
+@prefix collection: <https://github.com/Entif-AI/Bilqis-MLX/id/collection/> .
+@prefix ordered: <https://github.com/Entif-AI/Bilqis-MLX/id/ordered_collection/> .
+
+scheme:new-ithkuil a skos:ConceptScheme .
+scheme:shared-shape-fixture a skos:ConceptScheme .
+
+config:MFF a skos:Concept ;
+    skos:inScheme scheme:new-ithkuil, scheme:shared-shape-fixture .
+config:UPX a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+collection:configuration a skos:Collection ;
+    skos:member config:MFF, config:UPX .
+
+case:ACT a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+case:INS a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+collection:case a skos:Collection ; skos:member case:ACT, case:INS .
+
+register:NRR a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+register:DSV a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+collection:register a skos:Collection ; skos:member register:NRR, register:DSV .
+
+level:MIN a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+level:SBE a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+level:IFR a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+level:DFT a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+level:EQU a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+level:SUR a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+level:SPL a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+level:SPQ a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+level:MAX a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+ordered:level-scale a skos:OrderedCollection ;
+    skos:memberList (
+        level:MIN level:SBE level:IFR level:DFT level:EQU
+        level:SUR level:SPL level:SPQ level:MAX
+    ) .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-0bd881a56fac9e>
+    a rdfs:Resource .
+<https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0bd881a56fac9e/STEM%201/BSC>
+    a skos:Concept ; skos:inScheme scheme:new-ithkuil .
+<https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0bd881a56fac9e/STEM%202/BSC>
+    a skos:Concept ; skos:inScheme scheme:new-ithkuil .
