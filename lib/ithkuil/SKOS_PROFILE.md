@@ -44,9 +44,13 @@ the existing extractors. They MUST remain source-row locators and MUST NOT be us
 as semantic IRI keys. A summary punctuation correction can remint those hashes
 without changing the structural sense. If two source records with the same
 structural coordinates disagree about meaning, the resolver must hold the conflict
-rather than choose one by row order. Different source domains remain distinct until
-an explicit mapping contract justifies a relation. Equal glosses or root spellings
-cannot merge their identities.
+rather than choose one by row order. Source-document identity is evidence and does
+not by itself create a `skos:ConceptScheme` or a SKOS mapping relationship. The
+source-qualified root/sense IRIs preserve current source-record identity; concrete
+corpus projection may reconcile those records only with explicit source proof.
+Issue #36 mapping semantics apply to independently governed semantic identities,
+not merely to two documents that describe the same New Ithkuil meaning. Equal
+glosses or root spellings alone cannot merge source records.
 
 Scheme and datatype keys are profile declarations, not English labels. A new
 scheme key requires a genuinely different governed inventory. Merely reserving an
@@ -120,3 +124,99 @@ Standards basis: [W3C SKOS Reference](https://www.w3.org/TR/skos-reference/),
 [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986), and
 [RFC 3987](https://www.rfc-editor.org/rfc/rfc3987). The namespace, key grammar and
 error codes above are this project's profile choices, not additional W3C rules.
+
+## 2. Resource shapes and semantic organization (#32)
+
+This section fixes which source entities become SKOS concepts, schemes, collections,
+ordered collections, or generic RDF resources. It does not define labels, notation
+datatypes, semantic relations, mappings, provenance, or curriculum structure.
+
+| Source entity | RDF/SKOS shape | Scheme rule | Grouping/order rule |
+| --- | --- | --- | --- |
+| Grammar value such as Configuration `MFF`, Case `ACT`, or Register `NRR` | `skos:Concept` | One or more explicitly declared semantic inventories via `skos:inScheme` | Family membership may use `skos:Collection`; it does not imply hierarchy |
+| Grammar family such as Configuration, Case, or Register | `skos:Collection` | A collection is grouping structure, not a second concept identity | Emit `skos:member`; CSV/table/chapter order is ignored |
+| Source-defined semantic paradigm with meaningful order | `skos:OrderedCollection` | Members keep their existing concept identities | Emit one `skos:memberList` only when the order is explicitly semantic in the source |
+| Lexicon root resource | generic RDF resource | Source-document identity is not a concept scheme | The resource may receive notation under #33 without becoming a `skos:Concept` merely for that purpose |
+| Root-sense identity | `skos:Concept` | Participate in the admitted semantic scheme(s) | Remains distinct from the notation-bearing root and from sibling Stem/Specification senses |
+| Independently governed semantic inventory | `skos:ConceptScheme` | Scheme identity is profile-governed, never inferred from a source file/URL | Source documents can support one scheme without becoming schemes themselves |
+
+### Concept and scheme rules
+
+Every emitted semantic concept has one stable #31 IRI and at least one explicit
+`skos:inScheme` assertion. When the same underlying concept legitimately
+participates in more than one scheme, emit multiple `skos:inScheme` triples from
+that one concept IRI. Do not clone the concept merely to create scheme-local IDs.
+When two independently governed inventories have distinct identities, preserve
+both identities; #36 decides whether a SKOS mapping relation is justified.
+
+Source documents, source IDs, source URLs, chapter boundaries, tracked PDF splits,
+and extractor files are evidence/provenance boundaries. They do not automatically
+become concept schemes. In particular, the grammar HTML and lexicon PDF can describe
+the same New Ithkuil inventory without requiring a cross-scheme mapping merely
+because the evidence arrived through different documents.
+
+### Collection rules
+
+Use `skos:Collection` for real grammatical or semantic grouping where membership
+does not mean subsumption. Configuration, Case, and Register are representative
+unordered family collections. `skos:member` carries membership. The compiler MUST
+NOT derive `skos:broader` or `skos:narrower` from family membership, table nesting,
+file layout, chapter placement, or collection containment. #35 owns any later
+semantic-relation admission independently of these shapes.
+
+Member order supplied by a CSV reader has no semantic effect on a normal
+collection. Reversing or shuffling source rows must therefore leave the resulting
+collection graph unchanged.
+
+### OrderedCollection admission
+
+`skos:OrderedCollection` is admitted only when the source itself defines a
+meaningful semantic/paradigmatic order. The current Level scale is a positive
+fixture: source table `NI-WEB-CH05:T034` names the ordered comparison scale from
+MINIMAL through EQUATIVE to MAXIMAL as
+`MIN, SBE, IFR, DFT, EQU, SUR, SPL, SPQ, MAX`. The shape contract emits that
+source-defined scale with `skos:memberList` and an RDF list.
+
+CSV row order, source table order without independent semantic meaning, source
+chapter order, filesystem order, and curriculum/pedagogical order are prohibited
+order bases. Case remains an unordered collection merely because the source prints
+its values in rows. Curriculum prerequisites and teaching sequence remain a
+separate projection over stable semantic IDs.
+
+### Root and sense separation
+
+A notation-bearing lexicon root can remain an independently addressable generic RDF
+resource. It MUST NOT be typed as `skos:Concept` merely because #33 later attaches a
+notation. Source-defined Stem/Specification meanings are separate `skos:Concept`
+resources using the #31 sense IRI grammar. This preserves one root with many senses
+without collapsing those meanings into the written root form. A custom root→sense
+predicate is not admitted here; #35 owns that extension decision if graph consumers
+demonstrate the need.
+
+### Executable contract and fixtures
+
+`src/skos/shapes.py` exposes frozen resource specs and a pure RDFLib graph builder.
+It accepts only declared scheme references, concept members, and explicit
+`SOURCE_SEMANTIC` ordered collections. Unsupported order bases fail with
+`ORDER_BASIS_NOT_SOURCE_SEMANTIC`; undeclared schemes/members and wrong identity
+kinds fail closed rather than generating guessed RDF.
+
+`tests/fixtures/skos_shapes_positive.ttl` is the literal positive RDF fixture. It
+contains representative Configuration, Case, Register, Level, root, and root-sense
+shapes plus one synthetic second scheme proving that multi-scheme participation
+keeps one concept IRI. `tests/fixtures/skos_shapes_forbidden.ttl` records triples
+that the shape layer must never manufacture: false hierarchy, Case/table order,
+curriculum order, root-as-concept coercion, and scheme-specific concept clones.
+
+Run from the repository root with the semantic dependency set installed:
+
+```sh
+python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
+python3 -B -m unittest lib.ithkuil.tests.test_skos_shapes -v
+```
+
+The tests compare the emitted graph with the positive RDF fixture, prove the
+forbidden triples are absent, read the Level `skos:memberList` through RDFLib's RDF
+Collection interface, reject non-semantic order bases, prove ordinary collection
+row shuffling is graph-invariant, and keep the root resource distinct from its
+sense concepts.
