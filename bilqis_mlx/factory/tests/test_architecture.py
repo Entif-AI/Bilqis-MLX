@@ -72,6 +72,7 @@ class FactoryArchitectureTests(unittest.TestCase):
                         validate(course)
 
     def test_compatibility_cannot_call_current_mutation_owners(self):
+        self.assertFalse((ROOT / "bilqis_mlx/compatibility/trainer_transitions.py").exists())
         writers = (
             ("admission", "_factory_admission"),
             ("admission", "_executable_factory_admission"),

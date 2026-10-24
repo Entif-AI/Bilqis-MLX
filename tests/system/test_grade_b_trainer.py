@@ -783,8 +783,7 @@ class TestDisposableAppendWriter(unittest.TestCase):
         saved = _persist(self.root, receipt)
         return pointer, weights, manifest, saved, payload
 
-    def test_compatibility_delegates_append_transaction_to_runtime(self):
-        from bilqis_mlx.compatibility import trainer_transitions
+    def test_runtime_owns_append_transaction(self):
         from bilqis_mlx.runtime import release_adoption
         from bilqis_mlx import state_dag
 
@@ -796,16 +795,15 @@ class TestDisposableAppendWriter(unittest.TestCase):
             release_adoption, "_next_grade_admission_event", None)
         self.assertTrue(callable(runtime_transition))
         self.assertTrue(callable(runtime_event_builder))
-        self.assertFalse(hasattr(
-            trainer_transitions, "_next_grade_admission_event"))
+        self.assertEqual(runtime_transition.__module__, release_adoption.__name__)
 
         with (patch.object(release_adoption, "_activate_next_admitted_grade",
                            wraps=runtime_transition) as transition_spy,
               patch.object(release_adoption, "_next_grade_admission_event",
                            wraps=runtime_event_builder) as event_spy,
               redirect_stdout(io.StringIO())):
-            updated = trainer_transitions.activate_next_admitted_grade(
-                self.root, saved, self.a_course, self.b_course)
+            updated = release_adoption._activate_next_admitted_grade(
+                self.root, saved, self.a_course, self.b_course, None)
 
         transition_spy.assert_called_once_with(
             self.root, saved, self.a_course, self.b_course, None)

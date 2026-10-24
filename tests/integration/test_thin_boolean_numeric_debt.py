@@ -98,7 +98,6 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                         'stage': 'AWAITING_NEXT_GRADE_WITH_DEBT', 'queue': [],
                         'carried_mastery_debt': list(measured['debt_admission_boundary_exam']['scores'])},
                         'numeric_scope_final_maximum': 4}
-                    from bilqis_mlx.compatibility import trainer_transitions
                     from bilqis_mlx.runtime import release_adoption
                     runtime_dispatch = release_adoption._auto_adopt_known_grade_boundary
                     with patch('bilqis_mlx.profiles.school.boolean_entry_profile', return_value=profile):
@@ -106,7 +105,7 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                                 '_auto_adopt_known_grade_boundary',
                                 wraps=runtime_dispatch) as dispatch_spy:
                             _, _, _, admitted, course, changed = (
-                                trainer_transitions._auto_adopt_known_grade_boundary(
+                                release_adoption._auto_adopt_known_grade_boundary(
                                     mx, run, measured, fixture.grade_a, fixture.grade_a,
                                     SOURCE, fixture.manifest, params, own, graph,
                                     reserve_gib=0., full_grade_b=False,
@@ -139,7 +138,7 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                             '_auto_adopt_known_grade_boundary',
                             wraps=runtime_dispatch) as dispatch_spy:
                         _, grown_own, _, numeric, numeric_course, changed = (
-                            trainer_transitions._auto_adopt_known_grade_boundary(
+                            release_adoption._auto_adopt_known_grade_boundary(
                                 mx, run, measured, course, fixture.grade_a, SOURCE,
                                 fixture.manifest, params, own, graph, reserve_gib=0.,
                                 full_grade_b=False, numeric_staircase=False))
