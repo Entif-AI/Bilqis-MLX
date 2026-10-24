@@ -392,3 +392,102 @@ processes, shuffled triples, renamed blank nodes, RDF lists and exact Unicode.
 
 References: [W3C RDF 1.1 N-Triples](https://www.w3.org/TR/n-triples/),
 [RDFLib canonical graph API](https://rdflib.readthedocs.io/en/stable/apidocs/rdflib.compare/).
+
+## 6. Deterministic held/error accounting (#42)
+
+`src/skos/ledger.py` consumes the immutable #37 `CompilerClosure`, the complete #38
+`Resolution`, and #40 `BuildResult`. It does not reopen source files, infer a missing
+semantic decision, inspect process state, or use time, working-directory, graph-store,
+or model identity. `profile_version` and `profile_digest` are explicit required inputs.
+
+### Row accounting contract
+
+Every row in the compiler closure receives exactly one row disposition:
+
+- `EMITTED` for source rows attached to a #38 resource present in
+  `BuildResult.emitted` with its required strong RDF type;
+- `HELD` for semantic rows retained by resolver or builder issues;
+- `REJECTED` for invalid explicit targets or accounting-integrity failures;
+- `UNSUPPORTED` for known semantic input outside the current core projection;
+- `IR_ONLY` for source/provenance/support rows that may support RDF without owning a
+  standalone semantic resource.
+
+The current semantic row scope is exactly `morphemes_atomic`, `root_senses`,
+`lexicon_roots`, and `lexicon_root_senses`. `morpheme_compositions` remains explicit
+non-core `UNSUPPORTED` debt. Every other table registered in the #37 manifest is
+`IR_ONLY` at this stage. A future manifest table without an explicit ledger key and
+policy produces `UNKNOWN_MANIFEST_TABLE` and blocks accounting rather than silently
+succeeding.
+
+Many source rows may contribute to one resolved resource. If that resource emits, all
+of its contributing semantic rows are `EMITTED`; if it is held, all of its contributing
+rows are `HELD`. Multiple errors for one source row remain in `related_reason_codes`
+while the row still receives one disposition. Empty-`record_refs` group issues from
+#40 are retained separately in `group_issues` so a scheme or collection problem cannot
+double-count member rows.
+
+### Integrity and partial-build semantics
+
+Ordinary semantic holds are valid partial-build evidence. They set
+`release_ineligible=true` while leaving `blocking=false`. Accounting defects block the
+artifact: a missing semantic outcome, duplicate or out-of-scope row reference,
+incompatible dispositions, invalid `BuildResult.emitted` resource, unknown future
+table, or a held/rejected/unsupported semantic identity that still appears as a strong
+RDF subject or collection member. Required profile identity is fail-closed before a
+ledger is produced.
+
+`core_complete` means the four primary semantic tables are fully emitted with no
+blocking or group-level graph defect. `whole_release_eligible` additionally requires
+that no semantic inventory remains `UNSUPPORTED`; current composition debt therefore
+cannot masquerade as a whole-release pass even when the core semantic projection is
+complete. `release_ineligible` is the exact inverse of `whole_release_eligible`.
+
+This distinction lets #43 return a deterministic partial graph plus its complete
+ledger without calling that result fully conformant. Later full-coverage and release
+gates remain responsible for requiring zero unresolved semantic debt where their
+contracts demand it.
+
+### Stable record and disclosure boundary
+
+Each row entry preserves the exact table/key identifier, source-reference keys,
+source-locus coordinates, semantic IRI/key when available, primary and related reason
+codes, explanation, and blocking classification. `held_ledger.schema.json` versions
+the serialized shape and `held_ledger_reason_codes.json` versions ledger-owned reason
+codes plus the upstream pass-through policy.
+
+Dedicated identity fields are never rewritten by a diagnostic sanitizer. Free-text
+explanations, diagnostic details, and group-issue details are sanitized before JSON
+serialization so local host paths, loopback locations, file URLs, and arbitrary URL
+text from an error cannot leak through the diagnostic channel. Source loci store
+stable public coordinates rather than raw URLs.
+
+Stable row keys, source-reference keys, and semantic keys are never silently redacted.
+If one contains a raw URL, localhost value, or host filesystem path, accounting records
+`UNSAFE_LEDGER_IDENTITY_FIELD` and the public JSON serializer raises rather than
+publishing a transformed identity. Canonical Bilqis project semantic IRIs are permitted
+as explicit IRI fields. This keeps identity fidelity and disclosure safety separate.
+
+### Deterministic serialization and current-corpus evidence
+
+`ledger_json_bytes(result)` emits sorted-key UTF-8 JSON with one trailing newline.
+Entry, diagnostic, group-issue, reason-code, and source-reference order are canonical;
+row order and issue order do not affect the bytes.
+
+Against the current #37 closure and #40 builder:
+
+- #38 resolves 2,968 resources;
+- #40 emits 2,579 resources, reports 568 build issues, and produces 19,489 triples;
+- the ledger accounts all 10,588 manifest rows exactly once: 2,590 `EMITTED`, 500
+  `HELD`, 1,917 `UNSUPPORTED`, 5,581 `IR_ONLY`, and zero `REJECTED`;
+- the 500 held source rows carry 499 `NOTATION_COLLISION` primary reasons and one
+  `SOURCE_TEXT_TOO_LONG` reason;
+- there are zero accounting diagnostics, so `blocking=false`,
+  `core_complete=false`, `whole_release_eligible=false`, and
+  `release_ineligible=true`.
+
+`tests/fixtures/skos_ledger_expected.json` is a literal byte-level expected ledger.
+`test_skos_ledger.py` also covers unknown shapes, identity/definition conflicts,
+notation collision, unsupported relation, unadmitted mapping, missing public source
+locus, invalid targets, held-to-emitted repair, multiple rows per resource, group-only
+issues, duplicate/out-of-scope accounting, diagnostic sanitization, shuffled input and
+reason order, and the literal full-corpus counts above.
