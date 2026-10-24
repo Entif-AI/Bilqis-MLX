@@ -340,6 +340,7 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         from bilqis_mlx.factory.execution import CurriculumProfile
         from bilqis_mlx.factory.generation import draw_executable_release_rows
         from bilqis_mlx.factory.model import SourceAdapter
+        from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
         from bilqis_mlx.factory.tests.test_executable_release import _answers
 
         calls, checks = [], []
@@ -360,7 +361,8 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         curriculum = CurriculumDefinition("fixture.twelve/v1", (GradeSpec("Z", tuple(
             CapabilitySpec(name, "fixture", (f"root.{i}",), (f"root.{i}",), (), (),
                            (AnswerFamily("binary", BINARY),)) for i, name in enumerate(names)),
-            tuple((name, 4) for name in names)),))
+            tuple((name, 4) for name in names), tuple((name,) for name in names)),),
+            program_complete=True)
         bindings = SourceBindingSet(tuple(CapabilitySourceBinding(
             name, "repo:fixture/z", f"fixture.generator.{i % 2}", f"fixture.oracle.{i % 2}")
             for i, name in enumerate(names)))
@@ -376,6 +378,16 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         self.assertEqual(tuple(row["capability"] for row in rows),
                          tuple(name for name in names for _ in range(4)))
         self.assertEqual({row["gold"] for row in rows}, {"FALSE", "TRUE"})
+        program = schedule_program_from_executable_release(release)
+        self.assertEqual(tuple(cap.id for cap in program.grades[0].capabilities), names)
+        self.assertEqual(tuple(program.capability_map), names)
+        self.assertEqual(program.grades[0].exam_item_counts, tuple((name, 4) for name in names))
+        self.assertEqual(program.grades[0].teaching_stages, tuple((name,) for name in names))
+        self.assertEqual(tuple(cap for cap, _ in program.assessment_projections), names)
+        self.assertTrue(program.program_complete)
+        self.assertEqual(program.assessment_manifest_sha256, program.grades[0].assessment_sha256)
+        self.assertEqual(program.exact_scope_rubric(names), program.grades[0].assessment_sha256)
+        self.assertNotEqual(program.exact_scope_rubric(names[:-1]), program.grades[0].assessment_sha256)
 
 
 @unittest.skipUnless(SOURCE.is_dir(), "Pinned historic source not mounted")
