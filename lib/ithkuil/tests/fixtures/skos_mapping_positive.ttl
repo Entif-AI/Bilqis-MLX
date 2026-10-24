@@ -1,0 +1,26 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://example.invalid/synthetic/a/exact>
+    skos:exactMatch <https://example.invalid/synthetic/b/exact> .
+<https://example.invalid/synthetic/b/exact>
+    skos:exactMatch <https://example.invalid/synthetic/a/exact> .
+
+<https://example.invalid/synthetic/a/close>
+    skos:closeMatch <https://example.invalid/synthetic/b/close> .
+<https://example.invalid/synthetic/b/close>
+    skos:closeMatch <https://example.invalid/synthetic/a/close> .
+
+<https://example.invalid/synthetic/a/narrower-1>
+    skos:broadMatch <https://example.invalid/synthetic/b/broader-1> .
+<https://example.invalid/synthetic/b/broader-1>
+    skos:narrowMatch <https://example.invalid/synthetic/a/narrower-1> .
+
+<https://example.invalid/synthetic/a/broader-2>
+    skos:narrowMatch <https://example.invalid/synthetic/b/narrower-2> .
+<https://example.invalid/synthetic/b/narrower-2>
+    skos:broadMatch <https://example.invalid/synthetic/a/broader-2> .
+
+<https://example.invalid/synthetic/a/related>
+    skos:relatedMatch <https://example.invalid/synthetic/b/related> .
+<https://example.invalid/synthetic/b/related>
+    skos:relatedMatch <https://example.invalid/synthetic/a/related> .
