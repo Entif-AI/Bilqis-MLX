@@ -329,6 +329,55 @@ def _run_live_profile_probe():
         capture_output=True, text=True, check=False)
 
 
+class TwelveCapabilityProviderTests(unittest.TestCase):
+    def test_registered_providers_generate_every_direct_v2_capability(self):
+        from functools import partial
+        from bilqis_mlx.curriculum import AnswerFamily, BINARY
+        from bilqis_mlx.factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
+        from bilqis_mlx.factory.curriculum_definition import (
+            CapabilitySpec, CapabilitySourceBinding, CurriculumDefinition, GradeSpec, SourceBindingSet)
+        from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+        from bilqis_mlx.factory.execution import CurriculumProfile
+        from bilqis_mlx.factory.generation import draw_executable_release_rows
+        from bilqis_mlx.factory.model import SourceAdapter
+        from bilqis_mlx.factory.tests.test_executable_release import _answers
+
+        calls, checks = [], []
+        def draw(provider, *, capability, seed, each, course, **_):
+            calls.append((provider, capability, course))
+            return tuple({"id": f"{capability}:{seed}:{i}", "capability": capability,
+                          "provider": provider, "value": (seed + i) % 2,
+                          "gold": BINARY[(seed + i) % 2]} for i in range(each))
+        def check(provider, row, **_):
+            checks.append((provider, row["capability"]))
+            return row["provider"] == provider and row["gold"] == (
+                "TRUE" if row["value"] else "FALSE")
+        registry = SourceAdapterRegistry(tuple(RegisteredSourceAdapter(
+            SourceAdapter(f"fixture.provider.{i}", f"fixture.generator.{i}",
+                          (f"fixture.oracle.{i}",), str(i + 1) * 64),
+            partial(draw, i), partial(check, i)) for i in range(2)))
+        names = tuple(f"Z.C{i}" for i in range(12))
+        curriculum = CurriculumDefinition("fixture.twelve/v1", (GradeSpec("Z", tuple(
+            CapabilitySpec(name, "fixture", (f"root.{i}",), (f"root.{i}",), (), (),
+                           (AnswerFamily("binary", BINARY),)) for i, name in enumerate(names)),
+            tuple((name, 4) for name in names)),))
+        bindings = SourceBindingSet(tuple(CapabilitySourceBinding(
+            name, "repo:fixture/z", f"fixture.generator.{i % 2}", f"fixture.oracle.{i % 2}")
+            for i, name in enumerate(names)))
+        graph = {"tokens": ["fixture.padding", "cogal.value.false", "cogal.value.true"]}
+        release = compile_executable_factory_release(
+            curriculum, bindings, CurriculumProfile.full(), registry, _answers(),
+            source_root=None, graph=graph, verification_seed=11)
+        calls.clear()
+        checks.clear()
+        rows = draw_executable_release_rows(None, graph, release, registry, seed=17)
+        self.assertEqual(calls, [(i % 2, name, None) for i, name in enumerate(names)])
+        self.assertEqual(checks, [(i % 2, name) for i, name in enumerate(names) for _ in range(4)])
+        self.assertEqual(tuple(row["capability"] for row in rows),
+                         tuple(name for name in names for _ in range(4)))
+        self.assertEqual({row["gold"] for row in rows}, {"FALSE", "TRUE"})
+
+
 @unittest.skipUnless(SOURCE.is_dir(), "Pinned historic source not mounted")
 class LiveProfileExecutionTests(unittest.TestCase):
     def test_real_full_b_provider_executes_and_iff_profile_without_minimal_provider(self):
