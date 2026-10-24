@@ -338,7 +338,7 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
             CapabilitySpec, CapabilitySourceBinding, CurriculumDefinition, GradeSpec, SourceBindingSet)
         from bilqis_mlx.factory.executable_release import compile_executable_factory_release
         from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
-        from bilqis_mlx.factory.generation import draw_executable_release_rows
+        from bilqis_mlx.factory.generation import draw_executable_release_rows, draw_execution_rows
         from bilqis_mlx.factory.model import SourceAdapter
         from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
         from bilqis_mlx.factory.tests.test_executable_release import _answers
@@ -349,7 +349,8 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
             return tuple({"id": f"{capability}:{seed}:{i}", "capability": capability,
                           "provider": provider, "value": (seed + i) % 2,
                           "gold": BINARY[(seed + i) % 2]} for i in range(each))
-        def check(provider, row, **_):
+        def check(provider, row, *, course, **_):
+            self.assertIs(course, expected_context)
             checks.append((provider, row["capability"]))
             return row["provider"] == provider and row["gold"] == (
                 "TRUE" if row["value"] else "FALSE")
@@ -366,6 +367,7 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         bindings = SourceBindingSet(tuple(CapabilitySourceBinding(
             name, "repo:fixture/z", f"fixture.generator.{i % 2}", f"fixture.oracle.{i % 2}")
             for i, name in enumerate(names)))
+        expected_context = curriculum
         graph = {"tokens": ["fixture.padding", "cogal.value.false", "cogal.value.true"]}
         release = compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(), registry, _answers(),
@@ -373,11 +375,28 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         calls.clear()
         checks.clear()
         rows = draw_executable_release_rows(None, graph, release, registry, seed=17)
-        self.assertEqual(calls, [(i % 2, name, None) for i, name in enumerate(names)])
+        self.assertEqual(calls, [(i % 2, name, curriculum) for i, name in enumerate(names)])
         self.assertEqual(checks, [(i % 2, name) for i, name in enumerate(names) for _ in range(4)])
         self.assertEqual(tuple(row["capability"] for row in rows),
                          tuple(name for name in names for _ in range(4)))
         self.assertEqual({row["gold"] for row in rows}, {"FALSE", "TRUE"})
+        self.assertTrue(all(context is curriculum for _, _, context in calls))
+        with self.assertRaisesRegex(TypeError, "legacy_course"):
+            draw_execution_rows(None, graph, curriculum, release.execution_plan,
+                                registry, source_bindings=bindings, seed=17,
+                                legacy_course=curriculum)
+        from unittest.mock import patch
+        historical_course = object()
+        expected_context = historical_course
+        calls.clear()
+        with patch("bilqis_mlx.factory.generation.from_legacy_course",
+                   return_value=(curriculum, bindings)) as translate:
+            historical_rows = draw_execution_rows(
+                None, graph, historical_course, release.execution_plan, registry, seed=17)
+        translate.assert_called_once_with(historical_course)
+        self.assertEqual(historical_rows, rows)
+        self.assertTrue(all(context is historical_course for _, _, context in calls))
+        expected_context = curriculum
         program = schedule_program_from_executable_release(release)
         self.assertEqual(tuple(cap.id for cap in program.grades[0].capabilities), names)
         self.assertEqual(tuple(program.capability_map), names)
@@ -401,7 +420,7 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
                 self.assertEqual(thin.execution_plan.grades[0].cumulative_scope, selected)
                 calls.clear()
                 subset_rows = draw_executable_release_rows(None, graph, thin, registry, seed=17)
-                self.assertEqual(calls, [(i % 2, name, None) for i, name in enumerate(names)
+                self.assertEqual(calls, [(i % 2, name, curriculum) for i, name in enumerate(names)
                                          if name in selected])
                 self.assertEqual(tuple(row["capability"] for row in subset_rows),
                                  tuple(name for name in selected for _ in range(4)))

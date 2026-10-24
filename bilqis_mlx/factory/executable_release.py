@@ -655,7 +655,7 @@ def _verification_receipt(
     for execution in plan.capabilities:
         rows = draw_execution_rows(
             source_root, graph, curriculum, plan, source_registry,
-            source_bindings=bindings, legacy_course=legacy_course,
+            source_bindings=bindings,
             seed=verification_seed, capability=execution.capability_id,
             each=execution.exam_item_count)
         row_ids = tuple(row["id"] for row in rows)
