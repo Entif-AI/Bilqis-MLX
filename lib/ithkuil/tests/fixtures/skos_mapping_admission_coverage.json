@@ -1,0 +1,52 @@
+{
+  "outcomes": {
+    "HOLD": 551,
+    "REJECT": 1
+  },
+  "policy_digest_sha256": "8730569cda0d7db757a29d8c02a183f144f2cbfe4aa2d3e8aa071fd447657405",
+  "reasons": {
+    "MAPPING_BLOCKED_HELD": 1,
+    "MAPPING_DEFERRED_HELD": 1,
+    "MAPPING_HISTORICAL_ONLY_HELD": 2,
+    "MAPPING_PROPOSAL_HELD": 17,
+    "MAPPING_REJECTED_EXACT_EQUIVALENCE": 1,
+    "MAPPING_RESEARCH_ONLY_HELD": 277,
+    "MAPPING_RESEARCH_SEED_HELD": 11,
+    "MAPPING_SOURCE_SEEDED_HELD": 21,
+    "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD": 221
+  },
+  "rows": {
+    "bridge": 330,
+    "crosswalk": 222,
+    "total": 552
+  },
+  "schema": "bilqis.skos.mapping-admission-coverage/v1",
+  "synthetic_normalized_admissions": {
+    "EMIT_BROAD": {
+      "predicate": "broadMatch",
+      "review_state": "admitted_broad_match"
+    },
+    "EMIT_CLOSE": {
+      "predicate": "closeMatch",
+      "review_state": "admitted_close_match"
+    },
+    "EMIT_EXACT": {
+      "predicate": "exactMatch",
+      "review_state": "admitted_exact_equivalence"
+    },
+    "EMIT_NARROW": {
+      "predicate": "narrowMatch",
+      "review_state": "admitted_narrow_match"
+    },
+    "EMIT_RELATED": {
+      "predicate": "relatedMatch",
+      "review_state": "admitted_related_match"
+    }
+  },
+  "table_version": "2026-10-24.1",
+  "unique_policy_keys": {
+    "bridge": 26,
+    "crosswalk": 13,
+    "total": 39
+  }
+}

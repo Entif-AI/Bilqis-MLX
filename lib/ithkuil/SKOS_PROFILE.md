@@ -564,3 +564,75 @@ prove broad/narrow inverse directionality, detect direct and entailed path confl
 preserve exact/close coexistence and valid reciprocal hierarchy, require source/evidence and independent-scheme disposition, forbid
 self-mapping identity collapse, and verify that the current raw corpus contains no
 concept-target equivalence admissions.
+
+## Mapping admission table (#62)
+
+Issue #62 implements the finite normalization gate consumed by later mapping emission.
+It does **not** emit RDF and does not interpret source prose. The runtime performs an
+exact lookup in a versioned table; zero matches are `UNSUPPORTED`, and duplicate or
+multiple matches fail closed.
+
+### Exact decision key
+
+Each raw record is normalized to these exact fields:
+
+`record_kind, relation_state, equivalence_state, mapping_disposition, review_state,
+registry_state, source_era, target_kind, source_match_state`.
+
+For crosswalk rows, `relation_state` is `relation_type`, `review_state` is
+`crosswalk_state`, and `registry_state` is explicitly `__NOT_PRESENT__`. For bridge
+rows, `relation_state` is `link_type`, `review_state` is `bridge_epistemic_state`,
+`registry_state` is `registry_state_raw`, and the unavailable equivalence/disposition
+dimensions are explicitly `__NOT_PRESENT__`. There are no wildcards.
+
+`source_match_state` is included because it is a finite source-qualification state.
+The current files contain no normalized caution/dependency enum. Free English fields,
+including `semantic_differential` and `semantic_caution_or_dependencies`, are therefore
+excluded from the key and cannot change an admission result.
+
+### Current corpus disposition
+
+The current corpus contains 222 crosswalk rows and 330 semantic-bridge rows. These
+collapse to 13 and 26 exact policy combinations respectively, 39 total. Current target
+kinds are only `source_document`, `source_section`, and `historical_source`; there are
+zero concept targets. Consequently no current raw row is a SKOS mapping admission.
+
+The crosswalk's `APPROVED_*` strategy labels remain `HOLD` because they are workflow
+or construction strategies, not #36 normalized semantic mapping admissions. The one
+`rejected_exact_equivalence` row is `REJECT`. Bridge proposal, blocked, deferred,
+historical-only, research-only, research-seed, and source-seeded states remain `HOLD`
+with stable reason codes.
+
+### Five emitting outcomes
+
+The five emitting forms are present only as explicitly `synthetic_normalized_admissions`
+in the fixture. They reproduce #36's normalized reviewed states literally:
+
+- `exactMatch + admitted_exact_equivalence -> EMIT_EXACT`
+- `closeMatch + admitted_close_match -> EMIT_CLOSE`
+- `broadMatch + admitted_broad_match -> EMIT_BROAD`
+- `narrowMatch + admitted_narrow_match -> EMIT_NARROW`
+- `relatedMatch + admitted_related_match -> EMIT_RELATED`
+
+These synthetic rows are contract fixtures, not invented approvals of the current raw
+crosswalk or bridge corpus. Actual source/endpoint validation and later RDF emission
+remain owned by #63-#66.
+
+### Executable artifacts
+
+`src/skos/mapping_admission.py` loads and validates the table, creates exact row keys,
+returns one deterministic disposition, validates full observed coverage, and emits a
+stable coverage report. `src/skos/mapping_admission_table.json` is the
+versioned table. `tests/fixtures/skos_mapping_admission_coverage.json` is the literal
+current-corpus report. Tests prove 552-row coverage, all five synthetic emit outcomes,
+no current raw emission, proposal/blocked/deferred/historical/rejected negatives,
+unknown-state failure, duplicate/multiple-match failure, and row-order/commentary
+invariance.
+
+The runtime table lives with production code; test fixtures do not act as an
+implicit production policy source. JSON object-key order is nonsemantic. The
+policy loader rejects emitting rules targeting a source document or historical
+source and rejects normalized strength swaps, such as classifying an admitted
+close mapping as exact. The normalized decision is eligibility under the table,
+not source/endpoint evidence; #36 and the source-qualified mapping emitter still
+enforce their required proof and identity boundaries.
