@@ -337,7 +337,7 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         from bilqis_mlx.factory.curriculum_definition import (
             CapabilitySpec, CapabilitySourceBinding, CurriculumDefinition, GradeSpec, SourceBindingSet)
         from bilqis_mlx.factory.executable_release import compile_executable_factory_release
-        from bilqis_mlx.factory.execution import CurriculumProfile
+        from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
         from bilqis_mlx.factory.generation import draw_executable_release_rows
         from bilqis_mlx.factory.model import SourceAdapter
         from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
@@ -388,6 +388,26 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         self.assertEqual(program.assessment_manifest_sha256, program.grades[0].assessment_sha256)
         self.assertEqual(program.exact_scope_rubric(names), program.grades[0].assessment_sha256)
         self.assertNotEqual(program.exact_scope_rubric(names[:-1]), program.grades[0].assessment_sha256)
+        for requested in ((names[-1],), (names[9], names[0], names[5])):
+            with self.subTest(profile=requested):
+                selected = tuple(name for name in names if name in requested)
+                thin = compile_executable_factory_release(
+                    curriculum, bindings, CurriculumProfile("fixture.thin", grades=(
+                        GradeProfile("Z", enabled_capabilities=requested),)),
+                    registry, _answers(), source_root=None, graph=graph, verification_seed=11)
+                self.assertEqual(thin.curriculum, curriculum)
+                self.assertEqual(thin.source_bindings, bindings)
+                self.assertEqual(thin.execution_plan.grades[0].capabilities, selected)
+                self.assertEqual(thin.execution_plan.grades[0].cumulative_scope, selected)
+                calls.clear()
+                subset_rows = draw_executable_release_rows(None, graph, thin, registry, seed=17)
+                self.assertEqual(calls, [(i % 2, name, None) for i, name in enumerate(names)
+                                         if name in selected])
+                self.assertEqual(tuple(row["capability"] for row in subset_rows),
+                                 tuple(name for name in selected for _ in range(4)))
+                thin_schedule = schedule_program_from_executable_release(thin)
+                self.assertEqual(tuple(thin_schedule.capability_map), selected)
+                self.assertFalse(thin_schedule.program_complete)
 
 
 @unittest.skipUnless(SOURCE.is_dir(), "Pinned historic source not mounted")
