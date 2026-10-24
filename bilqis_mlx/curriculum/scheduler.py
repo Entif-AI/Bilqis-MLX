@@ -28,9 +28,6 @@ STAGES = frozenset(("MAIN", "ASSESS_MAIN", "RECOVERY_1", "ASSESS_RECOVERY_1",
                     "ASSESS_PROMOTION_SWEEP", "AWAITING_TEACHER_SOUP",
                     "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT",
                     "WHOLE_SCHOOL_MASTERED", "DEFERRED_STAGNATION"))
-B_DEBT_RUN_INTERVAL = 4
-
-
 def _program(value) -> ScheduleProgram:
     if isinstance(value, ScheduleProgram):
         return value
@@ -87,6 +84,33 @@ class Score:
     @property
     def perfect(self):
         return self.correct == self.total
+
+
+@dataclass(frozen=True)
+class DebtCadencePolicy:
+    """Explicit grade roles and turn budget for bounded debt scheduling."""
+
+    bounded_debt_grade_id: str
+    progression_priority_grade_id: str
+    non_debt_turns_per_run: int
+
+    def __post_init__(self):
+        if (not isinstance(self.bounded_debt_grade_id, str) or
+                not self.bounded_debt_grade_id or
+                not isinstance(self.progression_priority_grade_id, str) or
+                not self.progression_priority_grade_id or
+                self.bounded_debt_grade_id == self.progression_priority_grade_id or
+                type(self.non_debt_turns_per_run) is not int or
+                self.non_debt_turns_per_run < 1):
+            raise ValueError("INVALID_DEBT_CADENCE_POLICY")
+
+    @classmethod
+    def from_legacy_adr094(cls):
+        """Translate the historical B/C/four-turn contract at the boundary."""
+        return cls(
+            bounded_debt_grade_id="B",
+            progression_priority_grade_id="C",
+            non_debt_turns_per_run=4)
 
 
 @dataclass(frozen=True)
@@ -185,14 +209,16 @@ class SchoolState:
     # assessment freezes the baseline; each sweep visit replaces only the
     # semantic that was just rescored.
     promotion_sweep_scores: tuple[tuple[str, int, int], ...] = ()
-    # Historical ADR-090 candidate-visit counters are retained as telemetry and
-    # backward-compatible receipt state. ADR-094 moves scheduling authority to
-    # grade-level training turns instead of individual B candidate crumbs.
+    # Historical ADR-090 candidate-visit counters retain their saved receipt
+    # fields. ADR-094 moved scheduling authority to whole grade-turns.
     frontier_priority_visits: int = 0
     nongating_b_visits: int = 0
-    # Number of completed non-B training queues since B last received one
-    # complete currently-imperfect grade pass. Four such turns make B due.
+    # Saved under its historical wire name; policy supplies the active roles
+    # and number of completed non-debt turns.
     non_b_training_turns_since_b_run: int = 0
+    # Absent on old receipts only until the neural-inert ADR-094 migration.
+    # New schedules receive a policy only when one is explicitly supplied.
+    debt_cadence_policy: DebtCadencePolicy | None = None
 
     @property
     def grade(self) -> str:
@@ -205,50 +231,55 @@ def _caps(program, grade_ids: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(c.id for grade in grade_ids for c in lookup[grade].capabilities)
 
 
-def _c_frontier_priority_mode(program, state: SchoolState) -> bool:
-    """C progression owns the lane while unfinished B remains nongating debt."""
+def _debt_cadence_mode(program, state: SchoolState) -> bool:
+    """A supplied policy is active while both of its grade roles carry debt."""
     program = _program(program)
-    if (not {"B", "C"} <= set(state.active_grades) or
-            state.active_grades[-1] != "C"):
+    policy = state.debt_cadence_policy
+    if (policy is None or
+            not {policy.bounded_debt_grade_id,
+                 policy.progression_priority_grade_id} <= set(state.active_grades)):
         return False
     debt = set(state.carried_mastery_debt)
-    return bool(debt & set(_caps(program, ("B",)))) and bool(
-        debt & set(_caps(program, ("C",))))
+    return bool(debt & set(_caps(program, (policy.bounded_debt_grade_id,)))) and bool(
+        debt & set(_caps(program, (policy.progression_priority_grade_id,))))
 
 
-def _b_debt_run_due(program, state: SchoolState) -> bool:
-    return (_c_frontier_priority_mode(program, state) and
-            state.non_b_training_turns_since_b_run >= B_DEBT_RUN_INTERVAL)
+def _debt_run_due(program, state: SchoolState) -> bool:
+    return (_debt_cadence_mode(program, state) and
+            state.non_b_training_turns_since_b_run >=
+            state.debt_cadence_policy.non_debt_turns_per_run)
 
 
-def _b_debt_run_queue(program, state: SchoolState,
-                      scores: dict[str, Score],
-                      allowed_capabilities: tuple[str, ...] | None = None
-                      ) -> tuple[str, ...]:
-    """Return every currently imperfect admitted B debt capability, canonically."""
-    if not _c_frontier_priority_mode(program, state):
+def _debt_run_queue(program, state: SchoolState,
+                    scores: dict[str, Score],
+                    allowed_capabilities: tuple[str, ...] | None = None
+                    ) -> tuple[str, ...]:
+    """Return the imperfect admitted capabilities for the policy's debt role."""
+    if not _debt_cadence_mode(program, state):
         return ()
     allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
     debt = set(state.carried_mastery_debt)
+    bounded_grade_id = state.debt_cadence_policy.bounded_debt_grade_id
     return tuple(
-        capability for capability in _caps(program, ("B",))
+        capability for capability in _caps(program, (bounded_grade_id,))
         if capability in allowed and capability in debt and
         capability in scores and not scores[capability].perfect)
 
 
-def _enter_due_b_debt_run(program, state: SchoolState,
-                          snapshot: Assessment, *,
-                          allowed_capabilities: tuple[str, ...] | None = None,
-                          reset_sweep: bool = True) -> SchoolState | None:
-    if not _b_debt_run_due(program, state):
+def _enter_due_debt_run(program, state: SchoolState,
+                        snapshot: Assessment, *,
+                        allowed_capabilities: tuple[str, ...] | None = None,
+                        reset_sweep: bool = True) -> SchoolState | None:
+    if not _debt_run_due(program, state):
         return None
-    queue = _b_debt_run_queue(
+    queue = _debt_run_queue(
         program, state, snapshot.scores,
         allowed_capabilities=allowed_capabilities)
     if not queue:
         return None
+    bounded_grade_id = state.debt_cadence_policy.bounded_debt_grade_id
     entered = _enter_grade(
-        program, state, state.active_grades.index("B"),
+        program, state, state.active_grades.index(bounded_grade_id),
         stage="MAIN", first_recovery=(),
         main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
         latest_rubric_digest=snapshot.rubric_digest)
@@ -267,52 +298,69 @@ def _imperfect_ranked(scores: dict[str, Score],
 def _frontier_recovery_queue(program, state: SchoolState,
                              scores: dict[str, Score],
                              pool: tuple[str, ...]) -> tuple[str, ...]:
-    """Keep C recovery C-only; B receives bounded complete grade turns."""
-    if not _c_frontier_priority_mode(program, state):
+    """Limit priority recovery to the role named by an active policy."""
+    if not _debt_cadence_mode(program, state):
         return weakest_three(scores, pool)
     allowed = set(pool)
-    c_ranked = _imperfect_ranked(
-        scores, tuple(cap for cap in _caps(program, ("C",)) if cap in allowed))
-    return c_ranked[:3]
+    priority_grade_id = state.debt_cadence_policy.progression_priority_grade_id
+    ranked = _imperfect_ranked(
+        scores, tuple(cap for cap in _caps(program, (priority_grade_id,))
+                      if cap in allowed))
+    return ranked[:3]
 
 
-def migrate_b_full_run_epoch(program, state: SchoolState) -> SchoolState:
-    """Adopt ADR-094 without inventing learning or preserving single-B crumbs."""
+def migrate_legacy_debt_cadence_policy(program, state: SchoolState) -> SchoolState:
+    """Decode the historical policy only for a saved C-frontier course."""
     program = _program(program)
-    if not _c_frontier_priority_mode(program, state):
+    if state.debt_cadence_policy is not None:
+        return state
+    policy = DebtCadencePolicy.from_legacy_adr094()
+    if (not state.active_grades or
+            not {policy.bounded_debt_grade_id,
+             policy.progression_priority_grade_id} <= set(state.active_grades) or
+            state.active_grades[-1] != policy.progression_priority_grade_id):
+        return state
+    return replace(state, debt_cadence_policy=policy)
+
+
+def migrate_legacy_debt_cadence_queue(program, state: SchoolState) -> SchoolState:
+    """Re-anchor an older debt-role queue to the explicitly named priority role."""
+    program = _program(program)
+    if (not _debt_cadence_mode(program, state) or
+            state.stage not in ("MAIN", "RECOVERY_1", "RECOVERY_2")):
+        return state
+    bounded_caps = set(_caps(
+        program, (state.debt_cadence_policy.bounded_debt_grade_id,)))
+    if not state.queue or state.queue[0] not in bounded_caps:
+        return state
+    priority_grade_id = state.debt_cadence_policy.progression_priority_grade_id
+    return _enter_grade(
+        program, state, state.active_grades.index(priority_grade_id),
+        stage="MAIN", first_recovery=(), main_sweep_visited=(),
+        latest_rubric_digest=state.latest_rubric_digest)
+
+
+def migrate_legacy_debt_cadence_epoch(program, state: SchoolState) -> SchoolState:
+    """Adopt legacy turn accounting without rewriting visits or scores."""
+    program = _program(program)
+    if not _debt_cadence_mode(program, state):
         return replace(state, non_b_training_turns_since_b_run=0)
     migrated = replace(
-        state, non_b_training_turns_since_b_run=B_DEBT_RUN_INTERVAL)
+        state,
+        non_b_training_turns_since_b_run=(
+            state.debt_cadence_policy.non_debt_turns_per_run))
     if migrated.stage not in ("MAIN", "RECOVERY_1", "RECOVERY_2"):
         return migrated
-    b_caps = set(_caps(program, ("B",)))
-    if migrated.grade != "B" and any(cap in b_caps for cap in migrated.queue):
+    policy = migrated.debt_cadence_policy
+    bounded_caps = set(_caps(program, (policy.bounded_debt_grade_id,)))
+    if (migrated.grade != policy.bounded_debt_grade_id and
+            any(cap in bounded_caps for cap in migrated.queue)):
+        priority_grade_id = policy.progression_priority_grade_id
         return _enter_grade(
-            program, migrated, migrated.active_grades.index("C"),
+            program, migrated, migrated.active_grades.index(priority_grade_id),
             stage="MAIN", first_recovery=(), main_sweep_visited=(),
             latest_rubric_digest=migrated.latest_rubric_digest)
     return migrated
-
-
-def migrate_c_frontier_priority_epoch(program, state: SchoolState) -> SchoolState:
-    """Re-anchor pre-policy queued work without inventing neural progress.
-
-    Older receipts can resume in a full B MAIN/recovery queue.  The new budget
-    begins at zero, so that inherited burst would violate the policy before its
-    counters had any chance to govern.  Only teaching stages are re-anchored;
-    an owed ASSESS_* boundary remains untouched and is consumed normally.
-    """
-    program = _program(program)
-    if (not _c_frontier_priority_mode(program, state) or
-            state.stage not in ("MAIN", "RECOVERY_1", "RECOVERY_2")):
-        return state
-    b_caps = set(_caps(program, ("B",)))
-    if not state.queue or state.queue[0] not in b_caps:
-        return state
-    return _enter_grade(
-        program, state, state.active_grades.index("C"),
-        stage="MAIN", first_recovery=(), main_sweep_visited=(),
-        latest_rubric_digest=state.latest_rubric_digest)
 
 
 
@@ -412,7 +460,8 @@ def _enter_grade(program, state: SchoolState, grade_index: int, **changes) -> Sc
     return replace(entered, queue=queue)
 
 
-def start_new(program, initial_student: Checkpoint) -> SchoolState:
+def start_new(program, initial_student: Checkpoint, *,
+              debt_cadence_policy: DebtCadencePolicy | None = None) -> SchoolState:
     program = _program(program)
     state = SchoolState(schema="bilqis.mlx.letter-grade/v1",
                        course_digest=program.digest(),
@@ -420,7 +469,7 @@ def start_new(program, initial_student: Checkpoint) -> SchoolState:
                        grade_index=0, stage="MAIN",
                        queue=_caps(program, (program.grades[0].id,)),
                        first_recovery=(), current_student=initial_student,
-                       champions={})
+                       champions={}, debt_cadence_policy=debt_cadence_policy)
     return replace(state, queue=_main_queue(program, state))
 
 
@@ -465,6 +514,11 @@ def verify_state(program, state: SchoolState):
             tuple(g.id for g in program.grades if g.id in state.active_grades) != state.active_grades or
             not set(state.champions) <= known):
         raise ValueError("INVALID_GRADE_PROGRAM_OR_CHAMPIONS")
+    if (state.debt_cadence_policy is not None and
+            (not isinstance(state.debt_cadence_policy, DebtCadencePolicy) or
+             not {state.debt_cadence_policy.bounded_debt_grade_id,
+                  state.debt_cadence_policy.progression_priority_grade_id} <= known)):
+        raise ValueError("INVALID_DEBT_CADENCE_POLICY")
     if any(cap not in _score_pool(program, state) for cap in state.queue + state.first_recovery):
         raise ValueError("QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES")
     if (state.visits < 0 or state.school_cycles < 1 or
@@ -544,13 +598,14 @@ def visit(program, state: SchoolState, capability: str,
     frontier_priority_visits = state.frontier_priority_visits
     nongating_b_visits = state.nongating_b_visits
     non_b_training_turns_since_b_run = state.non_b_training_turns_since_b_run
-    if _c_frontier_priority_mode(program, state):
-        if capability in set(_caps(program, ("C",))):
+    if _debt_cadence_mode(program, state):
+        policy = state.debt_cadence_policy
+        if capability in set(_caps(program, (policy.progression_priority_grade_id,))):
             frontier_priority_visits += 1
-        elif capability in set(_caps(program, ("B",))):
+        elif capability in set(_caps(program, (policy.bounded_debt_grade_id,))):
             nongating_b_visits += 1
         if not rest:
-            if state.grade == "B":
+            if state.grade == policy.bounded_debt_grade_id:
                 non_b_training_turns_since_b_run = 0
             else:
                 non_b_training_turns_since_b_run += 1
@@ -633,19 +688,21 @@ def _resume_ordinary_spiral(program, state: SchoolState,
                             snapshot: Assessment, *,
                             allowed_capabilities: tuple[str, ...] | None = None,
                             reset_sweep: bool = True) -> SchoolState | None:
-    if _c_frontier_priority_mode(program, state):
-        due_b = _enter_due_b_debt_run(
+    if _debt_cadence_mode(program, state):
+        due = _enter_due_debt_run(
             program, state, snapshot,
             allowed_capabilities=allowed_capabilities,
             reset_sweep=reset_sweep)
-        if due_b is not None:
-            return due_b
+        if due is not None:
+            return due
         allowed = (set(snapshot.scores) if allowed_capabilities is None
                    else set(allowed_capabilities))
-        c_caps = tuple(cap for cap in _caps(program, ("C",)) if cap in allowed)
-        if _imperfect_ranked(snapshot.scores, c_caps):
+        priority_grade_id = state.debt_cadence_policy.progression_priority_grade_id
+        priority_caps = tuple(cap for cap in _caps(program, (priority_grade_id,))
+                              if cap in allowed)
+        if _imperfect_ranked(snapshot.scores, priority_caps):
             return _enter_grade(
-                program, state, state.active_grades.index("C"),
+                program, state, state.active_grades.index(priority_grade_id),
                 stage="MAIN", first_recovery=(),
                 main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
                 latest_rubric_digest=snapshot.rubric_digest)
@@ -685,21 +742,23 @@ def _continue_main_sweep(program, state: SchoolState,
     visited = state.main_sweep_visited
     if state.grade not in visited:
         visited = visited + (state.grade,)
-    if _c_frontier_priority_mode(program, state):
-        due_b = _enter_due_b_debt_run(
+    if _debt_cadence_mode(program, state):
+        due = _enter_due_debt_run(
             program, state, snapshot,
             allowed_capabilities=allowed_capabilities,
             reset_sweep=False)
-        if due_b is not None:
-            return due_b
-        if state.grade == "C":
+        if due is not None:
+            return due
+        priority_grade_id = state.debt_cadence_policy.progression_priority_grade_id
+        if state.grade == priority_grade_id:
             return None
         allowed = (set(snapshot.scores) if allowed_capabilities is None
                    else set(allowed_capabilities))
-        c_caps = tuple(cap for cap in _caps(program, ("C",)) if cap in allowed)
-        if _imperfect_ranked(snapshot.scores, c_caps):
+        priority_caps = tuple(cap for cap in _caps(program, (priority_grade_id,))
+                              if cap in allowed)
+        if _imperfect_ranked(snapshot.scores, priority_caps):
             return _enter_grade(
-                program, state, state.active_grades.index("C"),
+                program, state, state.active_grades.index(priority_grade_id),
                 stage="MAIN", first_recovery=(),
                 main_sweep_visited=visited,
                 latest_rubric_digest=snapshot.rubric_digest)
@@ -938,9 +997,9 @@ def _assess_ordinary(program, state: SchoolState,
                            else state.main_sweep_visited),
                        latest_rubric_digest=snapshot.rubric_digest)
     if state.stage == "ASSESS_RECOVERY_1":
-        due_b = _enter_due_b_debt_run(program, state, snapshot)
-        if due_b is not None:
-            return due_b
+        due = _enter_due_debt_run(program, state, snapshot)
+        if due is not None:
+            return due
         trio = _frontier_recovery_queue(
             program, state, snapshot.scores, pool)
         return replace(state, stage="RECOVERY_2", queue=trio,
@@ -965,8 +1024,8 @@ def _advance_after_promotion_sweep(program, state: SchoolState,
         advanced = _at_introduction_stage(
             cleared, next_stage, stage="MAIN",
             queue=grade.teaching_stages[next_stage], first_recovery=())
-        due_b = _enter_due_b_debt_run(program, advanced, snapshot)
-        return due_b if due_b is not None else advanced
+        due = _enter_due_debt_run(program, advanced, snapshot)
+        return due if due is not None else advanced
     if _perfect_in_grade(program, state.grade, snapshot.scores):
         return replace(_promote(program, cleared, snapshot),
                        grade_exam_epoch=state.grade_exam_epoch + 1)
@@ -1179,10 +1238,10 @@ def assess_withheld(program, state: SchoolState, snapshot: Assessment,
         return replace(state, stage="DEFERRED_STAGNATION", queue=(),
                        first_recovery=(), latest_rubric_digest=snapshot.rubric_digest)
     if state.stage == "ASSESS_RECOVERY_1":
-        due_b = _enter_due_b_debt_run(
+        due = _enter_due_debt_run(
             program, state, snapshot, allowed_capabilities=active_pool)
-        if due_b is not None:
-            return due_b
+        if due is not None:
+            return due
         trio = _frontier_recovery_queue(
             program, state, snapshot.scores, active_pool)
         if trio:
@@ -1459,7 +1518,18 @@ def read_state(path: Path, program) -> SchoolState:
     raw["pending_failures"] = tuple(raw["pending_failures"])
     raw["main_sweep_visited"] = tuple(raw.get("main_sweep_visited", ()))
     raw["carried_mastery_debt"] = tuple(raw.get("carried_mastery_debt", ()))
+    legacy_debt_cadence_policy = "debt_cadence_policy" not in raw
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in raw
+    legacy_frontier_priority_epoch = (
+        "frontier_priority_visits" not in raw and
+        "nongating_b_visits" not in raw)
+    policy_value = raw.get("debt_cadence_policy")
+    if policy_value is not None:
+        if not isinstance(policy_value, dict):
+            raise ValueError("INVALID_DEBT_CADENCE_POLICY")
+        raw["debt_cadence_policy"] = DebtCadencePolicy(**policy_value)
+    else:
+        raw["debt_cadence_policy"] = None
     raw["promotion_sweep_scope"] = tuple(raw.get("promotion_sweep_scope", ()))
     raw["promotion_sweep_return_stage"] = raw.get(
         "promotion_sweep_return_stage")
@@ -1474,8 +1544,12 @@ def read_state(path: Path, program) -> SchoolState:
     raw["champions"] = {grade: Checkpoint(**cp)
                         for grade, cp in raw["champions"].items()}
     result = SchoolState(**raw)
+    if legacy_debt_cadence_policy:
+        result = migrate_legacy_debt_cadence_policy(program, result)
+    if legacy_frontier_priority_epoch:
+        result = migrate_legacy_debt_cadence_queue(program, result)
     if legacy_b_full_run_epoch:
-        result = migrate_b_full_run_epoch(program, result)
+        result = migrate_legacy_debt_cadence_epoch(program, result)
     verify_state(program, result)
     return result
 

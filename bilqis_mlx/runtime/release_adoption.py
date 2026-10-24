@@ -125,11 +125,25 @@ def _verify_profile_successor(predecessor, successor, graph, profile):
         raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH")
 
 
-def _profile_transition(previous_program, successor_program, school, *, mastery_debt=None):
+_UNSPECIFIED_DEBT_CADENCE_POLICY = object()
+
+
+def _profile_transition(previous_program, successor_program, school, *,
+                        mastery_debt=None,
+                        debt_cadence_policy=_UNSPECIFIED_DEBT_CADENCE_POLICY):
     topology = _curriculum_scheduler.classify_schedule_topology(previous_program, successor_program)
     appended = topology is _curriculum_scheduler.ScheduleTopology.APPEND_GRADE
+    policy = (school.debt_cadence_policy
+              if debt_cadence_policy is _UNSPECIFIED_DEBT_CADENCE_POLICY
+              else debt_cadence_policy)
+    if (policy is not None and not isinstance(
+            policy, _curriculum_scheduler.DebtCadencePolicy)):
+        raise ValueError("INVALID_DEBT_CADENCE_POLICY")
     if topology is _curriculum_scheduler.ScheduleTopology.UNCHANGED and mastery_debt is None:
-        return school, None, False
+        next_state = (school if policy == school.debt_cadence_policy else
+                      _dataclasses.replace(school, debt_cadence_policy=policy))
+        _curriculum_scheduler.verify_state(successor_program, next_state)
+        return next_state, None, False
     revised = topology in (
         _curriculum_scheduler.ScheduleTopology.UNCHANGED,
         _curriculum_scheduler.ScheduleTopology.SAME_GRADE_EXPANSION,
@@ -138,10 +152,12 @@ def _profile_transition(previous_program, successor_program, school, *, mastery_
         if mastery_debt is None and school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
             mastery_debt = school.carried_mastery_debt
         return (
-            (_curriculum_scheduler.append_next_grade_with_debt(
+            _dataclasses.replace((_curriculum_scheduler.append_next_grade_with_debt(
                 previous_program, successor_program, school, mastery_debt)
              if mastery_debt is not None else
-             _curriculum_scheduler.adopt_appended_program(previous_program, successor_program, school)),
+             _curriculum_scheduler.adopt_appended_program(
+                 previous_program, successor_program, school)),
+                    debt_cadence_policy=policy),
             None,
             True,
         )
@@ -157,6 +173,9 @@ def _profile_transition(previous_program, successor_program, school, *, mastery_
         else:
             next_state, revised_grade = _curriculum_scheduler.adopt_revised_program(
                 previous_program, successor_program, school)
+        next_state = _dataclasses.replace(
+            next_state, debt_cadence_policy=policy)
+        _curriculum_scheduler.verify_state(successor_program, next_state)
         return next_state, revised_grade, False
     raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
 
@@ -239,7 +258,8 @@ def _profile_adoption_receipt(
 
 def _adopt_executable_profile(
         run_dir, receipt, grade_a_course, source_root, graph, profile, *,
-        compiled_successor=None, allow_mastery_debt=False):
+        compiled_successor=None, allow_mastery_debt=False,
+        debt_cadence_policy=_UNSPECIFIED_DEBT_CADENCE_POLICY):
     """Adopt one same-ABI v2 profile change without release-name dispatch."""
     predecessor = _runtime_admission._require_executable_factory_admission(run_dir, receipt, graph)
     previous_program = _factory_schedule.schedule_program_from_executable_release(predecessor)
@@ -261,7 +281,8 @@ def _adopt_executable_profile(
         _, mastery_debt = _catalog_boundary_evidence(
             predecessor, previous_program, school, receipt, allow_mastery_debt=True)
     next_state, revised_grade, appended = _profile_transition(
-        previous_program, successor_program, school, mastery_debt=mastery_debt)
+        previous_program, successor_program, school, mastery_debt=mastery_debt,
+        debt_cadence_policy=debt_cadence_policy)
     successor, release_file, admission = _runtime_admission._executable_factory_admission(
         run_dir, successor, next_state.current_student,
         receipt["semantic_graph_sha256"], graph)

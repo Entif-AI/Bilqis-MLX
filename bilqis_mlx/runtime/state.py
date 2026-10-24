@@ -9,7 +9,8 @@ import uuid
 
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.curriculum.scheduler import (
-    SchoolState, migrate_b_full_run_epoch, migrate_c_frontier_priority_epoch,
+    DebtCadencePolicy, SchoolState, migrate_legacy_debt_cadence_epoch,
+    migrate_legacy_debt_cadence_policy, migrate_legacy_debt_cadence_queue,
     verify_state,
 )
 
@@ -50,6 +51,7 @@ def _state_from_json(value: dict, course) -> SchoolState:
     legacy_frontier_priority_epoch = (
         "frontier_priority_visits" not in school and
         "nongating_b_visits" not in school)
+    legacy_debt_cadence_policy = "debt_cadence_policy" not in school
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in school
     school.setdefault("main_sweep_visited", ())
     school.setdefault("carried_mastery_debt", ())
@@ -60,6 +62,13 @@ def _state_from_json(value: dict, course) -> SchoolState:
     school.setdefault("frontier_priority_visits", 0)
     school.setdefault("nongating_b_visits", 0)
     school.setdefault("non_b_training_turns_since_b_run", 0)
+    policy_value = school.get("debt_cadence_policy")
+    if policy_value is not None:
+        if not isinstance(policy_value, dict):
+            raise ValueError("INVALID_DEBT_CADENCE_POLICY")
+        school["debt_cadence_policy"] = DebtCadencePolicy(**policy_value)
+    else:
+        school["debt_cadence_policy"] = None
     for name in ("active_grades", "queue", "first_recovery", "pending_failures",
                  "main_sweep_visited", "carried_mastery_debt",
                  "promotion_sweep_scope"):
@@ -73,10 +82,12 @@ def _state_from_json(value: dict, course) -> SchoolState:
     school["champions"] = {key: Checkpoint(**item)
                            for key, item in school["champions"].items()}
     result = SchoolState(**school)
+    if legacy_debt_cadence_policy:
+        result = migrate_legacy_debt_cadence_policy(course, result)
     if legacy_frontier_priority_epoch:
-        result = migrate_c_frontier_priority_epoch(course, result)
+        result = migrate_legacy_debt_cadence_queue(course, result)
     if legacy_b_full_run_epoch:
-        result = migrate_b_full_run_epoch(course, result)
+        result = migrate_legacy_debt_cadence_epoch(course, result)
     verify_state(course, result)
     return result
 

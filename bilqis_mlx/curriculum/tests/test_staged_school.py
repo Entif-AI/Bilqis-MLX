@@ -6,8 +6,10 @@ import unittest
 
 from bilqis_mlx.curriculum import ExamItem, validate, validate_exam_item
 from bilqis_mlx.curriculum.scheduler import (
-    _at_introduction_stage, _enter_grade, assess, assess_withheld,
-    assessment_capabilities, next_capability, start_new, visit,
+    DebtCadencePolicy, _at_introduction_stage, _debt_run_due,
+    _debt_run_queue, _enter_grade, _frontier_recovery_queue, assess,
+    assess_withheld, assessment_capabilities, next_capability, start_new,
+    visit, Score,
 )
 from bilqis_mlx.trainer import _state_from_json
 from bilqis_mlx.curriculum.tests.test_school import all_scores, cp, grade_loop, snapshot, three_grade_course
@@ -32,7 +34,9 @@ def finish_promotion_sweep(course, state, pointer, scores):
 
 def enter_c(course):
     pointer = cp("whole-student")
-    state = start_new(course, pointer)
+    state = start_new(
+        course, pointer,
+        debt_cadence_policy=DebtCadencePolicy.from_legacy_adr094())
     # A, initial B, then the required A->B replay, all at one complete student.
     for grade in ("A", "B", "A", "B"):
         assert state.grade == grade
@@ -45,6 +49,44 @@ def enter_c(course):
 
 
 class StagedSchoolTests(unittest.TestCase):
+    def test_debt_roles_and_cadence_come_from_policy_data(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        policy = DebtCadencePolicy(
+            bounded_debt_grade_id="A",
+            progression_priority_grade_id="C",
+            non_debt_turns_per_run=2)
+        state = replace(state, debt_cadence_policy=policy,
+                        carried_mastery_debt=("a.0", "c.0"),
+                        non_b_training_turns_since_b_run=1)
+        scores = snapshot(course, pointer, all_scores(course, through="C")).scores
+        scores["a.0"] = Score(4, 8)
+        scores["c.0"] = Score(4, 8)
+
+        self.assertFalse(_debt_run_due(course, state))
+        state = replace(state, non_b_training_turns_since_b_run=2)
+        self.assertTrue(_debt_run_due(course, state))
+        self.assertEqual(_debt_run_queue(course, state, scores), ("a.0",))
+        self.assertEqual(
+            _frontier_recovery_queue(course, state, scores, ("a.0", "c.0")),
+            ("c.0",))
+
+    def test_new_state_does_not_infer_historical_debt_cadence(self):
+        state = start_new(staged_course(), cp("new-school"))
+        self.assertIsNone(state.debt_cadence_policy)
+
+    def test_legacy_school_state_translates_adr094_cadence_without_rewriting_input(self):
+        course = staged_course()
+        state, _ = enter_c(course)
+        legacy = asdict(state)
+        legacy.pop("debt_cadence_policy")
+
+        migrated = _state_from_json(legacy, course)
+
+        self.assertNotIn("debt_cadence_policy", legacy)
+        self.assertEqual(migrated.debt_cadence_policy,
+                         DebtCadencePolicy.from_legacy_adr094())
+
     def test_c_frontier_due_b_turn_is_full_imperfect_grade_pass(self):
         course = staged_course()
         state, pointer = enter_c(course)

@@ -476,6 +476,7 @@ class NumericStaircaseTests(unittest.TestCase):
             self.assertEqual(len(admitted_operator_head['implementation_sha256']),
                              64)
             self.assertEqual(int(own.state['step'].item()), int(opt.state['step'].item()))
+            self.assertIsNone(c_record['school']['debt_cadence_policy'])
             admitted = storage._read_executable_factory_release_artifact(
                 root, c_record)
             program = schedule_program_from_executable_release(admitted)
@@ -511,6 +512,11 @@ class NumericStaircaseTests(unittest.TestCase):
         wide = {**wide, 'school': {
             **wide['school'],
             'carried_mastery_debt': ['C.COUNT', 'C.MUL', 'C.DIV'],
+            'debt_cadence_policy': {
+                'bounded_debt_grade_id': 'B',
+                'progression_priority_grade_id': 'C',
+                'non_debt_turns_per_run': 4,
+            },
         }}
         release = storage._read_executable_factory_release_artifact(
             self.root, wide)
@@ -524,6 +530,9 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertEqual(changed['numeric_scope_final_maximum'], 4)
         self.assertEqual(changed['school']['carried_mastery_debt'], ['C.COUNT'])
         self.assertEqual(changed['school']['current_student'], wide_student)
+        self.assertEqual(
+            changed['school']['debt_cadence_policy'],
+            wide['school']['debt_cadence_policy'])
         self.assertEqual(int(self.optimizer.state['step'].item()), prior_step)
         self.assertEqual(
             [cap.id for cap in program.grades[-1].capabilities],
@@ -531,6 +540,10 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertEqual(
             narrowed.profile.profile_id.rsplit('-', 1)[-1], '3')
         self.assertTrue(storage._mentor_epoch_references(changed))
+        school = storage._state_from_json(changed['school'], program)
+        cleared, _, _ = storage._profile_transition(
+            program, program, school, debt_cadence_policy=None)
+        self.assertIsNone(cleared.debt_cadence_policy)
         malformed = {
             **changed,
             'championship_epoch_history': [
