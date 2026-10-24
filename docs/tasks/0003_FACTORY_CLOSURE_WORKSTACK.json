@@ -11,8 +11,8 @@
       "depends_on": [],
       "wave": "0",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 152,
+      "issue_sha256": "d5af1aa348f125281f6cb08475f674d7a98a3e91e62f480fae3cfe093fffc25f"
     },
     {
       "spec_id": "SPEC-0007",
@@ -25,8 +25,8 @@
       ],
       "wave": "1",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 153,
+      "issue_sha256": "7d4da029c59463b77ad30b7394c775cefa4edd8420fa767cdd1b1fc7ab2b1def"
     },
     {
       "spec_id": "SPEC-0008",
@@ -40,8 +40,8 @@
       ],
       "wave": "2",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 154,
+      "issue_sha256": "dab4ad7e835ea164524f7c3b523bfb549e79debd2aa2ccab3fcb57ee691740ac"
     },
     {
       "spec_id": "SPEC-0009",
@@ -54,8 +54,8 @@
       ],
       "wave": "1",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 155,
+      "issue_sha256": "3dfd3db0efc77dfaf51d8b66cf419d7d39e52f8fa6c2d46d07f17cfa67c0fda1"
     },
     {
       "spec_id": "SPEC-0010",
@@ -68,8 +68,8 @@
       ],
       "wave": "2",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 156,
+      "issue_sha256": "73ae612f61bc0a8223431d443518b4fb1a9be1ce7b73c308436ac43b2d3e7783"
     },
     {
       "spec_id": "SPEC-0011",
@@ -82,8 +82,8 @@
       ],
       "wave": "2",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 157,
+      "issue_sha256": "b363568b548fb4d82a0e674c61ed5b26d218d8de631d952f466ce5e13141e750"
     },
     {
       "spec_id": "SPEC-0012",
@@ -96,8 +96,8 @@
       ],
       "wave": "2",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 158,
+      "issue_sha256": "40c80f70a6b18d6edb177f0a3d09d44df75cc5d29ba6a8a26bc5fdc6edf1e85b"
     },
     {
       "spec_id": "SPEC-0013",
@@ -110,8 +110,8 @@
       ],
       "wave": "2",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 159,
+      "issue_sha256": "8e2fefbd6283da58b397fa342f5cd2caefb2f1786c8f986451a8faae2cfb362a"
     },
     {
       "spec_id": "SPEC-0014",
@@ -124,8 +124,8 @@
       ],
       "wave": "2",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 160,
+      "issue_sha256": "7526b67010f1bd112cd96c872b65b93e254fb4865e96445d22fca48eb2004aa3"
     },
     {
       "spec_id": "SPEC-0015",
@@ -138,8 +138,8 @@
       ],
       "wave": "2",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 178,
+      "issue_sha256": "f36ef1130056a1ce4517f836c44b73f3e35e77702b004d99e6ca38f56abb1fd1"
     },
     {
       "spec_id": "SPEC-0016",
@@ -152,8 +152,8 @@
       ],
       "wave": "3",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 180,
+      "issue_sha256": "180aa7ef53cf943a321cec3b4c4273b6c397ba704c1278f6501328b7d47ea079"
     },
     {
       "spec_id": "SPEC-0017",
@@ -166,8 +166,8 @@
       ],
       "wave": "4",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 181,
+      "issue_sha256": "f6c3bdac8bafa843b87a2c31ad83b4b98c5147b1a34a005542feadae8ec8b099"
     },
     {
       "spec_id": "SPEC-0018",
@@ -180,8 +180,8 @@
       ],
       "wave": "4",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 182,
+      "issue_sha256": "1be87a6d13a8144ab86dd3978137a86c270965b9eae3c578a68d16a8aa1e2019"
     },
     {
       "spec_id": "SPEC-0019",
@@ -194,8 +194,8 @@
       ],
       "wave": "5",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 183,
+      "issue_sha256": "66a1299bbeb72b45dd8f720690ac8c87aa39605aed63531558f3a556f6fc6688"
     },
     {
       "spec_id": "SPEC-0020",
@@ -209,8 +209,8 @@
       ],
       "wave": "5",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 184,
+      "issue_sha256": "9909b4b2ea449527f69a10e0f4f62bc22f165912416597f31dbe107f86d7f4e6"
     },
     {
       "spec_id": "SPEC-0021",
@@ -223,8 +223,8 @@
       ],
       "wave": "5",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 185,
+      "issue_sha256": "8e82482ca5d5121121c5842ed9e2fa8b8ad132b030935b6121015601cffda814"
     },
     {
       "spec_id": "SPEC-0022",
@@ -237,8 +237,8 @@
       ],
       "wave": "5",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 186,
+      "issue_sha256": "f4a9810687fd929bac2b95cb0d5a58296ebe0817619f067a9f854a18146d1e85"
     },
     {
       "spec_id": "SPEC-0023",
@@ -252,8 +252,8 @@
       ],
       "wave": "5",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 187,
+      "issue_sha256": "18e638a4a8e7d03f07550bacfb7a275430db1f2c1dc1dd29d5bdd3280d0900be"
     },
     {
       "spec_id": "SPEC-0024",
@@ -267,8 +267,8 @@
       ],
       "wave": "5",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 188,
+      "issue_sha256": "72e957527b11abe5c57f437b90896d64b380d4d1141df78ca45d3ff81125bf6c"
     },
     {
       "spec_id": "SPEC-0025",
@@ -282,8 +282,8 @@
       ],
       "wave": "6",
       "verification_tier": "T0_UNIT",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 189,
+      "issue_sha256": "10d342742f0471882c7079882d359c8bfad70bccdd8e9209c02b8b038c47ce6a"
     },
     {
       "spec_id": "SPEC-0026",
@@ -296,8 +296,8 @@
       ],
       "wave": "7",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 190,
+      "issue_sha256": "be666c7f7db4b64b2328b794f53dc8c65ab8e73aa88b8a5c7f9232ad479e8956"
     },
     {
       "spec_id": "SPEC-0027",
@@ -311,8 +311,8 @@
       ],
       "wave": "8",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 191,
+      "issue_sha256": "d1c25b93ebac41fdcaa12fe2b115ba1dda1a2b4a82275b8cce95be9c233a6eb8"
     },
     {
       "spec_id": "SPEC-0028",
@@ -326,8 +326,8 @@
       ],
       "wave": "8",
       "verification_tier": "T2_SYSTEM",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 192,
+      "issue_sha256": "f4cb9016f013840358ea7f0e65a8b53a31f0b1bf356a940a776ba189c5a38018"
     },
     {
       "spec_id": "SPEC-0029",
@@ -341,8 +341,8 @@
       ],
       "wave": "8",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 193,
+      "issue_sha256": "5b36b77136952ef4894e92fd1f8adc21501f0041b6d42d18d3ce9b951bdb5f82"
     },
     {
       "spec_id": "SPEC-0030",
@@ -356,8 +356,8 @@
       ],
       "wave": "9",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 194,
+      "issue_sha256": "982282b3b98559a979eee26e5aa5dce50669448a9c019810994ac876ceb2526e"
     },
     {
       "spec_id": "SPEC-0031",
@@ -371,8 +371,8 @@
       ],
       "wave": "10",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 195,
+      "issue_sha256": "9f9cb17e065ff7e220faeb5bc6f2bbb8204ce07443c0b88c1776bc8ef8befb4b"
     },
     {
       "spec_id": "SPEC-0032",
@@ -386,8 +386,8 @@
       ],
       "wave": "11",
       "verification_tier": "T2_SYSTEM",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 196,
+      "issue_sha256": "bce99b9da4da827d3d8ed0112db6d5a2c752882636c244672cffd050c80362eb"
     },
     {
       "spec_id": "SPEC-0033",
@@ -401,8 +401,8 @@
       ],
       "wave": "12",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 197,
+      "issue_sha256": "972e37439218003876c4108de1abbd4219ea6edd9ec816ef907129187c7ce87b"
     },
     {
       "spec_id": "SPEC-0034",
@@ -415,8 +415,8 @@
       ],
       "wave": "13",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 198,
+      "issue_sha256": "5ca64128a54e9fd27d55eadf7323652140d1aec01c6351a498f43688eeb46c16"
     },
     {
       "spec_id": "SPEC-0035",
@@ -429,8 +429,8 @@
       ],
       "wave": "14",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 199,
+      "issue_sha256": "48afafd27a759f4469f7ab9feefb58d13717478f120690ab2d75b62a49efaf56"
     },
     {
       "spec_id": "SPEC-0036",
@@ -443,8 +443,8 @@
       ],
       "wave": "14",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 200,
+      "issue_sha256": "5627e0010084d20a7d885fca3e9d9c3f546a1214e368fa0f74cd40c64954a455"
     },
     {
       "spec_id": "SPEC-0037",
@@ -457,8 +457,8 @@
       ],
       "wave": "14",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 201,
+      "issue_sha256": "b99bceb849294749f91ac0a12ad3a44c74e387cd477ad3c50b7cbeff2e8862bc"
     },
     {
       "spec_id": "SPEC-0038",
@@ -473,8 +473,8 @@
       ],
       "wave": "15",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 202,
+      "issue_sha256": "2e55fe881604d8b958ced1ecfd0f68b34831758fc4bf230b1747bf545ea73d5e"
     },
     {
       "spec_id": "SPEC-0039",
@@ -488,8 +488,8 @@
       ],
       "wave": "15",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 203,
+      "issue_sha256": "6b142d6dec47483d30e15f131aff6bb872fe1e880e144c6883e4739e94d521a3"
     },
     {
       "spec_id": "SPEC-0040",
@@ -503,8 +503,8 @@
       ],
       "wave": "13",
       "verification_tier": "T2_SYSTEM",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 204,
+      "issue_sha256": "1697fcdb2663269018a8760182db6717ab1fa511c778f87b555f48a3d48a496b"
     },
     {
       "spec_id": "SPEC-0041",
@@ -518,8 +518,8 @@
       ],
       "wave": "15",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 205,
+      "issue_sha256": "8541f34b27d5d8011195f7f4b0d295bcbb9cc05c92859ac2ae127a867e1f2f28"
     },
     {
       "spec_id": "SPEC-0042",
@@ -533,8 +533,8 @@
       ],
       "wave": "15",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 206,
+      "issue_sha256": "908f53750db8d894cf5eba694cb3d28c9b9566c29bbaf3373e6d76bed27a7c9c"
     },
     {
       "spec_id": "SPEC-0043",
@@ -550,8 +550,8 @@
       ],
       "wave": "16",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 207,
+      "issue_sha256": "1c7e1580570700a207e5231d364331ca6af81ce49dc1de78addf2d7186b5b989"
     },
     {
       "spec_id": "SPEC-0044",
@@ -567,8 +567,8 @@
       ],
       "wave": "17",
       "verification_tier": "T2_SYSTEM",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 208,
+      "issue_sha256": "532416d4ba461193d249e4aa42271000564f1a9e9ee03b7e222865d74736e188"
     },
     {
       "spec_id": "SPEC-0045",
@@ -583,8 +583,8 @@
       ],
       "wave": "18",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 209,
+      "issue_sha256": "85097b9f13f8341f3234d107f30601632170debbe33899c3cb37446a3c60042e"
     },
     {
       "spec_id": "SPEC-0046",
@@ -598,8 +598,8 @@
       ],
       "wave": "19",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 210,
+      "issue_sha256": "c4a8f4939223664261632a8d4b62870fdb02b056ef7f4c3447c526d9b7f74dfe"
     },
     {
       "spec_id": "SPEC-0047",
@@ -613,8 +613,8 @@
       ],
       "wave": "20",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 211,
+      "issue_sha256": "f9909dfffb22cf2fdea20284479fb152af2d304b4b065db49b842dc5db419146"
     },
     {
       "spec_id": "SPEC-0048",
@@ -628,8 +628,8 @@
       ],
       "wave": "20",
       "verification_tier": "T2_SYSTEM",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 212,
+      "issue_sha256": "f9d0502defa311364143f188d80dbcd9c0063f7ffc09d9ae4b9fee15fb62d354"
     },
     {
       "spec_id": "SPEC-0049",
@@ -643,8 +643,8 @@
       ],
       "wave": "21",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 213,
+      "issue_sha256": "8921b0ae55529e2b3ef63a7cce39e3138922895e6ee95bbe08e4967f40bcc700"
     },
     {
       "spec_id": "SPEC-0050",
@@ -658,8 +658,8 @@
       ],
       "wave": "21",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 214,
+      "issue_sha256": "0655f94c19baf1d3314e7bfd8563118a5927af44e0d88fbc2d4f64621c3ff3b3"
     },
     {
       "spec_id": "SPEC-0051",
@@ -673,8 +673,8 @@
       ],
       "wave": "21",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 215,
+      "issue_sha256": "90688ee0c9928afb293260d5bb0744ddbd597929be1fec6b0dec91443a4ff320"
     },
     {
       "spec_id": "SPEC-0052",
@@ -688,8 +688,8 @@
       ],
       "wave": "9",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 216,
+      "issue_sha256": "dec4c5da5da794a622639ba0caac8dde33437926b5f39cc2d46930695e03bcfb"
     },
     {
       "spec_id": "SPEC-0053",
@@ -703,8 +703,8 @@
       ],
       "wave": "21",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 217,
+      "issue_sha256": "631f1753d69cb0b6837917559a98a41cefede5a9b43c4d4200ef7bd9f1ee5be3"
     },
     {
       "spec_id": "SPEC-0054",
@@ -718,8 +718,8 @@
       ],
       "wave": "22",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 218,
+      "issue_sha256": "524929722855ba2cc84a1cc6cdf3533053a5fabd7d0a1d7547144e76aaeffc81"
     },
     {
       "spec_id": "SPEC-0055",
@@ -733,8 +733,8 @@
       ],
       "wave": "22",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 219,
+      "issue_sha256": "040da9e59b661a398ff73ecfc166b775650840059bc8390df99a3becba49c4cc"
     },
     {
       "spec_id": "SPEC-0056",
@@ -749,8 +749,8 @@
       ],
       "wave": "23",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 220,
+      "issue_sha256": "7aa3fd9dd25e846823988e8f6154afcfa179eb64a5afb426fc9306b1c2e41c45"
     },
     {
       "spec_id": "SPEC-0057",
@@ -764,8 +764,8 @@
       ],
       "wave": "24",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 221,
+      "issue_sha256": "957593aa137dc323b5f1670b5ef158592479dd27b9264eb24f8f15d81730bd7c"
     },
     {
       "spec_id": "SPEC-0058",
@@ -778,8 +778,8 @@
       ],
       "wave": "25",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 222,
+      "issue_sha256": "62d0278da78dd2884dcff408f8ebfb10f7c148383795c1bd1bef63f9b6e81d9d"
     },
     {
       "spec_id": "SPEC-0059",
@@ -794,8 +794,8 @@
       ],
       "wave": "25",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 223,
+      "issue_sha256": "f47891871dde34b9034b3b3d1a96ca426c1603c7baf613c08ec2ab789f16f4b6"
     },
     {
       "spec_id": "SPEC-0060",
@@ -809,8 +809,8 @@
       ],
       "wave": "26",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 224,
+      "issue_sha256": "476e30926eb90647f9ba0a2e66d8e500e4f325cc3a311ed3cb7f0def9cd81dd7"
     },
     {
       "spec_id": "SPEC-0061",
@@ -824,8 +824,8 @@
       ],
       "wave": "21",
       "verification_tier": "T0_LEAF",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 225,
+      "issue_sha256": "109750cdf1aa59019b70c5954d270a239f6a00fc554ff8eeb4cff8befd8ad855"
     },
     {
       "spec_id": "SPEC-0062",
@@ -838,8 +838,8 @@
       ],
       "wave": "4",
       "verification_tier": "T0_LEAF",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 226,
+      "issue_sha256": "5586e1b404e6e47d0b04ab6e8c2dc002cfed789f131d5329a72a464f01e01baf"
     },
     {
       "spec_id": "SPEC-0063",
@@ -854,8 +854,8 @@
       ],
       "wave": "22",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 227,
+      "issue_sha256": "46bca5153c4df68b390acab80f066fa2c39e55ab693b8050ec7a79a96add3535"
     },
     {
       "spec_id": "SPEC-0064",
@@ -870,8 +870,8 @@
       ],
       "wave": "22",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 228,
+      "issue_sha256": "957bc80b85da38a849f9738a933d9eda9f268d0666c00d90364fcd42a7e8a9ef"
     },
     {
       "spec_id": "SPEC-0065",
@@ -885,8 +885,8 @@
       ],
       "wave": "23",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 229,
+      "issue_sha256": "dc601455f499855d5f85df76461df0a7ff39483d87801365b58deb5757b574f1"
     },
     {
       "spec_id": "SPEC-0066",
@@ -899,8 +899,8 @@
       ],
       "wave": "23",
       "verification_tier": "T0_LEAF",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 230,
+      "issue_sha256": "c41daacdafaabbb663eb1fc1dbb1b16bf0a02ae900410ff9887914a17e9893df"
     },
     {
       "spec_id": "SPEC-0067",
@@ -916,8 +916,8 @@
       ],
       "wave": "23",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 231,
+      "issue_sha256": "541d44aa10ea460c4008cfae9de7d3ccd536b80388ea32899e11729960e7d810"
     },
     {
       "spec_id": "SPEC-0068",
@@ -932,8 +932,8 @@
       ],
       "wave": "24",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 232,
+      "issue_sha256": "f32c558545fe7dbfc2e0e7cf5d3d1dd9a7523b2e93ee8c92f2281923a76ba70a"
     },
     {
       "spec_id": "SPEC-0069",
@@ -946,8 +946,8 @@
       ],
       "wave": "21",
       "verification_tier": "T0_LEAF",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 233,
+      "issue_sha256": "6e27bf5d34f13889c9d09dfd39f63b69dbdac6db7b4b88879cf151772fb34750"
     },
     {
       "spec_id": "SPEC-0070",
@@ -961,8 +961,8 @@
       ],
       "wave": "23",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 234,
+      "issue_sha256": "7e1e7ef4bd5d7e4c635c0a8b0b6774379486a5d23304717ac4cf51071dae9426"
     },
     {
       "spec_id": "SPEC-0071",
@@ -975,8 +975,8 @@
       ],
       "wave": "24",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 235,
+      "issue_sha256": "bd0a770691b38ec80070b8d9b16a8b3a8e9c6e0f2e4811e55b688cbb6c828d45"
     },
     {
       "spec_id": "SPEC-0072",
@@ -990,8 +990,8 @@
       ],
       "wave": "25",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 236,
+      "issue_sha256": "bcac578ff1021a17ed9363ac6aa251be7db893ff445c3cc4ea90a9d4855765b2"
     },
     {
       "spec_id": "SPEC-0073",
@@ -1006,8 +1006,8 @@
       ],
       "wave": "25",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 237,
+      "issue_sha256": "e08d351347098d979f247ca0467166dc320abf474c8576e4fd6499db48641884"
     },
     {
       "spec_id": "SPEC-0074",
@@ -1020,8 +1020,8 @@
       ],
       "wave": "19",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 238,
+      "issue_sha256": "57635c70b7c8f9074069862f5840975e222b2e982005c25efdfd32455d22ea65"
     },
     {
       "spec_id": "SPEC-0075",
@@ -1035,8 +1035,8 @@
       ],
       "wave": "22",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 239,
+      "issue_sha256": "d22934716233a1813085ede7455c89c2c90388ec26ef755542428d76028fdfa1"
     },
     {
       "spec_id": "SPEC-0076",
@@ -1055,8 +1055,8 @@
       ],
       "wave": "25",
       "verification_tier": "T2_SYSTEM",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 240,
+      "issue_sha256": "c413c2ecbe7b729f00f51d59d0a64491b87c35ac14b62b71003d9e137ab5c33f"
     },
     {
       "spec_id": "SPEC-0077",
@@ -1070,8 +1070,8 @@
       ],
       "wave": "27",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 241,
+      "issue_sha256": "48d84b2408c4fd25ab746027d8f568207840feaf896d41760e77103295ce1ca9"
     },
     {
       "spec_id": "SPEC-0078",
@@ -1085,8 +1085,8 @@
       ],
       "wave": "27",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 242,
+      "issue_sha256": "a09c3719b58d6f2d294293adbb892f6af83a9a1f4af5c859d5b56968e57cd96c"
     },
     {
       "spec_id": "SPEC-0079",
@@ -1100,8 +1100,8 @@
       ],
       "wave": "27",
       "verification_tier": "T1_INTEGRATION",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 243,
+      "issue_sha256": "f34d9a2e4cddd27ad1911631c420684b52f92abc3009c743b627f2bbbd1587ef"
     },
     {
       "spec_id": "SPEC-0080",
@@ -1120,8 +1120,8 @@
       ],
       "wave": "28",
       "verification_tier": "T2_SYSTEM",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 244,
+      "issue_sha256": "ddf1aa568013a20a8a91960278141401b70b3d9bb9fb0e853734e5a1bbcd606d"
     },
     {
       "spec_id": "SPEC-0081",
@@ -1136,8 +1136,8 @@
       ],
       "wave": "29",
       "verification_tier": "T2_SYSTEM",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 245,
+      "issue_sha256": "195ba782a8b761bc551d86ca96908a8822a2f6d86dc2557c64054e3fa6eded18"
     },
     {
       "spec_id": "SPEC-0082",
@@ -1164,8 +1164,8 @@
       ],
       "wave": "30",
       "verification_tier": "T3_CLOSURE",
-      "issue_number": null,
-      "issue_sha256": null
+      "issue_number": 246,
+      "issue_sha256": "9d62257fe99a3903cd298a6816887639575118d1521388226392f4df3ac4425a"
     }
   ]
 }
