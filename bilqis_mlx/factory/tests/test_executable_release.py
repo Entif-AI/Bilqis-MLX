@@ -77,8 +77,27 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
             source_root=None,
             graph=self.graph,
             verification_seed=20261019,
-            legacy_course=self.course,
         )
+
+    def test_compilers_reject_deleted_legacy_course_keyword(self):
+        from bilqis_mlx.factory.executable_release import compile_successor_profile_release
+
+        release = self.compile()
+        with self.assertRaisesRegex(TypeError, "legacy_course"):
+            compile_executable_factory_release(
+                self.curriculum, self.bindings, CurriculumProfile.full(),
+                self.registry, self.answers, source_root=None, graph=self.graph,
+                verification_seed=17, legacy_course=self.course)
+        with self.assertRaisesRegex(TypeError, "legacy_course"):
+            compile_successor_profile_release(
+                release, CurriculumProfile.full(), self.registry, self.answers,
+                source_root=None, graph=self.graph, verification_seed=17,
+                legacy_course=self.course)
+        successor = compile_successor_profile_release(
+            release, CurriculumProfile.full(), self.registry, self.answers,
+            source_root=None, graph=self.graph, verification_seed=20261019)
+        self.assertEqual(successor.verification, release.verification)
+        self.assertEqual(successor.predecessor_release_sha256, release.release_sha256)
 
     def test_v2_release_roundtrips_complete_executable_authority(self):
         release = self.compile()
@@ -245,7 +264,7 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
         full = compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(),
             registry, answers, source_root=None, graph=graph,
-            verification_seed=17, legacy_course=course)
+            verification_seed=17)
         reduced_profile = CurriculumProfile(
             "boolean-kernel/and-iff",
             grades=(GradeProfile(
@@ -267,7 +286,7 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
         reduced = compile_executable_factory_release(
             curriculum, bindings, reduced_profile,
             registry, answers, source_root=None, graph=graph,
-            verification_seed=17, legacy_course=course,
+            verification_seed=17,
             predecessor=full)
 
         self.assertEqual(reduced.predecessor_release_sha256, full.release_sha256)
@@ -299,7 +318,7 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
                 self.curriculum, self.bindings, CurriculumProfile.full(),
                 failing_registry, self.answers,
                 source_root=None, graph=self.graph,
-                verification_seed=20261019, legacy_course=self.course)
+                verification_seed=20261019)
 
     def test_incompatible_semantic_geometry_cannot_be_admitted(self):
         predecessor = self.compile()
@@ -328,7 +347,7 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
                 curriculum, bindings, CurriculumProfile.full(),
                 self.registry, self.answers,
                 source_root=None, graph=incompatible_graph,
-                verification_seed=20261019, legacy_course=changed_course,
+                verification_seed=20261019,
                 predecessor=predecessor)
 
     def test_append_only_semantic_geometry_is_carried_by_successor_release(self):
@@ -352,7 +371,7 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
             curriculum, bindings, CurriculumProfile.full(),
             self.registry, self.answers,
             source_root=None, graph=expanded_graph,
-            verification_seed=20261019, legacy_course=expanded_course,
+            verification_seed=20261019,
             predecessor=predecessor)
 
         self.assertEqual(

@@ -176,8 +176,7 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
 
             release = compile_executable_factory_release(
                 curriculum, bindings, profile, registry, answers,
-                source_root=source, graph=graph, verification_seed=2026101903,
-                legacy_course=course)
+                source_root=source, graph=graph, verification_seed=2026101903)
             assert release.execution_plan == plan
             assert "source.micro.boolean-minimal/v1" not in {
                 cap.provider_id for cap in release.execution_plan.capabilities}
@@ -249,8 +248,7 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
             projected_release = compile_executable_factory_release(
                 projected_curriculum, projected_bindings, projected_profile,
                 registry, answers, source_root=source, graph=graph,
-                verification_seed=2026101904,
-                legacy_course=projected_course)
+                verification_seed=2026101904)
             assert projected_release.execution_plan == projected_plan
 
             numeric_transition = numeric_entry_transition(
@@ -265,8 +263,7 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
                 answers,
                 source_root=source,
                 graph=numeric_transition.graph,
-                verification_seed=2026101905,
-                legacy_course=numeric_course)
+                verification_seed=2026101905)
             assert numeric_release.transition.semantic_geometry == (
                 "APPEND_ONLY_EXPANSION")
             assert tuple(
@@ -306,8 +303,7 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
                 answers,
                 source_root=source,
                 graph=numeric_transition.graph,
-                verification_seed=2026101906,
-                legacy_course=next_numeric_course)
+                verification_seed=2026101906)
             assert numeric_four.transition.semantic_geometry == "UNCHANGED"
             assert answer_heads_from_executable_release(
                 numeric_four, numeric_transition.graph

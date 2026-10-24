@@ -648,7 +648,7 @@ def _verification_receipt(
         plan: ExecutionPlan, source_registry: SourceAdapterRegistry,
         answer_modalities: tuple[AnswerModality, ...],
         answer_heads: tuple[AnswerHeadBinding, ...], *, source_root, graph: dict,
-        verification_seed: int, legacy_course=None) -> ExecutableVerificationReceipt:
+        verification_seed: int) -> ExecutableVerificationReceipt:
     projection_map = {
         item.capability_id: item for item in plan.capability_projection_digests}
     receipts = []
@@ -715,7 +715,7 @@ def compile_executable_factory_release(
         curriculum: CurriculumDefinition, source_bindings: SourceBindingSet,
         profile: CurriculumProfile, source_registry: SourceAdapterRegistry,
         answer_registry: AnswerModalityRegistry, *, source_root, graph: dict,
-        verification_seed: int, legacy_course=None,
+        verification_seed: int,
         predecessor: ExecutableFactoryRelease | None = None,
         lineage: PlanLineage | None = None) -> ExecutableFactoryRelease:
     """Compile and source-verify one immutable v2 FactoryRelease."""
@@ -751,7 +751,7 @@ def compile_executable_factory_release(
     verification = _verification_receipt(
         curriculum, source_bindings, plan, source_registry,
         answer_modalities, answer_heads, source_root=source_root, graph=graph,
-        verification_seed=verification_seed, legacy_course=legacy_course)
+        verification_seed=verification_seed)
 
     predecessor_sha = None
     transition = None
@@ -802,8 +802,7 @@ def compile_successor_profile_release(
         profile: CurriculumProfile,
         source_registry: SourceAdapterRegistry,
         answer_registry: AnswerModalityRegistry, *,
-        source_root, graph: dict, verification_seed: int,
-        legacy_course=None) -> ExecutableFactoryRelease:
+        source_root, graph: dict, verification_seed: int) -> ExecutableFactoryRelease:
     """Recompile one profile over the predecessor's immutable authorities."""
     if not isinstance(predecessor, ExecutableFactoryRelease):
         raise TypeError("FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID")
@@ -817,7 +816,6 @@ def compile_successor_profile_release(
         source_root=source_root,
         graph=graph,
         verification_seed=verification_seed,
-        legacy_course=legacy_course,
         predecessor=predecessor,
     )
 
