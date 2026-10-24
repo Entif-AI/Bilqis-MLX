@@ -404,6 +404,30 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
             self.assertIs(_schedule_for_receipt(ROOT, receipt, supplied), program)
         read_program.assert_called_once_with(str(ROOT.resolve()), release.release_sha256,
                                              receipt["factory_release_file"])
+        from bilqis_mlx.curriculum.scheduler import adopt_appended_program, start_new
+        from bilqis_mlx.learning.champions import Checkpoint
+        checkpoint = Checkpoint("a" * 64, "bundles/disposable-append", 7, True)
+        previous = replace(program, program_complete=False)
+        completed = replace(start_new(previous, checkpoint),
+            stage="AWAITING_NEXT_GRADE", queue=(), champions={"Z": checkpoint},
+            introduction_stage=len(previous.grades[0].teaching_stages) - 1)
+        added = replace(program.grades[0], id="Q")
+        added = replace(added, capabilities=tuple(replace(cap, id="Q." + cap.id)
+                                                for cap in added.capabilities),
+                        teaching_stages=tuple(tuple("Q." + name for name in stage)
+                                              for stage in added.teaching_stages))
+        successor = replace(previous, program_digest="b" * 64,
+                            grades=(*previous.grades, added),
+                            assessment_projections=(*previous.assessment_projections,
+                                *(("Q." + name, digest) for name, digest
+                                  in previous.assessment_projections)))
+        admitted = adopt_appended_program(previous, successor, completed)
+        self.assertEqual(admitted.grade, "Q")
+        self.assertEqual(admitted.current_student, checkpoint)
+        self.assertEqual(admitted.champions, {"Z": checkpoint})
+        self.assertEqual(admitted.queue, ("Q." + names[0],))
+        self.assertEqual(admitted.course_digest, successor.digest())
+        self.assertEqual(completed.current_student, checkpoint)
         self.assertEqual(tuple(cap.id for cap in program.grades[0].capabilities), names)
         self.assertEqual(tuple(program.capability_map), names)
         self.assertEqual(program.grades[0].exam_item_counts, tuple((name, 4) for name in names))
