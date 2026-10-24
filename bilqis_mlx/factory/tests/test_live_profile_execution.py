@@ -354,7 +354,7 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
             SourceAdapter(f"fixture.provider.{i}", f"fixture.generator.{i}",
                           (f"fixture.oracle.{i}",), str(i + 1) * 64),
             partial(draw, i), partial(check, i)) for i in range(2)))
-        names = tuple(f"Z.C{i}" for i in range(12))
+        names = tuple(f"opaque.task-{i}" for i in range(12))
         curriculum = CurriculumDefinition("fixture.twelve/v1", (GradeSpec("Z", tuple(
             CapabilitySpec(name, "fixture", (f"root.{i}",), (f"root.{i}",), (), (),
                            (AnswerFamily("binary", BINARY),)) for i, name in enumerate(names)),
@@ -422,6 +422,11 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
                                 *(("Q." + name, digest) for name, digest
                                   in previous.assessment_projections)))
         admitted = adopt_appended_program(previous, successor, completed)
+        from bilqis_mlx.runtime.release_adoption import _profile_transition
+        transitioned, revised_grade, appended = _profile_transition(previous, successor, completed)
+        self.assertEqual(transitioned, admitted)
+        self.assertIsNone(revised_grade)
+        self.assertTrue(appended)
         self.assertEqual(admitted.grade, "Q")
         self.assertEqual(admitted.current_student, checkpoint)
         self.assertEqual(admitted.champions, {"Z": checkpoint})
