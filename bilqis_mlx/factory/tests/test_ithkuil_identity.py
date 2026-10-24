@@ -91,11 +91,14 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
             course=None, executable_release=self.staged.successor, capability=CAPABILITY,
             batch_size=32, fresh_seed=42, prior_capability=None, prior_seed=None,
             fragile_fixed_rows=(), fragile_requested=(), fragile_seeds={},
-            fragile_rotation=0, teaching_seed=43, teaching_enrichment_enabled=True)
+            fragile_rotation=0, retention_support_capability=None,
+            retention_support_seed=None, retention_support_rotation=0,
+            teaching_seed=43, teaching_enrichment_enabled=True)
         packet = prepare_step_sources(request)
         self.assertEqual(packet["identity"], request["identity"])
         self.assertEqual(len(packet["fresh"]), 32)
         self.assertTrue(all(check(row, graph=self.graph) for row in packet["fresh"]))
+        self.assertEqual(packet["retention_support"], [])
         self.assertEqual(packet["teaching_enrichment_rows"], [])
 
     def test_proposal_requires_both_current_prerequisites(self):

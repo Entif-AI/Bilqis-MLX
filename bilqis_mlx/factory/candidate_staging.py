@@ -147,7 +147,7 @@ def compile_candidate_successor(
     successor = compile_executable_factory_release(
         curriculum, source_bindings, profile, source_registry, answer_registry,
         source_root=source_root, graph=graph, verification_seed=verification_seed,
-        legacy_course=legacy_course, predecessor=current)
+        predecessor=current)
     provisional = StagedCandidate(frontier.release_sha256, candidate_id,
                                   candidate.proposed_capability_id, sense.sense_id,
                                   anchor, successor, "0" * 64)

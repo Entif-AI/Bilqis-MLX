@@ -14,10 +14,11 @@ from bilqis_mlx.learning.fragile_replay import (
     select_preservation_rows,
     select_structural_preservation_rows,
 )
+from bilqis_mlx.factory.live_answers import live_answer_registry
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.live_curriculum import draw_course_rows
-from bilqis_mlx.factory.generation import draw_executable_release_rows
 from bilqis_mlx.factory.teaching import optional_teaching_rows
+from .source_execution import SourceExecutionContext
 
 
 SCHEMA = "bilqis.mlx.source-prefetch/v1"
@@ -40,22 +41,34 @@ def source_prefetch_pool(workers: int) -> ProcessPoolExecutor:
     )
 
 
-def _source_rows(request, *, seed: int, capability: str, each: int):
+def _source_execution_context(request: dict) -> SourceExecutionContext | None:
+    release = request.get("executable_release")
+    if release is None:
+        return None
+    return SourceExecutionContext(
+        release=release,
+        graph=request["graph"],
+        source_root=Path(request["source_root"]),
+        source_registry=live_source_registry(),
+        answer_registry=live_answer_registry(),
+    )
+
+
+def _source_rows(request, *, seed: int, capability: str, each: int,
+                 source_context: SourceExecutionContext | None = None):
     """Only pure, previously admitted source contracts enter worker processes."""
     root = Path(request["source_root"])
     release = request.get("executable_release")
     if release is not None:
-        from bilqis_mlx.factory.generation import draw_executable_release_rows
-        return draw_executable_release_rows(
-            root, request["graph"], release, live_source_registry(),
-            seed=seed, capability=capability, each=each,
-            legacy_course=request["course"])
+        context = source_context or _source_execution_context(request)
+        return context.draw_rows(seed=seed, capability=capability, each=each)
     return draw_course_rows(
         root, request["graph"], request["course"],
         seed=seed, capability=capability, each=each)
 
 
-def _fragile_rows(request: dict) -> tuple[dict, ...]:
+def _fragile_rows(request: dict, *,
+                  source_context: SourceExecutionContext | None = None) -> tuple[dict, ...]:
     fixed = tuple(request["fragile_fixed_rows"])
     requested = tuple(request["fragile_requested"])
     if not fixed or not requested:
@@ -78,7 +91,7 @@ def _fragile_rows(request: dict) -> tuple[dict, ...]:
         for seed in seeds:
             fresh.extend(_source_rows(
                 request, seed=seed, capability=name,
-                each=max(96, batch_size * 3)))
+                each=max(96, batch_size * 3), source_context=source_context))
             matched = select_structural_preservation_rows(
                 fresh, fixed_capability, excluded_ids=excluded,
                 rotation=rotation, limit=4)
@@ -118,7 +131,8 @@ def _teaching_enrichment_rows(request: dict):
         seed=request["teaching_seed"], enabled=request["teaching_enrichment_enabled"])
 
 
-def _retention_support_rows(request: dict):
+def _retention_support_rows(request: dict, *,
+                            source_context: SourceExecutionContext | None = None):
     capability = request["retention_support_capability"]
     if capability is None:
         return ()
@@ -127,7 +141,8 @@ def _retention_support_rows(request: dict):
     )
     rows = _source_rows(
         request, seed=request["retention_support_seed"],
-        capability=capability, each=max(request["batch_size"], 6))
+        capability=capability, each=max(request["batch_size"], 6),
+        source_context=source_context)
     return _select_fresh_retention_support_rows(
         rows, rotation=request["retention_support_rotation"])
 
@@ -152,16 +167,19 @@ def prepare_step_sources(request: dict) -> dict:
         raise ValueError("SOURCE_PREFETCH_IDENTITY_INVALID")
     batch_size = request["batch_size"]
     source_root = Path(request["source_root"])
+    source_context = _source_execution_context(request)
     fresh = _source_rows(
         request, seed=request["fresh_seed"],
-        capability=request["capability"], each=max(32, batch_size))
+        capability=request["capability"], each=max(32, batch_size),
+        source_context=source_context)
     prior = []
     if request["prior_capability"] is not None:
         prior = _source_rows(
             request, seed=request["prior_seed"],
-            capability=request["prior_capability"], each=max(batch_size, 6))
-    preservation = _fragile_rows(request)
-    retention_support = _retention_support_rows(request)
+            capability=request["prior_capability"], each=max(batch_size, 6),
+            source_context=source_context)
+    preservation = _fragile_rows(request, source_context=source_context)
+    retention_support = _retention_support_rows(request, source_context=source_context)
     enrichment = _teaching_enrichment_rows(request)
     return {
         "schema": SCHEMA,
