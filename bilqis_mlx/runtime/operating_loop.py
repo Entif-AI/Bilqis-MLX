@@ -143,8 +143,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 run_dir, manifest, historical_course, course_a, source_root, teacher_sha)
             admitted_v2 = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
-            course = _compatibility_executable_projection.legacy_course_for_profile(
-                course_a, source_root, admitted_v2.profile)
+            course = _factory_schedule.schedule_program_from_executable_release(admitted_v2)
             active_grade_count = len(admitted_v2.execution_plan.grades)
             target_boolean_profile = None
             if (active_grade_count <= 2 and not autonomous_curriculum and
@@ -173,6 +172,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                         target_boolean_profile)
             admitted_v2 = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
+            course = _factory_schedule.schedule_program_from_executable_release(admitted_v2)
             if (admit_next_grade_with_debt and
                     len(admitted_v2.execution_plan.grades) == 2 and
                     len(admitted_v2.curriculum.grades) > 2):
@@ -193,6 +193,9 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                         params, optimizer, catalog_transition,
                         reserve_gib=reserve_gib,
                         allow_mastery_debt=admit_next_grade_with_debt))
+            admitted_v2 = _runtime_admission._require_executable_factory_admission(
+                run_dir, receipt, graph)
+            course = _factory_schedule.schedule_program_from_executable_release(admitted_v2)
             receipt = _runtime_reconciliation._repair_championship_source_context(run_dir, receipt, course)
         else:
             if numeric_staircase:
@@ -213,6 +216,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 full_grade_b=full_grade_b, numeric_staircase=numeric_staircase))
         receipt, executable_release, schedule_program = _runtime_release_adoption._ensure_executable_release(
             run_dir, receipt, course, course_a, source_root, graph)
+        course = schedule_program
         with _runtime_timing_trace.trace_span("RECONCILE_VOCABULARY"):
             receipt = _runtime_reconciliation._reconcile_vocabulary_metadata(
                 run_dir, receipt, course, params, optimizer, graph)
@@ -341,7 +345,8 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 schedule_program = _factory_schedule.schedule_program_from_executable_release(executable_release)
                 if autonomy_session is not None:
                     autonomy_session.refresh_release(executable_release)
-            school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
+            course = schedule_program
+            school = _runtime_state._state_from_json(receipt["school"], schedule_program)
             receipt = _runtime_reconciliation._reconcile_stagnation_scope(
                 run_dir, receipt, course, school)
             school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
@@ -359,8 +364,11 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                     params, optimizer, graph, receipt, course = _runtime_release_adoption._adopt_jit_proposal(
                         mx, run_dir, receipt, course_a, source_root, graph, params, optimizer,
                         autonomy_session, proposal, reserve_gib=reserve_gib)
-                    autonomy_session.refresh_release(
-                        _runtime_admission._read_executable_factory_release_artifact(run_dir, receipt))
+                    executable_release = _runtime_admission._read_executable_factory_release_artifact(
+                        run_dir, receipt)
+                    schedule_program = _factory_schedule.schedule_program_from_executable_release(executable_release)
+                    course = schedule_program
+                    autonomy_session.refresh_release(executable_release)
                     _runtime_checkpoints._record(run_dir, {
                         "event": "SCHOOL_AUTONOMY_JIT_PROPOSAL_ADOPTED",
                         "generation": receipt["generation"],

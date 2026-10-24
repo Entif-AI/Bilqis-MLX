@@ -137,6 +137,19 @@ def _fixture():
 
 
 class DisposableGradeZSystemProof(unittest.TestCase):
+    def test_current_operate_and_admitted_resume_do_not_reconstruct_courses(self):
+        import ast
+        import inspect
+        from bilqis_mlx.runtime.operating_loop import operate
+        from bilqis_mlx.runtime.session import _resume_admitted_student
+
+        for entrypoint in (operate, _resume_admitted_student):
+            with self.subTest(entrypoint=entrypoint.__name__):
+                tree = ast.parse(inspect.getsource(entrypoint))
+                calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)]
+                self.assertFalse(any(isinstance(node.func, ast.Attribute) and
+                    node.func.attr == "legacy_course_for_profile" for node in calls))
+
     def test_assessment_context_draws_twelve_v2_capabilities_without_course(self):
         from unittest.mock import patch
         from bilqis_mlx.runtime.assessment import _draw_live_rows
