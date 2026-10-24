@@ -1,3 +1,52 @@
+# Issue #150 factory continuation | 2026-10-24
+
+This checkpoint tracks the factory feature branch only. It makes no claim about
+the current live student's scores, optimizer step, or run state.
+
+- Parent issue: #150; take-up checkpoint: issue comment 6388320082.
+- Worktree: `/Users/emilie/Code/.worktrees/Bilqis-MLX/150-factory-microspecs-20261023`.
+- Branch: `codex/150-factory-microspecs-20261023`.
+- Verified local and `origin` HEAD: `01b427d649f190697752496b040419851c8fc707`.
+- Protected authority: IPR-0220 remains OPEN; latest checkpoint 6346014727 was read.
+- Applicable incident: PM-2026-10-24-001, already captured and read back.
+- Current factory leaf boundary: #208 / SPEC-0044. Its latest terminal state is
+  `BLOCKED_SPEC_GAP` comment 6387603122. Amendment 6386459341 does not yet
+  authorize the two additional test files or corrected focused proof.
+
+## Completed in this branch epoch
+
+Commit `01b427d649f190697752496b040419851c8fc707` updates README, AGENTS,
+TASK-0003, and two factory-navigation architecture records. The records now
+define issue-page bookmarks, staleable dependency blocks, no global manifest or
+receipt hydration during ordinary leaf work, and reuse of healthy warm model
+sessions across cold page boundaries.
+
+Proof passed:
+
+- `python3 scripts/check_docs.py` — `DOCS_CHECK_OK`.
+- `python3 scripts/check_factory_workstack.py --execution-ready` —
+  `FACTORY_WORKSTACK_OK leaves=77`, `READY=SPEC-0006`.
+- `git diff --cached --check` — passed before commit.
+- Remote branch readback matches the commit above.
+
+No runtime source changes or runtime tests have been performed in this epoch.
+No neural training, `--human-run`, or real student/AdamW/checkpoint/run-state
+mutation occurred; live neural state was not inspected.
+
+## Next permitted work
+
+Port the audited missing identity-deduplication fixes, PR #141 visit reset,
+module extraction preserving `ScheduleTopology`, explicit `DebtCadencePolicy`
+and PR #140 rejection-aware behavior, then numeric ceiling 4→6 and saved-ceiling
+migration. Run the exact requested focused and repository guards in stable
+batches, commit and push each verified batch, and update this handoff and #150.
+After reconciliation, post the bounded reopening amendment on #208, recheck only
+its named direct prerequisites, and execute #208 only if its live gate permits.
+
+The known module-size ratchet failure and the #208 test-surface/proof gap remain
+unresolved. Factory closure, student learning, and full-suite health are not
+claimed.
+
 # CURRENT SUPERSESSION | 2026-10-23 | Prometheus direct-U7C + C promotion sweep
 
 This supersedes the issue-349 run snapshot below for current operator state. The active
