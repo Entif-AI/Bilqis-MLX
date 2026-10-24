@@ -1,0 +1,169 @@
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Collection> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDC> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDF> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDS> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFC> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFF> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFS> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DPX> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSC> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSF> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSS> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDC> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDF> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDS> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFC> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFS> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSC> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSF> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSS> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/collection/configuration> <http://www.w3.org/2004/02/skos/core#member> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/UPX> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDC> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDC> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDC> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDC> <http://www.w3.org/2004/02/skos/core#notation> "DDC"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDC> <http://www.w3.org/2004/02/skos/core#notation> "fs"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDC> <http://www.w3.org/2004/02/skos/core#note> "Configuration value duplex/dissimilar/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDC> <http://www.w3.org/2004/02/skos/core#prefLabel> "duplex/dissimilar/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDF> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDF> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDF> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDF> <http://www.w3.org/2004/02/skos/core#notation> "DDF"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDF> <http://www.w3.org/2004/02/skos/core#notation> "š"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDF> <http://www.w3.org/2004/02/skos/core#note> "Configuration value duplex/dissimilar/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDF> <http://www.w3.org/2004/02/skos/core#prefLabel> "duplex/dissimilar/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDS> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDS> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDS> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDS> <http://www.w3.org/2004/02/skos/core#notation> "DDS"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDS> <http://www.w3.org/2004/02/skos/core#notation> "ţs"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDS> <http://www.w3.org/2004/02/skos/core#note> "Configuration value duplex/dissimilar/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDS> <http://www.w3.org/2004/02/skos/core#prefLabel> "duplex/dissimilar/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFC> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFC> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFC> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFC> <http://www.w3.org/2004/02/skos/core#notation> "DFC"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFC> <http://www.w3.org/2004/02/skos/core#notation> "kš"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFC> <http://www.w3.org/2004/02/skos/core#note> "Configuration value duplex/fuzzy/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFC> <http://www.w3.org/2004/02/skos/core#prefLabel> "duplex/fuzzy/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFF> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFF> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFF> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFF> <http://www.w3.org/2004/02/skos/core#notation> "DFF"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFF> <http://www.w3.org/2004/02/skos/core#notation> "pš"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFF> <http://www.w3.org/2004/02/skos/core#note> "Configuration value duplex/fuzzy/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFF> <http://www.w3.org/2004/02/skos/core#prefLabel> "duplex/fuzzy/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFS> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFS> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFS> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFS> <http://www.w3.org/2004/02/skos/core#notation> "DFS"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFS> <http://www.w3.org/2004/02/skos/core#notation> "č"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFS> <http://www.w3.org/2004/02/skos/core#note> "Configuration value duplex/fuzzy/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DFS> <http://www.w3.org/2004/02/skos/core#prefLabel> "duplex/fuzzy/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DPX> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DPX> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DPX> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DPX> <http://www.w3.org/2004/02/skos/core#notation> "DPX"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DPX> <http://www.w3.org/2004/02/skos/core#notation> "s"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DPX> <http://www.w3.org/2004/02/skos/core#note> "Configuration value duplex"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DPX> <http://www.w3.org/2004/02/skos/core#prefLabel> "duplex"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSC> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSC> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSC> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSC> <http://www.w3.org/2004/02/skos/core#notation> "DSC"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSC> <http://www.w3.org/2004/02/skos/core#notation> "ks"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSC> <http://www.w3.org/2004/02/skos/core#note> "Configuration value duplex/similar/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSC> <http://www.w3.org/2004/02/skos/core#prefLabel> "duplex/similar/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSF> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSF> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSF> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSF> <http://www.w3.org/2004/02/skos/core#notation> "DSF"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSF> <http://www.w3.org/2004/02/skos/core#notation> "ps"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSF> <http://www.w3.org/2004/02/skos/core#note> "Configuration value duplex/similar/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSF> <http://www.w3.org/2004/02/skos/core#prefLabel> "duplex/similar/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSS> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSS> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSS> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSS> <http://www.w3.org/2004/02/skos/core#notation> "DSS"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSS> <http://www.w3.org/2004/02/skos/core#notation> "c"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSS> <http://www.w3.org/2004/02/skos/core#note> "Configuration value duplex/similar/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DSS> <http://www.w3.org/2004/02/skos/core#prefLabel> "duplex/similar/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDC> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDC> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDC> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDC> <http://www.w3.org/2004/02/skos/core#notation> "MDC"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDC> <http://www.w3.org/2004/02/skos/core#notation> "f"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDC> <http://www.w3.org/2004/02/skos/core#note> "Configuration value multiplex/dissimilar/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDC> <http://www.w3.org/2004/02/skos/core#prefLabel> "multiplex/dissimilar/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDF> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDF> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDF> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDF> <http://www.w3.org/2004/02/skos/core#notation> "MDF"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDF> <http://www.w3.org/2004/02/skos/core#notation> "ç"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDF> <http://www.w3.org/2004/02/skos/core#note> "Configuration value multiplex/dissimilar/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDF> <http://www.w3.org/2004/02/skos/core#prefLabel> "multiplex/dissimilar/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDS> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDS> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDS> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDS> <http://www.w3.org/2004/02/skos/core#notation> "MDS"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDS> <http://www.w3.org/2004/02/skos/core#notation> "ţ"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDS> <http://www.w3.org/2004/02/skos/core#note> "Configuration value multiplex/dissimilar/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MDS> <http://www.w3.org/2004/02/skos/core#prefLabel> "multiplex/dissimilar/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFC> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFC> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFC> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFC> <http://www.w3.org/2004/02/skos/core#notation> "MFC"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFC> <http://www.w3.org/2004/02/skos/core#notation> "ž"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFC> <http://www.w3.org/2004/02/skos/core#note> "Configuration value multiplex/fuzzy/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFC> <http://www.w3.org/2004/02/skos/core#prefLabel> "multiplex/fuzzy/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF> <http://www.w3.org/2004/02/skos/core#notation> "MFF"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF> <http://www.w3.org/2004/02/skos/core#notation> "ẓ"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF> <http://www.w3.org/2004/02/skos/core#note> "Configuration value multiplex/fuzzy/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF> <http://www.w3.org/2004/02/skos/core#prefLabel> "multiplex/fuzzy/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFS> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFS> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFS> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFS> <http://www.w3.org/2004/02/skos/core#notation> "MFS"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFS> <http://www.w3.org/2004/02/skos/core#notation> "z"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFS> <http://www.w3.org/2004/02/skos/core#note> "Configuration value multiplex/fuzzy/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFS> <http://www.w3.org/2004/02/skos/core#prefLabel> "multiplex/fuzzy/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSC> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSC> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSC> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSC> <http://www.w3.org/2004/02/skos/core#notation> "MSC"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSC> <http://www.w3.org/2004/02/skos/core#notation> "k"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSC> <http://www.w3.org/2004/02/skos/core#note> "Configuration value multiplex/similar/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSC> <http://www.w3.org/2004/02/skos/core#prefLabel> "multiplex/similar/connected"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSF> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSF> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSF> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSF> <http://www.w3.org/2004/02/skos/core#notation> "MSF"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSF> <http://www.w3.org/2004/02/skos/core#notation> "p"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSF> <http://www.w3.org/2004/02/skos/core#note> "Configuration value multiplex/similar/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSF> <http://www.w3.org/2004/02/skos/core#prefLabel> "multiplex/similar/fused"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSS> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSS> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSS> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSS> <http://www.w3.org/2004/02/skos/core#notation> "MSS"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSS> <http://www.w3.org/2004/02/skos/core#notation> "t"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSS> <http://www.w3.org/2004/02/skos/core#note> "Configuration value multiplex/similar/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MSS> <http://www.w3.org/2004/02/skos/core#prefLabel> "multiplex/similar/separate"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/UPX> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/UPX> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/UPX> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/UPX> <http://www.w3.org/2004/02/skos/core#notation> "UPX"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/UPX> <http://www.w3.org/2004/02/skos/core#notation> "∅"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/UPX> <http://www.w3.org/2004/02/skos/core#note> "Configuration value uniplex"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/UPX> <http://www.w3.org/2004/02/skos/core#prefLabel> "uniplex"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#ConceptScheme> .
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> <http://purl.org/dc/terms/bibliographicCitation> "Chapter 3: Morphology; source NI-WEB-CH03; section NI-WEB-CH03:3.1; table NI-WEB-CH03:T003; line 3239." .
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> <http://purl.org/dc/terms/identifier> "source=NI-WEB-CH03;section=NI-WEB-CH03:3.1;table=NI-WEB-CH03:T003;line=3239" .
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> <http://purl.org/dc/terms/source> <https://www.ithkuil.net/newithkuil_03_morphology.htm> .
+<https://www.ithkuil.net/newithkuil_03_morphology.htm> <http://purl.org/dc/terms/bibliographicCitation> "Chapter 3: Morphology" .
+<https://www.ithkuil.net/newithkuil_03_morphology.htm> <http://purl.org/dc/terms/identifier> "NI-WEB-CH03" .

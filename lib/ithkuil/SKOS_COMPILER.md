@@ -602,3 +602,98 @@ files are rejected at their publication boundary. The local lock prevents
 cooperating publishers from changing the same output root concurrently. This is a
 local consistency and durability protocol, not a remote authentication or
 attestation mechanism.
+
+## Configuration golden projection (#44)
+
+Configuration is the first bounded conformance slice over the existing deterministic
+compiler corridor. `src/skos/configuration.py` adds one owner function only:
+
+`select_configuration_resources(closure, resolution) -> ConfigurationSelection`
+
+The selector consumes the validated #37 closure and #38 resolution. It does not parse
+CSV independently, construct identities, project source metadata, emit RDF, or
+canonicalize bytes. The existing `SourceProjector`, `build_core_graph`, and
+`canonicalize` APIs retain those responsibilities.
+
+### Source-backed slice
+
+The current tracked `morphemes_atomic.csv` contains exactly 20 rows whose explicit
+`category_code` is `CONFIGURATION`. The selector starts from that full source class;
+it does not filter by value code, family, surface form, or resolver success. Every one
+of those source rows must appear in exactly one selected resolved resource, while many
+source rows may normalize to one semantic resource. A Configuration row with a missing
+or unsupported semantic key therefore fails closed instead of vanishing from the
+projection.
+
+The source fixture pins the current public evidence independently of builder output:
+
+- source document `NI-WEB-CH03`, “Chapter 3: Morphology”, canonical public URL
+  `https://www.ithkuil.net/newithkuil_03_morphology.htm`, source-content SHA-256
+  `93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f`;
+- section `NI-WEB-CH03:3.1`, source line `3063`;
+- table `NI-WEB-CH03:T003`, source line `3239`;
+- 20 literal value-code / value-name / Unicode-form / realization-type / atomic-ID /
+  source-assertion-ID tuples in `configuration_source.json`;
+- exact tracked-file digests for the atomic, source assertion, section, table, and
+  source-registry CSVs.
+
+The source table's own metadata fields are preserved in the machine-readable fixture,
+but its `row_count` field is not used to infer the semantic concept count. The 20-count
+oracle comes from the explicit Configuration rows in the tracked atomic IR.
+
+### Expected RDF closure
+
+`configuration_expected.ttl` is a literal RDF oracle authored from the pinned source
+facts and the already-governing #31–#36 profile rules. It expects:
+
+- 20 `skos:Concept` resources with literal stable IRIs
+  `.../id/grammar/CONFIGURATION/<code>`;
+- one New Ithkuil `skos:ConceptScheme`;
+- one `configuration` `skos:Collection` containing all 20 concepts;
+- exact source `value_name` as English `skos:prefLabel` and exact
+  `semantic_summary` as English `skos:note`;
+- exact source form as typed New Ithkuil `skos:notation`, including `∅`, plus the
+  grammar value code as the separate grammar-code typed notation;
+- the same public source locus on every concept, the scheme, and the collection;
+- no `skos:broader` or `skos:narrower` assertions.
+
+The literal oracle has 169 triples. Its #41 canonical N-Triples bytes are checked in as
+`configuration_expected.nt` with SHA-256
+`a415febbec9e0b53a6cd251d99853b8c23ac53a0e17af986a1e19a1178ae5b42`.
+`configuration_expected.json` pins that digest, triple count, concept count, canonical
+algorithm, RDFLib version, and zero expected positive-slice build issues.
+
+### Fail-closed proofs
+
+`configuration_malformed.json` is a machine-readable negative fixture. It adds a
+second physical row for the MSS semantic key with a conflicting source label/meaning.
+The existing resolver reports `CONFLICTING_SEMANTIC_MEANING`, and the bounded selector
+reports `CONFIGURATION_RESOLUTION_HELD`; no plausible replacement concept is emitted.
+
+The tests also prove that:
+
+- duplicate physical source records are not silently deduplicated;
+- row/source-assertion/resource order does not change the canonical digest;
+- a Configuration row with a blank semantic value remains in scope and fails closed;
+- the same surface form on two distinct Configuration values produces
+  `NOTATION_COLLISION` and holds both claimants rather than merging them;
+- a conflicting preferred source label holds that resource;
+- substituting another source URL holds the resource with source-registry mismatch;
+- two physical forms for one semantic identity normalize to one resolved resource,
+  exercising the existing #38 representation without implementing #45 policy here.
+
+### Proof recipe
+
+With the run-root Python environment and the repository root on `PYTHONPATH`:
+
+```text
+PYTHONPATH=. /Users/emilie/Code/.entif-proof-runtime/bilqis-mlx-pro-20261024/venv/bin/python -m unittest -v \
+  lib.ithkuil.tests.test_skos_configuration \
+  lib.ithkuil.tests.test_skos_configuration_hardening
+```
+
+For the checked-in source snapshot the positive projection is: 20 selected source
+rows, 20 resolved/emitted concepts, zero build issues, 169 triples, one scheme, one
+20-member family collection, and zero broader/narrower triples. Updating the count,
+literal identities/forms, or digest requires a corresponding deliberate source
+snapshot change; changing only the golden files is not sufficient evidence.
