@@ -68,7 +68,7 @@ class JitAdoptionTests(CandidateStagingFixture, unittest.TestCase):
             self.current.curriculum, self.current.source_bindings, self.current.profile,
             fixture.registry, fixture.answers, source_root=None, graph=fixture.graph,
             verification_seed=37)
-        with self.assertRaisesRegex(ValueError, "LINEAGE_DRIFT"):
+        with self.assertRaisesRegex(ValueError, "FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_DRIFT"):
             self.resolve(current=predecessor)
         replacement = self.stage(verification_seed=38)
         with self.assertRaisesRegex(ValueError, "JIT_ADOPTION_PROPOSAL_CONTEXT_CHANGED"):
