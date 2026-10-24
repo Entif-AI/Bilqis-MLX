@@ -168,3 +168,91 @@ Against the current validated corpus, 3,090 semantic rows resolve with zero issu
 2,968 resources: 485 grammar concepts, 165 atomic roots, 503 lexicon roots, and 1,815
 sense concepts. The 35 grammatical-category rows are family metadata for those atom
 rows and are not additional semantic resources.
+
+## 3. Public source-reference projection (#39)
+
+The source projector consumes only a validated #37 `CompilerClosure` plus one #38
+semantic identity and its `RecordRef(table, key)` tuple. It does not reopen CSV
+files, fetch source URLs, inspect raw HTML/PDF bytes, walk the whole corpus, or infer
+authorship, confidence, attestation, ontology semantics, or claim consequence.
+
+### RDF shape
+
+Only standard Dublin Core Terms predicates are emitted:
+
+- semantic resource `dcterms:source` deterministic source-locus IRI;
+- locus `dcterms:source` canonical public source-document URL;
+- locus `dcterms:identifier` compact public locator;
+- locus `dcterms:bibliographicCitation` human-readable public citation;
+- source document `dcterms:identifier` source-registry ID;
+- source document `dcterms:bibliographicCitation` public registry title.
+
+The locus IRI is a deterministic SHA-256-derived project IRI over canonical JSON
+containing the admitted public document URL plus an ordered list of named source
+coordinates. Human-readable `identifier` and citation strings are display only and
+do not enter the fingerprint as delimiter-joined text; punctuation such as `;`,
+`=`, or `|` inside a source coordinate cannot alias another coordinate structure.
+The locus is a traceability node, not semantic identity. Duplicate identical loci
+therefore collapse while multiple distinct loci remain attached to the same semantic
+IRI.
+
+### Binding and public-disclosure rules
+
+Every `RecordRef` is resolved against the exact row in the immutable compiler
+closure. `SourceProjector` resolves #38 once at construction and pre-indexes the
+exact semantic-identity → `RecordRef` binding. `project_resource` requires the
+caller's identity and record set to match that resolved binding exactly. A valid
+source row therefore cannot be transferred as apparent support for an unrelated or
+arbitrary semantic IRI. This index is built once; per-resource projection does not
+rerun whole-corpus resolution.
+
+Grammar rows bind through the tracked `source_manifest`, source-qualified
+section/table registries keyed as `(source_id, section_id)` and
+`(source_id, table_id)`, and their exact source fields. Reusing a locus ID in a
+different source therefore cannot overwrite the intended row by CSV order. Atomic rows additionally
+include all exact `source_assertions` for that atomic entity, so secondary public
+loci survive. A primary atomic locus and an identical assertion locus collapse to one
+source assertion.
+
+Lexicon roots and senses use their exact row loci. A lexicon-sense citation includes
+source chapter, section, root form, stem, specification, printed page, and
+`source_pdf_page` explicitly described as the **tracked chapter PDF page**.
+`source_pdf_page` is not asserted as a page number in the canonical whole-lexicon
+PDF and the projector never appends `#page=` to the canonical lexicon URL.
+
+Public document URLs must exactly match the source registry and use HTTPS on the
+strict `ithkuil.net` / `www.ithkuil.net` allowlist. Userinfo/credentials, query
+strings, fragments, local/file URLs, localhost/loopback hosts, protected-repository
+URLs, unsafe path traversal, and out-of-registry URL substitutions are held rather
+than serialized. Literal fields are also checked for control/surrogate text and
+private/local-path markers before they can enter public RDF.
+
+Source IDs, section/table IDs, line/page coordinates, and citations are locators only.
+They do not state authority, confidence, authorship, evidentiary weight, or semantic
+equivalence.
+
+### Held behavior
+
+`SourceProjector.project_resource(identity, source_records)` returns
+`SourceProjection(source_graph, issues, held)`. Missing rows, missing registry
+bindings, invalid public URLs, invalid section/table bindings, unsupported record
+shapes, and unsafe public literals produce deterministic `SourceIssue` records.
+No `dcterms:source` assertion is emitted for an invalid locus. If no permissible
+public locus remains for the resource, the result also contains
+`NO_PUBLIC_SOURCE_LOCUS` and the source graph is empty. #42 owns later durable
+held-ledger serialization.
+
+The graph may contain safe loci while a different contributing locus is held. Callers
+MUST inspect `issues`; #40 must hold the semantic resource on any #39 issue rather
+than treating a safe partial source graph as complete source closure.
+
+Constructed profile/group resources have no exact semantic source row of their own.
+For #40 schemes, collections, or ordered collections, the separate
+`project_group(identity, member_source_records)` method accepts only those identity
+kinds and only `RecordRef` values already bound to successful #38 member resources.
+It projects the union of those real member loci using the same standard DCTERMS shape;
+it does not invent source metadata for the group itself.
+
+The implementation pre-indexes closure rows and source assertions once in
+`SourceProjector(closure)`; projecting each resolved resource therefore avoids a
+whole-table scan per resource.
