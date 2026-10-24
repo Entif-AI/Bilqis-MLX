@@ -19,9 +19,11 @@ def prepare_realized_candidates(frontier, current, parent_graph, *,
         if sense_id not in available:
             continue
         graph = realization.expanded_graph(parent_graph)
-        result.append(realization.stage_identity(frontier, current, graph,
+        staged = realization.stage_identity(frontier, current, graph,
             source_root=source_root, source_registry=source_registry,
-            answer_registry=answer_registry))
+            answer_registry=answer_registry)
+        staged.successor.verify_semantic_catalog(graph)
+        result.append(staged)
     return tuple(result)
 
 

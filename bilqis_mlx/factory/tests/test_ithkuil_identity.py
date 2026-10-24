@@ -60,6 +60,37 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
             source_root=LEGACY, source_registry=cls.registry,
             answer_registry=live_answer_registry())
 
+    def test_realization_graph_must_match_the_staged_release_in_full(self):
+        from copy import deepcopy
+        from types import SimpleNamespace
+        from unittest.mock import Mock, patch
+        from bilqis_mlx.factory import candidate_realizations
+
+        for graph, valid in ((self.graph, True),
+                             ({**deepcopy(self.graph), "fixture_semantic_change": True}, False)):
+            realization = SimpleNamespace(
+                expanded_graph=Mock(return_value=graph),
+                stage_identity=Mock(return_value=self.staged))
+            with self.subTest(valid=valid), patch.object(candidate_realizations, "REALIZATIONS",
+                    {self.staged.source_sense_id: realization}):
+                if valid:
+                    prepared = candidate_realizations.prepare_realized_candidates(
+                        self.frontier, self.current, self.parent_graph,
+                        source_root=LEGACY, source_registry=self.registry,
+                        answer_registry=live_answer_registry())
+                    self.assertEqual(prepared, (self.staged,))
+                    self.assertEqual(candidate_realizations.admitted_candidate_graph(
+                        self.staged, self.parent_graph), self.graph)
+                else:
+                    with self.assertRaisesRegex(ValueError, "SEMANTIC_GRAPH_DRIFT"):
+                        candidate_realizations.prepare_realized_candidates(
+                            self.frontier, self.current, self.parent_graph,
+                            source_root=LEGACY, source_registry=self.registry,
+                            answer_registry=live_answer_registry())
+                    with self.assertRaisesRegex(ValueError, "SEMANTIC_GRAPH_DRIFT"):
+                        candidate_realizations.admitted_candidate_graph(
+                            self.staged, self.parent_graph)
+
     def test_registered_source_meanings_cannot_be_rebound(self):
         from bilqis_mlx.factory.candidate_realizations import REALIZATIONS
         with self.assertRaises(TypeError):
