@@ -24,6 +24,15 @@ GENERIC_RUNTIME = (
     "bilqis_mlx/cli.py",
 )
 GRADE_LITERAL = frozenset(chr(value) for value in range(ord("A"), ord("Z") + 1))
+CURRENT_WRITERS = frozenset({
+    "bilqis_mlx.runtime.admission._factory_admission",
+    "bilqis_mlx.runtime.admission._executable_factory_admission",
+    "bilqis_mlx.runtime.checkpoints._advance",
+    "bilqis_mlx.runtime.checkpoints._persist",
+    "bilqis_mlx.runtime.checkpoints._reconcile_delivery_outbox",
+    "bilqis_mlx.runtime.release_adoption._adopt_executable_profile",
+    "bilqis_mlx.runtime.release_adoption._adopt_catalog_profile",
+})
 
 
 def _source(path: Path) -> str:
@@ -97,21 +106,59 @@ def _legacy_course_usage(path: Path, root: Path) -> tuple[str, ...]:
                  for line in sorted(lines))
 
 
+def _import_from_module(node: ast.ImportFrom, path: Path, src: Path) -> str:
+    module = node.module or ""
+    if node.level:
+        package = ("bilqis_mlx", *path.relative_to(src).parts[:-1])
+        if node.level > len(package):
+            return ""
+        parent = package[:len(package) - node.level + 1]
+        module = ".".join((*parent, *module.split("."))) if module else ".".join(parent)
+    return module
+
+
 def _imports_trainer_facade(node: ast.AST, path: Path, src: Path) -> bool:
     facade = "bilqis_mlx.trainer"
     if isinstance(node, ast.Import):
         return any(alias.name == facade for alias in node.names)
     if not isinstance(node, ast.ImportFrom):
         return False
-    module = node.module or ""
-    if node.level:
-        package = ("bilqis_mlx", *path.relative_to(src).parts[:-1])
-        if node.level > len(package):
-            return False
-        parent = package[:len(package) - node.level + 1]
-        module = ".".join((*parent, *module.split("."))) if module else ".".join(parent)
+    module = _import_from_module(node, path, src)
     return module == facade or (
         module == "bilqis_mlx" and any(alias.name == "trainer" for alias in node.names))
+
+
+def _compatibility_writer_calls(tree: ast.AST, path: Path, src: Path) -> tuple[str, ...]:
+    bindings = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                name = alias.asname or alias.name.split(".")[0]
+                bindings[name] = alias.name if alias.asname else name
+        elif isinstance(node, ast.ImportFrom):
+            module = _import_from_module(node, path, src)
+            for alias in node.names:
+                if alias.name == "*":
+                    bindings.update({target.rsplit(".", 1)[1]: target
+                                     for target in CURRENT_WRITERS
+                                     if target.rsplit(".", 1)[0] == module})
+                else:
+                    bindings[alias.asname or alias.name] = f"{module}.{alias.name}"
+    problems = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        target = node.func
+        suffix = []
+        while isinstance(target, ast.Attribute):
+            suffix.append(target.attr)
+            target = target.value
+        if isinstance(target, ast.Name):
+            name = ".".join((bindings.get(target.id, target.id), *reversed(suffix)))
+            if name in CURRENT_WRITERS:
+                problems.append(f"{path.relative_to(src.parent)}:{node.lineno} "
+                                f"COMPATIBILITY_CALLS_CURRENT_WRITER:{name}")
+    return tuple(problems)
 
 
 def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
@@ -125,8 +172,11 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
     for path in sorted(src.rglob("*.py")):
         if "tests" in path.relative_to(src).parts:
             continue
+        tree = ast.parse(_source(path))
+        if path.relative_to(src).parts[0] == "compatibility":
+            problems.extend(_compatibility_writer_calls(tree, path, src))
         if path not in {src / "trainer.py", src / "cli.py"}:
-            for node in ast.walk(ast.parse(_source(path))):
+            for node in ast.walk(tree):
                 if _imports_trainer_facade(node, path, src):
                     problems.append(f"{path.relative_to(root)} LEAF_IMPORTS_TRAINER")
         if set(path.relative_to(src).parts) & {"compatibility", "research"}:

@@ -9,6 +9,53 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class FactoryArchitectureTests(unittest.TestCase):
+    def test_compatibility_cannot_call_current_mutation_owners(self):
+        writers = (
+            ("admission", "_factory_admission"),
+            ("admission", "_executable_factory_admission"),
+            ("checkpoints", "_advance"),
+            ("checkpoints", "_persist"),
+            ("checkpoints", "_reconcile_delivery_outbox"),
+            ("release_adoption", "_adopt_executable_profile"),
+            ("release_adoption", "_adopt_catalog_profile"),
+        )
+        for owner, name in writers:
+            module = f"bilqis_mlx.runtime.{owner}"
+            sources = (
+                f"import {module}\n{module}.{name}()\n",
+                f"import {module} as owner\nowner.{name}()\n",
+                f"from {module} import {name}\n{name}()\n",
+                f"from {module} import {name} as write\nwrite()\n",
+                f"from bilqis_mlx.runtime import {owner} as owner\nowner.{name}()\n",
+                f"from ..runtime.{owner} import {name} as write\nwrite()\n",
+                f"from ..runtime import {owner}\n{owner}.{name}()\n",
+                f"from {module} import *\n{name}()\n",
+            )
+            for source in sources:
+                with self.subTest(owner=owner, source=source), tempfile.TemporaryDirectory() as temp:
+                    root = Path(temp)
+                    (root / "bilqis_mlx/factory").mkdir(parents=True)
+                    (root / "bilqis_mlx/compatibility").mkdir()
+                    (root / "bilqis_mlx/compatibility/history.py").write_text(source)
+                    findings = inspect_factory_architecture(root)
+                    self.assertTrue(any("COMPATIBILITY_CALLS_CURRENT_WRITER" in item
+                                        and f"{module}.{name}" in item for item in findings))
+
+    def test_compatibility_may_decode_verify_and_construct_records(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "bilqis_mlx/factory").mkdir(parents=True)
+            (root / "bilqis_mlx/compatibility").mkdir()
+            (root / "bilqis_mlx/compatibility/history.py").write_text(
+                "from bilqis_mlx.runtime.checkpoints import _with_delivery_outbox\n"
+                "from bilqis_mlx.runtime import admission\n"
+                "from external import _advance\n"
+                "_with_delivery_outbox()\nadmission.verify_identity()\n_advance()\n"
+                "decode_state()\nderive_schedule()\nverify_executable_release()\n"
+                "measure_debt_boundary()\n")
+            self.assertFalse(any("COMPATIBILITY_CALLS_CURRENT_WRITER" in item
+                                 for item in inspect_factory_architecture(root)))
+
     def test_current_api_cannot_accept_or_forward_legacy_course(self):
         sources = (
             "def generate(*, legacy_course=None):\n    return ()\n",
