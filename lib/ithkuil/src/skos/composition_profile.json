@@ -1,0 +1,60 @@
+{
+  "profile_version": "bilqis-composition-profile/1",
+  "admitted_composition_types": [
+    "VXCS_affix",
+    "case_accessor",
+    "case_stacking",
+    "construction_template",
+    "inverse_case_accessor",
+    "morpheme_complex_template",
+    "slot_template",
+    "suppletive_adjunct",
+    "word_template"
+  ],
+  "admitted_derivations": ["source_join", "source_template"],
+  "negative_source_fixture": "COMP-0060583f4d9807",
+  "extension_terms": [
+    {
+      "key": "surfacePattern",
+      "iri": "https://github.com/Entif-AI/Bilqis-MLX/vocab/surfacePattern",
+      "source_field": "surface_pattern",
+      "definition": "The source-written structural surface pattern of a composition, distinct from any realized surface form.",
+      "domain": "http://www.w3.org/2000/01/rdf-schema#Resource",
+      "range": "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "source_fixture": "COMP-044604fe8e62d7",
+      "source_justification": "The Modular adjunct source row explicitly records the pattern 'scope marker + (V_NC_N) + (V_NC_M) + V_N/V_H' while recording no concrete surface form.",
+      "skos_gap": "A construction pattern is not a SKOS concept label, notation, or semantic relation.",
+      "rdf_gap": "rdf:value is already used for exact realized New Ithkuil surface form; reusing it for structural patterns would erase the source role distinction on concrete rows that carry both.",
+      "recurring": true,
+      "machine_required": true
+    },
+    {
+      "key": "condition",
+      "iri": "https://github.com/Entif-AI/Bilqis-MLX/vocab/condition",
+      "source_field": "condition",
+      "definition": "The source-stated realization condition that constrains a composition resource.",
+      "domain": "http://www.w3.org/2000/01/rdf-schema#Resource",
+      "range": "http://www.w3.org/2000/01/rdf-schema#Literal",
+      "source_fixture": "COMP-0060583f4d9807",
+      "source_justification": "The source row states that the default form is replaced by the listed alternant when immediately preceded by y.",
+      "skos_gap": "A realization condition is not a SKOS semantic relation or concept annotation role.",
+      "rdf_gap": "dcterms:description is used for the source semantic summary; flattening an operative realization condition into the same property would lose its machine role.",
+      "recurring": true,
+      "machine_required": true
+    },
+    {
+      "key": "componentCount",
+      "iri": "https://github.com/Entif-AI/Bilqis-MLX/vocab/componentCount",
+      "source_field": "component_count",
+      "definition": "The source-declared number of linguistic components in the composition; #58 separately owns the component edges and their order.",
+      "domain": "http://www.w3.org/2000/01/rdf-schema#Resource",
+      "range": "http://www.w3.org/2001/XMLSchema#nonNegativeInteger",
+      "source_fixture": "COMP-db595ab9beac42",
+      "source_justification": "The Standard formative source row declares component_count 9 and composition_components.csv contains exactly nine rows for that composition.",
+      "skos_gap": "SKOS has no predicate for the cardinality of linguistic construction components.",
+      "rdf_gap": "Generic rdf:value is already the principal realized surface value and RDF container membership would prematurely own #58 component edges; DCMI extent denotes size or duration rather than this source cardinality.",
+      "recurring": true,
+      "machine_required": true
+    }
+  ]
+}

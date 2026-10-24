@@ -1,0 +1,30 @@
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <http://purl.org/dc/terms/description> "Expectation of Outcome; degree 1: shockingly unexpected; without precedent or rumour" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <http://purl.org/dc/terms/identifier> "COMP-0060583f4d9807" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/04c3df2a240e70efc234a567af16cfb3549808102fe058a2758f88f834ffba3e> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/d8aab48ca52ab580e91970567a8e86e3b3a6ea217b84e308316ac9a4937c65f4> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <http://purl.org/dc/terms/title> "V_XC_S affix" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-derivation/source_join> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-type/VXCS_affix> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "iařš"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <https://github.com/Entif-AI/Bilqis-MLX/vocab/componentCount> "2"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <https://github.com/Entif-AI/Bilqis-MLX/vocab/condition> "default; replaced by listed alternant when immediately preceded by y" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <https://github.com/Entif-AI/Bilqis-MLX/vocab/surfacePattern> "V_X + C_S" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <http://purl.org/dc/terms/description> "Quotative Adjunct carrying the formative Slot-IX V_C value for elapsive case" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <http://purl.org/dc/terms/identifier> "COMP-037dfa8bbd64d2" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/5d6e8565afdf3f8e958b92f62aa442c3f8b5eaefe58350ec040d277c6dbd22a7> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/dc7f341375c883dc179b95140ff220339ab6c9913cb7a589df7f072dabb75399> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <http://purl.org/dc/terms/title> "Quotative Adjunct" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-derivation/source_join> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-type/suppletive_adjunct> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "hmo’e"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <https://github.com/Entif-AI/Bilqis-MLX/vocab/componentCount> "2"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <https://github.com/Entif-AI/Bilqis-MLX/vocab/condition> "required realized word-final glottal V_C surface" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-037dfa8bbd64d2> <https://github.com/Entif-AI/Bilqis-MLX/vocab/surfacePattern> "C_P + V_C" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <http://purl.org/dc/terms/description> "Modular adjunct" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <http://purl.org/dc/terms/identifier> "COMP-044604fe8e62d7" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/5dd7bad637528c839657e22c38c9eaea1ec9300eecfb7ae5f9dfef9bbd377d59> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <http://purl.org/dc/terms/title> "Modular adjunct" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-derivation/source_template> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-type/construction_template> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <https://github.com/Entif-AI/Bilqis-MLX/vocab/componentCount> "4"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <https://github.com/Entif-AI/Bilqis-MLX/vocab/surfacePattern> "scope marker + (V_NC_N) + (V_NC_M) + V_N/V_H" .
