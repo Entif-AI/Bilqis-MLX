@@ -109,6 +109,31 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
         self.assertEqual(restored, release)
         restored.verify_semantic_catalog(self.graph)
 
+    def test_twelve_capability_release_roundtrips_without_legacy_course(self):
+        names = tuple(f"Z.C{i}" for i in range(12))
+        template = self.curriculum.grades[0].capabilities[0]
+        capabilities = tuple(replace(
+            template, capability_id=name,
+            taught_roots=(f"z.op.{i}",), examined_roots=(f"z.op.{i}",),
+        ) for i, name in enumerate(names))
+        grade = replace(self.curriculum.grades[0], capabilities=capabilities,
+                        exam_item_counts=tuple((name, 4) for name in names))
+        curriculum = replace(self.curriculum, grades=(grade,))
+        bindings = replace(self.bindings, bindings=tuple(
+            replace(self.bindings.bindings[0], capability_id=name) for name in names))
+        release = compile_executable_factory_release(
+            curriculum, bindings, CurriculumProfile.full(), self.registry, self.answers,
+            source_root=None, graph=self.graph, verification_seed=17)
+        payload = json.loads(json.dumps(release.manifest()))
+        self.assertEqual(payload["schema"], "bilqis.mlx.factory-release/v2")
+        restored = ExecutableFactoryRelease.from_manifest(payload, release.release_sha256)
+        restored.verify()
+        restored.verify_semantic_catalog(self.graph)
+        self.assertEqual(restored, release)
+        self.assertEqual(restored.release_sha256, release.release_sha256)
+        self.assertEqual(tuple(item.capability_id for item in restored.verification.capabilities), names)
+        self.assertEqual(restored.verification.assessments[0].cumulative_scope, names)
+
     def test_v2_release_rejects_rehashed_plan_profile_mismatch(self):
         release = self.compile()
         mismatched = replace(
