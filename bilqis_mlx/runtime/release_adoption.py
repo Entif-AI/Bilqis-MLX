@@ -640,7 +640,6 @@ def _adopt_catalog_profile(
 def _adopt_jit_proposal(mx, run_dir, receipt, grade_a_course, source_root, graph,
                        parameters, optimizer, session, proposal, *, reserve_gib):
     """Use the existing student/own-AdamW admission transaction for a fresh JIT choice."""
-    from bilqis_mlx.factory.candidate_realizations import admitted_candidate_graph
     from bilqis_mlx.runtime.jit_adoption import verify_current_implementations
     predecessor = _runtime_admission._require_executable_factory_admission(run_dir, receipt, graph)
     program = _factory_schedule.schedule_program_from_executable_release(predecessor)
@@ -648,6 +647,23 @@ def _adopt_jit_proposal(mx, run_dir, receipt, grade_a_course, source_root, graph
     staged = session.resolve_ready_proposal(school.current_student, proposal)
     successor = staged.successor
     verify_current_implementations(successor, _source_adapters_school.live_source_registry(), _factory_live_answers.live_answer_registry())
+    return _adopt_prepared_successor(
+        mx, run_dir, receipt, grade_a_course, source_root, graph,
+        parameters, optimizer, staged, reserve_gib=reserve_gib)
+
+
+def _adopt_prepared_successor(
+        mx, run_dir, receipt, grade_a_course, source_root, graph,
+        parameters, optimizer, staged, *, reserve_gib):
+    """Adopt the exact compiled successor after upstream live revalidation."""
+    from bilqis_mlx.factory.candidate_realizations import admitted_candidate_graph
+
+    predecessor = _runtime_admission._require_executable_factory_admission(
+        run_dir, receipt, graph)
+    successor = staged.successor
+    successor.verify_successor_of(predecessor)
+    program = _factory_schedule.schedule_program_from_executable_release(predecessor)
+    school = _runtime_state._state_from_json(receipt["school"], program)
     successor_program = _factory_schedule.schedule_program_from_executable_release(successor)
     appended = (_curriculum_scheduler.classify_schedule_topology(program, successor_program)
                 is _curriculum_scheduler.ScheduleTopology.APPEND_GRADE)
