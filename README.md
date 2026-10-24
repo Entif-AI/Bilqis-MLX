@@ -11,6 +11,25 @@ seams, compatibility boundaries, or proofs. A particular semantic root belongs i
 this corpus only when it exposes a genuinely reusable missing factory mechanism.
 Future curriculum/root selection remains separate curriculum work.
 
+## Issue #150 page-local execution
+
+A fresh execution session reads root `README.md` and `AGENTS.md` once before
+source mutation. After bootstrap, ordinary leaf execution follows one GitHub
+issue page at a time: read only the bookmarked leaf, its live page gate and
+amendments, its named direct prerequisites, and its declared files. Do not
+hydrate parent issue #150, the full workstack manifest, or all execution
+receipts during ordinary leaf execution.
+
+The issue number is the durable bookmark. Git commits and GitHub receipts are
+durable execution state; model context is cache. `FACTORY_DEPENDENCY_BLOCKED`
+is a staleable observation on an incomplete page: recheck only its named direct
+prerequisites, with no same-page amendment required just to reevaluate the
+dependency state. Keep a healthy warm model session across cold page boundaries;
+do not start a new expensive session solely for isolation. Record the transient
+current page in the active handoff or issue checkpoint, never in durable
+architecture prose. See [the ticket-navigation record](docs/architecture/11_FACTORY_TICKET_NAVIGATION_20261023.md)
+and [the grooming decisions](docs/architecture/12_FACTORY_GROOMING_DECISIONS_20261024.md).
+
 ## CONTROLLING USER CORRECTION — 2026-10-23: full U7C Grade B
 
 The active Prometheus curriculum now admits the complete direct-U7C Boolean set:

@@ -2,69 +2,65 @@
 
 **Parent:** `Entif-AI/Bilqis-MLX#150`.
 **Authority:** SPEC-0001 + SPEC-0005 + the leaf specification selected by the workstack.
-**Mutation posture:** implementation only after the manifest is execution-ready.
+**Mutation posture:** implementation only after the current issue page and its named direct prerequisites authorize execution.
 **Neural authority:** this task never authorizes a real `--human-run` neural update.
 
 ## Goal
 
-Execute as many ready factory-architecture leaves as possible sequentially without
-re-researching or redesigning settled architecture. The workstack fixes the reusable
-factory. It does not create or execute one issue per future semantic root.
+Execute authorized factory-architecture leaves sequentially without re-researching
+or redesigning settled architecture. The workstack fixes the reusable factory. It
+does not create or execute one issue per future semantic root.
 
 ## Bootstrap once
 
-At run start:
+At the start of each fresh execution session:
 
-1. verify the intended branch/worktree and current writer-coordination state;
+1. verify the intended branch/worktree, local and remote heads, and writer-coordination state; stop on unexpected mutation;
 2. verify no human-owned `bilqis_mlx.cli train --human-run` process owns the source tree;
-3. read exactly these broad authorities:
-   - `AGENTS.md`;
-   - `docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md`;
-   - `docs/architecture/10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md`;
-   - `docs/specifications/0005_FACTORY_MICROSPEC_WORKSTACK.md`;
-   - `docs/tasks/0003_FACTORY_CLOSURE_WORKSTACK.json`;
-4. record SHA-256 digests for those five files in the first run receipt;
-5. run `python3 scripts/check_factory_workstack.py --execution-ready`;
-6. stop before implementation if the workstack is invalid.
+3. read root `README.md` and `AGENTS.md` once before source mutation, then read the broad factory authorities needed for the current bounded task;
+4. bind any run-specific authority receipt to the exact branch/base and the selected issue or amendment when required by that contract.
 
-Also bind the run to the exact base commit and exact issue #150 body. Canonicalize the
-bootstrap fields deterministically and record one `bootstrap_sha256`. If any bound
-authority or manifest hash changes mid-run, stop the whole run and re-bootstrap
-rather than continuing under mixed authority.
+The workstack manifest remains a grooming and architecture-maintenance index. It
+does not authorize an ordinary leaf run to hydrate the parent issue, the complete
+manifest, all leaf receipts, or a global ready set. Do not reread broad authorities
+between pages unless authority changes or the next page explicitly requires it.
 
-Do not reread the broad authorities before every leaf. Re-read them only if their
-recorded digest changes or a leaf explicitly names a newer amendment.
+Keep a healthy warm model session across cold issue-page boundaries. A cold page
+means reading the next issue's own gate and contract; it does not require a new
+expensive model session. Start fresh only after actual context failure or
+compaction pressure. The current issue number is the durable bookmark; Git and
+GitHub receipts are execution state, and model context is cache.
 
-## Reconstruct execution state
+## Page-local issue navigation
 
-The manifest is the dependency graph. GitHub issue comments are durable execution
-receipts. For every manifest leaf, use its exact mapped issue only; do not search for
-replacement issues by title.
+The live `FACTORY_PAGE_GATE_V1` on the bookmarked issue controls page order. Read
+only that issue, its later same-page amendments, its named direct prerequisites,
+and the files declared by the leaf contract. Do not inspect #150, the whole
+manifest, unrelated leaves, or all receipts during ordinary page execution.
 
-Before treating a leaf as executable, hash its local spec bytes and fetched issue body
-and require exact equality with `spec_sha256` and `issue_sha256` in the manifest.
+Interpret the current page's latest terminal state locally:
 
-Treat a leaf as done only when its issue contains a verified `FACTORY_LEAF_DONE`
-receipt naming:
+- `FACTORY_LEAF_DONE`: do not rerun the leaf; follow its `next_page`.
+- `BLOCKED_SPEC_GAP`: execute only when a newer same-page
+  `FACTORY_SPEC_AMENDMENT_V1` has `reopen: true`; otherwise follow `next_page`.
+- `FACTORY_DEPENDENCY_BLOCKED`: this is a staleable observation, not a permanent
+  terminal. Recheck only the named direct prerequisites. No same-page amendment
+  is required merely to reevaluate dependency state. If a prerequisite still
+  blocks the leaf, retain the specific blocker and follow the page gate; if all
+  prerequisites are satisfied, execute under the frozen leaf contract.
 
-- exact `spec_id`;
-- exact remotely visible commit SHA;
-- focused proof commands/results;
-- no unresolved required work for that invariant.
-
-Treat a leaf as blocked for the current run when its latest applicable receipt is
-`BLOCKED_SPEC_GAP`. A blocked leaf is not done. Its descendants remain unready.
-
-Pass the reconstructed IDs to `scripts/check_factory_workstack.py` with repeated
-`--done SPEC-####` and `--blocked SPEC-####` arguments to compute the current ready
-set.
+For each direct prerequisite, use only its latest local execution state and its
+own page gate when that state requires a revisit. Do not reconstruct or recompute
+the global ready set. When a page completes or remains blocked, follow its
+explicit `next_page` and treat prior-page context as non-authoritative except for
+commit or receipt references named by the new page.
 
 ## One-leaf execution loop
 
-For each ready leaf:
+For each leaf whose live page gate and direct prerequisites authorize execution:
 
 1. read the leaf spec;
-2. read only its mapped GitHub issue and predecessor completion receipts;
+2. read only its GitHub issue, page gate/amendments, and named direct prerequisites' latest local receipts;
 3. read only files and symbols in the spec's read allowlist;
 4. confirm the actual named symbols still match the spec's assumptions;
 5. implement only the predetermined design inside the write allowlist;
@@ -74,7 +70,7 @@ For each ready leaf:
 9. create one leaf-scoped commit where practical;
 10. refetch before push, push normally without force, and read back the remote SHA;
 11. post and read back one issue receipt;
-12. recompute the ready set and continue.
+12. follow the issue's explicit `next_page`; do not recompute a global ready set.
 
 A successful issue receipt uses this shape:
 
@@ -117,7 +113,8 @@ required_write_authority: ...
 proof_attempted: ...
 ```
 
-Then recompute readiness and move to another unrelated ready leaf.
+Then follow the issue's explicit `next_page`. Do not recompute a global ready set;
+continue only when the next page's local gate authorizes it.
 
 ## Exploration prohibitions
 
@@ -125,6 +122,7 @@ During ordinary leaf execution do not:
 
 - broadly explore the repository;
 - run unrestricted `rg` across the tree;
+- hydrate parent issue #150, the full workstack manifest, all receipts, or a global ready set;
 - search Git history for architecture archaeology;
 - search all GitHub issues for alternatives;
 - browse the web for a different design;
