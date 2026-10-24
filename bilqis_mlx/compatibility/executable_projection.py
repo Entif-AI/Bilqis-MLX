@@ -241,7 +241,6 @@ def compile_projected_executable_release(
         source_root=source_root,
         graph=graph,
         verification_seed=LIVE_V2_VERIFICATION_SEED,
-        legacy_course=canonical_course,
         predecessor=predecessor,
     )
     return release, schedule_program_from_executable_release(release), canonical_course

@@ -252,8 +252,7 @@ def _adopt_executable_profile(
         _factory_live_answers.live_answer_registry(),
         source_root=source_root,
         graph=graph,
-        verification_seed=2026101906,
-        legacy_course=compatibility_course)
+        verification_seed=2026101906)
     _verify_profile_successor(predecessor, successor, graph, profile)
     successor_program = _factory_schedule.schedule_program_from_executable_release(successor)
     mastery_debt = None
@@ -458,8 +457,7 @@ def _adopt_catalog_profile(
         _factory_live_answers.live_answer_registry(),
         source_root=source_root,
         graph=transition.graph,
-        verification_seed=2026101907,
-        legacy_course=compatibility_course)
+        verification_seed=2026101907)
     _verify_profile_successor(predecessor, successor, transition.graph, transition.profile)
     if (successor.transition is None or
             successor.transition.semantic_geometry != "APPEND_ONLY_EXPANSION"):

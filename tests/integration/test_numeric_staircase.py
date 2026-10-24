@@ -35,10 +35,36 @@ from tests.system import test_grade_c_trainer as fixtures
 class NumericStaircaseTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        fixtures.GradeCTrainerTests.setUpClass()
+        from bilqis_mlx.compatibility import historical_teacher_policy as policy
+        from bilqis_mlx.grade_a_release import accepted_grade_a
+        from bilqis_mlx.live_grade_a import live_course as live_a
+        from bilqis_mlx.live_grade_b import live_course as live_b
+        from bilqis_mlx.live_grade_c import registry_graph
+        from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+
+        cls.manifest = json.loads((Path(__file__).resolve().parents[2] /
+            "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
+        cls.grade_a = live_a(accepted_grade_a(cls.manifest))
+        cls.previous = live_b(cls.grade_a, fixtures.SOURCE)
+        registered = registry_graph()
+        tokens = registered["tokens"][:HISTORICAL_PREFIX_SIZE]
+        cls.parent_graph = {**registered, "tokens": tokens,
+            "nodes": registered["nodes"][:HISTORICAL_PREFIX_SIZE],
+            "row_contract_sha256": {name: registered["row_contract_sha256"][name]
+                                    for name in tokens}}
+        strategy = dict(old=4, preview=0, depth=1, contrast=0.0, lr=0.00013, distill=0.0)
+        key = policy._policy_key(strategy)
+        cls.teacher = dict(strategies={key: strategy}, global_stats={key: policy._stats()},
+                           grade_stats={}, events=0, mutations=0)
+        cls.policy_sha = storage._fingerprint({
+            "fixture_only": "numeric-staircase-disposable-policy/v1", "teacher": cls.teacher})
+        cls.engine = policy
 
     def setUp(self):
         self.fixture = fixtures.GradeCTrainerTests()
+        for name in ("manifest", "grade_a", "previous", "parent_graph", "teacher", "policy_sha"):
+            setattr(self.fixture, name, deepcopy(getattr(self, name)))
+        self.fixture.engine = self.engine
         self.mx, self.params, self.optimizer = self.fixture.toy()
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -58,8 +84,7 @@ class NumericStaircaseTests(unittest.TestCase):
             boolean_release = compile_successor_profile_release(
                 base_release, boolean_profile, live_source_registry(),
                 live_answer_registry(), source_root=fixtures.SOURCE,
-                graph=self.graph, verification_seed=2026102101,
-                legacy_course=boolean_course)
+                graph=self.graph, verification_seed=2026102101)
             boolean_program = schedule_program_from_executable_release(
                 boolean_release)
             school = self._perfect_to_boundary(
@@ -211,8 +236,7 @@ class NumericStaircaseTests(unittest.TestCase):
         release = compile_successor_profile_release(
             base_release, profile, live_source_registry(),
             live_answer_registry(), source_root=fixtures.SOURCE,
-            graph=self.fixture.parent_graph, verification_seed=2026102102,
-            legacy_course=compatibility)
+            graph=self.fixture.parent_graph, verification_seed=2026102102)
         program = schedule_program_from_executable_release(release)
         school = self._perfect_to_boundary(
             program, start_new(program, pointer))
