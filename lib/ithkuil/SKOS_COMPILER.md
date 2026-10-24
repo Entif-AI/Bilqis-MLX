@@ -491,3 +491,114 @@ notation collision, unsupported relation, unadmitted mapping, missing public sou
 locus, invalid targets, held-to-emitted repair, multiple rows per resource, group-only
 issues, duplicate/out-of-scope accounting, diagnostic sanitization, shuffled input and
 reason order, and the literal full-corpus counts above.
+
+## 7. One reproducible build entrypoint (#43)
+
+Run from the repository root after installing `requirements-semantic.txt`:
+
+```sh
+python3 -B -m lib.ithkuil.src.skos.build \
+  --input-root lib/ithkuil/_data/csv \
+  --output-root /path/to/skos-artifacts \
+  --profile bilqis-skos-profile/1
+```
+
+The input root defaults to this package's tracked `_data/csv` directory. The output
+root is required and must not be a symlink, inside the source CSV root, or inside
+the compiler's own source package. This prevents output metadata from becoming
+compiler input on the next rebuild. The supported profile is
+explicit; unknown versions fail. The Python API is `compile_corpus(input_root)` for
+immutable artifact bytes and `build(input_root, output_root)` for verified publication.
+Both traverse the same preflight, identity, source, core RDF, canonicalization and
+held-accounting stages. Normal builds have no network, model, graph-store, registry,
+training, student or optimizer dependency. No source or input file is modified.
+
+Each successful publication has:
+
+```text
+output-root/
+  CURRENT.json
+  generations/<bundle-sha256>/
+    manifest.json
+    canonical.nt
+    held.json
+    digest.json
+    input.json
+```
+
+`CURRENT.json` is the only mutable selection. A complete generation is written and
+read back before the pointer changes atomically. Each payload's exact byte count
+and SHA-256 are recorded in `manifest.json`; the generation ID hashes the manifest.
+Repeated identical builds reuse the same verified generation. A failed input or
+accounting check writes nothing, and a failure before the pointer swap leaves any
+prior valid pointer intact. Existing malformed/tampered generations or pointers are refused
+rather than overwritten. A process crash cannot leave a pointer selecting half a
+new artifact set; an unselected complete generation may be safely reused on retry.
+Payload files, generation directories and pointer updates are flushed in order.
+After the atomic pointer swap, the selection is committed: a subsequent directory
+sync error is reported as `DIRSYNC_UNCONFIRMED` only after full new-generation
+readback succeeds. This warning does not claim power-loss durability. A failure to
+read back after the swap returns `COMPILER_PUBLICATION_COMMITTED_READBACK_REQUIRED`
+with the generation identity; the caller must reconcile the actual pointer before
+retrying. It must not assume the write did not happen. Publication uses a narrow
+process-released output lock; competing writers receive `COMPILER_OUTPUT_BUSY`.
+This is a local readback/durability mechanism, not a remote attestation claim.
+
+`input.json` binds exact loaded table values, schema version, column names and row
+counts using a row/column-order-independent closure digest. It contains table
+digests rather than copying source text. `digest.json` binds the complete canonical
+graph bytes to the profile contract hash and compiler-package file hashes. The
+metadata contains no build timestamp or input/output filesystem location. A shared
+Git commit is useful execution evidence but is not substituted for content identity.
+
+Exit status 0 means a coherent artifact set was produced and verified. The JSON
+summary explicitly says `complete` or `partial` and includes `release_ineligible`.
+Held or unsupported semantic rows remain visible in `held.json`; a successful
+partial build does not satisfy later complete-corpus release gates. Structurally
+invalid input, invalid accounting, unsupported profile and publication errors exit
+2 with a stable JSON reason on stderr. A post-commit readback failure uses status
+`reconcile_required`; ordinary pre-commit failures use `blocked`. Neither erases
+prior immutable generations. `verify_publication(output_root)` independently checks the
+selected manifest and every payload digest.
+
+Agent interface disposition: `RAW_INTERFACE_JUSTIFIED`. This extends the repository's
+existing Python module/argparse interface with one deterministic command, bounded
+JSON status, stable nonzero failures, explicit paths, content-addressed idempotency
+and receipt readback. An additional service, scaffold or runtime is unnecessary for
+this local compiler. `--help` is the discoverability surface. Contract tests invoke
+the actual module in fresh processes, including CSV-only fresh workspaces, reordered
+inputs, failure paths and repeated publication.
+
+### Publication commit and recovery semantics
+
+The v1 publication bundle contains exactly four payload files: `canonical.nt`,
+`held.json`, `digest.json`, and `input.json`. `manifest.json` records their exact
+byte counts and SHA-256 values, and its bytes determine the generation ID.
+
+Publication writes and verifies a complete generation before changing
+`CURRENT.json`. The atomic replacement of `CURRENT.json` is the commit point.
+Routine failures before that replacement leave the previously selected generation
+unchanged. Temporary staging files created by the failed attempt are removed.
+
+After the commit point, the publisher reads the selected generation back through
+the normal verification path and requires that readback to select the expected
+committed bundle ID. A different valid generation is a reconciliation-required
+state, not success. If the final output-directory `fsync` fails but the expected
+generation readback succeeds, publication returns the verified receipt with
+`durability_warning.code = DIRSYNC_UNCONFIRMED`. This means the selected generation
+is coherent in the running system, but power-loss durability of the final directory
+entry was not confirmed.
+
+If readback fails after `CURRENT.json` was replaced, publication raises
+`COMPILER_PUBLICATION_COMMITTED_READBACK_REQUIRED` with the committed bundle ID.
+The caller must reconcile the actual pointer and generation state. It must not
+report the attempt as an ordinary precommit failure or assume the old pointer still
+applies.
+
+`verify_publication(output_root)` accepts only the exact generated v1
+`CURRENT.json` bytes and the exact four-file manifest contract. Symlinked output
+roots, `CURRENT.json`, `generations/`, generation directories, manifests, or payload
+files are rejected at their publication boundary. The local lock prevents
+cooperating publishers from changing the same output root concurrently. This is a
+local consistency and durability protocol, not a remote authentication or
+attestation mechanism.
