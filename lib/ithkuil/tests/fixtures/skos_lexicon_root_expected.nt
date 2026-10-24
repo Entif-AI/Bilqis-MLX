@@ -1,0 +1,9 @@
+<https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-0bd881a56fac9e> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/fec28d325d3b430f094620c5ae4112af59dc483c64fbc3814cd594a0f02b90b4> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-0bd881a56fac9e> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Resource> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-0bd881a56fac9e> <http://www.w3.org/2004/02/skos/core#notation> "-Č-"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-0bd881a56fac9e> <http://www.w3.org/2004/02/skos/core#prefLabel> "‘BE (i.e., copular identification only) / EQUIVALENCE / IDENTIFICATION’"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/fec28d325d3b430f094620c5ae4112af59dc483c64fbc3814cd594a0f02b90b4> <http://purl.org/dc/terms/bibliographicCitation> "New Ithkuil lexicon (Curriculum Registry URL variant); source NI-LEXICON-CURRICULUM; chapter 1; section 1.3; root -Č-; printed page 5; tracked chapter PDF page 2." .
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/fec28d325d3b430f094620c5ae4112af59dc483c64fbc3814cd594a0f02b90b4> <http://purl.org/dc/terms/identifier> "source=NI-LEXICON-CURRICULUM;chapter=1;section=1.3;root=-Č-;printed_page=5;tracked_chapter_page=2" .
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/fec28d325d3b430f094620c5ae4112af59dc483c64fbc3814cd594a0f02b90b4> <http://purl.org/dc/terms/source> <https://ithkuil.net/New_Ithkuil_Lexicon.pdf> .
+<https://ithkuil.net/New_Ithkuil_Lexicon.pdf> <http://purl.org/dc/terms/bibliographicCitation> "New Ithkuil lexicon (Curriculum Registry URL variant)" .
+<https://ithkuil.net/New_Ithkuil_Lexicon.pdf> <http://purl.org/dc/terms/identifier> "NI-LEXICON-CURRICULUM" .
