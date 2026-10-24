@@ -35,7 +35,7 @@ class JitCurriculumTests(unittest.TestCase):
         self.successor = compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(),
             fixture.registry, fixture.answers, source_root=None, graph=graph,
-            verification_seed=20261019, legacy_course=expanded_course,
+            verification_seed=20261019,
             predecessor=self.current)
         target = self.successor.execution_plan.capability_map["Z.C6"]
         sense = CandidateSense(
@@ -106,7 +106,7 @@ class JitCurriculumTests(unittest.TestCase):
             curriculum, bindings, CurriculumProfile.full(),
             self.fixture.registry, self.fixture.answers,
             source_root=None, graph=graph, verification_seed=20261019,
-            legacy_course=expanded_course, predecessor=self.current)
+            predecessor=self.current)
         target = overbroad.execution_plan.capability_map["Z.C6"]
         binding = replace(
             self.binding, source_anchor=target.source_anchor,

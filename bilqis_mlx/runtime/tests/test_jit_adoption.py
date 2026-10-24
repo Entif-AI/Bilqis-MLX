@@ -1,11 +1,17 @@
 from dataclasses import replace
+from copy import deepcopy
+from pathlib import Path
+from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock, patch
 
 from bilqis_mlx.factory.autonomy import compile_autonomy_plan, initial_evidence_ledger
 from bilqis_mlx.factory.jit_curriculum import propose_curriculum_delta
 from bilqis_mlx.factory.tests.test_candidate_staging import CandidateStagingFixture
 from bilqis_mlx.learning.champions import Checkpoint
-from bilqis_mlx.runtime.jit_adoption import resolve_ready_candidate
+from bilqis_mlx.runtime.jit_adoption import (
+    resolve_ready_candidate, verify_current_implementations,
+)
 
 
 class JitAdoptionTests(CandidateStagingFixture, unittest.TestCase):
@@ -47,3 +53,48 @@ class JitAdoptionTests(CandidateStagingFixture, unittest.TestCase):
             "d" * 64, obligation.minimum_specimens, True), plan=self.plan)
         with self.assertRaisesRegex(ValueError, "PROPOSAL_CONTEXT_CHANGED"):
             self.resolve(ledger=ledger)
+
+
+    def test_unchanged_implementation_descriptors_pass_without_mutation(self):
+        fixture = self.fixture.fixture
+        before = self.staged.successor.manifest()
+        verify_current_implementations(self.staged.successor,
+                                       fixture.registry, fixture.answers)
+        self.assertEqual(self.staged.successor.manifest(), before)
+
+    def test_source_and_answer_drift_block_before_admission_transactions(self):
+        from bilqis_mlx.runtime import release_adoption
+
+        fixture = self.fixture.fixture
+        successor = self.staged.successor
+        binding = successor.source_bindings.bindings[0]
+        source = fixture.registry.require(binding.generator_id, binding.oracle_id)
+        answer = fixture.answers.require(successor.answer_modalities[0].kind)
+        sources = SimpleNamespace(require=Mock(return_value=replace(
+            source, descriptor=replace(source.descriptor, implementation_sha256="f" * 64))))
+        answers = SimpleNamespace(require=Mock(return_value=replace(
+            answer, descriptor=replace(answer.descriptor, implementation_sha256="f" * 64))))
+        session = SimpleNamespace(resolve_ready_proposal=Mock(return_value=self.staged))
+        receipt = {"school": {"fixture": "unchanged"}}
+        before = deepcopy(receipt)
+        for registry, modalities, expected in (
+                (sources, fixture.answers, "JIT_ADOPTION_SOURCE_IMPLEMENTATION_DRIFT"),
+                (fixture.registry, answers, "JIT_ADOPTION_ANSWER_IMPLEMENTATION_DRIFT")):
+            with self.subTest(drift=expected), \
+                    patch.object(release_adoption._runtime_admission,
+                                 "_require_executable_factory_admission", return_value=self.current), \
+                    patch.object(release_adoption._runtime_state, "_state_from_json",
+                                 return_value=SimpleNamespace(current_student=self.checkpoint)), \
+                    patch.object(release_adoption._source_adapters_school,
+                                 "live_source_registry", return_value=registry), \
+                    patch.object(release_adoption._factory_live_answers,
+                                 "live_answer_registry", return_value=modalities), \
+                    patch.object(release_adoption, "_adopt_catalog_profile") as catalog, \
+                    patch.object(release_adoption, "_adopt_executable_profile") as profile:
+                with self.assertRaisesRegex(ValueError, "^" + expected + "$" ):
+                    release_adoption._adopt_jit_proposal(
+                        None, Path("/unused"), receipt, None, None, fixture.graph,
+                        None, None, session, self.proposal, reserve_gib=100.)
+                catalog.assert_not_called()
+                profile.assert_not_called()
+                self.assertEqual(receipt, before)
