@@ -325,6 +325,33 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertEqual(own.state['step'].item(), prior_step)
         self.assertEqual(graph, self.graph)
 
+    def test_frontier_lineage_is_verified_before_catalog_growth_or_prediction(self):
+        transition = numeric_entry_transition(
+            self.boolean_release, self.graph, full_boolean=False, maximum=3)
+        before_paths = tuple(sorted(str(path.relative_to(self.root))
+                                    for path in self.root.rglob("*")))
+        for field, value, expected in (
+                ("factory_release_sha256", "a" * 64, "FACTORY_EXECUTABLE_COHORT_RELEASE_DRIFT"),
+                ("source_sha256", "b" * 64, "FACTORY_EXECUTABLE_COHORT_SCOPE_DRIFT"),
+                ("student_sha256", "c" * 64, "FACTORY_PROFILE_EXPANSION_REQUIRES_COMPLETE_PERFECT_PREFIX"),
+                ("optimizer_step", -1, "FACTORY_PROFILE_EXPANSION_REQUIRES_COMPLETE_PERFECT_PREFIX")):
+            changed = deepcopy(self.before_numeric)
+            changed["last_exam"][field] = value
+            with self.subTest(field=field), \
+                    patch("bilqis_mlx.vocabulary_growth.extend_mlx_student",
+                          side_effect=AssertionError("growth before frontier verification")) as growth, \
+                    patch("bilqis_mlx.learning.student_ops._predictions",
+                          side_effect=AssertionError("prediction before frontier verification")) as inference:
+                with self.assertRaisesRegex(ValueError, "^" + expected + "$"):
+                    storage._adopt_catalog_profile(
+                        self.mx, self.root, changed, self.fixture.grade_a,
+                        fixtures.SOURCE, self.graph, self.params, self.optimizer,
+                        transition, reserve_gib=0.)
+                growth.assert_not_called()
+                inference.assert_not_called()
+            self.assertEqual(tuple(sorted(str(path.relative_to(self.root))
+                                          for path in self.root.rglob("*"))), before_paths)
+
     def test_rebaselined_predecessor_v2_pointer_is_bound_and_tamper_rejected(self):
         # The pre-growth Boolean exam is a normal same-current v2 cohort.
         self.assertIsNotNone(storage._verify_saved_cohort(

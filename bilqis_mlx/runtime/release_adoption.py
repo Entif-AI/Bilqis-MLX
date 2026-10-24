@@ -579,6 +579,11 @@ def _adopt_catalog_profile(
     exam, mastery_debt = _catalog_boundary_evidence(
         predecessor, previous_program, school, receipt,
         allow_mastery_debt=allow_mastery_debt)
+    from .assessment import _load_executable_cohort
+    preserved = _load_executable_cohort(
+        run_dir, {"manifest_sha256": receipt["source_manifest_sha256"]},
+        predecessor, tuple(item.capability_id
+                           for item in predecessor.execution_plan.capabilities), exam)
     compatibility_course = _compatibility_executable_projection.legacy_course_for_profile(
         grade_a_course, source_root, transition.profile)
     successor = compiled_successor or _factory_executable_release.compile_successor_profile_release(
@@ -617,10 +622,7 @@ def _adopt_catalog_profile(
         receipt, compatibility_course, successor, successor_program,
         release_file, admission, transition, grown, epoch, history,
         identity)
-    from bilqis_mlx.fixed_frontier import load_frontier_cohort, rebaseline_frontier_exam
-    preserved = load_frontier_cohort(run_dir, exam)
-    if preserved is None:
-        raise ValueError("FACTORY_CATALOG_BOUNDARY_COHORT_REQUIRED")
+    from bilqis_mlx.fixed_frontier import rebaseline_frontier_exam
     updated["last_exam"] = rebaseline_frontier_exam(
         run_dir, exam, checkpoint=_dataclasses.asdict(pointer), predictions=_learning_student_ops._predictions(
             mx, grown, list(preserved.rows), updated["config"], updated["answer_ids"]))
