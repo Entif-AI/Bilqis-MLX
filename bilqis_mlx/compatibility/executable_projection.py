@@ -96,7 +96,7 @@ def preflight_sealed_v1_migration(run_dir, receipt, manifest, source_root):
         from ..live_grade_c import registry_graph
         graph = registry_graph()
     else:
-        from ..source import read_sources
+        from ..grade_a_probe import read_sources
         _, _, graph, _, _ = read_sources(source_root)
     if _fingerprint(graph) != receipt["semantic_graph_sha256"]:
         raise ValueError("FACTORY_ADMISSION_SEALED_GRAPH_DRIFT")
