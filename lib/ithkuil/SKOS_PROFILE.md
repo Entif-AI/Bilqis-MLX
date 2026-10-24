@@ -381,3 +381,62 @@ installed from `requirements-semantic.txt`. Tests cover every admitted property,
 duplicate and conflicting preferred labels, label-class disjointness, multilingual
 identity preservation, realization-note demotion, conflicting definitions, missing
 source/language, generated text, unknown roles, long prose and exact RDF round trips.
+
+## 5. Semantic relations and extension admission (#35)
+
+| Source-qualified relation | Disposition | Predicate or condition |
+| --- | --- | --- |
+| Genuine semantic subsumption | `SKOS_SEMANTIC_RELATION` | Narrower concept `skos:broader` broader concept |
+| The inverse subsumption direction | `SKOS_SEMANTIC_RELATION` | Broader concept `skos:narrower` narrower concept |
+| Genuine conceptual association | `SKOS_SEMANTIC_RELATION` | `skos:related`, only with semantic evidence |
+| Grammatical family membership | `SKOS_MEMBERSHIP` | Family `skos:member` member; no semantic hierarchy |
+| Root-to-sense link | `RELATIONAL_IR_ONLY` until an extension/standard is admitted | #53 owns the concrete relationship decision |
+| Composition membership | `RELATIONAL_IR_ONLY` until admitted | #57 owns construction semantics |
+| Ordered composition component | `RELATIONAL_IR_ONLY` until admitted | #58 owns source role/order preservation |
+| Allomorph relation or condition | `RELATIONAL_IR_ONLY` until admitted | #59 owns the source rule model |
+| Conceptual contrast | `SKOS_SEMANTIC_RELATION` only when the source establishes an associative concept relation | Otherwise `HELD`; opposite-looking forms are insufficient |
+| Any unknown relation type or missing source evidence | `HELD` | Never use `skos:related` as graph glue |
+| Reviewed necessary linguistic residue | `BILQIS_EXTENSION` | Its admitted predicate, with declared domain/range |
+
+The decision matrix is a **non-authoritative classification helper** over premises
+already established by source review. Its `source_attested` / `semantic_proof`
+inputs do not prove source truth, authorize graph emission, or validate endpoint
+types. Those checks belong to source-qualified normalization/emission (#37-40).
+The helper never emits RDF. Semantic proof is not inferred from adjacency, labels,
+shared tables, morphology, source order, or model confidence. Family membership
+always remains membership, and structural linguistic relations never become SKOS
+semantic relations merely because they are useful to traverse.
+
+An extension entry has a stable term key/IRI, precise definition, relation kind,
+domain, range, public source fixture, source justification, rejected SKOS and
+generic-RDF alternatives, a negative fixture, recurring-use and machine-need
+dispositions, and optional subproperty/specialization proof. All required fields
+and proof references must validate. A missing fixture, convenience-only proposal,
+unknown relation kind, or an existing faithful SKOS primitive blocks admission.
+Custom-predicate qualification always starts from the raw registry term and reruns
+the checklist; there is no trusted `AdmittedExtension` wrapper or cached admission.
+
+The fixture registry `tests/fixtures/skos_extension_example.json` defines the
+`bilqis-extension-admission/1` format. Its scope is explicitly
+`admission-fixture-only`: passing a fixture gate does not install a production
+vocabulary. The real source rule `ALLO-08d9bb00e7a0dd` maps `fbm` through `fv` to `vw`
+under its attested condition. Its replacement role is a legitimate non-SKOS
+linguistic relation; a fixture term `surfaceReplacement` passes the admission
+checklist. The gate resolves that source key in canonical `allomorph_rules.csv` and
+parses a negative RDF fixture containing the exact source-bound false
+`skos:related` edge; matching caller-supplied proof strings are not evidence.
+Generic `rdf:value` cannot distinguish its input, intermediate and replacement roles.
+This establishes the boundary; #57–60 choose the actual minimal production terms.
+
+A custom subproperty of `skos:broader`, `skos:narrower` or `skos:related` additionally
+requires concept domain/range, the matching semantic relation kind, and a parsed
+specialization graph that binds the candidate property to both the SKOS superproperty
+and the real source key. A structural allomorph or composition relation fails even
+when a caller supplies a claimed specialization identifier. Unsupported or unbound
+specialization evidence remains unproven/held; no arbitrary proof map can admit it.
+
+Proof: `test_skos_relations.py` parses positive and negative RDF fixtures, checks
+each decision-matrix row, validates the real allomorph source row, rejects forged
+wrapper/source/negative/specialization evidence and unnecessary/custom membership,
+and keeps the core matrix non-authoritative. Unknown relations remain source IR or
+held state; no full corpus relations are emitted by this profile gate.
