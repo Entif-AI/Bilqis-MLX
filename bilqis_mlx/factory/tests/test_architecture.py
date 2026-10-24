@@ -9,6 +9,30 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class FactoryArchitectureTests(unittest.TestCase):
+    def test_current_api_cannot_accept_or_forward_legacy_course(self):
+        sources = (
+            "def generate(*, legacy_course=None):\n    return ()\n",
+            "def generate():\n    return build(legacy_course=historical)\n",
+            "def generate():\n    return context.legacy_course\n",
+        )
+        for source in sources:
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                (root / "bilqis_mlx/factory").mkdir(parents=True)
+                (root / "bilqis_mlx/factory/generation.py").write_text(source)
+                self.assertTrue(any("CURRENT_API_USES_LEGACY_COURSE" in problem
+                                    for problem in inspect_factory_architecture(root)))
+
+    def test_historical_decoder_may_read_legacy_course(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "bilqis_mlx/factory").mkdir(parents=True)
+            (root / "bilqis_mlx/compatibility").mkdir()
+            (root / "bilqis_mlx/compatibility/decode.py").write_text(
+                "def decode(legacy_course):\n    return legacy_course\n")
+            self.assertFalse(any("CURRENT_API_USES_LEGACY_COURSE" in problem
+                                 for problem in inspect_factory_architecture(root)))
+
     def test_current_repository_has_no_factory_bypass(self):
         self.assertEqual(inspect_factory_architecture(ROOT), ())
 

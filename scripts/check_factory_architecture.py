@@ -84,6 +84,19 @@ def _grade_literal_dispatch(path: Path, root: Path) -> tuple[str, ...]:
     return tuple(problems)
 
 
+def _legacy_course_usage(path: Path, root: Path) -> tuple[str, ...]:
+    tree = ast.parse(_source(path), filename=str(path))
+    lines = set()
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.arg) and node.arg == "legacy_course" or
+                isinstance(node, ast.Name) and node.id == "legacy_course" or
+                isinstance(node, ast.keyword) and node.arg == "legacy_course" or
+                isinstance(node, ast.Attribute) and node.attr == "legacy_course"):
+            lines.add(node.lineno)
+    return tuple(f"{path.relative_to(root)}:{line} CURRENT_API_USES_LEGACY_COURSE"
+                 for line in sorted(lines))
+
+
 def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
     src = root / "bilqis_mlx"
     problems: list[str] = []
@@ -119,6 +132,7 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
             if "tests" in candidate.relative_to(src).parts or not candidate.is_file():
                 continue
             problems.extend(_grade_literal_dispatch(candidate, root))
+            problems.extend(_legacy_course_usage(candidate, root))
 
     trainer = src / "trainer.py"
     operate_calls = _function_calls(trainer, "operate")
