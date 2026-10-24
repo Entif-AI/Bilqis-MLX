@@ -11,6 +11,27 @@ seams, compatibility boundaries, or proofs. A particular semantic root belongs i
 this corpus only when it exposes a genuinely reusable missing factory mechanism.
 Future curriculum/root selection remains separate curriculum work.
 
+## CONTROLLING USER CORRECTION — 2026-10-23: #150 tickets are the runner
+
+There is **no separate #150 orchestration runner or harness**. The durable issue
+pages, their direct prerequisite links, their proof/block receipts, and their
+explicit page-turn gates are the execution control plane. A Codex session keeps
+only one bookmark: the current GitHub issue number.
+
+Every #150 issue has an additive `FACTORY_PAGE_GATE_V1` comment. Ordinary leaf
+execution starts from that one issue, reads only its local spec and the direct
+prerequisite issues named by the gate, executes or records the local blocked
+state, then opens the gate's explicit `next_page`. Do **not** load issue #150,
+the 77-leaf manifest, or all leaf receipts into model context to reconstruct a
+global ready set. The manifest remains a design-time validation/index artifact,
+not ordinary executor input. After a quota/session reset, reopen only the
+bookmarked issue and continue from its page gate.
+
+See
+[`docs/architecture/11_FACTORY_TICKET_NAVIGATION_20261023.md`](docs/architecture/11_FACTORY_TICKET_NAVIGATION_20261023.md)
+and
+[`TASK-0003`](docs/tasks/0003_FACTORY_CLOSURE_CODEX_RUN_PROTOCOL.md).
+
 ## CONTROLLING USER CORRECTION — 2026-10-23: full U7C Grade B
 
 The active Prometheus curriculum now admits the complete direct-U7C Boolean set:
