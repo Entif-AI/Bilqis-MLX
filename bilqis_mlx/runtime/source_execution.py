@@ -43,3 +43,12 @@ class SourceExecutionContext:
             binding = bindings[capability.capability_id]
             self.source_registry.require(binding.generator_id, binding.oracle_id)
         self.answer_registry.validate_plan(self.release.execution_plan)
+
+    def draw_rows(self, *, seed: int, capability: str | None = None,
+                  each: int | None = None) -> list[dict]:
+        """Draw only the bound release's admitted capability/provider scope."""
+        from ..factory.generation import draw_executable_release_rows
+
+        return draw_executable_release_rows(
+            self.source_root, self.graph, self.release, self.source_registry,
+            seed=seed, capability=capability, each=each)

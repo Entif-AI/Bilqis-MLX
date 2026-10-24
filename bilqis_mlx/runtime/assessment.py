@@ -23,6 +23,7 @@ from ..live_curriculum import cohort_contract as _cohort_contract, draw_course_r
 from bilqis_mlx.curriculum.scheduler import assessment_capabilities
 from bilqis_mlx.learning.stagnation_control import quarantined_capabilities
 from .state import _durable_json, _seed, _state_from_json
+from .source_execution import SourceExecutionContext
 
 _CURRENT_ADMISSION_DRIFT = "FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DRIFT"
 
@@ -38,8 +39,7 @@ def _draw_executable_scope_cohort(
     for capability in contract.capabilities:
         rows.extend(draw_executable_release_rows(
             source_root, graph, release, registry,
-            seed=seed, legacy_course=legacy_course,
-            capability=capability))
+            seed=seed, capability=capability))
     cohort = make_cohort(
         rows,
         generator_version=contract.generator_version,
@@ -312,17 +312,18 @@ def _candidate_executable_cohort(
 
 
 def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None,
-                    course=None, executable_release=None):
-    """Draw through the admitted v2 source whenever an active release exists.
-
-    A compatibility Course is only metadata for v2 execution. Its historical
-    generator names are not runtime provider authority, and may be retired.
-    """
+                    course=None, executable_release=None,
+                    source_context: SourceExecutionContext | None = None):
+    """Draw from bound v2 authority, retaining the historical Course entrypoint."""
+    if source_context is not None:
+        if not isinstance(source_context, SourceExecutionContext):
+            raise TypeError("FACTORY_ASSESSMENT_SOURCE_CONTEXT_REQUIRED")
+        return source_context.draw_rows(seed=seed, capability=capability, each=each)
     if executable_release is not None:
         from ..source_adapters.school import live_source_registry
         return draw_executable_release_rows(
             source_root, graph, executable_release, live_source_registry(),
-            seed=seed, legacy_course=course, capability=capability, each=each)
+            seed=seed, capability=capability, each=each)
     if course is None:
         raise ValueError("FACTORY_RELEASE_REQUIRED_FOR_SOURCE_GENERATION")
     return draw_course_rows(source_root, graph, course, seed=seed,

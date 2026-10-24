@@ -132,12 +132,46 @@ def _fixture():
         source_registry, answer_registry,
         source_root=None, graph=graph,
         verification_seed=20261019,
-        legacy_course=course,
     )
     return course, source_registry, graph, release
 
 
 class DisposableGradeZSystemProof(unittest.TestCase):
+    def test_assessment_context_draws_twelve_v2_capabilities_without_course(self):
+        from unittest.mock import patch
+        from bilqis_mlx.runtime.assessment import _draw_live_rows
+        from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+
+        _, registry, graph, template = _fixture()
+        names = tuple(f"Z.C{i}" for i in range(12))
+        grade = template.curriculum.grades[0]
+        curriculum = replace(template.curriculum, grades=(replace(
+            grade, capabilities=tuple(replace(
+                grade.capabilities[0], capability_id=name) for name in names),
+            exam_item_counts=tuple((name, 4) for name in names)),))
+        bindings = replace(template.source_bindings, bindings=tuple(replace(
+            template.source_bindings.bindings[0], capability_id=name) for name in names))
+        answers = AnswerModalityRegistry((RegisteredAnswerModality(
+            AnswerModality("binary", "answer.binary/z-fixture", "e" * 64),
+            fixed_domain(BINARY), lambda value: "cogal.value." + value.lower()),))
+        release = compile_executable_factory_release(
+            curriculum, bindings, CurriculumProfile.full(), registry, answers,
+            source_root=None, graph=graph, verification_seed=19)
+        context = SourceExecutionContext(release, graph, None, registry, answers)
+        with patch("bilqis_mlx.runtime.assessment.draw_course_rows",
+                   side_effect=AssertionError("historical generation used")):
+            rows = _draw_live_rows(None, graph, seed=31, source_context=context)
+            selected = _draw_live_rows(
+                None, graph, seed=31, capability=names[-1], each=2,
+                source_context=context)
+            with self.assertRaisesRegex(ValueError, "UNKNOWN_CAPABILITY"):
+                _draw_live_rows(None, graph, seed=31, capability="Z.UNKNOWN",
+                                source_context=context)
+        self.assertEqual(tuple(row["capability"] for row in rows),
+                         tuple(name for name in names for _ in range(4)))
+        self.assertEqual(selected, [row for row in rows
+                                   if row["capability"] == names[-1]][:2])
+
     def _assert_compiler_and_generation(self, course, registry, graph, release):
         self.assertEqual(
             tuple(item.grade_id for item in release.execution_plan.grades),
