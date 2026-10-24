@@ -1,0 +1,1171 @@
+{
+  "schema": "bilqis.factory-workstack/v1",
+  "parent_issue": 150,
+  "leaves": [
+    {
+      "spec_id": "SPEC-0006",
+      "path": "docs/specifications/0006_FACTORY_WORKSTACK_MANIFEST.md",
+      "spec_sha256": "5e3571f1542c41ce453bec3a7543fdc473e5d5634496088279540ecd81d2dee7",
+      "title": "Factory workstack manifest",
+      "track": "control",
+      "depends_on": [],
+      "wave": "0",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0007",
+      "path": "docs/specifications/0007_FACTORY_WORKSTACK_VALIDATOR.md",
+      "spec_sha256": "78c5ab25181a1422544c67fc359814a38d550c94c1ab6af2d56b59df0bc1879b",
+      "title": "Factory workstack validator",
+      "track": "control",
+      "depends_on": [
+        "SPEC-0006"
+      ],
+      "wave": "1",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0008",
+      "path": "docs/specifications/0008_CLOSED_BOOK_EXECUTOR_PROTOCOL.md",
+      "spec_sha256": "5c262a6e9c594eb5f30048ffd6c58af9ac0faf071658913ab2f11080fe3e1a91",
+      "title": "Closed-book executor protocol",
+      "track": "control",
+      "depends_on": [
+        "SPEC-0006",
+        "SPEC-0007"
+      ],
+      "wave": "2",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0009",
+      "path": "docs/specifications/0009_FACTORY_DEPENDENCY_DIRECTION_GUARD.md",
+      "spec_sha256": "04855acde48c780336d0775f667dd4b897c6b08d2c735679e963e88c9ca71965",
+      "title": "Factory dependency-direction guard",
+      "track": "guards",
+      "depends_on": [
+        "SPEC-0006"
+      ],
+      "wave": "1",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0010",
+      "path": "docs/specifications/0010_BAN_GRADE_SPECIFIC_RUNTIME_FORKS.md",
+      "spec_sha256": "ac0aceb14c1e38549b571e8eeffebe0c5a4e0f7f79bbcf4febfbe6068b8c329f",
+      "title": "Ban grade-specific runtime forks",
+      "track": "guards",
+      "depends_on": [
+        "SPEC-0009"
+      ],
+      "wave": "2",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0011",
+      "path": "docs/specifications/0011_COMPATIBILITY_WRITER_QUARANTINE_GUARD.md",
+      "spec_sha256": "726c2b78ba5f6a0ef96798dc3a41f12b23518f1d37adcb8089272e7643521f1a",
+      "title": "Compatibility writer quarantine guard",
+      "track": "guards",
+      "depends_on": [
+        "SPEC-0009"
+      ],
+      "wave": "2",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0012",
+      "path": "docs/specifications/0012_SPLIT_GRADE_CARDINALITY_CONTRACTS.md",
+      "spec_sha256": "c241f638fb6972c1d2a6e1127af68406125e59f33fe73a45acdbec516b500d37",
+      "title": "Split grade cardinality contracts",
+      "track": "guards",
+      "depends_on": [
+        "SPEC-0009"
+      ],
+      "wave": "2",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0013",
+      "path": "docs/specifications/0013_BAN_CURRENT_LEGACY_COURSE_APIS.md",
+      "spec_sha256": "71fa594c10dad0d7710af4199e2f57c02cdad88c1c7097dd56a5014a4235453b",
+      "title": "Ban current legacy-course APIs",
+      "track": "guards",
+      "depends_on": [
+        "SPEC-0009"
+      ],
+      "wave": "2",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0014",
+      "path": "docs/specifications/0014_ENFORCE_EXECUTABLE_RELEASE_RUNTIME_GATE.md",
+      "spec_sha256": "309fd8b92966002ce1e5ba076f222054aed4261f934f925aa939376ecad501bc",
+      "title": "Enforce executable-release runtime gate",
+      "track": "guards",
+      "depends_on": [
+        "SPEC-0009"
+      ],
+      "wave": "2",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0015",
+      "path": "docs/specifications/0015_GUARD_SEMANTIC_ROOT_NEUTRALITY.md",
+      "spec_sha256": "1949501debb704c745e4f6564cbb8cbd9698da41224527daaa6cc0740f919e9f",
+      "title": "Guard semantic-root neutrality",
+      "track": "guards",
+      "depends_on": [
+        "SPEC-0009"
+      ],
+      "wave": "2",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0016",
+      "path": "docs/specifications/0016_V2_TWELVE_CAPABILITY_CURRICULUM.md",
+      "spec_sha256": "70017242c172323a1370dca0b825085053179e16533d30740a9a3d9138889290",
+      "title": "V2 twelve-capability curriculum",
+      "track": "v2-contract",
+      "depends_on": [
+        "SPEC-0012"
+      ],
+      "wave": "3",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0017",
+      "path": "docs/specifications/0017_TWELVE_CAP_RELEASE_ROUNDTRIP.md",
+      "spec_sha256": "8437d9026a16effbe3ec2cf6e1c2f6c78d3bf3d5d756c74edadb913bc65a56eb",
+      "title": "Twelve-cap release roundtrip",
+      "track": "v2-contract",
+      "depends_on": [
+        "SPEC-0016"
+      ],
+      "wave": "4",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0018",
+      "path": "docs/specifications/0018_TWELVE_CAP_EXECUTION_PLAN.md",
+      "spec_sha256": "24dcaadbe14e6412375e43a071509c19d01e2fb5236b9fada687dde24505dfe6",
+      "title": "Twelve-cap execution plan",
+      "track": "v2-contract",
+      "depends_on": [
+        "SPEC-0016"
+      ],
+      "wave": "4",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0019",
+      "path": "docs/specifications/0019_TWELVE_CAP_ANSWER_ASSESSMENT_SEALS.md",
+      "spec_sha256": "f7171b3eb731f1f94db7f29348b5377110b0fb35c6abe8917557fafbd19cfcd2",
+      "title": "Twelve-cap answer and assessment seals",
+      "track": "v2-contract",
+      "depends_on": [
+        "SPEC-0018"
+      ],
+      "wave": "5",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0020",
+      "path": "docs/specifications/0020_TWELVE_CAP_PROVIDER_GENERATION.md",
+      "spec_sha256": "910d4301d535d79fcada4178b970e9436042f00a7126ff03b7b98d0ea5de5114",
+      "title": "Twelve-cap provider generation",
+      "track": "v2-contract",
+      "depends_on": [
+        "SPEC-0015",
+        "SPEC-0018"
+      ],
+      "wave": "5",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0021",
+      "path": "docs/specifications/0021_TWELVE_CAP_SCHEDULE_PROJECTION.md",
+      "spec_sha256": "9562141836417998ce95b33ba193016aa4bc9f900adf39be197ec47366cd25c0",
+      "title": "Twelve-cap schedule projection",
+      "track": "v2-contract",
+      "depends_on": [
+        "SPEC-0018"
+      ],
+      "wave": "5",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0022",
+      "path": "docs/specifications/0022_TWELVE_CAP_PROFILE_PROJECTION.md",
+      "spec_sha256": "a66ae9d573aa5a7eefa127946cf98c68028380a563b09fad6bbd9eaf8d6d61fb",
+      "title": "Twelve-cap profile projection",
+      "track": "v2-contract",
+      "depends_on": [
+        "SPEC-0018"
+      ],
+      "wave": "5",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0023",
+      "path": "docs/specifications/0023_TWELVE_CAP_SUCCESSOR_LINEAGE.md",
+      "spec_sha256": "a5464808e4dff9cd51b9ded34c79ee9b9621c0af228070fb4bde46b93bac6510",
+      "title": "Twelve-cap successor lineage",
+      "track": "v2-contract",
+      "depends_on": [
+        "SPEC-0017",
+        "SPEC-0018"
+      ],
+      "wave": "5",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0024",
+      "path": "docs/specifications/0024_RUNTIME_SOURCE_EXECUTION_CONTEXT.md",
+      "spec_sha256": "0eee6e7a3dd185de3f4021358200ae0e06c85321459a2110dea31a9c9ebd2111",
+      "title": "Runtime source execution context",
+      "track": "legacy-decoupling",
+      "depends_on": [
+        "SPEC-0013",
+        "SPEC-0018"
+      ],
+      "wave": "5",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0025",
+      "path": "docs/specifications/0025_CONTEXT_FROM_ADMITTED_RELEASE.md",
+      "spec_sha256": "7406765c01b3f2159053875a6d1daa1ff80b8e303ade8eafd90aa71cd5696cf2",
+      "title": "Build context from admitted release",
+      "track": "legacy-decoupling",
+      "depends_on": [
+        "SPEC-0023",
+        "SPEC-0024"
+      ],
+      "wave": "6",
+      "verification_tier": "T0_UNIT",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0026",
+      "path": "docs/specifications/0026_REMOVE_GENERATION_LEGACY_COURSE.md",
+      "spec_sha256": "84a5e8e710529b8f7a406828209bb1baa5a4ea2339b5eb6cd18038a4f2937180",
+      "title": "Remove generation legacy-course dependency",
+      "track": "legacy-decoupling",
+      "depends_on": [
+        "SPEC-0025"
+      ],
+      "wave": "7",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0027",
+      "path": "docs/specifications/0027_REMOVE_COMPILER_LEGACY_COURSE.md",
+      "spec_sha256": "c1c4bf0c66af79917aeabd1895470ce54fd44646ad5cba951f4c053f55a14967",
+      "title": "Remove release compiler legacy-course dependency",
+      "track": "legacy-decoupling",
+      "depends_on": [
+        "SPEC-0017",
+        "SPEC-0026"
+      ],
+      "wave": "8",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0028",
+      "path": "docs/specifications/0028_ASSESSMENT_USES_V2_CONTEXT.md",
+      "spec_sha256": "58c32c2044a72ad3785c663d5c3ff033f2179834e809c311ba6418e4b7011fff",
+      "title": "Assessment uses v2 source context",
+      "track": "legacy-decoupling",
+      "depends_on": [
+        "SPEC-0025",
+        "SPEC-0026"
+      ],
+      "wave": "8",
+      "verification_tier": "T2_SYSTEM",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0029",
+      "path": "docs/specifications/0029_PREFETCH_USES_V2_CONTEXT.md",
+      "spec_sha256": "a964430e2309c865e7708ba3632a6c0674e2fa934aa3d6fffb7b4c32d48b66a5",
+      "title": "Prefetch uses v2 source context",
+      "track": "legacy-decoupling",
+      "depends_on": [
+        "SPEC-0025",
+        "SPEC-0026"
+      ],
+      "wave": "8",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0030",
+      "path": "docs/specifications/0030_ADOPTION_STOPS_COMPILING_COMPATIBILITY_COURSES.md",
+      "spec_sha256": "a95737897bfef20a627ff4428d29e0ac3bcb4f5d88cd35cf4f9e6b2f1d74111b",
+      "title": "Adoption stops compiling compatibility Courses",
+      "track": "legacy-decoupling",
+      "depends_on": [
+        "SPEC-0027",
+        "SPEC-0028"
+      ],
+      "wave": "9",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0031",
+      "path": "docs/specifications/0031_RESUME_CROSSES_COMPATIBILITY_ONCE.md",
+      "spec_sha256": "20a6d4b37e9a6c98b96c6bc5c89dc4a1c712160e2f09b9be76daf55c20fab1db",
+      "title": "Resume crosses compatibility once",
+      "track": "legacy-decoupling",
+      "depends_on": [
+        "SPEC-0025",
+        "SPEC-0030"
+      ],
+      "wave": "10",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0032",
+      "path": "docs/specifications/0032_OPERATING_LOOP_DIRECT_V2.md",
+      "spec_sha256": "cb56c6560d264c32ea992f74435bb8e09485a81d7414672534d60790b05acabc",
+      "title": "Operating loop stays direct-v2",
+      "track": "legacy-decoupling",
+      "depends_on": [
+        "SPEC-0014",
+        "SPEC-0031"
+      ],
+      "wave": "11",
+      "verification_tier": "T2_SYSTEM",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0033",
+      "path": "docs/specifications/0033_RELEASE_OWNED_SCHEDULE_PROGRAM.md",
+      "spec_sha256": "257ac1341de0dfa0c0ea7a0d24a9574ab94ad4c77c3e2c13c498804f7124bc80",
+      "title": "Release-owned schedule program",
+      "track": "scheduler-policy",
+      "depends_on": [
+        "SPEC-0021",
+        "SPEC-0032"
+      ],
+      "wave": "12",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0034",
+      "path": "docs/specifications/0034_SEPARATE_SCHEDULE_TOPOLOGY_CLASSIFIER.md",
+      "spec_sha256": "5a341fcf0159437024a4289094c8cf4992d608402ac43f4f8b4e160b928aef68",
+      "title": "Separate schedule topology classifier",
+      "track": "scheduler-policy",
+      "depends_on": [
+        "SPEC-0033"
+      ],
+      "wave": "13",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0035",
+      "path": "docs/specifications/0035_GENERIC_APPENDED_PROGRAM_ADOPTION.md",
+      "spec_sha256": "79771fedb03ac9e2e73b0b1480c6c23b8fab93b29d7bd69ce18d0978d129fd45",
+      "title": "Generic appended-program adoption",
+      "track": "scheduler-policy",
+      "depends_on": [
+        "SPEC-0034"
+      ],
+      "wave": "14",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0036",
+      "path": "docs/specifications/0036_GENERIC_SAME_GRADE_ADOPTION.md",
+      "spec_sha256": "35df0f3558a47875c5680195f63351b99a2c3fc8bcde83c66e53ac92aba73fe6",
+      "title": "Generic same-grade adoption",
+      "track": "scheduler-policy",
+      "depends_on": [
+        "SPEC-0034"
+      ],
+      "wave": "14",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0037",
+      "path": "docs/specifications/0037_EXPLICIT_DEBT_CADENCE_POLICY.md",
+      "spec_sha256": "bc8cfe74810129f0406ab94f6886005feec0da03893c7913bc90ed107105f2c2",
+      "title": "Explicit debt cadence policy",
+      "track": "scheduler-policy",
+      "depends_on": [
+        "SPEC-0034"
+      ],
+      "wave": "14",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0038",
+      "path": "docs/specifications/0038_RUNTIME_CONSUMES_CADENCE_POLICY.md",
+      "spec_sha256": "20eb50017e386adb44b12fb46699bd42d569866227a92c0e6226711bb7f53be0",
+      "title": "Runtime consumes cadence policy",
+      "track": "scheduler-policy",
+      "depends_on": [
+        "SPEC-0035",
+        "SPEC-0036",
+        "SPEC-0037"
+      ],
+      "wave": "15",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0039",
+      "path": "docs/specifications/0039_ELIMINATE_SCHEDULER_PREFIX_INFERENCE.md",
+      "spec_sha256": "a35a16e5614fdf3ea6fc3f6da3ffa48066fa64565f2c65287ac655496fe1bce2",
+      "title": "Eliminate scheduler prefix inference",
+      "track": "scheduler-policy",
+      "depends_on": [
+        "SPEC-0035",
+        "SPEC-0036"
+      ],
+      "wave": "15",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0040",
+      "path": "docs/specifications/0040_RUNTIME_OWNS_APPEND_WRITER.md",
+      "spec_sha256": "53166d3f627ad630ef4845f657c57743bc7d5b0212ec2c6f73adfacdbe3baf93",
+      "title": "Runtime owns append writer",
+      "track": "compatibility-quarantine",
+      "depends_on": [
+        "SPEC-0011",
+        "SPEC-0033"
+      ],
+      "wave": "13",
+      "verification_tier": "T2_SYSTEM",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0041",
+      "path": "docs/specifications/0041_RUNTIME_OWNS_REVISION_WRITER.md",
+      "spec_sha256": "68b48bb3f376a8bae1d16d0b40e79ae7f3035916c3a4041ce2a32ce9916aa9c5",
+      "title": "Runtime owns revision writer",
+      "track": "compatibility-quarantine",
+      "depends_on": [
+        "SPEC-0011",
+        "SPEC-0036"
+      ],
+      "wave": "15",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0042",
+      "path": "docs/specifications/0042_RUNTIME_OWNS_REPLACEMENT_WRITER.md",
+      "spec_sha256": "5e3936fdae2d34180d37a078c1c0b2fd71a4ae5434103f1a78ec5b96a6f002d7",
+      "title": "Runtime owns replacement writer",
+      "track": "compatibility-quarantine",
+      "depends_on": [
+        "SPEC-0011",
+        "SPEC-0036"
+      ],
+      "wave": "15",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0043",
+      "path": "docs/specifications/0043_RUNTIME_OWNS_KNOWN_BOUNDARY_DISPATCH.md",
+      "spec_sha256": "bdb95fff63bdbaac4bf5c15631761635f1a33e00cc2998790395777f6a697edc",
+      "title": "Runtime owns boundary dispatcher",
+      "track": "compatibility-quarantine",
+      "depends_on": [
+        "SPEC-0038",
+        "SPEC-0040",
+        "SPEC-0041",
+        "SPEC-0042"
+      ],
+      "wave": "16",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0044",
+      "path": "docs/specifications/0044_RETIRE_TRAINER_TRANSITIONS_WRITER.md",
+      "spec_sha256": "8ca60982d5be13e2b1c2e0d411fe337c3c0a370a69b4323b61107c584488066c",
+      "title": "Retire trainer transitions compatibility writer",
+      "track": "compatibility-quarantine",
+      "depends_on": [
+        "SPEC-0040",
+        "SPEC-0041",
+        "SPEC-0042",
+        "SPEC-0043"
+      ],
+      "wave": "17",
+      "verification_tier": "T2_SYSTEM",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0045",
+      "path": "docs/specifications/0045_FREEZE_COMPATIBILITY_TRANSLATION_ONLY.md",
+      "spec_sha256": "4c89cd5a8010ca5b2f781f3eac4754666f758499235c9a5339250f01d0f8803b",
+      "title": "Freeze compatibility as translation only",
+      "track": "compatibility-quarantine",
+      "depends_on": [
+        "SPEC-0031",
+        "SPEC-0032",
+        "SPEC-0044"
+      ],
+      "wave": "18",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0046",
+      "path": "docs/specifications/0046_CURRENT_IMPLEMENTATION_DRIFT_GATE.md",
+      "spec_sha256": "44c982fddf9e386963e96834c951dfcf94f5e2fbb3cf42448165956c9bf164c6",
+      "title": "Current implementation drift gate",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0027",
+        "SPEC-0045"
+      ],
+      "wave": "19",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0047",
+      "path": "docs/specifications/0047_DURABLE_STAGED_PACKAGE_CUSTODY.md",
+      "spec_sha256": "df7c8f71e97a8ab23ce10365274935d8dc7d76efa469564fd5521630669ac19f",
+      "title": "Durable staged-package custody",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0023",
+        "SPEC-0046"
+      ],
+      "wave": "20",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0048",
+      "path": "docs/specifications/0048_CLOSE_RUNTIME_SOURCE_FOOTPRINT.md",
+      "spec_sha256": "b850d8c709c829ad6f38f631a1f576d8106de0f5849dcd641b75548d71c1c6f0",
+      "title": "Close runtime source footprint",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0025",
+        "SPEC-0046"
+      ],
+      "wave": "20",
+      "verification_tier": "T2_SYSTEM",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0049",
+      "path": "docs/specifications/0049_RELEASE_BOUND_FRONTIER_REPLAY.md",
+      "spec_sha256": "cc5651abd12eeb9b0dc35e92c97b4ee58d87bee767b6db87d62ee61b2472ad5f",
+      "title": "Release-bound frontier replay",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0028",
+        "SPEC-0048"
+      ],
+      "wave": "21",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0050",
+      "path": "docs/specifications/0050_PREFETCH_FOOTPRINT_ENFORCEMENT.md",
+      "spec_sha256": "5258764a44be942b2e98c6d0e44ee238d5e4e03f98186decf88458e8b10cc890",
+      "title": "Prefetch footprint enforcement",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0029",
+        "SPEC-0048"
+      ],
+      "wave": "21",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0051",
+      "path": "docs/specifications/0051_NON_MUTATING_COMPATIBILITY_PREFLIGHT.md",
+      "spec_sha256": "30f6142e0b42099451fa0928e2da800754f1954770695745dd599eeb655d946f",
+      "title": "Non-mutating compatibility preflight",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0045",
+        "SPEC-0048"
+      ],
+      "wave": "21",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0052",
+      "path": "docs/specifications/0052_RELEASE_BIND_FULL_SEMANTIC_GRAPH.md",
+      "spec_sha256": "8bd869c1a89dea313a064607424054e01fd0c09443db72c78a2c20708da69749",
+      "title": "Release-bind full semantic graph",
+      "track": "prepared-successor",
+      "depends_on": [
+        "SPEC-0017",
+        "SPEC-0027"
+      ],
+      "wave": "9",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0053",
+      "path": "docs/specifications/0053_STAGE_EXISTING_RELEASE_TYPE.md",
+      "spec_sha256": "9ce86dc1aaf8d62b4a3fa41fc1306fb7c7e246d9b7846f25e965f399f5a892f7",
+      "title": "Stage the existing release type",
+      "track": "prepared-successor",
+      "depends_on": [
+        "SPEC-0047",
+        "SPEC-0052"
+      ],
+      "wave": "21",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0054",
+      "path": "docs/specifications/0054_EXACT_CANDIDATE_GRAPH_REALIZATION.md",
+      "spec_sha256": "c078b3df9193b1b786e23502bc463f907595b8258d14820cf45e4c25fa3481f6",
+      "title": "Exact candidate graph realization",
+      "track": "prepared-successor",
+      "depends_on": [
+        "SPEC-0048",
+        "SPEC-0053"
+      ],
+      "wave": "22",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0055",
+      "path": "docs/specifications/0055_REVALIDATE_LIVE_PROPOSAL_CONTEXT.md",
+      "spec_sha256": "51f918d5952e007e46dd6a9a0f7da0b92c67eff1f9e0950bd3ca3437d625dfa2",
+      "title": "Revalidate live proposal context",
+      "track": "prepared-successor",
+      "depends_on": [
+        "SPEC-0046",
+        "SPEC-0053"
+      ],
+      "wave": "22",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0056",
+      "path": "docs/specifications/0056_UNIFIED_PREPARED_SUCCESSOR_ENTRY.md",
+      "spec_sha256": "8b01e2fc8445d552340cd6e85eaf1e3e9b423a71318851bf62a086fb3b302ace",
+      "title": "Unified prepared-successor entry",
+      "track": "prepared-successor",
+      "depends_on": [
+        "SPEC-0033",
+        "SPEC-0048",
+        "SPEC-0055"
+      ],
+      "wave": "23",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0057",
+      "path": "docs/specifications/0057_DECOUPLE_TOPOLOGY_FROM_ABI_GEOMETRY.md",
+      "spec_sha256": "5982dba9eaadd497ba53674dac5f9e9f95ffdf7015df3644eff6c540a08ee87c",
+      "title": "Decouple topology from ABI geometry",
+      "track": "prepared-successor",
+      "depends_on": [
+        "SPEC-0034",
+        "SPEC-0056"
+      ],
+      "wave": "24",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0058",
+      "path": "docs/specifications/0058_SAME_ABI_MATERIALIZATION.md",
+      "spec_sha256": "63733b1151a5832f1f6bc8d7ead34d4ba53f5021c4070ed11c118acab14b3fcf",
+      "title": "Same-ABI materialization",
+      "track": "prepared-successor",
+      "depends_on": [
+        "SPEC-0057"
+      ],
+      "wave": "25",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0059",
+      "path": "docs/specifications/0059_APPEND_ONLY_MATERIALIZATION.md",
+      "spec_sha256": "f1b20339e2b3fc3d7f6a0fc847cf7b07e5cd35e26d93d850d57fb15015ce23b6",
+      "title": "Append-only materialization",
+      "track": "prepared-successor",
+      "depends_on": [
+        "SPEC-0049",
+        "SPEC-0054",
+        "SPEC-0057"
+      ],
+      "wave": "25",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0060",
+      "path": "docs/specifications/0060_COMMON_PREPARED_ADMISSION_TAIL.md",
+      "spec_sha256": "5a4b519fef597b8391a99c38dde29ff82d478db6c0177a4b658662ec2a76e7ba",
+      "title": "Common prepared admission tail",
+      "track": "prepared-successor",
+      "depends_on": [
+        "SPEC-0058",
+        "SPEC-0059"
+      ],
+      "wave": "26",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0061",
+      "path": "docs/specifications/0061_RUNTIME_SEMANTIC_FOOTPRINT_CONTRACT.md",
+      "spec_sha256": "9b01ab16e390a13d34e0e29ef49be59e5fc9204cdc9486f0649584a86fbe1229",
+      "title": "Runtime semantic-footprint contract",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0024",
+        "SPEC-0048"
+      ],
+      "wave": "21",
+      "verification_tier": "T0_LEAF",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0062",
+      "path": "docs/specifications/0062_INSTRUCTIONAL_CONSTITUENT_ROOTS.md",
+      "spec_sha256": "b58ad7dda82c3a409d732d1317d3294dbe317cbe7eddeff4b9eb72b56a8dd94e",
+      "title": "Instructional constituent root closure",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0016"
+      ],
+      "wave": "4",
+      "verification_tier": "T0_LEAF",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0063",
+      "path": "docs/specifications/0063_NUMERIC_PROVIDER_VERIFICATION_FOOTPRINT.md",
+      "spec_sha256": "c4ac9b73e17c46051a58a2aaabc73b4de074f0df04da8d43f162172a03471fb3",
+      "title": "Numeric provider owns verification and footprint",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0025",
+        "SPEC-0061",
+        "SPEC-0062"
+      ],
+      "wave": "22",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0064",
+      "path": "docs/specifications/0064_SCHOOL_PROVIDER_VERIFICATION_FOOTPRINT.md",
+      "spec_sha256": "63d25fe089958ea0966ae43f48d2f0cd63669be065d099349a1e1469784a6923",
+      "title": "School provider owns verification and footprint",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0025",
+        "SPEC-0061",
+        "SPEC-0062"
+      ],
+      "wave": "22",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0065",
+      "path": "docs/specifications/0065_RETIRE_GENERIC_PROVIDER_VERIFICATION.md",
+      "spec_sha256": "a914cd00ad0a3dfd60c09c4a2d233b516708a5f84c048ef7fa9151e660eda707",
+      "title": "Retire generic provider verification logic",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0063",
+        "SPEC-0064"
+      ],
+      "wave": "23",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0066",
+      "path": "docs/specifications/0066_SOURCE_OWNED_BOOLEAN_EVIDENCE_DEPENDENCIES.md",
+      "spec_sha256": "4c6668ccaf677e117daac19f334bf5671913d1cae06c63dfcf85716a04eedab4",
+      "title": "Source-owned Boolean evidence dependencies",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0064"
+      ],
+      "wave": "23",
+      "verification_tier": "T0_LEAF",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0067",
+      "path": "docs/specifications/0067_SEALED_INSTRUCTIONAL_CLOSURE.md",
+      "spec_sha256": "45030d9a635bb99630980cca65db7834ad037c16ac195ef3bc58ad0e6c269292",
+      "title": "Seal instructional constituent closure",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0061",
+        "SPEC-0062",
+        "SPEC-0063",
+        "SPEC-0064"
+      ],
+      "wave": "23",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0068",
+      "path": "docs/specifications/0068_LIVE_INSTRUCTIONAL_CLOSURE.md",
+      "spec_sha256": "7e204d99204871648fa38e3cf26127ea0b4b136cbd13d821b7c448dd6582b8da",
+      "title": "Enforce instructional closure on live draws",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0028",
+        "SPEC-0029",
+        "SPEC-0067"
+      ],
+      "wave": "24",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0069",
+      "path": "docs/specifications/0069_RETENTION_OWNED_FRAGILE_POLICY.md",
+      "spec_sha256": "a5ef8b28f207b86dbd4ad3e9b35ac01b58e9caf32e23742ce0db7ac8796f65c6",
+      "title": "Retention profile owns fragile preservation policy",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0048"
+      ],
+      "wave": "21",
+      "verification_tier": "T0_LEAF",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0070",
+      "path": "docs/specifications/0070_SOURCE_OWNED_FRAGILE_SEMANTICS.md",
+      "spec_sha256": "e8e7a1032ace28f9d50ce341fe5d4a9cf7a2ef6f86f00206ee76f3927fb59f15",
+      "title": "Source owns fragile preservation semantics",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0064",
+        "SPEC-0069"
+      ],
+      "wave": "23",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0071",
+      "path": "docs/specifications/0071_GENERIC_FRAGILE_PRESERVATION_SELECTOR.md",
+      "spec_sha256": "1f6913861eb7d49a5f858c2ae38c14627af81c511238a05ff487907ae21f6eb3",
+      "title": "Single generic fragile preservation selector",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0070"
+      ],
+      "wave": "24",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0072",
+      "path": "docs/specifications/0072_CANDIDATE_EVIDENCE_RETENTION_POLICY.md",
+      "spec_sha256": "db1d01ee7d8cde381858145a069d099d8b13521edc8fa9d2bb7af406809d2094",
+      "title": "Candidate evidence consumes retention policy",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0069",
+        "SPEC-0071"
+      ],
+      "wave": "25",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0073",
+      "path": "docs/specifications/0073_PREFETCH_RETENTION_POLICY.md",
+      "spec_sha256": "f66b9a4c8b1106ff3c610a8f9a5fefe33dd0b74ed1961a68645cd6958ce65833",
+      "title": "Prefetch consumes generic preservation policy",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0029",
+        "SPEC-0069",
+        "SPEC-0071"
+      ],
+      "wave": "25",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0074",
+      "path": "docs/specifications/0074_PRESENTATION_COMPATIBILITY_ISOLATION.md",
+      "spec_sha256": "559815a42ebf7625780962d981094f112bb38808b6837b7104d57d53d2f178f3",
+      "title": "Isolate historical presentation compatibility",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0045"
+      ],
+      "wave": "19",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0075",
+      "path": "docs/specifications/0075_CLI_COMPATIBILITY_PREFLIGHT_BOUNDARY.md",
+      "spec_sha256": "8b255e06cca3f8ff37455f830cc55fb64c4f5fc9399181ef688939ef513ab64d",
+      "title": "CLI legacy preflight translation boundary",
+      "track": "provider-custody",
+      "depends_on": [
+        "SPEC-0045",
+        "SPEC-0051"
+      ],
+      "wave": "22",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0076",
+      "path": "docs/specifications/0076_DIRECT_V2_TWELVE_CAP_GRADE_Z_PROOF.md",
+      "spec_sha256": "c76dc2e758f40d8293fa4802191086960aecb5727bc4b3aa4caf4422f8180ed4",
+      "title": "Direct-v2 twelve-cap Grade-Z proof",
+      "track": "proof-closeout",
+      "depends_on": [
+        "SPEC-0019",
+        "SPEC-0020",
+        "SPEC-0021",
+        "SPEC-0033",
+        "SPEC-0048",
+        "SPEC-0051",
+        "SPEC-0068"
+      ],
+      "wave": "25",
+      "verification_tier": "T2_SYSTEM",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0077",
+      "path": "docs/specifications/0077_SAME_ABI_PREPARED_ADOPTION_PROOF.md",
+      "spec_sha256": "5ab328ea5390a650dea6febb59f56cc754034d2016d4571f91b832a9034ad726",
+      "title": "Same-ABI prepared adoption proof",
+      "track": "proof-closeout",
+      "depends_on": [
+        "SPEC-0058",
+        "SPEC-0060"
+      ],
+      "wave": "27",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0078",
+      "path": "docs/specifications/0078_SAME_GRADE_APPEND_ONLY_PROOF.md",
+      "spec_sha256": "0f6c5d7e1ccccad7859d0381fa67b041eae77489f502b6db4361bc2ee7a80dca",
+      "title": "Same-grade append-only proof",
+      "track": "proof-closeout",
+      "depends_on": [
+        "SPEC-0059",
+        "SPEC-0060"
+      ],
+      "wave": "27",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0079",
+      "path": "docs/specifications/0079_APPEND_GRADE_RECOVERY_PROOF.md",
+      "spec_sha256": "fe094065c91402f8488a7bbdd180f68e9a1a623a0e5b51d760097447409bddfa",
+      "title": "Append-grade recovery proof",
+      "track": "proof-closeout",
+      "depends_on": [
+        "SPEC-0035",
+        "SPEC-0060"
+      ],
+      "wave": "27",
+      "verification_tier": "T1_INTEGRATION",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0080",
+      "path": "docs/specifications/0080_SYNTHETIC_C_TO_H_RUNWAY_PROOF.md",
+      "spec_sha256": "b10d4e868cbb4a60ab40b5bae4ff68167bfeb60f2ce30fe0d63f91febe598ff9",
+      "title": "Synthetic C-to-H runway proof",
+      "track": "proof-closeout",
+      "depends_on": [
+        "SPEC-0038",
+        "SPEC-0050",
+        "SPEC-0073",
+        "SPEC-0076",
+        "SPEC-0077",
+        "SPEC-0078",
+        "SPEC-0079"
+      ],
+      "wave": "28",
+      "verification_tier": "T2_SYSTEM",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0081",
+      "path": "docs/specifications/0081_RETIRE_LEGACY_GRADE_TRANSITION_RUNTIME.md",
+      "spec_sha256": "440ec6c9048e140b0f913ff7b18c68fc9a36d6fe3e47ed8929dacb714d8052a1",
+      "title": "Retire legacy grade-transition runtime",
+      "track": "proof-closeout",
+      "depends_on": [
+        "SPEC-0044",
+        "SPEC-0045",
+        "SPEC-0080"
+      ],
+      "wave": "29",
+      "verification_tier": "T2_SYSTEM",
+      "issue_number": null,
+      "issue_sha256": null
+    },
+    {
+      "spec_id": "SPEC-0082",
+      "path": "docs/specifications/0082_FACTORY_CLOSURE_GATE.md",
+      "spec_sha256": "c60b8e4ad46c555e49371be6b05ea63931bd1439fd453195e8b49856dfa77d7d",
+      "title": "Factory closure gate",
+      "track": "proof-closeout",
+      "depends_on": [
+        "SPEC-0008",
+        "SPEC-0010",
+        "SPEC-0011",
+        "SPEC-0013",
+        "SPEC-0014",
+        "SPEC-0015",
+        "SPEC-0051",
+        "SPEC-0065",
+        "SPEC-0066",
+        "SPEC-0068",
+        "SPEC-0072",
+        "SPEC-0073",
+        "SPEC-0074",
+        "SPEC-0075",
+        "SPEC-0081"
+      ],
+      "wave": "30",
+      "verification_tier": "T3_CLOSURE",
+      "issue_number": null,
+      "issue_sha256": null
+    }
+  ]
+}
