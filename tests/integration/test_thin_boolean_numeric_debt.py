@@ -1,7 +1,9 @@
 """Real-provider A→thin B→C admission preserves unfinished Boolean learning."""
 from contextlib import redirect_stdout
+from copy import deepcopy
 from dataclasses import replace
 import io
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -13,13 +15,46 @@ from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
 from bilqis_mlx.profiles.catalog import numeric_entry_transition
 from bilqis_mlx.runtime.exam_execution import _measure_debt_admission_boundary
 from bilqis_mlx.runtime.release_adoption import _adopt_executable_profile, _adopt_catalog_profile
-from tests.system.test_grade_c_trainer import GradeCTrainerTests, SOURCE
+from tests.system import test_grade_c_trainer as fixtures
+
+SOURCE = fixtures.SOURCE
 
 
 class ThinBooleanNumericDebtTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        GradeCTrainerTests.setUpClass()
+        from bilqis_mlx.compatibility import historical_teacher_policy as policy
+        from bilqis_mlx.grade_a_release import accepted_grade_a
+        from bilqis_mlx.live_grade_a import live_course as live_a
+        from bilqis_mlx.live_grade_b import live_course as live_b
+        from bilqis_mlx.live_grade_c import registry_graph
+        from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+
+        cls.manifest = json.loads((Path(__file__).resolve().parents[2] /
+            "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
+        cls.grade_a = live_a(accepted_grade_a(cls.manifest))
+        cls.previous = live_b(cls.grade_a, SOURCE)
+        registered = registry_graph()
+        tokens = registered["tokens"][:HISTORICAL_PREFIX_SIZE]
+        cls.parent_graph = {**registered, "tokens": tokens,
+            "nodes": registered["nodes"][:HISTORICAL_PREFIX_SIZE],
+            "row_contract_sha256": {name: registered["row_contract_sha256"][name]
+                                    for name in tokens}}
+        strategy = dict(old=4, preview=0, depth=1, contrast=0.0,
+                        lr=0.00013, distill=0.0)
+        key = policy._policy_key(strategy)
+        cls.teacher = dict(strategies={key: strategy}, global_stats={key: policy._stats()},
+                           grade_stats={}, events=0, mutations=0)
+        cls.policy_sha = trainer._fingerprint({
+            "fixture_only": "thin-boolean-numeric-debt-disposable-policy/v1",
+            "teacher": cls.teacher})
+        cls.engine = policy
+
+    def setUp(self):
+        self.fixture = fixtures.GradeCTrainerTests()
+        for name in ("manifest", "grade_a", "previous", "parent_graph", "teacher", "policy_sha"):
+            setattr(self.fixture, name, deepcopy(getattr(self, name)))
+        self.fixture.engine = self.engine
 
     def test_unmastered_not_and_do_not_block_designed_counting_entry(self):
         self._progress(automatic=False)
@@ -28,7 +63,7 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
         self._progress(automatic=True)
 
     def _progress(self, *, automatic):
-        fixture = GradeCTrainerTests()
+        fixture = self.fixture
         mx, params, own = fixture.toy()
         graph = fixture.parent_graph
         with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
