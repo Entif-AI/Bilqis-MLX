@@ -55,6 +55,29 @@ class JitAdoptionTests(CandidateStagingFixture, unittest.TestCase):
             self.resolve(ledger=ledger)
 
 
+    def test_changed_frontier_predecessor_and_package_invalidate_prepared_work(self):
+        from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+
+        changed = replace(self.frontier, senses=(replace(
+            self.frontier.senses[0], source_text_sha256="f" * 64),))
+        frontier = replace(changed, release_sha256=changed.expected_digest())
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_STAGING_FRONTIER_MISMATCH"):
+            self.resolve(frontier=frontier)
+        fixture = self.fixture.fixture
+        predecessor = compile_executable_factory_release(
+            self.current.curriculum, self.current.source_bindings, self.current.profile,
+            fixture.registry, fixture.answers, source_root=None, graph=fixture.graph,
+            verification_seed=37)
+        with self.assertRaisesRegex(ValueError, "LINEAGE_DRIFT"):
+            self.resolve(current=predecessor)
+        replacement = self.stage(verification_seed=38)
+        with self.assertRaisesRegex(ValueError, "JIT_ADOPTION_PROPOSAL_CONTEXT_CHANGED"):
+            self.resolve(staged=(replacement,))
+        # Rejections do not invalidate the original immutable, current context.
+        self.assertEqual(self.resolve(), self.staged)
+        self.assertEqual(self.ledger.receipts, ())
+        self.assertEqual(self.checkpoint.optimizer_step, 0)
+
     def test_unchanged_implementation_descriptors_pass_without_mutation(self):
         fixture = self.fixture.fixture
         before = self.staged.successor.manifest()
