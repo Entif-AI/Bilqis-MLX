@@ -713,5 +713,186 @@ class GradeBTrainerTests(unittest.TestCase):
             self.assertEqual(audit_saved_run(root)["verified_methodology_visit_count"], 18)
 
 
+class TestDisposableAppendWriter(unittest.TestCase):
+    """Exercise the real A->B append writer without historical checkpoint gates."""
+
+    @classmethod
+    def setUpClass(cls):
+        from bilqis_mlx.compatibility import historical_teacher_policy as policy
+
+        cls.manifest = json.loads(MANIFEST.read_text())
+        cls.a_course = a_live_course(accepted_grade_a(cls.manifest))
+        cls.b_course = b_live_course(cls.a_course, SOURCE_ROOT)
+        strategy = {
+            "old": 4, "preview": 0, "depth": 1, "contrast": 0.0,
+            "lr": 0.00013, "distill": 0.0,
+        }
+        key = policy._policy_key(strategy)
+        cls.teacher = {
+            "strategies": {key: strategy},
+            "global_stats": {key: policy._stats()},
+            "grade_stats": {}, "events": 0, "mutations": 0,
+        }
+        cls.teacher_sha = _fingerprint({
+            "fixture_only": "grade-b-append-writer-disposable-policy/v1",
+            "teacher": cls.teacher,
+        })
+
+    def setUp(self):
+        self.manifest = self.__class__.manifest
+        self.a_course = self.__class__.a_course
+        self.b_course = self.__class__.b_course
+        self.teacher_sha = self.__class__.teacher_sha
+        self.teacher = json.loads(json.dumps(self.__class__.teacher))
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+
+    def _saved_append_boundary(self):
+        weights = b"disposable-model-and-own-adamw"
+        sha = hashlib.sha256(weights).hexdigest()
+        pointer = Checkpoint(sha, "bundles/append-writer", 153144, True)
+        bundle = self.root / pointer.filename
+        bundle.mkdir(parents=True)
+        manifest = {"safetensors_sha256": sha,
+                    "optimizer_step": pointer.optimizer_step}
+        payload = bundle / "model-and-own-adamw.safetensors"
+        payload.write_bytes(weights)
+        (bundle / "manifest.json").write_text(json.dumps(manifest))
+        school = start_new(self.a_course, pointer)
+        for capability in self.a_course.grades[0].capabilities:
+            school = visit(self.a_course, school, capability.id, pointer)
+        scores = {
+            capability.id: Score(12, 12)
+            for capability in self.a_course.grades[0].capabilities
+        }
+        school = assess(self.a_course, school, Assessment(
+            pointer.sha256, pointer.optimizer_step, self.a_course.digest(),
+            self.a_course.grades[0].assessment_sha256, scores,
+            "fixture-intact-grade-a"))
+        # The append transaction consumes an already-admitted Grade-A boundary;
+        # this disposable fixture supplies that boundary without claiming a
+        # historical or human-trained checkpoint.
+        school = replace(
+            school, stage="AWAITING_NEXT_GRADE",
+            champions={**school.champions, "A": pointer},
+            queue=(), first_recovery=(), pending_failures=(),
+            promotion_sweep_scope=(), promotion_sweep_return_stage=None,
+            promotion_sweep_scores=())
+        receipt = GradeBTrainerTests._receipt(self, school, pointer)
+        saved = _persist(self.root, receipt)
+        return pointer, weights, manifest, saved, payload
+
+    def test_compatibility_delegates_append_transaction_to_runtime(self):
+        from bilqis_mlx.compatibility import trainer_transitions
+        from bilqis_mlx.runtime import release_adoption
+        from bilqis_mlx import state_dag
+
+        pointer, weights, bundle_manifest, saved, payload = (
+            self._saved_append_boundary())
+        runtime_transition = getattr(
+            release_adoption, "_activate_next_admitted_grade", None)
+        runtime_event_builder = getattr(
+            release_adoption, "_next_grade_admission_event", None)
+        self.assertTrue(callable(runtime_transition))
+        self.assertTrue(callable(runtime_event_builder))
+        self.assertFalse(hasattr(
+            trainer_transitions, "_next_grade_admission_event"))
+
+        with (patch.object(release_adoption, "_activate_next_admitted_grade",
+                           wraps=runtime_transition) as transition_spy,
+              patch.object(release_adoption, "_next_grade_admission_event",
+                           wraps=runtime_event_builder) as event_spy,
+              redirect_stdout(io.StringIO())):
+            updated = trainer_transitions.activate_next_admitted_grade(
+                self.root, saved, self.a_course, self.b_course)
+
+        transition_spy.assert_called_once_with(
+            self.root, saved, self.a_course, self.b_course, None)
+        event_spy.assert_called_once()
+        self.assertEqual(updated["generation"], saved["generation"] + 1)
+        self.assertEqual(updated["curriculum_mode"], B_RELEASE)
+        self.assertEqual(updated["model_bundle"], saved["model_bundle"])
+        self.assertEqual(updated["teacher"], saved["teacher"])
+        self.assertEqual(updated["school"]["current_student"],
+                         saved["school"]["current_student"])
+        self.assertEqual(updated["school"]["champions"],
+                         saved["school"]["champions"])
+        self.assertEqual((updated["school"]["grade_index"],
+                          updated["school"]["active_grades"]), (1, ["A", "B"]))
+        self.assertEqual(payload.read_bytes(), weights)
+        self.assertEqual(json.loads((payload.parent / "manifest.json").read_text()),
+                         bundle_manifest)
+
+        event = updated["delivery_outbox"][0]
+        self.assertEqual(event["event"], "SCHOOL_NEXT_GRADE_COURSE_ADMITTED")
+        self.assertEqual(event["generation"], updated["generation"])
+        self.assertEqual(event["previous_grade"], "A")
+        self.assertEqual(event["grade"], "B")
+        self.assertEqual(event["student_sha256"], pointer.sha256)
+        self.assertEqual(event["optimizer_step"], pointer.optimizer_step)
+        self.assertTrue(event["model_and_own_adamw_unchanged"])
+        self.assertEqual(state_dag.read_generation(self.root, 1), saved)
+        self.assertEqual(state_dag.read_generation(self.root, 2), updated)
+        self.assertEqual(state_dag.read_current(self.root), updated)
+
+        with redirect_stdout(io.StringIO()):
+            _reconcile_delivery_outbox(self.root, updated)
+            _reconcile_delivery_outbox(self.root, updated)
+        journal = self.root / "events.jsonl"
+        events = [json.loads(line) for line in journal.read_text().splitlines()]
+        self.assertEqual(events, updated["delivery_outbox"])
+
+        from bilqis_mlx.trainer import _durable_json
+        _durable_json(self.root / "state.json", saved, replace_existing=True)
+        with redirect_stdout(io.StringIO()):
+            recovered = _recover_orphaned_commit(self.root, saved)
+        self.assertEqual(recovered, updated)
+        self.assertEqual(state_dag.read_current(self.root), updated)
+        events_after_recovery = [
+            json.loads(line) for line in journal.read_text().splitlines()]
+        admissions = [event for event in events_after_recovery
+                      if event["event"] == "SCHOOL_NEXT_GRADE_COURSE_ADMITTED"]
+        self.assertEqual(admissions, updated["delivery_outbox"])
+        self.assertEqual(
+            [event["event"] for event in events_after_recovery],
+            ["SCHOOL_NEXT_GRADE_COURSE_ADMITTED",
+             "SCHOOL_INTERRUPT_POINTER_RECOVERED"])
+        with redirect_stdout(io.StringIO()):
+            recovered_again = _recover_orphaned_commit(self.root, updated)
+        self.assertEqual(recovered_again, updated)
+        self.assertEqual(
+            [json.loads(line) for line in journal.read_text().splitlines()],
+            events_after_recovery)
+
+    def test_append_state_commit_recovers_event_publication_once(self):
+        from bilqis_mlx import state_dag
+
+        _pointer, _weights, _bundle_manifest, saved, _payload = (
+            self._saved_append_boundary())
+        with patch("bilqis_mlx.runtime.checkpoints._record",
+                   side_effect=RuntimeError("crash-after-state-commit")):
+            with self.assertRaisesRegex(RuntimeError, "crash-after-state-commit"):
+                _activate_next_admitted_grade(
+                    self.root, saved, self.a_course, self.b_course)
+
+        committed = state_dag.read_current(self.root)
+        self.assertEqual(committed["curriculum_mode"], B_RELEASE)
+        self.assertEqual(committed["school"]["grade_index"], 1)
+        self.assertEqual(committed["school"]["current_student"],
+                         saved["school"]["current_student"])
+        self.assertEqual(len(committed["delivery_outbox"]), 1)
+        self.assertEqual(committed["delivery_outbox"][0]["event"],
+                         "SCHOOL_NEXT_GRADE_COURSE_ADMITTED")
+        with redirect_stdout(io.StringIO()):
+            _reconcile_delivery_outbox(self.root, committed)
+            _reconcile_delivery_outbox(self.root, committed)
+        events = [json.loads(line) for line in
+                  (self.root / "events.jsonl").read_text().splitlines()]
+        self.assertEqual(events, committed["delivery_outbox"])
+        self.assertEqual(events[0]["event_id"],
+                         committed["delivery_outbox"][0]["event_id"])
+
+
 if __name__ == "__main__":
     unittest.main()

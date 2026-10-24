@@ -111,10 +111,119 @@ def _schedule_for_receipt(run_dir, receipt, course):
 
 def _activate_next_admitted_grade(run_dir, receipt, previous_course, successor,
                                   graph=None):
-    """Compatibility shim for historical Course transition tests."""
-    from bilqis_mlx.compatibility.trainer_transitions import activate_next_admitted_grade
-    return activate_next_admitted_grade(
-        run_dir, receipt, previous_course, successor, graph)
+    """Append one admitted legacy grade and durably publish its event."""
+    from ..compatibility.live_releases import (
+        MINIMAL_BOOLEAN_RELEASE, legacy_receipt_fields, rebind_same_grade_config,
+    )
+    from ..compatibility.source_adapters import historical_source_registry
+    from ..learning.mentor_epoch import begin_epoch
+    from ..live_curriculum import assessment_rubric_for_scope
+
+    school = _runtime_state._state_from_json(
+        receipt["school"], _schedule_for_receipt(run_dir, receipt, previous_course))
+    current_grade = previous_course.grades[-1].id
+    if (not successor.executable or
+            len(successor.grades) != len(previous_course.grades) + 1 or
+            successor.grades[:-1] != previous_course.grades or
+            school.stage != "AWAITING_NEXT_GRADE" or
+            school.grade != current_grade or
+            current_grade not in school.champions or
+            receipt.get("curriculum_mode") != previous_course.version):
+        raise ValueError("HUMAN_TRAINER_NEXT_GRADE_ADMISSION_BOUNDARY_NOT_MET")
+    legacy_school = _dataclasses.replace(
+        school, course_digest=previous_course.digest())
+    next_state = _curriculum_scheduler.append_next_grade(
+        previous_course, successor, legacy_school)
+    exam = receipt.get("last_exam") or {}
+    prior_caps = tuple(
+        cap.id for grade in previous_course.grades for cap in grade.capabilities)
+    epoch = begin_epoch(
+        previous_graduate=_dataclasses.asdict(school.current_student),
+        admitted_baseline=_dataclasses.asdict(next_state.current_student),
+        introduced_grade=successor.grades[-1].id,
+        source_graph_sha256=receipt["semantic_graph_sha256"],
+        previous_capabilities=prior_caps,
+        previous_graduation_exam={
+            "checkpoint_sha256": exam.get("student_sha256"),
+            "rubric_sha256": exam.get("exam_rubric_sha256"),
+            "cohort_sha256": exam.get("cohort_sha256"),
+            "scores": exam.get("scores"),
+        })
+    history = list(receipt.get("championship_epoch_history", ()))
+    if receipt.get("mentor_epoch") is not None:
+        history.append(receipt["mentor_epoch"])
+    release, release_file, admission = _runtime_admission._factory_admission(
+        run_dir, successor, next_state.current_student,
+        receipt["semantic_graph_sha256"], registry=historical_source_registry())
+    settled = _copy.deepcopy(
+        (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
+    identity = _learning_championship_identity.build_school_identity(
+        course_sha256=successor.digest(),
+        semantic_graph_sha256=receipt["semantic_graph_sha256"],
+        parameter_shapes=receipt["parameter_shapes"],
+        factory_release_sha256=release.release_sha256)
+    epoch["settled_matchups"] = settled
+    epoch["championship_school_identity"] = identity
+    compatibility = legacy_receipt_fields(successor.version)
+    config_update = {}
+    if successor.version == MINIMAL_BOOLEAN_RELEASE:
+        if not isinstance(graph, dict):
+            raise ValueError("HUMAN_TRAINER_MINIMAL_GRADE_B_REQUIRES_GRAPH")
+        config_update["config"] = rebind_same_grade_config(
+            successor.version, receipt["config"], graph)
+    candidate = {
+        **receipt,
+        **compatibility,
+        "curriculum_mode": successor.version,
+        **config_update,
+        "live_rubric_sha256": assessment_rubric_for_scope(
+            successor, _curriculum_scheduler.assessment_capabilities(
+                successor, next_state)),
+        "factory_release_sha256": release.release_sha256,
+        "factory_release_file": release_file,
+        "factory_admission": _dataclasses.asdict(admission),
+        "championship_school_identity": identity,
+        "mentor_epoch": epoch,
+        "championship_epoch_history": history,
+    }
+    introduced_grade = successor.grades[-1].id
+    record = _runtime_checkpoints._advance(
+        run_dir, candidate, next_state,
+        result="ACTIVE_GRADE_" + introduced_grade, persist=False)
+    admitted = _next_grade_admission_event(
+        record, school, current_grade, introduced_grade, successor, epoch,
+        history, compatibility, release.release_sha256)
+    record = _runtime_checkpoints._persist(
+        run_dir, _runtime_checkpoints._with_delivery_outbox(record, (admitted,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
+    return record
+
+
+def _next_grade_admission_event(record, school, current_grade: str,
+                                introduced_grade: str, successor, epoch: dict,
+                                history: list, compatibility: dict,
+                                release_sha256: str) -> dict:
+    from ..compatibility.live_releases import release_code_digest
+
+    return {
+        "event": "SCHOOL_NEXT_GRADE_COURSE_ADMITTED",
+        "generation": record["generation"],
+        "grade": introduced_grade,
+        "previous_cohort_sha256":
+            (record.get("last_exam") or {}).get("cohort_sha256"),
+        "previous_grade": current_grade,
+        "previous_grade_champion_sha256": school.champions[current_grade].sha256,
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "teacher_events": record["teacher"]["events"],
+        "championship_baseline_sha256": epoch["baseline"]["sha256"],
+        "archived_championship_epochs": len(history),
+        "introduced_grade_rubric": successor.grades[-1].assessment_sha256,
+        "release_provider_sha256": release_code_digest(successor.version),
+        "factory_release_sha256": release_sha256,
+        **compatibility,
+        "model_and_own_adamw_unchanged": True,
+    }
 
 
 def _verify_profile_successor(predecessor, successor, graph, profile):
