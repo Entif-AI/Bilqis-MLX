@@ -28,6 +28,7 @@ from bilqis_mlx.profiles.catalog import (
     numeric_scope_profile)
 from bilqis_mlx.profiles.school import (
     boolean_entry_profile, with_disabled_future_grades)
+from bilqis_mlx.runtime.release_adoption import _advance_numeric_profile
 from bilqis_mlx.source_adapters.school import live_source_registry
 from tests.system import test_grade_c_trainer as fixtures
 
@@ -558,6 +559,29 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertEqual(release.profile.profile_id.rsplit('-', 1)[-1], '4')
         self.assertEqual(record['model_bundle'], entry_bundle)
         self.assertEqual(self.optimizer.state['step'].item(), prior_step)
+
+    def test_persisted_old_ceiling_four_migrates_and_advances_to_five(self):
+        course, record = self.start()
+        course, record, release, program = self._advance_scope(course, record)
+        school = self._perfect_to_boundary(
+            program, storage._state_from_json(record['school'], program))
+        if asdict(school) != record['school']:
+            record = storage._advance(self.root, record, school)
+        record = storage._advance(
+            self.root,
+            {**record, 'numeric_scope_final_maximum': 4},
+            storage._state_from_json(record['school'], program))
+        with redirect_stdout(io.StringIO()):
+            changed, course, successor, successor_program = _advance_numeric_profile(
+                self.root, record, self.fixture.grade_a, fixtures.SOURCE,
+                self.graph, course, release, program, numeric_staircase=False)
+        self.assertEqual(changed['numeric_scope_final_maximum'], 6)
+        self.assertEqual(changed['numeric_maximum'], 5)
+        self.assertEqual(successor.profile.profile_id.rsplit('-', 1)[-1], '5')
+        self.assertEqual(
+            [cap.id for cap in successor_program.grades[-1].capabilities],
+            ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB',
+             'C.MUL', 'C.DIV'])
 
     def test_wide_old_mistakes_are_deferred_without_being_discarded(self):
         course, record = self.start()

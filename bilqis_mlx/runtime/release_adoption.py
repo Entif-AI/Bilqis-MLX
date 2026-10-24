@@ -551,8 +551,12 @@ def _activate_replaced_admitted_grade(run_dir, receipt, previous_course, success
 def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, graph,
                              course, release, program, *, numeric_staircase):
     """Rebind a wide historical scope, then advance the admitted staircase."""
+    from bilqis_mlx.numeric_staircase import (
+        FINAL_MAXIMUM,
+        FULL_OPERATION_MAXIMUM,
+        INITIAL_MAXIMUM,
+    )
     if numeric_staircase:
-        from bilqis_mlx.numeric_staircase import INITIAL_MAXIMUM, FINAL_MAXIMUM
         if receipt.get("numeric_maximum", 0) > FINAL_MAXIMUM:
             current = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
@@ -564,6 +568,13 @@ def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, grap
                     grade_a_course, source_root, graph,
                     _profiles_catalog.numeric_scope_profile(current, INITIAL_MAXIMUM))
     final_scope = receipt.get("numeric_scope_final_maximum")
+    # Existing Prometheus receipts were durably capped at 4 before the
+    # operator authorized two additional number roots. Scope 4 still owns the
+    # full-operation unlock; it is no longer the terminal numeric ceiling.
+    if (final_scope == FULL_OPERATION_MAXIMUM and
+            FINAL_MAXIMUM > FULL_OPERATION_MAXIMUM):
+        receipt = {**receipt, "numeric_scope_final_maximum": FINAL_MAXIMUM}
+        final_scope = FINAL_MAXIMUM
     if final_scope is not None:
         current = _runtime_admission._require_executable_factory_admission(
             run_dir, receipt, graph)
