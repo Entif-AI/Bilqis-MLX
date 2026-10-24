@@ -3,10 +3,13 @@
 This checkpoint tracks the factory feature branch only. It makes no claim about
 the current live student's scores, optimizer step, or run state.
 
-- Parent issue: #150; take-up checkpoint: issue comment 6388320082.
+- Parent issue: #150; take-up checkpoint: issue comment 6388320082; latest
+  progress checkpoint before this transfer: issue comment 6388387650.
 - Worktree: `/Users/emilie/Code/.worktrees/Bilqis-MLX/150-factory-microspecs-20261023`.
 - Branch: `codex/150-factory-microspecs-20261023`.
-- Verified local and `origin` HEAD: `01b427d649f190697752496b040419851c8fc707`.
+- Last verified pre-transfer local and `origin` HEAD: `2b8af82dcfe8774056945cc7120c705b9142e63b`.
+  This handoff refresh is a bookkeeping-only commit; the final exact HEAD will
+  be read back and posted on #150 after the transfer artifacts are saved.
 - Protected authority: IPR-0220 remains OPEN; latest checkpoint 6346014727 was read.
 - Applicable incident: PM-2026-10-24-001, already captured and read back.
 - Current factory leaf boundary: #208 / SPEC-0044. Its latest terminal state is
@@ -26,12 +29,18 @@ Proof passed:
 - `python3 scripts/check_docs.py` — `DOCS_CHECK_OK`.
 - `python3 scripts/check_factory_workstack.py --execution-ready` —
   `FACTORY_WORKSTACK_OK leaves=77`, `READY=SPEC-0006`.
-- `git diff --cached --check` — passed before commit.
-- Remote branch readback matches the commit above.
+- `git diff --check` — passed before commit.
+- Issue comment 6388387650 read back with both pushed commits and matching
+  local/remote SHA.
 
 No runtime source changes or runtime tests have been performed in this epoch.
 No neural training, `--human-run`, or real student/AdamW/checkpoint/run-state
 mutation occurred; live neural state was not inspected.
+
+The BIOS pre-load context measurement for the `architecture` route was
+`206866/258400` tokens (`80.1%`, `TRANSFER`). This is context occupancy, not
+provider quota; no new quota probe was run. The architecture MetaSkill was not
+loaded after the transfer threshold was reached.
 
 ## Next permitted work
 
@@ -44,8 +53,8 @@ After reconciliation, post the bounded reopening amendment on #208, recheck only
 its named direct prerequisites, and execute #208 only if its live gate permits.
 
 The known module-size ratchet failure and the #208 test-surface/proof gap remain
-unresolved. Factory closure, student learning, and full-suite health are not
-claimed.
+unresolved. No source fix has been started. Factory closure, student learning,
+and full-suite health are not claimed.
 
 # CURRENT SUPERSESSION | 2026-10-23 | Prometheus direct-U7C + C promotion sweep
 
