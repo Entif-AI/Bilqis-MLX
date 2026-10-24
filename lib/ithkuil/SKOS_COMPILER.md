@@ -348,3 +348,47 @@ by RDF graph isomorphism, compares shuffled input by exact triple set, checks th
 list, and exercises fail-closed text, source, shape, collision, scheme and ordered-list
 behavior. The adjacent #32-#34/#38/#39 test suites remain the contract proofs for their
 individual layers.
+
+## 5. Canonical graph bytes and digest (#41)
+
+`canonicalize(graph)` returns immutable UTF-8 N-Triples bytes, the SHA-256 of all
+those bytes, the triple count and deterministic algorithm metadata. It accepts one
+complete RDF graph. Named-graph datasets are rejected instead of silently hashing
+only a default graph. No subset selection, entailment or lexical normalization is
+performed. The compiler's complete graph, including source-reference triples and
+ordered collection lists, is the input.
+
+Algorithm `bilqis-rdflib-canonical-ntriples/v1` pins RDFLib 7.6.0:
+
+1. Validate RDF triple positions and reject IRI terms with no absolute scheme,
+   non-scalar Unicode, C0/C1 controls, N-Triples-forbidden IRI characters, or
+   malformed percent escapes. This is a deterministic RDF-term syntax preflight;
+   it does not dereference IRIs or apply scheme-specific URL policy.
+2. Use RDFLib's `to_canonical_graph` to replace arbitrary blank-node labels with
+   graph-content-derived canonical labels.
+3. Serialize using the pinned RDFLib N-Triples serializer, preserve exact literal
+   lexical forms, sort the complete serialized triple lines by UTF-8 bytes and
+   terminate every nonempty output line with LF. An empty graph yields zero bytes.
+4. Compute SHA-256 over exactly that byte string. Bind the algorithm ID, RDFLib
+   version, serialization, encoding, byte count and triple count in metadata.
+
+This is the project's versioned canonical **graph** representation. It is not a
+claim to implement W3C RDF Dataset Canonicalization. N-Triples supplies the standard
+RDF syntax; RDFLib supplies deterministic blank-node labeling. A change in the
+canonicalizer version requires an explicit algorithm compatibility review rather
+than silently changing existing digest meaning.
+
+Only ASCII LF bytes separate serialized statements. Unicode line-separator code
+points inside a literal are preserved as literal text. NFC/NFD, datatype lexical
+forms, language, punctuation and source whitespace are not normalized away.
+Serialization prefixes, graph identifiers, working directories, timestamps,
+process hash seeds and store IDs do not participate in the semantic graph bytes.
+
+`canonical_diff(left, right, limit=20)` reports bounded added/removed canonical
+statements and both full graph digests. A developer-friendly Turtle rendering is
+not the canonical artifact and must never substitute its bytes for this digest.
+The full rebuild gate is exercised by #43; unit fixtures cover independent fresh
+processes, shuffled triples, renamed blank nodes, RDF lists and exact Unicode.
+
+References: [W3C RDF 1.1 N-Triples](https://www.w3.org/TR/n-triples/),
+[RDFLib canonical graph API](https://rdflib.readthedocs.io/en/stable/apidocs/rdflib.compare/).
