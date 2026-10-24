@@ -190,13 +190,20 @@ def draw_composite(legacy_root: Path, graph: dict, *, seed: int,
         raise ValueError("GRADE_B_COMPOSITE_UNKNOWN_CAPABILITY")
     operators = _operator_domain(operators)
     rows = []
+    seen = set()
     cycle = 0
     while len(rows) < each:
-        rows.extend(_cycle(
-            legacy_root, graph, seed=seed, cycle=cycle,
-            operators=operators))
+        for row in _cycle(
+                legacy_root, graph, seed=seed, cycle=cycle,
+                operators=operators):
+            if row["id"] in seen:
+                continue
+            seen.add(row["id"])
+            rows.append(row)
+            if len(rows) == each:
+                break
         cycle += 1
-    return tuple(rows[:each])
+    return tuple(rows)
 
 
 def build_course(previous: Course, legacy_root: Path) -> Course:

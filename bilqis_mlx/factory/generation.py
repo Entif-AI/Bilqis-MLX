@@ -20,6 +20,12 @@ def _digest(value) -> str:
         allow_nan=False).encode("utf-8")).hexdigest()
 
 
+def _require_unique_row_identities(
+        batch, *, capability: str, error_code: str) -> None:
+    if len({row["id"] for row in batch}) != len(batch):
+        raise ValueError(error_code + ":" + capability)
+
+
 def _runtime_adapter_contract(descriptor) -> dict:
     """Return provider identity that must remain stable across code refactors.
 
@@ -122,6 +128,9 @@ def draw_release_rows(source_root, graph, release: FactoryRelease,
                 raise ValueError("FACTORY_GENERATION_ANSWER_CONTRACT_DRIFT:" + cap.id)
             if adapter.check(row, source_root=source_root, graph=graph, course=course) is not True:
                 raise ValueError("FACTORY_GENERATION_SOURCE_ORACLE_DISAGREEMENT:" + cap.id)
+        _require_unique_row_identities(
+            batch, capability=cap.id,
+            error_code="FACTORY_GENERATION_IDENTITY_COLLISION")
         rows.extend(batch)
     expected = {cap.id: (each if each is not None else count)
                 for _, cap, count in selected}
@@ -210,6 +219,9 @@ def draw_execution_rows(
                 raise ValueError(
                     "FACTORY_EXECUTION_GENERATION_SOURCE_ORACLE_DISAGREEMENT:"
                     + execution.capability_id)
+        _require_unique_row_identities(
+            batch, capability=execution.capability_id,
+            error_code="FACTORY_EXECUTION_GENERATION_IDENTITY_COLLISION")
         rows.extend(batch)
     return rows
 

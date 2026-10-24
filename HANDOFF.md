@@ -1,12 +1,14 @@
 # CURRENT SUPERSESSION | 2026-10-23 | Prometheus direct-U7C + C promotion sweep
 
 This supersedes the issue-349 run snapshot below for current operator state. The active
-run is `runs/codex-0001-prometheus`, generation **27189**, factory release
+run is `runs/codex-0001-prometheus`, generation **27343**, factory release
 `83f9f052e40983b879a9e0495ad93d3d3fce31d10e0d12395e0b12499b17c654`.
-The causal student is SHA `4621f6802315c6ed8b6d96ad0a1f8a7755bb110be8863c77422e268e71675d67`
-at native AdamW step **142728**, Grade C `PROMOTION_SWEEP`, queue
-`C.COUNT → C.NUMBER → C.SUCCESSOR → C.ADD → C.SUB → C.MUL`, visit **19353**.
-The latest agent repair is neural-inert; canonical optimization remains human-only.
+The causal student is SHA `83322a22071e2ecaee149b6f0990e9ef73f21afe66ceff65466f0ddafe865c63`
+at native AdamW step **142748**, Grade B `MAIN`, queue
+`B.AND → B.OR → B.XOR → B.IMPLIES → B.IFF → B.COMPOSITE → B.IDBOOLOPS`,
+visit **19463**. A bounded repair reproduction consumed the already-due `B.NOT` visit
+but retained no candidate update; student SHA and AdamW step remained unchanged.
+Canonical open-ended optimization remains human-only.
 
 Grade B now admits `NOT, AND, OR, XOR, IMPLIES, IFF`, plus `COMPOSITE` and
 `IDBOOLOPS`, all through direct typed Boolean-AST/U7C source construction with no
@@ -24,6 +26,13 @@ world-based B miss debt and rekeyed direct-U7C misses; immutable historical evid
 was not rewritten. Fragile OR/XOR replay now understands direct-U7C records and
 reserves mandatory preservation capacity before optional fresh support, preventing
 `FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED` without weakening source truth.
+The later `TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT` was a distinct source-generator
+defect: `B.COMPOSITE` deduplicated identities only inside each 12-row generation
+cycle, while trainer draws request 32 rows and concatenate multiple cycles. A later
+cycle could therefore repeat the same capability-scoped semantic row with different
+`composition_pass` metadata. The public draw now deduplicates across the complete
+requested batch, and the generic factory boundary independently rejects any adapter
+that returns duplicate row IDs.
 
 ADR-093 clarifies the automatic C mean-stability sweep. A fresh complete grade mean
 strictly above 90% freezes the initial current-grade score vector. The canonical

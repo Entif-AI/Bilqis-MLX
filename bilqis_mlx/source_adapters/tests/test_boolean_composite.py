@@ -86,6 +86,12 @@ class BooleanCompositeTests(unittest.TestCase):
             self.assertTrue(1 <= len(row["tokens"]) <= 96)
             self.assertEqual(len(row["operators"]), row["composition_width"])
 
+    def test_multi_cycle_draw_preserves_unique_semantic_row_identity(self):
+        rows = draw_composite(SOURCE, self.graph, seed=10, each=32)
+
+        self.assertEqual(len(rows), 32)
+        self.assertEqual(len({row["id"] for row in rows}), 32)
+
     def test_composite_row_identity_is_capability_scoped(self):
         row = draw_composite(SOURCE, self.graph, seed=2026102311, each=12)[0]
         canonical = lambda value: json.dumps(

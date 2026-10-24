@@ -90,9 +90,9 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
             digest = lambda value: hashlib.sha256(json.dumps(
                 value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
             assert digest(draw_composite(source, graph, seed=2026101902)) == (
-                "cb1d95cc8ae92afeedd33e7f1603aa41d75368f70b83ad29a797eef0a6d87a95")
+                "cfbcbd61d0590433ca510d283daf333abfe5a08cba6ae7a81fbaef9059aeb903")
             assert digest(draw_identification(source, graph, seed=2026101902)) == (
-                "21c5e1b95a9eaf2bdd1be49f72f4c9bc8a2d35d249349b80439c27ce4318af1e")
+                "3d1e2c00b21d1e212ee8782aed0bc4cac9133778a604adebf93e02725c632fed")
             legacy_boolean_heads = boolean_answer_heads(graph)
             assert legacy_boolean_heads["boolean_operator"]["values"] == [
                 "NOT", "AND", "OR", "XOR", "IMPLIES", "IFF"]
