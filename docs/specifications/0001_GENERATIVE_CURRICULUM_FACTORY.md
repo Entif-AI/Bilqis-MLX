@@ -32,7 +32,7 @@ The historical failure addressed here is therefore **not absence of specificatio
 
 The user's autonomous JIT mandate permits a new v2 canonical grade to begin with
 one justified capability and grow through later verified deltas. V2 declarations
-accept 1–9 capabilities; the historical v1 Course contract and its manifests keep
+accept 1–12 capabilities; the historical v1 Course contract and its manifests keep
 their existing cardinality. Do not invent filler capabilities to complete a tranche.
 A thin profile may skip an unrelated disabled grade. Every enabled prerequisite
 and constituent must remain in the enabled closure. Canonical stage order, source
@@ -47,6 +47,23 @@ Append-only vocabulary growth requires the native Registry readback and preserve
 previous token indices, node contracts and allocation-source provenance. New-grade
 adoption uses the normal complete-prefix boundary; this refinement grants no
 automatic mastery-debt override.
+
+### Issue #150 factory-extensibility refinement — 2026-10-23
+
+The #150 decomposition is about the reusable factory architecture, not about
+enumerating future curriculum semantics. Do not create one desired-state
+specification, execution issue, runtime branch, or test family per semantic root.
+The factory must instead expose reusable typed mechanisms through which later
+source-qualified roots and capabilities can be declared, compiled, verified,
+released, admitted, taught, assessed, and retired without redesigning generic
+runtime code.
+
+A #150 leaf specification is warranted only when it establishes one reusable
+architectural invariant or ownership boundary with one bounded proof. Root-specific
+curriculum work remains separate unless a root demonstrates that the factory lacks
+a reusable primitive required by a class of semantics. The leaf corpus and its
+dependency graph are execution machinery for this factory cutover; their size is
+not a target and must never be padded with semantic-root tickets.
 
 Bilqis must have one curriculum system. New grades and capabilities must be data- and contract-driven instances of that system, not new runtime architectures.
 

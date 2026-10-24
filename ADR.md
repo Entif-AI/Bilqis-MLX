@@ -1306,3 +1306,21 @@ scores, misses and mastery debt remain cumulative evidence. Existing pre-ADR-094
 receipts migrate neural-inertly with one B pass due at the next safe assessment
 boundary, avoiding another starvation epoch without rewriting historical visits or
 claiming neural progress.
+
+
+## ADR-095 | 2026-10-23 | Factory micro-specs decompose reusable mechanics, not semantic roots
+
+**Direct user correction for issue #150 execution.** The factory/runway work is
+primarily about making the curriculum factory capable of handling whatever future
+source-qualified semantic roots are admitted through its typed contracts. The
+micro-spec corpus MUST therefore decompose reusable factory invariants, ownership
+boundaries, migrations, compatibility boundaries and proofs. It MUST NOT create a
+specification or GitHub issue for every prospective semantic root merely because
+that root may be taught later.
+
+A particular root belongs in #150 only when it exposes a missing reusable factory
+primitive or is required as a bounded conformance fixture. Curriculum selection,
+root sourcing and future grade composition remain separately governed work. This
+keeps #150 focused on the architecture originally intended from the beginning: one
+generic factory through which later semantics become declarative inputs rather than
+new implementation families.

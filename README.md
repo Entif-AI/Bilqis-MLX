@@ -1,5 +1,16 @@
 # Bilqis MLX
 
+## CONTROLLING USER CORRECTION — 2026-10-23: factory specs are not semantic-root tickets
+
+Issue #150 is a factory-architecture epic. Its decomposition exists to make the
+factory able to accept future source-qualified semantic roots and capabilities
+without redesigning generic runtime machinery. Do **not** create one specification
+or GitHub issue per future semantic root merely to populate the workstack. Leaf
+specifications own reusable factory invariants, ownership boundaries, migration
+seams, compatibility boundaries, or proofs. A particular semantic root belongs in
+this corpus only when it exposes a genuinely reusable missing factory mechanism.
+Future curriculum/root selection remains separate curriculum work.
+
 ## CONTROLLING USER CORRECTION — 2026-10-23: full U7C Grade B
 
 The active Prometheus curriculum now admits the complete direct-U7C Boolean set:
@@ -64,7 +75,7 @@ The former Bilqis implementations are preserved as pinned, read-only source depe
 
 **Operator recovery:** hard stops should identify the failed predicate, state what remains safe, and give a concrete neural-inert next step. See the [`Bilqis Operator Field Manual`](docs/operations/OPERATOR_FIELD_MANUAL.md). Do not hand-edit `state.json` or replace checkpoint/AdamW evidence to bypass a guard.
 
-**Curriculum factory authority:** [`SPEC-0001`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) defines the mandatory end state for semantics-to-grade compilation, release, admission, assessment, generalization, repository structure and extension. [`Authority convergence`](docs/architecture/10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md) records the current source hierarchy, resolved architecture, known conflicts and migration order. The production rule is **no factory release, no grade**. New grades are declarative factory instances; handwritten grade-specific runtime paths are nonconforming. The execution packet is [`TASK-0001`](docs/tasks/0001_IMPLEMENT_GENERATIVE_CURRICULUM_FACTORY.md).
+**Curriculum factory authority:** [`SPEC-0001`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) defines the mandatory end state for semantics-to-grade compilation, release, admission, assessment, generalization, repository structure and extension. [`Authority convergence`](docs/architecture/10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md) records the current source hierarchy, resolved architecture, known conflicts and migration order. The production rule is **no factory release, no grade**. New grades are declarative factory instances; handwritten grade-specific runtime paths are nonconforming. Issue #150 decomposes that factory cutover into reusable architecture leaves, not one ticket per future semantic root. The execution packet is [`TASK-0001`](docs/tasks/0001_IMPLEMENT_GENERATIVE_CURRICULUM_FACTORY.md).
 
 **Championship authority:** [Championship lifecycle specification](docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md) governs curriculum-boundary resets, capability champions, defended title succession, advisory rights and frozen soup eligibility. Normal examinations establish earned capability roles before graduation, including on fresh runs. Flash continues to defer title qualification.
 

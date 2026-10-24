@@ -11,6 +11,13 @@ Bilqis has accumulated several valid but differently scoped authorities: direct 
 
 The immediate factory repair must not create another authority layer that competes with them. This document records the current interpretation, conflicts, design, and migration order before additional implementation work proceeds.
 
+**2026-10-23 execution clarification:** issue #150 is an epic for repairing and
+finishing this reusable factory. Its micro-spec decomposition must follow reusable
+factory invariants and ownership seams, not future semantic-root inventory. A
+semantic root is an input to the eventual factory, not an automatic architecture
+ticket. Root-specific work enters #150 only when it proves a reusable factory
+mechanism is missing.
+
 The target is one executable curriculum authority:
 
 ```text
