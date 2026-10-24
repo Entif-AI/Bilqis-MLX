@@ -11,6 +11,11 @@ import ast
 from pathlib import Path
 import re
 
+if __package__:
+    from . import check_factory_closure as closure
+else:
+    import check_factory_closure as closure
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FUTURE_GRADE_FILE = re.compile(r"^(?:live_grade_|grade_)([d-z])(?:_(?:trainer|evaluator|admission|dashboard))?\.py$", re.I)
@@ -161,6 +166,45 @@ def _compatibility_writer_calls(tree: ast.AST, path: Path, src: Path) -> tuple[s
     return tuple(problems)
 
 
+def _semantic_neutrality(root: Path) -> tuple[str, ...]:
+    problems = []
+    registrations = {"bilqis_mlx/factory/adapters.py",
+                     "bilqis_mlx/factory/candidate_realizations.py"}
+    for path in closure._generic_files(root):
+        relative = path.relative_to(root)
+        if relative.as_posix() in registrations:
+            continue
+        tree = ast.parse(_source(path), filename=str(path))
+        release_aliases = closure._release_aliases(tree)
+        for node in ast.walk(tree):
+            targets = ()
+            if isinstance(node, ast.Import):
+                targets = tuple(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom):
+                module = _import_from_module(node, path, root / "bilqis_mlx")
+                targets = (module, *(f"{module}.{alias.name}" for alias in node.names))
+            for target in targets:
+                if closure.CONCRETE_PROVIDER.search(target):
+                    problems.append(f"{relative}:{node.lineno} "
+                                    f"GENERIC_IMPORTS_CONCRETE_PROVIDER:{target}")
+            if (isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)
+                    and node.id in release_aliases):
+                problems.append(f"{relative}:{node.lineno} "
+                                f"GENERIC_RELEASE_IDENTITY_REFERENCE:{node.id}")
+            if isinstance(node, (ast.If, ast.IfExp, ast.While)):
+                decision = node.test
+            elif isinstance(node, ast.Match):
+                decision = ast.Tuple(elts=[case.pattern for case in node.cases])
+            else:
+                continue
+            identities = sorted(value for value in closure._strings(decision)
+                                if closure.CAPABILITY_ID.fullmatch(value))
+            if identities:
+                problems.append(f"{relative}:{node.lineno} "
+                                f"GENERIC_CAPABILITY_IDENTITY_DISPATCH:{','.join(identities)}")
+    return tuple(problems)
+
+
 def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
     src = root / "bilqis_mlx"
     problems: list[str] = []
@@ -222,6 +266,7 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
         problems.append("bilqis_mlx/numeric_staircase.py SCOPE_RELEASE_BYPASSES_FACTORY_RELEASE")
 
     problems.extend(_research_imports(src, root))
+    problems.extend(_semantic_neutrality(root))
     return tuple(problems)
 
 

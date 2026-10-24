@@ -9,6 +9,38 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class FactoryArchitectureTests(unittest.TestCase):
+    def test_semantic_identity_dispatch_is_confined_to_registration_owners(self):
+        concrete = "from bilqis_mlx import live_grade_d\n"
+        branch = "def route(cap):\n    if cap == 'D.NEW':\n        return 1\n"
+        release = ("from somewhere import NUMERIC_RELEASE as selected\n"
+                   "def route(value):\n    return value == selected\n")
+        fixtures = (
+            ("runtime/leaf.py", concrete, True),
+            ("runtime/leaf.py", "from ..live_grade_d import generate\n", True),
+            ("factory/consumer.py", branch, True),
+            ("learning/consumer.py", branch, True),
+            ("runtime/leaf.py", release, True),
+            ("runtime/leaf.py", "def route(cap):\n    match cap:\n        case 'D.NEW': return 1\n", True),
+            ("runtime/leaf.py", "adapter_id = 'D.NEW'\nsource_sense_id = 'sense'\n", False),
+            ("factory/adapters.py", concrete + branch, False),
+            ("factory/candidate_realizations.py", concrete + branch, False),
+            ("source_adapters/domain.py", concrete + branch, False),
+            ("compatibility/history.py", concrete + branch, False),
+            ("research/prototype.py", concrete + branch, False),
+        )
+        for relative, source, rejected in fixtures:
+            with self.subTest(path=relative, source=source), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                (root / "bilqis_mlx/factory").mkdir(parents=True)
+                path = root / "bilqis_mlx" / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(source)
+                findings = inspect_factory_architecture(root)
+                identity_findings = [item for item in findings if any(code in item for code in (
+                    "GENERIC_IMPORTS_CONCRETE_PROVIDER", "GENERIC_CAPABILITY_IDENTITY_DISPATCH",
+                    "GENERIC_RELEASE_IDENTITY_REFERENCE"))]
+                self.assertEqual(bool(identity_findings), rejected)
+
     def test_v2_cardinality_is_independent_of_the_legacy_course_ceiling(self):
         from bilqis_mlx.curriculum import AnswerFamily, Capability, Course, Grade, validate
         from bilqis_mlx.factory.curriculum_definition import (
