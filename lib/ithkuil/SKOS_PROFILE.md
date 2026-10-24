@@ -318,3 +318,66 @@ compare the recovered lexical strings by exact Unicode code points. They also pr
 datatype/language-tag validation, explicit empty/whitespace behavior, valid
 same-resource multi-system notation, stable collision diagnostics under input
 reordering, and the distinction between blocking collisions and permitted homographs.
+
+## 4. Source labels and documentation (#34)
+
+Only explicitly source-grounded assertions enter the text projection. A source
+reference is required for every input; #39 checks those references against the
+public source graph. The text module does not infer source authority from a URL
+or confidence score. Generated labels and paraphrases are held.
+
+| Source/normalized field | SKOS property | Scope | Multiplicity per resource/language |
+| --- | --- | --- | --- |
+| `value_name`, `category_name`, `root_gloss`, `preferred_label` | `prefLabel` | Concept/resource identity | At most one distinct value; identical assertions deduplicate |
+| `alternate_label` | `altLabel` | Explicit source lexical alternative | Multiple distinct attested alternatives |
+| `hidden_label` | `hiddenLabel` | Explicit source search/historical alias | Multiple; never invented by normalization |
+| `sense_summary`, `definition` | `definition` | Identity-level meaning | One distinct value; competing definitions held |
+| `semantic_summary` | `definition` or `note` | Requires an explicit `concept` or `realization` classification | Concept definitions must agree; explicitly scoped realization notes coexist |
+| `scope_note` | `scopeNote` | Source-qualified scope restrictions | Multiple |
+| `note` | `note` | Source-classified note | Multiple |
+| `example` | `example` | Explicit source example | Multiple |
+| `history_note` | `historyNote` | Source-classified historical information | Multiple |
+| `change_note` | `changeNote` | Source-classified change information | Multiple |
+| `editorial_note` | `editorialNote` | Source-classified editorial information | Multiple |
+
+The normalized fields in this table are an admission interface, not claims that
+all these columns already exist in the CSV corpus. An adapter must retain the
+original field/locus and explicit role. In particular `evidence_excerpt` without a
+known source evidence role is not automatically a definition, example or note.
+
+Every admitted text literal requires an explicit language tag. Current source
+fields are English; adapters may supply `en` only for those declared English fields.
+The boundary accepts ASCII language codes of 2–8 letters with optional 1–8-character
+ASCII alphanumeric subtags and canonicalizes tag case to lowercase. Missing or
+unsupported tags are held, never guessed from text. Different languages may each
+have one preferred label on the same resource IRI. Preferred, alternate and hidden
+label sets are pairwise disjoint for the same resource/language/lexical value.
+
+Text code points, punctuation and whitespace are preserved exactly; whitespace-only
+values are held. No paraphrase, punctuation replacement or Unicode normalization
+is performed. The compact source-excerpt ceiling is 180 code points, matching the
+source corpus's compact-meaning boundary. Longer values are held with their source
+reference, not silently truncated or copied wholesale into RDF.
+
+Conflicting preferred labels or identity-level definitions produce deterministic
+`PREFERRED_LABEL_CONFLICT` or `DEFINITION_CONFLICT` outcomes. Input order, frequency,
+string length and apparent fluency are not authority rules. A caller may catch
+the `ProfileError` and write a held ledger entry; no partial text graph escapes
+the failed projection. Duplicate identical assertions deduplicate.
+
+An explicit realization-scoped `semantic_summary` becomes `skos:note`; it cannot
+replace the concept definition. This disposition is valid only when the adapter
+has established realization scope from the governing source rule. Material
+meaning disagreements must remain concept-level conflicts; they may not be
+relabeled as realization notes merely to pass validation. #46 owns corpus-specific
+normalization of divergent realization summaries. Unknown text roles/scopes,
+unattested generated labels, absent sources, and invalid language are held.
+Omitting scope for `semantic_summary` is an error; there is no default promotion to
+concept meaning. Fields whose role is already explicit, such as `sense_summary`
+or normalized `definition`, use their declared table role.
+
+Proof: `python -B -m unittest lib.ithkuil.tests.test_skos_text -v` in the environment
+installed from `requirements-semantic.txt`. Tests cover every admitted property,
+duplicate and conflicting preferred labels, label-class disjointness, multilingual
+identity preservation, realization-note demotion, conflicting definitions, missing
+source/language, generated text, unknown roles, long prose and exact RDF round trips.
