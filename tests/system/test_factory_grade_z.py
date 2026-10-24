@@ -31,7 +31,7 @@ from bilqis_mlx.factory.answers import (
 from bilqis_mlx.factory.assessment import qualification_complete
 from bilqis_mlx.factory.curriculum_definition import from_legacy_course
 from bilqis_mlx.factory.executable_release import compile_executable_factory_release
-from bilqis_mlx.factory.execution import CurriculumProfile
+from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
 from bilqis_mlx.factory.generation import draw_executable_release_rows
 from bilqis_mlx.factory.model import AssessmentClass, LearningEvidence, SourceAdapter
 from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
@@ -184,6 +184,65 @@ class DisposableGradeZSystemProof(unittest.TestCase):
                          tuple(name for name in names for _ in range(4)))
         self.assertEqual(selected, [row for row in rows
                                    if row["capability"] == names[-1]][:2])
+
+    def test_runtime_uses_only_the_admitted_source_and_answer_footprint(self):
+        from unittest.mock import Mock, patch
+        from bilqis_mlx.runtime.assessment import _draw_live_rows
+        from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+        from bilqis_mlx.runtime.source_prefetch import prepare_step_sources
+
+        course, registry, graph, template = _fixture()
+        unused_answer = Mock(side_effect=AssertionError("undeclared modality invoked"))
+        answers = AnswerModalityRegistry((
+            RegisteredAnswerModality(template.answer_modalities[0], fixed_domain(BINARY),
+                                    lambda value: "cogal.value." + value.lower()),
+            RegisteredAnswerModality(
+                AnswerModality("unused", "answer.unused/z-fixture", "f" * 64),
+                unused_answer, unused_answer),
+        ))
+        release = compile_executable_factory_release(
+            template.curriculum, template.source_bindings,
+            CurriculumProfile("fixture/one-capability", (
+                GradeProfile("Z", enabled_capabilities=(CAPABILITIES[0],)),)),
+            registry, answers, source_root=None, graph=graph, verification_seed=29)
+        provider = registry.require("fixture.z-generator/v1", "fixture.z-oracle/v1")
+        draw = Mock(wraps=provider.draw)
+        unused = Mock(side_effect=AssertionError("undeclared provider invoked"))
+        sources = SourceAdapterRegistry((replace(provider, draw=draw),
+            RegisteredSourceAdapter(SourceAdapter(
+                "fixture.unused-adapter/v1", "fixture.unused-generator/v1",
+                ("fixture.unused-oracle/v1",), "f" * 64), unused, unused)))
+        context = SourceExecutionContext(release, graph, None, sources, answers)
+        # The last capability exists in canonical curriculum, but is not admitted.
+        with self.assertRaisesRegex(ValueError, "UNKNOWN_CAPABILITY"):
+            _draw_live_rows(None, graph, seed=3, capability=CAPABILITIES[-1],
+                            source_context=context)
+        draw.assert_not_called()
+        request = dict(
+            identity="a" * 64, source_root=".", graph=graph, course=course,
+            executable_release=release, capability=CAPABILITIES[0], batch_size=2,
+            fresh_seed=3, prior_capability=None, prior_seed=4,
+            fragile_fixed_rows=(), fragile_requested=(), fragile_seeds={},
+            fragile_rotation=0, retention_support_capability=None,
+            retention_support_seed=5, retention_support_rotation=0,
+            teaching_seed=6, teaching_enrichment_enabled=False)
+        with patch("bilqis_mlx.runtime.source_prefetch.live_source_registry", return_value=sources), \
+                patch("bilqis_mlx.runtime.source_prefetch.live_answer_registry", return_value=answers), \
+                patch("bilqis_mlx.runtime.source_prefetch.draw_course_rows",
+                      side_effect=AssertionError("historical source bypass")):
+            prepared = prepare_step_sources(request)
+            self.assertEqual({row["capability"] for row in prepared["fresh"]},
+                             {CAPABILITIES[0]})
+            draw.reset_mock()
+            with self.assertRaisesRegex(ValueError, "UNKNOWN_CAPABILITY"):
+                prepare_step_sources({**request, "capability": CAPABILITIES[-1]})
+            draw.assert_not_called()
+            with self.assertRaisesRegex(ValueError, "UNKNOWN_CAPABILITY"):
+                prepare_step_sources({**request, "prior_capability": CAPABILITIES[-1]})
+            self.assertTrue(all(call.kwargs["capability"] == CAPABILITIES[0]
+                                for call in draw.call_args_list))
+        unused.assert_not_called()
+        unused_answer.assert_not_called()
 
     def _assert_compiler_and_generation(self, course, registry, graph, release):
         self.assertEqual(
