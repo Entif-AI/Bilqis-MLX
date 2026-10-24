@@ -923,3 +923,30 @@ python3 -B -m unittest -v \
 The source fixture also pins the exact current realization-type census and tracked
 input SHA-256 digests. A future source update may change these numbers, but a test or
 fixture-only count edit is not source evidence.
+
+## Lexicon roots (#50)
+
+`project_lexicon_roots(closure)` is a domain view over the merged compiler corridor.
+It does not reimplement root identity, notation, text, or public-source projection.
+It selects the `lexicon_roots` resources produced by #38 and sends them unchanged
+through #39 and #40.
+
+Root identity is `Identity("root", (source_id, lexicon_root_id))`. The English
+`root_gloss`, normalized spelling, source row order, and later senses do not
+participate. The exact `root_form_raw` becomes `skos:notation` with the existing New
+Ithkuil datatype. A root is emitted as an addressable `rdfs:Resource`, not a
+`skos:Concept`, so #51 can create independent sense concepts without collapsing the
+root into one meaning.
+
+`lexicon_root_evidence` remains supporting source IR. #50 checks every evidence row's
+stable root ID and exact raw root form against its canonical `lexicon_roots` row. A
+conflict holds the whole root. Valid repeated evidence IDs are exposed on
+`LexiconRootRecord.evidence_ids` and do not mint duplicate root resources or promote
+evidence prose into semantic labels. The RDF source locus itself remains the
+canonical #39 lexicon-root locus.
+
+Current proof: 503 source root rows project to 503 root resources, with zero held
+roots. `LEXROOT-0bd881a56fac9e` preserves exact `-Č-` notation and has eight repeated
+supporting evidence rows while remaining one resource. Reordering root and evidence
+rows produces the same canonical graph. A synthetic conflicting evidence spelling is
+held with `LEXICON_ROOT_FORM_CONFLICT` and emits no partial root RDF.
