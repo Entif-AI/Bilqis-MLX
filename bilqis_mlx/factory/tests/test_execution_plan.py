@@ -135,6 +135,35 @@ def _synthetic_boolean_course():
 
 
 class ExecutionPlanTests(unittest.TestCase):
+    def test_twelve_capability_v2_plan_preserves_legacy_cardinality(self):
+        from bilqis_mlx.curriculum import validate
+        from bilqis_mlx.factory.curriculum_definition import (
+            CapabilitySpec, CapabilitySourceBinding, CurriculumDefinition,
+            GradeSpec, SourceBindingSet, validate_curriculum_definition,
+        )
+        from bilqis_mlx.factory.tests.test_executable_release import _boolean_answers
+
+        names = tuple(f"Z.C{i}" for i in range(12))
+        capabilities = tuple(CapabilitySpec(
+            name, "fixture", (f"z.op.{i}",), (f"z.op.{i}",), (), (),
+            (AnswerFamily("binary", BINARY),),
+        ) for i, name in enumerate(names))
+        curriculum = CurriculumDefinition("fixture.twelve/v1", (GradeSpec(
+            "Z", capabilities, tuple((name, 4) for name in names)),))
+        bindings = SourceBindingSet(tuple(CapabilitySourceBinding(
+            name, "repo:fixture/z", "fixture.z-generator/v1", "fixture.z-oracle/v1",
+        ) for name in names), "b" * 64)
+        validate_curriculum_definition(curriculum, answer_kinds=("binary",))
+        plan = compile_execution_plan(
+            curriculum, CurriculumProfile.full(), _synthetic_registry(),
+            source_bindings=bindings, answer_registry=_boolean_answers())
+        self.assertEqual(plan.grades[0].capabilities, names)
+        self.assertEqual(plan.grades[0].cumulative_scope, names)
+        self.assertEqual(tuple(cap.capability_id for cap in plan.capabilities), names)
+        self.assertEqual(sum(cap.exam_item_count for cap in plan.capabilities), 48)
+        with self.assertRaisesRegex(ValueError, "^GRADE_CAPABILITY_COUNT_OUTSIDE_SIX_TO_NINE$"):
+            validate(_synthetic_course(10))
+
     def test_profile_roster_mutation_regenerates_all_static_runtime_projections(self):
         course = _synthetic_course(7)
         registry = _synthetic_registry()
