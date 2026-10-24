@@ -17,6 +17,18 @@ class SourceExecutionContext:
     source_registry: SourceAdapterRegistry
     answer_registry: AnswerModalityRegistry
 
+    @classmethod
+    def from_admitted_release(
+            cls, run_dir: Path, receipt: dict, *, graph: dict,
+            source_root: Path | None, source_registry: SourceAdapterRegistry,
+            answer_registry: AnswerModalityRegistry) -> SourceExecutionContext:
+        from .admission import (
+            _read_executable_factory_release_artifact as _read_executable_factory_release)
+
+        release = _read_executable_factory_release(run_dir, receipt)
+        return cls(release=release, graph=graph, source_root=source_root,
+                   source_registry=source_registry, answer_registry=answer_registry)
+
     def __post_init__(self) -> None:
         if not isinstance(self.release, ExecutableFactoryRelease):
             raise TypeError("Expected an ExecutableFactoryRelease")

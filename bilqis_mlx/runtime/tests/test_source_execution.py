@@ -1,5 +1,6 @@
 from dataclasses import replace
 import unittest
+from unittest.mock import patch
 
 from bilqis_mlx.factory.adapters import SourceAdapterRegistry
 from bilqis_mlx.factory.answers import AnswerModalityRegistry
@@ -31,6 +32,31 @@ class SourceExecutionContextTests(unittest.TestCase):
         self.assertIs(context.source_registry, self.sources)
         self.assertIs(context.answer_registry, self.answers)
         self.assertIsNone(context.source_root)
+
+    def test_admitted_context_uses_the_cold_read_authority(self):
+        from pathlib import Path
+        from bilqis_mlx.factory.execution import GradeProfile
+        thin = compile_executable_factory_release(
+            self.release.curriculum, self.release.source_bindings,
+            CurriculumProfile("thin", grades=(GradeProfile("Z", enabled_capabilities=("Z.C5",)),)),
+            self.sources, self.answers, source_root=None, graph=self.graph, verification_seed=19)
+        receipt = {"factory_release_sha256": thin.release_sha256}
+        arguments = {key: value for key, value in self.arguments.items() if key != "release"}
+        with patch("bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
+                   return_value=thin) as read:
+            context = SourceExecutionContext.from_admitted_release(Path("fixture-run"), receipt,
+                                                                   **arguments)
+        read.assert_called_once_with(Path("fixture-run"), receipt)
+        self.assertIs(context.release, thin)
+        self.assertEqual(tuple(context.release.execution_plan.capability_map), ("Z.C5",))
+        self.assertEqual(len(context.release.curriculum.capability_map), 6)
+
+    def test_admitted_context_propagates_failed_cold_read(self):
+        arguments = {key: value for key, value in self.arguments.items() if key != "release"}
+        with patch("bilqis_mlx.runtime.admission._read_executable_factory_release_artifact",
+                   side_effect=ValueError("invalid saved artifact")):
+            with self.assertRaisesRegex(ValueError, "invalid saved artifact"):
+                SourceExecutionContext.from_admitted_release(None, {}, **arguments)
 
     def test_context_rejects_legacy_course_and_untyped_registries(self):
         for field, value in (("release", self.course), ("source_registry", object()),
