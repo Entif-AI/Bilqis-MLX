@@ -104,6 +104,15 @@ class FactoryArchitectureTests(unittest.TestCase):
                 "def _rebind():\n _factory_admission()\n")
             self.assertEqual(inspect_factory_architecture(root), ())
 
+    def test_legacy_release_gate_does_not_authorize_current_training(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "bilqis_mlx/factory").mkdir(parents=True)
+            (root / "bilqis_mlx/trainer.py").write_text(
+                "def operate():\n _require_factory_admission()\n")
+            self.assertIn("bilqis_mlx/trainer.py OPERATE_BYPASSES_FACTORY_RELEASE",
+                          inspect_factory_architecture(root))
+
     def test_leaf_service_cannot_import_the_trainer_facade(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

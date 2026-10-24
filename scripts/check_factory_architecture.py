@@ -137,7 +137,6 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
     trainer = src / "trainer.py"
     operate_calls = _function_calls(trainer, "operate")
     if not operate_calls & {
-            "_require_factory_admission",
             "_require_executable_factory_admission",
             "_ensure_executable_release"}:
         problems.append("bilqis_mlx/trainer.py OPERATE_BYPASSES_FACTORY_RELEASE")
