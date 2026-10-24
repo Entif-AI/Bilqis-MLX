@@ -114,17 +114,31 @@ class FactoryArchitectureTests(unittest.TestCase):
                           inspect_factory_architecture(root))
 
     def test_leaf_service_cannot_import_the_trainer_facade(self):
+        imports = (
+            "from bilqis_mlx import trainer\n",
+            "import bilqis_mlx.trainer as facade\n",
+            "from bilqis_mlx.trainer import operate\n",
+            "from .. import trainer\n",
+            "from ..trainer import operate\n",
+        )
+        for name in ("leaf.py", "trainer.py", "cli.py", "__init__.py"):
+            for source in imports:
+                with self.subTest(name=name, source=source), tempfile.TemporaryDirectory() as temp:
+                    root = Path(temp)
+                    (root / "bilqis_mlx/factory").mkdir(parents=True)
+                    (root / "bilqis_mlx/runtime").mkdir()
+                    (root / "bilqis_mlx/runtime" / name).write_text(source)
+                    self.assertTrue(any("LEAF_IMPORTS_TRAINER" in problem
+                                        for problem in inspect_factory_architecture(root)))
+
+    def test_leaf_service_may_import_an_unrelated_trainer(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             (root / "bilqis_mlx/factory").mkdir(parents=True)
-            (root / "bilqis_mlx/runtime").mkdir()
-            (root / "bilqis_mlx/trainer.py").write_text(
-                "def operate():\n _ensure_executable_release()\n"
-                "def _adopt_executable_profile():\n _executable_factory_admission()\n")
-            (root / "bilqis_mlx/runtime/leaf.py").write_text(
-                "from bilqis_mlx import trainer\n")
-            self.assertTrue(any("LEAF_IMPORTS_TRAINER" in problem
-                                for problem in inspect_factory_architecture(root)))
+            (root / "bilqis_mlx/factory/leaf.py").write_text(
+                "from external import trainer\nfrom external.trainer import train\n")
+            self.assertFalse(any("LEAF_IMPORTS_TRAINER" in problem
+                                 for problem in inspect_factory_architecture(root)))
 
     def test_facade_cannot_hide_an_ungated_service(self):
         with tempfile.TemporaryDirectory() as temp:

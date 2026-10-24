@@ -97,6 +97,23 @@ def _legacy_course_usage(path: Path, root: Path) -> tuple[str, ...]:
                  for line in sorted(lines))
 
 
+def _imports_trainer_facade(node: ast.AST, path: Path, src: Path) -> bool:
+    facade = "bilqis_mlx.trainer"
+    if isinstance(node, ast.Import):
+        return any(alias.name == facade for alias in node.names)
+    if not isinstance(node, ast.ImportFrom):
+        return False
+    module = node.module or ""
+    if node.level:
+        package = ("bilqis_mlx", *path.relative_to(src).parts[:-1])
+        if node.level > len(package):
+            return False
+        parent = package[:len(package) - node.level + 1]
+        module = ".".join((*parent, *module.split("."))) if module else ".".join(parent)
+    return module == facade or (
+        module == "bilqis_mlx" and any(alias.name == "trainer" for alias in node.names))
+
+
 def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
     src = root / "bilqis_mlx"
     problems: list[str] = []
@@ -108,15 +125,9 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
     for path in sorted(src.rglob("*.py")):
         if "tests" in path.relative_to(src).parts:
             continue
-        if path.name not in {"trainer.py", "cli.py"}:
+        if path not in {src / "trainer.py", src / "cli.py"}:
             for node in ast.walk(ast.parse(_source(path))):
-                imports_trainer = (
-                    isinstance(node, ast.Import) and
-                    any(alias.name == "bilqis_mlx.trainer" for alias in node.names) or
-                    isinstance(node, ast.ImportFrom) and (
-                        (node.module or "").split(".")[-1] == "trainer" or
-                        any(alias.name == "trainer" for alias in node.names)))
-                if imports_trainer:
+                if _imports_trainer_facade(node, path, src):
                     problems.append(f"{path.relative_to(root)} LEAF_IMPORTS_TRAINER")
         if set(path.relative_to(src).parts) & {"compatibility", "research"}:
             continue
