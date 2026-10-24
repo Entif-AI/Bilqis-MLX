@@ -145,11 +145,13 @@ class ExecutionPlanTests(unittest.TestCase):
 
         names = tuple(f"Z.C{i}" for i in range(12))
         capabilities = tuple(CapabilitySpec(
-            name, "fixture", (f"z.op.{i}",), (f"z.op.{i}",), (), (),
+            name, "fixture", (f"z.op.{i}",), (f"z.op.{i}",),
+            (names[i - 1],) if i else (), (),
             (AnswerFamily("binary", BINARY),),
         ) for i, name in enumerate(names))
         curriculum = CurriculumDefinition("fixture.twelve/v1", (GradeSpec(
-            "Z", capabilities, tuple((name, 4) for name in names)),))
+            "Z", capabilities, tuple((name, 4) for name in names),
+            tuple((name,) for name in names)),))
         bindings = SourceBindingSet(tuple(CapabilitySourceBinding(
             name, "repo:fixture/z", "fixture.z-generator/v1", "fixture.z-oracle/v1",
         ) for name in names), "b" * 64)
@@ -161,6 +163,27 @@ class ExecutionPlanTests(unittest.TestCase):
         self.assertEqual(plan.grades[0].cumulative_scope, names)
         self.assertEqual(tuple(cap.capability_id for cap in plan.capabilities), names)
         self.assertEqual(sum(cap.exam_item_count for cap in plan.capabilities), 48)
+        self.assertEqual(plan.grades[0].teaching_stages, tuple((name,) for name in names))
+        self.assertEqual(tuple(item.capability_id for item in plan.capability_projection_digests), names)
+        for index, capability in enumerate(plan.capabilities):
+            with self.subTest(capability=capability.capability_id):
+                self.assertEqual(capability.stage, index)
+                self.assertEqual(capability.prerequisites, (names[index - 1],) if index else ())
+                self.assertEqual(capability.source_anchor, "repo:fixture/z")
+                self.assertEqual(capability.provider_id, "fixture.z-adapter/v1")
+                self.assertEqual(capability.oracle_id, "fixture.z-oracle/v1")
+        changed_bindings = replace(bindings, bindings=(
+            *bindings.bindings[:-1],
+            replace(bindings.bindings[-1], source_anchor="repo:fixture/z/revised")))
+        changed = compile_execution_plan(
+            curriculum, CurriculumProfile.full(), _synthetic_registry(),
+            source_bindings=changed_bindings, answer_registry=_boolean_answers())
+        self.assertEqual(changed.capability_projection_digests[:-1],
+                         plan.capability_projection_digests[:-1])
+        self.assertNotEqual(changed.capability_projection_digests[-1].source,
+                            plan.capability_projection_digests[-1].source)
+        self.assertEqual(changed.capability_projection_digests[-1].schedule,
+                         plan.capability_projection_digests[-1].schedule)
         with self.assertRaisesRegex(ValueError, "^GRADE_CAPABILITY_COUNT_OUTSIDE_SIX_TO_NINE$"):
             validate(_synthetic_course(10))
 
