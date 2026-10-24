@@ -1,0 +1,13 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF>
+    dcterms:source <https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/9f390b250fdced5e651cb9c136d2b4c1b20947f3cb5b6ce15c70f2e549b4dfba>
+    dcterms:bibliographicCitation "Chapter 3: Morphology; source NI-WEB-CH03; section NI-WEB-CH03:3.1; table NI-WEB-CH03:T003; line 3239." ;
+    dcterms:identifier "source=NI-WEB-CH03;section=NI-WEB-CH03:3.1;table=NI-WEB-CH03:T003;line=3239" ;
+    dcterms:source <https://www.ithkuil.net/newithkuil_03_morphology.htm> .
+
+<https://www.ithkuil.net/newithkuil_03_morphology.htm>
+    dcterms:bibliographicCitation "Chapter 3: Morphology" ;
+    dcterms:identifier "NI-WEB-CH03" .
