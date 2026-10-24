@@ -9,6 +9,36 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class FactoryArchitectureTests(unittest.TestCase):
+    def test_v2_cardinality_is_independent_of_the_legacy_course_ceiling(self):
+        from bilqis_mlx.curriculum import AnswerFamily, Capability, Course, Grade, validate
+        from bilqis_mlx.factory.curriculum_definition import (
+            CapabilitySpec, CurriculumDefinition, GradeSpec, validate_curriculum_definition)
+
+        answers = (AnswerFamily("binary", ("FALSE", "TRUE")),)
+        for count in (0, 1, 9, 10, 12, 13):
+            with self.subTest(contract="v2", count=count):
+                caps = tuple(CapabilitySpec(f"Z.C{i}", "foundation", (f"root.{i}",),
+                                           (f"root.{i}",), (), (), answers)
+                             for i in range(count))
+                definition = CurriculumDefinition("fixture", (GradeSpec(
+                    "Z", caps, tuple((cap.capability_id, 12) for cap in caps)),))
+                if 1 <= count <= 12:
+                    validate_curriculum_definition(definition, answer_kinds=("binary",))
+                else:
+                    with self.assertRaisesRegex(ValueError, "^FACTORY_CURRICULUM_GRADE_INVALID$"):
+                        validate_curriculum_definition(definition, answer_kinds=("binary",))
+        for count in (1, 9, 10):
+            with self.subTest(contract="legacy", count=count):
+                caps = tuple(Capability(f"Z.C{i}", "foundation", "repo:fixture",
+                                        (f"root.{i}",), (f"root.{i}",), (), (), answers)
+                             for i in range(count))
+                course = Course((Grade("Z", caps),), "fixture")
+                if count <= 9:
+                    validate(course)
+                else:
+                    with self.assertRaisesRegex(ValueError, "^GRADE_CAPABILITY_COUNT_OUTSIDE_SIX_TO_NINE$"):
+                        validate(course)
+
     def test_compatibility_cannot_call_current_mutation_owners(self):
         writers = (
             ("admission", "_factory_admission"),

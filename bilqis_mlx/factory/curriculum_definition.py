@@ -15,6 +15,9 @@ import re
 from ..curriculum import AnswerFamily, Course, GRADE_IDS, validate as validate_course
 
 
+V2_GRADE_CAPABILITY_MAX = 12
+
+
 def _digest(value) -> str:
     return hashlib.sha256(json.dumps(
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
@@ -106,7 +109,7 @@ def validate_curriculum_definition(
     seen_grades = set()
     for grade in curriculum.grades:
         if (grade.grade_id not in GRADE_IDS or grade.grade_id in seen_grades or
-                not 1 <= len(grade.capabilities) <= 9):
+                not 1 <= len(grade.capabilities) <= V2_GRADE_CAPABILITY_MAX):
             raise ValueError("FACTORY_CURRICULUM_GRADE_INVALID")
         seen_grades.add(grade.grade_id)
         ids = tuple(cap.capability_id for cap in grade.capabilities)
