@@ -185,8 +185,10 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                     full_boolean=full_grade_b,
                     maximum=3 if numeric_staircase or experiment_budget is not None else 10)
                 if experiment_budget is not None:
+                    from bilqis_mlx.numeric_staircase import FINAL_MAXIMUM
                     catalog_transition = _dataclasses.replace(
-                        catalog_transition, numeric_scope_final_maximum=4)
+                        catalog_transition,
+                        numeric_scope_final_maximum=FINAL_MAXIMUM)
                 params, optimizer, graph, receipt, course = (
                     _runtime_release_adoption._adopt_catalog_profile(
                         mx, run_dir, receipt, course_a, source_root, graph,
@@ -205,7 +207,8 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                     (".experiment-run.json",)
                     if experiment_budget is not None else ()))
         if experiment_budget is not None and receipt.get("numeric_scope_final_maximum") is None:
-            receipt = {**receipt, "numeric_scope_final_maximum": 4}
+            from bilqis_mlx.numeric_staircase import FINAL_MAXIMUM
+            receipt = {**receipt, "numeric_scope_final_maximum": FINAL_MAXIMUM}
         params, optimizer, graph, receipt, course, _ = (
             _runtime_release_adoption._auto_adopt_known_grade_boundary(
                 mx, run_dir, receipt, course, course_a, source_root, manifest,

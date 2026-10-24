@@ -85,8 +85,8 @@ def numeric_scope_profile(
         if grade.grade_id == active_grade.grade_id)
     all_ids = tuple(
         capability.capability_id for capability in canonical_grade.capabilities)
-    from ..numeric_staircase import FINAL_MAXIMUM, FOUNDATIONS
-    enabled = (all_ids if maximum >= FINAL_MAXIMUM else
+    from ..numeric_staircase import FULL_OPERATION_MAXIMUM, FOUNDATIONS
+    enabled = (all_ids if maximum >= FULL_OPERATION_MAXIMUM else
                all_ids[:len(FOUNDATIONS)])
     numbers = tuple(str(index) for index in range(maximum + 1))
     numeric_grade = GradeProfile(

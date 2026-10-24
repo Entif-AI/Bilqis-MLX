@@ -122,7 +122,10 @@ class NumericStaircaseTests(unittest.TestCase):
 
     @staticmethod
     def _perfect_to_boundary(program, school):
-        for index in range(32):
+        # Full C (unlocked at numeric scope 4) has seven capabilities and can
+        # require more promotion-sweep cycles before a later numeric profile
+        # revision is eligible. This is fixture headroom, not a runtime cap.
+        for index in range(64):
             if school.stage == 'AWAITING_NEXT_GRADE':
                 return school
             while next_capability(school):
@@ -274,7 +277,7 @@ class NumericStaircaseTests(unittest.TestCase):
             self.root, record)
         program = schedule_program_from_executable_release(release)
         self.assertEqual(record['numeric_maximum'], 3)
-        self.assertEqual(record['numeric_scope_final_maximum'], 4)
+        self.assertEqual(record['numeric_scope_final_maximum'], 6)
         self.assertEqual(release.profile.profile_id,
                          'school/boolean-kernel/and-iff/numeric-0-3')
         self.assertNotEqual(record['model_bundle'], before['model_bundle'])
@@ -415,7 +418,7 @@ class NumericStaircaseTests(unittest.TestCase):
                     '--legacy-code-root', str(fixtures.SOURCE)]), 0)
             report = json.loads(output.getvalue())
             self.assertEqual(report['numeric_staircase']['resume_maximum'], 3)
-            self.assertEqual(report['numeric_staircase']['final_maximum'], 4)
+            self.assertEqual(report['numeric_staircase']['final_maximum'], 6)
             self.assertFalse(report['neural_training_started_by_this_command'])
             self.assertEqual((self.root/'state.json').read_bytes(), original)
 
@@ -493,11 +496,11 @@ class NumericStaircaseTests(unittest.TestCase):
         with redirect_stdout(io.StringIO()):
             changed, _, narrowed, program = storage._adopt_executable_profile(
                 self.root,
-                {**wide, 'numeric_scope_final_maximum': 4},
+                {**wide, 'numeric_scope_final_maximum': 6},
                 self.fixture.grade_a, fixtures.SOURCE, graph,
                 numeric_scope_profile(release, 3))
         self.assertEqual(changed['numeric_maximum'], 3)
-        self.assertEqual(changed['numeric_scope_final_maximum'], 4)
+        self.assertEqual(changed['numeric_scope_final_maximum'], 6)
         self.assertEqual(changed['school']['carried_mastery_debt'], ['C.COUNT'])
         self.assertEqual(changed['school']['current_student'], wide_student)
         self.assertEqual(int(self.optimizer.state['step'].item()), prior_step)
@@ -532,11 +535,11 @@ class NumericStaircaseTests(unittest.TestCase):
         while record['numeric_maximum'] < record['numeric_scope_final_maximum']:
             course, record, release, _ = self._advance_scope(course, record)
             observed.append(record['numeric_maximum'])
-        self.assertEqual(observed, [3, 4])
+        self.assertEqual(observed, [3, 4, 5, 6])
         self.assertIsNone(next_numeric_scope_profile(
             release, final_maximum=record['numeric_scope_final_maximum']))
 
-    def test_final_scope_four_adds_multiply_and_divide_without_widening_numbers(self):
+    def test_scope_four_adds_multiply_and_divide_before_final_numeric_ceiling(self):
         course, record = self.start()
         entry_bundle = record['model_bundle']
         prior_step = self.optimizer.state['step'].item()
@@ -601,7 +604,7 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertEqual(observed,
             [(3,c) for c in
              ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB')] +
-            [(4,c) for c in
+            [(maximum,c) for maximum in (4, 5, 6) for c in
              ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB','C.MUL','C.DIV')])
         self.assertEqual(record['model_bundle'], entry_bundle)
 
