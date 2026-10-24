@@ -175,7 +175,9 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
                 "settled_matchups": {},
             },
         }
-        with TemporaryDirectory() as temp:
+        with TemporaryDirectory() as temp, patch(
+                "bilqis_mlx.compatibility.trainer_transitions.activate_replaced_admitted_grade",
+                side_effect=AssertionError("runtime delegated replacement mutation to compatibility")):
             root = Path(temp)
             revised = _activate_replaced_admitted_grade(
                 root, receipt, self.old, self.new, self.graph)

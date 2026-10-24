@@ -67,29 +67,6 @@ def _next_grade_admission_event(record, school, current_grade: str,
     }
 
 
-def _grade_replacement_event(record, school, previous_course, successor,
-                             replaced_grade: str, old_caps: tuple[str, ...],
-                             new_caps: tuple[str, ...], withheld: tuple[str, ...],
-                             release_sha256: str) -> dict:
-    return {
-        "event": "SCHOOL_GRADE_RELEASE_REPLACED",
-        "generation": record["generation"],
-        "grade": replaced_grade,
-        "previous_release": previous_course.version,
-        "release": successor.version,
-        "old_capabilities": list(old_caps),
-        "new_capabilities": list(new_caps),
-        "withheld_capabilities": list(withheld),
-        "student_sha256": school.current_student.sha256,
-        "optimizer_step": school.current_student.optimizer_step,
-        "factory_release_sha256": release_sha256,
-        "championship_field_reset": True,
-        "stale_geometry_evidence_deactivated": True,
-        "actual_neural_updates": 0,
-        "model_and_own_adamw_unchanged": True,
-    }
-
-
 def activate_next_admitted_grade(
         run_dir, receipt, previous_course, successor, graph=None):
     school = _runtime_state._state_from_json(
@@ -180,82 +157,8 @@ def activate_revised_admitted_grade(
 
 def activate_replaced_admitted_grade(
         run_dir, receipt, previous_course, successor, graph=None):
-    school = _runtime_state._state_from_json(
-        receipt["school"],
-        _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, previous_course))
-    legacy_school = replace(school, course_digest=previous_course.digest())
-    next_state, replaced_grade = replace_admitted_grade(
-        previous_course, successor, legacy_school)
-    release, release_file, admission = _factory_admission(
-        run_dir, successor, next_state.current_student,
-        receipt["semantic_graph_sha256"],
-        registry=historical_source_registry())
-    identity = build_school_identity(
-        course_sha256=successor.digest(),
-        semantic_graph_sha256=receipt["semantic_graph_sha256"],
-        parameter_shapes=receipt["parameter_shapes"],
-        factory_release_sha256=release.release_sha256)
-    old_caps = tuple(
-        cap.id for grade in previous_course.grades
-        if grade.id == replaced_grade for cap in grade.capabilities)
-    new_caps = tuple(
-        cap.id for grade in successor.grades
-        if grade.id == replaced_grade for cap in grade.capabilities)
-    withheld = tuple(cap for cap in old_caps if cap not in set(new_caps))
-    history = [*receipt.get("curriculum_history", ()), {
-        "release": previous_course.version,
-        "course_digest": previous_course.digest(),
-        "generation": receipt["generation"],
-        "state_file": f"states/{receipt['generation']:07d}.json",
-        "replaced_grade": replaced_grade,
-        "old_capabilities": list(old_caps),
-        "new_capabilities": list(new_caps),
-        "withheld_capabilities": list(withheld),
-        "replacement_kind": "HUMAN_DIRECTED_GRADE_WINNOW",
-    }]
-    if "config" not in receipt:
-        raise ValueError("HUMAN_TRAINER_GRADE_REPLACEMENT_CONFIG_MISSING")
-    updated = {
-        **receipt,
-        **legacy_receipt_fields(successor.version),
-        "config": rebind_same_grade_config(
-            successor.version, receipt["config"], graph),
-        "curriculum_mode": successor.version,
-        "curriculum_history": history,
-        "live_rubric_sha256": assessment_rubric_for_scope(
-            successor, assessment_capabilities(successor, next_state)),
-        "factory_release_sha256": release.release_sha256,
-        "factory_release_file": release_file,
-        "factory_admission": asdict(admission),
-        "championship_school_identity": identity,
-        "capability_best": {},
-        "graduation_perfect": {},
-        "whole_student_peaks": [],
-        "teacher_misses": [],
-        "teacher_miss_exposures": {},
-        "last_exam": None,
-        "burned_generalization_cohorts": [],
-        "legacy_frontier_pending_replay": False,
-        "stagnation_session": None,
-    }
-    updated.pop("qualification_cohort", None)
-    updated.pop("last_generalization_cohort", None)
-    if updated.get("mentor_epoch") is not None:
-        epoch, _ = enforce_school_identity(
-            updated["mentor_epoch"], identity,
-            generation=receipt["generation"] + 1,
-            student=asdict(school.current_student))
-        updated["mentor_epoch"] = epoch
-    record = _runtime_checkpoints._advance(
-        run_dir, updated, next_state,
-        result="ACTIVE_GRADE_" + next_state.grade, persist=False)
-    event = _grade_replacement_event(
-        record, school, previous_course, successor, replaced_grade,
-        old_caps, new_caps, withheld, release.release_sha256)
-    record = _runtime_checkpoints._persist(
-        run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
-    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
-    return record
+    return _runtime_release_adoption._activate_replaced_admitted_grade(
+        run_dir, receipt, previous_course, successor, graph)
 
 
 def _auto_adopt_known_grade_boundary(
