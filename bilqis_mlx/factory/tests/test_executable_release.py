@@ -133,6 +133,28 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
         self.assertEqual(restored.release_sha256, release.release_sha256)
         self.assertEqual(tuple(item.capability_id for item in restored.verification.capabilities), names)
         self.assertEqual(restored.verification.assessments[0].cumulative_scope, names)
+        self.assertEqual(tuple(item.specimen_count for item in restored.verification.capabilities),
+                         (4,) * 12)
+        seal = restored.verification.assessments[0]
+        self.assertEqual(len(seal.capability_receipt_sha256s), 12)
+        self.assertEqual(restored.answer_heads[0].kind, "binary")
+        self.assertEqual(restored.answer_heads[0].values, ("FALSE", "TRUE"))
+        self.assertEqual(restored.answer_heads[0].token_ids, (1, 2))
+        incomplete_seal = replace(seal, cumulative_scope=names[:-1],
+                                  capability_receipt_sha256s=seal.capability_receipt_sha256s[:-1])
+        incomplete_seal = replace(incomplete_seal, seal_sha256=incomplete_seal.expected_digest())
+        mutations = (
+            (replace(restored.verification, capabilities=restored.verification.capabilities[:-1]),
+             "FACTORY_EXECUTABLE_RELEASE_VERIFICATION_DRIFT"),
+            (replace(restored.verification, assessments=(incomplete_seal,)),
+             "FACTORY_EXECUTABLE_RELEASE_ASSESSMENT_DRIFT"),
+        )
+        for verification, error in mutations:
+            with self.subTest(error=error):
+                candidate = replace(restored, verification=verification)
+                candidate = replace(candidate, release_sha256=candidate.expected_digest())
+                with self.assertRaisesRegex(ValueError, f"^{error}$"):
+                    candidate.verify()
 
     def test_v2_release_rejects_rehashed_plan_profile_mismatch(self):
         release = self.compile()
