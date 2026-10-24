@@ -220,3 +220,101 @@ forbidden triples are absent, read the Level `skos:memberList` through RDFLib's 
 Collection interface, reject non-semantic order bases, prove ordinary collection
 row shuffling is graph-invariant, and keep the root resource distinct from its
 sense concepts.
+
+## 3. Typed notation (#33)
+
+`skos:notation` represents a source notation string attached to a semantic resource.
+Notation is representation, not semantic identity, provenance, realization policy, or
+an allomorph condition. Two canonical notation systems are admitted:
+
+| Notation system | Datatype IRI | Intended lexical values |
+| --- | --- | --- |
+| literal New Ithkuil | `https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil` | Source-facing New Ithkuil forms such as `ẓ`, `i’ö`, and the explicit zero exponent `∅` |
+| grammar code | `https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code` | Source grammar abbreviations/codes such as `MFF` |
+
+The datatype IRIs are the stable datatype identities defined by #31. No additional
+notation datatype is valid until the profile intentionally adds another stable
+notation-system identity.
+
+### Lexical-form contract
+
+Notation is source-preserving Unicode. The compiler MUST construct RDF typed literals
+without Unicode normalization; the RDFLib implementation uses `normalize=False`.
+It MUST NOT NFC-normalize, NFD-normalize, transliterate, ASCII-fold, case-fold,
+substitute typography, or otherwise rewrite the lexical code-point sequence. A
+precomposed NFC string and its canonically equivalent NFD sequence therefore remain
+distinct lexical notations unless an upstream source contract explicitly admits an
+alias. RDF escaping or output encoding may change serialized bytes, but parsing the
+serialization MUST recover the exact original Unicode code points.
+
+Unpaired UTF-16 surrogate code points U+D800–U+DFFF are not Unicode scalar values and
+are not legal notation input. They fail with `NOTATION_SURROGATE_FORBIDDEN`; the
+semantic layer MUST NOT replace, drop, pair, or otherwise repair them. All other
+accepted notation code points remain byte-for-byte/code-point-for-code-point untouched
+by the notation constructor.
+
+This semantic layer preserves the lexical Unicode string, not the original source-file
+byte sequence. Byte-level source evidence remains upstream in the source/provenance
+records and is not embedded in `skos:notation`.
+
+The empty string is not a legal notation. Leading or trailing Unicode whitespace is
+also illegal. Implementations MUST reject padded values rather than trimming them.
+Whitespace inside an otherwise valid lexical value is preserved exactly and is
+significant if such a value is source-admitted. The explicit zero exponent is the
+single literal `∅` (U+2205); it is never represented by an empty string.
+
+Notation values are datatype literals and MUST NOT carry a language tag. A resource may
+carry more than one `skos:notation`, including values from both canonical notation
+systems. The datatype distinguishes the notation systems; a grammar code and a literal
+New Ithkuil form on the same resource do not conflict.
+
+Allomorph conditions, slot metadata, source loci, and realization state remain outside
+the notation literal. #45 and #59 own realization/allomorph semantics.
+
+### Same-scheme collision contract
+
+The exact collision key is the tuple:
+
+`(governing scheme IRI, notation datatype IRI, exact lexical Unicode string)`.
+
+The governing scheme and resource identity in every collision claim MUST be absolute
+IRIs rather than relative references or arbitrary text. Invalid scheme and resource
+claims fail as `INVALID_NOTATION_SCHEME_IRI` and
+`INVALID_NOTATION_RESOURCE_IRI` before grouping, so collision identity cannot be
+manufactured from local labels or relative paths.
+
+Two claims from the same resource for the same tuple are idempotent. Equal lexical
+strings under different datatypes or different schemes are different keys. NFC and NFD
+strings with different code-point sequences are different keys even when Unicode
+canonical normalization would make them equivalent.
+
+A blocking notation collision exists only when two or more distinct semantic resource
+IRIs claim the same exact key and that notation is expected to identify a resource
+uniquely within the governing scheme. The collision report MUST contain the complete
+scheme/datatype/lexical tuple and every conflicting stable resource IRI. If a notation
+class is explicitly not expected to identify uniquely, the same exact homograph on
+multiple resources is allowed but remains visible as an allowed-homograph result for
+corpus review. If any claim for an exact tuple carries the uniqueness requirement, a
+second distinct resource is a collision.
+
+`analyze_notation_claims` returns deterministic collision and allowed-homograph
+groups. `validate_notation_collisions` fails with `NOTATION_COLLISION` on the first
+deterministically ordered blocking group. Corpus-wide enforcement remains owned by #47.
+
+### Fixtures and proof
+
+`tests/fixtures/skos_notation.json` contains ASCII grammar-code, non-ASCII source,
+multi-codepoint source, explicit-zero, NFC/NFD boundary, same-resource multi-system,
+blocking-collision, and allowed-homograph fixtures.
+
+Run from the repository root with RDFLib 7.6.0 installed:
+
+```sh
+python3 -B -m unittest lib.ithkuil.tests.test_skos_notation -v
+```
+
+The tests perform real RDF N-Triples serialize/parse/serialize/parse round trips and
+compare the recovered lexical strings by exact Unicode code points. They also prove
+datatype/language-tag validation, explicit empty/whitespace behavior, valid
+same-resource multi-system notation, stable collision diagnostics under input
+reordering, and the distinction between blocking collisions and permitted homographs.
