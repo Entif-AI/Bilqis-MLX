@@ -89,3 +89,82 @@ The tests validate the current corpus, reverse every table, corrupt each require
 boundary in a temporary copy, exercise malformed configuration, and prove that a
 blocking source error cannot produce an RDF artifact. They assert literal expected
 reason codes and source keys; no model or graph database is required.
+
+## 2. Identity resolution (#38)
+
+The resolver consumes only the immutable `CompilerClosure` returned by #37. It does
+not reopen CSV files, inspect raw HTML, emit RDF, consult FalkorDB, or read curriculum
+state. The normalized layer preserves source records and surface evidence while fixing
+semantic identity before later source-reference and RDF stages.
+
+### API
+
+`resolve_identities(closure) -> Resolution` returns immutable records:
+
+- `RecordRef(table, key)` identifies each contributing closure row by its declared
+  source-table primary key.
+- `Realization(record_ref, lexical_form, realization_type, condition)` preserves a
+  surface realization without making it semantic identity.
+- `TextAssertion(record_ref, field, text, role, scope, language)` preserves source
+  text with an explicit field contract.
+- `ResolvedResource(identity, role, source_records, realizations, families, texts,
+  schemes)` is one resolved semantic resource.
+- `ResolutionIssue(code, semantic_key, record_refs, details)` is a fail-closed held
+  result naming every implicated source record.
+- `Resolution(resources, issues)` is deterministically ordered and contains both
+  successful identities and held ambiguity.
+
+### Five-table normalization contract
+
+`grammatical_categories` supplies the finite category/family contract. It does not
+mint extra semantic resources. `morphemes_atomic` is split by explicit known source
+shape: `lexical_consonantal_root` and `CS_consonantal_root` become generic #32 root
+resources keyed by `(primary_source_id, atomic_id)`; every other explicitly known
+atom class becomes a grammar concept keyed by `(category_code, value_code)`.
+
+Rows sharing one grammar identity merge into one resource while retaining every
+`RecordRef`, realization, condition, family, and text assertion. Register initial and
+final rows therefore remain one REGISTER value when category/value match while both
+source families remain visible. Identical forms are not deduplicated across different
+source records: the two NRR zero realizations are both retained.
+
+`lexicon_roots` become generic roots keyed by `(source_id, lexicon_root_id)`.
+`root_senses` and `lexicon_root_senses` use #31 `sense_from_source()` exactly, including
+the declared ROOT-WIDE/UNSPECIFIED sentinels. Sense concepts remain separate from
+their notation-bearing roots.
+
+Only successfully resolved roots are eligible sense parents. A root held for conflicting
+meaning cannot leave apparently valid child senses behind. The final canonical-identity
+pass also rejects duplicate canonical resources from incompatible source tables, and a
+post-collision parent check removes any sense whose root was lost at that final pass.
+
+### Text and definition boundary
+
+`value_name` and `root_gloss` are explicit English source preferred-label assertions.
+`sense_summary` is the source identity-definition assertion for a sense. No synthetic
+sense display label is invented when none exists. `semantic_summary` on atomic rows is
+explicitly realization-scoped `source_note`; it is not selected as a canonical concept
+definition because #46 owns realization reconciliation. Raw source notation is retained
+as a non-language-tagged text assertion, while normalized lexical form lives on the
+realization itself. These are deliberately distinct: for example source root `-Č-` is
+retained exactly in `root_form_raw` while its realization lexical form is `č`. #40 must
+use the raw source assertion for SKOS notation (or an explicitly source-qualified later
+alternate), not silently substitute this normalized processing form; #45 owns later
+allomorph/realization normalization semantics.
+
+Mutable labels, source hashes, row order, and legacy sense IDs do not participate in
+identity. Two source-distinct senses may therefore retain identical English definition
+text while remaining distinct identities.
+
+### Fail-closed behavior and current closure
+
+Unknown atom shapes, missing stable keys, unknown family bindings, unresolved parent
+roots, conflicting meaning for one semantic coordinate, and IRI collisions produce
+`ResolutionIssue` records rather than first-row-wins resources. In particular, two
+legacy sense IDs that claim the same structural sense coordinate with different
+`sense_summary` values hold the coordinate and name both records.
+
+Against the current validated corpus, 3,090 semantic rows resolve with zero issues to
+2,968 resources: 485 grammar concepts, 165 atomic roots, 503 lexicon roots, and 1,815
+sense concepts. The 35 grammatical-category rows are family metadata for those atom
+rows and are not additional semantic resources.
