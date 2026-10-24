@@ -314,7 +314,16 @@ def _champion_directed_rows(mx, mentors, student_weights, rows, config,
             if (student_predictions[identity] != row["gold"] and
                     predictions[identity] == row["gold"]):
                 directed.add(identity)
-    return tuple(row for row in rows if row["id"] in directed)
+    selected = {}
+    for row in rows:
+        identity = row["id"]
+        if identity not in directed:
+            continue
+        prior = selected.get(identity)
+        if prior is not None and prior != row:
+            raise ValueError("TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT")
+        selected.setdefault(identity, row)
+    return tuple(selected.values())
 
 
 def _confidence_guidance(mx, mentors, picked, config, answer_ids,

@@ -292,3 +292,58 @@ class ChampionConfidenceTests(unittest.TestCase):
                 None, mentors, {"student": True}, rows,
                 {"heads": 1, "layers": 1}, [1, 2])
         self.assertEqual([row["id"] for row in directed], ["miss"])
+
+    def test_champion_directed_rows_deduplicate_repeated_source_identity(self):
+        from bilqis_mlx.learning.lesson_guidance import _champion_directed_rows
+
+        miss = {"id": "miss", "capability": "C.ADD", "gold": "3",
+                "tokens": [1, 2], "answer_kind": "numeric_active"}
+        rows = [miss, dict(miss)]
+        mentors = ({
+            "weights": {"synthetic": True},
+            "graph": {"tokens": list(range(16)), "nodes": [],
+                      "row_contract_sha256": {}},
+            "capabilities": ("C.ADD",),
+            "breadth": 1,
+        },)
+        with patch(
+            "bilqis_mlx.learning.lesson_guidance._learning_student_ops._predictions",
+            side_effect=[
+                {"miss": "2"},
+                {"miss": "3"},
+            ],
+        ):
+            directed = _champion_directed_rows(
+                None, mentors, {"student": True}, rows,
+                {"heads": 1, "layers": 1}, [1, 2])
+
+        self.assertEqual([row["id"] for row in directed], ["miss"])
+
+    def test_champion_directed_rows_reject_conflicting_repeated_identity(self):
+        from bilqis_mlx.learning.lesson_guidance import _champion_directed_rows
+
+        rows = [
+            {"id": "miss", "capability": "C.ADD", "gold": "3",
+             "tokens": [1, 2], "answer_kind": "numeric_active"},
+            {"id": "miss", "capability": "C.ADD", "gold": "4",
+             "tokens": [1, 3], "answer_kind": "numeric_active"},
+        ]
+        mentors = ({
+            "weights": {"synthetic": True},
+            "graph": {"tokens": list(range(16)), "nodes": [],
+                      "row_contract_sha256": {}},
+            "capabilities": ("C.ADD",),
+            "breadth": 1,
+        },)
+        with patch(
+            "bilqis_mlx.learning.lesson_guidance._learning_student_ops._predictions",
+            side_effect=[
+                {"miss": "2"},
+                {"miss": "3"},
+            ],
+        ):
+            with self.assertRaisesRegex(
+                    ValueError, "TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT"):
+                _champion_directed_rows(
+                    None, mentors, {"student": True}, rows,
+                    {"heads": 1, "layers": 1}, [1, 2])
