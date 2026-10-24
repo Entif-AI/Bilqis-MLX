@@ -109,7 +109,7 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
         self.assertEqual(restored, release)
         restored.verify_semantic_catalog(self.graph)
 
-    def test_twelve_capability_release_roundtrips_without_legacy_course(self):
+    def compile_twelve(self):
         names = tuple(f"Z.C{i}" for i in range(12))
         template = self.curriculum.grades[0].capabilities[0]
         capabilities = tuple(replace(
@@ -121,9 +121,13 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
         curriculum = replace(self.curriculum, grades=(grade,))
         bindings = replace(self.bindings, bindings=tuple(
             replace(self.bindings.bindings[0], capability_id=name) for name in names))
-        release = compile_executable_factory_release(
+        return compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(), self.registry, self.answers,
             source_root=None, graph=self.graph, verification_seed=17)
+
+    def test_twelve_capability_release_roundtrips_without_legacy_course(self):
+        names = tuple(f"Z.C{i}" for i in range(12))
+        release = self.compile_twelve()
         payload = json.loads(json.dumps(release.manifest()))
         self.assertEqual(payload["schema"], "bilqis.mlx.factory-release/v2")
         restored = ExecutableFactoryRelease.from_manifest(payload, release.release_sha256)
@@ -155,6 +159,35 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
                 candidate = replace(candidate, release_sha256=candidate.expected_digest())
                 with self.assertRaisesRegex(ValueError, f"^{error}$"):
                     candidate.verify()
+
+    def test_twelve_capability_successors_preserve_existing_lineage_contract(self):
+        predecessor = self.compile_twelve()
+        variants = (
+            (self.graph, "UNCHANGED"),
+            ({"tokens": [*self.graph["tokens"], "fixture.appended"]}, "APPEND_ONLY_EXPANSION"),
+        )
+        for graph, geometry in variants:
+            with self.subTest(geometry=geometry):
+                successor = compile_executable_factory_release(
+                    predecessor.curriculum, predecessor.source_bindings,
+                    CurriculumProfile("fixture.successor"), self.registry, self.answers,
+                    source_root=None, graph=graph, verification_seed=18, predecessor=predecessor)
+                successor.verify_successor_of(predecessor)
+                self.assertEqual(successor.predecessor_release_sha256, predecessor.release_sha256)
+                delta = successor.transition
+                self.assertEqual(delta.semantic_geometry, geometry)
+                self.assertEqual(delta.previous_plan_sha256, predecessor.execution_plan.digest())
+                self.assertEqual(delta.next_plan_sha256, successor.execution_plan.digest())
+                self.assertEqual(delta.previous_curriculum_sha256, predecessor.curriculum.digest())
+                self.assertEqual(delta.next_curriculum_sha256, predecessor.curriculum.digest())
+                self.assertEqual(delta.previous_source_binding_sha256, predecessor.source_bindings.digest())
+                self.assertEqual(delta.next_source_binding_sha256, predecessor.source_bindings.digest())
+                self.assertEqual(delta.added_capabilities, ())
+                self.assertEqual(delta.removed_capabilities, ())
+                restored = ExecutableFactoryRelease.from_manifest(
+                    json.loads(json.dumps(successor.manifest())), successor.release_sha256)
+                restored.verify_successor_of(predecessor)
+                self.assertEqual(restored.transition, delta)
 
     def test_v2_release_rejects_rehashed_plan_profile_mismatch(self):
         release = self.compile()
