@@ -4,7 +4,7 @@ Status: operational handoff evidence only. This document does not amend the gove
 
 ## Target and scope
 
-Repository: `Entif-AI/Bilqis-MLX`. Work in an isolated worktree branched from verified `origin/main`, not the unrelated `Entif-AI/Bilqis` checkout. Verify the exact Git remote and worktree writer before editing. Preserve existing trainer/checkpoints and human-only neural update authority. Read `AGENTS.md`, #19, and each issue's own complete current execution contract with its parent and dependencies before implementation.
+Repository: `Entif-AI/Bilqis-MLX`. The prepared isolated worktree is `/code/.worktrees/bilqis-mlx/codex-skos-31-43-pro-20261024` on branch `codex/skos-31-43-pro-20261024`, starting at verified `origin/main` `6a9c7c63c9c21fe513475f3ddd5872f91fb479bc`. Do not use the unrelated `Entif-AI/Bilqis` checkout. Verify the exact Git remote and worktree writer before editing. Preserve existing trainer/checkpoints and human-only neural update authority. Read `AGENTS.md`, #19, and each issue's own complete current execution contract with its parent and dependencies before implementation.
 
 Primary sequence: #31, #32, #33, #34, #35, #36, then #37, #38, #39, #40, #41, #42, #43. Treat this as a preference constrained by the dependencies below.
 
@@ -31,10 +31,14 @@ Source corpus: `lib/ithkuil/_data/csv/` in the correct repo. Source/relational I
 
 ## Execution and recovery
 
-Use user-selected Entif Architecture, BIOS Runtime durability/continuity, and Entif Work Stack as scoped. Git provides durable checkpointing for a persistent local worktree. Use Work Stack for the dependent issue sequence and external side-effect reconciliation. The project has no root-local Work Stack helper; the live Skill owns its canonical implementation. Revalidate scripts and paths in the executing session. A working preflight helper snapshot exists at `/Users/emilie/Code/.entif-proof-runtime/bilqis-mlx-pro-20261024/tools` and should not be treated as repository source authority.
+Use user-selected Entif Architecture, BIOS Runtime durability/continuity, and Entif Work Stack as scoped. Git provides durable checkpointing for a persistent local worktree. Use Work Stack for the dependent issue sequence and external side-effect reconciliation. The project has no root-local Work Stack helper; the live Skill owns its canonical implementation. Revalidate scripts and paths in the executing session. A working preflight helper snapshot exists at `/code/.entif-proof-runtime/bilqis-mlx-pro-20261024/tools` and should not be treated as repository source authority.
 
 For each issue: hydrate issue/parent/direct dependency from live GitHub; verify readiness; perform smallest complete implementation; positive and negative tests and deterministic/fresh-state checks as applicable; commit/push non-force to the owned feature branch; read remote SHA; stage PR/review evidence and issue checkpoint with exact refs. Reconcile uncertain mutations before retry. Never force-push, reset another writer, directly push main, or start real neural training. Keep one complete issue checkpoint before advancing to the next. On session truncation emit precise handoff: branch/worktree/head, issue, committed tasks, blockers, tests, failed attempts, next legal step, and Work Stack path.
 
 Merge and issue-close authority must be established by the user or governing standing policy. A passing PR or unmerged commit does not alone close #20/#21 dependencies.
+
+## Ready-to-resume issue ledger
+
+The prepared dependency ledger is `/code/.entif-proof-runtime/bilqis-mlx-pro-20261024/issue-work/c607c28b-52db-4cdc-97fb-858b86d4f70b`. Its declarative manifest is `/code/.entif-proof-runtime/bilqis-mlx-pro-20261024/issue-work/ISSUE_PLAN.json`. Validate before resuming using `python3 /code/.entif-proof-runtime/bilqis-mlx-pro-20261024/tools/work_stack.py validate --work <ledger-path>`. All 17 tasks are `planned`; only `issue31` is currently ready. This ledger grants no merge or training authority. Verified source-key preflight is stored at `/code/.entif-proof-runtime/bilqis-mlx-pro-20261024/source-key-smoke.json`.
 
 Preflight GitHub R/W fixture: this branch was created through the connected GitHub tool from `main`; this file is intentionally placed on the isolated preflight branch and must not be mistaken for a mainline requirement.
