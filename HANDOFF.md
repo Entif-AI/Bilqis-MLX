@@ -15,6 +15,12 @@ quota/context reset, rehydrate only that page. See
 `docs/architecture/11_FACTORY_TICKET_NAVIGATION_20261023.md` and
 `docs/tasks/0003_FACTORY_CLOSURE_CODEX_RUN_PROTOCOL.md`.
 
+Current #150 bookmark after grooming the first blocked guard pages: **#157 /
+SPEC-0011**. Page-local `FACTORY_SPEC_AMENDMENT_V1` comments now reopen
+SPEC-0011, SPEC-0012, SPEC-0013 and SPEC-0015 with the missing decisions
+supplied. Do not reconstruct the old ready set; start at #157 and follow each
+page's explicit next-page pointer.
+
 This supersedes the issue-349 run snapshot below for current operator state. The active
 run is `runs/codex-0001-prometheus`, generation **27189**, factory release
 `83f9f052e40983b879a9e0495ad93d3d3fce31d10e0d12395e0b12499b17c654`.

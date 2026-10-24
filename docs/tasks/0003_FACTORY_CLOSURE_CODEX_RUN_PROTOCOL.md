@@ -49,24 +49,47 @@ remain unchanged so their frozen hashes remain valid.
 
 For the bookmarked page:
 
-1. If this page already has a latest terminal receipt of
-   `FACTORY_LEAF_DONE`, `BLOCKED_SPEC_GAP`, or
-   `FACTORY_DEPENDENCY_BLOCKED`, do not rerun it. Turn directly to the
-   gate's `next_page`.
-2. Read only the direct prerequisite issue(s) listed in this page gate.
-3. Inspect only each prerequisite's latest terminal receipt.
-4. Interpret those receipts locally:
+1. If this page already has a latest `FACTORY_LEAF_DONE`, do not rerun it.
+   Turn directly to the gate's `next_page`.
+2. If the latest terminal receipt is `BLOCKED_SPEC_GAP` or
+   `FACTORY_DEPENDENCY_BLOCKED`, inspect **this same issue only** for a later
+   `FACTORY_SPEC_AMENDMENT_V1` with `reopen: true`.
+   - when the amendment is newer than the blocking receipt, the page is
+     reopened and executes under the frozen issue/spec plus that amendment;
+   - without a later reopening amendment, do not rerun it; turn to
+     `next_page`.
+3. Read only the direct prerequisite issue(s) listed in this page gate.
+4. Inspect only each prerequisite's latest terminal receipt.
+5. Interpret those receipts locally:
    - `FACTORY_LEAF_DONE`: prerequisite satisfied;
    - `BLOCKED_SPEC_GAP` or `FACTORY_DEPENDENCY_BLOCKED`: this page is not
      executable; post `FACTORY_DEPENDENCY_BLOCKED` here and turn the page;
    - no terminal receipt: the bookmark is inconsistent; open only the first
      missing prerequisite issue and follow its page gate.
-5. If every direct prerequisite is satisfied, read this leaf spec and its exact
+6. If every direct prerequisite is satisfied, read this leaf spec and its exact
    read allowlist and execute the predetermined design.
 
 The frozen lexical `SPEC-####` order was verified during grooming to be a
 topological ordering. That fact is encoded in the page-turn comments. The
 executor does not recompute, verify, or hydrate that global graph.
+
+### Page-local grooming amendments
+
+`FACTORY_SPEC_AMENDMENT_V1` is the only ordinary mechanism for correcting an
+under-groomed frozen page without rewriting its hash-bound issue body.
+
+An amendment:
+
+- is posted on the affected leaf issue only;
+- names the exact `spec_id`;
+- sets `reopen: true` only when it intentionally supersedes an earlier local
+  block;
+- states the missing decision/read/write/proof contract explicitly;
+- does not silently widen unrelated scope;
+- does not change another page.
+
+The amendment is part of that page's local execution contract. It is never a
+reason to read the parent epic, workstack manifest, or unrelated tickets.
 
 ## One-page execution
 

@@ -71,6 +71,21 @@ Given one bookmarked issue:
 
 No step requires a global ready set.
 
+## Correcting an under-groomed page
+
+A blocked page may later receive a `FACTORY_SPEC_AMENDMENT_V1` comment. This is
+the durable errata mechanism for the book.
+
+If the amendment is newer than the page's latest `BLOCKED_SPEC_GAP` or
+`FACTORY_DEPENDENCY_BLOCKED` and says `reopen: true`, that block is
+superseded for the affected page only. The executor combines the frozen
+issue/spec with the amendment and retries that page. A `FACTORY_LEAF_DONE`
+receipt remains terminal unless a separately authorized migration explicitly
+changes the completed contract.
+
+This mechanism avoids rewriting frozen issue bodies and avoids global
+re-grooming. The executor never searches for amendments elsewhere.
+
 ## Context and quota boundary
 
 The executor never owns global orchestration memory.
