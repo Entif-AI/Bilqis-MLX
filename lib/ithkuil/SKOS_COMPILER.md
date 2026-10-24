@@ -950,3 +950,37 @@ roots. `LEXROOT-0bd881a56fac9e` preserves exact `-Č-` notation and has eight re
 supporting evidence rows while remaining one resource. Reordering root and evidence
 rows produces the same canonical graph. A synthetic conflicting evidence spelling is
 held with `LEXICON_ROOT_FORM_CONFLICT` and emits no partial root RDF.
+
+## Lexicon sense concepts (#51)
+
+`project_lexicon_senses(closure)` selects the lexicon sense resources resolved by
+#38 and delegates RDF text/source/shape emission to #34, #39 and #40. It does not use
+the legacy `LEXSENSE-*` value as semantic identity. The canonical concept coordinate
+is the existing #31 identity:
+
+```text
+(source_id, lexicon_root_id, stem-or-ROOT-WIDE, specification)
+```
+
+This is deliberate because current legacy sense IDs are extraction records whose
+hash can change when gloss text changes. `LexiconSenseRecord.source_sense_ids`
+retains every source-row ID that supports the stable coordinate, so source-row
+traceability survives without allowing a gloss-derived identifier to rename the
+concept.
+
+Each admitted sense is a `skos:Concept` in the New Ithkuil scheme. Exact
+`sense_summary` source text is emitted as `skos:definition`; no preferred label is
+synthesized because the current source IR has no separate sense-label field. Public
+source loci remain #39 `dcterms:source` loci. `evidence_status` and
+`source_locus_kind` remain exact source metadata on `LexiconSenseRecord`; they are not
+promoted into semantic confidence or provenance claims in RDF.
+
+Equal duplicate source rows for the same coordinate converge on one concept and
+retain both source IDs. Conflicting semantic content at one coordinate is held by
+the existing resolver and produces no concept RDF. Distinct roots with identical
+English summaries remain distinct because gloss text never enters the identity.
+
+Current proof: all 1,615 parsed lexicon sense rows produce 1,615 independently
+addressable concepts with zero held rows. The copular root has 12 distinct concepts.
+Changing the legacy ID of a real source row leaves its concept IRI unchanged, and
+reordering all sense rows leaves the canonical graph unchanged.
