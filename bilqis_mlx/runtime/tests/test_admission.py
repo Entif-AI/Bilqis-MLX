@@ -19,6 +19,7 @@ from bilqis_mlx.factory.tests.test_execution_plan import (
     _synthetic_course, _synthetic_registry,
 )
 from bilqis_mlx.factory.tests.support import synthetic_release_inputs
+from bilqis_mlx.runtime.state import _fingerprint
 from bilqis_mlx.runtime.admission import (
     _executable_factory_admission, _factory_admission,
     _persist_executable_factory_release, _read_executable_factory_release,
@@ -49,7 +50,7 @@ def _executable_fixture(seed=17):
     release = compile_executable_factory_release(
         curriculum, bindings, CurriculumProfile.full(),
         registry, answers, source_root=None, graph=graph,
-        verification_seed=seed, legacy_course=course)
+        verification_seed=seed)
     return release, graph
 
 
@@ -184,17 +185,40 @@ class RuntimeAdmissionTests(unittest.TestCase):
                     ValueError, "FACTORY_EXECUTABLE_RELEASE_DURABLE_SCHEMA_INVALID"):
                 _read_executable_factory_release(root, receipt, graph)
 
+    def test_v2_graph_substitution_and_false_admission_digest_fail_closed(self):
+        release, graph = _executable_fixture(seed=37)
+        changed = {**graph, "nodes": [{"meaning": "substituted"}]}
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            with self.assertRaisesRegex(ValueError, "SEMANTIC_GRAPH_DRIFT"):
+                _executable_factory_admission(
+                    root, release, self.student, _fingerprint(changed), changed)
+            with self.assertRaisesRegex(ValueError, "SEMANTIC_GRAPH_DRIFT"):
+                _executable_factory_admission(
+                    root, release, self.student, "b" * 64, graph)
+            self.assertFalse((root / "factory-releases").exists())
+            _, release_file, admission = _executable_factory_admission(
+                root, release, self.student, _fingerprint(graph), graph)
+            receipt = dict(factory_release_sha256=release.release_sha256,
+                           factory_release_file=release_file,
+                           factory_admission_v2={**asdict(admission),
+                                                 "semantic_graph_sha256": _fingerprint(changed)},
+                           semantic_graph_sha256=_fingerprint(changed),
+                           school={"current_student": asdict(self.student)})
+            with self.assertRaisesRegex(ValueError, "SEMANTIC_GRAPH_DRIFT"):
+                _require_executable_factory_admission(root, receipt, graph)
+
     def test_v2_admission_binds_release_plan_catalog_graph_and_student(self):
         release, graph = _executable_fixture(seed=23)
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             _, release_file, admission = _executable_factory_admission(
-                root, release, self.student, "b" * 64, graph)
+                root, release, self.student, _fingerprint(graph), graph)
             receipt = {
                 "factory_release_sha256": release.release_sha256,
                 "factory_release_file": release_file,
                 "factory_admission_v2": asdict(admission),
-                "semantic_graph_sha256": "b" * 64,
+                "semantic_graph_sha256": _fingerprint(graph),
                 "school": {"current_student": asdict(self.student)},
             }
             restored = _require_executable_factory_admission(
@@ -212,7 +236,7 @@ class RuntimeAdmissionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             _, release_file, admission = _executable_factory_admission(
-                root, release, self.student, "b" * 64, graph)
+                root, release, self.student, _fingerprint(graph), graph)
             receipt = {
                 "factory_release_sha256": release.release_sha256,
                 "factory_release_file": release_file,
@@ -220,7 +244,7 @@ class RuntimeAdmissionTests(unittest.TestCase):
                     **asdict(admission),
                     "student_sha256": "c" * 64,
                 },
-                "semantic_graph_sha256": "b" * 64,
+                "semantic_graph_sha256": _fingerprint(graph),
                 "school": {"current_student": asdict(self.student)},
             }
             with self.assertRaisesRegex(

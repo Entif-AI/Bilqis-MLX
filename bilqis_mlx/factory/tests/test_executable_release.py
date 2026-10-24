@@ -79,6 +79,35 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
             verification_seed=20261019,
         )
 
+    def test_full_graph_binding_rejects_same_catalog_substitution(self):
+        from bilqis_mlx.factory.executable_release import _digest
+
+        self.graph["nodes"] = [{"meaning": "é", "arity": 1}]
+        release = self.compile()
+        self.assertEqual(release.semantic_graph_sha256, _digest(self.graph))
+        restored = ExecutableFactoryRelease.from_manifest(
+            json.loads(json.dumps(release.manifest())), release.release_sha256)
+        reordered = dict(reversed(tuple(self.graph.items())))
+        restored.verify_semantic_catalog(reordered)
+        changed = {**self.graph, "nodes": [{"meaning": "é", "arity": 2}]}
+        with self.assertRaisesRegex(ValueError, "SEMANTIC_GRAPH_DRIFT"):
+            restored.verify_semantic_catalog(changed)
+        with self.assertRaisesRegex(ValueError, "SEMANTIC_GRAPH_INVALID"):
+            replace(release, semantic_graph_sha256="invalid")
+
+    def test_historical_v2_manifest_preserves_exact_hash_without_graph_field(self):
+        from bilqis_mlx.factory.executable_release import _digest
+
+        payload = json.loads(json.dumps(self.compile().manifest()))
+        payload.pop("semantic_graph_sha256", None)
+        historical_sha = "c37d62403c00e87b0cdd648764f5967eee9a58860941ddca694371f2544cf956"
+        self.assertEqual(_digest(payload), historical_sha)
+        restored = ExecutableFactoryRelease.from_manifest(payload, historical_sha)
+        self.assertIsNone(restored.semantic_graph_sha256)
+        self.assertNotIn("semantic_graph_sha256", restored.manifest())
+        self.assertEqual(json.loads(json.dumps(restored.manifest())), payload)
+        self.assertEqual(restored.expected_digest(), historical_sha)
+
     def test_compilers_reject_deleted_legacy_course_keyword(self):
         from bilqis_mlx.factory.executable_release import compile_successor_profile_release
 

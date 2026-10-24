@@ -42,6 +42,8 @@ class _ReleaseError:
     ANSWER_HEAD_DRIFT = "FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_DRIFT"
     CATALOG_INVALID = "FACTORY_EXECUTABLE_RELEASE_CATALOG_INVALID"
     CATALOG_DRIFT = "FACTORY_EXECUTABLE_RELEASE_CATALOG_DRIFT"
+    SEMANTIC_GRAPH_INVALID = "FACTORY_EXECUTABLE_RELEASE_SEMANTIC_GRAPH_INVALID"
+    SEMANTIC_GRAPH_DRIFT = "FACTORY_EXECUTABLE_RELEASE_SEMANTIC_GRAPH_DRIFT"
     SEMANTIC_CATALOG_REQUIRED = "FACTORY_EXECUTABLE_RELEASE_SEMANTIC_CATALOG_REQUIRED"
     VERIFICATION_INVALID = "FACTORY_EXECUTABLE_RELEASE_VERIFICATION_INVALID"
     VERIFICATION_DRIFT = "FACTORY_EXECUTABLE_RELEASE_VERIFICATION_DRIFT"
@@ -218,6 +220,9 @@ class ExecutableAdmissionReceipt:
                 self.source_binding_sha256 != release.source_bindings.digest() or
                 self.semantic_catalog_sha256 != release.semantic_catalog_sha256):
             raise ValueError("FACTORY_EXECUTABLE_ADMISSION_RELEASE_MISMATCH")
+        if release.semantic_graph_sha256 is not None:
+            _require(self.semantic_graph_sha256 == release.semantic_graph_sha256,
+                     _ReleaseError.SEMANTIC_GRAPH_DRIFT)
 
 
 @dataclass(frozen=True)
@@ -238,8 +243,11 @@ class ExecutableFactoryRelease:
     predecessor_release_sha256: str | None
     transition: CurriculumDelta | None
     release_sha256: str
+    semantic_graph_sha256: str | None = None
 
     def __post_init__(self) -> None:
+        if self.semantic_graph_sha256 is not None:
+            _require_sha256(self.semantic_graph_sha256, _ReleaseError.SEMANTIC_GRAPH_INVALID)
         if self.schema != SCHEMA:
             raise ValueError("FACTORY_EXECUTABLE_RELEASE_SCHEMA_INVALID")
         if self.predecessor_release_sha256 is not None:
@@ -259,7 +267,7 @@ class ExecutableFactoryRelease:
             self.release_sha256, "FACTORY_EXECUTABLE_RELEASE_DIGEST_INVALID")
 
     def manifest(self) -> dict:
-        return {
+        payload = {
             "schema": self.schema,
             "curriculum": asdict(self.curriculum),
             "source_bindings": asdict(self.source_bindings),
@@ -275,6 +283,10 @@ class ExecutableFactoryRelease:
             "transition": (
                 None if self.transition is None else asdict(self.transition)),
         }
+
+        if self.semantic_graph_sha256 is not None:
+            payload["semantic_graph_sha256"] = self.semantic_graph_sha256
+        return payload
 
     def expected_digest(self) -> str:
         return _digest(self.manifest())
@@ -301,6 +313,9 @@ class ExecutableFactoryRelease:
             _digest(tuple(names)) == self.semantic_catalog_sha256,
             _ReleaseError.CATALOG_DRIFT,
         )
+        if self.semantic_graph_sha256 is not None:
+            _require(_digest(graph) == self.semantic_graph_sha256,
+                     _ReleaseError.SEMANTIC_GRAPH_DRIFT)
         for head in self.answer_heads:
             if any(
                     token_id >= len(names) or
@@ -370,6 +385,7 @@ class ExecutableFactoryRelease:
                 predecessor_release_sha256=payload["predecessor_release_sha256"],
                 transition=transition,
                 release_sha256=release_sha256,
+                semantic_graph_sha256=payload.get("semantic_graph_sha256"),
             )
         except (KeyError, TypeError, AttributeError) as exc:
             raise ValueError("FACTORY_EXECUTABLE_RELEASE_MANIFEST_INVALID") from exc
@@ -726,6 +742,7 @@ def compile_executable_factory_release(
             not isinstance(answer_registry, AnswerModalityRegistry) or
             type(verification_seed) is not int):
         raise TypeError("FACTORY_EXECUTABLE_RELEASE_INVALID_INPUT")
+    semantic_graph_sha256 = _digest(graph)
     plan = compile_execution_plan(
         curriculum, profile, source_registry,
         source_bindings=source_bindings, answer_registry=answer_registry)
@@ -788,6 +805,7 @@ def compile_executable_factory_release(
         predecessor_release_sha256=predecessor_sha,
         transition=transition,
         release_sha256="0" * 64,
+        semantic_graph_sha256=semantic_graph_sha256,
     )
     release = replace(release, release_sha256=release.expected_digest())
     release.verify()

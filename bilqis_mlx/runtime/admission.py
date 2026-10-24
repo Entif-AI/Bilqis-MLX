@@ -86,7 +86,6 @@ def _executable_factory_admission(
         run_dir: Path, release: ExecutableFactoryRelease, student,
         graph_sha256: str, graph: dict):
     """Publish and admit v2 without switching the existing live v1 caller."""
-    release_file = _persist_executable_factory_release(run_dir, release)
     admission = admit_executable_factory_release(
         release,
         student_sha256=student.sha256,
@@ -94,6 +93,7 @@ def _executable_factory_admission(
         semantic_graph_sha256=graph_sha256,
         graph=graph,
     )
+    release_file = _persist_executable_factory_release(run_dir, release)
     return release, release_file, admission
 
 
