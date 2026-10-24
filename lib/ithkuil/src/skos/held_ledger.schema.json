@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Entif-AI/Bilqis-MLX/lib/ithkuil/src/skos/held_ledger.schema.json",
+  "title": "Bilqis SKOS held/error accounting ledger",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_version",
+    "profile_version",
+    "profile_digest",
+    "counts",
+    "core_complete",
+    "whole_release_eligible",
+    "release_ineligible",
+    "blocking",
+    "entries",
+    "group_issues",
+    "diagnostics"
+  ],
+  "properties": {
+    "schema_version": {"const": "bilqis.skos.held-ledger/v1"},
+    "manifest_version": {"type": "string", "minLength": 1},
+    "profile_version": {"type": "string", "minLength": 1},
+    "profile_digest": {"type": "string", "minLength": 1},
+    "core_complete": {"type": "boolean"},
+    "whole_release_eligible": {"type": "boolean"},
+    "release_ineligible": {"type": "boolean"},
+    "blocking": {"type": "boolean"},
+    "counts": {"type": "object"},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["table", "key", "status", "reason_code", "related_reason_codes", "blocking", "explanation", "source_refs", "source_loci", "semantic_iri", "semantic_key"],
+        "properties": {
+          "table": {"type": "string", "minLength": 1},
+          "key": {"type": "string", "minLength": 1},
+          "status": {"enum": ["EMITTED", "HELD", "REJECTED", "UNSUPPORTED", "IR_ONLY"]},
+          "reason_code": {"type": "string", "minLength": 1},
+          "related_reason_codes": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+          "blocking": {"type": "boolean"},
+          "explanation": {"type": "string", "minLength": 1},
+          "source_refs": {"type": "array", "items": {"$ref": "#/$defs/recordRef"}, "uniqueItems": true},
+          "source_loci": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "semantic_iri": {"type": ["string", "null"]},
+          "semantic_key": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "group_issues": {"type": "array"},
+    "diagnostics": {"type": "array"}
+  },
+  "$defs": {
+    "recordRef": {
+      "type": "object",
+      "required": ["table", "key"],
+      "properties": {"table": {"type": "string"}, "key": {"type": "string"}},
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
