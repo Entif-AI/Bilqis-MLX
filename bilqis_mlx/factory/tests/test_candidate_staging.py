@@ -1,4 +1,7 @@
 from dataclasses import replace
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
 from bilqis_mlx.factory.autonomy import compile_autonomy_plan, initial_evidence_ledger
@@ -40,6 +43,30 @@ class CandidateStagingFixture:
 
 
 class CandidateStagingTests(CandidateStagingFixture, unittest.TestCase):
+    def test_durable_staging_roundtrips_the_ordinary_executable_release(self):
+        from bilqis_mlx.factory.executable_release import ExecutableFactoryRelease
+        from bilqis_mlx.runtime.candidate_staging import (
+            persist_staged_candidate, load_staged_candidates)
+
+        staged = self.stage()
+        self.assertIs(type(staged.successor), ExecutableFactoryRelease)
+        self.assertIs(staged.binding.staged_successor, staged.successor)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = persist_staged_candidate(root, staged, self.frontier, self.current)
+            payload = json.loads(path.read_text())
+            ordinary = ExecutableFactoryRelease.from_manifest(
+                payload["successor_manifest"], payload["successor_sha256"])
+            restored, = load_staged_candidates(root, self.frontier, self.current)
+            self.assertIs(type(restored.successor), ExecutableFactoryRelease)
+            self.assertEqual(restored.successor, ordinary)
+            self.assertEqual(restored.successor, staged.successor)
+            ordinary.verify_successor_of(self.current)
+            ordinary.verify_semantic_catalog(self.fixture.fixture.graph)
+            self.assertFalse((root / "state.json").exists())
+            self.assertFalse((root / "factory-releases").exists())
+            self.assertFalse((root / "events.jsonl").exists())
+
     def test_canonical_horizon_can_be_larger_than_the_single_executable_delta(self):
         from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
         curriculum, bindings = from_legacy_course(_synthetic_course(8))
