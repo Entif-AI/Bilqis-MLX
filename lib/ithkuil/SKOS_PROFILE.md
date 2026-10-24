@@ -440,3 +440,127 @@ each decision-matrix row, validates the real allomorph source row, rejects forge
 wrapper/source/negative/specialization evidence and unnecessary/custom membership,
 and keeps the core matrix non-authoritative. Unknown relations remain source IR or
 held state; no full corpus relations are emitted by this profile gate.
+
+## 6. Cross-scheme mapping semantics (#36)
+
+SKOS mapping properties relate semantic concepts from independently governed
+inventories. They never merge identities, never mint identity aliases, and never emit
+`owl:sameAs`. A source document, chapter, PDF, source ID, or extractor boundary is
+evidence provenance, not a concept scheme. Distinct source-document IDs therefore do
+not prove that two resources belong to independent schemes.
+
+This section defines only the normalized semantic admission contract. It does not
+interpret raw `bilqis_ithkuil_crosswalk.csv` or `bilqis_semantic_bridges.csv`
+states. Issue #62 owns the adapter from raw review/workbook states into the normalized
+states below. No raw corpus row is emitted by #36.
+
+### Predicate strength and source-state matrix
+
+| Predicate | Required normalized review state | Extra proof | Insufficient / held | Direction/symmetry | Historical-only emission |
+| --- | --- | --- | --- | --- | --- |
+| `skos:exactMatch` | `admitted_exact_equivalence` | Explicit `exactness_proof_ref` proving admitted equivalence | Similarity, absence of contradiction, ambiguous exactness, or a close-only qualification | Symmetric; emit both directions | Never |
+| `skos:closeMatch` | `admitted_close_match` | Explicit `qualification_ref` stating the admitted close correspondence | Proposal/ambiguity or a failed/missing exactness review without a separate close admission | Symmetric; emit both directions | Never |
+| `skos:broadMatch` | `admitted_broad_match` | Explicit source-grounded `direction_ref` | Label generality, collection membership, row order, or inferred direction without source evidence | Directional; inverse is `skos:narrowMatch` | Never |
+| `skos:narrowMatch` | `admitted_narrow_match` | Explicit source-grounded `direction_ref` | Label specificity, collection membership, row order, or inferred direction without source evidence | Directional; inverse is `skos:broadMatch` | Never |
+| `skos:relatedMatch` | `admitted_related_match` | Source/evidence review sufficient for admitted associative correspondence | Co-occurrence, topical resemblance, proposal, or unresolved relation type | Symmetric; emit both directions | Never |
+
+Every normalized claim also requires a nonempty `source_ref`, nonempty
+`evidence_ref`, explicit source and target scheme IRIs, and an explicit
+`independent_schemes` disposition. Both semantic resource IRIs remain distinct.
+If the inventories are not independently governed, or if both resources belong to the
+same governing scheme for this claim, the mapping is held rather than manufactured.
+
+`exactMatch` is not the default when nothing disproves equivalence. It requires the
+positive normalized state `admitted_exact_equivalence` plus explicit exactness proof.
+Likewise `closeMatch` is not a downgrade bucket for uncertain exactness. It requires
+its own independently reviewed state, `admitted_close_match`, plus an explicit
+qualification. An exact admission cannot be silently emitted as close, and an
+ambiguous or insufficient exactness review stays held.
+
+For directional mappings, `A skos:broadMatch B` means the target B is broader than
+the source A; the emitted inverse is `B skos:narrowMatch A`.
+`A skos:narrowMatch B` emits the inverse `B skos:broadMatch A`.
+Direction must be source-grounded. The compiler does not infer hierarchy from labels,
+collections, row order, or apparent generality.
+
+### Held and unsupported states
+
+The following normalized review states never emit a SKOS mapping assertion:
+
+| Review state | Held reason |
+| --- | --- |
+| `proposal` | `MAPPING_PROPOSAL_HELD` |
+| `blocked` | `MAPPING_BLOCKED_HELD` |
+| `deferred` | `MAPPING_DEFERRED_HELD` |
+| `historical_only` | `MAPPING_HISTORICAL_ONLY_HELD` |
+| `rejected_equivalence` | `MAPPING_REJECTED_EQUIVALENCE_HELD` |
+| `ambiguous` | `MAPPING_AMBIGUOUS_HELD` |
+
+Any review state outside the enumerated normalized state space fails closed as
+`UNSUPPORTED_MAPPING_REVIEW_STATE`. Raw values such as
+`APPROVED_TYPED_FORMAL_ADAPTER`, `formal_adapter`, or other workbook strategy
+labels are not normalized mapping admissions and are not interpreted here.
+
+The current tracked crosswalk contains 222 rows whose targets are only
+`source_document` or `source_section`; the 330 semantic-bridge rows target only
+`source_document`, `source_section`, or two `historical_source` records. There
+are currently zero confirmed concept-target equivalence rows in those raw tables.
+Accordingly, the executable positive fixtures for this section are deliberately
+synthetic and must not be read as admissions of existing Bilqis↔Ithkuil semantics.
+In particular, existing `APPROVED_*` source strategies are not promoted to SKOS
+semantic matches merely because their workflow label contains “approved.”
+
+### Conflict rules
+
+For each unordered semantic resource pair, `exactMatch` conflicts with hierarchical
+or associative mapping assertions, and a hierarchical mapping conflicts with
+`relatedMatch`. Conflicts in either orientation fail as
+`CONFLICTING_MAPPING_PREDICATES`; the implementation never chooses the strongest,
+weakest, or first relation automatically. `broadMatch` and reversed `narrowMatch`
+describe the same direction and remain idempotent at the RDF graph layer.
+
+`exactMatch` is symmetric, transitive and a subproperty of `closeMatch`.
+`closeMatch`, `broadMatch`, `narrowMatch` and `relatedMatch` are not declared
+transitive. The validator checks exact-match reachability for clashes with explicit
+hierarchical/associative mappings. It also checks the `broaderTransitive` reachability
+implied by broad/narrow mappings against associative links. Such path conflicts fail
+as `ENTAILED_MAPPING_CONFLICT`, with the endpoints and clash type. These are
+validation computations only: no inferred closure triples are written.
+
+Explicit admitted `exactMatch` and `closeMatch` may coexist, since exact implies
+close. Source-qualified reciprocal broad mappings and hierarchy cycles are not
+rejected merely for forming a cycle; SKOS permits them. A cycle carrying an actual
+disjoint-property clash still fails. There are no mixed-property substitution rules
+that propagate a broad/related edge through an exact/close link. Close chains never
+gain exactness. These distinctions follow the [W3C SKOS Reference, sections 10.3,
+10.4 and 10.6](https://www.w3.org/TR/skos-reference/#mapping).
+
+Source/evidence references, concept endpoint types, scheme memberships and independent
+governance are reviewed input premises at this boundary. #37–40 and #62 bind them to
+the actual source closure before corpus emission. A string reference alone is not
+proof of source truth. The explicit self-mapping rejection is this profile's
+cross-inventory admission rule; it is not a claim that SKOS forbids reflexive edges.
+
+### Executable contract and fixtures
+
+`src/skos/mapping.py` exposes frozen `MappingClaim` and `MappingDecision`
+records plus pure decision, conflict-validation, and graph-projection functions.
+`tests/fixtures/skos_mapping_admission.json` is the machine-readable predicate/state
+matrix and synthetic admission fixture. `tests/fixtures/skos_mapping_positive.ttl`
+is the literal expected RDF fixture. The implementation emits only SKOS mapping
+predicates and their required symmetric/inverse triples; it never emits
+`owl:sameAs`.
+
+Run from the repository root with RDFLib 7.6.0:
+
+```sh
+python3 -B -m unittest lib.ithkuil.tests.test_skos_mapping -v
+```
+
+The tests compare literal expected triples and the Turtle fixture, perform a real RDF
+serialize/parse round trip, cover all five positive predicates and all six held
+states, reject unknown/raw future states, require exactness/close/directional proof,
+prove broad/narrow inverse directionality, detect direct and entailed path conflicts,
+preserve exact/close coexistence and valid reciprocal hierarchy, require source/evidence and independent-scheme disposition, forbid
+self-mapping identity collapse, and verify that the current raw corpus contains no
+concept-target equivalence admissions.
