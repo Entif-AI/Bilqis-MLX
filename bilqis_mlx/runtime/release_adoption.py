@@ -473,44 +473,17 @@ def _catalog_boundary_evidence(
 
 
 def _catalog_epoch_state(
-        receipt, predecessor, successor, school, next_state, pointer,
-        transition, grown, exam, mastery_debt, *, allow_mastery_debt):
-    from bilqis_mlx.learning.mentor_epoch import begin_debt_epoch, begin_epoch
-    graph_sha = _runtime_state._fingerprint(transition.graph)
-    boundary_exam = {
-        "checkpoint_sha256": exam.get("student_sha256"),
-        "rubric_sha256": exam.get("exam_rubric_sha256"),
-        "cohort_sha256": exam.get("cohort_sha256"),
-        "scores": exam.get("scores"),
+        receipt, predecessor, successor, school, next_state,
+        transition, grown, mastery_debt, *, allow_mastery_debt, appended):
+    graph_receipt = {
+        **receipt,
+        "semantic_graph_sha256": _runtime_state._fingerprint(transition.graph),
+        "parameter_shapes": {name: list(value.shape) for name, value in grown.items()},
     }
-    epoch_args = dict(
-        admitted_baseline=_dataclasses.asdict(pointer),
-        introduced_grade=next_state.grade,
-        source_graph_sha256=graph_sha,
-        previous_capabilities=tuple(
-            item.capability_id for item in predecessor.execution_plan.capabilities))
-    if allow_mastery_debt:
-        epoch = begin_debt_epoch(
-            **epoch_args,
-            previous_checkpoint=_dataclasses.asdict(school.current_student),
-            previous_boundary_exam=boundary_exam,
-            previous_mastery_debt=mastery_debt)
-    else:
-        epoch = begin_epoch(
-            **epoch_args,
-            previous_graduate=_dataclasses.asdict(school.current_student),
-            previous_graduation_exam=boundary_exam)
-    history = list(receipt.get("championship_epoch_history", ()))
-    if receipt.get("mentor_epoch") is not None:
-        history.append(receipt["mentor_epoch"])
-    identity = _learning_championship_identity.build_school_identity(
-        course_sha256=successor.execution_plan.curriculum_sha256,
-        semantic_graph_sha256=graph_sha,
-        parameter_shapes={name: list(value.shape) for name, value in grown.items()},
-        factory_release_sha256=successor.release_sha256)
-    epoch["settled_matchups"] = _copy.deepcopy(
-        (receipt.get("mentor_epoch") or {}).get("settled_matchups", {}))
-    epoch["championship_school_identity"] = identity
+    identity, epoch, history = _profile_championship_state(
+        graph_receipt, predecessor, successor, school, next_state,
+        appended=appended,
+        mastery_debt=mastery_debt if allow_mastery_debt else None)
     return epoch, history, identity
 
 
@@ -599,11 +572,9 @@ def _adopt_catalog_profile(
             successor.transition.semantic_geometry != "APPEND_ONLY_EXPANSION"):
         raise ValueError("FACTORY_CATALOG_TRANSITION_NOT_APPEND_ONLY")
     successor_program = _factory_schedule.schedule_program_from_executable_release(successor)
-    next_state = (
-        _curriculum_scheduler.append_next_grade_with_debt(
-            previous_program, successor_program, school, mastery_debt)
-        if allow_mastery_debt else
-        _curriculum_scheduler.adopt_appended_program(previous_program, successor_program, school))
+    next_state, _, appended = _profile_transition(
+        previous_program, successor_program, school,
+        mastery_debt=mastery_debt if allow_mastery_debt else None)
 
     grown, own_optimizer, growth = _bilqis_mlx_vocabulary_growth.extend_mlx_student(
         parameters, optimizer, graph, transition.graph)
@@ -615,9 +586,9 @@ def _adopt_catalog_profile(
         run_dir, successor, pointer, _runtime_state._fingerprint(transition.graph),
         transition.graph)
     epoch, history, identity = _catalog_epoch_state(
-        receipt, predecessor, successor, school, next_state, pointer,
-        transition, grown, exam, mastery_debt,
-        allow_mastery_debt=allow_mastery_debt)
+        receipt, predecessor, successor, school, next_state,
+        transition, grown, mastery_debt,
+        allow_mastery_debt=allow_mastery_debt, appended=appended)
     updated = _catalog_adoption_receipt(
         receipt, compatibility_course, successor, successor_program,
         release_file, admission, transition, grown, epoch, history,
@@ -669,7 +640,8 @@ def _adopt_prepared_successor(
                 is _curriculum_scheduler.ScheduleTopology.APPEND_GRADE)
     if appended:
         _require_complete_profile_boundary(program, school, receipt)
-    if successor.transition.semantic_geometry == "APPEND_ONLY_EXPANSION":
+    semantic_geometry = successor.transition.semantic_geometry
+    if semantic_geometry == _factory_executable_release.SemanticGeometryChange.APPEND_ONLY_EXPANSION:
         from bilqis_mlx.profiles.catalog import CatalogProfileTransition
         next_graph = admitted_candidate_graph(staged, graph)
         return _adopt_catalog_profile(mx, run_dir, receipt, grade_a_course, source_root,
