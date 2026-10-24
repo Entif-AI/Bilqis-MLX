@@ -90,16 +90,16 @@ def _cached_schedule_program(run_dir_string, release_sha256, release_file):
 
 
 def _schedule_for_receipt(run_dir, receipt, course):
-    from bilqis_mlx.compatibility.schedule_program import schedule_program_from_legacy_course
-
-    if isinstance(course, _factory_schedule.ScheduleProgram):
-        return course
     if receipt.get("factory_admission_v2") is not None:
         return _cached_schedule_program(
             str(_pathlib.Path(run_dir).resolve()),
             receipt["factory_release_sha256"],
             receipt["factory_release_file"],
         )
+    if isinstance(course, _factory_schedule.ScheduleProgram):
+        return course
+    from bilqis_mlx.compatibility.schedule_program import schedule_program_from_legacy_course
+
     if receipt.get("factory_admission") is not None:
         # A v1 run already owns an immutable admitted course. Reconstruct the
         # scheduler from that sealed artifact instead of asking today's source

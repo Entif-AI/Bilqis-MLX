@@ -394,6 +394,16 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         self.assertTrue(all(context is historical_course for _, _, context in calls))
         expected_context = curriculum
         program = schedule_program_from_executable_release(release)
+        from dataclasses import replace
+        from bilqis_mlx.runtime.release_adoption import _schedule_for_receipt
+        supplied = replace(program, program_complete=False)
+        receipt = dict(factory_admission_v2={}, factory_release_sha256=release.release_sha256,
+                       factory_release_file="factory-releases/" + release.release_sha256 + ".json")
+        with patch("bilqis_mlx.runtime.release_adoption._cached_schedule_program",
+                   return_value=program) as read_program:
+            self.assertIs(_schedule_for_receipt(ROOT, receipt, supplied), program)
+        read_program.assert_called_once_with(str(ROOT.resolve()), release.release_sha256,
+                                             receipt["factory_release_file"])
         self.assertEqual(tuple(cap.id for cap in program.grades[0].capabilities), names)
         self.assertEqual(tuple(program.capability_map), names)
         self.assertEqual(program.grades[0].exam_item_counts, tuple((name, 4) for name in names))
