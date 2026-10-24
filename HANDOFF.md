@@ -1,5 +1,26 @@
 # CURRENT SUPERSESSION | 2026-10-23 | Prometheus direct-U7C + C promotion sweep
 
+## Issue #150 execution navigation | tickets are the runner
+
+The #150 factory micro-specs now use durable choose-your-own-adventure navigation.
+There is no separate orchestrator or harness. Every leaf issue carries a
+`FACTORY_PAGE_GATE_V1` comment naming only its direct prerequisites and explicit
+next page. The only cross-session execution bookmark is the current issue number.
+
+Ordinary Codex leaf execution must not read #150, hydrate
+`docs/tasks/0003_FACTORY_CLOSURE_WORKSTACK.json`, sweep all leaf comments, or
+compute a global ready set. Reopen the bookmarked issue, follow its local page
+gate, leave a terminal receipt, then turn to the named next page. After a
+quota/context reset, rehydrate only that page. See
+`docs/architecture/11_FACTORY_TICKET_NAVIGATION_20261023.md` and
+`docs/tasks/0003_FACTORY_CLOSURE_CODEX_RUN_PROTOCOL.md`.
+
+Current #150 bookmark after grooming the first blocked guard pages: **#157 /
+SPEC-0011**. Page-local `FACTORY_SPEC_AMENDMENT_V1` comments now reopen
+SPEC-0011, SPEC-0012, SPEC-0013 and SPEC-0015 with the missing decisions
+supplied. Do not reconstruct the old ready set; start at #157 and follow each
+page's explicit next-page pointer.
+
 This supersedes the issue-349 run snapshot below for current operator state. The active
 run is `runs/codex-0001-prometheus`, generation **27189**, factory release
 `83f9f052e40983b879a9e0495ad93d3d3fce31d10e0d12395e0b12499b17c654`.

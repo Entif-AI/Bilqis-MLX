@@ -10,6 +10,26 @@ migration seam, compatibility boundary, or focused proof. Future semantic roots 
 inputs the factory must be able to accept later. Root-specific curriculum work remains
 separate unless a root reveals a genuinely missing reusable factory primitive.
 
+## CONTROLLING USER CORRECTION — 2026-10-23: #150 tickets are the runner
+
+Do not introduce an LLM orchestrator, local runner, sidecar coordinator, or
+model-visible global workstack for #150 execution. The documentation and issue
+process gates are the runner. The only cross-session bookmark is the current
+GitHub issue number.
+
+Each #150 issue carries a `FACTORY_PAGE_GATE_V1` comment with its direct
+prerequisite issue(s), local entry/skip rules, and one explicit next page.
+Ordinary execution reads the bookmarked issue, its leaf spec, only the direct
+prerequisite receipts named by that page, and the leaf's declared read
+allowlist. It must not read #150, hydrate
+`docs/tasks/0003_FACTORY_CLOSURE_WORKSTACK.json`, sweep all leaf comments, or
+compute a global ready set. A quota/session restart reopens the bookmark only.
+If that is insufficient to continue, the ticket is under-groomed.
+
+See
+`docs/architecture/11_FACTORY_TICKET_NAVIGATION_20261023.md` and
+`docs/tasks/0003_FACTORY_CLOSURE_CODEX_RUN_PROTOCOL.md`.
+
 ## CONTROLLING USER CORRECTION — 2026-10-23: full U7C Grade B
 
 The active Prometheus curriculum now admits the complete direct-U7C Boolean set:
@@ -70,7 +90,7 @@ Authority: user's latest directives, protected `IPR-0220`, `ADR.md`, and approve
 
 **MANDATORY CURRICULUM FACTORY CONTRACT:** Read [`docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md`](docs/specifications/0001_GENERATIVE_CURRICULUM_FACTORY.md) before changing semantics, source construction, lessons, grades, assessment lifetime, admission, graduation, curriculum runtime, or documentation architecture. The factory is the only permitted production route from admitted semantics to an executable grade: **no factory release, no grade**. New grades must be declarative factory instances and must not add canonical `live_grade_*`, `grade_*_trainer`, grade-specific scheduler/evaluator/dashboard branches, or alternative runtime paths. Unit/contract tests belong beside their owning packages; top-level tests are integration/system only. SPEC-0001 requires the generic runtime cutover, A/B/C migration, fresh generalization graduation proof, and synthetic Grade Z extensibility test.
 
-**ISSUE #150 MICRO-SPEC EXECUTION BOUNDARY:** Read [`SPEC-0005`](docs/specifications/0005_FACTORY_MICROSPEC_WORKSTACK.md) and [`TASK-0003`](docs/tasks/0003_FACTORY_CLOSURE_CODEX_RUN_PROTOCOL.md) for the workstack/executor contract. An executor bootstraps this file, SPEC-0001, the authority-convergence record, SPEC-0005, and the manifest once; it then executes only ready leaf specs. A leaf must carry exact dependencies, bounded read/write surfaces, named symbols, compatibility invariants, focused verification, and stop/block rules. Do not rediscover architecture by broad repository exploration during leaf execution, and do not create root-by-root tickets merely to make the graph larger.
+**ISSUE #150 MICRO-SPEC EXECUTION BOUNDARY:** Read [`TASK-0003`](docs/tasks/0003_FACTORY_CLOSURE_CODEX_RUN_PROTOCOL.md) and [the ticket-navigation amendment](docs/architecture/11_FACTORY_TICKET_NAVIGATION_20261023.md). The issue pages themselves are the executor control plane. Start from one bookmarked issue, obey its `FACTORY_PAGE_GATE_V1`, read only that leaf's local contract and named direct prerequisites, leave a terminal receipt, then turn to its explicit next page. Do not bootstrap the full authority corpus, manifest, or global receipt set into Codex context during ordinary leaf execution. A leaf must still carry exact dependencies, bounded read/write surfaces, named symbols, compatibility invariants, focused verification, and stop/block rules. Do not rediscover architecture by broad repository exploration during leaf execution, and do not create root-by-root tickets merely to make the graph larger.
 
 **MANDATORY CHAMPIONSHIP CONTRACT:** Read [`docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md`](docs/specifications/0002_CHAMPIONSHIP_LIFECYCLE_V1.md) before changing admission, champions, soups, mentor references, comparison gates or retirement. Capability titles are defended independently with fresh incumbent/contender inference over current questions plus the capability's surviving title battery; cached neural predictions never adjudicate a title. A max score on one same-grade capability is sufficient to open that capability's title fight. Every `(capability, unordered checkpoint pair)` may settle exactly once for the lifetime of the run; no changed score, cohort, battery or later ownership permits a rematch. Active title ownership is grade-isolated: the checkpoint's retained-update origin grade must equal the capability grade, and legacy cross-grade owners are archived/inactivated rather than grandfathered. One actual takeover may trigger exactly one non-recursive same-grade fan-out screen for sibling titles, skipping already-settled pairs. Stagnation quarantine is capability-local teaching/scheduling authority and MUST NOT blanket-disable championship processing for other completely measured capabilities. Teaching geography is separate from title geography: every active maxed capability role contributes one direct source-gold-gated advisory vote to lessons in any admitted grade; non-max roles contribute zero direct role votes; frozen soups remain a separate aggregate adviser with full same-grade base votes and the existing diluted foreign-grade voice. Bind all active championship-derived advice to one unchanged holistic school identity; **any identity mismatch archives and clears every active champion and every active soup together before advice or defense**, while preserving the causal student+own AdamW, immutable history and settled-match ledger. Flash and candidate retention remain separately governed.
 
