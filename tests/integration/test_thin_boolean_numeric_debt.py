@@ -98,12 +98,24 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                         'stage': 'AWAITING_NEXT_GRADE_WITH_DEBT', 'queue': [],
                         'carried_mastery_debt': list(measured['debt_admission_boundary_exam']['scores'])},
                         'numeric_scope_final_maximum': 4}
-                    from bilqis_mlx.runtime.release_adoption import _auto_adopt_known_grade_boundary
+                    from bilqis_mlx.compatibility import trainer_transitions
+                    from bilqis_mlx.runtime import release_adoption
+                    runtime_dispatch = release_adoption._auto_adopt_known_grade_boundary
                     with patch('bilqis_mlx.profiles.school.boolean_entry_profile', return_value=profile):
-                        _, _, _, admitted, course, changed = _auto_adopt_known_grade_boundary(
-                            mx, run, measured, fixture.grade_a, fixture.grade_a, SOURCE,
-                            fixture.manifest, params, own, graph, reserve_gib=0.,
-                            full_grade_b=False, numeric_staircase=False)
+                        with patch.object(release_adoption,
+                                '_auto_adopt_known_grade_boundary',
+                                wraps=runtime_dispatch) as dispatch_spy:
+                            _, _, _, admitted, course, changed = (
+                                trainer_transitions._auto_adopt_known_grade_boundary(
+                                    mx, run, measured, fixture.grade_a, fixture.grade_a,
+                                    SOURCE, fixture.manifest, params, own, graph,
+                                    reserve_gib=0., full_grade_b=False,
+                                    numeric_staircase=False))
+                    dispatch_spy.assert_called_once_with(
+                        mx, run, measured, fixture.grade_a, fixture.grade_a,
+                        SOURCE, fixture.manifest, params, own, graph,
+                        reserve_gib=0., full_grade_b=False,
+                        numeric_staircase=False)
                     self.assertTrue(changed)
                     release = trainer._read_executable_factory_release_artifact(run, admitted)
                 else:
@@ -122,10 +134,19 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                     measured = {**measured, 'school': {**measured['school'],
                         'stage': 'AWAITING_NEXT_GRADE_WITH_DEBT', 'queue': [],
                         'carried_mastery_debt': list(measured['debt_admission_boundary_exam']['scores'])}}
-                    _, grown_own, _, numeric, numeric_course, changed = _auto_adopt_known_grade_boundary(
-                        mx, run, measured, course, fixture.grade_a, SOURCE, fixture.manifest,
-                        params, own, graph, reserve_gib=0., full_grade_b=False,
-                        numeric_staircase=False)
+                    runtime_dispatch = release_adoption._auto_adopt_known_grade_boundary
+                    with patch.object(release_adoption,
+                            '_auto_adopt_known_grade_boundary',
+                            wraps=runtime_dispatch) as dispatch_spy:
+                        _, grown_own, _, numeric, numeric_course, changed = (
+                            trainer_transitions._auto_adopt_known_grade_boundary(
+                                mx, run, measured, course, fixture.grade_a, SOURCE,
+                                fixture.manifest, params, own, graph, reserve_gib=0.,
+                                full_grade_b=False, numeric_staircase=False))
+                    dispatch_spy.assert_called_once_with(
+                        mx, run, measured, course, fixture.grade_a, SOURCE,
+                        fixture.manifest, params, own, graph, reserve_gib=0.,
+                        full_grade_b=False, numeric_staircase=False)
                     self.assertTrue(changed)
                 else:
                     _, grown_own, _, numeric, numeric_course = _adopt_catalog_profile(
