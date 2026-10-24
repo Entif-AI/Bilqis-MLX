@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 import json
 import tempfile
@@ -22,10 +23,11 @@ class StagedCandidateCustodyTests(CandidateStagingFixture, unittest.TestCase):
             root = Path(temp)
             path = persist_staged_candidate(root, staged, self.frontier, self.current)
             self.assertEqual(load_staged_candidates(root, self.frontier, self.current,
-                                                   source_registry=changed), ())
+                                                   source_registry=changed, answer_registry=self.fixture.fixture.answers), ())
             self.assertTrue(path.is_file())
             self.assertEqual(load_staged_candidates(root, self.frontier, self.current,
-                source_registry=self.fixture.fixture.registry), (staged,))
+                source_registry=self.fixture.fixture.registry,
+                answer_registry=self.fixture.fixture.answers), (staged,))
 
     def test_cold_read_is_idempotent_and_detects_content_tampering(self):
         staged = self.stage()
@@ -66,9 +68,46 @@ class StagedCandidateCustodyTests(CandidateStagingFixture, unittest.TestCase):
             with patch("bilqis_mlx.factory.candidate_frontier.load_candidate_frontier",
                        return_value=self.frontier), patch(
                        "bilqis_mlx.runtime.autonomy_live.live_source_registry",
-                       return_value=self.fixture.fixture.registry):
+                       return_value=self.fixture.fixture.registry), patch(
+                       "bilqis_mlx.factory.live_answers.live_answer_registry",
+                       return_value=self.fixture.fixture.answers):
                 proposal, relative = session.propose_source_frontier_work(
                     Checkpoint("e" * 64, "bundles/fixture", 0, True))
             self.assertEqual(proposal.disposition, ProposalDisposition.PROPOSAL)
             self.assertEqual(json.loads((root / relative).read_text())[
                 "selected_successor_sha256"], staged.successor.release_sha256)
+
+
+    def test_stale_answer_package_is_preserved_but_cannot_compete(self):
+        from bilqis_mlx.factory.answers import AnswerModalityRegistry
+
+        staged = self.stage()
+        fixture = self.fixture.fixture
+        original = fixture.answers.require(staged.successor.answer_modalities[0].kind)
+        changed = AnswerModalityRegistry((replace(original, descriptor=replace(
+            original.descriptor, implementation_sha256="f" * 64)),))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = persist_staged_candidate(root, staged, self.frontier, self.current)
+            saved = path.read_bytes()
+            self.assertEqual(load_staged_candidates(
+                root, self.frontier, self.current,
+                source_registry=fixture.registry, answer_registry=changed), ())
+            self.assertEqual(path.read_bytes(), saved)
+            self.assertEqual(load_staged_candidates(
+                root, self.frontier, self.current,
+                source_registry=fixture.registry, answer_registry=fixture.answers), (staged,))
+            self.assertEqual(path.read_bytes(), saved)
+
+    def test_persist_does_not_repair_tampered_immutable_package(self):
+        staged = self.stage()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = persist_staged_candidate(root, staged, self.frontier, self.current)
+            value = json.loads(path.read_text())
+            value["candidate_id"] = "candidate-reserve"
+            tampered = json.dumps(value)
+            path.write_text(tampered)
+            with self.assertRaisesRegex(ValueError, "CANDIDATE_STAGING_IMMUTABLE_DRIFT"):
+                persist_staged_candidate(root, staged, self.frontier, self.current)
+            self.assertEqual(path.read_text(), tampered)

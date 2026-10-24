@@ -35,10 +35,20 @@ def persist_staged_candidate(run_dir, staged, frontier, current) -> Path:
     return path
 
 
-def load_staged_candidates(run_dir, frontier, current, *, source_registry=None) -> tuple[StagedCandidate, ...]:
+def load_staged_candidates(run_dir, frontier, current, *, source_registry=None,
+                           answer_registry=None) -> tuple[StagedCandidate, ...]:
     directory = _directory(run_dir)
     if not directory.exists():
         return ()
+    check_implementations = source_registry is not None or answer_registry is not None
+    if check_implementations:
+        from .jit_adoption import verify_current_implementations
+        if source_registry is None:
+            from ..source_adapters.school import live_source_registry
+            source_registry = live_source_registry()
+        if answer_registry is None:
+            from ..factory.live_answers import live_answer_registry
+            answer_registry = live_answer_registry()
     result = []
     for path in sorted(directory.iterdir()):
         if path.is_symlink() or not path.is_file() or path.suffix != ".json":
@@ -49,22 +59,13 @@ def load_staged_candidates(run_dir, frontier, current, *, source_registry=None) 
                 staged.successor.predecessor_release_sha256 != current.release_sha256):
             continue
         staged.verify(frontier, current)
-        if source_registry is not None:
-            sealed = {item.adapter_id: item for item in staged.successor.source_adapters}
-            current_sources = []
-            for execution in staged.successor.execution_plan.capabilities:
-                binding = staged.successor.source_bindings.by_capability[execution.capability_id]
-                try:
-                    actual = source_registry.require(binding.generator_id, binding.oracle_id).descriptor
-                except ValueError:
-                    break
-                current_sources.append(actual == sealed.get(execution.provider_id))
-            else:
-                if all(current_sources):
-                    result.append(staged)
-            # A valid older implementation package remains immutable history;
-            # it cannot compete with the newly verified implementation epoch.
-            continue
+        if check_implementations:
+            try:
+                verify_current_implementations(
+                    staged.successor, source_registry, answer_registry)
+            except ValueError:
+                # Older implementation packages remain immutable history.
+                continue
         result.append(staged)
     if len({item.candidate_id for item in result}) != len(result):
         raise ValueError("CANDIDATE_STAGING_AMBIGUOUS_SUCCESSOR")
