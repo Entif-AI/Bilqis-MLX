@@ -169,6 +169,29 @@ def validate_curriculum_definition(
         previous_roots.update(grade_roots)
 
 
+def instructional_constituent_roots(
+        curriculum: CurriculumDefinition, capability_id: str) -> tuple[str, ...]:
+    """Return own and structurally earlier instructional roots in stable order."""
+    if not isinstance(curriculum, CurriculumDefinition):
+        raise TypeError("FACTORY_CURRICULUM_DEFINITION_REQUIRED")
+    validate_curriculum_definition(curriculum, answer_kinds=tuple(dict.fromkeys(
+        family.kind for grade in curriculum.grades for cap in grade.capabilities
+        for family in cap.answer_families)))
+    earlier_roots = []
+    for grade in curriculum.grades:
+        capabilities = {cap.capability_id: cap for cap in grade.capabilities}
+        if capability_id in capabilities:
+            for stage in grade.teaching_stages:
+                if capability_id in stage:
+                    break
+                earlier_roots.extend(root for name in stage
+                                     for root in capabilities[name].taught_roots)
+            return tuple(dict.fromkeys((
+                *earlier_roots, *capabilities[capability_id].taught_roots)))
+        earlier_roots.extend(root for cap in grade.capabilities for root in cap.taught_roots)
+    raise ValueError("FACTORY_CURRICULUM_UNKNOWN_CAPABILITY")
+
+
 def validate_source_bindings(
         curriculum: CurriculumDefinition, bindings: SourceBindingSet) -> None:
     if not isinstance(bindings, SourceBindingSet):
