@@ -1,0 +1,21 @@
+{
+  "schema": "bilqis.skos.preflight-negative/v1",
+  "manifest_version": "bilqis.skos.compiler-input/v1",
+  "cases": {
+    "missing_table": {"code": "MISSING_TABLE", "table": "root_senses", "field": ""},
+    "missing_column": {"code": "MISSING_COLUMN", "table": "morphemes_atomic", "field": "category_code"},
+    "duplicate_header": {"code": "DUPLICATE_CSV_HEADER", "table": "source_sections", "field": "source_id"},
+    "duplicate_pk": {"code": "DUPLICATE_PRIMARY_KEY", "table": "grammatical_categories", "field": "category_id"},
+    "blank_pk": {"code": "BLANK_PRIMARY_KEY", "table": "morphemes_atomic", "field": "atomic_id"},
+    "malformed_utf8": {"code": "MALFORMED_UTF8", "table": "source_sections", "field": ""},
+    "malformed_csv": {"code": "MALFORMED_CSV", "table": "source_sections", "field": ""},
+    "unknown_fk": {"code": "UNKNOWN_FOREIGN_KEY", "table": "grammatical_categories", "field": "source_id"},
+    "cross_source_section": {"code": "UNKNOWN_FOREIGN_KEY", "table": "morphemes_atomic", "field": "primary_source_id,primary_section_id"},
+    "unknown_assertion_entity": {"code": "UNKNOWN_SOURCE_ASSERTION_ENTITY", "table": "source_assertions", "field": "entity_id"},
+    "missing_source_assertion": {"code": "MISSING_SOURCE_ASSERTION", "table": "morphemes_atomic", "field": "atomic_id"},
+    "invalid_enum": {"code": "INVALID_ENUM_STATE", "table": "morphemes_atomic", "field": "realization_type"},
+    "semantic_conflict": {"code": "CONFLICTING_SEMANTIC_KEY", "table": "morphemes_atomic", "field": "category_name,value_name", "key": "CASE|ABL"},
+    "source_url_binding": {"code": "SOURCE_URL_BINDING_CONFLICT", "table": "morphemes_atomic", "field": "primary_source_url"},
+    "lexicon_parent_binding": {"code": "LEXICON_PARENT_BINDING_CONFLICT", "table": "lexicon_root_senses", "field": "root_form_raw"}
+  }
+}
