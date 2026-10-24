@@ -21,14 +21,32 @@ changing the identifier contract.
 | OrderedCollection | `id/ordered_collection/{collection_id}` | An admitted source-semantic ordered grouping ID |
 | Notation datatype | `id/datatype/{notation_system}` | `new-ithkuil` or `grammar-code` |
 | Lexical root resource | `id/root/{source_id}/{root_id}` | Public source identity and pinned root entity ID |
-| Root-sense Concept | `id/sense/{source_id}/{sense_id}` | Public source identity and pinned source sense ID |
+| Root-sense Concept | `id/sense/{source_id}/{root_id}/{stem}/{specification}` | Public source identity and source-defined structural sense coordinates |
 | Extension term | `vocab/{term}` | Admitted vocabulary term key |
 
-For lexicon records, `root_id` is the existing `lexicon_root_id` and `sense_id` is
-`lexicon_sense_id`. For grammar-site root records, the root key is the pinned
-`atomic_id` and the sense key is `sense_id`. Different source domains remain
-distinct until an explicit mapping contract justifies a relation. A label match
-or identical root spelling cannot merge their identities.
+For lexicon records, `root_id` is the existing `lexicon_root_id`; for grammar-site
+root records it is the pinned `atomic_id`. A sense's stable composite identifier is
+the root plus its source-declared ASCII `stem` and `specification`. Structural code case
+is canonicalized to uppercase (`Stem 1` and `STEM 1` are the same coordinate).
+Aggregate source coordinates such as `STEMS 1-3` stay aggregate; this contract does
+not expand them into invented senses. `sense_from_source` recognizes two explicit
+extractor schemas. In both, a present blank `stem` means the source's root-wide
+scope and becomes the reserved component `ROOT-WIDE`. In `root_senses` only, a
+present blank `specification` means an explicitly unspecified source sense and
+becomes `UNSPECIFIED`. A blank specification in `lexicon_root_senses`, an absent
+column, unknown source shape, or unknown structural code fails closed. These
+sentinels preserve the extractors' declared scopes; they do not infer missing
+stems or specifications. In the current corpus this preserves all 1,815 senses,
+including 714 lexicon root-wide senses and the grammar-site unspecified senses.
+
+The legacy `sense_id` and `lexicon_sense_id` hashes include mutable summary text in
+the existing extractors. They MUST remain source-row locators and MUST NOT be used
+as semantic IRI keys. A summary punctuation correction can remint those hashes
+without changing the structural sense. If two source records with the same
+structural coordinates disagree about meaning, the resolver must hold the conflict
+rather than choose one by row order. Different source domains remain distinct until
+an explicit mapping contract justifies a relation. Equal glosses or root spellings
+cannot merge their identities.
 
 Scheme and datatype keys are profile declarations, not English labels. A new
 scheme key requires a genuinely different governed inventory. Merely reserving an
@@ -37,7 +55,8 @@ issues own that decision. The `hasRootSense` fixture is a reserved example only.
 
 ### Encoding and normalization
 
-All keys are nonempty, case-sensitive Unicode strings in NFC. Leading/trailing
+Except for the declared uppercase structural sense-code normalization, keys are
+nonempty, case-sensitive Unicode strings in NFC. Leading/trailing
 whitespace, control/format/surrogate characters, and whole `.` or `..` segments are
 rejected. Non-NFC keys are rejected with `IDENTITY_KEY_NOT_NFC`, never silently
 collapsed. Key normalization is an upstream, explicitly reviewed identity change.
@@ -53,10 +72,12 @@ the grammar. The fixed kind prefix and component boundaries prevent cross-kind
 and delimiter collisions.
 
 Source snapshot versions, timestamps and file hashes describe evidence, not identity,
-and do not enter these IRIs. The upstream source entity IDs are treated as pinned
-keys: this layer MUST NOT recompute them from mutable glosses. An upstream extractor
-that remints a key creates a migration review, not permission to silently rename an
-existing concept. Its source fingerprint is not a semantic-equivalence assertion.
+and do not enter these IRIs. Root IDs and category/value codes are pinned source
+keys; sense keys use the structural composite above. This layer MUST NOT derive
+semantic keys from mutable glosses or the legacy gloss-derived sense hashes. An
+upstream change to a root or structural coordinate creates a migration review,
+not permission to silently rename an existing concept. A changed source text hash
+does not itself prove a semantic change or semantic equivalence.
 
 ### Identity continuity and failure behavior
 

@@ -6,7 +6,7 @@ import unittest
 
 from lib.ithkuil.src.skos.errors import ProfileError
 from lib.ithkuil.src.skos.identity import (
-    Identity, check_successor, from_record, identity_map, validate_assignments,
+    Identity, check_successor, from_record, identity_map, sense_from_source, validate_assignments,
 )
 
 
@@ -46,9 +46,52 @@ class IdentityContractTests(unittest.TestCase):
         first, second = (rows[key] for key in ("LEXSENSE-5286ade9db42c7", "LEXSENSE-2219dd530fe045"))
         self.assertEqual(first["lexicon_root_id"], "LEXROOT-0bd881a56fac9e")
         self.assertEqual(second["lexicon_root_id"], first["lexicon_root_id"])
-        iris = {Identity("sense", (r["source_id"], r["lexicon_sense_id"])).iri for r in (first, second)}
+        iris = {from_record("sense", {**r, "root_id": r["lexicon_root_id"]}).iri for r in (first, second)}
         self.assertEqual(len(iris), 2)
         self.assertIn(first["lexicon_root_id"], {r["lexicon_root_id"] for r in read("lexicon_roots.csv")})
+
+    def test_gloss_edit_and_reminted_legacy_hash_preserve_sense_iri(self):
+        with (ROOT / "_data/csv/lexicon_root_senses.csv").open(newline="", encoding="utf-8") as handle:
+            row = next(r for r in csv.DictReader(handle) if r["lexicon_sense_id"] == "LEXSENSE-5286ade9db42c7")
+        original = {**row, "root_id": row["lexicon_root_id"]}
+        changed = {**original, "sense_summary": row["sense_summary"] + ".",
+                   "lexicon_sense_id": "LEXSENSE-af2682e356ae56", "source_text_sha256": "changed"}
+        expected = "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0bd881a56fac9e/STEM%201/BSC"
+        self.assertEqual(from_record("sense", original).iri, expected)
+        self.assertEqual(from_record("sense", changed).iri, expected)
+        self.assertEqual(from_record("sense", {**original, "stem": "Stem 1", "specification": "bsc"}).iri, expected)
+
+    def test_gloss_hash_alone_cannot_identify_sense(self):
+        self.assert_code("MISSING_IDENTITY_KEY", from_record, "sense",
+                         {"source_id": "NI-LEXICON-CURRICULUM", "sense_id": "LEXSENSE-5286ade9db42c7"})
+
+    def test_sense_coordinate_validation_precedes_case_normalization(self):
+        keys = {"source_id": "S", "root_id": "R", "stem": "STEM 1", "specification": "BSC"}
+        self.assert_code("MISSING_OR_INVALID_IDENTITY_KEY", from_record, "sense", {**keys, "stem": 7})
+        self.assert_code("INVALID_SENSE_COORDINATE", from_record, "sense", {**keys, "specification": "ß"})
+
+    def test_declared_blank_scopes_have_explicit_distinct_keys(self):
+        row = {"source_id": "S", "atomic_id": "R", "stem": "", "specification": ""}
+        self.assertEqual(sense_from_source("root_senses", row).iri,
+                         "https://github.com/Entif-AI/Bilqis-MLX/id/sense/S/R/ROOT-WIDE/UNSPECIFIED")
+        lex = {"source_id": "S", "lexicon_root_id": "R", "stem": "", "specification": "CTE"}
+        self.assertEqual(sense_from_source("lexicon_root_senses", lex).iri,
+                         "https://github.com/Entif-AI/Bilqis-MLX/id/sense/S/R/ROOT-WIDE/CTE")
+        self.assert_code("MISSING_SENSE_COORDINATE", sense_from_source, "root_senses",
+                         {k: v for k, v in row.items() if k != "stem"})
+        self.assert_code("INVALID_SENSE_COORDINATE", sense_from_source, "lexicon_root_senses",
+                         {**lex, "specification": ""})
+        self.assert_code("UNKNOWN_SENSE_SOURCE_SHAPE", sense_from_source, "unknown", row)
+
+    def test_all_current_sense_coordinates_are_stable_under_text_and_legacy_id_edits(self):
+        for table, count in (("root_senses", 200), ("lexicon_root_senses", 1615)):
+            with (ROOT / "_data/csv" / (table + ".csv")).open(newline="", encoding="utf-8") as handle:
+                rows = list(csv.DictReader(handle))
+            original = {sense_from_source(table, row).iri for row in rows}
+            changed = {sense_from_source(table, {**row, "sense_summary": row["sense_summary"] + ".",
+                       "sense_id": "changed", "lexicon_sense_id": "changed"}).iri for row in reversed(rows)}
+            self.assertEqual(len(original), count)
+            self.assertEqual(changed, original)
 
     def test_key_change_and_case_change_are_distinct(self):
         values = ("MFF", "mff", "MFS", "a/b", "a%2Fb", "a?b", "a#b")
