@@ -1,0 +1,6 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807>
+    a skos:Concept ;
+    skos:notation "iařš" ;
+    skos:broader <urn:negative:composition-component-is-not-taxonomy> .

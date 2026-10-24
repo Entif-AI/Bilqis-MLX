@@ -698,6 +698,128 @@ rows, 20 resolved/emitted concepts, zero build issues, 169 triples, one scheme, 
 literal identities/forms, or digest requires a corresponding deliberate source
 snapshot change; changing only the golden files is not sufficient evidence.
 
+## 8. Source-faithful composition resources (#57)
+
+`project_compositions(closure, profile)` projects the canonical
+`morpheme_compositions` rows as linguistic construction resources. A composition is
+not a SKOS concept. The projector emits no `skos:broader`, `skos:narrower`,
+`skos:related`, or `skos:notation`, and it emits no component edges. #58 owns
+component relationships and linguistic order.
+
+### Identity and source-controlled typing
+
+The stable resource IRI is derived only from `composition_id`:
+
+```text
+https://github.com/Entif-AI/Bilqis-MLX/id/composition/<composition_id>
+```
+
+Surface form, construction name, source order, row position, labels, and normalized
+text do not participate in identity. The implementation reuses the existing identity
+key validation before encoding the source ID.
+
+The source's exact `composition_type` and `derivation` codes select RDF classes under
+the source-identity namespace, not the Bilqis extension-vocabulary namespace:
+
+```text
+.../id/composition-type/<composition_type>
+.../id/composition-derivation/<derivation>
+```
+
+Each class is emitted as `rdfs:Class` with the exact source code as
+`dcterms:identifier`. The issue-local machine profile admits only the nine current
+composition types and the two current derivations. A future unreviewed source code is
+held as `UNKNOWN_COMPOSITION_TYPE` or `UNKNOWN_COMPOSITION_DERIVATION`; it is never
+classified from the spelling or shape of the surface form.
+
+### Generic RDF/DC Terms first
+
+The source fields map to existing terms where those terms keep their meaning:
+
+| Source field | RDF representation |
+| --- | --- |
+| `composition_id` | `dcterms:identifier` |
+| `construction_name` | `dcterms:title` |
+| `semantic_summary` | `dcterms:description` |
+| `surface_form_raw` | `rdf:value` with the existing New Ithkuil datatype |
+| `composition_type` | source-controlled `rdf:type` class |
+| `derivation` | source-controlled `rdf:type` class |
+| public source loci | the same `dcterms:source` locus structure used by #39 |
+
+The raw surface is passed through the existing New Ithkuil typed-literal validator.
+`surface_form_normalized` is not emitted. This keeps punctuation and Unicode code
+points exactly as extracted; for example, source `hmo’e` remains distinct from the
+normalized `hmo'e` form.
+
+The source table has no `notes` column. Its note-like `semantic_summary` is therefore
+preserved as `dcterms:description`; the projector does not manufacture a separate
+notes field.
+
+### Three necessary extension predicates
+
+`composition_profile.json` is an issue-local reviewed profile, not the final #60
+vocabulary freeze. It admits only three Bilqis properties:
+
+| Term | Why generic RDF/DC Terms is insufficient |
+| --- | --- |
+| `surfacePattern` | Concrete rows carry both a realized form and a structural pattern. Reusing `rdf:value` for both would erase their source roles. |
+| `condition` | A realization condition is machine-relevant and distinct from the semantic description. Flattening both into `dcterms:description` loses that role. |
+| `componentCount` | #57 must preserve the source-declared component cardinality while #58 still owns the component edges. `dcterms:extent` means size or duration and does not state this cardinality faithfully. |
+
+Each registry entry binds the canonical term IRI, definition, domain/range, real
+source fixture, source field, source justification, rejected SKOS/generic-RDF
+alternative, recurrence, and machine need. `load_composition_profile` rechecks the
+real source fixture and exact term IRI. It also parses the negative RDF fixture in
+which a real composition is deliberately mis-modeled as a `skos:Concept` with SKOS
+notation/hierarchy. This instantiates #35's standards-first boundary without adding a
+second general vocabulary-governance engine.
+
+### Source traceability
+
+The projector reuses `source_public` validation and `PublicLocus` identity. For each
+composition it projects the row's primary source locus plus every
+`source_assertions.csv` record whose `entity_kind` is `morpheme_composition`. Any
+invalid source registry binding, section/table reference, public URL, or public
+literal holds the whole composition resource rather than leaking a partial graph.
+
+Current source evidence is especially crisp: 1,906 `source_join` rows have two
+source assertions each, while the 11 `source_template` rows have one each. The
+derivation class itself comes from the explicit `derivation` field; assertion count
+is corroborating provenance and is not used to guess the class.
+
+### Component boundary and accounting
+
+`component_count` is emitted as the source-declared `xsd:nonNegativeInteger` through
+`bilqis:componentCount`. #57 does not load or emit `composition_components.csv` in
+the runtime projection because #21's canonical closure does not yet own that table
+and #58 owns component edges/order. Conformance tests independently compare all
+current source declarations with `composition_components.csv`: 1,917 compositions
+correspond to 3,855 component rows with zero count mismatches.
+
+The result is:
+
+```text
+CompositionProjection(graph, emitted_ids, held_ids, issues)
+```
+
+Rows with an unadmitted type/derivation, invalid declared count, invalid exact raw
+surface, or invalid source trace are held as whole resources. The current reviewed
+corpus emits all 1,917 composition IDs with zero holds. Pattern/form strings are
+never identity: a synthetic same-form/different-ID regression proves that two stable
+composition IDs remain two RDF resources.
+
+Current full-corpus proof: 1,917 emitted, 0 held, 0 issues, 20,506 RDF triples,
+3,901,535 canonical UTF-8 N-Triples bytes, SHA-256
+`25f9778d87c08aa37655b7d8517e4df3516ccfc39610bb1ad9ecdbfc010fadb0`. Two fresh
+processes with different hash seeds produced the same receipt.
+
+Proof is in `test_skos_composition.py`, the literal positive N-Triples fixture
+`skos_composition_expected.nt`, and the negative SKOS fixture
+`skos_composition_negative.ttl`. The tests cover a concrete source join, an exact
+Unicode form whose normalized spelling differs, a source template, public source
+loci, profile admission, unknown-type holding, full-resource failure, input-row
+reordering, and canonical graph equality.
+
 ## Multiple-realization normalization (#45)
 
 #45 adds one bounded intermediate view over the existing #38 identity resolver:
