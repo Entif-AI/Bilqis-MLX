@@ -4,6 +4,10 @@ from __future__ import annotations
 VERSION = "bilqis.mlx.grade-b-composite-record-oracle/v1"
 CAPABILITY = "B.COMPOSITE"
 CONNECTIVES = ("NOT", "AND", "OR", "XOR", "IMPLIES", "IFF")
+COMPOSITE_WIDTHS = (2, 3)
+COMPOSITION_WIDTH_ERROR = "GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH"
+TASK_OR_CAPABILITY_ERROR = (
+    "GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
 
 
 def _entity(node):
@@ -64,16 +68,18 @@ def _operation_count(node: dict) -> int:
 
 def evaluate(record: dict, capability: str = CAPABILITY) -> str:
     if not isinstance(record, dict) or capability != CAPABILITY:
-        raise ValueError("GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
+        raise ValueError(TASK_OR_CAPABILITY_ERROR)
     if record.get("task") == "evaluate":
         from .grade_b_oracle import _direct_truth
         query = record.get("expression")
-        if not isinstance(query, dict) or _operation_count(query) not in (2, 3):
-            raise ValueError("GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH")
+        if (not isinstance(query, dict) or
+                _operation_count(query) not in COMPOSITE_WIDTHS):
+            raise ValueError(COMPOSITION_WIDTH_ERROR)
         return "TRUE" if _direct_truth(query, record.get("assignments")) else "FALSE"
     if record.get("task") != "micro":
-        raise ValueError("GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
+        raise ValueError(TASK_OR_CAPABILITY_ERROR)
     query = record.get("query")
-    if not isinstance(query, dict) or _operation_count(query) not in (2, 3):
-        raise ValueError("GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH")
+    if (not isinstance(query, dict) or
+            _operation_count(query) not in COMPOSITE_WIDTHS):
+        raise ValueError(COMPOSITION_WIDTH_ERROR)
     return "TRUE" if _truth(record["world"], query) else "FALSE"

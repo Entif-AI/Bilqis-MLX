@@ -7,11 +7,17 @@ It prevents an old mixed-step score board from certifying new grade mastery.
 from __future__ import annotations
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, replace
 from fractions import Fraction
 from .promotion import (
     PROMOTION_MEAN_FLOOR, PromotionError, _promotion_debt, _boundary_mastery_debt, _introduced_grade_capabilities, _mean_accuracy, _promotion_sweep_fields_cleared, _verify_promotion_sweep_state, _promotion_sweep_due, _start_promotion_sweep,
 )
+from .program_adoption import (
+    adopt_appended_program, adopt_expanded_prior_grade, adopt_revised_program,
+    append_next_grade, append_next_grade_with_debt, replace_admitted_grade,
+    revise_admitted_grade,
+)
+from .school_state import Assessment, SchoolState, Score, _caps, _program
 import hashlib
 import json
 from pathlib import Path
@@ -27,180 +33,49 @@ STAGES = frozenset(("MAIN", "ASSESS_MAIN", "RECOVERY_1", "ASSESS_RECOVERY_1",
                     "ASSESS_PROMOTION_SWEEP", "AWAITING_TEACHER_SOUP",
                     "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT",
                     "WHOLE_SCHOOL_MASTERED", "DEFERRED_STAGNATION"))
-B_DEBT_RUN_INTERVAL = 4
+NONGATING_DEBT_RUN_INTERVAL = 4
+NONGATING_PRIORITY_GRADE_COUNT = 3
 
 
-def _program(value) -> ScheduleProgram:
-    if isinstance(value, ScheduleProgram):
-        return value
-    from bilqis_mlx.compatibility.schedule_program import (
-        schedule_program_from_legacy_course,
-    )
-    return schedule_program_from_legacy_course(value)
+def _nongating_debt_priority_roles(
+        program, state: SchoolState) -> tuple[str, str] | None:
+    """Return the immediate prior debt grade and current progression frontier.
 
-
-@dataclass(frozen=True)
-class Score:
-    correct: int
-    total: int
-
-    def __post_init__(self):
-        if (type(self.correct) is not int or type(self.total) is not int or
-                not 0 <= self.correct <= self.total or self.total < 1):
-            raise ValueError("INVALID_CAPABILITY_SCORE")
-
-    @property
-    def accuracy(self):
-        return Fraction(self.correct, self.total)
-
-    @property
-    def perfect(self):
-        return self.correct == self.total
-
-
-@dataclass(frozen=True)
-class Assessment:
-    """One independently evaluated, fixed-rubric, single-checkpoint snapshot."""
-    checkpoint_sha256: str
-    optimizer_step: int
-    course_digest: str
-    rubric_digest: str
-    scores: dict[str, Score]
-    evaluation_id: str
-
-    def verify(self, checkpoint: Checkpoint, program,
-               required_capabilities: tuple[str, ...], *,
-               rubric_capabilities: tuple[str, ...] | None = None) -> None:
-        program = _program(program)
-        if (self.checkpoint_sha256 != checkpoint.sha256 or
-                self.optimizer_step != checkpoint.optimizer_step or
-                self.course_digest != program.digest()):
-            raise ValueError("ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE")
-        if (len(self.rubric_digest) != 64 or
-                any(c not in "0123456789abcdef" for c in self.rubric_digest) or
-                not self.evaluation_id):
-            raise ValueError("ASSESSMENT_RUBRIC_IDENTITY_MISSING")
-        rubric_scope = (required_capabilities if rubric_capabilities is None
-                        else rubric_capabilities)
-        if not set(required_capabilities) <= set(rubric_scope):
-            raise ValueError("ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL")
-        represented = [grade for grade in program.grades if
-                       any(cap.id in rubric_scope
-                           for cap in grade.capabilities)]
-        if not represented:
-            raise ValueError("ASSESSMENT_HAS_NO_REPRESENTED_GRADE")
-        # Each grade seals its *cumulative* exam (including prior grades).
-        # A newly introduced B rubric need not share A's exam digest.
-        grade_seal = (program.exact_scope_rubric(rubric_scope) or
-                      represented[-1].assessment_sha256)
-        if grade_seal is not None and self.rubric_digest != grade_seal:
-            raise ValueError("ASSESSMENT_NOT_GRADE_SEALED_RUBRIC")
-        all_caps = _caps(program, tuple(g.id for g in program.grades))
-        if (set(rubric_scope) == set(all_caps) and
-                program.assessment_manifest_sha256 is not None and
-                self.rubric_digest != program.assessment_manifest_sha256):
-            raise ValueError("ASSESSMENT_NOT_COURSE_SEALED_RUBRIC")
-        if set(self.scores) != set(required_capabilities):
-            raise ValueError("ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL")
-        if not all(isinstance(s, Score) for s in self.scores.values()):
-            raise ValueError("ASSESSMENT_INVALID_SCORE_TYPE")
-        declared_counts = {cap: count for grade in program.grades
-                           for cap, count in grade.exam_item_counts}
-        if any(cap in declared_counts and score.total != declared_counts[cap]
-               for cap, score in self.scores.items()):
-            raise ValueError("ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT")
-
-
-@dataclass(frozen=True)
-class SchoolState:
-    schema: str
-    course_digest: str
-    active_grades: tuple[str, ...]
-    grade_index: int
-    stage: str
-    queue: tuple[str, ...]
-    first_recovery: tuple[str, ...]
-    current_student: Checkpoint
-    champions: dict[str, Checkpoint]
-    visits: int = 0
-    school_cycles: int = 1
-    latest_rubric_digest: str | None = None
-    pending_failures: tuple[str, ...] = ()
-    teacher_soup_digest: str | None = None
-    # A newly graduated grade B or later triggers an ordered A..grade replay.
-    # Optional so saved letter-grade/v1 and human-run states remain readable.
-    revalidation_target_grade: str | None = None
-    # A pass ends one enrollment. A return to the grade owns a fresh test.
-    grade_exam_epoch: int = 0
-    introduction_stage: int = 0
-    # A staged grade can temporarily yield the teaching spiral to another
-    # grade before mastery.  Preserve each grade's introduced frontier so
-    # re-entry resumes the same semantic stage instead of silently rewinding
-    # to stage zero.  The scalar above remains the active-grade projection for
-    # backward-compatible saved states and operator surfaces.
-    introduction_frontiers: tuple[tuple[str, int], ...] = ()
-    # Grades that already received their ordinary full MAIN pass in the
-    # current cross-grade sweep. Global weakest-three recovery is due only
-    # after every currently imperfect eligible grade has had that pass.
-    main_sweep_visited: tuple[str, ...] = ()
-    # Explicit human-authorized progression may admit a later grade before all
-    # earlier capabilities are mastered.  These identities remain cumulative
-    # mastery debt until one intact checkpoint clears the whole active program.
-    carried_mastery_debt: tuple[str, ...] = ()
-    # A >90% grade mean opens a one-pass semantic stability sweep.
-    promotion_sweep_scope: tuple[str, ...] = ()
-    promotion_sweep_return_stage: str | None = None
-    # Running current-grade score vector for ADR-093. The threshold-crossing
-    # assessment freezes the baseline; each sweep visit replaces only the
-    # semantic that was just rescored.
-    promotion_sweep_scores: tuple[tuple[str, int, int], ...] = ()
-    # Historical ADR-090 candidate-visit counters are retained as telemetry and
-    # backward-compatible receipt state. ADR-094 moves scheduling authority to
-    # grade-level training turns instead of individual B candidate crumbs.
-    frontier_priority_visits: int = 0
-    nongating_b_visits: int = 0
-    # Number of completed non-B training queues since B last received one
-    # complete currently-imperfect grade pass. Four such turns make B due.
-    non_b_training_turns_since_b_run: int = 0
-
-    @property
-    def grade(self) -> str:
-        return self.active_grades[self.grade_index]
-
-
-def _caps(program, grade_ids: tuple[str, ...]) -> tuple[str, ...]:
+    ADR-094 was introduced while the active pair happened to be B -> C, but
+    SPEC-0001 forbids generic scheduler behavior from depending on letter-grade
+    identity. The policy is structural: the newest active grade owns
+    progression while its immediate predecessor remains nongating mastery debt.
+    """
     program = _program(program)
-    lookup = {grade.id: grade for grade in program.grades}
-    return tuple(c.id for grade in grade_ids for c in lookup[grade].capabilities)
-
-
-def _c_frontier_priority_mode(program, state: SchoolState) -> bool:
-    """C progression owns the lane while unfinished B remains nongating debt."""
-    program = _program(program)
-    if (not {"B", "C"} <= set(state.active_grades) or
-            state.active_grades[-1] != "C"):
-        return False
+    if len(state.active_grades) < NONGATING_PRIORITY_GRADE_COUNT:
+        return None
+    debt_grade, frontier_grade = state.active_grades[-2:]
     debt = set(state.carried_mastery_debt)
-    return bool(debt & set(_caps(program, ("B",)))) and bool(
-        debt & set(_caps(program, ("C",))))
+    if (not debt & set(_caps(program, (debt_grade,))) or
+            not debt & set(_caps(program, (frontier_grade,)))):
+        return None
+    return debt_grade, frontier_grade
 
 
 def _b_debt_run_due(program, state: SchoolState) -> bool:
-    return (_c_frontier_priority_mode(program, state) and
-            state.non_b_training_turns_since_b_run >= B_DEBT_RUN_INTERVAL)
+    return (_nongating_debt_priority_roles(program, state) is not None and
+            state.non_b_training_turns_since_b_run >=
+            NONGATING_DEBT_RUN_INTERVAL)
 
 
 def _b_debt_run_queue(program, state: SchoolState,
                       scores: dict[str, Score],
                       allowed_capabilities: tuple[str, ...] | None = None
                       ) -> tuple[str, ...]:
-    """Return every currently imperfect admitted B debt capability, canonically."""
-    if not _c_frontier_priority_mode(program, state):
+    """Return every imperfect admitted capability in the nongating debt grade."""
+    roles = _nongating_debt_priority_roles(program, state)
+    if roles is None:
         return ()
+    debt_grade, _ = roles
     allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
     debt = set(state.carried_mastery_debt)
     return tuple(
-        capability for capability in _caps(program, ("B",))
+        capability for capability in _caps(program, (debt_grade,))
         if capability in allowed and capability in debt and
         capability in scores and not scores[capability].perfect)
 
@@ -216,8 +91,9 @@ def _enter_due_b_debt_run(program, state: SchoolState,
         allowed_capabilities=allowed_capabilities)
     if not queue:
         return None
+    debt_grade, _ = _nongating_debt_priority_roles(program, state)
     entered = _enter_grade(
-        program, state, state.active_grades.index("B"),
+        program, state, state.active_grades.index(debt_grade),
         stage="MAIN", first_recovery=(),
         main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
         latest_rubric_digest=snapshot.rubric_digest)
@@ -236,28 +112,34 @@ def _imperfect_ranked(scores: dict[str, Score],
 def _frontier_recovery_queue(program, state: SchoolState,
                              scores: dict[str, Score],
                              pool: tuple[str, ...]) -> tuple[str, ...]:
-    """Keep C recovery C-only; B receives bounded complete grade turns."""
-    if not _c_frontier_priority_mode(program, state):
+    """Keep frontier recovery frontier-only; debt gets bounded full turns."""
+    roles = _nongating_debt_priority_roles(program, state)
+    if roles is None:
         return weakest_three(scores, pool)
+    _, frontier_grade = roles
     allowed = set(pool)
-    c_ranked = _imperfect_ranked(
-        scores, tuple(cap for cap in _caps(program, ("C",)) if cap in allowed))
-    return c_ranked[:3]
+    frontier_ranked = _imperfect_ranked(
+        scores, tuple(
+            cap for cap in _caps(program, (frontier_grade,)) if cap in allowed))
+    return frontier_ranked[:3]
 
 
 def migrate_b_full_run_epoch(program, state: SchoolState) -> SchoolState:
     """Adopt ADR-094 without inventing learning or preserving single-B crumbs."""
     program = _program(program)
-    if not _c_frontier_priority_mode(program, state):
+    roles = _nongating_debt_priority_roles(program, state)
+    if roles is None:
         return replace(state, non_b_training_turns_since_b_run=0)
+    debt_grade, frontier_grade = roles
     migrated = replace(
-        state, non_b_training_turns_since_b_run=B_DEBT_RUN_INTERVAL)
+        state, non_b_training_turns_since_b_run=NONGATING_DEBT_RUN_INTERVAL)
     if migrated.stage not in ("MAIN", "RECOVERY_1", "RECOVERY_2"):
         return migrated
-    b_caps = set(_caps(program, ("B",)))
-    if migrated.grade != "B" and any(cap in b_caps for cap in migrated.queue):
+    debt_caps = set(_caps(program, (debt_grade,)))
+    if (migrated.grade != debt_grade and
+            any(cap in debt_caps for cap in migrated.queue)):
         return _enter_grade(
-            program, migrated, migrated.active_grades.index("C"),
+            program, migrated, migrated.active_grades.index(frontier_grade),
             stage="MAIN", first_recovery=(), main_sweep_visited=(),
             latest_rubric_digest=migrated.latest_rubric_digest)
     return migrated
@@ -272,14 +154,16 @@ def migrate_c_frontier_priority_epoch(program, state: SchoolState) -> SchoolStat
     an owed ASSESS_* boundary remains untouched and is consumed normally.
     """
     program = _program(program)
-    if (not _c_frontier_priority_mode(program, state) or
+    roles = _nongating_debt_priority_roles(program, state)
+    if (roles is None or
             state.stage not in ("MAIN", "RECOVERY_1", "RECOVERY_2")):
         return state
-    b_caps = set(_caps(program, ("B",)))
-    if not state.queue or state.queue[0] not in b_caps:
+    debt_grade, frontier_grade = roles
+    debt_caps = set(_caps(program, (debt_grade,)))
+    if not state.queue or state.queue[0] not in debt_caps:
         return state
     return _enter_grade(
-        program, state, state.active_grades.index("C"),
+        program, state, state.active_grades.index(frontier_grade),
         stage="MAIN", first_recovery=(), main_sweep_visited=(),
         latest_rubric_digest=state.latest_rubric_digest)
 
@@ -513,13 +397,15 @@ def visit(program, state: SchoolState, capability: str,
     frontier_priority_visits = state.frontier_priority_visits
     nongating_b_visits = state.nongating_b_visits
     non_b_training_turns_since_b_run = state.non_b_training_turns_since_b_run
-    if _c_frontier_priority_mode(program, state):
-        if capability in set(_caps(program, ("C",))):
+    roles = _nongating_debt_priority_roles(program, state)
+    if roles is not None:
+        debt_grade, frontier_grade = roles
+        if capability in set(_caps(program, (frontier_grade,))):
             frontier_priority_visits += 1
-        elif capability in set(_caps(program, ("B",))):
+        elif capability in set(_caps(program, (debt_grade,))):
             nongating_b_visits += 1
         if not rest:
-            if state.grade == "B":
+            if state.grade == debt_grade:
                 non_b_training_turns_since_b_run = 0
             else:
                 non_b_training_turns_since_b_run += 1
@@ -602,7 +488,9 @@ def _resume_ordinary_spiral(program, state: SchoolState,
                             snapshot: Assessment, *,
                             allowed_capabilities: tuple[str, ...] | None = None,
                             reset_sweep: bool = True) -> SchoolState | None:
-    if _c_frontier_priority_mode(program, state):
+    roles = _nongating_debt_priority_roles(program, state)
+    if roles is not None:
+        _, frontier_grade = roles
         due_b = _enter_due_b_debt_run(
             program, state, snapshot,
             allowed_capabilities=allowed_capabilities,
@@ -611,10 +499,11 @@ def _resume_ordinary_spiral(program, state: SchoolState,
             return due_b
         allowed = (set(snapshot.scores) if allowed_capabilities is None
                    else set(allowed_capabilities))
-        c_caps = tuple(cap for cap in _caps(program, ("C",)) if cap in allowed)
-        if _imperfect_ranked(snapshot.scores, c_caps):
+        frontier_caps = tuple(
+            cap for cap in _caps(program, (frontier_grade,)) if cap in allowed)
+        if _imperfect_ranked(snapshot.scores, frontier_caps):
             return _enter_grade(
-                program, state, state.active_grades.index("C"),
+                program, state, state.active_grades.index(frontier_grade),
                 stage="MAIN", first_recovery=(),
                 main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
                 latest_rubric_digest=snapshot.rubric_digest)
@@ -654,21 +543,24 @@ def _continue_main_sweep(program, state: SchoolState,
     visited = state.main_sweep_visited
     if state.grade not in visited:
         visited = visited + (state.grade,)
-    if _c_frontier_priority_mode(program, state):
+    roles = _nongating_debt_priority_roles(program, state)
+    if roles is not None:
+        _, frontier_grade = roles
         due_b = _enter_due_b_debt_run(
             program, state, snapshot,
             allowed_capabilities=allowed_capabilities,
             reset_sweep=False)
         if due_b is not None:
             return due_b
-        if state.grade == "C":
+        if state.grade == frontier_grade:
             return None
         allowed = (set(snapshot.scores) if allowed_capabilities is None
                    else set(allowed_capabilities))
-        c_caps = tuple(cap for cap in _caps(program, ("C",)) if cap in allowed)
-        if _imperfect_ranked(snapshot.scores, c_caps):
+        frontier_caps = tuple(
+            cap for cap in _caps(program, (frontier_grade,)) if cap in allowed)
+        if _imperfect_ranked(snapshot.scores, frontier_caps):
             return _enter_grade(
-                program, state, state.active_grades.index("C"),
+                program, state, state.active_grades.index(frontier_grade),
                 stage="MAIN", first_recovery=(),
                 main_sweep_visited=visited,
                 latest_rubric_digest=snapshot.rubric_digest)
@@ -1076,6 +968,28 @@ def assess_flash(program, state: SchoolState, snapshot: Assessment) -> SchoolSta
     return resumed
 
 
+def _advance_withheld_intro_stage(
+        program, state: SchoolState, snapshot: Assessment,
+        active_pool: tuple[str, ...], blocked: tuple[str, ...]) -> SchoolState | None:
+    grade = next(g for g in program.grades if g.id == state.grade)
+    current_caps = set(_caps(program, (state.grade,)))
+    blocked_current = current_caps & set(blocked)
+    if (not grade.teaching_stages or
+            state.introduction_stage >= len(grade.teaching_stages)-1 or
+            blocked_current):
+        return None
+    own = tuple(c for c in _main_queue(program, state) if c in active_pool)
+    if not own or not all(snapshot.scores[c].perfect for c in own):
+        return None
+    next_stage = state.introduction_stage + 1
+    entered = _at_introduction_stage(
+        state, next_stage, stage="MAIN", first_recovery=(),
+        latest_rubric_digest=snapshot.rubric_digest)
+    queue = tuple(
+        c for c in grade.teaching_stages[next_stage] if c not in set(blocked))
+    return replace(entered, queue=queue) if queue else None
+
+
 def assess_withheld(program, state: SchoolState, snapshot: Assessment,
                     withheld: tuple[str, ...], *,
                     rubric_capabilities: tuple[str, ...] | None = None) -> SchoolState:
@@ -1112,21 +1026,10 @@ def assess_withheld(program, state: SchoolState, snapshot: Assessment,
                      active_pool if program.assessment_projections else pool),
     )
 
-    grade = next(g for g in program.grades if g.id == state.grade)
-    current_caps = set(_caps(program, (state.grade,)))
-    blocked_current = current_caps & set(blocked)
-    if (grade.teaching_stages and state.introduction_stage < len(grade.teaching_stages)-1 and
-            not blocked_current):
-        own = tuple(c for c in _main_queue(program, state) if c in active_pool)
-        if own and all(snapshot.scores[c].perfect for c in own):
-            next_stage = state.introduction_stage + 1
-            entered = _at_introduction_stage(
-                state, next_stage, stage="MAIN", first_recovery=(),
-                latest_rubric_digest=snapshot.rubric_digest)
-            queue = tuple(c for c in grade.teaching_stages[next_stage]
-                          if c not in set(blocked))
-            if queue:
-                return replace(entered, queue=queue)
+    advanced = _advance_withheld_intro_stage(
+        program, state, snapshot, active_pool, blocked)
+    if advanced is not None:
+        return advanced
 
     # Any withheld capability remains explicit graduation debt; never promote
     # a grade or cumulative prefix from a partial ordinary assessment.
@@ -1181,199 +1084,6 @@ def reactivate_stagnation_debt(program, state: SchoolState,
         raise ValueError("STAGNATION_REENTRY_OUTSIDE_ACTIVE_POOL")
     return replace(state, stage="RECOVERY_1", queue=tuple(debt),
                    first_recovery=tuple(debt[:3]))
-
-
-def adopt_appended_program(previous: ScheduleProgram,
-                           successor: ScheduleProgram,
-                           state: SchoolState) -> SchoolState:
-    """Admit exactly one appended projected grade without knowing its identity."""
-    if (not isinstance(previous, ScheduleProgram) or
-            not isinstance(successor, ScheduleProgram)):
-        raise TypeError("FACTORY_SCHEDULE_PROGRAM_REQUIRED")
-    verify_state(previous, state)
-    previous_ids = tuple(grade.id for grade in previous.grades)
-    successor_ids = tuple(grade.id for grade in successor.grades)
-    if (previous.program_complete or
-            state.stage != "AWAITING_NEXT_GRADE" or
-            len(successor_ids) != len(previous_ids) + 1 or
-            successor_ids[:-1] != previous_ids or
-            successor.grades[:-1] != previous.grades):
-        raise ValueError("FACTORY_SCHEDULE_APPEND_INVALID")
-    if state.grade not in state.champions:
-        raise ValueError("FACTORY_SCHEDULE_APPEND_REQUIRES_GRADUATED_PREFIX")
-    added = successor_ids[-1]
-    if added in state.champions:
-        raise ValueError("FACTORY_SCHEDULE_APPEND_FUTURE_CHAMPION_EXISTS")
-    extended = replace(
-        state,
-        course_digest=successor.digest(),
-        grade_exam_epoch=state.grade_exam_epoch + 1,
-        active_grades=successor_ids,
-        stage="MAIN",
-        first_recovery=(),
-        main_sweep_visited=(),
-        revalidation_target_grade=None,
-        latest_rubric_digest=None,
-        pending_failures=(),
-        teacher_soup_digest=None,
-        carried_mastery_debt=(),
-    )
-    return _enter_grade(successor, extended, len(previous.grades))
-
-
-def append_next_grade_with_debt(
-        previous, successor, state: SchoolState,
-        mastery_debt: tuple[str, ...]) -> SchoolState:
-    """Human-authorized append while preserving unresolved prior mastery debt.
-
-    This is progression, not graduation.  It never fabricates a champion for
-    an unresolved grade and it never clears debt merely because a later grade
-    becomes available.  One later cumulative checkpoint must still perfect the
-    complete active program before the ordinary next-grade boundary is reached.
-    """
-    previous, successor = _program(previous), _program(successor)
-    verify_state(previous, state)
-    if previous.program_complete:
-        raise ValueError("DEBT_GRADE_APPEND_REQUIRES_PARTIAL_PROGRAM")
-    if not mastery_debt or len(set(mastery_debt)) != len(mastery_debt):
-        raise ValueError("DEBT_GRADE_APPEND_REQUIRES_EXPLICIT_MASTERY_DEBT")
-    previous_caps = set(_caps(previous, tuple(g.id for g in previous.grades)))
-    if not set(mastery_debt) <= previous_caps:
-        raise ValueError("DEBT_GRADE_APPEND_DEBT_OUTSIDE_PREVIOUS_PROGRAM")
-    if len(successor.grades) != len(previous.grades) + 1:
-        raise ValueError("GRADE_APPEND_REQUIRES_EXACTLY_ONE_NEW_GRADE")
-    if tuple(successor.grades[:len(previous.grades)]) != previous.grades:
-        raise ValueError("GRADE_APPEND_WOULD_CHANGE_PREVIOUS_GRADE")
-    if any(g.assessment_sha256 is None for g in previous.grades):
-        raise ValueError("GRADE_APPEND_UNSEALED_PREVIOUS_GRADE")
-    if state.revalidation_target_grade is not None:
-        raise ValueError("DEBT_GRADE_APPEND_DURING_REVALIDATION_FORBIDDEN")
-    grade_by_capability = {
-        capability.id: grade.id
-        for grade in previous.grades for capability in grade.capabilities
-    }
-    debt_grades = {grade_by_capability[capability] for capability in mastery_debt}
-    mastered_required = set(state.active_grades) - debt_grades
-    if not mastered_required <= set(state.champions):
-        raise ValueError("DEBT_GRADE_APPEND_NONDEBT_GRADE_NOT_MASTERED")
-    added = successor.grades[-1].id
-    if added in state.champions:
-        raise ValueError("GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS")
-    extended = replace(
-        state, course_digest=successor.digest(),
-        grade_exam_epoch=state.grade_exam_epoch + 1,
-        active_grades=tuple(g.id for g in successor.grades),
-        stage="MAIN", first_recovery=(), main_sweep_visited=(),
-        revalidation_target_grade=None, latest_rubric_digest=None,
-        pending_failures=(), teacher_soup_digest=None,
-        carried_mastery_debt=tuple(mastery_debt))
-    return _enter_grade(successor, extended, len(previous.grades))
-
-
-def adopt_expanded_prior_grade(previous: ScheduleProgram,
-                               successor: ScheduleProgram,
-                               state: SchoolState) -> tuple[SchoolState, str]:
-    """Add capability debt to an earlier admitted grade without leaving the active frontier."""
-    if (not isinstance(previous, ScheduleProgram) or
-            not isinstance(successor, ScheduleProgram)):
-        raise TypeError("FACTORY_SCHEDULE_PROGRAM_REQUIRED")
-    verify_state(previous, state)
-    previous_ids = tuple(grade.id for grade in previous.grades)
-    successor_ids = tuple(grade.id for grade in successor.grades)
-    changed = tuple(
-        index for index, (old, new) in enumerate(zip(previous.grades, successor.grades))
-        if (old.capabilities != new.capabilities or
-            old.teaching_stages != new.teaching_stages))
-    if (previous_ids != successor_ids or len(changed) != 1 or
-            changed[0] >= state.grade_index):
-        raise ValueError("FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_INVALID")
-    index = changed[0]
-    old_grade, new_grade = previous.grades[index], successor.grades[index]
-    old_caps = tuple(cap.id for cap in old_grade.capabilities)
-    new_caps = tuple(cap.id for cap in new_grade.capabilities)
-    if (not set(old_caps) < set(new_caps) or
-            tuple(cap for cap in new_caps if cap in set(old_caps)) != old_caps):
-        raise ValueError("FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_NOT_ADDITIVE")
-    old_by_id = {cap.id: cap for cap in old_grade.capabilities}
-    new_by_id = {cap.id: cap for cap in new_grade.capabilities}
-    if any(new_by_id[cap] != old for cap, old in old_by_id.items()):
-        raise ValueError("FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY")
-    added = tuple(cap for cap in new_caps if cap not in old_by_id)
-    debt = tuple((*state.carried_mastery_debt,
-                  *(cap for cap in added if cap not in state.carried_mastery_debt)))
-    champions = dict(state.champions)
-    champions.pop(old_grade.id, None)
-    rebound = replace(
-        state, course_digest=successor.digest(), champions=champions,
-        carried_mastery_debt=debt, grade_exam_epoch=state.grade_exam_epoch + 1,
-        latest_rubric_digest=None, teacher_soup_digest=None)
-    verify_state(successor, rebound)
-    return rebound, old_grade.id
-
-
-def adopt_revised_program(previous: ScheduleProgram,
-                          successor: ScheduleProgram,
-                          state: SchoolState) -> tuple[SchoolState, str]:
-    """Rebind one active projected grade after a profile roster revision."""
-    if (not isinstance(previous, ScheduleProgram) or
-            not isinstance(successor, ScheduleProgram)):
-        raise TypeError("FACTORY_SCHEDULE_PROGRAM_REQUIRED")
-    verify_state(previous, state)
-    previous_ids = tuple(grade.id for grade in previous.grades)
-    successor_ids = tuple(grade.id for grade in successor.grades)
-    changed = tuple(
-        index for index, (old, new) in
-        enumerate(zip(previous.grades, successor.grades))
-        if old != new)
-    if (previous_ids != successor_ids or len(changed) != 1 or
-            changed[0] != len(previous.grades) - 1):
-        raise ValueError("FACTORY_SCHEDULE_REVISION_INVALID")
-    revised_grade = successor_ids[changed[0]]
-    if state.grade != revised_grade:
-        raise ValueError("FACTORY_SCHEDULE_REVISION_REQUIRES_ACTIVE_GRADE")
-    champions = dict(state.champions)
-    champions.pop(revised_grade, None)
-    successor_caps = set(_caps(successor, state.active_grades))
-    active_debt = tuple(
-        capability for capability in state.carried_mastery_debt
-        if capability in successor_caps)
-    rebound = replace(
-        state,
-        course_digest=successor.digest(),
-        stage="MAIN",
-        queue=(),
-        first_recovery=(),
-        champions=champions,
-        carried_mastery_debt=active_debt,
-        grade_exam_epoch=state.grade_exam_epoch + 1,
-        introduction_stage=0,
-        main_sweep_visited=(),
-        revalidation_target_grade=None,
-        latest_rubric_digest=None,
-        pending_failures=(),
-        teacher_soup_digest=None,
-    )
-    rebound = _enter_grade(successor, rebound, state.grade_index)
-    verify_state(successor, rebound)
-    return rebound, revised_grade
-
-
-def append_next_grade(previous, successor, state: SchoolState) -> SchoolState:
-    """Historical Course append migration; canonical v2 uses release deltas."""
-    from bilqis_mlx.compatibility.scheduler_transitions import append_next_grade as legacy
-    return legacy(previous, successor, state)
-
-
-def revise_admitted_grade(previous, successor, state: SchoolState):
-    """Historical Course revision; canonical v2 uses release deltas."""
-    from bilqis_mlx.compatibility.scheduler_transitions import revise_admitted_grade as legacy
-    return legacy(previous, successor, state)
-
-
-def replace_admitted_grade(previous, successor, state: SchoolState):
-    """Historical Course replacement; canonical v2 uses release deltas."""
-    from bilqis_mlx.compatibility.scheduler_transitions import replace_admitted_grade as legacy
-    return legacy(previous, successor, state)
 
 
 def continue_after_soup(program, state: SchoolState,

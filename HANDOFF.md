@@ -34,6 +34,24 @@ cycle could therefore repeat the same capability-scoped semantic row with differ
 requested batch, and the generic factory boundary independently rejects any adapter
 that returns duplicate row IDs.
 
+The repository quality gate that was previously hidden behind
+`GENERIC_GRADE_IDENTITY_DISPATCH` is also repaired. ADR-094's historical B/C
+behavior is now expressed structurally: once at least three grades are active, the
+latest active grade is the progression frontier and its immediate predecessor may
+receive the bounded nongating-debt turn when both still carry mastery debt. Generic
+scheduler code no longer branches on literal grade letters. The cleanup extracted
+typed school state/program adoption and lesson-selection modules, reduced
+`_take_visit` below its inherited size ceiling, named the recent U7C operator
+contracts, and regenerated the error manual/catalog. No module-size, operator-contract,
+or code-smell baseline was expanded. `npm run quality:check` is green; focused
+curriculum/learning/runtime coverage is 476 tests + 25 subtests and full-B/factory
+coverage is 22 tests + 12 subtests. The repository-wide runner still has seven
+unrelated pre-existing failures (source-prefetch fixture schema, two typed-soup
+fixtures, one historical Grade-C compatibility fixture, and three teaching-methodology
+fixtures); each reproduces on untouched commit `8a0c19b`. The one full-suite
+scheduler regression introduced during this refactor was fixed before publication.
+Prometheus resume preflight remains neural-inert with no blockers or migration.
+
 ADR-093 clarifies the automatic C mean-stability sweep. A fresh complete grade mean
 strictly above 90% freezes the initial current-grade score vector. The canonical
 one-pass sweep then replaces only the semantic just rescored; unrelated fresh-cohort

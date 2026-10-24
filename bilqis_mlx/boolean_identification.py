@@ -26,6 +26,10 @@ GENERATOR = "bilqis.mlx.grade-b-idboolops-constructor/v1"
 RELEASE = "bilqis.mlx.grade-a-b-idboolops/20261019-v1"
 ANSWER_KIND = "boolean_operator"
 ASSESSMENT_ITEMS = 12
+MIN_OPERATOR_DOMAIN_SIZE = 2
+OBSERVATION_OPERAND_COUNT = 2
+RECORD_SHAPE_ERROR = "GRADE_B_IDBOOLOPS_RECORD_SHAPE"
+OBSERVATION_SHAPE_ERROR = "GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE"
 
 
 def _digest(value) -> str:
@@ -61,7 +65,8 @@ def _require_historical_graph(legacy_root: Path, graph: dict):
 
 def _operator_domain(operators) -> tuple[str, ...]:
     operators = tuple(operators)
-    if (len(operators) < 2 or len(set(operators)) != len(operators) or
+    if (len(operators) < MIN_OPERATOR_DOMAIN_SIZE or
+            len(set(operators)) != len(operators) or
             not set(operators) <= set(BOOLEAN_OPERATORS) or
             operators != tuple(
                 operator for operator in BOOLEAN_OPERATORS
@@ -106,7 +111,7 @@ def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
     _require_historical_graph(legacy_root, graph)
     if (record.get("task") != TASK or "world" in record or
             set(record) != {"task", "observations", "options"}):
-        raise ValueError("GRADE_B_IDBOOLOPS_RECORD_SHAPE")
+        raise ValueError(RECORD_SHAPE_ERROR)
     names = graph["tokens"]
     premise = names.index("micro.proof.premise")
     conclusion = names.index("micro.proof.conclusion")
@@ -120,10 +125,11 @@ def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
         raise ValueError("GRADE_B_IDBOOLOPS_OBSERVATIONS_MISSING")
     for observation in observations:
         operands = observation.get("operands")
-        if (not isinstance(operands, list) or len(operands) != 2 or
+        if (not isinstance(operands, list) or
+                len(operands) != OBSERVATION_OPERAND_COUNT or
                 any(not isinstance(item, dict) or item.get("kind") != "literal" or
                     type(item.get("value")) is not bool for item in operands)):
-            raise ValueError("GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE")
+            raise ValueError(OBSERVATION_SHAPE_ERROR)
         for operand in operands:
             tokens.extend((premise, true_id if operand["value"] else false_id))
         tokens.extend((conclusion, true_id if observation["result"] else false_id,

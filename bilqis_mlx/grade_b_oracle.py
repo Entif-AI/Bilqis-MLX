@@ -8,6 +8,10 @@ from __future__ import annotations
 
 VERSION = "bilqis.mlx.grade-b-connective-record-oracle/v1"
 CONNECTIVES = ("NOT", "AND", "OR", "XOR", "IMPLIES", "IFF")
+ASSIGNMENTS_INVALID = "GRADE_B_ORACLE_ASSIGNMENTS_INVALID"
+CONNECTIVE_SHAPE_INVALID = "GRADE_B_ORACLE_CONNECTIVE_SHAPE"
+DIRECT_EXPRESSION_INVALID = "GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID"
+TASK_OR_CAPABILITY_INVALID = "GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY"
 
 
 def _entity(node):
@@ -43,7 +47,7 @@ def operand_truth(world: dict, node: dict) -> bool:
 
 def _direct_truth(node: dict, assignments: dict) -> bool:
     if not isinstance(assignments, dict):
-        raise ValueError("GRADE_B_ORACLE_ASSIGNMENTS_INVALID")
+        raise ValueError(ASSIGNMENTS_INVALID)
     kind = node.get("kind") if isinstance(node, dict) else None
     if kind == "literal" and type(node.get("value")) is bool:
         return node["value"]
@@ -52,11 +56,11 @@ def _direct_truth(node: dict, assignments: dict) -> bool:
         return assignments[node["name"]]
     if (kind != "apply" or node.get("operator") not in CONNECTIVES or
             not isinstance(node.get("args"), list)):
-        raise ValueError("GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID")
+        raise ValueError(DIRECT_EXPRESSION_INVALID)
     op = node["operator"]
     expected = 1 if op == "NOT" else 2
     if len(node["args"]) != expected:
-        raise ValueError("GRADE_B_ORACLE_CONNECTIVE_SHAPE")
+        raise ValueError(CONNECTIVE_SHAPE_INVALID)
     values = [_direct_truth(arg, assignments) for arg in node["args"]]
     if op == "NOT": return not values[0]
     left, right = values
@@ -65,27 +69,27 @@ def _direct_truth(node: dict, assignments: dict) -> bool:
     if op == "XOR": return left != right
     if op == "IMPLIES": return (not left) or right
     if op == "IFF": return left == right
-    raise ValueError("GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID")
+    raise ValueError(DIRECT_EXPRESSION_INVALID)
 
 def evaluate(record: dict, capability: str) -> str:
     if (not isinstance(record, dict) or
             capability not in {"B." + name for name in CONNECTIVES}):
-        raise ValueError("GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
+        raise ValueError(TASK_OR_CAPABILITY_INVALID)
     operation = capability.split(".", 1)[1]
     if record.get("task") == "evaluate":
         expression = record.get("expression")
         if (not isinstance(expression, dict) or expression.get("kind") != "apply" or
                 expression.get("operator") != operation):
-            raise ValueError("GRADE_B_ORACLE_CONNECTIVE_SHAPE")
+            raise ValueError(CONNECTIVE_SHAPE_INVALID)
         return "TRUE" if _direct_truth(expression, record.get("assignments")) else "FALSE"
     if record.get("task") != "micro":
-        raise ValueError("GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY")
+        raise ValueError(TASK_OR_CAPABILITY_INVALID)
     query = record["query"]
     if (not isinstance(query, dict) or set(query) != {"kind", "operator", "args"} or
             query["kind"] != "apply" or query["operator"] != operation or
             not isinstance(query["args"], list) or
             len(query["args"]) != (1 if operation == "NOT" else 2)):
-        raise ValueError("GRADE_B_ORACLE_CONNECTIVE_SHAPE")
+        raise ValueError(CONNECTIVE_SHAPE_INVALID)
     values = [operand_truth(record["world"], x) for x in query["args"]]
     if operation == "NOT":
         truth = not values[0]

@@ -131,6 +131,135 @@ def _skip_stagnant_target_visit(run_dir, receipt, school, course, capability,
     return result
 
 
+def _record_lesson_controls(lesson_control, policy_control_receipts,
+                            old_capabilities, picked, preservation,
+                            delivered_preservation, retention_support,
+                            delivered_retention_support):
+    if lesson_control is None:
+        return
+    lesson_control["planned_old_grade_examples"] = lesson_control[
+        "effective_old_grade_examples"]
+    earlier_grades = {item.partition(".")[0] for item in old_capabilities}
+    lesson_control["effective_old_grade_examples"] = sum(
+        row["capability"].partition(".")[0] in earlier_grades for row in picked)
+    lesson_control["selected_answer_kinds"] = sorted({
+        row.get("answer_kind", "binary") for row in picked})
+    lesson_control["fragile_preservation_requested"] = len(preservation)
+    lesson_control["fragile_preservation_delivered"] = len(delivered_preservation)
+    lesson_control["fragile_preservation_capabilities"] = sorted({
+        row["capability"] for row in delivered_preservation})
+    lesson_control["fragile_preservation_patterns"] = sorted({
+        row["capability"] + ":" +
+        "".join("1" if value else "0" for value in row["operand_truths"])
+        for row in delivered_preservation})
+    lesson_control["fragile_preservation_source"] = (
+        "FRESH_SOURCE_TRUTH_TABLE_SIBLINGS")
+    lesson_control["retention_support_requested"] = len(retention_support)
+    lesson_control["retention_support_delivered"] = len(delivered_retention_support)
+    lesson_control["retention_support_capabilities"] = sorted({
+        row["capability"] for row in delivered_retention_support})
+    lesson_control["retention_support_source"] = "FRESH_SOURCE_FAMILY"
+    policy_control_receipts.append(lesson_control)
+
+
+def _apply_retention_decision(
+        mx, run_dir, receipt, course, school, cap, parent_parameters,
+        parent_optimizer, params, optimizer, probe_rows, parent_predictions,
+        learning_settings, teacher, policy_key, candidate_gain,
+        teacher_curriculum_scope, previsit_diagnostics, original_learning_rate,
+        before, after, miss_exposures):
+    with _runtime_timing_trace.trace_span(
+            "RETENTION_CANDIDATE_EVIDENCE", capability=cap):
+        pair, probed, current_grade, fixed_grade, replay, frontier, stage = (
+            _runtime_candidate_evidence._candidate_grade_evidence(
+                mx, run_dir, receipt, course, school, cap,
+                parent_parameters, params, probe_rows,
+                parent_predictions, learning_settings))
+    with _runtime_timing_trace.trace_span("RETENTION_DECIDE", capability=cap):
+        outcome = _learning_learning_experiment.decide(
+            pair, active_capability=cap, phase=school.stage,
+            protected=probed, settings=learning_settings,
+            same_grade_capabilities=current_grade,
+            fixed_grade_replay=fixed_grade,
+            fixed_frontier_replay=frontier,
+            protected_frontier_grade=_retention_frontier_grade(school),
+            mature_grades=frozenset(school.champions),
+            negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
+            source_cohort_sha256=_runtime_state._fingerprint([
+                (row["id"], row["capability"], row["gold"], row["tokens"])
+                for row in probe_rows if row["capability"] in pair]),
+            fragile_replay=replay)
+    outcome["qualification_stage"] = stage
+    from bilqis_mlx.learning.matrix_strain import observe as observe_matrix_strain
+    with _runtime_timing_trace.trace_span("MATRIX_STRAIN", capability=cap):
+        outcome["matrix_strain"] = observe_matrix_strain(
+            mx, run_dir, receipt, parent_parameters, params)
+    admitted = _curriculum_scheduler.assessment_capabilities(
+        _runtime_release_adoption._schedule_for_receipt(
+            run_dir, receipt, course), school)
+    outcome["unsampled_admitted_capabilities"] = (
+        len(set(admitted) | {cap}) - len(pair))
+    with _runtime_timing_trace.trace_span(
+            "RETENTION_APPLY_DECISION", capability=cap,
+            decision=outcome["decision"]):
+        context_credit = _learning_learning_experiment.observe_context(
+            teacher, capability=cap, phase=school.stage,
+            policy_key=policy_key, decision=outcome, local_gain=candidate_gain,
+            curriculum_scope=teacher_curriculum_scope,
+            diagnostics=previsit_diagnostics)
+        if outcome["decision"] == "PROVISIONAL":
+            _learning_learning_experiment.commit_trial(
+                parent_parameters, parent_optimizer, params, optimizer)
+        else:
+            parent_optimizer.learning_rate = original_learning_rate
+            miss_exposures = _teacher_exposures_after_candidate(
+                receipt, miss_exposures, decision=outcome["decision"])
+            after = before
+    return (parent_parameters, parent_optimizer, after, outcome,
+            context_credit, miss_exposures)
+
+
+def _reconcile_candidate_outcome(
+        mx, receipt, cap, params, optimizer, priority, deferred_misses,
+        miss_exposures, outcome, context_credit, before, after, engine,
+        teacher, lesson_grade, policy_key, step_before, attempted_step):
+    remaining = priority
+    if priority and (outcome is None or outcome["decision"] == "PROVISIONAL"):
+        with _runtime_timing_trace.trace_span(
+                "MISS_RECONCILE", capability=cap, miss_count=len(priority)):
+            guesses = _learning_student_ops._predictions(
+                mx, params, priority, receipt["config"], receipt["answer_ids"])
+            remaining = _learning_teacher_feedback.reconcile_unresolved_misses(
+                priority, priority, guesses)
+    remaining_ids = {row["id"] for row in remaining}
+    resolved_ids = {row["id"] for row in priority} - remaining_ids
+    for identity in resolved_ids:
+        miss_exposures.pop(identity, None)
+    all_misses = [
+        row for row in receipt.get("teacher_misses", ())
+        if row["capability"] != cap
+    ] + deferred_misses + remaining
+    all_misses.sort(key=lambda row: (row["capability"], row["id"]))
+    reward = after - before
+    bandit_credit = _learning_learning_experiment.selection_credit(
+        reward, outcome, context_credit)
+    with _runtime_timing_trace.trace_span("TEACHER_OBSERVE", capability=cap):
+        engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
+    expected_retained = (
+        step_before if outcome is not None and outcome["decision"] == "REJECT"
+        else attempted_step)
+    attempted_updates = attempted_step - step_before
+    retained_updates = expected_retained - step_before
+    if attempted_updates < 0:
+        raise ValueError("HUMAN_TRAINER_ATTEMPTED_OPTIMIZER_STEP_REGRESSION")
+    if retained_updates < 0:
+        raise ValueError("HUMAN_TRAINER_RETAINED_OPTIMIZER_STEP_REGRESSION")
+    if int(optimizer.state["step"].item()) != expected_retained:
+        raise ValueError("LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT")
+    return (miss_exposures, remaining, resolved_ids, all_misses,
+            reward, bandit_credit, attempted_updates, retained_updates)
+
+
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 params, optimizer, graph, *, steps_per_visit, batch_size, reserve_gib,
                 source_root=None, learning_settings: _learning_learning_experiment.Settings | None = None,
@@ -534,34 +663,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                                step=step + 1),
                     enabled=boolean_association_bridge, release=executable_release)
         enrichment_examples += len(enrichment_rows)
-        if lesson_control is not None:
-            lesson_control["planned_old_grade_examples"] = lesson_control[
-                "effective_old_grade_examples"]
-            earlier_grades = {item.partition(".")[0] for item in old_capabilities}
-            lesson_control["effective_old_grade_examples"] = sum(
-                row["capability"].partition(".")[0] in earlier_grades for row in picked)
-            lesson_control["selected_answer_kinds"] = sorted({
-                row.get("answer_kind", "binary") for row in picked})
-            lesson_control["fragile_preservation_requested"] = len(preservation)
-            lesson_control["fragile_preservation_delivered"] = len(
-                delivered_preservation)
-            lesson_control["fragile_preservation_capabilities"] = sorted({
-                row["capability"] for row in delivered_preservation})
-            lesson_control["fragile_preservation_patterns"] = sorted({
-                row["capability"] + ":" +
-                "".join("1" if value else "0" for value in row["operand_truths"])
-                for row in delivered_preservation})
-            lesson_control["fragile_preservation_source"] = (
-                "FRESH_SOURCE_TRUTH_TABLE_SIBLINGS")
-            lesson_control["retention_support_requested"] = len(
-                retention_support)
-            lesson_control["retention_support_delivered"] = len(
-                delivered_retention_support)
-            lesson_control["retention_support_capabilities"] = sorted({
-                row["capability"] for row in delivered_retention_support})
-            lesson_control["retention_support_source"] = (
-                "FRESH_SOURCE_FAMILY")
-            policy_control_receipts.append(lesson_control)
+        _record_lesson_controls(
+            lesson_control, policy_control_receipts, old_capabilities, picked,
+            preservation, delivered_preservation, retention_support,
+            delivered_retention_support)
         for row in window:
             identity = row["id"]
             miss_exposures[identity] = miss_exposures.get(identity, 0) + 1
@@ -619,81 +724,19 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     candidate_gain = after-before
     outcome = context_credit = None
     if learning_settings is not None:
-        with _runtime_timing_trace.trace_span("RETENTION_CANDIDATE_EVIDENCE", capability=cap):
-            pair, probed, current_grade, fixed_grade_evidence, replay, frontier, stage = (
-                _runtime_candidate_evidence._candidate_grade_evidence(
-                    mx, run_dir, receipt, course, school, cap,
-                    parent_parameters, params, probe_rows,
-                    parent_predictions, learning_settings))
-        with _runtime_timing_trace.trace_span("RETENTION_DECIDE", capability=cap):
-            outcome = _learning_learning_experiment.decide(
-                pair, active_capability=cap, phase=school.stage,
-                protected=probed, settings=learning_settings,
-                same_grade_capabilities=current_grade,
-                fixed_grade_replay=fixed_grade_evidence,
-                fixed_frontier_replay=frontier,
-                protected_frontier_grade=_retention_frontier_grade(school),
-                mature_grades=frozenset(school.champions),
-                negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
-                source_cohort_sha256=_runtime_state._fingerprint([
-                    (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows
-                    if r["capability"] in pair]),
-                fragile_replay=replay)
-        outcome["qualification_stage"] = stage
-        from bilqis_mlx.learning.matrix_strain import observe as observe_matrix_strain
-        with _runtime_timing_trace.trace_span("MATRIX_STRAIN", capability=cap):
-            outcome["matrix_strain"] = observe_matrix_strain(
-                mx, run_dir, receipt, parent_parameters, params)
-        outcome["unsampled_admitted_capabilities"] = (
-            len(set(_curriculum_scheduler.assessment_capabilities(_runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school)) | {cap})-len(pair))
-        with _runtime_timing_trace.trace_span("RETENTION_APPLY_DECISION", capability=cap,
-                        decision=outcome["decision"]):
-            context_credit = _learning_learning_experiment.observe_context(
-                teacher, capability=cap, phase=school.stage, policy_key=policy_key,
-                decision=outcome, local_gain=candidate_gain,
-                curriculum_scope=teacher_curriculum_scope,
-                diagnostics=previsit_diagnostics)
-            if outcome["decision"] == "PROVISIONAL":
-                _learning_learning_experiment.commit_trial(parent_parameters, parent_optimizer, params, optimizer)
-            else:
-                # The rejected candidate never owned the causal model, its
-                # optimizer or the unresolved miss queue. Teacher-observed
-                # target exposure is not neural state and remains durable.
-                parent_optimizer.learning_rate = original_learning_rate
-                miss_exposures = _teacher_exposures_after_candidate(
-                    receipt, miss_exposures, decision=outcome["decision"])
-                after = before
-        params, optimizer = parent_parameters, parent_optimizer
-    remaining_priority = priority
-    if priority and (outcome is None or outcome["decision"] == "PROVISIONAL"):
-        with _runtime_timing_trace.trace_span("MISS_RECONCILE", capability=cap, miss_count=len(priority)):
-            miss_guesses = _learning_student_ops._predictions(
-                mx, params, priority, receipt["config"], receipt["answer_ids"])
-            remaining_priority = _learning_teacher_feedback.reconcile_unresolved_misses(
-                priority, priority, miss_guesses)
-    remaining_priority_ids = {row["id"] for row in remaining_priority}
-    resolved_priority_ids = {row["id"] for row in priority} - remaining_priority_ids
-    for identity in resolved_priority_ids:
-        miss_exposures.pop(identity, None)
-    all_teacher_misses = [
-        row for row in receipt.get("teacher_misses", ())
-        if row["capability"] != cap
-    ] + deferred_misses + remaining_priority
-    all_teacher_misses.sort(key=lambda row: (row["capability"], row["id"]))
-    reward = after - before
-    bandit_credit = _learning_learning_experiment.selection_credit(reward, outcome, context_credit)
-    with _runtime_timing_trace.trace_span("TEACHER_OBSERVE", capability=cap):
-        engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
-    expected_retained = (step_before if outcome is not None and
-                         outcome["decision"] == "REJECT" else attempted_step)
-    attempted_optimizer_updates = attempted_step - step_before
-    retained_optimizer_updates = expected_retained - step_before
-    if attempted_optimizer_updates < 0:
-        raise ValueError("HUMAN_TRAINER_ATTEMPTED_OPTIMIZER_STEP_REGRESSION")
-    if retained_optimizer_updates < 0:
-        raise ValueError("HUMAN_TRAINER_RETAINED_OPTIMIZER_STEP_REGRESSION")
-    if int(optimizer.state["step"].item()) != expected_retained:
-        raise ValueError("LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT")
+        (params, optimizer, after, outcome, context_credit,
+         miss_exposures) = _apply_retention_decision(
+            mx, run_dir, receipt, course, school, cap, parent_parameters,
+            parent_optimizer, params, optimizer, probe_rows, parent_predictions,
+            learning_settings, teacher, policy_key, candidate_gain,
+            teacher_curriculum_scope, previsit_diagnostics,
+            original_learning_rate, before, after, miss_exposures)
+    (miss_exposures, remaining_priority, resolved_priority_ids,
+     all_teacher_misses, reward, bandit_credit, attempted_optimizer_updates,
+     retained_optimizer_updates) = _reconcile_candidate_outcome(
+        mx, receipt, cap, params, optimizer, priority, deferred_misses,
+        miss_exposures, outcome, context_credit, before, after, engine,
+        teacher, lesson_grade, policy_key, step_before, attempted_step)
     # No new archive exists yet. The retained checkpoint is the last complete
     # recovery point, NOT a representation of these newly updated RAM weights.
     school = _curriculum_scheduler.visit(_runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school, cap, school.current_student)

@@ -32,11 +32,11 @@ def _select_fresh_retention_support_rows(
         rows, *, rotation: int) -> tuple[dict, ...]:
     """Choose one complete fresh source family for preservation rehearsal."""
     if type(rotation) is not int or rotation < 0:
-        raise ValueError("RETENTION_SUPPORT_ROTATION_INVALID")
+        raise ValueError(RETENTION_SUPPORT_ROTATION_INVALID)
     groups = {}
     for row in rows:
         if not isinstance(row, dict) or not isinstance(row.get("id"), str):
-            raise ValueError("RETENTION_SUPPORT_ROW_INVALID")
+            raise ValueError(RETENTION_SUPPORT_ROW_INVALID)
         groups.setdefault(row.get("source_id", row["id"]), []).append(row)
     if not groups:
         return ()
@@ -409,3 +409,5 @@ def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):
     if len(delivered) != len(preservation):
         raise ValueError("FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED")
     return result, tuple(delivered)
+RETENTION_SUPPORT_ROTATION_INVALID = "RETENTION_SUPPORT_ROTATION_INVALID"
+RETENTION_SUPPORT_ROW_INVALID = "RETENTION_SUPPORT_ROW_INVALID"

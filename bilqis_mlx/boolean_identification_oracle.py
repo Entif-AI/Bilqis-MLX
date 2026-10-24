@@ -7,6 +7,8 @@ from .curriculum import BOOLEAN_OPERATORS
 VERSION = "bilqis.mlx.grade-b-idboolops-record-oracle/v1"
 CAPABILITY = "B.IDBOOLOPS"
 TASK = "identify_boolean_operator"
+PROBE_ARITY = 2
+DIRECT_OPERAND_ERROR = "GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID"
 
 
 def _entity(node):
@@ -40,7 +42,7 @@ def _apply(operator: str, values: tuple[bool, ...]) -> bool:
     # IDBOOLOPS normalizes every candidate to the same two-slot experimental
     # surface. Unary NOT acts on the first proposition; the second proposition
     # is controlled irrelevant context. This keeps arity from leaking identity.
-    if len(values) != 2:
+    if len(values) != PROBE_ARITY:
         raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_PROBE_ARITY")
     if operator == "NOT":
         return not values[0]
@@ -76,7 +78,7 @@ def evaluate(record: dict, capability: str = CAPABILITY) -> str:
     for observation in observations:
         if (not isinstance(observation, dict) or set(observation) != {"operands", "result"} or
                 not isinstance(observation["operands"], list) or
-                len(observation["operands"]) != 2 or
+                len(observation["operands"]) != PROBE_ARITY or
                 type(observation["result"]) is not bool):
             raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_OBSERVATION_SHAPE")
         if "world" in record:
@@ -86,8 +88,8 @@ def evaluate(record: dict, capability: str = CAPABILITY) -> str:
             values = tuple(operand["value"] for operand in observation["operands"]
                            if isinstance(operand, dict) and operand.get("kind") == "literal"
                            and type(operand.get("value")) is bool)
-            if len(values) != 2:
-                raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID")
+            if len(values) != PROBE_ARITY:
+                raise ValueError(DIRECT_OPERAND_ERROR)
         truth_patterns.add(values)
         parsed.append((values, observation["result"]))
     required = {(False, False), (False, True), (True, False), (True, True)}

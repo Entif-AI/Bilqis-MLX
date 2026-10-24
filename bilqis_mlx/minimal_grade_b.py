@@ -104,7 +104,7 @@ def _identification_rows(source_root: Path, graph: dict, *, seed: int,
     result = tuple({**row, "generator": GENERATOR,
                     "oracle": IDENTIFICATION_ORACLE} for row in rows)
     if any(evaluate_identification(row["record"]) != row["gold"] for row in result):
-        raise ValueError("GRADE_B_MINIMAL_IDBOOLOPS_ORACLE_DRIFT")
+        raise ValueError(IDBOOLOPS_ORACLE_DRIFT)
     return result
 
 
@@ -191,3 +191,4 @@ def build_course(grade_a: Course, source_root: Path) -> Course:
     if not course.executable:
         raise ValueError("GRADE_B_MINIMAL_RELEASE_NOT_EXECUTABLE")
     return course
+IDBOOLOPS_ORACLE_DRIFT = "GRADE_B_MINIMAL_IDBOOLOPS_ORACLE_DRIFT"

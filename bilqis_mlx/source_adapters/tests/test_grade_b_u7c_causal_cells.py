@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from pathlib import Path
 import json
+from types import MappingProxyType
 import unittest
 
 from bilqis_mlx.grade_a_probe import read_sources
@@ -29,33 +30,36 @@ MANIFEST = ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
 # U7C kept only causally useful cells while balancing TRUE/FALSE per gate.
 # Repeated patterns are deliberate weights, not duplicate source records.
-U7C_PATTERN_QUOTAS = {
-    "NOT": {(False,): 1, (True,): 1},
-    "AND": {(True, True): 2, (True, False): 1, (False, True): 1},
-    "OR": {(False, False): 2, (True, False): 1, (False, True): 1},
-    "XOR": {
+U7C_PATTERN_QUOTAS = MappingProxyType({
+    "NOT": MappingProxyType({(False,): 1, (True,): 1}),
+    "AND": MappingProxyType({
+        (True, True): 2, (True, False): 1, (False, True): 1}),
+    "OR": MappingProxyType({
+        (False, False): 2, (True, False): 1, (False, True): 1}),
+    "XOR": MappingProxyType({
         (False, False): 1,
         (False, True): 1,
         (True, False): 1,
         (True, True): 1,
-    },
-    "IMPLIES": {(True, True): 1, (True, False): 2, (False, False): 1},
-    "IFF": {
+    }),
+    "IMPLIES": MappingProxyType({
+        (True, True): 1, (True, False): 2, (False, False): 1}),
+    "IFF": MappingProxyType({
         (False, False): 1,
         (False, True): 1,
         (True, False): 1,
         (True, True): 1,
-    },
-}
+    }),
+})
 
-FULLY_CAUSAL_PATTERNS = {
-    "NOT": {(False,), (True,)},
-    "AND": {(True, True)},
-    "OR": {(False, False)},
-    "XOR": {(False, False), (False, True), (True, False), (True, True)},
-    "IMPLIES": {(True, False)},
-    "IFF": {(False, False), (False, True), (True, False), (True, True)},
-}
+FULLY_CAUSAL_PATTERNS = MappingProxyType({
+    "NOT": frozenset(((False,), (True,))),
+    "AND": frozenset(((True, True),)),
+    "OR": frozenset(((False, False),)),
+    "XOR": frozenset(((False, False), (False, True), (True, False), (True, True))),
+    "IMPLIES": frozenset(((True, False),)),
+    "IFF": frozenset(((False, False), (False, True), (True, False), (True, True))),
+})
 
 
 def _u7c_cells(rows: tuple[dict, ...], operation: str) -> tuple[dict, ...]:
