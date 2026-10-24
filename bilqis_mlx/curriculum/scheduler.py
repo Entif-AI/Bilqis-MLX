@@ -9,6 +9,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from dataclasses import asdict, dataclass, replace
 from fractions import Fraction
+from enum import Enum
 from .promotion import (
     PROMOTION_MEAN_FLOOR, PromotionError, _promotion_debt, _boundary_mastery_debt, _introduced_grade_capabilities, _mean_accuracy, _promotion_sweep_fields_cleared, _verify_promotion_sweep_state, _promotion_sweep_due, _start_promotion_sweep,
 )
@@ -37,6 +38,36 @@ def _program(value) -> ScheduleProgram:
         schedule_program_from_legacy_course,
     )
     return schedule_program_from_legacy_course(value)
+
+
+class ScheduleTopology(str, Enum):
+    UNCHANGED = "UNCHANGED"
+    APPEND_GRADE = "APPEND_GRADE"
+    SAME_GRADE_EXPANSION = "SAME_GRADE_EXPANSION"
+    SAME_GRADE_REVISION = "SAME_GRADE_REVISION"
+    UNSUPPORTED = "UNSUPPORTED"
+
+
+def classify_schedule_topology(previous: ScheduleProgram,
+                               successor: ScheduleProgram) -> ScheduleTopology:
+    """Classify ordered grade/capability changes independently of semantic ABI."""
+    if not isinstance(previous, ScheduleProgram) or not isinstance(successor, ScheduleProgram):
+        raise TypeError("FACTORY_SCHEDULE_PROGRAM_REQUIRED")
+    if previous == successor:
+        return ScheduleTopology.UNCHANGED
+    old_ids = tuple(grade.id for grade in previous.grades)
+    new_ids = tuple(grade.id for grade in successor.grades)
+    if len(new_ids) == len(old_ids) + 1 and new_ids[:-1] == old_ids:
+        return ScheduleTopology.APPEND_GRADE
+    if new_ids != old_ids:
+        return ScheduleTopology.UNSUPPORTED
+    old_rosters = tuple(tuple(cap.id for cap in grade.capabilities) for grade in previous.grades)
+    new_rosters = tuple(tuple(cap.id for cap in grade.capabilities) for grade in successor.grades)
+    if old_rosters != new_rosters and all(
+            set(old) <= set(new) and tuple(name for name in new if name in old) == old
+            for old, new in zip(old_rosters, new_rosters)):
+        return ScheduleTopology.SAME_GRADE_EXPANSION
+    return ScheduleTopology.SAME_GRADE_REVISION
 
 
 @dataclass(frozen=True)

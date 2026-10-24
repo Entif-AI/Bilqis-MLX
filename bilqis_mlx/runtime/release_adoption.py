@@ -126,13 +126,14 @@ def _verify_profile_successor(predecessor, successor, graph, profile):
 
 
 def _profile_transition(previous_program, successor_program, school, *, mastery_debt=None):
-    appended = len(successor_program.grades) == len(previous_program.grades) + 1
-    if previous_program == successor_program and mastery_debt is None:
+    topology = _curriculum_scheduler.classify_schedule_topology(previous_program, successor_program)
+    appended = topology is _curriculum_scheduler.ScheduleTopology.APPEND_GRADE
+    if topology is _curriculum_scheduler.ScheduleTopology.UNCHANGED and mastery_debt is None:
         return school, None, False
-    revised = (
-        len(successor_program.grades) == len(previous_program.grades) and
-        tuple(grade.id for grade in successor_program.grades) ==
-        tuple(grade.id for grade in previous_program.grades))
+    revised = topology in (
+        _curriculum_scheduler.ScheduleTopology.UNCHANGED,
+        _curriculum_scheduler.ScheduleTopology.SAME_GRADE_EXPANSION,
+        _curriculum_scheduler.ScheduleTopology.SAME_GRADE_REVISION)
     if appended:
         if mastery_debt is None and school.stage == "AWAITING_NEXT_GRADE_WITH_DEBT":
             mastery_debt = school.carried_mastery_debt
@@ -515,7 +516,9 @@ def _adopt_jit_proposal(mx, run_dir, receipt, grade_a_course, source_root, graph
     staged = session.resolve_ready_proposal(school.current_student, proposal)
     successor = staged.successor
     verify_current_implementations(successor, _source_adapters_school.live_source_registry(), _factory_live_answers.live_answer_registry())
-    appended = len(successor.execution_plan.grades) > len(predecessor.execution_plan.grades)
+    successor_program = _factory_schedule.schedule_program_from_executable_release(successor)
+    appended = (_curriculum_scheduler.classify_schedule_topology(program, successor_program)
+                is _curriculum_scheduler.ScheduleTopology.APPEND_GRADE)
     if appended:
         _require_complete_profile_boundary(program, school, receipt)
     if successor.transition.semantic_geometry == "APPEND_ONLY_EXPANSION":

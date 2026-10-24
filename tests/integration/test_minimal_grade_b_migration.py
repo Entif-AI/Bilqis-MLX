@@ -109,6 +109,29 @@ class MinimalGradeBMigrationTests(unittest.TestCase):
         cls.new = minimal_boolean_successor(cls.a, SOURCE)
         _, _, cls.graph, _, _ = read_sources(SOURCE)
 
+    def test_schedule_topology_is_independent_of_semantic_geometry(self):
+        from bilqis_mlx.curriculum.scheduler import (
+            _program, classify_schedule_topology, ScheduleTopology,
+        )
+        previous = _program(self.new)
+        expanded = _program(self.old)
+        prefix = replace(previous, grades=previous.grades[:1])
+        arbitrary = replace(previous, grades=(previous.grades[0],
+            replace(previous.grades[1], id="Z")))
+        cases = (
+            (previous, previous, ScheduleTopology.UNCHANGED),
+            (prefix, arbitrary, ScheduleTopology.APPEND_GRADE),
+            (previous, expanded, ScheduleTopology.SAME_GRADE_EXPANSION),
+            (expanded, previous, ScheduleTopology.SAME_GRADE_REVISION),
+            (previous, replace(previous, program_digest="e" * 64),
+             ScheduleTopology.SAME_GRADE_REVISION),
+            (previous, replace(previous, grades=tuple(reversed(previous.grades))),
+             ScheduleTopology.UNSUPPORTED),
+        )
+        for old, new, expected in cases:
+            with self.subTest(topology=expected):
+                self.assertEqual(classify_schedule_topology(old, new), expected)
+
     def test_existing_full_b_is_replaced_without_neural_mutation(self):
         student = Checkpoint("a" * 64, "bundles/unchanged", 4321, True)
         base = start_new(self.old, student)
