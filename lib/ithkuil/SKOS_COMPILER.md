@@ -697,3 +697,107 @@ rows, 20 resolved/emitted concepts, zero build issues, 169 triples, one scheme, 
 20-member family collection, and zero broader/narrower triples. Updating the count,
 literal identities/forms, or digest requires a corresponding deliberate source
 snapshot change; changing only the golden files is not sufficient evidence.
+
+## Multiple-realization normalization (#45)
+
+#45 adds one bounded intermediate view over the existing #38 identity resolver:
+
+`normalize_atomic_realizations(closure, resolution) -> RealizationNormalization`
+
+It does not parse source independently, create a second identity system, add concept
+definitions, call Falkor/model state, or alter #47 notation-collision policy. The
+semantic identity remains whatever #38 resolved. Grammar rows use the declared
+`category_code + value_code` key; atomic roots remain source-qualified root identities;
+sense records are not atomic realization groups.
+
+### Current source census
+
+The pinned source snapshot contains 772 `morphemes_atomic` rows. Of these, 607 are
+grammar realization rows resolving to 485 grammar semantic keys, while 165 are atomic
+root rows resolving to 165 source-qualified roots. The normalized atomic view therefore
+contains 650 semantic groups while preserving all 772 source realizations.
+
+The 122 grammar rows collapsed beyond one-row-per-concept are not guessed duplicates.
+They come from 122 two-row semantic keys with these literal source type combinations:
+
+- 77 `conditioned_allomorph + overt`;
+- 32 `realized_allomorph + underlying_glottal`;
+- 6 `overt + standalone_allomorph`;
+- 5 `overt + overt_optional`;
+- 1 `standalone_allomorph + zero`;
+- 1 two-row `zero` group (Register NRR initial/final).
+
+The current source has no same-key `zero + overt` pair. The source-backed fixture does
+not manufacture one. A separate synthetic conformance test appends an overt UPX row to
+prove that the generic category/value rule would still produce one identity if such a
+source pair were admitted later.
+
+### Preserved realization facts
+
+Each normalized realization retains, separately:
+
+- source record ID;
+- raw source notation and separately normalized form;
+- the New Ithkuil notation datatype IRI;
+- realization type;
+- allomorph-group ID and source condition;
+- family, morpheme class, and slot;
+- source ID, section ID, table ID, source line, public source URL, and source anchor.
+
+`∅` is the literal U+2205 source notation. It is not treated as blank. A missing raw or
+normalized form is a stable `MISSING_REALIZATION_FORM` held reason.
+
+### Source-backed proving cases
+
+`realization_source_expected.json` pins actual tracked rows and source-assertion IDs;
+`realization_normalized_expected.json` pins the expected normalized groups without
+serializing the implementation under test. Representative current-source cases are:
+
+| Case | Source rows / raw forms | Source distinction preserved |
+| --- | --- | --- |
+| Configuration UPX | `ATOM-e09a479fdaca6d` / `∅` | `zero`, default/unmarked |
+| Configuration DDS | `ATOM-02a4496bfbac3a` / `ţs` | ordinary single overt form |
+| Perspective+Essence M.NRM | `ATOM-2096dbdae9a4c2` / `l`; `ATOM-52561afd815916` / `∅` | standalone vs zero |
+| Affiliation ASO | `ATOM-9b4208b045f444` / `nļ`; `ATOM-f08340cc673ded` / `l` | sole exponent vs inside C_A complex |
+| Effect 1:BEN | `ATOM-bab207e06f0db1` / `ia`; `ATOM-c2249e51c173ff` / `uä` | overt default vs immediately-preceded-by-y allomorph |
+| Case ACT | `ATOM-1dd3cebdcc2f9f` / `ai’`; `ATOM-b0078ab5063976` / `a’i` | underlying glottal vs realized glottal form; curly raw apostrophes preserved while normalized ASCII forms remain separate |
+| Register DSV | `ATOM-0c655eea22faae` / `hai`; `ATOM-257e51f4a984fb` / `ha` | final optional vs initial form; family/slot/condition retained |
+| Register NRR | `ATOM-0a27199f07517d`, `ATOM-68f38fe846454a` / `∅`, `∅` | final and initial source rows remain separate while one semantic identity is retained |
+| Extension ATV vs DPL | both source-backed with raw `b` among their realizations | two distinct semantic identities despite the homograph |
+
+The fixture uses only source vocabulary actually present in the tracked IR. In
+particular, no extra “prefix” relationship is inferred when the source row provides
+only its own family, slot, and condition fields.
+
+### Fail-closed boundaries
+
+The normalizer emits stable issues instead of repairing source ambiguity:
+
+- `UNKNOWN_REALIZATION_TYPE` for an unrecognized realization class;
+- `MISSING_REALIZATION_FORM` for blank raw/normalized notation;
+- `MISSING_ALLOMORPH_GROUP` when the required grouping reference is absent;
+- `DUPLICATE_REALIZATION_SOURCE_REF` when one atomic source key occurs twice;
+- `ALLOMORPH_GROUP_SEMANTIC_CONFLICT` when one grammar allomorph-group ID claims
+  multiple category/value identities;
+- `UPSTREAM_RESOLUTION_HELD` when #38 already held the source row;
+- `REALIZATION_RESOURCE_CARDINALITY` when one source row maps to zero or multiple
+  resolved resource variants;
+- `INCOMPATIBLE_REALIZATION_SEMANTIC_KEY` when a resolved resource disagrees with the
+  source-declared semantic key.
+
+Same-form distinct concepts are deliberately not merged, and this issue does not mark
+homographs as safe. #47 remains the owner of same-scheme notation-collision policy.
+
+### Proof recipe
+
+Focused proof from the repository root with semantic dependencies installed:
+
+```text
+python3 -B -m unittest -v \
+  lib.ithkuil.tests.test_skos_realization \
+  lib.ithkuil.tests.test_skos_realization_hardening
+```
+
+The source fixture also pins the exact current realization-type census and tracked
+input SHA-256 digests. A future source update may change these numbers, but a test or
+fixture-only count edit is not source evidence.
