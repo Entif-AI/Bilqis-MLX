@@ -333,8 +333,7 @@ def _resume_admitted_student(run_dir, manifest, historical_course, course_a,
     if saved.get("factory_admission_v2") is not None:
         saved_release = _runtime_admission._read_executable_factory_release_artifact(
             run_dir, saved)
-        course = _compatibility_executable_projection.legacy_course_for_profile(
-            course_a, source_root, saved_release.profile)
+        course = _factory_schedule.schedule_program_from_executable_release(saved_release)
         admitted_courses = None
     else:
         course, admitted_courses = _compatibility_executable_projection.resolve_legacy_resume_course(

@@ -77,6 +77,25 @@ class ExecutableMigrationTests(unittest.TestCase):
         self.assertEqual(migrated["last_exam"], receipt["last_exam"])
         self.assertEqual(receipt, original)
 
+        from bilqis_mlx.runtime.session import _resume_admitted_student
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            release_file = _persist_executable_factory_release(root, release)
+            saved = {**migrated, "factory_release_file": release_file, "generation": 1}
+            with patch("bilqis_mlx.runtime.session._state_dag.read_current", return_value=saved), \
+                    patch("bilqis_mlx.runtime.session._resume",
+                          return_value=("params", "optimizer", graph, saved)) as resume, \
+                    patch("bilqis_mlx.compatibility.executable_projection.legacy_course_for_profile",
+                          side_effect=AssertionError("v2 re-entered legacy projection")), \
+                    patch("bilqis_mlx.compatibility.executable_projection.resolve_legacy_resume_course",
+                          side_effect=AssertionError("v2 re-entered legacy decoding")):
+                for _ in range(2):
+                    result = _resume_admitted_student(root, {}, course, course, None, "d" * 64)
+                    self.assertEqual(result[-1], program)
+                    self.assertEqual(resume.call_args.args[2], program)
+                    self.assertIsNone(resume.call_args.kwargs["admitted_courses"])
+                self.assertEqual(resume.call_count, 2)
+
 
 class RuntimeAdmissionTests(unittest.TestCase):
     def setUp(self):
