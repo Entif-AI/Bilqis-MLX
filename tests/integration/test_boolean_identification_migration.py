@@ -1,4 +1,5 @@
 """Neural-inert durable enrollment of B.IDBOOLOPS into the revised Grade-B release."""
+from bilqis_mlx.state_dag import read_current
 from dataclasses import asdict, replace
 import json
 import os
@@ -66,7 +67,7 @@ class BooleanIdentificationMigrationTests(unittest.TestCase):
             root = Path(temp)
             revised = _activate_revised_admitted_grade(
                 root, receipt, self.old, self.new, self.graph)
-            self.assertEqual(json.loads((root / "state.json").read_text()), revised)
+            self.assertEqual(read_current(root), revised)
             self.assertTrue((root / "states" / "0000012.json").is_file())
             events = [json.loads(line) for line in (
                 root / "events.jsonl").read_text().splitlines()]

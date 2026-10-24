@@ -535,10 +535,87 @@ def _adopt_jit_proposal(mx, run_dir, receipt, grade_a_course, source_root, graph
 
 def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successor,
                                      graph=None):
-    """Compatibility shim for historical same-grade migration tests."""
-    from bilqis_mlx.compatibility.trainer_transitions import activate_revised_admitted_grade
-    return activate_revised_admitted_grade(
-        run_dir, receipt, previous_course, successor, graph)
+    """Publish the historical same-grade revision through the runtime writer."""
+    from dataclasses import asdict, replace
+    from ..curriculum.scheduler import revise_admitted_grade, assessment_capabilities
+    from ..compatibility.live_releases import (
+        BOOLEAN_IDENTIFICATION_RELEASE, legacy_receipt_fields, rebind_same_grade_config)
+    from ..compatibility.source_adapters import historical_source_registry
+    from ..learning.championship_identity import build_school_identity, enforce_school_identity
+    from ..live_curriculum import assessment_rubric_for_scope
+    from .admission import _factory_admission
+    school = _runtime_state._state_from_json(
+        receipt["school"],
+        _schedule_for_receipt(run_dir, receipt, previous_course))
+    legacy_school = replace(school, course_digest=previous_course.digest())
+    next_state, revised_grade = revise_admitted_grade(
+        previous_course, successor, legacy_school)
+    release, release_file, admission = _factory_admission(
+        run_dir, successor, next_state.current_student,
+        receipt["semantic_graph_sha256"],
+        registry=historical_source_registry())
+    identity = build_school_identity(
+        course_sha256=successor.digest(),
+        semantic_graph_sha256=receipt["semantic_graph_sha256"],
+        parameter_shapes=receipt["parameter_shapes"],
+        factory_release_sha256=release.release_sha256)
+    history = [*receipt.get("curriculum_history", ()), {
+        "release": previous_course.version,
+        "course_digest": previous_course.digest(),
+        "generation": receipt["generation"],
+        "state_file": f"states/{receipt['generation']:07d}.json",
+        "revised_grade": revised_grade,
+        "retired_grade_champion": (
+            asdict(school.champions[revised_grade])
+            if revised_grade in school.champions else None),
+    }]
+    config_update = {}
+    if "config" in receipt or successor.version == BOOLEAN_IDENTIFICATION_RELEASE:
+        if "config" not in receipt:
+            raise ValueError("HUMAN_TRAINER_TYPED_GRADE_REVISION_CONFIG_MISSING")
+        config_update["config"] = rebind_same_grade_config(
+            successor.version, receipt["config"], graph)
+    updated = {
+        **receipt,
+        **legacy_receipt_fields(successor.version),
+        **config_update,
+        "curriculum_mode": successor.version,
+        "curriculum_history": history,
+        "curriculum_parent":
+            receipt.get("curriculum_parent", asdict(school.current_student)),
+        "live_rubric_sha256": assessment_rubric_for_scope(
+            successor, assessment_capabilities(successor, next_state)),
+        "factory_release_sha256": release.release_sha256,
+        "factory_release_file": release_file,
+        "factory_admission": asdict(admission),
+        "championship_school_identity": identity,
+        "last_exam": None,
+    }
+    updated.pop("qualification_cohort", None)
+    if updated.get("mentor_epoch") is not None:
+        epoch, _ = enforce_school_identity(
+            updated["mentor_epoch"], identity,
+            generation=receipt["generation"] + 1,
+            student=asdict(school.current_student))
+        updated["mentor_epoch"] = epoch
+    record = _runtime_checkpoints._advance(
+        run_dir, updated, next_state,
+        result="ACTIVE_GRADE_" + next_state.grade, persist=False)
+    event = {
+        "event": "SCHOOL_GRADE_RELEASE_REVISED",
+        "generation": record["generation"],
+        "grade": revised_grade,
+        "previous_release": previous_course.version,
+        "release": successor.version,
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "factory_release_sha256": release.release_sha256,
+        "actual_neural_updates": 0,
+    }
+    record = _runtime_checkpoints._persist(
+        run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
+    return record
 
 
 def _activate_replaced_admitted_grade(run_dir, receipt, previous_course, successor,
