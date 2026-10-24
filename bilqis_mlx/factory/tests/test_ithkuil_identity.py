@@ -101,6 +101,29 @@ class IthkuilIdentityFactoryTests(unittest.TestCase):
         self.assertEqual(packet["retention_support"], [])
         self.assertEqual(packet["teaching_enrichment_rows"], [])
 
+    def test_prefetch_checks_the_complete_requested_footprint_before_drawing(self):
+        from unittest.mock import patch
+        from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+        from bilqis_mlx.runtime.source_prefetch import prepare_step_sources
+
+        request = dict(identity="d" * 64, source_root=str(LEGACY), graph=self.graph,
+            course=None, executable_release=self.staged.successor, capability=CAPABILITY,
+            batch_size=32, fresh_seed=42, prior_capability=None, prior_seed=None,
+            fragile_fixed_rows=(), fragile_requested=(), fragile_seeds={},
+            fragile_rotation=0, retention_support_capability=None,
+            retention_support_seed=None, retention_support_rotation=0,
+            teaching_seed=43, teaching_enrichment_enabled=True)
+        for change in ({"capability": "D.UNADMITTED"},
+                       {"prior_capability": "D.UNADMITTED"},
+                       {"fragile_requested": ("D.UNADMITTED",)},
+                       {"retention_support_capability": "D.UNADMITTED"}):
+            with self.subTest(change=change), patch.object(
+                    SourceExecutionContext, "draw_rows",
+                    side_effect=AssertionError("provider call before packet validation")) as draw:
+                with self.assertRaisesRegex(ValueError, "UNKNOWN_CAPABILITY"):
+                    prepare_step_sources({**request, **change})
+                draw.assert_not_called()
+
     def test_proposal_requires_both_current_prerequisites(self):
         plan = compile_autonomy_plan(self.current)
         ledger = initial_evidence_ledger(self.current, plan=plan)

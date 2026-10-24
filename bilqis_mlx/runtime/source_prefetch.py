@@ -168,6 +168,12 @@ def prepare_step_sources(request: dict) -> dict:
     batch_size = request["batch_size"]
     source_root = Path(request["source_root"])
     source_context = _source_execution_context(request)
+    if source_context is not None:
+        source_context.require_capabilities(tuple(
+            capability for capability in (
+                request["capability"], request["prior_capability"],
+                *request["fragile_requested"], request["retention_support_capability"])
+            if capability is not None))
     fresh = _source_rows(
         request, seed=request["fresh_seed"],
         capability=request["capability"], each=max(32, batch_size),

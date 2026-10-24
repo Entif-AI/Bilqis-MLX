@@ -44,6 +44,12 @@ class SourceExecutionContext:
             self.source_registry.require(binding.generator_id, binding.oracle_id)
         self.answer_registry.validate_plan(self.release.execution_plan)
 
+    def require_capabilities(self, capabilities: tuple[str, ...]) -> None:
+        """Check a complete host request before any of its providers run."""
+        admitted = self.release.execution_plan.capability_map
+        if any(capability not in admitted for capability in capabilities):
+            raise ValueError("FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY")
+
     def draw_rows(self, *, seed: int, capability: str | None = None,
                   each: int | None = None) -> list[dict]:
         """Draw only the bound release's admitted capability/provider scope."""
