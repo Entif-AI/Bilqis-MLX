@@ -256,3 +256,95 @@ it does not invent source metadata for the group itself.
 The implementation pre-indexes closure rows and source assertions once in
 `SourceProjector(closure)`; projecting each resolved resource therefore avoids a
 whole-table scan per resource.
+
+## 4. Core SKOS graph assembly (#40)
+
+`src/skos/builder.py` composes the already-normalized #38 resources with the #32
+resource-shape contract, #33 notation contract, #34 source-text projection, and #39
+public-source projector. It does not reopen CSV files or reinterpret raw source rows.
+
+### API and accounting
+
+`build_core_graph(resources, source_projector, *, ordered_collections=())` returns:
+
+- `BuildResult.graph`: the strong RDF graph for resources that passed every gate;
+- `BuildResult.emitted`: the exact sorted `ResolvedResource` records represented by
+  that strong graph, including every contributing `RecordRef` from merged identities;
+- `BuildResult.issues`: deterministic `BuildIssue(code, resource_iri, record_refs,
+  details)` records for #42 accounting.
+
+A semantic-resource issue carries that resource's complete `source_records` tuple.
+Group-only scheme/collection/ordered-collection issues use the group's IRI and an empty
+`record_refs` tuple; member IRIs and navigational source refs remain in `details`. This
+keeps a group problem from falsely classifying otherwise emitted semantic rows as held.
+
+### All-or-nothing resource admission
+
+For each resolved semantic resource, the builder validates its #32 shape, adapts only
+the explicit #38 text roles into #34, constructs #33 notation, and requests #39 source
+projection with the resource's exact source-record tuple. A failure in any of those
+surfaces holds the entire semantic resource. Partial source graphs returned alongside a
+#39 issue are discarded. No held semantic IRI remains as a subject or object of the
+strong RDF graph.
+
+The exact raw New Ithkuil notation comes only from #38 `TextAssertion` records with
+role `source_notation_raw`. `Realization.lexical_form` is never used as exact source
+notation. Grammar concepts additionally receive the source grammar value code as a
+separate `grammar-code` typed notation. No display label is synthesized for a sense
+that has only a source definition.
+
+After per-resource validation, the builder analyzes all notation claims using #33's
+default uniqueness rule. Every resource implicated in a blocking same-scheme,
+same-datatype, exact-lexical collision is held. The builder does not choose a winner or
+declare current homographs non-unique; corpus policy for those cases remains downstream.
+
+### Schemes and groups
+
+Every emitted concept has explicit `skos:inScheme`. A scheme is emitted only after
+`SourceProjector.project_group` admits public source loci derived from the surviving
+member resources. If a required scheme cannot be publicly sourced, all concepts that
+claim that scheme are held and scheme membership is recomputed, so no surviving
+`skos:inScheme` points to an absent scheme.
+
+Ordinary family collections are derived only from the `families` keys already retained
+by #38 on admitted concept resources. They emit `skos:member` and never imply
+`skos:broader` or `skos:narrower`. Root resources are not coerced into SKOS concepts to
+make them collection members, so root-only family metadata is not projected as a SKOS
+collection at this stage.
+
+Ordered collections are accepted only as explicit #32 `OrderedCollectionShape` values
+whose basis is `SOURCE_SEMANTIC`. CSV order, source-file order and curriculum order are
+never inspected by the builder. An ordered collection is a closed structure: if one of
+its declared members is held or missing, the whole ordered collection is held and no
+shortened `skos:memberList` is emitted. The validated Level order from #32 can therefore
+be supplied explicitly; in the current corpus it remains held because its member
+concepts are among the unresolved default-unique notation homographs.
+
+### Current-corpus evidence
+
+With the current validated relational closure and the staged #38/#39 implementations:
+
+- #38 resolves 2,968 resources with zero resolver issues;
+- #40 emits 2,579 semantic resources and holds 389;
+- 567 deterministic `NOTATION_COLLISION` issue records cover the colliding resources
+  and exact collision keys, and one `SOURCE_TEXT_TOO_LONG` issue holds one resource;
+- the strong graph contains 19,489 triples, one public-source-backed concept scheme,
+  nine admitted family collections, and no implicit ordered collection;
+- none of the 389 held semantic IRIs occurs anywhere in the emitted graph;
+- supplying the nine-member Level `SOURCE_SEMANTIC` manifest emits no shortened list
+  and records `ORDERED_COLLECTION_MEMBER_NOT_EMITTED` for all nine held members.
+
+These counts describe the current input under #33's strict default uniqueness rule.
+They are held-accounting evidence for #42, not a claim that later corpus-policy issues
+have been completed.
+
+### Proof
+
+`tests/fixtures/skos_builder_core.ttl` is the literal golden graph covering a scheme,
+multi-scheme concept, generic root, root-sense concept, ordinary collection, ordered
+collection, preferred label, definition, realization note, exact Unicode notation,
+grammar-code notation, and public source references. `test_skos_builder.py` compares it
+by RDF graph isomorphism, compares shuffled input by exact triple set, checks the RDF
+list, and exercises fail-closed text, source, shape, collision, scheme and ordered-list
+behavior. The adjacent #32-#34/#38/#39 test suites remain the contract proofs for their
+individual layers.
