@@ -1747,3 +1747,37 @@ receipt rows: 8,452 EMITTED, 1,051 HELD, 1 REJECTED, 0 UNSUPPORTED, and 150 IR_O
 No duplicate/missing source-row locator is present. Strong-subject checking uses actual
 RDF subjects, matching the established held-resource boundary; arbitrary URIRefs that
 appear only as objects are not reclassified as emitted subjects by this gate.
+
+## Canonical RDF determinism gate (#70)
+
+The checker delegates canonical meaning entirely to #41. compare_graphs() canonicalizes
+two RDF graphs and returns a deterministic case receipt containing both digests, triple
+counts, and the first removed/added canonical N-Triples assertion when they differ.
+require_equivalent() turns a mismatch into CANONICAL_DETERMINISM_MISMATCH with that
+meaningful delta.
+
+compare_bundles() applies the same check to #43 ArtifactBundle canonical.nt artifacts
+and independently verifies that each bundle metadata digest matches the canonical bytes.
+The shared `rdf_read.read_canonical_graph` boundary preserves typed literal lexical
+forms exactly with per-literal normalization disabled, and rejects noncanonical bytes.
+For example, `"01"^^xsd:integer` stays distinct from `"1"^^xsd:integer`; reading
+a valid artifact must not silently change its digest. Downstream conformance and
+graph projection reuse this same parser.
+repeat_build_check(input_root) runs the deterministic compiler twice. The CLI command
+python -m lib.ithkuil.src.skos.determinism --input-root CSV_ROOT runs that repeat gate
+and prints a compact machine-readable report.
+
+The current merged #43 core canonical digest is pinned by the fixture as
+062ff653652b0b4b8876a92f3c99b1d0451f26a75950f3241b8f2d2ba0915577 for 19,489 triples.
+This is a determinism oracle for the merged core build, not a claim that later staged
+domain graphs are release-complete.
+
+Tests cover all five contract scenarios: repeated same-process build; CSV rows and
+columns reversed in a fresh temporary source tree; fresh subprocesses in different
+temporary working directories and Python hash seeds; an exact Unicode-heavy notation
+graph containing decomposed C-caron and the literal empty-set sign; and an intentional
+semantic literal mutation. The first four preserve canonical digest/equivalence. The
+mutation changes digest and reports exact first removed/added assertions.
+
+No timestamp, temp path, process hash seed, Falkor ID, model state, or curriculum data
+enters the canonical comparison.
