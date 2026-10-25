@@ -170,3 +170,26 @@ clean reset/rebuild, unrelated foreign-subgraph survival, all three unsafe bound
 cases, wrong graph refusal, same-count stale-plan refusal, and an injected boundary
 race inside the final guarded operation. The full corpus graph is not reset by
 these tests.
+
+## Exact lookup paths (#76)
+
+`falkor_lookup.Reader` exposes exact `by_iri`, datatype-aware `notation`,
+`label_candidates`, `scheme`, and `members` queries. All values are parameters;
+owner scope is fixed by the reader. Every call checks the same complete artifact
+marker and uses `GRAPH.RO_QUERY`. A changed/incomplete artifact or wrong owner
+fails rather than falling back to another graph. IRI duplicates are errors;
+labels return candidate IRIs and never select or merge identities. Notation uses
+exact lexical text plus an explicitly admitted datatype. No Unicode normalization,
+case folding, fuzzy ranking or inferred hierarchy participates.
+
+`ensure_indexes(importer)` idempotently indexes `RdfTerm.iri`, `.lexical`, and
+`.datatype`, supplementing the importer's key index. Falkor reports several indexed
+properties in one label record, so reconciliation checks property membership,
+not exact singleton-list equality. Indexes affect plans, never meaning.
+
+The live golden test proves literal results for IRI, grammar code, `∅`, `ẓ`,
+same-text/wrong-system absence, preferred-label candidates, scheme closure and
+collection members before indexes and after two repeated setups. Exact projection
+readback remains unchanged. The IRI query plan uses `Node By Index Scan`.
+The current corpus may legitimately return no result for held concepts; lookup
+never promotes those rows merely to make a search succeed.

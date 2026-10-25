@@ -71,6 +71,7 @@ class LiveImportTests(unittest.TestCase):
             importer=Importer(db,name,owner,batch_size=5)
             with self.assertRaises(ProfileError): importer.materialize(bundle,fail_after_batches=1)
             self.assertEqual(importer.status()['state'],'incomplete')
+            importer.graph.query('CREATE INDEX FOR (n:RdfTerm) ON (n.iri)')
             first=importer.materialize(bundle)
             second=importer.materialize(bundle)
             self.assertEqual(first,second)

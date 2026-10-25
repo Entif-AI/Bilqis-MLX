@@ -136,7 +136,7 @@ class Importer:
             return self._receipt(projection)
         if state['state'] != 'incomplete': raise ProfileError('FALKOR_PROJECTION_STATE_INVALID')
         indexes=self._read('CALL db.indexes() YIELD label, properties RETURN label,properties')
-        if ['RdfTerm',['key']] not in indexes:
+        if not any(label=='RdfTerm' and 'key' in fields for label,fields in indexes):
             self.graph.query('CREATE INDEX FOR (n:RdfTerm) ON (n.key)')
         batches=0
         try:
