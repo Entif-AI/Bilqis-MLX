@@ -28,18 +28,6 @@ def check_copular(row, *, graph, **_):
     except (KeyError, ValueError, TypeError, AttributeError):
         return False
 
-def check_numeric(row, *, graph, **_):
-    from ..source_adapters.numeric import decode
-    from ..verification.numeric import independent_value
-    value = independent_value(decode(row["record"]["symbols"]))
-    gold = ("TRUE" if value else "FALSE") if type(value) is bool else str(value)
-    return (gold == row["gold"] and
-            [graph["tokens"][index] for index in row["tokens"]] ==
-            row["record"]["symbols"])
-
-
-
-
 from ..verification.event_frames import (
     VERSION as EVENT_FRAME_ORACLE, independent_answer as event_frame_answer,
 )

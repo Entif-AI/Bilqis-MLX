@@ -32,9 +32,32 @@ PLANS = (
 
 
 def constructor_digest():
+    """Historical v1 constructor attestation retained for immutable receipts.
+
+    Current providers attest their implementation separately. A changed semantic
+    contract or lesson plan requires a new release rather than this v1 evidence.
+    """
+    try:
+        evidence = json.loads((Path(__file__).resolve().parent /
+            "compatibility/numeric_constructor_v1.json").read_text())
+        if (not isinstance(evidence, dict) or
+                evidence.get("schema") != "bilqis.numeric-historical-constructor/v1" or
+                evidence.get("semantic_release") != CONTRACT["schema"] or
+                evidence.get("semantic_release_sha256") != digest(CONTRACT) or
+                evidence.get("lesson_plan_sha256") != digest([p.__dict__ for p in PLANS]) or
+                not evidence.get("source_files_sha256")):
+            raise ValueError("GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED")
+        return digest(evidence["source_files_sha256"])
+    except (OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED") from exc
+
+
+def provider_implementation_digest():
+    """Exact current implementation, independently bound by factory receipts."""
     root = Path(__file__).resolve().parent
     files = ("live_grade_c.py", "numeric_curriculum.py", "semantics/numeric.py",
-             "semantics/numeric_v1.json", "source_adapters/numeric.py", "verification/numeric.py")
+             "semantics/numeric_v1.json", "source_adapters/numeric.py", "verification/numeric.py",
+             "source_adapters/school.py", "compatibility/numeric_constructor_v1.json")
     import hashlib
     return digest({name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in files})
 

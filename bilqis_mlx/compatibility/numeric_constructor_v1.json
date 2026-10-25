@@ -1,0 +1,15 @@
+{
+  "schema": "bilqis.numeric-historical-constructor/v1",
+  "semantic_release": "bilqis.numeric-semantics/v1",
+  "semantic_release_sha256": "623214887107206c9bd30ca4468b0956d2b0a0dbf2c260634b1a2a24fde270b0",
+  "lesson_plan_sha256": "0ed2bdd91e912240962e43b8d491807f9aadd62665e2cd93cde7eba7b47a1e88",
+  "source_files_sha256": {
+    "live_grade_c.py": "052cec5b7948e4711cfb9c3e5be87d9fbe15415c0aacde6f24f485739a5cd7e8",
+    "numeric_curriculum.py": "c6425880638a04b34f4b9af4d75f6fe98929fe403d3df20b9937c2d24199cdf8",
+    "semantics/numeric.py": "ce6db9d113199e5ffa946e22cc769ea82723039d95555feb4794313b3b6d426e",
+    "semantics/numeric_v1.json": "56cbb434d0d27a657c8872e4a0ced5c14d40f701d4f76a7a33ca2e06d4ec073f",
+    "source_adapters/numeric.py": "d9a5753d42a54746a57c60d7346f4760d2eed33e9759ce691a2e92bd48b1afe8",
+    "verification/numeric.py": "7f785122d930883fbf34e557890542e753894e48f1e1dc2a021e07e4149797b8"
+  },
+  "source_commit": "ec9a97046f1285d3274af42b9dedfc589c800a75"
+}

@@ -19,6 +19,77 @@ ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT / "vendor" / "legacy-v16"
 
 
+class NumericProviderIdentityTests(unittest.TestCase):
+    def test_implementation_revision_preserves_historical_semantic_admission(self):
+        from unittest.mock import patch
+        from bilqis_mlx import live_grade_c as numeric
+        evidence = numeric.REGISTRY_PATH.read_bytes()
+        graph = numeric.registry_graph()
+        historical = numeric.constructor_digest()
+        self.assertNotEqual(numeric.provider_implementation_digest(), historical)
+        with patch.object(numeric, "provider_implementation_digest", return_value="f" * 64):
+            self.assertEqual(numeric.constructor_digest(), historical)
+            self.assertEqual(numeric.registry_graph(), graph)
+        self.assertEqual(numeric.REGISTRY_PATH.read_bytes(), evidence)
+        self.assertEqual({entry.admission_receipt for entry in numeric.admissions()},
+                         set(json.loads(evidence)["admission_receipts"]))
+
+    def test_changed_semantics_cannot_reuse_historical_release_attestation(self):
+        from unittest.mock import patch
+        from bilqis_mlx import live_grade_c as numeric
+        revised = deepcopy(numeric.CONTRACT)
+        revised["append_only_nodes"][0]["meaning"] = "A different semantic contract"
+        for version in (numeric.CONTRACT["schema"], "bilqis.numeric-semantics/v2"):
+            revised["schema"] = version
+            with self.subTest(version=version), patch.object(numeric, "CONTRACT", revised):
+                with self.assertRaisesRegex(ValueError, "GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED"):
+                    numeric.registry_graph()
+
+    def test_missing_semantic_attestation_fails_closed(self):
+        from unittest.mock import patch
+        from bilqis_mlx import live_grade_c as numeric
+        evidence = json.loads((ROOT / "bilqis_mlx/compatibility/numeric_constructor_v1.json").read_text())
+        for field in ("semantic_release", "semantic_release_sha256", "lesson_plan_sha256",
+                      "source_files_sha256"):
+            incomplete = {key: value for key, value in evidence.items() if key != field}
+            with self.subTest(field=field), patch.object(
+                    Path, "read_text", return_value=json.dumps(incomplete)):
+                with self.assertRaisesRegex(ValueError, "GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED"):
+                    numeric.constructor_digest()
+
+    def test_numeric_source_owns_independent_check_and_semantic_footprint(self):
+        from bilqis_mlx.source_adapters import numeric
+        from bilqis_mlx.source_adapters.school import live_source_registry, C_ORACLE
+        adapter = live_source_registry().require(
+            "bilqis_mlx.numeric_curriculum.draw_numeric", C_ORACLE)
+        self.assertIs(adapter.check, numeric.check_numeric)
+        self.assertIs(adapter.semantic_footprint, numeric.semantic_footprint)
+        row = {"record": {"task": numeric.DIALECT, "symbols": [
+            "school.syntax.math", "school.op.EQ", "school.op.ADD",
+            "school.number.1", "school.number.1", "school.number.2", "syntax.end"]}}
+        self.assertEqual(numeric.semantic_footprint(row),
+                         ("school.op.ADD", "school.number.1"))
+
+    def test_matching_specimens_do_not_authorize_an_unattested_provider(self):
+        from dataclasses import replace
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from bilqis_mlx.factory.generation import runtime_adapter_for_release
+        from bilqis_mlx.source_adapters.school import live_source_registry, C_ORACLE
+        registry = live_source_registry()
+        generator = "bilqis_mlx.numeric_curriculum.draw_numeric"
+        adapter = registry.require(generator, C_ORACLE)
+        release = SimpleNamespace(
+            source_bindings=SimpleNamespace(by_capability={"C.ADD": SimpleNamespace(
+                generator_id=generator, oracle_id=C_ORACLE)}),
+            source_adapters=(replace(adapter.descriptor, implementation_sha256="f" * 64),))
+        execution = SimpleNamespace(capability_id="C.ADD", provider_id=adapter.descriptor.adapter_id)
+        with patch("bilqis_mlx.factory.generation._requalifies_sealed_capability",
+                   return_value=True, create=True):
+            with self.assertRaisesRegex(ValueError, "FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT"):
+                runtime_adapter_for_release(None, {}, release, registry, execution)
+
+
 class GradeCSourceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -27,6 +98,26 @@ class GradeCSourceTests(unittest.TestCase):
         assert cls.graph == proposed_graph(cls.parent)
         manifest = json.loads((ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json").read_text())
         cls.previous = b_course(a_course(accepted_grade_a(manifest)), SOURCE)
+
+    def test_provider_acceptance_and_footprints_preserve_numeric_source_rules(self):
+        from unittest.mock import patch
+        from bilqis_mlx.source_adapters.numeric import check_numeric, semantic_footprint
+        rows = draw(self.graph, seed=19, maximum=3)
+        with patch("bilqis_mlx.source_adapters.school.draw_numeric",
+                   side_effect=AssertionError("checker invoked generator")):
+            for row in rows:
+                self.assertTrue(check_numeric(row, graph=self.graph))
+                self.assertFalse(check_numeric({**row, "gold": "wrong"}, graph=self.graph))
+                self.assertFalse(check_numeric({**row, "tokens": row["tokens"][:-1]}, graph=self.graph))
+                footprint = semantic_footprint(row)
+                self.assertTrue(footprint)
+                self.assertTrue(all(root.startswith(("school.op.", "school.number."))
+                                    for root in footprint))
+                self.assertEqual(semantic_footprint({**row, "root": "forged.root"}), footprint)
+        with self.assertRaises(ValueError):
+            check_numeric({"record": {"symbols": ["invalid"]}}, graph=self.graph)
+        with self.assertRaises(IndexError):
+            check_numeric({**rows[0], "tokens": [len(self.graph["tokens"])]}, graph=self.graph)
 
     def test_c_growth_preserves_historical_registry_rows(self):
         from bilqis_mlx.token_atlas import rows_for_graph

@@ -10,7 +10,7 @@ from ..factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from ..factory.autonomy import SupplementalEvidenceSpec
 from ..factory.model import SourceAdapter
 from ..curriculum import BOOLEAN_OPERATORS
-from ..factory.verification import check_numeric
+from .numeric import check_numeric, semantic_footprint as numeric_semantic_footprint
 from .structure import inspect_boolean_identification, inspect_source_query
 
 from ..grade_a_oracle import VERSION as A_ORACLE
@@ -46,7 +46,8 @@ from ..live_grade_b import (GENERATOR as B_COHORT_GENERATOR, RELEASE as B_RELEAS
 
 
 from ..live_grade_c import (GENERATOR as C_COHORT_GENERATOR, RELEASE as C_RELEASE,
-                            PLANS, constructor_digest as c_digest)
+                            PLANS, constructor_digest as c_digest,
+                            provider_implementation_digest as c_provider_digest)
 
 
 from ..numeric_curriculum import ORACLE as C_ORACLE, draw_numeric
@@ -370,14 +371,15 @@ def live_source_registry() -> SourceAdapterRegistry:
             dependencies=boolean_evidence_dependencies,
             semantic_footprint=semantic_footprint),
         RegisteredSourceAdapter(SourceAdapter(
-            "source.finite-numeric/v1", "bilqis_mlx.numeric_curriculum.draw_numeric",
-            (C_ORACLE,), c_digest(), cohort_generator_id=C_COHORT_GENERATOR,
+            "source.finite-numeric/v2", "bilqis_mlx.numeric_curriculum.draw_numeric",
+            (C_ORACLE,), c_provider_digest(), cohort_generator_id=C_COHORT_GENERATOR,
             variation_axes=("source-valid", "fresh-seed", "typed-answer",
                             "numeric-scope", "construction-shape"),
             profile_dimensions=(("numbers", tuple(str(i) for i in range(11))),),
             cohort_releases=((C_RELEASE, c_digest()),
                              (STAIRCASE_RELEASE, staircase_digest()))), draw_c, check_numeric,
-            witness=witness_numeric_obligation),
+            witness=witness_numeric_obligation,
+            semantic_footprint=numeric_semantic_footprint),
         copular_adapter(),
         event_adapter(),
         event_intro_adapter(),

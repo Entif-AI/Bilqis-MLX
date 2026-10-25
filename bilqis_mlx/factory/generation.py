@@ -1,10 +1,6 @@
 """Grade-neutral specimen generation from a verified FactoryRelease."""
 from __future__ import annotations
 
-from dataclasses import asdict
-import hashlib
-import json
-
 from .adapters import SourceAdapterRegistry
 from .model import FactoryRelease
 from .execution import ExecutionPlan
@@ -14,72 +10,20 @@ from .curriculum_definition import (
 )
 
 
-def _digest(value) -> str:
-    return hashlib.sha256(json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-        allow_nan=False).encode("utf-8")).hexdigest()
-
-
-def _runtime_adapter_contract(descriptor) -> dict:
-    """Return provider identity that must remain stable across code refactors.
-
-    Implementation and historical cohort-code digests are evidence about exact
-    source bytes, not the semantic adapter contract itself. A newer
-    implementation may execute an older admitted release only after it
-    reproduces that release's sealed capability specimens exactly.
-    """
-    contract = asdict(descriptor)
-    contract.pop("implementation_sha256")
-    releases = contract.pop("cohort_releases")
-    contract["cohort_release_ids"] = tuple(name for name, _ in releases)
-    return contract
-
-
-def _requalifies_sealed_capability(
-        source_root, graph, release, registry, execution, *, legacy_course=None) -> bool:
-    receipt = next((
-        item for item in release.verification.capabilities
-        if item.capability_id == execution.capability_id), None)
-    if receipt is None:
-        return False
-    try:
-        rows = draw_execution_rows(
-            source_root, graph, release.curriculum, release.execution_plan,
-            registry, source_bindings=release.source_bindings,
-            seed=receipt.verification_seed,
-            capability=execution.capability_id, each=receipt.specimen_count)
-    except (KeyError, TypeError, ValueError):
-        return False
-    return (
-        len(rows) == receipt.specimen_count and
-        _digest(tuple(row["id"] for row in rows)) == receipt.specimen_ids_sha256 and
-        _digest(rows) == receipt.specimen_content_sha256
-    )
-
-
 def runtime_adapter_for_release(
         source_root, graph, release, registry, execution, *, legacy_course=None,
         drift_code="FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT"):
-    """Resolve a runtime provider without confusing refactoring with source drift.
+    """Execute only the exact implementation bound by the admission receipt.
 
-    Exact descriptor identity is the fast path. If only implementation evidence
-    changed while the declared semantic adapter contract stayed intact, require
-    the current implementation to reproduce the admitted release's sealed
-    capability specimens byte-for-byte before allowing execution.
+    Historical releases remain readable. A refactored provider requires its own
+    verified admission; specimen replay cannot substitute a different identity.
     """
     binding = release.source_bindings.by_capability[execution.capability_id]
     registered = registry.require(binding.generator_id, binding.oracle_id)
     admitted = next((
         item for item in release.source_adapters
         if item.adapter_id == execution.provider_id), None)
-    compatible = registered.descriptor == admitted
-    if (not compatible and admitted is not None and
-            _runtime_adapter_contract(registered.descriptor) ==
-            _runtime_adapter_contract(admitted)):
-        compatible = _requalifies_sealed_capability(
-            source_root, graph, release, registry, execution,
-            legacy_course=legacy_course)
-    if not compatible:
+    if registered.descriptor != admitted:
         raise ValueError(drift_code + ":" + execution.capability_id)
     return registered
 
