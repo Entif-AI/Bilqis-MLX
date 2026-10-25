@@ -6,6 +6,7 @@ import hashlib
 import json
 
 from .generation import draw_executable_release_rows, runtime_adapter_for_release
+from .adapters import validate_instructional_constituents
 
 
 def content_digest(rows) -> str:
@@ -61,6 +62,9 @@ def draw_teaching_option_rows(source_root, graph, release, registry, *,
                 adapter.check(row, source_root=source_root, graph=graph,
                               course=legacy_course) is not True):
             raise ValueError("FACTORY_TEACHING_SOURCE_ORACLE_DISAGREEMENT")
+        validate_instructional_constituents(
+            row, curriculum=release.curriculum, plan=release.execution_plan,
+            capability=constituent.capability_id, adapter=adapter)
     return rows
 
 

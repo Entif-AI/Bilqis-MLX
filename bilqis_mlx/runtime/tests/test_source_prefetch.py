@@ -25,6 +25,51 @@ MANIFEST = ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
 
 class SourcePrefetchTests(unittest.TestCase):
+    def test_live_v2_assessment_and_worker_lanes_reject_seed_specific_future_root(self):
+        from bilqis_mlx.factory.tests.test_teaching import closed_source_fixture
+        from bilqis_mlx.runtime.assessment import _draw_live_rows
+        from bilqis_mlx.runtime.source_execution import SourceExecutionContext
+        course, graph, sources, answers, release = closed_source_fixture()
+        context = SourceExecutionContext(release, graph, None, sources, answers)
+        with self.assertRaisesRegex(ValueError, "CLOSURE:Z.C0:future.root"):
+            _draw_live_rows(None, graph, seed=999, capability="Z.C0", source_context=context)
+        with patch("bilqis_mlx.source_adapters.school.live_source_registry", return_value=sources):
+            with self.assertRaisesRegex(ValueError, "CLOSURE:Z.C0:future.root"):
+                _draw_live_rows(None, graph, seed=999, capability="Z.C0", executable_release=release)
+        request = {
+            "identity": "e" * 64, "source_root": "/source", "graph": graph,
+            "course": course, "executable_release": release,
+            "capability": "Z.C0", "batch_size": 4, "fresh_seed": 17,
+            "prior_capability": None, "prior_seed": None,
+            "fragile_fixed_rows": (), "fragile_requested": (), "fragile_seeds": {},
+            "fragile_rotation": 0, "retention_support_capability": None,
+            "retention_support_seed": 17, "retention_support_rotation": 0,
+            "teaching_seed": 17, "teaching_enrichment_enabled": False,
+        }
+        variants = {
+            "fresh": {"fresh_seed": 999},
+            "prior": {"prior_capability": "Z.C1", "prior_seed": 999},
+            "support": {"retention_support_capability": "Z.C1", "retention_support_seed": 999},
+            "enrichment": {"teaching_enrichment_enabled": True, "teaching_seed": 999},
+            "preservation_draw": {"fragile_fixed_rows": ({"id": "fixed", "capability": "Z.C1"},),
+                "fragile_requested": ("Z.C1",), "fragile_seeds": {"Z.C1": (999, 1001, 1002)}},
+        }
+        with (patch("bilqis_mlx.runtime.source_prefetch.live_source_registry", return_value=sources),
+              patch("bilqis_mlx.runtime.source_prefetch.live_answer_registry", return_value=answers)):
+            self.assertEqual(len(prepare_step_sources(request)["fresh"]), 32)
+            for lane, fields in variants.items():
+                with self.subTest(lane=lane), self.assertRaisesRegex(ValueError, "CLOSURE:Z.C[01]:future.root"):
+                    prepare_step_sources({**request, **fields})
+
+    def test_historical_assessment_dispatch_keeps_its_existing_generation_path(self):
+        from bilqis_mlx.runtime.assessment import _draw_live_rows
+        course = SimpleNamespace()
+        rows = [{"id": "legacy", "capability": "A.IDENTITY", "gold": "TRUE"}]
+        with (patch("bilqis_mlx.runtime.assessment.draw_course_rows", return_value=rows),
+              patch("bilqis_mlx.factory.generation.validate_instructional_constituents",
+                    side_effect=AssertionError("v1 acquired v2 closure"))):
+            self.assertEqual(_draw_live_rows(None, {}, seed=17, capability="A.IDENTITY", course=course), rows)
+
     def test_human_cli_defaults_to_two_prep_workers_with_serial_escape_hatch(self):
         self.assertEqual(parse_args(["train"]).source_prefetch_workers, 2)
         self.assertEqual(
