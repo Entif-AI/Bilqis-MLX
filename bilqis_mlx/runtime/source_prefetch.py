@@ -11,6 +11,7 @@ from pathlib import Path
 import signal
 
 from bilqis_mlx.learning.fragile_replay import fresh_preservation_rows
+from bilqis_mlx.profiles.retention import fragile_preservation_policy
 from bilqis_mlx.factory.live_answers import live_answer_registry
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.live_curriculum import draw_course_rows
@@ -70,6 +71,7 @@ def _fragile_rows(request: dict, *,
     requested = tuple(request["fragile_requested"])
     if not fixed or not requested:
         return ()
+    policy = fragile_preservation_policy()
     def seed_for(name, attempt):
         seeds = tuple(request["fragile_seeds"].get(name, ()))
         if len(seeds) != 3:
@@ -77,7 +79,7 @@ def _fragile_rows(request: dict, *,
         return seeds[attempt]
     return fresh_preservation_rows(
         fixed, capabilities=requested, rotation=request["fragile_rotation"],
-        batch_size=request["batch_size"], seed_for=seed_for,
+        batch_size=request["batch_size"], retention_policy=policy, seed_for=seed_for,
         draw_rows=lambda **kwargs: _source_rows(
             request, source_context=source_context, **kwargs))
 

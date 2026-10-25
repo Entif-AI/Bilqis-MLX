@@ -6,6 +6,13 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx.cli import parse_args
+from bilqis_mlx.factory.curriculum_definition import from_legacy_course
+from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+from bilqis_mlx.factory.execution import CurriculumProfile
+from bilqis_mlx.factory.tests.test_executable_release import _answers
+from bilqis_mlx.factory.tests.test_execution_plan import (
+    _synthetic_course, _synthetic_registry,
+)
 from bilqis_mlx.runtime import source_prefetch
 from bilqis_mlx.runtime.source_prefetch import prepare_step_sources
 
@@ -77,10 +84,56 @@ class SourcePrefetchTests(unittest.TestCase):
                     prepare_step_sources({**request, forbidden: object()})
 
     def test_active_v2_packet_uses_executable_release_instead_of_legacy_course(self):
+        course = _synthetic_course(6)
+        curriculum, bindings = from_legacy_course(course)
+        graph = {
+            "tokens": [
+                "fixture.padding",
+                "cogal.value.false",
+                "cogal.value.true",
+            ],
+        }
+        sources = _synthetic_registry()
+        answers = _answers()
+        release = compile_executable_factory_release(
+            curriculum, bindings, CurriculumProfile.full(), sources, answers,
+            source_root=None, graph=graph, verification_seed=17)
         request = {
             "identity": "b" * 64, "source_root": "/source",
+            "graph": graph, "course": course,
+            "executable_release": release,
+            "capability": "Z.C0", "batch_size": 4,
+            "fresh_seed": 15, "prior_capability": None,
+            "prior_seed": None, "fragile_fixed_rows": (),
+            "fragile_requested": (), "fragile_seeds": {},
+            "fragile_rotation": 0,
+            "retention_support_capability": None,
+            "retention_support_seed": 17,
+            "retention_support_rotation": 0, "teaching_seed": 16,
+            "teaching_enrichment_enabled": False,
+        }
+        expected = [{"id": "v2", "capability": "Z.C0", "gold": "TRUE"}]
+        with (patch("bilqis_mlx.runtime.source_prefetch.draw_course_rows",
+                    side_effect=AssertionError("Legacy v1 generation forbidden")),
+              patch("bilqis_mlx.runtime.source_prefetch.live_source_registry",
+                    return_value=sources),
+              patch("bilqis_mlx.runtime.source_prefetch.live_answer_registry",
+                    return_value=answers),
+              patch("bilqis_mlx.factory.generation.draw_executable_release_rows",
+                    return_value=expected) as executable):
+            result = prepare_step_sources(request)
+        self.assertEqual(result["fresh"], expected)
+        self.assertEqual(executable.call_args.kwargs, {
+            "seed": request["fresh_seed"], "capability": request["capability"],
+            "each": 32,
+        })
+        self.assertEqual(executable.call_args.args[2], release)
+
+    def test_v2_packet_rejects_untyped_release(self):
+        request = {
+            "identity": "c" * 64, "source_root": "/source",
             "graph": {"tokens": []}, "course": SimpleNamespace(),
-            "executable_release": SimpleNamespace(release_sha256="c" * 64),
+            "executable_release": SimpleNamespace(release_sha256="d" * 64),
             "capability": "B.AND", "batch_size": 4,
             "fresh_seed": 15, "prior_capability": None,
             "prior_seed": None, "fragile_fixed_rows": (),
@@ -91,15 +144,29 @@ class SourcePrefetchTests(unittest.TestCase):
             "retention_support_rotation": 0, "teaching_seed": 16,
             "teaching_enrichment_enabled": False,
         }
-        expected = [{"id": "v2", "capability": "B.AND", "gold": "TRUE"}]
-        with (patch("bilqis_mlx.runtime.source_prefetch.draw_course_rows",
-                    side_effect=AssertionError("Legacy v1 generation forbidden")),
-              patch("bilqis_mlx.factory.generation.draw_executable_release_rows",
-                    return_value=expected) as executable):
-            result = prepare_step_sources(request)
-        self.assertEqual(result["fresh"], expected)
-        self.assertEqual(executable.call_args.kwargs["legacy_course"],
-                         request["course"])
+        with self.assertRaisesRegex(TypeError, "Expected an ExecutableFactoryRelease"):
+            prepare_step_sources(request)
+
+    def test_fragile_worker_forwards_frozen_policy_without_boolean_assumption(self):
+        request = {
+            "fragile_fixed_rows": ({"id": "fixed", "capability": "C.ADD"},),
+            "fragile_requested": ("C.ADD",),
+            "fragile_seeds": {"C.ADD": (3, 5, 7)},
+            "fragile_rotation": 11,
+            "batch_size": 8,
+        }
+        from bilqis_mlx.profiles.retention import FragilePreservationPolicy
+        policy = FragilePreservationPolicy(("C.ADD",), 4, "fixture/source/v1")
+        with (patch("bilqis_mlx.runtime.source_prefetch.fragile_preservation_policy",
+                    return_value=policy),
+              patch("bilqis_mlx.runtime.source_prefetch.fresh_preservation_rows",
+                    return_value=()) as select):
+            result = source_prefetch._fragile_rows(request)
+
+        self.assertEqual(result, ())
+        self.assertEqual(select.call_args.kwargs["capabilities"], ("C.ADD",))
+        self.assertEqual(select.call_args.kwargs["rotation"], 11)
+        self.assertIs(select.call_args.kwargs["retention_policy"], policy)
 
     def test_step_packet_prepares_fresh_retention_support_family(self):
         request = {
