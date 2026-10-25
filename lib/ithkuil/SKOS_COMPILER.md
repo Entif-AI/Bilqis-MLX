@@ -1456,3 +1456,51 @@ domain/source locus; 17 are direct substitutions and two carry intermediate patt
 Fixtures include `fbm → fv → vw`, Unicode `ţbn → tḑ → ḑy`, and direct `řř → ňš`.
 Missing required domain/input/output/condition fields are held without partial RDF;
 row order does not affect canonical output.
+
+## Minimal Bilqis extension vocabulary freeze (#60)
+
+`extension_vocabulary.json` is the normative current-corpus freeze for linguistic
+residue that generic RDF, RDFS, DC Terms and SKOS cannot state without distortion.
+It is a term registry, not a parallel ontology. Each admitted property has one
+canonical `Identity("term", ...)` IRI, definition, domain/range expectation,
+cardinality, real source fixture and required fields, source justification, owning
+issues, rejected standards/custom alternatives, non-goals and no unproven SKOS
+subproperty claim.
+
+The current admitted set is exactly 13 properties:
+
+- lexicon dimensions: `lexiconStem`, `lexiconSpecification`;
+- root/sense structure: `hasSense`;
+- affix degree: `degreeOf`;
+- composition: `surfacePattern`, `condition`, `componentCount`;
+- component occurrence: `componentRole`, `slotLabel`;
+- explicit allomorph rules: `inputPattern`, `intermediatePattern`, `outputPattern`,
+  `allomorphDomain`.
+
+The #59 research result is evidence, not authority by itself. #60 independently
+admits its four pattern/domain roles because the actual 19-row source table recurs,
+machine consumers must distinguish the roles, generic `rdf:value`/DC relations lose
+that distinction, and the terms do not mint semantic concepts or SKOS relations.
+
+Four reviewed candidates are explicitly not admitted:
+
+- `sourceLocusKind`: extractor/provenance mode, excluded from this semantic freeze;
+- `componentPosition`: `rdf:_n` already preserves order;
+- `degreeNumber`: typed `rdf:value` already carries the scalar;
+- `surfaceReplacement`: #35 fixture-only example superseded by the three actual #59
+  source roles.
+
+The `sourceLocusKind` decision propagates upstream rather than being filtered later.
+The `upstream-correction/` packet removes that issue-local predicate from the owning
+#52 public graph while retaining the exact mode on `LexiconDimensionRecord` and #55
+receipt coverage. It also regenerates the #52/#54 exact fixtures and #55 canonical
+snapshot from the corrected graph. `lexiconStem` and `lexiconSpecification` remain
+admitted semantic dimensions. The original staged #52/#54/#55 files remain unchanged
+as review evidence for the pre-freeze state.
+
+`load_extension_vocabulary()` validates every admitted fixture directly against the
+tracked CSV row; registry prose cannot self-attest a term. `validate_graph_vocabulary`
+fails any `.../vocab/*` predicate not in the admitted set. Current #56/#57/#58/#59
+graphs exercise ten of the terms; the corrected #52 public dimension graph exercises
+two and keeps source mode record-only; #53 exercises `hasSense`. Tests prove a
+fabricated vocabulary predicate still fails closed.

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 import unittest
 
@@ -9,11 +8,13 @@ from rdflib import URIRef
 from rdflib.namespace import SKOS
 
 
-STAGED = os.environ.get("BILQIS_STAGED_SKOS_PATH")
-if STAGED:
-    import lib.ithkuil.src.skos as _skos
-    for path in reversed(STAGED.split(os.pathsep)):
-        _skos.__path__.insert(0, path)
+import lib.ithkuil.src.skos as _skos
+BASE_SKOS = Path(next(iter(_skos.__path__))).resolve()
+STAGED = Path(__file__).resolve().parents[1] / "src" / "skos"
+VERIFY = Path(__file__).resolve().parents[3] / "_verify" / "lib" / "ithkuil" / "src" / "skos"
+_skos.__path__.insert(0, str(STAGED))
+if VERIFY.exists():
+    _skos.__path__.insert(1, str(VERIFY))
 
 from lib.ithkuil.src.skos.errors import ProfileError
 from lib.ithkuil.src.skos.identity import Identity
@@ -25,10 +26,11 @@ from lib.ithkuil.src.skos.preflight import CompilerClosure, preflight
 from lib.ithkuil.src.skos.preflight_io import FrozenRow, LoadedTable
 
 
-LIB = Path(os.environ.get("BILQIS_ITHKUIL_LIB", Path(__file__).resolve().parents[1]))
+LIB = BASE_SKOS.parents[1]
 DATA = LIB / "_data" / "csv"
-RELATION_PROFILE = Path(os.environ.get("BILQIS_ROOT_SENSE_RELATION_PROFILE", LIB / "src/skos/root_sense_extension.json"))
-NEGATIVE = Path(os.environ.get("BILQIS_ROOT_SENSE_NEGATIVE_FIXTURE", LIB / "tests/fixtures/skos_root_sense_negative.ttl"))
+VERIFY_ITHKUIL = VERIFY.parents[1] if VERIFY.exists() else LIB
+RELATION_PROFILE = (VERIFY if VERIFY.exists() else BASE_SKOS) / "root_sense_extension.json"
+NEGATIVE = VERIFY_ITHKUIL / "tests" / "fixtures" / "skos_root_sense_negative.ttl"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 

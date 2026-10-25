@@ -14,7 +14,6 @@ from .preflight import CompilerClosure
 
 STEM = URIRef(Identity("term", ("lexiconStem",)).iri)
 SPECIFICATION = URIRef(Identity("term", ("lexiconSpecification",)).iri)
-SOURCE_LOCUS_KIND = URIRef(Identity("term", ("sourceLocusKind",)).iri)
 
 ALLOWED_STEMS = frozenset({"ROOT-WIDE", "STEM 1", "STEM 2", "STEM 3", "STEMS 1-3"})
 ALLOWED_SPECIFICATIONS = frozenset({"BSC", "CTE", "CSV", "OBJ"})
@@ -84,8 +83,6 @@ def project_lexicon_dimensions(
         subject = URIRef(record.identity.iri)
         graph.add((subject, STEM, Literal(record.canonical_stem, normalize=False)))
         graph.add((subject, SPECIFICATION, Literal(record.specification, normalize=False)))
-        for mode in record.source_locus_kinds:
-            graph.add((subject, SOURCE_LOCUS_KIND, Literal(mode, normalize=False)))
         records.append(LexiconDimensionRecord(
             record.identity,
             record.parent_root,

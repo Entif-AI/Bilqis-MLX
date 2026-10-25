@@ -4,7 +4,7 @@
   "expected_counts": {
     "root_resources": 503,
     "sense_concepts": 1615,
-    "dimension_triples": 4845,
+    "dimension_triples": 3230,
     "root_sense_links": 1615
   },
   "cases": {

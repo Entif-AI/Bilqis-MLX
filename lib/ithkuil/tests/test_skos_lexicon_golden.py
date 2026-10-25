@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 import unittest
 
@@ -9,16 +8,18 @@ from rdflib import Graph, Literal, URIRef
 from rdflib.namespace import DCTERMS, SKOS
 
 
-STAGED = os.environ.get("BILQIS_STAGED_SKOS_PATH")
-if STAGED:
-    import lib.ithkuil.src.skos as _skos
-    for path in reversed(STAGED.split(os.pathsep)):
-        _skos.__path__.insert(0, path)
+import lib.ithkuil.src.skos as _skos
+BASE_SKOS = Path(next(iter(_skos.__path__))).resolve()
+STAGED = Path(__file__).resolve().parents[1] / "src" / "skos"
+VERIFY = Path(__file__).resolve().parents[3] / "_verify" / "lib" / "ithkuil" / "src" / "skos"
+_skos.__path__.insert(0, str(STAGED))
+if VERIFY.exists():
+    _skos.__path__.insert(1, str(VERIFY))
 
 from lib.ithkuil.src.skos.canonical import canonicalize
 from lib.ithkuil.src.skos.identity import Identity
 from lib.ithkuil.src.skos.lexicon_dimensions import (
-    SOURCE_LOCUS_KIND, SPECIFICATION, STEM, project_lexicon_dimensions,
+    SPECIFICATION, STEM, project_lexicon_dimensions,
 )
 from lib.ithkuil.src.skos.lexicon_links import load_root_sense_term, project_root_sense_links
 from lib.ithkuil.src.skos.lexicon_roots import project_lexicon_roots
@@ -28,11 +29,12 @@ from lib.ithkuil.src.skos.preflight import CompilerClosure, preflight
 from lib.ithkuil.src.skos.preflight_io import FrozenRow, LoadedTable
 
 
-LIB = Path(os.environ.get("BILQIS_ITHKUIL_LIB", Path(__file__).resolve().parents[1]))
+LIB = BASE_SKOS.parents[1]
 DATA = LIB / "_data" / "csv"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 GOLDEN = json.loads((FIXTURES / "skos_lexicon_golden_cases.json").read_text(encoding="utf-8"))
-ROOT_SENSE_NEGATIVE = Path(os.environ.get("BILQIS_ROOT_SENSE_NEGATIVE_FIXTURE", FIXTURES / "skos_root_sense_negative.ttl"))
+VERIFY_ITHKUIL = VERIFY.parents[1] if VERIFY.exists() else LIB
+ROOT_SENSE_NEGATIVE = VERIFY_ITHKUIL / "tests" / "fixtures" / "skos_root_sense_negative.ttl"
 
 
 def staged_module_file(name: str) -> Path:
