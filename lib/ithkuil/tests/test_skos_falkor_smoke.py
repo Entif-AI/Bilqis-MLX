@@ -59,6 +59,14 @@ class SmokeSuiteTests(unittest.TestCase):
             with self.assertRaises(ProfileError):run_smoke(reader,p)
             reader.query.assert_not_called()
 
+    def test_missing_required_query_cannot_claim_a_complete_suite(self):
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d)/'missing.json';suite=json.loads(SUITE_PATH.read_text());suite['queries'].pop()
+            p.write_text(json.dumps(suite));reader=Mock()
+            with self.assertRaises(ProfileError):run_smoke(reader,p)
+            reader.query.assert_not_called()
+
     @unittest.skipUnless(os.environ.get('BILQIS_FALKOR_LIVE')=='1','explicit isolated live proof only')
     def test_frozen_suite_on_fresh_conformant_import(self):
         name='bilqis_skos_19_77_'+uuid.uuid4().hex[:12];owner='smoke-'+uuid.uuid4().hex

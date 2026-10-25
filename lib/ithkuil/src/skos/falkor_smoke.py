@@ -12,6 +12,7 @@ from .falkor_import import Importer,connect
 from .falkor_lookup import Reader
 
 SUITE_PATH=Path(__file__).with_name('smoke_queries.json')
+REQUIRED_CASES=frozenset({'grammar-code','utf8-notation','concept-notations','concept-schemes','family-members','semantic-neighbor','admitted-cross-scheme','held-exact-excluded','public-source','root-sense-dimensions','shared-label-is-candidates'})
 MUTATION=re.compile(r'\b(CREATE|MERGE|SET|DELETE|REMOVE|DROP|LOAD|CALL|FOREACH)\b',re.I)
 
 
@@ -22,6 +23,7 @@ def run_smoke(reader,suite_path=SUITE_PATH):
     ids=[case.get('id') for case in suite['queries']]
     if not ids or any(not isinstance(i,str) or not i for i in ids) or len(ids)!=len(set(ids)):
         raise ProfileError('FALKOR_SMOKE_QUERY_ID_INVALID')
+    if set(ids)!=REQUIRED_CASES:raise ProfileError('FALKOR_SMOKE_REQUIRED_CASE_MISSING')
     cases=[]
     for case in suite['queries']:
         if MUTATION.search(case['cypher']):raise ProfileError('FALKOR_SMOKE_MUTATION_FORBIDDEN',case['id'])
