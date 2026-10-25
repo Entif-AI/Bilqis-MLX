@@ -1639,3 +1639,37 @@ explicitly reviewed records for future admitted source states. Positive source-t
 integration tests are labeled synthetic, bind their review to the exact row/endpoints,
 and do not approve any current raw mapping. #68 consumes this receipt without taking
 over mapping policy or semantic adjudication.
+
+## Semantic coverage receipt schema (#67)
+
+The v1 receipt contract is bilqis.skos.semantic-coverage/v1. The durable JSON Schema
+is coverage_receipt.schema.json; coverage_schema.validate_coverage_receipt() applies
+the same structural rules plus the cross-field additive accounting checks that JSON
+Schema cannot express by itself. The implementation uses only the Python standard
+library and the existing ProfileError; no dependency was added to the shared venv.
+
+The receipt has explicit top-level sections for compiler/profile identity, consumed
+source/IR artifact digests, canonical RDF digest/triple count, extensible per-domain
+accounting, global disposition totals, declared source-frontier debt, blocking conflict
+summary, and build status.
+
+Every domain contains exactly the five row dispositions
+EMITTED | HELD | REJECTED | UNSUPPORTED | IR_ONLY, source-row total, semantic counts
+for concepts/roots/senses/mappings/compositions/allomorphs, notation totals keyed by
+datatype/system IRI, and explicit frontier-debt entries. New domains may be added through
+the common domain schema without changing existing field meaning. Unknown disposition
+names fail closed.
+
+The validator enforces both accounting equations: each domain source-row total equals
+the sum of its five dispositions, and global totals equal the sum of all domain totals.
+Inputs require unique (domain, artifact) identities and lowercase SHA-256 digests.
+Canonical RDF/profile digests are also exact lowercase SHA-256. The schema contains no
+curriculum or admission-authority field.
+
+Fixtures include one complete four-domain synthetic receipt and five literal invalid
+receipts: missing source digest, malformed RDF digest, inconsistent accounting totals,
+unknown disposition enum, and missing frontier-debt declaration. The command
+python -m lib.ithkuil.src.skos.coverage_schema RECEIPT.json exits zero with a small
+machine-readable validation result or exits 2 with a stable error code.
+
+#67 defines structure only. #68 owns computation from domain artifacts.
