@@ -575,6 +575,9 @@ class SchoolTelemetry:
                 step=step, prefix=grade or self.board.state.get("prefix"),
                 _rate_sample_eligible=True)
             return
+        # Journal replay is presentation history, not work performed by this
+        # execution command. The live cockpit VISITS counter is command-local.
+        self.visits = 0
         self.start = dict(self.latest)
         self.start_cap = dict(self.last_cap)
         self.execution_start_step = step if type(step) is int else None
@@ -613,6 +616,7 @@ class SchoolTelemetry:
         self.board.state.update(
             step=step if type(step) is int else self.board.state.get("step"),
             prefix=grade or self.board.state.get("prefix"),
+            visits=0,
             _rate_sample_eligible=True)
 
     def _start(self, grade, event):
