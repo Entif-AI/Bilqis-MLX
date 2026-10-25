@@ -79,6 +79,25 @@ def _direct_u7c_replay_rows():
 
 
 class FragileReplayTests(unittest.TestCase):
+    def test_retention_profile_owns_immutable_fragile_source_policy(self):
+        from dataclasses import FrozenInstanceError
+        from bilqis_mlx.profiles.retention import FragilePreservationPolicy, fragile_preservation_policy
+        policy = fragile_preservation_policy()
+        self.assertIsInstance(policy, FragilePreservationPolicy)
+        self.assertEqual(policy.capabilities, ("B.OR", "B.XOR"))
+        self.assertIs(fragile_preservation_capabilities(), policy.capabilities)
+        self.assertEqual(policy.per_capability_target, 4)
+        self.assertEqual(policy.source_selector, "bilqis.mlx.grade-b-u7c-runtime-sampler/v3")
+        with self.assertRaises(FrozenInstanceError):
+            policy.per_capability_target = 8
+        for capabilities, target, selector in ((["B.OR"], 4, "source"),
+                (("B.OR", "B.OR"), 4, "source"), (("",), 4, "source"),
+                (("B.OR",), True, "source"), (("B.OR",), 0, "source"),
+                (("B.OR",), 4, "")):
+            with self.subTest(capabilities=capabilities, target=target, selector=selector), \
+                    self.assertRaises(ValueError):
+                FragilePreservationPolicy(capabilities, target, selector)
+
     def test_saved_direct_u7c_cohort_replay_does_not_require_world(self):
         rows = _direct_u7c_replay_rows()
         rubric = "b" * 64
