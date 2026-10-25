@@ -193,3 +193,35 @@ collection members before indexes and after two repeated setups. Exact projectio
 readback remains unchanged. The IRI query plan uses `Node By Index Scan`.
 The current corpus may legitimately return no result for held concepts; lookup
 never promotes those rows merely to make a search succeed.
+
+## Frozen semantic smoke queries (#77)
+
+`src/skos/smoke_queries.json`, suite `1.0.0`, contains parameterized read-only
+Cypher and literal expected results. Its eleven cases cover code lookup, exact
+UTF-8 notation, all notation systems, schemes, family membership, direct semantic
+neighbors, admitted mappings, held-exact exclusion, public source identifiers,
+root/sense Stem/Specification, and shared-label candidates without identity merge.
+`falkor_smoke.run_smoke` validates suite/query identity, rejects mutation clauses,
+executes through the reader's server-enforced read-only command, and emits per-case
+results bound to suite and canonical RDF digests.
+
+The golden fixture is explicitly synthetic, built over the existing #40 core
+fixture. A separate #63 reviewed close-match claim is emitted by the existing
+admission projector; a proposed exact-match claim remains held. The admitted
+mapping support graph accompanies the #72 evidence bundle. This fixture proves
+query behavior; it does not admit any current corpus mapping or claim new source
+coverage. Current-corpus held/debt state remains separate.
+
+```sh
+BILQIS_FALKOR_LIVE=1 python3 -B -m unittest \
+  lib.ithkuil.tests.test_skos_falkor_smoke -v
+python3 -B -m lib.ithkuil.src.skos.falkor_smoke \
+  --graph EXPLICIT_FIXTURE_GRAPH --owner EXPLICIT_OWNER
+```
+
+For another pinned graph, supply `--suite` with its reviewed literal parameters and
+expected results. The runner never manufactures expectations from the same live
+query. Tests reject duplicate query IDs and mutating suite text before execution,
+pass every golden result on a fresh conformant import, and prove that the server
+rejects a deliberate write sent through the read-only reader. Complete projection
+readback remains unchanged after the suite and refused write.
