@@ -26,7 +26,7 @@ class PreparedSuccessorFixture(CandidateStagingFixture):
         self.checkpoint = Checkpoint("e" * 64, "bundles/fixture", 0, True)
         self.program = schedule_program_from_executable_release(self.current)
         self.receipt = {"school": asdict(start_new(self.program, self.checkpoint))}
-        self.parameters = {"weights": [1., 2.]}
+        self.parameters = {"weights": SimpleNamespace(shape=(2,), values=[1., 2.])}
         self.optimizer = SimpleNamespace(
             state={"step": 0}, update=Mock(side_effect=AssertionError("neural update")))
         self.temporary = tempfile.TemporaryDirectory()
@@ -60,7 +60,7 @@ class PreparedSuccessorFixture(CandidateStagingFixture):
                 "scores": {cap.id: {"correct": cap.exam_item_count, "total": cap.exam_item_count}
                            for grade in self.program.grades for cap in grade.capabilities}}}
 
-    def append_grade_fixture(self):
+    def append_grade_fixture(self, graph=None):
         from bilqis_mlx.factory.candidate_staging import compile_candidate_successor, candidate_source_anchor
         from bilqis_mlx.factory.executable_release import compile_executable_factory_release
         from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
@@ -90,7 +90,7 @@ class PreparedSuccessorFixture(CandidateStagingFixture):
         return compile_candidate_successor(frontier, self.current, self.candidate_id,
             curriculum=curriculum, source_bindings=bindings, profile=CurriculumProfile.full(),
             source_registry=fixture.registry, answer_registry=fixture.answers,
-            source_root=None, graph=self.graph, verification_seed=44)
+            source_root=None, graph=self.graph if graph is None else graph, verification_seed=44)
 
 
 class _BeforeMaterialization(Exception):
@@ -243,47 +243,131 @@ class PreparedSuccessorTests(PreparedSuccessorFixture, unittest.TestCase):
         self.assertEqual(tuple(self.root.iterdir()), ())
         self.optimizer.update.assert_not_called()
 
-    def test_same_graph_routes_the_exact_sealed_successor_without_compiling(self):
-        result_receipt = {"prepared": True}
-        before = deepcopy((self.parameters, self.optimizer.state, self.receipt))
-        materializations = []
-        original = release_adoption._materialize_prepared_successor
-        def materialize(*args, **kwargs):
-            result = original(*args, **kwargs)
-            materializations.append(result)
-            return result
-        with self.admitted_boundary(), patch.object(release_adoption,
-                "_adopt_executable_profile", return_value=(
-                    result_receipt, self.program, self.staged.successor, self.program)) as owner, \
-                patch.object(release_adoption, "_materialize_prepared_successor",
-                             side_effect=materialize) as materializer, \
-                patch.object(release_adoption._runtime_checkpoints, "_bundle_pointer",
-                             side_effect=AssertionError("unchanged geometry wrote bundle")), \
-                patch.object(release_adoption._bilqis_mlx_vocabulary_growth, "extend_mlx_student",
-                             side_effect=AssertionError("unchanged geometry grew")):
-            result = self.adopt()
-        materializer.assert_called_once()
-        self.assertIs(materializations[0].student, materializer.call_args.args[3])
-        self.assertEqual(materializations[0].student, self.checkpoint)
-        self.assertEqual(result, (self.parameters, self.optimizer, self.graph,
-                                  result_receipt, self.program))
-        self.assertIs(owner.call_args.kwargs["compiled_successor"], self.staged.successor)
-        self.assertEqual((self.parameters, self.optimizer.state, self.receipt), before)
-        self.optimizer.update.assert_not_called()
-        self.assertEqual(tuple(self.root.iterdir()), ())
+    def test_common_tail_commits_once_and_replays_only_delivery_after_crash(self):
+        import json
+        from bilqis_mlx import state_dag
+        original_current, original_program = self.current, self.program
+        for growing in (False, True):
+            for appended in (False, True):
+                for delivered in (False, True):
+                    with self.subTest(growing=growing, appended=appended, delivered=delivered), \
+                            tempfile.TemporaryDirectory() as temporary:
+                        root = Path(temporary)
+                        self.current, self.program = original_current, original_program
+                        graph = ({**self.graph, "tokens": [*self.graph["tokens"], "fixture.extra"]}
+                                 if growing else self.graph)
+                        staged = (self.append_grade_fixture(graph) if appended
+                                  else self.stage(graph=graph))
+                        self.graduate_fixture()
+                        self.receipt["last_exam"].update(
+                            exam_rubric_sha256="c" * 64, cohort_sha256="d" * 64)
+                        self.receipt.update(generation=0, run_id="prepared-disposable",
+                            config={"vocab_size": len(self.graph["tokens"])},
+                            parameter_shapes={"weights": [2]}, model_bundle=self.checkpoint.filename)
+                        materialized_student = (replace(self.checkpoint, sha256="f" * 64,
+                            filename="bundles/grown") if growing else self.checkpoint)
+                        materialized = release_adoption.PreparedSuccessorMaterialization(
+                            self.parameters, self.optimizer, graph, materialized_student,
+                            {"train_updates": 0} if growing else None,
+                            {"rebaselined": True} if growing else None)
+                        checkpoint = release_adoption._runtime_checkpoints
+                        reconcile = checkpoint._reconcile_delivery_outbox
+                        def interrupt(run_dir, record):
+                            if delivered:
+                                reconcile(run_dir, record)
+                            raise _BeforeMaterialization("publication interrupted")
+                        with self.admitted_boundary(), patch(
+                                "bilqis_mlx.factory.candidate_realizations.admitted_candidate_graph",
+                                return_value=graph), patch.object(release_adoption,
+                                "_materialize_prepared_successor", return_value=materialized) as materializer, \
+                                patch.object(release_adoption._compatibility_executable_projection,
+                                "legacy_course_for_profile", return_value=SimpleNamespace(version="fixture")), \
+                                patch.object(release_adoption._runtime_admission,
+                                "_executable_factory_admission",
+                                wraps=release_adoption._runtime_admission._executable_factory_admission) as admission, \
+                                patch.object(checkpoint, "_persist", wraps=checkpoint._persist) as persist, \
+                                patch.object(checkpoint, "_reconcile_delivery_outbox", side_effect=interrupt):
+                            with self.assertRaises(_BeforeMaterialization):
+                                release_adoption._adopt_prepared_successor(
+                                    None, root, self.receipt, None, None, self.graph,
+                                    self.parameters, self.optimizer, staged, reserve_gib=100.)
+                        materializer.assert_called_once()
+                        admission.assert_called_once()
+                        persist.assert_called_once()
+                        self.assertIs(admission.call_args.args[1], staged.successor)
+                        saved = state_dag.read_current(root)
+                        self.assertEqual(saved["generation"], 1)
+                        self.assertEqual(saved["school"]["current_student"], asdict(materialized_student))
+                        self.assertEqual(saved["factory_release_sha256"], staged.successor.release_sha256)
+                        self.assertEqual(saved["semantic_graph_sha256"],
+                                         release_adoption._runtime_state._fingerprint(graph))
+                        self.assertEqual(saved["config"]["vocab_size"], len(graph["tokens"]))
+                        self.assertEqual(saved["championship_school_identity"]["semantic_graph_sha256"],
+                                         saved["semantic_graph_sha256"])
+                        with patch.object(release_adoption, "_materialize_prepared_successor",
+                                side_effect=AssertionError("repeated materialization")), \
+                                patch.object(release_adoption._runtime_admission, "_executable_factory_admission",
+                                side_effect=AssertionError("repeated admission")), \
+                                patch.object(checkpoint, "_persist", side_effect=AssertionError("second generation")):
+                            reconcile(root, saved)
+                            reconcile(root, state_dag.read_current(root))
+                        events = [json.loads(line) for line in (root / "events.jsonl").read_text().splitlines()]
+                        self.assertEqual(events, saved["delivery_outbox"])
+                        self.assertEqual(len(events), 1)
+                        event = events[0]
+                        self.assertEqual(event["actual_neural_updates"], 0)
+                        if growing:
+                            self.assertEqual(event["event"], "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED")
+                            self.assertEqual(event["growth"], materialized.growth)
+                            self.assertEqual(event["previous_student_sha256"], self.checkpoint.sha256)
+                            self.assertEqual(saved["last_exam"], materialized.rebaselined_exam)
+                        else:
+                            self.assertEqual(event["event"], "SCHOOL_EXECUTION_PROFILE_ADOPTED")
+                            self.assertEqual(event["transition_kind"],
+                                             "APPEND_GRADE" if appended else "REVISE_PROFILE")
+                        self.assertEqual(event["generation"], 1)
+                        self.assertEqual(event["grade"], "Y" if appended else "Z")
+                        self.assertEqual(event["factory_release_sha256"], staged.successor.release_sha256)
+                        self.assertEqual(event["optimizer_step"], materialized_student.optimizer_step)
+                        if growing:
+                            self.assertEqual(event["semantic_geometry"], "APPEND_ONLY_EXPANSION")
+                        else:
+                            self.assertEqual(event["previous_factory_release_sha256"], self.current.release_sha256)
+                            self.assertEqual(event["revised_grade"], None if appended else "Z")
+                            self.assertFalse(event["debt_admission"])
+                            self.assertEqual(event["carried_mastery_debt"], [])
+                        self.assertEqual(event["student_sha256"], materialized_student.sha256)
+                        self.optimizer.update.assert_not_called()
 
-    def test_graph_growth_routes_the_exact_sealed_successor_without_compiling(self):
-        graph = {**self.graph, "tokens": [*self.graph["tokens"], "fixture.extra"]}
-        staged = self.stage(graph=graph)
-        expected = (self.parameters, self.optimizer, graph, {"prepared": True}, self.program)
-        with self.admitted_boundary(), patch(
-                "bilqis_mlx.factory.candidate_realizations.admitted_candidate_graph",
-                return_value=graph), patch.object(release_adoption,
-                "_adopt_catalog_profile", return_value=expected) as owner:
-            self.assertEqual(self.adopt(staged), expected)
-        self.assertIs(owner.call_args.kwargs["compiled_successor"], staged.successor)
-        self.assertIs(owner.call_args.args[7], self.optimizer)
-        self.optimizer.update.assert_not_called()
+    def test_both_geometries_use_the_common_commit_tail(self):
+        for growing in (False, True):
+            with self.subTest(growing=growing):
+                graph = ({**self.graph, "tokens": [*self.graph["tokens"], "fixture.extra"]}
+                         if growing else self.graph)
+                staged = self.stage(graph=graph)
+                materialized = release_adoption.PreparedSuccessorMaterialization(
+                    self.parameters, self.optimizer, graph, self.checkpoint,
+                    {"train_updates": 0} if growing else None, None)
+                with self.admitted_boundary(), patch(
+                        "bilqis_mlx.factory.candidate_realizations.admitted_candidate_graph",
+                        return_value=graph), patch.object(release_adoption,
+                        "_materialize_prepared_successor", return_value=materialized) as materializer, \
+                        patch.object(release_adoption._compatibility_executable_projection,
+                        "legacy_course_for_profile", return_value=SimpleNamespace(version="fixture")), \
+                        patch.object(release_adoption, "_commit_prepared_successor",
+                                     return_value={"prepared": True}) as commit, \
+                        patch.object(release_adoption, "_adopt_executable_profile",
+                                     side_effect=AssertionError("separate profile tail")), \
+                        patch.object(release_adoption, "_adopt_catalog_profile",
+                                     side_effect=AssertionError("separate catalog tail")):
+                    result = self.adopt(staged)
+                materializer.assert_called_once()
+                commit.assert_called_once()
+                self.assertIs(commit.call_args.args[3], staged.successor)
+                self.assertIs(commit.call_args.args[8], materialized)
+                self.assertEqual(result, (self.parameters, self.optimizer, graph,
+                                          {"prepared": True}, SimpleNamespace(version="fixture")))
+                self.optimizer.update.assert_not_called()
 
     def test_append_only_geometry_preserves_same_grade_topology(self):
         graph = {**self.graph, "tokens": [*self.graph["tokens"], "fixture.extra"]}
@@ -305,6 +389,9 @@ class PreparedSuccessorTests(PreparedSuccessorFixture, unittest.TestCase):
                 patch.object(release_adoption._curriculum_scheduler, "adopt_appended_program",
                              side_effect=AssertionError("geometry selected append-grade")), \
                 patch.object(release_adoption, "_materialize_prepared_successor",
+                    return_value=release_adoption.PreparedSuccessorMaterialization(
+                        self.parameters, self.optimizer, graph, self.checkpoint, {}, None)), \
+                patch.object(release_adoption._runtime_admission, "_executable_factory_admission",
                              side_effect=_BeforeMaterialization):
             with self.assertRaises(_BeforeMaterialization):
                 self.adopt(staged)

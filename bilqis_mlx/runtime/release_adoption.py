@@ -674,6 +674,60 @@ def _materialize_prepared_successor(
         grown, own_optimizer, next_graph, pointer, growth, exam)
 
 
+def _commit_prepared_successor(
+        run_dir, receipt, predecessor, successor,
+        previous_program, successor_program, school, next_state,
+        materialization, compatibility_course, *, topology, revised_grade):
+    """Commit one materialized successor and its original transition intent."""
+    student = materialization.student
+    next_state = _dataclasses.replace(next_state, current_student=student)
+    graph = materialization.graph
+    graph_sha = _runtime_state._fingerprint(graph)
+    shapes = {name: list(value.shape) for name, value in materialization.parameters.items()}
+    successor, release_file, admission = _runtime_admission._executable_factory_admission(
+        run_dir, successor, student, graph_sha, graph)
+    appended = topology is _curriculum_scheduler.ScheduleTopology.APPEND_GRADE
+    identity, epoch, history = _profile_championship_state(
+        {**receipt, "semantic_graph_sha256": graph_sha, "parameter_shapes": shapes},
+        predecessor, successor, school, next_state, appended=appended)
+    candidate = _profile_adoption_receipt(
+        receipt, compatibility_course, successor, successor_program,
+        release_file, admission, identity, epoch, history, revised_grade, graph)
+    candidate.update(semantic_graph_sha256=graph_sha, parameter_shapes=shapes,
+                     config={**candidate["config"], "vocab_size": len(graph["tokens"])})
+    if materialization.growth is not None:
+        candidate.update(
+            last_exam=materialization.rebaselined_exam,
+            numeric_maximum=candidate.get("numeric_maximum"),
+            numeric_scope_final_maximum=receipt.get("numeric_scope_final_maximum"))
+    record = _runtime_checkpoints._advance(
+        run_dir, candidate, next_state, model_bundle=student.filename,
+        result="ACTIVE_GRADE_" + next_state.grade, persist=False)
+    if materialization.growth is not None:
+        event = _catalog_adoption_event(
+            record, school, student, successor, materialization.growth, next_state.grade)
+    else:
+        event = {
+            "event": "SCHOOL_EXECUTION_PROFILE_ADOPTED",
+            "generation": record["generation"],
+            "grade": next_state.grade,
+            "profile_id": successor.profile.profile_id,
+            "transition_kind": "APPEND_GRADE" if appended else "REVISE_PROFILE",
+            "revised_grade": revised_grade,
+            "debt_admission": False,
+            "carried_mastery_debt": list(next_state.carried_mastery_debt),
+            "previous_factory_release_sha256": predecessor.release_sha256,
+            "factory_release_sha256": successor.release_sha256,
+            "student_sha256": school.current_student.sha256,
+            "optimizer_step": school.current_student.optimizer_step,
+            "actual_neural_updates": 0,
+        }
+    record = _runtime_checkpoints._persist(
+        run_dir, _runtime_checkpoints._with_delivery_outbox(record, (event,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
+    return record
+
+
 def _adopt_prepared_successor(
         mx, run_dir, receipt, grade_a_course, source_root, graph,
         parameters, optimizer, staged, *, reserve_gib):
@@ -687,24 +741,25 @@ def _adopt_prepared_successor(
     program = _factory_schedule.schedule_program_from_executable_release(predecessor)
     school = _runtime_state._state_from_json(receipt["school"], program)
     successor_program = _factory_schedule.schedule_program_from_executable_release(successor)
-    appended = (_curriculum_scheduler.classify_schedule_topology(program, successor_program)
-                is _curriculum_scheduler.ScheduleTopology.APPEND_GRADE)
-    if appended:
+    topology = _curriculum_scheduler.classify_schedule_topology(program, successor_program)
+    if topology is _curriculum_scheduler.ScheduleTopology.APPEND_GRADE:
         _require_complete_profile_boundary(program, school, receipt)
-    semantic_geometry = successor.transition.semantic_geometry
-    if semantic_geometry == _factory_executable_release.SemanticGeometryChange.APPEND_ONLY_EXPANSION:
-        from bilqis_mlx.profiles.catalog import CatalogProfileTransition
-        next_graph = admitted_candidate_graph(staged, graph)
-        return _adopt_catalog_profile(mx, run_dir, receipt, grade_a_course, source_root,
-            graph, parameters, optimizer, CatalogProfileTransition(successor.profile, next_graph),
-            reserve_gib=reserve_gib, compiled_successor=successor)
+    next_graph = (admitted_candidate_graph(staged, graph)
+                  if successor.transition.semantic_geometry ==
+                  _factory_executable_release.SemanticGeometryChange.APPEND_ONLY_EXPANSION
+                  else graph)
     materialized = _materialize_prepared_successor(
         mx, run_dir, receipt, school.current_student, successor,
-        graph, parameters, optimizer, graph, reserve_gib=reserve_gib)
-    record, course, _, _ = _adopt_executable_profile(
-        run_dir, receipt, grade_a_course, source_root, materialized.graph, successor.profile,
-        compiled_successor=successor)
-    return materialized.parameters, materialized.optimizer, materialized.graph, record, course
+        graph, parameters, optimizer, next_graph, reserve_gib=reserve_gib)
+    next_state, revised_grade, _ = _profile_transition(program, successor_program, school)
+    compatibility_course = _compatibility_executable_projection.legacy_course_for_profile(
+        grade_a_course, source_root, successor.profile)
+    record = _commit_prepared_successor(
+        run_dir, receipt, predecessor, successor, program, successor_program,
+        school, next_state, materialized, compatibility_course,
+        topology=topology, revised_grade=revised_grade)
+    return (materialized.parameters, materialized.optimizer, materialized.graph,
+            record, compatibility_course)
 
 
 def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successor,
