@@ -15,7 +15,7 @@ from bilqis_mlx.compatibility.frontier_recovery import (
 from bilqis_mlx.trainer import (_bundle_pointer, _fingerprint, _persist,
     _ensure_executable_release, _migrate_championship_governance, _resume,
     _state_from_json, _take_exam, _take_visit, prepare_source)
-from bilqis_mlx.grade_transition import activate_numeric_grade
+from bilqis_mlx.compatibility.grade_transition import activate_numeric_grade
 from bilqis_mlx.live_grade_a import live_course as a_course
 from bilqis_mlx.live_grade_b import RELEASE as B_RELEASE, constructor_digest as b_digest, live_course as b_course
 from bilqis_mlx.live_grade_c import PLANS, RELEASE as C_RELEASE, live_course, prepare_course
@@ -26,6 +26,86 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "vendor" / "legacy-v16"
 PARENT = SOURCE / "runs/primitive-consolidation-v16-triplets" / AUDITED_PARENT.basename
 MANIFEST = ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
+
+
+class GradeTransitionCompatibilityDisposableTests(unittest.TestCase):
+    """Exercise historical transition contracts without the archived checkpoint."""
+
+    @classmethod
+    def setUpClass(cls):
+        from bilqis_mlx.compatibility import historical_teacher_policy as policy
+        from bilqis_mlx.live_grade_c import registry_graph
+        from bilqis_mlx.semantics.abi import HISTORICAL_PREFIX_SIZE
+
+        cls.manifest = json.loads(MANIFEST.read_text())
+        cls.grade_a = a_course(accepted_grade_a(cls.manifest))
+        cls.previous = b_course(cls.grade_a, SOURCE)
+        registered = registry_graph()
+        tokens = registered["tokens"][:HISTORICAL_PREFIX_SIZE]
+        cls.parent_graph = {**registered, "tokens": tokens,
+            "nodes": registered["nodes"][:HISTORICAL_PREFIX_SIZE],
+            "row_contract_sha256": {name: registered["row_contract_sha256"][name]
+                                    for name in tokens}}
+        cls.course, cls.graph = prepare_course(cls.previous, maximum=10)
+        strategy = dict(old=4, preview=0, depth=1, contrast=0.0, lr=0.00013, distill=0.0)
+        key = policy._policy_key(strategy)
+        cls.teacher = dict(strategies={key: strategy}, global_stats={key: policy._stats()},
+                           grade_stats={}, events=0, mutations=0)
+        cls.policy_sha = _fingerprint({
+            "fixture_only": "grade-transition-compatibility/v1", "teacher": cls.teacher})
+
+    def setUp(self):
+        from copy import deepcopy
+        self.fixture = GradeCTrainerTests()
+        for name in ("manifest", "grade_a", "previous", "parent_graph", "course",
+                     "graph", "teacher", "policy_sha"):
+            setattr(self.fixture, name, deepcopy(getattr(self, name)))
+
+    def test_current_module_exposes_no_transition_or_readiness(self):
+        import bilqis_mlx.grade_transition as current
+        self.assertFalse(hasattr(current, "activate_numeric_grade"))
+        self.assertFalse(hasattr(current, "next_grade_readiness"))
+
+    def test_invalid_boundary_and_catalog_reject_before_growth(self):
+        self.fixture.test_c_requires_one_complete_cumulative_a_b_result_before_growth()
+        self.fixture.test_c_checks_native_catalog_without_external_review_before_growth()
+
+    def test_historical_debt_boundary_retains_unresolved_grades(self):
+        self.fixture.test_human_debt_admission_grows_c_without_fabricating_b_mastery()
+
+    def test_mastered_boundary_preserves_own_adamw_and_durable_events(self):
+        import numpy as np
+        mx, params, optimizer = self.fixture.toy()
+        count = len(self.parent_graph["tokens"])
+        embedding = np.asarray(params["embedding.weight"]).copy()
+        moments = np.asarray(optimizer.state["embedding.weight"]["m"]).copy()
+        step = int(optimizer.state["step"].item())
+        with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
+            root = Path(temp)
+            pointer = _bundle_pointer(root, "initial", params, optimizer,
+                                      self.parent_graph, reserve_gib=0.)
+            receipt = _persist(root, self.fixture.receipt(
+                self.fixture.graduated(pointer), pointer, params))
+            grown, own, graph, changed = activate_numeric_grade(
+                mx, root, receipt, self.previous, self.course,
+                params, optimizer, self.parent_graph, reserve_gib=0.)
+            self.assertEqual(graph["tokens"][:count], self.parent_graph["tokens"])
+            self.assertGreater(len(graph["tokens"]), count)
+            np.testing.assert_array_equal(np.asarray(grown["embedding.weight"])[:count], embedding)
+            np.testing.assert_array_equal(np.asarray(own.state["embedding.weight"]["m"])[:count], moments)
+            self.assertFalse(np.asarray(own.state["embedding.weight"]["m"])[count:].any())
+            self.assertEqual(int(own.state["step"].item()), step)
+            self.assertEqual(changed["school"]["current_student"]["optimizer_step"], step)
+            self.assertEqual(changed["teacher"], self.teacher)
+            self.assertEqual(changed["grade_c_admission_mode"], "MASTERED_BOUNDARY")
+            from bilqis_mlx.state_dag import read_generation
+            self.assertEqual(read_generation(root, changed["generation"]), changed)
+            events = [json.loads(line) for line in (root / "events.jsonl").read_text().splitlines()]
+            admission = [event for event in events if event["event"] == "SCHOOL_COURSE_ADMITTED"]
+            self.assertEqual(len(admission), 1)
+            self.assertEqual(admission[0]["actual_neural_updates"], 0)
+            self.assertEqual(admission[0]["optimizer_step"], step)
+            self.assertEqual(admission[0]["previous_student_sha256"], pointer.sha256)
 
 
 class GradeCTrainerTests(unittest.TestCase):
@@ -155,7 +235,7 @@ class GradeCTrainerTests(unittest.TestCase):
         pointer = Checkpoint("a"*64,"bundles/inert",1,True)
         receipt = self.receipt(self.graduated(pointer), pointer, params)
         receipt["last_exam"]["scores"]["B.NOT"]["correct"] = 11
-        with patch("bilqis_mlx.grade_transition.extend_mlx_student", side_effect=AssertionError("premature growth")):
+        with patch("bilqis_mlx.compatibility.grade_transition.extend_mlx_student", side_effect=AssertionError("premature growth")):
             with self.assertRaisesRegex(ValueError,"CUMULATIVE_A_B"):
                 activate_numeric_grade(mx, Path("/unused"), receipt, self.previous, self.course,
                     params,opt,self.parent_graph,reserve_gib=0.)
@@ -219,11 +299,11 @@ class GradeCTrainerTests(unittest.TestCase):
         mx, params, opt = self.toy()
         pointer = Checkpoint("a"*64,"bundles/inert",1,True)
         receipt = self.receipt(self.graduated(pointer), pointer, params)
-        with patch("bilqis_mlx.grade_transition.expanded_graph",
+        with patch("bilqis_mlx.compatibility.grade_transition.expanded_graph",
                    side_effect=ValueError("NATIVE_CATALOG_INVALID")), \
                 patch("bilqis_mlx.next_grade_review.require_admission_review",
                       side_effect=AssertionError("research review entered")), \
-                patch("bilqis_mlx.grade_transition.extend_mlx_student",
+                patch("bilqis_mlx.compatibility.grade_transition.extend_mlx_student",
                       side_effect=AssertionError("premature growth")):
             with self.assertRaisesRegex(ValueError, "NATIVE_CATALOG_INVALID"):
                 activate_numeric_grade(mx, Path("/unused"), receipt, self.previous,
