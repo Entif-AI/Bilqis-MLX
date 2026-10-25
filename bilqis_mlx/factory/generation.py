@@ -1,7 +1,7 @@
 """Grade-neutral specimen generation from a verified FactoryRelease."""
 from __future__ import annotations
 
-from .adapters import SourceAdapterRegistry
+from .adapters import SourceAdapterRegistry, validate_instructional_constituents
 from .model import FactoryRelease
 from .execution import ExecutionPlan
 from .curriculum_definition import (
@@ -154,6 +154,9 @@ def draw_execution_rows(
                 raise ValueError(
                     "FACTORY_EXECUTION_GENERATION_SOURCE_ORACLE_DISAGREEMENT:"
                     + execution.capability_id)
+            validate_instructional_constituents(
+                row, curriculum=curriculum, plan=plan,
+                capability=execution.capability_id, adapter=adapter)
         rows.extend(batch)
     return rows
 

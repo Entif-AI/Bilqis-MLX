@@ -34,7 +34,8 @@ class JitCurriculumTests(unittest.TestCase):
             *fixture.graph["tokens"], "fixture.appended.identity"]}
         self.successor = compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(),
-            fixture.registry, fixture.answers, source_root=None, graph=graph,
+            fixture.registry_with_revised_roots({"Z.C6": "fixture.op.6"}),
+            fixture.answers, source_root=None, graph=graph,
             verification_seed=20261019,
             predecessor=self.current)
         target = self.successor.execution_plan.capability_map["Z.C6"]
@@ -104,7 +105,8 @@ class JitCurriculumTests(unittest.TestCase):
             "fixture.appended.identity.6", "fixture.appended.identity.7"]}
         overbroad = compile_executable_factory_release(
             curriculum, bindings, CurriculumProfile.full(),
-            self.fixture.registry, self.fixture.answers,
+            self.fixture.registry_with_revised_roots({
+                "Z.C6": "fixture.op.6", "Z.C7": "fixture.op.7"}), self.fixture.answers,
             source_root=None, graph=graph, verification_seed=20261019,
             predecessor=self.current)
         target = overbroad.execution_plan.capability_map["Z.C6"]

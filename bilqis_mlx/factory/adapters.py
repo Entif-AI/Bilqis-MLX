@@ -34,6 +34,31 @@ class RegisteredSourceAdapter:
     semantic_footprint: SemanticFootprint | None = None
 
 
+def validate_instructional_constituents(row, *, curriculum, plan,
+                                        capability: str, adapter: RegisteredSourceAdapter) -> None:
+    """Constrain source-owned roots to the target and earlier admitted teaching."""
+    prefix = "FACTORY_INSTRUCTIONAL_CONSTITUENT_CLOSURE:" + capability + ":"
+    if adapter.semantic_footprint is None:
+        raise ValueError(prefix + "SOURCE_FOOTPRINT_UNAVAILABLE")
+    roots = adapter.semantic_footprint(row)
+    if (not isinstance(roots, tuple) or
+            any(not isinstance(root, str) or not root for root in roots)):
+        raise ValueError(prefix + "SOURCE_FOOTPRINT_INVALID")
+    target = plan.capability_map[capability]
+    ranks = {grade.grade_id: index for index, grade in enumerate(plan.grades)}
+    definitions = curriculum.capability_map
+    allowed = {
+        root for item in plan.capabilities
+        if (item.capability_id == capability or
+            ranks[item.grade_id] < ranks[target.grade_id] or
+            (item.grade_id == target.grade_id and item.stage < target.stage))
+        for root in definitions[item.capability_id].taught_roots
+    }
+    for root in roots:
+        if root not in allowed:
+            raise ValueError(prefix + root)
+
+
 class SourceAdapterRegistry:
     def __init__(self, adapters=()):
         self._by_generator: dict[str, RegisteredSourceAdapter] = {}

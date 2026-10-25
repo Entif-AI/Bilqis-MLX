@@ -77,7 +77,8 @@ def _synthetic_registry():
         "fixture.z-adapter/v1", "fixture.z-generator/v1",
         ("fixture.z-oracle/v1",), "d" * 64)
     return SourceAdapterRegistry((
-        RegisteredSourceAdapter(descriptor, _fixture_rows, _fixture_check),
+        RegisteredSourceAdapter(descriptor, _fixture_rows, _fixture_check,
+            semantic_footprint=lambda row: ("z.op." + row["capability"].partition(".C")[2],)),
     ))
 
 
@@ -121,15 +122,18 @@ def _synthetic_boolean_course():
         (grade_a, grade_b), "fixture.a-b/v1",
         source_attestation_sha256="3" * 64,
         assessment_manifest_sha256="2" * 64)
+    roots = {cap.id: cap.taught_roots for grade in course.grades for cap in grade.capabilities}
     registry = SourceAdapterRegistry((
         RegisteredSourceAdapter(SourceAdapter(
             "fixture.a-adapter/v1", "fixture.a-generator/v1",
-            ("fixture.a-oracle/v1",), "4" * 64), _fixture_rows, _fixture_check),
+            ("fixture.a-oracle/v1",), "4" * 64), _fixture_rows, _fixture_check,
+            semantic_footprint=lambda row: roots[row["capability"]]),
         RegisteredSourceAdapter(SourceAdapter(
             "fixture.b-adapter/v1", "fixture.b-generator/v1",
             ("fixture.b-oracle/v1",), "5" * 64,
             profile_dimensions=(("operators", BOOLEAN_OPERATORS),)),
-            _boolean_fixture_rows, _boolean_fixture_check),
+            _boolean_fixture_rows, _boolean_fixture_check,
+            semantic_footprint=lambda row: roots[row["capability"]]),
     ))
     return course, registry
 
