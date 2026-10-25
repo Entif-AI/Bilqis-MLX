@@ -17,7 +17,7 @@ import tempfile
 import unittest
 
 from bilqis_mlx.cli import human_stop_summary
-from bilqis_mlx.curriculum import AnswerFamily, BINARY, Capability, Course, Grade
+from bilqis_mlx.curriculum import AnswerFamily, BINARY
 from bilqis_mlx.curriculum.scheduler import (
     Assessment, Score, assess, assess_withheld, start_new, visit,
 )
@@ -29,7 +29,10 @@ from bilqis_mlx.factory.answers import (
     fixed_domain,
 )
 from bilqis_mlx.factory.assessment import qualification_complete
-from bilqis_mlx.factory.curriculum_definition import from_legacy_course
+from bilqis_mlx.factory.curriculum_definition import (
+    CapabilitySourceBinding, CapabilitySpec, CurriculumDefinition, GradeSpec,
+    SourceBindingSet,
+)
 from bilqis_mlx.factory.executable_release import compile_executable_factory_release
 from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
 from bilqis_mlx.factory.generation import draw_executable_release_rows
@@ -57,7 +60,7 @@ from bilqis_mlx.runtime.state import _fingerprint, _state_from_json
 from bilqis_mlx.trainer import session_stop_reason
 
 
-CAPABILITIES = tuple(f"Z.C{index}" for index in range(6))
+CAPABILITIES = tuple(f"Z.C{index}" for index in range(12))
 
 
 def _rows(*, capability, seed, each, **_):
@@ -78,35 +81,34 @@ def _check(row, **_):
 
 
 def _fixture():
-    capabilities = tuple(Capability(
-        id=identity,
+    capabilities = tuple(CapabilitySpec(
+        capability_id=identity,
         difficulty="disposable-z",
-        source_anchor="repo:fixture/grade-z",
         taught_roots=("z.semantic." + identity.rsplit(".", 1)[1],),
         examined_roots=("z.semantic." + identity.rsplit(".", 1)[1],),
         prerequisites=(), composed_of=(),
         answer_families=(AnswerFamily("binary", BINARY),),
-        lesson_generator="fixture.z-generator/v1",
-        independent_oracle="fixture.z-oracle/v1",
     ) for identity in CAPABILITIES)
-    grade = Grade(
+    grade = GradeSpec(
         "Z", capabilities,
-        assessment_sha256="a" * 64,
         exam_item_counts=tuple((identity, 4) for identity in CAPABILITIES),
     )
-    course = Course(
-        (grade,), "fixture.grade-z/v1",
-        source_attestation_sha256="b" * 64,
-        assessment_manifest_sha256="a" * 64,
-        program_complete=True,
-    )
+    curriculum = CurriculumDefinition(
+        "fixture.grade-z/v2", (grade,), program_complete=True)
+    bindings = SourceBindingSet(tuple(CapabilitySourceBinding(
+        identity, "repo:fixture/grade-z", "fixture.z-generator/v1",
+        "fixture.z-oracle/v1") for identity in CAPABILITIES),
+        source_attestation_sha256="b" * 64)
     adapter = SourceAdapter(
         "fixture.z-adapter/v1", "fixture.z-generator/v1",
         ("fixture.z-oracle/v1",), "d" * 64,
         variation_axes=("fresh-seed", "balanced-gold"),
     )
     source_registry = SourceAdapterRegistry((
-        RegisteredSourceAdapter(adapter, _rows, _check),
+        RegisteredSourceAdapter(
+            adapter, _rows, _check,
+            semantic_footprint=lambda row: (
+                "z.semantic." + row["capability"].rsplit(".", 1)[1],)),
     ))
     answer_registry = AnswerModalityRegistry((
         RegisteredAnswerModality(
@@ -125,15 +127,13 @@ def _fixture():
             "cogal.value.true",
         ],
     }
-    curriculum, bindings = from_legacy_course(
-        course, answer_kinds=answer_registry.kinds)
     release = compile_executable_factory_release(
         curriculum, bindings, CurriculumProfile.full(),
         source_registry, answer_registry,
         source_root=None, graph=graph,
         verification_seed=20261019,
     )
-    return course, source_registry, graph, release
+    return source_registry, graph, release
 
 
 class DisposableGradeZSystemProof(unittest.TestCase):
@@ -155,15 +155,10 @@ class DisposableGradeZSystemProof(unittest.TestCase):
         from bilqis_mlx.runtime.assessment import _draw_live_rows
         from bilqis_mlx.runtime.source_execution import SourceExecutionContext
 
-        _, registry, graph, template = _fixture()
-        names = tuple(f"Z.C{i}" for i in range(12))
-        grade = template.curriculum.grades[0]
-        curriculum = replace(template.curriculum, grades=(replace(
-            grade, capabilities=tuple(replace(
-                grade.capabilities[0], capability_id=name) for name in names),
-            exam_item_counts=tuple((name, 4) for name in names)),))
-        bindings = replace(template.source_bindings, bindings=tuple(replace(
-            template.source_bindings.bindings[0], capability_id=name) for name in names))
+        registry, graph, template = _fixture()
+        names = CAPABILITIES
+        curriculum = template.curriculum
+        bindings = template.source_bindings
         answers = AnswerModalityRegistry((RegisteredAnswerModality(
             AnswerModality("binary", "answer.binary/z-fixture", "e" * 64),
             fixed_domain(BINARY), lambda value: "cogal.value." + value.lower()),))
@@ -191,7 +186,7 @@ class DisposableGradeZSystemProof(unittest.TestCase):
         from bilqis_mlx.runtime.source_execution import SourceExecutionContext
         from bilqis_mlx.runtime.source_prefetch import prepare_step_sources
 
-        course, registry, graph, template = _fixture()
+        registry, graph, template = _fixture()
         unused_answer = Mock(side_effect=AssertionError("undeclared modality invoked"))
         answers = AnswerModalityRegistry((
             RegisteredAnswerModality(template.answer_modalities[0], fixed_domain(BINARY),
@@ -219,7 +214,7 @@ class DisposableGradeZSystemProof(unittest.TestCase):
                             source_context=context)
         draw.assert_not_called()
         request = dict(
-            identity="a" * 64, source_root=".", graph=graph, course=course,
+            identity="a" * 64, source_root=".", graph=graph, course=None,
             executable_release=release, capability=CAPABILITIES[0], batch_size=2,
             fresh_seed=3, prior_capability=None, prior_seed=4,
             fragile_fixed_rows=(), fragile_requested=(), fragile_seeds={},
@@ -244,7 +239,7 @@ class DisposableGradeZSystemProof(unittest.TestCase):
         unused.assert_not_called()
         unused_answer.assert_not_called()
 
-    def _assert_compiler_and_generation(self, course, registry, graph, release):
+    def _assert_compiler_and_generation(self, registry, graph, release):
         self.assertEqual(
             tuple(item.grade_id for item in release.execution_plan.grades),
             ("Z",))
@@ -252,11 +247,11 @@ class DisposableGradeZSystemProof(unittest.TestCase):
             item for item in release.answer_heads if item.kind == "binary")
         self.assertEqual(binary_head.values, BINARY)
         rows = draw_executable_release_rows(
-            None, graph, release, registry, seed=3, legacy_course=course)
-        self.assertEqual(len(rows), 24)
+            None, graph, release, registry, seed=3)
+        self.assertEqual(len(rows), 48)
         self.assertEqual({row["capability"] for row in rows}, set(CAPABILITIES))
 
-    def _admit_and_schedule(self, root, course, graph, release, student, manifest):
+    def _admit_and_schedule(self, root, graph, release, student, manifest):
         graph_sha = _fingerprint(graph)
         _, release_file, admission = _executable_factory_admission(
             root, release, student, graph_sha, graph)
@@ -274,39 +269,44 @@ class DisposableGradeZSystemProof(unittest.TestCase):
             "burned_generalization_cohorts_v2": [],
             "school": asdict(school),
         }
-        restored = _require_executable_factory_admission(
-            root, json.loads(json.dumps(receipt)), graph)
-        self.assertEqual(restored, release)
-        recovered_school = _state_from_json(
-            json.loads(json.dumps(receipt["school"])), program)
-        self.assertEqual(recovered_school, school)
-        for capability in CAPABILITIES:
+        # Persist a mid-pass state, then rebuild only from admitted disk artifacts.
+        for capability in CAPABILITIES[:5]:
             self.assertEqual(school.queue[0], capability)
             school = visit(program, school, capability, student)
+        receipt["school"] = asdict(school)
+        state_file = root / "grade-z-state.json"
+        state_file.write_text(json.dumps(receipt), encoding="utf-8")
+        cold_receipt = json.loads(state_file.read_text(encoding="utf-8"))
+        restored = _require_executable_factory_admission(root, cold_receipt, graph)
+        self.assertEqual(restored, release)
+        resumed_program = schedule_program_from_executable_release(restored)
+        school = _state_from_json(cold_receipt["school"], resumed_program)
+        self.assertEqual(school.queue, tuple(CAPABILITIES[5:]))
+        self.assertEqual(resumed_program.digest(), program.digest())
+        for capability in CAPABILITIES[5:]:
+            self.assertEqual(school.queue[0], capability)
+            school = visit(resumed_program, school, capability, student)
         self.assertEqual(school.stage, "ASSESS_MAIN")
         return receipt, program, school, graph_sha
 
     def _assert_cohort_lifecycle(
-            self, root, receipt, manifest, course, registry, graph, release):
+            self, root, receipt, manifest, registry, graph, release):
         routine, routine_pointer = _routine_executable_cohort(
             root, receipt, manifest, release, registry, None, graph,
-            capabilities=CAPABILITIES, assessment_epoch=0,
-            legacy_course=course)
+            capabilities=CAPABILITIES, assessment_epoch=0)
         promotion, promotion_pointer = _promotion_executable_cohort(
             root, receipt, manifest, release, registry, None, graph,
-            capabilities=CAPABILITIES, assessment_epoch=0,
-            legacy_course=course)
+            capabilities=CAPABILITIES, assessment_epoch=0)
         fixed_promotion, fixed_pointer = _promotion_executable_cohort(
             root, {**receipt, "qualification_cohort_v2": promotion_pointer},
             manifest, release, registry, None, graph,
-            capabilities=CAPABILITIES, assessment_epoch=0,
-            legacy_course=course)
+            capabilities=CAPABILITIES, assessment_epoch=0)
         self.assertEqual(fixed_promotion, promotion)
         self.assertEqual(fixed_pointer, promotion_pointer)
         generalization, generalization_pointer = _generalization_executable_cohort(
             root, receipt, manifest, release, registry, None, graph,
             capabilities=CAPABILITIES, assessment_epoch=0,
-            promotion_pointer=promotion_pointer, legacy_course=course)
+            promotion_pointer=promotion_pointer)
         self.assertFalse(
             {row["id"] for row in promotion.rows} &
             {row["id"] for row in generalization.rows})
@@ -316,7 +316,7 @@ class DisposableGradeZSystemProof(unittest.TestCase):
              "burned_generalization_cohorts_v2": [generalization_pointer]},
             manifest, release, registry, None, graph,
             capabilities=CAPABILITIES, assessment_epoch=0,
-            promotion_pointer=promotion_pointer, legacy_course=course)
+            promotion_pointer=promotion_pointer)
         self.assertNotEqual(next_generalization.digest, generalization.digest)
         self.assertNotEqual(next_pointer, generalization_pointer)
         return routine, routine_pointer, promotion, generalization
@@ -470,20 +470,31 @@ class DisposableGradeZSystemProof(unittest.TestCase):
         self.assertIn("awaiting the next", human_stop_summary(stop))
 
     def test_grade_z_runs_through_the_generic_factory_control_plane(self):
-        course, registry, graph, release = _fixture()
+        registry, graph, release = _fixture()
         student = Checkpoint("1" * 64, "bundles/z-student", 7, True)
         manifest = {"manifest_sha256": "2" * 64}
-        self._assert_compiler_and_generation(course, registry, graph, release)
+        self._assert_compiler_and_generation(registry, graph, release)
 
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             receipt, program, school, graph_sha = self._admit_and_schedule(
-                root, course, graph, release, student, manifest)
+                root, graph, release, student, manifest)
             routine, pointer, promotion, generalization = self._assert_cohort_lifecycle(
-                root, receipt, manifest, course, registry, graph, release)
+                root, receipt, manifest, registry, graph, release)
             mastered = self._assert_mastery_debt_and_teacher(
                 program, school, student, routine, pointer,
                 promotion, generalization)
+            receipt.update(school=asdict(mastered))
+            state_file = root / "grade-z-state.json"
+            state_file.write_text(json.dumps(receipt), encoding="utf-8")
+            cold_receipt = json.loads(state_file.read_text(encoding="utf-8"))
+            cold_release = _require_executable_factory_admission(
+                root, cold_receipt, graph)
+            cold_program = schedule_program_from_executable_release(cold_release)
+            cold_school = _state_from_json(cold_receipt["school"], cold_program)
+            self.assertEqual(cold_school, mastered)
+            self.assertEqual(cold_school.stage, "WHOLE_SCHOOL_MASTERED")
+            self.assertEqual(cold_release.release_sha256, release.release_sha256)
             scores, scope_sha, changed = self._assert_championship(
                 root, routine, pointer, student, graph_sha, manifest)
             self._assert_telemetry_and_operator(
