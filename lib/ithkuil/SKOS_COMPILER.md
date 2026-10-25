@@ -1023,3 +1023,49 @@ prose inherited-pattern shape (`-RMC-`), compact numbered inherited stems (`-KŢ
 and the source's combined `STEMS 1-3` coordinate (`-ŘḐŘ-`). Unknown source modes are
 held instead of guessed; an impossible `STEM 4` remains held by the upstream identity
 contract. Reordering source rows leaves canonical dimension RDF unchanged.
+
+## Root-to-sense relation decision (#53)
+
+The current profile needs one directional structural relation from an addressable
+root resource to each independently identified sense concept. The reviewed decision
+is `bilqis:hasSense`:
+
+```text
+root rdfs:Resource  -- bilqis:hasSense -->  sense skos:Concept
+```
+
+It is not symmetric, transitive, hierarchical, or a SKOS semantic relation. No
+inverse predicate is minted.
+
+### Standards-first decision
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| `skos:broader` / `skos:narrower` | Reject | SKOS semantic relations have concept domain/range and assert semantic hierarchy. The root is deliberately not a concept, and a sense is not a taxonomic specialization of its notation-bearing root. |
+| `skos:related` | Reject | It is a symmetric concept-to-concept associative semantic relation and cannot state the directional lexical role. |
+| `skos:member` | Reject | It is collection membership; roots are not `skos:Collection` resources. |
+| `dcterms:hasPart` | Reject | DCMI defines physical/logical inclusion. A separately identified sense is not asserted as a physical/logical part of the root resource. |
+| `rdfs:seeAlso` | Reject | It supplies a generic navigation hint, not the root-to-sense semantic role needed for deterministic queries. |
+| `ontolex:sense` | Reject for this profile | OntoLex defines this property from `ontolex:LexicalEntry` to `ontolex:LexicalSense`. Adopting it would require a broader OntoLex type/model commitment that #53 explicitly does not make. |
+| `bilqis:hasSense` | Admit | It states exactly the recurring source relation while preserving the established root resource and SKOS sense concept types. |
+
+The machine registry `root_sense_extension.json` records the term definition,
+domain/range expectations, real source fixture, source justification, standards gap,
+recurrence, and machine need. The #35 admission gate is extended only with a
+`root_sense` source binding to `lexicon_root_senses.csv`; its default decision matrix
+still returns `RELATIONAL_IR_ONLY` until the raw term is re-qualified against the
+source and negative fixture. The term is not a SKOS subproperty.
+
+The negative fixture binds the real source row `LEXSENSE-e3f64d03c6f6ec` to the
+tempting false `skos:broader` relation. Admission therefore cannot be self-attested by
+the registry prose alone.
+
+`project_root_sense_links()` consumes #50 roots, #51 senses, and #52 dimension
+admission. It emits a link only when the parent root and dimension-complete sense are
+both present. Missing endpoints are held with no partial relation edge.
+
+Current proof emits exactly 1,615 `bilqis:hasSense` triples for the 1,615 parsed
+senses, with zero holds. The Unicode/multi-sense root `-Č-` has exactly 12 links in a
+literal N-Triples fixture. Removing that parent root holds all 12 sense links. No
+`skos:broader`, `skos:narrower`, `skos:related`, or `skos:member` edge appears in the
+positive graph.
