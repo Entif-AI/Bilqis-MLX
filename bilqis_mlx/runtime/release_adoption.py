@@ -623,6 +623,31 @@ def _adopt_jit_proposal(mx, run_dir, receipt, grade_a_course, source_root, graph
         parameters, optimizer, staged, reserve_gib=reserve_gib)
 
 
+@_dataclasses.dataclass(frozen=True)
+class PreparedSuccessorMaterialization:
+    """In-memory learner state for one verified prepared cutover."""
+    parameters: dict
+    optimizer: object
+    graph: dict
+    student: _curriculum_scheduler.Checkpoint
+    growth: dict | None
+    rebaselined_exam: dict | None
+
+
+def _materialize_prepared_successor(
+        mx, run_dir, receipt, current_student, successor,
+        graph, parameters, optimizer, next_graph, *, reserve_gib):
+    """Reuse the current learner unchanged for same-ABI successors."""
+    if (successor.transition is None or successor.transition.semantic_geometry !=
+            _factory_executable_release.SemanticGeometryChange.UNCHANGED):
+        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
+    successor.verify_semantic_catalog(graph)
+    if _runtime_state._fingerprint(next_graph) != _runtime_state._fingerprint(graph):
+        raise ValueError(_factory_executable_release._ReleaseError.SEMANTIC_GRAPH_DRIFT)
+    return PreparedSuccessorMaterialization(
+        parameters, optimizer, graph, current_student, None, None)
+
+
 def _adopt_prepared_successor(
         mx, run_dir, receipt, grade_a_course, source_root, graph,
         parameters, optimizer, staged, *, reserve_gib):
@@ -647,10 +672,13 @@ def _adopt_prepared_successor(
         return _adopt_catalog_profile(mx, run_dir, receipt, grade_a_course, source_root,
             graph, parameters, optimizer, CatalogProfileTransition(successor.profile, next_graph),
             reserve_gib=reserve_gib, compiled_successor=successor)
+    materialized = _materialize_prepared_successor(
+        mx, run_dir, receipt, school.current_student, successor,
+        graph, parameters, optimizer, graph, reserve_gib=reserve_gib)
     record, course, _, _ = _adopt_executable_profile(
-        run_dir, receipt, grade_a_course, source_root, graph, successor.profile,
+        run_dir, receipt, grade_a_course, source_root, materialized.graph, successor.profile,
         compiled_successor=successor)
-    return parameters, optimizer, graph, record, course
+    return materialized.parameters, materialized.optimizer, materialized.graph, record, course
 
 
 def _activate_revised_admitted_grade(run_dir, receipt, previous_course, successor,

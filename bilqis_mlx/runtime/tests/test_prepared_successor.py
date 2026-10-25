@@ -1,7 +1,7 @@
 """Deterministic prepared-cutover contract; transaction owners are isolated seams."""
 from contextlib import contextmanager
 from copy import deepcopy
-from dataclasses import asdict, replace
+from dataclasses import asdict, fields, replace
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -98,13 +98,69 @@ class _BeforeMaterialization(Exception):
 
 
 class PreparedSuccessorTests(PreparedSuccessorFixture, unittest.TestCase):
+    def test_unchanged_materialization_preserves_all_learner_identities_and_bytes(self):
+        self.optimizer.state["moments"] = {"weights": [0.2, 0.3]}
+        bundle = self.root / self.checkpoint.filename
+        bundle.mkdir(parents=True)
+        payload = bundle / "model-and-own-adamw.safetensors"
+        payload.write_bytes(b"disposable-complete-student-and-own-adamw")
+        before = deepcopy((self.parameters, self.optimizer.state))
+        saved = payload.read_bytes()
+        with patch.object(release_adoption._bilqis_mlx_vocabulary_growth,
+                "extend_mlx_student", side_effect=AssertionError("unchanged geometry grew")), \
+                patch.object(release_adoption._runtime_checkpoints, "_bundle_pointer",
+                             side_effect=AssertionError("unchanged geometry wrote a bundle")):
+            result = release_adoption._materialize_prepared_successor(
+                None, self.root, self.receipt, self.checkpoint, self.staged.successor,
+                self.graph, self.parameters, self.optimizer, deepcopy(self.graph), reserve_gib=100.)
+        self.assertEqual(tuple(field.name for field in fields(result)), (
+            "parameters", "optimizer", "graph", "student", "growth", "rebaselined_exam"))
+        self.assertIs(result.parameters, self.parameters)
+        self.assertIs(result.optimizer, self.optimizer)
+        self.assertIs(result.graph, self.graph)
+        self.assertIs(result.student, self.checkpoint)
+        self.assertIsNone(result.growth)
+        self.assertIsNone(result.rebaselined_exam)
+        self.assertEqual((self.parameters, self.optimizer.state), before)
+        self.assertEqual(payload.read_bytes(), saved)
+        self.optimizer.update.assert_not_called()
+
+    def test_unchanged_materialization_rejects_graph_substitution_before_writes(self):
+        with patch.object(release_adoption._bilqis_mlx_vocabulary_growth,
+                "extend_mlx_student", side_effect=AssertionError("growth before verification")), \
+                patch.object(release_adoption._runtime_checkpoints, "_bundle_pointer",
+                             side_effect=AssertionError("bundle before verification")):
+            for changed in ({"tokens": list(reversed(self.graph["tokens"]))},
+                            {**self.graph, "nodes": [{"meaning": "substituted"}]}):
+                with self.subTest(graph=changed), self.assertRaisesRegex(ValueError, "SEMANTIC_GRAPH_DRIFT"):
+                    release_adoption._materialize_prepared_successor(
+                        None, self.root, self.receipt, self.checkpoint, self.staged.successor,
+                        self.graph, self.parameters, self.optimizer, changed, reserve_gib=100.)
+        self.assertEqual(tuple(self.root.iterdir()), ())
+        self.optimizer.update.assert_not_called()
+
     def test_same_graph_routes_the_exact_sealed_successor_without_compiling(self):
         result_receipt = {"prepared": True}
         before = deepcopy((self.parameters, self.optimizer.state, self.receipt))
+        materializations = []
+        original = release_adoption._materialize_prepared_successor
+        def materialize(*args, **kwargs):
+            result = original(*args, **kwargs)
+            materializations.append(result)
+            return result
         with self.admitted_boundary(), patch.object(release_adoption,
                 "_adopt_executable_profile", return_value=(
-                    result_receipt, self.program, self.staged.successor, self.program)) as owner:
+                    result_receipt, self.program, self.staged.successor, self.program)) as owner, \
+                patch.object(release_adoption, "_materialize_prepared_successor",
+                             side_effect=materialize) as materializer, \
+                patch.object(release_adoption._runtime_checkpoints, "_bundle_pointer",
+                             side_effect=AssertionError("unchanged geometry wrote bundle")), \
+                patch.object(release_adoption._bilqis_mlx_vocabulary_growth, "extend_mlx_student",
+                             side_effect=AssertionError("unchanged geometry grew")):
             result = self.adopt()
+        materializer.assert_called_once()
+        self.assertIs(materializations[0].student, materializer.call_args.args[3])
+        self.assertEqual(materializations[0].student, self.checkpoint)
         self.assertEqual(result, (self.parameters, self.optimizer, self.graph,
                                   result_receipt, self.program))
         self.assertIs(owner.call_args.kwargs["compiled_successor"], self.staged.successor)
