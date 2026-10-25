@@ -545,18 +545,12 @@ def _adopt_catalog_profile(
         parameters, optimizer, transition, *, reserve_gib, allow_mastery_debt=False,
         compiled_successor=None):
     """Adopt one append-only semantic ABI/profile expansion with zero updates."""
-    import bilqis_mlx.learning.student_ops as _learning_student_ops
     predecessor = _runtime_admission._require_executable_factory_admission(run_dir, receipt, graph)
     previous_program = _factory_schedule.schedule_program_from_executable_release(predecessor)
     school = _runtime_state._state_from_json(receipt["school"], previous_program)
     exam, mastery_debt = _catalog_boundary_evidence(
         predecessor, previous_program, school, receipt,
         allow_mastery_debt=allow_mastery_debt)
-    from .assessment import _load_executable_cohort
-    preserved = _load_executable_cohort(
-        run_dir, {"manifest_sha256": receipt["source_manifest_sha256"]},
-        predecessor, tuple(item.capability_id
-                           for item in predecessor.execution_plan.capabilities), exam)
     compatibility_course = _compatibility_executable_projection.legacy_course_for_profile(
         grade_a_course, source_root, transition.profile)
     successor = compiled_successor or _factory_executable_release.compile_successor_profile_release(
@@ -576,11 +570,12 @@ def _adopt_catalog_profile(
         previous_program, successor_program, school,
         mastery_debt=mastery_debt if allow_mastery_debt else None)
 
-    grown, own_optimizer, growth = _bilqis_mlx_vocabulary_growth.extend_mlx_student(
-        parameters, optimizer, graph, transition.graph)
-    pointer = _runtime_checkpoints._bundle_pointer(
-        run_dir, "catalog-admission-" + _uuid.uuid4().hex[:12],
-        grown, own_optimizer, transition.graph, reserve_gib=reserve_gib)
+    materialized = _materialize_prepared_successor(
+        mx, run_dir, {**receipt, "last_exam": exam}, school.current_student, successor,
+        graph, parameters, optimizer, transition.graph, reserve_gib=reserve_gib)
+    grown, own_optimizer, growth = (
+        materialized.parameters, materialized.optimizer, materialized.growth)
+    pointer = materialized.student
     next_state = _dataclasses.replace(next_state, current_student=pointer)
     successor, release_file, admission = _runtime_admission._executable_factory_admission(
         run_dir, successor, pointer, _runtime_state._fingerprint(transition.graph),
@@ -593,10 +588,7 @@ def _adopt_catalog_profile(
         receipt, compatibility_course, successor, successor_program,
         release_file, admission, transition, grown, epoch, history,
         identity)
-    from bilqis_mlx.fixed_frontier import rebaseline_frontier_exam
-    updated["last_exam"] = rebaseline_frontier_exam(
-        run_dir, exam, checkpoint=_dataclasses.asdict(pointer), predictions=_learning_student_ops._predictions(
-            mx, grown, list(preserved.rows), updated["config"], updated["answer_ids"]))
+    updated["last_exam"] = materialized.rebaselined_exam
     record = _runtime_checkpoints._advance(
         run_dir, updated, next_state, model_bundle=pointer.filename,
         result="ACTIVE_GRADE_" + next_state.grade, persist=False)
@@ -637,15 +629,49 @@ class PreparedSuccessorMaterialization:
 def _materialize_prepared_successor(
         mx, run_dir, receipt, current_student, successor,
         graph, parameters, optimizer, next_graph, *, reserve_gib):
-    """Reuse the current learner unchanged for same-ABI successors."""
-    if (successor.transition is None or successor.transition.semantic_geometry !=
-            _factory_executable_release.SemanticGeometryChange.UNCHANGED):
+    """Materialize only the released ABI geometry, without school publication."""
+    if successor.transition is None:
         raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
-    successor.verify_semantic_catalog(graph)
-    if _runtime_state._fingerprint(next_graph) != _runtime_state._fingerprint(graph):
-        raise ValueError(_factory_executable_release._ReleaseError.SEMANTIC_GRAPH_DRIFT)
+    geometry = successor.transition.semantic_geometry
+    if geometry == _factory_executable_release.SemanticGeometryChange.UNCHANGED:
+        successor.verify_semantic_catalog(graph)
+        if _runtime_state._fingerprint(next_graph) != _runtime_state._fingerprint(graph):
+            raise ValueError(_factory_executable_release._ReleaseError.SEMANTIC_GRAPH_DRIFT)
+        return PreparedSuccessorMaterialization(
+            parameters, optimizer, graph, current_student, None, None)
+    if geometry != _factory_executable_release.SemanticGeometryChange.APPEND_ONLY_EXPANSION:
+        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
+
+    from .assessment import _load_executable_cohort
+    from ..learning.student_ops import _predictions
+    from ..fixed_frontier import load_frontier, load_frontier_cohort, rebaseline_frontier_exam
+
+    predecessor = _runtime_admission._require_executable_factory_admission(run_dir, receipt, graph)
+    successor.verify_successor_of(predecessor)
+    successor.verify_semantic_catalog(next_graph)
+    exam = receipt.get("last_exam") or {}
+    _load_executable_cohort(
+        run_dir, {"manifest_sha256": receipt["source_manifest_sha256"]},
+        predecessor, tuple(exam.get("capabilities", ())), exam)
+    load_frontier(run_dir, {"last_exam": exam},
+                  parent_sha256=current_student.sha256,
+                  parent_optimizer_step=current_student.optimizer_step)
+    preserved = load_frontier_cohort(run_dir, exam)
+    if preserved is None:
+        raise ValueError("FACTORY_CATALOG_BOUNDARY_COHORT_REQUIRED")
+    grown, own_optimizer, growth = _bilqis_mlx_vocabulary_growth.extend_mlx_student(
+        parameters, optimizer, graph, next_graph)
+    pointer = _runtime_checkpoints._bundle_pointer(
+        run_dir, "catalog-admission-" + _uuid.uuid4().hex[:12],
+        grown, own_optimizer, next_graph, reserve_gib=reserve_gib)
+    config = {**receipt["config"], "vocab_size": len(next_graph["tokens"]),
+              "answer_heads": _factory_executable_release.answer_heads_from_executable_release(
+                  successor, next_graph)}
+    exam = rebaseline_frontier_exam(
+        run_dir, exam, checkpoint=_dataclasses.asdict(pointer), predictions=_predictions(
+            mx, grown, list(preserved.rows), config, receipt["answer_ids"]))
     return PreparedSuccessorMaterialization(
-        parameters, optimizer, graph, current_student, None, None)
+        grown, own_optimizer, next_graph, pointer, growth, exam)
 
 
 def _adopt_prepared_successor(

@@ -98,6 +98,110 @@ class _BeforeMaterialization(Exception):
 
 
 class PreparedSuccessorTests(PreparedSuccessorFixture, unittest.TestCase):
+    def test_append_only_materialization_preserves_native_rows_moments_and_frontier(self):
+        import mlx.core as mx
+        import mlx.optimizers as optim
+        import numpy as np
+        from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+        from bilqis_mlx.generated_assessment import score
+        from bilqis_mlx.runtime.assessment import _routine_executable_cohort
+        from bilqis_mlx.vocabulary_growth import digest
+
+        nodes = [{"id": token, "meaning": token, "semantic_id": "fixture:" + token,
+                  "family": "logic", "subtype": "atomic", "signature": "SemanticSymbol",
+                  "arity": 0, "source": "fixture:native-growth", "admission_receipt": "a" * 64}
+                 for token in self.graph["tokens"]]
+        self.graph = {**self.graph, "nodes": nodes,
+                      "row_contract_sha256": {node["id"]: digest(node) for node in nodes}}
+        fixture = self.fixture.fixture
+        self.current = compile_executable_factory_release(
+            self.current.curriculum, self.current.source_bindings, self.current.profile,
+            fixture.registry, fixture.answers, source_root=None, graph=self.graph,
+            verification_seed=71)
+        self.program = schedule_program_from_executable_release(self.current)
+        extra = {"id": "fixture.extra", "meaning": "new disposable identity",
+                 "semantic_id": "fixture:extra", "family": "logic", "subtype": "atomic",
+                 "signature": "SemanticSymbol", "arity": 0, "source": "fixture:native-growth",
+                 "admission_receipt": "b" * 64}
+        graph = {**self.graph, "tokens": [*self.graph["tokens"], extra["id"]],
+                 "nodes": [*nodes, extra], "row_contract_sha256": {
+                     **self.graph["row_contract_sha256"], extra["id"]: digest(extra)}}
+        staged = self.stage(graph=graph)
+        old_count = len(self.graph["tokens"])
+        self.parameters = {"embedding.weight": mx.arange(old_count * 2, dtype=mx.float32).reshape(old_count, 2),
+                           "linear.weight": mx.ones((2, 2), dtype=mx.float32)}
+        self.optimizer = optim.AdamW(learning_rate=0.001, bias_correction=True)
+        self.optimizer.init(self.parameters)
+        self.optimizer.state["step"] = mx.array(7, dtype=mx.uint64)
+        for name, value in self.parameters.items():
+            self.optimizer.state[name]["m"] = mx.full(value.shape, 0.25, dtype=mx.float32)
+            self.optimizer.state[name]["v"] = mx.full(value.shape, 0.5, dtype=mx.float32)
+        mx.eval(self.parameters, self.optimizer.state)
+        self.checkpoint = release_adoption._runtime_checkpoints._bundle_pointer(
+            self.root, "native-parent", self.parameters, self.optimizer, self.graph, reserve_gib=0.)
+        self.graduate_fixture()
+        self.receipt.update(generation=1, run_id="disposable-native-growth",
+                            config={"vocab_size": old_count, "precision": "fp32"},
+                            answer_ids={"FALSE": 1, "TRUE": 2})
+        cohort, pointer = _routine_executable_cohort(
+            self.root, self.receipt, {"manifest_sha256": "a" * 64}, self.current,
+            fixture.registry, None, self.graph,
+            capabilities=tuple(self.current.execution_plan.capability_map), assessment_epoch=0)
+        measured = score(cohort, {row["id"]: row["gold"] for row in cohort.rows}, asdict(self.checkpoint))
+        self.receipt["last_exam"] = {**pointer, "student_sha256": self.checkpoint.sha256,
+            "optimizer_step": 7, "exam_rubric_sha256": pointer["rubric_sha256"],
+            "scores": measured["scores"], "misses_for_teacher": []}
+        before_weights = {name: np.array(value) for name, value in self.parameters.items()}
+        before_moments = {name: {slot: np.array(self.optimizer.state[name][slot])
+                                 for slot in ("m", "v")} for name in self.parameters}
+        original_files = {str(path.relative_to(self.root)): path.read_bytes()
+                          for path in self.root.rglob("*") if path.is_file()}
+        release_sha = staged.successor.release_sha256
+        with self.admitted_boundary(), \
+                patch.object(optim.AdamW, "update", side_effect=AssertionError("neural optimizer update")), \
+                patch.object(release_adoption._bilqis_mlx_vocabulary_growth, "extend_mlx_student",
+                    wraps=release_adoption._bilqis_mlx_vocabulary_growth.extend_mlx_student) as growth, \
+                patch.object(release_adoption._runtime_checkpoints, "_bundle_pointer",
+                    wraps=release_adoption._runtime_checkpoints._bundle_pointer) as bundle, \
+                patch.object(release_adoption._curriculum_scheduler, "adopt_appended_program",
+                             side_effect=AssertionError("materializer changed topology")), \
+                patch.object(release_adoption._runtime_admission, "_executable_factory_admission",
+                             side_effect=AssertionError("materializer admitted a release")), \
+                patch.object(release_adoption._runtime_checkpoints, "_persist",
+                             side_effect=AssertionError("materializer published school state")), \
+                patch("bilqis_mlx.learning.student_ops._predictions", side_effect=lambda _mx, _p, rows, *_:
+                      {row["id"]: row["gold"] for row in rows}):
+            result = release_adoption._materialize_prepared_successor(
+                mx, self.root, self.receipt, self.checkpoint, staged.successor,
+                self.graph, self.parameters, self.optimizer, graph, reserve_gib=0.)
+        growth.assert_called_once_with(self.parameters, self.optimizer, self.graph, graph)
+        bundle.assert_called_once()
+        self.assertEqual(result.student.optimizer_step, 7)
+        self.assertEqual(int(result.optimizer.state["step"].item()), 7)
+        self.assertEqual(int(self.optimizer.state["step"].item()), 7)
+        for name, old in before_weights.items():
+            active = result.parameters[name][:old_count] if name == "embedding.weight" else result.parameters[name]
+            np.testing.assert_array_equal(np.asarray(active), old)
+            np.testing.assert_array_equal(np.asarray(self.parameters[name]), old)
+            for slot in ("m", "v"):
+                active = result.optimizer.state[name][slot]
+                if name == "embedding.weight":
+                    self.assertFalse(np.count_nonzero(np.asarray(active[old_count:])))
+                    active = active[:old_count]
+                np.testing.assert_array_equal(np.asarray(active), before_moments[name][slot])
+                np.testing.assert_array_equal(np.asarray(self.optimizer.state[name][slot]), before_moments[name][slot])
+        self.assertIs(result.graph, graph)
+        self.assertEqual(result.rebaselined_exam["student_sha256"], result.student.sha256)
+        self.assertEqual(result.rebaselined_exam["optimizer_step"], 7)
+        self.assertEqual(result.rebaselined_exam["cohort_sha256"], cohort.digest)
+        self.assertEqual(staged.successor.release_sha256, release_sha)
+        self.assertEqual(result.growth["train_updates"], 0)
+        for relative, content in original_files.items():
+            self.assertEqual((self.root / relative).read_bytes(), content)
+        self.assertFalse((self.root / "state.json").exists())
+        self.assertFalse((self.root / "events.jsonl").exists())
+        self.assertFalse((self.root / "factory-releases").exists())
+
     def test_unchanged_materialization_preserves_all_learner_identities_and_bytes(self):
         self.optimizer.state["moments"] = {"weights": [0.2, 0.3]}
         bundle = self.root / self.checkpoint.filename
@@ -200,7 +304,7 @@ class PreparedSuccessorTests(PreparedSuccessorFixture, unittest.TestCase):
                 patch.object(release_adoption, "_profile_transition", side_effect=transition), \
                 patch.object(release_adoption._curriculum_scheduler, "adopt_appended_program",
                              side_effect=AssertionError("geometry selected append-grade")), \
-                patch.object(release_adoption._bilqis_mlx_vocabulary_growth, "extend_mlx_student",
+                patch.object(release_adoption, "_materialize_prepared_successor",
                              side_effect=_BeforeMaterialization):
             with self.assertRaises(_BeforeMaterialization):
                 self.adopt(staged)
