@@ -1102,3 +1102,53 @@ concepts, 4,845 dimension triples and 1,615 `bilqis:hasSense` links.
 These fixtures describe only the currently parsed tracked Chapter 1–2 frontier. They
 do not create source claims for Chapters 3–7 or the affix-reference corpus, and they
 do not import curriculum state.
+
+## Chapter 1–2 lexicon reconciliation (#55)
+
+`reconcile_lexicon_frontier(input_root, relation_profile_path=...,
+negative_fixture_path=...)` composes the #50 root, #51 sense, #52 dimension, and #53
+root→sense layers into one graph-store-neutral lexicon-domain graph. It canonicalizes
+that graph with #41 and returns `LexiconReconciliation(graph, canonical, receipt)`.
+
+The receipt is `bilqis.skos.lexicon-reconciliation/v1`. It derives every count from
+the loaded relational closure at runtime. It records exact emitted/held partitions
+for roots and source sense rows, roots with zero parsed senses, roots with multiple
+senses, root notation count, Stem/Specification/source-mode coverage, Chapter counts,
+held reasons, exact #43-style source-table digests, canonical RDF metadata and a
+digest of the receipt body.
+
+Every root and sense source ID must have exactly one disposition. Overlap, missing
+accounting or out-of-scope accounting raises a stable `ProfileError`. Zero-sense roots
+are source-frontier debt, not held semantic failures: they remain emitted root
+resources and are listed separately under `roots_with_zero_parsed_sense_ids`.
+
+If a later semantic layer holds a sense that #40 could otherwise emit, #55 excludes
+that incomplete sense subject and its private source locus from the reconciled graph.
+The source row remains explicitly held in the receipt. This prevents a partially
+modeled sense from masquerading as a complete lexicon-domain result.
+
+The source digest covers exact sorted values from `lexicon_roots`,
+`lexicon_root_senses`, and `lexicon_root_evidence`, using the same input-receipt
+normalization as #43. The RDF digest is the complete canonical #41 graph digest.
+
+Current source expectations, verified rather than hard-coded by production logic:
+
+- 503 root rows, all 503 emitted;
+- 1,615 sense rows, all 1,615 emitted;
+- 219 emitted roots with no parsed sense yet;
+- 282 roots with more than one parsed sense;
+- 503 exact root notations;
+- Stem coverage: ROOT-WIDE 714, STEM 1/2/3 300 each, STEMS 1-3 1;
+- Specification coverage: BSC 847, CSV/CTE/OBJ 256 each;
+- source modes: table 1,522, prose 54, compact numbered 39.
+
+The frontier block explicitly says this closes only the currently tracked New Ithkuil
+Lexicon Chapters 1–2 projection. Chapters 3–7 and the pinned affix-reference source
+remain outside closure. No receipt text or count claims full official-lexicon
+coverage.
+
+Package-local tests verify exact current counts, debt separation, frontier statement,
+source/canonical digest binding, exact accounting failures, explicit held behavior for
+an unreviewed source mode, and canonical/receipt equality after reversing root,
+sense, and evidence rows. Fresh-process proof is run with different hash seeds and
+working directories over the same explicit source and staged-module paths.
