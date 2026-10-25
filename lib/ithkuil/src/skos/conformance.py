@@ -122,6 +122,11 @@ def main(argv=None) -> int:
                      'coverage.json': json_bytes(receipt),
                      'source-rows.json': json_bytes([{'domain': r.domain, 'table': r.table, 'key': r.key} for r in rows]),
                      'conformance.json': json_bytes(report)}
+            from rdflib import Graph
+            support = Graph()
+            for triple in admitted:
+                support.add(triple)
+            files['admitted-mappings.nt'] = canonicalize(support).payload
             for gate in report['gates']:
                 files[gate['gate'] + '.json'] = json_bytes(gate)
             if args.input_root and args.output_root.resolve().is_relative_to(args.input_root.resolve()):

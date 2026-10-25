@@ -89,6 +89,7 @@ class ConformanceTests(unittest.TestCase):
             self.assertIn('4/4', result.stderr)
             evidence = Path(json.loads(result.stdout)['evidence']['path'])
             self.assertEqual((evidence / 'canonical.nt').read_bytes(), canonicalize(graph).payload)
+            self.assertEqual((evidence / 'admitted-mappings.nt').read_bytes(), b'')
             repeated = subprocess.run(command, capture_output=True, text=True)
             self.assertEqual(repeated.returncode, 0, repeated.stderr)
             self.assertEqual(repeated.stdout, result.stdout)
