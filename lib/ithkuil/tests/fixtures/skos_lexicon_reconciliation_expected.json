@@ -1,0 +1,15 @@
+{
+  "schema": "bilqis.skos.lexicon-reconciliation-snapshot/v1",
+  "frontier": "tracked-new-ithkuil-lexicon-chapters-1-2",
+  "root_rows": 503,
+  "sense_rows": 1615,
+  "roots_with_zero_parsed_senses": 219,
+  "roots_with_multiple_parsed_senses": 282,
+  "notation_count": 503,
+  "canonical_triple_count": 23002,
+  "canonical_byte_count": 5458363,
+  "canonical_sha256": "55ad6a8f15b5b8f8e9e6e27a2ed95bc829277bf5552011f63f368d6c9e8e82f7",
+  "lexicon_source_sha256": "44729079821ffbe6ab3adf5bd501e8a9123468f0cfc4104f434f01b0ac04d036",
+  "compiler_input_closure_sha256": "2ecef7f8237d835c3ddafe11db1b3f0b636b10dc19de9e9c5b279a92c21dc9cf",
+  "receipt_sha256": "520664a0b9081efdc277e5722c7ebdf45d7e55c018694a39198e9ef9831158d6"
+}
