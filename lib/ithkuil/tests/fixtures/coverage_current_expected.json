@@ -2,23 +2,23 @@
   "schema": "bilqis.skos.coverage-current-fixture/v1",
   "build_status": "partial",
   "canonical_rdf": {
-    "sha256": "6cd2f8c1a97e9c67f18d4cd820a91a39bd288983eea254f217be23319c040c72",
-    "triple_count": 104479
+    "sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "triple_count": 130173
   },
   "profile_sha256": "7945757f24d5104d52a0880bd6694c7be453ba225e0c7dc73de8b596bbcbb821",
   "totals": {
-    "source_rows": 16986,
+    "source_rows": 25692,
     "dispositions": {
-      "EMITTED": 11550,
+      "EMITTED": 15152,
       "HELD": 1051,
       "REJECTED": 1,
       "UNSUPPORTED": 0,
-      "IR_ONLY": 4384
+      "IR_ONLY": 9488
     }
   },
   "inputs": {
     "atomic": "02a833abc5a116bd651bf50da3c94ef995610612c94c09d31f26cd7d8a6eb540",
-    "lexicon": "0b1b51ba290442e8c015380abbd44e33dd17ba18080079821509f57a004bd4ae",
+    "lexicon": "4bdc52e672ce3f98a9d27c0392f31600a861dc32be982f3332777454cac6c5df",
     "mapping": "2e55e16fe287afa36707cc6c6c84901b33d6d8e26673a1cc6af12c819c6658e9",
     "residue": "198cc83edc44d2804016193ea97f85d269e5ce133cd0b9dd2b4ae343eafae3dd"
   },
@@ -47,55 +47,55 @@
       "frontier_debt": []
     },
     "lexicon": {
-      "source_rows": 9600,
+      "source_rows": 18306,
       "dispositions": {
-        "EMITTED": 5216,
+        "EMITTED": 8818,
         "HELD": 0,
         "REJECTED": 0,
         "UNSUPPORTED": 0,
-        "IR_ONLY": 4384
+        "IR_ONLY": 9488
       },
       "semantic_counts": {
         "concepts": 0,
-        "roots": 2324,
-        "senses": 2892,
+        "roots": 5810,
+        "senses": 3008,
         "mappings": 0,
         "compositions": 0,
         "allomorphs": 0
       },
       "notation_counts": {
-        "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil": 2324
+        "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil": 5810
       },
       "frontier_debt": [
         {
           "code": "LEXICON_EXTRACTION_DEBT_CONFLICT",
-          "count": 41,
+          "count": 43,
           "blocking": false
         },
         {
           "code": "LEXICON_EXTRACTION_DEBT_INSUFFICIENT_SENSE_EVIDENCE",
-          "count": 3671,
+          "count": 8684,
           "blocking": false
         },
         {
           "code": "LEXICON_EXTRACTION_DEBT_UNSUPPORTED_SHAPE",
-          "count": 166,
+          "count": 191,
           "blocking": false
         },
         {
           "code": "LEXICON_OUTSIDE_TRACKED_FRONTIER",
-          "count": 2,
+          "count": 1,
           "blocking": false
         },
         {
           "code": "LEXICON_ROOTS_ZERO_PARSED_SENSES",
-          "count": 1644,
+          "count": 5097,
           "blocking": false
         }
       ],
-      "corrected_graph_sha256": "efac1c28a0d8baae281eb409f6c012aefcfb6de17c9c91736025ba4bf931e787",
-      "corrected_graph_triples": 48252,
-      "corrected_receipt_sha256": "df4c413a85f43832ed6c4a12511d0b099ca448169286343c31f913fd18c967fb"
+      "corrected_graph_sha256": "df21d927c97b458ff72e0910d5d120edd32dc14dd3f2273dda75e300c2308731",
+      "corrected_graph_triples": 73946,
+      "corrected_receipt_sha256": "5554d38afe4de0cbf0409d6cfb0497ee6569158beb6b8b376017429ee1c546e9"
     },
     "residue": {
       "source_rows": 6062,

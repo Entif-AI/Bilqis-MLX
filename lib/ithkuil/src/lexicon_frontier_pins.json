@@ -344,6 +344,13 @@
           "canonical_sha256": "ab3aebeed0e2479b5e012f48302bddf85bff64afae435f325aca354045348e5d"
         }
       }
+    },
+    "7": {
+      "filename": "New Ithkuil Lexicon - Chapter 07 - Natural Phenomena.pdf",
+      "sha256": "b753012f4df753b3cae476023adff3898a9296640b33e892185ebde22cd478d7",
+      "canonical_page_start": 319,
+      "page_count": 252,
+      "format": "PDF 1.3"
     }
   }
 }

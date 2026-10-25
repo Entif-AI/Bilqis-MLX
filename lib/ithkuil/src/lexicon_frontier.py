@@ -15,7 +15,7 @@ from . import build_lexicon_chapters as legacy
 
 ROOT=legacy.ROOT
 PINS=Path(__file__).with_name('lexicon_frontier_pins.json')
-VERSION='1.0.5'
+VERSION='1.0.6'
 
 
 def structural_sense_id(form,stem,specification):
@@ -64,11 +64,21 @@ def _stem_segments(value):
     return segments
 
 
-def _root_form(line):
+def _root_form(line,*,strict=False):
+    if strict:
+        match=re.match(r"^-\s*([^\s-](?:\s*[^\s-])*)\s*-(?=\s|[‘’'\"]|$)",line)
+        if not match:return None
+        body=re.sub(r'\s+','',match.group(1))
+        return '-'+body+'-' if body.isalpha() and len(body)<=14 else None
     match=legacy.ROOT_RE.match(line)
     if match:return match.group(1)
     spaced=re.match(r'^-\s*([^\s-](?:\s*[^\s-])*)\s*-',line)
     return '-'+re.sub(r'\s+','',spaced.group(1))+'-' if spaced else None
+
+
+def _incomplete_root_heading(line):
+    return (line.startswith('-') and any(quote in line for quote in ('‘','’',"'",'"'))
+            and _root_form(line,strict=True) is None)
 
 
 def _root_gloss(line):
@@ -90,7 +100,7 @@ def _prose_sense_candidates(document,chapter_id,root_index,by_form,common,*,excl
             nonlocal marker,buffer,marker_line,buffer_end_line
             if marker is None:return
             stem=marker;meaning=legacy.clean(' '.join(buffer))
-            root=by_form.get(current_root);locus=root_index[(page_number,current_root)]
+            root=by_form.get(current_root)
             source_text=meaning or marker
             fingerprint,count=legacy.source_fingerprint(source_text)
             item={'root_form_raw':current_root,'lexicon_root_id':root['lexicon_root_id'] if root else '',
@@ -102,6 +112,7 @@ def _prose_sense_candidates(document,chapter_id,root_index,by_form,common,*,excl
             if root is None or specification not in legacy.SPECIFICATIONS or not meaning:
                 item['status']='DEBT_INSUFFICIENT_SENSE_EVIDENCE'
             else:
+                locus=root_index[(page_number,current_root)]
                 item['status']='PARSED';item['specification']=specification
                 item['sense_id']=structural_sense_id(current_root,stem,specification)
                 sense={k:'' for k in _columns('lexicon_root_senses')}
@@ -120,11 +131,15 @@ def _prose_sense_candidates(document,chapter_id,root_index,by_form,common,*,excl
             section=legacy.SECTION_RE.match(line)
             if section:
                 flush();current_root=None;specification=None;continue
-            form=_root_form(line)
+            form=_root_form(line,strict=chapter_id=='7')
             if form:
                 flush()
                 current_root=form if (page_number,form) in root_index else None
                 specification=None;continue
+            if chapter_id=='7' and _incomplete_root_heading(line):
+                flush()
+                # Empty scope retains explicit stems as debt without minting a root.
+                current_root='';specification=None;continue
             if any(_overlaps(bbox,table_box) for table_box in table_boxes):continue
             if current_root is None:continue
             if line.upper() in legacy.SPECIFICATIONS:
@@ -182,19 +197,30 @@ def extract_chapter(chapter_id,canonical_pdf,*,prior_senses=()):
             'tracked_pdf_sha256':pin['sha256'],'evidence_status':'official_source_observed'}
     roots,_=legacy.page_line_records(document,chapter)
     root_index={}
-    section=None
+    section=None;unclassified=[]
     for page_number,page in enumerate(document,start=1):
         for line_number,line,_ in _page_lines(page):
             heading=legacy.SECTION_RE.match(line)
             if heading:section=heading.group(1) if heading.group(1).startswith(chapter_id+'.') else None
-            form=_root_form(line)
+            form=_root_form(line,strict=chapter_id=='7')
+            if chapter_id=='7' and section and _incomplete_root_heading(line):
+                fingerprint,count=legacy.source_fingerprint(line)
+                unclassified.append({'root_form_raw':'','lexicon_root_id':'',
+                                     'source_pdf_page':str(page_number),
+                                     'source_printed_page':legacy.printed_page(page),
+                                     'source_table_index':'','row':0,'column':0,
+                                     'status':'DEBT_UNSUPPORTED_SHAPE',
+                                     'source_text_sha256':fingerprint,'source_text_char_count':count,
+                                     'reason':'Quoted root heading has no supported complete root boundary.',
+                                     'source_locus':{'kind':'root','pdf_page':page_number,'line':line_number,
+                                                     'lexicon_section':section}})
             if form and section:
                 root_index[(page_number,form)]={'lexicon_section':section,'line':line_number,'source_line':line}
-    if chapter_id in {'4','6'}:
-        # Chapters 4 and 6 include spaced-root lines the compact-root scan misses.
+    root_debts=unclassified
+    if chapter_id in {'4','6','7'}:
+        # These chapters include spaced-root lines the compact-root scan misses.
         # Keep prior accepted chapter projections unchanged in this leaf issue.
         known_roots={r['root_form_raw'] for r in roots}
-        root_debts=[]
         for (page_number,form),locus in sorted(root_index.items()):
             if form in known_roots:continue
             page=document[page_number-1]
@@ -217,8 +243,6 @@ def extract_chapter(chapter_id,canonical_pdf,*,prior_senses=()):
                           'section_title':legacy.SECTION_TITLES.get(locus['lexicon_section'],''),
                           'source_pdf_page':str(page_number),'source_printed_page':legacy.printed_page(page)})
             known_roots.add(form)
-    else:
-        root_debts=[]
     for root in roots:
         if root['root_gloss']:continue
         for (page_number,form),locus in sorted(root_index.items()):
