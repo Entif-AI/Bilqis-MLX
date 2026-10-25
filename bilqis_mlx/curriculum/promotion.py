@@ -90,7 +90,7 @@ def _promotion_sweep_due(program, state: SchoolState,
     if state.revalidation_target_grade is not None or state.grade in state.champions:
         return False
     scope = _introduced_grade_capabilities(program, state)
-    return _mean_accuracy(snapshot.scores, scope) > PROMOTION_MEAN_FLOOR
+    return _mean_accuracy(snapshot.scores, scope) >= PROMOTION_MEAN_FLOOR
 
 
 def _start_promotion_sweep(program, state: SchoolState,

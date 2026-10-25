@@ -1409,3 +1409,38 @@ reduced to four or eight attempted updates, then repeatedly failed to produce ta
 gain at that shortened horizon. The resulting rejected attempts did not advance the
 durable optimizer step, causing command-level retained-step progress to collapse even
 while hundreds of disposable updates were being attempted.
+
+
+## ADR-098 | 2026-10-25 | Teacher strategies use a bounded active population
+
+**Direct user decision after retention remained poor despite restoring candidate
+horizons.** Preserve the inherited 512-strategy teacher inventory as historical
+provenance, but stop treating every nominal strategy as a live arm. The current
+trainer first canonicalizes behaviorally equivalent policies, then admits at most 16
+effective strategies into each capability/phase/teaching-geometry context. Up to
+eight active slots are context-local incumbents that have actually retained at least
+one candidate, ranked conservatively by retention evidence; remaining slots are the
+least-observed challengers. Failed challengers rotate back to the dormant bench as
+untried alternatives receive their turn. Dormant policies are not deleted and may
+become active again when context or teaching geometry changes.
+
+Contextual selection is **archive-immutable**. The historical teacher's original
+mutation function remains available for compatibility, but the live contextual path
+uses a non-mutating existing-policy picker and cannot regrow or rewrite the archive.
+This turns `512` from an active-search-space target into a provenance ceiling. The
+active/dormant population is derived from evidence and need not be serialized as a
+second source of truth. Visit telemetry records archive, active-effective and dormant-
+effective counts so policy-space dilution is observable.
+
+
+## ADR-099 | 2026-10-25 | 90% starts stability qualification and telemetry must not round upward across the gate
+
+**Direct user correction after Grade C appeared to reach 90% without sweeping.**
+A grade mean of exactly 90% is sufficient to start
+the existing stability/promotion sweep. The previous strict `> 90%` comparison is
+replaced by `>= 90%`; no downstream graduation or retention criterion is weakened.
+Live history also showed that genuinely above-90% Grade-C exams already entered
+`PROMOTION_SWEEP` (for example 208/231 and 210/231), while compact operator telemetry
+could round a sub-threshold 89.899% score to `90%`. Compact score summaries therefore
+show one decimal place so a displayed `90.0%` corresponds to an actual qualifying
+boundary rather than display rounding.

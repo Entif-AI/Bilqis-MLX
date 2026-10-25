@@ -362,7 +362,7 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertIn("c.1", state.carried_mastery_debt)
         self.assertNotIn("C", state.champions)
 
-    def test_exactly_ninety_mean_does_not_start_promotion_sweep(self):
+    def test_exactly_ninety_mean_starts_promotion_sweep(self):
         course = staged_course()
         state, pointer = enter_c(course)
         state = grade_loop(course, state, pointer)
@@ -378,7 +378,8 @@ class StagedSchoolTests(unittest.TestCase):
         state = assess(
             course, state, snapshot(course, pointer, exactly_ninety))
 
-        self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.queue, ("c.0", "c.1"))
         self.assertEqual(state.introduction_stage, 1)
         self.assertNotIn("c.2", assessment_capabilities(course, state))
 

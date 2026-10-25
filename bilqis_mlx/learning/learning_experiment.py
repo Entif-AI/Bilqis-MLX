@@ -21,11 +21,18 @@ from bilqis_mlx.learning.lesson_selection import (
     earlier_grade_capabilities, reserve_weakness_targets, select_source_lesson,
 )
 from bilqis_mlx.learning.teacher_geometry import is_geometry_scope
+from bilqis_mlx.learning.teacher_strategy_population import (
+    UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT,
+    active_effective_strategy_keys as _active_effective_strategy_keys,
+    effective_context_scope as _effective_context_scope,
+    effective_policy_key as _effective_policy_key,
+    historical_policy_mean as _historical_policy_mean,
+    pick_existing_active as _pick_existing_active,
+)
 
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
 MAX_FAILURE_ARCHETYPES = 24
-TEACHER_UCB_EXPLORATION_WEIGHT = 0.6
 INTERFERENCE_REJECTIONS_FOR_HALF_BUDGET = 2
 INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET = 4
 REJECTION_PRESSURE_CONTEXTUAL_START = 2
@@ -481,73 +488,9 @@ def _inherited_exploration(teacher: dict, grade: str, policy_key: str) -> float:
         math.log(total+2)/(1+info["trials"]))
 
 
-_CONTEXT_INEFFECTIVE_POLICY_FIELDS = frozenset({"preview"})
-
-
-def _effective_policy_key(policy: dict) -> str:
-    """Identity for knobs that actually change the current source lesson.
-
-    Future-grade preview is deliberately unavailable in the admitted-source
-    trainer, so preview-only legacy variants are one effective contextual
-    strategy even though their historical policy IDs remain distinct.
-    """
-    if not isinstance(policy, dict):
-        raise ValueError(LearningExperimentError.POLICY_INVALID.value)
-    effective = {
-        key: value for key, value in sorted(policy.items())
-        if key not in _CONTEXT_INEFFECTIVE_POLICY_FIELDS
-    }
-    if "depth" in effective:
-        effective["depth"] = (
-            "DEEP" if float(effective["depth"]) >= 3 else "SHALLOW")
-    if "contrast" in effective:
-        effective["contrast"] = (
-            "DIVERSE" if float(effective["contrast"]) >= .5 else "RANDOM")
-    return hashlib.sha256(
-        json.dumps(effective, sort_keys=True).encode()).hexdigest()[:12]
-
-
-def _effective_context_scope(teacher: dict, scope: dict) -> dict:
-    """Aggregate contextual evidence across behaviorally identical policies."""
-    groups = {}
-    strategies = teacher.get("strategies", {})
-    for policy_key, record in scope.items():
-        policy = strategies.get(policy_key)
-        if policy is None:
-            raise ValueError(LearningExperimentError.STRATEGY_ID_DRIFT.value)
-        effective_key = _effective_policy_key(policy)
-        group = groups.setdefault(effective_key, {
-            "trials": 0,
-            "reward_sum": 0.,
-            "unsafe": 0,
-            "retained": 0,
-            "no_target_gain_streak": 0,
-            "members": [],
-        })
-        group["trials"] += int(record.get("trials", 0))
-        group["reward_sum"] += float(record.get("reward_sum", 0.))
-        group["unsafe"] += int(record.get("unsafe", 0))
-        group["retained"] += int(record.get("retained", 0))
-        group["no_target_gain_streak"] += int(
-            record.get("no_target_gain_streak", 0))
-        group["members"].append(policy_key)
-    return groups
-
-
-def _historical_policy_mean(teacher: dict, grade: str, policy_key: str) -> float:
-    """Weak prior only; geometry epochs never treat legacy rewards as observations."""
-    local = teacher.get("grade_stats", {}).get(str(grade), {})
-    info = local.get(policy_key) or teacher.get("global_stats", {}).get(policy_key)
-    if not isinstance(info, dict) or not info.get("trials"):
-        return 0.
-    trials = int(info["trials"])
-    reward_sum = float(info.get("reward_sum", 0.))
-    if trials < 1 or not math.isfinite(reward_sum):
-        return 0.
-    return max(-1., min(1., reward_sum / trials))
-
-
-def _geometry_context_pick(teacher: dict, grade: str, scope: dict, rng):
+def _geometry_context_pick(teacher: dict, grade: str, scope: dict, rng,
+                           active_effective: tuple[str, ...],
+                           inventory: dict[str, list[str]]):
     """Explore the existing toolbox using fresh geometry-local evidence.
 
     Historical grade/global rewards contribute only a quarter pseudo-trial.
@@ -557,10 +500,18 @@ def _geometry_context_pick(teacher: dict, grade: str, scope: dict, rng):
     strategies = teacher.get("strategies", {})
     if not isinstance(strategies, dict) or not strategies:
         raise ValueError(LearningExperimentError.POLICY_INVALID.value)
-    inventory = {}
-    for policy_key, policy in strategies.items():
-        inventory.setdefault(_effective_policy_key(policy), []).append(policy_key)
-    effective_scope = _effective_context_scope(teacher, scope) if scope else {}
+    inventory = {
+        effective_key: inventory[effective_key]
+        for effective_key in active_effective
+    }
+    effective_scope = (
+        {
+            key: record
+            for key, record in _effective_context_scope(teacher, scope).items()
+            if key in inventory
+        }
+        if scope else {}
+    )
     total_trials = sum(record["trials"] for record in effective_scope.values())
 
     def group_score(item):
@@ -744,27 +695,48 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     diagnostic_key, _diagnostic_payload = _diagnostic_context(
         channel, capability, curriculum_scope, diagnostics)
 
+    context_key = capability+"|"+phase+"|"+curriculum_scope
+    scope = channel["contexts"].get(context_key, {})
+    active_effective, inventory = _active_effective_strategy_keys(
+        teacher, grade, scope)
+    active_set = set(active_effective)
+
+    def population_metadata():
+        return {
+            "active_effective_strategy_count": len(active_effective),
+            "dormant_effective_strategy_count": len(inventory) - len(active_effective),
+            "strategy_archive_count": len(teacher.get("strategies", {})),
+        }
+
     def result(key, policy, *, diagnostic_context_consumed=False):
         if return_metadata:
             return key, policy, {
                 "diagnostic_context_consumed": diagnostic_context_consumed,
                 "diagnostic_context_key": diagnostic_key,
                 "geometry_context": geometry_context,
+                **population_metadata(),
             }
         return key, policy
 
-    context_key = capability+"|"+phase+"|"+curriculum_scope
-    scope = channel["contexts"].get(context_key, {})
     if not scope:
         if geometry_context:
             original_key, original_policy = _geometry_context_pick(
-                teacher, grade, scope, rng)
+                teacher, grade, scope, rng, active_effective, inventory)
         else:
-            original_key, original_policy = engine.pick(teacher, grade, rng)
+            original_key, original_policy = _pick_existing_active(
+                engine, teacher, grade, rng, active_effective, inventory)
         return result(original_key, original_policy)
-    effective_scope = _effective_context_scope(teacher, scope)
+    effective_scope = {
+        key: record
+        for key, record in _effective_context_scope(teacher, scope).items()
+        if key in active_set
+    }
     diagnostic_scope = _diagnostic_effective_scope(
         teacher, scope, diagnostic_key)
+    diagnostic_scope = {
+        key: record for key, record in diagnostic_scope.items()
+        if key in active_set
+    }
     usable_diagnostic = {
         key: record for key, record in diagnostic_scope.items()
         if record.get("retained", 0) > 0
@@ -826,9 +798,10 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     # otherwise consume the finite 512-strategy budget without being tried.
     if geometry_context:
         original_key, original_policy = _geometry_context_pick(
-            teacher, grade, scope, rng)
+            teacher, grade, scope, rng, active_effective, inventory)
     else:
-        original_key, original_policy = engine.pick(teacher, grade, rng)
+        original_key, original_policy = _pick_existing_active(
+            engine, teacher, grade, rng, active_effective, inventory)
     original_effective = _effective_policy_key(original_policy)
     if original_effective == best_effective:
         return result(

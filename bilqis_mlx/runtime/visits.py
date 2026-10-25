@@ -156,6 +156,14 @@ def _skip_stagnant_target_visit(run_dir, receipt, school, course, capability,
     return result
 
 
+def _strategy_population_event(selection: dict) -> dict:
+    return {
+        "archive_count": selection.get("strategy_archive_count"),
+        "active_effective_count": selection.get("active_effective_strategy_count"),
+        "dormant_effective_count": selection.get("dormant_effective_strategy_count"),
+    }
+
+
 def _record_lesson_controls(lesson_control, policy_control_receipts,
                             old_capabilities, picked, preservation,
                             delivered_preservation, retention_support,
@@ -812,6 +820,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "teacher_selection_reward": bandit_credit,
         "teacher_geometry_epoch": teacher_geometry_epoch,
         "teacher_context_scope": teacher_curriculum_scope,
+        "teacher_strategy_population": _strategy_population_event(policy_selection),
         "legacy_bandit_observed": legacy_bandit_observed,
         "stale_geometry_misses_suppressed": len(stale_geometry_misses),
         "attempted_optimizer_updates": attempted_optimizer_updates,

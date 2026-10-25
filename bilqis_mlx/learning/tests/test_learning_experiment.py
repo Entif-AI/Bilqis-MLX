@@ -14,7 +14,7 @@ from bilqis_mlx.learning.learning_experiment import (
     fork_student, commit_trial, sampled_protection, whole_grade_protection,
     missing_grade_capabilities,
     selection_credit, select_source_lesson, candidate_step_budget,
-    _effective_policy_key,
+    _active_effective_strategy_keys, _effective_policy_key,
 )
 
 
@@ -86,6 +86,39 @@ def live_scale_teacher():
                                   "no_target_gain_streak": 0},
                 }
             },
+        },
+    }
+
+
+def strategy_population_teacher(count=24):
+    policies = []
+    for old in (4, 8, 12, 16, 20):
+        for depth in (1, 3):
+            for contrast in (0., .5):
+                for lr in (.00004, .00008, .00013, .0002, .0003):
+                    for distill in (0., .15, .35, .65):
+                        policies.append({
+                            "old": old, "preview": 0, "depth": depth,
+                            "contrast": contrast, "lr": lr,
+                            "distill": distill,
+                        })
+    strategies = {
+        f"policy-{index:03d}": policy
+        for index, policy in enumerate(policies[:count])
+    }
+    stats = {
+        key: {"trials": 10, "reward_sum": 0., "reward_ema": 0., "latest": 0.}
+        for key in strategies
+    }
+    return {
+        "strategies": strategies,
+        "global_stats": stats,
+        "grade_stats": {"C": {key: dict(value) for key, value in stats.items()}},
+        "events": 30,
+        "mutations": 0,
+        "causal_experiment": {
+            "version": "bilqis.mlx.causal-teacher-experiment/v1",
+            "negative_archetypes": [], "events": 0, "contexts": {},
         },
     }
 
@@ -1038,6 +1071,64 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertNotEqual(
             _effective_policy_key(shallow_a),
             _effective_policy_key(random_contrast))
+
+    def test_active_strategy_population_is_bounded_and_preserves_proven_incumbent(self):
+        teacher = strategy_population_teacher()
+        proven = "policy-023"
+        retained = decide({
+            "C.ADD": {"before": 3, "after": 5, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        for _ in range(5):
+            observe_context(
+                teacher, capability="C.ADD", phase="MAIN",
+                policy_key=proven, decision=retained, local_gain=.4,
+                curriculum_scope="scope")
+        scope = teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
+
+        active, inventory = _active_effective_strategy_keys(
+            teacher, "C", scope)
+
+        self.assertLessEqual(len(active), 16)
+        self.assertGreater(len(inventory), len(active))
+        self.assertIn(
+            _effective_policy_key(teacher["strategies"][proven]), active)
+
+    def test_contextual_pick_keeps_strategy_archive_immutable(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher()
+        before_keys = set(teacher["strategies"])
+        before_mutations = teacher["mutations"]
+
+        for seed in range(12):
+            contextual_pick(
+                policy_engine, teacher, "C.ADD", "MAIN", random.Random(seed),
+                curriculum_scope="scope")
+
+        self.assertEqual(set(teacher["strategies"]), before_keys)
+        self.assertEqual(teacher["mutations"], before_mutations)
+
+    def test_zero_retention_strategy_rotates_off_active_bench(self):
+        teacher = strategy_population_teacher()
+        active_before, inventory = _active_effective_strategy_keys(
+            teacher, "C", {})
+        no_gain = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        for effective_key in active_before:
+            member = inventory[effective_key][0]
+            observe_context(
+                teacher, capability="C.ADD", phase="MAIN",
+                policy_key=member, decision=no_gain, local_gain=0.,
+                curriculum_scope="scope")
+        scope = teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
+
+        active_after, _ = _active_effective_strategy_keys(
+            teacher, "C", scope)
+
+        self.assertNotEqual(set(active_before), set(active_after))
+        self.assertTrue(set(active_after) - set(active_before))
 
     def test_candidate_step_budget_shrinks_only_for_interference_pressure(self):
         teacher = {

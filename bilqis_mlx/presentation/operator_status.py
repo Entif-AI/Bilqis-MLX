@@ -78,7 +78,7 @@ def score_summary(progress, label, width):
         return full
     means = progress.start_means() if label == "START" else progress.current_means()
     compact = label + " " + " ".join(
-        f"{group}{means[group]:.0f}%" if means[group] is not None else f"{group}-"
+        f"{group}{means[group]:.1f}%" if means[group] is not None else f"{group}-"
         for group in ("G", "B", "N", "ALL"))
     if label == "LATEST*":
         missing = progress.remaining_to_perfect()

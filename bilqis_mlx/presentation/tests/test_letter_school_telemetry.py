@@ -9,6 +9,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from bilqis_mlx.presentation.dashboard import build, ingest
+from bilqis_mlx.presentation.operator_status import score_summary
 from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES, SchoolTelemetry
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard, TABLES
 from bilqis_mlx.state_dag import migrate_current_head
@@ -23,6 +24,22 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_compact_score_summary_does_not_round_sub_ninety_to_ninety(self):
+        progress = SimpleNamespace(
+            summary=lambda _label: "x" * 200,
+            current_means=lambda: {
+                "G": 98.6, "B": 83.4, "N": 89.8989898989, "ALL": 88.2,
+            },
+            start_means=lambda: {
+                "G": 98.6, "B": 83.4, "N": 89.8989898989, "ALL": 88.2,
+            },
+        )
+
+        compact = score_summary(progress, "LATEST", 80)
+
+        self.assertIn("N89.9%", compact)
+        self.assertNotIn("N90%", compact)
+
     def test_compact_header_compresses_active_integer_roots(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                           tables=LETTER_TABLES, compact_header=True)
