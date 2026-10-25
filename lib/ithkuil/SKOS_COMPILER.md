@@ -1591,3 +1591,23 @@ Rebuilding changed source state creates a new disposition without mutating prior
 input values or recorded outputs. Tests compare exact stable IDs, original states,
 commentary, historical distinction, order invariance, schema errors and a controlled
 state transition.
+
+## Mapping endpoint and conflict validation (#65)
+
+`mapping_validate.validate_mapping_batch` validates a complete normalized mapping
+batch before strong output is accepted. Missing/ambiguous/nonconcept endpoints,
+unknown future states, contradictory exact-versus-rejected claims, and conflicting
+material policy assertions produce stable `MappingIssue` records with every involved
+source row and the conflicting endpoint/predicate details. Any such issue prevents
+complete batch output; the result contains no strong triples.
+
+An opposite broad/narrow direction under one source/review basis is a contradiction.
+Separately qualified hierarchy cycles remain legal under the #36 SKOS contract.
+Exact and close claims may coexist when they have independently specified source
+review bases; conflicting versions of one source assertion are never reconciled by
+choosing the stronger or weaker label. Equivalent duplicate rows preserve both row
+identities while canonicalizing their RDF triples once. Known non-admitted proposal
+states remain held; the guard does not promote them or invent a source review.
+
+Tests exercise every required negative independently, all involved row IDs, order
+invariance, legal duplicates and a separately qualified reciprocal hierarchy.
