@@ -299,29 +299,25 @@ def witness_numeric_obligation(row, obligation, *, source_root, graph, course):
 
 
 def boolean_evidence_dependencies(*, course, capability):
-    """Declare abstraction proofs without changing released Course contracts."""
-    del course
+    """Resolve each direct Boolean producer from the declared curriculum."""
     if capability == B_COMPOSITE_CAPABILITY:
-        return tuple(
-            SupplementalEvidenceSpec(
-                capability_id=capability,
-                kind="COMPOSITION",
-                key="B." + operator,
-                requires_capabilities=("B." + operator,),
-            )
-            for operator in CONNECTIVES
-        )
-    if capability == B_IDBOOLOPS_CAPABILITY:
-        return tuple(
-            SupplementalEvidenceSpec(
-                capability_id=capability,
-                kind="PREREQUISITE",
-                key="B." + operator,
-                requires_capabilities=("B." + operator,),
-            )
-            for operator in CONNECTIVES
-        )
-    return ()
+        kind = "COMPOSITION"
+    elif capability == B_IDBOOLOPS_CAPABILITY:
+        kind = "PREREQUISITE"
+    else:
+        return ()
+    result = []
+    for operator in CONNECTIVES:
+        root = "cogal.operator." + operator
+        producers = tuple(identity for identity, producer in course.capability_map.items()
+                          if producer.examined_roots == (root,))
+        if len(producers) != 1:
+            raise ValueError("FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED:" + root)
+        identity = producers[0]
+        result.append(SupplementalEvidenceSpec(
+            capability_id=capability, kind=kind, key=identity,
+            requires_capabilities=(identity,)))
+    return tuple(result)
 
 
 

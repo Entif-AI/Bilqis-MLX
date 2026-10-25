@@ -37,6 +37,46 @@ class V2StructuralWitnessTests(unittest.TestCase):
         cls.composite = obligations_for_capability(
             cls.release, "B.COMPOSITE", plan=cls.plan)
 
+    def test_boolean_dependencies_resolve_declared_producer_identities(self):
+        from types import SimpleNamespace
+        from bilqis_mlx.grade_b_oracle import CONNECTIVES
+        from bilqis_mlx.source_adapters.school import boolean_evidence_dependencies
+        from dataclasses import asdict
+        producers = {"semantic:" + name.lower(): SimpleNamespace(
+            examined_roots=("cogal.operator." + name,)) for name in CONNECTIVES}
+        course = SimpleNamespace(capability_map=producers)
+        for capability, kind in (("B.COMPOSITE", "COMPOSITION"), ("B.IDBOOLOPS", "PREREQUISITE")):
+            with self.subTest(capability=capability):
+                obligations = boolean_evidence_dependencies(course=course, capability=capability)
+                self.assertEqual([asdict(item) for item in obligations], [
+                    {"capability_id": capability, "kind": kind, "key": identity,
+                     "requires_capabilities": (identity,), "minimum_specimens": 1}
+                    for identity in producers])
+        self.assertEqual(boolean_evidence_dependencies(course=course, capability="unknown"), ())
+        historical = boolean_evidence_dependencies(
+            course=self.release.curriculum, capability="B.COMPOSITE")
+        self.assertEqual([asdict(item) for item in historical], [
+            {"capability_id": "B.COMPOSITE", "kind": "COMPOSITION", "key": "B." + operator,
+             "requires_capabilities": ("B." + operator,), "minimum_specimens": 1}
+            for operator in CONNECTIVES])
+
+    def test_boolean_dependencies_fail_closed_on_missing_or_ambiguous_producer(self):
+        from types import SimpleNamespace
+        from bilqis_mlx.grade_b_oracle import CONNECTIVES
+        from bilqis_mlx.source_adapters.school import boolean_evidence_dependencies
+        producers = {"semantic:" + name.lower(): SimpleNamespace(
+            examined_roots=("cogal.operator." + name,)) for name in CONNECTIVES}
+        for ambiguous in (False, True):
+            broken = dict(producers)
+            if ambiguous:
+                broken["another.and"] = producers["semantic:and"]
+            else:
+                broken.pop("semantic:and")
+            with self.subTest(ambiguous=ambiguous), self.assertRaisesRegex(
+                    ValueError, "FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED"):
+                boolean_evidence_dependencies(course=SimpleNamespace(capability_map=broken),
+                                              capability="B.COMPOSITE")
+
     def _obligation(self, kind, key):
         return next(
             item for item in self.composite

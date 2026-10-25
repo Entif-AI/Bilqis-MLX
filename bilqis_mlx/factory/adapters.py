@@ -161,7 +161,8 @@ class SourceAdapterRegistry:
                 adapter = self.require(binding.generator_id, binding.oracle_id)
                 if adapter.dependencies is None:
                     continue
-                supplied = adapter.dependencies(course=course, capability=execution.capability_id)
+                supplied = adapter.dependencies(
+                    course=release.curriculum, capability=execution.capability_id)
                 for item in supplied:
                     if (not isinstance(item, SupplementalEvidenceSpec) or
                             item.capability_id != execution.capability_id):
