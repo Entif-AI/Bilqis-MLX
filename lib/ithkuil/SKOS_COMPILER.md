@@ -1828,3 +1828,47 @@ exact Unicode notation. The positive fixture is the existing canonical #40 core
 graph. A separate whole-current-corpus run validates all 77,614 triples at canonical
 digest `a81a1ec6d5f48e297eaa6901a2f1d609711777f5d2bc35f57f01103d6983ed7e`.
 Graph conformance does not erase the coverage receipt's partial/held/debt state.
+
+## Aggregate conformance command (#72)
+
+Run the complete tracked frontier with one command:
+
+```sh
+python3 -B -m lib.ithkuil.src.skos.conformance \
+  --input-root lib/ithkuil/_data/csv --output-root .local/skos-conformance
+```
+
+`corpus.py` orchestrates the existing atomic, lexicon, residue and mapping owners;
+it adds no semantic decisions. The command makes two independent domain builds,
+compares their canonical RDF, and performs an independent CSV primary-key census
+for omission reconciliation. It never calls a model or FalkorDB. Source inputs are
+read-only. Every mandatory gate is explicitly registered in `conformance.GATES`:
+`coverage`, `no-omission`, `determinism`, `shacl`, currently version `1.0.0`.
+Registry/implementation equality and a literal registry regression prevent silent
+omission. Future mandatory gates require an explicit registry change.
+
+For separately produced artifacts, use `--rdf`, `--coverage`, `--source-rows`, and
+`--comparison-rdf` instead of `--input-root`. The source census must be independent
+of the coverage receipt; the comparison RDF must come from an independent rebuild.
+`--admitted-mappings` retains #71's explicit upstream-support premise.
+
+Standard output is one JSON result; standard error contains a compact human
+summary. Exit 0 / `complete` means all conformance checks completed successfully;
+`coverage_status` separately retains `partial`, held rows and source-frontier debt.
+Exit 2 / `failed` identifies semantic/input failures. Exit 3 /
+`infrastructure-failed` distinguishes unavailable tooling/files, retaining the gate
+when the failure occurs inside a gate. Every constituent retains its own version,
+status and detailed evidence. A canonical digest mismatch also fails coverage.
+
+Optional `--output-root` preserves canonical/comparison RDF, coverage, source
+census, aggregate and individual gate reports under a directory derived from their
+content. Exact-byte readback verifies each file. Repeated publication reconciles
+existing equal bytes; conflicting bytes or symlinks fail. The final manifest lists
+constituent SHA-256 values. No constituent evidence is overwritten.
+
+The current-corpus proof passes all four gates over 9,654 independently counted
+source rows and 77,614 triples, retaining `coverage_status=partial` and canonical
+SHA-256 `a81a1ec6d5f48e297eaa6901a2f1d609711777f5d2bc35f57f01103d6983ed7e`.
+`test_skos_conformance.py` proves a clean fixture, one induced failure per gate,
+receipt/RDF binding, registry presence, evidence readback/idempotence, and distinct
+infrastructure failure.
