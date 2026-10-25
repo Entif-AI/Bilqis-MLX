@@ -160,5 +160,42 @@ class BooleanIdentificationTests(unittest.TestCase):
         )
 
 
+class BooleanIdentificationProviderContractTests(unittest.TestCase):
+    def setUp(self):
+        from bilqis_mlx.boolean_identification_oracle import TASK
+        _, _, self.graph, _, _ = read_sources(SOURCE)
+        self.adapter = live_source_registry().require(GENERATOR, ORACLE)
+        patterns = ((False, False), (False, True), (True, False), (True, True))
+        record = {"task": TASK, "options": list(BOOLEAN_OPERATORS), "observations": [
+            {"operands": [{"kind": "literal", "value": a}, {"kind": "literal", "value": b}],
+             "result": a and b} for a, b in patterns]}
+        self.row = {"capability": CAPABILITY, "record": record, "gold": "AND",
+                    "root": "cogal.operator.AND", "tokens": encode_record(record, SOURCE, self.graph)}
+
+    def test_independent_identification_verifier_preserves_gold_and_encoding_checks(self):
+        self.assertEqual(self.adapter.check.__module__, "bilqis_mlx.source_adapters.school")
+        self.assertTrue(self.adapter.check(self.row, source_root=SOURCE, graph=self.graph))
+        self.assertFalse(self.adapter.check({**self.row, "gold": "OR"},
+                                           source_root=SOURCE, graph=self.graph))
+        self.assertFalse(self.adapter.check({**self.row, "tokens": self.row["tokens"][:-1]},
+                                           source_root=SOURCE, graph=self.graph))
+
+    def test_incomplete_or_malformed_identification_evidence_is_rejected(self):
+        from copy import deepcopy
+        for mutation in ("missing", "malformed"):
+            row = deepcopy(self.row)
+            if mutation == "missing":
+                row["record"]["observations"].pop()
+            else:
+                row["record"]["observations"][0]["operands"] = []
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                self.adapter.check(row, source_root=SOURCE, graph=self.graph)
+
+    def test_footprint_recovers_identified_root_without_representation_markers(self):
+        self.assertEqual(self.adapter.semantic_footprint(self.row), ("cogal.operator.AND",))
+        self.assertEqual(self.adapter.semantic_footprint({**self.row, "root": "forged"}),
+                         ("cogal.operator.AND",))
+
+
 if __name__ == "__main__":
     unittest.main()

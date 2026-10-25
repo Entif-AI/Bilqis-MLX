@@ -5,9 +5,7 @@ from ..factory.adapters import RegisteredSourceAdapter, SourceAdapterRegistry
 from ..factory.autonomy import SupplementalEvidenceSpec
 from ..factory.model import SourceAdapter
 from ..curriculum import BOOLEAN_OPERATORS
-from ..factory.verification import (
-    check_boolean_composite, check_connective, check_numeric, check_predicate,
-)
+from ..factory.verification import check_numeric
 from .structure import inspect_boolean_identification, inspect_source_query
 
 from ..grade_a_oracle import VERSION as A_ORACLE
@@ -64,6 +62,53 @@ BOOLEAN_RUNTIME_SAMPLER = "bilqis.mlx.grade-b-u7c-runtime-sampler/v3"
 
 
 
+
+
+def check_predicate(row, *, source_root, **_):
+    from ..grade_a_oracle import evaluate
+    from ..grade_a_probe import read_sources
+    micro, development, *_ = read_sources(source_root)
+    library = micro if row["record"]["task"] == "micro" else development
+    return (evaluate(row["record"], row["capability"]) == row["gold"] and
+            list(library.encode(row["record"])) == row["tokens"])
+
+
+def check_connective(row, *, source_root, graph, **_):
+    from ..grade_b_oracle import evaluate
+    if row["record"].get("task") == "evaluate":
+        from ..live_grade_b import _encode_logic_record, _logic_source
+        logic = _logic_source(source_root)
+        return (evaluate(row["record"], row["capability"]) == row["gold"] and
+                _encode_logic_record(logic, row["record"], graph) == row["tokens"])
+    from ..grade_a_probe import read_sources
+    micro, *_ = read_sources(source_root)
+    return (evaluate(row["record"], row["capability"]) == row["gold"] and
+            list(micro.encode(row["record"])) == row["tokens"])
+
+
+def check_boolean_composite(row, *, source_root, graph, **_):
+    from ..boolean_composite_oracle import evaluate
+    if row["record"].get("task") == "evaluate":
+        from ..live_grade_b import _encode_logic_record, _logic_source
+        logic = _logic_source(source_root)
+        return (evaluate(row["record"], row["capability"]) == row["gold"] and
+                _encode_logic_record(logic, row["record"], graph) == row["tokens"])
+    from ..grade_a_probe import read_sources
+    micro, *_ = read_sources(source_root)
+    return (evaluate(row["record"], row["capability"]) == row["gold"] and
+            list(micro.encode(row["record"])) == row["tokens"])
+
+
+def semantic_footprint(row: dict) -> tuple[str, ...]:
+    """Inspect source operations and omit literal/entity/codec representation."""
+    record = row["record"]
+    if record.get("task") == "identify_boolean_operator":
+        from ..boolean_identification_oracle import evaluate
+        root = "cogal.operator." + evaluate(record, row["capability"])
+        shape = inspect_boolean_identification(record, root)
+    else:
+        shape = inspect_source_query(record["query"])
+    return tuple(dict.fromkeys(shape.rooted_operators))
 
 
 def draw_a(*, source_root, graph, course, capability, seed, each):
@@ -290,13 +335,15 @@ def live_source_registry() -> SourceAdapterRegistry:
             "source.micro.predicates/v1", "bilqis_mlx.grade_a_probe.make_record",
             (A_ORACLE,), generator_source_digest(),
             cohort_generator_id=A_COHORT_GENERATOR,
-            cohort_releases=((A_RELEASE, generator_source_digest()),)), draw_a, check_predicate),
+            cohort_releases=((A_RELEASE, generator_source_digest()),)), draw_a, check_predicate,
+            semantic_footprint=semantic_footprint),
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.boolean-connectives/v1", "bilqis_mlx.live_grade_b.draw_connectives",
             (B_ORACLE,), b_digest(), cohort_generator_id=B_COHORT_GENERATOR,
             cohort_releases=((B_RELEASE, b_digest()),),
             teaching_option_ids=(BOOLEAN_ASSOCIATION_OPTION,)), draw_b, check_connective,
-            enrich_boolean, witness_micro_obligation),
+            enrich_boolean, witness_micro_obligation,
+            semantic_footprint=semantic_footprint),
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.boolean-composite/v1", B_COMPOSITE_GENERATOR,
             (B_ORACLE, B_COMPOSITE_ORACLE), b_composite_digest(),
@@ -307,7 +354,8 @@ def live_source_registry() -> SourceAdapterRegistry:
             cohort_releases=((B_COMPOSITE_RELEASE, b_composite_digest()),)),
             draw_b_composite_release, check_b_composite_release,
             witness=witness_micro_obligation,
-            dependencies=boolean_evidence_dependencies),
+            dependencies=boolean_evidence_dependencies,
+            semantic_footprint=semantic_footprint),
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.boolean-identification/v1", B_IDBOOLOPS_GENERATOR,
             (B_ORACLE, B_COMPOSITE_ORACLE, B_IDBOOLOPS_ORACLE), b_idboolops_digest(),
@@ -318,7 +366,8 @@ def live_source_registry() -> SourceAdapterRegistry:
             cohort_releases=((B_IDBOOLOPS_RELEASE, b_idboolops_digest()),)),
             draw_b_idboolops_release, check_b_idboolops_release,
             witness=witness_micro_obligation,
-            dependencies=boolean_evidence_dependencies),
+            dependencies=boolean_evidence_dependencies,
+            semantic_footprint=semantic_footprint),
         RegisteredSourceAdapter(SourceAdapter(
             "source.finite-numeric/v1", "bilqis_mlx.numeric_curriculum.draw_numeric",
             (C_ORACLE,), c_digest(), cohort_generator_id=C_COHORT_GENERATOR,

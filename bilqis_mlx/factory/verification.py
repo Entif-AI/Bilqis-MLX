@@ -28,41 +28,6 @@ def check_copular(row, *, graph, **_):
     except (KeyError, ValueError, TypeError, AttributeError):
         return False
 
-def check_predicate(row, *, source_root, **_):
-    from ..grade_a_oracle import evaluate
-    from ..grade_a_probe import read_sources
-    micro, development, *_ = read_sources(source_root)
-    library = micro if row["record"]["task"] == "micro" else development
-    return (evaluate(row["record"], row["capability"]) == row["gold"] and
-            list(library.encode(row["record"])) == row["tokens"])
-
-
-def check_connective(row, *, source_root, graph, **_):
-    from ..grade_b_oracle import evaluate
-    if row["record"].get("task") == "evaluate":
-        from ..live_grade_b import _encode_logic_record, _logic_source
-        logic = _logic_source(source_root)
-        return (evaluate(row["record"], row["capability"]) == row["gold"] and
-                _encode_logic_record(logic, row["record"], graph) == row["tokens"])
-    from ..grade_a_probe import read_sources
-    micro, *_ = read_sources(source_root)
-    return (evaluate(row["record"], row["capability"]) == row["gold"] and
-            list(micro.encode(row["record"])) == row["tokens"])
-
-
-def check_boolean_composite(row, *, source_root, graph, **_):
-    from ..boolean_composite_oracle import evaluate
-    if row["record"].get("task") == "evaluate":
-        from ..live_grade_b import _encode_logic_record, _logic_source
-        logic = _logic_source(source_root)
-        return (evaluate(row["record"], row["capability"]) == row["gold"] and
-                _encode_logic_record(logic, row["record"], graph) == row["tokens"])
-    from ..grade_a_probe import read_sources
-    micro, *_ = read_sources(source_root)
-    return (evaluate(row["record"], row["capability"]) == row["gold"] and
-            list(micro.encode(row["record"])) == row["tokens"])
-
-
 def check_numeric(row, *, graph, **_):
     from ..source_adapters.numeric import decode
     from ..verification.numeric import independent_value

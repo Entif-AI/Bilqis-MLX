@@ -134,5 +134,40 @@ class BooleanCompositeTests(unittest.TestCase):
         self.assertEqual(atomic_evidence.delivered_count, 4)
 
 
+class BooleanCompositeProviderContractTests(unittest.TestCase):
+    def setUp(self):
+        from bilqis_mlx.source_adapters.school import check_boolean_composite
+        self.micro, _, self.graph, _, _ = read_sources(SOURCE)
+        self.adapter = live_source_registry().require(GENERATOR, ORACLE)
+        self.assertEqual(self.adapter.check.__module__, check_boolean_composite.__module__)
+        logic = _logic_source(SOURCE)
+        query = logic.apply("AND", logic.literal(True),
+                            logic.apply("NOT", logic.literal(False)))
+        record = logic.evaluation_record(query, {})
+        record["query"] = query
+        self.row = {"capability": CAPABILITY, "record": record, "gold": "TRUE",
+                    "tokens": _encode_logic_record(logic, record, self.graph)}
+
+    def test_independent_verifier_accepts_nested_composition_and_rejects_bad_evidence(self):
+        from copy import deepcopy
+        from bilqis_mlx.source_adapters.school import check_boolean_composite
+        self.assertEqual(check_boolean_composite.__module__, "bilqis_mlx.source_adapters.school")
+        self.assertTrue(self.adapter.check(self.row, source_root=SOURCE, graph=self.graph))
+        self.assertFalse(self.adapter.check({**self.row, "gold": "FALSE"},
+                                           source_root=SOURCE, graph=self.graph))
+        self.assertFalse(self.adapter.check({**self.row, "tokens": self.row["tokens"][:-1]},
+                                           source_root=SOURCE, graph=self.graph))
+        malformed = deepcopy(self.row)
+        malformed["record"]["query"]["args"] = []
+        with self.assertRaises(ValueError):
+            self.adapter.check(malformed, source_root=SOURCE, graph=self.graph)
+
+    def test_footprint_contains_nested_roots_and_no_literal_markers(self):
+        self.assertEqual(self.adapter.semantic_footprint(self.row),
+                         ("cogal.operator.AND", "cogal.operator.NOT"))
+        with self.assertRaises(ValueError):
+            self.adapter.semantic_footprint({"record": {"query": {"kind": "invented"}}})
+
+
 if __name__ == "__main__":
     unittest.main()
