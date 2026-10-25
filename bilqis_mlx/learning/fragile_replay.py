@@ -1,4 +1,4 @@
-"""Small source-oracled B connective replay during candidate admission."""
+"""Cohort custody and source-guided replay during candidate admission."""
 from __future__ import annotations
 
 import json
@@ -6,133 +6,41 @@ from pathlib import Path
 from collections import Counter
 
 from bilqis_mlx.generated_assessment import verify_stored_cohort
-from bilqis_mlx.grade_b_oracle import (
-    _direct_truth, evaluate as grade_b_gold, operand_truth,
-)
-from bilqis_mlx.live_grade_b import _u7c_pattern_counts
+from bilqis_mlx.profiles.retention import fragile_preservation_policy
+from bilqis_mlx.source_adapters.school import fragile_source_policy
 
 
-TRUTH_PATTERNS = (
-    (False, False),
-    (False, True),
-    (True, False),
-    (True, True),
-)
 _SOURCE_GOLD_DRIFT = "FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT"
 _COHORT_IDENTITY_DRIFT = "FRAGILE_REPLAY_COHORT_IDENTITY_DRIFT"
-_U7C_RUNTIME_SAMPLER = "bilqis.mlx.grade-b-u7c-runtime-sampler/v3"
-_DIRECT_BOOLEAN_UNIVERSE = "DIRECT_BOOLEAN_AST"
 
 
-def _is_direct_u7c_row(row: dict) -> bool:
-    record = row.get("record") if isinstance(row, dict) else None
-    return (isinstance(record, dict) and record.get("task") == "evaluate" and
-            row.get("runtime_sampler") == _U7C_RUNTIME_SAMPLER)
-
-
-def _preservation_pattern_counts(capability: str, rows, *, each: int) -> dict:
-    relevant = [row for row in rows if row.get("capability") == capability]
-    if relevant and all(_is_direct_u7c_row(row) for row in relevant):
-        try:
-            return _u7c_pattern_counts(capability.removeprefix("B."), each)
-        except ValueError as exc:
-            raise ValueError("FRAGILE_PRESERVATION_U7C_PATTERN_CONTRACT_INVALID") from exc
-    if any(_is_direct_u7c_row(row) for row in relevant):
-        raise ValueError("FRAGILE_PRESERVATION_MIXED_REPRESENTATION")
-    return {pattern: 1 for pattern in TRUTH_PATTERNS}
-
-
-def _replay_operand_pattern(record: dict) -> list[bool]:
-    """Recompute OR/XOR operand truth for historical worlds or direct U7C ASTs."""
-    if not isinstance(record, dict):
-        raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
-    if record.get("task") == "evaluate":
-        expression = record.get("expression")
-        query = record.get("query")
-        assignments = record.get("assignments")
-        if (not isinstance(expression, dict) or expression != query or
-                not isinstance(assignments, dict)):
-            raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
-        args = expression.get("args")
-        if not isinstance(args, list) or len(args) != 2:
-            raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
-        try:
-            return [_direct_truth(arg, assignments) for arg in args]
-        except ValueError as exc:
-            raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT") from exc
-    if record.get("task") == "micro":
-        world = record.get("world")
-        query = record.get("query")
-        args = query.get("args") if isinstance(query, dict) else None
-        if not isinstance(world, dict) or not isinstance(args, list) or len(args) != 2:
-            raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
-        try:
-            return [operand_truth(world, arg) for arg in args]
-        except ValueError as exc:
-            raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT") from exc
-    raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
-
-
-def _operand_kind(node: dict) -> str:
-    kind = node.get("kind")
-    if kind == "compare":
-        value = node.get("operator")
-    elif kind == "relation":
-        value = node.get("name")
-    else:
-        value = kind
-    if not isinstance(value, str) or not value:
-        raise ValueError("FRAGILE_PRESERVATION_OPERAND_KIND_INVALID")
-    return value
+def _source_policy():
+    return fragile_source_policy(fragile_preservation_policy().source_selector)
 
 
 def structural_signature(row: dict) -> tuple:
-    """Describe the compositional shape that truth-pattern-only replay misses."""
-    capability = row.get("capability")
-    raw = row.get("operand_truths")
-    record = row.get("record") or {}
-    query = record.get("query") or {}
-    args = query.get("args")
-    universe = (_DIRECT_BOOLEAN_UNIVERSE if _is_direct_u7c_row(row)
-                else row.get("universe_size"))
-    if (not isinstance(capability, str) or not capability or
-            not isinstance(raw, (list, tuple)) or len(raw) != 2 or
-            any(type(value) is not bool for value in raw) or
-            not isinstance(args, list) or len(args) != 2 or
-            (universe != _DIRECT_BOOLEAN_UNIVERSE and
-             (type(universe) is not int or universe < 1))):
-        raise ValueError("FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID")
-    return (capability, tuple(raw), tuple(_operand_kind(arg) for arg in args),
-            universe)
+    """Compatibility projection of the source-owned structural signature."""
+    return _source_policy().signature(row)
 
 
 def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozenset(),
                                         rotation: int, limit: int) -> tuple[dict, ...]:
-    """Prefer fresh siblings nearest to rotated fixed structural signatures.
-
-    Structural rehearsal is guidance, not an admission gate. Prefer exact
-    signature matches, then same truth-pattern/operand-kind matches across
-    universe sizes, then the same truth pattern. Missing shapes simply yield
-    fewer rows so callers can fall back to generic truth-table rehearsal.
-    """
+    """Select fresh siblings using the source's ordered structural match keys."""
     if type(rotation) is not int or rotation < 0 or type(limit) is not int or limit < 1:
         raise ValueError("FRAGILE_PRESERVATION_ROTATION_INVALID")
     excluded = set(excluded_ids)
-    direct_fixed = tuple(row for row in fixed_rows if _is_direct_u7c_row(row))
+    direct_fixed = tuple(row for row in fixed_rows if _source_policy().is_exact(row))
     if direct_fixed:
         if len(direct_fixed) != len(tuple(fixed_rows)):
             raise ValueError("FRAGILE_PRESERVATION_MIXED_REPRESENTATION")
-        capabilities = {row.get("capability") for row in direct_fixed}
-        if len(capabilities) != 1 or limit < 4 or limit % 2:
-            raise ValueError("FRAGILE_PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID")
-        capability = next(iter(capabilities))
-        required = _preservation_pattern_counts(
+        capability = _source_policy().structural_capability(direct_fixed, limit)
+        required = _source_policy().pattern_counts(
             capability, direct_fixed, each=limit)
         desired = []
         for pattern, count in sorted(required.items()):
             signatures = sorted({
                 structural_signature(row) for row in direct_fixed
-                if tuple(row.get("operand_truths") or ()) == pattern
+                if _source_policy().row_pattern(row) == pattern
             })
             if not signatures:
                 return ()
@@ -141,7 +49,7 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
             desired.extend(ordered[index % len(ordered)] for index in range(count))
         candidates = []
         for row in rows:
-            if row.get("id") in excluded or not _is_direct_u7c_row(row):
+            if row.get("id") in excluded or not _source_policy().is_exact(row):
                 continue
             try:
                 signature = structural_signature(row)
@@ -150,20 +58,13 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
             candidates.append((row, signature))
         selected, used = [], set()
         for wanted in desired:
-            chosen = next((
-                row for row, signature in candidates
-                if row["id"] not in used and signature == wanted
-            ), None)
-            if chosen is None:
-                chosen = next((
-                    row for row, signature in candidates
-                    if row["id"] not in used and signature[:3] == wanted[:3]
-                ), None)
-            if chosen is None:
-                chosen = next((
-                    row for row, signature in candidates
-                    if row["id"] not in used and signature[:2] == wanted[:2]
-                ), None)
+            chosen = None
+            for level, key in enumerate(_source_policy().matching_keys(wanted)):
+                chosen = next((row for row, signature in candidates
+                    if row["id"] not in used and
+                    _source_policy().matching_keys(signature)[level] == key), None)
+                if chosen is not None:
+                    break
             if chosen is None:
                 return ()
             selected.append(chosen)
@@ -185,20 +86,13 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
         candidates.append((row, signature))
     selected, used = [], set()
     for wanted in desired:
-        chosen = next((
-            row for row, signature in candidates
-            if row["id"] not in used and signature == wanted
-        ), None)
-        if chosen is None:
-            chosen = next((
-                row for row, signature in candidates
-                if row["id"] not in used and signature[:3] == wanted[:3]
-            ), None)
-        if chosen is None:
-            chosen = next((
-                row for row, signature in candidates
-                if row["id"] not in used and signature[:2] == wanted[:2]
-            ), None)
+        chosen = None
+        for level, key in enumerate(_source_policy().matching_keys(wanted)):
+            chosen = next((row for row, signature in candidates
+                if row["id"] not in used and
+                _source_policy().matching_keys(signature)[level] == key), None)
+            if chosen is not None:
+                break
         if chosen is not None:
             selected.append(chosen)
             used.add(chosen["id"])
@@ -207,19 +101,12 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
 
 def select_preservation_rows(rows, *, capabilities=None,
                              excluded_ids=frozenset()) -> tuple[dict, ...]:
-    """Pick fresh source siblings that cover each fragile truth-table cell once.
-
-    Fixed examination identities are explicitly excluded. The rehearsal signal
-    therefore teaches the same Boolean semantics without turning admission
-    questions into lesson material.
-    """
+    """Select source patterns with stable row-identity exclusions."""
     requested = (
         tuple(capabilities) if capabilities is not None else
         tuple(sorted({
             row.get("capability") for row in rows
-            if isinstance(row.get("capability"), str) and
-            isinstance(row.get("operand_truths"), (list, tuple)) and
-            len(row.get("operand_truths")) == 2
+            if _source_policy().eligible(row)
         })))
     if (not requested or len(requested) != len(set(requested)) or
             any(not isinstance(capability, str) or not capability
@@ -231,17 +118,13 @@ def select_preservation_rows(rows, *, capabilities=None,
         candidates = [row for row in rows
                       if row.get("capability") == capability and
                       row.get("id") not in excluded]
-        required = _preservation_pattern_counts(capability, candidates, each=4)
+        required = _source_policy().pattern_counts(capability, candidates, each=4)
         by_pattern = {}
         gold_by_pattern = {}
         for row in candidates:
-            raw = row.get("operand_truths")
-            if (not isinstance(raw, (list, tuple)) or len(raw) != 2 or
-                    any(type(value) is not bool for value in raw)):
-                raise ValueError("FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID")
-            pattern = tuple(raw)
+            pattern = _source_policy().row_pattern(row)
             gold = row.get("gold")
-            if pattern not in TRUTH_PATTERNS or gold not in ("TRUE", "FALSE"):
+            if gold not in _source_policy().answer_values:
                 raise ValueError(_SOURCE_GOLD_DRIFT)
             prior_gold = gold_by_pattern.setdefault(pattern, gold)
             if prior_gold != gold:
@@ -258,7 +141,7 @@ def select_preservation_rows(rows, *, capabilities=None,
 
 
 def load_replay_rows(run_dir: Path, receipt: dict, *, capabilities) -> tuple[dict, ...]:
-    """Reuse the current materialized full-exam B cases, never generate new gold."""
+    """Read preserved source-checked cases from the current complete exam cohort."""
     requested = tuple(capabilities)
     if (not requested or len(requested) != len(set(requested)) or
             any(not isinstance(name, str) or not name for name in requested)):
@@ -300,14 +183,11 @@ def load_replay_rows(run_dir: Path, receipt: dict, *, capabilities) -> tuple[dic
             raise ValueError("FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY")
         observed_patterns = Counter()
         for row in group:
-            pattern = _replay_operand_pattern(row["record"])
-            if (row.get("operand_truths") != pattern or
-                    grade_b_gold(row["record"], name) != row["gold"] or
-                    not row.get("tokens")):
+            if not _source_policy().verify_row(row, name):
                 raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
-            observed_patterns[tuple(pattern)] += 1
-        required = _preservation_pattern_counts(name, group, each=expected)
-        if all(_is_direct_u7c_row(row) for row in group):
+            observed_patterns[_source_policy().row_pattern(row)] += 1
+        required = _source_policy().pattern_counts(name, group, each=expected)
+        if all(_source_policy().is_exact(row) for row in group):
             if observed_patterns != Counter(required):
                 raise ValueError("FRAGILE_REPLAY_U7C_PATTERN_DRIFT")
         elif set(observed_patterns) != set(required):
@@ -325,7 +205,7 @@ def screen_replay(rows: tuple[dict, ...], parent: dict[str, str],
     repaired = 0
     for row in rows:
         old, new, gold = parent[row["id"]], candidate[row["id"]], row["gold"]
-        if old not in ("TRUE", "FALSE") or new not in ("TRUE", "FALSE"):
+        if old not in _source_policy().answer_values or new not in _source_policy().answer_values:
             raise ValueError("FRAGILE_REPLAY_INVALID_PREDICTION")
         if old == gold and new != gold:
             lost.append({"id": row["id"], "capability": row["capability"]})
