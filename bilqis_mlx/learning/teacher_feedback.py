@@ -189,7 +189,7 @@ def _source_structural_miss_identity(row: dict) -> dict | None:
             not isinstance(answer_kind, str) or
             not isinstance(record, dict)):
         return None
-    if capability.startswith("B."):
+    if capability.startswith("B.") or answer_kind == "boolean_operator":
         try:
             raw = row.get("operand_truths")
             if isinstance(raw, list) and len(raw) == 2:
@@ -203,7 +203,7 @@ def _source_structural_miss_identity(row: dict) -> dict | None:
             from bilqis_mlx.source_adapters.structure import (
                 inspect_boolean_identification, inspect_source_query,
             )
-            if capability == "B.IDBOOLOPS":
+            if answer_kind == "boolean_operator":
                 shape = inspect_boolean_identification(record, row.get("root"))
                 extras = {
                     "operator_options": tuple(row.get("operator_options", ())),

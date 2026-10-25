@@ -67,7 +67,7 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         staircase_fixtures.NumericStaircaseTests.setUpClass()
         cls.source_root = fixtures.SOURCE
         cls.grade_a_course = initial_course(
-            accepted_grade_a(fixtures.GradeCTrainerTests.manifest))
+            accepted_grade_a(staircase_fixtures.NumericStaircaseTests.manifest))
 
     def setUp(self):
         self.fixture=staircase_fixtures.NumericStaircaseTests()
@@ -399,11 +399,11 @@ class CausalTeacherIntegrationTests(unittest.TestCase):
         registry = live_source_registry()
         raw = draw_executable_release_rows(
             self.source_root, self.fixture.graph, self.executable_release,
-            registry, capability="C.COUNT", legacy_course=self.course,
+            registry, capability="C.COUNT",
             each=12, seed=109)
         prior = draw_executable_release_rows(
             self.source_root, self.fixture.graph, self.executable_release,
-            registry, capability="A.IDENTITY", legacy_course=self.course,
+            registry, capability="A.IDENTITY",
             each=12, seed=29)
         x,trace1=select_source_lesson(raw,prior,
             {"old":0,"contrast":0,"depth":1},seed=13,batch_size=6)

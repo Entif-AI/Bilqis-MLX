@@ -67,7 +67,7 @@ def _teaching_enrichment_rows(source_root, graph, course, capability, *,
     if release is not None:
         from bilqis_mlx.factory.teaching import optional_teaching_rows
         return optional_teaching_rows(source_root, graph, release, _source_adapters_school.live_source_registry(),
-            capability=capability, seed=seed, enabled=enabled, legacy_course=course)
+            capability=capability, seed=seed, enabled=enabled)
     return _source_adapters_school.live_source_registry().optional_teaching_rows(
         course, capability=capability, source_root=source_root, graph=graph,
         seed=seed, enabled=enabled)
@@ -432,7 +432,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                         source_root, graph, executable_release, _source_adapters_school.live_source_registry(),
                         capability=cap, option_id=autonomy_teaching_option,
                         seed=_runtime_state._seed(receipt, capability=cap, step=step+1),
-                        each=max(32, batch_size), legacy_course=course))
+                        each=max(32, batch_size)))
                     autonomy_option_specimen_ids.update(
                         row["id"] for row in fresh)
         fresh.extend(priority)

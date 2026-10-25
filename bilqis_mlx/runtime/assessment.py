@@ -29,8 +29,7 @@ _CURRENT_ADMISSION_DRIFT = "FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DR
 
 def _draw_executable_scope_cohort(
         source_root, graph, release: ExecutableFactoryRelease,
-        registry: SourceAdapterRegistry, *, capabilities, seed: int,
-        legacy_course=None):
+        registry: SourceAdapterRegistry, *, capabilities, seed: int):
     """Draw one exact v2 assessment scope without deriving grade identity."""
     if type(seed) is not int:
         raise TypeError("FACTORY_EXECUTABLE_COHORT_SEED_REQUIRED")
@@ -142,7 +141,7 @@ def _load_executable_cohort(
 
 def _routine_executable_cohort(
         run_dir, receipt, manifest, release, registry, source_root, graph, *,
-        capabilities, assessment_epoch: int, legacy_course=None):
+        capabilities, assessment_epoch: int):
     """Draw a fresh exact-scope routine cohort at every assessment boundary."""
     contract = assessment_scope_contract(release, capabilities)
     seed = _seed(
@@ -153,8 +152,7 @@ def _routine_executable_cohort(
     )
     cohort, actual = _draw_executable_scope_cohort(
         source_root, graph, release, registry,
-        capabilities=contract.capabilities, seed=seed,
-        legacy_course=legacy_course)
+        capabilities=contract.capabilities, seed=seed)
     pointer = _persist_executable_cohort(
         run_dir, manifest, actual, cohort)
     return cohort, {
@@ -166,7 +164,7 @@ def _routine_executable_cohort(
 
 def _promotion_executable_cohort(
         run_dir, receipt, manifest, release, registry, source_root, graph, *,
-        capabilities, assessment_epoch: int, legacy_course=None):
+        capabilities, assessment_epoch: int):
     """Keep one exact-scope promotion instrument fixed only within its attempt."""
     contract = assessment_scope_contract(release, capabilities)
     existing = receipt.get("qualification_cohort_v2")
@@ -187,8 +185,7 @@ def _promotion_executable_cohort(
     )
     cohort, actual = _draw_executable_scope_cohort(
         source_root, graph, release, registry,
-        capabilities=contract.capabilities, seed=seed,
-        legacy_course=legacy_course)
+        capabilities=contract.capabilities, seed=seed)
     pointer = _persist_executable_cohort(
         run_dir, manifest, actual, cohort)
     return cohort, {
@@ -226,7 +223,7 @@ def _burned_generalization_evidence(
 def _generalization_executable_cohort(
         run_dir, receipt, manifest, release, registry, source_root, graph, *,
         capabilities, assessment_epoch: int, promotion_pointer,
-        exposed_specimen_ids=(), legacy_course=None):
+        exposed_specimen_ids=()):
     """Draw a fresh exact-scope generalization instrument after promotion."""
     contract = assessment_scope_contract(release, capabilities)
     promotion = _load_executable_cohort(
@@ -257,8 +254,7 @@ def _generalization_executable_cohort(
         )
         rows, actual = _draw_executable_scope_cohort(
             source_root, graph, release, registry,
-            capabilities=contract.capabilities, seed=seed,
-            legacy_course=legacy_course)
+            capabilities=contract.capabilities, seed=seed)
         if required is None:
             required = Counter(
                 _generalization_stratum(row) for row in rows.rows)
@@ -295,7 +291,7 @@ def _generalization_executable_cohort(
 
 def _candidate_executable_cohort(
         run_dir, receipt, manifest, release, registry, source_root, graph, *,
-        capabilities, legacy_course=None):
+        capabilities):
     """Fresh exact-scope checkpoint-candidate screen under the admitted v2 release."""
     contract = assessment_scope_contract(release, capabilities)
     seed = _seed(
@@ -304,8 +300,7 @@ def _candidate_executable_cohort(
     )
     cohort, actual = _draw_executable_scope_cohort(
         source_root, graph, release, registry,
-        capabilities=contract.capabilities, seed=seed,
-        legacy_course=legacy_course)
+        capabilities=contract.capabilities, seed=seed)
     pointer = _persist_executable_cohort(
         run_dir, manifest, actual, cohort)
     return cohort, pointer

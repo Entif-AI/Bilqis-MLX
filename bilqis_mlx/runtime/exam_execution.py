@@ -135,7 +135,7 @@ def _measure_debt_admission_boundary(mx, run_dir, receipt, manifest, course,
     cohort, pointer = _runtime_assessment._routine_executable_cohort(
         run_dir, receipt, manifest, release, _source_adapters_school.live_source_registry(),
         source_root, graph, capabilities=full_scope,
-        assessment_epoch=school.grade_exam_epoch, legacy_course=course)
+        assessment_epoch=school.grade_exam_epoch)
     guesses = _learning_student_ops._predictions(
         mx, parameters, list(cohort.rows), receipt["config"], receipt["answer_ids"])
     measured = _bilqis_mlx_generated_assessment.score(cohort, guesses, _dataclasses.asdict(school.current_student))
@@ -175,7 +175,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     routine_cohort, routine_pointer = _runtime_assessment._routine_executable_cohort(
         run_dir, receipt, manifest, executable_release, source_registry,
         source_root, graph, capabilities=active_scope,
-        assessment_epoch=school.grade_exam_epoch, legacy_course=course)
+        assessment_epoch=school.grade_exam_epoch)
     routine_file = routine_pointer["cohort_file"]
     rubric = routine_pointer["rubric_sha256"]
     generator = routine_cohort.generator_version
@@ -193,8 +193,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
     else:
         candidate_cohort, _ = _runtime_assessment._candidate_executable_cohort(
             run_dir, receipt, manifest, executable_release, source_registry,
-            source_root, graph, capabilities=active_scope,
-            legacy_course=course)
+            source_root, graph, capabilities=active_scope)
         candidate_guesses = _learning_student_ops._predictions(
             mx, parameters, list(candidate_cohort.rows),
             receipt["config"], receipt["answer_ids"])
@@ -310,7 +309,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         promotion_cohort, qualification = _runtime_assessment._promotion_executable_cohort(
             run_dir, receipt, manifest, executable_release, source_registry,
             source_root, graph, capabilities=active_scope,
-            assessment_epoch=school.grade_exam_epoch, legacy_course=course)
+            assessment_epoch=school.grade_exam_epoch)
         promotion_file = qualification["cohort_file"]
         promotion_rows = list(promotion_cohort.rows)
         promotion_guesses = _learning_student_ops._predictions(
@@ -357,8 +356,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                     assessment_epoch=school.grade_exam_epoch,
                     promotion_pointer=qualification,
                     exposed_specimen_ids=tuple(
-                        row["id"] for row in routine_cohort.rows),
-                    legacy_course=course))
+                        row["id"] for row in routine_cohort.rows)))
             generalization_file = generalization["cohort_file"]
             generalization_rows = list(generalization_cohort.rows)
             generalization_guesses = _learning_student_ops._predictions(

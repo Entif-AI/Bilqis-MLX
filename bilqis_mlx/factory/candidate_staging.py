@@ -124,7 +124,7 @@ def compile_candidate_successor(
     frontier: CandidateFrontierRelease, current: ExecutableFactoryRelease,
     candidate_id: str, *, curriculum: CurriculumDefinition,
     source_bindings: SourceBindingSet, profile, source_registry, answer_registry,
-    source_root, graph: dict, verification_seed: int, legacy_course=None,
+    source_root, graph: dict, verification_seed: int,
 ) -> StagedCandidate:
     """Stage one source-verified delta without changing learner or school state.
 

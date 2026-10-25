@@ -55,21 +55,21 @@ class ExecutableConsumerTests(unittest.TestCase):
         self.full = compile_executable_factory_release(
             self.curriculum, self.bindings, CurriculumProfile.full(),
             self.registry, self.answers, source_root=None, graph=self.graph,
-            verification_seed=31, legacy_course=self.course)
+            verification_seed=31)
         self.reduced = compile_executable_factory_release(
             self.curriculum, self.bindings, _profile(),
             self.registry, self.answers, source_root=None, graph=self.graph,
-            verification_seed=31, legacy_course=self.course,
+            verification_seed=31,
             predecessor=self.full)
 
     def test_same_generation_consumer_obeys_release_profile(self):
         full = draw_executable_release_rows(
             None, self.graph, self.full, self.registry,
-            seed=37, legacy_course=self.course,
+            seed=37,
             capability="B.IDBOOLOPS")
         reduced = draw_executable_release_rows(
             None, self.graph, self.reduced, self.registry,
-            seed=37, legacy_course=self.course,
+            seed=37,
             capability="B.IDBOOLOPS")
 
         self.assertEqual(
@@ -109,19 +109,17 @@ class ExecutableConsumerTests(unittest.TestCase):
                 changed, draw or registered.draw, registered.check),
         ))
 
-    def test_generation_accepts_reimplementation_when_sealed_specimens_match(self):
+    def test_matching_specimens_do_not_substitute_an_unadmitted_provider(self):
         expected = draw_executable_release_rows(
             None, self.graph, self.reduced, self.registry,
-            seed=41, legacy_course=self.course,
-            capability="B.IDBOOLOPS")
+            seed=41, capability="B.IDBOOLOPS")
+        self.assertTrue(expected)
         registry = self._registry_with_reimplemented_provider()
-
-        actual = draw_executable_release_rows(
-            None, self.graph, self.reduced, registry,
-            seed=41, legacy_course=self.course,
-            capability="B.IDBOOLOPS")
-
-        self.assertEqual(actual, expected)
+        with self.assertRaisesRegex(
+                ValueError, "FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT"):
+            draw_executable_release_rows(
+                None, self.graph, self.reduced, registry,
+                seed=41, capability="B.IDBOOLOPS")
 
     def test_generation_refuses_provider_behavior_drift(self):
         registered = self.registry.require(
@@ -138,7 +136,7 @@ class ExecutableConsumerTests(unittest.TestCase):
                 ValueError, "FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT"):
             draw_executable_release_rows(
                 None, self.graph, self.reduced, registry,
-                seed=41, legacy_course=self.course,
+                seed=41,
                 capability="B.IDBOOLOPS")
 
 

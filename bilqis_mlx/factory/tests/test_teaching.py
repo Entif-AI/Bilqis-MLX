@@ -46,6 +46,22 @@ class ClosedTeachingTests(unittest.TestCase):
             optional_teaching_rows(None, graph, release, registry,
                 capability="Z.C0", seed=999, enabled=True)
 
+    def test_enrichment_provider_accepts_the_typed_curriculum(self):
+        from dataclasses import replace
+        from bilqis_mlx.curriculum import AnswerFamily
+        from bilqis_mlx.source_adapters.school import enrich_boolean, BOOLEAN_ASSOCIATION_OPTION
+        _, _, _, _, release = closed_source_fixture()
+        grade = release.curriculum.grades[0]
+        numeric = replace(grade.capabilities[-1], answer_families=(
+            AnswerFamily("numeric_active", ("0", "1", "2", "3")),))
+        curriculum = replace(release.curriculum, grades=(replace(
+            grade, capabilities=(*grade.capabilities[:-1], numeric)),))
+        with patch("bilqis_mlx.source_adapters.school.draw_b_grade_bridges",
+                   return_value=()) as draw:
+            enrich_boolean(source_root=None, graph={}, course=curriculum,
+                capability="Z.C0", seed=17, option_id=BOOLEAN_ASSOCIATION_OPTION)
+        self.assertEqual(draw.call_args.kwargs["maximum"], 3)
+
     def test_direct_teaching_option_uses_normal_closed_generation(self):
         _, graph, registry, _, release = closed_source_fixture()
         with self.assertRaisesRegex(ValueError, "CLOSURE:Z.C0:future.root"):

@@ -15,7 +15,7 @@ def content_digest(rows) -> str:
 
 
 def optional_teaching_rows(source_root, graph, release, registry, *,
-                           capability, seed, enabled, legacy_course=None):
+                           capability, seed, enabled):
     if not enabled:
         return ()
     execution = release.execution_plan.capability_map[capability]
@@ -24,12 +24,11 @@ def optional_teaching_rows(source_root, graph, release, registry, *,
     return tuple(row for option in descriptor.teaching_option_ids
                  for row in draw_teaching_option_rows(
                      source_root, graph, release, registry, capability=capability,
-                     option_id=option, seed=seed, each=execution.exam_item_count,
-                     legacy_course=legacy_course))
+                     option_id=option, seed=seed, each=execution.exam_item_count))
 
 
 def draw_teaching_option_rows(source_root, graph, release, registry, *,
-                              capability, option_id, seed, each, legacy_course=None):
+                              capability, option_id, seed, each):
     release.verify()
     execution = release.execution_plan.capability_map[capability]
     if option_id not in execution.teaching_option_ids:
@@ -37,15 +36,14 @@ def draw_teaching_option_rows(source_root, graph, release, registry, *,
     if option_id == "source.direct/" + capability:
         return tuple(draw_executable_release_rows(
             source_root, graph, release, registry, capability=capability,
-            seed=seed, each=each, legacy_course=legacy_course))
+            seed=seed, each=each))
     adapter = runtime_adapter_for_release(
         source_root, graph, release, registry, execution,
-        legacy_course=legacy_course,
         drift_code="FACTORY_TEACHING_PROVIDER_DRIFT")
     if adapter.enrich is None or option_id not in adapter.descriptor.teaching_option_ids:
         raise ValueError("FACTORY_TEACHING_OPTION_HAS_NO_IMPLEMENTATION")
     rows = tuple(adapter.enrich(source_root=source_root, graph=graph,
-                               course=legacy_course, capability=capability,
+                               course=release.curriculum, capability=capability,
                                option_id=option_id, seed=seed))
     if not rows:
         raise ValueError("FACTORY_TEACHING_OPTION_EMPTY")
@@ -60,7 +58,7 @@ def draw_teaching_option_rows(source_root, graph, release, registry, *,
                 not row.get("id") or
                 row.get("gold") not in answers.get(row.get("answer_kind", "binary"), ()) or
                 adapter.check(row, source_root=source_root, graph=graph,
-                              course=legacy_course) is not True):
+                              course=release.curriculum) is not True):
             raise ValueError("FACTORY_TEACHING_SOURCE_ORACLE_DISAGREEMENT")
         validate_instructional_constituents(
             row, curriculum=release.curriculum, plan=release.execution_plan,

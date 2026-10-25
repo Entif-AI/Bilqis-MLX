@@ -214,9 +214,7 @@ def draw_c(*, source_root, graph, course, capability, seed, each,
 def enrich_boolean(*, source_root, graph, course, capability, seed, option_id):
     if option_id != BOOLEAN_ASSOCIATION_OPTION:
         raise ValueError("FACTORY_UNKNOWN_BOOLEAN_TEACHING_OPTION")
-    cap = course.capability_map[capability]
-    if cap.lesson_generator != "bilqis_mlx.live_grade_b.draw_connectives":
-        return ()
+    course.capability_map[capability]
     numeric_caps = [member for member in course.capability_map.values()
                     if any(family.kind == "numeric_active"
                            for family in member.answer_families)]

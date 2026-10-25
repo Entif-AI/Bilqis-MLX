@@ -176,10 +176,10 @@ def _flush_working_student(mx, run_dir, receipt, manifest, course, parameters,
     exam_cohort, _ = _runtime_assessment._routine_executable_cohort(
         run_dir, receipt, manifest, executable_release, source_registry,
         source_root, graph, capabilities=active_scope,
-        assessment_epoch=school.grade_exam_epoch, legacy_course=course)
+        assessment_epoch=school.grade_exam_epoch)
     cohort, _ = _runtime_assessment._candidate_executable_cohort(
         run_dir, receipt, manifest, executable_release, source_registry,
-        source_root, graph, capabilities=active_scope, legacy_course=course)
+        source_root, graph, capabilities=active_scope)
     rubric = cohort.rubric_version
     generator = cohort.generator_version
     rows = list(cohort.rows)

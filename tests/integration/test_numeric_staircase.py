@@ -180,8 +180,7 @@ class NumericStaircaseTests(unittest.TestCase):
             run_dir, record, self.fixture.manifest, release,
             live_source_registry(), fixtures.SOURCE, graph,
             capabilities=capabilities,
-            assessment_epoch=school.grade_exam_epoch,
-            legacy_course=course)
+            assessment_epoch=school.grade_exam_epoch)
         measured = score(
             cohort, {row['id']: row['gold'] for row in cohort.rows},
             asdict(school.current_student))
@@ -654,8 +653,7 @@ class NumericStaircaseTests(unittest.TestCase):
                 cohort, _ = storage._routine_executable_cohort(
                     self.root, record, self.fixture.manifest, release,
                     live_source_registry(), fixtures.SOURCE, self.graph,
-                    capabilities=capabilities, assessment_epoch=epoch,
-                    legacy_course=course)
+                    capabilities=capabilities, assessment_epoch=epoch)
                 self.assertNotIn(cohort.digest, cohorts)
                 cohorts.append(cohort.digest)
             if maximum == record['numeric_scope_final_maximum']:

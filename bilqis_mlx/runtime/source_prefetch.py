@@ -88,8 +88,7 @@ def _teaching_enrichment_rows(request: dict):
     if request.get("executable_release") is not None:
         return optional_teaching_rows(Path(request["source_root"]), request["graph"],
             request["executable_release"], live_source_registry(), capability=request["capability"],
-            seed=request["teaching_seed"], enabled=request["teaching_enrichment_enabled"],
-            legacy_course=request["course"])
+            seed=request["teaching_seed"], enabled=request["teaching_enrichment_enabled"])
     return live_source_registry().optional_teaching_rows(
         request["course"], capability=request["capability"],
         source_root=Path(request["source_root"]), graph=request["graph"],

@@ -11,7 +11,7 @@ from .curriculum_definition import (
 
 
 def runtime_adapter_for_release(
-        source_root, graph, release, registry, execution, *, legacy_course=None,
+        source_root, graph, release, registry, execution, *,
         drift_code="FACTORY_EXECUTABLE_GENERATION_ADAPTER_DRIFT"):
     """Execute only the exact implementation bound by the admission receipt.
 
@@ -163,7 +163,7 @@ def draw_execution_rows(
 
 def draw_executable_release_rows(
         source_root, graph, release, registry: SourceAdapterRegistry, *,
-        seed: int, legacy_course=None, capability: str | None = None,
+        seed: int, capability: str | None = None,
         each: int | None = None) -> list[dict]:
     """Generate only from one admitted v2 release and its compiled projections."""
     from .executable_release import ExecutableFactoryRelease
@@ -184,8 +184,7 @@ def draw_executable_release_rows(
         selected = (selected_item,)
     for execution in selected:
         runtime_adapter_for_release(
-            source_root, graph, release, registry, execution,
-            legacy_course=legacy_course)
+            source_root, graph, release, registry, execution)
 
     return draw_execution_rows(
         source_root, graph, release.curriculum, release.execution_plan, registry,

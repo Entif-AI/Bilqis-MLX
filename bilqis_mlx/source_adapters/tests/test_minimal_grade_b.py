@@ -56,7 +56,7 @@ class MinimalGradeBTests(unittest.TestCase):
         for capability in ("B.AND", "B.IFF"):
             rows = draw_executable_release_rows(
                 SOURCE, self.graph, self.release, self.registry,
-                seed=11, legacy_course=self.canonical_course,
+                seed=11,
                 capability=capability, each=12)
             self.assertEqual({row["capability"] for row in rows}, {capability})
             self.assertEqual(len(rows), 12)
@@ -64,7 +64,7 @@ class MinimalGradeBTests(unittest.TestCase):
     def test_composite_never_uses_withheld_operators(self):
         rows = draw_executable_release_rows(
             SOURCE, self.graph, self.release, self.registry,
-            seed=12, legacy_course=self.canonical_course,
+            seed=12,
             capability="B.COMPOSITE", each=12)
         self.assertTrue(rows)
         self.assertTrue(all(set(row["operators"]) <= set(OPERATORS) for row in rows))
@@ -72,7 +72,7 @@ class MinimalGradeBTests(unittest.TestCase):
     def test_idboolops_is_two_way_and_balanced(self):
         rows = draw_executable_release_rows(
             SOURCE, self.graph, self.release, self.registry,
-            seed=13, legacy_course=self.canonical_course,
+            seed=13,
             capability="B.IDBOOLOPS", each=12)
         self.assertEqual([row["gold"] for row in rows].count("AND"), 6)
         self.assertEqual([row["gold"] for row in rows].count("IFF"), 6)

@@ -41,11 +41,11 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
         self.full = compile_executable_factory_release(
             self.curriculum, self.bindings, CurriculumProfile.full(),
             self.registry, self.answers, source_root=None, graph=self.graph,
-            verification_seed=47, legacy_course=self.course)
+            verification_seed=47)
         self.reduced = compile_executable_factory_release(
             self.curriculum, self.bindings, _profile(),
             self.registry, self.answers, source_root=None, graph=self.graph,
-            verification_seed=47, legacy_course=self.course,
+            verification_seed=47,
             predecessor=self.full)
         self.manifest = {"manifest_sha256": "c" * 64}
         self.a_scope = tuple(
@@ -55,7 +55,7 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
     def draw(self, release, scope, seed=53):
         return _draw_executable_scope_cohort(
             None, self.graph, release, self.registry,
-            capabilities=scope, seed=seed, legacy_course=self.course)
+            capabilities=scope, seed=seed)
 
     def receipt(self):
         return {
@@ -176,13 +176,11 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             root = Path(temp)
             first, first_pointer = _routine_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
-                None, self.graph, capabilities=scope, assessment_epoch=3,
-                legacy_course=self.course)
+                None, self.graph, capabilities=scope, assessment_epoch=3)
             receipt["generation"] += 1
             second, second_pointer = _routine_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
-                None, self.graph, capabilities=scope, assessment_epoch=4,
-                legacy_course=self.course)
+                None, self.graph, capabilities=scope, assessment_epoch=4)
             self.assertNotEqual(first.digest, second.digest)
             self.assertNotEqual(
                 first_pointer["cohort_sha256"],
@@ -196,21 +194,18 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             root = Path(temp)
             first, pointer = _promotion_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
-                None, self.graph, capabilities=scope, assessment_epoch=7,
-                legacy_course=self.course)
+                None, self.graph, capabilities=scope, assessment_epoch=7)
             receipt["qualification_cohort_v2"] = pointer
             receipt["generation"] += 10
             retry, retry_pointer = _promotion_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
-                None, self.graph, capabilities=scope, assessment_epoch=7,
-                legacy_course=self.course)
+                None, self.graph, capabilities=scope, assessment_epoch=7)
             self.assertEqual(retry.digest, first.digest)
             self.assertEqual(retry_pointer, pointer)
 
             second, second_pointer = _promotion_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
-                None, self.graph, capabilities=scope, assessment_epoch=8,
-                legacy_course=self.course)
+                None, self.graph, capabilities=scope, assessment_epoch=8)
             self.assertNotEqual(second.digest, first.digest)
             self.assertNotEqual(second_pointer, pointer)
 
@@ -221,13 +216,11 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             root = Path(temp)
             promotion, promotion_pointer = _promotion_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
-                None, self.graph, capabilities=scope, assessment_epoch=11,
-                legacy_course=self.course)
+                None, self.graph, capabilities=scope, assessment_epoch=11)
             first, first_pointer = _generalization_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
                 None, self.graph, capabilities=scope, assessment_epoch=11,
-                promotion_pointer=promotion_pointer,
-                legacy_course=self.course)
+                promotion_pointer=promotion_pointer)
             self.assertNotEqual(first.digest, promotion.digest)
             self.assertFalse(
                 {row["id"] for row in first.rows} &
@@ -238,8 +231,7 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             second, second_pointer = _generalization_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
                 None, self.graph, capabilities=scope, assessment_epoch=11,
-                promotion_pointer=promotion_pointer,
-                legacy_course=self.course)
+                promotion_pointer=promotion_pointer)
             self.assertNotEqual(second.digest, first.digest)
             self.assertNotEqual(second_pointer, first_pointer)
             self.assertNotEqual(
@@ -262,14 +254,12 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
                 root, self.manifest, contract, historical)
             promotion, promotion_pointer = _promotion_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
-                None, self.graph, capabilities=current_scope, assessment_epoch=12,
-                legacy_course=self.course)
+                None, self.graph, capabilities=current_scope, assessment_epoch=12)
             receipt["burned_generalization_cohorts_v2"] = [burned_pointer]
             fresh, _ = _generalization_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
                 None, self.graph, capabilities=current_scope, assessment_epoch=12,
-                promotion_pointer=promotion_pointer,
-                legacy_course=self.course)
+                promotion_pointer=promotion_pointer)
             self.assertNotEqual(fresh.digest, promotion.digest)
             self.assertNotEqual(fresh.digest, historical.digest)
 
@@ -282,13 +272,12 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             burned_pointer = _persist_executable_cohort(root, self.manifest, contract, historical)
             _, promotion_pointer = _promotion_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
-                None, self.graph, capabilities=self.a_scope, assessment_epoch=12,
-                legacy_course=self.course)
+                None, self.graph, capabilities=self.a_scope, assessment_epoch=12)
             receipt['burned_generalization_cohorts_v2'] = [burned_pointer]
             fresh, pointer = _generalization_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
                 None, self.graph, capabilities=self.a_scope, assessment_epoch=12,
-                promotion_pointer=promotion_pointer, legacy_course=self.course)
+                promotion_pointer=promotion_pointer)
             self.assertNotEqual(fresh.digest, historical.digest)
             self.assertEqual(pointer['factory_release_sha256'], self.reduced.release_sha256)
             self.assertEqual(receipt['burned_generalization_cohorts_v2'], [burned_pointer])
@@ -309,14 +298,12 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
                 root, self.manifest, contract, historical)
             promotion, promotion_pointer = _promotion_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
-                None, self.graph, capabilities=current_scope, assessment_epoch=13,
-                legacy_course=self.course)
+                None, self.graph, capabilities=current_scope, assessment_epoch=13)
             receipt["burned_generalization_cohorts_v2"] = [burned_pointer]
             fresh, _ = _generalization_executable_cohort(
                 root, receipt, self.manifest, self.reduced, self.registry,
                 None, self.graph, capabilities=current_scope, assessment_epoch=13,
-                promotion_pointer=promotion_pointer,
-                legacy_course=self.course)
+                promotion_pointer=promotion_pointer)
             self.assertNotEqual(fresh.digest, promotion.digest)
             self.assertNotEqual(fresh.digest, historical.digest)
 

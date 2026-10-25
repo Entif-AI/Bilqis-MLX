@@ -90,6 +90,24 @@ class TeacherFeedbackTests(unittest.TestCase):
 
         self.assertEqual([item["id"] for item in result], ["different-shape"])
 
+    def test_inverse_boolean_structure_uses_declared_answer_mode(self):
+        from bilqis_mlx.boolean_identification import ANSWER_KIND
+        from bilqis_mlx.boolean_identification_oracle import TASK
+        from bilqis_mlx.learning.teacher_feedback import _source_structural_miss_identity
+        row = {
+            "capability": "Z.INVERSE", "answer_kind": ANSWER_KIND, "gold": "AND",
+            "root": "cogal.operator.AND", "operator_options": ["AND", "OR"],
+            "observation_count": 1,
+            "record": {"task": TASK, "observations": [{"operands": [
+                {"kind": "literal", "value": True},
+                {"kind": "literal", "value": False}]}]},
+        }
+        shape = _source_structural_miss_identity(row)
+        self.assertIsNotNone(shape)
+        self.assertEqual(shape["root"], row["root"])
+        self.assertEqual(shape["operator_options"], ("AND", "OR"))
+        self.assertEqual(shape["observation_count"], 1)
+
     def test_numeric_miss_reconciles_across_permuted_source_construction(self):
         def count_row(identity, members):
             symbols = [
