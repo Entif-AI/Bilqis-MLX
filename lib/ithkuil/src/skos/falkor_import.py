@@ -1,18 +1,15 @@
 """Idempotent, explicitly owned materialization of conformant canonical RDF (#74)."""
 from __future__ import annotations
 
-import argparse
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
-import sys
 
 from falkordb import FalkorDB
 from redis.backoff import NoBackoff
 from redis.retry import Retry
-from redis.exceptions import RedisError
 
 from .conformance import GATES, validate_artifacts
 from .errors import ProfileError
@@ -20,6 +17,7 @@ from .falkor_projection import SCHEMA, VERSION, project_graph, reconstruct_graph
 from .no_omission import SourceRowIdentity
 from .rdf_read import read_canonical_graph
 
+IMPORTER_VERSION='2.0.0'
 LABELS = frozenset({'RdfTerm','Resource','Literal','BlankNode','Concept','ConceptScheme','Collection','OrderedCollection'})
 
 
@@ -176,19 +174,9 @@ class Importer:
 
 
 def main(argv=None):
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bundle',type=Path,required=True)
-    parser.add_argument('--graph',required=True)
-    parser.add_argument('--owner',required=True)
-    parser.add_argument('--host',default='127.0.0.1')
-    parser.add_argument('--port',type=int,default=16379)
-    args=parser.parse_args(argv)
-    try:
-        result=Importer(connect(args.host,args.port),args.graph,args.owner).materialize(args.bundle)
-    except (ProfileError,OSError,ValueError,RedisError) as error:
-        print(json.dumps({'status':'incomplete','code':getattr(error,'code',type(error).__name__)}))
-        return 2
-    print(json.dumps(result,sort_keys=True)); return 0
+    # The supported CLI publishes only the smoke-backed #78 receipt.
+    from .falkor_receipt import main as materialization_main
+    return materialization_main(argv)
 
 
 if __name__=='__main__': raise SystemExit(main())

@@ -92,7 +92,7 @@ conformance boundary.
 
 ```sh
 python3 -B -m lib.ithkuil.src.skos.falkor_import \
-  --bundle PATH/TO/CONFORMANCE-BUNDLE \
+  --bundle PATH/TO/CONFORMANCE-BUNDLE --suite PATH/TO/PINNED-SMOKE-SUITE \
   --graph EXPLICIT_OWNED_GRAPH --owner EXPLICIT_OWNER \
   --host 127.0.0.1 --port 16379
 ```
@@ -225,3 +225,35 @@ query. Tests reject duplicate query IDs and mutating suite text before execution
 pass every golden result on a fresh conformant import, and prove that the server
 rejects a deliberate write sent through the read-only reader. Complete projection
 readback remains unchanged after the suite and refused write.
+
+## Materialization receipt and drift verification (#78)
+
+Importer CLI `2.0.0` now delegates to `falkor_receipt` and requires an explicit pinned
+`--suite`. A successful command automatically imports/reconciles, sets up indexes,
+reads back canonical content, passes every mandatory smoke query, and emits a
+`bilqis.skos.materialization/v1` receipt. The importer's Python API remains the
+lower-level import phase; its phase completion does not substitute for this receipt.
+
+`materialization_receipt.schema.json` is the versioned JSON Schema. Complete
+receipts include graph/owner, canonical RDF SHA-256, coverage artifact hash/status,
+projection/importer version, exact implementation-byte identity and available Git
+commit/dirty metadata, term-label/edge-type census, index presence, complete smoke
+report/version/digest, and a UTC timestamp. The timestamp and graph name are
+operational metadata, never semantic identity. Coverage remains separately partial
+when the source frontier or held mappings require it. Connection credentials,
+private host configuration and execution paths are absent.
+
+`verify_receipt` validates schema and independently reconstructs current owned RDF,
+revalidates the canonical artifact closure, recomputes census/index state, reruns
+the pinned suite, and compares exact implementation identity. Historical execution
+timestamp/commit/dirty metadata are preserved; verification does not rewrite them.
+A receipt is not accepted solely because its producer or digest looks plausible.
+
+Partial import, changed canonical bytes, graph drift, incomplete marker, a changed
+implementation or a failed required query prevents acceptance of stale completion.
+The CLI emits an explicit incomplete receipt with reason on failure. Tests cover a
+valid complete receipt, automatic CLI publication, schema rejection, and separate
+canonical-mutation/graph-drift/query-failure/incomplete-state fixtures. Full-current-
+corpus proof uses eleven literal expectations derived offline from the canonical
+RDF artifact, not copied from live query output. All eleven pass while coverage
+remains partial; current held mappings remain absent.
