@@ -1504,3 +1504,39 @@ fails any `.../vocab/*` predicate not in the admitted set. Current #56/#57/#58/#
 graphs exercise ten of the terms; the corrected #52 public dimension graph exercises
 two and keeps source mode record-only; #53 exercises `hasSense`. Tests prove a
 fabricated vocabulary predicate still fails closed.
+
+## Linguistic residue reconciliation (#61)
+
+`reconcile_residue()` composes the current #56 affix-degree, merged #57 composition,
+#58 component-occurrence and #59 allomorph-rule projections and validates the merged
+graph against the normative #60 vocabulary. It consumes the already-validated core
+closure plus immutable deferred-table rows; it does not introduce a second compiler
+manifest or held-ledger implementation. The later full-compilation owner can pass
+manifest-owned rows through the same API.
+
+Every source row from the four current tables must have exactly one disposition:
+`emitted`, `held`, or explicitly reasoned `IR_ONLY`. Overlap, missing disposition,
+out-of-scope IDs, duplicate primary IDs, or an IR-only table outside the governed set
+fails closed. Held rows carry the domain projector's machine reason codes. Current
+source uses no IR-only exceptions.
+
+The receipt contains each table's exact source count, complete emitted-ID list,
+held IDs/reasons, IR-only IDs/reasons, deterministic source-row digest, aggregate
+held-reason census, the exact #60 extension predicates used, combined residue-source
+digest, complete canonical RDF metadata and receipt-body digest.
+
+Current expected census is 6,062 source rows: 271 affix degrees, 1,917 compositions,
+3,855 component occurrences and 19 allomorph rules. All 6,062 current rows emit with
+zero held and zero IR-only rows. The merged graph uses only ten of #60's 13 admitted
+terms; the three lexicon-only terms are outside #61's residue slice.
+
+Negative proofs deliberately remove a component occurrence (the remaining parent
+group is held rather than shortened), duplicate an affix-degree source ID (rejected
+before projection), and blank a required allomorph output (the rule is explicitly
+held, never dropped). The generic partition validator separately proves overlap,
+missing and out-of-scope dispositions fail closed.
+
+Source digests sort rows by their authoritative source key and graph canonicalization
+uses #41, so reversing all three deferred row sequences cannot change source, graph,
+or receipt digests. Fresh-process proof repeats the complete reconciliation from
+separate temporary working directories and hash seeds.
