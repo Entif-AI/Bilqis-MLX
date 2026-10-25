@@ -60,7 +60,7 @@ class PreparedSuccessorFixture(CandidateStagingFixture):
                 "scores": {cap.id: {"correct": cap.exam_item_count, "total": cap.exam_item_count}
                            for grade in self.program.grades for cap in grade.capabilities}}}
 
-    def append_grade_fixture(self, graph=None):
+    def append_grade_fixture(self, graph=None, *, ready=True):
         from bilqis_mlx.factory.candidate_staging import compile_candidate_successor, candidate_source_anchor
         from bilqis_mlx.factory.executable_release import compile_executable_factory_release
         from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
@@ -86,7 +86,8 @@ class PreparedSuccessorFixture(CandidateStagingFixture):
                 GradeProfile("Y", enabled_capabilities=()),)), fixture.registry,
             fixture.answers, source_root=None, graph=self.graph, verification_seed=43)
         self.program = schedule_program_from_executable_release(self.current)
-        self.graduate_fixture()
+        if ready:
+            self.graduate_fixture()
         return compile_candidate_successor(frontier, self.current, self.candidate_id,
             curriculum=curriculum, source_bindings=bindings, profile=CurriculumProfile.full(),
             source_registry=fixture.registry, answer_registry=fixture.answers,
@@ -242,6 +243,70 @@ class PreparedSuccessorTests(PreparedSuccessorFixture, unittest.TestCase):
                         self.graph, self.parameters, self.optimizer, changed, reserve_gib=100.)
         self.assertEqual(tuple(self.root.iterdir()), ())
         self.optimizer.update.assert_not_called()
+
+    def test_same_abi_prepared_release_waits_for_readiness_then_adopts_exact_sha(self):
+        """A staged same-ABI release becomes active only after boundary evidence."""
+        from bilqis_mlx import state_dag
+
+        staged = self.append_grade_fixture(ready=False)
+        self.assertEqual(staged.successor.transition.semantic_geometry, "UNCHANGED")
+        prepared_sha = staged.successor.release_sha256
+        _, release_file, admission = (
+            release_adoption._runtime_admission._executable_factory_admission(
+                self.root, self.current, self.checkpoint,
+                release_adoption._runtime_state._fingerprint(self.graph), self.graph))
+        self.receipt.update(
+            generation=0,
+            run_id="same-abi-prepared-fixture",
+            config={"vocab_size": len(self.graph["tokens"])},
+            parameter_shapes={name: list(value.shape)
+                              for name, value in self.parameters.items()},
+            factory_release_sha256=self.current.release_sha256,
+            factory_release_file=release_file,
+            factory_release_schema=self.current.schema,
+            factory_admission_v2=asdict(admission),
+            source_manifest_sha256="a" * 64,
+            semantic_graph_sha256=release_adoption._runtime_state._fingerprint(self.graph),
+        )
+        before = deepcopy((self.parameters, self.optimizer.state, self.graph))
+        baseline_files = {str(path.relative_to(self.root)): path.read_bytes()
+                          for path in self.root.rglob("*") if path.is_file()}
+        with patch.object(release_adoption._compatibility_executable_projection,
+                          "legacy_course_for_profile",
+                          return_value=SimpleNamespace(version="fixture")), \
+                patch.object(release_adoption._factory_executable_release,
+                             "compile_executable_factory_release",
+                             side_effect=AssertionError("recompiled")), \
+                patch.object(release_adoption._factory_executable_release,
+                             "compile_successor_profile_release",
+                             side_effect=AssertionError("recompiled")):
+            with self.assertRaisesRegex(
+                    ValueError, "FACTORY_PROFILE_EXPANSION_NOT_AT_GRADE_BOUNDARY"):
+                self.adopt(staged)
+            self.assertEqual(
+                {str(path.relative_to(self.root)): path.read_bytes()
+                 for path in self.root.rglob("*") if path.is_file()}, baseline_files)
+            self.assertEqual((self.parameters, self.optimizer.state, self.graph), before)
+            self.optimizer.update.assert_not_called()
+            established = self.receipt
+            self.graduate_fixture()
+            readiness = self.receipt
+            self.receipt = {**established,
+                            "school": readiness["school"],
+                            "last_exam": {**readiness["last_exam"],
+                                          "exam_rubric_sha256": "b" * 64,
+                                          "cohort_sha256": "c" * 64}}
+            parameters, optimizer, graph, record, _ = self.adopt(staged)
+        self.assertEqual(record["factory_release_sha256"], prepared_sha)
+        self.assertIs(parameters, self.parameters)
+        self.assertIs(optimizer, self.optimizer)
+        self.assertEqual(graph, self.graph)
+        self.assertEqual((self.parameters, self.optimizer.state, self.graph), before)
+        self.optimizer.update.assert_not_called()
+        self.assertEqual(state_dag.read_current(self.root), record)
+        reread = release_adoption._runtime_admission._require_executable_factory_admission(
+            self.root, record, self.graph)
+        self.assertEqual(reread.release_sha256, prepared_sha)
 
     def test_common_tail_commits_once_and_replays_only_delivery_after_crash(self):
         import json
