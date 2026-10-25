@@ -1567,3 +1567,27 @@ Proof: `python -B -m unittest lib.ithkuil.tests.test_skos_mapping_emit -v` compa
 ten literal expected triples, exact/close separation, both directional inverses,
 duplicate accounting, unknown/raw states, missing endpoints/schemes, ambiguous types,
 missing exactness evidence and reordered-input equivalence.
+
+## Non-admitted mapping source preservation (#64)
+
+`mapping_rows.load_mapping_rows(input_root)` reads the two explicit mapping CSV
+tables, rejects malformed records and duplicate/missing stable IDs, and returns
+immutable rows. `preserve_nonadmitted(rows, policy)` evaluates the #62 exact table
+and returns `MappingHeldRecord` values whose `entry` uses the existing #42
+`LedgerEntry` shape. No separate epistemic or RDF vocabulary is introduced.
+
+Each record preserves qualified source row identity, original relation/equivalence/
+review states, raw endpoint identifiers, current/historical source era, permissible
+source loci and semantic differential/caution text. Nonpublic commentary is listed
+in `withheld_fields` rather than copied to public artifacts; identity/state fields
+are preserved verbatim or rejected. Raw target IDs are evidence, not a claim that a
+source document resolves as an admitted concept. An emitting decision is refused
+by this held-only function and must go through the independently checked #63 path.
+
+All 552 current rows are accounted for: 551 held and one rejected, including two
+historical-only predecessors. No strong mapping graph is created. Unknown future
+states remain explicitly unsupported and block a complete mapping-domain status.
+Rebuilding changed source state creates a new disposition without mutating prior
+input values or recorded outputs. Tests compare exact stable IDs, original states,
+commentary, historical distinction, order invariance, schema errors and a controlled
+state transition.

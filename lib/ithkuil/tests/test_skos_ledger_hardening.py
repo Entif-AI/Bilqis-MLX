@@ -8,7 +8,7 @@ from lib.ithkuil.src.skos.builder import BuildResult
 from lib.ithkuil.src.skos.errors import ProfileError
 from lib.ithkuil.src.skos.identity import Identity
 from lib.ithkuil.src.skos.ledger import build_ledger, ledger_json_bytes
-from lib.ithkuil.src.skos.ledger_model import ExplicitDisposition
+from lib.ithkuil.src.skos.ledger_model import ExplicitDisposition, require_public_identity_safe
 from lib.ithkuil.src.skos.preflight import CompilerClosure
 from lib.ithkuil.src.skos.preflight_io import FrozenRow, LoadedTable
 from lib.ithkuil.src.skos.resolver import RecordRef, Resolution, ResolvedResource
@@ -96,5 +96,27 @@ class HeldLedgerBoundaryTests(unittest.TestCase):
         with self.assertRaises(ProfileError) as error:
             ledger_json_bytes(ledger)
         self.assertEqual(error.exception.code, 'UNSAFE_LEDGER_IDENTITY_FIELD')
+
+    def test_nested_percent_encoded_private_identity_is_rejected_without_rewriting_safe_text(self) -> None:
+        for value in (
+            'file:///Users/example/private-key',
+            'file%3A%2F%2F%2FUsers%2Fexample%2Fprivate-key',
+            'file%253A%252F%252F%252FUsers%252Fexample%252Fprivate-key',
+            'file%25253A%25252F%25252F%25252FUsers%25252Fexample%25252Fprivate-key',
+            'file%252525253A%252525252F%252525252F%252525252FUsers%252525252Fexample',
+        ):
+            with self.subTest(value=value):
+                with self.assertRaises(ProfileError) as error:
+                    require_public_identity_safe('fixture', value)
+                self.assertEqual(error.exception.code, 'UNSAFE_LEDGER_IDENTITY_FIELD')
+        require_public_identity_safe('fixture', '%C4%8C')
+        with self.assertRaises(ProfileError) as error:
+            require_public_identity_safe(
+                'fixture',
+                'https://github.com/Entif-AI/Bilqis-MLX/id/file%253A%252F%252F%252FUsers%252Fexample%252Fprivate',
+                allow_project_iri=True,
+            )
+        self.assertEqual(error.exception.code, 'UNSAFE_LEDGER_IDENTITY_FIELD')
+
 if __name__ == '__main__':
     unittest.main()

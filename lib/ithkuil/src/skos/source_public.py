@@ -21,6 +21,30 @@ PRIVATE_LITERAL_MARKERS = (
     "/home/",
     "\\",
 )
+MAX_CLASSIFICATION_DECODE_PASSES = 4
+
+
+def decoded_classification_view(value: str) -> str | None:
+    """Decode nested percent escapes for classification without rewriting source text.
+
+    Return ``None`` when the input is still changing after the bounded decode budget
+    or contains malformed UTF-8 escapes. Callers must treat that as unsafe.
+    """
+    classified = value
+    for _ in range(MAX_CLASSIFICATION_DECODE_PASSES):
+        try:
+            decoded = unquote(classified, errors="strict")
+        except UnicodeDecodeError:
+            return None
+        if decoded == classified:
+            return classified
+        classified = decoded
+    try:
+        if unquote(classified, errors="strict") != classified:
+            return None
+    except UnicodeDecodeError:
+        return None
+    return classified
 
 
 @dataclass(frozen=True, order=True)
@@ -50,7 +74,9 @@ def safe_public_literal(value: str) -> str | None:
     if any(unicodedata.category(char) in {"Cc", "Cf", "Cs"} for char in value):
         return None
     lowered = value.lower()
-    classified = unquote(lowered)
+    classified = decoded_classification_view(lowered)
+    if classified is None:
+        return None
     if any(marker in classified for marker in PRIVATE_LITERAL_MARKERS):
         return None
     if any(unicodedata.category(char) in {"Cc", "Cf", "Cs"} for char in classified):

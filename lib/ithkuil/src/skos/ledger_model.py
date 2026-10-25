@@ -6,6 +6,7 @@ import re
 
 from .errors import ProfileError
 from .resolver import RecordRef
+from .source_public import decoded_classification_view
 
 
 SCHEMA_VERSION = "bilqis.skos.held-ledger/v1"
@@ -64,9 +65,14 @@ def sanitize_detail(value: str) -> str:
 def public_identity_safe(value: str, *, allow_project_iri: bool = False) -> bool:
     """Stable identity fields are preserved verbatim or rejected, never redacted."""
     text = str(value)
+    classified = decoded_classification_view(text)
+    if classified is None:
+        return False
     if allow_project_iri and text.startswith(_PROJECT_IRI_PREFIX):
-        return not any(char.isspace() or ord(char) < 32 for char in text)
-    return not _UNSAFE.search(text)
+        suffix = classified[len(_PROJECT_IRI_PREFIX):] if classified.startswith(_PROJECT_IRI_PREFIX) else classified
+        return (not any(char.isspace() or ord(char) < 32 for char in text)
+                and not _UNSAFE.search(suffix))
+    return not _UNSAFE.search(classified)
 
 
 def require_public_identity_safe(

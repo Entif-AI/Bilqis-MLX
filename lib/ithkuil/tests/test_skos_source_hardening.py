@@ -131,6 +131,19 @@ class SourceProjectionHardeningTests(unittest.TestCase):
         text = "New Ithkuil source title"
         self.assertEqual(safe_public_literal(text), text)
 
+    def test_literal_screening_rejects_nested_percent_encoded_private_paths_without_rewriting_safe_text(self):
+        for value in (
+            "file:///Users/example/private-source",
+            "file%3A%2F%2F%2FUsers%2Fexample%2Fprivate-source",
+            "file%253A%252F%252F%252FUsers%252Fexample%252Fprivate-source",
+            "file%25253A%25252F%25252F%25252FUsers%25252Fexample%25252Fprivate-source",
+            "file%252525253A%252525252F%252525252F%252525252FUsers%252525252Fexample",
+        ):
+            with self.subTest(value=value):
+                self.assertIsNone(safe_public_literal(value))
+        harmless = "%C4%8C"
+        self.assertEqual(safe_public_literal(harmless), harmless)
+
 
 if __name__ == "__main__":
     unittest.main()
