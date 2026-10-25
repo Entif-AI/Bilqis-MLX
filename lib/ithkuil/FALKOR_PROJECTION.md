@@ -80,3 +80,55 @@ and invalid-term negative fixtures fail. No live database mutation occurs in #73
 ```sh
 python3 -B -m unittest lib.ithkuil.tests.test_skos_falkor_projection -v
 ```
+
+## Import and recovery (#74)
+
+Install `requirements-falkor.txt` locally. Import only a verified #72 evidence
+bundle; the importer hashes every constituent, independently re-runs all four gates
+from its serialized artifacts, and rejects a forged status or missing evidence.
+It does not read source CSVs or perform semantic decisions. A public API call
+accepts the bundle path, preventing a precomputed projection from bypassing the
+conformance boundary.
+
+```sh
+python3 -B -m lib.ithkuil.src.skos.falkor_import \
+  --bundle PATH/TO/CONFORMANCE-BUNDLE \
+  --graph EXPLICIT_OWNED_GRAPH --owner EXPLICIT_OWNER \
+  --host 127.0.0.1 --port 16379
+```
+
+The client accepts existing credentials through `BILQIS_FALKOR_USERNAME` and
+`BILQIS_FALKOR_PASSWORD`; credentials never enter receipts. Host/port select the
+local tunnel endpoint. This command runs entirely on the execution machine.
+
+The strategy is upsert by canonical term/edge key within one explicitly owned
+projection. A new empty graph receives one `BilqisProjection` marker with owner,
+canonical digest, version, expected counts and `state=incomplete`. Existing graphs
+without that exact owner marker are refused. A different canonical digest requires
+an explicitly safe reset; import does not silently mix artifact versions.
+
+All nodes/edges carry `owner`. Each MERGE sets ownership only on creation and
+checks it before updating matched data. A foreign key match cannot be overwritten.
+One authorized writer owns the graph; the marker is custody metadata, not a
+fabricated distributed lease. A range index on the term key supports deterministic
+upserts; retries inspect index state rather than recreating an existing index.
+
+Completion follows full paginated readback, exact reconstruction and digest/shape
+verification. The marker is then set complete and read back. A second identical
+import verifies the existing closure and returns without semantic writes. Failed
+or interrupted batches retain incomplete state and never emit a complete result.
+For a timeout or lost acknowledgement, inspect the actual marker and closure first;
+never infer that a write failed. Same-artifact retry reconciles through idempotent
+upserts. Different-artifact replacement belongs to #75. Automatic transport retries
+are disabled; an ambiguous operation is surfaced for reconciliation.
+
+The live test suite requires explicit `BILQIS_FALKOR_LIVE=1`. It creates fresh,
+uniquely named test graphs, records their owners, proves an induced partial failure,
+resumes that exact graph, and compares full readback after repeat import. It never
+resets an existing graph or invokes whole-graph deletion. Ordinary tests cover
+artifact tampering, a falsely claimed gate pass, the real aggregate-export/import
+boundary, and refusal to bypass conformance with a raw projection dictionary.
+
+References: [query parameters](https://docs.falkordb.com/commands/graph.query),
+[read-only queries](https://docs.falkordb.com/commands/graph.ro-query), and
+[range indexes](https://docs.falkordb.com/cypher/indexing/range-index).
