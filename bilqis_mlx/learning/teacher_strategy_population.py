@@ -42,17 +42,25 @@ def effective_context_scope(teacher: dict, scope: dict) -> dict:
         policy = strategies.get(policy_key)
         if policy is None:
             raise ValueError(LearningExperimentError.STRATEGY_ID_DRIFT.value)
+        latest = record.get("latest_realized_action_key")
+        realized = record.get("realized_actions")
+        evidence = (
+            realized.get(latest)
+            if isinstance(realized, dict) and isinstance(latest, str)
+            else None)
+        if not isinstance(evidence, dict) or not evidence.get("trials"):
+            evidence = record
         effective_key = effective_policy_key(policy)
         group = groups.setdefault(effective_key, {
             "trials": 0, "reward_sum": 0., "unsafe": 0, "retained": 0,
             "no_target_gain_streak": 0, "members": [],
         })
-        group["trials"] += int(record.get("trials", 0))
-        group["reward_sum"] += float(record.get("reward_sum", 0.))
-        group["unsafe"] += int(record.get("unsafe", 0))
-        group["retained"] += int(record.get("retained", 0))
+        group["trials"] += int(evidence.get("trials", 0))
+        group["reward_sum"] += float(evidence.get("reward_sum", 0.))
+        group["unsafe"] += int(evidence.get("unsafe", 0))
+        group["retained"] += int(evidence.get("retained", 0))
         group["no_target_gain_streak"] += int(
-            record.get("no_target_gain_streak", 0))
+            evidence.get("no_target_gain_streak", 0))
         group["members"].append(policy_key)
     return groups
 

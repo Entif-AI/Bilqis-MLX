@@ -1505,3 +1505,37 @@ the withheld capabilities. Likewise, `PROMOTION_SWEEP` and
 `ASSESS_PROMOTION_SWEEP` are rendered as `GRADUATION SWEEP IN PROGRESS` so repeated
 90%+ observations cannot look like an inert ordinary mean while stability
 qualification is actually being rechecked capability by capability.
+
+
+## ADR-102 | 2026-10-25 | Teacher credit follows realized lesson delivery
+
+**Evidence-driven completion of the contextual teacher experiment.** After the
+candidate horizon and active-strategy population repairs, the live run continued to
+show that most rejected teacher visits produced no measurable target gain even though
+full-horizon candidates were again the normal case. Inspection of the delivery
+receipts established a distinct causal problem: source availability, weakness replay,
+fragile preservation, retention support and reserved batch capacity can make the
+lesson actually delivered to the optimizer differ materially from the strategy that
+requested it. Rewarding only the nominal request therefore merges unlike experiments
+and can teach the selector the wrong causal lesson.
+
+The immutable historical strategy archive remains the request/provenance surface, but
+new contextual evidence is additionally keyed by a **realized teacher action** derived
+from what the optimizer actually received. The realized identity includes learning
+rate and candidate horizon, observed depth and contrast modes, actual old-grade,
+preservation, retention-support and fresh-support delivery, weakness-target and
+semantic-pattern coverage, applied confidence/distillation guidance, enrichment and
+answer-kind geometry. A nominal field that did not change delivery does not by itself
+split realized-action evidence.
+
+Each nominal policy retains its historical compatibility record and its sequence of
+realized actions. Contextual selection and the bounded active-population evidence use
+the latest realized action when present, while pre-ADR-102 records remain readable and
+fall back to their existing nominal effective-policy identity. This is a forward-only
+evidence refinement: previous reward is not rewritten or fabricated.
+
+When source-paired contextual retention evidence exists, new outcomes no longer feed
+the legacy nominal grade/global bandit as though the requested strategy alone caused
+the delivered lesson. Historical grade/global statistics remain available only as the
+existing bounded exploration prior. Retention, source-gold, custody, promotion,
+qualification and student/AdamW rules are unchanged.

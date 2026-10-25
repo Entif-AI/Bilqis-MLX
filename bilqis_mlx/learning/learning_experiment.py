@@ -21,6 +21,13 @@ from bilqis_mlx.learning.lesson_selection import (
     earlier_grade_capabilities, reserve_weakness_targets, select_source_lesson,
 )
 from bilqis_mlx.learning.teacher_geometry import is_geometry_scope
+from bilqis_mlx.learning.teacher_realized_action import (
+    bind_record as _bind_realized_action_record,
+    context_scope as _realized_context_scope,
+    describe as realized_teacher_action,
+    record_outcome as _record_realized_action_outcome,
+    selection_record as _context_selection_record,
+)
 from bilqis_mlx.learning.teacher_strategy_population import (
     UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT,
     active_effective_strategy_keys as _active_effective_strategy_keys,
@@ -726,11 +733,8 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             original_key, original_policy = _pick_existing_active(
                 engine, teacher, grade, rng, active_effective, inventory)
         return result(original_key, original_policy)
-    effective_scope = {
-        key: record
-        for key, record in _effective_context_scope(teacher, scope).items()
-        if key in active_set
-    }
+    effective_scope = _realized_context_scope(
+        teacher, scope, active_effective=active_set)
     if not effective_scope:
         if geometry_context:
             original_key, original_policy = _geometry_context_pick(
@@ -739,12 +743,9 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             original_key, original_policy = _pick_existing_active(
                 engine, teacher, grade, rng, active_effective, inventory)
         return result(original_key, original_policy)
-    diagnostic_scope = _diagnostic_effective_scope(
-        teacher, scope, diagnostic_key)
-    diagnostic_scope = {
-        key: record for key, record in diagnostic_scope.items()
-        if key in active_set
-    }
+    diagnostic_scope = _realized_context_scope(
+        teacher, scope, active_effective=active_set,
+        diagnostic_key=diagnostic_key)
     usable_diagnostic = {
         key: record for key, record in diagnostic_scope.items()
         if record.get("retained", 0) > 0
@@ -787,7 +788,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     best_record = selection_scope[best_effective]
 
     def member_rank(key):
-        record = scope[key]
+        record = best_record["member_records"][key]
         mean = record["reward_sum"] / record["trials"]
         return (record.get("retained", 0), mean, record["trials"], key)
 
@@ -810,7 +811,12 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     else:
         original_key, original_policy = _pick_existing_active(
             engine, teacher, grade, rng, active_effective, inventory)
-    original_effective = _effective_policy_key(original_policy)
+    original_record = scope.get(original_key)
+    original_effective = (
+        _context_selection_record(original_policy, original_record)[0]
+        if isinstance(original_record, dict)
+        else "nominal:" + _effective_policy_key(original_policy)
+    )
     if original_effective == best_effective:
         return result(
             original_key, original_policy,
@@ -855,7 +861,8 @@ def _stagnation_feedback(teacher: dict, capability: str, policy_key: str,
 def observe_context(teacher: dict, *, capability: str, phase: str,
                     policy_key: str, decision: dict, local_gain: float,
                     curriculum_scope: str = "",
-                    diagnostics: dict | None = None) -> dict:
+                    diagnostics: dict | None = None,
+                    realized_action: dict | None = None) -> dict:
     """Source-paired trial outcome; never rewrite historical UCB rewards."""
     if (policy_key not in teacher.get("strategies", {}) or
             not math.isfinite(local_gain) or
@@ -874,8 +881,10 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                                             "no_target_gain_streak": 0})
     record.setdefault("no_target_gain_streak", 0)
     record.setdefault("retained", 0)
+    action_key, action_record, stagnation_key = _bind_realized_action_record(
+        record, realized_action, policy_key)
     shared_stagnation = _shared_stagnation_record(
-        channel, capability, curriculum_scope, policy_key)
+        channel, capability, curriculum_scope, stagnation_key)
     capability_stagnation = _capability_stagnation_record(
         channel, capability, curriculum_scope)
     # Normalized worst-case retention cost stops many small wins concealing
@@ -945,6 +954,10 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         diagnostic["unsafe"] += 1
     else:
         diagnostic["retained"] += 1
+    _record_realized_action_outcome(
+        action_record, rejected=decision["decision"] == "REJECT",
+        no_target_gain=no_target_gain, reward=reward,
+        diagnostic_key=diagnostic_key)
     strain = decision.get("matrix_strain") or {}
     if strain.get("status") == "MEASURED":
         # A bounded teacher-observable geometric feature; outcome rewards
@@ -980,6 +993,7 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             "attempts_since_retained":
                 capability_stagnation["attempts_since_retained"],
             "diagnostic_context_key": diagnostic_key,
+            **({"realized_action_key": action_key} if action_key is not None else {}),
             "inherited_exploration_credit": inherited_exploration,
             "teacher_selection_reward": selection_reward,
             "legacy_reward_reinterpreted": False,

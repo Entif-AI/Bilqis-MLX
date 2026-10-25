@@ -900,6 +900,102 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         pick, _ = contextual_pick(Legacy, teacher, "C.ADD", "RECOVERY_2", random.Random(2))
         self.assertEqual(pick, "positive")
 
+    def test_contextual_credit_follows_latest_realized_action_not_nominal_average(self):
+        import bilqis_mlx.learning.learning_experiment as experiment
+
+        teacher = {
+            "strategies": {
+                "variable": {"lr": .0001, "old": 16, "depth": 3, "contrast": 1.0},
+                "steady": {"lr": .0002, "old": 8, "depth": 3, "contrast": 1.0},
+            },
+            "global_stats": {},
+            "grade_stats": {},
+            "events": 0,
+        }
+        bad = decide({
+            "C.ADD": {"before": 3, "after": 4, "total": 6},
+            "B.XOR": {"before": 6, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected={"B.XOR"},
+            settings=Settings())
+        good = decide({
+            "C.ADD": {"before": 3, "after": 5, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+
+        bad_action = experiment.realized_teacher_action(
+            teacher["strategies"]["variable"], candidate_steps=16, batch_size=32,
+            policy_controls=({"effective_old_grade_examples": 2,
+                              "depth_control": "SOURCE_TOKEN_LENGTH_PROXY",
+                              "contrast_control": "SOURCE_GROUP_DIVERSITY"},),
+            guidance_applied_steps=0, enrichment_examples=0)
+        good_action = experiment.realized_teacher_action(
+            teacher["strategies"]["variable"], candidate_steps=16, batch_size=32,
+            policy_controls=({"effective_old_grade_examples": 12,
+                              "depth_control": "SOURCE_TOKEN_LENGTH_PROXY",
+                              "contrast_control": "SOURCE_GROUP_DIVERSITY"},),
+            guidance_applied_steps=0, enrichment_examples=0)
+        steady_action = experiment.realized_teacher_action(
+            teacher["strategies"]["steady"], candidate_steps=16, batch_size=32,
+            policy_controls=({"effective_old_grade_examples": 8,
+                              "depth_control": "SOURCE_TOKEN_LENGTH_PROXY",
+                              "contrast_control": "SOURCE_GROUP_DIVERSITY"},),
+            guidance_applied_steps=0, enrichment_examples=0)
+
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="variable",
+            decision=bad, local_gain=.1, curriculum_scope="scope",
+            realized_action=bad_action)
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="variable",
+            decision=good, local_gain=.4, curriculum_scope="scope",
+            realized_action=good_action)
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="steady",
+            decision=good, local_gain=.2, curriculum_scope="scope",
+            realized_action=steady_action)
+
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "steady", _teacher["strategies"]["steady"]
+
+        picked, _ = contextual_pick(
+            Legacy, teacher, "C.ADD", "MAIN", random.Random(2),
+            curriculum_scope="scope")
+        self.assertEqual(picked, "variable")
+        context = teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
+        self.assertEqual(
+            context["variable"]["latest_realized_action_key"],
+            good_action["key"])
+        self.assertEqual(
+            context["variable"]["realized_actions"][good_action["key"]]["trials"], 1)
+
+    def test_realized_action_identity_tracks_delivery_not_requested_old_mix(self):
+        import bilqis_mlx.learning.learning_experiment as experiment
+
+        controls = ({
+            "effective_old_grade_examples": 5,
+            "depth_control": "SOURCE_TOKEN_LENGTH_PROXY",
+            "contrast_control": "SOURCE_GROUP_DIVERSITY",
+        },)
+        common = dict(
+            candidate_steps=16, batch_size=32, policy_controls=controls,
+            guidance_applied_steps=0, enrichment_examples=0)
+        requested_four = experiment.realized_teacher_action(
+            {"lr": .0001, "old": 4, "distill": .15}, **common)
+        requested_twenty = experiment.realized_teacher_action(
+            {"lr": .0001, "old": 20, "distill": .15}, **common)
+        changed_delivery = experiment.realized_teacher_action(
+            {"lr": .0001, "old": 4, "distill": .15},
+            **{**common, "policy_controls": ({
+                "effective_old_grade_examples": 9,
+                "depth_control": "SOURCE_TOKEN_LENGTH_PROXY",
+                "contrast_control": "SOURCE_GROUP_DIVERSITY",
+            },)})
+
+        self.assertEqual(requested_four["key"], requested_twenty["key"])
+        self.assertNotEqual(requested_four["key"], changed_delivery["key"])
+
     def test_single_retained_context_success_is_immediately_exploitable(self):
         teacher = {
             "strategies": {

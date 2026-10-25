@@ -200,7 +200,7 @@ def _apply_retention_decision(
         parent_optimizer, params, optimizer, probe_rows, parent_predictions,
         learning_settings, teacher, policy_key, candidate_gain,
         teacher_curriculum_scope, previsit_diagnostics, original_learning_rate,
-        before, after, miss_exposures):
+        before, after, miss_exposures, realized_action):
     with _runtime_timing_trace.trace_span(
             "RETENTION_CANDIDATE_EVIDENCE", capability=cap):
         pair, probed, current_grade, fixed_grade, replay, frontier, stage = (
@@ -245,7 +245,8 @@ def _apply_retention_decision(
             teacher, capability=cap, phase=school.stage,
             policy_key=policy_key, decision=outcome, local_gain=candidate_gain,
             curriculum_scope=teacher_curriculum_scope,
-            diagnostics=previsit_diagnostics)
+            diagnostics=previsit_diagnostics,
+            realized_action=realized_action)
         if outcome["decision"] == "PROVISIONAL":
             _learning_learning_experiment.commit_trial(
                 parent_parameters, parent_optimizer, params, optimizer)
@@ -283,8 +284,7 @@ def _reconcile_candidate_outcome(
     reward = after - before
     bandit_credit = _learning_learning_experiment.selection_credit(
         reward, outcome, context_credit)
-    legacy_bandit_observed = (
-        teacher_geometry_epoch is None or context_credit is None)
+    legacy_bandit_observed = context_credit is None
     if legacy_bandit_observed:
         with _runtime_timing_trace.trace_span("TEACHER_OBSERVE", capability=cap):
             engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
@@ -302,6 +302,27 @@ def _reconcile_candidate_outcome(
     return (miss_exposures, remaining, resolved_ids, all_misses,
             reward, bandit_credit, attempted_updates, retained_updates,
             legacy_bandit_observed)
+
+
+def _score_candidate_and_realize(
+        mx, receipt, cap, params, optimizer, rows, step_before, candidate_steps,
+        policy, batch_size, policy_control_receipts, confidence_applied_steps,
+        enrichment_examples, learning_settings):
+    with _runtime_timing_trace.trace_span(
+            "TRAIN_SCORE_AFTER", capability=cap, row_count=len(rows)):
+        after = _learning_student_ops._train_score(
+            mx, params, rows, receipt["config"], receipt["answer_ids"])
+    attempted_step = int(optimizer.state["step"].item())
+    if attempted_step != step_before + candidate_steps:
+        raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
+    realized_action = None
+    if learning_settings is not None:
+        realized_action = _learning_learning_experiment.realized_teacher_action(
+            policy, candidate_steps=candidate_steps, batch_size=batch_size,
+            policy_controls=policy_control_receipts,
+            guidance_applied_steps=confidence_applied_steps,
+            enrichment_examples=enrichment_examples)
+    return after, attempted_step, realized_action
 
 
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
@@ -759,12 +780,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 receipt["answer_ids"], champion_guidance=training_guidance)
         _runtime_timing_trace.trace_mark("OPTIMIZER_STEP_END", capability=cap, visit_step=step + 1,
                    optimizer_step=int(optimizer.state["step"].item()))
-    with _runtime_timing_trace.trace_span("TRAIN_SCORE_AFTER", capability=cap, row_count=len(rows)):
-        after = _learning_student_ops._train_score(mx, params, rows, receipt["config"],
-                             receipt["answer_ids"])
-    attempted_step = int(optimizer.state["step"].item())
-    if attempted_step != step_before+candidate_steps:
-        raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
+    after, attempted_step, realized_action = _score_candidate_and_realize(
+        mx, receipt, cap, params, optimizer, rows, step_before, candidate_steps,
+        policy, batch_size, policy_control_receipts, confidence_applied_steps,
+        enrichment_examples, learning_settings)
     candidate_gain = after-before
     outcome = context_credit = None
     if learning_settings is not None:
@@ -774,7 +793,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             parent_optimizer, params, optimizer, probe_rows, parent_predictions,
             learning_settings, teacher, policy_key, candidate_gain,
             teacher_curriculum_scope, previsit_diagnostics,
-            original_learning_rate, before, after, miss_exposures)
+            original_learning_rate, before, after, miss_exposures,
+            realized_action)
     (miss_exposures, remaining_priority, resolved_priority_ids,
      all_teacher_misses, reward, bandit_credit, attempted_optimizer_updates,
      retained_optimizer_updates, legacy_bandit_observed) = _reconcile_candidate_outcome(
@@ -821,6 +841,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "teacher_geometry_epoch": teacher_geometry_epoch,
         "teacher_context_scope": teacher_curriculum_scope,
         "teacher_strategy_population": _strategy_population_event(policy_selection),
+        **({"realized_teacher_action": realized_action}
+           if realized_action is not None else {}),
         "legacy_bandit_observed": legacy_bandit_observed,
         "stale_geometry_misses_suppressed": len(stale_geometry_misses),
         "attempted_optimizer_updates": attempted_optimizer_updates,

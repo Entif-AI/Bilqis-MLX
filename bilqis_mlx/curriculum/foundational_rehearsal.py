@@ -10,6 +10,7 @@ from .school_state import SchoolState, Score, _caps, _program
 # Foundations get half the rehearsal frequency of the immediate predecessor:
 # enough to recover measured decay without crowding the active frontier/debt pair.
 FOUNDATIONAL_DEBT_RUN_INTERVAL = NONGATING_DEBT_RUN_INTERVAL * 2
+MINIMUM_ACTIVE_GRADES_FOR_FOUNDATIONAL_REHEARSAL = 3
 
 
 def rehearsal_plan(
@@ -22,7 +23,7 @@ def rehearsal_plan(
             FOUNDATIONAL_DEBT_RUN_INTERVAL):
         return None
     program = _program(program)
-    if len(state.active_grades) < 3:
+    if len(state.active_grades) < MINIMUM_ACTIVE_GRADES_FOR_FOUNDATIONAL_REHEARSAL:
         return None
     allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
     candidates = []
