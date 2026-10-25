@@ -1540,3 +1540,30 @@ Source digests sort rows by their authoritative source key and graph canonicaliz
 uses #41, so reversing all three deferred row sequences cannot change source, graph,
 or receipt digests. Fresh-process proof repeats the complete reconciliation from
 separate temporary working directories and hash seeds.
+
+## Source-qualified mapping emission (#63)
+
+`mapping_emit.emit_admitted_mappings(rows, endpoint_graph, policy)` consumes explicit
+`ReviewedMappingRow(RecordRef, MappingClaim)` records. Raw crosswalk/bridge prose is
+never interpreted as review authority. The emitter recomputes the exact #62 normalized
+admission and #36 proof requirements, then verifies both endpoints are admitted SKOS
+concepts with membership in their declared, known concept schemes. An absent endpoint,
+ambiguous concept/collection type or mismatched scheme produces a row-bound issue.
+
+Predicate strength comes only from the finite table. Broad/narrow direction and
+inverse edges follow #36; symmetric predicates emit their reciprocal edge. The emitter
+preserves both identities and never creates `owl:sameAs`. Equivalent assertions share
+RDF triples while `MappingAssertion.record_refs` preserves every contributing input
+row. Duplicate source-row identities are rejected. Cross-claim semantic conflicts
+prevent a complete graph rather than selecting a preferred assertion.
+
+The current raw corpus has no concept-target admissions. The five positive fixtures
+are explicitly synthetic reviewed inputs, not newly approved Bilqis mappings.
+Source review and independent-scheme governance remain upstream premises; strings
+and graph membership do not prove that a human/source review actually occurred.
+Later #65 validates batch conflicts and #66 reconciles the complete source domain.
+
+Proof: `python -B -m unittest lib.ithkuil.tests.test_skos_mapping_emit -v` compares
+ten literal expected triples, exact/close separation, both directional inverses,
+duplicate accounting, unknown/raw states, missing endpoints/schemes, ambiguous types,
+missing exactness evidence and reordered-input equivalence.
