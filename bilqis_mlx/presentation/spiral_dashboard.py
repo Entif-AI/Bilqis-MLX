@@ -450,7 +450,7 @@ class Dashboard:
         self.number_semantics=normalized
         if notify and normalized:
             self.notify(
-                "NUMBERS NOW " + " ".join(normalized),
+                "INT ROOTS NOW " + self._number_semantics_text(),
                 key="number-semantics:" + ",".join(normalized))
         return True
 
@@ -478,7 +478,7 @@ class Dashboard:
         return _active_notice(self._notifications,self.clock())
 
     def _number_semantics_text(self):
-        return _number_semantics_text(self.number_semantics)
+        return f'{self.number_semantics[0]}...{self.number_semantics[-1]}' if len(self.number_semantics)>1 else _number_semantics_text(self.number_semantics)
 
     def _refresh_champions(self):
         """Read canonical champion inventory if a grade checkpoint changed."""
@@ -922,7 +922,7 @@ class Dashboard:
                 f"| visits {state.get('visits','-')} "
                 f"| T {state.get('teacher','-')}")
         if self.number_semantics:
-            status+=f" | numbers {self._number_semantics_text()}"
+            status+=f" | int roots {self._number_semantics_text()}"
         footer=f"{state.get('stop','RUNNING')} {state.get('halt','')} | raw log: {self.log_hint or 'read-only'}"
         retained=state.get("retained_visits",0)
         retained_suffix=(f" ({retained:,} retained)" if type(retained) is int else "")
@@ -971,7 +971,7 @@ class Dashboard:
                 ("TEACHER",teacher if teacher not in (None,'','?') else "-",7,True),
                 ("GRADES",curriculum['grades'],6,True),
                 ("CAPS",curriculum['capabilities'],5,True),
-                ("NUMBER SEMANTICS",self._number_semantics_text(),23,False),
+                ("INT ROOTS",self._number_semantics_text(),11,False),
                 ("STUDENT LATEST",latest,18,False),
                 ("STUDENT BEST",best,18,False),
                 ("STEPS/MIN",

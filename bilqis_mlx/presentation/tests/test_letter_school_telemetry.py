@@ -23,15 +23,15 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
-    def test_compact_header_names_exact_active_number_semantics(self):
+    def test_compact_header_compresses_active_integer_roots(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
                           tables=LETTER_TABLES, compact_header=True)
         board.set_number_semantics(("0", "1", "2", "3", "4", "5", "6"))
 
         rendered = board.render(width=240, height=30)
 
-        self.assertIn("NUMBER SEMANTICS", rendered)
-        self.assertIn("0 1 2 3 4 5 6", rendered)
+        self.assertIn("INT ROOTS", rendered)
+        self.assertIn("0...6", rendered)
 
     def test_profile_scope_and_grade_milestones_use_transient_candidate_notice(self):
         now = [100.0]
@@ -50,7 +50,7 @@ class SchoolTelemetryTests(unittest.TestCase):
         self.assertEqual(
             board.number_semantics, ("0", "1", "2", "3", "4", "5", "6"))
         self.assertIn(
-            "NUMBERS NOW 0 1 2 3 4 5 6",
+            "INT ROOTS NOW 0...6",
             board.render(width=240, height=30))
 
         promoted = exam(

@@ -1,11 +1,22 @@
 """Small read-only operator-status helpers shared by School50 presentation views."""
 from __future__ import annotations
 
+from enum import Enum
+
 NOTICE_TTL_SECONDS = 60.0
+HEADER_MARGIN = 2
+SCIENTIFIC_NOTATION_BASE = 10
+MAX_DISPLAY_INTEGER_ROOT = 100
 PROFILE_ADOPTION_EVENTS = (
     "SCHOOL_EXECUTION_PROFILE_ADOPTED",
     "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED",
 )
+
+
+class OperatorStatusError(str, Enum):
+    NUMBER_SEMANTICS_INVALID = "DASHBOARD_NUMBER_SEMANTICS_INVALID"
+    NOTIFICATION_INVALID = "DASHBOARD_NOTIFICATION_INVALID"
+    PROFILE_ADOPTION_INVALID = "SCHOOL_TELEMETRY_PROFILE_ADOPTION_INVALID"
 
 
 def clean(value):
@@ -47,10 +58,10 @@ def human_duration(seconds):
 
 
 def right_header(left, summary, width):
-    if len(summary) > width - 2:
+    if len(summary) > width - HEADER_MARGIN:
         return summary[:width]
-    left = left[:max(0, width - len(summary) - 2)]
-    return left + " " * max(2, width - len(left) - len(summary)) + summary
+    left = left[:max(0, width - len(summary) - HEADER_MARGIN)]
+    return left + " " * max(HEADER_MARGIN, width - len(left) - len(summary)) + summary
 
 
 def score_summary(progress, label, width):
@@ -80,7 +91,7 @@ def score_summary(progress, label, width):
 
 def display_metric(value, *, decimals=3):
     if type(value) in (float, int):
-        if value and abs(value) < 0.5 * 10 ** (-decimals):
+        if value and abs(value) < 0.5 * SCIENTIFIC_NOTATION_BASE ** (-decimals):
             return f"{value:.2e}"
         return f"{value:.{decimals}f}"
     return "-"
@@ -92,7 +103,7 @@ def normalize_number_semantics(values):
     if (isinstance(values, (list, tuple)) and values and
             all(isinstance(value, str) and value for value in values)):
         return tuple(values)
-    raise ValueError("DASHBOARD_NUMBER_SEMANTICS_INVALID")
+    raise ValueError(OperatorStatusError.NUMBER_SEMANTICS_INVALID.value)
 
 
 def number_semantics_from_state(state):
@@ -116,7 +127,7 @@ def number_semantics_from_profile(profile_id):
     if not suffix.isdigit():
         return ()
     maximum = int(suffix)
-    if maximum > 100:
+    if maximum > MAX_DISPLAY_INTEGER_ROOT:
         return ()
     return tuple(str(value) for value in range(maximum + 1))
 
@@ -129,7 +140,7 @@ def add_notice(notifications, now, message, *, key=None,
                ttl_seconds=NOTICE_TTL_SECONDS):
     if (not isinstance(message, str) or not message.strip() or
             not isinstance(ttl_seconds, (int, float)) or ttl_seconds <= 0):
-        raise ValueError("DASHBOARD_NOTIFICATION_INVALID")
+        raise ValueError(OperatorStatusError.NOTIFICATION_INVALID.value)
     identity = str(key if key is not None else message)
     current = [
         item for item in notifications
@@ -175,7 +186,7 @@ def notify_grade_admitted(board, grade, generation):
 def apply_profile_adoption(telemetry, grade, event):
     profile_id = event.get("profile_id")
     if not grade or not isinstance(profile_id, str) or not profile_id:
-        raise ValueError("SCHOOL_TELEMETRY_PROFILE_ADOPTION_INVALID")
+        raise ValueError(OperatorStatusError.PROFILE_ADOPTION_INVALID.value)
     telemetry._reset_score_era(reason=event["event"], grade=grade)
     numeric_changed = telemetry.board.set_numeric_profile(profile_id, notify=True)
     if event.get("transition_kind") == "APPEND_GRADE":
