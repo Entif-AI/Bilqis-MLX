@@ -1712,3 +1712,38 @@ four triples, and canonical SHA-256
 64a084ddf108eba38205905d8015e6f3c50e191f42ff8fa5ccd9f441c6e07008. It proves the
 same generator can produce build_status=complete when the source fixture is genuinely
 clean rather than by weakening held/debt semantics.
+
+## Global no-omission accounting gate (#69)
+
+The gate takes two independent inputs: the stable source-row set inspected from source
+or domain reconciliation inputs, and the #67 coverage receipt generated from build
+outputs. This avoids the circular claim that a receipt is complete merely because it
+lists every row it chose to include.
+
+SourceRowIdentity is the stable tuple (domain, table, key). validate_no_omission()
+first compares that independent set to every row entry in the receipt. Missing, extra,
+or multiply-accounted rows fail with NO_OMISSION_MISMATCH and literal locators such as
+atomic:morphemes_atomic:ATOM-A3. Duplicate source IDs fail separately.
+
+Only after the set equation is proven does the gate run the full #67 schema/arithmetic
+validator. `semantic_iri` is optional because an emitted source row may own an RDF
+assertion or structural occurrence rather than a standalone semantic resource. IR_ONLY
+rows require a non-empty reason code and owner. HELD, REJECTED, UNSUPPORTED, and IR_ONLY rows remain accounted
+but fail if their semantic IRI appears in the supplied strong-subject set.
+
+The synthetic source fixture covers atomic, lexicon, residue composition, residue
+affix, and mapping rows. Five omission fixtures each remove one independently named
+row while keeping the shortened receipt internally additive, proving the independent
+source set catches silent loss. Additional fixtures cover duplicate accounting and an
+IR_ONLY row without rationale.
+
+#68 supplies the real source-row sets and computed receipt. This leaf owns only the
+independent accounting gate and does not decide whether an emitted semantic assertion
+is correct.
+
+Current composed proof against the #68 receipt independently enumerates 9,654 source
+rows across atomic, lexicon, residue, and mapping inputs and accounts exactly 9,654
+receipt rows: 8,452 EMITTED, 1,051 HELD, 1 REJECTED, 0 UNSUPPORTED, and 150 IR_ONLY.
+No duplicate/missing source-row locator is present. Strong-subject checking uses actual
+RDF subjects, matching the established held-resource boundary; arbitrary URIRefs that
+appear only as objects are not reclassified as emitted subjects by this gate.
