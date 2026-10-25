@@ -1,0 +1,11 @@
+{
+  "scheme_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil",
+  "datatype_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil",
+  "lexical": "b",
+  "resource_iris": [
+    "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/EXTENSION/ATV",
+    "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/EXTENSION/DPL",
+    "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/REFERENTIAL/ma.DETRIMENTAL"
+  ],
+  "rule_id": "fixture-explicit-homograph-admission"
+}

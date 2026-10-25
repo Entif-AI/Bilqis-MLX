@@ -7,6 +7,7 @@ from rdflib import Graph, URIRef
 from rdflib.namespace import DCTERMS, SKOS
 from .errors import ProfileError
 from .identity import Identity
+from .collision import HomographAdmission, resolve_homograph_admissions
 from .notation import (GRAMMAR_CODE_DATATYPE_IRI, NEW_ITHKUIL_DATATYPE_IRI,
                        NotationClaim, analyze_notation_claims, typed_notation)
 from .resolver import NEW_ITHKUIL, RecordRef, ResolvedResource, TextAssertion
@@ -191,7 +192,8 @@ def _deduplicate_resources(resources: Iterable[ResolvedResource]) -> tuple[tuple
         issues.append(BuildIssue("RESOURCE_IDENTITY_REDEFINED", iri, refs, (f"variants={len(distinct)}",)))
     return tuple(kept), tuple(issues)
 def build_core_graph(resources: Iterable[ResolvedResource], source_projector: SourceProjector, *,
-                     ordered_collections: Iterable[OrderedCollectionShape] = ()) -> BuildResult:
+                     ordered_collections: Iterable[OrderedCollectionShape] = (),
+                     notation_admissions: Iterable[HomographAdmission] = ()) -> BuildResult:
     """Build the complete strong core graph; held resources emit no partial RDF."""
     unique, initial_issues = _deduplicate_resources(resources)
     issues = set(initial_issues)
@@ -204,8 +206,16 @@ def build_core_graph(resources: Iterable[ResolvedResource], source_projector: So
     notation_report = analyze_notation_claims(
         claim for item in prepared.values() for claim in item.notation_claims
     )
+    admitted, admission_issues = resolve_homograph_admissions(
+        notation_report.collisions, tuple(notation_admissions)
+    )
+    if admission_issues:
+        issue = admission_issues[0]
+        raise ProfileError(issue.code, issue.rule_id, *issue.details)
     collision_iris = set()
     for conflict in notation_report.collisions:
+        if conflict.key in admitted:
+            continue
         details = (
             f"scheme={conflict.key.scheme_iri}",
             f"datatype={conflict.key.datatype_iri}",

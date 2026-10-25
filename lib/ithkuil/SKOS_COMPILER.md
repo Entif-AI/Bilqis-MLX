@@ -1248,3 +1248,37 @@ python3 -B \
 
 No model, English-label match, row-order tie-break, Falkor state, curriculum order, or
 filesystem coordinate participates in definition selection.
+
+## Atomic notation collision policy (#47)
+
+`analyze_atomic_collisions(closure, resolution, admissions=()) -> AtomicCollisionReport`
+reuses the #33 typed-notation key and #38 identities. The exact key remains
+`(governing scheme, notation datatype, exact Unicode lexical form)`; no NFC folding,
+ASCII folding, label matching, category inference, or family hierarchy participates.
+
+The report binds every collision to complete claimant IRIs and exact atomic source rows
+with source/section/table/line/public URL. Default policy is strict. A
+`HomographAdmission` is legal only when it names one exact collision key, the complete
+claimant set, and a non-empty rule ID. Partial, unknown, or duplicate admissions fail
+closed. This is an explicit exception mechanism, not a global uniqueness relaxation.
+
+Current atomic source produces 1,256 notation claims over 650 atomic resources. There
+are 151 exact collision keys involving 388 resources and 499 source rows; no homograph
+is admitted by default, so atomic release eligibility is false. Real fixtures include
+grammar-code `ACT` shared by CASE/ACT and CASE_ACCESSOR_VX/ACT, and New Ithkuil `b`
+shared by EXTENSION/ATV, EXTENSION/DPL, and REFERENTIAL/ma.DETRIMENTAL. Register NRR's
+two physical `∅` rows remain one claimant because they resolve to one semantic concept.
+
+`collision_resolution(resolution, report)` converts unresolved collisions into ordinary
+`NOTATION_COLLISION` ResolutionIssues and removes all held claimant resources before
+the builder, so #42 can account them without concept deletion or identity merging.
+Explicit admissions remain visible as `ADMITTED / EXPLICIT_HOMOGRAPH_ADMISSION` records.
+The staged extension to the existing `build_core_graph` API adds only the optional
+`notation_admissions=` keyword. It validates the same exact key and complete claimant
+set before skipping that one collision; default calls remain strict and byte-compatible.
+Thus an explicit admission reaches the actual emitter instead of existing only in a
+side report, while invalid or partial policy input fails before graph assembly.
+
+Focused proof uses run-root `venv/bin/python -m unittest` on `test_skos_collision` and
+`test_skos_collision_hardening`. Same lexical strings under distinct datatypes/schemes
+continue to use the already-green #33 primitive tests.
