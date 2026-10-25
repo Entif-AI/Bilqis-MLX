@@ -491,6 +491,39 @@ class OperatorTests(unittest.TestCase):
             self.assertEqual((cli.LEGACY_ROOT, cli.ORIGINAL_CHECKPOINT), original)
             self.assertFalse(json.loads(out.getvalue())["neural_training_started_by_this_command"])
 
+    def test_legacy_boolean_preflight_facade_keeps_exact_payload(self):
+        from bilqis_mlx import cli
+        from bilqis_mlx.compatibility.cli_preflight import (
+            legacy_boolean_revision_preflight,
+        )
+
+        fields = dict(
+            resume=True, boolean_composite=True, boolean_idboolops=False,
+            checkpoint_sha256="a" * 64)
+        expected = legacy_boolean_revision_preflight(**fields)
+        self.assertEqual(
+            cli._boolean_revision_preflight(
+                Path("/not-used"), Path("/not-used"), **fields), expected)
+        self.assertEqual(expected["legacy_boolean_revision_flags"], {
+            "composite_requested": True,
+            "idboolops_requested": False,
+            "authority": "CANONICAL_PROFILE_TEACHING_STAGES",
+            "separate_release_enrollment": False,
+            "source_student_sha256": "a" * 64,
+            "neural_updates": 0,
+        })
+
+    def test_legacy_cli_compatibility_facades_keep_exact_payloads(self):
+        from bilqis_mlx import cli
+        from bilqis_mlx.compatibility.cli_preflight import (
+            historical_session_stop,
+            legacy_qualification_scope,
+        )
+
+        self.assertEqual(cli._qualification_scope(), legacy_qualification_scope())
+        self.assertTrue(historical_session_stop("GRADE_A_SESSION_STOPPED"))
+        self.assertFalse(historical_session_stop("SCHOOL_SESSION_STOPPED"))
+
     def test_legacy_grade_b_preflight_defers_next_grade_until_v2_migration(self):
         from bilqis_mlx import cli
         from bilqis_mlx.boolean_composite import build_course as admitted_composite

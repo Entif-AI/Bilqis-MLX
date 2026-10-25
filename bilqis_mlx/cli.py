@@ -12,10 +12,16 @@ from bilqis_mlx.runtime.disk import assert_headroom
 from bilqis_mlx.state_dag import read_current
 from .source import AUDITED_PARENT
 from .compatibility.cli_preflight import (
-    legacy_new_run_status_fields,
-    legacy_numeric_scope,
+    legacy_boolean_revision_preflight,
+    legacy_boolean_profile_request,
+    legacy_ignored_boolean_revision_flags,
+    legacy_boolean_association_bridge_fields,
+    legacy_new_run_inspection,
+    legacy_numeric_staircase_preflight,
     legacy_profile_label,
+    legacy_qualification_scope,
     legacy_status_fields,
+    historical_session_stop,
 )
 from .paths import REPO_ROOT, LEGACY_SOURCE, LEGACY_CHECKPOINTS, active_run_dir
 from bilqis_mlx.presentation.spiral_dashboard import Dashboard, TABLES
@@ -28,19 +34,8 @@ ORIGINAL_CHECKPOINT = LEGACY_CHECKPOINTS / AUDITED_PARENT.basename
 
 
 def _qualification_scope() -> dict:
-    """Report prior evidence accurately without replaying neural steps."""
-    return {
-        "disposable_full_student_optimizer_continuation": {
-            "status": "PREVIOUSLY_VERIFIED_CPU_AND_APPLE_GPU",
-            "scope": "ONE_DETACHED_STEP_AND_COMPLETE_39_TENSOR_ADAMW_RESTART",
-            "evidence": "docs/evidence/grades/GRADE_A_REPAIR_AND_BACKEND_20261015.md",
-            "recheck": "npm run mlx:qualify",
-            "freshly_rerun_by_this_command": False,
-        },
-        "human_live_grade_a_trainer_end_to_end_qualified": False,
-        "human_experimental_trainer_implemented": True,
-        "operator_release": "HUMAN_EXPLICIT_--human-run_ONLY",
-    }
+    """Compatibility facade retained for callers of the historical CLI seam."""
+    return legacy_qualification_scope()
 
 
 def _latest_session_stop(run_dir: Path, generation: int, step: int) -> dict | None:
@@ -52,7 +47,8 @@ def _latest_session_stop(run_dir: Path, generation: int, step: int) -> dict | No
     if not lines:
         return None
     event = json.loads(lines[-1])
-    if (event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED") or
+    if ((event.get("event") != "SCHOOL_SESSION_STOPPED" and
+            not historical_session_stop(event.get("event"))) or
             event.get("generation") != generation or
             event.get("optimizer_step") != step):
         return None
@@ -214,13 +210,8 @@ def _inspect(run_dir: Path) -> dict:
                 **_qualification_scope(),
                 "neural_training_started_by_this_command":False,
                 "run_dir":str(run_dir)}
-    return {"status":"GRADE_A_EXPERIMENTAL_HUMAN_LAUNCH_AVAILABLE",
-            "grade":"A","phase":"READY_FOR_HUMAN_GRADE_A_START",
-            "historical_seed":AUDITED_PARENT.__dict__,
-            **legacy_new_run_status_fields(),
-            "grade_a_curriculum": "SIX_SOURCE_TYPED_PREDICATES_FRESH_GENERATED_COHORTS",
+    return {**legacy_new_run_inspection(historical_seed=AUDITED_PARENT.__dict__),
             **_qualification_scope(),
-            "source_grounded_grade_a_admitted":True,
             "neural_training_started_by_this_command":False,
             "run_dir":str(run_dir)}
 
@@ -245,25 +236,11 @@ def _source_paths(legacy_code_root: Path | None, champion_checkpoint: Path | Non
 def _boolean_revision_preflight(run_dir: Path, legacy_root: Path, *, resume: bool,
                                 boolean_composite: bool, boolean_idboolops: bool,
                                 checkpoint_sha256: str | None) -> dict:
-    """Describe legacy flags now represented by canonical teaching stages."""
-    if not boolean_composite and not boolean_idboolops:
-        return {}
-    if not resume:
-        if boolean_composite:
-            raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_RESUME")
-        raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_RESUME")
-    if not isinstance(checkpoint_sha256, str) or not checkpoint_sha256:
-        raise ValueError("BOOLEAN_REVISION_SOURCE_STUDENT_MISSING")
-    return {
-        "legacy_boolean_revision_flags": {
-            "composite_requested": boolean_composite,
-            "idboolops_requested": boolean_idboolops,
-            "authority": "CANONICAL_PROFILE_TEACHING_STAGES",
-            "separate_release_enrollment": False,
-            "source_student_sha256": checkpoint_sha256,
-            "neural_updates": 0,
-        }
-    }
+    """Compatibility facade retained for callers of the historical CLI seam."""
+    return legacy_boolean_revision_preflight(
+        resume=resume, boolean_composite=boolean_composite,
+        boolean_idboolops=boolean_idboolops,
+        checkpoint_sha256=checkpoint_sha256)
 
 
 def preflight(run_dir: Path, *, resume=False, verify_source=False,
@@ -315,20 +292,9 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         saved = read_current(run_dir)
         factory = snapshot.get("factory")
         maximum = saved.get("numeric_maximum")
-        legacy_scope = legacy_numeric_scope(saved)
-        from .numeric_staircase import INITIAL_MAXIMUM, FINAL_MAXIMUM
-        snapshot["numeric_staircase"] = {
-            "authority": "EXECUTABLE_FACTORY_NUMERIC_PROFILE",
-            "initial_maximum": INITIAL_MAXIMUM,
-            "final_maximum": FINAL_MAXIMUM,
-            "resume_maximum": (
-                maximum if isinstance(maximum, int)
-                else legacy_scope.get("resume_maximum", 3)),
-            "source_student_sha256": snapshot["checkpoint_sha256"],
-            "neural_updates": 0,
-            "profile_id": (
-                factory.get("profile_id") if factory is not None else None),
-        }
+        snapshot["numeric_staircase"] = legacy_numeric_staircase_preflight(
+            saved, maximum=maximum,
+            checkpoint_sha256=snapshot["checkpoint_sha256"], factory=factory)
     snapshot.update(_boolean_revision_preflight(
         run_dir, legacy_root, resume=resume,
         boolean_composite=(boolean_composite if full_grade_b else False),
@@ -337,9 +303,8 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     if resume:
         saved = read_current(run_dir)
         factory = snapshot.get("factory")
-        requested_profile = (
-            "school/boolean/full" if full_grade_b
-            else "school/boolean-kernel/and-iff")
+        requested_profile = legacy_boolean_profile_request(
+            full_grade_b=full_grade_b)
         if factory is not None:
             snapshot["execution_profile"] = {
                 "active_profile_id": factory["profile_id"],
@@ -353,11 +318,10 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         else:
             snapshot["legacy_profile"] = legacy_profile_label(
                 saved, full_grade_b=full_grade_b)
-        if (not full_grade_b and (boolean_composite or boolean_idboolops)):
-            snapshot["legacy_boolean_revision_flags"] = {
-                "ignored": True,
-                "reason": "MINIMAL_GRADE_B_ALREADY_INCLUDES_SIMPLIFIED_COMPOSITE_AND_IDBOOLOPS",
-            }
+        snapshot.update(legacy_ignored_boolean_revision_flags(
+            full_grade_b=full_grade_b,
+            boolean_composite=boolean_composite,
+            boolean_idboolops=boolean_idboolops))
     if verify_source:
         from .grade_a_manifest import verify_manifest
         source = json.loads(GRADE_A_MANIFEST.read_text(encoding="utf-8"))
@@ -399,21 +363,14 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
     else:
         snapshot["source_manifest_preflight"] = "NOT_RERUN_USE_--verify-source"
     if boolean_association_bridge:
-        from .boolean_association import VERSION, constructor_digest
         from .runtime.admission import admitted_release_supports_teaching_option
         saved = read_current(run_dir)
-        if not admitted_release_supports_teaching_option(run_dir, saved, VERSION):
-            snapshot["blockers"].append("TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE")
-        snapshot["boolean_association_bridge"] = {
-            "enabled_for_next_human_command": True,
-            "version": VERSION,
-            "generator_code_sha256": constructor_digest(),
-            "authority": "FACTORY_RELEASE_TEACHING_OPTION",
-            "exam_rubric_changed": False,
-            "grade_a_pass_fail_changed": False,
-            "grade_c_pass_fail_changed": False,
-            "neural_updates": 0,
-        }
+        bridge = legacy_boolean_association_bridge_fields()
+        if not admitted_release_supports_teaching_option(
+                run_dir, saved, bridge["version"]):
+            snapshot["blockers"].append(
+                "TEACHING_ENRICHMENT_NOT_ADMITTED_BY_FACTORY_RELEASE")
+        snapshot["boolean_association_bridge"] = bridge
     # The source remains unchanged. This probes only current disk headroom.
     snapshot["disk"] = assert_headroom(ROOT, required_bytes=0)
     return _print_status(snapshot)
@@ -627,7 +584,8 @@ def _prepare_live_board(args, build, ingest):
         runtime_phase = event.get("_runtime_phase")
         if isinstance(runtime_phase, str) and runtime_phase:
             board.state["phase"] = runtime_phase
-        if event.get("event") not in ("GRADE_A_SESSION_STOPPED", "SCHOOL_SESSION_STOPPED"):
+        if (event.get("event") != "SCHOOL_SESSION_STOPPED" and
+                not historical_session_stop(event.get("event"))):
             board.mode = live_mode
             board.state["stop"] = "RUNNING"
         if event.get("_dashboard_redraw", True):

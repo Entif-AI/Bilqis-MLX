@@ -28,6 +28,27 @@ BOOLEAN_RELEASES = (
 )
 
 
+def legacy_qualification_scope() -> dict:
+    """Report Grade-A-era qualification evidence without replaying it."""
+    return {
+        "disposable_full_student_optimizer_continuation": {
+            "status": "PREVIOUSLY_VERIFIED_CPU_AND_APPLE_GPU",
+            "scope": "ONE_DETACHED_STEP_AND_COMPLETE_39_TENSOR_ADAMW_RESTART",
+            "evidence": "docs/evidence/grades/GRADE_A_REPAIR_AND_BACKEND_20261015.md",
+            "recheck": "npm run mlx:qualify",
+            "freshly_rerun_by_this_command": False,
+        },
+        "human_live_grade_a_trainer_end_to_end_qualified": False,
+        "human_experimental_trainer_implemented": True,
+        "operator_release": "HUMAN_EXPLICIT_--human-run_ONLY",
+    }
+
+
+def historical_session_stop(event_name: object) -> bool:
+    """Recognize the Grade-A stop event superseded by the school event."""
+    return event_name == "GRADE_A_SESSION_STOPPED"
+
+
 def legacy_status_fields(saved: dict) -> dict:
     mode = saved.get("curriculum_mode")
     return {
@@ -51,6 +72,19 @@ def legacy_new_run_status_fields() -> dict:
         "grade_a_release": INITIAL_RELEASE,
         "historical_source_release": GRADE_A_RELEASE,
         "grade_a_curriculum_mode": INITIAL_RELEASE,
+    }
+
+
+def legacy_new_run_inspection(*, historical_seed: dict) -> dict:
+    """Render the Grade-A-only status contract before a saved school exists."""
+    return {
+        "status": "GRADE_A_EXPERIMENTAL_HUMAN_LAUNCH_AVAILABLE",
+        "grade": "A",
+        "phase": "READY_FOR_HUMAN_GRADE_A_START",
+        "historical_seed": historical_seed,
+        **legacy_new_run_status_fields(),
+        "grade_a_curriculum": "SIX_SOURCE_TYPED_PREDICATES_FRESH_GENERATED_COHORTS",
+        "source_grounded_grade_a_admitted": True,
     }
 
 
@@ -88,4 +122,82 @@ def legacy_numeric_scope(saved: dict) -> dict:
         "resume_maximum": saved.get("numeric_maximum", INITIAL_MAXIMUM),
         "neural_updates": 0,
         "legacy_release": NUMERIC_STAIRCASE_RELEASE,
+    }
+
+
+def legacy_numeric_staircase_preflight(
+        saved: dict, *, maximum, checkpoint_sha256: str | None,
+        factory: dict | None) -> dict:
+    """Project the historical numeric-staircase request into CLI wire fields."""
+    from ..numeric_staircase import INITIAL_MAXIMUM, FINAL_MAXIMUM
+
+    scope = legacy_numeric_scope(saved)
+    return {
+        "authority": "EXECUTABLE_FACTORY_NUMERIC_PROFILE",
+        "initial_maximum": INITIAL_MAXIMUM,
+        "final_maximum": FINAL_MAXIMUM,
+        "resume_maximum": (
+            maximum if isinstance(maximum, int)
+            else scope.get("resume_maximum", 3)),
+        "source_student_sha256": checkpoint_sha256,
+        "neural_updates": 0,
+        "profile_id": factory.get("profile_id") if factory is not None else None,
+    }
+
+
+def legacy_boolean_revision_preflight(
+        *, resume: bool, boolean_composite: bool,
+        boolean_idboolops: bool, checkpoint_sha256: str | None) -> dict:
+    """Describe legacy Boolean flags now represented by teaching stages."""
+    if not boolean_composite and not boolean_idboolops:
+        return {}
+    if not resume:
+        if boolean_composite:
+            raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_RESUME")
+        raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_RESUME")
+    if not isinstance(checkpoint_sha256, str) or not checkpoint_sha256:
+        raise ValueError("BOOLEAN_REVISION_SOURCE_STUDENT_MISSING")
+    return {
+        "legacy_boolean_revision_flags": {
+            "composite_requested": boolean_composite,
+            "idboolops_requested": boolean_idboolops,
+            "authority": "CANONICAL_PROFILE_TEACHING_STAGES",
+            "separate_release_enrollment": False,
+            "source_student_sha256": checkpoint_sha256,
+            "neural_updates": 0,
+        }
+    }
+
+
+def legacy_boolean_profile_request(*, full_grade_b: bool) -> str:
+    return ("school/boolean/full" if full_grade_b
+            else "school/boolean-kernel/and-iff")
+
+
+def legacy_ignored_boolean_revision_flags(
+        *, full_grade_b: bool, boolean_composite: bool,
+        boolean_idboolops: bool) -> dict:
+    if full_grade_b or not (boolean_composite or boolean_idboolops):
+        return {}
+    return {
+        "legacy_boolean_revision_flags": {
+            "ignored": True,
+            "reason": "MINIMAL_GRADE_B_ALREADY_INCLUDES_SIMPLIFIED_COMPOSITE_AND_IDBOOLOPS",
+        }
+    }
+
+
+def legacy_boolean_association_bridge_fields() -> dict:
+    """Describe the historical Boolean association bridge without admission."""
+    from ..boolean_association import VERSION, constructor_digest
+
+    return {
+        "enabled_for_next_human_command": True,
+        "version": VERSION,
+        "generator_code_sha256": constructor_digest(),
+        "authority": "FACTORY_RELEASE_TEACHING_OPTION",
+        "exam_rubric_changed": False,
+        "grade_a_pass_fail_changed": False,
+        "grade_c_pass_fail_changed": False,
+        "neural_updates": 0,
     }
