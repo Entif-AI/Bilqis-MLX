@@ -20,6 +20,7 @@ Enrich = Callable[..., tuple[dict, ...]]
 Check = Callable[..., bool]
 Witness = Callable[..., bool]
 Dependencies = Callable[..., tuple[SupplementalEvidenceSpec, ...]]
+SemanticFootprint = Callable[[dict], tuple[str, ...]]
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,7 @@ class RegisteredSourceAdapter:
     enrich: Enrich | None = None
     witness: Witness | None = None
     dependencies: Dependencies | None = None
+    semantic_footprint: SemanticFootprint | None = None
 
 
 class SourceAdapterRegistry:
@@ -45,7 +47,9 @@ class SourceAdapterRegistry:
                 (adapter.enrich is not None and not callable(adapter.enrich)) or
                 (adapter.witness is not None and not callable(adapter.witness)) or
                 (adapter.dependencies is not None and
-                 not callable(adapter.dependencies))):
+                 not callable(adapter.dependencies)) or
+                (adapter.semantic_footprint is not None and
+                 not callable(adapter.semantic_footprint))):
             raise ValueError("FACTORY_SOURCE_CONSTRUCTOR_AND_CHECKER_REQUIRED")
         key = adapter.descriptor.generator_id
         if key in self._by_generator:

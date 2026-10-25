@@ -79,6 +79,40 @@ class ExecutableFactoryReleaseTests(unittest.TestCase):
             verification_seed=20261019,
         )
 
+    def test_semantic_footprint_is_runtime_only_and_preserves_release_identity(self):
+        from unittest.mock import Mock
+        baseline = self.compile()
+        payload = json.dumps(baseline.manifest(), sort_keys=True)
+        binding = self.bindings.bindings[0]
+        original = self.registry.require(binding.generator_id, binding.oracle_id)
+        callback = Mock(return_value=("fixture.semantic.root",))
+        registered = replace(original, semantic_footprint=callback)
+        self.registry = SourceAdapterRegistry((registered,))
+        resolved = self.registry.require(binding.generator_id, binding.oracle_id)
+        row = {"query": {"kind": "fixture"}}
+        self.assertEqual(resolved.semantic_footprint(row), ("fixture.semantic.root",))
+        callback.assert_called_once_with(row)
+        callback.reset_mock()
+        compiled = self.compile()
+        self.assertEqual(json.dumps(compiled.manifest(), sort_keys=True), payload)
+        self.assertEqual(compiled.release_sha256, baseline.release_sha256)
+        restored = ExecutableFactoryRelease.from_manifest(
+            json.loads(payload), baseline.release_sha256)
+        self.assertEqual(restored, compiled)
+        self.assertEqual(registered.descriptor, original.descriptor)
+        callback.assert_not_called()
+
+    def test_historical_registration_keeps_optional_footprint_uninvoked(self):
+        binding = self.bindings.bindings[0]
+        adapter = self.registry.require(binding.generator_id, binding.oracle_id)
+        self.assertIsNone(adapter.semantic_footprint)
+        self.compile().verify()
+        self.registry.descriptors_for(self.course)
+        for invalid in (False, "callback", (), {}):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(
+                    ValueError, "FACTORY_SOURCE_CONSTRUCTOR_AND_CHECKER_REQUIRED"):
+                SourceAdapterRegistry((replace(adapter, semantic_footprint=invalid),))
+
     def test_full_graph_binding_rejects_same_catalog_substitution(self):
         from bilqis_mlx.factory.executable_release import _digest
 
