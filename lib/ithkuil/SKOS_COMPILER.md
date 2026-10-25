@@ -1152,3 +1152,99 @@ source/canonical digest binding, exact accounting failures, explicit held behavi
 an unreviewed source mode, and canonical/receipt equality after reversing root,
 sense, and evidence rows. Fresh-process proof is run with different hash seeds and
 working directories over the same explicit source and staged-module paths.
+
+## Concept-level definition normalization (#46)
+
+#46 adds a deterministic post-#45 text-normalization step without changing semantic
+identity or inventing prose:
+
+`normalize_atomic_definitions(closure, resolution, realizations=None) -> DefinitionNormalization`
+
+The result contains a derived `Resolution` suitable for the existing builder/ledger,
+an exact-source definition inventory, per-source-row classifications, and any newly
+held `ResolutionIssue`s. `definition_graph(result)` projects only selected exact source
+text as concept-scoped `skos:definition` triples through the existing #34 text profile.
+
+### Classification domain
+
+Every atomic `semantic_summary` candidate processed by this leaf receives one of the
+contract classes:
+
+`CONCEPT_DEFINITION | REALIZATION_NOTE | SOURCE_EDITORIAL | HELD_CONFLICT | IGNORE_WITH_REASON`
+
+The current source uses the first two only. The latter three remain explicit legal
+states so future source/editorial shapes cannot fall through into an implicit choice.
+
+The deterministic current rules are deliberately narrow:
+
+1. One summary, or multiple realization rows with the exact same summary, is an exact
+   source-backed concept definition. All contributing rows remain provenance sources.
+2. A two-row `underlying_glottal` / `realized_allomorph` pair with one allomorph group
+   is normalized only when the realized summary is literally `<base> realized glottal
+   form`. The underlying summary is the definition; the qualified source text remains
+   a realization note. No suffix is removed to create new prose.
+3. A fixed Register adjunct summary whose literal ending names its source slot
+   (`register initial adjunct` or `register final adjunct`) remains a realization note.
+   When both variants exist, no common-prefix “definition” is synthesized.
+4. Any other divergent semantic summaries for one identity become
+   `CONFLICTING_SEMANTIC_MEANING` with exact source rows and `field=semantic_summary`.
+
+### Current source proof
+
+The tracked atomic grammar inventory contains 607 realization rows for 485 grammar
+semantic keys. The summary shapes are:
+
+- 363 single-row/single-summary identities;
+- 84 multi-realization identities whose summaries are byte-for-byte identical;
+- 32 Case identities with the exact underlying/realized-glottal source pattern;
+- 6 Register identities whose initial/final summaries are explicitly realization-slot
+  wording.
+
+The resulting current normalization has:
+
+- 479 concepts with exact source `skos:definition` text;
+- 563 source candidates classified `CONCEPT_DEFINITION`;
+- 44 source candidates classified `REALIZATION_NOTE`;
+- 6 Register concepts with notes only and no fabricated concept definition;
+- zero held definition conflicts.
+
+Representative literal fixtures pin Configuration DDS, Effect 1:BEN, Case ACT, and
+Register DSV source row IDs, source-assertion IDs, source loci, summary text, realization
+types, grouping metadata, and the exact expected definition/note disposition.
+
+### Builder and ledger integration
+
+For admitted grammar resources, #46 removes source-note assertions that have been
+promoted to exact concept definitions while preserving realization-specific notes.
+The semantic identity, source rows, notation realizations, labels, families and schemes
+remain unchanged. `definition_graph()` supplies the exact concept-definition triples.
+
+For an unresolved summary conflict the resource is removed from the derived
+`Resolution` and an ordinary `ResolutionIssue` with the already-governed #42 reason
+`CONFLICTING_SEMANTIC_MEANING` is added. The existing builder therefore emits no strong
+resource, and the existing ledger marks every implicated atomic row `HELD` without a
+new ledger architecture or explicit-disposition bypass.
+
+### Negative proof
+
+The hardening fixture changes the conditioned Effect 1:BEN summary to a genuinely
+different claim. Both physical source rows are reported, both candidates classify as
+`HELD_CONFLICT`, the grammar resource disappears from the derived resolution, the
+builder emits no `skos:Concept`, and #42 records both rows as
+`HELD / CONFLICTING_SEMANTIC_MEANING`. Reversing every table and row yields the same
+normalization and conflict receipt.
+
+### Proof recipe
+
+The focused proof uses the run-root environment and a bounded package overlay made of
+repo symlinks plus staged #45/#46 modules only:
+
+```text
+python3 -B \
+  -m unittest -v \
+  lib.ithkuil.tests.test_skos_definition \
+  lib.ithkuil.tests.test_skos_definition_hardening
+```
+
+No model, English-label match, row-order tie-break, Falkor state, curriculum order, or
+filesystem coordinate participates in definition selection.

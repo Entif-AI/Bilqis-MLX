@@ -1,0 +1,89 @@
+{
+  "fixture_schema": "bilqis.skos.definition-normalized-fixture/v1",
+  "expected_current_counts": {
+    "classification_counts": {
+      "CONCEPT_DEFINITION": 563,
+      "REALIZATION_NOTE": 44
+    },
+    "definitions": 479,
+    "held_conflicts": 0,
+    "notes_only_concepts": 6
+  },
+  "cases": {
+    "CASE::ACT": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CASE/ACT",
+      "definition": "activative case",
+      "candidates": [
+        {
+          "atomic_id": "ATOM-1dd3cebdcc2f9f",
+          "classification": "CONCEPT_DEFINITION",
+          "reason": "exact underlying source summary",
+          "text": "activative case"
+        },
+        {
+          "atomic_id": "ATOM-b0078ab5063976",
+          "classification": "REALIZATION_NOTE",
+          "reason": "explicit realized-glottal qualifier",
+          "text": "activative case realized glottal form"
+        }
+      ],
+      "remaining_realization_notes": [
+        "activative case realized glottal form"
+      ]
+    },
+    "REGISTER::DSV": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/REGISTER/DSV",
+      "definition": null,
+      "candidates": [
+        {
+          "atomic_id": "ATOM-0c655eea22faae",
+          "classification": "REALIZATION_NOTE",
+          "reason": "summary explicitly names register realization slot",
+          "text": "discursive (direct speech) register final adjunct"
+        },
+        {
+          "atomic_id": "ATOM-257e51f4a984fb",
+          "classification": "REALIZATION_NOTE",
+          "reason": "summary explicitly names register realization slot",
+          "text": "discursive (direct speech) register initial adjunct"
+        }
+      ],
+      "remaining_realization_notes": [
+        "discursive (direct speech) register final adjunct",
+        "discursive (direct speech) register initial adjunct"
+      ]
+    },
+    "CONFIGURATION::DDS": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDS",
+      "definition": "Configuration value duplex/dissimilar/separate",
+      "candidates": [
+        {
+          "atomic_id": "ATOM-02a4496bfbac3a",
+          "classification": "CONCEPT_DEFINITION",
+          "reason": "stable identity-level source summary",
+          "text": "Configuration value duplex/dissimilar/separate"
+        }
+      ],
+      "remaining_realization_notes": []
+    },
+    "EFFECT::1:BEN": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/EFFECT/1%3ABEN",
+      "definition": "Effect value 1:BEN",
+      "candidates": [
+        {
+          "atomic_id": "ATOM-bab207e06f0db1",
+          "classification": "CONCEPT_DEFINITION",
+          "reason": "stable identity-level source summary",
+          "text": "Effect value 1:BEN"
+        },
+        {
+          "atomic_id": "ATOM-c2249e51c173ff",
+          "classification": "CONCEPT_DEFINITION",
+          "reason": "stable identity-level source summary",
+          "text": "Effect value 1:BEN"
+        }
+      ],
+      "remaining_realization_notes": []
+    }
+  }
+}
