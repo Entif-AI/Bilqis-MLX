@@ -984,3 +984,42 @@ Current proof: all 1,615 parsed lexicon sense rows produce 1,615 independently
 addressable concepts with zero held rows. The copular root has 12 distinct concepts.
 Changing the legacy ID of a real source row leaves its concept IRI unchanged, and
 reordering all sense rows leaves the canonical graph unchanged.
+
+## Stem and Specification dimensions (#52)
+
+`project_lexicon_dimensions(closure)` adds the source's lexical dimensions to the
+stable #51 sense concepts without changing their identity. Three issue-local Bilqis
+predicates are necessary because SKOS and DC Terms do not define New Ithkuil Stem,
+Specification, or extractor-locus roles:
+
+- `bilqis:lexiconStem`
+- `bilqis:lexiconSpecification`
+- `bilqis:sourceLocusKind`
+
+The first two are semantic dimensions. `sourceLocusKind` is source-mode metadata and
+remains separate from the sense meaning. Its values are exactly the current IR enum:
+`table`, `prose`, or `compact_numbered_stem`.
+
+Blank source Stem coordinates are represented by the already-governing #31 canonical
+value `ROOT-WIDE`; `STEM 1`, `STEM 2`, `STEM 3`, and `STEMS 1-3` remain distinct.
+Specification remains one of `BSC`, `CTE`, `CSV`, `OBJ`. The projector emits no
+`skos:broader`, `skos:narrower`, collection ordering, or curriculum relation from
+these dimensions.
+
+The source extractor states that some prose and compact-numbered rows arise where a
+root inherits another root's Specification pattern. The relational IR does not carry
+a separate boolean `inherited` field. #52 therefore preserves the exact recorded
+`source_locus_kind` and does not reverse-engineer an inheritance flag from spelling,
+blank fields, row adjacency, or model judgment. Direct table rows remain queryably
+different from prose/compact source modes.
+
+`query_senses(records, parent_root=..., stem=..., specification=...)` performs an
+exact deterministic dimension query. It returns stable sense identities and assigns
+no ordering semantics to Stem numbers.
+
+Current proof covers all 1,615 senses with exactly one Stem, Specification, and
+source-locus-kind assertion each. Fixtures include a direct table sense (`-SČ-`), a
+prose inherited-pattern shape (`-RMC-`), compact numbered inherited stems (`-KŢG-`),
+and the source's combined `STEMS 1-3` coordinate (`-ŘḐŘ-`). Unknown source modes are
+held instead of guessed; an impossible `STEM 4` remains held by the upstream identity
+contract. Reordering source rows leaves canonical dimension RDF unchanged.
