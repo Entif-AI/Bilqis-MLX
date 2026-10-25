@@ -216,9 +216,10 @@ def _fragile_replay_evidence(
         mx, run_dir, receipt, parent, candidate, config, answer_ids,
         frontier_parent, frontier_candidate):
     from bilqis_mlx.learning.fragile_replay import load_replay_rows, screen_replay
+    policy = _profiles_retention.fragile_preservation_policy()
     replay_rows = load_replay_rows(
         run_dir, receipt,
-        capabilities=_profiles_retention.fragile_preservation_capabilities())
+        capabilities=policy.capabilities)
     if not replay_rows:
         return {
             "status": "NOT_MEASURED",
@@ -321,7 +322,7 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
                                      executable_release=None):
     """Generate fresh semantic siblings for the configured fragile safety rows.
 
-    Rehearsal is active only after a source-verified B replay exam exists.
+    Rehearsal is active only after a source-verified replay exam exists.
     The fixed examination rows themselves are never delivered to the optimizer.
     """
     from bilqis_mlx.learning.fragile_replay import load_replay_rows, fresh_preservation_rows
