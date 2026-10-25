@@ -28,6 +28,34 @@ class CatalogProfileTransition:
     numeric_scope_final_maximum: int | None = None
 
 
+def numeric_scope_bounds() -> tuple[int, int]:
+    from ..numeric_staircase import INITIAL_MAXIMUM, FINAL_MAXIMUM
+    return INITIAL_MAXIMUM, FINAL_MAXIMUM
+
+
+def next_school_transition(release, graph, *, full_boolean, numeric_staircase,
+                           final_scope=None):
+    """Author the existing school's next profile; runtime consumes the value."""
+    active = tuple(grade.grade_id for grade in release.execution_plan.grades)
+    next_index = len(active)
+    next_grade = (release.curriculum.grades[next_index].grade_id
+                  if next_index < len(release.curriculum.grades) else None)
+    if active == ("A",) and next_grade == "B":
+        profile = with_disabled_future_grades(
+            boolean_entry_profile(full=full_boolean),
+            tuple(grade.grade_id for grade in release.curriculum.grades[2:]))
+        return CatalogProfileTransition(profile, graph)
+    if active == ("A", "B") and next_grade == "C":
+        transition = numeric_entry_transition(
+            release, graph, full_boolean=full_boolean,
+            maximum=3 if numeric_staircase or final_scope is not None else 10)
+        if final_scope is not None:
+            from dataclasses import replace
+            transition = replace(transition, numeric_scope_final_maximum=final_scope)
+        return transition
+    return None
+
+
 def numeric_entry_transition(
         release: ExecutableFactoryRelease, graph: dict, *,
         full_boolean: bool, maximum: int = 3) -> CatalogProfileTransition:

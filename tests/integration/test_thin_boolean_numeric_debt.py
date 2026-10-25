@@ -100,7 +100,7 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                         'numeric_scope_final_maximum': 4}
                     from bilqis_mlx.runtime import release_adoption
                     runtime_dispatch = release_adoption._auto_adopt_known_grade_boundary
-                    with patch('bilqis_mlx.profiles.school.boolean_entry_profile', return_value=profile):
+                    with patch('bilqis_mlx.profiles.catalog.boolean_entry_profile', return_value=profile):
                         with patch.object(release_adoption,
                                 '_auto_adopt_known_grade_boundary',
                                 wraps=runtime_dispatch) as dispatch_spy:

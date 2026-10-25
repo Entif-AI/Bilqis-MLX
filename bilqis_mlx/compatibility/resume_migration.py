@@ -1,19 +1,20 @@
 """One-time migrations for receipts predating executable factory v2."""
 from __future__ import annotations
 
-import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
-
 from dataclasses import asdict, replace
+import json
 
 from .live_releases import INITIAL_RELEASE
 
 
-def migrate_historical_grade_a(
-        run_dir, receipt, school, live_course, historical_course, manifest):
+def migrate_historical_grade_a(receipt, school, live_course, manifest):
     """Archive fixed-rubric Grade-A authority and rebind to generated live A."""
 
+    if json.dumps(asdict(school), sort_keys=True) != json.dumps(receipt.get("school"), sort_keys=True):
+        raise ValueError("HISTORICAL_MIGRATION_SCHOOL_DRIFT")
+    if receipt.get("historical_grade_champions") is not None:
+        return None
     legacy_frontier = receipt.get("capability_best", {})
-    _runtime_checkpoints._verify_best_custody(run_dir, receipt)
     historical_champions = dict(school.champions)
     if historical_champions:
         school = replace(
@@ -31,20 +32,18 @@ def migrate_historical_grade_a(
         course_digest=live_course.digest(),
         latest_rubric_digest=None,
     )
-    record = dict(receipt)
+    record = {**receipt, "school": asdict(school)}
     record["historical_capability_best"] = legacy_frontier
     record["historical_grade_champions"] = {
         key: asdict(item) for key, item in historical_champions.items()}
     record["capability_best"] = {}
     record["curriculum_mode"] = INITIAL_RELEASE
     record["legacy_frontier_pending_replay"] = bool(legacy_frontier)
-    receipt = _runtime_checkpoints._advance(run_dir, record, school)
-    _runtime_checkpoints._record(run_dir, {
+    event = {
         "event": "SCHOOL_LIVE_GRADE_A_MIGRATED",
-        "generation": receipt["generation"],
         "historical_rubric": manifest["exam_rubric_sha256"],
         "live_rubric": live_course.grades[0].assessment_sha256,
         "legacy_best_slots": len(legacy_frontier),
         "source_student_unchanged": True,
-    })
-    return receipt, school
+    }
+    return record, school, event

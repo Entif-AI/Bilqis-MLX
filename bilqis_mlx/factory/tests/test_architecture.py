@@ -146,6 +146,18 @@ class FactoryArchitectureTests(unittest.TestCase):
     def test_current_repository_has_no_factory_bypass(self):
         self.assertEqual(inspect_factory_architecture(ROOT), ())
 
+    def test_retired_current_transition_cannot_be_restored_or_reexported(self):
+        for source in (
+            "def activate_numeric_grade(): pass\n",
+            "from somewhere import next_grade_readiness\n",
+        ):
+            with tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                (root / "bilqis_mlx/factory").mkdir(parents=True)
+                (root / "bilqis_mlx/grade_transition.py").write_text(source)
+                self.assertTrue(any("RETIRED_CURRENT_TRANSITION" in item
+                                    for item in inspect_factory_architecture(root)))
+
     def test_future_grade_runtime_fork_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -156,7 +168,7 @@ class FactoryArchitectureTests(unittest.TestCase):
                 "def operate():\n _require_factory_admission()\n"
                 "def _activate_next_admitted_grade():\n _factory_admission()\n")
             (root / "bilqis_mlx/grade_transition.py").write_text(
-                "def activate_numeric_grade():\n _factory_admission()\n")
+                "# Historical evidence digests only.\n")
             (root / "bilqis_mlx/numeric_staircase.py").write_text(
                 "def _rebind():\n _factory_admission()\n")
             problems = inspect_factory_architecture(root)
@@ -173,7 +185,7 @@ class FactoryArchitectureTests(unittest.TestCase):
                 "def operate():\n _require_factory_admission()\n"
                 "def _activate_next_admitted_grade():\n _factory_admission()\n")
             (root / "bilqis_mlx/grade_transition.py").write_text(
-                "def activate_numeric_grade():\n _factory_admission()\n")
+                "# Historical evidence digests only.\n")
             (root / "bilqis_mlx/numeric_staircase.py").write_text(
                 "def _rebind():\n _factory_admission()\n")
             problems = inspect_factory_architecture(root)
@@ -189,7 +201,7 @@ class FactoryArchitectureTests(unittest.TestCase):
                 "def operate():\n pass\n"
                 "def _activate_next_admitted_grade():\n _factory_admission()\n")
             (root / "bilqis_mlx/grade_transition.py").write_text(
-                "def activate_numeric_grade():\n _factory_admission()\n")
+                "# Historical evidence digests only.\n")
             (root / "bilqis_mlx/numeric_staircase.py").write_text(
                 "def _rebind():\n _factory_admission()\n")
             problems = inspect_factory_architecture(root)
@@ -209,7 +221,7 @@ class FactoryArchitectureTests(unittest.TestCase):
                 " _require_executable_factory_admission()\n"
                 " _executable_factory_admission()\n")
             (root / "bilqis_mlx/grade_transition.py").write_text(
-                "def activate_numeric_grade():\n _factory_admission()\n")
+                "# Historical evidence digests only.\n")
             (root / "bilqis_mlx/numeric_staircase.py").write_text(
                 "def _rebind():\n _factory_admission()\n")
             self.assertEqual(inspect_factory_architecture(root), ())

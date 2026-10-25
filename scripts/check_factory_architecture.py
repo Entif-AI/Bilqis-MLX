@@ -259,8 +259,16 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
             problems.append("bilqis_mlx/grade_a_trainer.py LEGACY_RUNTIME_OWNS_BEHAVIOR")
 
     transition = src / "grade_transition.py"
-    if "_factory_admission" not in _function_calls(transition, "activate_numeric_grade"):
-        problems.append("bilqis_mlx/grade_transition.py C_ADMISSION_BYPASSES_FACTORY_RELEASE")
+    if transition.is_file():
+        tree = ast.parse(_source(transition))
+        for node in ast.walk(tree):
+            if (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and
+                    node.name in {"activate_numeric_grade", "next_grade_readiness"}):
+                problems.append("bilqis_mlx/grade_transition.py RETIRED_CURRENT_TRANSITION")
+            if isinstance(node, ast.ImportFrom) and any(
+                    item.name in {"activate_numeric_grade", "next_grade_readiness"}
+                    for item in node.names):
+                problems.append("bilqis_mlx/grade_transition.py RETIRED_CURRENT_TRANSITION")
     staircase = src / "numeric_staircase.py"
     if "_factory_admission" not in _function_calls(staircase, "_rebind"):
         problems.append("bilqis_mlx/numeric_staircase.py SCOPE_RELEASE_BYPASSES_FACTORY_RELEASE")

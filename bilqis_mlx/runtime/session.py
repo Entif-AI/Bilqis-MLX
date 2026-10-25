@@ -156,6 +156,79 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
     return parameters, optimizer, graph, receipt
 
 
+def _recovery_baseline(run_dir, receipt):
+    """Apply recovery only to the current durable generation under operator lock."""
+    if _state_dag.read_current(run_dir) != receipt:
+        raise ValueError("HISTORICAL_RECOVERY_BASELINE_DRIFT")
+    recovered = _runtime_checkpoints._recover_orphaned_commit(run_dir, receipt)
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, recovered)
+    return recovered
+
+
+def _migrate_historical_grade_a(run_dir, receipt, school, live_course, manifest):
+    from ..compatibility.resume_migration import migrate_historical_grade_a
+    receipt = _recovery_baseline(run_dir, receipt)
+    if receipt.get("historical_grade_champions") is not None:
+        return receipt, _runtime_state._state_from_json(receipt["school"], live_course)
+    _runtime_checkpoints._verify_best_custody(run_dir, receipt)
+    planned = migrate_historical_grade_a(receipt, school, live_course, manifest)
+    if planned is None:
+        return receipt, school
+    values, school, event = planned
+    record = _runtime_checkpoints._advance(run_dir, values, school, persist=False)
+    event = {**event, "generation": record["generation"]}
+    record = _runtime_checkpoints._persist(run_dir,
+        _runtime_checkpoints._with_delivery_outbox(record, (event,)))
+    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
+    return record, school
+
+
+def _recover_legacy_frontier(mx, run_dir, receipt, course, parameters):
+    """Idempotently bind an early Grade-C frontier to its graph-grown parent."""
+    from bilqis_mlx.learning.student_ops import _predictions
+    from bilqis_mlx.runtime.checkpoints import _advance, _persist, _with_delivery_outbox, _reconcile_delivery_outbox
+
+    from ..compatibility.frontier_recovery import recover_legacy_frontier
+    receipt = _recovery_baseline(run_dir, receipt)
+    source_exam = recover_legacy_frontier(mx, run_dir, receipt)
+    if source_exam is None:
+        return receipt
+    school = _runtime_state._state_from_json(receipt["school"], course)
+    previous_caps = (receipt.get("mentor_epoch") or {}).get("previous_capabilities") or ()
+    previous_grade = (
+        previous_caps[-1].partition(".")[0] if previous_caps else None)
+    from ..fixed_frontier import load_frontier_cohort, rebaseline_frontier_exam
+    cohort = load_frontier_cohort(run_dir, source_exam)
+    guesses = _predictions(
+        mx, parameters, list(cohort.rows), receipt["config"], receipt["answer_ids"])
+    migrated_exam = rebaseline_frontier_exam(
+        run_dir, source_exam, checkpoint=_dataclasses.asdict(school.current_student),
+        predictions=guesses,
+        assessment_grade=source_exam.get("assessment_grade", previous_grade),
+        grade_exam_epoch=source_exam.get("grade_exam_epoch"))
+    migrated = {**receipt,
+                "last_exam": migrated_exam,
+                "grade_c_fixed_frontier_cohort_sha256": cohort.digest}
+    record = _advance(
+        run_dir, migrated, school, last_exam=migrated_exam,
+        result=receipt.get("result"), persist=False)
+    event = {
+        "event": "SCHOOL_FIXED_FRONTIER_REBASELINED",
+        "generation": record["generation"],
+        "grade": school.grade,
+        "student_sha256": school.current_student.sha256,
+        "optimizer_step": school.current_student.optimizer_step,
+        "previous_student_sha256": source_exam.get("student_sha256"),
+        "cohort_sha256": cohort.digest,
+        "rows": len(cohort.rows),
+        "actual_neural_updates": 0,
+    }
+    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
+    _reconcile_delivery_outbox(run_dir, record)
+    return record
+
+
+
 def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
             source_root, successor_course=None, admitted_courses=None):
     import mlx.core as mx
@@ -214,8 +287,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
             run_dir, receipt, old_course,
             sealed_v1_release=sealed_v1_release)
     mx.eval(parameters, optimizer.state)
-    from bilqis_mlx.compatibility.frontier_recovery import recover_legacy_frontier
-    receipt = recover_legacy_frontier(mx, run_dir, receipt, old_course, parameters)
+    receipt = _recover_legacy_frontier(mx, run_dir, receipt, old_course, parameters)
     school = _runtime_state._state_from_json(receipt["school"], school_program)
     if "capability_best" not in receipt:
         # Existing full-history run: reconstruct bests from actual sealed
@@ -234,11 +306,8 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
                           "champion_roles": len(frontier),
                           "whole_student_unchanged": True})
     if old_mode:
-        from bilqis_mlx.compatibility.resume_migration import (
-            migrate_historical_grade_a,
-        )
-        receipt, school = migrate_historical_grade_a(
-            run_dir, receipt, school, course, old_course, manifest)
+        receipt, school = _migrate_historical_grade_a(
+            run_dir, receipt, school, course, manifest)
     active_course = course if old_mode else old_course
     receipt, _, _ = _runtime_release_adoption._ensure_executable_release(
         run_dir, receipt, active_course, grade_a_course, source_root, graph)
