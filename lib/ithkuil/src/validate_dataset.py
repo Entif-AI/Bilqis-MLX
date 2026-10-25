@@ -145,6 +145,63 @@ def main() -> None:
             import io
             stream=io.StringIO(newline='');writer=csv.DictWriter(stream,fieldnames=list(rows[0]),lineterminator='\n');writer.writeheader();writer.writerows(rows)
             require(hashlib.sha256(stream.getvalue().encode()).hexdigest()==profile['legacy_table_sha256'][name],'earlier chapter bytes drift: '+name)
+        pins=json.loads((ROOT/'src/lexicon_frontier_pins.json').read_text())
+        receipts=profile.get('chapter_receipts',{})
+        admitted=set(profile.get('admitted_chapters',[]))
+        require(set(receipts)==admitted,'lexicon frontier chapter receipt set drift')
+        parser_digest=hashlib.sha256((ROOT/'src/lexicon_frontier.py').read_bytes()).hexdigest()
+        legacy_parser_digest=hashlib.sha256((ROOT/'src/build_lexicon_chapters.py').read_bytes()).hexdigest()
+        allowed_statuses={'PARSED','DEBT_UNSUPPORTED_SHAPE','DEBT_INSUFFICIENT_SENSE_EVIDENCE','DEBT_AMBIGUOUS_LOCUS','DEBT_CONFLICT'}
+        locus_fields={'table':{'kind','pdf_page','table_index','row','column'},
+                      'prose':{'kind','pdf_page','line_start','line_end'},
+                      'root':{'kind','pdf_page','line','lexicon_section'}}
+        for chapter in sorted(admitted,key=int):
+            receipt=receipts[chapter]
+            pin=pins.get('chapters',{}).get(chapter)
+            require(pin is not None,'lexicon frontier receipt references unpinned chapter '+chapter)
+            require(receipt.get('chapter')==chapter and receipt.get('source',{}).get('sha256')==pin['sha256'],
+                    'lexicon frontier source pin drift: chapter '+chapter)
+            require(receipt['source'].get('filename')==pin['filename'] and receipt['source'].get('page_count')==pin['page_count'],
+                    'lexicon frontier source identity drift: chapter '+chapter)
+            require(receipt['source'].get('canonical_sha256')==pins['canonical_sha256'],
+                    'lexicon frontier canonical source digest drift: chapter '+chapter)
+            require(receipt.get('parser',{}).get('sha256')==parser_digest and
+                    receipt.get('parser',{}).get('legacy_sha256')==legacy_parser_digest,
+                    'lexicon frontier parser receipt stale: chapter '+chapter)
+            accounting_path=SOURCES/'lexicon_frontier'/('chapter-'+chapter+'-accounting.json')
+            accounting_bytes=accounting_path.read_bytes()
+            require(hashlib.sha256(accounting_bytes).hexdigest()==receipt.get('accounting_sha256'),
+                    'lexicon frontier accounting artifact digest drift: chapter '+chapter)
+            accounting=json.loads(accounting_bytes)
+            require(isinstance(accounting,list),'lexicon frontier accounting artifact invalid: chapter '+chapter)
+            observed=Counter()
+            for item in accounting:
+                status=item.get('status')
+                require(status in allowed_statuses,'lexicon frontier accounting disposition invalid: chapter '+chapter)
+                observed[status]+=1
+                locus=item.get('source_locus')
+                require(isinstance(locus,dict) and locus.get('kind') in locus_fields,
+                        'lexicon frontier accounting source locus missing: chapter '+chapter)
+                require(set(locus)==locus_fields[locus['kind']],
+                        'lexicon frontier accounting source locus shape invalid: chapter '+chapter)
+                require(locus.get('pdf_page')==int(item['source_pdf_page']),
+                        'lexicon frontier accounting source page mismatch: chapter '+chapter)
+                if locus['kind']=='table':
+                    require(locus['table_index']==int(item['source_table_index']) and
+                            locus['row']==int(item['row']) and locus['column']==int(item['column']),
+                            'lexicon frontier table locator mismatch: chapter '+chapter)
+                elif locus['kind']=='prose':
+                    require(not item['source_table_index'] and locus['line_start']<=locus['line_end'],
+                            'lexicon frontier prose locator mismatch: chapter '+chapter)
+                else:
+                    require(not item['source_table_index'] and locus['line']>0 and locus['lexicon_section'],
+                            'lexicon frontier root locator mismatch: chapter '+chapter)
+            require(len(accounting)==receipt.get('counts',{}).get('source_observations'),
+                    'lexicon frontier observation count drift: chapter '+chapter)
+            require(dict(sorted(observed.items()))==receipt.get('dispositions'),
+                    'lexicon frontier disposition count drift: chapter '+chapter)
+            require(observed['PARSED']==receipt.get('counts',{}).get('parsed_sense_observations'),
+                    'lexicon frontier parsed observation count drift: chapter '+chapter)
     else:
         require([len(lexicon_roots),len(lexicon_senses),len(lexicon_evidence)]==[503,1615,150],'unadmitted lexicon expansion')
     require(all(row["source_id"] == "NI-LEXICON-CURRICULUM" for row in lexicon_roots), "lexicon root source identity drift")

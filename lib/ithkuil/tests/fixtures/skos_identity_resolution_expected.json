@@ -1,11 +1,11 @@
 {
   "schema": "bilqis.skos.identity-resolution-fixture/v1",
   "counts": {
-    "resources": 3191,
+    "resources": 3190,
     "grammar": 485,
     "atomic_roots": 165,
     "lexicon_roots": 625,
-    "senses": 1916,
+    "senses": 1915,
     "issues": 0
   },
   "register_nrr": {

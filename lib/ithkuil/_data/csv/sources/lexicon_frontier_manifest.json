@@ -4,29 +4,32 @@
   ],
   "chapter_receipts": {
     "3": {
-      "accounting_sha256": "6572cd2916cbed7d8fc8f15d15e24f0c8e14671221231b40a56859ca59ab5530",
+      "accounting_sha256": "4ec71cee2cf82941d4e154c608e2265177a293822e632b80c8e51c72fd2b17c6",
       "chapter": "3",
       "counts": {
-        "evidence": 239,
+        "evidence": 228,
+        "parsed_sense_observations": 100,
         "roots": 122,
         "roots_without_senses": 94,
-        "senses": 101
+        "senses": 100,
+        "source_observations": 303,
+        "unique_sense_coordinates": 100
       },
       "dispositions": {
-        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 209,
-        "DEBT_UNSUPPORTED_SHAPE": 5,
-        "PARSED": 119
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 201,
+        "DEBT_UNSUPPORTED_SHAPE": 2,
+        "PARSED": 100
       },
       "output_sha256": {
-        "lexicon_root_evidence.csv": "2751c6f02dfe6377dc2a1e4e944498cc8bde2f5260defc729bf9fc7556e827bd",
-        "lexicon_root_senses.csv": "f4797e820c5665068b36424e241306196cacd40dce4ba951536bf4d9a2be4915",
+        "lexicon_root_evidence.csv": "767c8aa49b686113e47ad1009626ac24500f8c514a3204cdb78d94ea510ad184",
+        "lexicon_root_senses.csv": "83b7c9c2a73082f3c29abc438db43996e1bcb57fa9117c7607ffa227edd9312d",
         "lexicon_roots.csv": "1c6852b9862f54cd7780c034c181762bad7deb4128e9c4db570580d926634f56"
       },
       "parser": {
-        "legacy_sha256": "db8eb859572e64d6d1560086c4d3c24e7afa33ba2588c436e162b073669f59d8",
+        "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
         "pymupdf_version": "1.27.2.3",
-        "sha256": "13bc75151633fdc78d5db75f155d447eab5609dbb348abdf876b30f617a16e60",
-        "version": "1.0.0"
+        "sha256": "d5cdf5759fd8ba99d5cc4639cef4bf4c64b96610f8ff67eea85882438696eead",
+        "version": "1.0.1"
       },
       "schema": "bilqis.ithkuil.chapter-extraction/v1",
       "source": {
@@ -60,8 +63,8 @@
     }
   },
   "counts": {
-    "lexicon_root_evidence": 389,
-    "lexicon_root_senses": 1716,
+    "lexicon_root_evidence": 378,
+    "lexicon_root_senses": 1715,
     "lexicon_roots": 625
   },
   "legacy_chapters": [
@@ -74,8 +77,8 @@
     "lexicon_roots.csv": "7cdb5df8266c7c8b815392cf3333fc5e3d05876b1c79277494c925e24559e0cc"
   },
   "output_sha256": {
-    "lexicon_root_evidence.csv": "78533c202beb541ebca9301d3d9135483e6e32164eecabacd7bb7b41229bf68a",
-    "lexicon_root_senses.csv": "173680dcb34af59383815aadd226c20a3d712cd7c9706b1fc86ae2235ba33904",
+    "lexicon_root_evidence.csv": "40718662d466520bdd3fbec57d8db462f15a22741142ad8ff32a4f40c8e6302a",
+    "lexicon_root_senses.csv": "7a7e24e2a127c780e6182380af3aa07e6d1d6a93f362051a8459165eb2e5701e",
     "lexicon_roots.csv": "e8a9989f0e9d731a6a0a66ee25ca78630a56f9238a6bd3b1c5421da62eb2d88c",
     "sources/lexicon_split_provenance.csv": "276da9e57c901a086981940c73ef1996882e55f2c4451b79d38d4e0b8cea23e3"
   },

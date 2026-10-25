@@ -3,9 +3,9 @@
   "frontier": "New Ithkuil Lexicon tracked Chapters 1-3",
   "expected_counts": {
     "root_resources": 625,
-    "sense_concepts": 1716,
-    "dimension_triples": 3432,
-    "root_sense_links": 1716
+    "sense_concepts": 1715,
+    "dimension_triples": 3430,
+    "root_sense_links": 1715
   },
   "cases": {
     "multi_unicode_root": {

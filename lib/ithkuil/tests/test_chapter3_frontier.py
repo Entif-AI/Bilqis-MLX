@@ -5,7 +5,12 @@ import unittest
 import tempfile
 import hashlib
 import io
+import shutil
+from unittest.mock import patch
 
+from lib.ithkuil.src import build_lexicon_chapters as legacy
+from lib.ithkuil.src import lexicon_frontier as frontier
+from lib.ithkuil.src import validate_dataset as validator
 from lib.ithkuil.src.lexicon_frontier import extract_chapter,structural_sense_id
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -24,18 +29,86 @@ class ChapterThreeFrontierTests(unittest.TestCase):
         self.assertTrue(any(r['root_form_raw']=='-ẒB-' and r['status']=='DEBT_INSUFFICIENT_SENSE_EVIDENCE' for r in result['accounting']))
         self.assertTrue(all(r['source_id']=='NI-LEXICON-CURRICULUM' and r['source_pdf_page'] and r['source_printed_page'] for r in result['roots']+result['senses']+result['evidence']))
 
-    def test_explicit_prose_stems_keep_their_stated_bsc_scope(self):
+    def test_table_stems_are_not_reclassified_as_prose(self):
         result=extract_chapter('3',PDF)
-        rows=[r for r in result['senses'] if r['root_form_raw']=='-LC-' and r['source_locus_kind']=='prose']
-        self.assertEqual(
-            {(r['stem'],r['specification']) for r in rows},
-            {('STEM 2','BSC'),('STEM 3','BSC')},
-        )
-        stem_three=next(r for r in rows if r['stem']=='STEM 3')
-        self.assertNotIn('CTE',stem_three['sense_summary'])
+        for stem in ('STEM 2','STEM 3'):
+            rows=[r for r in result['senses'] if r['root_form_raw']=='-LC-' and r['stem']==stem and r['specification']=='BSC']
+            self.assertEqual(len(rows),1)
+            self.assertEqual(rows[0]['source_locus_kind'],'table')
+            observations=[r for r in result['accounting'] if r['root_form_raw']=='-LC-' and r.get('stem')==stem and r.get('specification')=='BSC' and r['status']=='PARSED']
+            self.assertEqual(len(observations),1)
+            self.assertEqual(observations[0]['source_locus'],{'kind':'table','pdf_page':1,'table_index':2,'row':1,'column':2})
+        self.assertFalse(any(r['root_form_raw']=='-LC-' and r.get('source_locus',{}).get('kind')=='prose' for r in result['accounting']))
         stem_one=next(r for r in result['senses'] if r['root_form_raw']=='-LC-' and r['stem']=='STEM 1')
         self.assertEqual(stem_one['source_locus_kind'],'table')
         self.assertEqual(stem_one['sense_summary'],'(to be) a marked/indicated pathway/trail/course')
+
+    def test_unqualified_table_stem_remains_debt_at_its_table_locus(self):
+        result=extract_chapter('3',PDF)
+        observations=[r for r in result['accounting'] if r['root_form_raw']=='-KM-' and r.get('stem')=='STEM 3']
+        self.assertEqual(len(observations),1)
+        self.assertEqual(observations[0]['status'],'DEBT_INSUFFICIENT_SENSE_EVIDENCE')
+        self.assertNotIn(('-KM-','STEM 3','OBJ'),{(r['root_form_raw'],r['stem'],r['specification']) for r in result['senses']})
+        self.assertEqual(observations[0]['source_locus'],{'kind':'table','pdf_page':16,'table_index':1,'row':6,'column':0})
+
+    def test_table_cell_not_reparsed_when_rotated_text_escapes_table_bbox(self):
+        result=extract_chapter('3',PDF)
+        observations=[r for r in result['accounting'] if r['root_form_raw']=='-Ţ-' and r.get('stem')=='STEM 2']
+        self.assertEqual(len(observations),1)
+        self.assertEqual(observations[0]['status'],'DEBT_INSUFFICIENT_SENSE_EVIDENCE')
+        self.assertEqual(observations[0]['source_locus'],{'kind':'table','pdf_page':7,'table_index':1,'row':0,'column':2})
+
+    def test_unscoped_prose_shape_is_retained_as_addressable_debt(self):
+        result=extract_chapter('3',PDF)
+        observation=next(r for r in result['accounting'] if r['root_form_raw']=='-Ř-' and r.get('stem')=='STEM 1')
+        self.assertEqual(observation['status'],'DEBT_INSUFFICIENT_SENSE_EVIDENCE')
+        self.assertEqual(observation['source_locus']['kind'],'prose')
+        self.assertEqual(observation['source_locus']['pdf_page'],14)
+        self.assertGreater(observation['source_locus']['line_start'],0)
+        self.assertNotIn('-Ř-',{r['root_form_raw'] for r in result['senses']})
+
+    def test_every_accounting_observation_has_one_typed_source_locus(self):
+        result=extract_chapter('3',PDF)
+        for item in result['accounting']:
+            locus=item['source_locus']
+            self.assertIn(locus['kind'],{'table','prose','root'})
+            if locus['kind']=='table':
+                self.assertEqual(set(locus),{'kind','pdf_page','table_index','row','column'})
+            elif locus['kind']=='prose':
+                self.assertEqual(set(locus),{'kind','pdf_page','line_start','line_end'})
+                self.assertLessEqual(locus['line_start'],locus['line_end'])
+            else:
+                self.assertEqual(set(locus),{'kind','pdf_page','line','lexicon_section'})
+
+    def test_accounting_digest_binds_exact_pretty_json_artifact_bytes(self):
+        result=extract_chapter('3',PDF)
+        artifact=(json.dumps(result['accounting'],sort_keys=True,ensure_ascii=False,indent=2)+'\n').encode()
+        self.assertEqual(result['receipt']['accounting_sha256'],hashlib.sha256(artifact).hexdigest())
+
+    def test_admission_is_idempotent_and_validator_binds_accounting_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            temp_root=Path(directory)/'ithkuil';temp_data=temp_root/'_data/csv'
+            shutil.copytree(ROOT/'_data/csv',temp_data)
+            temp_sources=temp_data/'sources';temp_profile=temp_sources/'lexicon_frontier_manifest.json'
+            patches=[
+                patch.multiple(legacy,DATA=temp_data,MANIFEST=temp_sources/'source_manifest.csv'),
+                patch.multiple(frontier,ROOT=temp_root,PROFILE=temp_profile),
+                patch.multiple(validator,DATA=temp_data,SOURCES=temp_sources),
+                patch.object(validator,'no_crlf',side_effect=lambda path: validator.require(
+                    b'\r\n' not in path.read_bytes(),'CRLF found in '+path.name)),
+            ]
+            with patches[0],patches[1],patches[2],patches[3]:
+                frontier.admit_chapter('3',PDF)
+                paths=[temp_data/(name+'.csv') for name in frontier.TABLES]
+                paths.extend([temp_sources/'lexicon_split_provenance.csv',temp_profile,
+                              temp_sources/'lexicon_frontier/chapter-3-accounting.json'])
+                first=[path.read_bytes() for path in paths]
+                frontier.admit_chapter('3',PDF)
+                self.assertEqual(first,[path.read_bytes() for path in paths])
+                accounting=paths[-1]
+                accounting.write_bytes(accounting.read_bytes()+b' ')
+                with self.assertRaisesRegex(validator.ValidationError,'accounting artifact digest drift'):
+                    validator.main()
 
     def test_repeat_extraction_and_gloss_independent_identity(self):
         first=extract_chapter('3',PDF);second=extract_chapter('3',PDF)

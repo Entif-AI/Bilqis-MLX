@@ -1,19 +1,22 @@
 {
-  "accounting_sha256": "6572cd2916cbed7d8fc8f15d15e24f0c8e14671221231b40a56859ca59ab5530",
+  "accounting_sha256": "4ec71cee2cf82941d4e154c608e2265177a293822e632b80c8e51c72fd2b17c6",
   "counts": {
-    "evidence": 239,
+    "evidence": 228,
+    "parsed_sense_observations": 100,
     "roots": 122,
     "roots_without_senses": 94,
-    "senses": 101
+    "senses": 100,
+    "source_observations": 303,
+    "unique_sense_coordinates": 100
   },
   "dispositions": {
-    "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 209,
-    "DEBT_UNSUPPORTED_SHAPE": 5,
-    "PARSED": 119
+    "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 201,
+    "DEBT_UNSUPPORTED_SHAPE": 2,
+    "PARSED": 100
   },
   "output_sha256": {
-    "lexicon_root_evidence.csv": "2751c6f02dfe6377dc2a1e4e944498cc8bde2f5260defc729bf9fc7556e827bd",
-    "lexicon_root_senses.csv": "f4797e820c5665068b36424e241306196cacd40dce4ba951536bf4d9a2be4915",
+    "lexicon_root_evidence.csv": "767c8aa49b686113e47ad1009626ac24500f8c514a3204cdb78d94ea510ad184",
+    "lexicon_root_senses.csv": "83b7c9c2a73082f3c29abc438db43996e1bcb57fa9117c7607ffa227edd9312d",
     "lexicon_roots.csv": "1c6852b9862f54cd7780c034c181762bad7deb4128e9c4db570580d926634f56"
   },
   "source": {

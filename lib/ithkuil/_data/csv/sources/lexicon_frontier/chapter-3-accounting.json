@@ -4,6 +4,13 @@
     "lexicon_root_id": "",
     "root_form_raw": "",
     "row": 0,
+    "source_locus": {
+      "column": 0,
+      "kind": "table",
+      "pdf_page": 5,
+      "row": 0,
+      "table_index": 2
+    },
     "source_pdf_page": "5",
     "source_printed_page": "103",
     "source_table_index": "2",
@@ -16,6 +23,13 @@
     "lexicon_root_id": "",
     "root_form_raw": "",
     "row": 0,
+    "source_locus": {
+      "column": 0,
+      "kind": "table",
+      "pdf_page": 17,
+      "row": 0,
+      "table_index": 2
+    },
     "source_pdf_page": "17",
     "source_printed_page": "115",
     "source_table_index": "2",
@@ -28,6 +42,12 @@
     "lexicon_root_id": "LEXROOT-09da3e0b0f03b4",
     "root_form_raw": "-XF-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 48,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -40,6 +60,12 @@
     "lexicon_root_id": "LEXROOT-0badacdb20aaa2",
     "root_form_raw": "-XT-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 45,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -52,6 +78,12 @@
     "lexicon_root_id": "LEXROOT-0c9cb27eda5dfa",
     "root_form_raw": "-KW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 17,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -64,6 +96,12 @@
     "lexicon_root_id": "LEXROOT-0e15353dbe1d11",
     "root_form_raw": "-BR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 49,
+      "pdf_page": 6
+    },
     "source_pdf_page": "6",
     "source_printed_page": "104",
     "source_table_index": "",
@@ -76,6 +114,12 @@
     "lexicon_root_id": "LEXROOT-14876a15dcfe52",
     "root_form_raw": "-RW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.7",
+      "line": 68,
+      "pdf_page": 13
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "",
@@ -88,42 +132,69 @@
     "lexicon_root_id": "LEXROOT-14876a15dcfe52",
     "root_form_raw": "-RW-",
     "row": 71,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 71,
+      "line_start": 71,
+      "pdf_page": 13
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "",
     "source_text_char_count": "16",
     "source_text_sha256": "2cd2108e05652b25415c1fe77250df68e4d2905422848a4d561c46bb064443a3",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 1"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-14876a15dcfe52",
     "root_form_raw": "-RW-",
     "row": 72,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 72,
+      "line_start": 72,
+      "pdf_page": 13
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "",
     "source_text_char_count": "16",
     "source_text_sha256": "4cb5b99922d5dff72cf50c9e99c2944bc73ad1b2474928ca1c756bf93d63916b",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-14876a15dcfe52",
     "root_form_raw": "-RW-",
     "row": 73,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 73,
+      "line_start": 73,
+      "pdf_page": 13
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "",
     "source_text_char_count": "15",
     "source_text_sha256": "693dbb47c1fecaa21e7a3dca013a2be8ed95a46d459ffb5ad96d15b9cf2b76ca",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-1531e427ae08fb",
     "root_form_raw": "-ŘŢ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.7",
+      "line": 34,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
@@ -136,46 +207,74 @@
     "lexicon_root_id": "LEXROOT-1531e427ae08fb",
     "root_form_raw": "-ŘŢ-",
     "row": 37,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 37,
+      "line_start": 37,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "27",
     "source_text_sha256": "fe99f56562c287c3962a0ae435e5d18b7c2f5be19687af01f357aa8a65187ab0",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 1"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-1531e427ae08fb",
     "root_form_raw": "-ŘŢ-",
     "row": 38,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 38,
+      "line_start": 38,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "30",
     "source_text_sha256": "a23feb793c0b80359ddef1937554f1b1f03e19ed846f7eb84c635b89669168c2",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-1531e427ae08fb",
     "root_form_raw": "-ŘŢ-",
     "row": 39,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 39,
+      "line_start": 39,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "44",
     "source_text_sha256": "0a3e655280de4847038d1903f982d8c973d8464c45ed3d8d67a840fc5fe7f132",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-18799e18b119ea",
     "root_form_raw": "-TŇ-",
-    "row": 46,
+    "row": 1,
     "sense_id": "LEXSENSE-8fd4859c3ddcab",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "183",
     "source_text_sha256": "dd713203bc8f001cd8a8addf8cd81aacc6150e6936f168509d4563760c2f9ac7",
     "specification": "BSC",
@@ -183,14 +282,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-18799e18b119ea",
     "root_form_raw": "-TŇ-",
-    "row": 49,
+    "row": 1,
     "sense_id": "LEXSENSE-ccdad56ae3fcb7",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "156",
     "source_text_sha256": "734bcb644c4431b57a2297f2495bb8463953d39d5ae7dab2791a72a1703d14a1",
     "specification": "BSC",
@@ -198,14 +304,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-18799e18b119ea",
     "root_form_raw": "-TŇ-",
-    "row": 52,
+    "row": 1,
     "sense_id": "LEXSENSE-12b4594ca93009",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "189",
     "source_text_sha256": "256b924353964febec93e68ab51155cd7af0272395eb4f0ea48299d8fb06748f",
     "specification": "BSC",
@@ -216,39 +329,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-18799e18b119ea",
     "root_form_raw": "-TŇ-",
-    "row": 1,
-    "sense_id": "LEXSENSE-8fd4859c3ddcab",
-    "source_pdf_page": "3",
-    "source_printed_page": "101",
-    "source_table_index": "2",
-    "source_text_char_count": "191",
-    "source_text_sha256": "040add267178348c3ab100f352202432b008f2c0011f618ed1273c5ab0ccb806",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-18799e18b119ea",
-    "root_form_raw": "-TŇ-",
-    "row": 1,
-    "source_pdf_page": "3",
-    "source_printed_page": "101",
-    "source_table_index": "2",
-    "source_text_char_count": "362",
-    "source_text_sha256": "6795b948190c5b65a878f7a8615f383d9feeab982b49173db078aa57a7393450",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-18799e18b119ea",
-    "root_form_raw": "-TŇ-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 2,
+      "table_index": 2
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "2",
     "source_text_char_count": "102",
     "source_text_sha256": "f26168abfea7deb30707ce8ba09c04e764fb8a6adf2fdcbfe77399e644ab5a1c",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -256,11 +350,19 @@
     "lexicon_root_id": "LEXROOT-18799e18b119ea",
     "root_form_raw": "-TŇ-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 3,
+      "table_index": 2
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "2",
     "source_text_char_count": "90",
     "source_text_sha256": "4123eddbc8900c443f5b9b088e5a7ce7773bc4862c41e5121e8eee676f506c48",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -268,22 +370,37 @@
     "lexicon_root_id": "LEXROOT-18799e18b119ea",
     "root_form_raw": "-TŇ-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 4,
+      "table_index": 2
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "2",
     "source_text_char_count": "75",
     "source_text_sha256": "562ceb94a15aa1e275bcb12334b805f13d1fac193c8ceed823c5c601ec35a7ab",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-1e560b92957891",
     "root_form_raw": "-ḐẒ-",
-    "row": 48,
+    "row": 1,
     "sense_id": "LEXSENSE-47b09493ae365c",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "312",
     "source_text_sha256": "e08df975db90ffc2a07d6468adb6a80ffb110afb73ddbfd84d968ec38e3e781e",
     "specification": "BSC",
@@ -291,14 +408,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-1e560b92957891",
     "root_form_raw": "-ḐẒ-",
-    "row": 52,
+    "row": 1,
     "sense_id": "LEXSENSE-8be4deff095453",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "232",
     "source_text_sha256": "2707e9ebf0a19b2a5c404b946a46ad7daea8e8253715f7dec3fec999eb807d7a",
     "specification": "BSC",
@@ -306,14 +430,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-1e560b92957891",
     "root_form_raw": "-ḐẒ-",
-    "row": 57,
+    "row": 1,
     "sense_id": "LEXSENSE-5025b9b8451dd9",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "327",
     "source_text_sha256": "0bac04ff392e5b753cab11a8f50cd44a23c87eb6414d1aba0a9021fd08b176ab",
     "specification": "BSC",
@@ -324,39 +455,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-1e560b92957891",
     "root_form_raw": "-ḐẒ-",
-    "row": 1,
-    "sense_id": "LEXSENSE-47b09493ae365c",
-    "source_pdf_page": "12",
-    "source_printed_page": "110",
-    "source_table_index": "3",
-    "source_text_char_count": "320",
-    "source_text_sha256": "d53b01ea5cacae646f774ddecd6b55b899dce7536e244c3e4bc2d7f4075cb5e5",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-1e560b92957891",
-    "root_form_raw": "-ḐẒ-",
-    "row": 1,
-    "source_pdf_page": "12",
-    "source_printed_page": "110",
-    "source_table_index": "3",
-    "source_text_char_count": "576",
-    "source_text_sha256": "c1a608d67a3542ade6682e53ec6379890c3efb259a22a2fbfd4737e11429588c",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-1e560b92957891",
-    "root_form_raw": "-ḐẒ-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 2,
+      "table_index": 3
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
     "source_table_index": "3",
     "source_text_char_count": "132",
     "source_text_sha256": "c23d692382e2187121be295d7841e4a3c818c8374ff5026f3e8ebdf471a73bb8",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -364,11 +476,19 @@
     "lexicon_root_id": "LEXROOT-1e560b92957891",
     "root_form_raw": "-ḐẒ-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 3,
+      "table_index": 3
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
     "source_table_index": "3",
     "source_text_char_count": "138",
     "source_text_sha256": "36d2fc773ea16ceeab0b0387be827e826ca32f8bc90790000c41ca97c3347443",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -376,11 +496,19 @@
     "lexicon_root_id": "LEXROOT-1e560b92957891",
     "root_form_raw": "-ḐẒ-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 4,
+      "table_index": 3
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
     "source_table_index": "3",
     "source_text_char_count": "130",
     "source_text_sha256": "3bdfdc15a4e6b5124431cfca912e0130f9d70d45412900aab72199573d158434",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -388,6 +516,12 @@
     "lexicon_root_id": "LEXROOT-20762879a71ecf",
     "root_form_raw": "-PF-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 34,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -400,6 +534,12 @@
     "lexicon_root_id": "LEXROOT-20770c18f7c084",
     "root_form_raw": "-VB-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 26,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -412,6 +552,12 @@
     "lexicon_root_id": "LEXROOT-2113771bab65f7",
     "root_form_raw": "-CH-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 37,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -424,6 +570,12 @@
     "lexicon_root_id": "LEXROOT-2159448bd0363d",
     "root_form_raw": "-CF-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 7,
+      "pdf_page": 3
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "",
@@ -432,14 +584,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-25cacae8cd3a22",
     "root_form_raw": "-TŇW-",
-    "row": 7,
+    "row": 1,
     "sense_id": "LEXSENSE-7540c72cc165cf",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "219",
     "source_text_sha256": "d1973ce4951f34a33347b4f957f75f22affc380a3dfe1ca6f67f2418ddf7ac88",
     "specification": "BSC",
@@ -447,14 +606,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-25cacae8cd3a22",
     "root_form_raw": "-TŇW-",
-    "row": 10,
+    "row": 1,
     "sense_id": "LEXSENSE-0fa60bef764cc8",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "244",
     "source_text_sha256": "6d88765982d11124ed717c3f0d58360a9c8225267ebcb010a83b71ca104861d1",
     "specification": "BSC",
@@ -462,14 +628,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-25cacae8cd3a22",
     "root_form_raw": "-TŇW-",
-    "row": 15,
+    "row": 1,
     "sense_id": "LEXSENSE-75cab2bf208519",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "61",
     "source_text_sha256": "ff59a5d48bc014d67364029e5f0b41ee8cb5b0ded40799e0e5eb31cb3de59550",
     "specification": "BSC",
@@ -480,39 +653,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-25cacae8cd3a22",
     "root_form_raw": "-TŇW-",
-    "row": 1,
-    "sense_id": "LEXSENSE-7540c72cc165cf",
-    "source_pdf_page": "4",
-    "source_printed_page": "102",
-    "source_table_index": "1",
-    "source_text_char_count": "227",
-    "source_text_sha256": "2d08051d0966d757e42034a33796806330354561cf58d955933fc5bb62c91f22",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-25cacae8cd3a22",
-    "root_form_raw": "-TŇW-",
-    "row": 1,
-    "source_pdf_page": "4",
-    "source_printed_page": "102",
-    "source_table_index": "1",
-    "source_text_char_count": "322",
-    "source_text_sha256": "fbb5d729fa02c72ef0fb0bb0d46a9ecd4eac7aabfc7f2c0ad69ec47f0ed8482e",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-25cacae8cd3a22",
-    "root_form_raw": "-TŇW-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
     "source_table_index": "1",
     "source_text_char_count": "99",
     "source_text_sha256": "2bb798aaa377dd0b6347d23febf6bd0b2095f86ff3325f2f8c176e8f9703e601",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -520,11 +674,19 @@
     "lexicon_root_id": "LEXROOT-25cacae8cd3a22",
     "root_form_raw": "-TŇW-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
     "source_table_index": "1",
     "source_text_char_count": "88",
     "source_text_sha256": "92cd541f410e09b490ed00ce6338c8b29c64314f9769d320a5eb77342490829d",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -532,11 +694,19 @@
     "lexicon_root_id": "LEXROOT-25cacae8cd3a22",
     "root_form_raw": "-TŇW-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
     "source_table_index": "1",
     "source_text_char_count": "80",
     "source_text_sha256": "402600ee04b96ce58e3aa13256839ccf211ec2765dc9c241b36fed80ff246fba",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -544,6 +714,12 @@
     "lexicon_root_id": "LEXROOT-28e585e026f9a7",
     "root_form_raw": "-ḐG-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 12,
+      "pdf_page": 9
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
     "source_table_index": "",
@@ -556,6 +732,12 @@
     "lexicon_root_id": "LEXROOT-2c2c5684b3843e",
     "root_form_raw": "-XR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 38,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -568,6 +750,12 @@
     "lexicon_root_id": "LEXROOT-2d810cfc6c4e41",
     "root_form_raw": "-XL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 36,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -576,14 +764,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-32ae7a5141eba0",
     "root_form_raw": "-TPH-",
-    "row": 58,
+    "row": 1,
     "sense_id": "LEXSENSE-fce0661bc7acf8",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "200",
     "source_text_sha256": "cfde55d6cd0ddd48cd10d142bcaffdb5fd28a493bdc88286a68f1ee1fd118f07",
     "specification": "BSC",
@@ -591,14 +786,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-32ae7a5141eba0",
     "root_form_raw": "-TPH-",
-    "row": 60,
+    "row": 1,
     "sense_id": "LEXSENSE-1aa2aebcb3ac58",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "102",
     "source_text_sha256": "ebe73d9346a53cdbe8356a5cee3e34b5d232940886933f4c50435760edc81d25",
     "specification": "BSC",
@@ -606,14 +808,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-32ae7a5141eba0",
     "root_form_raw": "-TPH-",
-    "row": 64,
+    "row": 1,
     "sense_id": "LEXSENSE-306cfe686cd63e",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "73",
     "source_text_sha256": "495c2330cd7e995e19b252456718a2394654165020f336ff9d5cee7dc3a1f744",
     "specification": "BSC",
@@ -624,39 +833,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-32ae7a5141eba0",
     "root_form_raw": "-TPH-",
-    "row": 1,
-    "sense_id": "LEXSENSE-fce0661bc7acf8",
-    "source_pdf_page": "16",
-    "source_printed_page": "114",
-    "source_table_index": "3",
-    "source_text_char_count": "208",
-    "source_text_sha256": "3192dae313b83d27e8b6d2a73ccc602f06b218a2cfb84bfd0fd1664452bc98be",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-32ae7a5141eba0",
-    "root_form_raw": "-TPH-",
-    "row": 1,
-    "source_pdf_page": "16",
-    "source_printed_page": "114",
-    "source_table_index": "3",
-    "source_text_char_count": "192",
-    "source_text_sha256": "6edcbc392ea4269de5ae72b8fefbfcd3b86f66896f34663a9c7643a0eccf6ec9",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-32ae7a5141eba0",
-    "root_form_raw": "-TPH-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 2,
+      "table_index": 3
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "3",
     "source_text_char_count": "58",
     "source_text_sha256": "ad65b3b60ed8a4b4296d331bc2201c2d0c7fab1eaec92c6d72150004980fc29c",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -664,11 +854,19 @@
     "lexicon_root_id": "LEXROOT-32ae7a5141eba0",
     "root_form_raw": "-TPH-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 3,
+      "table_index": 3
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "3",
     "source_text_char_count": "86",
     "source_text_sha256": "9c6878b807df0bf7a1ce61c704e1a232315ab8a1bd2a99c332f7685e5f3ed256",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -676,11 +874,19 @@
     "lexicon_root_id": "LEXROOT-32ae7a5141eba0",
     "root_form_raw": "-TPH-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 4,
+      "table_index": 3
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "3",
     "source_text_char_count": "18",
     "source_text_sha256": "930d912a85c8340b186836dce986ff4529970f26f5534346ad15cd871c0909e9",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -688,6 +894,12 @@
     "lexicon_root_id": "LEXROOT-34afebbf405fc7",
     "root_form_raw": "-ḐD-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 3,
+      "pdf_page": 9
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
     "source_table_index": "",
@@ -700,6 +912,12 @@
     "lexicon_root_id": "LEXROOT-3840d0c94a6c6e",
     "root_form_raw": "-PY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 13,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -712,6 +930,12 @@
     "lexicon_root_id": "LEXROOT-3af985562042a2",
     "root_form_raw": "-BẒ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 49,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -724,6 +948,12 @@
     "lexicon_root_id": "LEXROOT-3cadb23a580b5c",
     "root_form_raw": "-ŠL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 51,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -736,6 +966,12 @@
     "lexicon_root_id": "LEXROOT-3f31eeacfe555e",
     "root_form_raw": "-FW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 25,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -744,14 +980,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-3f3e9ce79bb97f",
     "root_form_raw": "-ḐÇ-",
-    "row": 6,
+    "row": 1,
     "sense_id": "LEXSENSE-cc4e8b5311d8af",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "70",
     "source_text_sha256": "b18eb01e62862b2b4d012c8596278fa40c8bb3c90421f73fad61c6d18da3339d",
     "specification": "BSC",
@@ -759,14 +1002,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-3f3e9ce79bb97f",
     "root_form_raw": "-ḐÇ-",
-    "row": 7,
+    "row": 1,
     "sense_id": "LEXSENSE-7dddbc4c62fade",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "53",
     "source_text_sha256": "108557af888234caaeb34d7cc855026d4d121f5b3d4b8c3a90974781de78794e",
     "specification": "BSC",
@@ -774,14 +1024,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-3f3e9ce79bb97f",
     "root_form_raw": "-ḐÇ-",
-    "row": 9,
+    "row": 1,
     "sense_id": "LEXSENSE-09f5476301a488",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "132",
     "source_text_sha256": "ffe805230369128398653e6561a5666996336eb3dab309d4d191b7630c9dfb36",
     "specification": "BSC",
@@ -792,39 +1049,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-3f3e9ce79bb97f",
     "root_form_raw": "-ḐÇ-",
-    "row": 1,
-    "sense_id": "LEXSENSE-cc4e8b5311d8af",
-    "source_pdf_page": "12",
-    "source_printed_page": "110",
-    "source_table_index": "1",
-    "source_text_char_count": "78",
-    "source_text_sha256": "50b59e919240db27c257319fa2ae0fd0c8c21f1189759bb5b7bb4a58b0f77a4a",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-3f3e9ce79bb97f",
-    "root_form_raw": "-ḐÇ-",
-    "row": 1,
-    "source_pdf_page": "12",
-    "source_printed_page": "110",
-    "source_table_index": "1",
-    "source_text_char_count": "202",
-    "source_text_sha256": "7a3243e446818ce7921ff4ae94d1a1970cdafd36b52ccba6ed37669db7ee2aac",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-3f3e9ce79bb97f",
-    "root_form_raw": "-ḐÇ-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
     "source_table_index": "1",
     "source_text_char_count": "69",
     "source_text_sha256": "77b3f2304b481c9cfbbd791aafb71a0e101fb5c1403735882398f7b38f701f9c",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -832,11 +1070,19 @@
     "lexicon_root_id": "LEXROOT-3f3e9ce79bb97f",
     "root_form_raw": "-ḐÇ-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
     "source_table_index": "1",
     "source_text_char_count": "90",
     "source_text_sha256": "bd661d3f96b56318c227f0b6b237d6471532480ef53f6b42798cc8e7acb3df23",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -844,11 +1090,19 @@
     "lexicon_root_id": "LEXROOT-3f3e9ce79bb97f",
     "root_form_raw": "-ḐÇ-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
     "source_table_index": "1",
     "source_text_char_count": "71",
     "source_text_sha256": "d09c8b9bbc38b0ec4653cee8d071bab18c51bb66e8ef4176fef59117cf3a3f45",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -856,6 +1110,12 @@
     "lexicon_root_id": "LEXROOT-4007c1e60a7562",
     "root_form_raw": "-FKY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 35,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -868,6 +1128,12 @@
     "lexicon_root_id": "LEXROOT-4410ada1ddd544",
     "root_form_raw": "-GẒ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 55,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -881,6 +1147,13 @@
     "root_form_raw": "-RP-",
     "row": 2,
     "sense_id": "LEXSENSE-b264443473a466",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -896,6 +1169,13 @@
     "root_form_raw": "-RP-",
     "row": 2,
     "sense_id": "LEXSENSE-53ad81028f1dc4",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -911,6 +1191,13 @@
     "root_form_raw": "-RP-",
     "row": 2,
     "sense_id": "LEXSENSE-6804d6d950f03f",
+    "source_locus": {
+      "column": 3,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -926,6 +1213,13 @@
     "root_form_raw": "-RP-",
     "row": 3,
     "sense_id": "LEXSENSE-afe9e797c4a837",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -941,6 +1235,13 @@
     "root_form_raw": "-RP-",
     "row": 3,
     "sense_id": "LEXSENSE-458a86d3892339",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -956,6 +1257,13 @@
     "root_form_raw": "-RP-",
     "row": 3,
     "sense_id": "LEXSENSE-42dca59a560c86",
+    "source_locus": {
+      "column": 3,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -971,6 +1279,13 @@
     "root_form_raw": "-RP-",
     "row": 4,
     "sense_id": "LEXSENSE-8c316f458cdbe4",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -986,6 +1301,13 @@
     "root_form_raw": "-RP-",
     "row": 4,
     "sense_id": "LEXSENSE-2e762493b95f3f",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -1001,6 +1323,13 @@
     "root_form_raw": "-RP-",
     "row": 4,
     "sense_id": "LEXSENSE-2afbd7db520a50",
+    "source_locus": {
+      "column": 3,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -1016,6 +1345,13 @@
     "root_form_raw": "-RP-",
     "row": 5,
     "sense_id": "LEXSENSE-3fde9034104cff",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -1031,6 +1367,13 @@
     "root_form_raw": "-RP-",
     "row": 5,
     "sense_id": "LEXSENSE-5fe8e59fb432ab",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -1046,6 +1389,13 @@
     "root_form_raw": "-RP-",
     "row": 5,
     "sense_id": "LEXSENSE-c089f3e64da0b2",
+    "source_locus": {
+      "column": 3,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "1",
@@ -1060,6 +1410,12 @@
     "lexicon_root_id": "LEXROOT-453268bd4db4f4",
     "root_form_raw": "-PL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 13,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -1072,6 +1428,12 @@
     "lexicon_root_id": "LEXROOT-46392efc193e1f",
     "root_form_raw": "-JN-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 35,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -1080,14 +1442,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-46ee42824794a8",
     "root_form_raw": "-ÇP-",
-    "row": 8,
+    "row": 1,
     "sense_id": "LEXSENSE-be014464278290",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "135",
     "source_text_sha256": "566e165e9b9ba19d94b4421ca3cd53afc2faca92f6c211e260d9b44213bb9f4f",
     "specification": "BSC",
@@ -1095,14 +1464,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-46ee42824794a8",
     "root_form_raw": "-ÇP-",
-    "row": 10,
+    "row": 1,
     "sense_id": "LEXSENSE-ae95cc3901a184",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "91",
     "source_text_sha256": "60a2dd0920d5129a14dbaf203828a635961086ce12545a961ef5d8d1f1d80fd6",
     "specification": "BSC",
@@ -1110,14 +1486,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-46ee42824794a8",
     "root_form_raw": "-ÇP-",
-    "row": 12,
+    "row": 1,
     "sense_id": "LEXSENSE-51afa1ddbf2af0",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "74",
     "source_text_sha256": "3aa3f47cb60c3678ccf22cac0cec41e671aa8dc610394a27be86d88b4346909c",
     "specification": "BSC",
@@ -1128,39 +1511,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-46ee42824794a8",
     "root_form_raw": "-ÇP-",
-    "row": 1,
-    "sense_id": "LEXSENSE-be014464278290",
-    "source_pdf_page": "11",
-    "source_printed_page": "109",
-    "source_table_index": "1",
-    "source_text_char_count": "143",
-    "source_text_sha256": "23c438223631bf99019d76d54d95bc6bf87589ef38dd9eed288224e9dd50675f",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-46ee42824794a8",
-    "root_form_raw": "-ÇP-",
-    "row": 1,
-    "source_pdf_page": "11",
-    "source_printed_page": "109",
-    "source_table_index": "1",
-    "source_text_char_count": "182",
-    "source_text_sha256": "a22b5f3aca30e44735a3c538ac03a8502b16635dfdfb5bb906a2efb6c9860812",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-46ee42824794a8",
-    "root_form_raw": "-ÇP-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
     "source_table_index": "1",
     "source_text_char_count": "61",
     "source_text_sha256": "218bd1e75dd498fe6270cb4faa349eb0126f07d03045b1672caa5616bf04797f",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1168,11 +1532,19 @@
     "lexicon_root_id": "LEXROOT-46ee42824794a8",
     "root_form_raw": "-ÇP-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
     "source_table_index": "1",
     "source_text_char_count": "116",
     "source_text_sha256": "d5bdded1e7fc20157e732840a77f7f6ee1e996e5a3a2b657ca947013f2e665ba",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1180,11 +1552,19 @@
     "lexicon_root_id": "LEXROOT-46ee42824794a8",
     "root_form_raw": "-ÇP-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
     "source_table_index": "1",
     "source_text_char_count": "32",
     "source_text_sha256": "b78b63e47bd2d58319e6e899fa4b3ff4241d0482c8506efc73eb35114c7ed2e3",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1192,6 +1572,12 @@
     "lexicon_root_id": "LEXROOT-4a424e3ea5b135",
     "root_form_raw": "-DR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 43,
+      "pdf_page": 6
+    },
     "source_pdf_page": "6",
     "source_printed_page": "104",
     "source_table_index": "",
@@ -1204,6 +1590,12 @@
     "lexicon_root_id": "LEXROOT-4d7ad088a3300f",
     "root_form_raw": "-ẒR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 24,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -1216,6 +1608,12 @@
     "lexicon_root_id": "LEXROOT-508fbd922b7d88",
     "root_form_raw": "-FK-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 21,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -1228,6 +1626,12 @@
     "lexicon_root_id": "LEXROOT-5454750a157202",
     "root_form_raw": "-ČḐ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 50,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -1236,14 +1640,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-558dd3638576cb",
     "root_form_raw": "-ÇC-",
-    "row": 50,
+    "row": 1,
     "sense_id": "LEXSENSE-41d795c7cc3004",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "107",
     "source_text_sha256": "a4636be672e84b5aebd90b2cc2beaed7eb0d85c0d101dd13135b91840ff5c5a0",
     "specification": "BSC",
@@ -1251,14 +1662,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-558dd3638576cb",
     "root_form_raw": "-ÇC-",
-    "row": 51,
+    "row": 1,
     "sense_id": "LEXSENSE-37488aec3849a3",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "70",
     "source_text_sha256": "fb75ef6e3857f65f971f4356e60e97c8b76102bcdf27ea39181b085207e868af",
     "specification": "BSC",
@@ -1266,14 +1684,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-558dd3638576cb",
     "root_form_raw": "-ÇC-",
-    "row": 54,
+    "row": 1,
     "sense_id": "LEXSENSE-e204ed62e6a0d1",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "87",
     "source_text_sha256": "6778be12c892e6fd3040cf144a68406c493fecea522ebe232f17c7bed39bdcc4",
     "specification": "BSC",
@@ -1284,39 +1709,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-558dd3638576cb",
     "root_form_raw": "-ÇC-",
-    "row": 1,
-    "sense_id": "LEXSENSE-41d795c7cc3004",
-    "source_pdf_page": "11",
-    "source_printed_page": "109",
-    "source_table_index": "3",
-    "source_text_char_count": "115",
-    "source_text_sha256": "0428c9103b990fbcf84cccf6b9f1bfb5e7938ba98c35bc82f69c8044ec9d867a",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-558dd3638576cb",
-    "root_form_raw": "-ÇC-",
-    "row": 1,
-    "source_pdf_page": "11",
-    "source_printed_page": "109",
-    "source_table_index": "3",
-    "source_text_char_count": "174",
-    "source_text_sha256": "e6d7c1ad29b2367d13f95e0ae3d2b148a331dad1b78929757b900bb7609b0297",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-558dd3638576cb",
-    "root_form_raw": "-ÇC-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 2,
+      "table_index": 3
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
     "source_table_index": "3",
     "source_text_char_count": "100",
     "source_text_sha256": "7269bf598636f5a593331b6384b83e25e97166758a9a01eff1109801a6712c72",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1324,11 +1730,19 @@
     "lexicon_root_id": "LEXROOT-558dd3638576cb",
     "root_form_raw": "-ÇC-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 3,
+      "table_index": 3
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
     "source_table_index": "3",
     "source_text_char_count": "110",
     "source_text_sha256": "2471abb21223f2d55026dc8278b131b157a7887c53fef664be31b36754631328",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1336,22 +1750,37 @@
     "lexicon_root_id": "LEXROOT-558dd3638576cb",
     "root_form_raw": "-ÇC-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 4,
+      "table_index": 3
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
     "source_table_index": "3",
     "source_text_char_count": "74",
     "source_text_sha256": "838c626ff275cb957139afaaf6a9ffa2b6bd6469d54f3f4339ee99e421d8b693",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-5888e50040ef4a",
     "root_form_raw": "-ŘTŇ-",
-    "row": 29,
+    "row": 1,
     "sense_id": "LEXSENSE-daf87dae76c5b0",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "223",
     "source_text_sha256": "311ae1b41c5330ef58cda72c6d5a5e6d38d1c5e346768f0bb9fba76dccef1cea",
     "specification": "BSC",
@@ -1359,14 +1788,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-5888e50040ef4a",
     "root_form_raw": "-ŘTŇ-",
-    "row": 32,
+    "row": 1,
     "sense_id": "LEXSENSE-90191f37055394",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "225",
     "source_text_sha256": "4910bf05acbf31ce6fcb1810fd57cc995b6042c94d7c8b1ece5cefc6db05bf66",
     "specification": "BSC",
@@ -1374,14 +1810,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-5888e50040ef4a",
     "root_form_raw": "-ŘTŇ-",
-    "row": 37,
+    "row": 1,
     "sense_id": "LEXSENSE-41ad3f0f9ccc33",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "76",
     "source_text_sha256": "4eb6ea02843b07848d0d9f046f779509bee2a562e9cd4d3cdcb8e5b0c5f4c3db",
     "specification": "BSC",
@@ -1392,39 +1835,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-5888e50040ef4a",
     "root_form_raw": "-ŘTŇ-",
-    "row": 1,
-    "sense_id": "LEXSENSE-daf87dae76c5b0",
-    "source_pdf_page": "4",
-    "source_printed_page": "102",
-    "source_table_index": "2",
-    "source_text_char_count": "231",
-    "source_text_sha256": "58c03db6c9cf1104e5019765415950619d243cf63f9a018a873afc0cbed9b08a",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-5888e50040ef4a",
-    "root_form_raw": "-ŘTŇ-",
-    "row": 1,
-    "source_pdf_page": "4",
-    "source_printed_page": "102",
-    "source_table_index": "2",
-    "source_text_char_count": "318",
-    "source_text_sha256": "c81c0879e22cee823b658fe213b59712b2c4955ba55fee2f5db6fb24a3aa0908",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-5888e50040ef4a",
-    "root_form_raw": "-ŘTŇ-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 2,
+      "table_index": 2
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
     "source_table_index": "2",
     "source_text_char_count": "123",
     "source_text_sha256": "ef2a347993a80a56a75299609e9e8b818b82dbaa7812ec0609865df9783d08e6",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1432,11 +1856,19 @@
     "lexicon_root_id": "LEXROOT-5888e50040ef4a",
     "root_form_raw": "-ŘTŇ-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 3,
+      "table_index": 2
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
     "source_table_index": "2",
     "source_text_char_count": "164",
     "source_text_sha256": "a9deedec5826465ecb24a4a2eff46b21c9af3840fd670fab86ac036687b65a18",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1444,11 +1876,19 @@
     "lexicon_root_id": "LEXROOT-5888e50040ef4a",
     "root_form_raw": "-ŘTŇ-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 4,
+      "table_index": 2
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
     "source_table_index": "2",
     "source_text_char_count": "76",
     "source_text_sha256": "36ba2fca970c0cc1d34c731993b73beab5e5bd0106a78901a73eff1c38eab4c0",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1456,6 +1896,12 @@
     "lexicon_root_id": "LEXROOT-58bc57007b0355",
     "root_form_raw": "-DK-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 45,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -1468,6 +1914,12 @@
     "lexicon_root_id": "LEXROOT-5a39c05552c799",
     "root_form_raw": "-ḐW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 13,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -1476,14 +1928,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-5b92dbbbcd21ef",
     "root_form_raw": "-ŇŽW-",
-    "row": 5,
+    "row": 1,
     "sense_id": "LEXSENSE-3213e05291b814",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 5,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "5",
     "source_printed_page": "103",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "170",
     "source_text_sha256": "d4d29ed41aa6945e301ee55f16e4ae37c24079b4f4f59407d90f4d3bbf0dce94",
     "specification": "BSC",
@@ -1491,14 +1950,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-5b92dbbbcd21ef",
     "root_form_raw": "-ŇŽW-",
-    "row": 7,
+    "row": 1,
     "sense_id": "LEXSENSE-86c9a34cb0d72b",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 5,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "5",
     "source_printed_page": "103",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "133",
     "source_text_sha256": "86d8a8a33b0a21b0f0e1b959fac4740ab9f31862d97e5df3b6cc3fb1719f67d7",
     "specification": "BSC",
@@ -1506,14 +1972,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-5b92dbbbcd21ef",
     "root_form_raw": "-ŇŽW-",
-    "row": 11,
+    "row": 1,
     "sense_id": "LEXSENSE-ffa789d9534c2a",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 5,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "5",
     "source_printed_page": "103",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "125",
     "source_text_sha256": "74cfe5f3a75abbedfb322d4c91b508eef5c9f5f0055a326dd4e5f5e47b9994c0",
     "specification": "BSC",
@@ -1524,39 +1997,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-5b92dbbbcd21ef",
     "root_form_raw": "-ŇŽW-",
-    "row": 1,
-    "sense_id": "LEXSENSE-3213e05291b814",
-    "source_pdf_page": "5",
-    "source_printed_page": "103",
-    "source_table_index": "1",
-    "source_text_char_count": "178",
-    "source_text_sha256": "1e9897e4666581b36448d06efc9653f709b47a26ff032b6ae82f0d627d86c20b",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-5b92dbbbcd21ef",
-    "root_form_raw": "-ŇŽW-",
-    "row": 1,
-    "source_pdf_page": "5",
-    "source_printed_page": "103",
-    "source_table_index": "1",
-    "source_text_char_count": "275",
-    "source_text_sha256": "238b92f307263085479f8dc8d7eb14fedae8e2403207d57b9cc5edae78174d09",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-5b92dbbbcd21ef",
-    "root_form_raw": "-ŇŽW-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 5,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "5",
     "source_printed_page": "103",
     "source_table_index": "1",
     "source_text_char_count": "32",
     "source_text_sha256": "f1c9328abc005c043fdceb0b8a08dd98a70ed6e25937e6782261f7ee3bf6bb4d",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1564,11 +2018,19 @@
     "lexicon_root_id": "LEXROOT-5b92dbbbcd21ef",
     "root_form_raw": "-ŇŽW-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 5,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "5",
     "source_printed_page": "103",
     "source_table_index": "1",
     "source_text_char_count": "65",
     "source_text_sha256": "e9e1c9be508e6dcb4919df6b9950c2545c6c80cc212e101d752a356d04525bdc",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1576,11 +2038,19 @@
     "lexicon_root_id": "LEXROOT-5b92dbbbcd21ef",
     "root_form_raw": "-ŇŽW-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 5,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "5",
     "source_printed_page": "103",
     "source_table_index": "1",
     "source_text_char_count": "80",
     "source_text_sha256": "71126f70890d85801a6e7ba3b0788c500485637965745bdca4b7d3be7c43a22f",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1588,6 +2058,12 @@
     "lexicon_root_id": "LEXROOT-5cea1be626abf1",
     "root_form_raw": "-ČḐR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 53,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -1600,6 +2076,12 @@
     "lexicon_root_id": "LEXROOT-5f04c1fa62a2b1",
     "root_form_raw": "-VBW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 39,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -1612,6 +2094,12 @@
     "lexicon_root_id": "LEXROOT-61e22af20cf657",
     "root_form_raw": "-PK-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 43,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -1620,14 +2108,41 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-641d80135b3478",
     "root_form_raw": "-RV-",
-    "row": 54,
-    "sense_id": "LEXSENSE-fedff4f0bc24a0",
+    "row": 1,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
-    "source_table_index": "",
+    "source_table_index": "2",
+    "source_text_char_count": "155",
+    "source_text_sha256": "e560ecf2a6f0a97330def3dcd40b0d12a0afb8217339965f810e1a0acf821291",
+    "specification": "BSC",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+  },
+  {
+    "column": 2,
+    "lexicon_root_id": "LEXROOT-641d80135b3478",
+    "root_form_raw": "-RV-",
+    "row": 1,
+    "sense_id": "LEXSENSE-fedff4f0bc24a0",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 1,
+      "table_index": 2
+    },
+    "source_pdf_page": "13",
+    "source_printed_page": "111",
+    "source_table_index": "2",
     "source_text_char_count": "16",
     "source_text_sha256": "b9bcf245c76ea5819f266088f37b15d670d1dd501eaef1d5710ef5e681a5f3e9",
     "specification": "BSC",
@@ -1635,14 +2150,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-641d80135b3478",
     "root_form_raw": "-RV-",
-    "row": 55,
+    "row": 1,
     "sense_id": "LEXSENSE-19a09c025b431c",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "9",
     "source_text_sha256": "9dbedc9b0a7923b8113c84f3431eb5438349eb775f4bdac17cb5f65ddb2f4343",
     "specification": "BSC",
@@ -1650,14 +2172,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-641d80135b3478",
     "root_form_raw": "-RV-",
-    "row": 56,
+    "row": 1,
     "sense_id": "LEXSENSE-bc1dfc8f4d2b04",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "18",
     "source_text_sha256": "abb7e09124b440c25d75f49af6fe5616746329125cca4c2de1fffca633e19ce7",
     "specification": "BSC",
@@ -1668,36 +2197,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-641d80135b3478",
     "root_form_raw": "-RV-",
-    "row": 1,
-    "source_pdf_page": "13",
-    "source_printed_page": "111",
-    "source_table_index": "2",
-    "source_text_char_count": "155",
-    "source_text_sha256": "e560ecf2a6f0a97330def3dcd40b0d12a0afb8217339965f810e1a0acf821291",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-641d80135b3478",
-    "root_form_raw": "-RV-",
-    "row": 1,
-    "source_pdf_page": "13",
-    "source_printed_page": "111",
-    "source_table_index": "2",
-    "source_text_char_count": "69",
-    "source_text_sha256": "b93f3128201e40e7b9d4b24993ff9154ca7e7716799a6001d3388fdd6d1bbb16",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-641d80135b3478",
-    "root_form_raw": "-RV-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 2,
+      "table_index": 2
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "2",
     "source_text_char_count": "70",
     "source_text_sha256": "99dab07982a889166c33eef9931df3185b71b47d1cdfeef7195d86edd97918ba",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1705,11 +2218,19 @@
     "lexicon_root_id": "LEXROOT-641d80135b3478",
     "root_form_raw": "-RV-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 3,
+      "table_index": 2
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "2",
     "source_text_char_count": "89",
     "source_text_sha256": "07dacc4e7c653c4cfb1b260438bf658ee5a69779b4f9c17c0f1e36e106ffbb25",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1717,11 +2238,19 @@
     "lexicon_root_id": "LEXROOT-641d80135b3478",
     "root_form_raw": "-RV-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 4,
+      "table_index": 2
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "2",
     "source_text_char_count": "70",
     "source_text_sha256": "8c1712ac2308360319663dff3234692d871d5025279329fe81e4648ae572c069",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1729,6 +2258,12 @@
     "lexicon_root_id": "LEXROOT-675ec09e8aa958",
     "root_form_raw": "-CL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 17,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -1741,6 +2276,12 @@
     "lexicon_root_id": "LEXROOT-67fcae12a212a7",
     "root_form_raw": "-ḐV-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 9,
+      "pdf_page": 9
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
     "source_table_index": "",
@@ -1753,6 +2294,12 @@
     "lexicon_root_id": "LEXROOT-69c584c90cb6c4",
     "root_form_raw": "-DW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 9,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -1765,6 +2312,12 @@
     "lexicon_root_id": "LEXROOT-6a31167fd16e50",
     "root_form_raw": "-VY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 29,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -1777,6 +2330,12 @@
     "lexicon_root_id": "LEXROOT-6a80f97050df81",
     "root_form_raw": "-ŘŇ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.7",
+      "line": 4,
+      "pdf_page": 15
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "",
@@ -1789,46 +2348,74 @@
     "lexicon_root_id": "LEXROOT-6a80f97050df81",
     "root_form_raw": "-ŘŇ-",
     "row": 6,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 6,
+      "line_start": 6,
+      "pdf_page": 15
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "",
     "source_text_char_count": "22",
     "source_text_sha256": "1a284302b6e37e2b1a0a80cfa13bb76276db4cb701bfd146fa77ef2937123961",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 1"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-6a80f97050df81",
     "root_form_raw": "-ŘŇ-",
     "row": 7,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 7,
+      "line_start": 7,
+      "pdf_page": 15
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "",
     "source_text_char_count": "24",
     "source_text_sha256": "d4f3a86ddbabdf3bfa4a008483b6d0c59c0d02992420a1abb7b64d09e3b3418d",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-6a80f97050df81",
     "root_form_raw": "-ŘŇ-",
     "row": 8,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 8,
+      "line_start": 8,
+      "pdf_page": 15
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "",
     "source_text_char_count": "22",
     "source_text_sha256": "e25653f7fa9a2e3915b87c0172d77e73f4d4c14126ce5edd868fa1bd6a564e7f",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-783c9ab2e541b1",
     "root_form_raw": "-LPŠ-",
-    "row": 6,
+    "row": 1,
     "sense_id": "LEXSENSE-96ba2e907485c5",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 17,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "17",
     "source_printed_page": "115",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "244",
     "source_text_sha256": "8d8625add2e67831de4a0938f9eec570e31b7a266c3ca856ee336b1207da7fa7",
     "specification": "BSC",
@@ -1836,14 +2423,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-783c9ab2e541b1",
     "root_form_raw": "-LPŠ-",
-    "row": 9,
+    "row": 1,
     "sense_id": "LEXSENSE-e1156d59edeb47",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 17,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "17",
     "source_printed_page": "115",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "149",
     "source_text_sha256": "7bdb19ff2b988e239b7c5c4a537e347739ac4f4c47171bf8e432e706bc5f077a",
     "specification": "BSC",
@@ -1851,14 +2445,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-783c9ab2e541b1",
     "root_form_raw": "-LPŠ-",
-    "row": 13,
+    "row": 1,
     "sense_id": "LEXSENSE-3941b945f837ca",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 17,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "17",
     "source_printed_page": "115",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "164",
     "source_text_sha256": "e662c06e3af3ec0027d5757072916e8dc63cccb707f6c615b6481b0f2d378ad3",
     "specification": "BSC",
@@ -1869,39 +2470,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-783c9ab2e541b1",
     "root_form_raw": "-LPŠ-",
-    "row": 1,
-    "sense_id": "LEXSENSE-96ba2e907485c5",
-    "source_pdf_page": "17",
-    "source_printed_page": "115",
-    "source_table_index": "1",
-    "source_text_char_count": "252",
-    "source_text_sha256": "eb7d841fedd6b88d6262ba5351953dc8f34d2ca7c89813dc7bcfebb0f7ba6c29",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-783c9ab2e541b1",
-    "root_form_raw": "-LPŠ-",
-    "row": 1,
-    "source_pdf_page": "17",
-    "source_printed_page": "115",
-    "source_table_index": "1",
-    "source_text_char_count": "330",
-    "source_text_sha256": "f1226a41cc884001b0b8f278ca039b8539ef7d97fd946619dd6622fcdfb06fae",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-783c9ab2e541b1",
-    "root_form_raw": "-LPŠ-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 17,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "17",
     "source_printed_page": "115",
     "source_table_index": "1",
     "source_text_char_count": "104",
     "source_text_sha256": "e7f5a7fd68e45e68373009d6bb939b4cbd98309501473662b1b546826567cace",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1909,11 +2491,19 @@
     "lexicon_root_id": "LEXROOT-783c9ab2e541b1",
     "root_form_raw": "-LPŠ-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 17,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "17",
     "source_printed_page": "115",
     "source_table_index": "1",
     "source_text_char_count": "92",
     "source_text_sha256": "1310323191a73d7736fe76e069cb65c809353f5d39da4b163a53363999c47a72",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1921,11 +2511,19 @@
     "lexicon_root_id": "LEXROOT-783c9ab2e541b1",
     "root_form_raw": "-LPŠ-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 17,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "17",
     "source_printed_page": "115",
     "source_table_index": "1",
     "source_text_char_count": "104",
     "source_text_sha256": "1ac97099e7c0f8aed26e509b7b3a22445cb05a14c6247a49dc29315471b22762",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -1933,6 +2531,12 @@
     "lexicon_root_id": "LEXROOT-7d4a7fdda8cd54",
     "root_form_raw": "-JĻ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 53,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -1945,6 +2549,12 @@
     "lexicon_root_id": "LEXROOT-7f79579d9ef602",
     "root_form_raw": "-VG-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 28,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -1957,6 +2567,12 @@
     "lexicon_root_id": "LEXROOT-86dd7a17e2423a",
     "root_form_raw": "-FL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 17,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -1969,6 +2585,12 @@
     "lexicon_root_id": "LEXROOT-8a239ef6199914",
     "root_form_raw": "-FY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 23,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -1981,6 +2603,12 @@
     "lexicon_root_id": "LEXROOT-8a408d2cd9ffa1",
     "root_form_raw": "-VJ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 39,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -1993,6 +2621,12 @@
     "lexicon_root_id": "LEXROOT-8c39a52e53d336",
     "root_form_raw": "-BL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 15,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -2005,6 +2639,12 @@
     "lexicon_root_id": "LEXROOT-8c845a82508a1f",
     "root_form_raw": "-VBY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 38,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -2013,38 +2653,61 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-94e57aa1859a45",
     "root_form_raw": "-ŢF-",
-    "row": 44,
+    "row": 0,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 0,
+      "table_index": 2
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "94",
     "source_text_sha256": "0d2dd717c68d2bc5b917f91c4fac8ecc91a97c14a7bd33519ea4778f9e3ba49a",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-94e57aa1859a45",
     "root_form_raw": "-ŢF-",
-    "row": 48,
+    "row": 0,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 0,
+      "table_index": 2
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "80",
     "source_text_sha256": "4c0928480df210050f720ebc501652053ee27e97e1b6e1f4d8f7992571faca5c",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-94e57aa1859a45",
     "root_form_raw": "-ŢF-",
-    "row": 51,
+    "row": 1,
     "sense_id": "LEXSENSE-5af1cf7bce7c36",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "147",
     "source_text_sha256": "7b000f84276abc952c111ff2c1ea9fc927785603577b1d3adfa00de8a2f30152",
     "specification": "BSC",
@@ -2052,22 +2715,76 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-94e57aa1859a45",
     "root_form_raw": "-ŢF-",
-    "row": 0,
+    "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 2,
+      "table_index": 2
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
     "source_table_index": "2",
-    "source_text_char_count": "934",
-    "source_text_sha256": "6f835eba415c0312d857eea5ffa59eac348e0fc49bbc86f1fef211724be0e8b9",
-    "status": "DEBT_UNSUPPORTED_SHAPE"
+    "source_text_char_count": "185",
+    "source_text_sha256": "7b749419b8b60a9514fe701f6d5f878e29dee850cb0371603ccd8880e7b5fa09",
+    "specification": "CTE",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+  },
+  {
+    "column": 1,
+    "lexicon_root_id": "LEXROOT-94e57aa1859a45",
+    "root_form_raw": "-ŢF-",
+    "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 3,
+      "table_index": 2
+    },
+    "source_pdf_page": "9",
+    "source_printed_page": "107",
+    "source_table_index": "2",
+    "source_text_char_count": "187",
+    "source_text_sha256": "d5be7ced968e55e2edd39d2ff4a7fea4ca6a029c518518f9f93f84ce5aadd687",
+    "specification": "CSV",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+  },
+  {
+    "column": 1,
+    "lexicon_root_id": "LEXROOT-94e57aa1859a45",
+    "root_form_raw": "-ŢF-",
+    "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 4,
+      "table_index": 2
+    },
+    "source_pdf_page": "9",
+    "source_printed_page": "107",
+    "source_table_index": "2",
+    "source_text_char_count": "126",
+    "source_text_sha256": "e4c7dbb2f93d30d2797cdcd458531e2b37e31aaf44543c620271d8200d35e0b8",
+    "specification": "OBJ",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-951ec359aa9f97",
     "root_form_raw": "-RN-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.7",
+      "line": 23,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
@@ -2080,42 +2797,69 @@
     "lexicon_root_id": "LEXROOT-951ec359aa9f97",
     "root_form_raw": "-RN-",
     "row": 27,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 27,
+      "line_start": 27,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "78",
     "source_text_sha256": "37ca8065ea0d68a6c31c91f186257442540628cd9742b0969943faedfa7c9c0f",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 1"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-951ec359aa9f97",
     "root_form_raw": "-RN-",
     "row": 28,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 28,
+      "line_start": 28,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "82",
     "source_text_sha256": "428bf8a23cf1dc8d8c487958b22aff1885bcc3b97c3e142ad59b07da4c1f8278",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-951ec359aa9f97",
     "root_form_raw": "-RN-",
     "row": 29,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 29,
+      "line_start": 29,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "81",
     "source_text_sha256": "47f1353b35a970151198de1877a035b1d45f0ddb748d6594754957ad3602abef",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-95a587ad7871fc",
     "root_form_raw": "-XḐ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 43,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -2128,6 +2872,12 @@
     "lexicon_root_id": "LEXROOT-98177064c41f6b",
     "root_form_raw": "-ZẒ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 41,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -2140,6 +2890,12 @@
     "lexicon_root_id": "LEXROOT-9999f618ddde95",
     "root_form_raw": "-KR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 41,
+      "pdf_page": 6
+    },
     "source_pdf_page": "6",
     "source_printed_page": "104",
     "source_table_index": "",
@@ -2148,40 +2904,44 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-9a5b6ccf3626fc",
     "root_form_raw": "-JG-",
-    "row": 8,
+    "row": 1,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 2,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "70",
     "source_text_sha256": "3d32d048f58ccc8cc0968efb198c58d36d5fdb0b7b37382eac3a3d1cce43e29a",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 0,
-    "lexicon_root_id": "LEXROOT-9a5b6ccf3626fc",
-    "root_form_raw": "-JG-",
-    "row": 11,
-    "source_pdf_page": "2",
-    "source_printed_page": "100",
-    "source_table_index": "",
-    "source_text_char_count": "71",
-    "source_text_sha256": "7a4eca804ab8a8f5d7acaf39a04ba7a69f0002486120ff899c671633ac674c1b",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
     "column": 2,
     "lexicon_root_id": "LEXROOT-9a5b6ccf3626fc",
     "root_form_raw": "-JG-",
     "row": 1,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 2,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "1",
-    "source_text_char_count": "157",
-    "source_text_sha256": "e01a1e2a861fe7ad00802fffcc51668e50acf8e92bfcabf2b18f1e6b7db78f1e",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "source_text_char_count": "71",
+    "source_text_sha256": "7a4eca804ab8a8f5d7acaf39a04ba7a69f0002486120ff899c671633ac674c1b",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
     "column": 1,
@@ -2189,6 +2949,13 @@
     "root_form_raw": "-JG-",
     "row": 2,
     "sense_id": "LEXSENSE-a14e214527a91b",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 2,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "1",
@@ -2204,6 +2971,13 @@
     "root_form_raw": "-JG-",
     "row": 3,
     "sense_id": "LEXSENSE-2eb764a2b9e14a",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 2,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "1",
@@ -2219,6 +2993,13 @@
     "root_form_raw": "-JG-",
     "row": 4,
     "sense_id": "LEXSENSE-4c98dec3056153",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 2,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "1",
@@ -2234,6 +3015,13 @@
     "root_form_raw": "-JG-",
     "row": 5,
     "sense_id": "LEXSENSE-8d733991b0f937",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 2,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "1",
@@ -2248,6 +3036,12 @@
     "lexicon_root_id": "LEXROOT-a47399a13c8814",
     "root_form_raw": "-XW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 15,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -2260,6 +3054,12 @@
     "lexicon_root_id": "LEXROOT-a5449a495820d6",
     "root_form_raw": "-TL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 19,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -2272,6 +3072,12 @@
     "lexicon_root_id": "LEXROOT-a60e24def40a85",
     "root_form_raw": "-KČ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 43,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -2284,6 +3090,12 @@
     "lexicon_root_id": "LEXROOT-a673b66cae2810",
     "root_form_raw": "-PW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 15,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -2296,6 +3108,12 @@
     "lexicon_root_id": "LEXROOT-a703726a49d40c",
     "root_form_raw": "-ẒḐ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 13,
+      "pdf_page": 3
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "",
@@ -2304,40 +3122,84 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-a97eec0301fa8e",
     "root_form_raw": "-ŠŘ-",
-    "row": 11,
+    "row": 1,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
-    "source_table_index": "",
-    "source_text_char_count": "165",
-    "source_text_sha256": "b0de3f045ff0a5b048f1b80974ed1682d8a0fe7b41f523ab0ac60ad51344d7ff",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 0,
-    "lexicon_root_id": "LEXROOT-a97eec0301fa8e",
-    "root_form_raw": "-ŠŘ-",
-    "row": 15,
-    "source_pdf_page": "1",
-    "source_printed_page": "99",
-    "source_table_index": "",
-    "source_text_char_count": "128",
-    "source_text_sha256": "0c210258bb4ee23820e0e7bb1dd2127e575090e3558926f883c1830f41cb4f5a",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "source_table_index": "1",
+    "source_text_char_count": "25",
+    "source_text_sha256": "98bcc0b52fa75062775a97a26ff46c8904b3163b1abded34baf9aac8db20f888",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
     "column": 2,
     "lexicon_root_id": "LEXROOT-a97eec0301fa8e",
     "root_form_raw": "-ŠŘ-",
     "row": 1,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "1",
-    "source_text_char_count": "310",
-    "source_text_sha256": "9fb973822a97eb6e87d9aa9bb02d76a0bd5ff2cf20760a060872c8ab22e1f1b0",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "source_text_char_count": "133",
+    "source_text_sha256": "ab92ccaab688ea03a3c31928e8dd9c46e29d10f11d7abfb7ffbbeaa07bbd9669",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 1"
+  },
+  {
+    "column": 2,
+    "lexicon_root_id": "LEXROOT-a97eec0301fa8e",
+    "root_form_raw": "-ŠŘ-",
+    "row": 1,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 1,
+      "table_index": 1
+    },
+    "source_pdf_page": "1",
+    "source_printed_page": "99",
+    "source_table_index": "1",
+    "source_text_char_count": "26",
+    "source_text_sha256": "96740ab6afc5d1a7dddeece1ffe81d4c31488a8a9522faed7113f4b0fd840cd8",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
+  },
+  {
+    "column": 2,
+    "lexicon_root_id": "LEXROOT-a97eec0301fa8e",
+    "root_form_raw": "-ŠŘ-",
+    "row": 1,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 1,
+      "table_index": 1
+    },
+    "source_pdf_page": "1",
+    "source_printed_page": "99",
+    "source_table_index": "1",
+    "source_text_char_count": "95",
+    "source_text_sha256": "2f258c38325f2869a1ab5b2920bed2ae5b919637f99cd5f3c832154232ea187e",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 1"
   },
   {
     "column": 1,
@@ -2345,6 +3207,13 @@
     "root_form_raw": "-ŠŘ-",
     "row": 2,
     "sense_id": "LEXSENSE-d4ff4dd85bf11e",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "1",
@@ -2360,6 +3229,13 @@
     "root_form_raw": "-ŠŘ-",
     "row": 3,
     "sense_id": "LEXSENSE-4de142bc300555",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "1",
@@ -2375,6 +3251,13 @@
     "root_form_raw": "-ŠŘ-",
     "row": 4,
     "sense_id": "LEXSENSE-b0e0861e0f8144",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "1",
@@ -2390,6 +3273,13 @@
     "root_form_raw": "-ŠŘ-",
     "row": 5,
     "sense_id": "LEXSENSE-8d706e90369577",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "1",
@@ -2404,6 +3294,12 @@
     "lexicon_root_id": "LEXROOT-abec77412ef8ae",
     "root_form_raw": "-FC-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 57,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -2416,6 +3312,12 @@
     "lexicon_root_id": "LEXROOT-ad273621f968dd",
     "root_form_raw": "-K-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 3,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -2424,14 +3326,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-ad2ee69e3adf26",
     "root_form_raw": "-LC-",
-    "row": 35,
+    "row": 1,
     "sense_id": "LEXSENSE-47ca5789b6abd4",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "47",
     "source_text_sha256": "be0980b9e9f5a091bc961c06496f328cb24f03a558d6845365d5e130eb3394d5",
     "specification": "BSC",
@@ -2439,14 +3348,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-ad2ee69e3adf26",
     "root_form_raw": "-LC-",
-    "row": 36,
+    "row": 1,
     "sense_id": "LEXSENSE-fbdc993df39e96",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "41",
     "source_text_sha256": "2e71afbea7e487fe7468d2e1be0c2ba4ad033630f07fd5be7334e25d97b96b04",
     "specification": "BSC",
@@ -2454,14 +3370,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-ad2ee69e3adf26",
     "root_form_raw": "-LC-",
-    "row": 38,
+    "row": 1,
     "sense_id": "LEXSENSE-53701e8a2b6e9b",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "121",
     "source_text_sha256": "48326b47eaa83a258724ce093e0dfe51d74b57b29001587d396b3e4a1d6faaa9",
     "specification": "BSC",
@@ -2472,39 +3395,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-ad2ee69e3adf26",
     "root_form_raw": "-LC-",
-    "row": 1,
-    "sense_id": "LEXSENSE-47ca5789b6abd4",
-    "source_pdf_page": "1",
-    "source_printed_page": "99",
-    "source_table_index": "2",
-    "source_text_char_count": "55",
-    "source_text_sha256": "1973a8b2501e3b1c97900c30045074fc34f057bfb33148369ee1c41cf18302ca",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-ad2ee69e3adf26",
-    "root_form_raw": "-LC-",
-    "row": 1,
-    "source_pdf_page": "1",
-    "source_printed_page": "99",
-    "source_table_index": "2",
-    "source_text_char_count": "179",
-    "source_text_sha256": "e226bbf0213d7a0f472fada0a5682058ed0eefa592e1df54413ab465f0c09a78",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-ad2ee69e3adf26",
-    "root_form_raw": "-LC-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 2,
+      "table_index": 2
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "2",
     "source_text_char_count": "92",
     "source_text_sha256": "93efc078eca2648813bd1fa9998501b295d90164dfe30647cafb8511eb7792e6",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -2512,11 +3416,19 @@
     "lexicon_root_id": "LEXROOT-ad2ee69e3adf26",
     "root_form_raw": "-LC-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 3,
+      "table_index": 2
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "2",
     "source_text_char_count": "156",
     "source_text_sha256": "a6d2c30552fbf200efa2102fb4dcdf8ce013edfedbda35ea66c112af8ed8b8f9",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -2524,11 +3436,19 @@
     "lexicon_root_id": "LEXROOT-ad2ee69e3adf26",
     "root_form_raw": "-LC-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 4,
+      "table_index": 2
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "2",
     "source_text_char_count": "59",
     "source_text_sha256": "593bcc5238e80c1dcc786f1ffe8e0912021e73605c4a2359cd6789d668047800",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -2536,6 +3456,12 @@
     "lexicon_root_id": "LEXROOT-aedb65f3226e2e",
     "root_form_raw": "-VGY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 40,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -2548,6 +3474,12 @@
     "lexicon_root_id": "LEXROOT-af110864c06d1a",
     "root_form_raw": "-ḐY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 11,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -2560,6 +3492,12 @@
     "lexicon_root_id": "LEXROOT-b18de97db70927",
     "root_form_raw": "-GJ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 5,
+      "pdf_page": 3
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "",
@@ -2572,6 +3510,12 @@
     "lexicon_root_id": "LEXROOT-b2e1193d8655be",
     "root_form_raw": "-ẒŢ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 11,
+      "pdf_page": 3
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "",
@@ -2584,6 +3528,12 @@
     "lexicon_root_id": "LEXROOT-b42c0cb4f69dbe",
     "root_form_raw": "-RḐ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.7",
+      "line": 14,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
@@ -2596,42 +3546,69 @@
     "lexicon_root_id": "LEXROOT-b42c0cb4f69dbe",
     "root_form_raw": "-RḐ-",
     "row": 17,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 17,
+      "line_start": 17,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "76",
     "source_text_sha256": "b9242d2697c8df22e6423daa36104479cd1e3cb1755d3dbfd8e821f829ef4875",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 1"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-b42c0cb4f69dbe",
     "root_form_raw": "-RḐ-",
     "row": 18,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 18,
+      "line_start": 18,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "78",
     "source_text_sha256": "f1cb7fc1dd2ceb21a101c08d368ec0a9c1b06de0d755a06b8b04e8ca356825a8",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-b42c0cb4f69dbe",
     "root_form_raw": "-RḐ-",
     "row": 19,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 19,
+      "line_start": 19,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "80",
     "source_text_sha256": "0837f8bebd8f03afb32a3a2f2337c0c480a3b882665d4b6b9416b78a4637254e",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-b631ef1fd91770",
     "root_form_raw": "-FḐ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 32,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -2644,6 +3621,12 @@
     "lexicon_root_id": "LEXROOT-b6e6b724f2b18e",
     "root_form_raw": "-TK-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 46,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -2656,6 +3639,12 @@
     "lexicon_root_id": "LEXROOT-ba32922def25a4",
     "root_form_raw": "-FP-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 19,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -2668,6 +3657,12 @@
     "lexicon_root_id": "LEXROOT-babbee6e3bba80",
     "root_form_raw": "-ČF-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 31,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -2680,6 +3675,12 @@
     "lexicon_root_id": "LEXROOT-bb9954137a7978",
     "root_form_raw": "-FPY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 33,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -2692,6 +3693,12 @@
     "lexicon_root_id": "LEXROOT-c0044bf989a738",
     "root_form_raw": "-KF-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 5,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -2704,6 +3711,12 @@
     "lexicon_root_id": "LEXROOT-c257d2ef07b380",
     "root_form_raw": "-P-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 54,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -2716,6 +3729,12 @@
     "lexicon_root_id": "LEXROOT-c2f25f8c3eac14",
     "root_form_raw": "-VČ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 47,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -2724,14 +3743,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-c34c5cf9b45616",
     "root_form_raw": "-KÇN-",
-    "row": 55,
+    "row": 1,
     "sense_id": "LEXSENSE-559de9145b46a4",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "231",
     "source_text_sha256": "3c5b546b083919e6a8e6a0898c30e96795d4466fbd91ec909104ffad259b5ec7",
     "specification": "BSC",
@@ -2739,14 +3765,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-c34c5cf9b45616",
     "root_form_raw": "-KÇN-",
-    "row": 58,
+    "row": 1,
     "sense_id": "LEXSENSE-34831d712c4205",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "203",
     "source_text_sha256": "a6086772e6ad589400ecc66f7652b30e408b6887ae9b5ea960dafac8996f5c36",
     "specification": "BSC",
@@ -2754,14 +3787,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-c34c5cf9b45616",
     "root_form_raw": "-KÇN-",
-    "row": 62,
+    "row": 1,
     "sense_id": "LEXSENSE-aa8eada6330044",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "276",
     "source_text_sha256": "3bc9c5683512fce6a9e8409a1445fb6a6d4b0e73de8c491bf1adf5c6e8cc540f",
     "specification": "BSC",
@@ -2772,39 +3812,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-c34c5cf9b45616",
     "root_form_raw": "-KÇN-",
-    "row": 1,
-    "sense_id": "LEXSENSE-559de9145b46a4",
-    "source_pdf_page": "1",
-    "source_printed_page": "99",
-    "source_table_index": "3",
-    "source_text_char_count": "239",
-    "source_text_sha256": "09cb981435edb684fd8882755b5a77ad4faeba620fbcbda45447eb9654600c88",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-c34c5cf9b45616",
-    "root_form_raw": "-KÇN-",
-    "row": 1,
-    "source_pdf_page": "1",
-    "source_printed_page": "99",
-    "source_table_index": "3",
-    "source_text_char_count": "496",
-    "source_text_sha256": "a2955c3d30740d109ad1db4897ec3e3ea614bebe6e8910dbe2389dc533b71f0e",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-c34c5cf9b45616",
-    "root_form_raw": "-KÇN-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 2,
+      "table_index": 3
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "3",
     "source_text_char_count": "31",
     "source_text_sha256": "4af53e3b19c063682c39e53c0caf9df4d2ac2f469a6959125e63e6684a72f41e",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -2812,11 +3833,19 @@
     "lexicon_root_id": "LEXROOT-c34c5cf9b45616",
     "root_form_raw": "-KÇN-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 3,
+      "table_index": 3
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "3",
     "source_text_char_count": "87",
     "source_text_sha256": "3f473ac8b32d2607426f2b97f14890e3af553ef5c3e488d835473cb1c95c47c5",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -2824,27 +3853,20 @@
     "lexicon_root_id": "LEXROOT-c34c5cf9b45616",
     "root_form_raw": "-KÇN-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 1,
+      "row": 4,
+      "table_index": 3
+    },
     "source_pdf_page": "1",
     "source_printed_page": "99",
     "source_table_index": "3",
     "source_text_char_count": "82",
     "source_text_sha256": "01de2ffa06442061aa43e9e946a0268a2b1aa4e05ae8e5004e8bdf5e57e0f7cc",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 0,
-    "lexicon_root_id": "LEXROOT-c43480d040513c",
-    "root_form_raw": "-KM-",
-    "row": 25,
-    "sense_id": "LEXSENSE-3e561e46cb10b3",
-    "source_pdf_page": "16",
-    "source_printed_page": "114",
-    "source_table_index": "",
-    "source_text_char_count": "95",
-    "source_text_sha256": "3cbeccc8afedeac9658a0e87f65092682b09d036920c4ff9b360ae5f14193e07",
     "specification": "OBJ",
-    "status": "PARSED",
-    "stem": "STEM 3"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
     "column": 1,
@@ -2852,6 +3874,13 @@
     "root_form_raw": "-KM-",
     "row": 2,
     "sense_id": "LEXSENSE-7c76613e3c0abb",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "1",
@@ -2867,6 +3896,13 @@
     "root_form_raw": "-KM-",
     "row": 2,
     "sense_id": "LEXSENSE-5a23d4d3de3a55",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "1",
@@ -2882,6 +3918,13 @@
     "root_form_raw": "-KM-",
     "row": 3,
     "sense_id": "LEXSENSE-77dfb91b14fefe",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "1",
@@ -2897,6 +3940,13 @@
     "root_form_raw": "-KM-",
     "row": 3,
     "sense_id": "LEXSENSE-bf294f6413b18c",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "1",
@@ -2912,6 +3962,13 @@
     "root_form_raw": "-KM-",
     "row": 4,
     "sense_id": "LEXSENSE-4221c2087115b9",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "1",
@@ -2927,6 +3984,13 @@
     "root_form_raw": "-KM-",
     "row": 4,
     "sense_id": "LEXSENSE-005947fc2055e5",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "1",
@@ -2942,6 +4006,13 @@
     "root_form_raw": "-KM-",
     "row": 5,
     "sense_id": "LEXSENSE-47fa5522e9e1d2",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "1",
@@ -2957,6 +4028,13 @@
     "root_form_raw": "-KM-",
     "row": 5,
     "sense_id": "LEXSENSE-b23d6a5b798c8c",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "1",
@@ -2968,9 +4046,35 @@
   },
   {
     "column": 0,
+    "lexicon_root_id": "LEXROOT-c43480d040513c",
+    "root_form_raw": "-KM-",
+    "row": 6,
+    "source_locus": {
+      "column": 0,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 6,
+      "table_index": 1
+    },
+    "source_pdf_page": "16",
+    "source_printed_page": "114",
+    "source_table_index": "1",
+    "source_text_char_count": "47",
+    "source_text_sha256": "8b62247010971df80e25bce6216d01d5a00a657cfa9c10f2fdf78e4f1ccff456",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
+  },
+  {
+    "column": 0,
     "lexicon_root_id": "LEXROOT-c471475b4cdcf7",
     "root_form_raw": "-FR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 46,
+      "pdf_page": 6
+    },
     "source_pdf_page": "6",
     "source_printed_page": "104",
     "source_table_index": "",
@@ -2983,6 +4087,12 @@
     "lexicon_root_id": "LEXROOT-c521f31bface0d",
     "root_form_raw": "-Ř-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.7",
+      "line": 4,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
@@ -2995,42 +4105,69 @@
     "lexicon_root_id": "LEXROOT-c521f31bface0d",
     "root_form_raw": "-Ř-",
     "row": 7,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 7,
+      "line_start": 7,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "33",
     "source_text_sha256": "99138d6eeaca4107de400c5db613880c94afc25e1e5116b3bc1769006adbaa03",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 1"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-c521f31bface0d",
     "root_form_raw": "-Ř-",
     "row": 8,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 8,
+      "line_start": 8,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "14",
     "source_text_sha256": "5f87016b5ea1f63300ecc2b868850f7a0b1250a2999dfc5dd90fd337f724495e",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-c521f31bface0d",
     "root_form_raw": "-Ř-",
     "row": 9,
+    "source_locus": {
+      "kind": "prose",
+      "line_end": 9,
+      "line_start": 9,
+      "pdf_page": 14
+    },
     "source_pdf_page": "14",
     "source_printed_page": "112",
     "source_table_index": "",
     "source_text_char_count": "30",
     "source_text_sha256": "ac211e989b5972ab570a9eb9e73f21c0cb4d6e7a0a758c80487d70513087ab4a",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-c629100a4651a7",
     "root_form_raw": "-V-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 7,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -3043,6 +4180,12 @@
     "lexicon_root_id": "LEXROOT-cc85fb750dd844",
     "root_form_raw": "-ẒW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 27,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -3051,38 +4194,61 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-ccd9146fb590a1",
     "root_form_raw": "-Ţ-",
-    "row": 31,
+    "row": 0,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 7,
+      "row": 0,
+      "table_index": 1
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "101",
     "source_text_sha256": "efe7aa06c75beee0983b6e35335ecc4047dde1980bf6af363105d4975f00c32f",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-ccd9146fb590a1",
     "root_form_raw": "-Ţ-",
-    "row": 35,
+    "row": 0,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 7,
+      "row": 0,
+      "table_index": 1
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "89",
     "source_text_sha256": "5759f288f7cb7e2d6bed71d587ecd6dfa3a05ea1901f652d6d9aa09e4e0a83ed",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-ccd9146fb590a1",
     "root_form_raw": "-Ţ-",
-    "row": 38,
+    "row": 1,
     "sense_id": "LEXSENSE-e29611780a6b14",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 7,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "56",
     "source_text_sha256": "95fae971e622298c8c6a7a38748809ec93f277165958c82a90183b591367a7b2",
     "specification": "BSC",
@@ -3090,22 +4256,76 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-ccd9146fb590a1",
     "root_form_raw": "-Ţ-",
-    "row": 0,
+    "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 7,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "1",
-    "source_text_char_count": "634",
-    "source_text_sha256": "83ffd65ec832d60fe86a0103dfa51e47583c2e9e03764b5c030164fba1f1f5fb",
-    "status": "DEBT_UNSUPPORTED_SHAPE"
+    "source_text_char_count": "110",
+    "source_text_sha256": "89500d5637894a071b14dfc28c8d3c1f21608debb02db1f92e2fbc699c3d2d19",
+    "specification": "CTE",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+  },
+  {
+    "column": 1,
+    "lexicon_root_id": "LEXROOT-ccd9146fb590a1",
+    "root_form_raw": "-Ţ-",
+    "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 7,
+      "row": 3,
+      "table_index": 1
+    },
+    "source_pdf_page": "7",
+    "source_printed_page": "105",
+    "source_table_index": "1",
+    "source_text_char_count": "94",
+    "source_text_sha256": "3aca5e86e6635236ec5b5d08786dd852ba645bdee816c83da5abe6bccc1f2294",
+    "specification": "CSV",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+  },
+  {
+    "column": 1,
+    "lexicon_root_id": "LEXROOT-ccd9146fb590a1",
+    "root_form_raw": "-Ţ-",
+    "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 7,
+      "row": 4,
+      "table_index": 1
+    },
+    "source_pdf_page": "7",
+    "source_printed_page": "105",
+    "source_table_index": "1",
+    "source_text_char_count": "71",
+    "source_text_sha256": "a2e3cdb8eb008f6f522b5ebfce764ccbf69cb425d482ee4728499c151fd22c8a",
+    "specification": "OBJ",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
     "column": 0,
     "lexicon_root_id": "LEXROOT-ce44a5c38889b6",
     "root_form_raw": "-ẒB-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 26,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -3118,6 +4338,12 @@
     "lexicon_root_id": "LEXROOT-d319813251ea42",
     "root_form_raw": "-GR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 3,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -3126,14 +4352,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-d68711c5825acc",
     "root_form_raw": "-FKL-",
-    "row": 21,
+    "row": 1,
     "sense_id": "LEXSENSE-f5d2606c38ac1e",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "219",
     "source_text_sha256": "367d9ecb5661eac720abd7340d6aaa00938b473b8b8395f9d0877b72f626c30f",
     "specification": "BSC",
@@ -3141,14 +4374,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-d68711c5825acc",
     "root_form_raw": "-FKL-",
-    "row": 24,
+    "row": 1,
     "sense_id": "LEXSENSE-599f71e254e69b",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "238",
     "source_text_sha256": "56a8dfa61a3e39ffffccf11f92f93bc23430e8fd34cd587c056ad2fca1cc4fd9",
     "specification": "BSC",
@@ -3156,14 +4396,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-d68711c5825acc",
     "root_form_raw": "-FKL-",
-    "row": 28,
+    "row": 1,
     "sense_id": "LEXSENSE-c6225abeb732e2",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "299",
     "source_text_sha256": "695a9ef4fc9a92fa677c0abfc61826d1b976e2b660bd70e12f6438d0ca785b99",
     "specification": "BSC",
@@ -3174,39 +4421,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-d68711c5825acc",
     "root_form_raw": "-FKL-",
-    "row": 1,
-    "sense_id": "LEXSENSE-f5d2606c38ac1e",
-    "source_pdf_page": "3",
-    "source_printed_page": "101",
-    "source_table_index": "1",
-    "source_text_char_count": "227",
-    "source_text_sha256": "cdd437da5e12e0ce203ec1c93edc11a8d22592ec3d01d52d1009b0a037d285b1",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-d68711c5825acc",
-    "root_form_raw": "-FKL-",
-    "row": 1,
-    "source_pdf_page": "3",
-    "source_printed_page": "101",
-    "source_table_index": "1",
-    "source_text_char_count": "554",
-    "source_text_sha256": "64deed2894d2c55d0df2ea89cb4f6a4d804722ac4c85c10de315d8353d895383",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-d68711c5825acc",
-    "root_form_raw": "-FKL-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "1",
     "source_text_char_count": "62",
     "source_text_sha256": "ca20382a0490ccbf57f099bc78ac063db0bb4d107e8f753d2e642f4a9190c1e5",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3214,11 +4442,19 @@
     "lexicon_root_id": "LEXROOT-d68711c5825acc",
     "root_form_raw": "-FKL-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "1",
     "source_text_char_count": "60",
     "source_text_sha256": "ad5d19656835bac312e06f95f743bac4d1f38c75c7b7493a54ffb61e6a5df2c7",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3226,11 +4462,19 @@
     "lexicon_root_id": "LEXROOT-d68711c5825acc",
     "root_form_raw": "-FKL-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 3,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "1",
     "source_text_char_count": "115",
     "source_text_sha256": "3d4f713c1cf1610b6fd2485368db5feff9b128b9ecb1fc5a53f5e24c80890ed3",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3238,6 +4482,12 @@
     "lexicon_root_id": "LEXROOT-d854a34f3c8867",
     "root_form_raw": "-ŢY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 51,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -3250,6 +4500,12 @@
     "lexicon_root_id": "LEXROOT-d8dcd78e1bea30",
     "root_form_raw": "-PR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 38,
+      "pdf_page": 6
+    },
     "source_pdf_page": "6",
     "source_printed_page": "104",
     "source_table_index": "",
@@ -3258,14 +4514,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-d9051260e9fda4",
     "root_form_raw": "-NH-",
-    "row": 18,
+    "row": 1,
     "sense_id": "LEXSENSE-e1205fb16c70c7",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "165",
     "source_text_sha256": "0cb8fcd337082cf7dd74ebc8a0e3690ba62e464444518bc830b3ecab095c9898",
     "specification": "BSC",
@@ -3273,14 +4536,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-d9051260e9fda4",
     "root_form_raw": "-NH-",
-    "row": 20,
+    "row": 1,
     "sense_id": "LEXSENSE-e8b174a096257a",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "98",
     "source_text_sha256": "8f8bbf3673669f6569a299784ce21cc75dd13ce3785f3fee349fc46c43aa42ef",
     "specification": "BSC",
@@ -3288,14 +4558,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-d9051260e9fda4",
     "root_form_raw": "-NH-",
-    "row": 23,
+    "row": 1,
     "sense_id": "LEXSENSE-8dbd25eb16ffdd",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
-    "source_table_index": "",
+    "source_table_index": "1",
     "source_text_char_count": "96",
     "source_text_sha256": "da123b95d9a561f822399bf31018c45ac3f272452a2e710f414295e7475ae63d",
     "specification": "BSC",
@@ -3306,39 +4583,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-d9051260e9fda4",
     "root_form_raw": "-NH-",
-    "row": 1,
-    "sense_id": "LEXSENSE-e1205fb16c70c7",
-    "source_pdf_page": "9",
-    "source_printed_page": "107",
-    "source_table_index": "1",
-    "source_text_char_count": "173",
-    "source_text_sha256": "d74dbd09349de2ae17358364da76afcf359d8d7b2bbea0b991f28cfa5d7ccbc1",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-d9051260e9fda4",
-    "root_form_raw": "-NH-",
-    "row": 1,
-    "source_pdf_page": "9",
-    "source_printed_page": "107",
-    "source_table_index": "1",
-    "source_text_char_count": "211",
-    "source_text_sha256": "f3b3a2902665a9909e60c0bfd652f5c72db28c0390bc8e39d031a5e0f11beee2",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-d9051260e9fda4",
-    "root_form_raw": "-NH-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
     "source_table_index": "1",
     "source_text_char_count": "99",
     "source_text_sha256": "d40ea78a69d0b5fa7a19ddeba8f339f7a18607fc6749b14641d96782caae7952",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3346,11 +4604,19 @@
     "lexicon_root_id": "LEXROOT-d9051260e9fda4",
     "root_form_raw": "-NH-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
     "source_table_index": "1",
     "source_text_char_count": "93",
     "source_text_sha256": "c5c0e486b2bc4517d87b9d710e027583ffd956f001acc1612974b2e0d1c6dddb",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3358,11 +4624,19 @@
     "lexicon_root_id": "LEXROOT-d9051260e9fda4",
     "root_form_raw": "-NH-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 9,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
     "source_table_index": "1",
     "source_text_char_count": "66",
     "source_text_sha256": "88f7e5c3f83d338edc551aa30dc5feeeb6a496d2d402e1f8c468291175bc5ba5",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3370,6 +4644,12 @@
     "lexicon_root_id": "LEXROOT-daad57eeee8e57",
     "root_form_raw": "-ḐB-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 6,
+      "pdf_page": 9
+    },
     "source_pdf_page": "9",
     "source_printed_page": "107",
     "source_table_index": "",
@@ -3382,6 +4662,12 @@
     "lexicon_root_id": "LEXROOT-db810372e067be",
     "root_form_raw": "-ŢW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 53,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -3394,6 +4680,12 @@
     "lexicon_root_id": "LEXROOT-de8ae64e6e1cad",
     "root_form_raw": "-Ḑ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 49,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -3406,6 +4698,12 @@
     "lexicon_root_id": "LEXROOT-dec417eb5b618b",
     "root_form_raw": "-XḐR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 52,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -3418,6 +4716,12 @@
     "lexicon_root_id": "LEXROOT-e03e44614b6419",
     "root_form_raw": "-FKW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 36,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -3426,14 +4730,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-e0cc53e6cc992e",
     "root_form_raw": "-ŇBY-",
-    "row": 25,
+    "row": 1,
     "sense_id": "LEXSENSE-738678d81f8d8f",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "194",
     "source_text_sha256": "637f8d13faa9293e8488f25b4be44cf7c6ca80e3bc5f1105cb633c4f00ea4f50",
     "specification": "BSC",
@@ -3441,14 +4752,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-e0cc53e6cc992e",
     "root_form_raw": "-ŇBY-",
-    "row": 28,
+    "row": 1,
     "sense_id": "LEXSENSE-5b49e0a7101949",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "258",
     "source_text_sha256": "29959776c9be63f9d7cbdbbcbbee010c6d78ac357928fc8bb3542fbfd9aaf3d0",
     "specification": "BSC",
@@ -3456,14 +4774,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-e0cc53e6cc992e",
     "root_form_raw": "-ŇBY-",
-    "row": 33,
+    "row": 1,
     "sense_id": "LEXSENSE-c8eb3070064cbd",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "126",
     "source_text_sha256": "5a17ba3e219716e2da671db301c950485e6fe98fb38312e66437e563301ea134",
     "specification": "BSC",
@@ -3474,39 +4799,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-e0cc53e6cc992e",
     "root_form_raw": "-ŇBY-",
-    "row": 1,
-    "sense_id": "LEXSENSE-738678d81f8d8f",
-    "source_pdf_page": "12",
-    "source_printed_page": "110",
-    "source_table_index": "2",
-    "source_text_char_count": "202",
-    "source_text_sha256": "ac4bc00d00bd92d30dacfe9d209a504f943d472de405d0abdd934d0dba42313e",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-e0cc53e6cc992e",
-    "root_form_raw": "-ŇBY-",
-    "row": 1,
-    "source_pdf_page": "12",
-    "source_printed_page": "110",
-    "source_table_index": "2",
-    "source_text_char_count": "401",
-    "source_text_sha256": "56302c6e849a3f697a314e9eda8743a2d731f378b800d6aba9b28e046633baff",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-e0cc53e6cc992e",
-    "root_form_raw": "-ŇBY-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 2,
+      "table_index": 2
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
     "source_table_index": "2",
     "source_text_char_count": "70",
     "source_text_sha256": "a3c54f5dc126caad7e40dada7ee2b4fa154757428a12b7e0b87d0684b76d0b06",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3514,11 +4820,19 @@
     "lexicon_root_id": "LEXROOT-e0cc53e6cc992e",
     "root_form_raw": "-ŇBY-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 3,
+      "table_index": 2
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
     "source_table_index": "2",
     "source_text_char_count": "99",
     "source_text_sha256": "cf1afb488878f6fb32403268b47e63801c1c11446c8605e7075fd8c61ce75f4a",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3526,46 +4840,77 @@
     "lexicon_root_id": "LEXROOT-e0cc53e6cc992e",
     "root_form_raw": "-ŇBY-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 12,
+      "row": 4,
+      "table_index": 2
+    },
     "source_pdf_page": "12",
     "source_printed_page": "110",
     "source_table_index": "2",
     "source_text_char_count": "62",
     "source_text_sha256": "a7193903187cdbdcf3497252538fdcad8c0659cdd5d05c015aa0ff9c8b3cff06",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-e2e030128aa8df",
     "root_form_raw": "-RŠ-",
-    "row": 34,
+    "row": 0,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 0,
+      "table_index": 2
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "64",
     "source_text_sha256": "0c334fe822327395dae1a39330d006d6af336ebbd60666411b3c8805a73dfb1f",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-e2e030128aa8df",
     "root_form_raw": "-RŠ-",
-    "row": 37,
+    "row": 0,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 0,
+      "table_index": 2
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "150",
     "source_text_sha256": "0eeb103a883f917ffa61ba6576a2ee3fc37d6da00c0bb19e0841f33303a3fc7a",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-e2e030128aa8df",
     "root_form_raw": "-RŠ-",
-    "row": 42,
+    "row": 1,
     "sense_id": "LEXSENSE-ad3b551243a665",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "190",
     "source_text_sha256": "1fb0ae32d6f2868ab5bb94d61d567fce1dc66226d285f269ef0cdeec127153e5",
     "specification": "BSC",
@@ -3573,39 +4918,63 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-e2e030128aa8df",
     "root_form_raw": "-RŠ-",
-    "row": 0,
+    "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 2,
+      "table_index": 2
+    },
     "source_pdf_page": "16",
     "source_printed_page": "114",
     "source_table_index": "2",
-    "source_text_char_count": "864",
-    "source_text_sha256": "b63f321ee4bf6e11a0043c88af39faee83a93a11528eb81c8bda5ccacc78d2cb",
-    "status": "DEBT_UNSUPPORTED_SHAPE"
-  },
-  {
-    "column": 0,
-    "lexicon_root_id": "LEXROOT-e4e5e562a5af3d",
-    "root_form_raw": "-TR-",
-    "row": 16,
-    "source_pdf_page": "6",
-    "source_printed_page": "104",
-    "source_table_index": "",
-    "source_text_char_count": "137",
-    "source_text_sha256": "e15d46595c5a989960de855a6e8e42515a715caaf929df8a2aa6e7776b7dacff",
+    "source_text_char_count": "170",
+    "source_text_sha256": "c45d518df63757fdeb01b47a8fc45beef4c96b40cc8f6d69d367dfe0629cec0f",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
-    "lexicon_root_id": "LEXROOT-e4e5e562a5af3d",
-    "root_form_raw": "-TR-",
-    "row": 20,
-    "source_pdf_page": "6",
-    "source_printed_page": "104",
-    "source_table_index": "",
-    "source_text_char_count": "153",
-    "source_text_sha256": "f2ccee6b255ae68bad078daade466239c9f8652fd5d6c45a81a2a62f7f1bd1f6",
+    "column": 1,
+    "lexicon_root_id": "LEXROOT-e2e030128aa8df",
+    "root_form_raw": "-RŠ-",
+    "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 3,
+      "table_index": 2
+    },
+    "source_pdf_page": "16",
+    "source_printed_page": "114",
+    "source_table_index": "2",
+    "source_text_char_count": "118",
+    "source_text_sha256": "f76afe5a9c1289e91bada12b0607dc827e656086113973960fa7c13d4b1588cb",
+    "specification": "CSV",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+  },
+  {
+    "column": 1,
+    "lexicon_root_id": "LEXROOT-e2e030128aa8df",
+    "root_form_raw": "-RŠ-",
+    "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 16,
+      "row": 4,
+      "table_index": 2
+    },
+    "source_pdf_page": "16",
+    "source_printed_page": "114",
+    "source_table_index": "2",
+    "source_text_char_count": "64",
+    "source_text_sha256": "827a76ad0457649dcf1386857eea1c9b8b9762e5319fc455dd9df96bfc0e8d48",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3613,12 +4982,80 @@
     "lexicon_root_id": "LEXROOT-e4e5e562a5af3d",
     "root_form_raw": "-TR-",
     "row": 1,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 6,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "6",
     "source_printed_page": "104",
     "source_table_index": "1",
-    "source_text_char_count": "307",
-    "source_text_sha256": "73297dafc98a74e73f73244973af290888548e955708e9a971fcdd5a5d07a9ea",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "source_text_char_count": "6",
+    "source_text_sha256": "dce0a14e496117f290690c1c57dcd27f538fdf149f76e668bde825bab3e15353",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 2"
+  },
+  {
+    "column": 2,
+    "lexicon_root_id": "LEXROOT-e4e5e562a5af3d",
+    "root_form_raw": "-TR-",
+    "row": 1,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 6,
+      "row": 1,
+      "table_index": 1
+    },
+    "source_pdf_page": "6",
+    "source_printed_page": "104",
+    "source_table_index": "1",
+    "source_text_char_count": "123",
+    "source_text_sha256": "2cc4bdb1ec1872ce5534602806c6ba8dadbdf34ed54b14acd960a832c18643cc",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 1"
+  },
+  {
+    "column": 2,
+    "lexicon_root_id": "LEXROOT-e4e5e562a5af3d",
+    "root_form_raw": "-TR-",
+    "row": 1,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 6,
+      "row": 1,
+      "table_index": 1
+    },
+    "source_pdf_page": "6",
+    "source_printed_page": "104",
+    "source_table_index": "1",
+    "source_text_char_count": "6",
+    "source_text_sha256": "dce0a14e496117f290690c1c57dcd27f538fdf149f76e668bde825bab3e15353",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
+  },
+  {
+    "column": 2,
+    "lexicon_root_id": "LEXROOT-e4e5e562a5af3d",
+    "root_form_raw": "-TR-",
+    "row": 1,
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 6,
+      "row": 1,
+      "table_index": 1
+    },
+    "source_pdf_page": "6",
+    "source_printed_page": "104",
+    "source_table_index": "1",
+    "source_text_char_count": "139",
+    "source_text_sha256": "f5c00f8b60e89e65ea57aac37cf4922fc78ee1a3ff9491d9479ef2f4165ca648",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 1"
   },
   {
     "column": 1,
@@ -3626,6 +5063,13 @@
     "root_form_raw": "-TR-",
     "row": 2,
     "sense_id": "LEXSENSE-a15833904d6d5a",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 6,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "6",
     "source_printed_page": "104",
     "source_table_index": "1",
@@ -3641,6 +5085,13 @@
     "root_form_raw": "-TR-",
     "row": 3,
     "sense_id": "LEXSENSE-477ee84ce641f6",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 6,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "6",
     "source_printed_page": "104",
     "source_table_index": "1",
@@ -3656,6 +5107,13 @@
     "root_form_raw": "-TR-",
     "row": 4,
     "sense_id": "LEXSENSE-c29b45ff7f7a06",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 6,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "6",
     "source_printed_page": "104",
     "source_table_index": "1",
@@ -3671,6 +5129,13 @@
     "root_form_raw": "-TR-",
     "row": 5,
     "sense_id": "LEXSENSE-9190ebe313838e",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 6,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "6",
     "source_printed_page": "104",
     "source_table_index": "1",
@@ -3685,6 +5150,12 @@
     "lexicon_root_id": "LEXROOT-e68b3cbd34038e",
     "root_form_raw": "-ẒL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 22,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -3693,14 +5164,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-e8785c7d060c5c",
     "root_form_raw": "-ŇŽ-",
-    "row": 53,
+    "row": 1,
     "sense_id": "LEXSENSE-c493f481d4977f",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "143",
     "source_text_sha256": "44bf55d5d689803a1a6de1d41cff848e04db94ef3149e706710e8197c9670cf4",
     "specification": "BSC",
@@ -3708,14 +5186,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-e8785c7d060c5c",
     "root_form_raw": "-ŇŽ-",
-    "row": 55,
+    "row": 1,
     "sense_id": "LEXSENSE-750fe26c1885bf",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "121",
     "source_text_sha256": "c7dbe574723b1328763bb78d71e81c952e23dc7659266efb453f290a57e74214",
     "specification": "BSC",
@@ -3723,14 +5208,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-e8785c7d060c5c",
     "root_form_raw": "-ŇŽ-",
-    "row": 58,
+    "row": 1,
     "sense_id": "LEXSENSE-4c8b725f6a2af6",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 1,
+      "table_index": 3
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
-    "source_table_index": "",
+    "source_table_index": "3",
     "source_text_char_count": "76",
     "source_text_sha256": "bce59d1e152b679fa3d756d7a8671847f455542504f525a2ed7e3b4cc033a4c8",
     "specification": "BSC",
@@ -3741,39 +5233,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-e8785c7d060c5c",
     "root_form_raw": "-ŇŽ-",
-    "row": 1,
-    "sense_id": "LEXSENSE-c493f481d4977f",
-    "source_pdf_page": "4",
-    "source_printed_page": "102",
-    "source_table_index": "3",
-    "source_text_char_count": "151",
-    "source_text_sha256": "36cf3aa9a6104316135e5fd70bf275612c4745f4fd03d7703fe99fc146dd9a5c",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-e8785c7d060c5c",
-    "root_form_raw": "-ŇŽ-",
-    "row": 1,
-    "source_pdf_page": "4",
-    "source_printed_page": "102",
-    "source_table_index": "3",
-    "source_text_char_count": "214",
-    "source_text_sha256": "2622114d999ee383e470d1896fc0bfd48b0ab7db9615f2303e2b5ccdb6c0089b",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-e8785c7d060c5c",
-    "root_form_raw": "-ŇŽ-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 2,
+      "table_index": 3
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
     "source_table_index": "3",
     "source_text_char_count": "43",
     "source_text_sha256": "83f4371045bd2f144cf9a38527841b638c03ce3cf9d1437b9278322605848fcb",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3781,11 +5254,19 @@
     "lexicon_root_id": "LEXROOT-e8785c7d060c5c",
     "root_form_raw": "-ŇŽ-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 3,
+      "table_index": 3
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
     "source_table_index": "3",
     "source_text_char_count": "84",
     "source_text_sha256": "a6fbefc9203f0b20be68fe43deffcf2094a15af3ca1431fa7c559c8ffb66ac29",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3793,11 +5274,19 @@
     "lexicon_root_id": "LEXROOT-e8785c7d060c5c",
     "root_form_raw": "-ŇŽ-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 4,
+      "row": 4,
+      "table_index": 3
+    },
     "source_pdf_page": "4",
     "source_printed_page": "102",
     "source_table_index": "3",
     "source_text_char_count": "67",
     "source_text_sha256": "9259f21ac104e7809b4ec3757f965b96097dd684b2d0f7d2abf1d8e751f55033",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3805,6 +5294,12 @@
     "lexicon_root_id": "LEXROOT-eb1e5f80b6f784",
     "root_form_raw": "-CW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 30,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -3817,6 +5312,12 @@
     "lexicon_root_id": "LEXROOT-ee22e5e95bf669",
     "root_form_raw": "-KL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 10,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -3829,6 +5330,12 @@
     "lexicon_root_id": "LEXROOT-f057ccdddb8470",
     "root_form_raw": "-KY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 16,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -3841,12 +5348,20 @@
     "lexicon_root_id": "LEXROOT-f0640321d1e13f",
     "root_form_raw": "-LN-",
     "row": 1,
+    "source_locus": {
+      "column": 3,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 1,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
-    "source_text_char_count": "7",
-    "source_text_sha256": "80657a3469f6ef6ed0e2827460bfa2a84a79a194b9657c5fb2c18717468759c6",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
+    "source_text_char_count": "1",
+    "source_text_sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1",
+    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+    "stem": "STEM 3"
   },
   {
     "column": 1,
@@ -3854,6 +5369,13 @@
     "root_form_raw": "-LN-",
     "row": 2,
     "sense_id": "LEXSENSE-ea8636f33208e2",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
@@ -3869,6 +5391,13 @@
     "root_form_raw": "-LN-",
     "row": 2,
     "sense_id": "LEXSENSE-f21237787f5ccd",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
@@ -3883,11 +5412,19 @@
     "lexicon_root_id": "LEXROOT-f0640321d1e13f",
     "root_form_raw": "-LN-",
     "row": 2,
+    "source_locus": {
+      "column": 3,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 2,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
     "source_text_char_count": "200",
     "source_text_sha256": "58face318891e8da848257b6bbd5e8fcb67760fd40f8ab953e9aca6951ab07ca",
+    "specification": "BSC",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3896,6 +5433,13 @@
     "root_form_raw": "-LN-",
     "row": 3,
     "sense_id": "LEXSENSE-92385b38eb7ee1",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
@@ -3911,6 +5455,13 @@
     "root_form_raw": "-LN-",
     "row": 3,
     "sense_id": "LEXSENSE-3f4235da44950d",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
@@ -3925,11 +5476,19 @@
     "lexicon_root_id": "LEXROOT-f0640321d1e13f",
     "root_form_raw": "-LN-",
     "row": 3,
+    "source_locus": {
+      "column": 3,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 3,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
     "source_text_char_count": "92",
     "source_text_sha256": "f662c0406684e40c0cdeba291300e5a58e77ce423eaf1008c7beb63c30c08ec3",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3938,6 +5497,13 @@
     "root_form_raw": "-LN-",
     "row": 4,
     "sense_id": "LEXSENSE-dc07b3e3c011e7",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
@@ -3953,6 +5519,13 @@
     "root_form_raw": "-LN-",
     "row": 4,
     "sense_id": "LEXSENSE-d2a5f3060ca837",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
@@ -3967,11 +5540,19 @@
     "lexicon_root_id": "LEXROOT-f0640321d1e13f",
     "root_form_raw": "-LN-",
     "row": 4,
+    "source_locus": {
+      "column": 3,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 4,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
     "source_text_char_count": "74",
     "source_text_sha256": "8c5f861c33ff8a96683ce58a83ba9d5b9dc6e207f650b614c30029f8ba884c58",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -3980,6 +5561,13 @@
     "root_form_raw": "-LN-",
     "row": 5,
     "sense_id": "LEXSENSE-835a23a2b38ed1",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
@@ -3995,6 +5583,13 @@
     "root_form_raw": "-LN-",
     "row": 5,
     "sense_id": "LEXSENSE-1d726307749706",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
@@ -4009,11 +5604,19 @@
     "lexicon_root_id": "LEXROOT-f0640321d1e13f",
     "root_form_raw": "-LN-",
     "row": 5,
+    "source_locus": {
+      "column": 3,
+      "kind": "table",
+      "pdf_page": 13,
+      "row": 5,
+      "table_index": 1
+    },
     "source_pdf_page": "13",
     "source_printed_page": "111",
     "source_table_index": "1",
     "source_text_char_count": "87",
     "source_text_sha256": "c468482e3326a0ba49064461f77cb4bfad73796a2ddc785d91eac50f37d7a62f",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -4021,6 +5624,12 @@
     "lexicon_root_id": "LEXROOT-f0f7b3c4c8caff",
     "root_form_raw": "-ẒX-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 45,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -4029,14 +5638,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-f11e52a574f3f7",
     "root_form_raw": "-RÇP-",
-    "row": 28,
+    "row": 1,
     "sense_id": "LEXSENSE-403fcc148eb2a0",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "63",
     "source_text_sha256": "b57e6e092b108ab85ee9efcc8c1748bd3a21a76198841d484fd08e41760be74f",
     "specification": "BSC",
@@ -4044,14 +5660,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-f11e52a574f3f7",
     "root_form_raw": "-RÇP-",
-    "row": 29,
+    "row": 1,
     "sense_id": "LEXSENSE-051d11be049cd8",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "90",
     "source_text_sha256": "3108a2072b02ad4691a44b3c63dbb812a812da34eabce44398616db4d3535789",
     "specification": "BSC",
@@ -4059,14 +5682,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-f11e52a574f3f7",
     "root_form_raw": "-RÇP-",
-    "row": 32,
+    "row": 1,
     "sense_id": "LEXSENSE-afd9db5f1223c2",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "25",
     "source_text_sha256": "b093584195fa3393416dee4a3b393b389731c688c9d89036d95b45dfce69e86c",
     "specification": "BSC",
@@ -4077,39 +5707,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-f11e52a574f3f7",
     "root_form_raw": "-RÇP-",
-    "row": 1,
-    "sense_id": "LEXSENSE-403fcc148eb2a0",
-    "source_pdf_page": "11",
-    "source_printed_page": "109",
-    "source_table_index": "2",
-    "source_text_char_count": "71",
-    "source_text_sha256": "6ca3bed2e862d02a667034769771bd17482e6d635826f1c260f23bea309764f1",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-f11e52a574f3f7",
-    "root_form_raw": "-RÇP-",
-    "row": 1,
-    "source_pdf_page": "11",
-    "source_printed_page": "109",
-    "source_table_index": "2",
-    "source_text_char_count": "132",
-    "source_text_sha256": "9148e45768e0e855cd8b4e24a34e2acf8ba76e4e00a3a50251bc33b2df8de163",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-f11e52a574f3f7",
-    "root_form_raw": "-RÇP-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 2,
+      "table_index": 2
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
     "source_table_index": "2",
     "source_text_char_count": "53",
     "source_text_sha256": "ebcfce87f3aad6c4a34665f138380b88884e0407411b2336b9bf856abd6c84d9",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -4117,11 +5728,19 @@
     "lexicon_root_id": "LEXROOT-f11e52a574f3f7",
     "root_form_raw": "-RÇP-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 3,
+      "table_index": 2
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
     "source_table_index": "2",
     "source_text_char_count": "65",
     "source_text_sha256": "046c8b15bb0d3e59de30a86a5b1cdbfca154927f582178d0699d3c25177f42b9",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -4129,11 +5748,19 @@
     "lexicon_root_id": "LEXROOT-f11e52a574f3f7",
     "root_form_raw": "-RÇP-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 11,
+      "row": 4,
+      "table_index": 2
+    },
     "source_pdf_page": "11",
     "source_printed_page": "109",
     "source_table_index": "2",
     "source_text_char_count": "28",
     "source_text_sha256": "8edeaa84dc445b28b4cb514efa80f9ffc96cb848d40f1ada7d212b2f323f7c23",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -4141,6 +5768,12 @@
     "lexicon_root_id": "LEXROOT-f281d5ae52b56f",
     "root_form_raw": "-ŢC-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 3,
+      "pdf_page": 3
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "",
@@ -4153,6 +5786,12 @@
     "lexicon_root_id": "LEXROOT-f2e8b8312e33d3",
     "root_form_raw": "-ẒD-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 33,
+      "pdf_page": 2
+    },
     "source_pdf_page": "2",
     "source_printed_page": "100",
     "source_table_index": "",
@@ -4165,6 +5804,12 @@
     "lexicon_root_id": "LEXROOT-f306b6f93034fa",
     "root_form_raw": "-DL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 8,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",
@@ -4177,6 +5822,12 @@
     "lexicon_root_id": "LEXROOT-f3fb1b3f4f8524",
     "root_form_raw": "-CŢ-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.1",
+      "line": 9,
+      "pdf_page": 3
+    },
     "source_pdf_page": "3",
     "source_printed_page": "101",
     "source_table_index": "",
@@ -4189,6 +5840,12 @@
     "lexicon_root_id": "LEXROOT-f6ea1d3a5ea7b1",
     "root_form_raw": "-CR-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 19,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -4201,6 +5858,12 @@
     "lexicon_root_id": "LEXROOT-f71ff834f209cc",
     "root_form_raw": "-DY-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 7,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -4213,6 +5876,12 @@
     "lexicon_root_id": "LEXROOT-fa4e3fe6a82fcc",
     "root_form_raw": "-XK-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.5",
+      "line": 47,
+      "pdf_page": 10
+    },
     "source_pdf_page": "10",
     "source_printed_page": "108",
     "source_table_index": "",
@@ -4221,14 +5890,21 @@
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
-    "column": 0,
+    "column": 1,
     "lexicon_root_id": "LEXROOT-fb7b4f4879d34c",
     "root_form_raw": "-KT-",
-    "row": 59,
+    "row": 1,
     "sense_id": "LEXSENSE-86981dee2bbc2d",
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "194",
     "source_text_sha256": "e6339f41bbc9913e713d037166dbdc368db2db9c0d67e6226e33417fb46a5b87",
     "specification": "BSC",
@@ -4236,14 +5912,21 @@
     "stem": "STEM 1"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-fb7b4f4879d34c",
     "root_form_raw": "-KT-",
-    "row": 61,
+    "row": 1,
     "sense_id": "LEXSENSE-b1384da4ad0faa",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "33",
     "source_text_sha256": "acbf7e9c93cb7a3203ebe559733f9b0853f0784b5c269a45fb9bc987b0241354",
     "specification": "BSC",
@@ -4251,14 +5934,21 @@
     "stem": "STEM 2"
   },
   {
-    "column": 0,
+    "column": 2,
     "lexicon_root_id": "LEXROOT-fb7b4f4879d34c",
     "root_form_raw": "-KT-",
-    "row": 64,
+    "row": 1,
     "sense_id": "LEXSENSE-169022448cb6c1",
+    "source_locus": {
+      "column": 2,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 1,
+      "table_index": 2
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
-    "source_table_index": "",
+    "source_table_index": "2",
     "source_text_char_count": "32",
     "source_text_sha256": "8d4c8381ce5262e1521a8f57ad08396bd5f9b0ff3e0909698c4b4d94c8593608",
     "specification": "BSC",
@@ -4269,39 +5959,20 @@
     "column": 1,
     "lexicon_root_id": "LEXROOT-fb7b4f4879d34c",
     "root_form_raw": "-KT-",
-    "row": 1,
-    "sense_id": "LEXSENSE-86981dee2bbc2d",
-    "source_pdf_page": "15",
-    "source_printed_page": "113",
-    "source_table_index": "2",
-    "source_text_char_count": "202",
-    "source_text_sha256": "18b74552a43f08ecd846c936b708f19e36355ff92df27232f788c27119680307",
-    "specification": "BSC",
-    "status": "PARSED",
-    "stem": "STEM 1"
-  },
-  {
-    "column": 2,
-    "lexicon_root_id": "LEXROOT-fb7b4f4879d34c",
-    "root_form_raw": "-KT-",
-    "row": 1,
-    "source_pdf_page": "15",
-    "source_printed_page": "113",
-    "source_table_index": "2",
-    "source_text_char_count": "82",
-    "source_text_sha256": "95bf291420f237f9b27a6d8f7a74607fa979747dc788a03af06a7c3bc4819a49",
-    "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
-  },
-  {
-    "column": 1,
-    "lexicon_root_id": "LEXROOT-fb7b4f4879d34c",
-    "root_form_raw": "-KT-",
     "row": 2,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 2,
+      "table_index": 2
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "2",
     "source_text_char_count": "55",
     "source_text_sha256": "3bcdaf12ef30e024b52a569691de8ef0e7b95e128944d38c5ce3a415f52316af",
+    "specification": "CTE",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -4309,11 +5980,19 @@
     "lexicon_root_id": "LEXROOT-fb7b4f4879d34c",
     "root_form_raw": "-KT-",
     "row": 3,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 3,
+      "table_index": 2
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "2",
     "source_text_char_count": "81",
     "source_text_sha256": "2f00dd560ad5dfebc1c5adb9aa99ee4e702d4751c75e1f2476cb86fd394d0a15",
+    "specification": "CSV",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -4321,11 +6000,19 @@
     "lexicon_root_id": "LEXROOT-fb7b4f4879d34c",
     "root_form_raw": "-KT-",
     "row": 4,
+    "source_locus": {
+      "column": 1,
+      "kind": "table",
+      "pdf_page": 15,
+      "row": 4,
+      "table_index": 2
+    },
     "source_pdf_page": "15",
     "source_printed_page": "113",
     "source_table_index": "2",
     "source_text_char_count": "90",
     "source_text_sha256": "6a2d0115528b6398d9a313f7a133137ccdf237c12de8da84bb9a3c8ff2345b38",
+    "specification": "OBJ",
     "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE"
   },
   {
@@ -4333,6 +6020,12 @@
     "lexicon_root_id": "LEXROOT-fc140c31e47362",
     "root_form_raw": "-VW-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.4",
+      "line": 31,
+      "pdf_page": 8
+    },
     "source_pdf_page": "8",
     "source_printed_page": "106",
     "source_table_index": "",
@@ -4345,6 +6038,12 @@
     "lexicon_root_id": "LEXROOT-ff95b2c129702b",
     "root_form_raw": "-GL-",
     "row": 0,
+    "source_locus": {
+      "kind": "root",
+      "lexicon_section": "3.3",
+      "line": 6,
+      "pdf_page": 7
+    },
     "source_pdf_page": "7",
     "source_printed_page": "105",
     "source_table_index": "",

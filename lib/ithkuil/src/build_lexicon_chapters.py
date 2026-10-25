@@ -871,7 +871,8 @@ def main() -> None:
         chapter.chapter for chapter in AVAILABLE_CHAPTERS))
     parser.add_argument("--output", type=Path)
     parser.add_argument("--next", action="store_true", help="Extract one unprocessed later chapter")
-    parser.add_argument('--admit-chapter', choices=('3','4','5','6','7'))
+    pinned_frontier=json.loads((ROOT/'src/lexicon_frontier_pins.json').read_text())['chapters']
+    parser.add_argument('--admit-chapter', choices=tuple(sorted(pinned_frontier,key=int)))
     parser.add_argument('--canonical-pdf',type=Path)
     args = parser.parse_args()
     if args.admit_chapter:
