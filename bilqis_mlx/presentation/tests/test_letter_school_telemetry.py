@@ -479,7 +479,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(row["decision"], "REJECT")
             self.assertIn("NO_MEASURABLE_TARGET_GAIN", row["evidence"])
 
-    def test_mastery_panel_lists_up_to_six_highest_scoring_champions_per_grade(self):
+    def test_mastery_panel_preserves_every_active_capability_champion(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             roles = {}
@@ -533,13 +533,16 @@ class SchoolTelemetryTests(unittest.TestCase):
             rows = board._section_rows("GRADES & MASTERY")
             a_rows = [row for row in rows
                       if row.get("row_type") == "champion" and row["grade"] == "A"]
-            self.assertEqual(len(a_rows), 6)
+            self.assertEqual(len(a_rows), 7)
             self.assertEqual(
                 {row["capability"] for row in a_rows},
-                {"A.ONE", "A.TWO", "A.THREE", "A.FOUR", "A.FIVE", "A.SIX"},
+                {"A.ONE", "A.TWO", "A.THREE", "A.FOUR", "A.FIVE", "A.SIX",
+                 "A.SEVEN"},
             )
             seven = next(row for row in rows if row.get("capability") == "A.SEVEN")
-            self.assertEqual(seven["row_type"], "family")
+            self.assertEqual(seven["row_type"], "champion")
+            self.assertEqual(seven["best"], "7/12")
+            self.assertIn("CHAMP @106", seven["outcome"])
             three = next(row for row in a_rows if row["capability"] == "A.THREE")
             self.assertEqual(three["latest"], "12/12")
             self.assertEqual(three["best"], "12/12")
