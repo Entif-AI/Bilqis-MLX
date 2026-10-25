@@ -1611,3 +1611,31 @@ states remain held; the guard does not promote them or invent a source review.
 
 Tests exercise every required negative independently, all involved row IDs, order
 invariance, legal duplicates and a separately qualified reciprocal hierarchy.
+
+## Complete mapping-domain reconciliation (#66)
+
+`mapping_corpus.compile_mapping_corpus(input_root)` composes the #62 raw admission
+matrix, #63 endpoint-bound emitter, #64 held preservation and #65 batch validator.
+The result contains the strong mapping graph and one deterministic reconciliation
+receipt. A raw held/proposal state cannot be overridden by supplying a reviewed
+claim. An emitting raw policy row additionally requires the matching stable source
+row, source/target identity, exact predicate and reviewed evidence before emission.
+
+The receipt derives current source counts, all dispositions, predicate triple counts,
+state/reason breakdowns, historical rows, unsupported/conflict counts, declared
+source-target pairs and equivalent-assertion duplicates. Each source row occurs once;
+every emitted triple has its contributing row references; held rows contribute none.
+Removing an accounting record fails with the exact missing stable source ID.
+
+Current source evidence is 222 crosswalk plus 330 bridge rows, 551 held, one rejected,
+two historical-only predecessors, zero admitted mapping triples and zero unsupported
+rows/conflicts. Complete accounting does not mean all mappings are admitted. The
+receipt explicitly reports `requires_semantic_review` and does not manufacture
+concept-target matches from source-document references. Unknown future raw states
+prevent complete mapping status and suppress the batch's strong output.
+
+The pure `compile_mapping_rows` API accepts immutable input rows and optional
+explicitly reviewed records for future admitted source states. Positive source-to-RDF
+integration tests are labeled synthetic, bind their review to the exact row/endpoints,
+and do not approve any current raw mapping. #68 consumes this receipt without taking
+over mapping policy or semantic adjudication.
