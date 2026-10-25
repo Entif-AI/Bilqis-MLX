@@ -11,6 +11,7 @@ import bilqis_mlx.learning.lesson_guidance as _learning_lesson_guidance
 import bilqis_mlx.learning.stagnation_control as _learning_stagnation_control
 import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.learning.teacher_feedback as _learning_teacher_feedback
+import bilqis_mlx.learning.teacher_geometry as _learning_teacher_geometry
 import bilqis_mlx.profiles.catalog as _profiles_catalog
 import bilqis_mlx.profiles.retention as _profiles_retention
 import bilqis_mlx.runtime.admission as _runtime_admission
@@ -37,6 +38,30 @@ def _retention_frontier_grade(school) -> str:
     if not active:
         raise ValueError(RETENTION_REQUIRES_ACTIVE_GRADE_ERROR)
     return active[-1]
+
+
+def _teacher_geometry_scope(receipt: dict, executable_release, capability: str):
+    """Bind adaptive teacher evidence to the admitted lesson geometry."""
+    epoch = _learning_teacher_geometry.active_epoch(
+        executable_release, capability)
+    base = (str(receipt.get("curriculum_mode", "")) + "/" +
+            str(receipt.get("numeric_maximum", "")))
+    return epoch, _learning_teacher_geometry.context_scope(base, epoch)
+
+
+def _geometry_compatible_misses(receipt: dict, capability: str,
+                                epoch: str | None):
+    """Separate current replay specimens from historical retired geometry."""
+    rows = [
+        row for row in receipt.get("teacher_misses", ())
+        if row["capability"] == capability
+    ]
+    current, stale = [], []
+    for row in rows:
+        target = (current if _learning_teacher_geometry.row_matches_epoch(
+            row, epoch) else stale)
+        target.append(row)
+    return current, stale
 
 
 def _teacher_exposures_after_candidate(receipt: dict, attempted: dict,
@@ -176,6 +201,12 @@ def _apply_retention_decision(
                 parent_parameters, params, probe_rows,
                 parent_predictions, learning_settings))
     with _runtime_timing_trace.trace_span("RETENTION_DECIDE", capability=cap):
+        negative_prototypes = teacher["causal_experiment"]["negative_archetypes"]
+        if _learning_teacher_geometry.is_geometry_scope(teacher_curriculum_scope):
+            negative_prototypes = [
+                item for item in negative_prototypes
+                if item.get("curriculum_scope") == teacher_curriculum_scope
+            ]
         outcome = _learning_learning_experiment.decide(
             pair, active_capability=cap, phase=school.stage,
             protected=probed, settings=learning_settings,
@@ -184,7 +215,7 @@ def _apply_retention_decision(
             fixed_frontier_replay=frontier,
             protected_frontier_grade=_retention_frontier_grade(school),
             mature_grades=frozenset(school.champions),
-            negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
+            negative_prototypes=negative_prototypes,
             source_cohort_sha256=_runtime_state._fingerprint([
                 (row["id"], row["capability"], row["gold"], row["tokens"])
                 for row in probe_rows if row["capability"] in pair]),
@@ -222,7 +253,8 @@ def _apply_retention_decision(
 def _reconcile_candidate_outcome(
         mx, receipt, cap, params, optimizer, priority, deferred_misses,
         miss_exposures, outcome, context_credit, before, after, engine,
-        teacher, lesson_grade, policy_key, step_before, attempted_step):
+        teacher, lesson_grade, policy_key, step_before, attempted_step,
+        teacher_geometry_epoch):
     remaining = priority
     if priority and (outcome is None or outcome["decision"] == "PROVISIONAL"):
         with _runtime_timing_trace.trace_span(
@@ -243,8 +275,11 @@ def _reconcile_candidate_outcome(
     reward = after - before
     bandit_credit = _learning_learning_experiment.selection_credit(
         reward, outcome, context_credit)
-    with _runtime_timing_trace.trace_span("TEACHER_OBSERVE", capability=cap):
-        engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
+    legacy_bandit_observed = (
+        teacher_geometry_epoch is None or context_credit is None)
+    if legacy_bandit_observed:
+        with _runtime_timing_trace.trace_span("TEACHER_OBSERVE", capability=cap):
+            engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
     expected_retained = (
         step_before if outcome is not None and outcome["decision"] == "REJECT"
         else attempted_step)
@@ -257,7 +292,8 @@ def _reconcile_candidate_outcome(
     if int(optimizer.state["step"].item()) != expected_retained:
         raise ValueError("LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT")
     return (miss_exposures, remaining, resolved_ids, all_misses,
-            reward, bandit_credit, attempted_updates, retained_updates)
+            reward, bandit_credit, attempted_updates, retained_updates,
+            legacy_bandit_observed)
 
 
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
@@ -291,8 +327,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         raise ValueError("HUMAN_TRAINER_UNKNOWN_LESSON_GRADE")
     teacher = _json.loads(_runtime_state._canonical(receipt["teacher"]))
     rng = _random.Random(_runtime_state._seed(receipt, capability=cap))
-    teacher_curriculum_scope = (str(receipt.get("curriculum_mode", "")) + "/" +
-                                str(receipt.get("numeric_maximum", "")))
+    teacher_geometry_epoch, teacher_curriculum_scope = _teacher_geometry_scope(
+        receipt, executable_release, cap)
     candidate_steps = _learning_learning_experiment.candidate_step_budget(
         steps_per_visit, teacher, cap,
         curriculum_scope=teacher_curriculum_scope)
@@ -326,8 +362,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     champion_candidate_ids = {row["id"] for row in champion_candidates}
     # Every unsuccessful examination construction can become direct teaching
     # material once scoring has completed. No held-out embargo survives.
-    priority = [r for r in receipt.get("teacher_misses", ())
-                if r["capability"] == cap]
+    priority, stale_geometry_misses = _geometry_compatible_misses(
+        receipt, cap, teacher_geometry_epoch)
     deferred_misses = []
     if receipt.get("numeric_maximum") is not None:
         priority, deferred_misses = _profiles_catalog.partition_numeric_scope(
@@ -733,10 +769,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             original_learning_rate, before, after, miss_exposures)
     (miss_exposures, remaining_priority, resolved_priority_ids,
      all_teacher_misses, reward, bandit_credit, attempted_optimizer_updates,
-     retained_optimizer_updates) = _reconcile_candidate_outcome(
+     retained_optimizer_updates, legacy_bandit_observed) = _reconcile_candidate_outcome(
         mx, receipt, cap, params, optimizer, priority, deferred_misses,
         miss_exposures, outcome, context_credit, before, after, engine,
-        teacher, lesson_grade, policy_key, step_before, attempted_step)
+        teacher, lesson_grade, policy_key, step_before, attempted_step,
+        teacher_geometry_epoch)
     # No new archive exists yet. The retained checkpoint is the last complete
     # recovery point, NOT a representation of these newly updated RAM weights.
     school = _curriculum_scheduler.visit(_runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school, cap, school.current_student)
@@ -773,6 +810,10 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
+        "teacher_geometry_epoch": teacher_geometry_epoch,
+        "teacher_context_scope": teacher_curriculum_scope,
+        "legacy_bandit_observed": legacy_bandit_observed,
+        "stale_geometry_misses_suppressed": len(stale_geometry_misses),
         "attempted_optimizer_updates": attempted_optimizer_updates,
         "candidate_step_control": {
             "configured_steps": steps_per_visit,

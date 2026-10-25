@@ -14,6 +14,7 @@ from bilqis_mlx.learning.learning_experiment import (
     fork_student, commit_trial, sampled_protection, whole_grade_protection,
     missing_grade_capabilities,
     selection_credit, select_source_lesson, candidate_step_budget,
+    _effective_policy_key,
 )
 
 
@@ -1017,6 +1018,27 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             curriculum_scope="scope")
         self.assertIn(picked, {"preview0", "preview4"})
 
+    def test_policy_identity_collapses_behavioral_depth_and_contrast_aliases(self):
+        shallow_a = {
+            "contrast": .5, "depth": 1, "distill": .15,
+            "lr": .00008, "old": 12, "preview": 0,
+        }
+        shallow_b = {
+            "contrast": 1., "depth": 2, "distill": .15,
+            "lr": .00008, "old": 12, "preview": 4,
+        }
+        deep = {**shallow_a, "depth": 3}
+        random_contrast = {**shallow_a, "contrast": 0.}
+        self.assertEqual(
+            _effective_policy_key(shallow_a),
+            _effective_policy_key(shallow_b))
+        self.assertNotEqual(
+            _effective_policy_key(shallow_a),
+            _effective_policy_key(deep))
+        self.assertNotEqual(
+            _effective_policy_key(shallow_a),
+            _effective_policy_key(random_contrast))
+
     def test_candidate_step_budget_shrinks_only_for_interference_pressure(self):
         teacher = {
             "strategies": {"policy": {"lr": .00013}},
@@ -1077,6 +1099,160 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(
             candidate_step_budget(
                 16, teacher, "C.SUB", curriculum_scope="scope"), 16)
+
+    def test_candidate_step_budget_recovers_when_interference_streak_breaks(self):
+        teacher = {
+            "strategies": {"policy": {"lr": .00013}},
+            "global_stats": {
+                "policy": {"trials": 20, "reward_sum": 0.,
+                           "reward_ema": 0., "latest": 0.},
+            },
+            "grade_stats": {},
+            "events": 20,
+        }
+        interference = decide({
+            "C.SUB": {"before": 22, "after": 23, "total": 33},
+            "A.EDGE": {"before": 6, "after": 4, "total": 6},
+        }, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"A.EDGE"}, settings=Settings())
+        no_gain = decide({
+            "C.SUB": {"before": 22, "after": 22, "total": 33},
+        }, active_capability="C.SUB", phase="RECOVERY_1", protected=set(),
+            settings=Settings())
+
+        for _ in range(4):
+            observe_context(
+                teacher, capability="C.SUB", phase="RECOVERY_1",
+                policy_key="policy", decision=interference, local_gain=.03,
+                curriculum_scope="scope")
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 4)
+
+        observe_context(
+            teacher, capability="C.SUB", phase="RECOVERY_1",
+            policy_key="policy", decision=no_gain, local_gain=0.,
+            curriculum_scope="scope")
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 16)
+
+    def test_legacy_accumulated_interference_does_not_throttle_new_runtime(self):
+        teacher = {
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "contexts": {}, "negative_archetypes": [], "events": 0,
+                "capability_stagnation": {
+                    "C.SUB|scope": {
+                        "rejection_streak": 40,
+                        "no_target_gain_streak": 5,
+                        "attempts_since_retained": 40,
+                        "total_rejections": 100,
+                        "total_retained": 2,
+                        "current_rejection_reasons": {
+                            "ACTIVE_SCHOOL_GRADE_REGRESSION": 8,
+                            "NO_MEASURABLE_TARGET_GAIN": 32,
+                        },
+                    },
+                },
+            },
+        }
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 16)
+
+    def test_geometry_context_does_not_delegate_first_pick_to_legacy_bandit(self):
+        teacher = {
+            "strategies": {
+                "a": {"lr": .00008, "old": 8, "preview": 0,
+                      "depth": 1, "contrast": 0., "distill": 0.},
+                "b": {"lr": .00013, "old": 12, "preview": 2,
+                      "depth": 3, "contrast": .5, "distill": .15},
+            },
+            "global_stats": {
+                "a": {"trials": 100, "reward_sum": -20.,
+                      "reward_ema": -.2, "latest": -.2},
+                "b": {"trials": 100, "reward_sum": 20.,
+                      "reward_ema": .2, "latest": .2},
+            },
+            "grade_stats": {"B": {
+                "a": {"trials": 100, "reward_sum": -20.,
+                      "reward_ema": -.2, "latest": -.2},
+                "b": {"trials": 100, "reward_sum": 20.,
+                      "reward_ema": .2, "latest": .2},
+            }},
+            "events": 200,
+        }
+
+        class Legacy:
+            calls = 0
+
+            @classmethod
+            def pick(cls, _teacher, _grade, _rng):
+                cls.calls += 1
+                return "a", _teacher["strategies"]["a"]
+
+        picked, policy = contextual_pick(
+            Legacy, teacher, "B.AND", "MAIN", random.Random(7),
+            curriculum_scope="scope/geometry=outer-v1")
+        self.assertIn(picked, teacher["strategies"])
+        self.assertEqual(policy, teacher["strategies"][picked])
+        self.assertEqual(Legacy.calls, 0)
+        no_gain = decide({
+            "B.AND": {"before": 6, "after": 6, "total": 12},
+        }, active_capability="B.AND", phase="MAIN", protected=set(),
+            settings=Settings())
+        credit = observe_context(
+            teacher, capability="B.AND", phase="MAIN",
+            policy_key=picked, decision=no_gain, local_gain=0.,
+            curriculum_scope="scope/geometry=outer-v1")
+        self.assertEqual(credit["inherited_exploration_credit"], 0.)
+
+    def test_geometry_local_outcome_outweighs_historical_policy_ranking(self):
+        common = {"old": 8, "preview": 0, "depth": 1,
+                  "contrast": 0., "distill": 0.}
+        teacher = {
+            "strategies": {
+                "historical_winner": {**common, "lr": .0003},
+                "geometry_winner": {**common, "lr": .00008},
+            },
+            "global_stats": {
+                "historical_winner": {"trials": 100, "reward_sum": 80.,
+                                      "reward_ema": .8, "latest": .8},
+                "geometry_winner": {"trials": 100, "reward_sum": -80.,
+                                    "reward_ema": -.8, "latest": -.8},
+            },
+            "grade_stats": {"B": {
+                "historical_winner": {"trials": 100, "reward_sum": 80.,
+                                      "reward_ema": .8, "latest": .8},
+                "geometry_winner": {"trials": 100, "reward_sum": -80.,
+                                    "reward_ema": -.8, "latest": -.8},
+            }},
+            "events": 200,
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "negative_archetypes": [], "events": 1,
+                "contexts": {
+                    "B.AND|MAIN|scope/geometry=outer-v1": {
+                        "geometry_winner": {
+                            "trials": 1, "reward_sum": .5,
+                            "unsafe": 0, "retained": 1,
+                            "latest": .5, "no_target_gain_streak": 0,
+                        },
+                    },
+                },
+            },
+        }
+
+        class Legacy:
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "historical_winner", _teacher["strategies"]["historical_winner"]
+
+        picked, _ = contextual_pick(
+            Legacy, teacher, "B.AND", "MAIN", random.Random(3),
+            curriculum_scope="scope/geometry=outer-v1")
+        self.assertEqual(picked, "geometry_winner")
 
     def test_rejection_pressure_stops_unseen_legacy_novelty_without_retained_winner(self):
         teacher = {

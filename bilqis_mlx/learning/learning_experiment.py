@@ -20,6 +20,7 @@ from bilqis_mlx.learning.teacher_feedback import (
 from bilqis_mlx.learning.lesson_selection import (
     earlier_grade_capabilities, reserve_weakness_targets, select_source_lesson,
 )
+from bilqis_mlx.learning.teacher_geometry import is_geometry_scope
 
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
@@ -29,6 +30,7 @@ INTERFERENCE_REJECTIONS_FOR_HALF_BUDGET = 2
 INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET = 4
 REJECTION_PRESSURE_CONTEXTUAL_START = 2
 REJECTION_PRESSURE_EXPLORATION_INTERVAL = 4
+GEOMETRY_HISTORICAL_PRIOR_WEIGHT = 0.25
 
 
 @dataclass(frozen=True)
@@ -457,6 +459,7 @@ def _capability_stagnation_record(channel: dict, capability: str,
     record = channel.setdefault("capability_stagnation", {}).setdefault(
         _stagnation_key(capability, curriculum_scope), {
             "rejection_streak": 0,
+            "consecutive_interference_rejections": 0,
             "no_target_gain_streak": 0,
             "attempts_since_retained": 0,
             "total_rejections": 0,
@@ -464,6 +467,7 @@ def _capability_stagnation_record(channel: dict, capability: str,
             "current_rejection_reasons": {},
         })
     record.setdefault("current_rejection_reasons", {})
+    record.setdefault("consecutive_interference_rejections", 0)
     return record
 
 
@@ -493,6 +497,12 @@ def _effective_policy_key(policy: dict) -> str:
         key: value for key, value in sorted(policy.items())
         if key not in _CONTEXT_INEFFECTIVE_POLICY_FIELDS
     }
+    if "depth" in effective:
+        effective["depth"] = (
+            "DEEP" if float(effective["depth"]) >= 3 else "SHALLOW")
+    if "contrast" in effective:
+        effective["contrast"] = (
+            "DIVERSE" if float(effective["contrast"]) >= .5 else "RANDOM")
     return hashlib.sha256(
         json.dumps(effective, sort_keys=True).encode()).hexdigest()[:12]
 
@@ -522,6 +532,72 @@ def _effective_context_scope(teacher: dict, scope: dict) -> dict:
             record.get("no_target_gain_streak", 0))
         group["members"].append(policy_key)
     return groups
+
+
+def _historical_policy_mean(teacher: dict, grade: str, policy_key: str) -> float:
+    """Weak prior only; geometry epochs never treat legacy rewards as observations."""
+    local = teacher.get("grade_stats", {}).get(str(grade), {})
+    info = local.get(policy_key) or teacher.get("global_stats", {}).get(policy_key)
+    if not isinstance(info, dict) or not info.get("trials"):
+        return 0.
+    trials = int(info["trials"])
+    reward_sum = float(info.get("reward_sum", 0.))
+    if trials < 1 or not math.isfinite(reward_sum):
+        return 0.
+    return max(-1., min(1., reward_sum / trials))
+
+
+def _geometry_context_pick(teacher: dict, grade: str, scope: dict, rng):
+    """Explore the existing toolbox using fresh geometry-local evidence.
+
+    Historical grade/global rewards contribute only a quarter pseudo-trial.
+    They can break an otherwise empty tie, but cannot masquerade as trials
+    observed under the revised teaching surface.
+    """
+    strategies = teacher.get("strategies", {})
+    if not isinstance(strategies, dict) or not strategies:
+        raise ValueError(LearningExperimentError.POLICY_INVALID.value)
+    inventory = {}
+    for policy_key, policy in strategies.items():
+        inventory.setdefault(_effective_policy_key(policy), []).append(policy_key)
+    effective_scope = _effective_context_scope(teacher, scope) if scope else {}
+    total_trials = sum(record["trials"] for record in effective_scope.values())
+
+    def group_score(item):
+        effective_key, members = item
+        record = effective_scope.get(effective_key)
+        trials = int(record["trials"]) if record else 0
+        reward_sum = float(record["reward_sum"]) if record else 0.
+        prior = sum(
+            _historical_policy_mean(teacher, grade, member)
+            for member in members
+        ) / len(members)
+        mean = reward_sum / trials if trials else 0.
+        prior_bonus = (
+            GEOMETRY_HISTORICAL_PRIOR_WEIGHT * prior / (trials + 1))
+        exploration = TEACHER_UCB_EXPLORATION_WEIGHT * math.sqrt(
+            math.log(total_trials + 2) / (trials + 1))
+        return mean + prior_bonus + exploration + rng.random() * 1e-9
+
+    effective_key, members = max(inventory.items(), key=group_score)
+    tried = [member for member in members if member in scope]
+    if tried:
+        def tried_rank(member):
+            record = scope[member]
+            trials = int(record.get("trials", 0))
+            mean = float(record.get("reward_sum", 0.)) / max(1, trials)
+            return (int(record.get("retained", 0)), mean, trials, member)
+        policy_key = max(tried, key=tried_rank)
+    else:
+        policy_key = max(
+            members,
+            key=lambda member: (
+                _historical_policy_mean(teacher, grade, member),
+                rng.random(),
+                member,
+            ),
+        )
+    return policy_key, strategies[policy_key]
 
 
 def _diagnostic_context(channel: dict, capability: str, curriculum_scope: str,
@@ -628,9 +704,10 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
     The configured horizon remains authoritative in the healthy regime.
     Candidate attempts and optimizer steps are different units: a rejected
     16-step candidate is one failed candidate, not one sixteenth of a failure.
-    After two consecutive rejected candidates, halve the next disposable
-    trial. After four, quarter it. A retained candidate resets the rejection
-    streak through the existing capability-stagnation owner.
+    After two consecutive interference-rejected candidates, halve the next
+    disposable trial. After four, quarter it. A no-target-gain outcome breaks
+    the interference streak, while a retained candidate resets all current
+    rejection pressure through the existing capability-stagnation owner.
     """
     if type(default_steps) is not int or default_steps < 1:
         raise ValueError(LearningExperimentError.CANDIDATE_STEPS_INVALID.value)
@@ -640,13 +717,14 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
     stagnation = _capability_stagnation(
         channel, capability, curriculum_scope)
     reasons = stagnation.get("current_rejection_reasons", {})
+    interference_rejections = stagnation.get(
+        "consecutive_interference_rejections", 0)
     if (not isinstance(reasons, dict) or any(
             not isinstance(reason, str) or type(count) is not int or count < 0
-            for reason, count in reasons.items())):
+            for reason, count in reasons.items()) or
+            type(interference_rejections) is not int or
+            interference_rejections < 0):
         raise ValueError(LearningExperimentError.CANDIDATE_STAGNATION_INVALID.value)
-    interference_rejections = sum(
-        count for reason, count in reasons.items()
-        if reason != "NO_MEASURABLE_TARGET_GAIN")
     half = max(1, default_steps // 2)
     quarter = max(1, default_steps // 4)
     if interference_rejections >= INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET:
@@ -662,6 +740,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     """Preserve the inherited bandit's exploration; prefer proven safe context."""
     grade = capability.partition(".")[0]
     channel = _channel(teacher)
+    geometry_context = is_geometry_scope(curriculum_scope)
     diagnostic_key, _diagnostic_payload = _diagnostic_context(
         channel, capability, curriculum_scope, diagnostics)
 
@@ -670,13 +749,18 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             return key, policy, {
                 "diagnostic_context_consumed": diagnostic_context_consumed,
                 "diagnostic_context_key": diagnostic_key,
+                "geometry_context": geometry_context,
             }
         return key, policy
 
     context_key = capability+"|"+phase+"|"+curriculum_scope
     scope = channel["contexts"].get(context_key, {})
     if not scope:
-        original_key, original_policy = engine.pick(teacher, grade, rng)
+        if geometry_context:
+            original_key, original_policy = _geometry_context_pick(
+                teacher, grade, scope, rng)
+        else:
+            original_key, original_policy = engine.pick(teacher, grade, rng)
         return result(original_key, original_policy)
     effective_scope = _effective_context_scope(teacher, scope)
     diagnostic_scope = _diagnostic_effective_scope(
@@ -740,7 +824,11 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     # inherited bandit. Avoid calling it on pressure-exploitation visits:
     # pick() may mutate the strategy inventory, and discarded mutations would
     # otherwise consume the finite 512-strategy budget without being tried.
-    original_key, original_policy = engine.pick(teacher, grade, rng)
+    if geometry_context:
+        original_key, original_policy = _geometry_context_pick(
+            teacher, grade, scope, rng)
+    else:
+        original_key, original_policy = engine.pick(teacher, grade, rng)
     original_effective = _effective_policy_key(original_policy)
     if original_effective == best_effective:
         return result(
@@ -763,10 +851,13 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
 
 def _stagnation_feedback(teacher: dict, capability: str, policy_key: str,
                          decision: dict, reward: float, record: dict,
-                         shared_stagnation: dict) -> tuple[float, float]:
+                         shared_stagnation: dict,
+                         curriculum_scope: str) -> tuple[float, float]:
     no_target_gain = decision.get("reason") == "NO_MEASURABLE_TARGET_GAIN"
-    inherited_exploration = _inherited_exploration(
-        teacher, capability.partition(".")[0], policy_key)
+    inherited_exploration = (
+        0. if is_geometry_scope(curriculum_scope) else
+        _inherited_exploration(
+            teacher, capability.partition(".")[0], policy_key))
     selection_reward = reward
     repayment = 0.-inherited_exploration
     if no_target_gain and repayment < selection_reward:
@@ -842,9 +933,14 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             raise ValueError(LearningExperimentError.REJECTION_REASON_INVALID.value)
         reasons = capability_stagnation["current_rejection_reasons"]
         reasons[reason] = reasons.get(reason, 0) + 1
+        if reason == "NO_MEASURABLE_TARGET_GAIN":
+            capability_stagnation["consecutive_interference_rejections"] = 0
+        else:
+            capability_stagnation["consecutive_interference_rejections"] += 1
     else:
         record["retained"] += 1
         capability_stagnation["rejection_streak"] = 0
+        capability_stagnation["consecutive_interference_rejections"] = 0
         capability_stagnation["attempts_since_retained"] = 0
         capability_stagnation["total_retained"] += 1
         capability_stagnation["current_rejection_reasons"] = {}
@@ -854,7 +950,7 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         capability_stagnation["no_target_gain_streak"] = 0
     inherited_exploration, selection_reward = _stagnation_feedback(
         teacher, capability, policy_key, decision, reward, record,
-        shared_stagnation)
+        shared_stagnation, curriculum_scope)
     record["trials"] += 1
     record["reward_sum"] += reward
     record["latest"] = reward
@@ -898,6 +994,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                 capability_stagnation["rejection_streak"],
             "capability_no_target_gain_streak":
                 capability_stagnation["no_target_gain_streak"],
+            "consecutive_interference_rejections":
+                capability_stagnation["consecutive_interference_rejections"],
             "attempts_since_retained":
                 capability_stagnation["attempts_since_retained"],
             "diagnostic_context_key": diagnostic_key,

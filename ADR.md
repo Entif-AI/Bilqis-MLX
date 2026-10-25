@@ -1367,3 +1367,45 @@ the marker adopts one verified same-profile `REVISE_SOURCE` successor with zero
 neural updates. The causal student and scheduler projection are preserved while
 stale assessment/championship authority is handled by the existing source-revision
 identity rules.
+
+
+## ADR-097 | 2026-10-25 | Teacher evidence follows teaching geometry; interference throttling is consecutive
+
+**Direct user decision after revising IDBOOLOPS, AND and IMPLIES presentation.**
+Adaptive teacher evidence is causally comparable only while the student's teaching
+surface is unchanged. A capability-local teaching-geometry epoch therefore becomes
+part of contextual policy identity for the revised `B.IDBOOLOPS`, `B.AND` and
+`B.IMPLIES` surfaces. Unchanged capabilities keep their historical context keys.
+The strategy inventory is preserved, but the revised capabilities start fresh
+contextual reward, rejection-pressure and diagnostic evidence. Historical grade/global
+bandit reward is at most a weak prior and is not mutated by geometry-epoch visits
+while the causal experiment channel is active.
+
+Contextual strategy identity also follows behavior rather than nominal knob spelling.
+`preview` remains unavailable and excluded; `depth=1/2` share the shallow policy,
+`depth=3/4` share the deep policy, and `contrast=0.5/1.0` share the diversity policy
+because those are the actual selector thresholds. This prevents the finite strategy
+inventory from fragmenting evidence across behaviorally identical variants.
+
+Exact unresolved-miss specimens from a retired geometry are not replayed into the
+new one. Their historical events/exposure receipts remain evidence, while fresh
+source-equivalent misses may repopulate the active queue under the current admitted
+representation. Negative interference archetypes are likewise compared only inside
+the current teacher context scope rather than across incompatible presentations.
+
+The disposable candidate-step controller is also corrected to match its documented
+intent. Halving/quartering depends on **consecutive interference rejections**, not the
+cumulative count of every interference reason since the last retained candidate.
+`NO_MEASURABLE_TARGET_GAIN` breaks that interference streak; retained candidates
+reset current rejection pressure. Pre-fix receipts lack the new consecutive counter
+and therefore resume at the configured candidate horizon instead of inheriting an
+indefinite 4/16 or 8/16 throttle from old failures. Retention criteria themselves are
+unchanged: full-horizon candidates remain disposable until the same source-grounded
+retention gates accept them.
+
+This corrects a self-locking failure mode observed in the live Prometheus run: many
+capabilities had accumulated old frontier/interference rejects, were permanently
+reduced to four or eight attempted updates, then repeatedly failed to produce target
+gain at that shortened horizon. The resulting rejected attempts did not advance the
+durable optimizer step, causing command-level retained-step progress to collapse even
+while hundreds of disposable updates were being attempted.
