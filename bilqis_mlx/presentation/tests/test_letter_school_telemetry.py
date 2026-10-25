@@ -836,6 +836,40 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertNotIn("BEST OBSERVED SAMPLE (not paired)", rendered)
             self.assertNotIn("fresh sampled cohort", rendered)
 
+    def test_current_score_grade_precedes_historical_capability_prefix(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {
+                "event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "Z",
+                "generation": 1, "rubric": "z" * 64,
+                "cohort_sha256": "c" * 64,
+                "cohort_file": f"cohorts/{'c' * 64}.json",
+                "generator_version": "current-generic/v1",
+                "optimizer_step": 101, "student_sha256": "s" * 64,
+                "scores": {"A.HISTORICAL": {
+                    "grade": "Y", "correct": 9, "total": 12}},
+            })
+            family = board.rows["BRIDGE FAMILIES"][-1]
+            self.assertEqual(family["grade"], "Y")
+            self.assertIn("Z NOT EVALUATED IN THIS SAMPLE", " ".join(
+                row["detail"] for row in board.rows["SYSTEM & QUALIFICATION"]
+                if row["kind"] == "EXAM SCOPE"))
+
+    def test_historical_live_exam_keeps_grade_and_rendered_live_label(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {
+                "event": "GRADE_A_LIVE_EXAM_COMMITTED", "generation": 1,
+                "rubric": "a" * 64, "cohort_sha256": "d" * 64,
+                "cohort_file": f"cohorts/{'d' * 64}.json",
+                "generator_version": "grade-a-live/v1", "optimizer_step": 100,
+                "student_sha256": "e" * 64,
+                "scores": {"A.IDENTITY": {"correct": 10, "total": 12}},
+            })
+            self.assertEqual(board.rows["BRIDGE FAMILIES"][-1]["grade"], "A")
+            self.assertIn("BEST OBSERVED SAMPLE (not paired)", " ".join(
+                board.operator_lines))
+
     def test_cross_cohort_top_resets_when_next_grade_is_admitted(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

@@ -13,9 +13,12 @@ import string
 
 from bilqis_mlx.presentation.spiral_dashboard import Column
 from ..compatibility.telemetry_events import (
-    HISTORICAL_EVENT_KINDS,
+    historical_capability_grade,
+    historical_course_admission,
     historical_event_grade,
+    historical_event_kind,
     historical_live_exam,
+    historical_withheld_inventory_change_explains,
 )
 
 
@@ -303,7 +306,6 @@ LETTER_TABLES = (
 
 
 EVENT_KINDS = {
-    **HISTORICAL_EVENT_KINDS,
     "SCHOOL_NEW_RUN_INITIALIZED": "init",
     "SCHOOL_NEXT_GRADE_COURSE_ADMITTED": "init",
     "SCHOOL_EXECUTION_PROFILE_ADOPTED": "curriculum",
@@ -347,21 +349,6 @@ def _inventory_scope(scope: str, caps: dict) -> str:
     return scope + "|inventory:" + ",".join(sorted(caps))
 
 
-def _withheld_inventory_change_explains(event: dict, grade: str,
-                                        previous, current) -> bool:
-    """Recognize the historical scope-receipt bug caused by withholding."""
-    withheld = {
-        cap for cap in event.get("withheld_capabilities", ())
-        if isinstance(cap, str) and _grade_from_capability(cap, grade) == grade
-    }
-    if not withheld:
-        return False
-    before, after = dict(previous), dict(current)
-    changed = set(before) ^ set(after)
-    return (bool(changed) and changed <= withheld and
-            all(before[cap] == after[cap] for cap in set(before) & set(after)))
-
-
 def _scaled_lr(value: Any) -> str:
     if type(value) not in (float, int):
         return "-"
@@ -395,11 +382,6 @@ def _percent(value: Any) -> str:
 
 def _count(value: Any) -> str:
     return f"{value:,}" if type(value) is int else "-"
-
-
-def _grade_from_capability(name: str, event_grade: str) -> str:
-    prefix = name.split(".", 1)[0]
-    return prefix if len(prefix) == 1 and prefix.isalpha() else event_grade
 
 
 def _source_provenance(event: dict):
@@ -477,7 +459,8 @@ class SchoolTelemetry:
         if (event.get("event", "").startswith("SCHOOL_") and
                 event.get("telemetry_schema", TELEMETRY_VERSION) != TELEMETRY_VERSION):
             raise ValueError("SCHOOL_TELEMETRY_UNSUPPORTED_SCHEMA")
-        kind = EVENT_KINDS.get(event.get("event"))
+        kind = (EVENT_KINDS.get(event.get("event")) or
+                historical_event_kind(event.get("event")))
         if kind is None:
             return
         grade = event.get("grade") or historical_event_grade(event["event"])
@@ -506,8 +489,8 @@ class SchoolTelemetry:
     def _init(self, grade, event):
         if event.get("event") in {
                 "SCHOOL_NEXT_GRADE_COURSE_ADMITTED",
-                "SCHOOL_GRADE_B_COURSE_ADMITTED",
-                "SCHOOL_COURSE_ADMITTED"}:
+                "SCHOOL_COURSE_ADMITTED"} or historical_course_admission(
+                    event.get("event")):
             self._reset_score_era(
                 reason=("NEXT_GRADE_ADMITTED"
                         if event.get("event") == "SCHOOL_NEXT_GRADE_COURSE_ADMITTED"
@@ -801,7 +784,8 @@ class SchoolTelemetry:
             raise ValueError("SCHOOL_TELEMETRY_LIVE_COHORT_PROVENANCE_REQUIRED")
         cohort = defaultdict(dict)
         for cap, raw in scores.items():
-            score_grade = raw.get("grade") or _grade_from_capability(cap, grade)
+            score_grade = (raw.get("grade") or
+                           historical_capability_grade(cap, grade))
             if (raw.get("checkpoint_sha256", checkpoint) != checkpoint or
                     raw.get("optimizer_step", step) != step):
                 raise ValueError("SCHOOL_TELEMETRY_EXAM_CHECKPOINT_MISMATCH")
@@ -826,7 +810,7 @@ class SchoolTelemetry:
             if effective_scope is None:
                 if previous_shape is None or previous_shape == shape:
                     effective_scope = scope
-                elif _withheld_inventory_change_explains(
+                elif historical_withheld_inventory_change_explains(
                         event, g, previous_shape, shape):
                     effective_scope = _inventory_scope(scope, caps)
                 else:
@@ -871,7 +855,8 @@ class SchoolTelemetry:
             epoch = event.get("championship_epoch") or {}
             earned = tuple(
                 cap for cap in epoch.get("earned_roles", ())
-                if isinstance(cap, str) and _grade_from_capability(cap, grade) == g)
+                if (isinstance(cap, str) and
+                    historical_capability_grade(cap, grade) == g))
             title_decisions = tuple(
                 decision for decision in epoch.get("cross_origin_decisions", ())
                 if isinstance(decision, dict) and decision.get("grade") == g)
