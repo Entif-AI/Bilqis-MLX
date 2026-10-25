@@ -1,6 +1,6 @@
 {
   "legacy_raw_file_count": 168,
-  "legacy_raw_raise_count": 1947,
+  "legacy_raw_raise_count": 1945,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -553,13 +553,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_B_IDBOOLOPS_ORACLE_OBSERVATIONS_MISSING'",
-      "path": "bilqis_mlx/boolean_identification_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_IDBOOLOPS_ORACLE_OBSERVATION_SHAPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_IDBOOLOPS_ORACLE_OBSERVATION_SHAPE'",
       "path": "bilqis_mlx/boolean_identification_oracle.py"
     },
     {
@@ -12089,13 +12082,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'LESSON_SOURCE_IDENTIFICATION_OBSERVATIONS_MISSING'",
-      "path": "bilqis_mlx/source_adapters/structure.py"
-    },
-    {
-      "code_hint": "LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING'",
       "path": "bilqis_mlx/source_adapters/structure.py"
     },
     {

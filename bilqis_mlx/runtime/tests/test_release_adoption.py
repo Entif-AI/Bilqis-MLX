@@ -1,11 +1,22 @@
 """A source/teaching revision need not change the scheduler projection."""
 from dataclasses import replace
+from types import SimpleNamespace
 import unittest
 
+from bilqis_mlx.boolean_identification import (
+    CAPABILITY as IDBOOLOPS_CAPABILITY,
+    GENERATOR as IDBOOLOPS_GENERATOR,
+    ORACLE as IDBOOLOPS_ORACLE,
+    REPRESENTATION_VARIATION,
+)
 from bilqis_mlx.curriculum.scheduler import start_new
 from bilqis_mlx.factory.schedule import ScheduleCapability, ScheduleGrade, ScheduleProgram
 from bilqis_mlx.learning.champions import Checkpoint
-from bilqis_mlx.runtime.release_adoption import _profile_transition
+from bilqis_mlx.runtime.release_adoption import (
+    _idboolops_landmark_revision_required,
+    _profile_transition,
+)
+from bilqis_mlx.source_adapters.school import live_source_registry
 
 
 class TeachingOnlyTransitionTests(unittest.TestCase):
@@ -50,6 +61,38 @@ class TeachingOnlyTransitionTests(unittest.TestCase):
         _, _, repeated_history = _profile_championship_state(
             unchanged, None, successor, self.school, self.school, appended=False)
         self.assertEqual(repeated_history, history)
+
+    def test_named_idboolops_landmarks_require_one_explicit_source_revision(self):
+        registry = live_source_registry()
+        current = registry.require(
+            IDBOOLOPS_GENERATOR, IDBOOLOPS_ORACLE).descriptor
+        historical = replace(
+            current,
+            variation_axes=tuple(
+                axis for axis in current.variation_axes
+                if axis != REPRESENTATION_VARIATION),
+        )
+        binding = SimpleNamespace(
+            generator_id=IDBOOLOPS_GENERATOR,
+            oracle_id=IDBOOLOPS_ORACLE,
+        )
+
+        def release(provider):
+            return SimpleNamespace(
+                execution_plan=SimpleNamespace(capability_map={
+                    IDBOOLOPS_CAPABILITY: SimpleNamespace(
+                        provider_id=provider.adapter_id),
+                }),
+                source_bindings=SimpleNamespace(by_capability={
+                    IDBOOLOPS_CAPABILITY: binding,
+                }),
+                source_adapters=(provider,),
+            )
+
+        self.assertTrue(_idboolops_landmark_revision_required(
+            release(historical), registry))
+        self.assertFalse(_idboolops_landmark_revision_required(
+            release(current), registry))
 
 
 class ExplicitProfileDebtTests(unittest.TestCase):

@@ -27,7 +27,8 @@ RELEASE = "bilqis.mlx.grade-a-b-idboolops/20261019-v1"
 ANSWER_KIND = "boolean_operator"
 ASSESSMENT_ITEMS = 12
 MIN_OPERATOR_DOMAIN_SIZE = 2
-OBSERVATION_OPERAND_COUNT = 2
+PROPOSITIONS = ("P", "Q")
+REPRESENTATION_VARIATION = "named-proposition-bindings"
 RECORD_SHAPE_ERROR = "GRADE_B_IDBOOLOPS_RECORD_SHAPE"
 OBSERVATION_SHAPE_ERROR = "GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE"
 
@@ -107,7 +108,7 @@ def _apply(operator: str, values: tuple[bool, ...]) -> bool:
 
 
 def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
-    """Serialize direct Boolean truth signatures with the operator hidden."""
+    """Serialize shuffled truth observations with explicit proposition landmarks."""
     _require_historical_graph(legacy_root, graph)
     if (record.get("task") != TASK or "world" in record or
             set(record) != {"task", "observations", "options"}):
@@ -115,23 +116,32 @@ def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
     names = graph["tokens"]
     premise = names.index("micro.proof.premise")
     conclusion = names.index("micro.proof.conclusion")
+    bind = names.index("syntax.bind")
     separator = names.index("syntax.separator")
     end = names.index("syntax.end")
     false_id = names.index("cogal.value.false")
     true_id = names.index("cogal.value.true")
+    proposition_ids = {
+        name: names.index("cogal.variable." + name)
+        for name in PROPOSITIONS
+    }
     tokens = [names.index("task.evaluate")]
     observations = record.get("observations") or []
     if not observations:
         raise ValueError("GRADE_B_IDBOOLOPS_OBSERVATIONS_MISSING")
     for observation in observations:
-        operands = observation.get("operands")
-        if (not isinstance(operands, list) or
-                len(operands) != OBSERVATION_OPERAND_COUNT or
-                any(not isinstance(item, dict) or item.get("kind") != "literal" or
-                    type(item.get("value")) is not bool for item in operands)):
+        assignments = observation.get("assignments")
+        if (not isinstance(assignments, dict) or
+                tuple(assignments) != PROPOSITIONS or
+                any(type(assignments[name]) is not bool for name in PROPOSITIONS) or
+                set(observation) != {"assignments", "result"} or
+                type(observation.get("result")) is not bool):
             raise ValueError(OBSERVATION_SHAPE_ERROR)
-        for operand in operands:
-            tokens.extend((premise, true_id if operand["value"] else false_id))
+        for name in PROPOSITIONS:
+            tokens.extend((
+                premise, proposition_ids[name], bind,
+                true_id if assignments[name] else false_id,
+            ))
         tokens.extend((conclusion, true_id if observation["result"] else false_id,
                        separator))
     tokens[-1] = end
@@ -175,7 +185,7 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
                         logic.independent_evaluate(source_expr, {}) != generator_truth):
                     raise ValueError("GRADE_B_IDBOOLOPS_SOURCE_TRUTH_DISAGREEMENT")
                 observations.append({
-                    "operands": [logic.literal(bit) for bit in pattern],
+                    "assignments": dict(zip(PROPOSITIONS, pattern)),
                     "result": generator_truth,
                 })
             record = {"task": TASK, "observations": observations,

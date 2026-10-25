@@ -192,7 +192,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1947** raw raises across **168** files. The baseline gate permits only reduction.
+Current production scan: **1945** raw raises across **168** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -1199,7 +1199,6 @@ Current production scan: **1947** raw raises across **168** files. The baseline 
 | `GRADE_B_IDBOOLOPS_ORACLE_ENTITY_OUTSIDE_WORLD` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_NOT_UNIQUE` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_OBSERVATIONS_MISSING` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
-| `GRADE_B_IDBOOLOPS_ORACLE_OBSERVATION_SHAPE` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_OPERAND_ARITY` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_OPTION_DRIFT` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_PROBE_ARITY` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
@@ -1509,7 +1508,6 @@ Current production scan: **1947** raw raises across **168** files. The baseline 
 | `LESSON_EVIDENCE_UNADMITTED_CONSTITUENT` | 1 | `bilqis_mlx/diagnostics/teaching.py` |
 | `LESSON_EVIDENCE_WRONG_ROOT` | 1 | `bilqis_mlx/diagnostics/teaching.py` |
 | `LESSON_SOURCE_IDENTIFICATION_OBSERVATIONS_MISSING` | 1 | `bilqis_mlx/source_adapters/structure.py` |
-| `LESSON_SOURCE_IDENTIFICATION_OPERANDS_MISSING` | 1 | `bilqis_mlx/source_adapters/structure.py` |
 | `LESSON_SOURCE_IDENTIFICATION_STRUCTURE_INVALID` | 1 | `bilqis_mlx/source_adapters/structure.py` |
 | `LESSON_SOURCE_NO_SEMANTIC_OPERATOR` | 1 | `bilqis_mlx/source_adapters/structure.py` |
 | `LESSON_SOURCE_OPERATOR_SHAPE_INVALID` | 1 | `bilqis_mlx/source_adapters/structure.py` |

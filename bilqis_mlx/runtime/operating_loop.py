@@ -143,8 +143,9 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 run_dir, manifest, historical_course, course_a, source_root, teacher_sha)
             admitted_v2 = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
-            course = _compatibility_executable_projection.legacy_course_for_profile(
-                course_a, source_root, admitted_v2.profile)
+            receipt, course, admitted_v2, _ = (
+                _runtime_release_adoption._adopt_idboolops_landmark_revision_if_needed(
+                    run_dir, receipt, course_a, source_root, graph, admitted_v2))
             active_grade_count = len(admitted_v2.execution_plan.grades)
             target_boolean_profile = None
             if (active_grade_count <= 2 and not autonomous_curriculum and

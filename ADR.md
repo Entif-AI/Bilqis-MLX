@@ -1306,3 +1306,30 @@ scores, misses and mastery debt remain cumulative evidence. Existing pre-ADR-094
 receipts migrate neural-inertly with one B pass due at the next safe assessment
 boundary, avoiding another starvation epoch without rewriting historical visits or
 claiming neural progress.
+
+
+## ADR-095 | 2026-10-25 | IDBOOLOPS restores proposition landmarks without restoring worlds
+
+**Direct user decision after comparing pre- and post-U7C learning behavior.** Keep
+`B.IDBOOLOPS` as a genuine inverse Boolean-identification problem: the target
+operator stays absent from the student input, the complete FF/FT/TF/TT observation
+set stays shuffled, and the answer remains the admitted Boolean-operator head.
+Do not canonicalize row order or reintroduce `A.LINK`, `A.IDENTITY`, or a finite
+world merely to make the task easier.
+
+The direct-U7C representation may, however, restore **structural landmarks** that
+make each shuffled observation internally bindable. Each observation now names the
+already-admitted Boolean proposition slots `P` and `Q` and uses the existing
+`syntax.bind` token to attach each slot to its TRUE/FALSE value before the observed
+result. The representation therefore exposes `P=<value>, Q=<value> -> <result>`
+without exposing the hidden operator. These landmarks are answer-independent and
+add no new semantic token or world-model prerequisite.
+
+This is a source/presentation revision, not claimed neural mastery. Existing cohorts,
+scores, checkpoints, student weights and own AdamW remain immutable historical
+evidence. A live run whose admitted factory release predates the landmark contract
+must adopt one verified same-profile source successor with **zero neural updates**
+before drawing new IDBOOLOPS rows. The scheduler projection and causal student are
+preserved, stale assessment evidence is invalidated, and the changed factory-release
+identity follows the existing championship-identity reset/archive rules rather than
+silently comparing old and new presentation strata.

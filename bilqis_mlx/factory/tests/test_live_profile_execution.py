@@ -92,7 +92,7 @@ LIVE_PROFILE_PROBE = textwrap.dedent(r'''
             assert digest(draw_composite(source, graph, seed=2026101902)) == (
                 "cfbcbd61d0590433ca510d283daf333abfe5a08cba6ae7a81fbaef9059aeb903")
             assert digest(draw_identification(source, graph, seed=2026101902)) == (
-                "3d1e2c00b21d1e212ee8782aed0bc4cac9133778a604adebf93e02725c632fed")
+                "901767315b3a6552485dca23d8ac1320a2418a48e0a6f58d5cef0d47a12ff686")
             legacy_boolean_heads = boolean_answer_heads(graph)
             assert legacy_boolean_heads["boolean_operator"]["values"] == [
                 "NOT", "AND", "OR", "XOR", "IMPLIES", "IFF"]
