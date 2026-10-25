@@ -324,61 +324,22 @@ def _fresh_fragile_preservation_rows(run_dir, source_root, graph, receipt,
     Rehearsal is active only after a source-verified B replay exam exists.
     The fixed examination rows themselves are never delivered to the optimizer.
     """
-    from bilqis_mlx.learning.fragile_replay import (
-        load_replay_rows, select_preservation_rows,
-        select_structural_preservation_rows,
-    )
-    capabilities = _profiles_retention.fragile_preservation_capabilities()
-    fixed = (tuple(fixed_rows) if fixed_rows is not None
-             else load_replay_rows(
-                 run_dir, receipt, capabilities=capabilities))
+    from bilqis_mlx.learning.fragile_replay import load_replay_rows, fresh_preservation_rows
+    policy = _profiles_retention.fragile_preservation_policy()
+    fixed = (tuple(fixed_rows) if fixed_rows is not None else
+             load_replay_rows(run_dir, receipt, capabilities=policy.capabilities))
     if not fixed:
         return ()
-    admitted = set(_curriculum_scheduler.assessment_capabilities(_runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school))
-    requested = tuple(name for name in capabilities if name in admitted)
-    if not requested:
-        return ()
-    excluded = {row["id"] for row in fixed}
-    selected = []
-    for name in requested:
-        fixed_capability = tuple(
-            row for row in fixed if row["capability"] == name)
-        fresh = []
-        matched = ()
-        for attempt in range(3):
-            fresh.extend(_runtime_assessment._draw_live_rows(
-                source_root, graph,
-                executable_release=executable_release,
-                seed=_runtime_state._seed(
-                    receipt,
-                    capability=f"FRAGILE_PRESERVE:{name}:{attempt}",
-                    step=step),
-                capability=name, each=max(96, batch_size * 3), course=course))
-            matched = select_structural_preservation_rows(
-                fresh, fixed_capability, excluded_ids=excluded,
-                rotation=max(0, step - 1) * 4, limit=4)
-            if len(matched) >= 4:
-                break
-        delivered = list(matched)
-        if len(delivered) < 4:
-            try:
-                fallback = select_preservation_rows(
-                    fresh, capabilities=(name,), excluded_ids=excluded)
-            except ValueError as exc:
-                if str(exc) != "FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE":
-                    raise
-                fallback = ()
-            used = {row["id"] for row in delivered}
-            for row in fallback:
-                if row["id"] not in used:
-                    delivered.append(row)
-                    used.add(row["id"])
-                if len(delivered) >= 4:
-                    break
-        selected.extend(delivered[:4])
-    if any(row["id"] in excluded for row in selected):
-        raise ValueError("FRAGILE_PRESERVATION_EXAM_ROW_LEAK")
-    return tuple(selected)
+    admitted = set(_curriculum_scheduler.assessment_capabilities(
+        _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school))
+    requested = tuple(name for name in policy.capabilities if name in admitted)
+    return fresh_preservation_rows(
+        fixed, capabilities=requested, rotation=max(0, step - 1) * policy.per_capability_target,
+        batch_size=batch_size, retention_policy=policy,
+        seed_for=lambda name, attempt: _runtime_state._seed(
+            receipt, capability=f"FRAGILE_PRESERVE:{name}:{attempt}", step=step),
+        draw_rows=lambda **kwargs: _runtime_assessment._draw_live_rows(
+            source_root, graph, executable_release=executable_release, course=course, **kwargs))
 
 
 def _inject_preservation_rows(chosen, preservation, *, reserved_ids=()):

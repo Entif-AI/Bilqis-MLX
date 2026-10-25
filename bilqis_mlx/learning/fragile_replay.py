@@ -24,23 +24,25 @@ def structural_signature(row: dict) -> tuple:
 
 
 def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozenset(),
-                                        rotation: int, limit: int) -> tuple[dict, ...]:
+                                        rotation: int, limit: int,
+                                        source_policy=None) -> tuple[dict, ...]:
     """Select fresh siblings using the source's ordered structural match keys."""
+    source = source_policy if source_policy is not None else _source_policy()
     if type(rotation) is not int or rotation < 0 or type(limit) is not int or limit < 1:
         raise ValueError("FRAGILE_PRESERVATION_ROTATION_INVALID")
     excluded = set(excluded_ids)
-    direct_fixed = tuple(row for row in fixed_rows if _source_policy().is_exact(row))
+    direct_fixed = tuple(row for row in fixed_rows if source.is_exact(row))
     if direct_fixed:
         if len(direct_fixed) != len(tuple(fixed_rows)):
             raise ValueError("FRAGILE_PRESERVATION_MIXED_REPRESENTATION")
-        capability = _source_policy().structural_capability(direct_fixed, limit)
-        required = _source_policy().pattern_counts(
+        capability = source.structural_capability(direct_fixed, limit)
+        required = source.pattern_counts(
             capability, direct_fixed, each=limit)
         desired = []
         for pattern, count in sorted(required.items()):
             signatures = sorted({
-                structural_signature(row) for row in direct_fixed
-                if _source_policy().row_pattern(row) == pattern
+                source.signature(row) for row in direct_fixed
+                if source.row_pattern(row) == pattern
             })
             if not signatures:
                 return ()
@@ -49,20 +51,20 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
             desired.extend(ordered[index % len(ordered)] for index in range(count))
         candidates = []
         for row in rows:
-            if row.get("id") in excluded or not _source_policy().is_exact(row):
+            if row.get("id") in excluded or not source.is_exact(row):
                 continue
             try:
-                signature = structural_signature(row)
+                signature = source.signature(row)
             except ValueError:
                 continue
             candidates.append((row, signature))
         selected, used = [], set()
         for wanted in desired:
             chosen = None
-            for level, key in enumerate(_source_policy().matching_keys(wanted)):
+            for level, key in enumerate(source.matching_keys(wanted)):
                 chosen = next((row for row, signature in candidates
                     if row["id"] not in used and
-                    _source_policy().matching_keys(signature)[level] == key), None)
+                    source.matching_keys(signature)[level] == key), None)
                 if chosen is not None:
                     break
             if chosen is None:
@@ -70,7 +72,7 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
             selected.append(chosen)
             used.add(chosen["id"])
         return tuple(selected)
-    desired = sorted({structural_signature(row) for row in fixed_rows})
+    desired = sorted({source.signature(row) for row in fixed_rows})
     if not desired:
         return ()
     shift = rotation % len(desired)
@@ -80,17 +82,17 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
         if row.get("id") in excluded:
             continue
         try:
-            signature = structural_signature(row)
+            signature = source.signature(row)
         except ValueError:
             continue
         candidates.append((row, signature))
     selected, used = [], set()
     for wanted in desired:
         chosen = None
-        for level, key in enumerate(_source_policy().matching_keys(wanted)):
+        for level, key in enumerate(source.matching_keys(wanted)):
             chosen = next((row for row, signature in candidates
                 if row["id"] not in used and
-                _source_policy().matching_keys(signature)[level] == key), None)
+                source.matching_keys(signature)[level] == key), None)
             if chosen is not None:
                 break
         if chosen is not None:
@@ -100,13 +102,15 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
 
 
 def select_preservation_rows(rows, *, capabilities=None,
-                             excluded_ids=frozenset()) -> tuple[dict, ...]:
+                             excluded_ids=frozenset(), each=4,
+                             source_policy=None) -> tuple[dict, ...]:
     """Select source patterns with stable row-identity exclusions."""
+    source = source_policy if source_policy is not None else _source_policy()
     requested = (
         tuple(capabilities) if capabilities is not None else
         tuple(sorted({
             row.get("capability") for row in rows
-            if _source_policy().eligible(row)
+            if source.eligible(row)
         })))
     if (not requested or len(requested) != len(set(requested)) or
             any(not isinstance(capability, str) or not capability
@@ -118,13 +122,13 @@ def select_preservation_rows(rows, *, capabilities=None,
         candidates = [row for row in rows
                       if row.get("capability") == capability and
                       row.get("id") not in excluded]
-        required = _source_policy().pattern_counts(capability, candidates, each=4)
+        required = source.pattern_counts(capability, candidates, each=each)
         by_pattern = {}
         gold_by_pattern = {}
         for row in candidates:
-            pattern = _source_policy().row_pattern(row)
+            pattern = source.row_pattern(row)
             gold = row.get("gold")
-            if gold not in _source_policy().answer_values:
+            if gold not in source.answer_values:
                 raise ValueError(_SOURCE_GOLD_DRIFT)
             prior_gold = gold_by_pattern.setdefault(pattern, gold)
             if prior_gold != gold:
@@ -137,6 +141,55 @@ def select_preservation_rows(rows, *, capabilities=None,
             if len(available) < count:
                 raise ValueError("FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE")
             selected.extend(available[:count])
+    return tuple(selected)
+
+
+def fresh_preservation_rows(fixed_rows, *, capabilities, draw_rows, seed_for,
+                            rotation: int, batch_size: int,
+                            retention_policy=None, source_policy=None) -> tuple[dict, ...]:
+    """Draw up to three source cohorts and select bounded fresh siblings."""
+    policy = retention_policy if retention_policy is not None else fragile_preservation_policy()
+    source = (source_policy if source_policy is not None else
+              fragile_source_policy(policy.source_selector))
+    fixed = tuple(fixed_rows)
+    requested = tuple(capabilities)
+    if not fixed or not requested:
+        return ()
+    excluded = {row["id"] for row in fixed}
+    target = policy.per_capability_target
+    selected = []
+    for name in requested:
+        fixed_capability = tuple(row for row in fixed if row["capability"] == name)
+        fresh = []
+        matched = ()
+        for attempt in range(3):
+            fresh.extend(draw_rows(capability=name, seed=seed_for(name, attempt),
+                                   each=max(96, batch_size * 3)))
+            matched = select_structural_preservation_rows(
+                fresh, fixed_capability, excluded_ids=excluded,
+                rotation=rotation, limit=target, source_policy=source)
+            if len(matched) >= target:
+                break
+        delivered = list(matched)
+        if len(delivered) < target:
+            try:
+                fallback = select_preservation_rows(
+                    fresh, capabilities=(name,), excluded_ids=excluded,
+                    each=target, source_policy=source)
+            except ValueError as exc:
+                if str(exc) != "FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE":
+                    raise
+                fallback = ()
+            used = {row["id"] for row in delivered}
+            for row in fallback:
+                if row["id"] not in used:
+                    delivered.append(row)
+                    used.add(row["id"])
+                if len(delivered) >= target:
+                    break
+        selected.extend(delivered[:target])
+    if any(row["id"] in excluded for row in selected):
+        raise ValueError("FRAGILE_PRESERVATION_EXAM_ROW_LEAK")
     return tuple(selected)
 
 

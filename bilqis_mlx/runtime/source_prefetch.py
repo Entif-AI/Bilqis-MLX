@@ -10,10 +10,7 @@ import multiprocessing
 from pathlib import Path
 import signal
 
-from bilqis_mlx.learning.fragile_replay import (
-    select_preservation_rows,
-    select_structural_preservation_rows,
-)
+from bilqis_mlx.learning.fragile_replay import fresh_preservation_rows
 from bilqis_mlx.factory.live_answers import live_answer_registry
 from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.live_curriculum import draw_course_rows
@@ -73,50 +70,16 @@ def _fragile_rows(request: dict, *,
     requested = tuple(request["fragile_requested"])
     if not fixed or not requested:
         return ()
-    excluded = {row["id"] for row in fixed}
-    selected = []
-    source_root = Path(request["source_root"])
-    graph = request["graph"]
-    course = request["course"]
-    batch_size = request["batch_size"]
-    seed_map = request["fragile_seeds"]
-    rotation = request["fragile_rotation"]
-    for name in requested:
-        fixed_capability = tuple(row for row in fixed if row["capability"] == name)
-        fresh = []
-        matched = ()
-        seeds = tuple(seed_map.get(name, ()))
+    def seed_for(name, attempt):
+        seeds = tuple(request["fragile_seeds"].get(name, ()))
         if len(seeds) != 3:
             raise ValueError("SOURCE_PREFETCH_FRAGILE_SEEDS_INVALID")
-        for seed in seeds:
-            fresh.extend(_source_rows(
-                request, seed=seed, capability=name,
-                each=max(96, batch_size * 3), source_context=source_context))
-            matched = select_structural_preservation_rows(
-                fresh, fixed_capability, excluded_ids=excluded,
-                rotation=rotation, limit=4)
-            if len(matched) >= 4:
-                break
-        delivered = list(matched)
-        if len(delivered) < 4:
-            try:
-                fallback = select_preservation_rows(
-                    fresh, capabilities=(name,), excluded_ids=excluded)
-            except ValueError as exc:
-                if str(exc) != "FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE":
-                    raise
-                fallback = ()
-            used = {row["id"] for row in delivered}
-            for row in fallback:
-                if row["id"] not in used:
-                    delivered.append(row)
-                    used.add(row["id"])
-                if len(delivered) >= 4:
-                    break
-        selected.extend(delivered[:4])
-    if any(row["id"] in excluded for row in selected):
-        raise ValueError("FRAGILE_PRESERVATION_EXAM_ROW_LEAK")
-    return tuple(selected)
+        return seeds[attempt]
+    return fresh_preservation_rows(
+        fixed, capabilities=requested, rotation=request["fragile_rotation"],
+        batch_size=request["batch_size"], seed_for=seed_for,
+        draw_rows=lambda **kwargs: _source_rows(
+            request, source_context=source_context, **kwargs))
 
 
 def _teaching_enrichment_rows(request: dict):
