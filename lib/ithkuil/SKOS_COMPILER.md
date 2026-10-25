@@ -1348,3 +1348,37 @@ tables/rows produce byte-identical receipts.
 
 This is atomic morphology closeout only. It does not claim whole-#19 release eligibility
 and does not aggregate lexicon, mapping, composition, curriculum, or store coverage.
+
+## Affix-degree semantic concepts (#56)
+
+`project_affix_degrees(closure, degree_rows)` projects the currently deferred
+`affix_degrees.csv` rows without making the compiler manifest change that belongs to
+the later full-compilation integration. The function consumes the validated core
+closure plus immutable degree rows, so #72 can pass a future manifest-owned table
+without changing the semantic API.
+
+The extractor's legacy `degree_id` is not semantic identity: it is generated from
+`(atomic_id, degree, meaning_summary)`, so a source wording change would rename it.
+The stable degree concept IRI therefore uses `(affix_root_atomic_id, degree)` and
+retains every legacy `degree_id` as `dcterms:identifier` source-row identity.
+
+Each degree is a `skos:Concept` in the New Ithkuil scheme, with exact source
+`meaning_summary` as `skos:definition`. The numeric source degree is represented by
+generic `rdf:value` as `xsd:nonNegativeInteger`. One project relation,
+`bilqis:degreeOf`, links the degree concept to the already-resolved semantic identity
+of its `morphemes_atomic` affix root. No `skos:broader`, `skos:narrower`, or ordered
+collection relation is inferred from the degree number.
+
+Source trace uses the existing public-source policy through the small
+`residue_source` bridge: source registry URL, section/table coordinates, line/anchor,
+and public-literal checks must all pass before the concept is emitted.
+
+Current source proof covers 271 degree rows over 30 affix roots. Twenty-nine roots
+have degrees 1–9 and one source root has explicit degree 0–9. All 271 current rows
+emit with zero holds. A resolved resource outside the source's `affix_root` family
+is held with `AFFIX_DEGREE_ROOT_KIND_INVALID`, so an unrelated grammar resource
+cannot acquire affix degrees merely because its ID resolves. A deterministic query returns one root's degrees numerically
+for display/query purposes only; that ordering is not asserted in RDF and carries no
+curriculum meaning. Duplicate source coordinates with conflicting meanings, unknown
+affix roots, or blank meaning text are held as whole concepts rather than inferred
+from neighboring degrees.
