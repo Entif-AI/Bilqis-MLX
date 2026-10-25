@@ -46,6 +46,6 @@ jobs:
           bilqis_mlx/factory/tests/test_historical_generalization.py
           bilqis_mlx/runtime/tests/test_admission.py
       - name: Install semantic profile dependencies
-        run: python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
+        run: python3 -m pip install -r lib/ithkuil/requirements-falkor.txt
       - name: Verify deterministic source semantic profile
         run: python3 -B -m unittest discover -s lib/ithkuil/tests -p 'test_skos_*.py' -v
