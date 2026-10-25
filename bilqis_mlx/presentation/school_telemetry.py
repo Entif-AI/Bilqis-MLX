@@ -12,6 +12,7 @@ from typing import Any
 import string
 
 from bilqis_mlx.presentation.spiral_dashboard import Column
+from bilqis_mlx.presentation.operator_status import PROFILE_ADOPTION_EVENTS, apply_profile_adoption, display_metric as _display, notify_grade_admitted
 from ..compatibility.telemetry_events import (
     HISTORICAL_EVENT_KINDS,
     historical_event_grade,
@@ -334,14 +335,6 @@ EVENT_KINDS = {
 }
 
 
-def _display(value: Any, *, decimals: int = 3) -> str:
-    if type(value) in (float, int):
-        if value and abs(value) < 0.5 * 10 ** (-decimals):
-            return f"{value:.2e}"
-        return f"{value:.{decimals}f}"
-    return "-"
-
-
 def _inventory_scope(scope: str, caps: dict) -> str:
     """Internal comparison identity for the capability inventory actually scored."""
     return scope + "|inventory:" + ",".join(sorted(caps))
@@ -513,11 +506,15 @@ class SchoolTelemetry:
                         if event.get("event") == "SCHOOL_NEXT_GRADE_COURSE_ADMITTED"
                         else "COURSE_ADMITTED"),
                 grade=grade)
+            notify_grade_admitted(self.board,grade,event.get("generation","-"))
         self.board.state["step"] = event.get("optimizer_step", self.board.state.get("step"))
         self.board.state["_rate_sample_eligible"] = True
 
     def _curriculum(self, grade, event):
         """Make a release replacement a hard boundary in the active dashboard view."""
+        if event["event"] in PROFILE_ADOPTION_EVENTS:
+            apply_profile_adoption(self,grade,event)
+            return
         self._reset_score_era(reason=event["event"], grade=grade)
         old_caps = tuple(event.get("old_capabilities") or ())
         new_caps = tuple(event.get("new_capabilities") or ())
@@ -948,6 +945,8 @@ class SchoolTelemetry:
         self.board.state.update(phase=event.get("phase", self.board.state.get("phase")),
                                 prefix=grade, step=step,
                                 _rate_sample_eligible=True)
+        if target_evaluated:
+            self.board.notify_school_phase(grade,event.get("phase"))
         if not target_evaluated:
             observed = "+".join(sorted(cohort))
             detail = (

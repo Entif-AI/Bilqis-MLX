@@ -11,6 +11,7 @@ from collections import deque
 from pathlib import Path
 
 from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TABLES
+from bilqis_mlx.presentation.operator_status import number_semantics_from_state
 from bilqis_mlx.runtime.disk import headroom_snapshot
 from bilqis_mlx.state_dag import read_current
 from bilqis_mlx.source import AUDITED_PARENT
@@ -35,6 +36,7 @@ def _initialize_board(board: Dashboard, run_dir: Path, state, school, active,
     phase = school.get("stage", "READY_FOR_HUMAN_START")
     board.run_name = run_dir.name
     board.mode = "READ-ONLY"
+    board.set_number_semantics(number_semantics_from_state(state))
     board.push("state", {
         "mastery": {"phase": phase, "prefix": current_grade, "position": 0},
         "optimizer_step": step,
@@ -129,28 +131,32 @@ def _replay_dashboard_journal(board: Dashboard, run_dir: Path) -> None:
     # The renderer itself retains only bounded row buffers. Read the journal
     # once without decoding old JSON, then decode only the same recent-record
     # window the dashboard is capable of displaying.
-    with events.open("rb") as log:
-        identity = os.fstat(log.fileno())
-        board.journal_identity = (identity.st_dev, identity.st_ino)
-        replay_limit = max(
-            (rows.maxlen or 0 for rows in board.rows.values()), default=0)
-        recent = deque(maxlen=max(1, replay_limit))
-        while line := log.readline():
-            recent.append((log.tell(), line))
-        for end, line in recent:
-            if not line.endswith(b"\n"):
-                # Preserve a partially appended JSON line for the follower.
-                board.journal_offset = end - len(line)
-                break
-            board.journal_offset = end
-            if line.strip():
-                try:
-                    ingest(board, json.loads(line))
-                except (ValueError, TypeError, KeyError) as exc:
-                    board.push("system", {
-                        "kind": "LOG",
-                        "detail": f"Invalid telemetry event ignored: {str(exc)[:62]}",
-                    }, redraw=False)
+    board.replaying_journal = True
+    try:
+        with events.open("rb") as log:
+            identity = os.fstat(log.fileno())
+            board.journal_identity = (identity.st_dev, identity.st_ino)
+            replay_limit = max(
+                (rows.maxlen or 0 for rows in board.rows.values()), default=0)
+            recent = deque(maxlen=max(1, replay_limit))
+            while line := log.readline():
+                recent.append((log.tell(), line))
+            for end, line in recent:
+                if not line.endswith(b"\n"):
+                    # Preserve a partially appended JSON line for the follower.
+                    board.journal_offset = end - len(line)
+                    break
+                board.journal_offset = end
+                if line.strip():
+                    try:
+                        ingest(board, json.loads(line))
+                    except (ValueError, TypeError, KeyError) as exc:
+                        board.push("system", {
+                            "kind": "LOG",
+                            "detail": f"Invalid telemetry event ignored: {str(exc)[:62]}",
+                        }, redraw=False)
+    finally:
+        board.replaying_journal = False
 
 
 def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard:
@@ -168,6 +174,7 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
     _push_saved_school_evidence(board, state, active, current_grade)
     board.push("system", {"kind": "RESTART", "detail": "Saved run: train --human-run --resume"}, redraw=False)
     _replay_dashboard_journal(board, run_dir)
+    board.notify_school_phase(current_grade, phase)
     if active and not board.rows["GRADES & MASTERY"]:
         board.rows["GRADES & MASTERY"].append({"grade": current_grade, "step": step,
                  "attempt": "-",

@@ -23,6 +23,59 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_compact_header_names_exact_active_number_semantics(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                          tables=LETTER_TABLES, compact_header=True)
+        board.set_number_semantics(("0", "1", "2", "3", "4", "5", "6"))
+
+        rendered = board.render(width=240, height=30)
+
+        self.assertIn("NUMBER SEMANTICS", rendered)
+        self.assertIn("0 1 2 3 4 5 6", rendered)
+
+    def test_profile_scope_and_grade_milestones_use_transient_candidate_notice(self):
+        now = [100.0]
+        board = Dashboard(
+            stream=io.StringIO(), clock=lambda: now[0], show_all_panels=True,
+            tables=LETTER_TABLES, compact_header=True)
+        board.school_telemetry = SchoolTelemetry(
+            board, active_grades=("C",), champions={})
+
+        ingest(board, {
+            "event": "SCHOOL_EXECUTION_PROFILE_ADOPTED",
+            "grade": "C", "generation": 1, "optimizer_step": 200,
+            "profile_id": "school/u7c-full-b/numeric-0-6",
+            "transition_kind": "REVISE_PROFILE",
+        })
+        self.assertEqual(
+            board.number_semantics, ("0", "1", "2", "3", "4", "5", "6"))
+        self.assertIn(
+            "NUMBERS NOW 0 1 2 3 4 5 6",
+            board.render(width=240, height=30))
+
+        promoted = exam(
+            "C", 2, "c" * 64, {"C.NUMBER": (11, 12)},
+            step=200, sha="d" * 64)
+        promoted["phase"] = "AWAITING_NEXT_GRADE_WITH_DEBT"
+        ingest(board, promoted)
+        rendered = board.render(width=240, height=30)
+        self.assertIn("GRADE C PROMOTED WITH DEBT", rendered)
+        self.assertIn("> NEXT GRADE READY", rendered)
+
+        now[0] += 61
+        self.assertNotIn(
+            "GRADE C PROMOTED WITH DEBT",
+            board.render(width=240, height=30))
+
+        graduated = exam(
+            "C", 3, "c" * 64, {"C.NUMBER": (12, 12)},
+            step=200, sha="d" * 64)
+        graduated["phase"] = "AWAITING_NEXT_GRADE"
+        ingest(board, graduated)
+        self.assertIn(
+            "GRADE C GRADUATED 100%",
+            board.render(width=240, height=30))
+
     def test_merkle_state_keeps_champion_inventory_visible(self):
         from bilqis_mlx.data_plane import close_data_planes
         from bilqis_mlx.state_dag import persist
