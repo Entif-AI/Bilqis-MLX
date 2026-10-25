@@ -36,6 +36,16 @@ class CopularTests(unittest.TestCase):
         cls.graph = proposed_graph()
         cls.operation = bind_operation(cls.graph)
 
+    def test_copular_provider_owns_check_without_using_generator(self):
+        from unittest.mock import patch
+        from bilqis_mlx.factory.verification import check_copular
+        self.assertEqual(check.__module__, "bilqis_mlx.source_adapters.copular")
+        self.assertIs(check_copular, check)
+        rows = draw(None, self.graph, seed=17, each=12)
+        with patch("bilqis_mlx.source_adapters.copular.draw",
+                   side_effect=AssertionError("checker invoked generator")):
+            self.assertTrue(all(check(row, graph=self.graph) for row in rows))
+
     def test_positive_identity_is_about_denotation(self):
         world = ReferentWorld(("A", "B", "C"),
                               (("A", "C"), ("B", "C"), ("C", "A")))
