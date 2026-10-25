@@ -132,3 +132,41 @@ boundary, and refusal to bypass conformance with a raw projection dictionary.
 References: [query parameters](https://docs.falkordb.com/commands/graph.query),
 [read-only queries](https://docs.falkordb.com/commands/graph.ro-query), and
 [range indexes](https://docs.falkordb.com/cypher/indexing/range-index).
+
+## Scoped reset and foreign boundaries (#75)
+
+`falkor_reset.plan_reset(importer)` is read-only. It enumerates the exact owned
+term/edge keys, counts, graph/owner, represented canonical digest, marker state,
+foreign nodes touching owned edges, foreign edges touching owned nodes, and
+boundary blockers. Ownership requires the explicit marker plus matching per-term
+and per-edge owner. Unknown owned node classes, foreign incoming/outgoing edges,
+and an owned edge touching a foreign node refuse deletion.
+
+`reset_owned(importer, plan)` requires that exact graph/owner plan, re-reads it,
+and then executes one guarded database query. The query rechecks exact key sets,
+marker identity/state/digest and foreign boundaries before deleting only the
+selected owned edges and terms. It uses neither `GRAPH.DELETE` nor an unscoped
+node deletion. A same-count key swap or foreign edge arriving after the final
+client-side read fails the database guard. The marker survives in `empty` state;
+readback confirms zero represented counts. A subsequent verified import can rebuild.
+Unrelated foreign nodes and edges remain untouched and may coexist with the owned
+projection; importer/readback scope and boundary checks preserve that separation.
+
+```sh
+# No-mutation plan:
+python3 -B -m lib.ithkuil.src.skos.falkor_reset \
+  --graph EXPLICIT_OWNED_GRAPH --owner EXPLICIT_OWNER > reset-plan.json
+# Execute only this reviewed exact plan:
+python3 -B -m lib.ithkuil.src.skos.falkor_reset \
+  --graph EXPLICIT_OWNED_GRAPH --owner EXPLICIT_OWNER \
+  --execute --plan reset-plan.json
+```
+
+An interrupted reset reports reconciliation required. Inspect the surviving marker
+and actual owned boundary; do not infer that a timeout means no deletion occurred.
+No whole-graph administration is provided. Live tests create only fresh owned test
+graphs and synthetic foreign-boundary fixtures. They prove dry-run immutability,
+clean reset/rebuild, unrelated foreign-subgraph survival, all three unsafe boundary
+cases, wrong graph refusal, same-count stale-plan refusal, and an injected boundary
+race inside the final guarded operation. The full corpus graph is not reset by
+these tests.

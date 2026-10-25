@@ -81,8 +81,8 @@ class Importer:
 
     def require_owned(self):
         state = self.status()
-        nodes = self._read("MATCH (n) WHERE coalesce(n.owner,'') <> $owner RETURN count(n)",{'owner':self.owner})[0][0]
-        edges = self._read("MATCH ()-[e]->() WHERE coalesce(e.owner,'') <> $owner OR type(e) <> 'RDF' RETURN count(e)",{'owner':self.owner})[0][0]
+        nodes = self._read("MATCH (n) WHERE n.owner=$owner AND NOT ('RdfTerm' IN labels(n)) AND NOT ('BilqisProjection' IN labels(n)) RETURN count(n)",{'owner':self.owner})[0][0]
+        edges = self._read("MATCH (a)-[e]->(b) WHERE (a.owner=$owner OR b.owner=$owner OR e.owner=$owner) AND (coalesce(e.owner,'') <> $owner OR coalesce(a.owner,'') <> $owner OR coalesce(b.owner,'') <> $owner OR type(e) <> 'RDF' OR NOT ('RdfTerm' IN labels(a)) OR NOT ('RdfTerm' IN labels(b))) RETURN count(e)",{'owner':self.owner})[0][0]
         if nodes or edges:
             raise ProfileError('FALKOR_FOREIGN_DATA_PRESENT', f'nodes={nodes}',f'edges={edges}')
         return state
@@ -109,7 +109,7 @@ class Importer:
         reconstruct_graph(result)
         if state['version'] != VERSION or state['nodes'] != len(nodes) or state['edges'] != len(edges):
             raise ProfileError('FALKOR_MARKER_CENSUS_MISMATCH')
-        total = self._read('MATCH (n) RETURN count(n)')[0][0]
+        total = self._read('MATCH (n) WHERE n.owner=$owner RETURN count(n)',{'owner':self.owner})[0][0]
         if total != len(nodes)+1:
             raise ProfileError('FALKOR_UNACCOUNTED_NODES')
         return result
@@ -125,6 +125,10 @@ class Importer:
             rows=self.graph.query("MATCH (n) WITH count(n) AS count WHERE count=0 CREATE (m:BilqisProjection {owner:$owner,digest:$digest,version:$version,nodes:$nodes,edges:$edges,state:'incomplete'}) RETURN m.owner",params).result_set
             if rows != [[self.owner]]: raise ProfileError('FALKOR_GRAPH_CLAIM_REFUSED')
         state=self.require_owned()
+        if state['state']=='empty':
+            rows=self.graph.query("MATCH (m:BilqisProjection {owner:$owner,state:'empty',digest:''}) OPTIONAL MATCH (n:RdfTerm) WHERE n.owner=$owner WITH m,count(n) AS count WHERE count=0 SET m.digest=$digest,m.version=$version,m.nodes=$nodes,m.edges=$edges,m.state='incomplete' RETURN m.state",params).result_set
+            if rows != [['incomplete']]:raise ProfileError('FALKOR_EMPTY_REBUILD_REFUSED')
+            state=self.status()
         if state['digest'] != params['digest'] or state['version'] != VERSION:
             raise ProfileError('FALKOR_DIFFERENT_ARTIFACT_REQUIRES_RESET')
         if state['state'] == 'complete':
