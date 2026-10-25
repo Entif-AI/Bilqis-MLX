@@ -1130,6 +1130,26 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertNotEqual(set(active_before), set(active_after))
         self.assertTrue(set(active_after) - set(active_before))
 
+    def test_context_with_only_dormant_failures_selects_fresh_active_challenger(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher()
+        failed = "policy-000"
+        no_gain = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN",
+            policy_key=failed, decision=no_gain, local_gain=0.,
+            curriculum_scope="scope")
+
+        picked, _policy = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(4),
+            curriculum_scope="scope")
+
+        self.assertNotEqual(picked, failed)
+        self.assertIn(picked, teacher["strategies"])
+
     def test_candidate_step_budget_shrinks_only_for_interference_pressure(self):
         teacher = {
             "strategies": {"policy": {"lr": .00013}},

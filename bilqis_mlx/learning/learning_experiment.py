@@ -731,6 +731,14 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         for key, record in _effective_context_scope(teacher, scope).items()
         if key in active_set
     }
+    if not effective_scope:
+        if geometry_context:
+            original_key, original_policy = _geometry_context_pick(
+                teacher, grade, scope, rng, active_effective, inventory)
+        else:
+            original_key, original_policy = _pick_existing_active(
+                engine, teacher, grade, rng, active_effective, inventory)
+        return result(original_key, original_policy)
     diagnostic_scope = _diagnostic_effective_scope(
         teacher, scope, diagnostic_key)
     diagnostic_scope = {

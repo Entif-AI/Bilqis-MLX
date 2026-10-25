@@ -11,6 +11,7 @@ from bilqis_mlx.learning.teacher_feedback import LearningExperimentError
 UCB_EXPLORATION_WEIGHT = 0.6
 ACTIVE_EFFECTIVE_STRATEGY_LIMIT = 16
 ACTIVE_EFFECTIVE_INCUMBENT_LIMIT = 8
+DEEP_POLICY_DEPTH_MINIMUM = 3
 _INEFFECTIVE_POLICY_FIELDS = frozenset({"preview"})
 
 
@@ -24,7 +25,8 @@ def effective_policy_key(policy: dict) -> str:
     }
     if "depth" in effective:
         effective["depth"] = (
-            "DEEP" if float(effective["depth"]) >= 3 else "SHALLOW")
+            "DEEP" if float(effective["depth"]) >= DEEP_POLICY_DEPTH_MINIMUM
+            else "SHALLOW")
     if "contrast" in effective:
         effective["contrast"] = (
             "DIVERSE" if float(effective["contrast"]) >= .5 else "RANDOM")
