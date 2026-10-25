@@ -1,31 +1,49 @@
 {
   "schema": "bilqis.skos.identity-resolution-fixture/v1",
   "counts": {
-    "resources": 2968,
+    "resources": 3191,
     "grammar": 485,
     "atomic_roots": 165,
-    "lexicon_roots": 503,
-    "senses": 1815,
+    "lexicon_roots": 625,
+    "senses": 1916,
     "issues": 0
   },
   "register_nrr": {
     "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/REGISTER/NRR",
-    "families": ["register_adjunct_final", "register_adjunct_initial"],
-    "source_records": [
-      ["morphemes_atomic", "ATOM-0a27199f07517d"],
-      ["morphemes_atomic", "ATOM-68f38fe846454a"]
+    "families": [
+      "register_adjunct_final",
+      "register_adjunct_initial"
     ],
-    "lexical_forms": ["∅", "∅"]
+    "source_records": [
+      [
+        "morphemes_atomic",
+        "ATOM-0a27199f07517d"
+      ],
+      [
+        "morphemes_atomic",
+        "ATOM-68f38fe846454a"
+      ]
+    ],
+    "lexical_forms": [
+      "∅",
+      "∅"
+    ]
   },
   "atomic_root": {
     "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-WEB-CH07/ATOM-00e59b6388deca",
-    "source_record": ["morphemes_atomic", "ATOM-00e59b6388deca"],
+    "source_record": [
+      "morphemes_atomic",
+      "ATOM-00e59b6388deca"
+    ],
     "family": "case_affix_root",
     "lexical_form": "sy"
   },
   "lexicon_root": {
     "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-c38edca4b6c30c",
-    "source_record": ["lexicon_roots", "LEXROOT-c38edca4b6c30c"],
+    "source_record": [
+      "lexicon_roots",
+      "LEXROOT-c38edca4b6c30c"
+    ],
     "lexical_form": "s",
     "pref_label": "[the “carrier” root]"
   },
@@ -36,11 +54,17 @@
   },
   "same_label_distinct_senses": [
     {
-      "record": ["root_senses", "SENSE-52d516cf035fbb"],
+      "record": [
+        "root_senses",
+        "SENSE-52d516cf035fbb"
+      ],
       "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-WEB-CH10/ATOM-0a315f9beea2af/STEM%202/BSC"
     },
     {
-      "record": ["lexicon_root_senses", "LEXSENSE-bb9de636873ce1"],
+      "record": [
+        "lexicon_root_senses",
+        "LEXSENSE-bb9de636873ce1"
+      ],
       "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-c38edca4b6c30c/STEM%202/BSC"
     }
   ]

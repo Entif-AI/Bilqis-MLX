@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from lib.ithkuil.tests.source_expectations import LEXICON
+
 import unittest
 
 from rdflib import Graph, Literal, URIRef
@@ -47,12 +49,12 @@ class LexiconDimensionTests(unittest.TestCase):
         cls.result = project_lexicon_dimensions(cls.closure)
 
     def test_every_current_sense_has_exact_dimensions(self):
-        self.assertEqual(len(self.result.records), 1615)
+        self.assertEqual(len(self.result.records), LEXICON["sense_rows"])
         self.assertEqual(self.result.held_source_ids, ())
         self.assertEqual(self.result.issues, ())
-        self.assertEqual(len(self.result.graph), 3230)
-        self.assertEqual(len(list(self.result.graph.triples((None, STEM, None)))), 1615)
-        self.assertEqual(len(list(self.result.graph.triples((None, SPECIFICATION, None)))), 1615)
+        self.assertEqual(len(self.result.graph), LEXICON["sense_rows"] * 2)
+        self.assertEqual(len(list(self.result.graph.triples((None, STEM, None)))), LEXICON["sense_rows"])
+        self.assertEqual(len(list(self.result.graph.triples((None, SPECIFICATION, None)))), LEXICON["sense_rows"])
 
     def test_direct_prose_and_compact_source_modes_remain_record_metadata_only(self):
         cases = {

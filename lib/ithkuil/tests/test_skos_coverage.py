@@ -140,7 +140,7 @@ class CoverageTests(unittest.TestCase):
                 "frontier_debt",
             ):
                 self.assertEqual(domain[field], expected[field], (name, field))
-        self.assertEqual(sum(len(domain["rows"]) for domain in receipt["domains"].values()), 9654)
+        self.assertEqual(sum(len(domain["rows"]) for domain in receipt["domains"].values()), EXPECTED["totals"]["source_rows"])
         self.assertEqual(coverage_json_bytes(self.coverage), coverage_json_bytes(self.coverage))
 
     def test_corrected_lexicon_graph_is_consumed_without_downstream_filtering(self):
@@ -156,7 +156,7 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(receipt["build_status"], "partial")
         self.assertEqual(receipt["totals"]["dispositions"]["HELD"], 1051)
         self.assertEqual(receipt["totals"]["dispositions"]["REJECTED"], 1)
-        self.assertEqual(receipt["domains"]["lexicon"]["frontier_debt"][1]["count"], 219)
+        self.assertEqual(receipt["domains"]["lexicon"]["frontier_debt"], EXPECTED["domains"]["lexicon"]["frontier_debt"])
         self.assertEqual(receipt["domains"]["mapping"]["frontier_debt"][0]["count"], 552)
 
     def test_every_domain_row_id_is_unique_and_status_totals_reconcile(self):

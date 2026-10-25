@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lib.ithkuil.tests.source_expectations import LEXICON
+
 import os
 from pathlib import Path
 import unittest
@@ -44,13 +46,13 @@ class LexiconRootProjectionTests(unittest.TestCase):
         cls.result = project_lexicon_roots(cls.closure)
 
     def test_current_frontier_projects_one_root_resource_per_source_root(self):
-        self.assertEqual(len(self.closure.table("lexicon_roots").rows), 503)
-        self.assertEqual(len(self.result.records), 503)
-        self.assertEqual(len(self.result.emitted_ids), 503)
+        self.assertEqual(len(self.closure.table("lexicon_roots").rows), LEXICON["root_rows"])
+        self.assertEqual(len(self.result.records), LEXICON["root_rows"])
+        self.assertEqual(len(self.result.emitted_ids), LEXICON["root_rows"])
         self.assertEqual(self.result.held_ids, ())
         self.assertEqual(self.result.issues, ())
         roots = {record.identity.iri for record in self.result.records}
-        self.assertEqual(len(roots), 503)
+        self.assertEqual(len(roots), LEXICON["root_rows"])
         for iri in roots:
             subject = URIRef(iri)
             self.assertIn((subject, RDF.type, RDFS.Resource), self.result.graph)

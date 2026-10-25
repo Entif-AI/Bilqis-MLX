@@ -148,6 +148,15 @@ def lexicon_domain(
         "senses": counts["sense_concepts_emitted"],
     }
     debt = []
+    extraction_debt = Counter(
+        row["evidence_kind"].upper()
+        for row in closure.table("lexicon_root_evidence").rows
+        if row["evidence_kind"].startswith("debt_")
+    )
+    debt.extend(
+        {"code": "LEXICON_EXTRACTION_" + reason, "count": count, "blocking": False}
+        for reason, count in sorted(extraction_debt.items())
+    )
     zero_sense = len(receipt["debt"]["roots_with_zero_parsed_sense_ids"])
     if zero_sense:
         debt.append(

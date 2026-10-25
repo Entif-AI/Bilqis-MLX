@@ -1,3 +1,5 @@
+
+from lib.ithkuil.tests.source_expectations import LEXICON
 import csv
 from dataclasses import FrozenInstanceError
 import json
@@ -116,9 +118,9 @@ class PreflightContractTests(unittest.TestCase):
                 ("grammatical_categories", 35),
                 ("morphemes_atomic", 772),
                 ("root_senses", 200),
-                ("lexicon_roots", 503),
-                ("lexicon_root_senses", 1615),
-                ("lexicon_root_evidence", 150),
+                ("lexicon_roots", LEXICON["root_rows"]),
+                ("lexicon_root_senses", LEXICON["sense_rows"]),
+                ("lexicon_root_evidence", LEXICON["evidence_rows"]),
                 ("morpheme_compositions", 1917),
             ],
         )

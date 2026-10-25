@@ -1,3 +1,5 @@
+
+from lib.ithkuil.tests.source_expectations import CORE
 from collections import Counter, defaultdict
 import json
 from pathlib import Path
@@ -62,7 +64,7 @@ class IdentityResolverTests(unittest.TestCase):
             len(self.closure.table(name).rows)
             for name in ("morphemes_atomic", "root_senses", "lexicon_roots", "lexicon_root_senses")
         )
-        self.assertEqual(semantic_rows, 3090)
+        self.assertEqual(semantic_rows, CORE["semantic_rows"])
         self.assertEqual(len(self.resolution.resources), expected["resources"])
         self.assertEqual(len(self.resolution.issues), expected["issues"])
         kinds = Counter(resource.identity.kind for resource in self.resolution.resources)

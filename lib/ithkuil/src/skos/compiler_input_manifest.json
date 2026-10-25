@@ -784,7 +784,11 @@
           "note",
           "scope_note",
           "scope_restriction",
-          "specification_note"
+          "specification_note",
+          "debt_insufficient_sense_evidence",
+          "debt_unsupported_shape",
+          "debt_conflict",
+          "debt_ambiguous_locus"
         ],
         "evidence_status": [
           "official_source_observed"

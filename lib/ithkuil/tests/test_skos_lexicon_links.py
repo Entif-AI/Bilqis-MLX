@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from lib.ithkuil.tests.source_expectations import LEXICON
+
 import os
 from pathlib import Path
 import unittest
@@ -51,8 +53,8 @@ class RootSenseLinkTests(unittest.TestCase):
         self.assertIsNone(self.term.subproperty_of)
 
     def test_current_frontier_emits_one_non_skos_link_per_sense(self):
-        self.assertEqual(len(self.result.graph), 1615)
-        self.assertEqual(len(self.result.linked_sense_ids), 1615)
+        self.assertEqual(len(self.result.graph), LEXICON["sense_rows"])
+        self.assertEqual(len(self.result.linked_sense_ids), LEXICON["sense_rows"])
         self.assertEqual(self.result.held_sense_ids, ())
         self.assertEqual(self.result.issues, ())
         self.assertEqual(

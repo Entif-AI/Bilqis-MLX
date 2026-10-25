@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from lib.ithkuil.tests.source_expectations import LEXICON
+
 import os
 from pathlib import Path
 import unittest
@@ -45,12 +47,12 @@ class LexiconSenseProjectionTests(unittest.TestCase):
         cls.result = project_lexicon_senses(cls.closure)
 
     def test_current_frontier_has_one_concept_per_stable_coordinate(self):
-        self.assertEqual(len(self.closure.table("lexicon_root_senses").rows), 1615)
-        self.assertEqual(len(self.result.records), 1615)
-        self.assertEqual(len(self.result.emitted_source_ids), 1615)
+        self.assertEqual(len(self.closure.table("lexicon_root_senses").rows), LEXICON["sense_rows"])
+        self.assertEqual(len(self.result.records), LEXICON["sense_rows"])
+        self.assertEqual(len(self.result.emitted_source_ids), LEXICON["sense_rows"])
         self.assertEqual(self.result.held_source_ids, ())
         self.assertEqual(self.result.issues, ())
-        self.assertEqual(len({record.identity for record in self.result.records}), 1615)
+        self.assertEqual(len({record.identity for record in self.result.records}), LEXICON["sense_rows"])
         for record in self.result.records:
             self.assertIn((URIRef(record.identity.iri), RDF.type, SKOS.Concept), self.result.graph)
             self.assertEqual(record.evidence_statuses, ("official_source_observed",))

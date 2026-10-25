@@ -1,0 +1,14 @@
+{
+  "schema": "bilqis.ithkuil.lexicon-frontier-pins/v1",
+  "source_id": "NI-LEXICON-CURRICULUM",
+  "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+  "chapters": {
+    "3": {
+      "filename": "New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf",
+      "sha256": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0",
+      "canonical_page_start": 99,
+      "page_count": 17,
+      "format": "PDF 1.3"
+    }
+  }
+}

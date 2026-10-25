@@ -595,7 +595,13 @@ def extract_root_evidence(
     return records
 
 
-def build(chapters=CHAPTERS) -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]]]:
+def build(chapters=None) -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]]]:
+    if chapters is None:
+        profile=DATA/'sources/lexicon_frontier_manifest.json'
+        if profile.exists():
+            from lib.ithkuil.src.lexicon_frontier import rebuild_admitted
+            return rebuild_admitted(json.loads(profile.read_text()))[0]
+        chapters=CHAPTERS
     manifest = source_manifest_row()
     roots_by_id: dict[str, dict[str, str]] = {}
     senses_by_key: dict[tuple[str, str, str], dict[str, str]] = {}
@@ -865,7 +871,16 @@ def main() -> None:
         chapter.chapter for chapter in AVAILABLE_CHAPTERS))
     parser.add_argument("--output", type=Path)
     parser.add_argument("--next", action="store_true", help="Extract one unprocessed later chapter")
+    parser.add_argument('--admit-chapter', choices=('3','4','5','6','7'))
+    parser.add_argument('--canonical-pdf',type=Path)
     args = parser.parse_args()
+    if args.admit_chapter:
+        if not args.canonical_pdf or args.chapters or args.output or args.next:
+            parser.error('--admit-chapter requires --canonical-pdf and cannot mix extraction modes')
+        from lib.ithkuil.src.lexicon_frontier import admit_chapter
+        with contextlib.redirect_stdout(sys.stderr):
+            result=admit_chapter(args.admit_chapter,args.canonical_pdf)
+        print(json.dumps(result,sort_keys=True,ensure_ascii=False));return
     if args.next:
         if args.output is None or args.chapters:
             parser.error("--next requires --output and cannot be combined with --chapters")

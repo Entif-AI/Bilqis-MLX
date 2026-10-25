@@ -43,10 +43,10 @@ Key fields:
 - `grammatical_categories.csv`: normalized category registry.
 - `affix_degrees.csv`: degree semantics attached to attested C_S affix roots.
 - `root_senses.csv`: compact stem/specification sense summaries attached to lexical roots.
-- `lexicon_roots.csv`: source-corpus inventory of every root heading observed in the tracked New Ithkuil lexicon Chapter 1–2 split PDFs. These are source identities, **not** Bilqis ABI admissions or curriculum capabilities.
-- `lexicon_root_senses.csv`: compact source-grounded Stem/Specification senses extracted from explicit Chapter 1–2 lexicon root tables, explicit prose Stem statements, **and compact numbered Stem 1/2/3 inventories for roots that inherit another root's Specification pattern**. Rows retain canonical lexicon source identity plus tracked split-PDF digest and exact page/table-or-prose locus.
-- `lexicon_root_evidence.csv`: short source-context evidence for examples, scope restrictions, notes and inherited-Specification caveats. Long source prose is not copied wholesale; each row retains a compact excerpt plus SHA-256 and character count for the full extracted source text and an exact page/root locus.
-- `sources/lexicon_split_provenance.csv`: reproducible binding between the tracked Chapter-1/2 page-projection PDFs and the canonical `NI-LEXICON-CURRICULUM` source. It records exact/near-exact extracted-text page comparison counts and deliberately does **not** claim byte-identical derivation.
+- `lexicon_roots.csv`: source-corpus inventory of every root heading observed in the accepted New Ithkuil split-PDF frontier (currently Chapters 1–3). These are source identities, **not** Bilqis ABI admissions or curriculum capabilities.
+- `lexicon_root_senses.csv`: compact source-grounded Stem/Specification senses extracted from explicit accepted lexicon root tables, explicit prose Stem statements, **and compact numbered Stem 1/2/3 inventories for roots that inherit another root's Specification pattern**. Rows retain canonical lexicon source identity plus tracked split-PDF digest and exact page/table-or-prose locus.
+- `lexicon_root_evidence.csv`: short source-context evidence for examples, scope restrictions, notes, inherited-Specification caveats and root-linked extraction debt. Long source prose is not copied wholesale; each row retains a compact excerpt plus SHA-256 and character count for the full extracted source text and an exact page/root locus.
+- `sources/lexicon_split_provenance.csv`: reproducible binding between accepted tracked page-projection PDFs and the canonical `NI-LEXICON-CURRICULUM` source. It records exact/near-exact extracted-text page comparison counts and deliberately does **not** claim byte-identical derivation.
 - `allomorph_rules.csv`: explicit source-listed C_A substitution rules, including multi-step substitutions where the source gives an intermediate form.
 - `composition_components.csv`: ordered linguistic component edges for every composed entity/template.
 
@@ -64,7 +64,7 @@ The enrichment tables preserve qualified, partial, adapter, compositional, nativ
 
 The lower-case grammar-site lexicon and the capitalized lexicon URL used in the Curriculum Registry are separate source identities because their bytes and SHA-256 hashes differ.
 
-The grammar extractor parses the official grammar HTML. The canonical lexicon and affix-reference PDFs remain fetched and hash-pinned source identities. The tracked split lexicon Chapters 1 and 2 are additionally parsed into `lexicon_roots.csv` and `lexicon_root_senses.csv`; those tables are a source-corpus layer and do not mint Bilqis token IDs, grades, lessons, or mastery. Later tracked chapters 3–7 can be extracted separately with `python3 src/build_lexicon_chapters.py --next --output <directory>`. Expanded snapshots retain exact input/output hashes, explicit roots-without-senses debt and `tracked_source_projection_observed` status. Canonical full-PDF page equivalence remains `NOT_MEASURED`; these snapshots do not change the canonical Chapter-1/2 tables or current research frontier. The affix-reference PDF remains unparsed.
+The grammar extractor parses the official grammar HTML. The canonical lexicon and affix-reference PDFs remain fetched and hash-pinned source identities. The accepted lexicon frontier is recorded in `sources/lexicon_frontier_manifest.json`, currently Chapters 1–3. Later-chapter admission uses `python3 -B -m lib.ithkuil.src.build_lexicon_chapters --admit-chapter 3 --canonical-pdf PATH`, verifies exact pinned source and normalized canonical-page text, preserves the accepted earlier rows, and stages dataset validation before publication. A separate `--chapters ... --output ...` research snapshot remains unadmitted and keeps its own `NOT_MEASURED` canonical-equivalence status. See `_data/README.md` for the extraction/debt contract. The affix-reference PDF remains unparsed.
 
 ## Rebuild and validation
 
@@ -79,7 +79,13 @@ python3 src/build_lexicon_chapters.py
 python3 src/validate_dataset.py
 ```
 
-`build_lexicon_chapters.py` requires the pinned extraction dependency in `requirements-extraction.txt` and reads only the tracked split PDFs in `_data/pdf/`. `validate_dataset.py` checks source and entity cardinalities, lexicon root/sense identities and loci, foreign keys, composition component counts, core grammar inventory counts, Slot-IV V_R and register/suppletive coverage, exact C_A substitution rules and triggers, explicit root-paradigm coverage, current-vs-historical crosswalk resolution, exclusion of curriculum-order columns across every derived data table, protected URL leakage, LF line endings, and raw/work-cache Git exclusion.
+`build_lexicon_chapters.py` requires the pinned extraction dependency in `requirements-extraction.txt` and reads tracked split PDFs in `_data/pdf/` and the exact pinned canonical PDF when admitting later chapters. `validate_dataset.py` checks source and entity cardinalities, lexicon root/sense identities and loci, foreign keys, composition component counts, core grammar inventory counts, Slot-IV V_R and register/suppletive coverage, exact C_A substitution rules and triggers, explicit root-paradigm coverage, current-vs-historical crosswalk resolution, exclusion of curriculum-order columns across every derived data table, protected URL leakage, LF line endings, and raw/work-cache Git exclusion.
 
 `build_curriculum_frontier.py` is intentionally **not** part of the canonical source-data rebuild. It is a tracked, deterministic research projection that reads the canonical source-domain tables and writes curriculum-order artifacts to ignored `_private/curriculum_frontier/` (or `BILQIS_CURRICULUM_FRONTIER_OUT`). Its regression test enforces 144 explicit D-O source-sense targets, 96 reserve roots, live A/B/C prerequisite closure, and the prohibition on historical unadmitted Boolean prerequisites. This keeps source truth and pedagogical ordering mechanically separate while making the curriculum proposal reproducible.
 
+
+Later-chapter debt kinds are finite source evidence states:
+`debt_insufficient_sense_evidence`, `debt_unsupported_shape`,
+`debt_ambiguous_locus`, and `debt_conflict`. Unknown evidence states still fail
+preflight. Chapter accounting also retains unrooted structures without fabricating
+a root foreign key. These source states add no SKOS predicates or admissions.

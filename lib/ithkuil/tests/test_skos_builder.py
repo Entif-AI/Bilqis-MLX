@@ -1,3 +1,5 @@
+
+from lib.ithkuil.tests.source_expectations import CORE
 from dataclasses import dataclass, replace
 from collections import Counter
 import csv
@@ -225,8 +227,8 @@ class CoreBuilderTests(unittest.TestCase):
         resolution = resolve_identities(closure)
         projector = SourceProjector(closure)
         baseline = build_core_graph(resolution.resources, projector)
-        self.assertEqual((len(resolution.resources), len(resolution.issues)), (2968, 0))
-        self.assertEqual((len(baseline.emitted), len(baseline.issues)), (2579, 568))
+        self.assertEqual((len(resolution.resources), len(resolution.issues)), (CORE["resolved_resources"], 0))
+        self.assertEqual((len(baseline.emitted), len(baseline.issues)), (CORE["emitted_resources"], 568))
         self.assertEqual(Counter(issue.code for issue in baseline.issues),
                          Counter({"NOTATION_COLLISION": 567, "SOURCE_TEXT_TOO_LONG": 1}))
         self.assertEqual(len({r.identity.iri for r in resolution.resources} -

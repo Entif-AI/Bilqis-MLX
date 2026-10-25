@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import csv
+import hashlib
+import json
 import re
 import subprocess
 from collections import Counter
@@ -129,9 +131,22 @@ def main() -> None:
     require(asserted_compositions == composition_ids, "not every composition has source assertions")
     require(all(row["affix_root_atomic_id"] in atomic_ids for row in degrees), "affix degree references unknown atomic root")
     require(all(row["atomic_id"] in atomic_ids for row in senses), "root sense references unknown atomic root")
-    require(len(lexicon_roots) == 503, f"expected 503 Chapter-1/2 lexicon roots, found {len(lexicon_roots)}")
-    require(len(lexicon_senses) == 1615, f"expected 1,615 Chapter-1/2 lexicon senses, found {len(lexicon_senses)}")
-    require(len(lexicon_evidence) == 150, f"expected 150 Chapter-1/2 lexicon evidence rows, found {len(lexicon_evidence)}")
+    legacy_groups=[[row for row in rows if row['lexicon_chapter'] in {'1','2'}] for rows in (lexicon_roots,lexicon_senses,lexicon_evidence)]
+    require([len(rows) for rows in legacy_groups]==[503,1615,150],'Chapter-1/2 source counts drift')
+    profile_path=SOURCES/'lexicon_frontier_manifest.json'
+    if profile_path.exists():
+        profile=json.loads(profile_path.read_text())
+        require(profile.get('schema')=='bilqis.ithkuil.lexicon-frontier/v1','lexicon frontier schema invalid')
+        for name,expected in profile['counts'].items():
+            require(len(read_csv(DATA/(name+'.csv')))==expected,'lexicon frontier count drift: '+name)
+        for name,digest in profile['output_sha256'].items():
+            require(hashlib.sha256((DATA/name).read_bytes()).hexdigest()==digest,'lexicon frontier output drift: '+name)
+        for name,rows in zip(('lexicon_roots.csv','lexicon_root_senses.csv','lexicon_root_evidence.csv'),legacy_groups):
+            import io
+            stream=io.StringIO(newline='');writer=csv.DictWriter(stream,fieldnames=list(rows[0]),lineterminator='\n');writer.writeheader();writer.writerows(rows)
+            require(hashlib.sha256(stream.getvalue().encode()).hexdigest()==profile['legacy_table_sha256'][name],'earlier chapter bytes drift: '+name)
+    else:
+        require([len(lexicon_roots),len(lexicon_senses),len(lexicon_evidence)]==[503,1615,150],'unadmitted lexicon expansion')
     require(all(row["source_id"] == "NI-LEXICON-CURRICULUM" for row in lexicon_roots), "lexicon root source identity drift")
     require(all(row["lexicon_root_id"] in lexicon_root_ids for row in lexicon_senses), "lexicon sense references unknown lexicon root")
     require(all(row["lexicon_root_id"] in lexicon_root_ids for row in lexicon_evidence), "lexicon evidence references unknown lexicon root")
@@ -141,10 +156,10 @@ def main() -> None:
     require(all(len(row["source_text_sha256"]) == 64 and int(row["source_text_char_count"]) > 0 for row in lexicon_senses), "lexicon sense lost full-source fingerprint")
     require(all(len(row["evidence_excerpt"]) <= 180 for row in lexicon_evidence), "lexicon evidence excerpt exceeds compact-source limit")
     require(all(len(row["source_text_sha256"]) == 64 and int(row["source_text_char_count"]) > 0 for row in lexicon_evidence), "lexicon evidence lost full-source fingerprint")
-    require(len(lexicon_split_provenance) == 2, "expected two tracked Chapter-1/2 split provenance rows")
+    require(len(lexicon_split_provenance) == 2+(len(profile['admitted_chapters']) if profile_path.exists() else 0), 'lexicon split provenance admission drift')
     require(all(row["bound_source_id"] == "NI-LEXICON-CURRICULUM" for row in lexicon_split_provenance), "split provenance source binding drift")
     require(all(row["bound_source_sha256"] == "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21" for row in lexicon_split_provenance), "split provenance canonical digest drift")
-    require(sum(int(row["page_count"]) for row in lexicon_split_provenance) == 96, "split provenance page-count drift")
+    require(sum(int(row['page_count']) for row in lexicon_split_provenance[:2]) == 96, 'legacy split provenance page-count drift')
     lexicon_root_by_form = {row["root_form_raw"]: row for row in lexicon_roots}
     require(lexicon_root_by_form["-Č-"]["lexicon_section"] == "1.3", "copular root lost Chapter 1.3 locus")
     require(lexicon_root_by_form["-PS-"]["lexicon_section"] == "2.0", "event root lost Chapter 2.0 locus")

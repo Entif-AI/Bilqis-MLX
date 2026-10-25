@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lib.ithkuil.tests.source_expectations import LEXICON
+
 import json
 from pathlib import Path
 import unittest
@@ -19,7 +21,7 @@ if VERIFY.exists():
 from lib.ithkuil.src.skos.errors import ProfileError
 from lib.ithkuil.src.skos.identity import Identity
 from lib.ithkuil.src.skos.lexicon_reconcile import (
-    FRONTIER, OUTSIDE_CLOSURE, reconcile_lexicon_closure, reconcile_lexicon_frontier,
+    reconcile_lexicon_closure, reconcile_lexicon_frontier,
     reconciliation_json_bytes, validate_dispositions,
 )
 from lib.ithkuil.src.skos.preflight import CompilerClosure, preflight
@@ -55,30 +57,12 @@ class LexiconReconciliationTests(unittest.TestCase):
 
     def test_current_frontier_receipt_matches_literal_source_counts(self):
         counts = self.result.receipt["counts"]
-        self.assertEqual(counts, {
-            "root_rows_consumed": 503,
-            "root_resources_emitted": 503,
-            "root_resources_held": 0,
-            "sense_rows_consumed": 1615,
-            "sense_concepts_emitted": 1615,
-            "sense_rows_held": 0,
-            "roots_with_zero_parsed_senses": 219,
-            "roots_with_multiple_parsed_senses": 282,
-            "notation_count": 503,
-        })
-        self.assertEqual(self.result.receipt["coverage"]["stem"], {
-            "ROOT-WIDE": 714, "STEM 1": 300, "STEM 2": 300, "STEM 3": 300, "STEMS 1-3": 1,
-        })
-        self.assertEqual(self.result.receipt["coverage"]["specification"], {
-            "BSC": 847, "CSV": 256, "CTE": 256, "OBJ": 256,
-        })
-        self.assertEqual(self.result.receipt["coverage"]["source_locus_kind"], {
-            "compact_numbered_stem": 39, "prose": 54, "table": 1522,
-        })
+        self.assertEqual(counts, LEXICON["counts"])
+        self.assertEqual(self.result.receipt["coverage"], LEXICON["coverage"])
 
     def test_zero_sense_debt_is_explicit_and_not_mislabeled_held(self):
         debt = self.result.receipt["debt"]
-        self.assertEqual(len(debt["roots_with_zero_parsed_sense_ids"]), 219)
+        self.assertEqual(len(debt["roots_with_zero_parsed_sense_ids"]), LEXICON["roots_with_zero_parsed_senses"])
         self.assertEqual(debt["held_roots"], [])
         self.assertEqual(debt["held_senses"], [])
         self.assertEqual(debt["held_by_reason"], {})
@@ -86,12 +70,8 @@ class LexiconReconciliationTests(unittest.TestCase):
 
     def test_frontier_receipt_never_claims_unparsed_chapters(self):
         frontier = self.result.receipt["frontier"]
-        self.assertEqual(frontier["scope"], FRONTIER)
-        self.assertEqual(frontier["included_chapters"], ["1", "2"])
-        self.assertEqual(frontier["outside_closure"], list(OUTSIDE_CLOSURE))
+        self.assertEqual(frontier, LEXICON["frontier_contract"])
         self.assertIn("not complete official lexicon coverage", frontier["claim"])
-        self.assertEqual(self.result.receipt["coverage"]["root_chapters"], {"1": 39, "2": 464})
-        self.assertEqual(self.result.receipt["coverage"]["sense_chapters"], {"1": 43, "2": 1572})
 
     def test_source_and_canonical_digests_are_bound_and_receipt_bytes_repeat(self):
         source = self.result.receipt["source"]
@@ -143,7 +123,7 @@ class LexiconReconciliationTests(unittest.TestCase):
             relation_profile_path=RELATION_PROFILE,
             negative_fixture_path=NEGATIVE,
         )
-        self.assertEqual(result.receipt["counts"]["sense_concepts_emitted"], 1614)
+        self.assertEqual(result.receipt["counts"]["sense_concepts_emitted"], LEXICON["sense_rows"] - 1)
         self.assertEqual(result.receipt["counts"]["sense_rows_held"], 1)
         self.assertEqual(result.receipt["debt"]["held_senses"], [{
             "source_sense_id": target["lexicon_sense_id"],

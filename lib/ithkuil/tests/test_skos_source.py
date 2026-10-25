@@ -1,3 +1,5 @@
+
+from lib.ithkuil.tests.source_expectations import CORE
 from pathlib import Path
 import unittest
 from rdflib import Graph, Literal, URIRef
@@ -342,7 +344,7 @@ class SourceProjectionTests(unittest.TestCase):
             self.assertEqual(projection.issues, (), resource.identity.iri)
             self.assertEqual(projection.held, (), resource.identity.iri)
             projected += 1
-        self.assertEqual(projected, 2968)
+        self.assertEqual(projected, CORE["resolved_resources"])
 
 
 if __name__ == "__main__":

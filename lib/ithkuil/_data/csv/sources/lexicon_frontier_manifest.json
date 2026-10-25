@@ -1,0 +1,83 @@
+{
+  "admitted_chapters": [
+    "3"
+  ],
+  "chapter_receipts": {
+    "3": {
+      "accounting_sha256": "6572cd2916cbed7d8fc8f15d15e24f0c8e14671221231b40a56859ca59ab5530",
+      "chapter": "3",
+      "counts": {
+        "evidence": 239,
+        "roots": 122,
+        "roots_without_senses": 94,
+        "senses": 101
+      },
+      "dispositions": {
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 209,
+        "DEBT_UNSUPPORTED_SHAPE": 5,
+        "PARSED": 119
+      },
+      "output_sha256": {
+        "lexicon_root_evidence.csv": "2751c6f02dfe6377dc2a1e4e944498cc8bde2f5260defc729bf9fc7556e827bd",
+        "lexicon_root_senses.csv": "f4797e820c5665068b36424e241306196cacd40dce4ba951536bf4d9a2be4915",
+        "lexicon_roots.csv": "1c6852b9862f54cd7780c034c181762bad7deb4128e9c4db570580d926634f56"
+      },
+      "parser": {
+        "legacy_sha256": "db8eb859572e64d6d1560086c4d3c24e7afa33ba2588c436e162b073669f59d8",
+        "pymupdf_version": "1.27.2.3",
+        "sha256": "13bc75151633fdc78d5db75f155d447eab5609dbb348abdf876b30f617a16e60",
+        "version": "1.0.0"
+      },
+      "schema": "bilqis.ithkuil.chapter-extraction/v1",
+      "source": {
+        "canonical_page_start": 99,
+        "canonical_pages": [
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          105,
+          106,
+          107,
+          108,
+          109,
+          110,
+          111,
+          112,
+          113,
+          114,
+          115
+        ],
+        "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+        "comparison": "normalized-page-text-exact",
+        "filename": "New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf",
+        "format": "PDF 1.3",
+        "page_count": 17,
+        "sha256": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0"
+      }
+    }
+  },
+  "counts": {
+    "lexicon_root_evidence": 389,
+    "lexicon_root_senses": 1716,
+    "lexicon_roots": 625
+  },
+  "legacy_chapters": [
+    "1",
+    "2"
+  ],
+  "legacy_table_sha256": {
+    "lexicon_root_evidence.csv": "fb205c21d51764706a22682e9d991e2c257e0cf2090082dcf31229eb3d4d83f7",
+    "lexicon_root_senses.csv": "0e9cfefe9e1c4e25901f8b70af5d180290419804f658502bd6f38c862b1898a0",
+    "lexicon_roots.csv": "7cdb5df8266c7c8b815392cf3333fc5e3d05876b1c79277494c925e24559e0cc"
+  },
+  "output_sha256": {
+    "lexicon_root_evidence.csv": "78533c202beb541ebca9301d3d9135483e6e32164eecabacd7bb7b41229bf68a",
+    "lexicon_root_senses.csv": "173680dcb34af59383815aadd226c20a3d712cd7c9706b1fc86ae2235ba33904",
+    "lexicon_roots.csv": "e8a9989f0e9d731a6a0a66ee25ca78630a56f9238a6bd3b1c5421da62eb2d88c",
+    "sources/lexicon_split_provenance.csv": "276da9e57c901a086981940c73ef1996882e55f2c4451b79d38d4e0b8cea23e3"
+  },
+  "schema": "bilqis.ithkuil.lexicon-frontier/v1"
+}

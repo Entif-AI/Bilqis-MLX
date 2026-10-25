@@ -1,3 +1,5 @@
+
+from lib.ithkuil.tests.source_expectations import LEXICON
 import csv
 import itertools
 import json
@@ -84,7 +86,7 @@ class IdentityContractTests(unittest.TestCase):
         self.assert_code("UNKNOWN_SENSE_SOURCE_SHAPE", sense_from_source, "unknown", row)
 
     def test_all_current_sense_coordinates_are_stable_under_text_and_legacy_id_edits(self):
-        for table, count in (("root_senses", 200), ("lexicon_root_senses", 1615)):
+        for table, count in (("root_senses", 200), ("lexicon_root_senses", LEXICON["sense_rows"])):
             with (ROOT / "_data/csv" / (table + ".csv")).open(newline="", encoding="utf-8") as handle:
                 rows = list(csv.DictReader(handle))
             original = {sense_from_source(table, row).iri for row in rows}

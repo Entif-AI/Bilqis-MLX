@@ -22,11 +22,6 @@ from .publication import json_bytes
 
 
 SCHEMA = "bilqis.skos.lexicon-reconciliation/v1"
-FRONTIER = "tracked-new-ithkuil-lexicon-chapters-1-2"
-OUTSIDE_CLOSURE = (
-    "New Ithkuil Lexicon Chapters 3-7",
-    "pinned New Ithkuil affix-reference source",
-)
 
 
 @dataclass(frozen=True)
@@ -168,14 +163,24 @@ def reconcile_lexicon_closure(
     for source_id in held_senses:
         held_by_reason.update(sense_reasons[source_id])
 
+    included = sorted({row["lexicon_chapter"] for row in root_rows}, key=int)
+    excluded = [str(chapter) for chapter in range(1, 8) if str(chapter) not in included]
+    outside = []
+    if excluded:
+        contiguous = list(map(int, excluded)) == list(range(int(excluded[0]), int(excluded[-1]) + 1))
+        missing = excluded[0] + "-" + excluded[-1] if len(excluded) > 1 and contiguous else ",".join(excluded)
+        outside.append("New Ithkuil Lexicon Chapters " + missing)
+    outside.append("pinned New Ithkuil affix-reference source")
+    # Preserve the accepted historical Chapter 1-2 receipt wording.
+    chapter_description = "1-2" if included == ["1", "2"] else ",".join(included)
     body = {
         "schema": SCHEMA,
         "frontier": {
-            "scope": FRONTIER,
+            "scope": "tracked-new-ithkuil-lexicon-chapters-" + "-".join(included),
             "source_id": "NI-LEXICON-CURRICULUM",
-            "included_chapters": ["1", "2"],
-            "outside_closure": list(OUTSIDE_CLOSURE),
-            "claim": "current tracked Chapter 1-2 source frontier only; not complete official lexicon coverage",
+            "included_chapters": included,
+            "outside_closure": outside,
+            "claim": "current tracked Chapter " + chapter_description + " source frontier only; not complete official lexicon coverage",
         },
         "counts": {
             "root_rows_consumed": len(root_rows),

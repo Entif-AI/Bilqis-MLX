@@ -1,3 +1,5 @@
+
+from lib.ithkuil.tests.source_expectations import CORE
 import csv
 import json
 import os
@@ -41,15 +43,13 @@ class ReproducibleBuildTests(unittest.TestCase):
         metadata = self.bundle.metadata()
         self.assertEqual(metadata["status"], "partial")
         self.assertTrue(metadata["release_ineligible"])
-        self.assertEqual(metadata["emitted_resources"], 2579)
-        self.assertEqual(metadata["resolved_resources"], 2968)
-        self.assertEqual(metadata["triple_count"], 19489)
+        self.assertEqual(metadata["emitted_resources"], CORE["emitted_resources"])
+        self.assertEqual(metadata["resolved_resources"], CORE["resolved_resources"])
+        self.assertEqual(metadata["triple_count"], CORE["triple_count"])
         self.assertEqual(set(dict(self.bundle.files)), {"canonical.nt", "held.json", "digest.json", "input.json"})
         ledger = json.loads(dict(self.bundle.files)["held.json"])
         self.assertFalse(ledger["blocking"])
-        self.assertEqual(ledger["counts"]["by_status"], {
-            "EMITTED": 2590, "HELD": 500, "REJECTED": 0, "UNSUPPORTED": 1917, "IR_ONLY": 5581,
-        })
+        self.assertEqual(ledger["counts"]["by_status"], CORE["ledger_dispositions"])
         digest = json.loads(dict(self.bundle.files)["digest.json"])
         self.assertEqual(digest["sha256"], metadata["canonical_sha256"])
         self.assertEqual(digest["profile_sha256"], metadata["profile_sha256"])

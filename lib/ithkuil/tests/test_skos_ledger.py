@@ -1,4 +1,6 @@
 from __future__ import annotations
+from lib.ithkuil.tests.source_expectations import CORE
+
 import unittest
 import tempfile
 from pathlib import Path
@@ -206,9 +208,9 @@ class HeldLedgerContractTests(unittest.TestCase):
         resolution = resolve_identities(closure)
         build = build_core_graph(resolution.resources, SourceProjector(closure))
         ledger = _ledger(closure, resolution, build)
-        self.assertEqual((len(resolution.resources), len(build.emitted), len(build.issues), len(build.graph)), (2968, 2579, 568, 19489))
-        self.assertEqual(ledger.counts, {'EMITTED': 2590, 'HELD': 500, 'REJECTED': 0, 'UNSUPPORTED': 1917, 'IR_ONLY': 5581})
-        self.assertEqual(len(ledger.entries), 10588)
+        self.assertEqual((len(resolution.resources), len(build.emitted), len(build.issues), len(build.graph)), (CORE["resolved_resources"], CORE["emitted_resources"], 568, CORE["triple_count"]))
+        self.assertEqual(ledger.counts, CORE["ledger_dispositions"])
+        self.assertEqual(len(ledger.entries), sum(CORE["ledger_dispositions"].values()))
         self.assertEqual(ledger.diagnostics, ())
         self.assertIs(ledger.blocking, False)
         self.assertIs(ledger.core_complete, False)
