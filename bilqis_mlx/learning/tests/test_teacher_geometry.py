@@ -2,12 +2,17 @@ import unittest
 from types import SimpleNamespace
 
 from bilqis_mlx.boolean_identification import REPRESENTATION_VARIATION
+from bilqis_mlx.boolean_composite import (
+    PRESENTATION as COMPOSITE_PRESENTATION,
+    REPRESENTATION_VARIATION as COMPOSITE_REPRESENTATION_VARIATION,
+)
 from bilqis_mlx.live_grade_b import (
     OUTER_LANDMARK_PRESENTATION,
     OUTER_LANDMARK_VARIATION,
 )
 from bilqis_mlx.learning.teacher_geometry import (
     AND_IMPLIES_EPOCH,
+    COMPOSITE_EPOCH,
     IDBOOLOPS_EPOCH,
     active_epoch,
     context_scope,
@@ -43,6 +48,11 @@ class TeacherGeometryTests(unittest.TestCase):
             active_epoch(
                 release("B.IFF", (OUTER_LANDMARK_VARIATION,)),
                 "B.IFF"))
+        self.assertEqual(
+            active_epoch(
+                release("B.COMPOSITE", (COMPOSITE_REPRESENTATION_VARIATION,)),
+                "B.COMPOSITE"),
+            COMPOSITE_EPOCH)
 
     def test_geometry_epoch_partitions_teacher_context_without_rewriting_base_scope(self):
         base = "bilqis.mlx.grade-a-b-c-live/20261016-v1/6"
@@ -84,3 +94,18 @@ class TeacherGeometryTests(unittest.TestCase):
         }
         self.assertFalse(row_matches_epoch(old, IDBOOLOPS_EPOCH))
         self.assertTrue(row_matches_epoch(current, IDBOOLOPS_EPOCH))
+
+    def test_old_composite_misses_do_not_replay_into_new_geometry(self):
+        old = {
+            "capability": "B.COMPOSITE",
+            "record": {"task": "evaluate"},
+        }
+        current = {
+            "capability": "B.COMPOSITE",
+            "record": {
+                "task": "evaluate",
+                "presentation": COMPOSITE_PRESENTATION,
+            },
+        }
+        self.assertFalse(row_matches_epoch(old, COMPOSITE_EPOCH))
+        self.assertTrue(row_matches_epoch(current, COMPOSITE_EPOCH))

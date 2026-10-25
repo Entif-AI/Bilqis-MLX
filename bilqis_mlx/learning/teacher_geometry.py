@@ -7,6 +7,10 @@ representations open a fresh evidence epoch for the affected capability only.
 from __future__ import annotations
 
 from bilqis_mlx.boolean_identification import REPRESENTATION_VARIATION
+from bilqis_mlx.boolean_composite import (
+    PRESENTATION as COMPOSITE_PRESENTATION,
+    REPRESENTATION_VARIATION as COMPOSITE_REPRESENTATION_VARIATION,
+)
 from bilqis_mlx.live_grade_b import (
     OUTER_LANDMARK_PRESENTATION,
     OUTER_LANDMARK_VARIATION,
@@ -15,6 +19,7 @@ from bilqis_mlx.live_grade_b import (
 
 IDBOOLOPS_EPOCH = "idboolops-named-proposition-bindings-v1"
 AND_IMPLIES_EPOCH = "and-implies-named-outer-operands-v1"
+COMPOSITE_EPOCH = "composite-proof-role-tree-landmarks-v1"
 GEOMETRY_SCOPE_MARKER = "/geometry="
 CAPABILITY_NOT_ADMITTED = "TEACHER_GEOMETRY_CAPABILITY_NOT_ADMITTED"
 SCOPE_INVALID = "TEACHER_GEOMETRY_SCOPE_INVALID"
@@ -33,6 +38,9 @@ def active_epoch(release, capability: str) -> str | None:
     if (capability in {"B.AND", "B.IMPLIES"} and
             OUTER_LANDMARK_VARIATION in axes):
         return AND_IMPLIES_EPOCH
+    if (capability == "B.COMPOSITE" and
+            COMPOSITE_REPRESENTATION_VARIATION in axes):
+        return COMPOSITE_EPOCH
     return None
 
 
@@ -69,6 +77,9 @@ def row_epoch(row: dict) -> str | None:
     if (capability in {"B.AND", "B.IMPLIES"} and
             record.get("presentation") == OUTER_LANDMARK_PRESENTATION):
         return AND_IMPLIES_EPOCH
+    if (capability == "B.COMPOSITE" and
+            record.get("presentation") == COMPOSITE_PRESENTATION):
+        return COMPOSITE_EPOCH
     return None
 
 

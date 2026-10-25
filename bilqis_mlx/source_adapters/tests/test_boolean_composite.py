@@ -8,7 +8,7 @@ import unittest
 
 from bilqis_mlx.boolean_composite import (
     CAPABILITY, GENERATOR, ORACLE, RELEASE, build_course, draw_composite,
-    independent_evaluate,
+    encode_record, independent_evaluate,
 )
 from bilqis_mlx.factory.generation import draw_release_rows
 from bilqis_mlx.factory.live_releases import initial_course, boolean_successor
@@ -81,10 +81,50 @@ class BooleanCompositeTests(unittest.TestCase):
             self.assertNotIn("world", row["record"])
             self.assertEqual(row["record"]["task"], "evaluate")
             self.assertEqual(row["gold"], independent_evaluate(row["record"]))
-            logic = _logic_source(SOURCE)
-            self.assertEqual(row["tokens"], _encode_logic_record(logic, row["record"], self.graph))
+            self.assertEqual(
+                row["tokens"], encode_record(row["record"], SOURCE, self.graph))
             self.assertTrue(1 <= len(row["tokens"]) <= 96)
             self.assertEqual(len(row["operators"]), row["composition_width"])
+
+    def test_pre_landmark_composite_records_keep_the_historical_codec(self):
+        logic = _logic_source(SOURCE)
+        row = draw_composite(SOURCE, self.graph, seed=2026102518, each=1)[0]
+        historical = dict(row["record"])
+        historical.pop("presentation")
+
+        self.assertEqual(
+            encode_record(historical, SOURCE, self.graph),
+            _encode_logic_record(logic, historical, self.graph))
+        self.assertEqual(independent_evaluate(historical), row["gold"])
+
+    def test_nested_rows_expose_recursive_proof_role_landmarks(self):
+        rows = draw_composite(SOURCE, self.graph, seed=2026102517, each=12)
+        names = self.graph["tokens"]
+
+        def tree_shape(node):
+            if node["kind"] != "apply":
+                return 0, 0
+            nodes, edges = 1, len(node["args"])
+            for child in node["args"]:
+                child_nodes, child_edges = tree_shape(child)
+                nodes += child_nodes
+                edges += child_edges
+            return nodes, edges
+
+        for row in rows:
+            token_names = [names[token] for token in row["tokens"]]
+            nodes, edges = tree_shape(row["record"]["query"])
+            self.assertEqual(
+                row["record"].get("presentation"),
+                "proof-role-tree-landmarks/v1")
+            self.assertEqual(token_names[0], "task.evaluate")
+            self.assertEqual(token_names[1], "micro.proof.conclusion")
+            self.assertEqual(
+                token_names.count("micro.proof.conclusion"), nodes)
+            self.assertEqual(
+                token_names.count("micro.proof.premise"), edges)
+            self.assertEqual(token_names.count("syntax.end"), 1)
+            self.assertEqual(token_names[-1], "syntax.end")
 
     def test_multi_cycle_draw_preserves_unique_semantic_row_identity(self):
         rows = draw_composite(SOURCE, self.graph, seed=10, each=32)

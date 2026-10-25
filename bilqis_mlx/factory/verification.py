@@ -54,10 +54,9 @@ def check_connective(row, *, source_root, graph, **_):
 def check_boolean_composite(row, *, source_root, graph, **_):
     from ..boolean_composite_oracle import evaluate
     if row["record"].get("task") == "evaluate":
-        from ..live_grade_b import _encode_logic_record, _logic_source
-        logic = _logic_source(source_root)
+        from ..boolean_composite import encode_record
         return (evaluate(row["record"], row["capability"]) == row["gold"] and
-                _encode_logic_record(logic, row["record"], graph) == row["tokens"])
+                encode_record(row["record"], source_root, graph) == row["tokens"])
     from ..grade_a_probe import read_sources
     micro, *_ = read_sources(source_root)
     return (evaluate(row["record"], row["capability"]) == row["gold"] and

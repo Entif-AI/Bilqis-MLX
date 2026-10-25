@@ -9,12 +9,17 @@ from bilqis_mlx.boolean_identification import (
     ORACLE as IDBOOLOPS_ORACLE,
     REPRESENTATION_VARIATION,
 )
+from bilqis_mlx.boolean_composite import (
+    CAPABILITY as COMPOSITE_CAPABILITY,
+    REPRESENTATION_VARIATION as COMPOSITE_REPRESENTATION_VARIATION,
+)
 from bilqis_mlx.curriculum.scheduler import start_new
 from bilqis_mlx.factory.schedule import ScheduleCapability, ScheduleGrade, ScheduleProgram
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.live_grade_b import OUTER_LANDMARK_VARIATION
 from bilqis_mlx.runtime.release_adoption import (
     _atomic_boolean_landmark_revision_required,
+    _composite_landmark_revision_required,
     _idboolops_landmark_revision_required,
     _source_presentation_revision_required,
     _profile_transition,
@@ -132,6 +137,42 @@ class TeachingOnlyTransitionTests(unittest.TestCase):
         self.assertTrue(_atomic_boolean_landmark_revision_required(
             release(historical), registry))
         self.assertFalse(_atomic_boolean_landmark_revision_required(
+            release(current), registry))
+        self.assertTrue(_source_presentation_revision_required(
+            release(historical), registry))
+
+    def test_composite_landmarks_require_one_explicit_source_revision(self):
+        registry = live_source_registry()
+        generator = IDBOOLOPS_GENERATOR
+        current = registry.require(
+            generator, "bilqis.mlx.grade-b-composite-record-oracle/v1"
+        ).descriptor
+        historical = replace(
+            current,
+            variation_axes=tuple(
+                axis for axis in current.variation_axes
+                if axis != COMPOSITE_REPRESENTATION_VARIATION),
+        )
+        binding = SimpleNamespace(
+            generator_id=generator,
+            oracle_id="bilqis.mlx.grade-b-composite-record-oracle/v1",
+        )
+
+        def release(provider):
+            return SimpleNamespace(
+                execution_plan=SimpleNamespace(capability_map={
+                    COMPOSITE_CAPABILITY: SimpleNamespace(
+                        provider_id=provider.adapter_id),
+                }),
+                source_bindings=SimpleNamespace(by_capability={
+                    COMPOSITE_CAPABILITY: binding,
+                }),
+                source_adapters=(provider,),
+            )
+
+        self.assertTrue(_composite_landmark_revision_required(
+            release(historical), registry))
+        self.assertFalse(_composite_landmark_revision_required(
             release(current), registry))
         self.assertTrue(_source_presentation_revision_required(
             release(historical), registry))

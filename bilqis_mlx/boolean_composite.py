@@ -13,6 +13,7 @@ from .curriculum import AnswerFamily, BINARY, Capability, Course
 from .grade_a_probe import read_sources
 from .grade_b_oracle import CONNECTIVES
 from .live_grade_b import (
+    MAX_BOOLEAN_CONTEXT_TOKENS,
     PREREQUISITES, RELEASE as PARENT_RELEASE,
     _encode_logic_record, _logic_source, capability_row_identity,
     source_record_identity,
@@ -23,6 +24,11 @@ CAPABILITY = "B.COMPOSITE"
 GENERATOR = "bilqis.mlx.grade-b-composite-constructor/v1"
 RELEASE = "bilqis.mlx.grade-a-b-composite/20261019-v1"
 ASSESSMENT_ITEMS = 12
+PRESENTATION = "proof-role-tree-landmarks/v1"
+REPRESENTATION_VARIATION = "composite-proof-role-tree-landmarks"
+COMPOSITE_RECORD_INVALID = "GRADE_B_COMPOSITE_RECORD_INVALID"
+COMPOSITE_TOKEN_ABI_DRIFT = "GRADE_B_COMPOSITE_TOKEN_ABI_DRIFT"
+COMPOSITE_CONTEXT_LENGTH = "GRADE_B_COMPOSITE_CONTEXT_LENGTH"
 
 
 def _digest(value) -> str:
@@ -66,6 +72,69 @@ def _expression(logic, operators: tuple[str, ...], leaves: tuple[dict, ...]):
                            logic.apply("NOT", leaves[2]))
     return logic.apply(outer, logic.apply(left, leaves[0], leaves[1]),
                        logic.apply(right, leaves[2], leaves[3]))
+
+
+def _encode_tree(node: dict, graph: dict) -> list[int]:
+    names = graph["tokens"]
+    kind = node.get("kind") if isinstance(node, dict) else None
+    if kind == "literal" and type(node.get("value")) is bool:
+        return [names.index(
+            "cogal.value.true" if node["value"] else "cogal.value.false")]
+    if kind == "variable" and node.get("name") in ("P", "Q"):
+        return [names.index("cogal.variable." + node["name"])]
+    if kind != "apply":
+        raise ValueError(COMPOSITE_RECORD_INVALID)
+    operator = node.get("operator")
+    args = node.get("args")
+    if (operator not in CONNECTIVES or not isinstance(args, list) or
+            len(args) != (1 if operator == "NOT" else 2)):
+        raise ValueError(COMPOSITE_RECORD_INVALID)
+    try:
+        tokens = [
+            names.index("micro.proof.conclusion"),
+            names.index("cogal.operator." + operator),
+        ]
+        for index, child in enumerate(args):
+            if index:
+                tokens.append(names.index("syntax.separator"))
+            tokens.append(names.index("micro.proof.premise"))
+            tokens.extend(_encode_tree(child, graph))
+        return tokens
+    except ValueError as exc:
+        raise ValueError(COMPOSITE_TOKEN_ABI_DRIFT) from exc
+
+
+def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
+    """Encode revised COMPOSITE rows while preserving historical row readability."""
+    logic = _logic_source(legacy_root)
+    if record.get("presentation") != PRESENTATION:
+        return _encode_logic_record(logic, record, graph)
+    query = record.get("query")
+    assignments = record.get("assignments")
+    if (record.get("task") != "evaluate" or not isinstance(query, dict) or
+            not isinstance(assignments, dict) or
+            logic.free_variables(query) != set(assignments)):
+        raise ValueError(COMPOSITE_RECORD_INVALID)
+    names = graph["tokens"]
+    try:
+        tokens = [names.index("task.evaluate"), *_encode_tree(query, graph),
+                  names.index("syntax.bind")]
+        for name, value in sorted(assignments.items()):
+            if name not in ("P", "Q") or type(value) is not bool:
+                raise ValueError(COMPOSITE_RECORD_INVALID)
+            tokens.extend((
+                names.index("cogal.variable." + name),
+                names.index(
+                    "cogal.value.true" if value else "cogal.value.false"),
+            ))
+        tokens.append(names.index("syntax.end"))
+    except ValueError as exc:
+        if str(exc) == COMPOSITE_RECORD_INVALID:
+            raise
+        raise ValueError(COMPOSITE_TOKEN_ABI_DRIFT) from exc
+    if not 1 <= len(tokens) <= MAX_BOOLEAN_CONTEXT_TOKENS:
+        raise ValueError(COMPOSITE_CONTEXT_LENGTH)
+    return tokens
 
 
 def _operator_domain(operators) -> tuple[str, ...]:
@@ -153,13 +222,14 @@ def _cycle(legacy_root: Path, graph: dict, *, seed: int, cycle: int,
             query = _expression(logic, operators, leaves)
             record = logic.evaluation_record(query, env)
             record["query"] = query
+            record["presentation"] = PRESENTATION
             gold_bool = logic.gold(record)
             gold = "TRUE" if gold_bool else "FALSE"
             if (gold_bool != logic.gold(record, independent=True) or
                     gold != independent_evaluate(record) or
                     gold_bool != wanted):
                 continue
-            tokens = _encode_logic_record(logic, record, graph)
+            tokens = encode_record(record, legacy_root, graph)
             source_id = source_record_identity(record)
             identity = capability_row_identity(CAPABILITY, record)
             if identity in seen:

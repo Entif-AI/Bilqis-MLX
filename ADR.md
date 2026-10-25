@@ -1444,3 +1444,34 @@ Live history also showed that genuinely above-90% Grade-C exams already entered
 could round a sub-threshold 89.899% score to `90%`. Compact score summaries therefore
 show one decimal place so a displayed `90.0%` corresponds to an actual qualifying
 boundary rather than display rounding.
+
+
+## ADR-100 | 2026-10-25 | COMPOSITE exposes recursive proof-role factorization
+
+**Direct user decision:** apply the previously deferred information-geometry repair to
+`B.COMPOSITE`. Preserve the exact mixed-operator source ASTs, operator-width schedule,
+leaf randomization, P/Q bindings, gold labels, answer modality, and independent oracle,
+but make the recursive compositional roles visible in the student token stream.
+
+Each connective node is now introduced with `micro.proof.conclusion`; each child
+operand or nested subtree is introduced with `micro.proof.premise`; binary siblings
+are separated with the existing `syntax.separator`. The complete tree is followed by
+the historical `syntax.bind` assignment block and one final `syntax.end`. No hidden
+target, intermediate truth label, new semantic root, or auxiliary neural loss is
+introduced. Historical pre-landmark COMPOSITE records remain readable through the
+legacy codec.
+
+This is deliberately **not** a resurrection of ADR-066's failed generic syntax-end,
+child-query/end, postfix, or auxiliary operand-truth experiments. Those variants used
+generic structural delimiters or extra supervision. This revision uses already-known
+proof-role tokens to label the semantic edge relation itself: result node versus
+premise subtree. It therefore remains an empirical representation experiment, not a
+claim that COMPOSITE is solved.
+
+The new presentation is an explicit factory variation axis on both the standalone
+COMPOSITE provider and the canonical umbrella Boolean-identification provider. Runs
+whose admitted release predates it adopt one same-profile `REVISE_SOURCE` successor
+with zero neural updates. `B.COMPOSITE` also opens a fresh teacher geometry epoch so
+old policy rewards, exact miss specimens, and interference evidence do not govern the
+new representation. Retention, student/AdamW custody, and promotion authority remain
+unchanged.

@@ -182,12 +182,38 @@ def _atomic_boolean_landmark_revision_required(predecessor, registry=None) -> bo
     return False
 
 
+def _composite_landmark_revision_required(predecessor, registry=None) -> bool:
+    """Return whether admitted COMPOSITE rows predate recursive proof-role landmarks."""
+    from bilqis_mlx.boolean_composite import (
+        CAPABILITY, REPRESENTATION_VARIATION,
+    )
+    execution = predecessor.execution_plan.capability_map.get(CAPABILITY)
+    binding = predecessor.source_bindings.by_capability.get(CAPABILITY)
+    if execution is None or binding is None:
+        return False
+    admitted = next(
+        (provider for provider in predecessor.source_adapters
+         if provider.adapter_id == execution.provider_id),
+        None,
+    )
+    if admitted is None:
+        raise ValueError(SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING)
+    registry = registry or _source_adapters_school.live_source_registry()
+    current = registry.require(
+        binding.generator_id, binding.oracle_id).descriptor
+    return (
+        REPRESENTATION_VARIATION in current.variation_axes and
+        REPRESENTATION_VARIATION not in admitted.variation_axes
+    )
+
+
 def _source_presentation_revision_required(predecessor, registry=None) -> bool:
     """Collect explicitly authorized neural-inert source-presentation revisions."""
     registry = registry or _source_adapters_school.live_source_registry()
     return (
         _idboolops_landmark_revision_required(predecessor, registry) or
-        _atomic_boolean_landmark_revision_required(predecessor, registry)
+        _atomic_boolean_landmark_revision_required(predecessor, registry) or
+        _composite_landmark_revision_required(predecessor, registry)
     )
 
 
