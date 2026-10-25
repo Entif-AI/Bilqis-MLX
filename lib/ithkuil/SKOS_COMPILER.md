@@ -1069,3 +1069,36 @@ senses, with zero holds. The Unicode/multi-sense root `-Č-` has exactly 12 link
 literal N-Triples fixture. Removing that parent root holds all 12 sense links. No
 `skos:broader`, `skos:narrower`, `skos:related`, or `skos:member` edge appears in the
 positive graph.
+
+## Representative lexicon golden fixtures (#54)
+
+`skos_lexicon_golden_cases.json` freezes a compact, source-derived conformance set
+over the #50–#53 APIs. It is expected output, not a new semantic layer. The fixture
+records exact stable IRIs, source-row IDs, Stem/Specification values, source-locus
+modes and locus IRIs for deliberately different source shapes.
+
+The positive set contains:
+
+- Unicode/multi-sense root `-Č-`: exact typed root notation, eight supporting
+  evidence records, one root resource, and 12 root→sense links.
+- Direct table sense `-SČ-` / `STEM 1` / `BSC`.
+- Prose inherited-pattern shape `-RMC-` / `STEM 1` / `BSC`.
+- Compact numbered inherited-pattern shape `-KŢG-` / `STEM 1` / `BSC`.
+- Combined `STEMS 1-3` prose coordinate for `-ŘḐŘ-`.
+- The real `-NY-` and `-RNY-` root-wide CSV senses whose English definitions are
+  byte-identical while their source roots, source-row IDs and semantic IRIs remain
+  distinct.
+
+The negative fixture behavior is executable rather than blessed prose. A synthetic
+raw-form conflict in `lexicon_root_evidence` holds the root and emits no partial root
+RDF. A duplicate stable sense coordinate with conflicting source meaning holds both
+source rows and emits no concept RDF for that coordinate.
+
+The golden suite also recomputes the full four-layer lexicon graph after reversing
+the primary root, sense and supporting-evidence rows. Canonical output must remain
+identical. Current frozen aggregate expectations are 503 root resources, 1,615 sense
+concepts, 4,845 dimension triples and 1,615 `bilqis:hasSense` links.
+
+These fixtures describe only the currently parsed tracked Chapter 1–2 frontier. They
+do not create source claims for Chapters 3–7 or the affix-reference corpus, and they
+do not import curriculum state.

@@ -1,0 +1,73 @@
+{
+  "schema": "bilqis.skos.lexicon-golden/v1",
+  "frontier": "New Ithkuil Lexicon tracked Chapters 1-2",
+  "expected_counts": {
+    "root_resources": 503,
+    "sense_concepts": 1615,
+    "dimension_triples": 4845,
+    "root_sense_links": 1615
+  },
+  "cases": {
+    "multi_unicode_root": {
+      "root_id": "LEXROOT-0bd881a56fac9e",
+      "root_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-0bd881a56fac9e",
+      "raw_notation": "-Č-",
+      "evidence_count": 8,
+      "sense_link_count": 12,
+      "source_locus_iris": ["https://github.com/Entif-AI/Bilqis-MLX/source/locus/fec28d325d3b430f094620c5ae4112af59dc483c64fbc3814cd594a0f02b90b4"],
+      "source_urls": ["https://ithkuil.net/New_Ithkuil_Lexicon.pdf"]
+    },
+    "direct_table": {
+      "sense_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-01e02023f505ec/STEM%201/BSC",
+      "source_sense_ids": ["LEXSENSE-e3f64d03c6f6ec"],
+      "stem": "STEM 1",
+      "specification": "BSC",
+      "source_locus_kinds": ["table"],
+      "definition": "(be) an act/instance of breaking something apart or breaking something open",
+      "source_locus_iris": ["https://github.com/Entif-AI/Bilqis-MLX/source/locus/bb56eb03408e3b9348fc35d7509622ae41cb867b0e6adf0ec92eb0a7e444b9b2"]
+    },
+    "prose_inherited_shape": {
+      "sense_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-a5299227d87d97/STEM%201/BSC",
+      "source_sense_ids": ["LEXSENSE-692a65c96164c7"],
+      "stem": "STEM 1",
+      "specification": "BSC",
+      "source_locus_kinds": ["prose"],
+      "source_locus_iris": ["https://github.com/Entif-AI/Bilqis-MLX/source/locus/7a7622347537202ff7653c6bad083486299c35c374ad9f023d733b5b3ab62304"]
+    },
+    "compact_inherited_shape": {
+      "sense_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-4c7bdc159bffbf/STEM%201/BSC",
+      "source_sense_ids": ["LEXSENSE-1eed60bdff3221"],
+      "stem": "STEM 1",
+      "specification": "BSC",
+      "source_locus_kinds": ["compact_numbered_stem"],
+      "definition": "personal electronic computing device (e.g., PC, laptop, tablet, touchpad, etc.)",
+      "source_locus_iris": ["https://github.com/Entif-AI/Bilqis-MLX/source/locus/dd53bba6180aa73648f0eae31200eae82031d68f7f121cfa603594cb921ee80c"]
+    },
+    "combined_stems": {
+      "sense_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-38f830ad38e6e4/STEMS%201-3/BSC",
+      "source_sense_ids": ["LEXSENSE-80601f1be011a7"],
+      "stem": "STEMS 1-3",
+      "specification": "BSC",
+      "source_locus_kinds": ["prose"],
+      "source_locus_iris": ["https://github.com/Entif-AI/Bilqis-MLX/source/locus/a39eb12a3a066e05028bad0942ca9e7af83f5621fafd14ae6236ced53b329815"]
+    },
+    "same_gloss_left": {
+      "sense_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-8d7660f4334ba7/ROOT-WIDE/CSV",
+      "source_sense_ids": ["LEXSENSE-b6a2fc0e3470c1"],
+      "stem": "ROOT-WIDE",
+      "specification": "CSV",
+      "source_locus_kinds": ["table"],
+      "definition": "(to be) the act/process of choosing from one’s available options/alternatives",
+      "source_locus_iris": ["https://github.com/Entif-AI/Bilqis-MLX/source/locus/2c48a22f5a39579ab2e65f6dc2cc67b03b872fb4859ab748ee5ffb917e10a200"]
+    },
+    "same_gloss_right": {
+      "sense_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-d02f4d1b32543f/ROOT-WIDE/CSV",
+      "source_sense_ids": ["LEXSENSE-bd892e7c9edfd5"],
+      "stem": "ROOT-WIDE",
+      "specification": "CSV",
+      "source_locus_kinds": ["table"],
+      "definition": "(to be) the act/process of choosing from one’s available options/alternatives",
+      "source_locus_iris": ["https://github.com/Entif-AI/Bilqis-MLX/source/locus/8d7bf2c9d63816892f9f6e3f372cbabe0f0c2e3a1de1cb38cd5252c8464faa3e"]
+    }
+  }
+}
