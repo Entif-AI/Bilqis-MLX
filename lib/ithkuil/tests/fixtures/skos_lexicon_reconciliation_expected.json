@@ -1,71 +1,74 @@
 {
-  "canonical_byte_count": 5640126,
-  "canonical_sha256": "7b71860b19e7ec0f3aa9ea12655172e95d440f45c1a7abc4aad9edf7820ee56a",
-  "canonical_triple_count": 23347,
-  "compiler_input_closure_sha256": "6a231bdb2ae842fdec96e9647565aad0c5c17bd4406c1381d45e1eda9460eead",
+  "canonical_byte_count": 9021021,
+  "canonical_sha256": "4eb9959f6f26b43d04331bb92e3726ae7f0cf12ecf30f29f5810fefa582a740d",
+  "canonical_triple_count": 37337,
+  "compiler_input_closure_sha256": "ba94adb268e943c112003b8e4deb8927665a454c7e17b02079458eee7ed2682b",
   "counts": {
-    "notation_count": 625,
-    "root_resources_emitted": 625,
+    "notation_count": 1344,
+    "root_resources_emitted": 1344,
     "root_resources_held": 0,
-    "root_rows_consumed": 625,
-    "roots_with_multiple_parsed_senses": 307,
-    "roots_with_zero_parsed_senses": 313,
-    "sense_concepts_emitted": 1715,
-    "sense_rows_consumed": 1715,
+    "root_rows_consumed": 1344,
+    "roots_with_multiple_parsed_senses": 568,
+    "roots_with_zero_parsed_senses": 769,
+    "sense_concepts_emitted": 2526,
+    "sense_rows_consumed": 2526,
     "sense_rows_held": 0
   },
   "coverage": {
     "root_chapters": {
       "1": 39,
       "2": 464,
-      "3": 122
+      "3": 122,
+      "4": 719
     },
     "sense_chapters": {
       "1": 43,
       "2": 1572,
-      "3": 100
+      "3": 100,
+      "4": 811
     },
     "source_locus_kind": {
       "compact_numbered_stem": 39,
       "prose": 54,
-      "table": 1622
+      "table": 2433
     },
     "specification": {
-      "BSC": 917,
-      "CSV": 266,
-      "CTE": 266,
-      "OBJ": 266
+      "BSC": 1689,
+      "CSV": 279,
+      "CTE": 279,
+      "OBJ": 279
     },
     "stem": {
       "ROOT-WIDE": 714,
-      "STEM 1": 346,
-      "STEM 2": 331,
-      "STEM 3": 323,
+      "STEM 1": 624,
+      "STEM 2": 597,
+      "STEM 3": 590,
       "STEMS 1-3": 1
     }
   },
-  "evidence_rows": 378,
-  "frontier": "tracked-new-ithkuil-lexicon-chapters-1-2-3",
+  "evidence_rows": 2853,
+  "frontier": "tracked-new-ithkuil-lexicon-chapters-1-2-3-4",
   "frontier_contract": {
-    "claim": "current tracked Chapter 1,2,3 source frontier only; not complete official lexicon coverage",
+    "claim": "current tracked Chapter 1,2,3,4 source frontier only; not complete official lexicon coverage",
     "included_chapters": [
       "1",
       "2",
-      "3"
+      "3",
+      "4"
     ],
     "outside_closure": [
-      "New Ithkuil Lexicon Chapters 4-7",
+      "New Ithkuil Lexicon Chapters 5-7",
       "pinned New Ithkuil affix-reference source"
     ],
-    "scope": "tracked-new-ithkuil-lexicon-chapters-1-2-3",
+    "scope": "tracked-new-ithkuil-lexicon-chapters-1-2-3-4",
     "source_id": "NI-LEXICON-CURRICULUM"
   },
-  "lexicon_source_sha256": "ad7b51cf864c2db3ffba5d537599eb15438de81d62ae724b60371d7997585f90",
-  "notation_count": 625,
-  "receipt_sha256": "c5939b6c39146a8719883718394e81e574ef900b4416a01bac6603371805bebf",
-  "root_rows": 625,
-  "roots_with_multiple_parsed_senses": 307,
-  "roots_with_zero_parsed_senses": 313,
+  "lexicon_source_sha256": "35f1d2e6e92d76ac7da36c7c735f967ef3fb67308271e9b7d94c4f9b9c6a23ed",
+  "notation_count": 1344,
+  "receipt_sha256": "5e9c98bfb822eb2db04e23acf43f7132db8906671a98c538ae966c169ddd5234",
+  "root_rows": 1344,
+  "roots_with_multiple_parsed_senses": 568,
+  "roots_with_zero_parsed_senses": 769,
   "schema": "bilqis.skos.lexicon-reconciliation-snapshot/v1",
-  "sense_rows": 1715
+  "sense_rows": 2526
 }

@@ -2,6 +2,82 @@
   "schema": "bilqis.ithkuil.lexicon-frontier-pins/v1",
   "source_id": "NI-LEXICON-CURRICULUM",
   "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+  "source_pdfs": {
+    "0": {
+      "filename": "New Ithkuil Lexicon - Chapter 00 - Table of Contents.pdf",
+      "sha256": "5801addb2e60fc80859ec626c07ff4e32c8fa5805b1623d409d4f9cf913c3f6f",
+      "canonical_page_start": 1,
+      "page_count": 3,
+      "format": "PDF 1.3"
+    },
+    "1": {
+      "filename": "New Ithkuil Lexicon - Chapter 01 - Roots and Grammar.pdf",
+      "sha256": "1c60e40374cf6ffd16791b89983db8f6584c2e1feac7a9c965fc8255b2f95609",
+      "canonical_page_start": 4,
+      "page_count": 4,
+      "format": "PDF 1.3"
+    },
+    "2": {
+      "filename": "New Ithkuil Lexicon - Chapter 02 - Tools, States and Acts.pdf",
+      "sha256": "0d8eaa667d26345dfb55e99ee823fb8ecfa4b4a2d72f998d0e0e3c7b94bad9b2",
+      "canonical_page_start": 7,
+      "page_count": 92,
+      "format": "PDF 1.3"
+    },
+    "3": {
+      "filename": "New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf",
+      "sha256": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0",
+      "canonical_page_start": 99,
+      "page_count": 17,
+      "format": "PDF 1.3"
+    },
+    "4": {
+      "filename": "New Ithkuil Lexicon - Chapter 04 - Psychology and Sociology.pdf",
+      "sha256": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34",
+      "canonical_page_start": 115,
+      "page_count": 130,
+      "format": "PDF 1.3",
+      "canonical_page_text_variants": {
+        "42": {
+          "tracked_sha256": "bef0cd4c4f91453bbbeaff621173a0753492eb377a19d97bc04dcdb2534f21ce",
+          "canonical_sha256": "f38432affc8b060ce4c6313cb907aa2f5142227bdb3e1438ff5a64ec8d2843d3"
+        },
+        "87": {
+          "tracked_sha256": "4d513906e8a3a1327a840dde0ca21f65a80b41200e2197ab815de0af5d4c35a6",
+          "canonical_sha256": "5b2abb3355c77c790601801a829f2bcc7add6ec6c00d7e82ff8f9a663b0eb92e"
+        },
+        "88": {
+          "tracked_sha256": "b1fe8e54844d2f894c24bb38f3667e89be6aafc520cffe62301ecc52de52c64f",
+          "canonical_sha256": "0f0804a604658bbabc607709ea0c9e82038de5561ed8aaa91e72b1a255c4bb3b"
+        },
+        "89": {
+          "tracked_sha256": "15bc3bac82b7122f476bdac8d824eaebd34a071017afd3db34bb60470f9e9703",
+          "canonical_sha256": "27f27774a14a283642c3eb4324902ad21366e77a5edfd0925a2f4b1d0dcaa8f6"
+        }
+      }
+    },
+    "5": {
+      "filename": "New Ithkuil Lexicon - Chapter 05 - Miscellaneous Entities.pdf",
+      "sha256": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30",
+      "canonical_page_start": 245,
+      "page_count": 16,
+      "format": "PDF 1.3"
+    },
+    "6": {
+      "filename": "New Ithkuil Lexicon - Chapter 06 - Nature, Non-Biological.pdf",
+      "sha256": "0fd4aa1df217533427f950b86a4b7c4963dc5e66f7be927c8ad56a2ee990fdbd",
+      "canonical_page_start": 261,
+      "page_count": 59,
+      "format": "PDF 1.3"
+    },
+    "7": {
+      "filename": "New Ithkuil Lexicon - Chapter 07 - Natural Phenomena.pdf",
+      "sha256": "b753012f4df753b3cae476023adff3898a9296640b33e892185ebde22cd478d7",
+      "canonical_page_start": 319,
+      "page_count": 252,
+      "format": "PDF 1.3"
+    }
+  },
   "chapters": {
     "3": {
       "filename": "New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf",
@@ -9,6 +85,31 @@
       "canonical_page_start": 99,
       "page_count": 17,
       "format": "PDF 1.3"
+    },
+    "4": {
+      "filename": "New Ithkuil Lexicon - Chapter 04 - Psychology and Sociology.pdf",
+      "sha256": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34",
+      "canonical_page_start": 115,
+      "page_count": 130,
+      "format": "PDF 1.3",
+      "canonical_page_text_variants": {
+        "42": {
+          "tracked_sha256": "bef0cd4c4f91453bbbeaff621173a0753492eb377a19d97bc04dcdb2534f21ce",
+          "canonical_sha256": "f38432affc8b060ce4c6313cb907aa2f5142227bdb3e1438ff5a64ec8d2843d3"
+        },
+        "87": {
+          "tracked_sha256": "4d513906e8a3a1327a840dde0ca21f65a80b41200e2197ab815de0af5d4c35a6",
+          "canonical_sha256": "5b2abb3355c77c790601801a829f2bcc7add6ec6c00d7e82ff8f9a663b0eb92e"
+        },
+        "88": {
+          "tracked_sha256": "b1fe8e54844d2f894c24bb38f3667e89be6aafc520cffe62301ecc52de52c64f",
+          "canonical_sha256": "0f0804a604658bbabc607709ea0c9e82038de5561ed8aaa91e72b1a255c4bb3b"
+        },
+        "89": {
+          "tracked_sha256": "15bc3bac82b7122f476bdac8d824eaebd34a071017afd3db34bb60470f9e9703",
+          "canonical_sha256": "27f27774a14a283642c3eb4324902ad21366e77a5edfd0925a2f4b1d0dcaa8f6"
+        }
+      }
     }
   }
 }

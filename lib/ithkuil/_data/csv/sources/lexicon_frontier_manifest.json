@@ -1,6 +1,7 @@
 {
   "admitted_chapters": [
-    "3"
+    "3",
+    "4"
   ],
   "chapter_receipts": {
     "3": {
@@ -28,12 +29,13 @@
       "parser": {
         "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
         "pymupdf_version": "1.27.2.3",
-        "sha256": "d5cdf5759fd8ba99d5cc4639cef4bf4c64b96610f8ff67eea85882438696eead",
-        "version": "1.0.1"
+        "sha256": "e043b564cd68cf38a98fb779379b1c69de6b7ab6fb4d45eac755315aa6538c37",
+        "version": "1.0.3"
       },
       "schema": "bilqis.ithkuil.chapter-extraction/v1",
       "source": {
         "canonical_page_start": 99,
+        "canonical_page_text_variant_pages": [],
         "canonical_pages": [
           99,
           100,
@@ -57,15 +59,213 @@
         "comparison": "normalized-page-text-exact",
         "filename": "New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf",
         "format": "PDF 1.3",
+        "min_text_similarity": 1.0,
         "page_count": 17,
         "sha256": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0"
+      }
+    },
+    "4": {
+      "accounting_sha256": "410fc88cdbccacb24e7511583cbf4b5169af411dd525b7d2dd1f0202949f2162",
+      "chapter": "4",
+      "counts": {
+        "evidence": 2475,
+        "parsed_sense_observations": 811,
+        "roots": 719,
+        "roots_without_senses": 456,
+        "senses": 811,
+        "source_observations": 3133,
+        "unique_sense_coordinates": 811
+      },
+      "dispositions": {
+        "DEBT_CONFLICT": 20,
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 2131,
+        "DEBT_UNSUPPORTED_SHAPE": 171,
+        "PARSED": 811
+      },
+      "output_sha256": {
+        "lexicon_root_evidence.csv": "22c3f5a7684e42610a2e8366937a0044c3007ba8a58a017c030e90bbf9e8ac78",
+        "lexicon_root_senses.csv": "a154d3894fbda774f6c31998f5820f7c0288fb182ba2f6ae9872d22ae2030151",
+        "lexicon_roots.csv": "53292b8ec4935c9d748adac1b2266843db1ef4472ff792e1556b016c9e5b1baf"
+      },
+      "parser": {
+        "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "pymupdf_version": "1.27.2.3",
+        "sha256": "e043b564cd68cf38a98fb779379b1c69de6b7ab6fb4d45eac755315aa6538c37",
+        "version": "1.0.3"
+      },
+      "schema": "bilqis.ithkuil.chapter-extraction/v1",
+      "source": {
+        "canonical_page_start": 115,
+        "canonical_page_text_variant_pages": [
+          "42",
+          "87",
+          "88",
+          "89"
+        ],
+        "canonical_page_text_variants": {
+          "42": {
+            "canonical_sha256": "f38432affc8b060ce4c6313cb907aa2f5142227bdb3e1438ff5a64ec8d2843d3",
+            "tracked_sha256": "bef0cd4c4f91453bbbeaff621173a0753492eb377a19d97bc04dcdb2534f21ce"
+          },
+          "87": {
+            "canonical_sha256": "5b2abb3355c77c790601801a829f2bcc7add6ec6c00d7e82ff8f9a663b0eb92e",
+            "tracked_sha256": "4d513906e8a3a1327a840dde0ca21f65a80b41200e2197ab815de0af5d4c35a6"
+          },
+          "88": {
+            "canonical_sha256": "0f0804a604658bbabc607709ea0c9e82038de5561ed8aaa91e72b1a255c4bb3b",
+            "tracked_sha256": "b1fe8e54844d2f894c24bb38f3667e89be6aafc520cffe62301ecc52de52c64f"
+          },
+          "89": {
+            "canonical_sha256": "27f27774a14a283642c3eb4324902ad21366e77a5edfd0925a2f4b1d0dcaa8f6",
+            "tracked_sha256": "15bc3bac82b7122f476bdac8d824eaebd34a071017afd3db34bb60470f9e9703"
+          }
+        },
+        "canonical_pages": [
+          115,
+          116,
+          117,
+          118,
+          119,
+          120,
+          121,
+          122,
+          123,
+          124,
+          125,
+          126,
+          127,
+          128,
+          129,
+          130,
+          131,
+          132,
+          133,
+          134,
+          135,
+          136,
+          137,
+          138,
+          139,
+          140,
+          141,
+          142,
+          143,
+          144,
+          145,
+          146,
+          147,
+          148,
+          149,
+          150,
+          151,
+          152,
+          153,
+          154,
+          155,
+          156,
+          157,
+          158,
+          159,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          166,
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          174,
+          175,
+          176,
+          177,
+          178,
+          179,
+          180,
+          181,
+          182,
+          183,
+          184,
+          185,
+          186,
+          187,
+          188,
+          189,
+          190,
+          191,
+          192,
+          193,
+          194,
+          195,
+          196,
+          197,
+          198,
+          199,
+          200,
+          201,
+          202,
+          203,
+          204,
+          205,
+          206,
+          207,
+          208,
+          209,
+          210,
+          211,
+          212,
+          213,
+          214,
+          215,
+          216,
+          217,
+          218,
+          219,
+          220,
+          221,
+          222,
+          223,
+          224,
+          225,
+          226,
+          227,
+          228,
+          229,
+          230,
+          231,
+          232,
+          233,
+          234,
+          235,
+          236,
+          237,
+          238,
+          239,
+          240,
+          241,
+          242,
+          243,
+          244
+        ],
+        "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+        "comparison": "normalized-page-text-exact-with-pinned-variants",
+        "filename": "New Ithkuil Lexicon - Chapter 04 - Psychology and Sociology.pdf",
+        "format": "PDF 1.3",
+        "min_text_similarity": 0.9679083094555874,
+        "page_count": 130,
+        "sha256": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34"
       }
     }
   },
   "counts": {
-    "lexicon_root_evidence": 378,
-    "lexicon_root_senses": 1715,
-    "lexicon_roots": 625
+    "lexicon_root_evidence": 2853,
+    "lexicon_root_senses": 2526,
+    "lexicon_roots": 1344
   },
   "legacy_chapters": [
     "1",
@@ -77,10 +277,10 @@
     "lexicon_roots.csv": "7cdb5df8266c7c8b815392cf3333fc5e3d05876b1c79277494c925e24559e0cc"
   },
   "output_sha256": {
-    "lexicon_root_evidence.csv": "40718662d466520bdd3fbec57d8db462f15a22741142ad8ff32a4f40c8e6302a",
-    "lexicon_root_senses.csv": "7a7e24e2a127c780e6182380af3aa07e6d1d6a93f362051a8459165eb2e5701e",
-    "lexicon_roots.csv": "e8a9989f0e9d731a6a0a66ee25ca78630a56f9238a6bd3b1c5421da62eb2d88c",
-    "sources/lexicon_split_provenance.csv": "276da9e57c901a086981940c73ef1996882e55f2c4451b79d38d4e0b8cea23e3"
+    "lexicon_root_evidence.csv": "b20df4f9c22dd657892348916c27ffb79294b5629c6def042c117ac631c7b831",
+    "lexicon_root_senses.csv": "42f662ea416c511ec34b3951273855550f6290520e49c6fd090581b07fdb602f",
+    "lexicon_roots.csv": "c65922a0fb1edb8000f64b379c1a75adffefb192a30ca925ca50581ab180b117",
+    "sources/lexicon_split_provenance.csv": "2d2b249cd1f9d0730c590e189f5b4a88e37f5b8933867d8b1785d5e26c27816a"
   },
   "schema": "bilqis.ithkuil.lexicon-frontier/v1"
 }

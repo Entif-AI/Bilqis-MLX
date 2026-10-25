@@ -42,6 +42,8 @@
     ],
     "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
     "comparison": "normalized-page-text-exact",
+    "canonical_page_text_variant_pages": [],
+    "min_text_similarity": 1.0,
     "filename": "New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf",
     "format": "PDF 1.3",
     "page_count": 17,

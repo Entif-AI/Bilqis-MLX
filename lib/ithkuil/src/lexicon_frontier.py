@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections import Counter,defaultdict
 import csv
+import difflib
 import hashlib
 import json
 from pathlib import Path
@@ -14,7 +15,7 @@ from . import build_lexicon_chapters as legacy
 
 ROOT=legacy.ROOT
 PINS=Path(__file__).with_name('lexicon_frontier_pins.json')
-VERSION='1.0.1'
+VERSION='1.0.3'
 
 
 def structural_sense_id(form,stem,specification):
@@ -70,6 +71,13 @@ def _root_form(line):
     return '-'+re.sub(r'\s+','',spaced.group(1))+'-' if spaced else None
 
 
+def _root_gloss(line):
+    match=legacy.ROOT_RE.match(line)
+    if match:return legacy.clean(match.group(2))
+    spaced=re.match(r'^-\s*([^\s-](?:\s*[^\s-])*)\s*-\s*(.*)$',line)
+    return legacy.clean(spaced.group(2)) if spaced else ''
+
+
 def _prose_sense_candidates(document,chapter_id,root_index,by_form,common):
     """Parse only non-table prose with explicit root, Stem, and Specification scope."""
     accounting=[];candidates=defaultdict(list)
@@ -81,16 +89,16 @@ def _prose_sense_candidates(document,chapter_id,root_index,by_form,common):
             nonlocal marker,buffer,marker_line,buffer_end_line
             if marker is None:return
             stem=marker;meaning=legacy.clean(' '.join(buffer))
-            root=by_form[current_root];locus=root_index[(page_number,current_root)]
+            root=by_form.get(current_root);locus=root_index[(page_number,current_root)]
             source_text=meaning or marker
             fingerprint,count=legacy.source_fingerprint(source_text)
-            item={'root_form_raw':current_root,'lexicon_root_id':root['lexicon_root_id'],
+            item={'root_form_raw':current_root,'lexicon_root_id':root['lexicon_root_id'] if root else '',
                   'source_pdf_page':str(page_number),'source_printed_page':legacy.printed_page(page),
                   'source_table_index':'','row':marker_line,'column':0,
                   'source_text_sha256':fingerprint,'source_text_char_count':count,'stem':stem,
                   'source_locus':{'kind':'prose','pdf_page':page_number,'line_start':marker_line,
                                   'line_end':buffer_end_line or marker_line}}
-            if specification not in legacy.SPECIFICATIONS or not meaning:
+            if root is None or specification not in legacy.SPECIFICATIONS or not meaning:
                 item['status']='DEBT_INSUFFICIENT_SENSE_EVIDENCE'
             else:
                 item['status']='PARSED';item['specification']=specification
@@ -136,6 +144,28 @@ def _prose_sense_candidates(document,chapter_id,root_index,by_form,common):
     return accounting,candidates
 
 
+def canonical_page_map(document,canonical,pin):
+    """Bind pages exactly, except for byte-pinned text-extraction variants."""
+    variants=pin.get('canonical_page_text_variants',{})
+    page_map=[];observed=[];similarities=[]
+    for index,page in enumerate(document):
+        local_page=index+1;canonical_page=pin['canonical_page_start']+index
+        tracked_text=legacy.clean(page.get_text())
+        canonical_text=legacy.clean(canonical[canonical_page-1].get_text())
+        if tracked_text!=canonical_text:
+            key=str(local_page);expected=variants.get(key)
+            tracked_sha=hashlib.sha256(tracked_text.encode('utf-8')).hexdigest()
+            canonical_sha=hashlib.sha256(canonical_text.encode('utf-8')).hexdigest()
+            if expected!={'tracked_sha256':tracked_sha,'canonical_sha256':canonical_sha}:
+                raise ValueError('LEXICON_CANONICAL_PAGE_MISMATCH:'+key)
+            observed.append(key)
+            similarities.append(difflib.SequenceMatcher(None,tracked_text,canonical_text,autojunk=False).ratio())
+        page_map.append(canonical_page)
+    if set(observed)!=set(variants):
+        raise ValueError('LEXICON_CANONICAL_PAGE_VARIANT_SET_MISMATCH')
+    return page_map,observed,min(similarities,default=1.0)
+
+
 def extract_chapter(chapter_id,canonical_pdf,*,prior_senses=()):
     pins=json.loads(PINS.read_text());pin=pins['chapters'].get(chapter_id)
     if pin is None:raise ValueError('LEXICON_CHAPTER_NOT_PINNED')
@@ -145,17 +175,11 @@ def extract_chapter(chapter_id,canonical_pdf,*,prior_senses=()):
         raise ValueError('LEXICON_SOURCE_PIN_MISMATCH')
     document=fitz.open(path);canonical=fitz.open(canonical_pdf)
     if len(document)!=pin['page_count']:raise ValueError('LEXICON_CHAPTER_PAGE_COUNT_MISMATCH')
-    page_map=[]
-    for index,page in enumerate(document):
-        canonical_page=pin['canonical_page_start']+index
-        if legacy.clean(page.get_text())!=legacy.clean(canonical[canonical_page-1].get_text()):
-            raise ValueError('LEXICON_CANONICAL_PAGE_MISMATCH:'+str(index+1))
-        page_map.append(canonical_page)
+    page_map,page_variants,min_similarity=canonical_page_map(document,canonical,pin)
     manifest=legacy.source_manifest_row()
     common={'source_id':legacy.SOURCE_ID,'source_url':manifest['final_url'],'tracked_pdf_name':chapter.filename,
             'tracked_pdf_sha256':pin['sha256'],'evidence_status':'official_source_observed'}
     roots,_=legacy.page_line_records(document,chapter)
-    for row in roots:row.update({**common,'canonical_source_sha256':pins['canonical_sha256']})
     root_index={}
     section=None
     for page_number,page in enumerate(document,start=1):
@@ -164,9 +188,39 @@ def extract_chapter(chapter_id,canonical_pdf,*,prior_senses=()):
             if heading:section=heading.group(1) if heading.group(1).startswith(chapter_id+'.') else None
             form=_root_form(line)
             if form and section:
-                root_index[(page_number,form)]={'lexicon_section':section,'line':line_number}
+                root_index[(page_number,form)]={'lexicon_section':section,'line':line_number,'source_line':line}
+    if chapter_id=='4':
+        # Chapter 4 includes spaced-root lines the legacy compact-root scan misses.
+        # Keep prior accepted chapter projections unchanged in this leaf issue.
+        known_roots={r['root_form_raw'] for r in roots}
+        root_debts=[]
+        for (page_number,form),locus in sorted(root_index.items()):
+            if form in known_roots:continue
+            page=document[page_number-1]
+            gloss=_root_gloss(locus['source_line'])
+            if not gloss:
+                source_text=locus['source_line'];fingerprint,count=legacy.source_fingerprint(source_text)
+                root_debts.append({'root_form_raw':form,'lexicon_root_id':'',
+                                   'source_pdf_page':str(page_number),'source_printed_page':legacy.printed_page(page),
+                                   'source_table_index':'','row':0,'column':0,
+                                   'status':'DEBT_INSUFFICIENT_SENSE_EVIDENCE',
+                                   'source_text_sha256':fingerprint,'source_text_char_count':count,
+                                   'source_locus':{'kind':'root','pdf_page':page_number,'line':locus['line'],
+                                                   'lexicon_section':locus['lexicon_section']}})
+                known_roots.add(form)
+                continue
+            roots.append({'lexicon_root_id':legacy.stable_id('LEXROOT',legacy.SOURCE_ID,form),
+                          'root_form_raw':form,'root_form_normalized':form.strip('-').lower(),
+                          'root_gloss':legacy.short_meaning(gloss),
+                          'lexicon_chapter':chapter_id,'lexicon_section':locus['lexicon_section'],
+                          'section_title':legacy.SECTION_TITLES.get(locus['lexicon_section'],''),
+                          'source_pdf_page':str(page_number),'source_printed_page':legacy.printed_page(page)})
+            known_roots.add(form)
+    else:
+        root_debts=[]
+    for row in roots:row.update({**common,'canonical_source_sha256':pins['canonical_sha256']})
     by_form={r['root_form_raw']:r for r in roots}
-    accounting=[];candidates=defaultdict(list)
+    accounting=root_debts;candidates=defaultdict(list)
     for page_number,page in enumerate(document,start=1):
         for table_number,table in enumerate(page.find_tables().tables,start=1):
             data=table.extract()
@@ -334,7 +388,9 @@ def extract_chapter(chapter_id,canonical_pdf,*,prior_senses=()):
     parsed_observations=sum(row['status']=='PARSED' for row in accounting)
     unique_coordinates={(row['root_form_raw'],row['stem'],row['specification']) for row in senses}
     receipt={'schema':'bilqis.ithkuil.chapter-extraction/v1','chapter':chapter_id,'parser':{'version':VERSION,'sha256':legacy.sha256(Path(__file__)),'legacy_sha256':legacy.sha256(Path(legacy.__file__)),'pymupdf_version':fitz.VersionBind},
-             'source':{**pin,'canonical_sha256':pins['canonical_sha256'],'canonical_pages':page_map,'comparison':'normalized-page-text-exact'},
+             'source':{**pin,'canonical_sha256':pins['canonical_sha256'],'canonical_pages':page_map,
+                       'canonical_page_text_variant_pages':page_variants,'min_text_similarity':min_similarity,
+                       'comparison':'normalized-page-text-exact-with-pinned-variants' if page_variants else 'normalized-page-text-exact'},
              'counts':{'roots':len(roots),'senses':len(senses),'unique_sense_coordinates':len(unique_coordinates),
                        'evidence':len(evidence),'roots_without_senses':len(roots)-len(sense_roots),
                        'source_observations':len(accounting),'parsed_sense_observations':parsed_observations},
@@ -393,10 +449,16 @@ def admit_chapter(chapter,canonical_pdf):
             'tracked_pdf_name':source['filename'],'tracked_pdf_sha256':source['sha256'],
             'bound_source_id':legacy.SOURCE_ID,'bound_source_sha256':source['canonical_sha256'],
             'page_count':str(source['page_count']),'canonical_pdf_page_start':str(source['canonical_pages'][0]),
-            'canonical_pdf_page_end':str(source['canonical_pages'][-1]),'exact_text_page_count':str(source['page_count']),
-            'near_exact_text_page_count':'0','min_text_similarity':'1.0',
-            'verification_method':'PyMuPDF normalized extracted-text page comparison','relation_status':'page_projection_text_verified',
-            'notes':'Exact normalized text page comparison; no byte-identical derivative claim.'}
+            'canonical_pdf_page_end':str(source['canonical_pages'][-1]),
+            'exact_text_page_count':str(source['page_count']-len(source['canonical_page_text_variant_pages'])),
+            'near_exact_text_page_count':str(len(source['canonical_page_text_variant_pages'])),
+            'min_text_similarity':str(source['min_text_similarity']),
+            'verification_method':'PyMuPDF normalized extracted-text page comparison with exact pinned variant hashes',
+            'relation_status':'page_projection_text_verified_with_pinned_variants' if source['canonical_page_text_variant_pages'] else 'page_projection_text_verified',
+            'notes':('Exact normalized text comparison except pinned page-text variants '+
+                     ','.join(source['canonical_page_text_variant_pages'])+'; no byte-identical derivative claim.')
+                    if source['canonical_page_text_variant_pages'] else
+                    'Exact normalized text page comparison; no byte-identical derivative claim.'}
     files['sources/lexicon_split_provenance.csv']=_bytes(sorted(by_name.values(),key=lambda r:r['tracked_pdf_name']),fields)
     profile.update({'legacy_chapters':['1','2'],'counts':dict(zip(TABLES,map(len,groups))),
                     'output_sha256':{name:hashlib.sha256(payload).hexdigest() for name,payload in files.items()},

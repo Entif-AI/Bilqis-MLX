@@ -70,12 +70,18 @@ From the repository root, after restoring the exact pinned raw canonical PDF:
 ```sh
 python3 -B -m lib.ithkuil.src.build_lexicon_chapters \
   --admit-chapter 3 --canonical-pdf lib/ithkuil/_raw/New_Ithkuil_Lexicon.pdf
+python3 -B -m lib.ithkuil.src.build_lexicon_chapters \
+  --admit-chapter 4 --canonical-pdf lib/ithkuil/_raw/New_Ithkuil_Lexicon.pdf
 python3 -B -m lib.ithkuil.src.validate_dataset
 ```
 
 `lexicon_frontier_pins.json` identifies the split artifact and format before
 extraction. Chapter 3 has 17 pages, exactly matching normalized extracted text on
 canonical PDF pages 99–115. The receipt makes no byte-derivative claim.
+Its `source_pdfs` inventory pins every tracked chapter PDF by exact digest;
+`chapters` limits later-chapter parser/admission selection, while the generated
+`admitted_chapters` list records what is actually published. A source pin alone
+does not mean that a chapter has been admitted into canonical tables.
 The existing extractor dispatches accepted later chapters through
 `lexicon_frontier.py`; an ordinary rebuild retains that accepted frontier.
 Admission validates a staged copy of the full CSV corpus before publishing it.
@@ -93,6 +99,29 @@ English wording never enters the key. Earlier Chapter 1–2 rows retain their ex
 accepted bytes and identities. Multi-Stem merged cells, unqualified Stem/Specification
 scope and inherited-pattern prose stay debt until separately supported rules exist.
 The legacy parser's accepted Chapter 1–2 behavior remains reproducible explicitly.
+
+## Accepted later-chapter source extraction (#81)
+
+Chapter 4's 130-page PDF is pinned by exact digest and mapped to canonical PDF
+pages 115–244. Four normalized text-extraction variants (local pages 42 and
+87–89) are accepted only by their exact tracked/canonical text hashes; an
+unlisted or changed variant fails closed. The receipt and split-provenance row
+record those variants and the observed minimum text similarity.
+
+Chapter 4 contributes 719 root rows, 811 parsed sense rows and 2,475 compact
+evidence rows. Its 3,133 source observations are fully accounted for: 811 parsed,
+2,131 insufficient-sense debt, 171 unsupported-shape debt and 20 conflicts.
+There are 456 emitted roots without parsed senses; 361 prose observations remain
+explicit debt/conflict, with no prose-derived senses admitted. Three spaced-form
+roots with explicit inline glosses are emitted with source loci. Six root forms
+without independent gloss evidence remain root-locus debt and do not become
+canonical root rows.
+
+The deterministic fixture records source/output/accounting hashes, counts and
+representative table, multi-sense, prose-debt and unsupported-table loci. A repeat
+extraction matches the published receipt. Chapter 1–2 table bytes remain
+unchanged, and Chapter 3 output digests remain unchanged. This is source-IR work
+only; it does not change the SKOS profile or curriculum/training authority.
 
 `sources/lexicon_frontier_manifest.json` binds per-chapter pins, parser version/code
 hashes, page maps, output hashes, counts and legacy compatibility hashes.

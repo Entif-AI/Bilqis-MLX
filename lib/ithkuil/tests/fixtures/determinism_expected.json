@@ -1,8 +1,8 @@
 {
   "schema": "bilqis.skos.determinism-fixture/v1",
   "current_core": {
-    "canonical_sha256": "7834e666868a593109974fa025780de2feafee1d3d943e385a5a71d190356041",
-    "triple_count": 21149
+    "canonical_sha256": "efb4fffc91276bb80273f61b7bd6c661a784f962adaad559da86f589cd48cb35",
+    "triple_count": 32706
   },
   "unicode_fixture": {
     "lexical": "Č / ∅"
