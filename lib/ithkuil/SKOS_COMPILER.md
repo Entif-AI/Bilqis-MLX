@@ -1781,3 +1781,50 @@ mutation changes digest and reports exact first removed/added assertions.
 
 No timestamp, temp path, process hash seed, Falkor ID, model state, or curriculum data
 enters the canonical comparison.
+
+## Independent graph conformance (#71)
+
+`src/skos/conformance_shapes.ttl` encodes proven public profile invariants.
+Each named shape carries `dcterms:identifier` and `dcterms:source` authority links:
+
+| Shape | Owning invariant |
+| --- | --- |
+| ConceptIdentity | Concept IRI shape, #31/#32; affix-degree coordinates, #56 |
+| SchemeIdentity | Scheme IRI shape, #31/#32 |
+| ConceptScheme | Required declared concept schemes, #32 |
+| Notation | Admitted notation datatypes and nonempty unpadded literals, #33 |
+| PreferredLabels | Preferred-label language uniqueness and label disjointness, #34 |
+| SourceLinks | Required source-link presence on source-bound resources, #39 |
+| NoCurriculum | Exclusion of curriculum/training predicates, #19/#32 |
+| MappingEndpoints | Concept endpoints in distinct schemes, #36/#63 |
+
+The shapes validate resource structure; they do not reconstruct semantic keys,
+prove source authenticity, infer linguistic theory, or encode private policy.
+`NoCurriculum` checks predicate IRIs, including otherwise untyped subjects; it does
+not interpret source text containing words such as curriculum or training.
+
+Mapping admission cannot be inferred from RDF endpoints. The independent
+`MappingAdmission` detector (#63/#66) requires exact triple support from the
+upstream admitted mapping output. An absent support artifact admits zero mappings.
+A support artifact is an explicit upstream premise, never approval inferred from a
+matching graph, source label, or endpoint shape. The current corpus emits zero
+admitted mappings while preserving mapping debt.
+
+Run independently over canonical N-Triples:
+
+```sh
+python3 -B -m lib.ithkuil.src.skos.shacl --rdf PATH/canonical.nt
+# When upstream emits admitted mappings, also supply its canonical output:
+# --admitted-mappings PATH/admitted-mappings.nt
+python3 -B -m unittest lib.ithkuil.tests.test_skos_shacl -v
+```
+
+The validator uses pySHACL with inference disabled, validates a copy, and binds its
+machine-readable report to the unchanged canonical RDF digest. Exit 0 means graph
+conformance; exit 2 means violation or invalid input. Every violation identifies
+focus node, named shape, invariant, and owning issues. Fixtures intentionally break
+each shape independently, reject unsupported mapping assertions, and preserve
+exact Unicode notation. The positive fixture is the existing canonical #40 core
+graph. A separate whole-current-corpus run validates all 77,614 triples at canonical
+digest `a81a1ec6d5f48e297eaa6901a2f1d609711777f5d2bc35f57f01103d6983ed7e`.
+Graph conformance does not erase the coverage receipt's partial/held/debt state.

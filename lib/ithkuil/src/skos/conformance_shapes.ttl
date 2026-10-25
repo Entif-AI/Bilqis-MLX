@@ -1,0 +1,69 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix s: <https://github.com/Entif-AI/Bilqis-MLX/validation/shape/> .
+@prefix issue: <https://github.com/Entif-AI/Bilqis-MLX/issues/> .
+
+s:ConceptIdentity a sh:NodeShape ;
+    dct:identifier "ConceptIdentity" ; dct:source issue:31, issue:32, issue:56 ;
+    sh:targetClass skos:Concept ; sh:nodeKind sh:IRI ;
+    sh:pattern "^https://github[.]com/Entif-AI/Bilqis-MLX/id/(grammar/[^/]+/[^/]+|sense/[^/]+/[^/]+/[^/]+/[^/]+|affix-degree/[^/]+/[0-9]+)$" .
+
+s:SchemeIdentity a sh:NodeShape ;
+    dct:identifier "SchemeIdentity" ; dct:source issue:31, issue:32 ;
+    sh:targetClass skos:ConceptScheme ; sh:nodeKind sh:IRI ;
+    sh:pattern "^https://github[.]com/Entif-AI/Bilqis-MLX/id/scheme/[^/]+$" .
+
+s:ConceptScheme a sh:NodeShape ;
+    dct:identifier "ConceptScheme" ; dct:source issue:32 ;
+    sh:targetClass skos:Concept ;
+    sh:property [ sh:path skos:inScheme ; sh:minCount 1 ; sh:nodeKind sh:IRI ; sh:class skos:ConceptScheme ] .
+
+s:Notation a sh:NodeShape ;
+    dct:identifier "Notation" ; dct:source issue:33 ;
+    sh:targetSubjectsOf skos:notation ;
+    sh:property [ sh:path skos:notation ;
+        sh:or (
+            [ sh:datatype <https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> ]
+            [ sh:datatype <https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> ]
+        ) ; sh:minLength 1 ; sh:pattern "^\\S([\\s\\S]*\\S)?$" ] .
+
+s:PreferredLabels a sh:NodeShape ;
+    dct:identifier "PreferredLabels" ; dct:source issue:34 ;
+    sh:targetSubjectsOf skos:prefLabel ;
+    sh:property [ sh:path skos:prefLabel ; sh:nodeKind sh:Literal ; sh:uniqueLang true ;
+        sh:disjoint skos:altLabel ; sh:disjoint skos:hiddenLabel ] .
+
+s:SourceLinks a sh:NodeShape ;
+    dct:identifier "SourceLinks" ; dct:source issue:39 ;
+    sh:targetClass skos:Concept, skos:ConceptScheme, skos:Collection, skos:OrderedCollection ;
+    sh:targetSubjectsOf skos:notation ;
+    sh:property [ sh:path dct:source ; sh:minCount 1 ; sh:nodeKind sh:IRI ] .
+
+s:NoCurriculum a sh:NodeShape ;
+    dct:identifier "NoCurriculum" ; dct:source issue:19, issue:32 ;
+    sh:target [ a sh:SPARQLTarget ; sh:select """
+        SELECT DISTINCT ?this WHERE { ?this ?p ?o .
+          FILTER(REGEX(STR(?p), "(curriculum|teachingOrder|training|prerequisite|[/#]grade)", "i")) }
+    """ ] ;
+    sh:sparql [ sh:message "Curriculum properties are outside the semantic corpus (#19, #32)." ;
+        sh:select """
+        SELECT $this ?path ?value WHERE { $this ?path ?value .
+          FILTER(REGEX(STR(?path), "(curriculum|teachingOrder|training|prerequisite|[/#]grade)", "i")) }
+    """ ] .
+
+s:MappingEndpoints a sh:NodeShape ;
+    dct:identifier "MappingEndpoints" ; dct:source issue:36, issue:63 ;
+    sh:targetSubjectsOf skos:exactMatch, skos:closeMatch, skos:broadMatch, skos:narrowMatch, skos:relatedMatch ;
+    sh:class skos:Concept ;
+    sh:property [ sh:path [ sh:alternativePath ( skos:exactMatch skos:closeMatch skos:broadMatch skos:narrowMatch skos:relatedMatch ) ] ;
+        sh:nodeKind sh:IRI ; sh:class skos:Concept ] ;
+    sh:sparql [ sh:message "Mapping endpoints must belong to distinct declared schemes (#36, #63)." ;
+        sh:select """
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        SELECT $this ?path ?value WHERE {
+          $this ?path ?value .
+          FILTER (?path IN (skos:exactMatch, skos:closeMatch, skos:broadMatch, skos:narrowMatch, skos:relatedMatch))
+          FILTER NOT EXISTS { $this skos:inScheme ?a . ?value skos:inScheme ?b . FILTER (?a != ?b) }
+        }
+    """ ] .
