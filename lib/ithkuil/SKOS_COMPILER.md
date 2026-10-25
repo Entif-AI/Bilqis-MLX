@@ -1315,3 +1315,36 @@ Every row has exactly one `EMITTED`, `HELD`, or fail-closed `REJECTED` outcome. 
 definition and collision reason codes are preserved; the orchestrator does not reinterpret
 their meaning. No lexicon sense, mapping, composition, Falkor or curriculum projection is
 introduced here.
+
+## Atomic corpus reconciliation (#49)
+
+The API reconcile_atomic(closure, compiled) -> AtomicReconciliation closes the
+atomic-domain accounting equation over the #48 artifact. It does not compile or
+reinterpret source. atomic_reconciliation_json_bytes(result) serializes the complete
+stable receipt, including all row outcomes. atomic_source_digest(closure) hashes exact
+atomic IR row values as canonical sorted JSON, independent of table row/column order.
+
+Current source reconciliation is complete: 772 atomic rows, 650 semantic identities,
+34 category codes and 122 multi-realization identities. The identity equation is
+650 = 261 emitted + 389 held. The emitted set is 104 concepts + 157 roots. The
+2,052-triple atomic graph contains 104 grammar-code notation triples and 272 New Ithkuil
+notation triples. Held identities are 388 NOTATION_COLLISION + 1 SOURCE_TEXT_TOO_LONG;
+held rows are 499 + 1 respectively.
+
+The receipt pins atomic source SHA-256
+02a833abc5a116bd651bf50da3c94ef995610612c94c09d31f26cd7d8a6eb540 and canonical
+atomic RDF SHA-256 885e502b20bac8805a3a30e49f1c0d43d5b674a5ec8f823bf475d7234a360167.
+It validates that source and outcome row IDs are a one-to-one set, no row is rejected,
+every row has a semantic identity, every semantic identity is uniformly emitted or held,
+the emitted identity set equals the builder result, every held identity is absent from
+strong RDF and collection membership, and the source category set equals #48 accounting.
+
+Failures name stable rows or semantic IRIs. The negative proof removes
+ATOM-02a4496bfbac3a from row outcomes and receives
+ATOMIC_RECONCILIATION_ROW_MISMATCH with missing=ATOM-02a4496bfbac3a. A second
+regression adds one structurally admitted source row/category and proves the receipt
+changes to 773 rows / 651 identities with a different source digest. Reordered source
+tables/rows produce byte-identical receipts.
+
+This is atomic morphology closeout only. It does not claim whole-#19 release eligibility
+and does not aggregate lexicon, mapping, composition, curriculum, or store coverage.

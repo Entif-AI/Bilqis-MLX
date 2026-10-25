@@ -1,0 +1,33 @@
+{
+  "schema": "bilqis.skos.atomic-reconciliation-fixture/v1",
+  "conformance_complete": true,
+  "source": {
+    "atomic_rows": 772,
+    "semantic_identities": 650,
+    "category_codes": 34,
+    "multi_realization_identities": 122,
+    "sha256": "02a833abc5a116bd651bf50da3c94ef995610612c94c09d31f26cd7d8a6eb540"
+  },
+  "rdf": {
+    "canonical_sha256": "885e502b20bac8805a3a30e49f1c0d43d5b674a5ec8f823bf475d7234a360167",
+    "triple_count": 2052,
+    "emitted_resources": 261,
+    "emitted_concepts": 104,
+    "emitted_roots": 157,
+    "notation_counts_by_datatype": {
+      "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code": 104,
+      "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil": 272
+    }
+  },
+  "held": {
+    "identities": 389,
+    "identity_counts_by_reason": {
+      "NOTATION_COLLISION": 388,
+      "SOURCE_TEXT_TOO_LONG": 1
+    },
+    "row_counts_by_reason": {
+      "NOTATION_COLLISION": 499,
+      "SOURCE_TEXT_TOO_LONG": 1
+    }
+  }
+}
