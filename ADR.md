@@ -1475,3 +1475,33 @@ with zero neural updates. `B.COMPOSITE` also opens a fresh teacher geometry epoc
 old policy rewards, exact miss specimens, and interference evidence do not govern the
 new representation. Retention, student/AdamW custody, and promotion authority remain
 unchanged.
+
+
+## ADR-101 | 2026-10-25 | Quarantine re-probes, decayed foundations rehearse, qualification state is explicit
+
+**Direct user decision after a long-lived Grade-C run exposed three liveness and
+operator-visibility failures.** Stagnation containment remains valid, but a
+quarantined progression-gating capability may not disappear until the human command
+happens to end. After one complete intervening recovery cycle, quarantined debt in
+the current grade is released for one bounded re-probe cycle and injected at the
+front of the recovery queue. It is judged by the same ordinary fresh-score,
+same-checkpoint retention and two-round stagnation evidence. If it again satisfies
+the quarantine predicate it is re-contained; otherwise it remains released. No
+synthetic score, promotion shortcut, or weakened retention rule is introduced.
+
+Previously mastered foundation grades also remain live learning territory when
+current cumulative evidence shows decay. In the three-grade priority topology, the
+immediate predecessor continues its existing one-in-four nongating debt cadence; a
+mastered grade older than that pair receives a bounded imperfect-capability rehearsal
+turn after twice that interval. The policy is grade-neutral and evidence-driven: only
+currently imperfect capabilities are queued, and the cadence resets when the
+foundational run completes. Legacy long-lived receipts begin with one rehearsal due
+check so existing foundation decay is not forced to wait through a new full interval.
+
+Operator telemetry must distinguish a partial active-scope score from qualification
+authority. If any capability in the displayed grade is withheld, the mastery row and
+operator summary explicitly say `ACTIVE-SCOPE` and `QUALIFICATION BLOCKED`, naming
+the withheld capabilities. Likewise, `PROMOTION_SWEEP` and
+`ASSESS_PROMOTION_SWEEP` are rendered as `GRADUATION SWEEP IN PROGRESS` so repeated
+90%+ observations cannot look like an inert ordinary mean while stability
+qualification is actually being rechecked capability by capability.

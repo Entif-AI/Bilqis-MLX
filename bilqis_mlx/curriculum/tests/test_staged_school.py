@@ -45,6 +45,52 @@ def enter_c(course):
 
 
 class StagedSchoolTests(unittest.TestCase):
+    def test_decayed_foundational_grade_gets_bounded_rehearsal_turn(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        last_stage = len(course.grades[-1].teaching_stages) - 1
+        state = _at_introduction_stage(
+            state, last_stage, stage="ASSESS_MAIN", queue=())
+        introduced_c = tuple(
+            capability
+            for stage in course.grades[-1].teaching_stages
+            for capability in stage)
+        state = replace(
+            state,
+            champions={"A": state.champions["A"]},
+            carried_mastery_debt=("a.0", "b.0", *introduced_c),
+            non_foundational_training_turns_since_foundational_run=8,
+        )
+        scores = {
+            capability: (8, 8)
+            for capability in assessment_capabilities(course, state)
+        }
+        scores["a.0"] = (6, 8)
+        scores["b.0"] = (6, 8)
+        for capability in introduced_c:
+            scores[capability] = (6, 8)
+
+        resumed = assess(course, state, snapshot(course, pointer, scores))
+
+        self.assertEqual((resumed.grade, resumed.stage), ("A", "MAIN"))
+        self.assertEqual(resumed.queue, ("a.0",))
+
+    def test_foundational_rehearsal_resets_its_own_cadence(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = replace(
+            state,
+            non_foundational_training_turns_since_foundational_run=8)
+        state = _enter_grade(
+            course, state, 0, stage="MAIN", first_recovery=(),
+            main_sweep_visited=())
+        state = replace(state, queue=("a.0",))
+
+        finished = visit(course, state, "a.0", pointer)
+
+        self.assertEqual(
+            finished.non_foundational_training_turns_since_foundational_run, 0)
+
     def test_c_frontier_due_b_turn_is_full_imperfect_grade_pass(self):
         course = staged_course()
         state, pointer = enter_c(course)

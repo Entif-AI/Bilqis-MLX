@@ -24,6 +24,49 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_withheld_grade_mean_is_labeled_active_scope_and_qualification_blocked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            partial = exam(
+                "C", 1, "c" * 64,
+                {
+                    "C.COUNT": (31, 33), "C.NUMBER": (33, 33),
+                    "C.SUCCESSOR": (31, 33), "C.ADD": (31, 33),
+                    "C.MUL": (30, 33), "C.DIV": (28, 33),
+                },
+                step=146432, sha="d" * 64)
+            partial["withheld_capabilities"] = ["C.SUB"]
+
+            ingest(board, partial)
+
+            mastery = [row for row in board._section_rows("GRADES & MASTERY")
+                       if row.get("grade") == "C" and row.get("row_type") == "summary"]
+            self.assertEqual(len(mastery), 1)
+            self.assertIn("ACTIVE-SCOPE", mastery[0]["outcome"])
+            self.assertIn("QUALIFICATION BLOCKED", mastery[0]["outcome"])
+            self.assertIn("C.SUB", mastery[0]["outcome"])
+            operator = " ".join(board.operator_lines)
+            self.assertIn("ACTIVE-SCOPE", operator)
+            self.assertIn("QUALIFICATION BLOCKED", operator)
+            self.assertIn("C.SUB", operator)
+
+    def test_promotion_sweep_is_explicit_in_mastery_row_and_operator_summary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            sweeping = exam(
+                "C", 2, "e" * 64,
+                {"C.ADD": (31, 33), "C.SUB": (30, 33)},
+                step=146500, sha="f" * 64)
+            sweeping["phase"] = "PROMOTION_SWEEP"
+
+            ingest(board, sweeping)
+
+            mastery = [row for row in board._section_rows("GRADES & MASTERY")
+                       if row.get("grade") == "C" and row.get("row_type") == "summary"]
+            self.assertEqual(len(mastery), 1)
+            self.assertIn("GRADUATION SWEEP", mastery[0]["outcome"])
+            self.assertIn("GRADUATION SWEEP", " ".join(board.operator_lines))
+
     def test_compact_score_summary_does_not_round_sub_ninety_to_ninety(self):
         progress = SimpleNamespace(
             summary=lambda _label: "x" * 200,

@@ -174,7 +174,7 @@ def test_rehabilitation_supersedes_stale_withheld_alert():
     state, _ = complete_recovery_cycle(
         state, weakest_tail=("C.SUB",),
         scores={"C.SUB": {"correct": 5, "total": 12}}, generation=13)
-    assert end_of_run_alerts(state)[0]["action"] == "WITHHELD_FOR_REMAINDER_OF_SESSION"
+    assert end_of_run_alerts(state)[0]["action"] == "WITHHELD_UNTIL_BOUNDED_REPROBE"
 
     state, _ = stagnation_control.activate_sole_grade_rehabilitation(
         state, capabilities=("C.SUB",), generation=14)
@@ -205,6 +205,76 @@ def test_rehabilitation_exemption_is_limited_to_recorded_debt_capabilities():
         scores={"C.SUB": {"correct": 5, "total": 12}}, generation=24)
     assert quarantined_capabilities(state) == ("C.SUB",)
     assert events[0]["capability"] == "C.SUB"
+
+
+def test_quarantine_gets_one_full_recovery_cycle_cooldown_then_bounded_reprobe():
+    from bilqis_mlx.learning import stagnation_control
+
+    state = session()
+    state["cycle_index"] = 20
+    state["quarantined"] = {
+        "C.SUB": {
+            "capability": "C.SUB",
+            "cycle_index": 20,
+            "reason": "fixture",
+        },
+    }
+    state["alerts"] = [{
+        "capability": "C.SUB",
+        "delivery": "END_OF_RUN_REVIEW",
+        "action": "WITHHELD_UNTIL_BOUNDED_REPROBE",
+        "reason": "fixture",
+        "trigger_generation": 100,
+        "required_mastery_debt": True,
+    }]
+
+    state = begin_recovery_cycle(state, first_recovery=("B.AND",))
+    assert state["cycle_index"] == 21
+    assert stagnation_control.bounded_reprobe_due(state, grade="C") == ()
+
+    state = begin_recovery_cycle(state, first_recovery=("B.AND",))
+    assert state["cycle_index"] == 22
+    assert stagnation_control.bounded_reprobe_due(state, grade="C") == ("C.SUB",)
+
+    state, event = stagnation_control.activate_bounded_reprobe(
+        state, capabilities=("C.SUB",), generation=110)
+    assert quarantined_capabilities(state) == ()
+    assert state["rehabilitation"]["mode"] == "BOUNDED_REPROBE"
+    assert event["event"] == "SCHOOL_STAGNATION_BOUNDED_REPROBE_STARTED"
+    assert end_of_run_alerts(state)[0]["action"] == "RELEASED_FOR_BOUNDED_REPROBE"
+
+
+def test_bounded_reprobe_can_requarantine_after_fresh_two_round_failure():
+    from bilqis_mlx.learning import stagnation_control
+
+    state = session()
+    state["cycle_index"] = 22
+    state["quarantined"] = {
+        "C.SUB": {
+            "capability": "C.SUB", "cycle_index": 20,
+            "reason": "fixture",
+        },
+    }
+    state, _ = stagnation_control.activate_bounded_reprobe(
+        state, capabilities=("C.SUB",), generation=110)
+    state["cycle_first_recovery"] = ["C.SUB"]
+    state["last_progress_elapsed_seconds"]["C.SUB"] = 0.0
+    for phase, generation in (("RECOVERY_1", 111), ("RECOVERY_2", 112)):
+        state = record_visit(
+            state, capability="C.SUB", phase=phase, decision="REJECT",
+            retained_optimizer_updates=0, generation=generation)
+
+    state, events = complete_recovery_cycle(
+        state, weakest_tail=("C.SUB",),
+        scores={"C.SUB": {"correct": 5, "total": 12}}, generation=113,
+        elapsed_seconds=2400.0)
+
+    assert quarantined_capabilities(state) == ("C.SUB",)
+    assert state.get("rehabilitation") is None
+    assert any(event["event"] == "SCHOOL_CAPABILITY_STAGNATION_QUARANTINED"
+               for event in events)
+    assert any(event["event"] == "SCHOOL_STAGNATION_BOUNDED_REPROBE_COMPLETED"
+               for event in events)
 
 
 def test_scope_reconciliation_expands_required_contract_and_resets_cycle_evidence():

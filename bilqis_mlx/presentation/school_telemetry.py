@@ -12,7 +12,12 @@ from typing import Any
 import string
 
 from bilqis_mlx.presentation.spiral_dashboard import Column
-from bilqis_mlx.presentation.operator_status import PROFILE_ADOPTION_EVENTS, apply_profile_adoption, display_metric as _display, notify_grade_admitted
+from bilqis_mlx.presentation.operator_status import (
+    PROFILE_ADOPTION_EVENTS, apply_profile_adoption,
+    display_metric as _display, exam_qualification_display,
+    inventory_scope as _inventory_scope, notify_grade_admitted,
+    withheld_inventory_change_explains as _withheld_inventory_change_explains,
+)
 from ..compatibility.telemetry_events import (
     HISTORICAL_EVENT_KINDS,
     historical_event_grade,
@@ -333,26 +338,6 @@ EVENT_KINDS = {
     "SCHOOL_AUTONOMY_QUALIFIED_VISIT_COMPLETED": "autonomy",
     "SCHOOL_AUTONOMY_TEACHING_RECORDED": "autonomy",
 }
-
-
-def _inventory_scope(scope: str, caps: dict) -> str:
-    """Internal comparison identity for the capability inventory actually scored."""
-    return scope + "|inventory:" + ",".join(sorted(caps))
-
-
-def _withheld_inventory_change_explains(event: dict, grade: str,
-                                        previous, current) -> bool:
-    """Recognize the historical scope-receipt bug caused by withholding."""
-    withheld = {
-        cap for cap in event.get("withheld_capabilities", ())
-        if isinstance(cap, str) and _grade_from_capability(cap, grade) == grade
-    }
-    if not withheld:
-        return False
-    before, after = dict(previous), dict(current)
-    changed = set(before) ^ set(after)
-    return (bool(changed) and changed <= withheld and
-            all(before[cap] == after[cap] for cap in set(before) & set(after)))
 
 
 def _scaled_lr(value: Any) -> str:
@@ -875,7 +860,12 @@ class SchoolTelemetry:
             withheld = tuple(
                 cap for cap in event.get("withheld_capabilities", ())
                 if isinstance(cap, str))
-            if event.get("flash_scheduler_only") is True:
+            phase = event.get("phase", "?")
+            qualification_label, _qualification_banner = exam_qualification_display(
+                g, event, correct, total, live=live)
+            if qualification_label is not None:
+                label = qualification_label
+            elif event.get("flash_scheduler_only") is True:
                 label = f"FLASH SAMPLE {correct}/{total} | NO TITLES"
             elif earned:
                 label = f"TITLE MOVED {len(earned)} | SAMPLE {correct}/{total}"
@@ -915,7 +905,7 @@ class SchoolTelemetry:
             elif correct == total:
                 label = "100% EXAM; GATE PENDING"
             else:
-                label = f"{'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | {event.get('phase', '?')}"
+                label = f"{'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | {phase}"
             self.board.rows["GRADES & MASTERY"].append({
                 "visit": self.visits, "grade": g, "step": step or "-",
                 "attempt": report.generation,
@@ -964,6 +954,12 @@ class SchoolTelemetry:
             self.board.push("system", system_row, redraw=False)
         if target_evaluated:
             self._summary()
+            _label, banner = exam_qualification_display(
+                grade, event,
+                sum(score[0] for score in cohort[grade].values()),
+                sum(score[1] for score in cohort[grade].values()), live=live)
+            if banner is not None:
+                self.board.operator_lines.insert(0, banner)
 
     def _cumulative_exam(self, cohort, rubric, scope, step, phase):
         """Show one checkpoint's complete grade-prefix exam, never summed bests."""

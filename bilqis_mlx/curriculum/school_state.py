@@ -157,6 +157,7 @@ class SchoolState:
     frontier_priority_visits: int = 0
     nongating_b_visits: int = 0
     non_b_training_turns_since_b_run: int = 0
+    non_foundational_training_turns_since_foundational_run: int = 0
 
     @property
     def grade(self) -> str:

@@ -321,8 +321,24 @@ def _advance_stagnation_after_routine(
             progress_checkpoint=progress_checkpoint)
     if (school.stage == "ASSESS_MAIN" and
             routine_advanced.stage == "RECOVERY_1"):
-        stagnation = _learning_stagnation_control.begin_recovery_cycle(
+        candidate_cycle = _learning_stagnation_control.begin_recovery_cycle(
             stagnation, first_recovery=routine_advanced.first_recovery)
+        due = _learning_stagnation_control.bounded_reprobe_due(
+            candidate_cycle, grade=routine_advanced.grade)
+        if due:
+            injected = tuple(dict.fromkeys(
+                (*due[:3], *routine_advanced.first_recovery)))[:3]
+            stagnation = _learning_stagnation_control.begin_recovery_cycle(
+                stagnation, first_recovery=injected)
+            stagnation, reprobe_event = (
+                _learning_stagnation_control.activate_bounded_reprobe(
+                    stagnation, capabilities=tuple(due[:3]),
+                    generation=generation))
+            routine_advanced = _dataclasses.replace(
+                routine_advanced, queue=injected, first_recovery=injected)
+            events = (*events, reprobe_event)
+        else:
+            stagnation = candidate_cycle
     elif school.stage == "ASSESS_RECOVERY_2":
         tail = _curriculum_scheduler.weakest_three(routine_assessment.scores, active_scope)
         stagnation, events = _learning_stagnation_control.complete_recovery_cycle(

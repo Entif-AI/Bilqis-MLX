@@ -18,6 +18,12 @@ RECOVERY_PHASES = ("RECOVERY_1", "RECOVERY_2")
 # mastery debt and repeatedly taught, but it never actuates run containment.
 NON_TERMINAL_STAGNATION_GRADES = frozenset(("B",))
 MINIMUM_NO_PROGRESS_SECONDS = 20 * 60
+BOUNDED_REPROBE_COOLDOWN_CYCLES = 1
+BOUNDED_REPROBE_MODE = "BOUNDED_REPROBE"
+BOUNDED_REPROBE_GRADE_INVALID = "STAGNATION_BOUNDED_REPROBE_GRADE_INVALID"
+BOUNDED_REPROBE_INVALID_START = "STAGNATION_BOUNDED_REPROBE_INVALID_START"
+BOUNDED_REPROBE_REQUIRES_ONE_GRADE = (
+    "STAGNATION_BOUNDED_REPROBE_REQUIRES_ONE_GRADE")
 
 
 def _validate_grace(grace: dict | None) -> None:
@@ -268,7 +274,10 @@ def activate_sole_grade_rehabilitation(
         updated["quarantined"].pop(capability, None)
     for alert in updated["alerts"]:
         if (alert.get("capability") in rehabilitated and
-                alert.get("action") == "WITHHELD_FOR_REMAINDER_OF_SESSION"):
+                alert.get("action") in {
+                    "WITHHELD_FOR_REMAINDER_OF_SESSION",
+                    "WITHHELD_UNTIL_BOUNDED_REPROBE",
+                }):
             alert["action"] = "RELEASED_FOR_SOLE_GRADE_REHABILITATION"
             alert["resolution_generation"] = generation
             alert["resolution_reason"] = "SOLE_REMAINING_GRADE_MASTERY_DEBT"
@@ -288,6 +297,75 @@ def activate_sole_grade_rehabilitation(
         "reason": "SOLE_REMAINING_GRADE_MASTERY_DEBT",
         "quarantine_override": True,
         "required_mastery_debt": True,
+    }
+
+
+def bounded_reprobe_due(control: dict, *, grade: str) -> tuple[str, ...]:
+    """Return current-grade quarantined debt after one full recovery-cycle cooldown."""
+    _validate(control)
+    if not isinstance(grade, str) or not grade:
+        raise ValueError(BOUNDED_REPROBE_GRADE_INVALID)
+    if control.get("rehabilitation") is not None:
+        return ()
+    current_cycle = control["cycle_index"]
+    prefix = grade + "."
+    due = []
+    for capability, evidence in control["quarantined"].items():
+        if not capability.startswith(prefix) or not isinstance(evidence, dict):
+            continue
+        trigger_cycle = evidence.get("cycle_index")
+        if (type(trigger_cycle) is int and
+                current_cycle - trigger_cycle > BOUNDED_REPROBE_COOLDOWN_CYCLES):
+            due.append(capability)
+    return tuple(sorted(due))
+
+
+def activate_bounded_reprobe(
+        control: dict, *, capabilities: tuple[str, ...],
+        generation: int) -> tuple[dict, dict]:
+    """Release quarantined debt for one ordinary recovery cycle, then re-evaluate it."""
+    _validate(control)
+    if (not capabilities or len(set(capabilities)) != len(capabilities) or
+            any(not isinstance(capability, str) or not capability
+                for capability in capabilities) or
+            type(generation) is not int or generation < 0 or
+            control.get("rehabilitation") is not None or
+            not set(capabilities) <= set(control["quarantined"])):
+        raise ValueError(BOUNDED_REPROBE_INVALID_START)
+    grades = {capability.partition(".")[0] for capability in capabilities}
+    if len(grades) != 1:
+        raise ValueError(BOUNDED_REPROBE_REQUIRES_ONE_GRADE)
+    updated = deepcopy(control)
+    released = set(capabilities)
+    for capability in capabilities:
+        updated["quarantined"].pop(capability, None)
+    for alert in updated["alerts"]:
+        if (alert.get("capability") in released and
+                alert.get("action") in {
+                    "WITHHELD_FOR_REMAINDER_OF_SESSION",
+                    "WITHHELD_UNTIL_BOUNDED_REPROBE",
+                }):
+            alert["action"] = "RELEASED_FOR_BOUNDED_REPROBE"
+            alert["resolution_generation"] = generation
+            alert["resolution_reason"] = "BOUNDED_RECOVERY_CYCLE_REPROBE"
+    grade = next(iter(grades))
+    updated["rehabilitation"] = {
+        "mode": BOUNDED_REPROBE_MODE,
+        "grade": grade,
+        "capabilities": list(capabilities),
+        "started_generation": generation,
+        "started_cycle_index": updated["cycle_index"],
+        "reason": "BOUNDED_RECOVERY_CYCLE_REPROBE",
+    }
+    return updated, {
+        "event": "SCHOOL_STAGNATION_BOUNDED_REPROBE_STARTED",
+        "generation": generation,
+        "grade": grade,
+        "capabilities": list(capabilities),
+        "cycle_index": updated["cycle_index"],
+        "cooldown_cycles": BOUNDED_REPROBE_COOLDOWN_CYCLES,
+        "required_mastery_debt": True,
+        "quarantine_override": True,
     }
 
 
@@ -430,6 +508,27 @@ def _stagnation_evidence(control: dict, *, capability: str, score: dict,
     }
 
 
+def _finish_bounded_reprobe(control: dict, rehabilitation: dict,
+                            generation: int, events: list[dict]):
+    if rehabilitation.get("mode") != BOUNDED_REPROBE_MODE:
+        return control, events
+    updated = deepcopy(control)
+    reprobe = set(rehabilitation.get("capabilities", ()))
+    requarantined = tuple(sorted(reprobe & set(updated["quarantined"])))
+    released = tuple(sorted(reprobe - set(updated["quarantined"])))
+    updated.pop("rehabilitation", None)
+    events.append({
+        "event": "SCHOOL_STAGNATION_BOUNDED_REPROBE_COMPLETED",
+        "generation": generation,
+        "grade": rehabilitation["grade"],
+        "capabilities": sorted(reprobe),
+        "released_capabilities": list(released),
+        "requarantined_capabilities": list(requarantined),
+        "required_mastery_debt": bool(requarantined),
+    })
+    return updated, events
+
+
 def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
                             scores: dict[str, dict], generation: int,
                             active_warnings: tuple[dict, ...] = (),
@@ -457,10 +556,11 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
     warning_by_capability = _warning_signals(active_warnings)
     candidates = set(updated["cycle_first_recovery"]) & set(weakest_tail)
     events = []
-    rehabilitation_capabilities = set(
-        (updated.get("rehabilitation") or {}).get("capabilities", ()))
+    rehabilitation = updated.get("rehabilitation") or {}
+    rehabilitation_capabilities = set(rehabilitation.get("capabilities", ()))
+    bounded_reprobe = rehabilitation.get("mode") == BOUNDED_REPROBE_MODE
     for capability in sorted(candidates):
-        if capability in rehabilitation_capabilities:
+        if capability in rehabilitation_capabilities and not bounded_reprobe:
             continue
         if capability in updated["quarantined"]:
             continue
@@ -493,7 +593,7 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
         alert = {
             "capability": capability,
             "delivery": "END_OF_RUN_REVIEW",
-            "action": "WITHHELD_FOR_REMAINDER_OF_SESSION",
+            "action": "WITHHELD_UNTIL_BOUNDED_REPROBE",
             "reason": evidence["reason"],
             "trigger_generation": generation,
             "required_mastery_debt": True,
@@ -505,6 +605,8 @@ def complete_recovery_cycle(control: dict, *, weakest_tail: tuple[str, ...],
             "required_mastery_debt": True,
             "teacher_updates_after_trigger": 0,
         })
+    updated, events = _finish_bounded_reprobe(
+        updated, rehabilitation, generation, events)
     return updated, tuple(events)
 
 

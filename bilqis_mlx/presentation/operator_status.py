@@ -89,6 +89,47 @@ def score_summary(progress, label, width):
     return compact
 
 
+def exam_qualification_display(grade, event, correct, total, *, live):
+    """Return explicit partial/sweep labels for operator-visible exam telemetry."""
+    withheld = tuple(sorted(
+        cap for cap in event.get("withheld_capabilities", ())
+        if isinstance(cap, str) and cap.partition(".")[0] == grade))
+    phase = event.get("phase", "?")
+    if withheld:
+        return (
+            f"ACTIVE-SCOPE {'GENERATED' if live else 'SEALED'} EXAM {correct}/{total} | "
+            f"QUALIFICATION BLOCKED: {', '.join(withheld)}",
+            f"ACTIVE-SCOPE {grade} SCORE ONLY | QUALIFICATION BLOCKED: "
+            f"withheld {', '.join(withheld)}",
+        )
+    if phase in ("PROMOTION_SWEEP", "ASSESS_PROMOTION_SWEEP"):
+        return (
+            f"GRADUATION SWEEP IN PROGRESS | SAMPLE {correct}/{total}",
+            f"GRADUATION SWEEP IN PROGRESS | {grade} stability qualification "
+            "is being rechecked capability-by-capability",
+        )
+    return None, None
+
+
+def inventory_scope(scope: str, caps: dict) -> str:
+    return scope + "|inventory:" + ",".join(sorted(caps))
+
+
+def withheld_inventory_change_explains(event: dict, grade: str,
+                                       previous, current) -> bool:
+    """Recognize an inventory change caused only by explicit withholding."""
+    withheld = {
+        cap for cap in event.get("withheld_capabilities", ())
+        if isinstance(cap, str) and cap.partition(".")[0] == grade
+    }
+    if not withheld:
+        return False
+    before, after = dict(previous), dict(current)
+    changed = set(before) ^ set(after)
+    return (bool(changed) and changed <= withheld and
+            all(before[cap] == after[cap] for cap in set(before) & set(after)))
+
+
 def display_metric(value, *, decimals=3):
     if type(value) in (float, int):
         if value and abs(value) < 0.5 * SCIENTIFIC_NOTATION_BASE ** (-decimals):

@@ -17,6 +17,18 @@ from .program_adoption import (
     append_next_grade, append_next_grade_with_debt, replace_admitted_grade,
     revise_admitted_grade,
 )
+from .foundational_rehearsal import (
+    FOUNDATIONAL_DEBT_RUN_INTERVAL,
+    rehearsal_plan as _foundational_rehearsal_plan,
+)
+from .debt_priority import (
+    NONGATING_DEBT_RUN_INTERVAL,
+    debt_run_due as _b_debt_run_due,
+    debt_run_queue as _b_debt_run_queue,
+    frontier_recovery_queue as _frontier_recovery_queue,
+    imperfect_ranked as _imperfect_ranked,
+    roles as _nongating_debt_priority_roles,
+)
 from .school_state import Assessment, SchoolState, Score, _caps, _program
 import hashlib
 import json
@@ -33,53 +45,6 @@ STAGES = frozenset(("MAIN", "ASSESS_MAIN", "RECOVERY_1", "ASSESS_RECOVERY_1",
                     "ASSESS_PROMOTION_SWEEP", "AWAITING_TEACHER_SOUP",
                     "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT",
                     "WHOLE_SCHOOL_MASTERED", "DEFERRED_STAGNATION"))
-NONGATING_DEBT_RUN_INTERVAL = 4
-NONGATING_PRIORITY_GRADE_COUNT = 3
-
-
-def _nongating_debt_priority_roles(
-        program, state: SchoolState) -> tuple[str, str] | None:
-    """Return the immediate prior debt grade and current progression frontier.
-
-    ADR-094 was introduced while the active pair happened to be B -> C, but
-    SPEC-0001 forbids generic scheduler behavior from depending on letter-grade
-    identity. The policy is structural: the newest active grade owns
-    progression while its immediate predecessor remains nongating mastery debt.
-    """
-    program = _program(program)
-    if len(state.active_grades) < NONGATING_PRIORITY_GRADE_COUNT:
-        return None
-    debt_grade, frontier_grade = state.active_grades[-2:]
-    debt = set(state.carried_mastery_debt)
-    if (not debt & set(_caps(program, (debt_grade,))) or
-            not debt & set(_caps(program, (frontier_grade,)))):
-        return None
-    return debt_grade, frontier_grade
-
-
-def _b_debt_run_due(program, state: SchoolState) -> bool:
-    return (_nongating_debt_priority_roles(program, state) is not None and
-            state.non_b_training_turns_since_b_run >=
-            NONGATING_DEBT_RUN_INTERVAL)
-
-
-def _b_debt_run_queue(program, state: SchoolState,
-                      scores: dict[str, Score],
-                      allowed_capabilities: tuple[str, ...] | None = None
-                      ) -> tuple[str, ...]:
-    """Return every imperfect admitted capability in the nongating debt grade."""
-    roles = _nongating_debt_priority_roles(program, state)
-    if roles is None:
-        return ()
-    debt_grade, _ = roles
-    allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
-    debt = set(state.carried_mastery_debt)
-    return tuple(
-        capability for capability in _caps(program, (debt_grade,))
-        if capability in allowed and capability in debt and
-        capability in scores and not scores[capability].perfect)
-
-
 def _enter_due_b_debt_run(program, state: SchoolState,
                           snapshot: Assessment, *,
                           allowed_capabilities: tuple[str, ...] | None = None,
@@ -100,28 +65,23 @@ def _enter_due_b_debt_run(program, state: SchoolState,
     return replace(entered, queue=queue)
 
 
-def _imperfect_ranked(scores: dict[str, Score],
-                      capabilities: tuple[str, ...]) -> tuple[str, ...]:
-    return tuple(sorted(
-        (capability for capability in capabilities
-         if capability in scores and not scores[capability].perfect),
-        key=lambda capability: (scores[capability].accuracy, capability),
-    ))
-
-
-def _frontier_recovery_queue(program, state: SchoolState,
-                             scores: dict[str, Score],
-                             pool: tuple[str, ...]) -> tuple[str, ...]:
-    """Keep frontier recovery frontier-only; debt gets bounded full turns."""
-    roles = _nongating_debt_priority_roles(program, state)
-    if roles is None:
-        return weakest_three(scores, pool)
-    _, frontier_grade = roles
-    allowed = set(pool)
-    frontier_ranked = _imperfect_ranked(
-        scores, tuple(
-            cap for cap in _caps(program, (frontier_grade,)) if cap in allowed))
-    return frontier_ranked[:3]
+def _enter_due_foundational_rehearsal(
+        program, state: SchoolState, snapshot: Assessment, *,
+        allowed_capabilities: tuple[str, ...] | None = None,
+        reset_sweep: bool = True) -> SchoolState | None:
+    plan = _foundational_rehearsal_plan(
+        program, state, snapshot.scores,
+        allowed_capabilities=allowed_capabilities,
+        priority_active=_nongating_debt_priority_roles(program, state) is not None)
+    if plan is None:
+        return None
+    grade, queue = plan
+    entered = _enter_grade(
+        program, state, state.active_grades.index(grade),
+        stage="MAIN", first_recovery=(),
+        main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
+        latest_rubric_digest=snapshot.rubric_digest)
+    return replace(entered, queue=queue)
 
 
 def migrate_b_full_run_epoch(program, state: SchoolState) -> SchoolState:
@@ -143,6 +103,18 @@ def migrate_b_full_run_epoch(program, state: SchoolState) -> SchoolState:
             stage="MAIN", first_recovery=(), main_sweep_visited=(),
             latest_rubric_digest=migrated.latest_rubric_digest)
     return migrated
+
+
+def migrate_foundational_rehearsal_epoch(program, state: SchoolState) -> SchoolState:
+    """Let legacy long-lived runs immediately reconsider decayed foundations."""
+    program = _program(program)
+    if _nongating_debt_priority_roles(program, state) is None:
+        return replace(
+            state, non_foundational_training_turns_since_foundational_run=0)
+    return replace(
+        state,
+        non_foundational_training_turns_since_foundational_run=
+        FOUNDATIONAL_DEBT_RUN_INTERVAL)
 
 
 def migrate_c_frontier_priority_epoch(program, state: SchoolState) -> SchoolState:
@@ -328,7 +300,9 @@ def verify_state(program, state: SchoolState):
             type(state.nongating_b_visits) is not int or
             state.nongating_b_visits < 0 or
             type(state.non_b_training_turns_since_b_run) is not int or
-            state.non_b_training_turns_since_b_run < 0):
+            state.non_b_training_turns_since_b_run < 0 or
+            type(state.non_foundational_training_turns_since_foundational_run) is not int or
+            state.non_foundational_training_turns_since_foundational_run < 0):
         raise ValueError("INVALID_SCHOOL_COUNTER")
     frontiers = state.introduction_frontiers
     grade_lookup = {grade.id: grade for grade in program.grades}
@@ -397,6 +371,8 @@ def visit(program, state: SchoolState, capability: str,
     frontier_priority_visits = state.frontier_priority_visits
     nongating_b_visits = state.nongating_b_visits
     non_b_training_turns_since_b_run = state.non_b_training_turns_since_b_run
+    foundational_turns = state.non_foundational_training_turns_since_foundational_run
+    foundational_grades = set(state.active_grades[:-2])
     roles = _nongating_debt_priority_roles(program, state)
     if roles is not None:
         debt_grade, frontier_grade = roles
@@ -409,6 +385,12 @@ def visit(program, state: SchoolState, capability: str,
                 non_b_training_turns_since_b_run = 0
             else:
                 non_b_training_turns_since_b_run += 1
+            if state.grade in foundational_grades:
+                foundational_turns = 0
+            else:
+                foundational_turns += 1
+    elif not rest and state.grade in foundational_grades:
+        foundational_turns = 0
     if state.stage == "PROMOTION_SWEEP":
         after = "ASSESS_PROMOTION_SWEEP"
     else:
@@ -419,7 +401,9 @@ def visit(program, state: SchoolState, capability: str,
                    frontier_priority_visits=frontier_priority_visits,
                    nongating_b_visits=nongating_b_visits,
                    non_b_training_turns_since_b_run=(
-                       non_b_training_turns_since_b_run))
+                       non_b_training_turns_since_b_run),
+                   non_foundational_training_turns_since_foundational_run=(
+                       foundational_turns))
 
 
 def require_assessment_after_flash(program, state: SchoolState) -> SchoolState:
@@ -491,6 +475,12 @@ def _resume_ordinary_spiral(program, state: SchoolState,
     roles = _nongating_debt_priority_roles(program, state)
     if roles is not None:
         _, frontier_grade = roles
+        foundational = _enter_due_foundational_rehearsal(
+            program, state, snapshot,
+            allowed_capabilities=allowed_capabilities,
+            reset_sweep=reset_sweep)
+        if foundational is not None:
+            return foundational
         due_b = _enter_due_b_debt_run(
             program, state, snapshot,
             allowed_capabilities=allowed_capabilities,
@@ -546,6 +536,12 @@ def _continue_main_sweep(program, state: SchoolState,
     roles = _nongating_debt_priority_roles(program, state)
     if roles is not None:
         _, frontier_grade = roles
+        foundational = _enter_due_foundational_rehearsal(
+            program, state, snapshot,
+            allowed_capabilities=allowed_capabilities,
+            reset_sweep=False)
+        if foundational is not None:
+            return foundational
         due_b = _enter_due_b_debt_run(
             program, state, snapshot,
             allowed_capabilities=allowed_capabilities,
@@ -1139,6 +1135,8 @@ def read_state(path: Path, program) -> SchoolState:
     raw["main_sweep_visited"] = tuple(raw.get("main_sweep_visited", ()))
     raw["carried_mastery_debt"] = tuple(raw.get("carried_mastery_debt", ()))
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in raw
+    legacy_foundational_rehearsal_epoch = (
+        "non_foundational_training_turns_since_foundational_run" not in raw)
     raw["promotion_sweep_scope"] = tuple(raw.get("promotion_sweep_scope", ()))
     raw["promotion_sweep_return_stage"] = raw.get(
         "promotion_sweep_return_stage")
@@ -1147,6 +1145,8 @@ def read_state(path: Path, program) -> SchoolState:
         for capability, correct, total in raw.get("promotion_sweep_scores", ()))
     raw["non_b_training_turns_since_b_run"] = raw.get(
         "non_b_training_turns_since_b_run", 0)
+    raw["non_foundational_training_turns_since_foundational_run"] = raw.get(
+        "non_foundational_training_turns_since_foundational_run", 0)
     raw["introduction_frontiers"] = tuple(
         (grade, stage) for grade, stage in raw.get("introduction_frontiers", ()))
     raw["current_student"] = Checkpoint(**raw["current_student"])
@@ -1155,6 +1155,8 @@ def read_state(path: Path, program) -> SchoolState:
     result = SchoolState(**raw)
     if legacy_b_full_run_epoch:
         result = migrate_b_full_run_epoch(program, result)
+    if legacy_foundational_rehearsal_epoch:
+        result = migrate_foundational_rehearsal_epoch(program, result)
     verify_state(program, result)
     return result
 
