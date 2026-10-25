@@ -1,14 +1,14 @@
 {
-  "canonical_sha256": "efb4fffc91276bb80273f61b7bd6c661a784f962adaad559da86f589cd48cb35",
-  "emitted_resources": 4331,
+  "canonical_sha256": "8a4e535e36d8a71cfba6f5afdc2f542d12451b5dbe537950b8a0ed329ceb61e0",
+  "emitted_resources": 4613,
   "ledger_dispositions": {
-    "EMITTED": 4342,
+    "EMITTED": 4624,
     "HELD": 500,
-    "IR_ONLY": 8284,
+    "IR_ONLY": 8815,
     "REJECTED": 0,
     "UNSUPPORTED": 1917
   },
-  "resolved_resources": 4720,
-  "semantic_rows": 4842,
-  "triple_count": 32706
+  "resolved_resources": 5002,
+  "semantic_rows": 5124,
+  "triple_count": 34723
 }

@@ -103,11 +103,23 @@ def validate_semantic_invariants(
                 row[config["parent_key"]]: row
                 for row in loaded.table(config["parent"]).rows
             }
+            locus_fields = config.get("locus_fields", [])
+            source_loci = {
+                tuple(row[field] for field in locus_fields)
+                for row in parents.values()
+            }
             for child_name in config["children"]:
                 for row in loaded.table(child_name).rows:
                     parent = parents.get(row[config["parent_key"]])
                     if parent is None:
                         continue
+                    if tuple(row[field] for field in locus_fields) not in source_loci:
+                        findings.append(finding(
+                            config["reason_code"], child_name,
+                            key=row[config["parent_key"]], field=",".join(locus_fields),
+                            locus=f"row={row.fingerprint}",
+                            details=("observation does not match a declared source locus",),
+                        ))
                     for field in config["equal_fields"]:
                         if row[field] != parent[field]:
                             findings.append(

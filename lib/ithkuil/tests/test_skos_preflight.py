@@ -317,6 +317,29 @@ class PreflightContractTests(unittest.TestCase):
             self.assert_finding(preflight(root), "lexicon_parent_binding")
         finally:
             temp.cleanup()
+    def test_repeated_root_keeps_its_later_observation_locus(self):
+        closure = preflight(SOURCE_ROOT).require_valid()
+        parent = next(row for row in closure.table("lexicon_roots").rows if row["root_form_raw"] == "-ŠMW-")
+        sense = next(row for row in closure.table("lexicon_root_senses").rows
+                     if row["root_form_raw"] == "-ŠMW-" and row["lexicon_chapter"] == "5")
+        self.assertEqual(parent["lexicon_chapter"], "2")
+        self.assertEqual(sense["lexicon_root_id"], parent["lexicon_root_id"])
+        self.assertEqual(sense["tracked_pdf_name"], "New Ithkuil Lexicon - Chapter 05 - Miscellaneous Entities.pdf")
+        self.assertEqual(sense["source_pdf_page"], "5")
+    def test_repeated_root_rejects_an_unbound_observation_artifact(self):
+        temp, root = self.clone()
+        try:
+            def drift(rows):
+                row = next(row for row in rows if row["root_form_raw"] == "-ŠMW-" and row["lexicon_chapter"] == "5")
+                row["tracked_pdf_sha256"] = "0" * 64
+            self.mutate_dict_rows(root, "lexicon_root_senses", drift)
+            result = preflight(root)
+            self.assertTrue(any(finding.code == "LEXICON_PARENT_BINDING_CONFLICT"
+                                and finding.table == "lexicon_root_senses"
+                                and "tracked_pdf_sha256" in finding.field for finding in result.findings))
+            self.assertIsNone(result.closure)
+        finally:
+            temp.cleanup()
     def test_row_reordering_preserves_exact_normalized_closure(self):
         expected = preflight(SOURCE_ROOT).require_valid()
         temp, root = self.clone()

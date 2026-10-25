@@ -15,7 +15,7 @@ from . import build_lexicon_chapters as legacy
 
 ROOT=legacy.ROOT
 PINS=Path(__file__).with_name('lexicon_frontier_pins.json')
-VERSION='1.0.3'
+VERSION='1.0.4'
 
 
 def structural_sense_id(form,stem,specification):

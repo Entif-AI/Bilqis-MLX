@@ -219,7 +219,7 @@ def _validate_raw_manifest(raw: dict) -> None:
                 _manifest_error("semantic_invariant_table", name)
             _require_fields(
                 set(by_name[parent]["columns"]),
-                [parent_key, *item.get("equal_fields", [])],
+                [parent_key, *item.get("equal_fields", []), *item.get("locus_fields", [])],
                 f"{name}:parent_fields",
             )
             for child in children:
@@ -227,7 +227,7 @@ def _validate_raw_manifest(raw: dict) -> None:
                     _manifest_error("semantic_invariant_table", name, str(child))
                 _require_fields(
                     set(by_name[child]["columns"]),
-                    [parent_key, *item.get("equal_fields", [])],
+                    [parent_key, *item.get("equal_fields", []), *item.get("locus_fields", [])],
                     f"{name}:child_fields",
                 )
     if len(raw.get("reason_codes", [])) != len(set(raw.get("reason_codes", []))):

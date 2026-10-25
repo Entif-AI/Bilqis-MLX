@@ -71,7 +71,11 @@ are retained as source locators, not reused as semantic IRI keys.
 Source/section and source/table foreign keys are checked together. A source record
 may refer to a table from another section of the same document where the source
 does so; the compiler does not invent a section-equality rule. Lexicon children must
-agree with their referenced root's source, chapter, section and split-PDF binding.
+agree with their referenced root's form and canonical source identity. Each
+observation's source, chapter, section and split-PDF tuple must match a source
+locus declared by the root corpus. A repeated root can therefore retain its
+earliest stable root row while later senses/evidence preserve their actual
+chapter and artifact. Unknown or mixed source-locus tuples fail preflight.
 `source_manifest` owns source IDs. Workbook tabs do not become semantic sources.
 
 The existing extraction validator requires cached raw downloads and serves a

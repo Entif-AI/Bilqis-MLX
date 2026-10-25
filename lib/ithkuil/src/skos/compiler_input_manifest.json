@@ -1008,6 +1008,10 @@
       "equal_fields": [
         "root_form_raw",
         "source_id",
+        "source_url"
+      ],
+      "locus_fields": [
+        "source_id",
         "source_url",
         "tracked_pdf_name",
         "tracked_pdf_sha256",

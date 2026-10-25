@@ -61,7 +61,19 @@
       "sha256": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30",
       "canonical_page_start": 245,
       "page_count": 16,
-      "format": "PDF 1.3"
+      "format": "PDF 1.3",
+      "canonical_page_text_variants": {
+        "2": {"tracked_sha256": "7efba43110ab37e23deb7a4977a34a92b78ce09de0ce1e2fc4ca6bf2ef4c16c6", "canonical_sha256": "e43245866031b8c3114c3b2903f8c449279e3950512aa90946c5c05fdb9c3d23"},
+        "3": {"tracked_sha256": "4573d348306ba28db63915db49b0726075c6903242225ed72b70262942e4914d", "canonical_sha256": "88804c70f16f37b57710abe41c72c1f1528dfb5c278292a5cdaf3b63eb502e49"},
+        "4": {"tracked_sha256": "97aaeedad5d5310c26f8032d370e750798872d21cd3218830f2d59fb56ef06db", "canonical_sha256": "2aae0c9f1a60bc21bab537e8a3e5d7f50963a6305f20911bf9009e5c57733465"},
+        "5": {"tracked_sha256": "aaa205c6dc24cd35b38c81faff21d8cd92ace585c775517372f5e83d72e6a361", "canonical_sha256": "c62d5601350eff9373e1a467b2ff9bd7bb2c71b5a79377eea971dd52b84be5fb"},
+        "7": {"tracked_sha256": "4ae4c3851a8fb517c6047e4c8d23d7e87f5195e9725e39f38294add8c861e21e", "canonical_sha256": "5dadc7388862acfdaac5faa8b6a5804a2a45112169778b7a993f5c654785461b"},
+        "9": {"tracked_sha256": "589a4816d54845c73e5d1011a029dc095fedcc7c0f8081a2f9a2dd2c070997a8", "canonical_sha256": "b8bb0a2a6c943d8a29fbb0a163c6b067eb53d42c69ea1fc5b9c22e90c5e0d007"},
+        "11": {"tracked_sha256": "5535e6000d7869096f68a6bd165fd4b77c9c39d4ec446acdd0ea0788c98ecc5d", "canonical_sha256": "fddc436e811fa7b76a7cfad446e371b72ee48eaf1bb04909a260092bba129213"},
+        "14": {"tracked_sha256": "6b1a74bf8cfe90d72096ad8d8ceb7f272a863f8d34ceed9004a8803e90c9b2cb", "canonical_sha256": "5ae60c507348323ef97c2201c2c174be4dda3ab04b0b4f4492d0af77e3753e26"},
+        "15": {"tracked_sha256": "a290303ce5e6f5cb8c15195027c90ac8db545fbbbbbc5fec61c71e52eeec7b0a", "canonical_sha256": "84eb67cc2ba315b9cfc4956972a4ae9f6bc48684979f221331386124e809920c"},
+        "16": {"tracked_sha256": "90fc7b70a3e089b62aa10d2e155193686501fee6354ac0d7517c70e4a5bf1c1d", "canonical_sha256": "57fec0d864a41e06bfb3a6ecdd8b0d96e0de2a79ed2af1c1deb9ec3ec9ca7a7e"}
+      }
     },
     "6": {
       "filename": "New Ithkuil Lexicon - Chapter 06 - Nature, Non-Biological.pdf",
@@ -109,6 +121,25 @@
           "tracked_sha256": "15bc3bac82b7122f476bdac8d824eaebd34a071017afd3db34bb60470f9e9703",
           "canonical_sha256": "27f27774a14a283642c3eb4324902ad21366e77a5edfd0925a2f4b1d0dcaa8f6"
         }
+      }
+    },
+    "5": {
+      "filename": "New Ithkuil Lexicon - Chapter 05 - Miscellaneous Entities.pdf",
+      "sha256": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30",
+      "canonical_page_start": 245,
+      "page_count": 16,
+      "format": "PDF 1.3",
+      "canonical_page_text_variants": {
+        "2": {"tracked_sha256": "7efba43110ab37e23deb7a4977a34a92b78ce09de0ce1e2fc4ca6bf2ef4c16c6", "canonical_sha256": "e43245866031b8c3114c3b2903f8c449279e3950512aa90946c5c05fdb9c3d23"},
+        "3": {"tracked_sha256": "4573d348306ba28db63915db49b0726075c6903242225ed72b70262942e4914d", "canonical_sha256": "88804c70f16f37b57710abe41c72c1f1528dfb5c278292a5cdaf3b63eb502e49"},
+        "4": {"tracked_sha256": "97aaeedad5d5310c26f8032d370e750798872d21cd3218830f2d59fb56ef06db", "canonical_sha256": "2aae0c9f1a60bc21bab537e8a3e5d7f50963a6305f20911bf9009e5c57733465"},
+        "5": {"tracked_sha256": "aaa205c6dc24cd35b38c81faff21d8cd92ace585c775517372f5e83d72e6a361", "canonical_sha256": "c62d5601350eff9373e1a467b2ff9bd7bb2c71b5a79377eea971dd52b84be5fb"},
+        "7": {"tracked_sha256": "4ae4c3851a8fb517c6047e4c8d23d7e87f5195e9725e39f38294add8c861e21e", "canonical_sha256": "5dadc7388862acfdaac5faa8b6a5804a2a45112169778b7a993f5c654785461b"},
+        "9": {"tracked_sha256": "589a4816d54845c73e5d1011a029dc095fedcc7c0f8081a2f9a2dd2c070997a8", "canonical_sha256": "b8bb0a2a6c943d8a29fbb0a163c6b067eb53d42c69ea1fc5b9c22e90c5e0d007"},
+        "11": {"tracked_sha256": "5535e6000d7869096f68a6bd165fd4b77c9c39d4ec446acdd0ea0788c98ecc5d", "canonical_sha256": "fddc436e811fa7b76a7cfad446e371b72ee48eaf1bb04909a260092bba129213"},
+        "14": {"tracked_sha256": "6b1a74bf8cfe90d72096ad8d8ceb7f272a863f8d34ceed9004a8803e90c9b2cb", "canonical_sha256": "5ae60c507348323ef97c2201c2c174be4dda3ab04b0b4f4492d0af77e3753e26"},
+        "15": {"tracked_sha256": "a290303ce5e6f5cb8c15195027c90ac8db545fbbbbbc5fec61c71e52eeec7b0a", "canonical_sha256": "84eb67cc2ba315b9cfc4956972a4ae9f6bc48684979f221331386124e809920c"},
+        "16": {"tracked_sha256": "90fc7b70a3e089b62aa10d2e155193686501fee6354ac0d7517c70e4a5bf1c1d", "canonical_sha256": "57fec0d864a41e06bfb3a6ecdd8b0d96e0de2a79ed2af1c1deb9ec3ec9ca7a7e"}
       }
     }
   }

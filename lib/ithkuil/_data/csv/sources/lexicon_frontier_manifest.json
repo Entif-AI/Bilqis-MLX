@@ -1,7 +1,8 @@
 {
   "admitted_chapters": [
     "3",
-    "4"
+    "4",
+    "5"
   ],
   "chapter_receipts": {
     "3": {
@@ -29,8 +30,8 @@
       "parser": {
         "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
         "pymupdf_version": "1.27.2.3",
-        "sha256": "e043b564cd68cf38a98fb779379b1c69de6b7ab6fb4d45eac755315aa6538c37",
-        "version": "1.0.3"
+        "sha256": "e5960cc4da90773fcc14f82fe99dbd0016f114704d2b85ed0edaf7cddad4d2c5",
+        "version": "1.0.4"
       },
       "schema": "bilqis.ithkuil.chapter-extraction/v1",
       "source": {
@@ -90,8 +91,8 @@
       "parser": {
         "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
         "pymupdf_version": "1.27.2.3",
-        "sha256": "e043b564cd68cf38a98fb779379b1c69de6b7ab6fb4d45eac755315aa6538c37",
-        "version": "1.0.3"
+        "sha256": "e5960cc4da90773fcc14f82fe99dbd0016f114704d2b85ed0edaf7cddad4d2c5",
+        "version": "1.0.4"
       },
       "schema": "bilqis.ithkuil.chapter-extraction/v1",
       "source": {
@@ -260,12 +261,125 @@
         "page_count": 130,
         "sha256": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34"
       }
+    },
+    "5": {
+      "accounting_sha256": "27ffdc66a553b228bd7c66ae8d0066060eac5d5f39d896e4276c16dbe32e3930",
+      "chapter": "5",
+      "counts": {
+        "evidence": 531,
+        "parsed_sense_observations": 32,
+        "roots": 257,
+        "roots_without_senses": 246,
+        "senses": 32,
+        "source_observations": 502,
+        "unique_sense_coordinates": 32
+      },
+      "dispositions": {
+        "DEBT_CONFLICT": 8,
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 430,
+        "DEBT_UNSUPPORTED_SHAPE": 32,
+        "PARSED": 32
+      },
+      "output_sha256": {
+        "lexicon_root_evidence.csv": "515bc3e7276bf05b9a8468fe93057541249e461d973507ed5a35dcfefaf73f61",
+        "lexicon_root_senses.csv": "9f66af4a89a1204e50978be13037c56bd899119d1c8f99dc8652b6aa58e1e862",
+        "lexicon_roots.csv": "7975d40bc66240df938e34dfbb361f57f48627eca0efcfec6bde9aa0975c1a2e"
+      },
+      "parser": {
+        "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "pymupdf_version": "1.27.2.3",
+        "sha256": "e5960cc4da90773fcc14f82fe99dbd0016f114704d2b85ed0edaf7cddad4d2c5",
+        "version": "1.0.4"
+      },
+      "schema": "bilqis.ithkuil.chapter-extraction/v1",
+      "source": {
+        "canonical_page_start": 245,
+        "canonical_page_text_variant_pages": [
+          "2",
+          "3",
+          "4",
+          "5",
+          "7",
+          "9",
+          "11",
+          "14",
+          "15",
+          "16"
+        ],
+        "canonical_page_text_variants": {
+          "11": {
+            "canonical_sha256": "fddc436e811fa7b76a7cfad446e371b72ee48eaf1bb04909a260092bba129213",
+            "tracked_sha256": "5535e6000d7869096f68a6bd165fd4b77c9c39d4ec446acdd0ea0788c98ecc5d"
+          },
+          "14": {
+            "canonical_sha256": "5ae60c507348323ef97c2201c2c174be4dda3ab04b0b4f4492d0af77e3753e26",
+            "tracked_sha256": "6b1a74bf8cfe90d72096ad8d8ceb7f272a863f8d34ceed9004a8803e90c9b2cb"
+          },
+          "15": {
+            "canonical_sha256": "84eb67cc2ba315b9cfc4956972a4ae9f6bc48684979f221331386124e809920c",
+            "tracked_sha256": "a290303ce5e6f5cb8c15195027c90ac8db545fbbbbbc5fec61c71e52eeec7b0a"
+          },
+          "16": {
+            "canonical_sha256": "57fec0d864a41e06bfb3a6ecdd8b0d96e0de2a79ed2af1c1deb9ec3ec9ca7a7e",
+            "tracked_sha256": "90fc7b70a3e089b62aa10d2e155193686501fee6354ac0d7517c70e4a5bf1c1d"
+          },
+          "2": {
+            "canonical_sha256": "e43245866031b8c3114c3b2903f8c449279e3950512aa90946c5c05fdb9c3d23",
+            "tracked_sha256": "7efba43110ab37e23deb7a4977a34a92b78ce09de0ce1e2fc4ca6bf2ef4c16c6"
+          },
+          "3": {
+            "canonical_sha256": "88804c70f16f37b57710abe41c72c1f1528dfb5c278292a5cdaf3b63eb502e49",
+            "tracked_sha256": "4573d348306ba28db63915db49b0726075c6903242225ed72b70262942e4914d"
+          },
+          "4": {
+            "canonical_sha256": "2aae0c9f1a60bc21bab537e8a3e5d7f50963a6305f20911bf9009e5c57733465",
+            "tracked_sha256": "97aaeedad5d5310c26f8032d370e750798872d21cd3218830f2d59fb56ef06db"
+          },
+          "5": {
+            "canonical_sha256": "c62d5601350eff9373e1a467b2ff9bd7bb2c71b5a79377eea971dd52b84be5fb",
+            "tracked_sha256": "aaa205c6dc24cd35b38c81faff21d8cd92ace585c775517372f5e83d72e6a361"
+          },
+          "7": {
+            "canonical_sha256": "5dadc7388862acfdaac5faa8b6a5804a2a45112169778b7a993f5c654785461b",
+            "tracked_sha256": "4ae4c3851a8fb517c6047e4c8d23d7e87f5195e9725e39f38294add8c861e21e"
+          },
+          "9": {
+            "canonical_sha256": "b8bb0a2a6c943d8a29fbb0a163c6b067eb53d42c69ea1fc5b9c22e90c5e0d007",
+            "tracked_sha256": "589a4816d54845c73e5d1011a029dc095fedcc7c0f8081a2f9a2dd2c070997a8"
+          }
+        },
+        "canonical_pages": [
+          245,
+          246,
+          247,
+          248,
+          249,
+          250,
+          251,
+          252,
+          253,
+          254,
+          255,
+          256,
+          257,
+          258,
+          259,
+          260
+        ],
+        "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+        "comparison": "normalized-page-text-exact-with-pinned-variants",
+        "filename": "New Ithkuil Lexicon - Chapter 05 - Miscellaneous Entities.pdf",
+        "format": "PDF 1.3",
+        "min_text_similarity": 0.9959432048681541,
+        "page_count": 16,
+        "sha256": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30"
+      }
     }
   },
   "counts": {
-    "lexicon_root_evidence": 2853,
-    "lexicon_root_senses": 2526,
-    "lexicon_roots": 1344
+    "lexicon_root_evidence": 3384,
+    "lexicon_root_senses": 2558,
+    "lexicon_roots": 1594
   },
   "legacy_chapters": [
     "1",
@@ -277,10 +391,10 @@
     "lexicon_roots.csv": "7cdb5df8266c7c8b815392cf3333fc5e3d05876b1c79277494c925e24559e0cc"
   },
   "output_sha256": {
-    "lexicon_root_evidence.csv": "b20df4f9c22dd657892348916c27ffb79294b5629c6def042c117ac631c7b831",
-    "lexicon_root_senses.csv": "42f662ea416c511ec34b3951273855550f6290520e49c6fd090581b07fdb602f",
-    "lexicon_roots.csv": "c65922a0fb1edb8000f64b379c1a75adffefb192a30ca925ca50581ab180b117",
-    "sources/lexicon_split_provenance.csv": "2d2b249cd1f9d0730c590e189f5b4a88e37f5b8933867d8b1785d5e26c27816a"
+    "lexicon_root_evidence.csv": "1816e25d3a6cfd7f9653450f0115c2e3a4992481ac74b32d59f4cc0c6cf56268",
+    "lexicon_root_senses.csv": "13eb850624ab51fb8e63b59df8ac303e099d6a0118dab6dababfdcb84820e983",
+    "lexicon_roots.csv": "1477473d29fa860c167d43a17bca992dd0150ccfe1b844d7d9d52c88f20e7832",
+    "sources/lexicon_split_provenance.csv": "ad6ebbac2c58a1bf91444590884d19113133310dece53ced417b414e94f7b798"
   },
   "schema": "bilqis.ithkuil.lexicon-frontier/v1"
 }
