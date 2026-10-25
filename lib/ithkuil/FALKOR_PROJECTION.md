@@ -257,3 +257,38 @@ canonical-mutation/graph-drift/query-failure/incomplete-state fixtures. Full-cur
 corpus proof uses eleven literal expectations derived offline from the canonical
 RDF artifact, not copied from live query output. All eleven pass while coverage
 remains partial; current held mappings remain absent.
+
+## Bounded Akasha-facing read path (#79)
+
+`akasha_skos.AkashaSkosClient` selects one explicit graph/owner and complete
+materialization receipt. It provides a typed-notation journey to an explicitly
+expected Concept IRI, schemes, family collections, and available direct semantic
+or mapping neighbors. Every returned identity/result is checked against canonical
+RDF and the independently revalidated materialization receipt. Candidate lists are
+preserved; a notation match does not authorize identity merging. A notation-bearing
+root resource cannot be silently promoted into a Concept by this adapter.
+
+```sh
+python3 -B -m lib.ithkuil.src.skos.akasha_skos \
+  --graph EXPLICIT_GRAPH --owner EXPLICIT_OWNER \
+  --receipt materialization.json --bundle PATH/TO/CONFORMANCE-BUNDLE \
+  --suite PATH/TO/PINNED-SMOKE-SUITE \
+  --notation EXACT_UTF8_FORM --datatype EXACT_NOTATION_DATATYPE \
+  --expected-iri EXACT_CANONICAL_CONCEPT_IRI
+```
+
+The adapter exposes no semantic writer, model inference, embeddings, curriculum
+selection or broader Akasha product redesign. Every graph operation in the read
+journey uses `GRAPH.RO_QUERY`. Missing graph/concept, graph-owner mismatch,
+ambiguous markers, incomplete/stale receipt, changed canonical digest and divergent
+readback fail explicitly. There is no generic/default-graph fallback.
+
+The live fixture uses a temporary Redis ACL credential with access only to the
+selected graph key and read commands. Its successful `∅` journey returns the
+literal TEST/A identity, fixture family, secondary scheme and reviewed close/related
+neighbors at canonical digest
+`f1861614be87247978c4ac44eae646de9c0e110a046c0afde3234f238ecce015`.
+The server denies both `GRAPH.QUERY` and reads of unrelated graph keys. The credential
+is removed after the test and never printed or persisted; SSH credentials are not
+read or changed. Exact owned projection contents remain unchanged. This is a
+bounded adapter/consumer proof, not a claim of production Akasha deployment.
