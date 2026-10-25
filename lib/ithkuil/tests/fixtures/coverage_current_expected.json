@@ -1,0 +1,70 @@
+{
+  "schema": "bilqis.skos.coverage-current-fixture/v1",
+  "build_status": "partial",
+  "canonical_rdf": {
+    "sha256": "a81a1ec6d5f48e297eaa6901a2f1d609711777f5d2bc35f57f01103d6983ed7e",
+    "triple_count": 77614
+  },
+  "profile_sha256": "7945757f24d5104d52a0880bd6694c7be453ba225e0c7dc73de8b596bbcbb821",
+  "totals": {
+    "source_rows": 9654,
+    "dispositions": {
+      "EMITTED": 8452,
+      "HELD": 1051,
+      "REJECTED": 1,
+      "UNSUPPORTED": 0,
+      "IR_ONLY": 150
+    }
+  },
+  "inputs": {
+    "atomic": "02a833abc5a116bd651bf50da3c94ef995610612c94c09d31f26cd7d8a6eb540",
+    "lexicon": "44729079821ffbe6ab3adf5bd501e8a9123468f0cfc4104f434f01b0ac04d036",
+    "mapping": "2e55e16fe287afa36707cc6c6c84901b33d6d8e26673a1cc6af12c819c6658e9",
+    "residue": "198cc83edc44d2804016193ea97f85d269e5ce133cd0b9dd2b4ae343eafae3dd"
+  },
+  "domains": {
+    "atomic": {
+      "source_rows": 772,
+      "dispositions": {"EMITTED": 272, "HELD": 500, "REJECTED": 0, "UNSUPPORTED": 0, "IR_ONLY": 0},
+      "semantic_counts": {"concepts": 104, "roots": 157, "senses": 0, "mappings": 0, "compositions": 0, "allomorphs": 0},
+      "notation_counts": {
+        "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code": 104,
+        "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil": 272
+      },
+      "frontier_debt": []
+    },
+    "lexicon": {
+      "source_rows": 2268,
+      "dispositions": {"EMITTED": 2118, "HELD": 0, "REJECTED": 0, "UNSUPPORTED": 0, "IR_ONLY": 150},
+      "semantic_counts": {"concepts": 0, "roots": 503, "senses": 1615, "mappings": 0, "compositions": 0, "allomorphs": 0},
+      "notation_counts": {
+        "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil": 503
+      },
+      "frontier_debt": [
+        {"code": "LEXICON_OUTSIDE_TRACKED_FRONTIER", "count": 2, "blocking": false},
+        {"code": "LEXICON_ROOTS_ZERO_PARSED_SENSES", "count": 219, "blocking": false}
+      ],
+      "corrected_graph_sha256": "5446888f0987c8d4465608028028dd2dfd602301f7426f86abee0a2dba32eb33",
+      "corrected_graph_triples": 21387,
+      "corrected_receipt_sha256": "943b066ce88ab5a49ac4abce8f1f30d641ebf38a6fa5d48525063b8c2a7741be"
+    },
+    "residue": {
+      "source_rows": 6062,
+      "dispositions": {"EMITTED": 6062, "HELD": 0, "REJECTED": 0, "UNSUPPORTED": 0, "IR_ONLY": 0},
+      "semantic_counts": {"concepts": 0, "roots": 0, "senses": 0, "mappings": 0, "compositions": 1917, "allomorphs": 19},
+      "notation_counts": {},
+      "frontier_debt": [],
+      "graph_sha256": "f9aaa79e9839c68b1973546002ce8674d70836c9873a5b0cf7c2bbe6365f8bee",
+      "graph_triples": 54271
+    },
+    "mapping": {
+      "source_rows": 552,
+      "dispositions": {"EMITTED": 0, "HELD": 551, "REJECTED": 1, "UNSUPPORTED": 0, "IR_ONLY": 0},
+      "semantic_counts": {"concepts": 0, "roots": 0, "senses": 0, "mappings": 0, "compositions": 0, "allomorphs": 0},
+      "notation_counts": {},
+      "frontier_debt": [
+        {"code": "MAPPING_SEMANTIC_REVIEW_REQUIRED", "count": 552, "blocking": false}
+      ]
+    }
+  }
+}

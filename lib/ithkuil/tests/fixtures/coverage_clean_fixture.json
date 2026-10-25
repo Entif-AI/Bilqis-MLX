@@ -1,0 +1,25 @@
+{
+  "schema": "bilqis.skos.coverage-clean-fixture/v1",
+  "profile_version": "fixture-profile/1",
+  "profile_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "expected_canonical_sha256": "64a084ddf108eba38205905d8015e6f3c50e191f42ff8fa5ccd9f441c6e07008",
+  "expected_triple_count": 4,
+  "inputs": [
+    {"domain": "atomic", "artifact": "atomic-clean", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    {"domain": "lexicon", "artifact": "lexicon-clean", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+    {"domain": "mapping", "artifact": "mapping-clean", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+    {"domain": "residue", "artifact": "residue-clean", "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"}
+  ],
+  "rows": {
+    "atomic": {"table": "morphemes_atomic", "key": "ATOM-CLEAN", "semantic_iri": "urn:clean:atomic"},
+    "lexicon": {"table": "lexicon_roots", "key": "LEXROOT-CLEAN", "semantic_iri": "urn:clean:lexicon"},
+    "mapping": {"table": "mapping_crosswalk", "key": "MAP-CLEAN", "semantic_iri": "urn:clean:mapping"},
+    "residue": {"table": "morpheme_compositions", "key": "COMP-CLEAN", "semantic_iri": "urn:clean:residue"}
+  },
+  "triples": [
+    ["urn:clean:atomic", "urn:clean:p", "atomic"],
+    ["urn:clean:lexicon", "urn:clean:p", "lexicon"],
+    ["urn:clean:mapping", "urn:clean:p", "mapping"],
+    ["urn:clean:residue", "urn:clean:p", "residue"]
+  ]
+}

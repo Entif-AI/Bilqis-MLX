@@ -1673,3 +1673,42 @@ python -m lib.ithkuil.src.skos.coverage_schema RECEIPT.json exits zero with a sm
 machine-readable validation result or exits 2 with a stable error code.
 
 #67 defines structure only. #68 owns computation from domain artifacts.
+
+## Whole-source semantic coverage generation (#68)
+
+CoverageBuild is a composed semantic artifact containing the merged domain graph, its
+#41 canonical bytes/digest, and one #67 semantic-coverage receipt. The public entry point
+build_coverage() consumes the actual atomic #49, lexicon #55, residue #61, and mapping
+#66 results plus the validated source closure. Domain adapters translate those owner
+receipts into one common row/disposition schema without reinterpreting source meaning.
+
+compose_coverage() is the lower-level composition boundary used by tests and the later
+#72 explicit registry command. It merges the supplied domain graphs, canonicalizes the
+union exactly once, optionally verifies a caller-provided #41 CanonicalRdf byte-for-byte,
+derives global totals/conflict summaries/build status, and runs the #67 validator before
+returning. coverage_json_bytes() emits stable receipt bytes.
+
+Current source coverage, using the #60-corrected lexicon dimension projector, contains
+9,654 in-scope source/IR rows: 8,452 EMITTED, 1,051 HELD, 1 REJECTED, 0 UNSUPPORTED,
+and 150 IR_ONLY. The combined graph has 77,614 triples and canonical SHA-256
+a81a1ec6d5f48e297eaa6901a2f1d609711777f5d2bc35f57f01103d6983ed7e.
+It is explicitly partial, not release-clean.
+
+Atomic contributes 772 rows, 104 emitted concepts, 157 emitted roots, and unresolved
+notation/text debt. Lexicon contributes 2,268 rows: 503 roots, 1,615 senses, and 150
+source-evidence IR-only rows. Its corrected graph is exactly 21,387 triples with SHA-256
+5446888f0987c8d4465608028028dd2dfd602301f7426f86abee0a2dba32eb33; no
+sourceLocusKind predicate is filtered downstream because the corrected owner projector
+never emits it. Residue contributes 6,062 fully emitted rows including 1,917 compositions
+and 19 allomorph rules. Mapping contributes 552 rows, currently 551 held and one rejected.
+
+Known source-frontier debt remains explicit: 219 tracked lexicon roots have zero parsed
+senses, two lexicon source frontiers remain outside the tracked closure, and all 552
+current mapping rows still require semantic review/admission. The current partial status
+therefore survives even though the receipt itself reconciles.
+
+A separate four-domain bounded clean fixture has four emitted rows, no debt/conflicts,
+four triples, and canonical SHA-256
+64a084ddf108eba38205905d8015e6f3c50e191f42ff8fa5ccd9f441c6e07008. It proves the
+same generator can produce build_status=complete when the source fixture is genuinely
+clean rather than by weakening held/debt semantics.
