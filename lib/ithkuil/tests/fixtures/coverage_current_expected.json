@@ -2,23 +2,23 @@
   "schema": "bilqis.skos.coverage-current-fixture/v1",
   "build_status": "partial",
   "canonical_rdf": {
-    "sha256": "07fcb86326be53e4ef9bc190d844a724dcb12e70155360a440014cb714219df0",
-    "triple_count": 95677
+    "sha256": "6cd2f8c1a97e9c67f18d4cd820a91a39bd288983eea254f217be23319c040c72",
+    "triple_count": 104479
   },
   "profile_sha256": "7945757f24d5104d52a0880bd6694c7be453ba225e0c7dc73de8b596bbcbb821",
   "totals": {
-    "source_rows": 14922,
+    "source_rows": 16986,
     "dispositions": {
-      "EMITTED": 10486,
+      "EMITTED": 11550,
       "HELD": 1051,
-      "IR_ONLY": 3384,
       "REJECTED": 1,
-      "UNSUPPORTED": 0
+      "UNSUPPORTED": 0,
+      "IR_ONLY": 4384
     }
   },
   "inputs": {
     "atomic": "02a833abc5a116bd651bf50da3c94ef995610612c94c09d31f26cd7d8a6eb540",
-    "lexicon": "1e4b7794f57251b7c109482087602e30b4b6790659f4d8427542b9df9f80a546",
+    "lexicon": "0b1b51ba290442e8c015380abbd44e33dd17ba18080079821509f57a004bd4ae",
     "mapping": "2e55e16fe287afa36707cc6c6c84901b33d6d8e26673a1cc6af12c819c6658e9",
     "residue": "198cc83edc44d2804016193ea97f85d269e5ce133cd0b9dd2b4ae343eafae3dd"
   },
@@ -47,34 +47,34 @@
       "frontier_debt": []
     },
     "lexicon": {
-      "source_rows": 7536,
+      "source_rows": 9600,
       "dispositions": {
-        "EMITTED": 4152,
+        "EMITTED": 5216,
         "HELD": 0,
-        "IR_ONLY": 3384,
         "REJECTED": 0,
-        "UNSUPPORTED": 0
+        "UNSUPPORTED": 0,
+        "IR_ONLY": 4384
       },
       "semantic_counts": {
         "concepts": 0,
-        "roots": 1594,
-        "senses": 2558,
+        "roots": 2324,
+        "senses": 2892,
         "mappings": 0,
         "compositions": 0,
         "allomorphs": 0
       },
       "notation_counts": {
-        "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil": 1594
+        "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil": 2324
       },
       "frontier_debt": [
         {
           "code": "LEXICON_EXTRACTION_DEBT_CONFLICT",
-          "count": 28,
+          "count": 41,
           "blocking": false
         },
         {
           "code": "LEXICON_EXTRACTION_DEBT_INSUFFICIENT_SENSE_EVIDENCE",
-          "count": 2748,
+          "count": 3671,
           "blocking": false
         },
         {
@@ -89,13 +89,13 @@
         },
         {
           "code": "LEXICON_ROOTS_ZERO_PARSED_SENSES",
-          "count": 1008,
+          "count": 1644,
           "blocking": false
         }
       ],
-      "corrected_graph_sha256": "264c9631c5a61d42615977511de2bd8043fcaac6abce8e3660e90fdb6d56e5ca",
-      "corrected_graph_triples": 39450,
-      "corrected_receipt_sha256": "5914241626f1e709ab6701e67f57e51018740c3c1fabbe56f0ede2036ccfe1a1"
+      "corrected_graph_sha256": "efac1c28a0d8baae281eb409f6c012aefcfb6de17c9c91736025ba4bf931e787",
+      "corrected_graph_triples": 48252,
+      "corrected_receipt_sha256": "df4c413a85f43832ed6c4a12511d0b099ca448169286343c31f913fd18c967fb"
     },
     "residue": {
       "source_rows": 6062,

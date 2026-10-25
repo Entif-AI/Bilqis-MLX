@@ -2,7 +2,8 @@
   "admitted_chapters": [
     "3",
     "4",
-    "5"
+    "5",
+    "6"
   ],
   "chapter_receipts": {
     "3": {
@@ -30,8 +31,8 @@
       "parser": {
         "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
         "pymupdf_version": "1.27.2.3",
-        "sha256": "e5960cc4da90773fcc14f82fe99dbd0016f114704d2b85ed0edaf7cddad4d2c5",
-        "version": "1.0.4"
+        "sha256": "c31b078da3b76ade1b92853771c114e64f6cce6316801ae6a5c67b806cc0d871",
+        "version": "1.0.5"
       },
       "schema": "bilqis.ithkuil.chapter-extraction/v1",
       "source": {
@@ -91,8 +92,8 @@
       "parser": {
         "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
         "pymupdf_version": "1.27.2.3",
-        "sha256": "e5960cc4da90773fcc14f82fe99dbd0016f114704d2b85ed0edaf7cddad4d2c5",
-        "version": "1.0.4"
+        "sha256": "c31b078da3b76ade1b92853771c114e64f6cce6316801ae6a5c67b806cc0d871",
+        "version": "1.0.5"
       },
       "schema": "bilqis.ithkuil.chapter-extraction/v1",
       "source": {
@@ -288,8 +289,8 @@
       "parser": {
         "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
         "pymupdf_version": "1.27.2.3",
-        "sha256": "e5960cc4da90773fcc14f82fe99dbd0016f114704d2b85ed0edaf7cddad4d2c5",
-        "version": "1.0.4"
+        "sha256": "c31b078da3b76ade1b92853771c114e64f6cce6316801ae6a5c67b806cc0d871",
+        "version": "1.0.5"
       },
       "schema": "bilqis.ithkuil.chapter-extraction/v1",
       "source": {
@@ -374,12 +375,238 @@
         "page_count": 16,
         "sha256": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30"
       }
+    },
+    "6": {
+      "accounting_sha256": "1d120f091e914c71392be81b4dabdd5af35b29690a88bd12e02a9373c5b53a45",
+      "chapter": "6",
+      "counts": {
+        "evidence": 1000,
+        "parsed_sense_observations": 334,
+        "roots": 733,
+        "roots_without_senses": 639,
+        "senses": 334,
+        "source_observations": 1361,
+        "unique_sense_coordinates": 334
+      },
+      "dispositions": {
+        "DEBT_CONFLICT": 13,
+        "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 948,
+        "DEBT_UNSUPPORTED_SHAPE": 66,
+        "PARSED": 334
+      },
+      "output_sha256": {
+        "lexicon_root_evidence.csv": "6a001d73718765cd89d0431f8bd97a8dcd6332924c5ff3045714f652333fb2ca",
+        "lexicon_root_senses.csv": "08d482abdd9caa8e6a9943ee382e0a98cb8a10796f4ef98340f905173c822b24",
+        "lexicon_roots.csv": "504b7bba8278cbedbfbe065047cf944d71dcb10fea5c3f231e1d86eb70ec5d37"
+      },
+      "parser": {
+        "legacy_sha256": "44120e04f51d67939a9afb8190101135c37a13a65ed117ad1e7f283c0aaffe4d",
+        "pymupdf_version": "1.27.2.3",
+        "sha256": "c31b078da3b76ade1b92853771c114e64f6cce6316801ae6a5c67b806cc0d871",
+        "version": "1.0.5"
+      },
+      "schema": "bilqis.ithkuil.chapter-extraction/v1",
+      "source": {
+        "canonical_page_start": 261,
+        "canonical_page_text_variant_pages": [
+          "6",
+          "16",
+          "17",
+          "18",
+          "28",
+          "32",
+          "33",
+          "36",
+          "41",
+          "42",
+          "43",
+          "44",
+          "45",
+          "46",
+          "47",
+          "48",
+          "49",
+          "50",
+          "52",
+          "54",
+          "55",
+          "56",
+          "57",
+          "58"
+        ],
+        "canonical_page_text_variants": {
+          "16": {
+            "canonical_sha256": "71dee433596816390f66dde5d6489de62828f791454033df3385f32ae55adf8f",
+            "tracked_sha256": "602d550a433076cc4757c97b4dd2e3c4e42e1ff5c4e2f5bc559990538a8fd4ab"
+          },
+          "17": {
+            "canonical_sha256": "c32c47bb595ba9f39a80e9c6db7f1e01959242973f33b3fa0c1f364ea80df208",
+            "tracked_sha256": "29904862e427d0714d7508ff3365bc22a332d182faeb5119c7f8927104f99e68"
+          },
+          "18": {
+            "canonical_sha256": "671d72583f4a67e99356d237ada4113c1f83a686c6e4a6de67fc0982837aa0f7",
+            "tracked_sha256": "52496826462d0434b8da601c582deb382a83097a9337092864aee1f73a5262a3"
+          },
+          "28": {
+            "canonical_sha256": "c47b8046afd36be896d0f168759ed8da688a02a866c8ecc2954b977ca99a6f90",
+            "tracked_sha256": "da975dc0327e8cd6fad201e1037def43fbb9b949267ba642e1100f78395e5b8b"
+          },
+          "32": {
+            "canonical_sha256": "c2c74c0c8467d3b23e4ebdd4654f0356d5f9809d0eee183c989a4734ad6e9bb4",
+            "tracked_sha256": "6bf7607ca622543866d0d60ff90e4fbc0b8a1769b38ce3e62118aa10ff71fa74"
+          },
+          "33": {
+            "canonical_sha256": "6671c14ae019a31e5ace3be82f4e851de7b6625267ff334d1653796b242e9229",
+            "tracked_sha256": "f84b56396f69a57109b4ad6efe46ee78d64cb9817d90534cec3b8765719f6da6"
+          },
+          "36": {
+            "canonical_sha256": "0aba6a14ad556e0aabe74de2ede8a73bbfd1e4b14a6b8db36c1d9a8de2ff8a0f",
+            "tracked_sha256": "d84e23e287bac9eba87643443f2026f29b9ac17e70f371cabdd98623a0ecce8e"
+          },
+          "41": {
+            "canonical_sha256": "02e24254f71dc35d8ff8b89a450760245f78d68d9088f9994f181ead1acbcbaa",
+            "tracked_sha256": "d0373af7b70d00e4ce330f2c17e4a64c17aff3a21bd3d2f4ed75a44b94050637"
+          },
+          "42": {
+            "canonical_sha256": "c74ca5c3ba10ac2c325e0ded0daa6d4b5404907efce7dc3fa34601835658836a",
+            "tracked_sha256": "7a293cc37b2eccbbdbf7b16ed9d56c09445652f70b99fa6ec0e78803371245a4"
+          },
+          "43": {
+            "canonical_sha256": "02fd0d662c1000a44eea129f1143c762f58a39228bb59bb3834dd0adf7dc4319",
+            "tracked_sha256": "a1ade9eda40989a8acd23f81ddc2cc35093e94515a64fba14304c555ed8d9b00"
+          },
+          "44": {
+            "canonical_sha256": "6571c5edc5e32fc13dcb85b68c70666d1d4d44ef1563b576f387c3391c7afb12",
+            "tracked_sha256": "622b0cd727e1d9b177477f4d80857bace534d2d251e657077f4b52962a9b4ff1"
+          },
+          "45": {
+            "canonical_sha256": "0257ca9fd0aa8e1521ad6898f3012ff82def1d0b4385c97efbf970f23d9d32e8",
+            "tracked_sha256": "62ff41769f9d63c0f33f6a7c541eb28a3484f4ce36ffad2d0aa5cebd601660d3"
+          },
+          "46": {
+            "canonical_sha256": "6eeab8935484bb6e76945854d1c2c451da78f62392e7d7c0886d5af19258af56",
+            "tracked_sha256": "bfa1b13c4e5560b71af03fc2bf34f53404b69c81a465eb243ecbc0241cbcda1f"
+          },
+          "47": {
+            "canonical_sha256": "0b3221d08b7e86db292b0d5b2360a2a32e1b9c7fc34267245e23ec11a672d37d",
+            "tracked_sha256": "c14ef1468c6182797eaf125ca30cc0e25165b90609422e1342f9c0d7d7839c3f"
+          },
+          "48": {
+            "canonical_sha256": "ad5eb16efc05007439528aebaf72438d7349407f7963c6596ca32263cb35156c",
+            "tracked_sha256": "5c30deb74641b53c3e11872de4f83a4f913b70b54170a189645f80f951a65019"
+          },
+          "49": {
+            "canonical_sha256": "b35b63ab5df3cb7a38d545409e5a9ac0dba137be51b1ff0098fd83fa4e47271e",
+            "tracked_sha256": "b9196d118f58a2c41adf09f737156a0e90a79e302d9e353df1f436e9452d2e05"
+          },
+          "50": {
+            "canonical_sha256": "79f499c665ca4b2d94d24b8c7c71e2a9ce7be806e0126fe0c9029c57dea789d3",
+            "tracked_sha256": "d14231b1c3b0b5a51c3283b132085b3be02f404df6853f7ee07abfcfe597ec14"
+          },
+          "52": {
+            "canonical_sha256": "cea4edc933055b5f88d4a14f51612344a9676752433ce80a8e8df7c7cbed4086",
+            "tracked_sha256": "d9cebc84120cae032b0a4768096956093426f35acc1a1b383e58288bfd55ac5c"
+          },
+          "54": {
+            "canonical_sha256": "6c1bf1d62d5f4b587f9058567b6ab6d1dfb277f5612d3a779eca4e5a852347a2",
+            "tracked_sha256": "584128ee109bf801f6297e9843834f1aefdcf79a2da10aee1cf3cb35c63852a1"
+          },
+          "55": {
+            "canonical_sha256": "dc72d82a94113e0d9c35d6b829068fc8fb1179a903e8b751d8078a5775250254",
+            "tracked_sha256": "3367f8f8d31cb0d181f303741fbf3fc7f303dc0462d741b8dd76b9e4d82a0e22"
+          },
+          "56": {
+            "canonical_sha256": "180d6945f3b1c86dda4944c10e807abc5188383b7a74a2ab8be3238537022b0a",
+            "tracked_sha256": "a2d11ec1c52fdf8bd1a23a3c825d17d428eac96a8ea3e87065debc576c807622"
+          },
+          "57": {
+            "canonical_sha256": "eaa68651a9f6f5371f4b5129c3ceb4fe1c6e61958076f12a4eef3ac1578c5103",
+            "tracked_sha256": "3b61960eb38755a018db9c22e08b764706fadcef89941ea060fface31701cd85"
+          },
+          "58": {
+            "canonical_sha256": "ab3aebeed0e2479b5e012f48302bddf85bff64afae435f325aca354045348e5d",
+            "tracked_sha256": "fd0dc3a85896f918c9138cbbd64367d4d10177267200a47a3b3c9adfaaa84245"
+          },
+          "6": {
+            "canonical_sha256": "71919cc2c6059d1d78bd347810ae2e8a604d34d50d42882b5c0373a5f45eef35",
+            "tracked_sha256": "172348399ffebedff415a8e8e39e4e3ae15ab235ecafa165e3ab32fac6daac51"
+          }
+        },
+        "canonical_pages": [
+          261,
+          262,
+          263,
+          264,
+          265,
+          266,
+          267,
+          268,
+          269,
+          270,
+          271,
+          272,
+          273,
+          274,
+          275,
+          276,
+          277,
+          278,
+          279,
+          280,
+          281,
+          282,
+          283,
+          284,
+          285,
+          286,
+          287,
+          288,
+          289,
+          290,
+          291,
+          292,
+          293,
+          294,
+          295,
+          296,
+          297,
+          298,
+          299,
+          300,
+          301,
+          302,
+          303,
+          304,
+          305,
+          306,
+          307,
+          308,
+          309,
+          310,
+          311,
+          312,
+          313,
+          314,
+          315,
+          316,
+          317,
+          318,
+          319
+        ],
+        "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+        "comparison": "normalized-page-text-exact-with-pinned-variants",
+        "filename": "New Ithkuil Lexicon - Chapter 06 - Nature, Non-Biological.pdf",
+        "format": "PDF 1.3",
+        "min_text_similarity": 0.8346055979643766,
+        "page_count": 59,
+        "sha256": "0fd4aa1df217533427f950b86a4b7c4963dc5e66f7be927c8ad56a2ee990fdbd"
+      }
     }
   },
   "counts": {
-    "lexicon_root_evidence": 3384,
-    "lexicon_root_senses": 2558,
-    "lexicon_roots": 1594
+    "lexicon_root_evidence": 4384,
+    "lexicon_root_senses": 2892,
+    "lexicon_roots": 2324
   },
   "legacy_chapters": [
     "1",
@@ -391,10 +618,10 @@
     "lexicon_roots.csv": "7cdb5df8266c7c8b815392cf3333fc5e3d05876b1c79277494c925e24559e0cc"
   },
   "output_sha256": {
-    "lexicon_root_evidence.csv": "1816e25d3a6cfd7f9653450f0115c2e3a4992481ac74b32d59f4cc0c6cf56268",
-    "lexicon_root_senses.csv": "13eb850624ab51fb8e63b59df8ac303e099d6a0118dab6dababfdcb84820e983",
-    "lexicon_roots.csv": "1477473d29fa860c167d43a17bca992dd0150ccfe1b844d7d9d52c88f20e7832",
-    "sources/lexicon_split_provenance.csv": "ad6ebbac2c58a1bf91444590884d19113133310dece53ced417b414e94f7b798"
+    "lexicon_root_evidence.csv": "2fe2da4ffec357b23d338def76793d98fd40fbba7e58c7a7358e4231133aaeb8",
+    "lexicon_root_senses.csv": "aaea13de2b94c213abcc32c6c4002132fd5fbcae8030c152d5e70385fa623512",
+    "lexicon_roots.csv": "0316594d0d404c4792bc7fed111e59e7cc51116317382ea767f7c0d5541351ba",
+    "sources/lexicon_split_provenance.csv": "0598bca1f77c450a1bc65717f141649a75353f631f2da21de7974469467d28b1"
   },
   "schema": "bilqis.ithkuil.lexicon-frontier/v1"
 }

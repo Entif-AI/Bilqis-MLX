@@ -31,7 +31,7 @@ python3 src/fetch_sources.py
 
 Raw downloaded source files are written to ignored `_raw/`. `csv/sources/source_manifest.csv` is tracked and records source URLs, content hashes, response metadata, and snapshot time. This keeps the experiment reproducible without vendoring the complete copyrighted source pages into Git.
 
-The grammar HTML is parsed into the tracked relational tables. The canonical lexicon and affix-reference PDFs are fetched and SHA-pinned provenance inputs. The tracked split lexicon Chapters 1–5 are additionally parsed into source-corpus tables with exact split-PDF hashes and page/table loci. Those rows are **not** semantic admission or curriculum order. Chapters 6–7 and the affix-reference PDF remain outside the accepted extraction frontier.
+The grammar HTML is parsed into the tracked relational tables. The canonical lexicon and affix-reference PDFs are fetched and SHA-pinned provenance inputs. The tracked split lexicon Chapters 1–6 are additionally parsed into source-corpus tables with exact split-PDF hashes and page/table loci. Those rows are **not** semantic admission or curriculum order. Chapter 7 and the affix-reference PDF remain outside the accepted extraction frontier.
 
 The live Curriculum Registry is exported separately through authenticated Google Drive access. Its workbook bytes are not committed. Derived enrichment rows must retain tab/range provenance and source-state labels.
 
@@ -74,6 +74,8 @@ python3 -B -m lib.ithkuil.src.build_lexicon_chapters \
   --admit-chapter 4 --canonical-pdf lib/ithkuil/_raw/New_Ithkuil_Lexicon.pdf
 python3 -B -m lib.ithkuil.src.build_lexicon_chapters \
   --admit-chapter 5 --canonical-pdf lib/ithkuil/_raw/New_Ithkuil_Lexicon.pdf
+python3 -B -m lib.ithkuil.src.build_lexicon_chapters \
+  --admit-chapter 6 --canonical-pdf lib/ithkuil/_raw/New_Ithkuil_Lexicon.pdf
 python3 -B -m lib.ithkuil.src.validate_dataset
 ```
 
@@ -145,6 +147,33 @@ preflight binds those complete observation tuples independently of root identity
 and counts. Tests cover the three explicit BSC stems of `-DDL-`, exact root
 spellings, prose debt, unsupported tables, deterministic reruns and rejection of
 changed page-text pins. Admission preserves Chapter 1–4 row bytes and identities.
+
+## Chapter 6 source extraction (#83)
+
+Chapter 6's pinned 59-page PDF maps to canonical pages 261–319. Twenty-four
+page-text differences are bound by exact tracked/canonical hashes. Extraction
+uses the tracked PDF's wording and root forms; the comparison makes no semantic
+equivalence or byte-derivative claim.
+
+The source slice emits 733 roots, 334 senses and 1,000 evidence rows. Its 1,361
+observations comprise 334 parsed senses, 948 insufficient-evidence debts,
+66 unsupported shapes and 13 conflicts. There are 639 roots without parsed
+senses. Prose observations remain explicit debt/conflict, with no prose-derived
+senses admitted. The existing spaced-root recovery preserves `-RẒBW-` at local
+page 53, line 48, section 6.4.3, with its explicit inline gloss.
+
+Local page 44 is a geometric diagram with fragmented text and no extractable
+printed-page number. Its complete page and 14 root observations remain explicit
+unsupported debt. No printed page or incomplete canonical row is invented.
+Another 25 root observations without independent gloss evidence remain debt.
+An unlabeled overview mention can use a later explicit definition of the same
+root, retaining that definition's actual source locus. Repeated roots retain
+their earlier canonical IDs.
+
+`tests/fixtures/chapter6_extraction_expected.json` binds source/output/accounting
+digests and counts. Tests cover explicit multi-stem tables, spaced-root recovery,
+prose conflict, unsupported table debt, deterministic reruns and changed-pin
+rejection. Earlier admitted root/sense/evidence bytes and IDs remain unchanged.
 
 `sources/lexicon_frontier_manifest.json` binds per-chapter pins, parser version/code
 hashes, page maps, output hashes, counts and legacy compatibility hashes.

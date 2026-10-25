@@ -34,7 +34,7 @@ class LexiconFrontierPinTests(unittest.TestCase):
         source_pdfs = manifest["source_pdfs"]
         chapters = manifest["chapters"]
 
-        self.assertEqual(set(chapters), {"3", "4", "5"})
+        self.assertEqual(set(chapters), {"3", "4", "5", "6"})
         for chapter, pin in chapters.items():
             self.assertEqual(pin, source_pdfs[chapter])
 

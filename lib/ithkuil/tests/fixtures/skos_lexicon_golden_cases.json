@@ -1,11 +1,11 @@
 {
   "schema": "bilqis.skos.lexicon-golden/v1",
-  "frontier": "New Ithkuil Lexicon tracked Chapters 1-5",
+  "frontier": "New Ithkuil Lexicon tracked Chapters 1-6",
   "expected_counts": {
-    "root_resources": 1594,
-    "sense_concepts": 2558,
-    "dimension_triples": 5116,
-    "root_sense_links": 2558
+    "root_resources": 2324,
+    "sense_concepts": 2892,
+    "dimension_triples": 5784,
+    "root_sense_links": 2892
   },
   "cases": {
     "multi_unicode_root": {

@@ -154,7 +154,8 @@ def main() -> None:
         allowed_statuses={'PARSED','DEBT_UNSUPPORTED_SHAPE','DEBT_INSUFFICIENT_SENSE_EVIDENCE','DEBT_AMBIGUOUS_LOCUS','DEBT_CONFLICT'}
         locus_fields={'table':{'kind','pdf_page','table_index','row','column'},
                       'prose':{'kind','pdf_page','line_start','line_end'},
-                      'root':{'kind','pdf_page','line','lexicon_section'}}
+                      'root':{'kind','pdf_page','line','lexicon_section'},
+                      'page':{'kind','pdf_page'}}
         for chapter in sorted(admitted,key=int):
             receipt=receipts[chapter]
             pin=pins.get('chapters',{}).get(chapter)
@@ -193,9 +194,13 @@ def main() -> None:
                 elif locus['kind']=='prose':
                     require(not item['source_table_index'] and locus['line_start']<=locus['line_end'],
                             'lexicon frontier prose locator mismatch: chapter '+chapter)
-                else:
+                elif locus['kind']=='root':
                     require(not item['source_table_index'] and locus['line']>0 and locus['lexicon_section'],
                             'lexicon frontier root locator mismatch: chapter '+chapter)
+                else:
+                    require(not item['source_table_index'] and not item['lexicon_root_id'] and
+                            status=='DEBT_UNSUPPORTED_SHAPE' and 1<=locus['pdf_page']<=pin['page_count'],
+                            'lexicon frontier page locator mismatch: chapter '+chapter)
             require(len(accounting)==receipt.get('counts',{}).get('source_observations'),
                     'lexicon frontier observation count drift: chapter '+chapter)
             require(dict(sorted(observed.items()))==receipt.get('dispositions'),

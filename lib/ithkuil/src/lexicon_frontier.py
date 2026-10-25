@@ -15,7 +15,7 @@ from . import build_lexicon_chapters as legacy
 
 ROOT=legacy.ROOT
 PINS=Path(__file__).with_name('lexicon_frontier_pins.json')
-VERSION='1.0.4'
+VERSION='1.0.5'
 
 
 def structural_sense_id(form,stem,specification):
@@ -78,10 +78,11 @@ def _root_gloss(line):
     return legacy.clean(spaced.group(2)) if spaced else ''
 
 
-def _prose_sense_candidates(document,chapter_id,root_index,by_form,common):
+def _prose_sense_candidates(document,chapter_id,root_index,by_form,common,*,excluded_pages=()):
     """Parse only non-table prose with explicit root, Stem, and Specification scope."""
     accounting=[];candidates=defaultdict(list)
     for page_number,page in enumerate(document,start=1):
+        if page_number in excluded_pages:continue
         table_boxes=[table.bbox for table in page.find_tables().tables]
         current_root=None;specification=None;marker=None;buffer=[];marker_line=0;buffer_end_line=0
 
@@ -189,8 +190,8 @@ def extract_chapter(chapter_id,canonical_pdf,*,prior_senses=()):
             form=_root_form(line)
             if form and section:
                 root_index[(page_number,form)]={'lexicon_section':section,'line':line_number,'source_line':line}
-    if chapter_id=='4':
-        # Chapter 4 includes spaced-root lines the legacy compact-root scan misses.
+    if chapter_id in {'4','6'}:
+        # Chapters 4 and 6 include spaced-root lines the compact-root scan misses.
         # Keep prior accepted chapter projections unchanged in this leaf issue.
         known_roots={r['root_form_raw'] for r in roots}
         root_debts=[]
@@ -218,10 +219,45 @@ def extract_chapter(chapter_id,canonical_pdf,*,prior_senses=()):
             known_roots.add(form)
     else:
         root_debts=[]
+    for root in roots:
+        if root['root_gloss']:continue
+        for (page_number,form),locus in sorted(root_index.items()):
+            if form!=root['root_form_raw']:continue
+            gloss=_root_gloss(locus['source_line'])
+            if not gloss:continue
+            root.update({'root_gloss':legacy.short_meaning(gloss),
+                         'lexicon_section':locus['lexicon_section'],
+                         'section_title':legacy.SECTION_TITLES.get(locus['lexicon_section'],''),
+                         'source_pdf_page':str(page_number),
+                         'source_printed_page':legacy.printed_page(document[page_number-1])})
+            break
+    unsupported_pages={number for number,page in enumerate(document,start=1) if not legacy.printed_page(page)}
+    for root in roots:
+        page_number=int(root['source_pdf_page'])
+        if page_number not in unsupported_pages and root['root_gloss']:continue
+        locus=root_index[(page_number,root['root_form_raw'])]
+        fingerprint,count=legacy.source_fingerprint(locus['source_line'])
+        root_debts.append({'root_form_raw':root['root_form_raw'],'lexicon_root_id':'',
+                           'source_pdf_page':str(page_number),'source_printed_page':root['source_printed_page'],
+                           'source_table_index':'','row':0,'column':0,
+                           'status':'DEBT_UNSUPPORTED_SHAPE' if page_number in unsupported_pages else 'DEBT_INSUFFICIENT_SENSE_EVIDENCE',
+                           'source_text_sha256':fingerprint,'source_text_char_count':count,
+                           'source_locus':{'kind':'root','pdf_page':page_number,'line':locus['line'],
+                                           'lexicon_section':locus['lexicon_section']}})
+    for page_number in sorted(unsupported_pages):
+        fingerprint,count=legacy.source_fingerprint(document[page_number-1].get_text())
+        root_debts.append({'root_form_raw':'','lexicon_root_id':'','source_pdf_page':str(page_number),
+                           'source_printed_page':'','source_table_index':'','row':0,'column':0,
+                           'status':'DEBT_UNSUPPORTED_SHAPE','source_text_sha256':fingerprint,
+                           'source_text_char_count':count,
+                           'reason':'No extractable printed-page locus; retain the complete source page as debt.',
+                           'source_locus':{'kind':'page','pdf_page':page_number}})
+    roots=[row for row in roots if int(row['source_pdf_page']) not in unsupported_pages and row['root_gloss']]
     for row in roots:row.update({**common,'canonical_source_sha256':pins['canonical_sha256']})
     by_form={r['root_form_raw']:r for r in roots}
     accounting=root_debts;candidates=defaultdict(list)
     for page_number,page in enumerate(document,start=1):
+        if page_number in unsupported_pages:continue
         for table_number,table in enumerate(page.find_tables().tables,start=1):
             data=table.extract()
             if not data:continue
@@ -324,7 +360,8 @@ def extract_chapter(chapter_id,canonical_pdf,*,prior_senses=()):
                         status='PARSED'
                     add_table_observation(row_index,col,meaning,status,stem=stem,
                                           specification=label if label in legacy.SPECIFICATIONS else None)
-    prose_accounting,prose_candidates=_prose_sense_candidates(document,chapter_id,root_index,by_form,common)
+    prose_accounting,prose_candidates=_prose_sense_candidates(
+        document,chapter_id,root_index,by_form,common,excluded_pages=unsupported_pages)
     table_observations={(item['root_form_raw'],item.get('stem'),item['source_text_sha256'])
                         for item in accounting if item.get('stem') and item['source_locus']['kind']=='table'}
     table_parsed={(item['root_form_raw'],item.get('stem'),item.get('specification'),item['source_text_sha256'])
@@ -360,7 +397,8 @@ def extract_chapter(chapter_id,canonical_pdf,*,prior_senses=()):
                                'source_text_sha256':fingerprint,'source_text_char_count':count,
                                'source_locus':{'kind':'root','pdf_page':int(root['source_pdf_page']),
                                                'line':root_locus['line'],'lexicon_section':root_locus['lexicon_section']}})
-    evidence=legacy.extract_root_evidence(document,chapter,by_form)
+    evidence=[row for row in legacy.extract_root_evidence(document,chapter,by_form)
+              if int(row['source_pdf_page']) not in unsupported_pages]
     for row in evidence:row.update({**common,'canonical_source_sha256':pins['canonical_sha256']})
     for item in accounting:
         if item['status']=='PARSED':continue

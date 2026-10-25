@@ -1,77 +1,80 @@
 {
-  "canonical_byte_count": 9521663,
-  "canonical_sha256": "264c9631c5a61d42615977511de2bd8043fcaac6abce8e3660e90fdb6d56e5ca",
-  "canonical_triple_count": 39450,
-  "compiler_input_closure_sha256": "7aa282e444e1d21f98e563dbae2da13c697a9bc0f400c208f9a81335b7c9d22c",
+  "canonical_byte_count": 11613760,
+  "canonical_sha256": "efac1c28a0d8baae281eb409f6c012aefcfb6de17c9c91736025ba4bf931e787",
+  "canonical_triple_count": 48252,
+  "compiler_input_closure_sha256": "166ead7c29878d98c21b439edeaea29671b92345beebc95bb55e80c0ac1e2b7d",
   "counts": {
-    "notation_count": 1594,
-    "root_resources_emitted": 1594,
+    "root_rows_consumed": 2324,
+    "root_resources_emitted": 2324,
     "root_resources_held": 0,
-    "root_rows_consumed": 1594,
-    "roots_with_multiple_parsed_senses": 579,
-    "roots_with_zero_parsed_senses": 1008,
-    "sense_concepts_emitted": 2558,
-    "sense_rows_consumed": 2558,
-    "sense_rows_held": 0
+    "sense_rows_consumed": 2892,
+    "sense_concepts_emitted": 2892,
+    "sense_rows_held": 0,
+    "roots_with_zero_parsed_senses": 1644,
+    "roots_with_multiple_parsed_senses": 673,
+    "notation_count": 2324
   },
   "coverage": {
+    "stem": {
+      "ROOT-WIDE": 714,
+      "STEM 1": 746,
+      "STEM 2": 719,
+      "STEM 3": 712,
+      "STEMS 1-3": 1
+    },
+    "specification": {
+      "BSC": 1998,
+      "CSV": 298,
+      "CTE": 298,
+      "OBJ": 298
+    },
+    "source_locus_kind": {
+      "compact_numbered_stem": 39,
+      "prose": 54,
+      "table": 2799
+    },
     "root_chapters": {
       "1": 39,
       "2": 464,
       "3": 122,
       "4": 719,
-      "5": 250
+      "5": 250,
+      "6": 730
     },
     "sense_chapters": {
       "1": 43,
       "2": 1572,
       "3": 100,
       "4": 811,
-      "5": 32
-    },
-    "source_locus_kind": {
-      "compact_numbered_stem": 39,
-      "prose": 54,
-      "table": 2465
-    },
-    "specification": {
-      "BSC": 1721,
-      "CSV": 279,
-      "CTE": 279,
-      "OBJ": 279
-    },
-    "stem": {
-      "ROOT-WIDE": 714,
-      "STEM 1": 634,
-      "STEM 2": 608,
-      "STEM 3": 601,
-      "STEMS 1-3": 1
+      "5": 32,
+      "6": 334
     }
   },
-  "evidence_rows": 3384,
-  "frontier": "tracked-new-ithkuil-lexicon-chapters-1-2-3-4-5",
+  "evidence_rows": 4384,
+  "frontier": "tracked-new-ithkuil-lexicon-chapters-1-2-3-4-5-6",
   "frontier_contract": {
-    "claim": "current tracked Chapter 1,2,3,4,5 source frontier only; not complete official lexicon coverage",
+    "scope": "tracked-new-ithkuil-lexicon-chapters-1-2-3-4-5-6",
+    "source_id": "NI-LEXICON-CURRICULUM",
     "included_chapters": [
       "1",
       "2",
       "3",
       "4",
-      "5"
+      "5",
+      "6"
     ],
     "outside_closure": [
-      "New Ithkuil Lexicon Chapters 6-7",
+      "New Ithkuil Lexicon Chapters 7",
       "pinned New Ithkuil affix-reference source"
     ],
-    "scope": "tracked-new-ithkuil-lexicon-chapters-1-2-3-4-5",
-    "source_id": "NI-LEXICON-CURRICULUM"
+    "claim": "current tracked Chapter 1,2,3,4,5,6 source frontier only; not complete official lexicon coverage"
   },
-  "lexicon_source_sha256": "1e4b7794f57251b7c109482087602e30b4b6790659f4d8427542b9df9f80a546",
-  "notation_count": 1594,
-  "receipt_sha256": "5914241626f1e709ab6701e67f57e51018740c3c1fabbe56f0ede2036ccfe1a1",
-  "root_rows": 1594,
-  "roots_with_multiple_parsed_senses": 579,
-  "roots_with_zero_parsed_senses": 1008,
+  "lexicon_source_sha256": "0b1b51ba290442e8c015380abbd44e33dd17ba18080079821509f57a004bd4ae",
+  "notation_count": 2324,
+  "receipt_sha256": "df4c413a85f43832ed6c4a12511d0b099ca448169286343c31f913fd18c967fb",
+  "root_rows": 2324,
+  "roots_with_multiple_parsed_senses": 673,
+  "roots_with_zero_parsed_senses": 1644,
   "schema": "bilqis.skos.lexicon-reconciliation-snapshot/v1",
-  "sense_rows": 2558
+  "sense_rows": 2892
 }
