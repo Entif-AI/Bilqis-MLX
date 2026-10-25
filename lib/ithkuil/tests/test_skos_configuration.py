@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from collections import Counter
+import csv
 import hashlib
+import io
 import json
 from pathlib import Path
 import unittest
@@ -78,7 +80,16 @@ class ConfigurationGoldenTests(unittest.TestCase):
 
     def test_literal_source_fixture_matches_tracked_snapshot(self) -> None:
         for relative, digest in FILE_DIGESTS.items():
-            self.assertEqual(hashlib.sha256((SOURCE_ROOT / relative).read_bytes()).hexdigest(), digest)
+            payload = (SOURCE_ROOT / relative).read_bytes()
+            if relative == 'source_tables.csv':
+                # Configuration's historical HTML fixture excludes later PDF observations.
+                reader = csv.DictReader(io.StringIO(payload.decode()))
+                stream = io.StringIO(newline='')
+                writer = csv.DictWriter(stream, fieldnames=reader.fieldnames, lineterminator='\n')
+                writer.writeheader()
+                writer.writerows(row for row in reader if row['source_id'] != 'NI-AFFIX-PDF')
+                payload = stream.getvalue().encode()
+            self.assertEqual(hashlib.sha256(payload).hexdigest(), digest)
         self.assertEqual(self.source_fixture["tracked_input_digests"], FILE_DIGESTS)
         self.assertEqual(
             self.source_fixture["source_document"],

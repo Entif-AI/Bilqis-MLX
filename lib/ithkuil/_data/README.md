@@ -13,7 +13,34 @@ The user-required primary tables are:
 
 Supporting relational tables may preserve information that would be lossy in those two flat tables, including source hierarchy, grammatical categories, paradigms/examples, typed entity relationships, and Bilqis crosswalk/provenance.
 
-The current schema is documented in [`../SCHEMA.md`](../SCHEMA.md). The present snapshot contains 772 atomic surface records and 1,917 composition/template records, plus 3,855 component edges, 200 grammar-derived root-sense rows, 625 Chapter-1–3 lexicon roots, 1,673 Chapter-1–3 lexicon sense rows, 363 compact lexicon context-evidence rows, 19 explicit C_A allomorph rules, normalized source/category/degree tables, and Bilqis enrichment.
+The current schema is documented in [`../SCHEMA.md`](../SCHEMA.md). The present snapshot contains 772 atomic surface records and 1,917 composition/template records, plus 3,855 component edges, 200 grammar-derived root-sense rows, 5,810 Chapter-1–7 lexicon roots, 3,008 lexicon sense rows, 9,488 compact lexicon context-evidence rows, 19 explicit C_A allomorph rules, normalized source/category/degree tables, and Bilqis enrichment. The affix PDF adds 403 observed tables and 8,060 cells without extending atomic or degree semantics.
+
+## Affix-reference source extraction (#85)
+
+From the repository root:
+
+```sh
+.venv/bin/python -B -m lib.ithkuil.src.build_structure --admit-affix
+.venv/bin/python -B -m lib.ithkuil.src.validate_dataset
+.venv/bin/python -B -m unittest lib.ithkuil.tests.test_affix_frontier lib.ithkuil.tests.test_affix_admission -q
+```
+
+An ordinary `build_structure` rebuild includes the admitted affix slice. It
+validates a staged full dataset and compiler preflight before publication and
+writes `sources/affix_frontier_manifest.json` last. The manifest binds the exact
+PDF, parser/dependency identities, output digests, legacy hashes, and the
+`affix_frontier_accounting.json` ledger. Every emitted row reconciles to one
+source observation with page/table/row/column and bounding-box coordinates.
+
+The inventory contains 440 tables across 140 pages: 403 admitted ordinary
+explicit nine-degree blocks, 35 unsupported tables and two held PIC occurrences.
+The 19,954 accounting observations comprise 8,463 parsed table/cell rows,
+1,994 wholly table-covered text spans, 9,495 unsupported table/text observations,
+and two repeated-identity conflicts. These are source-unit counts, not distinct
+linguistic entities. Partially overlapping text stays debt rather than being
+silently absorbed into table coverage. Source prose, cross-references, split
+blocks and irregular forms receive no inferred root, degree or curriculum link.
+See [the structural inventory and mapping review](../AFFIX_FRONTIER.md).
 
 ## Ordering boundary
 

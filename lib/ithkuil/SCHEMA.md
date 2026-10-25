@@ -37,7 +37,7 @@ Key fields:
 ## Structural and provenance tables
 
 - `source_sections.csv`: website chapter/section/subsection hierarchy with parent IDs and real source anchors when present.
-- `source_tables.csv`: every HTML table tied to its containing source section and a conservative structural role.
+- `source_tables.csv`: HTML tables tied to containing source sections, plus admitted affix-PDF observations with explicit page anchors and conservative structural roles. Unsupported PDF tables remain in the source accounting ledger.
 - `source_table_cells.csv`: exact short factual cells plus hashes and lengths for long explanatory cells. Long prose is not mirrored into Git.
 - `source_assertions.csv`: many-to-one provenance edges from official source loci to atomic/composed entities.
 - `grammatical_categories.csv`: normalized category registry.
@@ -64,7 +64,14 @@ The enrichment tables preserve qualified, partial, adapter, compositional, nativ
 
 The lower-case grammar-site lexicon and the capitalized lexicon URL used in the Curriculum Registry are separate source identities because their bytes and SHA-256 hashes differ.
 
-The grammar extractor parses the official grammar HTML. The canonical lexicon and affix-reference PDFs remain fetched and hash-pinned source identities. The accepted lexicon frontier is recorded in `sources/lexicon_frontier_manifest.json`, currently Chapters 1–3. Later-chapter admission uses `python3 -B -m lib.ithkuil.src.build_lexicon_chapters --admit-chapter 3 --canonical-pdf PATH`, verifies exact pinned source and normalized canonical-page text, preserves the accepted earlier rows, and stages dataset validation before publication. A separate `--chapters ... --output ...` research snapshot remains unadmitted and keeps its own `NOT_MEASURED` canonical-equivalence status. See `_data/README.md` for the extraction/debt contract. The affix-reference PDF remains unparsed.
+The grammar extractor parses the official grammar HTML. The canonical lexicon and affix-reference PDFs are fetched and hash-pinned source identities. The accepted lexicon frontier is recorded in `sources/lexicon_frontier_manifest.json`, currently Chapters 1–7. Later-chapter admission uses `python3 -B -m lib.ithkuil.src.build_lexicon_chapters --admit-chapter 3 --canonical-pdf PATH`, verifies exact pinned source and normalized canonical-page text, preserves the accepted earlier rows, and stages dataset validation before publication. A separate `--chapters ... --output ...` research snapshot remains unadmitted and keeps its own `NOT_MEASURED` canonical-equivalence status. See `_data/README.md` for the extraction/debt contract.
+
+The affix PDF contributes 403 source tables and 8,060 cells, not new atomic
+roots or `affix_degrees` semantics. `sources/affix_frontier_manifest.json`
+binds the parser, source digest, output digests and exact-locus accounting.
+Thirty-five unsupported tables and two repeated PIC tables remain debt.
+See [the mapping review](AFFIX_FRONTIER.md). Existing HTML rows and semantic
+tables retain their prior bytes and identities.
 
 ## Rebuild and validation
 

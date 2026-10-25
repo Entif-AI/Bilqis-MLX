@@ -68,8 +68,15 @@ def main() -> None:
     require(len(manifest) == 18, f"expected 18 official source identities, found {len(manifest)}")
     require(len(curriculum_manifest) == 8, f"expected 8 curriculum snapshot tabs, found {len(curriculum_manifest)}")
     require(len(sections) == 337, f"expected 337 source sections, found {len(sections)}")
-    require(len(tables) == 324, f"expected 324 HTML tables, found {len(tables)}")
-    require(len(cells) == 5397, f"expected 5,397 non-empty table cells, found {len(cells)}")
+    html_tables = [row for row in tables if row['source_id'] != 'NI-AFFIX-PDF']
+    html_cells = [row for row in cells if row['source_id'] != 'NI-AFFIX-PDF']
+    require(len(html_tables) == 324, f"expected 324 HTML tables, found {len(html_tables)}")
+    require(len(html_cells) == 5397, f"expected 5,397 HTML table cells, found {len(html_cells)}")
+    if __package__:
+        from .affix_admission import validate as validate_affix
+    else:
+        from affix_admission import validate as validate_affix
+    validate_affix(DATA, manifest, tables, cells)
     require(len(crosswalk) == 222, f"expected 222 token crosswalk rows, found {len(crosswalk)}")
     require(len(bridges) == 330, f"expected 330 semantic bridge rows, found {len(bridges)}")
 

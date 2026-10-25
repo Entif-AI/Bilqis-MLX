@@ -2,7 +2,7 @@
   "canonical_byte_count": 17977047,
   "canonical_sha256": "df21d927c97b458ff72e0910d5d120edd32dc14dd3f2273dda75e300c2308731",
   "canonical_triple_count": 73946,
-  "compiler_input_closure_sha256": "84ab9f7a0ff0f0df043b5778683e3392d9a45d0dcd3c6e2afa66d3eb48cdfe73",
+  "compiler_input_closure_sha256": "719a92def4d18bf31f56dd5a47989d62dcb0ad37b9a6901981f070ac646a8d51",
   "counts": {
     "root_rows_consumed": 5810,
     "root_resources_emitted": 5810,
@@ -73,7 +73,7 @@
   },
   "lexicon_source_sha256": "4bdc52e672ce3f98a9d27c0392f31600a861dc32be982f3332777454cac6c5df",
   "notation_count": 5810,
-  "receipt_sha256": "5554d38afe4de0cbf0409d6cfb0497ee6569158beb6b8b376017429ee1c546e9",
+  "receipt_sha256": "08fde223950e8d0fb6e3eb64946cab78a8b81d1d93df741cbdcf10682f0b61c1",
   "root_rows": 5810,
   "roots_with_multiple_parsed_senses": 706,
   "roots_with_zero_parsed_senses": 5097,

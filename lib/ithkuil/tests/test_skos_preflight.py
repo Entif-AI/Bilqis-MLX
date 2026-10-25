@@ -113,7 +113,7 @@ class PreflightContractTests(unittest.TestCase):
                 ("source_manifest", 18),
                 ("curriculum_manifest", 8),
                 ("source_sections", 337),
-                ("source_tables", 324),
+                ("source_tables", 727),
                 ("source_assertions", 4709),
                 ("grammatical_categories", 35),
                 ("morphemes_atomic", 772),

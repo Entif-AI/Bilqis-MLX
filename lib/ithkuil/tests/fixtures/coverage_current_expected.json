@@ -95,7 +95,7 @@
       ],
       "corrected_graph_sha256": "df21d927c97b458ff72e0910d5d120edd32dc14dd3f2273dda75e300c2308731",
       "corrected_graph_triples": 73946,
-      "corrected_receipt_sha256": "5554d38afe4de0cbf0409d6cfb0497ee6569158beb6b8b376017429ee1c546e9"
+      "corrected_receipt_sha256": "08fde223950e8d0fb6e3eb64946cab78a8b81d1d93df741cbdcf10682f0b61c1"
     },
     "residue": {
       "source_rows": 6062,

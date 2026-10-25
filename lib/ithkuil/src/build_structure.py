@@ -120,7 +120,7 @@ def likely_header(row: list[str]) -> bool:
     return any(term in text for term in terms) and sum(len(c) <= 120 for c in row) >= max(1, len(row) // 2)
 
 
-def main() -> None:
+def main(*, admit_affix: bool = False) -> None:
     DATA.mkdir(parents=True, exist_ok=True)
     manifest = load_manifest()
     sections: list[dict[str, str | int]] = []
@@ -264,6 +264,15 @@ def main() -> None:
                         }
                     )
 
+    if admit_affix or (DATA / 'sources/affix_frontier_manifest.json').exists():
+        if __package__:
+            from .affix_admission import admit
+        else:
+            from affix_admission import admit
+        profile = admit(sections, tables, cells, DATA)
+        print('affix source admission:', profile['receipt']['counts'])
+        return
+
     write_csv(DATA / "source_sections.csv", sections)
     write_csv(DATA / "source_tables.csv", tables)
     write_csv(DATA / "source_table_cells.csv", cells)
@@ -280,5 +289,9 @@ def write_csv(path: Path, rows: list[dict[str, str | int]]) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    arguments = argparse.ArgumentParser(description=__doc__)
+    arguments.add_argument('--admit-affix', action='store_true',
+                           help='stage and admit the pinned affix PDF as source observations')
+    main(admit_affix=arguments.parse_args().admit_affix)
 
