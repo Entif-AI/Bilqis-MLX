@@ -1423,3 +1423,36 @@ as complete. If every component of a nonempty admitted parent is missing, valida
 fails with `COMPONENT_GROUP_MISSING` and the exact parent identity before RDF emission;
 an absent group cannot evade the per-group checks. The numeric order is linguistic structure only; no curriculum field or
 relation is emitted.
+
+## Explicit allomorph substitution rules (#59)
+
+`project_allomorph_rules(closure, rule_rows)` projects the current
+`allomorph_rules.csv` as rule resources, not semantic concepts. Rule identity is the
+source `allomorph_rule_id` under `id/allomorph-rule/`. The rule graph has no
+`skos:Concept`, `skos:broader`, `skos:narrower` or `skos:related` assertions and does
+not modify #38/#45 semantic identities.
+
+The rule preserves four source roles using issue-local extension predicates:
+
+- `bilqis:inputPattern`
+- `bilqis:intermediatePattern` when the source provides one
+- `bilqis:outputPattern`
+- `bilqis:allomorphDomain`
+
+The already-proven `bilqis:condition` term is reused for the source condition. Pattern
+strings are literal source text. #59 does not parse them into a rule language or
+interpret bracket syntax. A future unfamiliar pattern therefore remains literal if
+the source row is otherwise valid.
+
+The current source does not carry an `allomorph_group_id` or a semantic concept key
+for these rules. It carries only the affected-domain text `C_A affix-complex`.
+Consequently #59 emits that exact literal domain and does not fabricate a group or
+concept edge. This keeps rule structure separate from the #45 realization groups,
+whose semantic identities remain whatever #38 resolved.
+
+Public source loci reuse the #56 `residue_source` bridge and the common
+`source_public` policy. Current source proof: 19 unique rules, all in one explicit
+domain/source locus; 17 are direct substitutions and two carry intermediate patterns.
+Fixtures include `fbm → fv → vw`, Unicode `ţbn → tḑ → ḑy`, and direct `řř → ňš`.
+Missing required domain/input/output/condition fields are held without partial RDF;
+row order does not affect canonical output.
