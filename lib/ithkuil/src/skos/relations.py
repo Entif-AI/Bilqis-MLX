@@ -32,6 +32,11 @@ SEMANTIC_PREDICATES = {
 STRUCTURAL_KINDS = frozenset({"root_sense", "composition_membership", "ordered_component", "allomorph"})
 SOURCE_BINDINGS = {
     "allomorph": ("allomorph_rules.csv", "allomorph_rule_id", ("input_pattern", "output_pattern", "condition_summary")),
+    "root_sense": (
+        "lexicon_root_senses.csv",
+        "lexicon_sense_id",
+        ("source_id", "lexicon_root_id", "stem", "specification", "sense_summary"),
+    ),
 }
 NEGATIVE_SKOS_SUBSTITUTES = {
     "root_sense": str(SKOS.broader),
