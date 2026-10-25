@@ -1,0 +1,41 @@
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <http://www.w3.org/1999/02/22-rdf-syntax-ns#_1> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-39a9d514203027> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> <http://www.w3.org/1999/02/22-rdf-syntax-ns#_2> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-f3698d202266a8> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-39a9d514203027> <http://purl.org/dc/terms/identifier> "CC-39a9d514203027" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-39a9d514203027> <http://purl.org/dc/terms/isPartOf> <https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-39a9d514203027> <http://purl.org/dc/terms/references> <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/VX_TYPE_3/T3.D1> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-39a9d514203027> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Resource> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-39a9d514203027> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "ATOM-109428d5140ef9" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-39a9d514203027> <https://github.com/Entif-AI/Bilqis-MLX/vocab/componentRole> "type/degree vowel" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-39a9d514203027> <https://github.com/Entif-AI/Bilqis-MLX/vocab/condition> "default; replaced by listed alternant when immediately preceded by y" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-39a9d514203027> <https://github.com/Entif-AI/Bilqis-MLX/vocab/slotLabel> "V_X" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-f3698d202266a8> <http://purl.org/dc/terms/identifier> "CC-f3698d202266a8" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-f3698d202266a8> <http://purl.org/dc/terms/isPartOf> <https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-0060583f4d9807> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-f3698d202266a8> <http://purl.org/dc/terms/references> <https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-WEB-CH04/ATOM-7c73d550bffdc5> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-f3698d202266a8> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Resource> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-f3698d202266a8> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "ATOM-7c73d550bffdc5" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-f3698d202266a8> <https://github.com/Entif-AI/Bilqis-MLX/vocab/componentRole> "affix root" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-f3698d202266a8> <https://github.com/Entif-AI/Bilqis-MLX/vocab/slotLabel> "C_S" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <http://www.w3.org/1999/02/22-rdf-syntax-ns#_1> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-86d908a6dd8ec1> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <http://www.w3.org/1999/02/22-rdf-syntax-ns#_2> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-8a2f8234fc13dc> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <http://www.w3.org/1999/02/22-rdf-syntax-ns#_3> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-2572dce346294d> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> <http://www.w3.org/1999/02/22-rdf-syntax-ns#_4> <https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-88d06c223b2f4a> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-86d908a6dd8ec1> <http://purl.org/dc/terms/identifier> "CC-86d908a6dd8ec1" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-86d908a6dd8ec1> <http://purl.org/dc/terms/isPartOf> <https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-86d908a6dd8ec1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Resource> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-86d908a6dd8ec1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "scope marker" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-86d908a6dd8ec1> <https://github.com/Entif-AI/Bilqis-MLX/vocab/componentRole> "source-declared template" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-8a2f8234fc13dc> <http://purl.org/dc/terms/identifier> "CC-8a2f8234fc13dc" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-8a2f8234fc13dc> <http://purl.org/dc/terms/isPartOf> <https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-8a2f8234fc13dc> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Resource> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-8a2f8234fc13dc> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "(V_NC_N)" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-8a2f8234fc13dc> <https://github.com/Entif-AI/Bilqis-MLX/vocab/componentRole> "source-declared template" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-2572dce346294d> <http://purl.org/dc/terms/identifier> "CC-2572dce346294d" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-2572dce346294d> <http://purl.org/dc/terms/isPartOf> <https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-2572dce346294d> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Resource> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-2572dce346294d> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "(V_NC_M)" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-2572dce346294d> <https://github.com/Entif-AI/Bilqis-MLX/vocab/componentRole> "source-declared template" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-88d06c223b2f4a> <http://purl.org/dc/terms/identifier> "CC-88d06c223b2f4a" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-88d06c223b2f4a> <http://purl.org/dc/terms/isPartOf> <https://github.com/Entif-AI/Bilqis-MLX/id/composition/COMP-044604fe8e62d7> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-88d06c223b2f4a> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2000/01/rdf-schema#Resource> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-88d06c223b2f4a> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "V_N/V_H" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/composition-component/CC-88d06c223b2f4a> <https://github.com/Entif-AI/Bilqis-MLX/vocab/componentRole> "source-declared template" .

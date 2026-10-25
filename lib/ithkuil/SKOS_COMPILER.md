@@ -1382,3 +1382,44 @@ for display/query purposes only; that ordering is not asserted in RDF and carrie
 curriculum meaning. Duplicate source coordinates with conflicting meanings, unknown
 affix roots, or blank meaning text are held as whole concepts rather than inferred
 from neighboring degrees.
+
+## Ordered composition components (#58)
+
+`project_composition_components(closure, component_rows, compositions)` consumes the
+#57 parent projection plus deferred `composition_components.csv` rows. A parent group
+is emitted only when its parent composition exists and was emitted, every position is
+a positive unique integer, positions are contiguous from 1 through the parent
+`component_count`, and every component has exactly one atomic reference or literal
+symbol value.
+
+Component occurrence identity is the source `component_id` under
+`id/composition-component/`. The occurrence uses generic RDF/DC Terms wherever they
+state the source fact faithfully:
+
+- `dcterms:isPartOf` links occurrence to its parent construction;
+- `rdf:_1`, `rdf:_2`, … encode the exact linguistic position on the parent;
+- `rdf:value` preserves either the exact source atomic ID or literal/symbol;
+- `dcterms:references` points atomic occurrences at the #38-resolved semantic
+  resource for that atomic ID;
+- `dcterms:identifier` preserves the component occurrence ID.
+
+Only two new #58 terms are required: `bilqis:componentRole` and
+`bilqis:slotLabel`. The already-proven #57 `bilqis:condition` is reused for component
+conditions. Component role and slot are not taxonomy, source provenance, or
+pedagogical sequencing.
+
+The source table itself has no independent source-locus columns. #58 therefore does
+not fabricate a component locus. Each occurrence is linked to the parent composition,
+whose #57 resource already carries the source loci proved by the composition row and
+source assertions.
+
+Current source proof: 3,855 rows, 3,812 atomic references, 43 literal/symbol
+occurrences, zero both/neither value rows, zero unknown atomic IDs, zero duplicate
+positions and zero parent count mismatches. Fixtures reconstruct the nine-component
+Standard formative and both atomic and source-template compositions exactly. Any
+count drift, duplicate position, impossible value-kind combination or unknown atomic
+ID holds the entire parent component group so a shortened sequence cannot masquerade
+as complete. If every component of a nonempty admitted parent is missing, validation
+fails with `COMPONENT_GROUP_MISSING` and the exact parent identity before RDF emission;
+an absent group cannot evade the per-group checks. The numeric order is linguistic structure only; no curriculum field or
+relation is emitted.
