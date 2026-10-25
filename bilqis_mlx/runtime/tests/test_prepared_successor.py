@@ -445,7 +445,17 @@ class PreparedSuccessorTests(PreparedSuccessorFixture, unittest.TestCase):
                                 side_effect=AssertionError("repeated admission")), \
                                 patch.object(checkpoint, "_persist", side_effect=AssertionError("second generation")):
                             reconcile(root, saved)
-                            reconcile(root, state_dag.read_current(root))
+                            recovered = state_dag.read_current(root)
+                            bytes_after_first_recovery = {
+                                str(path.relative_to(root)): path.read_bytes()
+                                for path in root.rglob("*") if path.is_file()}
+                            self.assertEqual(recovered, saved)
+                            reconcile(root, recovered)
+                            self.assertEqual(state_dag.read_current(root), saved)
+                            self.assertEqual(
+                                {str(path.relative_to(root)): path.read_bytes()
+                                 for path in root.rglob("*") if path.is_file()},
+                                bytes_after_first_recovery)
                         events = [json.loads(line) for line in (root / "events.jsonl").read_text().splitlines()]
                         self.assertEqual(events, saved["delivery_outbox"])
                         self.assertEqual(len(events), 1)
