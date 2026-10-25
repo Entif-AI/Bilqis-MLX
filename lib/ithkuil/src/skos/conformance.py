@@ -128,7 +128,7 @@ def main(argv=None) -> int:
                 support.add(triple)
             files['admitted-mappings.nt'] = canonicalize(support).payload
             for gate in report['gates']:
-                files[gate['gate'] + '.json'] = json_bytes(gate)
+                files['gate-' + gate['gate'] + '.json'] = json_bytes(gate)
             if args.input_root and args.output_root.resolve().is_relative_to(args.input_root.resolve()):
                 raise ProfileError('CONFORMANCE_OUTPUT_INSIDE_SOURCE')
             report['evidence'] = write_evidence(files, args.output_root)

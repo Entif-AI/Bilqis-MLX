@@ -90,6 +90,8 @@ class ConformanceTests(unittest.TestCase):
             evidence = Path(json.loads(result.stdout)['evidence']['path'])
             self.assertEqual((evidence / 'canonical.nt').read_bytes(), canonicalize(graph).payload)
             self.assertEqual((evidence / 'admitted-mappings.nt').read_bytes(), b'')
+            self.assertEqual(json.loads((evidence / 'coverage.json').read_text()), receipt)
+            self.assertEqual(json.loads((evidence / 'gate-coverage.json').read_text())['gate'], 'coverage')
             repeated = subprocess.run(command, capture_output=True, text=True)
             self.assertEqual(repeated.returncode, 0, repeated.stderr)
             self.assertEqual(repeated.stdout, result.stdout)
