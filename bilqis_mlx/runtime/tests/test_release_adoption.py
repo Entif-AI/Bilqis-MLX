@@ -12,8 +12,11 @@ from bilqis_mlx.boolean_identification import (
 from bilqis_mlx.curriculum.scheduler import start_new
 from bilqis_mlx.factory.schedule import ScheduleCapability, ScheduleGrade, ScheduleProgram
 from bilqis_mlx.learning.champions import Checkpoint
+from bilqis_mlx.live_grade_b import OUTER_LANDMARK_VARIATION
 from bilqis_mlx.runtime.release_adoption import (
+    _atomic_boolean_landmark_revision_required,
     _idboolops_landmark_revision_required,
+    _source_presentation_revision_required,
     _profile_transition,
 )
 from bilqis_mlx.source_adapters.school import live_source_registry
@@ -93,6 +96,45 @@ class TeachingOnlyTransitionTests(unittest.TestCase):
             release(historical), registry))
         self.assertFalse(_idboolops_landmark_revision_required(
             release(current), registry))
+
+    def test_named_and_implies_landmarks_require_one_explicit_source_revision(self):
+        registry = live_source_registry()
+        generator = IDBOOLOPS_GENERATOR
+        current = registry.require(
+            generator, "bilqis.mlx.grade-b-connective-record-oracle/v1"
+        ).descriptor
+        historical = replace(
+            current,
+            variation_axes=tuple(
+                axis for axis in current.variation_axes
+                if axis != OUTER_LANDMARK_VARIATION),
+        )
+        binding = SimpleNamespace(
+            generator_id=generator,
+            oracle_id="bilqis.mlx.grade-b-connective-record-oracle/v1",
+        )
+
+        def release(provider):
+            capabilities = {
+                capability: SimpleNamespace(provider_id=provider.adapter_id)
+                for capability in ("B.AND", "B.IMPLIES")
+            }
+            bindings = {
+                capability: binding
+                for capability in capabilities
+            }
+            return SimpleNamespace(
+                execution_plan=SimpleNamespace(capability_map=capabilities),
+                source_bindings=SimpleNamespace(by_capability=bindings),
+                source_adapters=(provider,),
+            )
+
+        self.assertTrue(_atomic_boolean_landmark_revision_required(
+            release(historical), registry))
+        self.assertFalse(_atomic_boolean_landmark_revision_required(
+            release(current), registry))
+        self.assertTrue(_source_presentation_revision_required(
+            release(historical), registry))
 
 
 class ExplicitProfileDebtTests(unittest.TestCase):

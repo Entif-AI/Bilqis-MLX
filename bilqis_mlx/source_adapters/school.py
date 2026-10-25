@@ -39,8 +39,13 @@ from ..boolean_identification import (
 )
 
 
-from ..live_grade_b import (GENERATOR as B_COHORT_GENERATOR, RELEASE as B_RELEASE,
-                            draw_connectives, constructor_digest as b_digest)
+from ..live_grade_b import (
+    GENERATOR as B_COHORT_GENERATOR,
+    OUTER_LANDMARK_VARIATION as B_OUTER_LANDMARK_VARIATION,
+    RELEASE as B_RELEASE,
+    draw_connectives,
+    constructor_digest as b_digest,
+)
 
 
 from ..live_grade_c import (GENERATOR as C_COHORT_GENERATOR, RELEASE as C_RELEASE,
@@ -295,6 +300,10 @@ def live_source_registry() -> SourceAdapterRegistry:
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.boolean-connectives/v1", "bilqis_mlx.live_grade_b.draw_connectives",
             (B_ORACLE,), b_digest(), cohort_generator_id=B_COHORT_GENERATOR,
+            variation_axes=(
+                "source-valid", "balanced-gold", "fresh-seed",
+                B_OUTER_LANDMARK_VARIATION,
+            ),
             cohort_releases=((B_RELEASE, b_digest()),),
             teaching_option_ids=(BOOLEAN_ASSOCIATION_OPTION,)), draw_b, check_connective,
             enrich_boolean, witness_micro_obligation),
@@ -315,7 +324,8 @@ def live_source_registry() -> SourceAdapterRegistry:
             cohort_generator_id=B_IDBOOLOPS_GENERATOR,
             variation_axes=("source-valid", "fresh-seed", "inverse-operator-identification",
                             "balanced-operator-targets", "masked-operator-input",
-                            B_IDBOOLOPS_REPRESENTATION_VARIATION),
+                            B_IDBOOLOPS_REPRESENTATION_VARIATION,
+                            B_OUTER_LANDMARK_VARIATION),
             profile_dimensions=(("operators", BOOLEAN_OPERATORS),),
             cohort_releases=((B_IDBOOLOPS_RELEASE, b_idboolops_digest()),)),
             draw_b_idboolops_release, check_b_idboolops_release,

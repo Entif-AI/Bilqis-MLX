@@ -14,8 +14,9 @@ from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.grade_b_oracle import CONNECTIVES, evaluate as independent_oracle
 from bilqis_mlx.live_grade_a import live_course as live_a_course
 from bilqis_mlx.live_grade_b import (
-    GENERATOR, RELEASE, _encode_logic_record, _logic_source, _u7c_pattern_counts,
-    draw_connectives, live_course, constructor_digest, source_attestation,
+    GENERATOR, RELEASE, _encode_connective_record, _encode_logic_record,
+    _logic_source, _u7c_pattern_counts, draw_connectives, live_course,
+    constructor_digest, source_attestation,
 )
 from bilqis_mlx.source_adapters.school import draw_b
 
@@ -68,7 +69,10 @@ class LiveGradeBTests(unittest.TestCase):
             logic = _logic_source(LEGACY)
             for r in subset:
                 self.assertEqual(r["gold"], independent_oracle(r["record"],r["capability"]))
-                self.assertEqual(r["tokens"], _encode_logic_record(logic, r["record"], self.graph))
+                self.assertEqual(
+                    r["tokens"],
+                    _encode_connective_record(
+                        logic, r["record"], self.graph, r["capability"]))
                 self.assertLess(max(r["tokens"]), len(self.graph["tokens"]))
                 self.assertGreaterEqual(min(r["tokens"]), 0)
                 validate_exam_item(self.course, "B", ExamItem(
@@ -114,6 +118,91 @@ class LiveGradeBTests(unittest.TestCase):
                     Counter(_u7c_pattern_counts(op, 12)))
                 self.assertEqual({r["runtime_sampler"] for r in rows},
                                  {"bilqis.mlx.grade-b-u7c-runtime-sampler/v3"})
+
+    def test_and_and_implies_cover_all_truth_cells_with_named_outer_operands(self):
+        expected = {
+            "B.AND": Counter({
+                (True, True): 6,
+                (True, False): 2,
+                (False, True): 2,
+                (False, False): 2,
+            }),
+            "B.IMPLIES": Counter({
+                (True, False): 6,
+                (True, True): 2,
+                (False, False): 2,
+                (False, True): 2,
+            }),
+        }
+        for capability, pattern_counts in expected.items():
+            logic = _logic_source(LEGACY)
+            rows = draw_connectives(
+                LEGACY, self.graph, seed=2026102502, each=12,
+                capability=capability)
+            self.assertEqual(
+                Counter(tuple(row["operand_truths"]) for row in rows),
+                pattern_counts)
+            self.assertEqual(
+                Counter(row["gold"] for row in rows),
+                Counter({"TRUE": 6, "FALSE": 6}))
+            operator = capability.removeprefix("B.")
+            for row in rows:
+                self.assertEqual(
+                    row["record"].get("presentation"),
+                    "named-outer-operands/v1")
+                names = [self.graph["tokens"][token] for token in row["tokens"]]
+                self.assertEqual(names[:5], [
+                    "task.evaluate",
+                    "cogal.operator." + operator,
+                    "micro.proof.premise",
+                    "cogal.variable.P",
+                    "syntax.bind",
+                ])
+                separator = names.index("syntax.separator")
+                self.assertEqual(
+                    names[separator + 1:separator + 4],
+                    ["micro.proof.premise", "cogal.variable.Q", "syntax.bind"])
+                self.assertEqual(names[-1], "syntax.end")
+                self.assertEqual(
+                    set(row["record"]["assignments"]),
+                    logic.free_variables(row["record"]["expression"]))
+            self.assertTrue(any(row["record"]["assignments"] for row in rows))
+
+    def test_other_atomic_connectives_keep_the_historical_logic_codec(self):
+        logic = _logic_source(LEGACY)
+        for capability in ("B.NOT", "B.OR", "B.XOR", "B.IFF"):
+            row = draw_connectives(
+                LEGACY, self.graph, seed=2026102503, each=12,
+                capability=capability)[0]
+            self.assertNotIn("presentation", row["record"])
+            self.assertEqual(
+                row["tokens"],
+                _encode_logic_record(logic, row["record"], self.graph))
+
+    def test_pre_landmark_and_implies_records_keep_the_historical_codec(self):
+        logic = _logic_source(LEGACY)
+        for operator in ("AND", "IMPLIES"):
+            expression = logic.apply(
+                operator, logic.variable("P"), logic.variable("Q"))
+            record = logic.evaluation_record(
+                expression, {"P": True, "Q": False})
+            self.assertEqual(
+                _encode_connective_record(
+                    logic, record, self.graph, "B." + operator),
+                _encode_logic_record(logic, record, self.graph))
+            self.assertEqual(
+                independent_oracle(record, "B." + operator),
+                "FALSE")
+
+    def test_small_balanced_and_implies_draws_remain_supported(self):
+        for capability in ("B.AND", "B.IMPLIES"):
+            rows = draw_connectives(
+                LEGACY, self.graph, seed=2026102506, each=4,
+                capability=capability)
+            self.assertEqual(len(rows), 4)
+            self.assertEqual(
+                Counter(row["gold"] for row in rows),
+                Counter({"TRUE": 2, "FALSE": 2}))
 
     def test_oracle_rejects_undeclared_operator_and_wrong_arity(self):
         row = draw_connectives(LEGACY,self.graph,seed=1,each=4,capability="B.NOT")[0]

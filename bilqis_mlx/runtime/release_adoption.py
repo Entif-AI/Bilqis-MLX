@@ -22,6 +22,8 @@ import uuid as _uuid
 
 
 IDBOOLOPS_ADMITTED_PROVIDER_MISSING = "FACTORY_IDBOOLOPS_ADMITTED_PROVIDER_MISSING"
+SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING = (
+    "FACTORY_SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING")
 
 
 def _ensure_factory_admission(run_dir, receipt, course, graph):
@@ -150,6 +152,42 @@ def _idboolops_landmark_revision_required(predecessor, registry=None) -> bool:
     return (
         REPRESENTATION_VARIATION in current.variation_axes and
         REPRESENTATION_VARIATION not in admitted.variation_axes
+    )
+
+
+def _atomic_boolean_landmark_revision_required(predecessor, registry=None) -> bool:
+    """Return whether admitted AND/IMPLIES rows predate outer P/Q landmarks."""
+    from bilqis_mlx.live_grade_b import (
+        OUTER_LANDMARK_CONNECTIVES, OUTER_LANDMARK_VARIATION,
+    )
+    registry = registry or _source_adapters_school.live_source_registry()
+    for operator in OUTER_LANDMARK_CONNECTIVES:
+        capability = "B." + operator
+        execution = predecessor.execution_plan.capability_map.get(capability)
+        binding = predecessor.source_bindings.by_capability.get(capability)
+        if execution is None or binding is None:
+            continue
+        admitted = next(
+            (provider for provider in predecessor.source_adapters
+             if provider.adapter_id == execution.provider_id),
+            None,
+        )
+        if admitted is None:
+            raise ValueError(SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING)
+        current = registry.require(
+            binding.generator_id, binding.oracle_id).descriptor
+        if (OUTER_LANDMARK_VARIATION in current.variation_axes and
+                OUTER_LANDMARK_VARIATION not in admitted.variation_axes):
+            return True
+    return False
+
+
+def _source_presentation_revision_required(predecessor, registry=None) -> bool:
+    """Collect explicitly authorized neural-inert source-presentation revisions."""
+    registry = registry or _source_adapters_school.live_source_registry()
+    return (
+        _idboolops_landmark_revision_required(predecessor, registry) or
+        _atomic_boolean_landmark_revision_required(predecessor, registry)
     )
 
 
@@ -340,14 +378,14 @@ def _adopt_executable_profile(
     return record, compatibility_course, successor, successor_program
 
 
-def _adopt_idboolops_landmark_revision_if_needed(
+def _adopt_source_presentation_revision_if_needed(
         run_dir, receipt, grade_a_course, source_root, graph, predecessor):
-    """Adopt the authorized IDBOOLOPS presentation revision with zero updates."""
+    """Adopt authorized Boolean presentation revisions with zero neural updates."""
     program = _factory_schedule.schedule_program_from_executable_release(predecessor)
     compatibility_course = _compatibility_executable_projection.legacy_course_for_profile(
         grade_a_course, source_root, predecessor.profile)
     registry = _source_adapters_school.live_source_registry()
-    if not _idboolops_landmark_revision_required(predecessor, registry):
+    if not _source_presentation_revision_required(predecessor, registry):
         return receipt, compatibility_course, predecessor, program
     successor = _factory_executable_release.compile_successor_profile_release(
         predecessor,
@@ -356,7 +394,7 @@ def _adopt_idboolops_landmark_revision_if_needed(
         _factory_live_answers.live_answer_registry(),
         source_root=source_root,
         graph=graph,
-        verification_seed=2026102501,
+        verification_seed=2026102502,
         legacy_course=compatibility_course,
     )
     return _adopt_executable_profile(

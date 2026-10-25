@@ -24,6 +24,10 @@ RELEASE = "bilqis.mlx.grade-a-b-live/20261015-v1"
 ASSESSMENT_ITEMS_PER_CAPABILITY = 12
 PREREQUISITES = ()
 PINNED_BOOLEAN_SOURCE = PINNED_SOURCES["bilqis_logic/kernel.py"]
+OUTER_LANDMARK_CONNECTIVES = ("AND", "IMPLIES")
+OUTER_LANDMARK_PRESENTATION = "named-outer-operands/v1"
+OUTER_LANDMARK_VARIATION = "and-implies-named-outer-operands"
+MAX_BOOLEAN_CONTEXT_TOKENS = 96
 
 
 def _digest(value):
@@ -52,7 +56,11 @@ def source_attestation(legacy_root: Path) -> dict:
     source = root / "bilqis_logic/kernel.py"
     if hashlib.sha256(source.read_bytes()).hexdigest() != PINNED_BOOLEAN_SOURCE:
         raise ValueError("GRADE_B_BOOLEAN_TRUTH_TABLE_SOURCE_DRIFT")
-    required = ("task.evaluate", "syntax.end", "cogal.value.false", "cogal.value.true")
+    required = (
+        "task.evaluate", "syntax.bind", "syntax.separator", "syntax.end",
+        "micro.proof.premise", "cogal.value.false", "cogal.value.true",
+        "cogal.variable.P", "cogal.variable.Q",
+    )
     identities = tuple("cogal.operator." + op for op in CONNECTIVES)
     if not set(required + identities) <= set(graph["tokens"]):
         raise ValueError("GRADE_B_SOURCE_TOKEN_IDENTITIES_UNAVAILABLE")
@@ -127,7 +135,79 @@ def _encode_logic_record(logic, record: dict, graph: dict) -> list[int]:
         tokens = [names.index(logic.TOKENS[index]) for index in logic.encode(record)]
     except (IndexError, ValueError) as exc:
         raise ValueError(BOOLEAN_TOKEN_ABI_DRIFT) from exc
-    if not 1 <= len(tokens) <= 96:
+    if not 1 <= len(tokens) <= MAX_BOOLEAN_CONTEXT_TOKENS:
+        raise ValueError(BOOLEAN_CONTEXT_LENGTH)
+    return tokens
+
+
+def _expression_prefix(
+        logic, expression: dict, assignments: dict, graph: dict) -> list[int]:
+    """Reuse the pinned codec to obtain one operand's typed prefix."""
+    free_names = logic.free_variables(expression)
+    operand_assignments = {
+        name: assignments[name] for name in free_names}
+    encoded = logic.encode(
+        logic.evaluation_record(expression, operand_assignments))
+    bind = logic.TOKEN_ID["syntax.bind"]
+    try:
+        boundary = encoded.index(bind)
+        names = graph["tokens"]
+        return [names.index(logic.TOKENS[index])
+                for index in encoded[1:boundary]]
+    except (IndexError, ValueError) as exc:
+        raise ValueError(BOOLEAN_TOKEN_ABI_DRIFT) from exc
+
+
+def _encode_connective_record(
+        logic, record: dict, graph: dict, capability: str) -> list[int]:
+    """Encode atomic Boolean rows, landmarking only the authorized outer slots."""
+    operator = capability.removeprefix("B.")
+    if (operator not in OUTER_LANDMARK_CONNECTIVES or
+            record.get("presentation") != OUTER_LANDMARK_PRESENTATION):
+        return _encode_logic_record(logic, record, graph)
+    expression = record.get("expression")
+    if (not isinstance(expression, dict) or
+            expression.get("kind") != "apply" or
+            expression.get("operator") != operator or
+            len(expression.get("args", ())) != 2 or
+            not isinstance(record.get("assignments"), dict)):
+        raise ValueError(BOOLEAN_LANDMARK_RECORD_INVALID)
+    assignments = record["assignments"]
+    names = graph["tokens"]
+    try:
+        task = names.index("task.evaluate")
+        root = names.index("cogal.operator." + operator)
+        premise = names.index("micro.proof.premise")
+        left = names.index("cogal.variable.P")
+        right = names.index("cogal.variable.Q")
+        bind = names.index("syntax.bind")
+        separator = names.index("syntax.separator")
+        end = names.index("syntax.end")
+        false_id = names.index("cogal.value.false")
+        true_id = names.index("cogal.value.true")
+    except ValueError as exc:
+        raise ValueError(BOOLEAN_TOKEN_ABI_DRIFT) from exc
+    left_prefix = _expression_prefix(
+        logic, expression["args"][0], assignments, graph)
+    right_prefix = _expression_prefix(
+        logic, expression["args"][1], assignments, graph)
+    tokens = [
+        task, root,
+        premise, left, bind, *left_prefix,
+        separator,
+        premise, right, bind, *right_prefix,
+        separator,
+        bind,
+    ]
+    for name, value in sorted(assignments.items()):
+        if name not in ("P", "Q") or type(value) is not bool:
+            raise ValueError(BOOLEAN_LANDMARK_RECORD_INVALID)
+        tokens.extend((
+            names.index("cogal.variable." + name),
+            true_id if value else false_id,
+        ))
+    tokens.append(end)
+    if not 1 <= len(tokens) <= MAX_BOOLEAN_CONTEXT_TOKENS:
         raise ValueError(BOOLEAN_CONTEXT_LENGTH)
     return tokens
 
@@ -166,17 +246,43 @@ def _truth_expressions(logic, truth: bool, operator: str) -> tuple[tuple[dict, d
     return tuple(result)
 
 
+def _split_three(total: int) -> tuple[int, int, int]:
+    base, remainder = divmod(total, 3)
+    return tuple(base + (1 if index < remainder else 0)
+                 for index in range(3))
+
+
 def _u7c_pattern_counts(op: str, each: int) -> dict[tuple[bool, ...], int]:
     half = each // 2
     low, high = half // 2, half - half // 2
     if op == "NOT":
         return {(False,): half, (True,): half}
     if op == "AND":
-        return {(True, True): half, (True, False): low, (False, True): high}
+        tf, ft, ff = _split_three(half)
+        return {
+            pattern: count
+            for pattern, count in (
+                ((True, True), half),
+                ((True, False), tf),
+                ((False, True), ft),
+                ((False, False), ff),
+            )
+            if count
+        }
     if op == "OR":
         return {(False, False): half, (True, False): low, (False, True): high}
     if op == "IMPLIES":
-        return {(True, False): half, (True, True): low, (False, False): high}
+        tt, ff, ft = _split_three(half)
+        return {
+            pattern: count
+            for pattern, count in (
+                ((True, False), half),
+                ((True, True), tt),
+                ((False, False), ff),
+                ((False, True), ft),
+            )
+            if count
+        }
     if op == "XOR":
         return {(False, True): low, (True, False): high,
                 (False, False): low, (True, True): high}
@@ -229,6 +335,8 @@ def draw_connectives(legacy_root: Path, graph: dict, *, seed: int,
                 expression = logic.apply(op, *operands)
                 record = logic.evaluation_record(expression, env)
                 record["query"] = expression
+                if op in OUTER_LANDMARK_CONNECTIVES:
+                    record["presentation"] = OUTER_LANDMARK_PRESENTATION
                 source_id = source_record_identity(record)
                 identity = capability_row_identity("B." + op, record)
                 if identity in seen:
@@ -244,7 +352,8 @@ def draw_connectives(legacy_root: Path, graph: dict, *, seed: int,
                     "id": identity, "source_id": source_id,
                     "capability": "B." + op, "answer_kind": "binary",
                     "gold": gold, "record": record,
-                    "tokens": _encode_logic_record(logic, record, graph),
+                    "tokens": _encode_connective_record(
+                        logic, record, graph, "B." + op),
                     "oracle": ORACLE_VERSION, "generator": GENERATOR,
                     "operand_truths": list(pattern),
                     "root": "cogal.operator." + op,
@@ -271,4 +380,5 @@ def independent_truth(op: str, values: tuple[bool, ...]) -> bool:
 BOOLEAN_SOURCE_ROOT_MISMATCH = "GRADE_B_BOOLEAN_SOURCE_ROOT_MISMATCH"
 BOOLEAN_TOKEN_ABI_DRIFT = "GRADE_B_BOOLEAN_TOKEN_ABI_DRIFT"
 BOOLEAN_CONTEXT_LENGTH = "GRADE_B_BOOLEAN_CONTEXT_LENGTH"
+BOOLEAN_LANDMARK_RECORD_INVALID = "GRADE_B_BOOLEAN_LANDMARK_RECORD_INVALID"
 UNKNOWN_OPERATOR = "GRADE_B_UNKNOWN_OPERATOR"

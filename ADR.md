@@ -1333,3 +1333,37 @@ before drawing new IDBOOLOPS rows. The scheduler projection and causal student a
 preserved, stale assessment evidence is invalidated, and the changed factory-release
 identity follows the existing championship-identity reset/archive rules rather than
 silently comparing old and new presentation strata.
+
+
+## ADR-096 | 2026-10-25 | AND/IMPLIES complete truth cells and expose outer operand roles
+
+**Direct user decision after observing repeated Grade-B frontier-loss rejections.**
+Extend the narrow information-geometry repair to `B.AND` and `B.IMPLIES` without
+reintroducing world models, hidden-state auxiliary losses, or a new token ABI. The
+source AST, independent Boolean oracle, answer modality, scheduler, retention gates,
+student/AdamW custody and historical evidence remain unchanged.
+
+For 12-row source cohorts, keep exact 6/6 TRUE/FALSE balance while restoring the
+previously omitted truth cells. `B.AND` uses `TT=6, TF=2, FT=2, FF=2`;
+`B.IMPLIES` uses `TF=6, TT=2, FF=2, FT=2`. The original U7C causal-core cells remain
+present as a subset, so the earlier counterfactual influence witness is preserved,
+but the full released source family now exposes all four operand truth combinations.
+This intentionally favors semantic closure over keeping the full 12-row marginal
+distribution optimized for the old sparse single-arm-baseline heuristic.
+
+The student-facing encoding now makes only the two **outer operand roles** explicit:
+`premise P bind <left source expression> ; premise Q bind <right source expression>`.
+The original source-expression diversity and P/Q variable bindings inside those
+expressions remain available; the landmarks factor the outer tree without replacing
+the source expressions with bare truth values. `B.NOT`, `B.OR`, `B.XOR` and `B.IFF`
+retain the historical logic codec. This is narrower than the AST-boundary and
+auxiliary-hidden-state experiments rejected by ADR-066 and makes no claim of neural
+improvement before live evidence exists.
+
+Because the canonical full-B factory currently routes atomic Boolean capabilities
+through the umbrella Boolean-identification provider, that provider explicitly
+declares this presentation variation as well. A run whose admitted release predates
+the marker adopts one verified same-profile `REVISE_SOURCE` successor with zero
+neural updates. The causal student and scheduler projection are preserved while
+stale assessment/championship authority is handled by the existing source-revision
+identity rules.
