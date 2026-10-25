@@ -1324,3 +1324,56 @@ root sourcing and future grade composition remain separately governed work. This
 keeps #150 focused on the architecture originally intended from the beginning: one
 generic factory through which later semantics become declarative inputs rather than
 new implementation families.
+
+## ADR-096 | 2026-10-25 | Conjoined Triangle authority, immutable identity and projection boundaries
+
+**Direct user decision.** The Bilqis semantic corpus, curriculum factory, Akasha and Mission Control must converge without collapsing their authority boundaries. State transitions should follow functional, append-only semantics wherever practical: a correction or revision creates a new immutable artifact, event, receipt or projection version. Historical evidence is never rewritten to make current state look cleaner.
+
+### Semantic authority and Rosetta boundary
+
+The canonical New Ithkuil relational IR and its deterministic SKOS/RDF release own the meaning of Bilqis semantic primitives and their ontology relationships. SKOS is the dictionary. It does not own trainer mechanics, process execution, learner state or operational policy.
+
+Rosetta is the narrow waist for representing and communicating meaning, process evidence and protocol relationships. It must not presume implementation mechanics, choose policies, express opinions, or turn an external vocabulary into Rosetta core semantics. The Bilqis SKOS corpus integrates through a governed Rosetta VocabPack with stable anchors. Standards such as OWL 2, SHACL and SPARQL may be used through packs, validators or projections where their own contracts apply. They do not expand Rosetta core by convenience. Rosetta core process semantics describe interoperable protocol artifacts and update propagation, not the internal algorithms of surrounding Entif projects.
+
+The source vocabulary, Rosetta representation and executable implementation therefore remain separate authorities. A source term can retain one stable semantic identity across many implementation revisions.
+
+### Identity taxonomy and provider attestation
+
+Semantic identity MUST NOT depend on provider implementation bytes.
+
+A stable semantic identity names what a concept or semantic contract means. An immutable semantic release digest identifies the exact released semantic content. A provider implementation has its own independently versioned implementation identity or digest. An admission receipt binds the semantic identity/release, provider implementation identity, applicable proof evidence and admitted runtime target.
+
+A semantics-preserving provider refactor may change the provider implementation digest without changing semantic identity. A semantic change requires a new semantic release identity/version. Historical admission receipts remain immutable and continue to attest the exact semantic and implementation identities that existed when they were issued.
+
+Cross-system contracts must use explicit identity classes rather than an ambiguous generic `id` where confusion is possible. The intended classes include stable semantic identity, exact content/release digest, external source anchor, provider implementation digest, run identity, checkpoint identity, projection identity and receipt identity.
+
+### Akasha domain and projection model
+
+Akasha is a governed data plane and query substrate, not a semantic source of truth. Its initial deployment may be physically consolidated, but its domains are logically federated. Semantic projection, learner evidence, factory/release state, training/run history, receipts/provenance and program/operational state remain distinct namespaces with explicit owners and mutation laws.
+
+Derived Akasha projections must be disposable. Deleting a derived projection must not destroy canonical meaning or historical evidence. The system must be able to rebuild it from canonical immutable releases, artifacts, events and receipts.
+
+Learner evidence is immutable event history. Corrections, disputes and later evaluations append new evidence or superseding relationships rather than overwriting prior observations. "Current mastery", confidence, fragility, debt and similar learner-state values are projections over that history, not mutable canonical facts.
+
+### Curriculum admission state
+
+Source availability does not imply curriculum admission. The normal progression is:
+
+`SOURCE_AVAILABLE -> SEMANTICALLY_MAPPED -> CURRICULUM_CANDIDATE -> FACTORY_VALIDATED -> QUALIFIED -> STAGED -> ADMITTED`.
+
+Automation may advance deterministic and evidence-backed stages through `STAGED`. `ADMITTED` remains an explicit human-authority transition unless a later ADR changes that boundary. Parsing, mapping, materializing or validating a semantic source must never silently authorize neural training.
+
+Every cross-leg artifact must name the semantic/factory release it expects. Stale or mismatched identity fails explicitly. Implementations must not silently substitute "latest", guess a translation or repair identity drift by convenience.
+
+### Integration and Mission Control
+
+PR-level completion is not holistic qualification. Each implementation payload must first qualify independently. Exact qualified heads are then combined into an ephemeral integration candidate. Cross-boundary tests and one reproducible qualification receipt govern merge readiness. The tested combination, or a sequence proven equivalent to it, is the merge authority.
+
+Mission Control begins as a read-only control plane over durable sources and projections. It must not become semantic, learner-evidence, factory or receipt authority through UI convenience. Operator status distinguishes at least implemented, turned in, individually qualified, integrated, launch qualified, blocked and superseded. These states must derive from their owning evidence rather than a generic mutable `done` flag.
+
+The Conjoined Triangle tracker is temporary. Mission Control replaces bespoke project trackers only after the same Program, WorkItem, Dependency, Gate, Evidence, Risk, Decision and Notification model can onboard a second non-Bilqis project without a core schema fork or another spreadsheet.
+
+### Write-admission boundary reserved for follow-up
+
+The user agrees with the core direction that canonical mutations must pass through governed authority and that Mission Control or arbitrary workers must not write source meaning or canonical evidence directly. The detailed information-flow model, including writer topology, command brokering, authorization stages and propagation mechanics, is intentionally **not frozen by this ADR**. That design remains open for the next architecture discussion. Future implementation must not infer a more specific write topology from this ADR.
+
