@@ -1282,3 +1282,36 @@ side report, while invalid or partial policy input fails before graph assembly.
 Focused proof uses run-root `venv/bin/python -m unittest` on `test_skos_collision` and
 `test_skos_collision_hardening`. Same lexical strings under distinct datatypes/schemes
 continue to use the already-green #33 primitive tests.
+
+## Full generic atomic compilation (#48)
+
+`compile_atomic(closure, resolution=None, admissions=()) -> AtomicCompileResult` composes
+the existing semantic owners instead of adding category-specific emitters: #38 identity,
+#45 realization normalization, #46 definition normalization, #47 exact collision policy,
+then the existing SourceProjector/core builder. `atomic_report_json_bytes(result)` emits
+a deterministic category-accounting summary.
+
+Category support is structural. The runtime reads `category_code`, `value_code`,
+`morpheme_class`, family registry membership and source metadata from the validated IR;
+it never matches English category/value labels. Atomic roots retain source-qualified root
+identity, grammar rows retain category/value identity, and family membership remains
+SKOS Collection membership rather than taxonomy or curriculum order.
+
+Current source contains 772 atomic rows across 34 category codes. The strict current
+collision policy yields 272 emitted rows and 500 held rows, with zero rejected or silent
+rows. These correspond to 261 emitted atomic resources; 499 held rows are involved in
+unresolved #47 notation collisions and one is held by the existing `SOURCE_TEXT_TOO_LONG`
+profile boundary. The resulting bounded atomic graph has 2,052 triples. The literal
+category fixture names all 34 categories and their exact source/emitted/held counts.
+
+Unknown/new category rows cannot disappear: a source category absent from the structural
+family registry becomes explicit upstream-held state and still appears in the category
+report. Conversely, a synthetic structurally equivalent category supplied through the
+same category/family metadata and stable keys compiles through the same runtime path,
+demonstrating that adding a category does not require new architecture or an English-name
+branch.
+
+Every row has exactly one `EMITTED`, `HELD`, or fail-closed `REJECTED` outcome. Existing
+definition and collision reason codes are preserved; the orchestrator does not reinterpret
+their meaning. No lexicon sense, mapping, composition, Falkor or curriculum projection is
+introduced here.

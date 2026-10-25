@@ -1,0 +1,220 @@
+{
+  "categories": {
+    "AFFILIATION": {
+      "emitted_rows": 0,
+      "held_rows": 7,
+      "rejected_rows": 0,
+      "source_rows": 7
+    },
+    "ASPECT": {
+      "emitted_rows": 0,
+      "held_rows": 44,
+      "rejected_rows": 0,
+      "source_rows": 44
+    },
+    "BIAS": {
+      "emitted_rows": 60,
+      "held_rows": 1,
+      "rejected_rows": 0,
+      "source_rows": 61
+    },
+    "CASE": {
+      "emitted_rows": 0,
+      "held_rows": 108,
+      "rejected_rows": 0,
+      "source_rows": 108
+    },
+    "CASE_ACCESSOR": {
+      "emitted_rows": 6,
+      "held_rows": 0,
+      "rejected_rows": 0,
+      "source_rows": 6
+    },
+    "CASE_ACCESSOR_VX": {
+      "emitted_rows": 0,
+      "held_rows": 83,
+      "rejected_rows": 0,
+      "source_rows": 83
+    },
+    "CASE_SCOPE": {
+      "emitted_rows": 5,
+      "held_rows": 8,
+      "rejected_rows": 0,
+      "source_rows": 13
+    },
+    "CASE_STACKING": {
+      "emitted_rows": 2,
+      "held_rows": 0,
+      "rejected_rows": 0,
+      "source_rows": 2
+    },
+    "CONFIGURATION": {
+      "emitted_rows": 4,
+      "held_rows": 16,
+      "rejected_rows": 0,
+      "source_rows": 20
+    },
+    "EFFECT": {
+      "emitted_rows": 0,
+      "held_rows": 17,
+      "rejected_rows": 0,
+      "source_rows": 17
+    },
+    "EXTENSION": {
+      "emitted_rows": 0,
+      "held_rows": 11,
+      "rejected_rows": 0,
+      "source_rows": 11
+    },
+    "FUNCTION_SPECIFICATION_CONTEXT": {
+      "emitted_rows": 0,
+      "held_rows": 40,
+      "rejected_rows": 0,
+      "source_rows": 40
+    },
+    "ILLOCUTION": {
+      "emitted_rows": 8,
+      "held_rows": 1,
+      "rejected_rows": 0,
+      "source_rows": 9
+    },
+    "INVERSE_CASE_ACCESSOR": {
+      "emitted_rows": 6,
+      "held_rows": 0,
+      "rejected_rows": 0,
+      "source_rows": 6
+    },
+    "LEVEL": {
+      "emitted_rows": 0,
+      "held_rows": 9,
+      "rejected_rows": 0,
+      "source_rows": 9
+    },
+    "LEXICAL_ROOT": {
+      "emitted_rows": 6,
+      "held_rows": 0,
+      "rejected_rows": 0,
+      "source_rows": 6
+    },
+    "MOOD": {
+      "emitted_rows": 0,
+      "held_rows": 6,
+      "rejected_rows": 0,
+      "source_rows": 6
+    },
+    "NUMBER_ROOT": {
+      "emitted_rows": 20,
+      "held_rows": 0,
+      "rejected_rows": 0,
+      "source_rows": 20
+    },
+    "PERSPECTIVE_ESSENCE": {
+      "emitted_rows": 0,
+      "held_rows": 14,
+      "rejected_rows": 0,
+      "source_rows": 14
+    },
+    "PHASE": {
+      "emitted_rows": 0,
+      "held_rows": 9,
+      "rejected_rows": 0,
+      "source_rows": 9
+    },
+    "REFERENTIAL": {
+      "emitted_rows": 16,
+      "held_rows": 23,
+      "rejected_rows": 0,
+      "source_rows": 39
+    },
+    "REGISTER": {
+      "emitted_rows": 11,
+      "held_rows": 2,
+      "rejected_rows": 0,
+      "source_rows": 13
+    },
+    "SERIES1": {
+      "emitted_rows": 0,
+      "held_rows": 9,
+      "rejected_rows": 0,
+      "source_rows": 9
+    },
+    "SERIES2": {
+      "emitted_rows": 0,
+      "held_rows": 9,
+      "rejected_rows": 0,
+      "source_rows": 9
+    },
+    "SERIES3": {
+      "emitted_rows": 0,
+      "held_rows": 17,
+      "rejected_rows": 0,
+      "source_rows": 17
+    },
+    "SERIES4": {
+      "emitted_rows": 0,
+      "held_rows": 9,
+      "rejected_rows": 0,
+      "source_rows": 9
+    },
+    "SPECIALIZED_ROOT": {
+      "emitted_rows": 74,
+      "held_rows": 0,
+      "rejected_rows": 0,
+      "source_rows": 74
+    },
+    "SUPPLETIVE_ADJUNCT": {
+      "emitted_rows": 0,
+      "held_rows": 4,
+      "rejected_rows": 0,
+      "source_rows": 4
+    },
+    "VALENCE": {
+      "emitted_rows": 0,
+      "held_rows": 9,
+      "rejected_rows": 0,
+      "source_rows": 9
+    },
+    "VALIDATION": {
+      "emitted_rows": 8,
+      "held_rows": 1,
+      "rejected_rows": 0,
+      "source_rows": 9
+    },
+    "VXCS_AFFIX_ROOT": {
+      "emitted_rows": 43,
+      "held_rows": 8,
+      "rejected_rows": 0,
+      "source_rows": 51
+    },
+    "VX_TYPE_1": {
+      "emitted_rows": 1,
+      "held_rows": 9,
+      "rejected_rows": 0,
+      "source_rows": 10
+    },
+    "VX_TYPE_2": {
+      "emitted_rows": 1,
+      "held_rows": 9,
+      "rejected_rows": 0,
+      "source_rows": 10
+    },
+    "VX_TYPE_3": {
+      "emitted_rows": 1,
+      "held_rows": 17,
+      "rejected_rows": 0,
+      "source_rows": 18
+    }
+  },
+  "category_count": 34,
+  "emitted_resources": 261,
+  "emitted_rows": 272,
+  "graph_triples": 2052,
+  "held_reason_counts": {
+    "NOTATION_COLLISION": 499,
+    "SOURCE_TEXT_TOO_LONG": 1
+  },
+  "held_rows": 500,
+  "rejected_rows": 0,
+  "schema": "bilqis.skos.atomic-category-fixture/v1",
+  "source_rows": 772
+}
