@@ -278,7 +278,7 @@ class NumericStaircaseTests(unittest.TestCase):
             self.root, record)
         program = schedule_program_from_executable_release(release)
         self.assertEqual(record['numeric_maximum'], 3)
-        self.assertEqual(record['numeric_scope_final_maximum'], 6)
+        self.assertEqual(record['numeric_scope_final_maximum'], 10)
         self.assertEqual(release.profile.profile_id,
                          'school/boolean-kernel/and-iff/numeric-0-3')
         self.assertNotEqual(record['model_bundle'], before['model_bundle'])
@@ -419,7 +419,7 @@ class NumericStaircaseTests(unittest.TestCase):
                     '--legacy-code-root', str(fixtures.SOURCE)]), 0)
             report = json.loads(output.getvalue())
             self.assertEqual(report['numeric_staircase']['resume_maximum'], 3)
-            self.assertEqual(report['numeric_staircase']['final_maximum'], 6)
+            self.assertEqual(report['numeric_staircase']['final_maximum'], 10)
             self.assertFalse(report['neural_training_started_by_this_command'])
             self.assertEqual((self.root/'state.json').read_bytes(), original)
 
@@ -536,7 +536,7 @@ class NumericStaircaseTests(unittest.TestCase):
         while record['numeric_maximum'] < record['numeric_scope_final_maximum']:
             course, record, release, _ = self._advance_scope(course, record)
             observed.append(record['numeric_maximum'])
-        self.assertEqual(observed, [3, 4, 5, 6])
+        self.assertEqual(observed, [3, 4, 5, 6, 7, 8, 9, 10])
         self.assertIsNone(next_numeric_scope_profile(
             release, final_maximum=record['numeric_scope_final_maximum']))
 
@@ -575,13 +575,75 @@ class NumericStaircaseTests(unittest.TestCase):
             changed, course, successor, successor_program = _advance_numeric_profile(
                 self.root, record, self.fixture.grade_a, fixtures.SOURCE,
                 self.graph, course, release, program, numeric_staircase=False)
-        self.assertEqual(changed['numeric_scope_final_maximum'], 6)
+        self.assertEqual(changed['numeric_scope_final_maximum'], 10)
         self.assertEqual(changed['numeric_maximum'], 5)
         self.assertEqual(successor.profile.profile_id.rsplit('-', 1)[-1], '5')
         self.assertEqual(
             [cap.id for cap in successor_program.grades[-1].capabilities],
             ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB',
              'C.MUL', 'C.DIV'])
+
+    def test_grade_c_boundary_at_saved_ceiling_six_advances_to_seven(self):
+        course, record = self.start()
+        while record['numeric_maximum'] < 6:
+            course, record, release, program = self._advance_scope(course, record)
+        school = self._perfect_to_boundary(
+            program, storage._state_from_json(record['school'], program))
+        if asdict(school) != record['school']:
+            record = storage._advance(self.root, record, school)
+        record = storage._advance(
+            self.root, {**record, 'numeric_scope_final_maximum': 6},
+            storage._state_from_json(record['school'], program))
+        self.assertEqual(record['numeric_scope_final_maximum'], 6)
+        self.assertEqual(record['numeric_maximum'], 6)
+        self.assertEqual(record['school']['stage'], 'AWAITING_NEXT_GRADE')
+
+        with redirect_stdout(io.StringIO()):
+            changed, course, successor, successor_program = _advance_numeric_profile(
+                self.root, record, self.fixture.grade_a, fixtures.SOURCE,
+                self.graph, course, release, program, numeric_staircase=False)
+
+        self.assertEqual(changed['numeric_scope_final_maximum'], 10)
+        self.assertEqual(changed['numeric_maximum'], 7)
+        self.assertEqual(changed['school']['stage'], 'MAIN')
+        self.assertEqual(
+            changed['school']['active_grades'][changed['school']['grade_index']], 'C')
+        self.assertEqual(successor.profile.profile_id.rsplit('-', 1)[-1], '7')
+        self.assertEqual(
+            [cap.id for cap in successor_program.grades[-1].capabilities],
+            ['C.COUNT', 'C.NUMBER', 'C.SUCCESSOR', 'C.ADD', 'C.SUB',
+             'C.MUL', 'C.DIV'])
+
+    def test_grade_c_debt_boundary_advances_scope_and_preserves_debt(self):
+        course, record = self.start()
+        while record['numeric_maximum'] < 6:
+            course, record, release, program = self._advance_scope(course, record)
+        school = self._perfect_to_boundary(
+            program, storage._state_from_json(record['school'], program))
+        debt_school = {
+            **asdict(school),
+            'stage': 'AWAITING_NEXT_GRADE_WITH_DEBT',
+            'champions': {
+                grade: pointer for grade, pointer in asdict(school)['champions'].items()
+                if grade != 'C'},
+            'carried_mastery_debt': ['C.COUNT'],
+        }
+        record = storage._advance(
+            self.root,
+            {**record, 'numeric_scope_final_maximum': 6},
+            storage._state_from_json(debt_school, program))
+
+        with redirect_stdout(io.StringIO()):
+            changed, course, successor, _ = _advance_numeric_profile(
+                self.root, record, self.fixture.grade_a, fixtures.SOURCE,
+                self.graph, course, release, program, numeric_staircase=False)
+
+        self.assertEqual(changed['numeric_scope_final_maximum'], 10)
+        self.assertEqual(changed['numeric_maximum'], 7)
+        self.assertEqual(changed['school']['stage'], 'MAIN')
+        self.assertEqual(changed['school']['carried_mastery_debt'], ['C.COUNT'])
+        self.assertNotIn('C', changed['school']['champions'])
+        self.assertEqual(successor.profile.profile_id.rsplit('-', 1)[-1], '7')
 
     def test_wide_old_mistakes_are_deferred_without_being_discarded(self):
         course, record = self.start()
@@ -628,7 +690,7 @@ class NumericStaircaseTests(unittest.TestCase):
         self.assertEqual(observed,
             [(3,c) for c in
              ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB')] +
-            [(maximum,c) for maximum in (4, 5, 6) for c in
+            [(maximum,c) for maximum in range(4, 11) for c in
              ('C.COUNT','C.NUMBER','C.SUCCESSOR','C.ADD','C.SUB','C.MUL','C.DIV')])
         self.assertEqual(record['model_bundle'], entry_bundle)
 

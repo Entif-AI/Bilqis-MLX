@@ -555,6 +555,7 @@ def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, grap
         FINAL_MAXIMUM,
         FULL_OPERATION_MAXIMUM,
         INITIAL_MAXIMUM,
+        PREVIOUS_FINAL_MAXIMUM,
     )
     if numeric_staircase:
         if receipt.get("numeric_maximum", 0) > FINAL_MAXIMUM:
@@ -568,11 +569,11 @@ def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, grap
                     grade_a_course, source_root, graph,
                     _profiles_catalog.numeric_scope_profile(current, INITIAL_MAXIMUM))
     final_scope = receipt.get("numeric_scope_final_maximum")
-    # Existing Prometheus receipts were durably capped at 4 before the
-    # operator authorized two additional number roots. Scope 4 still owns the
-    # full-operation unlock; it is no longer the terminal numeric ceiling.
-    if (final_scope == FULL_OPERATION_MAXIMUM and
-            FINAL_MAXIMUM > FULL_OPERATION_MAXIMUM):
+    # Existing Prometheus receipts may retain either historical bounded
+    # ceiling. Keep the same one-step profile-revision mechanism while the
+    # temporary Grade C continuation policy extends through the registry target.
+    if (final_scope in (FULL_OPERATION_MAXIMUM, PREVIOUS_FINAL_MAXIMUM) and
+            FINAL_MAXIMUM > final_scope):
         receipt = {**receipt, "numeric_scope_final_maximum": FINAL_MAXIMUM}
         final_scope = FINAL_MAXIMUM
     if final_scope is not None:
