@@ -54,14 +54,23 @@ The region is intentionally **coarser than checkpoint identity**. It currently c
 - numeric scope where applicable;
 - capability-score band;
 - grade-score band;
+- bounded per-capability score shape inside the active lesson grade;
 - rejection-pressure band;
 - attempts-since-retention band;
 - mastery-debt band.
+- mastery-debt grade shape.
 
 Exact student/checkpoint SHA, cohort SHA, batch SHA, source-cohort SHA, and generated
 lesson identity are forbidden as region keys. They remain provenance in their owning
 receipts. This prevents the predictor from manufacturing a new one-sample context for
 every batch or checkpoint.
+
+The grade-score and mastery-debt shapes exist because aggregate grade means can alias
+materially different learners. They remain bounded semantic projections: score shape
+uses score bands rather than exact answer vectors, and debt shape records counts by
+grade rather than a checkpoint fingerprint. Rejection/attempt pressure also retains
+separate high-pressure bands rather than collapsing every value above seven into one
+bucket.
 
 The architecture-neutral fixture is:
 

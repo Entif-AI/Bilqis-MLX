@@ -25,8 +25,9 @@ class TeacherVNextConformanceTests(unittest.TestCase):
         expected = fixture["expected"]
         for field in (
             "capability_score_band", "grade_score_band",
+            "grade_score_shape",
             "rejection_pressure_band", "attempts_since_retained_band",
-            "mastery_debt_band",
+            "mastery_debt_band", "mastery_debt_shape",
         ):
             self.assertEqual(region[field], expected[field])
 

@@ -1607,6 +1607,10 @@ The predictive learner state is a coarse `StudentRegion`, not an exact checkpoin
 generated-batch identity. Exact student, source, cohort, proposal and realized-delivery
 identities remain immutable provenance outside the generalization key. This prevents
 the evidence fragmentation observed during the first realized-action experiment.
+The region nevertheless preserves material learner topology: active-grade capability
+score bands, mastery-debt shape and differentiated high rejection-pressure bands keep
+distinct learner states from aliasing merely because they share one aggregate grade
+mean. This is semantic state generalization, not checkpoint identity.
 
 Candidate evaluation now supports neural-inert target probes at a versioned
 multi-fidelity ladder (`2/4/8/16` in the first policy). The candidate still runs its

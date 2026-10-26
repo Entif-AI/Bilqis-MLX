@@ -26,6 +26,50 @@ class TeacherOutcomeContractTests(unittest.TestCase):
         self.assertEqual(first["grade_score_band"], "P085_094")
         self.assertEqual(first["rejection_pressure_band"], "R04_07")
 
+    def test_student_region_distinguishes_grade_and_debt_shape_without_checkpoint_identity(self):
+        from bilqis_mlx.learning.teacher_outcomes import student_region
+
+        common = dict(
+            capability="B.AND", phase="MAIN", lesson_grade="B",
+            curriculum_scope="scope/geometry=outer-v1",
+            geometry_epoch="outer-v1", numeric_maximum=7,
+            capability_correct=7, capability_total=12,
+            grade_correct=65, grade_total=96,
+            rejection_streak=10, attempts_since_retained=10,
+        )
+        historical = student_region(
+            **common,
+            mastery_debt_count=13,
+            grade_capability_scores={
+                "B.AND": (7, 12), "B.IFF": (7, 12),
+                "B.IMPLIES": (6, 12), "B.IDBOOLOPS": (5, 12),
+            },
+            mastery_debt_capabilities=(
+                "A.LINK", "A.MEMBER", "B.AND", "B.IMPLIES", "B.IFF",
+                "B.COMPOSITE", "B.IDBOOLOPS", "C.COUNT", "C.NUMBER",
+                "C.ADD", "C.SUB", "C.MUL", "C.DIV",
+            ))
+        later = student_region(
+            **common,
+            mastery_debt_count=17,
+            grade_capability_scores={
+                "B.AND": (7, 12), "B.IFF": (4, 12),
+                "B.IMPLIES": (5, 12), "B.IDBOOLOPS": (8, 12),
+            },
+            mastery_debt_capabilities=(
+                "A.LINK", "A.MEMBER", "B.NOT", "B.AND", "B.OR", "B.XOR",
+                "B.IMPLIES", "B.IFF", "B.COMPOSITE", "B.IDBOOLOPS",
+                "C.COUNT", "C.NUMBER", "C.SUCCESSOR", "C.ADD", "C.SUB",
+                "C.MUL", "C.DIV",
+            ))
+
+        self.assertNotEqual(historical["key"], later["key"])
+        self.assertNotEqual(
+            historical["grade_score_shape"], later["grade_score_shape"])
+        self.assertNotEqual(
+            historical["mastery_debt_shape"], later["mastery_debt_shape"])
+        self.assertNotIn("student_sha256", historical)
+
     def test_outcome_ledger_keeps_retention_gain_risk_and_cost_separate(self):
         from bilqis_mlx.learning.teacher_outcomes import (
             observe, predict, student_region,

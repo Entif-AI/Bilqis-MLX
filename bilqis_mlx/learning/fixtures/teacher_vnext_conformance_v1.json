@@ -12,9 +12,16 @@
     "capability_total": 33,
     "grade_correct": 205,
     "grade_total": 231,
+    "grade_capability_scores": {
+      "C.ADD": [28, 33],
+      "C.COUNT": [31, 33],
+      "C.NUMBER": [32, 33],
+      "C.SUB": [22, 33]
+    },
     "rejection_streak": 5,
     "attempts_since_retained": 7,
-    "mastery_debt_count": 3
+    "mastery_debt_count": 3,
+    "mastery_debt_capabilities": ["A.LINK", "B.AND", "C.SUB"]
   },
   "action": {
     "family": "LOCAL_INCUMBENT_MUTATION",
@@ -40,9 +47,11 @@
   "expected": {
     "capability_score_band": "P070_084",
     "grade_score_band": "P085_094",
+    "grade_score_shape": "C.ADD=P070_084|C.COUNT=P085_094|C.NUMBER=P095_099|C.SUB=P050_069",
     "rejection_pressure_band": "R04_07",
     "attempts_since_retained_band": "A04_07",
     "mastery_debt_band": "D01_03",
+    "mastery_debt_shape": "A:1|B:1|C:1",
     "retention_probability_after_one": 1.0,
     "expected_target_delta_after_one": 2.0,
     "expected_protected_net_delta_after_one": 0.0,

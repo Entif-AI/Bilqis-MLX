@@ -27,7 +27,10 @@ SCORE_BAND_MID_MIN = 70
 SCORE_BAND_WEAK_MIN = 50
 COUNT_BAND_LOW_MAX = 3
 COUNT_BAND_MID_MAX = 7
+COUNT_BAND_HIGH_MAX = 15
+COUNT_BAND_VERY_HIGH_MAX = 31
 MIN_VARIANCE_SAMPLE_SIZE = 2
+SCORE_PAIR_LENGTH = 2
 
 
 class TeacherOutcomeError(str, Enum):
@@ -109,7 +112,48 @@ def _count_band(value: int, *, prefix: str) -> str:
         return prefix + "01_03"
     if value <= COUNT_BAND_MID_MAX:
         return prefix + "04_07"
-    return prefix + "08_PLUS"
+    if value <= COUNT_BAND_HIGH_MAX:
+        return prefix + "08_15"
+    if value <= COUNT_BAND_VERY_HIGH_MAX:
+        return prefix + "16_31"
+    return prefix + "32_PLUS"
+
+
+def _grade_score_shape(lesson_grade: str,
+                       scores: dict[str, tuple[int, int]] | None) -> str:
+    if scores is None:
+        return "UNMEASURED"
+    if not isinstance(scores, dict):
+        raise ValueError(TeacherOutcomeError.REGION_SCORE_INVALID.value)
+    prefix = lesson_grade + "."
+    parts = []
+    for capability, score in sorted(scores.items()):
+        if not isinstance(capability, str) or not capability.startswith(prefix):
+            continue
+        if (not isinstance(score, (tuple, list)) or
+                len(score) != SCORE_PAIR_LENGTH or
+                type(score[0]) is not int or type(score[1]) is not int):
+            raise ValueError(TeacherOutcomeError.REGION_SCORE_INVALID.value)
+        parts.append(capability + "=" + _score_band(score[0], score[1]))
+    return "|".join(parts) if parts else "UNMEASURED"
+
+
+def _mastery_debt_shape(capabilities, mastery_debt_count: int) -> str:
+    if capabilities is None:
+        return "COUNT=" + _count_band(mastery_debt_count, prefix="D")
+    if not isinstance(capabilities, (tuple, list)) or any(
+            not isinstance(capability, str) or "." not in capability
+            for capability in capabilities):
+        raise ValueError(TeacherOutcomeError.REGION_IDENTITY_INVALID.value)
+    counts = {}
+    for capability in capabilities:
+        grade = capability.partition(".")[0]
+        counts[grade] = counts.get(grade, 0) + 1
+    if sum(counts.values()) != mastery_debt_count:
+        raise ValueError(TeacherOutcomeError.REGION_IDENTITY_INVALID.value)
+    return "|".join(
+        grade + ":" + str(counts[grade]) for grade in sorted(counts)
+    ) or "NONE"
 
 
 def student_region(*, capability: str, phase: str, lesson_grade: str,
@@ -119,7 +163,9 @@ def student_region(*, capability: str, phase: str, lesson_grade: str,
                    capability_total: int | None,
                    grade_correct: int | None, grade_total: int | None,
                    rejection_streak: int, attempts_since_retained: int,
-                   mastery_debt_count: int) -> dict:
+                   mastery_debt_count: int,
+                   grade_capability_scores: dict[str, tuple[int, int]] | None = None,
+                   mastery_debt_capabilities=None) -> dict:
     """Return a coarse predictive region with exact identities deliberately absent."""
     if (not isinstance(capability, str) or "." not in capability or
             not isinstance(phase, str) or not phase or
@@ -140,11 +186,15 @@ def student_region(*, capability: str, phase: str, lesson_grade: str,
         "capability_score_band": _score_band(
             capability_correct, capability_total),
         "grade_score_band": _score_band(grade_correct, grade_total),
+        "grade_score_shape": _grade_score_shape(
+            lesson_grade, grade_capability_scores),
         "rejection_pressure_band": _count_band(
             rejection_streak, prefix="R"),
         "attempts_since_retained_band": _count_band(
             attempts_since_retained, prefix="A"),
         "mastery_debt_band": _count_band(mastery_debt_count, prefix="D"),
+        "mastery_debt_shape": _mastery_debt_shape(
+            mastery_debt_capabilities, mastery_debt_count),
     }
     region["key"] = hashlib.sha256(json.dumps(
         region, sort_keys=True, separators=(",", ":")

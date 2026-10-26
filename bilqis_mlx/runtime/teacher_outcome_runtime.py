@@ -82,6 +82,13 @@ def build_region(receipt: dict, school, teacher: dict, *, capability: str,
     ]
     grade_correct = sum(value["correct"] for value in grade_rows) if grade_rows else None
     grade_total = sum(value["total"] for value in grade_rows) if grade_rows else None
+    grade_capability_scores = {
+        name: (value["correct"], value["total"])
+        for name, value in scores.items()
+        if isinstance(name, str) and name.partition(".")[0] == lesson_grade and
+        isinstance(value, dict) and type(value.get("correct")) is int and
+        type(value.get("total")) is int
+    }
     stagnation = (
         teacher.get("causal_experiment", {}).get("capability_stagnation", {}).get(
             capability + "|" + curriculum_scope, {})
@@ -100,6 +107,9 @@ def build_region(receipt: dict, school, teacher: dict, *, capability: str,
         rejection_streak=int(stagnation.get("rejection_streak", 0)),
         attempts_since_retained=int(stagnation.get("attempts_since_retained", 0)),
         mastery_debt_count=len(getattr(school, "carried_mastery_debt", ())),
+        grade_capability_scores=grade_capability_scores,
+        mastery_debt_capabilities=tuple(getattr(
+            school, "carried_mastery_debt", ())),
     )
 
 
