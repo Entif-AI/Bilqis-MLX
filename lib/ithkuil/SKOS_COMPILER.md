@@ -1,5 +1,11 @@
 # Deterministic New Ithkuil semantic compiler
 
+For current release inventories/digests and supported consumer commands, use
+[release consumption and rebuild](RELEASE_REBUILD.md). Numerical inventories and
+"current corpus" examples in the issue-by-issue implementation notes below are
+historical checkpoints; the linked #93–#95 release receipts supersede those counts.
+Their semantic contracts remain governed by the profile and owning modules.
+
 The compiler consumes the tracked relational CSV corpus under `_data/csv/`.
 `SKOS_PROFILE.md` governs semantic identity and RDF meaning. The compiler does not
 fetch sources, call a model, connect to FalkorDB, consult curriculum ordering, or

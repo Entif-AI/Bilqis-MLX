@@ -4,6 +4,10 @@ Normative contract #73, version `1.0.0`. FalkorDB is derived state. The canonica
 RDF default graph and its stable IRIs remain authoritative. This contract does
 not change the semantic profile, held-state admission, source truth or curriculum.
 
+For the current full-release digest, emitted lookup examples and consumer commands,
+start with [release consumption and rebuild](RELEASE_REBUILD.md). The bounded
+fixtures described below are historical contract proofs, not release identities.
+
 ## Exact storage model
 
 Every subject/object RDF term becomes one `RdfTerm` node. Every asserted triple
@@ -138,14 +142,21 @@ References: [query parameters](https://docs.falkordb.com/commands/graph.query),
 `falkor_reset.plan_reset(importer)` is read-only. It enumerates the exact owned
 term/edge keys, counts, graph/owner, represented canonical digest, marker state,
 foreign nodes touching owned edges, foreign edges touching owned nodes, and
-boundary blockers. Ownership requires the explicit marker plus matching per-term
+boundary blockers. Enumeration reuses the importer's 1,000-row pages in stable
+operational order. Independent aggregate counts before and after enumeration must
+match the full node/boundary rows; duplicate keys and marker drift block reset.
+See [provider-scale proof](evidence/reset-75-scale.json). Ownership requires the
+explicit marker plus matching per-term
 and per-edge owner. Unknown owned node classes, foreign incoming/outgoing edges,
 and an owned edge touching a foreign node refuse deletion.
 
 `reset_owned(importer, plan)` requires that exact graph/owner plan, re-reads it,
 and then executes one guarded database query. The query rechecks exact key sets,
 marker identity/state/digest and foreign boundaries before deleting only the
-selected owned edges and terms. It uses neither `GRAPH.DELETE` nor an unscoped
+selected owned edges and terms. After checking node keys, it drops the node array
+before scanning edges, then rematches nodes after edge deletion inside the same
+transaction. This avoids retaining that array through every edge row. It uses
+neither `GRAPH.DELETE` nor an unscoped
 node deletion. A same-count key swap or foreign edge arriving after the final
 client-side read fails the database guard. The marker survives in `empty` state;
 readback confirms zero represented counts. A subsequent verified import can rebuild.

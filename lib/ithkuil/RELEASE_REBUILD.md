@@ -1,4 +1,40 @@
-# Full-corpus clean-room rebuild (#93)
+# Semantic release consumption and clean-room rebuild (#93–#96)
+
+As of 2026-10-26, the declared source/IR release scope is fully accounted;
+semantic coverage remains **partial**. PR #291 is draft and unmerged. The evidence
+below describes the tested branch, not a published production deployment.
+
+## Authority and release artifacts
+
+| Layer | Authority and consumer entrypoint |
+| --- | --- |
+| Official source snapshots | Pinned URLs, SHA-256 and byte counts in [source manifest](_data/csv/sources/source_manifest.csv); extraction debt in [frontier receipt](_data/csv/sources/extraction_frontier.json) |
+| Relational compiler IR | Source-addressable CSVs under `_data/csv/`; [schema](SCHEMA.md) and [frontier contract](EXTRACTION_FRONTIER.md). CSV rows are compiler input, not RDF identity. |
+| Canonical semantic artifact | Default-graph RDF/SKOS, stable IRIs and typed notation governed by [profile](SKOS_PROFILE.md) and [compiler](SKOS_COMPILER.md) |
+| Held/debt/conformance evidence | Core held/error ledger plus full-domain `coverage.json`, `source-rows.json`, `conformance.json` and constituent reports. A passing gate does not remove debt. |
+| Optional derived store | [Falkor projection](FALKOR_PROJECTION.md), rebuilt only from conformant canonical RDF; Akasha is a read-only semantic consumer. |
+| Curriculum/training | Separate authority. This corpus admits no capability, changes no lesson order and authorizes no neural update. |
+
+The verified source candidate is `eb3ce818319382bb1946a3a4a23ea585a638ea70`.
+[Two clean builds](evidence/release-93.json), [release census](evidence/release-94/release-census.json)
+and [two graph rebuild/readbacks](evidence/release-95.json) bind the same full-domain
+RDF SHA-256 `7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e`
+and **130,173 triples**. Its content-addressed bundle ID is
+`f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`.
+The census accounts for **25,692 rows**: 15,152 EMITTED, 1,051 HELD,
+9,488 IR_ONLY, one REJECTED and zero UNSUPPORTED. The [human census](evidence/release-94/RELEASE_CENSUS.md)
+explains remaining extraction and semantic debt. These totals do not claim complete
+New Ithkuil coverage. The core compiler generation has its own smaller RDF closure
+and digest; use the full-domain conformance bundle for graph import.
+
+Artifacts are rebuilt locally; a Git checkout contains the receipts, not a hosted
+RDF download service. The semantic action returns exact core-generation and
+full-domain bundle paths in its result. Within the full-domain bundle,
+`manifest.json` hashes `canonical.nt`, comparison RDF, source census, coverage and
+conformance evidence. Verify the manifest and release digest before consumption.
+Do not substitute a fixture bundle or assume the core and full-domain digests match.
+
+## Clean-room source and semantic rebuild
 
 This proof covers the current admitted source/compiler scope. Held rows and
 unparsed frontier debt remain explicit. It does not perform graph materialization,
@@ -6,7 +42,8 @@ curriculum admission, neural training, merge or release publication.
 
 Use the exact candidate recorded in `evidence/release-93.json`. Keep all code and
 Python execution local. No graph service is required. Start each run from a
-separate `git archive` of that revision, without copying ignored local files:
+separate `git archive` of that revision, without copying ignored local files.
+Create each empty runtime directory before extracting:
 
 ```sh
 git -C <repository> archive <candidate-sha> | tar -xf - -C <new-runtime-directory>
@@ -75,3 +112,121 @@ Scan canonical CSV/RDF/held/frontier/coverage payloads for workspace paths.
 Preserve each failure's result/log evidence and verify prior authoritative files
 remain unchanged. Route any defect to its source/compiler/conformance owner;
 this release gate must not repair semantics or waive their safeguards.
+
+## Minimal local validation
+
+Run from the repository root using a compatible Python environment. Install the
+requirements from the selected candidate; #93 records the tested dependency freeze.
+
+```sh
+python3 -m pip install -r lib/ithkuil/requirements-extraction.txt \
+  -r lib/ithkuil/requirements-semantic.txt
+python3 -B -m lib.ithkuil.src.validate_dataset
+python3 -B -m lib.ithkuil.src.skos.conformance \
+  --input-root lib/ithkuil/_data/csv --output-root .local/release-conformance
+```
+
+This validates/recompiles existing IR; it does not replace the fresh-source proof
+above. Require all four gates (`coverage`, `no-omission`, `determinism`, `shacl`).
+Read `coverage_status` separately from conformance `status=complete`. A failed
+precondition stops downstream execution. Use `set -e` or separate successful
+commands before optional materialization; a failed test must not fall through.
+
+## RDF and notation queries
+
+Stable IRIs identify resources. Labels are search candidates and may be shared;
+never use an English label, row position or Falkor ID as semantic identity.
+Notation is exact UTF-8 lexical text **plus its datatype IRI**. Do not normalize,
+case-fold or merge notation systems. These SPARQL queries over the full release
+`canonical.nt` each return exactly one concept:
+
+```sparql
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT ?concept WHERE {
+  ?concept skos:notation "ACC"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code> .
+}
+```
+
+Expected: `https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC`.
+
+```sparql
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT ?concept WHERE {
+  ?concept skos:notation "cč"^^<https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil> .
+}
+```
+
+Expected: `https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD`.
+The [release query fixture](tests/fixtures/release95_smoke.json) also freezes family,
+scheme, source traceability and root-to-sense results. Its admitted `hasSense`
+journey retains `STEM 3` and `BSC`. Both mapping queries are empty: an absent
+mapping is not an invitation to infer one. CONFIGURATION/MFF remains HELD for
+NOTATION_COLLISION and must not replace these emitted examples. Lowercase/unparsed
+lexicon and other frontier limitations remain in the census.
+
+## Optional Falkor and Akasha commands
+
+Falkor is optional derived state. Use an operator-authorized explicit graph/owner
+and configured local endpoint. Discover the actual service/tunnel port from
+configuration; no example port grants target authority. Execute code locally and
+carry only DB traffic over an operator-established tunnel. Install the optional
+[graph requirements](requirements-falkor.txt) locally when selecting this stage.
+
+In these command templates, replace `BUNDLE` with the verified full-domain bundle,
+`GRAPH`/`OWNER` with the authorized target and `HOST`/`PORT` with its configured
+endpoint. The suite below is only valid for the exact release digest above. The
+materializer writes owned projection data and operational indexes; it never resets
+a conflicting graph automatically. Credentials, if required, come from existing
+`BILQIS_FALKOR_USERNAME` / `BILQIS_FALKOR_PASSWORD` environment settings and are
+never copied into receipts or documentation.
+
+```sh
+python3 -B -m lib.ithkuil.src.skos.falkor_receipt \
+  --bundle BUNDLE --suite lib/ithkuil/tests/fixtures/release95_smoke.json \
+  --graph GRAPH --owner OWNER --host HOST --port PORT > materialization.json
+```
+
+Only after a complete receipt, use the read-only adapter:
+
+```sh
+python3 -B -m lib.ithkuil.src.skos.akasha_skos \
+  --graph GRAPH --owner OWNER --host HOST --port PORT \
+  --receipt materialization.json --bundle BUNDLE \
+  --suite lib/ithkuil/tests/fixtures/release95_smoke.json \
+  --notation ACC \
+  --datatype https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code \
+  --expected-iri https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC
+```
+
+Expected `status=complete`, that exact concept, nonempty family/scheme lists and
+`coverage_status=partial`. Missing/stale/mismatched projection evidence fails
+explicitly; the adapter never falls back to an unrelated graph. #95 proves this
+bounded adapter using graph-scoped read-only credentials; it does not claim a
+broader Akasha production deployment.
+
+For a requested replacement, first obtain a no-mutation ownership plan:
+
+```sh
+python3 -B -m lib.ithkuil.src.skos.falkor_reset \
+  --graph GRAPH --owner OWNER --host HOST --port PORT > reset-plan.json
+```
+
+Reset execution requires separate exact-target authorization and review under the
+[scoped reset contract](FALKOR_PROJECTION.md). Complete paged key enumeration must
+agree with independent aggregate counts. Foreign boundary, wrong owner/digest,
+stale selection or mutation-time race blocks deletion. A result cap is never
+proof of completeness. No global limit change or whole-graph deletion is required.
+For lost acknowledgements, inspect live state before replay. The [scale proof](evidence/reset-75-scale.json)
+and #95 receipt preserve actual full-release reset/readback evidence.
+
+## Reusable ingestion Skill
+
+Use the version 1.0.0 [Skill entrypoint](../../skills/ithkuil-ingestion/SKILL.md),
+[workflow contract](INGESTION_SKILL_CONTRACT.md) and [packaged artifact](evidence/ithkuil-ingestion-1.0.0.skill).
+The [package receipt](evidence/ingestion-92-package.json) records exact file hashes,
+validator results and packaged clean-room execution. The Skill routes to existing
+source, semantic and optional graph owners; it contains no duplicate semantic
+compiler or production corpus. Its default source/semantic workflow needs no DB.
+Graph writes need explicit target/owner intent; the Skill grants no automatic reset,
+training, curriculum admission, Git publication or merge permission. Its bounded
+fixture demonstrates workflow behavior, separately from full-release evidence.
