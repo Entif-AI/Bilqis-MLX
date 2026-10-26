@@ -439,7 +439,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             if methodology_unavailable is None:
                 try:
                     methodology_steps.append(_diagnostics_teaching.inspect_lesson_step(
-                        course, cap, fresh, picked))
+                        executable_release.curriculum, cap, fresh, picked))
                 except ValueError as exc:
                     # A diagnostic implementation gap must not invent a new
                     # training gate or silently change the evolved teacher.
