@@ -37,6 +37,20 @@ class SchoolTelemetryTests(unittest.TestCase):
         start = headings.index("R/H")
         self.assertEqual(values[start:start + 5].strip(), "10")
 
+    def test_step_rate_is_run_normalized_not_redraw_delta(self):
+        board = Dashboard(
+            stream=io.StringIO(), clock=lambda: 1800.0,
+            show_all_panels=True, tables=LETTER_TABLES,
+            compact_header=True)
+        board.started = 0.0
+        board.state.update(attempted_steps=5400)
+        board._rate_step = 5383
+        board._rate_time = 1740.0
+
+        board._sample_step_rate()
+
+        self.assertEqual(round(board._steps_per_min), 180)
+
     def test_withheld_grade_mean_is_labeled_active_scope_and_qualification_blocked(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())

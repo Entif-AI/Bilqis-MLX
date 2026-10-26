@@ -1082,19 +1082,16 @@ class Dashboard:
             self.dirty=True
 
     def _sample_step_rate(self):
-        """Measure attempted optimizer throughput only at real dashboard draws."""
+        """Normalize attempted optimizer throughput across the full run runtime."""
         if self.state.get("_rate_sample_eligible", True) is False:
             return
         step=self.state.get("attempted_steps")
         now=self.clock()
         if type(step) is not int:
             return
-        if self._rate_step is None:
-            self._rate_step,self._rate_time=step,now
-            return
-        elapsed=now-self._rate_time
-        if elapsed>0 and step!=self._rate_step:
-            self._steps_per_min=(step-self._rate_step)/elapsed*60
+        elapsed=now-self.started
+        if elapsed>0:
+            self._steps_per_min=step/elapsed*60
             self._rate_step,self._rate_time=step,now
 
     def _latest_all_grade_score(self):
