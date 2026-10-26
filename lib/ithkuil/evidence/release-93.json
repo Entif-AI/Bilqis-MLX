@@ -1,0 +1,1225 @@
+{
+  "acceptance": {
+    "ir_rebuild_and_validation": "PASS: both complete canonical Stage-A sequences, all 10 commands successful, 26 matching published artifacts",
+    "no_model_or_manual_semantic_edits": "PASS: deterministic repository owners only; no semantic source or compiler code was changed",
+    "pinned_sources": "PASS: both independent sets of 18 downloads match declared hashes and byte counts; all 8 tracked chapter PDF hashes verify.",
+    "rdf_and_conformance": "PASS: both canonical semantic sequences; four gates each",
+    "second_clean_rebuild": "PASS: exact equality of both complete source/semantic inventories, including 130173 full-domain triples"
+  },
+  "authority_boundary": "IPR-0220; no curriculum admission or neural updates",
+  "branch": "codex/skos-31-43-pro-20261024",
+  "candidate_revision": "eb3ce818319382bb1946a3a4a23ea585a638ea70",
+  "commands": [
+    "git archive <candidate> | tar -xf - -C <new-runtime>",
+    "<python> -m venv <fresh-environment>",
+    "<fresh-python> -m pip install --no-cache-dir -r <candidate>/lib/ithkuil/requirements-extraction.txt -r <candidate>/lib/ithkuil/requirements-semantic.txt",
+    "curl -L --fail --silent --show-error --max-time 90 --output <new-runtime>/lib/ithkuil/_raw/<local-name> <manifest-requested-url>; verify unchanged manifest hash and byte count",
+    "<fresh-python> -B -m lib.ithkuil.src.ingestion --repo <runtime> --python <fresh-python> --selection all",
+    "<fresh-python> -B -m lib.ithkuil.src.ingestion_semantic --repo <runtime> --python <fresh-python> --input-root <runtime>/lib/ithkuil/_data/csv --frontier <runtime>/lib/ithkuil/_data/csv/sources/extraction_frontier.json --source-result <source-result> --output-root <new-output>"
+  ],
+  "dependency_freeze": [
+    "html5rdf==1.2.1",
+    "lxml==6.1.3",
+    "owlrl==7.6.2",
+    "packaging==26.3",
+    "pip==26.0.1",
+    "prettytable==3.18.0",
+    "PyMuPDF==1.27.2.3",
+    "pyparsing==3.3.3",
+    "pyshacl==0.40.1",
+    "rdflib==7.6.0",
+    "wcwidth==0.9.4"
+  ],
+  "differences": [],
+  "environment": {
+    "architecture": "arm64",
+    "candidate_revision": "eb3ce818319382bb1946a3a4a23ea585a638ea70",
+    "dependencies": "environment-freeze.txt",
+    "graph_client_installed": false,
+    "mlx_installed": false,
+    "openai_client_installed": false,
+    "os": "darwin",
+    "os_release": "23.5.0",
+    "python": "3.14.4 (main, Apr  7 2026, 13:13:20) [Clang 16.0.0 (clang-1600.0.26.6)]",
+    "source_restore": "Independent official HTTP downloads verified against unchanged tracked manifests; no source cache copied."
+  },
+  "excluded_operational_fields": [
+    "absolute workspace/interpreter/output paths",
+    "run/result identities derived from those paths",
+    "command argv/log locations"
+  ],
+  "fixture_only": false,
+  "hidden_state_checks": {
+    "missing_compiler_dependency": {
+      "error": "ModuleNotFoundError: No module named 'rdflib'",
+      "output_created": false,
+      "status": "nonzero exit 1"
+    },
+    "missing_parser_dependency": {
+      "error": "ModuleNotFoundError: No module named 'lxml'",
+      "failed_stage": "build_structure",
+      "no_publication": true,
+      "status": "FAILED"
+    },
+    "missing_sources": {
+      "downstream_commands": 0,
+      "error_code": "SOURCE_PIN_MISMATCH:NI-WEB-CH01:newithkuil_01_phonology.htm",
+      "status": "BLOCKED"
+    },
+    "no_graph_model_or_neural_clients": true,
+    "prior_authoritative_files_preserved": "Both tracked source/CSV reference trees remained byte-identical before successful source publication; semantic builds preserved every freshly published source artifact.",
+    "workspace_path_scan": "Every published source artifact and recorded canonical semantic payload passed; zero workstation paths."
+  },
+  "issue": 93,
+  "limits": [
+    "Coverage remains partial and held/frontier debt remains explicit.",
+    "#94 owns release-level accounting, #95 graph proof, #96 consumer documentation, and #97 root acceptance audit.",
+    "No production graph mutation, neural training, curriculum admission, merge or manual issue closure."
+  ],
+  "routed_defects": [],
+  "runs": {
+    "one": {
+      "frontier": {
+        "debt_by_reason": {
+          "DEBT_CONFLICT": 43,
+          "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 8757,
+          "DEBT_UNSUPPORTED_SHAPE": 339,
+          "chapter_0_toc_unparsed": 1,
+          "legacy_debt_not_measured": 2,
+          "partial_table_overlap": 3498,
+          "prose_and_semantic_exhaustiveness_unmeasured": 14,
+          "repeated_affix_identity": 2,
+          "roots_without_parsed_senses": 5097,
+          "roots_without_parsed_senses_in_source_receipt": 4898,
+          "unclassified_source_prose": 5962,
+          "unsupported_table_shape": 35
+        },
+        "entry_count": 26,
+        "receipt_sha256": "4bfea433a820234aac03191581b3a667f725d6afcf3b8cb7853ee363e405dafe",
+        "sha256": "33b668fb2fc0bb1f831e9d415851e39a88ba419d2a88de5f332f27b4d7986c24"
+      },
+      "pinned_inputs": {
+        "lib/ithkuil/_data/csv/sources/source_manifest.csv": "3e151b90b7140db9ee1319d4c16b2da3d8bd3aa675da5e0a9e20e57ce61b4b83",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 00 - Table of Contents.pdf": "5801addb2e60fc80859ec626c07ff4e32c8fa5805b1623d409d4f9cf913c3f6f",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 01 - Roots and Grammar.pdf": "1c60e40374cf6ffd16791b89983db8f6584c2e1feac7a9c965fc8255b2f95609",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 02 - Tools, States and Acts.pdf": "0d8eaa667d26345dfb55e99ee823fb8ecfa4b4a2d72f998d0e0e3c7b94bad9b2",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 04 - Psychology and Sociology.pdf": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 05 - Miscellaneous Entities.pdf": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 06 - Nature, Non-Biological.pdf": "0fd4aa1df217533427f950b86a4b7c4963dc5e66f7be927c8ad56a2ee990fdbd",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 07 - Natural Phenomena.pdf": "b753012f4df753b3cae476023adff3898a9296640b33e892185ebde22cd478d7",
+        "lib/ithkuil/_raw/New_Ithkuil_Lexicon.pdf": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+        "lib/ithkuil/_raw/index.html": "ade3938eb1bbdb9904ead704bd0fadc07fd064ffe0c4906e732a1c05552cec96",
+        "lib/ithkuil/_raw/newithkuil_01_phonology.htm": "f97f7d919cd9e0eca9d7221cb0ad03591c3b4a83e30feb208c5a3002a9be8d90",
+        "lib/ithkuil/_raw/newithkuil_02_morpho-phonology.htm": "5ee3a68497ca3bb242ba79cd3c556fa790a9407413b75242380b4cc1ecd2ffc6",
+        "lib/ithkuil/_raw/newithkuil_03_morphology.htm": "93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f",
+        "lib/ithkuil/_raw/newithkuil_04_case.htm": "d9e322e731a1df0fa6ed6213e15dc039ce7f27839fa06275e66764ff4dea0825",
+        "lib/ithkuil/_raw/newithkuil_05_verbs.htm": "4bd65c19301080f1aa96fa512701f88c19223c322535a448b88d70f81efb9c67",
+        "lib/ithkuil/_raw/newithkuil_06_more_verbs.htm": "db4f341c928f3432b53e3094c2e00a4995eed09be42bfa07729be18c1f08b91e",
+        "lib/ithkuil/_raw/newithkuil_07_affixes.htm": "11f947908bbbfb42705dfff63a40c83d376a39985ac83a28ce588fdcafc314b8",
+        "lib/ithkuil/_raw/newithkuil_08_adjuncts.htm": "125625c6377e5e755d65cbf2df02b5f2f2a50a6e847acb80badbf3afb9e0323a",
+        "lib/ithkuil/_raw/newithkuil_09_referentials.htm": "bf650d9017ae6c2a31f904aa35335d85364ed824b8585b169cc9e228db6a2dce",
+        "lib/ithkuil/_raw/newithkuil_10_spec_constructions.htm": "c664c578ff18c83b5bd209198a1b2fc7b0840697072b4f88faf6701164cb103e",
+        "lib/ithkuil/_raw/newithkuil_11_syntax.htm": "0d9d2a65ef2cb3c6e233090dc3d7aea6af16492e167dcfd7c304b06368f378c2",
+        "lib/ithkuil/_raw/newithkuil_12_script.htm": "1b36aa995d029aceaf9b4b3f8d41984d4a17372c1365e22c026617c794de89d7",
+        "lib/ithkuil/_raw/newithkuil_13_numbers.htm": "bfccda659c150949e8f5ae347f987ed6008db8a6fd2d85fd81e9a821f77ff581",
+        "lib/ithkuil/_raw/newithkuil_affixes.pdf": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+        "lib/ithkuil/_raw/newithkuil_appendices.htm": "3dacde8078f779c93db51d7575c231fae1114550bee38099fe74d1f07ff82197",
+        "lib/ithkuil/_raw/newithkuil_lexicon.pdf": "bfcaeca6350074748ecea2e273eeb7b812ccf59d848461ed4512259fcec51d43"
+      },
+      "published_source_artifacts": {
+        "EXTRACTION_FRONTIER.md": {
+          "bytes": 1828,
+          "sha256": "882037dfab4bbe998c1db031693291476af2b870d1e98f85a69b83fd7dc640a3"
+        },
+        "_data/csv/affix_degrees.csv": {
+          "bytes": 55649,
+          "sha256": "7eb67d6e39a9798f57da66a0b8840996a9caa46bfb5c0df10b71c4299bdbb2a3"
+        },
+        "_data/csv/allomorph_rules.csv": {
+          "bytes": 4526,
+          "sha256": "c053d0c6dce878bacb6ccb1f49f4cd6a8be7dd9185d02bb7992ac60f7def051d"
+        },
+        "_data/csv/bilqis_ithkuil_crosswalk.csv": {
+          "bytes": 156807,
+          "sha256": "afb61f90602cf8bf631fdb0191dcde723722327e4456f6e462694f1768d1c6ec"
+        },
+        "_data/csv/bilqis_semantic_bridges.csv": {
+          "bytes": 140542,
+          "sha256": "c5af26bb5b599eba19973a99a824e86ea2a82cf20a715d18bac0013ca7ba91fb"
+        },
+        "_data/csv/composition_components.csv": {
+          "bytes": 369982,
+          "sha256": "437e021d05d221ae0fc3b646c54cb33796b006ec9277b735bd3c5d53e238b39c"
+        },
+        "_data/csv/grammatical_categories.csv": {
+          "bytes": 7208,
+          "sha256": "005c123f7b7fa0db7bb2a812579f602447a13063b8c4000e450dd4e55710a44e"
+        },
+        "_data/csv/lexicon_root_evidence.csv": {
+          "bytes": 4887939,
+          "sha256": "aaefff67aa4b2ddf058a1926ce874145c1eb2fab4c5821eb7ce04e0cce601b50"
+        },
+        "_data/csv/lexicon_root_senses.csv": {
+          "bytes": 1454438,
+          "sha256": "fe0701acb57e9257b56bf2feac741171e583fdfab032f3d017cfcc8fa404eb5c"
+        },
+        "_data/csv/lexicon_roots.csv": {
+          "bytes": 2438800,
+          "sha256": "ddd84523758a5dcbfa86f70cd2c7bb0f63bdea18ee089015390f0d3a8199fc46"
+        },
+        "_data/csv/morpheme_compositions.csv": {
+          "bytes": 832038,
+          "sha256": "114ae3347d12c0b510ccff196466a27afc13e40b727eaf519f8d93d48ba2c512"
+        },
+        "_data/csv/morphemes_atomic.csv": {
+          "bytes": 274650,
+          "sha256": "6c6e2ea64a659b7061bdc3d388201c6219207bc1aa002869537f56d1f7ddf083"
+        },
+        "_data/csv/root_senses.csv": {
+          "bytes": 47417,
+          "sha256": "10b5cf14189f94269ed48d96b235a773e90c82623bda04eab4f8f965ed433b93"
+        },
+        "_data/csv/source_assertions.csv": {
+          "bytes": 963896,
+          "sha256": "20a197bd4ca9757c19b731652d124139109351294a3b561fb456c81f2e922f7d"
+        },
+        "_data/csv/source_sections.csv": {
+          "bytes": 56091,
+          "sha256": "765f30d97c64b68266a45cf77fed69cdba2ce70d5ec368ec1d6c817c259d856f"
+        },
+        "_data/csv/source_table_cells.csv": {
+          "bytes": 4322255,
+          "sha256": "d43de43ab990876be78cb07ae34ffc6bdc54b18ff8327118baa31814c5631768"
+        },
+        "_data/csv/source_tables.csv": {
+          "bytes": 186330,
+          "sha256": "d85cad7573ecb4d22f17a4dd61e0280b05c3cd0c4b1a57edb820a6ef8ec356e5"
+        },
+        "_data/csv/sources/affix_frontier_accounting.json": {
+          "bytes": 7908138,
+          "sha256": "230e2c1d5f00fe39cfd7fbfa49a9b00f78c85973bc7918859e24688c2c4db04f"
+        },
+        "_data/csv/sources/affix_frontier_manifest.json": {
+          "bytes": 2700,
+          "sha256": "0ef57b9f94004caca576a08c49d16c221ca9999432363c230a9b35f7d4f03c9b"
+        },
+        "_data/csv/sources/extraction_frontier.json": {
+          "bytes": 93676,
+          "sha256": "33b668fb2fc0bb1f831e9d415851e39a88ba419d2a88de5f332f27b4d7986c24"
+        },
+        "_data/csv/sources/lexicon_frontier/chapter-3-accounting.json": {
+          "bytes": 166813,
+          "sha256": "4ec71cee2cf82941d4e154c608e2265177a293822e632b80c8e51c72fd2b17c6"
+        },
+        "_data/csv/sources/lexicon_frontier/chapter-4-accounting.json": {
+          "bytes": 1730809,
+          "sha256": "410fc88cdbccacb24e7511583cbf4b5169af411dd525b7d2dd1f0202949f2162"
+        },
+        "_data/csv/sources/lexicon_frontier/chapter-5-accounting.json": {
+          "bytes": 263813,
+          "sha256": "27ffdc66a553b228bd7c66ae8d0066060eac5d5f39d896e4276c16dbe32e3930"
+        },
+        "_data/csv/sources/lexicon_frontier/chapter-6-accounting.json": {
+          "bytes": 736544,
+          "sha256": "1d120f091e914c71392be81b4dabdd5af35b29690a88bd12e02a9373c5b53a45"
+        },
+        "_data/csv/sources/lexicon_frontier/chapter-7-accounting.json": {
+          "bytes": 2763313,
+          "sha256": "0d9c7717476d8035c8494ea18d776fd1eedd81d6d2bd865d78772d4ff0e1f9f5"
+        },
+        "_data/csv/sources/lexicon_frontier_manifest.json": {
+          "bytes": 26612,
+          "sha256": "aa2f529d17affcf73f1e06c98a59d33f8f219d1d690666825ba1d40490e94075"
+        }
+      },
+      "semantic_artifacts": {
+        "core": {
+          "bundle_id": "da5286dca64ab4d5a406105d3d8bc7d8d9c33f03219f86f8a5301ba3e31ff984",
+          "emitted_resources": 9279,
+          "files": {
+            "canonical": {
+              "bytes": 16699383,
+              "sha256": "49aaf11d3d2a7d4dd758be022e8a82ce66804ef6b03a2d210b8289ca7d263d60"
+            },
+            "current": {
+              "bytes": 220,
+              "sha256": "683004e6e77708d6d3aae696a60dc71551ba9913843f85dc01eafc017ffd6eea"
+            },
+            "digest": {
+              "bytes": 8516,
+              "sha256": "2680fa071b8951488c2ba7bd37c415f17d3fbd81db690e1e3e2af7e8201a5050"
+            },
+            "held": {
+              "bytes": 16661320,
+              "sha256": "2154962538deaebbcdcb7bf4b69a0db1d39244f3e48303c9f6cef30d1651fb39"
+            },
+            "input": {
+              "bytes": 6803,
+              "sha256": "163c37682d312709117608df252678967b3d5367bc79ab2dfa8cadd3f12f76e1"
+            },
+            "manifest": {
+              "bytes": 1189,
+              "sha256": "da5286dca64ab4d5a406105d3d8bc7d8d9c33f03219f86f8a5301ba3e31ff984"
+            }
+          },
+          "release_ineligible": true,
+          "resolved_resources": 9668,
+          "status": "partial",
+          "triple_count": 67869
+        },
+        "full": {
+          "bundle_id": "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec",
+          "coverage_status": "partial",
+          "files": {
+            "canonical": {
+              "bytes": 28250558,
+              "sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e"
+            },
+            "comparison": {
+              "bytes": 28250558,
+              "sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e"
+            },
+            "conformance": {
+              "bytes": 2043,
+              "sha256": "276edfe06bface167883ea779a221983e2ba307a2263b64f5a9be9501cdb7cf8"
+            },
+            "coverage": {
+              "bytes": 7273836,
+              "sha256": "73a249c1dfff4c9cda382808b5d0bf87c8912bb04b3ac8b805675262007c6461"
+            },
+            "gate_artifacts.coverage": {
+              "bytes": 263,
+              "sha256": "5977361c9bb06e4f06ed71e4c834523ab89c7d78fa36f2336791f0f229ce3731"
+            },
+            "gate_artifacts.determinism": {
+              "bytes": 436,
+              "sha256": "6d249d4fd09b16ce3dec8a74eceafc9d8ef817900c7424f2fc177f85c000e54b"
+            },
+            "gate_artifacts.no-omission": {
+              "bytes": 470,
+              "sha256": "3d2f45f05aa9748dcf2aff0a1b6e87ce89712aa6c1af73e2043964125d3f95fc"
+            },
+            "gate_artifacts.shacl": {
+              "bytes": 384,
+              "sha256": "c55ae694d9dfd98dc246e966ecf9930de80ceb7a298df2a3e66e6866fe7030dd"
+            },
+            "manifest": {
+              "bytes": 908,
+              "sha256": "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec"
+            },
+            "source_rows": {
+              "bytes": 2689386,
+              "sha256": "f500cad84f390e4f5abb35d66ac8f5d171fdf5e13e3aa44c1432e2b2dd225c76"
+            }
+          },
+          "gates": [
+            {
+              "evidence": {
+                "build_status": "partial",
+                "canonical_rdf": {
+                  "sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+                  "triple_count": 130173
+                }
+              },
+              "gate": "coverage",
+              "status": "passed",
+              "version": "1.0.0"
+            },
+            {
+              "evidence": {
+                "accounted_rows": 25692,
+                "complete": true,
+                "dispositions": {
+                  "EMITTED": 15152,
+                  "HELD": 1051,
+                  "IR_ONLY": 9488,
+                  "REJECTED": 1,
+                  "UNSUPPORTED": 0
+                },
+                "domain_rows": {
+                  "atomic": 772,
+                  "lexicon": 18306,
+                  "mapping": 552,
+                  "residue": 6062
+                },
+                "schema": "bilqis.skos.no-omission/v1",
+                "source_rows": 25692
+              },
+              "gate": "no-omission",
+              "status": "passed",
+              "version": "1.0.0"
+            },
+            {
+              "evidence": {
+                "after_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+                "after_triples": 130173,
+                "before_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+                "before_triples": 130173,
+                "equal": true,
+                "first_added": null,
+                "first_removed": null,
+                "scenario": "independent-build"
+              },
+              "gate": "determinism",
+              "status": "passed",
+              "version": "1.0.0"
+            },
+            {
+              "evidence": {
+                "canonical_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+                "conforms": true,
+                "schema": "bilqis.skos.shacl-report/v1",
+                "shapes_sha256": "a69d3d99e55898df36c618f2a006eb70b27050ac74e72f0e8cf244fb2e77f04f",
+                "triple_count": 130173,
+                "violations": []
+              },
+              "gate": "shacl",
+              "status": "passed",
+              "version": "1.0.0"
+            }
+          ],
+          "status": "complete",
+          "triple_count": 130173
+        }
+      },
+      "semantic_command_exits": [
+        {
+          "exit_code": 0,
+          "stage": "core_build"
+        },
+        {
+          "exit_code": 0,
+          "stage": "full_conformance"
+        }
+      ],
+      "source_command_exits": [
+        {
+          "exit_code": 0,
+          "stage": "build_structure"
+        },
+        {
+          "exit_code": 0,
+          "stage": "build_morphology"
+        },
+        {
+          "exit_code": 0,
+          "stage": "build_lexicon_chapters_1_2"
+        },
+        {
+          "exit_code": 0,
+          "stage": "admit_lexicon_chapter_3"
+        },
+        {
+          "exit_code": 0,
+          "stage": "admit_lexicon_chapter_4"
+        },
+        {
+          "exit_code": 0,
+          "stage": "admit_lexicon_chapter_5"
+        },
+        {
+          "exit_code": 0,
+          "stage": "admit_lexicon_chapter_6"
+        },
+        {
+          "exit_code": 0,
+          "stage": "admit_lexicon_chapter_7"
+        },
+        {
+          "exit_code": 0,
+          "stage": "validate_dataset"
+        },
+        {
+          "exit_code": 0,
+          "stage": "source_frontier"
+        }
+      ],
+      "source_manifest_sha256": "3e151b90b7140db9ee1319d4c16b2da3d8bd3aa675da5e0a9e20e57ce61b4b83"
+    },
+    "two": {
+      "frontier": {
+        "debt_by_reason": {
+          "DEBT_CONFLICT": 43,
+          "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 8757,
+          "DEBT_UNSUPPORTED_SHAPE": 339,
+          "chapter_0_toc_unparsed": 1,
+          "legacy_debt_not_measured": 2,
+          "partial_table_overlap": 3498,
+          "prose_and_semantic_exhaustiveness_unmeasured": 14,
+          "repeated_affix_identity": 2,
+          "roots_without_parsed_senses": 5097,
+          "roots_without_parsed_senses_in_source_receipt": 4898,
+          "unclassified_source_prose": 5962,
+          "unsupported_table_shape": 35
+        },
+        "entry_count": 26,
+        "receipt_sha256": "4bfea433a820234aac03191581b3a667f725d6afcf3b8cb7853ee363e405dafe",
+        "sha256": "33b668fb2fc0bb1f831e9d415851e39a88ba419d2a88de5f332f27b4d7986c24"
+      },
+      "pinned_inputs": {
+        "lib/ithkuil/_data/csv/sources/source_manifest.csv": "3e151b90b7140db9ee1319d4c16b2da3d8bd3aa675da5e0a9e20e57ce61b4b83",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 00 - Table of Contents.pdf": "5801addb2e60fc80859ec626c07ff4e32c8fa5805b1623d409d4f9cf913c3f6f",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 01 - Roots and Grammar.pdf": "1c60e40374cf6ffd16791b89983db8f6584c2e1feac7a9c965fc8255b2f95609",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 02 - Tools, States and Acts.pdf": "0d8eaa667d26345dfb55e99ee823fb8ecfa4b4a2d72f998d0e0e3c7b94bad9b2",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 03 - Spacetime and Motion.pdf": "304e44fe561c741841a42f500e19be77ef044be5e4722077edc96e14299499e0",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 04 - Psychology and Sociology.pdf": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 05 - Miscellaneous Entities.pdf": "c48b1a83f541c3728b5d2685ec186b64b73b00c417ded234b30c40361e36ef30",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 06 - Nature, Non-Biological.pdf": "0fd4aa1df217533427f950b86a4b7c4963dc5e66f7be927c8ad56a2ee990fdbd",
+        "lib/ithkuil/_data/pdf/New Ithkuil Lexicon - Chapter 07 - Natural Phenomena.pdf": "b753012f4df753b3cae476023adff3898a9296640b33e892185ebde22cd478d7",
+        "lib/ithkuil/_raw/New_Ithkuil_Lexicon.pdf": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+        "lib/ithkuil/_raw/index.html": "ade3938eb1bbdb9904ead704bd0fadc07fd064ffe0c4906e732a1c05552cec96",
+        "lib/ithkuil/_raw/newithkuil_01_phonology.htm": "f97f7d919cd9e0eca9d7221cb0ad03591c3b4a83e30feb208c5a3002a9be8d90",
+        "lib/ithkuil/_raw/newithkuil_02_morpho-phonology.htm": "5ee3a68497ca3bb242ba79cd3c556fa790a9407413b75242380b4cc1ecd2ffc6",
+        "lib/ithkuil/_raw/newithkuil_03_morphology.htm": "93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f",
+        "lib/ithkuil/_raw/newithkuil_04_case.htm": "d9e322e731a1df0fa6ed6213e15dc039ce7f27839fa06275e66764ff4dea0825",
+        "lib/ithkuil/_raw/newithkuil_05_verbs.htm": "4bd65c19301080f1aa96fa512701f88c19223c322535a448b88d70f81efb9c67",
+        "lib/ithkuil/_raw/newithkuil_06_more_verbs.htm": "db4f341c928f3432b53e3094c2e00a4995eed09be42bfa07729be18c1f08b91e",
+        "lib/ithkuil/_raw/newithkuil_07_affixes.htm": "11f947908bbbfb42705dfff63a40c83d376a39985ac83a28ce588fdcafc314b8",
+        "lib/ithkuil/_raw/newithkuil_08_adjuncts.htm": "125625c6377e5e755d65cbf2df02b5f2f2a50a6e847acb80badbf3afb9e0323a",
+        "lib/ithkuil/_raw/newithkuil_09_referentials.htm": "bf650d9017ae6c2a31f904aa35335d85364ed824b8585b169cc9e228db6a2dce",
+        "lib/ithkuil/_raw/newithkuil_10_spec_constructions.htm": "c664c578ff18c83b5bd209198a1b2fc7b0840697072b4f88faf6701164cb103e",
+        "lib/ithkuil/_raw/newithkuil_11_syntax.htm": "0d9d2a65ef2cb3c6e233090dc3d7aea6af16492e167dcfd7c304b06368f378c2",
+        "lib/ithkuil/_raw/newithkuil_12_script.htm": "1b36aa995d029aceaf9b4b3f8d41984d4a17372c1365e22c026617c794de89d7",
+        "lib/ithkuil/_raw/newithkuil_13_numbers.htm": "bfccda659c150949e8f5ae347f987ed6008db8a6fd2d85fd81e9a821f77ff581",
+        "lib/ithkuil/_raw/newithkuil_affixes.pdf": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+        "lib/ithkuil/_raw/newithkuil_appendices.htm": "3dacde8078f779c93db51d7575c231fae1114550bee38099fe74d1f07ff82197",
+        "lib/ithkuil/_raw/newithkuil_lexicon.pdf": "bfcaeca6350074748ecea2e273eeb7b812ccf59d848461ed4512259fcec51d43"
+      },
+      "published_source_artifacts": {
+        "EXTRACTION_FRONTIER.md": {
+          "bytes": 1828,
+          "sha256": "882037dfab4bbe998c1db031693291476af2b870d1e98f85a69b83fd7dc640a3"
+        },
+        "_data/csv/affix_degrees.csv": {
+          "bytes": 55649,
+          "sha256": "7eb67d6e39a9798f57da66a0b8840996a9caa46bfb5c0df10b71c4299bdbb2a3"
+        },
+        "_data/csv/allomorph_rules.csv": {
+          "bytes": 4526,
+          "sha256": "c053d0c6dce878bacb6ccb1f49f4cd6a8be7dd9185d02bb7992ac60f7def051d"
+        },
+        "_data/csv/bilqis_ithkuil_crosswalk.csv": {
+          "bytes": 156807,
+          "sha256": "afb61f90602cf8bf631fdb0191dcde723722327e4456f6e462694f1768d1c6ec"
+        },
+        "_data/csv/bilqis_semantic_bridges.csv": {
+          "bytes": 140542,
+          "sha256": "c5af26bb5b599eba19973a99a824e86ea2a82cf20a715d18bac0013ca7ba91fb"
+        },
+        "_data/csv/composition_components.csv": {
+          "bytes": 369982,
+          "sha256": "437e021d05d221ae0fc3b646c54cb33796b006ec9277b735bd3c5d53e238b39c"
+        },
+        "_data/csv/grammatical_categories.csv": {
+          "bytes": 7208,
+          "sha256": "005c123f7b7fa0db7bb2a812579f602447a13063b8c4000e450dd4e55710a44e"
+        },
+        "_data/csv/lexicon_root_evidence.csv": {
+          "bytes": 4887939,
+          "sha256": "aaefff67aa4b2ddf058a1926ce874145c1eb2fab4c5821eb7ce04e0cce601b50"
+        },
+        "_data/csv/lexicon_root_senses.csv": {
+          "bytes": 1454438,
+          "sha256": "fe0701acb57e9257b56bf2feac741171e583fdfab032f3d017cfcc8fa404eb5c"
+        },
+        "_data/csv/lexicon_roots.csv": {
+          "bytes": 2438800,
+          "sha256": "ddd84523758a5dcbfa86f70cd2c7bb0f63bdea18ee089015390f0d3a8199fc46"
+        },
+        "_data/csv/morpheme_compositions.csv": {
+          "bytes": 832038,
+          "sha256": "114ae3347d12c0b510ccff196466a27afc13e40b727eaf519f8d93d48ba2c512"
+        },
+        "_data/csv/morphemes_atomic.csv": {
+          "bytes": 274650,
+          "sha256": "6c6e2ea64a659b7061bdc3d388201c6219207bc1aa002869537f56d1f7ddf083"
+        },
+        "_data/csv/root_senses.csv": {
+          "bytes": 47417,
+          "sha256": "10b5cf14189f94269ed48d96b235a773e90c82623bda04eab4f8f965ed433b93"
+        },
+        "_data/csv/source_assertions.csv": {
+          "bytes": 963896,
+          "sha256": "20a197bd4ca9757c19b731652d124139109351294a3b561fb456c81f2e922f7d"
+        },
+        "_data/csv/source_sections.csv": {
+          "bytes": 56091,
+          "sha256": "765f30d97c64b68266a45cf77fed69cdba2ce70d5ec368ec1d6c817c259d856f"
+        },
+        "_data/csv/source_table_cells.csv": {
+          "bytes": 4322255,
+          "sha256": "d43de43ab990876be78cb07ae34ffc6bdc54b18ff8327118baa31814c5631768"
+        },
+        "_data/csv/source_tables.csv": {
+          "bytes": 186330,
+          "sha256": "d85cad7573ecb4d22f17a4dd61e0280b05c3cd0c4b1a57edb820a6ef8ec356e5"
+        },
+        "_data/csv/sources/affix_frontier_accounting.json": {
+          "bytes": 7908138,
+          "sha256": "230e2c1d5f00fe39cfd7fbfa49a9b00f78c85973bc7918859e24688c2c4db04f"
+        },
+        "_data/csv/sources/affix_frontier_manifest.json": {
+          "bytes": 2700,
+          "sha256": "0ef57b9f94004caca576a08c49d16c221ca9999432363c230a9b35f7d4f03c9b"
+        },
+        "_data/csv/sources/extraction_frontier.json": {
+          "bytes": 93676,
+          "sha256": "33b668fb2fc0bb1f831e9d415851e39a88ba419d2a88de5f332f27b4d7986c24"
+        },
+        "_data/csv/sources/lexicon_frontier/chapter-3-accounting.json": {
+          "bytes": 166813,
+          "sha256": "4ec71cee2cf82941d4e154c608e2265177a293822e632b80c8e51c72fd2b17c6"
+        },
+        "_data/csv/sources/lexicon_frontier/chapter-4-accounting.json": {
+          "bytes": 1730809,
+          "sha256": "410fc88cdbccacb24e7511583cbf4b5169af411dd525b7d2dd1f0202949f2162"
+        },
+        "_data/csv/sources/lexicon_frontier/chapter-5-accounting.json": {
+          "bytes": 263813,
+          "sha256": "27ffdc66a553b228bd7c66ae8d0066060eac5d5f39d896e4276c16dbe32e3930"
+        },
+        "_data/csv/sources/lexicon_frontier/chapter-6-accounting.json": {
+          "bytes": 736544,
+          "sha256": "1d120f091e914c71392be81b4dabdd5af35b29690a88bd12e02a9373c5b53a45"
+        },
+        "_data/csv/sources/lexicon_frontier/chapter-7-accounting.json": {
+          "bytes": 2763313,
+          "sha256": "0d9c7717476d8035c8494ea18d776fd1eedd81d6d2bd865d78772d4ff0e1f9f5"
+        },
+        "_data/csv/sources/lexicon_frontier_manifest.json": {
+          "bytes": 26612,
+          "sha256": "aa2f529d17affcf73f1e06c98a59d33f8f219d1d690666825ba1d40490e94075"
+        }
+      },
+      "semantic_artifacts": {
+        "core": {
+          "bundle_id": "da5286dca64ab4d5a406105d3d8bc7d8d9c33f03219f86f8a5301ba3e31ff984",
+          "emitted_resources": 9279,
+          "files": {
+            "canonical": {
+              "bytes": 16699383,
+              "sha256": "49aaf11d3d2a7d4dd758be022e8a82ce66804ef6b03a2d210b8289ca7d263d60"
+            },
+            "current": {
+              "bytes": 220,
+              "sha256": "683004e6e77708d6d3aae696a60dc71551ba9913843f85dc01eafc017ffd6eea"
+            },
+            "digest": {
+              "bytes": 8516,
+              "sha256": "2680fa071b8951488c2ba7bd37c415f17d3fbd81db690e1e3e2af7e8201a5050"
+            },
+            "held": {
+              "bytes": 16661320,
+              "sha256": "2154962538deaebbcdcb7bf4b69a0db1d39244f3e48303c9f6cef30d1651fb39"
+            },
+            "input": {
+              "bytes": 6803,
+              "sha256": "163c37682d312709117608df252678967b3d5367bc79ab2dfa8cadd3f12f76e1"
+            },
+            "manifest": {
+              "bytes": 1189,
+              "sha256": "da5286dca64ab4d5a406105d3d8bc7d8d9c33f03219f86f8a5301ba3e31ff984"
+            }
+          },
+          "release_ineligible": true,
+          "resolved_resources": 9668,
+          "status": "partial",
+          "triple_count": 67869
+        },
+        "full": {
+          "bundle_id": "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec",
+          "coverage_status": "partial",
+          "files": {
+            "canonical": {
+              "bytes": 28250558,
+              "sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e"
+            },
+            "comparison": {
+              "bytes": 28250558,
+              "sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e"
+            },
+            "conformance": {
+              "bytes": 2043,
+              "sha256": "276edfe06bface167883ea779a221983e2ba307a2263b64f5a9be9501cdb7cf8"
+            },
+            "coverage": {
+              "bytes": 7273836,
+              "sha256": "73a249c1dfff4c9cda382808b5d0bf87c8912bb04b3ac8b805675262007c6461"
+            },
+            "gate_artifacts.coverage": {
+              "bytes": 263,
+              "sha256": "5977361c9bb06e4f06ed71e4c834523ab89c7d78fa36f2336791f0f229ce3731"
+            },
+            "gate_artifacts.determinism": {
+              "bytes": 436,
+              "sha256": "6d249d4fd09b16ce3dec8a74eceafc9d8ef817900c7424f2fc177f85c000e54b"
+            },
+            "gate_artifacts.no-omission": {
+              "bytes": 470,
+              "sha256": "3d2f45f05aa9748dcf2aff0a1b6e87ce89712aa6c1af73e2043964125d3f95fc"
+            },
+            "gate_artifacts.shacl": {
+              "bytes": 384,
+              "sha256": "c55ae694d9dfd98dc246e966ecf9930de80ceb7a298df2a3e66e6866fe7030dd"
+            },
+            "manifest": {
+              "bytes": 908,
+              "sha256": "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec"
+            },
+            "source_rows": {
+              "bytes": 2689386,
+              "sha256": "f500cad84f390e4f5abb35d66ac8f5d171fdf5e13e3aa44c1432e2b2dd225c76"
+            }
+          },
+          "gates": [
+            {
+              "evidence": {
+                "build_status": "partial",
+                "canonical_rdf": {
+                  "sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+                  "triple_count": 130173
+                }
+              },
+              "gate": "coverage",
+              "status": "passed",
+              "version": "1.0.0"
+            },
+            {
+              "evidence": {
+                "accounted_rows": 25692,
+                "complete": true,
+                "dispositions": {
+                  "EMITTED": 15152,
+                  "HELD": 1051,
+                  "IR_ONLY": 9488,
+                  "REJECTED": 1,
+                  "UNSUPPORTED": 0
+                },
+                "domain_rows": {
+                  "atomic": 772,
+                  "lexicon": 18306,
+                  "mapping": 552,
+                  "residue": 6062
+                },
+                "schema": "bilqis.skos.no-omission/v1",
+                "source_rows": 25692
+              },
+              "gate": "no-omission",
+              "status": "passed",
+              "version": "1.0.0"
+            },
+            {
+              "evidence": {
+                "after_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+                "after_triples": 130173,
+                "before_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+                "before_triples": 130173,
+                "equal": true,
+                "first_added": null,
+                "first_removed": null,
+                "scenario": "independent-build"
+              },
+              "gate": "determinism",
+              "status": "passed",
+              "version": "1.0.0"
+            },
+            {
+              "evidence": {
+                "canonical_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+                "conforms": true,
+                "schema": "bilqis.skos.shacl-report/v1",
+                "shapes_sha256": "a69d3d99e55898df36c618f2a006eb70b27050ac74e72f0e8cf244fb2e77f04f",
+                "triple_count": 130173,
+                "violations": []
+              },
+              "gate": "shacl",
+              "status": "passed",
+              "version": "1.0.0"
+            }
+          ],
+          "status": "complete",
+          "triple_count": 130173
+        }
+      },
+      "semantic_command_exits": [
+        {
+          "exit_code": 0,
+          "stage": "core_build"
+        },
+        {
+          "exit_code": 0,
+          "stage": "full_conformance"
+        }
+      ],
+      "source_command_exits": [
+        {
+          "exit_code": 0,
+          "stage": "build_structure"
+        },
+        {
+          "exit_code": 0,
+          "stage": "build_morphology"
+        },
+        {
+          "exit_code": 0,
+          "stage": "build_lexicon_chapters_1_2"
+        },
+        {
+          "exit_code": 0,
+          "stage": "admit_lexicon_chapter_3"
+        },
+        {
+          "exit_code": 0,
+          "stage": "admit_lexicon_chapter_4"
+        },
+        {
+          "exit_code": 0,
+          "stage": "admit_lexicon_chapter_5"
+        },
+        {
+          "exit_code": 0,
+          "stage": "admit_lexicon_chapter_6"
+        },
+        {
+          "exit_code": 0,
+          "stage": "admit_lexicon_chapter_7"
+        },
+        {
+          "exit_code": 0,
+          "stage": "validate_dataset"
+        },
+        {
+          "exit_code": 0,
+          "stage": "source_frontier"
+        }
+      ],
+      "source_manifest_sha256": "3e151b90b7140db9ee1319d4c16b2da3d8bd3aa675da5e0a9e20e57ce61b4b83"
+    }
+  },
+  "schema": "bilqis.ithkuil.release93-proof/v1",
+  "source_restore": {
+    "one": [
+      {
+        "expected": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+        "expected_bytes": 833483,
+        "matches": true,
+        "observed": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+        "observed_bytes": 833483,
+        "source_id": "NI-AFFIX-PDF",
+        "url": "https://www.ithkuil.net/newithkuil_affixes.pdf"
+      },
+      {
+        "expected": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+        "expected_bytes": 4685069,
+        "matches": true,
+        "observed": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+        "observed_bytes": 4685069,
+        "source_id": "NI-LEXICON-CURRICULUM",
+        "url": "https://ithkuil.net/New_Ithkuil_Lexicon.pdf"
+      },
+      {
+        "expected": "bfcaeca6350074748ecea2e273eeb7b812ccf59d848461ed4512259fcec51d43",
+        "expected_bytes": 4677817,
+        "matches": true,
+        "observed": "bfcaeca6350074748ecea2e273eeb7b812ccf59d848461ed4512259fcec51d43",
+        "observed_bytes": 4677817,
+        "source_id": "NI-LEXICON-SITE",
+        "url": "https://www.ithkuil.net/newithkuil_lexicon.pdf"
+      },
+      {
+        "expected": "3dacde8078f779c93db51d7575c231fae1114550bee38099fe74d1f07ff82197",
+        "expected_bytes": 899245,
+        "matches": true,
+        "observed": "3dacde8078f779c93db51d7575c231fae1114550bee38099fe74d1f07ff82197",
+        "observed_bytes": 899245,
+        "source_id": "NI-WEB-APP",
+        "url": "https://www.ithkuil.net/newithkuil_appendices.htm"
+      },
+      {
+        "expected": "f97f7d919cd9e0eca9d7221cb0ad03591c3b4a83e30feb208c5a3002a9be8d90",
+        "expected_bytes": 198437,
+        "matches": true,
+        "observed": "f97f7d919cd9e0eca9d7221cb0ad03591c3b4a83e30feb208c5a3002a9be8d90",
+        "observed_bytes": 198437,
+        "source_id": "NI-WEB-CH01",
+        "url": "https://www.ithkuil.net/newithkuil_01_phonology.htm"
+      },
+      {
+        "expected": "5ee3a68497ca3bb242ba79cd3c556fa790a9407413b75242380b4cc1ecd2ffc6",
+        "expected_bytes": 310009,
+        "matches": true,
+        "observed": "5ee3a68497ca3bb242ba79cd3c556fa790a9407413b75242380b4cc1ecd2ffc6",
+        "observed_bytes": 310009,
+        "source_id": "NI-WEB-CH02",
+        "url": "https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm"
+      },
+      {
+        "expected": "93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f",
+        "expected_bytes": 633254,
+        "matches": true,
+        "observed": "93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f",
+        "observed_bytes": 633254,
+        "source_id": "NI-WEB-CH03",
+        "url": "https://www.ithkuil.net/newithkuil_03_morphology.htm"
+      },
+      {
+        "expected": "d9e322e731a1df0fa6ed6213e15dc039ce7f27839fa06275e66764ff4dea0825",
+        "expected_bytes": 1154088,
+        "matches": true,
+        "observed": "d9e322e731a1df0fa6ed6213e15dc039ce7f27839fa06275e66764ff4dea0825",
+        "observed_bytes": 1154088,
+        "source_id": "NI-WEB-CH04",
+        "url": "https://www.ithkuil.net/newithkuil_04_case.htm"
+      },
+      {
+        "expected": "4bd65c19301080f1aa96fa512701f88c19223c322535a448b88d70f81efb9c67",
+        "expected_bytes": 1072790,
+        "matches": true,
+        "observed": "4bd65c19301080f1aa96fa512701f88c19223c322535a448b88d70f81efb9c67",
+        "observed_bytes": 1072790,
+        "source_id": "NI-WEB-CH05",
+        "url": "https://www.ithkuil.net/newithkuil_05_verbs.htm"
+      },
+      {
+        "expected": "db4f341c928f3432b53e3094c2e00a4995eed09be42bfa07729be18c1f08b91e",
+        "expected_bytes": 285239,
+        "matches": true,
+        "observed": "db4f341c928f3432b53e3094c2e00a4995eed09be42bfa07729be18c1f08b91e",
+        "observed_bytes": 285239,
+        "source_id": "NI-WEB-CH06",
+        "url": "https://www.ithkuil.net/newithkuil_06_more_verbs.htm"
+      },
+      {
+        "expected": "11f947908bbbfb42705dfff63a40c83d376a39985ac83a28ce588fdcafc314b8",
+        "expected_bytes": 758952,
+        "matches": true,
+        "observed": "11f947908bbbfb42705dfff63a40c83d376a39985ac83a28ce588fdcafc314b8",
+        "observed_bytes": 758952,
+        "source_id": "NI-WEB-CH07",
+        "url": "https://www.ithkuil.net/newithkuil_07_affixes.htm"
+      },
+      {
+        "expected": "125625c6377e5e755d65cbf2df02b5f2f2a50a6e847acb80badbf3afb9e0323a",
+        "expected_bytes": 356571,
+        "matches": true,
+        "observed": "125625c6377e5e755d65cbf2df02b5f2f2a50a6e847acb80badbf3afb9e0323a",
+        "observed_bytes": 356571,
+        "source_id": "NI-WEB-CH08",
+        "url": "https://www.ithkuil.net/newithkuil_08_adjuncts.htm"
+      },
+      {
+        "expected": "bf650d9017ae6c2a31f904aa35335d85364ed824b8585b169cc9e228db6a2dce",
+        "expected_bytes": 153667,
+        "matches": true,
+        "observed": "bf650d9017ae6c2a31f904aa35335d85364ed824b8585b169cc9e228db6a2dce",
+        "observed_bytes": 153667,
+        "source_id": "NI-WEB-CH09",
+        "url": "https://www.ithkuil.net/newithkuil_09_referentials.htm"
+      },
+      {
+        "expected": "c664c578ff18c83b5bd209198a1b2fc7b0840697072b4f88faf6701164cb103e",
+        "expected_bytes": 374635,
+        "matches": true,
+        "observed": "c664c578ff18c83b5bd209198a1b2fc7b0840697072b4f88faf6701164cb103e",
+        "observed_bytes": 374635,
+        "source_id": "NI-WEB-CH10",
+        "url": "https://www.ithkuil.net/newithkuil_10_spec_constructions.htm"
+      },
+      {
+        "expected": "0d9d2a65ef2cb3c6e233090dc3d7aea6af16492e167dcfd7c304b06368f378c2",
+        "expected_bytes": 71699,
+        "matches": true,
+        "observed": "0d9d2a65ef2cb3c6e233090dc3d7aea6af16492e167dcfd7c304b06368f378c2",
+        "observed_bytes": 71699,
+        "source_id": "NI-WEB-CH11",
+        "url": "https://www.ithkuil.net/newithkuil_11_syntax.htm"
+      },
+      {
+        "expected": "1b36aa995d029aceaf9b4b3f8d41984d4a17372c1365e22c026617c794de89d7",
+        "expected_bytes": 138207,
+        "matches": true,
+        "observed": "1b36aa995d029aceaf9b4b3f8d41984d4a17372c1365e22c026617c794de89d7",
+        "observed_bytes": 138207,
+        "source_id": "NI-WEB-CH12",
+        "url": "https://www.ithkuil.net/newithkuil_12_script.htm"
+      },
+      {
+        "expected": "bfccda659c150949e8f5ae347f987ed6008db8a6fd2d85fd81e9a821f77ff581",
+        "expected_bytes": 247625,
+        "matches": true,
+        "observed": "bfccda659c150949e8f5ae347f987ed6008db8a6fd2d85fd81e9a821f77ff581",
+        "observed_bytes": 247625,
+        "source_id": "NI-WEB-CH13",
+        "url": "https://www.ithkuil.net/newithkuil_13_numbers.htm"
+      },
+      {
+        "expected": "ade3938eb1bbdb9904ead704bd0fadc07fd064ffe0c4906e732a1c05552cec96",
+        "expected_bytes": 42004,
+        "matches": true,
+        "observed": "ade3938eb1bbdb9904ead704bd0fadc07fd064ffe0c4906e732a1c05552cec96",
+        "observed_bytes": 42004,
+        "source_id": "NI-WEB-INDEX",
+        "url": "https://www.ithkuil.net/"
+      }
+    ],
+    "two": [
+      {
+        "expected": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+        "expected_bytes": 833483,
+        "matches": true,
+        "observed": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+        "observed_bytes": 833483,
+        "source_id": "NI-AFFIX-PDF",
+        "url": "https://www.ithkuil.net/newithkuil_affixes.pdf"
+      },
+      {
+        "expected": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+        "expected_bytes": 4685069,
+        "matches": true,
+        "observed": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+        "observed_bytes": 4685069,
+        "source_id": "NI-LEXICON-CURRICULUM",
+        "url": "https://ithkuil.net/New_Ithkuil_Lexicon.pdf"
+      },
+      {
+        "expected": "bfcaeca6350074748ecea2e273eeb7b812ccf59d848461ed4512259fcec51d43",
+        "expected_bytes": 4677817,
+        "matches": true,
+        "observed": "bfcaeca6350074748ecea2e273eeb7b812ccf59d848461ed4512259fcec51d43",
+        "observed_bytes": 4677817,
+        "source_id": "NI-LEXICON-SITE",
+        "url": "https://www.ithkuil.net/newithkuil_lexicon.pdf"
+      },
+      {
+        "expected": "3dacde8078f779c93db51d7575c231fae1114550bee38099fe74d1f07ff82197",
+        "expected_bytes": 899245,
+        "matches": true,
+        "observed": "3dacde8078f779c93db51d7575c231fae1114550bee38099fe74d1f07ff82197",
+        "observed_bytes": 899245,
+        "source_id": "NI-WEB-APP",
+        "url": "https://www.ithkuil.net/newithkuil_appendices.htm"
+      },
+      {
+        "expected": "f97f7d919cd9e0eca9d7221cb0ad03591c3b4a83e30feb208c5a3002a9be8d90",
+        "expected_bytes": 198437,
+        "matches": true,
+        "observed": "f97f7d919cd9e0eca9d7221cb0ad03591c3b4a83e30feb208c5a3002a9be8d90",
+        "observed_bytes": 198437,
+        "source_id": "NI-WEB-CH01",
+        "url": "https://www.ithkuil.net/newithkuil_01_phonology.htm"
+      },
+      {
+        "expected": "5ee3a68497ca3bb242ba79cd3c556fa790a9407413b75242380b4cc1ecd2ffc6",
+        "expected_bytes": 310009,
+        "matches": true,
+        "observed": "5ee3a68497ca3bb242ba79cd3c556fa790a9407413b75242380b4cc1ecd2ffc6",
+        "observed_bytes": 310009,
+        "source_id": "NI-WEB-CH02",
+        "url": "https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm"
+      },
+      {
+        "expected": "93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f",
+        "expected_bytes": 633254,
+        "matches": true,
+        "observed": "93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f",
+        "observed_bytes": 633254,
+        "source_id": "NI-WEB-CH03",
+        "url": "https://www.ithkuil.net/newithkuil_03_morphology.htm"
+      },
+      {
+        "expected": "d9e322e731a1df0fa6ed6213e15dc039ce7f27839fa06275e66764ff4dea0825",
+        "expected_bytes": 1154088,
+        "matches": true,
+        "observed": "d9e322e731a1df0fa6ed6213e15dc039ce7f27839fa06275e66764ff4dea0825",
+        "observed_bytes": 1154088,
+        "source_id": "NI-WEB-CH04",
+        "url": "https://www.ithkuil.net/newithkuil_04_case.htm"
+      },
+      {
+        "expected": "4bd65c19301080f1aa96fa512701f88c19223c322535a448b88d70f81efb9c67",
+        "expected_bytes": 1072790,
+        "matches": true,
+        "observed": "4bd65c19301080f1aa96fa512701f88c19223c322535a448b88d70f81efb9c67",
+        "observed_bytes": 1072790,
+        "source_id": "NI-WEB-CH05",
+        "url": "https://www.ithkuil.net/newithkuil_05_verbs.htm"
+      },
+      {
+        "expected": "db4f341c928f3432b53e3094c2e00a4995eed09be42bfa07729be18c1f08b91e",
+        "expected_bytes": 285239,
+        "matches": true,
+        "observed": "db4f341c928f3432b53e3094c2e00a4995eed09be42bfa07729be18c1f08b91e",
+        "observed_bytes": 285239,
+        "source_id": "NI-WEB-CH06",
+        "url": "https://www.ithkuil.net/newithkuil_06_more_verbs.htm"
+      },
+      {
+        "expected": "11f947908bbbfb42705dfff63a40c83d376a39985ac83a28ce588fdcafc314b8",
+        "expected_bytes": 758952,
+        "matches": true,
+        "observed": "11f947908bbbfb42705dfff63a40c83d376a39985ac83a28ce588fdcafc314b8",
+        "observed_bytes": 758952,
+        "source_id": "NI-WEB-CH07",
+        "url": "https://www.ithkuil.net/newithkuil_07_affixes.htm"
+      },
+      {
+        "expected": "125625c6377e5e755d65cbf2df02b5f2f2a50a6e847acb80badbf3afb9e0323a",
+        "expected_bytes": 356571,
+        "matches": true,
+        "observed": "125625c6377e5e755d65cbf2df02b5f2f2a50a6e847acb80badbf3afb9e0323a",
+        "observed_bytes": 356571,
+        "source_id": "NI-WEB-CH08",
+        "url": "https://www.ithkuil.net/newithkuil_08_adjuncts.htm"
+      },
+      {
+        "expected": "bf650d9017ae6c2a31f904aa35335d85364ed824b8585b169cc9e228db6a2dce",
+        "expected_bytes": 153667,
+        "matches": true,
+        "observed": "bf650d9017ae6c2a31f904aa35335d85364ed824b8585b169cc9e228db6a2dce",
+        "observed_bytes": 153667,
+        "source_id": "NI-WEB-CH09",
+        "url": "https://www.ithkuil.net/newithkuil_09_referentials.htm"
+      },
+      {
+        "expected": "c664c578ff18c83b5bd209198a1b2fc7b0840697072b4f88faf6701164cb103e",
+        "expected_bytes": 374635,
+        "matches": true,
+        "observed": "c664c578ff18c83b5bd209198a1b2fc7b0840697072b4f88faf6701164cb103e",
+        "observed_bytes": 374635,
+        "source_id": "NI-WEB-CH10",
+        "url": "https://www.ithkuil.net/newithkuil_10_spec_constructions.htm"
+      },
+      {
+        "expected": "0d9d2a65ef2cb3c6e233090dc3d7aea6af16492e167dcfd7c304b06368f378c2",
+        "expected_bytes": 71699,
+        "matches": true,
+        "observed": "0d9d2a65ef2cb3c6e233090dc3d7aea6af16492e167dcfd7c304b06368f378c2",
+        "observed_bytes": 71699,
+        "source_id": "NI-WEB-CH11",
+        "url": "https://www.ithkuil.net/newithkuil_11_syntax.htm"
+      },
+      {
+        "expected": "1b36aa995d029aceaf9b4b3f8d41984d4a17372c1365e22c026617c794de89d7",
+        "expected_bytes": 138207,
+        "matches": true,
+        "observed": "1b36aa995d029aceaf9b4b3f8d41984d4a17372c1365e22c026617c794de89d7",
+        "observed_bytes": 138207,
+        "source_id": "NI-WEB-CH12",
+        "url": "https://www.ithkuil.net/newithkuil_12_script.htm"
+      },
+      {
+        "expected": "bfccda659c150949e8f5ae347f987ed6008db8a6fd2d85fd81e9a821f77ff581",
+        "expected_bytes": 247625,
+        "matches": true,
+        "observed": "bfccda659c150949e8f5ae347f987ed6008db8a6fd2d85fd81e9a821f77ff581",
+        "observed_bytes": 247625,
+        "source_id": "NI-WEB-CH13",
+        "url": "https://www.ithkuil.net/newithkuil_13_numbers.htm"
+      },
+      {
+        "expected": "ade3938eb1bbdb9904ead704bd0fadc07fd064ffe0c4906e732a1c05552cec96",
+        "expected_bytes": 42004,
+        "matches": true,
+        "observed": "ade3938eb1bbdb9904ead704bd0fadc07fd064ffe0c4906e732a1c05552cec96",
+        "observed_bytes": 42004,
+        "source_id": "NI-WEB-INDEX",
+        "url": "https://www.ithkuil.net/"
+      }
+    ]
+  },
+  "status": "passed",
+  "tracked_baseline_role": "Existing owners use tracked baseline CSVs for compatibility verification and reviewed mapping/bridge evidence. All source-owned CSVs are regenerated from pinned inputs; missing raw sources block even with those tracked CSVs present.",
+  "tracked_frontier_note": "All canonical CSVs reproduce the tracked references exactly. Only the frontier receipt refreshes the morphology-parser code fingerprint changed by the already-accepted fixture work, plus its derived receipt hash. No semantic/source-owner repair was performed.",
+  "tracked_frontier_reference_changes": [
+    [
+      "/entries/11/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/12/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/13/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/14/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/15/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/16/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/17/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/18/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/19/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/20/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/21/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/22/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/23/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/24/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/entries/25/parser/morphology_sha256",
+      "08cb5779339d10de9759ad06c4050a663bad0ab9ae3a4b87d4b9d8b752a41145",
+      "73c646437d218b714f018c73800ea8e60a044c8d7af3be2b06d932fa40576e3c"
+    ],
+    [
+      "/receipt_sha256",
+      "4480a0573d5a6f949e15c511bef43967c896a6e005933a424a35846029d6db05",
+      "4bfea433a820234aac03191581b3a667f725d6afcf3b8cb7853ee363e405dafe"
+    ]
+  ],
+  "verification": {
+    "all_recorded_payload_hashes": "read back and verified in both workspaces",
+    "diff_check": "passed",
+    "quality": "passed, zero new baseline-relative findings",
+    "source_code_changes": "none; only proof/runbook artifacts added for #93",
+    "two_complete_semantic_rebuilds": "passed; core build and all four full-domain conformance gates per run",
+    "two_complete_source_rebuilds": "passed; all 10 owner commands per run exited zero"
+  },
+  "workspace_method": "Two independent git archives at the exact candidate; each independently downloads all 18 official source pins. No ignored source cache, prior generated output or graph state is copied."
+}
