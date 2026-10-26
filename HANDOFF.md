@@ -1,49 +1,54 @@
-# Issue #333 continuation | 2026-10-26
+# Issue #324 qualification preparation | 2026-10-26
 
-- Work: [#333](https://github.com/Entif-AI/Bilqis-MLX/issues/333),
-  draft stacked [PR #335](https://github.com/Entif-AI/Bilqis-MLX/pull/335).
-- Branch: `codex/333-factory-teacher-observations-20261026`.
-- Verified implementation commit: `94a9e0301f16790c202058cd7ecd3af609f0c573`. Its predecessor is
-  `d59b8ddf1fd58e3b72b9b20635a40b6a916809bc`.
-- Base: `codex/320-model-topology-20261026`,
-  `f09e44d35b5f544ef8d3e61ec127e326d0b09eb1`; PR #334 remains unmerged.
-- Serialized writer: this continuation. Existing corrections were preserved.
-- Authority: IPR-0220 remains OPEN. Protected location and current receipt belong
-  in the protected checkpoint; this public projection uses only its opaque ID.
-- Incident: PM-2026-10-26-003, RC-042, PAT-028; existing canonical incident enriched
-  and read back. Earlier premature completion comment 6409512957 remains historical;
-  correction 6409580404 holds until the superseding exact-head receipt is verified.
+**QUALIFICATION_MANIFEST_FROZEN_AND_READY_FOR_HUMAN_INITIATION**
+**NO NEURAL RUN EXECUTED.** Do not launch either arm without deliberate human initiation.
 
-## Completed engineering and proof
+- Preparation branch: `codex/324-learning-qualification-20261026`.
+- Parent: #333 / PR #335 at `35cf2b8ccb6c7d0e9f195d7e65e4ef990bfe5994`.
+- Exact executable commit: `59fa6bbfd1765df45277637430acf2a00d9e1e91`.
+- Frozen execution checkout: `/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-20261026`.
+- Source proof: Portable CI40321841155 and Semantic ABI CI40321841144 succeed.
+- Current native proof: 122 passed, one existing source-dependent skip, 141 subtests.
+  Qualification-only: 14 passed, 11 subtests; minimal no-pip host12 passed, two native skips.
+- Governing issue #324 comment6412618439 explicitly accepts exact-head engineering
+  evidence. #150/#320/#333 may remain open, draft and unmerged. Do not merge,
+  retarget or modify their frozen branches to alter lifecycle state.
+- IPR-0220 remains OPEN; protected checkpoint carries its private location. Public
+  projections use only this opaque identifier.
+- Current incident: PM-2026-10-26-007 / RC-135 / PAT-096, native ledger readback
+  verified. Earlier #333 incident PM-2026-10-26-003 remains separate history.
 
-Capture preserves valid skip before-scores while zero denominators and unscored
-after/protected effects remain unmeasured. Cold readback now checks policy-epoch
-and selection-source sidecars. Ordered duplicate rows, support composition,
-topology/policy partitions and unchanged portable-v1 fixture remain covered.
+## Frozen review packet
 
-Both ordinary and autonomy paths traverse retained/rejected/target-only/skip
-outcomes with capture enabled and disabled. Disposable tests compare selection,
-reward, RNG, source draws, batch order, learner, native AdamW and published bundle
-identity. Actual visit events are committed through canonical outboxes, read before
-journal emission and replayed twice with one logical observation and stable bytes.
+See `docs/evidence/qualification/ISSUE324_REVIEW_PACKET_20261026.md` for exact
+commands, resource bounds, remaining acceptance and scientific assumptions.
 
-- Focused current-Factory/native suite: 119 passed, 130 subtests.
-- Portable workflow selection: 86 passed, no skips or errors.
-- Architecture, closure, semantic boundaries, release/docs/error checks and module
-  size ratchet pass. Smell baseline has no new findings after fixture decomposition.
-- Historical ABI fingerprints match; external independent ABI enforcement remains
-  advisory/unconfigured locally.
-- Coverage map: `docs/operations/FACTORY_TEACHER_OBSERVATIONS.md`.
+Active manifest: `docs/evidence/qualification/issue324-20261026-v2.json`.
+Canonical digest: `167c308831e95a1aa13a18b04608957b786281a030022ef6de3e2d0634cd964a`.
+The v1 object folder is immutable provenance shared by v2; only v2 is active.
+The workload is A6/B8/C7, numeric inputs0..8, frozen from live source generation44238.
+Future ceiling10 is excluded. Same-ABI A/A+B/A+B+C releases preserve prerequisite
+admission; no untaught B/C examination occurs at initialization.
 
-## Remaining boundary and next permitted action
+Baseline:6 layers/24 heads/width384/FFN1536/context96.
+Capacity:8 layers/32 heads/width512/FFN2048/context96.
+Both use fresh FP32 weights, native zero AdamW, initialization seed324, training
+seed3240, identical pinned teacher/runtime policy and finite per-arm budget:
+1000 visits, at most16000 attempted steps,90 minutes at safe boundaries,100 GiB reserve.
+Acquisition seed32401; post seeds32403/32405/32407. Existing mean proficiency rules
+apply. Fresh-probe scope/overlap/missingness remain explicit; no teaching embargo.
 
-Verify hosted CI and remote exact HEAD before posting the superseding #333 receipt.
-That receipt clears only #324's observation-adapter prerequisite. #150 and #320
-are still OPEN; #324 requires their verified completion plus its frozen workload,
-policy/topology identities, evaluation seeds and finite budgets. No merge or real
-qualification run is authorized by this handoff. Preserve the two-topology baseline
-comparison and human-owned neural initiation. Actual learning remains NOT_MEASURED.
+Both real dry-run commands passed with no neural authority and zero optimizer
+updates. Seven altered manifest/identity cases fail closed. No experiment run
+folder was created. Production byte hashes, source identities and code head are
+pinned independently of review-only documentation commits.
 
-The real student, its native AdamW, teacher, original checkpoints, PR #290 and PR
-#334 were not mutated. No `--human-run` was invoked. Do not resume historical
-students or add Grade D/SKOS semantics as part of #333 closeout.
+## Next permitted action
+
+Human reviews the packet and may explicitly initiate the two proposed commands,
+sequentially. Neither command has run. No QUALIFIED/NOT_QUALIFIED learner result
+exists. Do not extend budgets, widen semantics, use ordinary resume to refund an
+interrupted experiment, or introduce Grade D/SKOS/historical migration. A changed
+prerequisite or implementation requires a revalidated manifest. Real student,
+original native AdamW, teacher, champions and historical checkpoints remain under
+human custody; this lane performed only source/disposable checks and metadata writes.

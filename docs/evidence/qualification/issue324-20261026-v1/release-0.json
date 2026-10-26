@@ -1,0 +1,1611 @@
+{
+  "answer_heads": [
+    {
+      "implementation_sha256": "a456569f776a119b7f49e048f40858c7702b783bcc8cb5449bb62e581285b896",
+      "kind": "binary",
+      "modality_id": "answer.binary/v1",
+      "semantic_identities": [
+        "cogal.value.false",
+        "cogal.value.true"
+      ],
+      "token_ids": [
+        6,
+        7
+      ],
+      "values": [
+        "FALSE",
+        "TRUE"
+      ]
+    }
+  ],
+  "answer_modalities": [
+    {
+      "adapter_id": "answer.binary/v1",
+      "implementation_sha256": "a456569f776a119b7f49e048f40858c7702b783bcc8cb5449bb62e581285b896",
+      "kind": "binary"
+    },
+    {
+      "adapter_id": "answer.boolean-operator/v1",
+      "implementation_sha256": "6e60c572677b58cae4ca2d5e010a2d726c4f7ce95fa63b96213564d953414297",
+      "kind": "boolean_operator"
+    },
+    {
+      "adapter_id": "answer.numeric-active/v1",
+      "implementation_sha256": "2697aa9f6f1e2024b13e6fe95ed53e67ec47df14de178e8980ee816456453d5a",
+      "kind": "numeric_active"
+    }
+  ],
+  "curriculum": {
+    "curriculum_id": "bilqis.curriculum.semantic/v1",
+    "grades": [
+      {
+        "capabilities": [
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "A.IDENTITY",
+            "composed_of": [],
+            "difficulty": "direct-predicate",
+            "examined_roots": [
+              "micro.compare.EQ"
+            ],
+            "prerequisites": [],
+            "taught_roots": [
+              "micro.compare.EQ"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "A.PARENT",
+            "composed_of": [],
+            "difficulty": "direct-predicate",
+            "examined_roots": [
+              "micro.relation.PARENT"
+            ],
+            "prerequisites": [],
+            "taught_roots": [
+              "micro.relation.PARENT"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "A.LINK",
+            "composed_of": [],
+            "difficulty": "direct-predicate",
+            "examined_roots": [
+              "micro.relation.LINK"
+            ],
+            "prerequisites": [],
+            "taught_roots": [
+              "micro.relation.LINK"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "A.MEMBER",
+            "composed_of": [],
+            "difficulty": "direct-predicate",
+            "examined_roots": [
+              "development.op.MEMBER"
+            ],
+            "prerequisites": [],
+            "taught_roots": [
+              "development.op.MEMBER"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "A.EDGE",
+            "composed_of": [],
+            "difficulty": "direct-predicate",
+            "examined_roots": [
+              "development.op.EDGE"
+            ],
+            "prerequisites": [],
+            "taught_roots": [
+              "development.op.EDGE"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "A.MAPS",
+            "composed_of": [],
+            "difficulty": "direct-predicate",
+            "examined_roots": [
+              "development.op.MAPS"
+            ],
+            "prerequisites": [],
+            "taught_roots": [
+              "development.op.MAPS"
+            ]
+          }
+        ],
+        "exam_item_counts": [
+          [
+            "A.IDENTITY",
+            12
+          ],
+          [
+            "A.PARENT",
+            12
+          ],
+          [
+            "A.LINK",
+            12
+          ],
+          [
+            "A.MEMBER",
+            12
+          ],
+          [
+            "A.EDGE",
+            12
+          ],
+          [
+            "A.MAPS",
+            12
+          ]
+        ],
+        "grade_id": "A",
+        "teaching_stages": []
+      },
+      {
+        "capabilities": [
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "B.NOT",
+            "composed_of": [],
+            "difficulty": "first-boolean-composition",
+            "examined_roots": [
+              "cogal.operator.NOT"
+            ],
+            "prerequisites": [
+              "A.IDENTITY",
+              "A.PARENT",
+              "A.LINK"
+            ],
+            "taught_roots": [
+              "cogal.operator.NOT"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "B.AND",
+            "composed_of": [],
+            "difficulty": "first-boolean-composition",
+            "examined_roots": [
+              "cogal.operator.AND"
+            ],
+            "prerequisites": [
+              "A.IDENTITY",
+              "A.PARENT",
+              "A.LINK"
+            ],
+            "taught_roots": [
+              "cogal.operator.AND"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "B.OR",
+            "composed_of": [],
+            "difficulty": "first-boolean-composition",
+            "examined_roots": [
+              "cogal.operator.OR"
+            ],
+            "prerequisites": [
+              "A.IDENTITY",
+              "A.PARENT",
+              "A.LINK"
+            ],
+            "taught_roots": [
+              "cogal.operator.OR"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "B.XOR",
+            "composed_of": [],
+            "difficulty": "first-boolean-composition",
+            "examined_roots": [
+              "cogal.operator.XOR"
+            ],
+            "prerequisites": [
+              "A.IDENTITY",
+              "A.PARENT",
+              "A.LINK"
+            ],
+            "taught_roots": [
+              "cogal.operator.XOR"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "B.IMPLIES",
+            "composed_of": [],
+            "difficulty": "first-boolean-composition",
+            "examined_roots": [
+              "cogal.operator.IMPLIES"
+            ],
+            "prerequisites": [
+              "A.IDENTITY",
+              "A.PARENT",
+              "A.LINK"
+            ],
+            "taught_roots": [
+              "cogal.operator.IMPLIES"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "B.IFF",
+            "composed_of": [],
+            "difficulty": "first-boolean-composition",
+            "examined_roots": [
+              "cogal.operator.IFF"
+            ],
+            "prerequisites": [
+              "A.IDENTITY",
+              "A.PARENT",
+              "A.LINK"
+            ],
+            "taught_roots": [
+              "cogal.operator.IFF"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              }
+            ],
+            "capability_id": "B.COMPOSITE",
+            "composed_of": [],
+            "difficulty": "first-boolean-composition",
+            "examined_roots": [
+              "cogal.operator.NOT",
+              "cogal.operator.AND",
+              "cogal.operator.OR",
+              "cogal.operator.XOR",
+              "cogal.operator.IMPLIES",
+              "cogal.operator.IFF"
+            ],
+            "prerequisites": [
+              "A.IDENTITY",
+              "A.PARENT",
+              "A.LINK"
+            ],
+            "taught_roots": [
+              "cogal.operator.NOT",
+              "cogal.operator.AND",
+              "cogal.operator.OR",
+              "cogal.operator.XOR",
+              "cogal.operator.IMPLIES",
+              "cogal.operator.IFF"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "boolean_operator",
+                "values": [
+                  "NOT",
+                  "AND",
+                  "OR",
+                  "XOR",
+                  "IMPLIES",
+                  "IFF"
+                ]
+              }
+            ],
+            "capability_id": "B.IDBOOLOPS",
+            "composed_of": [],
+            "difficulty": "first-boolean-composition",
+            "examined_roots": [
+              "cogal.operator.NOT",
+              "cogal.operator.AND",
+              "cogal.operator.OR",
+              "cogal.operator.XOR",
+              "cogal.operator.IMPLIES",
+              "cogal.operator.IFF"
+            ],
+            "prerequisites": [
+              "A.IDENTITY",
+              "A.PARENT",
+              "A.LINK"
+            ],
+            "taught_roots": [
+              "cogal.operator.NOT",
+              "cogal.operator.AND",
+              "cogal.operator.OR",
+              "cogal.operator.XOR",
+              "cogal.operator.IMPLIES",
+              "cogal.operator.IFF"
+            ]
+          }
+        ],
+        "exam_item_counts": [
+          [
+            "B.NOT",
+            12
+          ],
+          [
+            "B.AND",
+            12
+          ],
+          [
+            "B.OR",
+            12
+          ],
+          [
+            "B.XOR",
+            12
+          ],
+          [
+            "B.IMPLIES",
+            12
+          ],
+          [
+            "B.IFF",
+            12
+          ],
+          [
+            "B.COMPOSITE",
+            12
+          ],
+          [
+            "B.IDBOOLOPS",
+            12
+          ]
+        ],
+        "grade_id": "B",
+        "teaching_stages": []
+      },
+      {
+        "capabilities": [
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              },
+              {
+                "kind": "numeric_active",
+                "values": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9",
+                  "10"
+                ]
+              }
+            ],
+            "capability_id": "C.COUNT",
+            "composed_of": [],
+            "difficulty": "grounded-finite-numbers",
+            "examined_roots": [
+              "school.op.COUNT"
+            ],
+            "prerequisites": [
+              "A.IDENTITY",
+              "A.MEMBER"
+            ],
+            "taught_roots": [
+              "school.op.COUNT"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              },
+              {
+                "kind": "numeric_active",
+                "values": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9",
+                  "10"
+                ]
+              }
+            ],
+            "capability_id": "C.NUMBER",
+            "composed_of": [],
+            "difficulty": "grounded-finite-numbers",
+            "examined_roots": [
+              "school.number.0",
+              "school.number.1",
+              "school.number.2",
+              "school.number.3",
+              "school.number.4",
+              "school.number.5",
+              "school.number.6",
+              "school.number.7",
+              "school.number.8",
+              "school.number.9",
+              "school.number.10"
+            ],
+            "prerequisites": [
+              "C.COUNT"
+            ],
+            "taught_roots": [
+              "school.number.0",
+              "school.number.1",
+              "school.number.2",
+              "school.number.3",
+              "school.number.4",
+              "school.number.5",
+              "school.number.6",
+              "school.number.7",
+              "school.number.8",
+              "school.number.9",
+              "school.number.10"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              },
+              {
+                "kind": "numeric_active",
+                "values": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9",
+                  "10"
+                ]
+              }
+            ],
+            "capability_id": "C.SUCCESSOR",
+            "composed_of": [],
+            "difficulty": "grounded-finite-numbers",
+            "examined_roots": [
+              "school.op.SUCC"
+            ],
+            "prerequisites": [
+              "C.COUNT",
+              "C.NUMBER"
+            ],
+            "taught_roots": [
+              "school.op.SUCC"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              },
+              {
+                "kind": "numeric_active",
+                "values": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9",
+                  "10"
+                ]
+              }
+            ],
+            "capability_id": "C.ADD",
+            "composed_of": [],
+            "difficulty": "grounded-finite-numbers",
+            "examined_roots": [
+              "school.op.ADD"
+            ],
+            "prerequisites": [
+              "C.COUNT",
+              "C.NUMBER",
+              "C.SUCCESSOR"
+            ],
+            "taught_roots": [
+              "school.op.ADD"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              },
+              {
+                "kind": "numeric_active",
+                "values": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9",
+                  "10"
+                ]
+              }
+            ],
+            "capability_id": "C.SUB",
+            "composed_of": [],
+            "difficulty": "grounded-finite-numbers",
+            "examined_roots": [
+              "school.op.SUB"
+            ],
+            "prerequisites": [
+              "C.COUNT",
+              "C.NUMBER",
+              "C.ADD"
+            ],
+            "taught_roots": [
+              "school.op.SUB"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              },
+              {
+                "kind": "numeric_active",
+                "values": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9",
+                  "10"
+                ]
+              }
+            ],
+            "capability_id": "C.MUL",
+            "composed_of": [],
+            "difficulty": "grounded-finite-numbers",
+            "examined_roots": [
+              "school.op.MUL"
+            ],
+            "prerequisites": [
+              "C.COUNT",
+              "C.NUMBER",
+              "C.ADD"
+            ],
+            "taught_roots": [
+              "school.op.MUL"
+            ]
+          },
+          {
+            "answer_families": [
+              {
+                "kind": "binary",
+                "values": [
+                  "FALSE",
+                  "TRUE"
+                ]
+              },
+              {
+                "kind": "numeric_active",
+                "values": [
+                  "0",
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9",
+                  "10"
+                ]
+              }
+            ],
+            "capability_id": "C.DIV",
+            "composed_of": [],
+            "difficulty": "grounded-finite-numbers",
+            "examined_roots": [
+              "school.op.DIV"
+            ],
+            "prerequisites": [
+              "C.COUNT",
+              "C.NUMBER",
+              "C.MUL"
+            ],
+            "taught_roots": [
+              "school.op.DIV"
+            ]
+          }
+        ],
+        "exam_item_counts": [
+          [
+            "C.COUNT",
+            33
+          ],
+          [
+            "C.NUMBER",
+            33
+          ],
+          [
+            "C.SUCCESSOR",
+            33
+          ],
+          [
+            "C.ADD",
+            33
+          ],
+          [
+            "C.SUB",
+            33
+          ],
+          [
+            "C.MUL",
+            33
+          ],
+          [
+            "C.DIV",
+            33
+          ]
+        ],
+        "grade_id": "C",
+        "teaching_stages": [
+          [
+            "C.COUNT"
+          ],
+          [
+            "C.NUMBER"
+          ],
+          [
+            "C.SUCCESSOR"
+          ],
+          [
+            "C.ADD"
+          ],
+          [
+            "C.SUB"
+          ],
+          [
+            "C.MUL"
+          ],
+          [
+            "C.DIV"
+          ]
+        ]
+      }
+    ],
+    "program_complete": false
+  },
+  "execution_plan": {
+    "capabilities": [
+      {
+        "answer_families": [
+          {
+            "kind": "binary",
+            "values": [
+              "FALSE",
+              "TRUE"
+            ]
+          }
+        ],
+        "capability_id": "A.IDENTITY",
+        "composed_of": [],
+        "construction_program_id": "A.IDENTITY",
+        "exam_item_count": 12,
+        "grade_id": "A",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "prerequisites": [],
+        "provider_id": "source.micro.predicates/v1",
+        "provider_implementation_sha256": "bdf41355cdee00801d00357362f629425877de6e66e63669282d45a78b195389",
+        "provider_parameters": [],
+        "source_anchor": "repo:bilqis_micro/kernel.py::compare",
+        "stage": 0,
+        "teaching_option_ids": [
+          "source.direct/A.IDENTITY"
+        ],
+        "variation_axes": [
+          "source-valid",
+          "balanced-gold",
+          "fresh-seed"
+        ]
+      },
+      {
+        "answer_families": [
+          {
+            "kind": "binary",
+            "values": [
+              "FALSE",
+              "TRUE"
+            ]
+          }
+        ],
+        "capability_id": "A.PARENT",
+        "composed_of": [],
+        "construction_program_id": "A.PARENT",
+        "exam_item_count": 12,
+        "grade_id": "A",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "prerequisites": [],
+        "provider_id": "source.micro.predicates/v1",
+        "provider_implementation_sha256": "bdf41355cdee00801d00357362f629425877de6e66e63669282d45a78b195389",
+        "provider_parameters": [],
+        "source_anchor": "repo:bilqis_micro/kernel.py::relation",
+        "stage": 0,
+        "teaching_option_ids": [
+          "source.direct/A.PARENT"
+        ],
+        "variation_axes": [
+          "source-valid",
+          "balanced-gold",
+          "fresh-seed"
+        ]
+      },
+      {
+        "answer_families": [
+          {
+            "kind": "binary",
+            "values": [
+              "FALSE",
+              "TRUE"
+            ]
+          }
+        ],
+        "capability_id": "A.LINK",
+        "composed_of": [],
+        "construction_program_id": "A.LINK",
+        "exam_item_count": 12,
+        "grade_id": "A",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "prerequisites": [],
+        "provider_id": "source.micro.predicates/v1",
+        "provider_implementation_sha256": "bdf41355cdee00801d00357362f629425877de6e66e63669282d45a78b195389",
+        "provider_parameters": [],
+        "source_anchor": "repo:bilqis_micro/kernel.py::relation",
+        "stage": 0,
+        "teaching_option_ids": [
+          "source.direct/A.LINK"
+        ],
+        "variation_axes": [
+          "source-valid",
+          "balanced-gold",
+          "fresh-seed"
+        ]
+      },
+      {
+        "answer_families": [
+          {
+            "kind": "binary",
+            "values": [
+              "FALSE",
+              "TRUE"
+            ]
+          }
+        ],
+        "capability_id": "A.MEMBER",
+        "composed_of": [],
+        "construction_program_id": "A.MEMBER",
+        "exam_item_count": 12,
+        "grade_id": "A",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "prerequisites": [],
+        "provider_id": "source.micro.predicates/v1",
+        "provider_implementation_sha256": "bdf41355cdee00801d00357362f629425877de6e66e63669282d45a78b195389",
+        "provider_parameters": [],
+        "source_anchor": "repo:bilqis_development/kernel.py::op",
+        "stage": 0,
+        "teaching_option_ids": [
+          "source.direct/A.MEMBER"
+        ],
+        "variation_axes": [
+          "source-valid",
+          "balanced-gold",
+          "fresh-seed"
+        ]
+      },
+      {
+        "answer_families": [
+          {
+            "kind": "binary",
+            "values": [
+              "FALSE",
+              "TRUE"
+            ]
+          }
+        ],
+        "capability_id": "A.EDGE",
+        "composed_of": [],
+        "construction_program_id": "A.EDGE",
+        "exam_item_count": 12,
+        "grade_id": "A",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "prerequisites": [],
+        "provider_id": "source.micro.predicates/v1",
+        "provider_implementation_sha256": "bdf41355cdee00801d00357362f629425877de6e66e63669282d45a78b195389",
+        "provider_parameters": [],
+        "source_anchor": "repo:bilqis_development/kernel.py::op",
+        "stage": 0,
+        "teaching_option_ids": [
+          "source.direct/A.EDGE"
+        ],
+        "variation_axes": [
+          "source-valid",
+          "balanced-gold",
+          "fresh-seed"
+        ]
+      },
+      {
+        "answer_families": [
+          {
+            "kind": "binary",
+            "values": [
+              "FALSE",
+              "TRUE"
+            ]
+          }
+        ],
+        "capability_id": "A.MAPS",
+        "composed_of": [],
+        "construction_program_id": "A.MAPS",
+        "exam_item_count": 12,
+        "grade_id": "A",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "prerequisites": [],
+        "provider_id": "source.micro.predicates/v1",
+        "provider_implementation_sha256": "bdf41355cdee00801d00357362f629425877de6e66e63669282d45a78b195389",
+        "provider_parameters": [],
+        "source_anchor": "repo:bilqis_development/kernel.py::op",
+        "stage": 0,
+        "teaching_option_ids": [
+          "source.direct/A.MAPS"
+        ],
+        "variation_axes": [
+          "source-valid",
+          "balanced-gold",
+          "fresh-seed"
+        ]
+      }
+    ],
+    "capability_projection_digests": [
+      {
+        "answer_schema": "9086bb88ce4afecebaec606af70eedccc81436df66fee2ec8ecfc224b825ba4d",
+        "assessment": "90ab05906a283285c198ebafa294ce08045911018e0017f77ee9cd62fbd3bb74",
+        "capability_id": "A.IDENTITY",
+        "coverage": "cb9bd6ead3791bdcc5bcff8f48581b1e204d60f9f19ecd527740e8e60d1f8ddc",
+        "schedule": "f4a5830f8f4afcb96aab8d6271298196dcfd5c6589d78e7ef70d1a7456a88317",
+        "source": "2ccac91344bbdab85347dbb6a8b0ef6f32931a7456926934d3377e1c71185f7f",
+        "teaching": "93564657edfe280c345d9ccc020f91a53d1b3204cd7eab67070b75432210b79d"
+      },
+      {
+        "answer_schema": "4fc704856f294037170b07ddc488cd63380e2283842be20a1fc0b30cdab439ca",
+        "assessment": "2c4aa97df0e0cde3e39c8d4c057fa93bf3aa746384312d8a28065bb33d05fe16",
+        "capability_id": "A.PARENT",
+        "coverage": "db6b21c614cfea31344b27de3b0d03be4391540dc73357f7e512513490c9530a",
+        "schedule": "ee214a0b4121638fc32f1bd215293fb5c38fefb280293743b68f1512acd5b15b",
+        "source": "d98139584e4c53b479996ab8af8b3574701a854345b997cf137404297bc5f060",
+        "teaching": "573fc1410a318286608549c0ac8d146a2c65e9d6219cc1cbb57a6271a9e5d785"
+      },
+      {
+        "answer_schema": "e03a5cd912b3892be62e2db94d4e66982fc5c94a17f8ac73c4e1bd07eb7a3601",
+        "assessment": "1181f0a59e66fb4caf75c31c1514b5d83742e2871022c5fbb8d5683d0ec752f1",
+        "capability_id": "A.LINK",
+        "coverage": "9def93b4754a664e1619828bcda64a98e08f1ad3059ab86c23b6a2e3478aa13a",
+        "schedule": "be06649d11efbeaf18393f8f4ec09d7b56742eaeed0ebc7bf09cd99ea87557a2",
+        "source": "033d19da0c816c25203d049e4b3dfaeabc6c57eff0291d809eec56eae6bf9279",
+        "teaching": "0387e215e0db0bc80b767f4aba4e5c261eb16fc6c1a49d4ea85ba7d7b67611d4"
+      },
+      {
+        "answer_schema": "54239debfd3312e713a64013761c41cd995d42d774910bb1f506546ae24e8461",
+        "assessment": "15b3dd1b1a4ae3c9e74761501e5c2ec25b0d4b96fb1a7af2f8a72a5ea6ebacfd",
+        "capability_id": "A.MEMBER",
+        "coverage": "61b628be52b73393548db2a188e2c76862db259a24b36841d6c2abcc374ccf6f",
+        "schedule": "7008a052fe8a0cc6938515288c4a4e1bf8866cc789869e162cb1fc1763a7a879",
+        "source": "3983a4c70007e1f4d43e23e950c73c25650e0dd41a57f57fe749630acb6c07a3",
+        "teaching": "eeb310980d1514cd9848933fb01bbf0bfc41a0e0e23ec8c92162e9f93d2870ee"
+      },
+      {
+        "answer_schema": "619f8b9c0d9a98bd7c27f8da53e60491e1f8e29bc1b192e6787e3c301f6c717c",
+        "assessment": "75f4b33ca7384fe6128a292bc4ab9fcc1f1c5ea83e4bfb0b7650e1e5c672bde7",
+        "capability_id": "A.EDGE",
+        "coverage": "266479822e2aeeee16b7a4a497be99ca30be2fc086eb82de77b0d95e417f47c4",
+        "schedule": "cf51b658b4d0c46edf3d25dab2253afff5adcab1d914f372b2d4aad4fe15b2ee",
+        "source": "2f295654c9cbd1d13bcce4f217c1a0c26b76180e0fdc2af4e572d42a43fb1816",
+        "teaching": "37d7cf96341462dc9d1a519296d50d1bde5cd6483d17fab91f95b8f11e1036f6"
+      },
+      {
+        "answer_schema": "86ca6eac98d952a97f1056bc4231f2699a67ce131e67b4d71c47ff36bcde6f72",
+        "assessment": "6fdbb09850faecb0a29d222e1b72f8ddb51a278e00694cd956d767811857ed84",
+        "capability_id": "A.MAPS",
+        "coverage": "dbb832052f992a99527c8ba21501334ace5e8f69331d0cc980fe0412f71ecd6b",
+        "schedule": "a5cd7af9d9041d0a2109f50631fc8664ebd9b8bda7f53afd61804f038e1724f4",
+        "source": "0ee16190f6ed199b2a9848e66a5bd8934026ec409cb2caac0d1b8eef53a0ddf9",
+        "teaching": "049f4838cb76a8b35fd546e6d9395af09c6bbeb4e200008d5c98154c6d210842"
+      }
+    ],
+    "curriculum_sha256": "a44c9a293683cd2feddbb58b5279ebf9379489a0a6abb46ea4d597e3a0e599a2",
+    "grades": [
+      {
+        "assessment_blueprint_sha256": "ccd2b3655dd6993bf61e5567f7b6014b46fad3dec869d68261158fabdaf0814a",
+        "capabilities": [
+          "A.IDENTITY",
+          "A.PARENT",
+          "A.LINK",
+          "A.MEMBER",
+          "A.EDGE",
+          "A.MAPS"
+        ],
+        "cumulative_scope": [
+          "A.IDENTITY",
+          "A.PARENT",
+          "A.LINK",
+          "A.MEMBER",
+          "A.EDGE",
+          "A.MAPS"
+        ],
+        "grade_id": "A",
+        "teaching_stages": []
+      }
+    ],
+    "profile_id": "school/u7c-full-b/numeric-0-8",
+    "projection_digests": {
+      "answer_schema": "216d4ee035181b30accbb8b3874ceded02e1f14537c8f58d91f21472962ab4b3",
+      "assessment": "736961dfff2941c06871132097071a0c0b748cb8d00908c1f83a4c2f4e0907c0",
+      "coverage": "a2bce02b6f105bb3d871597742d0ccee9d72fcd34ee72b29644cad51dd38fd56",
+      "roster": "fb24417fef42be1d1e1045ebbe8d70b4c8ca9ddbdcc055a3e205e8722a612431",
+      "schedule": "86b1084abbd9db9fe6cdced8f45ae6d0e54dfb85f80199f0f70464bfc0128b3a",
+      "source": "28b6db1a590ea80199d35ae2ed3f7b957013ddd0dd819b7686b9efc8fc52c704",
+      "teaching": "c7537d786d54c5d8d685cbb201c2be856cf5b81f610bd2a53f2e71c893240f78"
+    },
+    "source_binding_sha256": "ce029e896490f260d1709ad6647a89b949fe25ac2bb11b0e089ed9668090c579"
+  },
+  "predecessor_release_sha256": null,
+  "profile": {
+    "grades": [
+      {
+        "capabilities": [],
+        "enabled_capabilities": null,
+        "grade_id": "A"
+      },
+      {
+        "capabilities": [],
+        "enabled_capabilities": [],
+        "grade_id": "B"
+      },
+      {
+        "capabilities": [],
+        "enabled_capabilities": [],
+        "grade_id": "C"
+      }
+    ],
+    "profile_id": "school/u7c-full-b/numeric-0-8"
+  },
+  "schema": "bilqis.mlx.factory-release/v2",
+  "semantic_catalog": [
+    "syntax.pad",
+    "task.evaluate",
+    "task.equivalent",
+    "syntax.bind",
+    "syntax.separator",
+    "syntax.end",
+    "cogal.value.false",
+    "cogal.value.true",
+    "cogal.variable.P",
+    "cogal.variable.Q",
+    "cogal.operator.NOT",
+    "cogal.operator.AND",
+    "cogal.operator.OR",
+    "cogal.operator.XOR",
+    "cogal.operator.XNOR",
+    "cogal.operator.IMPLIES",
+    "cogal.operator.IFF",
+    "micro.syntax.world",
+    "micro.syntax.entities",
+    "micro.syntax.facts",
+    "micro.syntax.rules",
+    "micro.syntax.propositions",
+    "micro.syntax.reports",
+    "micro.syntax.interpretations",
+    "micro.syntax.query",
+    "micro.syntax.section_end",
+    "micro.entity.A",
+    "micro.entity.B",
+    "micro.entity.C",
+    "micro.entity.D",
+    "micro.entity.E",
+    "micro.role.source",
+    "micro.role.target",
+    "micro.role.mediator",
+    "micro.relation.PARENT",
+    "micro.relation.CHILD",
+    "micro.relation.LINK",
+    "micro.relation.GRANDPARENT",
+    "micro.quantifier.EXISTS",
+    "micro.quantifier.FORALL",
+    "micro.bound.0",
+    "micro.bound.1",
+    "micro.compare.EQ",
+    "micro.compare.NEQ",
+    "micro.compose",
+    "micro.proof.entails",
+    "micro.proof.rule_step",
+    "micro.proof.countermodel",
+    "micro.rule.parent_parent_grandparent",
+    "micro.source.S0",
+    "micro.source.S1",
+    "micro.source.S2",
+    "micro.proposition.J0",
+    "micro.proposition.J1",
+    "micro.proposition.J2",
+    "micro.report.support",
+    "micro.report.refute",
+    "micro.interpretation.0",
+    "micro.interpretation.1",
+    "micro.state.UNKNOWN",
+    "micro.state.CONFLICT",
+    "micro.state.AMBIGUOUS",
+    "micro.evidence.observe",
+    "micro.evidence.NOT",
+    "micro.evidence.AND",
+    "micro.evidence.OR",
+    "micro.proof.premise",
+    "micro.proof.conclusion",
+    "development.syntax.sets",
+    "development.syntax.functions",
+    "development.syntax.edges",
+    "development.syntax.events",
+    "development.syntax.links",
+    "development.syntax.prior",
+    "development.Set.K0",
+    "development.Set.K1",
+    "development.Function.F0",
+    "development.Function.F1",
+    "development.Event.E0",
+    "development.Event.E1",
+    "development.Event.E2",
+    "development.Event.E3",
+    "development.EventKind.ASSERT",
+    "development.EventKind.OBSERVE",
+    "development.EventKind.INFER",
+    "development.LinkKind.DERIVED_FROM",
+    "development.LinkKind.DEPENDS_ON",
+    "development.LinkKind.SUPERSEDES",
+    "development.op.MEMBER",
+    "development.op.SUBSET",
+    "development.op.INTERSECTION",
+    "development.op.DIFFERENCE",
+    "development.op.DOMAIN",
+    "development.op.RANGE",
+    "development.op.INVERSE",
+    "development.op.COMPOSITION",
+    "development.op.MAPS",
+    "development.op.NEIGHBORS",
+    "development.op.EDGE",
+    "development.op.PATH",
+    "development.op.IS_PROPOSITION",
+    "development.op.IS_ASSERTION",
+    "development.op.IS_OBSERVATION",
+    "development.op.ASSERTED_BY",
+    "development.op.OBSERVED_BY",
+    "development.op.FORMAL_ENTAILS",
+    "development.op.DERIVED_FROM",
+    "development.op.DEPENDENCY",
+    "development.op.SUPERSEDES",
+    "development.op.REVISES",
+    "development.op.IS_CURRENT",
+    "development.op.CURRENT_STATE",
+    "development.op.HISTORICAL_STATE",
+    "school.syntax.math",
+    "school.op.ADD",
+    "school.op.SUB",
+    "school.op.MUL",
+    "school.op.MOD",
+    "school.op.EQ",
+    "school.op.LT",
+    "school.op.LE",
+    "school.number.0",
+    "school.number.1",
+    "school.number.2",
+    "school.number.3",
+    "school.number.4",
+    "school.number.5",
+    "school.number.6",
+    "school.number.7",
+    "school.number.8",
+    "school.number.9",
+    "school.number.10",
+    "school.number.11",
+    "school.number.12",
+    "school.number.13",
+    "school.number.14",
+    "school.number.15",
+    "school.number.16",
+    "school.number.17",
+    "school.number.18",
+    "school.number.19",
+    "school.number.20",
+    "school.number.21",
+    "school.number.22",
+    "school.number.23",
+    "school.number.24",
+    "school.number.25",
+    "school.number.26",
+    "school.number.27",
+    "school.number.28",
+    "school.number.29",
+    "school.number.30",
+    "school.number.31",
+    "school.number.32",
+    "school.number.33",
+    "school.number.34",
+    "school.number.35",
+    "school.number.36",
+    "school.number.37",
+    "school.number.38",
+    "school.number.39",
+    "school.number.40",
+    "school.number.41",
+    "school.number.42",
+    "school.number.43",
+    "school.number.44",
+    "school.number.45",
+    "school.number.46",
+    "school.number.47",
+    "school.number.48",
+    "school.number.49",
+    "school.number.50",
+    "school.number.51",
+    "school.number.52",
+    "school.number.53",
+    "school.number.54",
+    "school.number.55",
+    "school.number.56",
+    "school.number.57",
+    "school.number.58",
+    "school.number.59",
+    "school.number.60",
+    "school.number.61",
+    "school.number.62",
+    "school.number.63",
+    "school.number.64",
+    "school.number.65",
+    "school.number.66",
+    "school.number.67",
+    "school.number.68",
+    "school.number.69",
+    "school.number.70",
+    "school.number.71",
+    "school.number.72",
+    "school.number.73",
+    "school.number.74",
+    "school.number.75",
+    "school.number.76",
+    "school.number.77",
+    "school.number.78",
+    "school.number.79",
+    "school.number.80",
+    "school.number.81",
+    "school.number.82",
+    "school.number.83",
+    "school.number.84",
+    "school.number.85",
+    "school.number.86",
+    "school.number.87",
+    "school.number.88",
+    "school.number.89",
+    "school.number.90",
+    "school.number.91",
+    "school.number.92",
+    "school.number.93",
+    "school.number.94",
+    "school.number.95",
+    "school.number.96",
+    "school.number.97",
+    "school.number.98",
+    "school.number.99",
+    "school.number.100",
+    "school.op.COUNT",
+    "school.op.SUCC",
+    "school.op.DIV",
+    "school.syntax.number_set",
+    "school.syntax.number_groups"
+  ],
+  "semantic_catalog_sha256": "477ccbf6c7a9c0e978d94ff88329bccd6b51da46c788782976aefb6fe2021d38",
+  "semantic_graph_sha256": "db2297d41d7e50dd44321c323be760f7d66575e8c11b2f6b3d59a304b5a8afd6",
+  "source_adapters": [
+    {
+      "accepted_oracle_ids": [
+        "bilqis.mlx.grade-a-record-oracle/v2"
+      ],
+      "adapter_id": "source.micro.predicates/v1",
+      "cohort_generator_id": "bilqis.mlx.grade-a-live-constructor/v1",
+      "cohort_releases": [
+        [
+          "bilqis.mlx.grade-a-live/20261015",
+          "bdf41355cdee00801d00357362f629425877de6e66e63669282d45a78b195389"
+        ]
+      ],
+      "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+      "implementation_sha256": "bdf41355cdee00801d00357362f629425877de6e66e63669282d45a78b195389",
+      "profile_dimensions": [],
+      "teaching_option_ids": [],
+      "variation_axes": [
+        "source-valid",
+        "balanced-gold",
+        "fresh-seed"
+      ]
+    }
+  ],
+  "source_bindings": {
+    "bindings": [
+      {
+        "capability_id": "A.IDENTITY",
+        "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "source_anchor": "repo:bilqis_micro/kernel.py::compare"
+      },
+      {
+        "capability_id": "A.PARENT",
+        "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "source_anchor": "repo:bilqis_micro/kernel.py::relation"
+      },
+      {
+        "capability_id": "A.LINK",
+        "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "source_anchor": "repo:bilqis_micro/kernel.py::relation"
+      },
+      {
+        "capability_id": "A.MEMBER",
+        "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "source_anchor": "repo:bilqis_development/kernel.py::op"
+      },
+      {
+        "capability_id": "A.EDGE",
+        "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "source_anchor": "repo:bilqis_development/kernel.py::op"
+      },
+      {
+        "capability_id": "A.MAPS",
+        "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+        "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+        "source_anchor": "repo:bilqis_development/kernel.py::op"
+      },
+      {
+        "capability_id": "B.NOT",
+        "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+        "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+        "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+      },
+      {
+        "capability_id": "B.AND",
+        "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+        "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+        "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+      },
+      {
+        "capability_id": "B.OR",
+        "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+        "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+        "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+      },
+      {
+        "capability_id": "B.XOR",
+        "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+        "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+        "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+      },
+      {
+        "capability_id": "B.IMPLIES",
+        "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+        "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+        "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+      },
+      {
+        "capability_id": "B.IFF",
+        "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+        "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+        "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+      },
+      {
+        "capability_id": "B.COMPOSITE",
+        "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+        "oracle_id": "bilqis.mlx.grade-b-composite-record-oracle/v1",
+        "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+      },
+      {
+        "capability_id": "B.IDBOOLOPS",
+        "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+        "oracle_id": "bilqis.mlx.grade-b-idboolops-record-oracle/v1",
+        "source_anchor": "repo:bilqis_logic/kernel.py::TABLES+_operation"
+      },
+      {
+        "capability_id": "C.COUNT",
+        "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+        "oracle_id": "bilqis.independent-finite-numeric/v1",
+        "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+      },
+      {
+        "capability_id": "C.NUMBER",
+        "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+        "oracle_id": "bilqis.independent-finite-numeric/v1",
+        "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+      },
+      {
+        "capability_id": "C.SUCCESSOR",
+        "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+        "oracle_id": "bilqis.independent-finite-numeric/v1",
+        "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+      },
+      {
+        "capability_id": "C.ADD",
+        "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+        "oracle_id": "bilqis.independent-finite-numeric/v1",
+        "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+      },
+      {
+        "capability_id": "C.SUB",
+        "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+        "oracle_id": "bilqis.independent-finite-numeric/v1",
+        "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+      },
+      {
+        "capability_id": "C.MUL",
+        "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+        "oracle_id": "bilqis.independent-finite-numeric/v1",
+        "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+      },
+      {
+        "capability_id": "C.DIV",
+        "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+        "oracle_id": "bilqis.independent-finite-numeric/v1",
+        "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+      }
+    ],
+    "source_attestation_sha256": "3b924650a9a709a79d3a25f87eaba561d37279836c25e96ef67bfb21ee464fa6"
+  },
+  "transition": null,
+  "verification": {
+    "answer_heads_sha256": "e4757ee1c6b0bb38545a5b63fa6792ee7eb85f17a7978ff5ad531a1541b45da2",
+    "answer_modalities_sha256": "e185fc291db2dcd4ee7e536d524ee207571856b04700ad35d866d75853fcad31",
+    "assessments": [
+      {
+        "assessment_blueprint_sha256": "ccd2b3655dd6993bf61e5567f7b6014b46fad3dec869d68261158fabdaf0814a",
+        "capability_receipt_sha256s": [
+          "e191517b0c3b2cadd29221f54476e57ee35dc23ac95c5f72d164d1be735786aa",
+          "3d48179c55b59107c64fe478d6998909ebfebcaecea9555f17202fdc45196ed0",
+          "236e115a5ee67e4e3855104708ae76b0aad4ad1be545ad92d81382dc28abc4ec",
+          "125e2317432f65b1460cdc3950c10ca06025294f27252f12b97941bdeb72d938",
+          "762bea53d65c48676096eeafc68d729b53ae05ba165d62d2918f6ce9fc546ed3",
+          "50c49a51eb6ae215ae59b72dd9d5aea3870fb5454dfcdb256255e955857a0836"
+        ],
+        "cumulative_scope": [
+          "A.IDENTITY",
+          "A.PARENT",
+          "A.LINK",
+          "A.MEMBER",
+          "A.EDGE",
+          "A.MAPS"
+        ],
+        "grade_id": "A",
+        "seal_sha256": "4afdaeb35d3f3f690e5d9dc9cf719412984a31b560eb6327fc6f228c82607ae0"
+      }
+    ],
+    "capabilities": [
+      {
+        "answer_schema_projection_sha256": "9086bb88ce4afecebaec606af70eedccc81436df66fee2ec8ecfc224b825ba4d",
+        "capability_id": "A.IDENTITY",
+        "coverage_projection_sha256": "cb9bd6ead3791bdcc5bcff8f48581b1e204d60f9f19ecd527740e8e60d1f8ddc",
+        "source_projection_sha256": "2ccac91344bbdab85347dbb6a8b0ef6f32931a7456926934d3377e1c71185f7f",
+        "specimen_content_sha256": "f1059b8cb19c1f2cbbae4641bab607806a247fa6ee32ebd989927d874e8be233",
+        "specimen_count": 12,
+        "specimen_ids_sha256": "c773e71075e6771c00a29119772d8abeaf2d075ce2c9484463f9122435b42264",
+        "verification_seed": 32420261026
+      },
+      {
+        "answer_schema_projection_sha256": "4fc704856f294037170b07ddc488cd63380e2283842be20a1fc0b30cdab439ca",
+        "capability_id": "A.PARENT",
+        "coverage_projection_sha256": "db6b21c614cfea31344b27de3b0d03be4391540dc73357f7e512513490c9530a",
+        "source_projection_sha256": "d98139584e4c53b479996ab8af8b3574701a854345b997cf137404297bc5f060",
+        "specimen_content_sha256": "5982a9b10a9039c2dc2e8300f2cb57dd3478a0b0bfe1cda1c08920c84caffc05",
+        "specimen_count": 12,
+        "specimen_ids_sha256": "c6b8906fd04f534ed635edd082f84a348faf2955a2c8890e39d12fedb8580885",
+        "verification_seed": 32420261026
+      },
+      {
+        "answer_schema_projection_sha256": "e03a5cd912b3892be62e2db94d4e66982fc5c94a17f8ac73c4e1bd07eb7a3601",
+        "capability_id": "A.LINK",
+        "coverage_projection_sha256": "9def93b4754a664e1619828bcda64a98e08f1ad3059ab86c23b6a2e3478aa13a",
+        "source_projection_sha256": "033d19da0c816c25203d049e4b3dfaeabc6c57eff0291d809eec56eae6bf9279",
+        "specimen_content_sha256": "9c05e1ce59f78a15cd9a804fbc609363a8472464ab1fc8d0dca13099fdc5be85",
+        "specimen_count": 12,
+        "specimen_ids_sha256": "8be299f3dbe8ad47e250e4db0534a0d0683b1b4518768456391a7fd2f8b61b68",
+        "verification_seed": 32420261026
+      },
+      {
+        "answer_schema_projection_sha256": "54239debfd3312e713a64013761c41cd995d42d774910bb1f506546ae24e8461",
+        "capability_id": "A.MEMBER",
+        "coverage_projection_sha256": "61b628be52b73393548db2a188e2c76862db259a24b36841d6c2abcc374ccf6f",
+        "source_projection_sha256": "3983a4c70007e1f4d43e23e950c73c25650e0dd41a57f57fe749630acb6c07a3",
+        "specimen_content_sha256": "cbef54e14a79b8651e6e9fc5d89f40f2f9001f9be017eaa54982480a15335723",
+        "specimen_count": 12,
+        "specimen_ids_sha256": "8edbbe67e352c79c90e6b81408eb21c49e54f899f860708ae5c18c039bdacf48",
+        "verification_seed": 32420261026
+      },
+      {
+        "answer_schema_projection_sha256": "619f8b9c0d9a98bd7c27f8da53e60491e1f8e29bc1b192e6787e3c301f6c717c",
+        "capability_id": "A.EDGE",
+        "coverage_projection_sha256": "266479822e2aeeee16b7a4a497be99ca30be2fc086eb82de77b0d95e417f47c4",
+        "source_projection_sha256": "2f295654c9cbd1d13bcce4f217c1a0c26b76180e0fdc2af4e572d42a43fb1816",
+        "specimen_content_sha256": "ef7b8125686754e7ece90d6b92c6917c29affec067d9b30fe12227ceab0809d5",
+        "specimen_count": 12,
+        "specimen_ids_sha256": "7c75f6294ce2cc0fde560cd99139df4a859b7dc4ebf49532e9288487f44189d0",
+        "verification_seed": 32420261026
+      },
+      {
+        "answer_schema_projection_sha256": "86ca6eac98d952a97f1056bc4231f2699a67ce131e67b4d71c47ff36bcde6f72",
+        "capability_id": "A.MAPS",
+        "coverage_projection_sha256": "dbb832052f992a99527c8ba21501334ace5e8f69331d0cc980fe0412f71ecd6b",
+        "source_projection_sha256": "0ee16190f6ed199b2a9848e66a5bd8934026ec409cb2caac0d1b8eef53a0ddf9",
+        "specimen_content_sha256": "5af7609af3c8ddc2c3ce86b0770b17f576b25f46a91b902e7769eba937f6acef",
+        "specimen_count": 12,
+        "specimen_ids_sha256": "377fd0086398a2541c9daf39ecfd5a086e0e63ae398d880db244050f355ec1e8",
+        "verification_seed": 32420261026
+      }
+    ],
+    "execution_plan_sha256": "19540272eb81fdc5afde6eef088f36a659c5ba45334102aee8c3fb9b7f87159c",
+    "provider_descriptors_sha256": "4f8dc4afb7f59950d9a56197d17ebb70580a67f770a7f3bf70d57325b64c1780",
+    "semantic_catalog_sha256": "477ccbf6c7a9c0e978d94ff88329bccd6b51da46c788782976aefb6fe2021d38",
+    "source_binding_sha256": "ce029e896490f260d1709ad6647a89b949fe25ac2bb11b0e089ed9668090c579",
+    "verification_seed": 32420261026
+  }
+}

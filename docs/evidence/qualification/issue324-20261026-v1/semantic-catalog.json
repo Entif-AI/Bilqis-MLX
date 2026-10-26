@@ -1,0 +1,3699 @@
+{
+  "coordinate_policy": "immutable row-local features; incoming edges do not alter old rows; append tokens only",
+  "nodes": [
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "syntax.pad",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "task.evaluate",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "task.equivalent",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "syntax.bind",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "syntax.separator",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "syntax.end",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "complement",
+          "target": "cogal.value.true"
+        }
+      ],
+      "family": "Boolean",
+      "id": "cogal.value.false",
+      "signature": "Boolean",
+      "stage": 0,
+      "subtype": "literal"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "complement",
+          "target": "cogal.value.false"
+        }
+      ],
+      "family": "Boolean",
+      "id": "cogal.value.true",
+      "signature": "Boolean",
+      "stage": 0,
+      "subtype": "literal"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "Boolean",
+      "id": "cogal.variable.P",
+      "signature": "Boolean",
+      "stage": 0,
+      "subtype": "free_variable"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "Boolean",
+      "id": "cogal.variable.Q",
+      "signature": "Boolean",
+      "stage": 0,
+      "subtype": "free_variable"
+    },
+    {
+      "arity": 1,
+      "directional": false,
+      "edges": [],
+      "family": "Boolean",
+      "id": "cogal.operator.NOT",
+      "roles": [
+        "operand"
+      ],
+      "signature": "Boolean->Boolean",
+      "stage": 0,
+      "subtype": "operator",
+      "symmetric": false,
+      "truth_signature": [
+        false,
+        true
+      ]
+    },
+    {
+      "arity": 2,
+      "directional": false,
+      "edges": [],
+      "family": "Boolean",
+      "id": "cogal.operator.AND",
+      "roles": [
+        "left",
+        "right"
+      ],
+      "signature": "Boolean*Boolean->Boolean",
+      "stage": 0,
+      "subtype": "operator",
+      "symmetric": true,
+      "truth_signature": [
+        true,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "arity": 2,
+      "directional": false,
+      "edges": [],
+      "family": "Boolean",
+      "id": "cogal.operator.OR",
+      "roles": [
+        "left",
+        "right"
+      ],
+      "signature": "Boolean*Boolean->Boolean",
+      "stage": 0,
+      "subtype": "operator",
+      "symmetric": true,
+      "truth_signature": [
+        true,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "arity": 2,
+      "directional": false,
+      "edges": [
+        {
+          "kind": "complement",
+          "target": "cogal.operator.XNOR"
+        },
+        {
+          "kind": "complement",
+          "target": "cogal.operator.IFF"
+        }
+      ],
+      "family": "Boolean",
+      "id": "cogal.operator.XOR",
+      "roles": [
+        "left",
+        "right"
+      ],
+      "signature": "Boolean*Boolean->Boolean",
+      "stage": 0,
+      "subtype": "operator",
+      "symmetric": true,
+      "truth_signature": [
+        false,
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "arity": 2,
+      "directional": false,
+      "edges": [
+        {
+          "kind": "complement",
+          "target": "cogal.operator.XOR"
+        },
+        {
+          "kind": "equivalent",
+          "target": "cogal.operator.IFF"
+        }
+      ],
+      "family": "Boolean",
+      "id": "cogal.operator.XNOR",
+      "roles": [
+        "left",
+        "right"
+      ],
+      "signature": "Boolean*Boolean->Boolean",
+      "stage": 0,
+      "subtype": "operator",
+      "symmetric": true,
+      "truth_signature": [
+        true,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "arity": 2,
+      "directional": true,
+      "edges": [],
+      "family": "Boolean",
+      "id": "cogal.operator.IMPLIES",
+      "roles": [
+        "left",
+        "right"
+      ],
+      "signature": "Boolean*Boolean->Boolean",
+      "stage": 0,
+      "subtype": "operator",
+      "symmetric": false,
+      "truth_signature": [
+        true,
+        false,
+        true,
+        true
+      ]
+    },
+    {
+      "arity": 2,
+      "directional": false,
+      "edges": [
+        {
+          "kind": "complement",
+          "target": "cogal.operator.XOR"
+        },
+        {
+          "kind": "equivalent",
+          "target": "cogal.operator.XNOR"
+        }
+      ],
+      "family": "Boolean",
+      "id": "cogal.operator.IFF",
+      "roles": [
+        "left",
+        "right"
+      ],
+      "signature": "Boolean*Boolean->Boolean",
+      "stage": 0,
+      "subtype": "operator",
+      "symmetric": true,
+      "truth_signature": [
+        true,
+        false,
+        false,
+        true
+      ]
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "micro.syntax.world",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "micro.syntax.entities",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "micro.syntax.facts",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "micro.syntax.rules",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "micro.syntax.propositions",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "micro.syntax.reports",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "micro.syntax.interpretations",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "micro.syntax.query",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "micro.syntax.section_end",
+      "signature": "Syntax",
+      "stage": 0,
+      "subtype": "delimiter"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "entity",
+      "id": "micro.entity.A",
+      "signature": "Entity",
+      "stage": 1,
+      "subtype": "individual"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "entity",
+      "id": "micro.entity.B",
+      "signature": "Entity",
+      "stage": 1,
+      "subtype": "individual"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "entity",
+      "id": "micro.entity.C",
+      "signature": "Entity",
+      "stage": 1,
+      "subtype": "individual"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "entity",
+      "id": "micro.entity.D",
+      "signature": "Entity",
+      "stage": 1,
+      "subtype": "individual"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "entity",
+      "id": "micro.entity.E",
+      "signature": "Entity",
+      "stage": 1,
+      "subtype": "individual"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "role",
+      "id": "micro.role.source",
+      "signature": "ArgumentRole",
+      "stage": 1,
+      "subtype": "source"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "role",
+      "id": "micro.role.target",
+      "signature": "ArgumentRole",
+      "stage": 1,
+      "subtype": "target"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "role",
+      "id": "micro.role.mediator",
+      "signature": "ArgumentRole",
+      "stage": 1,
+      "subtype": "mediator"
+    },
+    {
+      "arity": 2,
+      "directional": true,
+      "edges": [
+        {
+          "kind": "argument",
+          "target": "micro.role.source"
+        },
+        {
+          "kind": "argument",
+          "target": "micro.role.target"
+        },
+        {
+          "kind": "inverse",
+          "target": "micro.relation.CHILD"
+        }
+      ],
+      "family": "relation",
+      "id": "micro.relation.PARENT",
+      "roles": [
+        "source",
+        "target"
+      ],
+      "signature": "Entity*Entity->Boolean",
+      "stage": 1,
+      "subtype": "binary",
+      "symmetric": false
+    },
+    {
+      "arity": 2,
+      "directional": true,
+      "edges": [
+        {
+          "kind": "argument",
+          "target": "micro.role.source"
+        },
+        {
+          "kind": "argument",
+          "target": "micro.role.target"
+        },
+        {
+          "kind": "inverse",
+          "target": "micro.relation.PARENT"
+        }
+      ],
+      "family": "relation",
+      "id": "micro.relation.CHILD",
+      "roles": [
+        "source",
+        "target"
+      ],
+      "signature": "Entity*Entity->Boolean",
+      "stage": 1,
+      "subtype": "binary",
+      "symmetric": false
+    },
+    {
+      "arity": 2,
+      "directional": false,
+      "edges": [
+        {
+          "kind": "argument",
+          "target": "micro.role.source"
+        },
+        {
+          "kind": "argument",
+          "target": "micro.role.target"
+        }
+      ],
+      "family": "relation",
+      "id": "micro.relation.LINK",
+      "roles": [
+        "source",
+        "target"
+      ],
+      "signature": "Entity*Entity->Boolean",
+      "stage": 1,
+      "subtype": "binary",
+      "symmetric": true
+    },
+    {
+      "arity": 2,
+      "directional": true,
+      "edges": [
+        {
+          "kind": "argument",
+          "target": "micro.role.source"
+        },
+        {
+          "kind": "argument",
+          "target": "micro.role.target"
+        },
+        {
+          "kind": "composition",
+          "target": "micro.compose"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "micro.relation.PARENT"
+        }
+      ],
+      "family": "relation",
+      "id": "micro.relation.GRANDPARENT",
+      "roles": [
+        "source",
+        "target"
+      ],
+      "signature": "Entity*Entity->Boolean",
+      "stage": 3,
+      "subtype": "binary",
+      "symmetric": false
+    },
+    {
+      "arity": 1,
+      "binding": "de-Bruijn-nearest-first",
+      "edges": [
+        {
+          "kind": "binding",
+          "target": "micro.bound.0"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "micro.relation.PARENT"
+        }
+      ],
+      "family": "quantifier",
+      "id": "micro.quantifier.EXISTS",
+      "scope": "finite-world-domain",
+      "signature": "(Entity->Boolean)->Boolean",
+      "stage": 2,
+      "subtype": "EXISTS"
+    },
+    {
+      "arity": 1,
+      "binding": "de-Bruijn-nearest-first",
+      "edges": [
+        {
+          "kind": "binding",
+          "target": "micro.bound.0"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "micro.relation.PARENT"
+        }
+      ],
+      "family": "quantifier",
+      "id": "micro.quantifier.FORALL",
+      "scope": "finite-world-domain",
+      "signature": "(Entity->Boolean)->Boolean",
+      "stage": 2,
+      "subtype": "FORALL"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "binding",
+      "id": "micro.bound.0",
+      "scope": "lexical",
+      "signature": "Entity",
+      "stage": 2,
+      "subtype": "de_Bruijn_0"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "binding",
+      "id": "micro.bound.1",
+      "scope": "lexical",
+      "signature": "Entity",
+      "stage": 2,
+      "subtype": "de_Bruijn_1"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "exclusion",
+          "target": "micro.compare.NEQ"
+        }
+      ],
+      "family": "identity",
+      "id": "micro.compare.EQ",
+      "signature": "Entity*Entity->Boolean",
+      "stage": 1,
+      "subtype": "EQ",
+      "symmetric": true
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "exclusion",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "identity",
+      "id": "micro.compare.NEQ",
+      "signature": "Entity*Entity->Boolean",
+      "stage": 2,
+      "subtype": "NEQ",
+      "symmetric": true
+    },
+    {
+      "arity": 4,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.relation.PARENT"
+        },
+        {
+          "kind": "equivalent_form",
+          "target": "micro.quantifier.EXISTS"
+        }
+      ],
+      "family": "composition",
+      "id": "micro.compose",
+      "roles": [
+        "source",
+        "mediator",
+        "target"
+      ],
+      "signature": "Relation*Relation*Entity*Entity->Boolean",
+      "stage": 2,
+      "subtype": "two_hop"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compose"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "cogal.operator.IMPLIES"
+        }
+      ],
+      "family": "proof",
+      "id": "micro.proof.entails",
+      "signature": "ProofContext->Boolean",
+      "stage": 3,
+      "subtype": "entails"
+    },
+    {
+      "arity": 3,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compose"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "cogal.operator.IMPLIES"
+        }
+      ],
+      "family": "proof",
+      "id": "micro.proof.rule_step",
+      "signature": "ProofContext->Boolean",
+      "stage": 3,
+      "subtype": "rule_step"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compose"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "cogal.operator.IMPLIES"
+        }
+      ],
+      "family": "proof",
+      "id": "micro.proof.countermodel",
+      "signature": "ProofContext->Boolean",
+      "stage": 3,
+      "subtype": "countermodel"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compose"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "cogal.operator.IMPLIES"
+        },
+        {
+          "kind": "premise",
+          "target": "micro.relation.PARENT"
+        },
+        {
+          "kind": "conclusion",
+          "target": "micro.relation.GRANDPARENT"
+        }
+      ],
+      "family": "proof",
+      "id": "micro.rule.parent_parent_grandparent",
+      "signature": "PARENT(x,y)*PARENT(y,z)->GRANDPARENT(x,z)",
+      "stage": 3,
+      "subtype": "parent_parent_grandparent"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.source.S0",
+      "signature": "EvidenceSource",
+      "stage": 4,
+      "subtype": "source"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.source.S1",
+      "signature": "EvidenceSource",
+      "stage": 4,
+      "subtype": "source"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.source.S2",
+      "signature": "EvidenceSource",
+      "stage": 4,
+      "subtype": "source"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.proposition.J0",
+      "signature": "BooleanStatement",
+      "stage": 4,
+      "subtype": "proposition"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.proposition.J1",
+      "signature": "BooleanStatement",
+      "stage": 4,
+      "subtype": "proposition"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.proposition.J2",
+      "signature": "BooleanStatement",
+      "stage": 4,
+      "subtype": "proposition"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "contrast",
+          "target": "micro.report.refute"
+        }
+      ],
+      "family": "evidence",
+      "id": "micro.report.support",
+      "signature": "EvidencePolarity",
+      "stage": 4,
+      "subtype": "support"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "contrast",
+          "target": "micro.report.support"
+        }
+      ],
+      "family": "evidence",
+      "id": "micro.report.refute",
+      "signature": "EvidencePolarity",
+      "stage": 4,
+      "subtype": "refute"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.interpretation.0",
+      "signature": "Interpretation",
+      "stage": 4,
+      "subtype": "live_interpretation"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.interpretation.1",
+      "signature": "Interpretation",
+      "stage": 4,
+      "subtype": "live_interpretation"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.state.UNKNOWN",
+      "signature": "EvidenceState",
+      "stage": 4,
+      "subtype": "UNKNOWN"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.state.CONFLICT",
+      "signature": "EvidenceState",
+      "stage": 4,
+      "subtype": "CONFLICT"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "evidence",
+      "id": "micro.state.AMBIGUOUS",
+      "signature": "EvidenceState",
+      "stage": 4,
+      "subtype": "AMBIGUOUS"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "lift_of",
+          "target": "micro.proposition.J0"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        }
+      ],
+      "family": "evidence",
+      "id": "micro.evidence.observe",
+      "signature": "Proposition->Evidence",
+      "stage": 4,
+      "subtype": "observe"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "lift_of",
+          "target": "cogal.operator.NOT"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        }
+      ],
+      "family": "evidence",
+      "id": "micro.evidence.NOT",
+      "signature": "Evidence|Boolean->Evidence",
+      "stage": 4,
+      "subtype": "NOT"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "lift_of",
+          "target": "cogal.operator.AND"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        }
+      ],
+      "family": "evidence",
+      "id": "micro.evidence.AND",
+      "signature": "(Evidence|Boolean)*(Evidence|Boolean)->Evidence",
+      "stage": 4,
+      "subtype": "AND"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "lift_of",
+          "target": "cogal.operator.OR"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        }
+      ],
+      "family": "evidence",
+      "id": "micro.evidence.OR",
+      "signature": "(Evidence|Boolean)*(Evidence|Boolean)->Evidence",
+      "stage": 4,
+      "subtype": "OR"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "argument",
+          "target": "micro.proof.rule_step"
+        }
+      ],
+      "family": "role",
+      "id": "micro.proof.premise",
+      "signature": "BooleanStatementRole",
+      "stage": 3,
+      "subtype": "premise"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "argument",
+          "target": "micro.proof.rule_step"
+        }
+      ],
+      "family": "role",
+      "id": "micro.proof.conclusion",
+      "signature": "BooleanStatementRole",
+      "stage": 3,
+      "subtype": "conclusion"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "development.syntax.sets",
+      "signature": "Syntax",
+      "stage": 5,
+      "subtype": "sets"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "development.syntax.functions",
+      "signature": "Syntax",
+      "stage": 5,
+      "subtype": "functions"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "development.syntax.edges",
+      "signature": "Syntax",
+      "stage": 5,
+      "subtype": "edges"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "development.syntax.events",
+      "signature": "Syntax",
+      "stage": 5,
+      "subtype": "events"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "development.syntax.links",
+      "signature": "Syntax",
+      "stage": 5,
+      "subtype": "links"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "development.syntax.prior",
+      "signature": "Syntax",
+      "stage": 5,
+      "subtype": "prior"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "Set",
+      "id": "development.Set.K0",
+      "signature": "Set",
+      "stage": 5,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "Set",
+      "id": "development.Set.K1",
+      "signature": "Set",
+      "stage": 5,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "Function",
+      "id": "development.Function.F0",
+      "signature": "Function",
+      "stage": 5,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "Function",
+      "id": "development.Function.F1",
+      "signature": "Function",
+      "stage": 5,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "Event",
+      "id": "development.Event.E0",
+      "signature": "Event",
+      "stage": 6,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "Event",
+      "id": "development.Event.E1",
+      "signature": "Event",
+      "stage": 6,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "Event",
+      "id": "development.Event.E2",
+      "signature": "Event",
+      "stage": 6,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "Event",
+      "id": "development.Event.E3",
+      "signature": "Event",
+      "stage": 6,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "EventKind",
+      "id": "development.EventKind.ASSERT",
+      "signature": "EventKind",
+      "stage": 6,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "EventKind",
+      "id": "development.EventKind.OBSERVE",
+      "signature": "EventKind",
+      "stage": 6,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "EventKind",
+      "id": "development.EventKind.INFER",
+      "signature": "EventKind",
+      "stage": 6,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "LinkKind",
+      "id": "development.LinkKind.DERIVED_FROM",
+      "signature": "LinkKind",
+      "stage": 6,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "LinkKind",
+      "id": "development.LinkKind.DEPENDS_ON",
+      "signature": "LinkKind",
+      "stage": 6,
+      "subtype": "identity"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "LinkKind",
+      "id": "development.LinkKind.SUPERSEDES",
+      "signature": "LinkKind",
+      "stage": 6,
+      "subtype": "identity"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.MEMBER",
+      "scope": "finite-closed-world",
+      "signature": "Entity*Set->Boolean",
+      "stage": 5,
+      "subtype": "MEMBER"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.MEMBER"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.SUBSET",
+      "scope": "finite-closed-world",
+      "signature": "Set*Set->Boolean",
+      "stage": 5,
+      "subtype": "SUBSET"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.MEMBER"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.INTERSECTION",
+      "scope": "finite-closed-world",
+      "signature": "Set*Set->Set",
+      "stage": 5,
+      "subtype": "INTERSECTION"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.MEMBER"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.DIFFERENCE",
+      "scope": "finite-closed-world",
+      "signature": "Set*Set->Set",
+      "stage": 5,
+      "subtype": "DIFFERENCE"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.MEMBER"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.DOMAIN",
+      "scope": "finite-closed-world",
+      "signature": "Function->Set",
+      "stage": 5,
+      "subtype": "DOMAIN"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.MEMBER"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.RANGE",
+      "scope": "finite-closed-world",
+      "signature": "Function->Set",
+      "stage": 5,
+      "subtype": "RANGE"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.MAPS"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.INVERSE",
+      "scope": "finite-closed-world",
+      "signature": "Function->Function",
+      "stage": 5,
+      "subtype": "INVERSE"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.MAPS"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.COMPOSITION",
+      "scope": "finite-closed-world",
+      "signature": "Function*Function->Function",
+      "stage": 5,
+      "subtype": "COMPOSITION"
+    },
+    {
+      "arity": 3,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.MAPS",
+      "scope": "finite-closed-world",
+      "signature": "Function*Entity*Entity->Boolean",
+      "stage": 5,
+      "subtype": "MAPS"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.MEMBER"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.EDGE"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.NEIGHBORS",
+      "scope": "finite-closed-world",
+      "signature": "Entity->Set",
+      "stage": 5,
+      "subtype": "NEIGHBORS"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.EDGE",
+      "scope": "finite-closed-world",
+      "signature": "Entity*Entity->Boolean",
+      "stage": 5,
+      "subtype": "EDGE"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.EDGE"
+        }
+      ],
+      "family": "mathematics",
+      "id": "development.op.PATH",
+      "scope": "finite-closed-world",
+      "signature": "Entity*Entity->Boolean",
+      "stage": 5,
+      "subtype": "PATH"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.IS_ASSERTION"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.IS_PROPOSITION",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Proposition->Boolean",
+      "stage": 6,
+      "subtype": "IS_PROPOSITION"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.IS_ASSERTION",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Event->Boolean",
+      "stage": 6,
+      "subtype": "IS_ASSERTION"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.IS_ASSERTION"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.IS_OBSERVATION",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Event->Boolean",
+      "stage": 6,
+      "subtype": "IS_OBSERVATION"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.OBSERVED_BY"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.FORMAL_ENTAILS"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.ASSERTED_BY",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Source*Proposition->Boolean",
+      "stage": 6,
+      "subtype": "ASSERTED_BY"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.OBSERVED_BY",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Source*Proposition->Boolean",
+      "stage": 6,
+      "subtype": "OBSERVED_BY"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.ASSERTED_BY"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.FORMAL_ENTAILS",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Proposition->Boolean",
+      "stage": 6,
+      "subtype": "FORMAL_ENTAILS"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.DEPENDENCY"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.DERIVED_FROM",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Event*Event->Boolean",
+      "stage": 6,
+      "subtype": "DERIVED_FROM"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.DERIVED_FROM"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.DEPENDENCY",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Event*Event->Boolean",
+      "stage": 6,
+      "subtype": "DEPENDENCY"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.DERIVED_FROM"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.REVISES"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.SUPERSEDES",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Event*Event->Boolean",
+      "stage": 6,
+      "subtype": "SUPERSEDES"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.SUPERSEDES"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.REVISES",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Event*Event->Boolean",
+      "stage": 6,
+      "subtype": "REVISES"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.IS_CURRENT",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Event->Boolean",
+      "stage": 6,
+      "subtype": "IS_CURRENT"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.IS_CURRENT"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.CURRENT_STATE",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Proposition->Evidence",
+      "stage": 6,
+      "subtype": "CURRENT_STATE"
+    },
+    {
+      "arity": 1,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.proof.entails"
+        },
+        {
+          "kind": "composition",
+          "target": "development.op.CURRENT_STATE"
+        }
+      ],
+      "family": "epistemic",
+      "id": "development.op.HISTORICAL_STATE",
+      "scope": "typed-declared-event-graphs",
+      "signature": "Proposition->Evidence",
+      "stage": 6,
+      "subtype": "HISTORICAL_STATE"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "syntax",
+      "id": "school.syntax.math",
+      "signature": "Syntax",
+      "stage": 19,
+      "subtype": "math-school"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.op.ADD",
+      "signature": "Number*Number->Number",
+      "stage": 19,
+      "subtype": "ADD"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.op.SUB",
+      "signature": "Number*Number->Number",
+      "stage": 19,
+      "subtype": "SUB"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.op.MUL",
+      "signature": "Number*Number->Number",
+      "stage": 19,
+      "subtype": "MUL"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.op.MOD",
+      "signature": "Number*Number->Number",
+      "stage": 19,
+      "subtype": "MOD"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.op.EQ",
+      "signature": "Number*Number->Boolean",
+      "stage": 19,
+      "subtype": "EQ"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.op.LT",
+      "signature": "Number*Number->Boolean",
+      "stage": 19,
+      "subtype": "LT"
+    },
+    {
+      "arity": 2,
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "micro.compare.EQ"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.op.LE",
+      "signature": "Number*Number->Boolean",
+      "stage": 19,
+      "subtype": "LE"
+    },
+    {
+      "arity": 0,
+      "edges": [],
+      "family": "integer",
+      "id": "school.number.0",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-0"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.0"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.1",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-1"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.1"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.2",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-2"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.2"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.3",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-3"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.3"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.4",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-4"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.4"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.5",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-5"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.5"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.6",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-6"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.6"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.7",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-7"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.7"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.8",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-8"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.8"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.9",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-9"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.9"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.10",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-10"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.10"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.11",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-11"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.11"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.12",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-12"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.12"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.13",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-13"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.13"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.14",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-14"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.14"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.15",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-15"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.15"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.16",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-16"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.16"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.17",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-17"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.17"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.18",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-18"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.18"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.19",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-19"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.19"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.20",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-20"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.20"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.21",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-21"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.21"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.22",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-22"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.22"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.23",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-23"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.23"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.24",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-24"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.24"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.25",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-25"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.25"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.26",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-26"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.26"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.27",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-27"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.27"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.28",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-28"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.28"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.29",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-29"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.29"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.30",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-30"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.30"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.31",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-31"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.31"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.32",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-32"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.32"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.33",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-33"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.33"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.34",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-34"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.34"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.35",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-35"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.35"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.36",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-36"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.36"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.37",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-37"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.37"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.38",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-38"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.38"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.39",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-39"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.39"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.40",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-40"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.40"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.41",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-41"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.41"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.42",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-42"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.42"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.43",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-43"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.43"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.44",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-44"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.44"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.45",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-45"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.45"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.46",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-46"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.46"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.47",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-47"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.47"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.48",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-48"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.48"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.49",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-49"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.49"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.50",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-50"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.50"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.51",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-51"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.51"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.52",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-52"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.52"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.53",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-53"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.53"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.54",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-54"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.54"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.55",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-55"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.55"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.56",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-56"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.56"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.57",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-57"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.57"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.58",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-58"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.58"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.59",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-59"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.59"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.60",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-60"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.60"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.61",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-61"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.61"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.62",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-62"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.62"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.63",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-63"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.63"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.64",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-64"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.64"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.65",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-65"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.65"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.66",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-66"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.66"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.67",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-67"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.67"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.68",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-68"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.68"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.69",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-69"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.69"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.70",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-70"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.70"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.71",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-71"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.71"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.72",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-72"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.72"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.73",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-73"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.73"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.74",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-74"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.74"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.75",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-75"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.75"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.76",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-76"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.76"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.77",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-77"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.77"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.78",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-78"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.78"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.79",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-79"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.79"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.80",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-80"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.80"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.81",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-81"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.81"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.82",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-82"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.82"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.83",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-83"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.83"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.84",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-84"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.84"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.85",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-85"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.85"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.86",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-86"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.86"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.87",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-87"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.87"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.88",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-88"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.88"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.89",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-89"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.89"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.90",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-90"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.90"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.91",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-91"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.91"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.92",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-92"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.92"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.93",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-93"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.93"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.94",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-94"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.94"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.95",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-95"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.95"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.96",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-96"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.96"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.97",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-97"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.97"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.98",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-98"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.98"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.99",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-99"
+    },
+    {
+      "arity": 0,
+      "edges": [
+        {
+          "kind": "ordinal_predecessor",
+          "target": "school.number.99"
+        }
+      ],
+      "family": "integer",
+      "id": "school.number.100",
+      "signature": "Number",
+      "stage": 19,
+      "subtype": "magnitude-100"
+    },
+    {
+      "admission_receipt": "0a5648a3ab90762c28d0f0f47744f11a533d2e2f16e81b7d7d0839a7df7b9927",
+      "arity": 1,
+      "capability_id": "C.COUNT",
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "school.number.0"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "school.number.1"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.op.COUNT",
+      "meaning": "Exact cardinality of a finite set of distinct nonnegative integer identities.",
+      "semantic_id": "bilqis.numeric/v1:school.op.COUNT",
+      "signature": "NumberSet->Number",
+      "source": "https://ithkuil.net/newithkuil_13_numbers.htm",
+      "stage": 0,
+      "state": "LEARNING_ADMITTED_NOT_YET_MASTERED",
+      "subtype": "compositional"
+    },
+    {
+      "admission_receipt": "0a5648a3ab90762c28d0f0f47744f11a533d2e2f16e81b7d7d0839a7df7b9927",
+      "arity": 1,
+      "capability_id": "C.COUNT",
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "school.number.0"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "school.number.1"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.op.SUCC",
+      "meaning": "Immediate finite-natural successor n+1, within the declared teaching bound.",
+      "semantic_id": "bilqis.numeric/v1:school.op.SUCC",
+      "signature": "Number->Number",
+      "source": "https://ithkuil.net/newithkuil_13_numbers.htm",
+      "stage": 0,
+      "state": "LEARNING_ADMITTED_NOT_YET_MASTERED",
+      "subtype": "compositional"
+    },
+    {
+      "admission_receipt": "0a5648a3ab90762c28d0f0f47744f11a533d2e2f16e81b7d7d0839a7df7b9927",
+      "arity": 2,
+      "capability_id": "C.DIV",
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "school.number.0"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "school.number.1"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.op.DIV",
+      "meaning": "Exact nonnegative integer quotient; divisor must be positive and divide the dividend.",
+      "semantic_id": "bilqis.numeric/v1:school.op.DIV",
+      "signature": "Number*Number->Number",
+      "source": "https://ithkuil.net/newithkuil_13_numbers.htm",
+      "stage": 0,
+      "state": "LEARNING_ADMITTED_NOT_YET_MASTERED",
+      "subtype": "compositional"
+    },
+    {
+      "admission_receipt": "0a5648a3ab90762c28d0f0f47744f11a533d2e2f16e81b7d7d0839a7df7b9927",
+      "arity": 0,
+      "capability_id": "C.COUNT",
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "school.number.0"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "school.number.1"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.syntax.number_set",
+      "meaning": "Begin a literal finite Number set; existing syntax.end closes it. Duplicate members are invalid.",
+      "semantic_id": "bilqis.numeric/v1:school.syntax.number_set",
+      "signature": "NumberSet",
+      "source": "https://ithkuil.net/newithkuil_13_numbers.htm",
+      "stage": 0,
+      "state": "LEARNING_ADMITTED_NOT_YET_MASTERED",
+      "subtype": "compositional"
+    },
+    {
+      "admission_receipt": "0a5648a3ab90762c28d0f0f47744f11a533d2e2f16e81b7d7d0839a7df7b9927",
+      "arity": 0,
+      "capability_id": "C.MUL",
+      "edges": [
+        {
+          "kind": "prerequisite",
+          "target": "school.number.0"
+        },
+        {
+          "kind": "prerequisite",
+          "target": "school.number.1"
+        }
+      ],
+      "family": "mathematics",
+      "id": "school.syntax.number_groups",
+      "meaning": "Begin disjoint equal-sized finite Number sets; each set and the group list close with syntax.end. Context witnesses multiplication or exact division.",
+      "semantic_id": "bilqis.numeric/v1:school.syntax.number_groups",
+      "signature": "NumberGroups",
+      "source": "https://ithkuil.net/newithkuil_13_numbers.htm",
+      "stage": 0,
+      "state": "LEARNING_ADMITTED_NOT_YET_MASTERED",
+      "subtype": "compositional"
+    }
+  ],
+  "row_contract_sha256": {
+    "cogal.operator.AND": "97931b395c3f7ae09d4ce9a6da75cb899300ac6d326381c9efbec6e7f37133ef",
+    "cogal.operator.IFF": "3158119ebfd74c03c9101ac02942725144ea24525677a6b9b443a061ce01e7d9",
+    "cogal.operator.IMPLIES": "8e46ea72b5c1bc49498126c71082d9bd8c0399984af6e43b480b4efcf9de2b6f",
+    "cogal.operator.NOT": "ac2e3abe5bae20684a6e6ee91a1cc36d5a95d7d96034b13d415e26b6bcf29cbf",
+    "cogal.operator.OR": "afb3cc103771f75f9df6a83ddf125ddcb66b7faf9a059d251ac6e4f479692c9e",
+    "cogal.operator.XNOR": "9113592f1430f5b7b75a5a98c03dcd1eb65383610073bef0166cba1148328fbe",
+    "cogal.operator.XOR": "049c6d2e90cdf9d0110743856bb9a84cd4c7776067df935d9c92fb18ffb3499d",
+    "cogal.value.false": "c3abdad49acaa1fa5c08e403724e6aa6cc9130211e579a3dfe4f8a198bd7d57d",
+    "cogal.value.true": "f610150ebe270b3b6c0ad112882726d1f5f73e8dd8ad97edc9c2a70a616bdb58",
+    "cogal.variable.P": "cdb304eecbac755da9db7f15d44591309bdc56ccb22b9faa7e644133302e84a2",
+    "cogal.variable.Q": "50546d90c3ba269bc3f3513346f3b3353bb6051bc09c7f61f58db1a8f63bce94",
+    "development.Event.E0": "7cf33f911c0e374625e631199b6f2041799582e53697ed4a8f65b7fade1df4b8",
+    "development.Event.E1": "29ea41472bdd485c56e8454d6d51ad593d0aa4419cf402ab466e129dc899596e",
+    "development.Event.E2": "7e5bf98282cbaee9dc408e848bc299dc9de62db963716347a079ccc59440a1ae",
+    "development.Event.E3": "b149df3ee05cfb2836417ebc54e00a64762f454d7166948a593a7d27e353b794",
+    "development.EventKind.ASSERT": "75e480ca27ba46dd9bfad7b060f687190b6464bc36b6053dd51e5f4d53bbf206",
+    "development.EventKind.INFER": "15494d38b2f59e9681b0c62a34aad487f01ef75c50c0991dfa070a7fd5ba7c9d",
+    "development.EventKind.OBSERVE": "8d12b3a21943b610b918de2c1f6e5faefb27c9fe2ed9f12fdf68cf6cf938e33d",
+    "development.Function.F0": "7244e45c7d0238005ca56f929b0ddc169f749367160c0969571f464d8adef13e",
+    "development.Function.F1": "18580c407efbb75e0e52600e2854206f1667044686863a8598858977e4aba287",
+    "development.LinkKind.DEPENDS_ON": "0ab24327321cd808013090aaa817ea12e97ed36ba78cf54b74b1830eae8ab599",
+    "development.LinkKind.DERIVED_FROM": "3673f89c365f05788f0ce150251973c93f3fc264bf0850c52b013f54c6e1452b",
+    "development.LinkKind.SUPERSEDES": "3ab36e82d6e90b6072dba303ac825177ea49299ae7c30510d0316bf4d11aaa98",
+    "development.Set.K0": "132b3315c547d0c9649f84ae476f6016b79ca7fdb0cd296558e23858691ad056",
+    "development.Set.K1": "e1e971f2f39022cac923170a930c8321b1feb52f00f102eb39fce3dbe31e294e",
+    "development.op.ASSERTED_BY": "ba4e1d336c06503741c1f48148bfd785a2e65920a9c746d7928aa0a23fdab036",
+    "development.op.COMPOSITION": "44ea77d2198d7f99f91a1a9436c26e04c42b32725e48ff091040e14bfdf40830",
+    "development.op.CURRENT_STATE": "39297b8e3eaea6a54ef70210ff64ecaedac16265228a4b22f952938a2fc113be",
+    "development.op.DEPENDENCY": "99a7eb1f03b75e9702a5bc3b9d293ae795d694fc1597f3e9e3fdb04d5846f914",
+    "development.op.DERIVED_FROM": "54ad3ef77b1b537f4a58bbcb0934b986f5a5c648054bcbb4e10bd08f7b49503f",
+    "development.op.DIFFERENCE": "5723da660a5046012c11f7106719356fbd5cf71f3e63ded9fbf6b74ee10fb08c",
+    "development.op.DOMAIN": "5f97676bc71e147817ffb589c0e8e46b1fe182f5abacaa760eb870a308932975",
+    "development.op.EDGE": "7e4518c4fc591d5ff98bd4924c44381734a6d69bcfa7188a0102e73066a1571d",
+    "development.op.FORMAL_ENTAILS": "ace1dcd5bd029f6e67c4604b2147dc8461450b34ca28a13a425e01e1f2709748",
+    "development.op.HISTORICAL_STATE": "e6ee344953d76a794b8a602cdbdde3ee3b531d57bffeb4e9fdbdeeea04aa903e",
+    "development.op.INTERSECTION": "0c17bbf255fde4fac3e3eed84854c9849980c9e7c5159f485f93b0390a3f39f5",
+    "development.op.INVERSE": "5561740fcf44bfd41b6ba38513b1f8dc446e47ded6155989feec68fde24ad0a7",
+    "development.op.IS_ASSERTION": "94c122d1c7f635c4aecb92834972f38cd7c2f8654fbdfc71d1042c1ac147bab1",
+    "development.op.IS_CURRENT": "dace2598e569e7049d985ac26832ef745fea0ccb820719b8afc84ee4225cc07c",
+    "development.op.IS_OBSERVATION": "baf8ee7776c9607ed7a622e668d245b69faaee2072ca35793b52325b2db23ba1",
+    "development.op.IS_PROPOSITION": "ff28720b0e473eb2c8880850610859c4581f4e38afff2a40103f2b36043cb2d2",
+    "development.op.MAPS": "9e678fe1057223d1c365a5ceb7b839202850acd96b9bb35b5713fc25505d3bf5",
+    "development.op.MEMBER": "0aa5d8c3bb46da267f4de1dd5dde8e10b874fc1aa7055c22495473855894ee9a",
+    "development.op.NEIGHBORS": "a6f681836ea12fe6d1f4e9ccc892790424683675d9a36e5c1cc657389cd3af1c",
+    "development.op.OBSERVED_BY": "46021d2f40139ced1108b516e4c722971d4e3e05a8a9120a6685509f7f296cb8",
+    "development.op.PATH": "0fa6b467c1375742f0447318f29c3733e85f3a694212a95c758448dd24149afe",
+    "development.op.RANGE": "7b427b3bb47c8d5bc3dd93bc6492956ef17da1545f7b5b241c5a18f951df0482",
+    "development.op.REVISES": "391efb7bdcd1c009fee61092e32ebfa1b6cd9ff919356b9eedd68c7dd114b2d7",
+    "development.op.SUBSET": "d3cfe171167ad6425ad7a80c043e5b2fc442a39ba150535388d44c74bb5d773c",
+    "development.op.SUPERSEDES": "81bee6f3d17337b04caa7b660226535ac0d33942088987b6248d94622159f782",
+    "development.syntax.edges": "3f776e8f229db4101ae5f2b43baaa9ec2ce27903826f2f358b8861706c7822c0",
+    "development.syntax.events": "6bec09964ccf7f086e0e63eb3de551a25c9fd5cf04956d3286aaf1a72a6ead80",
+    "development.syntax.functions": "6a1562ab63299b2c14260da9b3928a5e2d1ee89af9c9e4e4f066be5ef6adcacb",
+    "development.syntax.links": "4cf876665a32e222f8bde06a8294a2ac5cc5433421220bd769f8c4969c5dff92",
+    "development.syntax.prior": "ed8483e0c54acea8d2e8e032773677aaad212e76b79a684cb9a439419dc4af03",
+    "development.syntax.sets": "d26ef1b1312664a8eeebbe7d4369470995c8cf6af6cac108c2e1da889b2cf294",
+    "micro.bound.0": "7dca61a5bbcb0ad0e1246b89378113c5f1a1dbfbf1197fa98ec8b759ea11f2e1",
+    "micro.bound.1": "ca7f5f15ee67cd9f7b4428037ea5fbc3187d0bcf181ea869b024b992a00d4f7c",
+    "micro.compare.EQ": "2f04c87420a2115be8187098e3d516816884f330c244f27e787741a21502f7d5",
+    "micro.compare.NEQ": "0d147bb984db35d6eb0c4430fd96d3aa530684805f9672a427ceae77d555ddb1",
+    "micro.compose": "478648962cc8cbd58d723b1c54fb15600365e4a558c9a24b4b22bda50fbf1090",
+    "micro.entity.A": "f0b0cbb68bfd7e28621b24161430ecaecf80538f6e15111bb41c2c5d8ffe7caf",
+    "micro.entity.B": "d0df0d288cda40928a4e902f3c161cc262d70ef42ec944c4f8f697a5668d759c",
+    "micro.entity.C": "28d7592f78fb7995bb0bb6825ebe63eeb8147f3475ea2d946a49726d0c10f7cb",
+    "micro.entity.D": "96905a5679c4f6f7decffd75b55bb3e7debd7d3b5c088180b5a4007ece3d0a75",
+    "micro.entity.E": "8f6c5f1d73f4a7e92fd572207975652ca0694ddc1c16f0a2f29d6d40a4550b52",
+    "micro.evidence.AND": "42d2a9844bc0950a7de6a071236408fc7fa2bd9fa55754a8bb6202de040e8f90",
+    "micro.evidence.NOT": "bb1c7f84475998dbd2663e837122cbc2d9b2c2e223c61aef7cb70e36b9e7a9a9",
+    "micro.evidence.OR": "abc7b88e2aae943d9aa84364c3c396c61856793d6c41b4b23e1683bb24c991cd",
+    "micro.evidence.observe": "d266a83aa900858e1f6ed079e272ae9ff1951075375894ac69eedd6429846890",
+    "micro.interpretation.0": "6059ba242640d98a289d95d60e8fec87088f8459f7231c56c3ea47b1f15e26a9",
+    "micro.interpretation.1": "6eb8a477c3a775294dd02655be47d6b31735f58a3848a5abef10c6d93281e0c0",
+    "micro.proof.conclusion": "40c1c009b3a28477b2dd7016342c7109ed6a937e6ffe50505498d54223863bad",
+    "micro.proof.countermodel": "1386ed9f7a63658d3f44960adafef2f73130ea56d4ccd538834d4d2bab500ee8",
+    "micro.proof.entails": "3e1b8cca97af60d4cc9d81e5eb0d5195f7291a4449ef163937721211a68832ae",
+    "micro.proof.premise": "d8eeef18e26a41c1e334664e707ef6fcfb9fb9e7f0b64960ba0080e8407771b8",
+    "micro.proof.rule_step": "7821c5af8bab40bf1ef165cef6fb1222bb93e12cad7652c4c804d0fa435e22e7",
+    "micro.proposition.J0": "a19e101bd0ffe4fed947727b16b29029571d5e44b3c4e1bda60b5e9bb76f1ae7",
+    "micro.proposition.J1": "611865f48086cec2c9113604b72ed427fff4d839988d05af2b69f2937ac02a66",
+    "micro.proposition.J2": "aca58a531734589bc725ed3368855c514af9f1e8dab17c01d1b0b1dd40388071",
+    "micro.quantifier.EXISTS": "b1bceff0f8b5e37a2cdbad6c0c8b860111159b16445a774d46b3f2e70c5709a7",
+    "micro.quantifier.FORALL": "748650562bbe764e1905adfde49cb2b4525bb33e37eca23822618fd5fa599bb5",
+    "micro.relation.CHILD": "46b2a0bb17fa95e52c59db60b5112cb2c585a4d868cc59404779c71f9521f279",
+    "micro.relation.GRANDPARENT": "842ad3f72b7889e464e88a2d80d1657e84d3f5f15aa5738cebe483c639e85ed4",
+    "micro.relation.LINK": "463645edf695f8ca6b3ed7960cf83f852b175bbb5c0cf30520d14a341f493d9b",
+    "micro.relation.PARENT": "82dc3446bc7725e050957290e585a7ab187bf13bceba4133defabf1ebd3092fd",
+    "micro.report.refute": "0826ff7bc0ad304d996f18c3f428048e887f3c48552312ced3ec415436dfade4",
+    "micro.report.support": "3561d223627c5b220209ecbfcf1c3ee2a64b4f9b753037fa63ac60de329e5790",
+    "micro.role.mediator": "415b9e3c76da0f5d0537587deee06de10e2a2ab22f443cd8a2fc5f5c87f8bc7b",
+    "micro.role.source": "6492c59b664a00dac3b4d9d0a29b267ddb61cacd3d8321a4884fd31a5299bf05",
+    "micro.role.target": "af65f9c518e6e6bb3de5a8a2662fa46e97e4724f9f17c91d68aaaf5645023d8a",
+    "micro.rule.parent_parent_grandparent": "9f0e33fb59c3c35ce99a337bec5a440a2396a32a8cb43f3b0d8377e080a1d814",
+    "micro.source.S0": "2d10c6ef2b14dd76e6379e9bf458127bcea61fb4cef52da881e1a48b9954b382",
+    "micro.source.S1": "1b5e98f4b0d336cbef21390eb74c27d65df8e33154eb14bc4ff97d456ac4d397",
+    "micro.source.S2": "71e8598075d75516be74f8e421dd03fb1b2ab778a2102bd8f0c020d9d384a19c",
+    "micro.state.AMBIGUOUS": "d21b25383a076824c8579c2debabab06a49a4260b0b0cad88f5a03d10960cab0",
+    "micro.state.CONFLICT": "c935a232851755873ca208f2a2bbf6c194f10871929a649814ec3750a55624e3",
+    "micro.state.UNKNOWN": "aed3fe2c73e69b7a9ff046500bc35308c01971e565db9a978bd156deb058092f",
+    "micro.syntax.entities": "a571d6072bc1286a7a8bb3f4e8cafcddb86a71df44a69494edcb6cb144de6a12",
+    "micro.syntax.facts": "854ebc5a4af57b44a2f484c251b8c21bc8e4bb81a9c8e07e04f95dfeb332efac",
+    "micro.syntax.interpretations": "a0023b5e79b0255231faf987017080a60a49fa3a95c712118a33c25c5fa85c4c",
+    "micro.syntax.propositions": "c87da92ac568a5d47b8de840c478d7f345745dfc43f8a559f87ffd9f49263aff",
+    "micro.syntax.query": "9bb43094bb3bdba628de1c073feb791587e51e7d72c2158ed1a6719af5c898d5",
+    "micro.syntax.reports": "d7c8765627c59d26ae9eafc7d5d215f7a44e957cc05b545bd8f0f0c5175cad7f",
+    "micro.syntax.rules": "205bb220c9cd313602474f1fb453f7f2d601fdfbbbd33970e04ee9fdf46541c4",
+    "micro.syntax.section_end": "27d3d038d200281f348b612b60eb5e3575c5b8baabd699c303814d58886119be",
+    "micro.syntax.world": "e6d414e1a02be63a482359a2a2fcad81003624f78955905369068d983022d0fe",
+    "school.number.0": "8f7d169671af7f708e31593e35ac9b9f28c5fadd6c5a399db210e43b521a1974",
+    "school.number.1": "f7a86e72c22125e53e9c0fe056daee9b0de7025cb4591a7f5b27c1baef75021a",
+    "school.number.10": "a9bf6eb764bdff86bf292d2beefb31d485e1247322ed24c97f876ef8873af96b",
+    "school.number.100": "c8ebed2460cba2f3015713eaec1d312ef56643289ee845c39c07fa7d366338e9",
+    "school.number.11": "2d634de6b0e57202cb7af1f6212ddd5da628806eb13b30a9239c01606141fe08",
+    "school.number.12": "9d43993e6ab23d42834ff8b1df1b154b601f481de5afb244d233a37ed9bd0fdb",
+    "school.number.13": "17c1d63bbb48d6d0fc4259c7e04bea06dc96dc570594c5b13fa49ee06236236f",
+    "school.number.14": "2ff8f07acde5ee60a2a4bac542449e3fe1dfb9c7fedfc366d9a64838f0cd4493",
+    "school.number.15": "687b18df0a116b23a2c2d419b60fbf23ffe69e604df83a42ffc02060eb30b5a8",
+    "school.number.16": "09d9efb79de6f90411fc44b60325ca1b194ff887914978c3c32aa1d2aec67c9e",
+    "school.number.17": "aaf01f709b29ff28d2113c54b18db14535ce4885676d4b08fd677d004c36fbc0",
+    "school.number.18": "daec59c4e0e8ccc978baf7f9f3f1ab03cb2388c6a1625f0cb99a48e7b2ce9093",
+    "school.number.19": "dbf4f5341af6335687ee7d08ab87dea72460c976c0ad7ac82f92633603a13141",
+    "school.number.2": "f925e010e5ede9789ff517012b2f20c5306d90062e1a6215fff6f52df9306e0b",
+    "school.number.20": "500ae0382647b81f5d0eefbf3aeea19c735c693bba8efc29f1d89e4bf37afc86",
+    "school.number.21": "0c17bdb9ff5802ec2df2404a773b7d09a3bf41857a0e2d4ae3b46f741f8919f4",
+    "school.number.22": "2255143377703930d7773effc6bc4966def4f20496d7a6154672a3dc7fbcb806",
+    "school.number.23": "5e4b0b337272ea3fa9fcd0494e96291e3d64865951299a8aeca65c91c015ec09",
+    "school.number.24": "c68329987db4e7ee2ed767719642302d823bcac09dc8bd2f94f861d40847d4e5",
+    "school.number.25": "7e0a5da6ec5d8b5da42c498915440aa7d306b4dd7265dec7a185e1b1f7626ae4",
+    "school.number.26": "f831c3c85fe13bd294c7a569f023431f0b5a18558a666e7dfee58f39852246bc",
+    "school.number.27": "f215c57592115c9d2d2d9d26ce2cd285004a647503947c7b1a034f629395bc48",
+    "school.number.28": "80fa493acc3057b2206cfcd00a94b410eee317b3e43971f76c0826a7f95df203",
+    "school.number.29": "53691181b5ae6aa146a65b7b2ae346eddf4269c214188182a40c5434b6a820e4",
+    "school.number.3": "b4435b079dc11100e092746b0b4299b04b83bd3c90e3301f1ba0532f2a3f9bb6",
+    "school.number.30": "5fec69553ce76cb78f7211db0147ba101ebd60a1c3d36031acd2b1025572c50e",
+    "school.number.31": "8e2b3a8dd8b5886cc154e288839babf294ed579dfd692df8444911cece8f081f",
+    "school.number.32": "764bb244750ea6d3488cea3c05ceccb3e258beb77a2b2151bbe0aec78a165f05",
+    "school.number.33": "80a682d163ced7b9338e9b7dc3ef52d7c3c326467c98d36e9742b3aaf373e0e4",
+    "school.number.34": "42c1a7017f0d1213153798880e1acb7d6fa550b86871bfc1dd3de77c94fedd05",
+    "school.number.35": "d687ba54d159ec7683b05eedbe56add5edcc62e99944f5e8b9c541d45fd41b5b",
+    "school.number.36": "fc08d627061a7c26f92f4904afd3f1f7ece00138b4e6ccfc998896c148d54885",
+    "school.number.37": "13d6a2a5e5e6ae52c12c5fe97076d8530f6b1702f7da103a7ae640dc45896745",
+    "school.number.38": "ea6266b39e213607899a38043e79a69abb5d4170b4f5f81c16d41f431911a495",
+    "school.number.39": "3f565652df6eb68b411342c5620d09a91bcfb2decd1792ed2730f796b1c68bc2",
+    "school.number.4": "fc750a615b87eda6101ef8efc807757ce790896677a205d0365b971990f7b8d7",
+    "school.number.40": "8cfb3fc531527e2d226416c2eb3d8a8b772e4ff61d0d897442756aae71472ced",
+    "school.number.41": "8de18fba0a0fc4ef1c5dd915d86a0fea78e8eca4635f7902b7edc10210aba36b",
+    "school.number.42": "f43192a53039bc5bfe02fe64f1d93c24ab5028d8c558264afe7544357201c917",
+    "school.number.43": "33782ad8097ef0400725d41404d143f3288853c3eb1ba00c6a488552351be481",
+    "school.number.44": "22b873425eac7a31e32cbe158bafaa48bc92c5ebab4e6b40066afee13853cfa6",
+    "school.number.45": "a3da9e9257e7e6bef015bec12098e3c5689f35c4cab73268a4e6ed73a39032e5",
+    "school.number.46": "b7734b61b4a42dc5f1cec53bccebb3c27a31afe5e3e588059c23830058677d52",
+    "school.number.47": "3f759c9a76e77e8a8d7b932118cd45f784fdaa7f90207925005eee9ab6a067b4",
+    "school.number.48": "f07810d392b9188e21966089c7b06c539f5282f3d90b1423ef387dd73dd929ec",
+    "school.number.49": "5bbe1e78d6c125dc2554764fb0e4d0cfb774aa0d2e4990ff4b9fa6fd54d9c404",
+    "school.number.5": "4226cfd2dd5b5942866880e9a6e5fd1e47dd92e2075d4fd29c67388cc84e05fa",
+    "school.number.50": "442eb0ee1a95a50ba36834fbd1e7f2f61e4e98dd9e9c2451269328e54b1d3193",
+    "school.number.51": "dd7d8e563ec84a6beedb6098f852f8cad73c11eceeba942ee420a51ec9bc6715",
+    "school.number.52": "5423af4fe704cf17e8e4a151ff8c54530106267f456b0c4dd1d79e1105b2f649",
+    "school.number.53": "a7a0e0e254dac0aecbba336a6ca58098f983231988065d9889ac0ed6b14361a0",
+    "school.number.54": "b0db25b4b80b6f530126c9ea69468104ed27bc285e110b2aa06eb431c3887b67",
+    "school.number.55": "f1e64af1904207307ebc7ebae046e85c730d189f388fc84eabe4f9a170525529",
+    "school.number.56": "98b9db4f85450f18c9dd222799985693d1d9c0e417e2bead2b0d2607c256c459",
+    "school.number.57": "a85239d3684b49d8a06ab751f8a6aea9bedab4166173dfa2fb5ac0f22af77514",
+    "school.number.58": "2d394d737f119f09a3e3e03e8f9bd4d3a367df07dd071448e4103ee35ce3a2f9",
+    "school.number.59": "6edee8be89c26507b36c8737bb06d30f69e756fc6ed48d00fd673331dd208e23",
+    "school.number.6": "65e0198e1a99eed89cdd853bb525f7e673e357b9e4f95224783ff19a31770d44",
+    "school.number.60": "ed637b840815e54b9721a79560cdb048db9639ab35669b701b35ea9523ecb956",
+    "school.number.61": "1e8820702c27dbd5dfb7a72b65e8675fe1e213ca385c20f052f1c532760ed8aa",
+    "school.number.62": "e2f979b11169edda43260af827f15ab58ba9987a4a7f8895e806c8346e61aaac",
+    "school.number.63": "4298f15c46f0e3a8fa225c3d9d9f011c7047cd7bceeccbdb99c2b4c2a63da4df",
+    "school.number.64": "88805ea0f7eaa0fb2737182f977a36499779fbea8eb86f564f2c6de2a18412b6",
+    "school.number.65": "b6e54c5daa0e1479b3b0d94c46093865da727c666b2765e1266e15871fc7e8a2",
+    "school.number.66": "23514796abbd155186ce1bedd7176beb0f66c3cf24796353265a4cacaa7880b5",
+    "school.number.67": "6a20caff9c59817b883408ac14c75909330d9a44b0fdfcf61823d42894a1dfb4",
+    "school.number.68": "4afedaa834b996ba218b0198840b38d0f93f77d8c034e07608b6a03572f53046",
+    "school.number.69": "90cadc3db3185008fc57e6c8e470ab45531e342725d8596311f6066d002e1c4c",
+    "school.number.7": "168e78ee03c1b4d7eaec42495c057f59ec94feeda0865f27e99c290cdba1863e",
+    "school.number.70": "433f5943a06b10a04b27ebba89f15d0d23096d9005d67b8aacfa371c0e2f0764",
+    "school.number.71": "40c2f2a32212e0d161103d310b6c0849d920e65dde312e43eb3cad4440c8b743",
+    "school.number.72": "f87e8dfed1bdbedac2aedb541cc142b399bdb3059f0f7f7a7faad985c44f01f4",
+    "school.number.73": "15d5730e11588505aaae5fff13e03df330753d6308a3fcdd8013ef42298f6694",
+    "school.number.74": "2029ae3f3563efa6578d48c0fe2cd5c990b996ac57dce0ed879bc85ca1a03068",
+    "school.number.75": "d17c7785120cc8ea8a11f56e82e1985fecad21fad1fb8857b97b0de0d623f17e",
+    "school.number.76": "548f2cea7aaabad7ef025e233e13977a6f7987ac06fced49ed3ebd0a5a2221ad",
+    "school.number.77": "d504b88829e01aab17b760a4f43a3c120217c86608b7fd2b48bce8244253e656",
+    "school.number.78": "f9e9406426d446a47b34ef7ef22b1760e1c04ea96b76f436ebba97faa8264952",
+    "school.number.79": "df9a89a02009582bd41746f229f700c4219481e4b2bd4cd49f70d8c8147025ec",
+    "school.number.8": "06922efd85b66d48b37f40a5ae5a8c76d847bbf6464a7836e7a8d74a7f3831b7",
+    "school.number.80": "bf60bf535e27466259f04a0a9ad75633da3deae473de03110f36a6390753dae7",
+    "school.number.81": "dec86bea047653a41a688a4dcb6756a9fffc2d6894eeaee3486f141ba8267ac2",
+    "school.number.82": "a3260c4604f007e1b5c1011d63ddc4c915728efa76486397f54cc563e4a41d1c",
+    "school.number.83": "7ac28bdc104af927894565df81292ac1dc41a0d479c65a814d077775d47c6b03",
+    "school.number.84": "336f8b486fbbb90d4b8affbfce1def8471c0aa362834ce007766795c20a9c59a",
+    "school.number.85": "47bb7c2723bcf193500ca51e527a9f815801587a99c4041c98c808df7aaa6c20",
+    "school.number.86": "23717ba335fb52c5c32531718134b9e8a38620416f5197a6b2c4c197e44d6405",
+    "school.number.87": "91a23a4f04c5291021b6282ce381c35a96579cb9d396beaaf0b6e8f13cb65c09",
+    "school.number.88": "c8dada55c51c50b9facaf6d3d3c6b7b2d31e3e9c6d9a31c0e21a974540424bf0",
+    "school.number.89": "3970761acb3c371baf788294d3d1a5ab3f419ab9b6c65781981af86e04e3545c",
+    "school.number.9": "d9deecc558af260cf9ca0859fc6e017dbe79ec1dc9ed59842abbab31841c6a38",
+    "school.number.90": "6bb03b1fed441d6b00da441e599f0719cab2cfaf48fbd2e599140fd7db156926",
+    "school.number.91": "b669793485d2b09ef57650e42e3288077823c29d1f6f9e927e8b2f903d73fb73",
+    "school.number.92": "1a1bc8f31e03f5a963eb022e02cf53005bb2b7aeb586427f0b14e9b07b32ec87",
+    "school.number.93": "54a79058ccc37b6311d19f349b31376b39f63d6c1229da7c76850f218970ef11",
+    "school.number.94": "dc50d2cc576c2950ae988758ded8097f2720a15890c5856b05f3fddc7e5d465e",
+    "school.number.95": "80cc4361460638101a4c1a2c9f15f03f2efc7bcbc920e38e0a3c1bea3804934b",
+    "school.number.96": "7a5640e161154804ca83cfc0522c84afb3e88ab1afbbf7e3ed99b28d7912da73",
+    "school.number.97": "1496675f6d8d30e426d60c9cc7be3b965016c2f33428ba75be8ae26d2661284b",
+    "school.number.98": "fff3dcb65ac46b908653ff797b0e8589cac23d9e3f4514becb39ad72e1e1070c",
+    "school.number.99": "d377759f2ab0a44c18fe4aa656c66a11b281ce764986e91afb56ce2e9e7f8c16",
+    "school.op.ADD": "1e0d8a8b074022ac6be1ae4c4a79f2c6bab0c843a2068c83412424b7f02fcfa3",
+    "school.op.COUNT": "e238c5cd7139e6353e2577c8cb3ff017a04ebcb91674444bc54efa2406369fea",
+    "school.op.DIV": "529f6d721f6137b0ee0c37c3b41b8c12a3f74518f501facd25ff8ac5ffc0dfbd",
+    "school.op.EQ": "c23e307093044d3e25ea9d6ecead61cd1c66b4c8d524182265dedfd155dc068c",
+    "school.op.LE": "788b0bd8df4b28bcfe0994e493481767325a30a44366a64bb1d272bf31d6d6cd",
+    "school.op.LT": "73c65726201cded1023fadff36d7e1fd77e74b865815beb9555cf744e7da6856",
+    "school.op.MOD": "5dcbbc4bd2622ac265f0c1b5548e6b91385403f0d5d966d501c18008ce1e8db6",
+    "school.op.MUL": "149c1916ef8492521c9c204a489e064380b075f5ae4ecd0a12e05fdc714ed4b3",
+    "school.op.SUB": "4a29e51db8a193dc824a968c650bbc7d691ac9815170f234637bed9f52dd3556",
+    "school.op.SUCC": "71cd9cf3be766a999332cd4e11ea021c989622a5223eea3fded3d836929253d5",
+    "school.syntax.math": "6b98a2f205a6d04daa89bae038fa1d09ea7e2e3fdd52d388ca0472a5ff2db075",
+    "school.syntax.number_groups": "e967d96582bf185453fe6e876a34422ebdc61a45cd3541548588760c93426e83",
+    "school.syntax.number_set": "8f927b408f8c79a3ca86c7fc3ce854b7fd88e062542f3461e98deae0b1b29784",
+    "syntax.bind": "3f2af9093cb34d0e873010ef4f879791a520a92be52aecac869b86eefd3effb3",
+    "syntax.end": "c6a3a5231811e53038f6d914eb7d9e7f6258d0d31e4aa02f4313c69cb14b209c",
+    "syntax.pad": "8d42dcbac3776034882341487d96fd7a8796d24e6bba8d7574ddd88aac142a7f",
+    "syntax.separator": "00ae0ed2f5e03755d8fab0a690ea0cb9b8f5a1c5bbd2c62141cade1000d6094a",
+    "task.equivalent": "94c4c91381efba96b9fd0024b9fb9440c5362bbb5462806276a1330e1855940c",
+    "task.evaluate": "11bf52aa1dcf0a6ad3235d9a72092a0eaa502261ba536a8968312f8a24f36365"
+  },
+  "tokens": [
+    "syntax.pad",
+    "task.evaluate",
+    "task.equivalent",
+    "syntax.bind",
+    "syntax.separator",
+    "syntax.end",
+    "cogal.value.false",
+    "cogal.value.true",
+    "cogal.variable.P",
+    "cogal.variable.Q",
+    "cogal.operator.NOT",
+    "cogal.operator.AND",
+    "cogal.operator.OR",
+    "cogal.operator.XOR",
+    "cogal.operator.XNOR",
+    "cogal.operator.IMPLIES",
+    "cogal.operator.IFF",
+    "micro.syntax.world",
+    "micro.syntax.entities",
+    "micro.syntax.facts",
+    "micro.syntax.rules",
+    "micro.syntax.propositions",
+    "micro.syntax.reports",
+    "micro.syntax.interpretations",
+    "micro.syntax.query",
+    "micro.syntax.section_end",
+    "micro.entity.A",
+    "micro.entity.B",
+    "micro.entity.C",
+    "micro.entity.D",
+    "micro.entity.E",
+    "micro.role.source",
+    "micro.role.target",
+    "micro.role.mediator",
+    "micro.relation.PARENT",
+    "micro.relation.CHILD",
+    "micro.relation.LINK",
+    "micro.relation.GRANDPARENT",
+    "micro.quantifier.EXISTS",
+    "micro.quantifier.FORALL",
+    "micro.bound.0",
+    "micro.bound.1",
+    "micro.compare.EQ",
+    "micro.compare.NEQ",
+    "micro.compose",
+    "micro.proof.entails",
+    "micro.proof.rule_step",
+    "micro.proof.countermodel",
+    "micro.rule.parent_parent_grandparent",
+    "micro.source.S0",
+    "micro.source.S1",
+    "micro.source.S2",
+    "micro.proposition.J0",
+    "micro.proposition.J1",
+    "micro.proposition.J2",
+    "micro.report.support",
+    "micro.report.refute",
+    "micro.interpretation.0",
+    "micro.interpretation.1",
+    "micro.state.UNKNOWN",
+    "micro.state.CONFLICT",
+    "micro.state.AMBIGUOUS",
+    "micro.evidence.observe",
+    "micro.evidence.NOT",
+    "micro.evidence.AND",
+    "micro.evidence.OR",
+    "micro.proof.premise",
+    "micro.proof.conclusion",
+    "development.syntax.sets",
+    "development.syntax.functions",
+    "development.syntax.edges",
+    "development.syntax.events",
+    "development.syntax.links",
+    "development.syntax.prior",
+    "development.Set.K0",
+    "development.Set.K1",
+    "development.Function.F0",
+    "development.Function.F1",
+    "development.Event.E0",
+    "development.Event.E1",
+    "development.Event.E2",
+    "development.Event.E3",
+    "development.EventKind.ASSERT",
+    "development.EventKind.OBSERVE",
+    "development.EventKind.INFER",
+    "development.LinkKind.DERIVED_FROM",
+    "development.LinkKind.DEPENDS_ON",
+    "development.LinkKind.SUPERSEDES",
+    "development.op.MEMBER",
+    "development.op.SUBSET",
+    "development.op.INTERSECTION",
+    "development.op.DIFFERENCE",
+    "development.op.DOMAIN",
+    "development.op.RANGE",
+    "development.op.INVERSE",
+    "development.op.COMPOSITION",
+    "development.op.MAPS",
+    "development.op.NEIGHBORS",
+    "development.op.EDGE",
+    "development.op.PATH",
+    "development.op.IS_PROPOSITION",
+    "development.op.IS_ASSERTION",
+    "development.op.IS_OBSERVATION",
+    "development.op.ASSERTED_BY",
+    "development.op.OBSERVED_BY",
+    "development.op.FORMAL_ENTAILS",
+    "development.op.DERIVED_FROM",
+    "development.op.DEPENDENCY",
+    "development.op.SUPERSEDES",
+    "development.op.REVISES",
+    "development.op.IS_CURRENT",
+    "development.op.CURRENT_STATE",
+    "development.op.HISTORICAL_STATE",
+    "school.syntax.math",
+    "school.op.ADD",
+    "school.op.SUB",
+    "school.op.MUL",
+    "school.op.MOD",
+    "school.op.EQ",
+    "school.op.LT",
+    "school.op.LE",
+    "school.number.0",
+    "school.number.1",
+    "school.number.2",
+    "school.number.3",
+    "school.number.4",
+    "school.number.5",
+    "school.number.6",
+    "school.number.7",
+    "school.number.8",
+    "school.number.9",
+    "school.number.10",
+    "school.number.11",
+    "school.number.12",
+    "school.number.13",
+    "school.number.14",
+    "school.number.15",
+    "school.number.16",
+    "school.number.17",
+    "school.number.18",
+    "school.number.19",
+    "school.number.20",
+    "school.number.21",
+    "school.number.22",
+    "school.number.23",
+    "school.number.24",
+    "school.number.25",
+    "school.number.26",
+    "school.number.27",
+    "school.number.28",
+    "school.number.29",
+    "school.number.30",
+    "school.number.31",
+    "school.number.32",
+    "school.number.33",
+    "school.number.34",
+    "school.number.35",
+    "school.number.36",
+    "school.number.37",
+    "school.number.38",
+    "school.number.39",
+    "school.number.40",
+    "school.number.41",
+    "school.number.42",
+    "school.number.43",
+    "school.number.44",
+    "school.number.45",
+    "school.number.46",
+    "school.number.47",
+    "school.number.48",
+    "school.number.49",
+    "school.number.50",
+    "school.number.51",
+    "school.number.52",
+    "school.number.53",
+    "school.number.54",
+    "school.number.55",
+    "school.number.56",
+    "school.number.57",
+    "school.number.58",
+    "school.number.59",
+    "school.number.60",
+    "school.number.61",
+    "school.number.62",
+    "school.number.63",
+    "school.number.64",
+    "school.number.65",
+    "school.number.66",
+    "school.number.67",
+    "school.number.68",
+    "school.number.69",
+    "school.number.70",
+    "school.number.71",
+    "school.number.72",
+    "school.number.73",
+    "school.number.74",
+    "school.number.75",
+    "school.number.76",
+    "school.number.77",
+    "school.number.78",
+    "school.number.79",
+    "school.number.80",
+    "school.number.81",
+    "school.number.82",
+    "school.number.83",
+    "school.number.84",
+    "school.number.85",
+    "school.number.86",
+    "school.number.87",
+    "school.number.88",
+    "school.number.89",
+    "school.number.90",
+    "school.number.91",
+    "school.number.92",
+    "school.number.93",
+    "school.number.94",
+    "school.number.95",
+    "school.number.96",
+    "school.number.97",
+    "school.number.98",
+    "school.number.99",
+    "school.number.100",
+    "school.op.COUNT",
+    "school.op.SUCC",
+    "school.op.DIV",
+    "school.syntax.number_set",
+    "school.syntax.number_groups"
+  ],
+  "version": "micro-typed-graph-0.1.0"
+}

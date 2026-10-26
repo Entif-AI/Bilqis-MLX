@@ -1,0 +1,840 @@
+{
+  "arms": [
+    {
+      "id": "baseline",
+      "initialization_origin": "fresh-model",
+      "initialization_seed": 324,
+      "run_dir": "/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-20261026/runs/qualification-324-baseline",
+      "topology": {
+        "context": 96,
+        "digest": "6655a25bec72eca55d15b1d1ab78d17cb928ac9679bdacde96c8b5d5302463bd",
+        "ffn_dimension": 1536,
+        "heads": 24,
+        "layers": 6,
+        "schema": "bilqis.mlx.model-topology/v1",
+        "width": 384
+      }
+    },
+    {
+      "id": "capacity",
+      "initialization_origin": "fresh-model",
+      "initialization_seed": 324,
+      "run_dir": "/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-20261026/runs/qualification-324-capacity",
+      "topology": {
+        "context": 96,
+        "digest": "c7c282299fc1f5a3d581139dba5d820b88d5c6ca89cc17981ec71a82cd33afc5",
+        "ffn_dimension": 2048,
+        "heads": 32,
+        "layers": 8,
+        "schema": "bilqis.mlx.model-topology/v1",
+        "width": 512
+      }
+    }
+  ],
+  "budget": {
+    "attempted_step_ceiling": 16000,
+    "batch_size": 32,
+    "checkpoint_estimate_bytes": 600000000,
+    "fresh_source_draw_rounds_per_capability_per_post_seed": 8,
+    "max_visits": 1000,
+    "minutes": 90,
+    "qualification_inference_rows_ceiling": 2793,
+    "steps_per_visit": 16,
+    "wall_semantics": "SOFT_SESSION_LIMIT_AT_SAFE_BOUNDARY; DUE_EXAMS_AND_FINAL_CHECKPOINT_FINISH"
+  },
+  "budget_sha256": "7ebcd702dd9c6fe7dd3634e237d401078702c8d7afd4f9661b1a14910ea071ff",
+  "digest": "d4e953cb969f01ce14b1f9f28fe49a500c515ce325e227c28f013606f95eb972",
+  "evaluation": {
+    "acquisition_seed": 32401,
+    "criterion": {
+      "acquisition": "STRICTLY_GREATER",
+      "aggregation": "ARITHMETIC_MEAN_OF_CAPABILITY_ACCURACIES",
+      "denominator": 10,
+      "numerator": 9,
+      "post_acquisition": "GREATER_OR_EQUAL"
+    },
+    "fixture": {
+      "file": "evaluation-fixture.json",
+      "sha256": "6bc44b8afcc25ef97494f11be61bc91232ba7a076c9df9827b94d04fe7108e85"
+    },
+    "fresh_draw_rounds": 8,
+    "fresh_procedure": "For each post seed/capability/round, draw using sha256([seed,capability,round])[:16]; exclude exact trained input/label keys; keep first unique rows up to exam_item_count. No teaching embargo.",
+    "fresh_requirement": "Each post sweep includes unseen target-grade probes. Per-capability exhausted fresh scope is NOT_MEASURED. The frozen full target-grade mean remains the qualification criterion.",
+    "overlap_key": "sha256(capability,tokens,gold,answer_kind)",
+    "post_acquisition_seeds": [
+      32403,
+      32405,
+      32407
+    ],
+    "resume": "No automatic experimental resume or budget refund; interrupted arm is incomplete pending explicit epoch decision",
+    "target_grade": "C"
+  },
+  "external_files": [
+    {
+      "path": "/Users/emilie/Code/bilqis-mlx/vendor/legacy-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt",
+      "sha256": "646d8590cf8fddb7b3c412ecead4ac185a0578f93baadf24e05f92dd15068a78"
+    },
+    {
+      "path": "/Users/emilie/Code/bilqis-mlx/vendor/legacy-v16/runs/primitive-consolidation-v16-triplets/state.json",
+      "sha256": "5658b695a66a2618cf3dea964d12bbf10b26186f69293b79ec489d9ee721d165"
+    },
+    {
+      "path": "/Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json",
+      "sha256": "95ef4fa373832dc0bb7152bf4cf77c9b85142c7db8d0ed34cc7fdc3debe38699"
+    },
+    {
+      "path": "/Users/emilie/Code/bilqis-mlx/vendor/legacy-v16/bilqis_school/engine.py",
+      "sha256": "6b62f288750bc6d129b349e0333b560f480ede900bf28e3b641299fe696abaa1"
+    }
+  ],
+  "graph": {
+    "file": "semantic-catalog.json",
+    "sha256": "db2297d41d7e50dd44321c323be760f7d66575e8c11b2f6b3d59a304b5a8afd6"
+  },
+  "implementation": {
+    "component_refs": {
+      "150": "refs/heads/codex/150-factory-microspecs-20261023",
+      "320": "refs/heads/codex/320-model-topology-20261026",
+      "333": "refs/heads/codex/333-factory-teacher-observations-20261026"
+    },
+    "components": {
+      "150": "0a0d73a85d8b6214aaa446c04a510d05e904ae5c",
+      "320": "f09e44d35b5f544ef8d3e61ec127e326d0b09eb1",
+      "333": "35cf2b8ccb6c7d0e9f195d7e65e4ef990bfe5994"
+    },
+    "environment": {
+      "libraries": {
+        "mlx": "0.31.1",
+        "numpy": "2.4.4",
+        "torch": "2.11.0"
+      },
+      "machine": "arm64",
+      "macos": "27.0.1",
+      "python": "3.14.3",
+      "system": "Darwin"
+    },
+    "files": {
+      "bilqis_mlx/__init__.py": "d63df4551d1c6fb9eb128521b61db8c5a0acd464f872628fd3abece078d508d4",
+      "bilqis_mlx/backup.py": "e3db6552fea568fb4c6f88f88871b00a4ddd5e41d090473485cda7f2afd1b296",
+      "bilqis_mlx/boolean_association.py": "f95b714e2f940c71f64c3c20024f2bb165dc946bd254c40f36d3c9ea06c7686a",
+      "bilqis_mlx/boolean_composite.py": "ee5109708c1993332e8740ffa4b7bc506fcee96971c1df805d849fef84bdba4c",
+      "bilqis_mlx/boolean_composite_oracle.py": "8c3ebd1c0705f0787c7261bbb3c06d22e7238fde149635ee8d7ee6ed92a190b9",
+      "bilqis_mlx/boolean_identification.py": "1c21fd6f4d778814ab3e270fec48fa9f161c65abbf314a5970d4877b44039725",
+      "bilqis_mlx/boolean_identification_oracle.py": "4b604485d2a0d69c2a7f69ed614aae3c301a7d5ca82bdaeeea2d86af35e39881",
+      "bilqis_mlx/cli.py": "18f659b93e5d78ecc66ec895cfd9bec16f62720c102300f6645659d83fc9e198",
+      "bilqis_mlx/compatibility/__init__.py": "225775e0ed38ab1bc818106175bc92e469a76f1d0fb6ca369aaef1295344616a",
+      "bilqis_mlx/compatibility/assessment.py": "9486ebf92fc5e6052302c61d1ef801bfa56618aaeb3c4a1a93ee45a310d5360c",
+      "bilqis_mlx/compatibility/cli_preflight.py": "72cfec79ec9ebe1e1fb4f4ba1f69aa3b5945ef31e1e036ebae017415f2a12e49",
+      "bilqis_mlx/compatibility/executable_projection.py": "3de16b8238fe3240cfcfabf44cba558dbf1cb31be3740dcc44e251e63db7c759",
+      "bilqis_mlx/compatibility/factory_release_v1.py": "8e19bd7f740ba126989ace791a2253e202c1ffe4a31a380bf9fba0cd27d542c9",
+      "bilqis_mlx/compatibility/frontier_recovery.py": "d767fdd605134d0ce83345c355f1764aca4b71322687d427b93ddc9c265429aa",
+      "bilqis_mlx/compatibility/grade_transition.py": "5865fc0c05c3edabba83fac715e12d1f92e2457b12ed8c3a4689bea80f510698",
+      "bilqis_mlx/compatibility/historical_live_release.py": "b7bffc5d320bc31f39c84e6160bad15bcc3603c616eb2d32f53215bd08f1fd50",
+      "bilqis_mlx/compatibility/historical_teacher_policy.py": "4024ec12269982eeeb5314588227f02ea22f419b2643d3e7c1810ce3cdcc8f01",
+      "bilqis_mlx/compatibility/identities.py": "ee397ef9e14f53c68deb8e124f9cb95218c1e81c7fb1cde53caa77bba295982d",
+      "bilqis_mlx/compatibility/live_releases.py": "0910df828916e7640d69851f48ce61b8d1146934a877487165523c300f1bf042",
+      "bilqis_mlx/compatibility/resume_migration.py": "4c755e8c565a52eb1a59bc46d591332f22b3b6a9cf117f557fb6e0e4095d364b",
+      "bilqis_mlx/compatibility/schedule_program.py": "98d1dc471e8c6f493ae2e3a09273d9da2ef793c0e57d52440fc81498e3eb0bc4",
+      "bilqis_mlx/compatibility/scheduler_transitions.py": "c912e4e62a7eff0fcec04c250cf2395bb412f914e6b8b9c12db8195ef18e99c6",
+      "bilqis_mlx/compatibility/settled_matchup_recovery.py": "5c9e09e21d6cd33ce52beb4eccd1eb2c2e98a0ee89bc648b2ed3ef2a45468e23",
+      "bilqis_mlx/compatibility/source_adapters.py": "554b4572eb4f449dc4646c1fd683520781f42fa124aba208494c8ed54a77d316",
+      "bilqis_mlx/compatibility/source_bootstrap.py": "3783f9396bd26a358b69392d1a2699c489c99dbbe43a34100dbb8e2e9d17f4cf",
+      "bilqis_mlx/compatibility/telemetry_events.py": "236c4864061f1fb664decdf0a4c63898f93b4f0e48fd83d781320d08de05814d",
+      "bilqis_mlx/curriculum/__init__.py": "b16eddeaaa8f2890c3ebe69bfb8909e9fec6f0626fd2fb0aae83414fc9fec693",
+      "bilqis_mlx/curriculum/promotion.py": "e1fb91d70ce4911e26c15a46313d83aa908408a2172878985707585f6c1f70f6",
+      "bilqis_mlx/curriculum/scheduler.py": "afbec8b8f41c2f35b06a2351f675ec7050af35b2aeee3ebf17dd92ad9000a118",
+      "bilqis_mlx/curriculum/state.py": "3d098bb5ab7ca5a3a2de94c1932297b532f6c5c298e8510e65d74027fbc7afba",
+      "bilqis_mlx/curriculum_compiler.py": "6e1bb7a0a727142050b77cbafe7f1246c6ce11030be017e61041b3bd08388b53",
+      "bilqis_mlx/curriculum_contracts.py": "3e9cbc4b207345c402cb2432e6be132738952873e9cd408a0d7aa7093a746cf7",
+      "bilqis_mlx/data_plane.py": "1a76d9c2c1306571e585dde12fd25c1292b13e2b6e11686fa41fa76647298da3",
+      "bilqis_mlx/diagnostics/__init__.py": "7a456bb61e7b2b224de161ad79036df8476f90c91e52e7f55e8264623fb108a7",
+      "bilqis_mlx/diagnostics/audit.py": "182b2aad323c902f58147f48abc60d809ee42596899b1f6035997c721ce11077",
+      "bilqis_mlx/diagnostics/candidate_shadow.py": "e4d11fdb57c06ea550701fb410846a4ac03cfed6a7cfe85bb81839f4bd7daae4",
+      "bilqis_mlx/diagnostics/event_evidence.py": "3715915954646339becb480aff767b9e2290403825953f115a2ab5377528e90c",
+      "bilqis_mlx/diagnostics/exam_events.py": "7e5cd634399f468f0521d9fb0708396d25ef9786c7f3bd55701e2da9798eeb03",
+      "bilqis_mlx/diagnostics/health_shadow.py": "58711caef8ce538faef8493c1efbac36b6392816f812f45f9e7684456a5a0735",
+      "bilqis_mlx/diagnostics/learning_report.py": "6b01845b459a7463e35249dd0d3a320fb19b742166159be0341a5b6c5b947cd6",
+      "bilqis_mlx/diagnostics/learning_report_render.py": "a71d1530837d0b15b969b99cfac0768bf4f7f927ec518cca68218bf3228f6b18",
+      "bilqis_mlx/diagnostics/observations.py": "4b6779cd718daad6e8ca855c2cc4ed6775c9f2ae947a48687bd862f3ee7fa979",
+      "bilqis_mlx/diagnostics/signals.py": "7a66fe1fbaa69e298b6695897e479bb03b9ae4b8b48002bba2d49459a780e589",
+      "bilqis_mlx/diagnostics/teaching.py": "15ae6beee2e6b9049142a5e84e4d8f0a6961b28e7c1706c19dba1a04019fcbf9",
+      "bilqis_mlx/diagnostics/trajectories.py": "76eb31008c3aab829c1a3da8d1fa4cba781f474551a8bf03b6b23fbb246c4067",
+      "bilqis_mlx/errors/__init__.py": "23267835468cddf2ffec6ce8618678af8c56ff3cef3a8a2077f3e4f42b3f90a6",
+      "bilqis_mlx/errors/bus.py": "ff2e8bf04ef1f214e76025fa27614a38204148dfaed31d0115d8386f41934303",
+      "bilqis_mlx/errors/catalog.py": "76728dd16ffc1dc337d781ca707a93ba7fc08d959daff56293e5c66aae7b2bca",
+      "bilqis_mlx/errors/legacy.py": "e76967da9bbc3050836110e22ac9b192f5e4d016958be7baa2411e2a87d93569",
+      "bilqis_mlx/errors/model.py": "32119a68389c4ea5b224419e5e70f31e995a0c67b590b2ca892e0d3c4e0b4dd3",
+      "bilqis_mlx/factory/__init__.py": "761e171365766cdba28ee7d619ed86e85cf3a97084b7604e43209f10ffe437af",
+      "bilqis_mlx/factory/adapters.py": "c6071f37c704accc2e7f042eee009b0639bbb2a0b3527b5d11a6b3672e7376de",
+      "bilqis_mlx/factory/answers.py": "cf7d6eb13d596f75fca232a9ddc41a037e3666ab279b569a315ec1663fccbb75",
+      "bilqis_mlx/factory/assessment.py": "460e7084217603d1d0929f5f754d81501c5c548c5efdb4e08fe2ff6a8712c56a",
+      "bilqis_mlx/factory/autonomy.py": "c7b7171b44d9af3d54a547af0f6b5aad580607db5f21446fab08ca0b09346cdc",
+      "bilqis_mlx/factory/candidate_frontier.py": "c13efd20fea2bae10a607d0b48fce95c19ba3d8723354ad2830c96405fb7278e",
+      "bilqis_mlx/factory/candidate_realizations.py": "53ce50dc3a0aee331fe6aac61414a426c94316693cffa99b257d65e5568285e5",
+      "bilqis_mlx/factory/candidate_staging.py": "082b8df970ec0cab1e15b289ca1e78d6bb87391397255c413f409399921ba607",
+      "bilqis_mlx/factory/curriculum_definition.py": "5bef2e7d630fc813eee2bbd947be27d9bee650149322c1034174ca6b927d4af3",
+      "bilqis_mlx/factory/development.py": "6ee20253db01c59aeaf1389602546bb0941bb6a92e9cf594d5f50aea5840bcef",
+      "bilqis_mlx/factory/development_binding.py": "364af9f2361cb397da41df66a8c03d8814ec354bbf54a75ea11965cd0ace1582",
+      "bilqis_mlx/factory/evidence.py": "15ebe97dde6169af5d6805fd5dc3ea237e3f796810be49e30a2e854d75f7f90c",
+      "bilqis_mlx/factory/executable_release.py": "9c743f0a1568a991264b02a06436079425dbaa9145f6317b72a76c1a020eeff5",
+      "bilqis_mlx/factory/execution.py": "cd30660abda3fefb00325055e5268316b56578971e87c8400fbd3e9d09c54f7a",
+      "bilqis_mlx/factory/generation.py": "dad556178423d7b28f831cf6aa3310160483b9a64b76d26c834dac29d9b6d8e0",
+      "bilqis_mlx/factory/jit_curriculum.py": "9d97e994c723ee078cd117f8e61f1b3ac4b918f175629fafa89019dd19a67a90",
+      "bilqis_mlx/factory/live_answers.py": "41e7658ac034c3e55f76fe4875ae2df8b0337f697f6e81650276ab871838130a",
+      "bilqis_mlx/factory/live_releases.py": "f0bb0901bdc96a4b40a0572bd73dd53abf49d310f1b6497df1423faf69baad74",
+      "bilqis_mlx/factory/model.py": "2fc43629bdfbbd5dc64abd2387f5fb29f0e00efa9244a78528fd5502493b4317",
+      "bilqis_mlx/factory/release.py": "574e456032ea5246f0353451bdac26fca2b7df606f308c43345c7d20e2edd3e7",
+      "bilqis_mlx/factory/schedule.py": "9cfe2826a3526b7f1b192c75f65c15fc5e198a6db3b9ee95145855ab47e56236",
+      "bilqis_mlx/factory/teaching.py": "97b4ddea842f426ec36d3280ec0fd7e94f80b47521c555a3257f5f6d3952fbbd",
+      "bilqis_mlx/factory/understanding.py": "93f45f1ce40ffb54f2790aca5f85542dd598b129bd631e6cbd80b9ca62c0829a",
+      "bilqis_mlx/factory/verification.py": "1c293773dbfea6a1640348fef6fc6a983e3972fecce742b6580d63fbb9a0a117",
+      "bilqis_mlx/fixed_frontier.py": "f09e99ad3722b1ca6f415533671be4436b739f38d3715f78a45d575d39531322",
+      "bilqis_mlx/full_student_qualification.py": "2533dc9976c64a866f906a60c582eea494181be7e7c6a7775d6a9c01ea8cb1e3",
+      "bilqis_mlx/generated_assessment.py": "08d1d0808b650fe7c25dfa8ea5e779414099da338ef943df4c291db6b39ced3e",
+      "bilqis_mlx/grade_a_baseline.py": "144435a9de6709fe04a21ea4f8bab15031b303e3134bac47a7968fa90e979a88",
+      "bilqis_mlx/grade_a_evaluator.py": "69c1f0f7d1c6ab2f2f4ba33272ca0240ef8974372b7d9d51bec15a7052dc3bd3",
+      "bilqis_mlx/grade_a_manifest.py": "79b61c89f7b89f12e0b55fb515e28ff4d117d0e69edb141b3f56efaecf238ea9",
+      "bilqis_mlx/grade_a_oracle.py": "f3f284e5ac2db94404bf6d8b35a739c9e5ab2ab02aa8a33a483d6bb7f0907dc8",
+      "bilqis_mlx/grade_a_probe.py": "4600c6047a70aa192b67c7eb2dbf8dbd25241a19c7a5ef90003194b95d3c8b4b",
+      "bilqis_mlx/grade_a_release.py": "d6d62d8f66c41c3acaf8fdc7aa4c47d9ed143d2a3fcd46447ad5dbc565c674cd",
+      "bilqis_mlx/grade_b_oracle.py": "d33fecd59a239266ca6206e8d389323e32b4e321cccd5691b107c6116bace5db",
+      "bilqis_mlx/grade_c_preflight.py": "988a66129f1d7f3a1621b8f0ca8ec851f15d3d5ac01b836dd9d1c8603741cfdc",
+      "bilqis_mlx/grade_release_plan.py": "fb959a8bb0e2b81aa1ce2cdac888701afaf5443cd4e13d67b2aaf4807f3c2fc2",
+      "bilqis_mlx/grade_transition.py": "7c147e709b5a810be5a619f93d078fb272067d5e93b16b315315b131147d2b47",
+      "bilqis_mlx/integer_curriculum.py": "b9caf65ab1f348a2e8080f0131aacfc2f8625a6b04cf6abe0c689f3fa555b703",
+      "bilqis_mlx/integer_learning_smoke.py": "1d8c7b9f6e555ff17e7fbd0225eeac9eafb364e4140e2c7dbadb28e162c8f125",
+      "bilqis_mlx/ithkuil_alignment.py": "94ca0a88a0dc85ea82fea2f1df1238c9ffa4d75e3175a0097500994de571aaaa",
+      "bilqis_mlx/learning/__init__.py": "6e2ff39ff828bb6ad530a62b42c5c903faf0bdbde667ced3d2da0837810d9348",
+      "bilqis_mlx/learning/capability_frontier.py": "fc4a92c856cfdccb4a2eaf52f8fb0f59fb157f92bca72eb0b098ac5cd818c7fb",
+      "bilqis_mlx/learning/champion_confidence.py": "d2e63e6a3e59775bc7eac1a5670599126a927949a1be1918bf41dbfa55c6f92c",
+      "bilqis_mlx/learning/champions.py": "9c3ac562c0973b31e56a9cb14e3f954d9caaf5445cc54b58cc69a19aa25d0106",
+      "bilqis_mlx/learning/championship_identity.py": "4ed4a61748e1cb674965001247838219a33e7e8d5225e6b789bbcd9b12387e60",
+      "bilqis_mlx/learning/championship_policy.py": "837590eeafdd7698270d865d7ba273845644b7bedf1dc4d538e4f8da4ef77168",
+      "bilqis_mlx/learning/championship_runtime.py": "b6182243558acde2a4e497bc0c9fd54f06c698b2173ca2b2e21fd4a2972cc2c1",
+      "bilqis_mlx/learning/championship_witnesses.py": "f60c74580f38c65cbd6fd3cb4e7587ca6f03c7f4b0388fe5bbd4f6135ca7e788",
+      "bilqis_mlx/learning/epoch_championships.py": "0f579d5a380fd580c6d41b8cbba64181f6df29bc54dde5e682ddf5ef375205a5",
+      "bilqis_mlx/learning/fragile_replay.py": "0d3275de94c471185f57fb9028d112199aa5c10f33c63c381c168429fd411ddd",
+      "bilqis_mlx/learning/grade_soup.py": "07cbec76a98e45c7b5271c518dd9d2aaf26a692ed12a0ba2cab954a6964b2675",
+      "bilqis_mlx/learning/learning_experiment.py": "e09061c04ea98b20a625d671f574782aa1d6827b46948c22cd445c3e6325eb02",
+      "bilqis_mlx/learning/lesson_guidance.py": "24902552aeb4488513d0d0f3542556e86beab8c990634362bd6fffcd8ebea5a4",
+      "bilqis_mlx/learning/matrix_strain.py": "dc0b1d0bb7265bed2ad0928e0746c9b4d009c832dd90662dbd25e5e9301a77f8",
+      "bilqis_mlx/learning/mentor_epoch.py": "1fb0244568463f9bff50869094cbf426cf157c1c69c2c1132704bd45b6b8a9d5",
+      "bilqis_mlx/learning/source_selection.py": "b6cb12177dc15d498e5dd50203d1264f8da2441c4497ba8bd505f5791223034b",
+      "bilqis_mlx/learning/stagnation_control.py": "0eebf65cc60db3d7f4dde3de9bf4883022e78faba9287903a8820504a07c3242",
+      "bilqis_mlx/learning/student_ops.py": "1e2f8aab38b3e1282197e680d4e0b6b50d7e97cdc771a63ef32b9ade137193ab",
+      "bilqis_mlx/learning/teacher_feedback.py": "617af29e23611fc02dc1057492b4559a27ed92f7fd4febf906b7ce8920e66f01",
+      "bilqis_mlx/learning/teacher_observations.py": "2bb9479ebbc5332740ccaed8e2b00f1711ea8f2a2b9e35ff235ca99c7c6cbaa7",
+      "bilqis_mlx/learning/teacher_votes.py": "009fb85e19399a53422e21bdd70beb99fa0ec26b680780b20e6e5953bb3a27a4",
+      "bilqis_mlx/learning/whole_student_retention.py": "3bc8fe07037e73d301d2a3127391ee4f61106a257625048f9d942bb58fb5a2c9",
+      "bilqis_mlx/live_curriculum.py": "cd22f1a6e45ad3c52668ce6d82dcc604f99b53213d61330bec88ba571e15199f",
+      "bilqis_mlx/live_grade_a.py": "94919b629919160abff8f403b1488e614763464450dabc0e02dccb32daf4ccfc",
+      "bilqis_mlx/live_grade_b.py": "a875a5d89abbc59687f99841afa40d3d24cfecb199c3d31e36a24423548ce9b7",
+      "bilqis_mlx/live_grade_c.py": "a6da1d9b3198f260c94581186e48a65f521ac33fc02cea92714f68fc017f1846",
+      "bilqis_mlx/minimal_boolean_identification_oracle.py": "a7749e6825012b1f10ca060718b487f8b44ea97f6108a8e20f2a7f74aeb42b36",
+      "bilqis_mlx/minimal_grade_b.py": "809038d8d80e893f0fd24fa2422db0057ee59882eec96a7308195e713a7f0077",
+      "bilqis_mlx/next_grade_review.py": "cac5991177300f9c3caf96f9b71425c7e2b5d887551262671bc7cb6fa20ca959",
+      "bilqis_mlx/ni_adjudication.py": "5c04d7e21932d60a783c17fbb2bf5cf03c13097b06055e9529714e5d1845b276",
+      "bilqis_mlx/ni_construction.py": "53eaaef57a929c991f835b99468d79d3fc359d5e4ef758f707f849d0104c10dd",
+      "bilqis_mlx/ni_construction_audit.py": "5472005167009623b24e06cc37bd1fc07317e99871314f34b11f7e59837e044f",
+      "bilqis_mlx/ni_named.py": "cf5d4a97b3fcd9e77b2c79059e97a709b2a4967ddcc1513aad218a041823b44a",
+      "bilqis_mlx/numeric_curriculum.py": "c6425880638a04b34f4b9af4d75f6fe98929fe403d3df20b9937c2d24199cdf8",
+      "bilqis_mlx/numeric_staircase.py": "ec3b5338fc1604a6250a847ee99eae09956b5a5bb269a63f3ac8372205133e74",
+      "bilqis_mlx/operator_vocabulary.py": "808f16522e692c7e40bd5cdb74c2aaedb3c1e94524b863b22befff69662da29d",
+      "bilqis_mlx/paths.py": "004e570e337f5549dc28a3f1bf74186d7eedc28c8d5b694d1b0a358c8215528f",
+      "bilqis_mlx/pedagogical_parity.py": "9d1354ed5f7cbe683e00664b3262b0aa57c146cad7701178ca01cb08ba3e0738",
+      "bilqis_mlx/presentation/__init__.py": "848c90cfcc53ae7a5d8b7ec892e1964fa52013791b83fa28a066e259effa1e1a",
+      "bilqis_mlx/presentation/dashboard.py": "6d6fd546324f8e1b4b783a40ec2af8c5a4554401b6050a3e02b8e60939b3fac4",
+      "bilqis_mlx/presentation/dashboard_watch.py": "747ee53dc8f1a2cf4e8d356dfd9ba280a1601af5f2c5b2df74f0d19b1705e38e",
+      "bilqis_mlx/presentation/run_discovery.py": "20f51dd90c51f680ca50c2ffa93937593c4d9f3e8d8964f23ecd76c1c3a72d41",
+      "bilqis_mlx/presentation/school_telemetry.py": "c6d3f9ca6ef614d8f93d5f9552a8b0e47b3f0a750b78bfe2ba080b8b275750ee",
+      "bilqis_mlx/presentation/spiral_dashboard.py": "ec19e5a05524b1fd1f5eecf674e8352c02810238ba477f56ed681e62ad487e64",
+      "bilqis_mlx/profiles/__init__.py": "05a431521f44078bf6e879b0d7d756a0bafbdf84ca3b6908f7daf6bcdb669566",
+      "bilqis_mlx/profiles/catalog.py": "d1cdbf2e2bc14b867cd01cb1f97c09c7c0f88352ab07c887a2c9091f9068f53e",
+      "bilqis_mlx/profiles/developmental.py": "091957404fa57791289396d3cd91d54742fae58a6705097ffdeeae60ae2e3342",
+      "bilqis_mlx/profiles/retention.py": "a907d0f476366ed01277281bdb078d5f74aff6d30764121ec62daff4901cfd30",
+      "bilqis_mlx/profiles/school.py": "d5258817880c81e6ddb50f2da61c584c9dbaf2a6acd678bcef10a1d5b2dfdc7a",
+      "bilqis_mlx/registry_ast.py": "7cc25afe6489da7120272dd53b2b13613839e3e678ab54cf680f84d838d63b0c",
+      "bilqis_mlx/registry_versions.py": "05ce67743e5ffb8c9efaceaa57125e68b53c85f3b471865b5b3786476aa79e40",
+      "bilqis_mlx/runtime/__init__.py": "1be94cb37c0b8c58e55e8291df548286cd7db3068b13933fdd07758fb48662c1",
+      "bilqis_mlx/runtime/admission.py": "a68c4a3c348463a58930947253161dd425b09a1af32907e68c32e247849d2bf8",
+      "bilqis_mlx/runtime/assessment.py": "b6972a549caae956a1bf2045b348279a8e4331fc892da6099bbb128e1e907fe5",
+      "bilqis_mlx/runtime/autonomy_live.py": "070bf8c225aa65495ef2044a27e0c5b864f53b7503a9b7511d98470e5b08c7a5",
+      "bilqis_mlx/runtime/autonomy_loop.py": "cb4196255efac34d246134003b3459b1b39b1c5332d82ce95c9973c9d536c335",
+      "bilqis_mlx/runtime/autonomy_state.py": "ef972b0e13a4f7ed40a2b28b2ab808e437bbf9457eef30d39fbe2c217bff9299",
+      "bilqis_mlx/runtime/boundary_commit.py": "8ef4599bbffa55b51573e7318a00fee1660bc4805b190ffc4bb84b150671580f",
+      "bilqis_mlx/runtime/candidate_evidence.py": "55fad24cf65bdb43f09f9be0d5ae3a25a8367eb1de5616f42ea16b70d7e8a12a",
+      "bilqis_mlx/runtime/candidate_staging.py": "d82cf3e00d706fb7d45903c10f043b62a309eaa8a59cb13c661e644d19bc3fc6",
+      "bilqis_mlx/runtime/checkpoints.py": "cd514827913facb1d58fb81b092b7a1b899b4694289c50f8414ad9aaf5b9309f",
+      "bilqis_mlx/runtime/disk.py": "a4b9afc8f2ac18a3bcb6f5ad97e8674b2a5285ade4c8ade9b1e5d6894777363c",
+      "bilqis_mlx/runtime/exam_execution.py": "3c410c81bc9dc7f4e6428b4519cc9f10823ba9269a1405a6a848de8c1c958e62",
+      "bilqis_mlx/runtime/experiment_runs.py": "0136d0a05ec97b21cbeae4a3afac9dcb53ee343e4749fb830105c09c29eaa97d",
+      "bilqis_mlx/runtime/frontier_refresh.py": "fb00a909bd0ffb54c2cd510b043c85df12ba915d3db887321c877242fd24a0a2",
+      "bilqis_mlx/runtime/jit_adoption.py": "07ebfc1497ef95fbede988c485285f9448440b0f4a5236428fe6b4413877231d",
+      "bilqis_mlx/runtime/mlx_checkpoint.py": "7dd75fa91900097b7ec15a61f4e4843f96278832ef6ae03165b51c85a2ba361d",
+      "bilqis_mlx/runtime/mlx_memory.py": "f8d9f2cadd758a5a793026cb211c2e53e4428a2e5b9bef23806a1abd1e16fe3e",
+      "bilqis_mlx/runtime/mlx_parity.py": "bed48333b48c5aae9bd36c079a16d1c0edb56c04e02e4fe5f37e6daefaa0577c",
+      "bilqis_mlx/runtime/model_topology.py": "71147ba555e22f344997174a6aa31e99f511256196d9a59706fd7f6331e7f3de",
+      "bilqis_mlx/runtime/operating_loop.py": "bf18371f8a155407e4986c4b741e11f1b5badb5addeefeef34562b85c08193da",
+      "bilqis_mlx/runtime/operator_recovery.py": "54f3a1d647c54e9784be816ee71a379abf7e65982d85d56589fc1ba1248ba07c",
+      "bilqis_mlx/runtime/outbox_lineage.py": "bf7374f32b8da94b517ceefb8d41690ba608b7b3c5addd5f6565e1f50e2af76d",
+      "bilqis_mlx/runtime/qualification.py": "b0bcad50dabf4acbd2439f5d81a627c8375ac6e1b4328de30fb949896c652487",
+      "bilqis_mlx/runtime/qualification_manifest.py": "231bf23f9bad7be783a26b33d1448bd843fbfdf48ad651a78def4c1afdd26bad",
+      "bilqis_mlx/runtime/qualification_results.py": "3bff85c6af384854b3bd30579574fee3b02700fffd108605145dc6cc11e6bacd",
+      "bilqis_mlx/runtime/reconciliation.py": "dbf8f5318884ae67400133daead2f6a6fdc47f84d87655c95567d6f41e6e3507",
+      "bilqis_mlx/runtime/release_adoption.py": "0e6a7b02c1aeea24ded5946f8250686fd6644045dc6e33744f38bc489faa848e",
+      "bilqis_mlx/runtime/session.py": "cb1cd749338d914dd0a1c76b57a3a90e800a0c9b4538db8ca9084fa770422717",
+      "bilqis_mlx/runtime/source_development.py": "22239494c1fa5c75d684f5d5fed774b12971324d8d7349a0c3ecb7e78ad5c6f3",
+      "bilqis_mlx/runtime/source_execution.py": "92dac603869335e2bb9902747650f7538e87a276b348452a827a2ca74110472d",
+      "bilqis_mlx/runtime/source_prefetch.py": "5540d3490f0d61edb0861cbe5e5b40ee923534ed601962c6ba5c11e59035b678",
+      "bilqis_mlx/runtime/state.py": "b8abe63cc759afe1404afde5204aeb9a75ef6bb4abfee4e9309c8a5387a547f0",
+      "bilqis_mlx/runtime/teacher_observation_capture.py": "18f2e4824c2d413399fba37530f7ac9ad1de1f8dbdc60ccc7ee7a3fbcf1f9cd5",
+      "bilqis_mlx/runtime/teacher_observation_replay.py": "ffcf02c40e854647279536edac423914e9756c9e5475df05c6e750ab181e06f5",
+      "bilqis_mlx/runtime/timing_trace.py": "46f6da2578c5dd258c5332edd7923fb562997434e20d085335dce6828183b908",
+      "bilqis_mlx/runtime/topology_lifecycle.py": "60fc25894c21406a6a2808aa9201d22ac0a8e4f6ce121232cd694b7e601d5910",
+      "bilqis_mlx/runtime/visits.py": "b427671f8c0c68e0c08e9ddb12912d390acac0db5a2b0a56a9be4db987cd81fd",
+      "bilqis_mlx/selection_outcomes.py": "8386953b92f0fcd1683bc7918b8d27a8de8145cbd5bc58043cb91d91d26536c9",
+      "bilqis_mlx/semantic_coverage.py": "1fbec77a62600640ee6517644ba21168e304d9058ac3721f6745a526183eca70",
+      "bilqis_mlx/semantic_sampling.py": "bb5bddbfda5b4d07985f8267f1ba6fbccaabd1c7dd98196b5e504ae244dd6e4e",
+      "bilqis_mlx/semantic_test_generation.py": "b81b4da101d09d72c52c3da6bd28397eeb4f76158e0dd1b49726127f63805e72",
+      "bilqis_mlx/semantic_transformations.py": "4820dd25de3cbc881b6d29d6a2a028330e7ec342001aa550a3bece29901f8f6f",
+      "bilqis_mlx/semantics/__init__.py": "aecbaaf2d7fb8fe908be0b552df0b989c144755b46cacc8329031281ebfba5ed",
+      "bilqis_mlx/semantics/abi.py": "33c8db5595a93a73b1e16d0252b04d4433c9ef87a7cd2cce7650e4108b2d998e",
+      "bilqis_mlx/semantics/catalog.py": "57c4da6e517a9f98160040d81ee507f84b335dc96fd6bb64883f9d4e07079945",
+      "bilqis_mlx/semantics/copular.py": "2bebc16d602dd34b6a66bfc53f2e53dbdea0eb8caa955e3eedb7c57bd5a58263",
+      "bilqis_mlx/semantics/core.py": "dcc83c004cf32c720a3d9638f5d1c44d089f74511003208d3d952d72b0723d8e",
+      "bilqis_mlx/semantics/domains.py": "c417476c9d42ab1a820c17ffcbad7008e45655fb2d14d8e566dd9791d87ac64d",
+      "bilqis_mlx/semantics/functions.py": "a2629398481432051cf48c53c96fcfd3d9d573d08f76c9c8ab4d763067d60867",
+      "bilqis_mlx/semantics/laws.py": "5ceb087fcf61e3b1f6ce4da4f571f60e7a91c8fb514c09ed5c84cfcfa8b4e341",
+      "bilqis_mlx/semantics/memo.py": "2e72615d059f8a04b2d45154d8dacd416beffe7a2ad7d9abebeab1673eb8c049",
+      "bilqis_mlx/semantics/numeric.py": "ce6db9d113199e5ffa946e22cc769ea82723039d95555feb4794313b3b6d426e",
+      "bilqis_mlx/soup.py": "a77fe7feca32424ce62d9b9f9a909be0e347b69457aa821e3e3a82a42ae49967",
+      "bilqis_mlx/source.py": "95254127cce29180ba8fa104f3e9bd2a6db3348a969a09a3ca70b473beafac36",
+      "bilqis_mlx/source_adapters/__init__.py": "318b8f7901c91d82b0c9e06301cb86c0eaefd3ec4b4f0d48084a04c2aa143fa9",
+      "bilqis_mlx/source_adapters/catalog.py": "2547198bb1beb8e556a349a09d15e3c8d3e6d1719ca948998e1f3d0102c21cd7",
+      "bilqis_mlx/source_adapters/copular.py": "901d0817fa961f8c75b2b5711f1240de0c3f855ea3f71d800e6f5c442cf795d0",
+      "bilqis_mlx/source_adapters/copular_curriculum.py": "f371b1544344307a146057e49bbda188a8b1abe7ebdadee201311672c2d0f8cd",
+      "bilqis_mlx/source_adapters/event_frames.py": "cb20604fb9eeb37e2b4411073197159cc594c2b8784aed719610994714a8a08e",
+      "bilqis_mlx/source_adapters/event_intro.py": "b52e3a8dcf405518221a2c1d1ee2f4d56e144939a73bdc2161ed656ffbad5558",
+      "bilqis_mlx/source_adapters/event_pairs.py": "0c61b8228ba9015aaf624a448e1e938a317cc08e3914b54d86f94dc24b5f069d",
+      "bilqis_mlx/source_adapters/micro.py": "2f6f80b652cbec9587fac712654d40f13c5200e8f1b35a61657640064d572a13",
+      "bilqis_mlx/source_adapters/numeric.py": "65159f740330cfd47128e36bbebaf34e05128db4f11f3e0568e38555097dce62",
+      "bilqis_mlx/source_adapters/school.py": "95913e3254fe59f3309e54f9367a2a9d52a8b6fd30a1092004905399f82c5b8f",
+      "bilqis_mlx/source_adapters/structure.py": "f7ad7906d539d65f7d0eaaf7b89f64436ff7fd8ea48bc54fa71d181209305e5a",
+      "bilqis_mlx/state_archive.py": "256f052c38085e8317c4ece0bc56a469aec6293870a4df3f72e4c18aef9bdaf9",
+      "bilqis_mlx/state_dag.py": "c2f8a24b2defe566e64722a8ca2c1c43a5f59b72423ddc16d43ca601565a5729",
+      "bilqis_mlx/token_atlas.py": "b81e0859f021ba857a053b34cb98a7350d7311490536436df717e0e7ec7481d1",
+      "bilqis_mlx/trainer.py": "7a32f80e950368e139b97cdd688cdabe184f3f6c529598a3ce22d2fb58f76fcc",
+      "bilqis_mlx/typed_answer_training.py": "09eaeb0b4b99da148f7ad44905019f8816334237604d8c6e2e2d1a1cfca5b777",
+      "bilqis_mlx/verification/__init__.py": "e12a2c7c2394bf1e10e523be042dcf954a365e3cb9f34308a62b8e8a52c85e6d",
+      "bilqis_mlx/verification/cases.py": "d800f1716dc6b3bb0885c376a47103eb9d4d4771c7c2b4f811a32754cfe39e47",
+      "bilqis_mlx/verification/construction_contracts.py": "63a69f980e4d349ae2b2f5f9efad6a535c600b6f63a3998c864b90f9f8b21dae",
+      "bilqis_mlx/verification/copular.py": "0417a7e33dce50e30a596d5c34098da5450ec64bf90867dd21eca06022c07791",
+      "bilqis_mlx/verification/curriculum.py": "f9c2a710aad511442378d44c1b4c9f09e9e31a63e3258a0adff488e5a2172571",
+      "bilqis_mlx/verification/event_frames.py": "fd98947dcca51c8d58bd5e5486dff25f4030e5ff17a5790287b19e46c722ebfa",
+      "bilqis_mlx/verification/expressions.py": "80bcc55e29be7f6cf233497fa6857d522f48586ef4b8175c1f0872cf3122652b",
+      "bilqis_mlx/verification/laws.py": "8be4e51fa2a4be43b8c08e9ee3dc1ca011d83ea4432ad1fbf64a70be5998b93c",
+      "bilqis_mlx/verification/numeric.py": "7f785122d930883fbf34e557890542e753894e48f1e1dc2a021e07e4149797b8",
+      "bilqis_mlx/verification/outcomes.py": "9a1eb72a9faa2e308f2615e73258f28687ffb59b2b6ac04aeaa1451d08c561a4",
+      "bilqis_mlx/verification/review_evidence.py": "e543cc847af4777bc4f8dcf49be015f3a511a6080ba75aaac2d2887e7dfbd0cb",
+      "bilqis_mlx/vocabulary_growth.py": "173e40a1eaab0bbdaa6d7e300073150467be68b5387ad5a1347bd762ce07cbb5",
+      "bilqis_mlx/vocabulary_probe.py": "8e6a4f5f989c5b0379f76a38c96fd46dd11a6a85294cb8d94d04b43335948cda"
+    },
+    "head": "7e7774100ed6403c57bcacc9579d303504527591",
+    "provider": {
+      "implementation": "bilqis.mlx.causal-tied-fp32/v1",
+      "precision": "fp32",
+      "provider": "mlx"
+    }
+  },
+  "initial_state": {
+    "carried_mastery_debt": [],
+    "live_student_not_imported": true,
+    "optimizer_step": 0,
+    "origin": "fresh-current-factory"
+  },
+  "initialization_seed": 324,
+  "neural_authority": false,
+  "numeric_maximum": 8,
+  "numeric_scope_sha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+  "observation_capture": true,
+  "optimizer": {
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "eps": 1e-08,
+    "learning_rate": 0.00013,
+    "weight_decay": 0.01
+  },
+  "policy": {
+    "sha256": "733453ffcadebf641a9a789754919c9e82cb11c7c544a8eb6452f4005dc78775",
+    "value": {
+      "autonomous_curriculum": false,
+      "flash_mode": false,
+      "full_grade_b": true,
+      "initial_teacher_state_sha256": "5658b695a66a2618cf3dea964d12bbf10b26186f69293b79ec489d9ee721d165",
+      "numeric_staircase": false,
+      "optimizer": {
+        "betas": [
+          0.9,
+          0.95
+        ],
+        "eps": 1e-08,
+        "learning_rate": 0.00013,
+        "weight_decay": 0.01
+      },
+      "reserve_gib": 100.0,
+      "retention_enabled": true,
+      "retention_settings": {
+        "introduction_extra_loss": 2,
+        "mature_max_loss": 1,
+        "probe_each": 6,
+        "protected_cap_limit": 8
+      },
+      "source_prefetch_workers": 2,
+      "source_teaching_enrichment": false,
+      "stage_epochs": {
+        "05b5e7ad888c2de93153a0207a951fa594d71b1ceb0979d48a0f278338f981d5": {
+          "batch_size": 32,
+          "configured_steps": 16,
+          "cost_boundary": "host-monotonic-visit-entry-to-observation-finalization; includes capture and existing inference",
+          "factory_release_sha256": "05b5e7ad888c2de93153a0207a951fa594d71b1ceb0979d48a0f278338f981d5",
+          "fallback": "existing-engine-pick; unchanged-diagnostic-context-rules",
+          "feature_schema": "bilqis.teacher-student-region/v1",
+          "implementation": {
+            "compatibility/historical_teacher_policy.py": "4024ec12269982eeeb5314588227f02ea22f419b2643d3e7c1810ce3cdcc8f01",
+            "learning/learning_experiment.py": "e09061c04ea98b20a625d671f574782aa1d6827b46948c22cd445c3e6325eb02",
+            "learning/lesson_guidance.py": "24902552aeb4488513d0d0f3542556e86beab8c990634362bd6fffcd8ebea5a4",
+            "learning/source_selection.py": "b6cb12177dc15d498e5dd50203d1264f8da2441c4497ba8bd505f5791223034b",
+            "learning/teacher_feedback.py": "617af29e23611fc02dc1057492b4559a27ed92f7fd4febf906b7ce8920e66f01",
+            "learning/teacher_observations.py": "2bb9479ebbc5332740ccaed8e2b00f1711ea8f2a2b9e35ff235ca99c7c6cbaa7",
+            "profiles/retention.py": "a907d0f476366ed01277281bdb078d5f74aff6d30764121ec62daff4901cfd30",
+            "runtime/candidate_evidence.py": "55fad24cf65bdb43f09f9be0d5ae3a25a8367eb1de5616f42ea16b70d7e8a12a",
+            "runtime/source_prefetch.py": "5540d3490f0d61edb0861cbe5e5b40ee923534ed601962c6ba5c11e59035b678",
+            "runtime/state.py": "b8abe63cc759afe1404afde5204aeb9a75ef6bb4abfee4e9309c8a5387a547f0",
+            "runtime/teacher_observation_capture.py": "18f2e4824c2d413399fba37530f7ac9ad1de1f8dbdc60ccc7ee7a3fbcf1f9cd5",
+            "runtime/visits.py": "b427671f8c0c68e0c08e9ddb12912d390acac0db5a2b0a56a9be4db987cd81fd"
+          },
+          "new_early_termination": false,
+          "new_inference": false,
+          "option_rule": "ordinary-source-direct; autonomy-existing-selected-option",
+          "qualification_training_seed": 3240,
+          "retention_settings": {
+            "introduction_extra_loss": 2,
+            "mature_max_loss": 1,
+            "probe_each": 6,
+            "protected_cap_limit": 8
+          },
+          "schema": "bilqis.factory.teacher-evidence-epoch/v1",
+          "seed_derivation": "runtime.state._seed(qualification_training_seed-or-run_id,generation,capability,step)",
+          "selector": "existing-contextual-pick-or-inherited-bandit/v1",
+          "semantic_graph_sha256": "db2297d41d7e50dd44321c323be760f7d66575e8c11b2f6b3d59a304b5a8afd6",
+          "source_manifest_sha256": "b8339836482bdaf7cbad7d2f685f7d7d80a55ab6979cc40074af006e6a97c9d8",
+          "teacher_source_sha256": "6b62f288750bc6d129b349e0333b560f480ede900bf28e3b641299fe696abaa1",
+          "teaching_enrichment_enabled": false
+        },
+        "8c24bd6239ed32712381a1f2068bbd298415e5868cda3b6f942bf724e290944f": {
+          "batch_size": 32,
+          "configured_steps": 16,
+          "cost_boundary": "host-monotonic-visit-entry-to-observation-finalization; includes capture and existing inference",
+          "factory_release_sha256": "8c24bd6239ed32712381a1f2068bbd298415e5868cda3b6f942bf724e290944f",
+          "fallback": "existing-engine-pick; unchanged-diagnostic-context-rules",
+          "feature_schema": "bilqis.teacher-student-region/v1",
+          "implementation": {
+            "compatibility/historical_teacher_policy.py": "4024ec12269982eeeb5314588227f02ea22f419b2643d3e7c1810ce3cdcc8f01",
+            "learning/learning_experiment.py": "e09061c04ea98b20a625d671f574782aa1d6827b46948c22cd445c3e6325eb02",
+            "learning/lesson_guidance.py": "24902552aeb4488513d0d0f3542556e86beab8c990634362bd6fffcd8ebea5a4",
+            "learning/source_selection.py": "b6cb12177dc15d498e5dd50203d1264f8da2441c4497ba8bd505f5791223034b",
+            "learning/teacher_feedback.py": "617af29e23611fc02dc1057492b4559a27ed92f7fd4febf906b7ce8920e66f01",
+            "learning/teacher_observations.py": "2bb9479ebbc5332740ccaed8e2b00f1711ea8f2a2b9e35ff235ca99c7c6cbaa7",
+            "profiles/retention.py": "a907d0f476366ed01277281bdb078d5f74aff6d30764121ec62daff4901cfd30",
+            "runtime/candidate_evidence.py": "55fad24cf65bdb43f09f9be0d5ae3a25a8367eb1de5616f42ea16b70d7e8a12a",
+            "runtime/source_prefetch.py": "5540d3490f0d61edb0861cbe5e5b40ee923534ed601962c6ba5c11e59035b678",
+            "runtime/state.py": "b8abe63cc759afe1404afde5204aeb9a75ef6bb4abfee4e9309c8a5387a547f0",
+            "runtime/teacher_observation_capture.py": "18f2e4824c2d413399fba37530f7ac9ad1de1f8dbdc60ccc7ee7a3fbcf1f9cd5",
+            "runtime/visits.py": "b427671f8c0c68e0c08e9ddb12912d390acac0db5a2b0a56a9be4db987cd81fd"
+          },
+          "new_early_termination": false,
+          "new_inference": false,
+          "option_rule": "ordinary-source-direct; autonomy-existing-selected-option",
+          "qualification_training_seed": 3240,
+          "retention_settings": {
+            "introduction_extra_loss": 2,
+            "mature_max_loss": 1,
+            "probe_each": 6,
+            "protected_cap_limit": 8
+          },
+          "schema": "bilqis.factory.teacher-evidence-epoch/v1",
+          "seed_derivation": "runtime.state._seed(qualification_training_seed-or-run_id,generation,capability,step)",
+          "selector": "existing-contextual-pick-or-inherited-bandit/v1",
+          "semantic_graph_sha256": "db2297d41d7e50dd44321c323be760f7d66575e8c11b2f6b3d59a304b5a8afd6",
+          "source_manifest_sha256": "b8339836482bdaf7cbad7d2f685f7d7d80a55ab6979cc40074af006e6a97c9d8",
+          "teacher_source_sha256": "6b62f288750bc6d129b349e0333b560f480ede900bf28e3b641299fe696abaa1",
+          "teaching_enrichment_enabled": false
+        },
+        "d66afd156643ca1861cb048bfc797d919331dc2f6aa8695f0882de2890c67dd1": {
+          "batch_size": 32,
+          "configured_steps": 16,
+          "cost_boundary": "host-monotonic-visit-entry-to-observation-finalization; includes capture and existing inference",
+          "factory_release_sha256": "d66afd156643ca1861cb048bfc797d919331dc2f6aa8695f0882de2890c67dd1",
+          "fallback": "existing-engine-pick; unchanged-diagnostic-context-rules",
+          "feature_schema": "bilqis.teacher-student-region/v1",
+          "implementation": {
+            "compatibility/historical_teacher_policy.py": "4024ec12269982eeeb5314588227f02ea22f419b2643d3e7c1810ce3cdcc8f01",
+            "learning/learning_experiment.py": "e09061c04ea98b20a625d671f574782aa1d6827b46948c22cd445c3e6325eb02",
+            "learning/lesson_guidance.py": "24902552aeb4488513d0d0f3542556e86beab8c990634362bd6fffcd8ebea5a4",
+            "learning/source_selection.py": "b6cb12177dc15d498e5dd50203d1264f8da2441c4497ba8bd505f5791223034b",
+            "learning/teacher_feedback.py": "617af29e23611fc02dc1057492b4559a27ed92f7fd4febf906b7ce8920e66f01",
+            "learning/teacher_observations.py": "2bb9479ebbc5332740ccaed8e2b00f1711ea8f2a2b9e35ff235ca99c7c6cbaa7",
+            "profiles/retention.py": "a907d0f476366ed01277281bdb078d5f74aff6d30764121ec62daff4901cfd30",
+            "runtime/candidate_evidence.py": "55fad24cf65bdb43f09f9be0d5ae3a25a8367eb1de5616f42ea16b70d7e8a12a",
+            "runtime/source_prefetch.py": "5540d3490f0d61edb0861cbe5e5b40ee923534ed601962c6ba5c11e59035b678",
+            "runtime/state.py": "b8abe63cc759afe1404afde5204aeb9a75ef6bb4abfee4e9309c8a5387a547f0",
+            "runtime/teacher_observation_capture.py": "18f2e4824c2d413399fba37530f7ac9ad1de1f8dbdc60ccc7ee7a3fbcf1f9cd5",
+            "runtime/visits.py": "b427671f8c0c68e0c08e9ddb12912d390acac0db5a2b0a56a9be4db987cd81fd"
+          },
+          "new_early_termination": false,
+          "new_inference": false,
+          "option_rule": "ordinary-source-direct; autonomy-existing-selected-option",
+          "qualification_training_seed": 3240,
+          "retention_settings": {
+            "introduction_extra_loss": 2,
+            "mature_max_loss": 1,
+            "probe_each": 6,
+            "protected_cap_limit": 8
+          },
+          "schema": "bilqis.factory.teacher-evidence-epoch/v1",
+          "seed_derivation": "runtime.state._seed(qualification_training_seed-or-run_id,generation,capability,step)",
+          "selector": "existing-contextual-pick-or-inherited-bandit/v1",
+          "semantic_graph_sha256": "db2297d41d7e50dd44321c323be760f7d66575e8c11b2f6b3d59a304b5a8afd6",
+          "source_manifest_sha256": "b8339836482bdaf7cbad7d2f685f7d7d80a55ab6979cc40074af006e6a97c9d8",
+          "teacher_source_sha256": "6b62f288750bc6d129b349e0333b560f480ede900bf28e3b641299fe696abaa1",
+          "teaching_enrichment_enabled": false
+        }
+      }
+    }
+  },
+  "release": {
+    "file": "release-2.json",
+    "sha256": "05b5e7ad888c2de93153a0207a951fa594d71b1ceb0979d48a0f278338f981d5"
+  },
+  "schema": "bilqis.factory.learning-qualification/v1",
+  "source": {
+    "checkpoint": "/Users/emilie/Code/bilqis-mlx/vendor/legacy-v16/runs/primitive-consolidation-v16-triplets/student-116760-7e9af4651f28.pt",
+    "manifest": "/Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json",
+    "root": "/Users/emilie/Code/bilqis-mlx/vendor/legacy-v16"
+  },
+  "source_observation": {
+    "future_ceiling_not_adopted": 10,
+    "generation": 44238,
+    "numeric_maximum": 8,
+    "observed_debt_not_imported": [
+      "A.IDENTITY",
+      "A.LINK",
+      "A.MAPS",
+      "B.XOR",
+      "B.IMPLIES",
+      "B.IFF",
+      "B.COMPOSITE",
+      "B.IDBOOLOPS",
+      "C.ADD",
+      "C.SUB",
+      "C.MUL",
+      "C.DIV"
+    ],
+    "release_sha256": "18d08779808f632ccfd72f342ab05d8bf6d0b7f55cae8f5880257d31aa17b889",
+    "run_id": "a1cc702b3fea47ec9f9da9265529f9ba"
+  },
+  "stages": [
+    {
+      "file": "release-0.json",
+      "release_sha256": "8c24bd6239ed32712381a1f2068bbd298415e5868cda3b6f942bf724e290944f",
+      "sha256": "8c24bd6239ed32712381a1f2068bbd298415e5868cda3b6f942bf724e290944f"
+    },
+    {
+      "file": "release-1.json",
+      "release_sha256": "d66afd156643ca1861cb048bfc797d919331dc2f6aa8695f0882de2890c67dd1",
+      "sha256": "d66afd156643ca1861cb048bfc797d919331dc2f6aa8695f0882de2890c67dd1"
+    },
+    {
+      "file": "release-2.json",
+      "release_sha256": "05b5e7ad888c2de93153a0207a951fa594d71b1ceb0979d48a0f278338f981d5",
+      "sha256": "05b5e7ad888c2de93153a0207a951fa594d71b1ceb0979d48a0f278338f981d5"
+    }
+  ],
+  "training_seed": 3240,
+  "workload": {
+    "curriculum_sha256": "a44c9a293683cd2feddbb58b5279ebf9379489a0a6abb46ea4d597e3a0e599a2",
+    "execution_plan_sha256": "764fac2f0a4d0c036dce5f803cbb1e1cd14edab792644a12f0888beea261355d",
+    "grades": {
+      "A": [
+        "A.IDENTITY",
+        "A.PARENT",
+        "A.LINK",
+        "A.MEMBER",
+        "A.EDGE",
+        "A.MAPS"
+      ],
+      "B": [
+        "B.NOT",
+        "B.AND",
+        "B.OR",
+        "B.XOR",
+        "B.IMPLIES",
+        "B.IFF",
+        "B.COMPOSITE",
+        "B.IDBOOLOPS"
+      ],
+      "C": [
+        "C.COUNT",
+        "C.NUMBER",
+        "C.SUCCESSOR",
+        "C.ADD",
+        "C.SUB",
+        "C.MUL",
+        "C.DIV"
+      ]
+    },
+    "provider_parameters": {
+      "A.EDGE": {},
+      "A.IDENTITY": {},
+      "A.LINK": {},
+      "A.MAPS": {},
+      "A.MEMBER": {},
+      "A.PARENT": {},
+      "B.AND": {},
+      "B.COMPOSITE": {},
+      "B.IDBOOLOPS": {},
+      "B.IFF": {},
+      "B.IMPLIES": {},
+      "B.NOT": {},
+      "B.OR": {},
+      "B.XOR": {},
+      "C.ADD": {
+        "numbers": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "C.COUNT": {
+        "numbers": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "C.DIV": {
+        "numbers": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "C.MUL": {
+        "numbers": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "C.NUMBER": {
+        "numbers": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "C.SUB": {
+        "numbers": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "C.SUCCESSOR": {
+        "numbers": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      }
+    },
+    "release_sha256": "05b5e7ad888c2de93153a0207a951fa594d71b1ceb0979d48a0f278338f981d5",
+    "semantic_catalog_sha256": "477ccbf6c7a9c0e978d94ff88329bccd6b51da46c788782976aefb6fe2021d38",
+    "semantic_graph_sha256": "db2297d41d7e50dd44321c323be760f7d66575e8c11b2f6b3d59a304b5a8afd6",
+    "source_bindings": {
+      "bindings": [
+        {
+          "capability_id": "A.IDENTITY",
+          "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+          "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+          "source_anchor": "repo:bilqis_micro/kernel.py::compare"
+        },
+        {
+          "capability_id": "A.PARENT",
+          "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+          "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+          "source_anchor": "repo:bilqis_micro/kernel.py::relation"
+        },
+        {
+          "capability_id": "A.LINK",
+          "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+          "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+          "source_anchor": "repo:bilqis_micro/kernel.py::relation"
+        },
+        {
+          "capability_id": "A.MEMBER",
+          "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+          "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+          "source_anchor": "repo:bilqis_development/kernel.py::op"
+        },
+        {
+          "capability_id": "A.EDGE",
+          "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+          "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+          "source_anchor": "repo:bilqis_development/kernel.py::op"
+        },
+        {
+          "capability_id": "A.MAPS",
+          "generator_id": "bilqis_mlx.grade_a_probe.make_record",
+          "oracle_id": "bilqis.mlx.grade-a-record-oracle/v2",
+          "source_anchor": "repo:bilqis_development/kernel.py::op"
+        },
+        {
+          "capability_id": "B.NOT",
+          "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+          "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+          "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+        },
+        {
+          "capability_id": "B.AND",
+          "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+          "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+          "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+        },
+        {
+          "capability_id": "B.OR",
+          "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+          "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+          "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+        },
+        {
+          "capability_id": "B.XOR",
+          "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+          "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+          "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+        },
+        {
+          "capability_id": "B.IMPLIES",
+          "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+          "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+          "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+        },
+        {
+          "capability_id": "B.IFF",
+          "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+          "oracle_id": "bilqis.mlx.grade-b-connective-record-oracle/v1",
+          "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+        },
+        {
+          "capability_id": "B.COMPOSITE",
+          "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+          "oracle_id": "bilqis.mlx.grade-b-composite-record-oracle/v1",
+          "source_anchor": "repo:bilqis_micro/kernel.py::_operation+_table"
+        },
+        {
+          "capability_id": "B.IDBOOLOPS",
+          "generator_id": "bilqis.mlx.grade-b-idboolops-constructor/v1",
+          "oracle_id": "bilqis.mlx.grade-b-idboolops-record-oracle/v1",
+          "source_anchor": "repo:bilqis_logic/kernel.py::TABLES+_operation"
+        },
+        {
+          "capability_id": "C.COUNT",
+          "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+          "oracle_id": "bilqis.independent-finite-numeric/v1",
+          "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+        },
+        {
+          "capability_id": "C.NUMBER",
+          "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+          "oracle_id": "bilqis.independent-finite-numeric/v1",
+          "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+        },
+        {
+          "capability_id": "C.SUCCESSOR",
+          "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+          "oracle_id": "bilqis.independent-finite-numeric/v1",
+          "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+        },
+        {
+          "capability_id": "C.ADD",
+          "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+          "oracle_id": "bilqis.independent-finite-numeric/v1",
+          "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+        },
+        {
+          "capability_id": "C.SUB",
+          "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+          "oracle_id": "bilqis.independent-finite-numeric/v1",
+          "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+        },
+        {
+          "capability_id": "C.MUL",
+          "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+          "oracle_id": "bilqis.independent-finite-numeric/v1",
+          "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+        },
+        {
+          "capability_id": "C.DIV",
+          "generator_id": "bilqis_mlx.numeric_curriculum.draw_numeric",
+          "oracle_id": "bilqis.independent-finite-numeric/v1",
+          "source_anchor": "https://ithkuil.net/newithkuil_13_numbers.htm"
+        }
+      ],
+      "source_attestation_sha256": "3b924650a9a709a79d3a25f87eaba561d37279836c25e96ef67bfb21ee464fa6"
+    }
+  }
+}
