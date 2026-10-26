@@ -952,30 +952,30 @@ class Dashboard:
                 latest=f"{latest_score[0]}/{latest_score[1]} @{latest_score[2]}"
                 best=f"{best_score[0]}/{best_score[1]} @{best_score[2]}"
             fields=[
-                ("BILQIS",school,22,False),
-                ("VER RUN/UI",f"{self.run_version or 'legacy'}/{self.ui_version}",13,False),
-                ("RUNTIME",_human_duration(elapsed),15,False),
+                ("ENTIF-AI/BILQIS-MLX",school,19,False),
+                ("V RUN/UI",f"{self.run_version or 'legacy'}/{self.ui_version}",12,False),
+                ("RUNTIME",_human_duration(elapsed),12,False),
             ]
             budget=self.time_budget_seconds
             if isinstance(budget,(int,float)) and budget>0:
                 percent=int(elapsed*100/budget+.5)
                 fields.append((
                     "MAX TIME",
-                    f"{percent}% / {_human_duration(budget)} max",
-                    16,
+                    f"{percent}% / {_human_duration(budget)}",
+                    12,
                     False,
                 ))
             fields.extend([
                 ("RUN",self.run_name or "-",23,False),
-                ("STEPS",step if step not in (None,'','?') else "-",7,True),
-                ("EXAM",exam if exam not in (None,'','?') else "-",6,True),
-                ("VISITS",visits if visits not in (None,'','?') else "-",7,True),
+                ("STEPS",step if step not in (None,'','?') else "-",6,True),
+                ("EXAM",exam if exam not in (None,'','?') else "-",5,True),
+                ("VISITS",visits if visits not in (None,'','?') else "-",6,True),
                 ("TEACHER",teacher if teacher not in (None,'','?') else "-",7,True),
                 ("GRADES",curriculum['grades'],6,True),
-                ("CAPS",curriculum['capabilities'],5,True),
-                ("INT ROOTS",self._number_semantics_text(),11,False),
-                ("STUDENT LATEST",latest,18,False),
-                ("STUDENT BEST",best,18,False),
+                ("CAPS",curriculum['capabilities'],4,True),
+                ("INTROOT",self._number_semantics_text(),7,False),
+                ("STUDENT LATEST",latest,17,False),
+                ("STUDENT BEST",best,17,False),
                 ("ST/M",round(self._steps_per_min)
                  if isinstance(self._steps_per_min,(int,float)) else "-",4,True),
                 ("RTN",retained if type(retained) is int else "-",3,True),
