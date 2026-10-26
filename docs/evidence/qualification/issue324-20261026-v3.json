@@ -43,7 +43,7 @@
     "wall_semantics": "SOFT_SESSION_LIMIT_AT_SAFE_BOUNDARY; DUE_EXAMS_AND_FINAL_CHECKPOINT_FINISH"
   },
   "budget_sha256": "7ebcd702dd9c6fe7dd3634e237d401078702c8d7afd4f9661b1a14910ea071ff",
-  "digest": "7c84593af015bc38119b0ff75ed64bd322efced17a661dffe3324d5480a5c556",
+  "digest": "7f1968f38b2a062df7dbaae586ccecc3327ff5885a72cb7c368938ecec92aea1",
   "evaluation": {
     "acquisition_seed": 32401,
     "criterion": {
@@ -279,7 +279,7 @@
       "bilqis_mlx/runtime/outbox_lineage.py": "bf7374f32b8da94b517ceefb8d41690ba608b7b3c5addd5f6565e1f50e2af76d",
       "bilqis_mlx/runtime/qualification.py": "b0bcad50dabf4acbd2439f5d81a627c8375ac6e1b4328de30fb949896c652487",
       "bilqis_mlx/runtime/qualification_manifest.py": "231bf23f9bad7be783a26b33d1448bd843fbfdf48ad651a78def4c1afdd26bad",
-      "bilqis_mlx/runtime/qualification_results.py": "bd8e475a27e416eeb5ff5b89c06d2c7a7b343fc8b2820c76bf14af1023ca6325",
+      "bilqis_mlx/runtime/qualification_results.py": "a1a340aa6ea5a05ba94eadad8f507f110fe0493f996e6ea823491f3152fd330f",
       "bilqis_mlx/runtime/reconciliation.py": "dbf8f5318884ae67400133daead2f6a6fdc47f84d87655c95567d6f41e6e3507",
       "bilqis_mlx/runtime/release_adoption.py": "0e6a7b02c1aeea24ded5946f8250686fd6644045dc6e33744f38bc489faa848e",
       "bilqis_mlx/runtime/session.py": "cb1cd749338d914dd0a1c76b57a3a90e800a0c9b4538db8ca9084fa770422717",
@@ -339,7 +339,7 @@
       "bilqis_mlx/vocabulary_growth.py": "173e40a1eaab0bbdaa6d7e300073150467be68b5387ad5a1347bd762ce07cbb5",
       "bilqis_mlx/vocabulary_probe.py": "8e6a4f5f989c5b0379f76a38c96fd46dd11a6a85294cb8d94d04b43335948cda"
     },
-    "head": "895a15321020c379d4bf4b12a55d55e45511a4a3",
+    "head": "2e5ee21a97a66c683c61f74419da03500c30d2c4",
     "provider": {
       "implementation": "bilqis.mlx.causal-tied-fp32/v1",
       "precision": "fp32",

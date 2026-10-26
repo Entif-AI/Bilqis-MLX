@@ -1,7 +1,7 @@
 {
-  "canonical_manifest_sha256": "7c84593af015bc38119b0ff75ed64bd322efced17a661dffe3324d5480a5c556",
-  "implementation_head": "895a15321020c379d4bf4b12a55d55e45511a4a3",
-  "manifest_file_sha256": "cc1b421aeedb489abb5045a6fd84641ffeb6e20b7509661a6e66e3c77b26ca82",
+  "canonical_manifest_sha256": "7f1968f38b2a062df7dbaae586ccecc3327ff5885a72cb7c368938ecec92aea1",
+  "implementation_head": "2e5ee21a97a66c683c61f74419da03500c30d2c4",
+  "manifest_file_sha256": "d0653159f371cdc826beccf61ce660da0078457fd84ba786477bc2ea8ecf20b4",
   "policy_sha256": "733453ffcadebf641a9a789754919c9e82cb11c7c544a8eb6452f4005dc78775",
   "supersedes_manifest_sha256": "167c308831e95a1aa13a18b04608957b786281a030022ef6de3e2d0634cd964a"
 }

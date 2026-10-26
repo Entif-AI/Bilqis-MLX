@@ -12,7 +12,7 @@
     "steps_per_visit": 16,
     "wall_semantics": "SOFT_SESSION_LIMIT_AT_SAFE_BOUNDARY; DUE_EXAMS_AND_FINAL_CHECKPOINT_FINISH"
   },
-  "manifest_sha256": "7c84593af015bc38119b0ff75ed64bd322efced17a661dffe3324d5480a5c556",
+  "manifest_sha256": "7f1968f38b2a062df7dbaae586ccecc3327ff5885a72cb7c368938ecec92aea1",
   "neural_authority": false,
   "numeric_maximum": 8,
   "run_dir": "/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026/runs/qualification-324-baseline",
