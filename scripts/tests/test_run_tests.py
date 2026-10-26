@@ -95,6 +95,39 @@ class RunTestsTests(unittest.TestCase):
         self.assertIn("TEST_TOTALS total=0 passed=0 failed=0 skipped=0", output.getvalue())
         self.assertIn("0 passed, 0 failed, 0 skipped", output.getvalue())
 
+    def test_default_discovery_can_exclude_verified_ithkuil_suite(self):
+        runner = _runner_module()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            normal = root / "tests" / "test_normal.py"
+            skos = root / "lib" / "ithkuil" / "tests" / "test_skos_big.py"
+            for path in (normal, skos):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(
+                    "import unittest\nclass Example(unittest.TestCase):\n"
+                    "    def test_ok(self): pass\n")
+            discovered = runner.discover_test_files(root)
+            filtered = runner.exclude_ithkuil_tests(discovered, root)
+            self.assertEqual(filtered, (normal,))
+
+    def test_directory_target_loads_all_tests_below_that_directory(self):
+        runner = _runner_module()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tests = root / "lib" / "ithkuil" / "tests"
+            for name in ("test_one.py", "test_two.py"):
+                path = tests / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(
+                    "import unittest\nclass Example(unittest.TestCase):\n"
+                    "    def test_ok(self): pass\n")
+            suite = runner._load_targets((str(tests),), root)
+            result = unittest.TestResult()
+            suite.run(result)
+            self.assertEqual(result.testsRun, 2)
+            self.assertFalse(result.errors)
+            self.assertFalse(result.failures)
+
     def test_import_errors_are_reported_by_unittest(self):
         runner = _runner_module()
         with tempfile.TemporaryDirectory() as temporary:
