@@ -58,7 +58,7 @@ The former Bilqis implementations are preserved as pinned, read-only source depe
 
 ![Bilqis live training dashboard showing a two-row run cockpit above candidate evaluation, sentinel and teacher telemetry, system qualification state, and per-capability curriculum mastery.](docs/evidence/diagnostics/images/bilqis-dashboard-prometheus.png)
 
-*A live Bilqis training run in the operator dashboard. The cockpit summarizes runtime and whole-student progress while the panes expose candidate retention, sentinel and teacher evidence, qualification state, and curriculum mastery at a glance.*
+*A live Bilqis training run in the operator dashboard. The cockpit summarizes runtime and whole-student progress while the panes expose candidate retention, sentinel and teacher evidence, qualification state, and curriculum mastery at a glance. `VER RUN/UI` shows the trainer session's recorded SemVer first and the observer/dashboard checkout second. Historical runs that predate version telemetry display `legacy/<ui-version>` rather than borrowing the observer version.*
 
 ## Keep training the existing student
 
@@ -174,6 +174,6 @@ python3 -B scripts/check_historical_abi.py
 python3 -B scripts/check_semantic_boundaries.py
 ```
 
-The portable Linux GitHub Actions jobs verify source, semantic ABI, release manifests, selected neural-inert tests and regression-aware code hygiene. Full neural testing is Apple Silicon only. Conventional Commits, Semantic Versioning and a dated `CHANGELOG.md` govern private releases. Tag an immutable annotated `vMAJOR.MINOR.PATCH` on a verified clean `main`; the tag workflow validates and publishes private release notes. See [contribution and release rules](CONTRIBUTING.md).
+The portable Linux GitHub Actions jobs verify source, semantic ABI, release manifests, selected neural-inert tests and regression-aware code hygiene. Full neural testing is Apple Silicon only. Conventional Commits, Semantic Versioning and a dated `CHANGELOG.md` govern source releases. Tag an immutable annotated `vMAJOR.MINOR.PATCH` on a verified clean `main`; the tag workflow validates and publishes release notes. See [contribution and release rules](CONTRIBUTING.md).
 
 For detailed historical decision-making and source provenance, read [ADR.md](ADR.md), [AGENTS.md](AGENTS.md) and the [archived pre-consolidation README](docs/history/README_PRE_CANONICAL_20261017.md). Historical example paths in old research papers are **provenance**, not current operator commands. Protected research contracts must not be copied into public repositories.

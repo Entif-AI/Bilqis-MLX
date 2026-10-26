@@ -211,7 +211,8 @@ class SchoolTelemetryTests(unittest.TestCase):
             board.school_telemetry.begin_execution(grade="A", step=120)
             ingest(board, {"event": "SCHOOL_SESSION_STARTED", "grade": "A",
                            "generation": 20, "optimizer_step": 120,
-                           "checkpoint_sha256": "a" * 64})
+                           "checkpoint_sha256": "a" * 64,
+                           "software_version": "9.8.7"})
             ingest(board, exam("A", 30, "rubric-a", {"A.IDENTITY": (8, 12)},
                                step=136))
 
@@ -224,8 +225,20 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(mastery["best"], "10/12")
             self.assertIn("START", " ".join(board.operator_lines))
             display = board.render(width=180, height=42)
+            self.assertEqual(board.run_version, "9.8.7")
+            self.assertIn("9.8.7/0.3.0", display)
             self.assertNotIn("START", display)
             self.assertNotIn("FIRST", display)
+
+    def test_unversioned_legacy_run_does_not_borrow_dashboard_ui_version(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                          tables=LETTER_TABLES, compact_header=True)
+
+        rendered = board.render(width=240, height=30)
+
+        self.assertIsNone(board.run_version)
+        self.assertIn("VER RUN/UI", rendered)
+        self.assertIn("legacy/", rendered)
 
     def test_begin_execution_resets_replayed_visit_counter(self):
         with tempfile.TemporaryDirectory() as tmp:

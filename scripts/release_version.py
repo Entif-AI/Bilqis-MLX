@@ -40,7 +40,12 @@ def version_contract(root: Path, *, require_tag: bool = False) -> dict:
     project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     package = json.loads((root / "package.json").read_text(encoding="utf-8"))
     version = project["project"]["version"]
-    if not VERSION.fullmatch(version) or package.get("version") != version:
+    python_init = (root / "bilqis_mlx" / "__init__.py").read_text(encoding="utf-8")
+    python_match = re.search(
+        r'^__version__\s*=\s*["\']([^"\']+)["\']\s*$', python_init, re.M)
+    python_version = python_match.group(1) if python_match else None
+    if (not VERSION.fullmatch(version) or package.get("version") != version or
+            python_version != version):
         raise ValueError("RELEASE_SEMVER_OR_MANIFEST_MISMATCH")
     notes = changelog_section((root / "CHANGELOG.md").read_text(encoding="utf-8"), version)
     tag = "v" + version

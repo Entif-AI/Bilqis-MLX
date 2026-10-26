@@ -1654,3 +1654,27 @@ retention, source/oracle truth, custody, AdamW, promotion and qualification auth
 are unchanged. Teacher vNext's `StudentRegion` remains the longer-term generalization
 surface; exact checkpoint identity here is used only to prevent redundant retries
 against an actually unchanged learner, not as the predictive region key.
+
+
+## ADR-107 | 2026-10-25 | Trainer software identity is SemVer-governed and run-owned
+
+**Direct user request to make fast-moving trainer changes operationally legible.**
+Bilqis MLX software releases use Semantic Versioning, a dated checked-in changelog,
+and one version value shared by the Python package, Python project manifest and npm
+manifest. Compatible fixes increment PATCH, backward-compatible capability additions
+increment MINOR, and breaking software/runtime contracts increment MAJOR. A release
+tranche updates its version and changelog together; immutable release tags remain
+`vMAJOR.MINOR.PATCH` after reviewed integration.
+
+The dashboard distinguishes the version of the trainer that produced the run from the
+version of the dashboard code rendering it. `SCHOOL_SESSION_STARTED` records the
+trainer `software_version`, and the active receipt carries the same value for durable
+readback. A detached dashboard displays that run-owned value when available and its
+own UI package version separately. Historical sessions that predate software-version
+telemetry are explicitly displayed as `unversioned`; they must never borrow the
+version number of a newer observer checkout.
+
+The first release under this clarified operator contract is `0.3.0`. This versioning
+surface is provenance and operator telemetry only: it does not alter neural state,
+curriculum authority, retention, custody, promotion, qualification or championship
+semantics.

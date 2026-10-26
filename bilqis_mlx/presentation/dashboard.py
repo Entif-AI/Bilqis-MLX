@@ -35,6 +35,8 @@ def _initialize_board(board: Dashboard, run_dir: Path, state, school, active,
         "current_student", {}).get("optimizer_step", AUDITED_PARENT.optimizer_step)
     phase = school.get("stage", "READY_FOR_HUMAN_START")
     board.run_name = run_dir.name
+    if state and isinstance(state.get("software_version"), str):
+        board.run_version = state["software_version"]
     board.mode = "READ-ONLY"
     board.set_number_semantics(number_semantics_from_state(state))
     board.push("state", {

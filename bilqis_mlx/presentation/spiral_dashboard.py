@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 import re
 from pathlib import Path
+from bilqis_mlx import __version__ as SOFTWARE_VERSION
 from bilqis_mlx.state_dag import read_current, read_current_fields
 from .operator_status import (
     NOTICE_TTL_SECONDS,
@@ -35,7 +36,6 @@ import shutil
 import signal
 import sys
 import time
-
 @dataclass(frozen=True)
 class Column:
     name: str
@@ -417,6 +417,7 @@ class Dashboard:
         self.mode="LIVE"
         self.log_hint=""
         self.run_name=""
+        self.run_version=None; self.ui_version=SOFTWARE_VERSION
         self.time_budget_seconds=None
         self.title=title
         self.compact_header=compact_header
@@ -913,8 +914,9 @@ class Dashboard:
         width=max(30,size.columns if width is None else width)
         height=max(6,size.lines if height is None else height)
         state=self.state
-        headline=(f"{self.title}     {self.mode}   "
-                  f"{self.clock()-self.started:.0f}s elapsed")
+        run_version=(f"v{self.run_version}" if self.run_version else "unversioned")
+        headline=(f"{self.title} RUN {run_version} | UI v{self.ui_version}     "
+                  f"{self.mode}   {self.clock()-self.started:.0f}s elapsed")
         status=(f"{state.get('phase','INIT')}  next {state.get('next','-')} "
                 f"| prefix {state.get('prefix','-')} "
                 f"| fail {state.get('failures','-')}/{state.get('max_failures','-')} "
@@ -952,6 +954,7 @@ class Dashboard:
                 best=f"{best_score[0]}/{best_score[1]} @{best_score[2]}"
             fields=[
                 ("BILQIS",school,22,False),
+                ("VER RUN/UI",f"{self.run_version or 'legacy'}/{self.ui_version}",13,False),
                 ("RUNTIME",_human_duration(elapsed),15,False),
             ]
             budget=self.time_budget_seconds

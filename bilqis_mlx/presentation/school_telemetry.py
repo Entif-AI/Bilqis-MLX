@@ -573,6 +573,9 @@ class SchoolTelemetry:
             prefix=grade or self.board.state.get("prefix"), visits=0, _rate_sample_eligible=True)
 
     def _start(self, grade, event):
+        version = event.get("software_version")
+        if isinstance(version, str) and version:
+            self.board.run_version = version
         self.begin_execution(grade=grade, step=event.get("optimizer_step"))
 
     def _progress(self, grade, event):

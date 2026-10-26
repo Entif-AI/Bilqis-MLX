@@ -16,6 +16,8 @@ Run `python3 -B -m unittest discover -s tests -q` on Apple Silicon for the full 
 
 ## Release discipline
 
-Tag releases with immutable annotated SemVer tags `vMAJOR.MINOR.PATCH`. Python and npm project versions must agree, and `CHANGELOG.md` must include a dated version section. Run `npm run release:check` before tagging. Verify the release tag points at the same reviewed commit on `main`. `.github/workflows/release.yml` checks the tag and publishes a private GitHub Release with notes derived from the checked-in changelog.
+Tag releases with immutable annotated SemVer tags `vMAJOR.MINOR.PATCH`. The Python package, `pyproject.toml`, and npm project versions must agree, and `CHANGELOG.md` must include a dated version section. Run `npm run release:check` before tagging. Verify the release tag points at the same reviewed commit on `main`. `.github/workflows/release.yml` checks the tag and publishes release notes derived from the checked-in changelog.
+
+Every integrated trainer/runtime/dashboard tranche must choose its SemVer effect explicitly: patch for compatible corrections, minor for backward-compatible capability additions, and major for breaking contracts. Update the checked-in version and changelog in the same integration tranche. The operator dashboard displays the active run's recorded software version; `SCHOOL_SESSION_STARTED` events carry that version so a detached observer does not confuse an older running trainer with a newer checkout.
 
 Never re-tag a release after publication. Use another patch version to correct an error. Experimental checkpoint scores and best-of-history markers are not claims of qualified neural performance.
