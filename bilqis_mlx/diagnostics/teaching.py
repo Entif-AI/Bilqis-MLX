@@ -26,11 +26,7 @@ class LessonStepEvidence:
 
 def _capability_id(candidate) -> str:
     identity = getattr(candidate, "id", None)
-    if identity is None:
-        identity = getattr(candidate, "capability_id", None)
-    if not isinstance(identity, str) or not identity:
-        raise ValueError("LESSON_EVIDENCE_INVALID_CAPABILITY_AUTHORITY")
-    return identity
+    return identity if identity is not None else candidate.capability_id
 
 
 def inspect_lesson_step(course, capability: str, offered: list[dict],
