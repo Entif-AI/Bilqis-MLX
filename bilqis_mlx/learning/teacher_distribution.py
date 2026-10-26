@@ -8,7 +8,7 @@ import json
 import math
 
 from bilqis_mlx.compatibility.historical_teacher_policy import KNOBS
-from bilqis_mlx.learning.teacher_outcomes import MODEL_SCHEMA, proposed_action
+from bilqis_mlx.learning.teacher_outcomes import backoff_records, proposed_action
 
 
 class TeacherDistributionError(str, Enum):
@@ -41,22 +41,6 @@ DEFAULT_DISTRIBUTION_POLICY = DistributionPolicy(
     samples=4,
     log_lr_jitter=.12,
 )
-
-
-def _region_records(teacher: dict, region: dict) -> tuple[dict, ...]:
-    model = teacher.get("outcome_model")
-    if not isinstance(model, dict) or model.get("schema") != MODEL_SCHEMA:
-        return ()
-    key = region.get("key")
-    if not isinstance(key, str):
-        raise ValueError(TeacherDistributionError.REGION_INVALID.value)
-    return tuple(
-        record for record in model.get("contexts", {}).values()
-        if isinstance(record, dict) and
-        isinstance(record.get("region"), dict) and
-        record["region"].get("key") == key and
-        int(record.get("trials", 0)) > 0
-    )
 
 
 def _utility(record: dict) -> float:
@@ -111,7 +95,12 @@ def learned_proposals(teacher: dict, *, region: dict, rng,
                       policy: DistributionPolicy = DEFAULT_DISTRIBUTION_POLICY,
                       candidate_steps: int, batch_size: int) -> dict:
     """Fit a bounded local distribution and sample shadow-only interventions."""
-    rows = _region_records(teacher, region)
+    if not isinstance(region.get("key"), str):
+        raise ValueError(TeacherDistributionError.REGION_INVALID.value)
+    evidence_level, rows = backoff_records(
+        teacher, region=region,
+        minimum_observations=policy.minimum_observations,
+        minimum_retained=policy.minimum_retained)
     observations = sum(int(record["trials"]) for record in rows)
     retained = sum(int(record["retained"]) for record in rows)
     qualified = (
@@ -123,6 +112,7 @@ def learned_proposals(teacher: dict, *, region: dict, rng,
         "policy_version": policy.version,
         "observations": observations,
         "retained": retained,
+        "evidence_level": evidence_level,
         "status": "QUALIFIED" if qualified else "NOT_QUALIFIED",
         "proposals": [],
         "actual_authority_changed": False,

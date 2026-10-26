@@ -35,6 +35,7 @@ SCORE_PAIR_LENGTH = 2
 
 class TeacherOutcomeError(str, Enum):
     ACTION_INVALID = "TEACHER_OUTCOME_ACTION_INVALID"
+    BACKOFF_POLICY_INVALID = "TEACHER_OUTCOME_BACKOFF_POLICY_INVALID"
     HEALTH_OBSERVATION_INVALID = "TEACHER_HEALTH_OBSERVATION_INVALID"
     HEALTH_POLICY_INVALID = "TEACHER_HEALTH_POLICY_INVALID"
     MODEL_DRIFT = "TEACHER_OUTCOME_MODEL_DRIFT"
@@ -80,6 +81,39 @@ DEFAULT_HEALTH_POLICY = HealthPolicy(
     minimum_support=8,
     exhausted_zero_retention_visits=16,
     low_yield_retention_fraction=.10,
+)
+
+
+@dataclass(frozen=True)
+class BackoffPolicy:
+    version: str
+    minimum_observations: int
+
+    def __post_init__(self) -> None:
+        if (not self.version or type(self.minimum_observations) is not int or
+                self.minimum_observations < 1):
+            raise ValueError(TeacherOutcomeError.BACKOFF_POLICY_INVALID.value)
+
+
+DEFAULT_BACKOFF_POLICY = BackoffPolicy(
+    version="teacher-outcome-backoff/v1",
+    minimum_observations=8,
+)
+
+
+BACKOFF_LEVELS = (
+    ("EXACT", ("key",)),
+    ("CAPABILITY_PHASE", (
+        "capability", "phase", "lesson_grade", "curriculum_scope",
+        "geometry_epoch", "numeric_maximum")),
+    ("CAPABILITY", (
+        "capability", "lesson_grade", "curriculum_scope",
+        "geometry_epoch", "numeric_maximum")),
+    ("GRADE_PHASE", (
+        "lesson_grade", "phase", "curriculum_scope",
+        "geometry_epoch", "numeric_maximum")),
+    ("GRADE", (
+        "lesson_grade", "curriculum_scope", "geometry_epoch", "numeric_maximum")),
 )
 
 
@@ -293,6 +327,46 @@ def _context_key(region: dict, action: dict) -> str:
     return region["key"] + "|" + action_key
 
 
+def _region_matches(candidate: dict, target: dict, fields: tuple[str, ...]) -> bool:
+    return all(candidate.get(field) == target.get(field) for field in fields)
+
+
+def backoff_records(teacher: dict, *, region: dict, minimum_observations: int,
+                    minimum_retained: int = 0,
+                    effective_policy_key: str | None = None,
+                    candidate_steps: int | None = None,
+                    batch_size: int | None = None) -> tuple[str, tuple[dict, ...]]:
+    """Return the nearest sufficiently supported compatible evidence neighborhood."""
+    if (type(minimum_observations) is not int or minimum_observations < 1 or
+            type(minimum_retained) is not int or minimum_retained < 0):
+        raise ValueError(TeacherOutcomeError.BACKOFF_POLICY_INVALID.value)
+    model = teacher.get("outcome_model")
+    if not isinstance(model, dict) or model.get("schema") != MODEL_SCHEMA:
+        return "PRIOR", ()
+    contexts = tuple(
+        record for record in model.get("contexts", {}).values()
+        if isinstance(record, dict) and int(record.get("trials", 0)) > 0 and
+        (effective_policy_key is None or
+         record.get("action", {}).get("effective_policy_key") == effective_policy_key) and
+        (candidate_steps is None or
+         record.get("action", {}).get("parameters", {}).get("candidate_steps") ==
+         candidate_steps) and
+        (batch_size is None or
+         record.get("action", {}).get("parameters", {}).get("batch_size") == batch_size)
+    )
+    for level, fields in BACKOFF_LEVELS:
+        rows = tuple(
+            record for record in contexts
+            if isinstance(record.get("region"), dict) and
+            _region_matches(record["region"], region, fields)
+        )
+        observations = sum(int(record.get("trials", 0)) for record in rows)
+        retained = sum(int(record.get("retained", 0)) for record in rows)
+        if observations >= minimum_observations and retained >= minimum_retained:
+            return level, rows
+    return "PRIOR", ()
+
+
 def _finite_number(value, *, name: str, minimum: float | None = None) -> float:
     if not isinstance(value, (int, float)) or not math.isfinite(value):
         raise ValueError(name)
@@ -480,6 +554,80 @@ def predict(teacher: dict, *, region: dict, action: dict) -> dict:
         "mean_worst_protected_loss": record["worst_protected_loss_sum"] / trials,
         "rejection_reasons": dict(sorted(record["rejection_reasons"].items())),
     }
+
+
+def _predict_from_records(records: tuple[dict, ...]) -> dict:
+    trials = sum(int(record["trials"]) for record in records)
+    retained = sum(int(record["retained"]) for record in records)
+    if trials == 0:
+        return {
+            "trials": 0, "retained": 0,
+            "retention_probability": .5,
+            "retention_interval": (0., 1.),
+            "expected_target_delta": 0.,
+            "target_delta_standard_error": 0.,
+            "expected_protected_net_delta": 0.,
+            "protected_delta_standard_error": 0.,
+            "expected_candidate_steps": 0.,
+            "expected_retained_steps": 0.,
+            "expected_wall_seconds": 0.,
+            "wall_seconds_standard_error": 0.,
+        }
+    target_sum = sum(float(record["target_delta_sum"]) for record in records)
+    target_sq_sum = sum(float(record["target_delta_sq_sum"]) for record in records)
+    protected_sum = sum(float(record["protected_net_delta_sum"]) for record in records)
+    protected_sq_sum = sum(
+        float(record["protected_net_delta_sq_sum"]) for record in records)
+    wall_sum = sum(float(record["wall_seconds_sum"]) for record in records)
+    wall_sq_sum = sum(float(record["wall_seconds_sq_sum"]) for record in records)
+    rejection_reasons = {}
+    for record in records:
+        for reason, count in record.get("rejection_reasons", {}).items():
+            rejection_reasons[reason] = rejection_reasons.get(reason, 0) + int(count)
+    return {
+        "trials": trials,
+        "retained": retained,
+        "retention_probability": retained / trials,
+        "retention_interval": _wilson(retained, trials),
+        "expected_target_delta": target_sum / trials,
+        "target_delta_standard_error": _standard_error(
+            target_sum, target_sq_sum, trials),
+        "expected_protected_net_delta": protected_sum / trials,
+        "protected_delta_standard_error": _standard_error(
+            protected_sum, protected_sq_sum, trials),
+        "expected_candidate_steps": sum(
+            float(record["attempted_steps_sum"]) for record in records) / trials,
+        "expected_retained_steps": sum(
+            float(record["retained_steps_sum"]) for record in records) / trials,
+        "expected_wall_seconds": wall_sum / trials,
+        "wall_seconds_standard_error": _standard_error(
+            wall_sum, wall_sq_sum, trials),
+        "mean_worst_protected_loss": sum(
+            float(record["worst_protected_loss_sum"]) for record in records) / trials,
+        "rejection_reasons": dict(sorted(rejection_reasons.items())),
+    }
+
+
+def predict_backoff(teacher: dict, *, region: dict, action: dict,
+                    policy: BackoffPolicy = DEFAULT_BACKOFF_POLICY) -> dict:
+    """Predict from the nearest compatible region with enough action evidence."""
+    _validate_action(action)
+    level, rows = backoff_records(
+        teacher, region=region,
+        minimum_observations=policy.minimum_observations,
+        effective_policy_key=action["effective_policy_key"],
+        candidate_steps=action.get("parameters", {}).get("candidate_steps"),
+        batch_size=action.get("parameters", {}).get("batch_size"))
+    estimate = _predict_from_records(rows)
+    estimate.update({
+        "evidence_level": level,
+        "evidence_region_count": len({
+            record.get("region", {}).get("key") for record in rows
+            if isinstance(record.get("region"), dict)
+        }),
+        "backoff_policy_version": policy.version,
+    })
+    return estimate
 
 
 def health_summary(observations, *, policy: HealthPolicy = DEFAULT_HEALTH_POLICY) -> dict:

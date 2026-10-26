@@ -802,6 +802,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     def population_metadata():
         return {
             "active_effective_strategy_count": len(active_effective),
+            "active_effective_strategy_keys": list(active_effective),
             "dormant_effective_strategy_count": len(inventory) - len(active_effective),
             "strategy_archive_count": len(teacher.get("strategies", {})),
             "checkpoint_retired_effective_strategy_count": len(retired_effective),

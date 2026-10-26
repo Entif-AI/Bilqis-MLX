@@ -3,6 +3,62 @@ from types import SimpleNamespace
 import random
 
 
+def _prometheus_canary_fixture():
+    from bilqis_mlx.learning.learning_experiment import VERSION
+    from bilqis_mlx.learning.teacher_outcomes import (
+        observe, proposed_action, student_region,
+    )
+    from bilqis_mlx.learning.teacher_strategy_population import effective_policy_key
+
+    strategies = {
+        "policy-a": {"lr": .00008, "old": 8, "preview": 0,
+                     "depth": 1, "contrast": 0., "distill": .15},
+        "policy-b": {"lr": .0003, "old": 20, "preview": 0,
+                     "depth": 4, "contrast": 1., "distill": .65},
+    }
+    ordered = sorted(strategies, key=lambda key: effective_policy_key(strategies[key]))
+    vnext_key, legacy_key = ordered[0], ordered[-1]
+    teacher = {
+        "strategies": strategies,
+        "global_stats": {key: {"trials": 0, "reward_sum": 0., "reward_ema": 0.,
+                               "latest": None} for key in strategies},
+        "grade_stats": {}, "events": 0, "mutations": 0,
+        "causal_experiment": {"version": VERSION, "contexts": {},
+                              "negative_archetypes": [], "events": 0},
+    }
+    region = student_region(
+        capability="C.SUB", phase="RECOVERY_1", lesson_grade="C",
+        curriculum_scope="scope/7", geometry_epoch="integer-v1",
+        numeric_maximum=7, capability_correct=20, capability_total=33,
+        grade_correct=145, grade_total=165, rejection_streak=0,
+        attempts_since_retained=0, mastery_debt_count=2,
+        mastery_debt_capabilities=("B.AND", "C.SUB"))
+    action = proposed_action(
+        family="GLOBAL_CHALLENGER",
+        effective_policy_key=effective_policy_key(strategies[vnext_key]),
+        policy_key=vnext_key,
+        parameters={"lr": strategies[vnext_key]["lr"], "old": strategies[vnext_key]["old"],
+                    "distill": strategies[vnext_key]["distill"],
+                    "depth": "DEEP" if strategies[vnext_key]["depth"] >= 3 else "SHALLOW",
+                    "contrast": "DIVERSE" if strategies[vnext_key]["contrast"] >= .5 else "RANDOM",
+                    "candidate_steps": 16, "batch_size": 32})
+    for index in range(11):
+        observe(
+            teacher, region=region, action=action, retained=index < 4,
+            rejection_reason=("PAIRED_SCREEN_WITHIN_BUDGET"
+                              if index < 4 else "NO_MEASURABLE_TARGET_GAIN"),
+            target_delta=2 if index < 4 else 0, protected_net_delta=0,
+            worst_protected_loss=0, attempted_steps=16,
+            retained_steps=16 if index < 4 else 0, wall_seconds=1.)
+    receipt = {"generation": 100, "numeric_maximum": 7, "last_exam": {"scores": {
+        "C.SUB": {"correct": 20, "total": 33},
+        "C.COUNT": {"correct": 32, "total": 33}}}}
+    school = SimpleNamespace(
+        current_student=SimpleNamespace(sha256="a" * 64),
+        carried_mastery_debt=("B.AND", "C.SUB"))
+    return teacher, strategies, vnext_key, legacy_key, receipt, school
+
+
 class TeacherOutcomeContractTests(unittest.TestCase):
     def test_student_region_generalizes_across_exact_student_and_batch_identity(self):
         from bilqis_mlx.learning.teacher_outcomes import student_region
@@ -438,6 +494,197 @@ class TeacherOutcomeContractTests(unittest.TestCase):
         self.assertEqual(proposal["family"], "LEARNED_LOCAL_DISTRIBUTION")
         self.assertGreater(proposal["parameters"]["lr"], .00004)
         self.assertLess(proposal["parameters"]["lr"], .00008)
+
+    def test_backoff_prediction_pools_same_capability_without_aliasing_region_identity(self):
+        from bilqis_mlx.learning.teacher_outcomes import (
+            BackoffPolicy, observe, predict_backoff, proposed_action, student_region,
+        )
+
+        teacher = {}
+        action = proposed_action(
+            family="INCUMBENT_REPLAY", effective_policy_key="same-policy",
+            parameters={"lr": .00013, "old": 8, "depth": "DEEP",
+                        "contrast": "RANDOM", "distill": .15,
+                        "candidate_steps": 16, "batch_size": 32})
+        regions = []
+        for rejection_streak in (0, 5):
+            region = student_region(
+                capability="C.SUB", phase="RECOVERY_1", lesson_grade="C",
+                curriculum_scope="scope/7", geometry_epoch="integer-v1",
+                numeric_maximum=7, capability_correct=20, capability_total=33,
+                grade_correct=145, grade_total=165,
+                rejection_streak=rejection_streak,
+                attempts_since_retained=rejection_streak,
+                mastery_debt_count=4,
+                grade_capability_scores={"C.SUB": (20, 33), "C.COUNT": (32, 33)},
+                mastery_debt_capabilities=("A.LINK", "B.AND", "C.ADD", "C.SUB"))
+            regions.append(region)
+            for index in range(4):
+                observe(
+                    teacher, region=region, action=action,
+                    retained=index == 0,
+                    rejection_reason=("PAIRED_SCREEN_WITHIN_BUDGET"
+                                      if index == 0 else "NO_MEASURABLE_TARGET_GAIN"),
+                    target_delta=1 if index == 0 else 0,
+                    protected_net_delta=0, worst_protected_loss=0,
+                    attempted_steps=16, retained_steps=16 if index == 0 else 0,
+                    wall_seconds=1.)
+
+        self.assertNotEqual(regions[0]["key"], regions[1]["key"])
+        result = predict_backoff(
+            teacher, region=regions[0], action=action,
+            policy=BackoffPolicy(version="test", minimum_observations=8))
+
+        self.assertEqual(result["trials"], 8)
+        self.assertEqual(result["retained"], 2)
+        self.assertEqual(result["evidence_level"], "CAPABILITY_PHASE")
+        self.assertEqual(result["evidence_region_count"], 2)
+
+    def test_learned_distribution_qualifies_from_nearest_compatible_backoff_level(self):
+        from bilqis_mlx.learning.teacher_distribution import (
+            DistributionPolicy, learned_proposals,
+        )
+        from bilqis_mlx.learning.teacher_outcomes import (
+            observe, proposed_action, student_region,
+        )
+
+        teacher = {}
+        regions = []
+        for rejection_streak in (0, 5):
+            regions.append(student_region(
+                capability="B.IDBOOLOPS", phase="MAIN", lesson_grade="B",
+                curriculum_scope="scope/7", geometry_epoch="boolean-v1",
+                numeric_maximum=7, capability_correct=8, capability_total=12,
+                grade_correct=70, grade_total=96,
+                rejection_streak=rejection_streak,
+                attempts_since_retained=rejection_streak,
+                mastery_debt_count=3,
+                mastery_debt_capabilities=("A.LINK", "B.AND", "B.IDBOOLOPS")))
+        action = proposed_action(
+            family="INCUMBENT_REPLAY", effective_policy_key="productive",
+            parameters={"lr": .00013, "old": 8, "depth": "SHALLOW",
+                        "contrast": "DIVERSE", "distill": .15,
+                        "candidate_steps": 16, "batch_size": 32})
+        for region in regions:
+            for index in range(8):
+                observe(
+                    teacher, region=region, action=action,
+                    retained=index < 2,
+                    rejection_reason=("PAIRED_SCREEN_WITHIN_BUDGET"
+                                      if index < 2 else "NO_MEASURABLE_TARGET_GAIN"),
+                    target_delta=1 if index < 2 else 0,
+                    protected_net_delta=0, worst_protected_loss=0,
+                    attempted_steps=16, retained_steps=16 if index < 2 else 0,
+                    wall_seconds=1.)
+        policy = DistributionPolicy(
+            version="test", minimum_observations=16,
+            minimum_retained=3, samples=1, log_lr_jitter=0.)
+
+        result = learned_proposals(
+            teacher, region=regions[0], rng=random.Random(2), policy=policy,
+            candidate_steps=16, batch_size=32)
+
+        self.assertEqual(result["status"], "QUALIFIED")
+        self.assertEqual(result["observations"], 16)
+        self.assertEqual(result["retained"], 4)
+        self.assertEqual(result["evidence_level"], "CAPABILITY_PHASE")
+
+    def test_vnext_canary_is_bounded_and_falls_back_when_evidence_is_underpowered(self):
+        from bilqis_mlx.learning.teacher_outcomes import (
+            observe, proposed_action, student_region,
+        )
+        from bilqis_mlx.learning.teacher_proposals import select_canary_proposal
+
+        region = student_region(
+            capability="C.SUB", phase="RECOVERY_1", lesson_grade="C",
+            curriculum_scope="scope/7", geometry_epoch="integer-v1",
+            numeric_maximum=7, capability_correct=20, capability_total=33,
+            grade_correct=145, grade_total=165, rejection_streak=2,
+            attempts_since_retained=2, mastery_debt_count=2,
+            mastery_debt_capabilities=("B.AND", "C.SUB"))
+        teacher = {
+            "strategies": {
+                "good": {"lr": .00013, "old": 8, "preview": 0,
+                         "depth": 3, "contrast": 0., "distill": .15},
+                "bad": {"lr": .0003, "old": 20, "preview": 0,
+                        "depth": 4, "contrast": 1., "distill": .65},
+            },
+        }
+        good = proposed_action(
+            family="INCUMBENT_REPLAY", effective_policy_key="placeholder",
+            policy_key="good", parameters={"lr": .00013, "old": 8,
+            "depth": "DEEP", "contrast": "RANDOM", "distill": .15,
+            "candidate_steps": 16, "batch_size": 32})
+        bad = proposed_action(
+            family="GLOBAL_CHALLENGER", effective_policy_key="placeholder-2",
+            policy_key="bad", parameters={"lr": .0003, "old": 20,
+            "depth": "DEEP", "contrast": "DIVERSE", "distill": .65,
+            "candidate_steps": 16, "batch_size": 32})
+
+        underpowered = select_canary_proposal(
+            teacher, region=region, proposals=(good, bad),
+            candidate_ordinal=8, rng=random.Random(1))
+        self.assertEqual(underpowered["status"], "FALLBACK_UNDERPOWERED")
+        self.assertFalse(underpowered["actual_authority_changed"])
+
+        for index in range(8):
+            observe(
+                teacher, region=region, action=good,
+                retained=index < 3,
+                rejection_reason=("PAIRED_SCREEN_WITHIN_BUDGET"
+                                  if index < 3 else "NO_MEASURABLE_TARGET_GAIN"),
+                target_delta=2 if index < 3 else 0,
+                protected_net_delta=0, worst_protected_loss=0,
+                attempted_steps=16, retained_steps=16 if index < 3 else 0,
+                wall_seconds=1.)
+            observe(
+                teacher, region=region, action=bad,
+                retained=False, rejection_reason="PROTECTED_CAPABILITY_REGRESSION",
+                target_delta=0, protected_net_delta=-2, worst_protected_loss=2,
+                attempted_steps=16, retained_steps=0, wall_seconds=1.)
+
+        not_due = select_canary_proposal(
+            teacher, region=region, proposals=(good, bad),
+            candidate_ordinal=9, rng=random.Random(1))
+        self.assertEqual(not_due["status"], "NOT_SCHEDULED")
+        selected = select_canary_proposal(
+            teacher, region=region, proposals=(good, bad),
+            candidate_ordinal=12, rng=random.Random(1))
+        self.assertEqual(selected["status"], "SELECTED")
+        self.assertTrue(selected["actual_authority_changed"])
+        self.assertEqual(selected["selected"]["proposal"]["policy_key"], "good")
+
+        retired = select_canary_proposal(
+            teacher, region=region, proposals=(good, bad),
+            candidate_ordinal=12, rng=random.Random(1),
+            allowed_effective_policy_keys={"placeholder-2"})
+        self.assertEqual(retired["status"], "FALLBACK_UNDERPOWERED")
+        self.assertFalse(retired["actual_authority_changed"])
+
+    def test_prometheus_selector_canary_overrides_legacy_only_on_supported_slot(self):
+        from bilqis_mlx.runtime.teacher_outcome_runtime import select_policy_and_prepare
+
+        teacher, strategies, vnext_key, legacy_key, receipt, school = (
+            _prometheus_canary_fixture())
+
+        class LegacyEngine:
+            @staticmethod
+            def pick_existing(_teacher, _grade, _rng, exclude=None):
+                self.assertNotIn(legacy_key, set(exclude or ()))
+                return legacy_key, strategies[legacy_key]
+
+        policy_key, _policy, selection, prepared = select_policy_and_prepare(
+            LegacyEngine(), teacher, random.Random(3), receipt, school,
+            capability="C.SUB", phase="RECOVERY_1", lesson_grade="C",
+            curriculum_scope="scope/7", geometry_epoch="integer-v1",
+            diagnostics={}, learning_settings=object(),
+            candidate_steps=16, batch_size=32)
+
+        self.assertEqual(selection["origin"], "TEACHER_VNEXT_CANARY")
+        self.assertTrue(selection["actual_authority_changed"])
+        self.assertEqual(selection["legacy_policy_key"], legacy_key)
+        self.assertEqual(policy_key, vnext_key)
+        self.assertEqual(prepared.action["policy_key"], vnext_key)
 
 
 if __name__ == "__main__":

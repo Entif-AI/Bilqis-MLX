@@ -187,6 +187,7 @@ class TeacherFeedbackTests(unittest.TestCase):
         self.assertEqual(decision["policy_key"], "policy-1")
         self.assertEqual(decision["policy_selection"], {
             "origin":"INHERITED_LEGACY_UCB",
+            "actual_authority_changed":False,
             "diagnostic_context_consumed":False,
         })
         self.assertEqual(set(decision["opportunities"]), {
@@ -214,10 +215,35 @@ class TeacherFeedbackTests(unittest.TestCase):
         ))
         self.assertEqual(decision["policy_selection"], {
             "origin": "INHERITED_LEGACY_UCB",
+            "actual_authority_changed": False,
             "diagnostic_context_consumed": True,
             "diagnostic_context_key": "abc123",
         })
         self.assertEqual(len(decision["decision_id"]), 64)
+
+    def test_decision_records_vnext_canary_authority_and_legacy_counterfactual(self):
+        decision = summarize_teacher_decision(TeacherDecisionInput(
+            capability="C.SUB", policy_key="vnext-policy", warnings=(),
+            unresolved_miss_count=0, champion_candidate_count=0,
+            prerequisite_capabilities=(), methodology={},
+            delivered_examples=16, replayed_misses=0,
+            resolved_exam_misses=0, champion_prioritized=0, seed=46,
+            policy_selection_origin="TEACHER_VNEXT_CANARY",
+            actual_authority_changed=True,
+            legacy_policy_key="legacy-policy",
+            vnext_canary_status="SELECTED",
+            vnext_canary_policy_version="teacher-vnext-canary/v1",
+            vnext_evidence_level="CAPABILITY_PHASE",
+        ))
+        self.assertEqual(decision["policy_selection"], {
+            "origin": "TEACHER_VNEXT_CANARY",
+            "actual_authority_changed": True,
+            "diagnostic_context_consumed": False,
+            "legacy_policy_key": "legacy-policy",
+            "vnext_canary_status": "SELECTED",
+            "vnext_canary_policy_version": "teacher-vnext-canary/v1",
+            "vnext_evidence_level": "CAPABILITY_PHASE",
+        })
 
     def test_same_fixed_exam_gives_exact_delayed_outcome_and_ambiguity_control(self):
         previous = {"cohort_sha256":"c"*64, "optimizer_step":100,

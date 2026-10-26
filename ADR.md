@@ -1773,3 +1773,46 @@ than four observations, while the learned distribution requires at least 16 obse
 and three retentions. Do not lower those evidence thresholds or collapse materially
 different learner states merely to force qualification. Any future pooling/backoff or
 authority-transition design requires separate evidence and review.
+
+## ADR-111 | 2026-10-26 | Teacher vNext receives bounded proposal canary authority
+
+The first merged vNext calibration established that exact `StudentRegion` evidence was
+too fragmented to support a learned proposer: 267 candidate observations produced 223
+exact regions. The predictive contract therefore keeps every exact region and receipt
+unchanged while adding a versioned hierarchical evidence backoff. Prediction first uses
+exact evidence when supported, then progressively compatible capability+phase,
+capability, grade+phase, and grade neighborhoods. Curriculum scope, geometry epoch and
+numeric scope remain compatibility boundaries; exact checkpoint identity remains
+forbidden as a predictive region key.
+
+The learned local proposal distribution may use the nearest compatible backoff level,
+but its evidence gate remains unchanged at **16 observations and 3 retentions**. The
+system does not manufacture qualification by lowering support thresholds. Replay over
+160 states from the clean first merged-vNext run changes learned-distribution status
+from structurally starved to `QUALIFIED` in 95 states and `NOT_QUALIFIED` in 65.
+
+Teacher vNext now receives a deliberately bounded **real proposal-selection canary**.
+Every fourth actual teacher candidate is eligible. A canary proposal must map to an
+existing executable strategy, have at least eight compatible observations and at least
+one retained observation, and remain inside the legacy selector's post-retirement active
+effective-policy set. If any condition is missing, selection falls back to the inherited
+controller. Novel local/learned parameter proposals remain shadow-only until a separate
+non-archive custody and causal-credit path exists. This preserves the immutable
+historical strategy archive and prevents vNext from resurrecting a policy retired for
+same-student target inertia.
+
+The inherited controller still computes its selection first on every visit. Canary
+receipts preserve that `legacy_policy_key` as a counterfactual and explicitly record
+selector origin, actual authority change, vNext policy version, evidence level/support,
+selected family/policy and predicted retention. This makes the next bounded human run a
+direct vNext-versus-legacy experiment instead of another shadow-only observation hour.
+On a clean-run replay of the last 160 states, 40 canary slots were scheduled, 14 had
+enough retained evidence to select a vNext policy and 26 safely fell back; selected
+policies had mean predicted retention about 11.3% with a 6.25% minimum. These are
+counterfactual support diagnostics, not claimed realized improvement.
+
+This authority is only over **which valid teaching policy to try**. Source/oracle truth,
+lesson validation, candidate execution, retention admission, student/AdamW custody,
+promotion, qualification and championship authority are unchanged. Multi-fidelity
+early stopping remains shadow-only and is not activated by this decision. Neural
+training remains human-operated.

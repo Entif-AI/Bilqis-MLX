@@ -168,6 +168,85 @@ def _strategy_population_event(selection: dict) -> dict:
     }
 
 
+def _vnext_canary_event(selection: dict) -> dict | None:
+    canary = selection.get("vnext_canary")
+    if not isinstance(canary, dict):
+        return None
+    selected = canary.get("selected")
+    selected_proposal = (
+        selected.get("proposal") if isinstance(selected, dict) else None)
+    selected_prediction = (
+        selected.get("prediction") if isinstance(selected, dict) else None)
+    return {
+        "schema": canary.get("schema"),
+        "policy_version": canary.get("policy_version"),
+        "candidate_ordinal": canary.get("candidate_ordinal"),
+        "status": canary.get("status"),
+        "scheduled": bool(canary.get("scheduled")),
+        "actual_authority_changed": bool(canary.get("actual_authority_changed")),
+        "legacy_policy_key": selection.get("legacy_policy_key"),
+        "selected_policy_key": (
+            selected_proposal.get("policy_key")
+            if isinstance(selected_proposal, dict) else None),
+        "selected_family": (
+            selected_proposal.get("family")
+            if isinstance(selected_proposal, dict) else None),
+        "evidence_level": (
+            selected_prediction.get("evidence_level")
+            if isinstance(selected_prediction, dict) else None),
+        "evidence_trials": (
+            selected_prediction.get("trials")
+            if isinstance(selected_prediction, dict) else 0),
+        "predicted_retention_probability": (
+            selected_prediction.get("retention_probability")
+            if isinstance(selected_prediction, dict) else None),
+        "acquisition_score": (
+            selected.get("acquisition_score")
+            if isinstance(selected, dict) else None),
+        "executable_proposals": int(canary.get("executable_proposals", 0)),
+        "supported_proposals": int(canary.get("supported_proposals", 0)),
+    }
+
+
+def _teacher_selection_fields(selection: dict) -> dict:
+    canary = selection.get("vnext_canary") or {}
+    selected = canary.get("selected") or {}
+    prediction = selected.get("prediction") or {}
+    return {
+        "policy_selection_origin": selection.get(
+            "origin", "INHERITED_LEGACY_UCB"),
+        "actual_authority_changed": bool(selection.get(
+            "actual_authority_changed", False)),
+        "legacy_policy_key": selection.get("legacy_policy_key"),
+        "vnext_canary_status": canary.get("status"),
+        "vnext_canary_policy_version": canary.get("policy_version"),
+        "vnext_evidence_level": prediction.get("evidence_level"),
+    }
+
+
+def _teacher_decision(capability, policy_key, warnings, priority,
+                      champion_candidate_ids, prerequisites, methodology,
+                      candidate_steps, batch_size, replayed_misses,
+                      resolved_priority_ids, champion_prioritized, receipt,
+                      policy_selection):
+    return _learning_teacher_feedback.summarize_teacher_decision(
+        _learning_teacher_feedback.TeacherDecisionInput(
+            capability=capability, policy_key=policy_key, warnings=warnings,
+            unresolved_miss_count=len(priority),
+            champion_candidate_count=len(champion_candidate_ids),
+            prerequisite_capabilities=prerequisites,
+            methodology=methodology,
+            delivered_examples=candidate_steps * batch_size,
+            replayed_misses=replayed_misses,
+            resolved_exam_misses=len(resolved_priority_ids),
+            champion_prioritized=champion_prioritized,
+            seed=_runtime_state._seed(receipt, capability=capability),
+            diagnostic_context_consumed=policy_selection[
+                "diagnostic_context_consumed"],
+            diagnostic_context_key=policy_selection["diagnostic_context_key"],
+            **_teacher_selection_fields(policy_selection)))
+
+
 def _record_lesson_controls(lesson_control, policy_control_receipts,
                             old_capabilities, picked, preservation,
                             delivered_preservation, retention_support,
@@ -814,22 +893,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         course, cap, tuple(methodology_steps),
         introductory=introduction_pass,
         unmeasured_reason=methodology_unavailable)
-    teacher_decision = _learning_teacher_feedback.summarize_teacher_decision(_learning_teacher_feedback.TeacherDecisionInput(
-        capability=cap, policy_key=policy_key, warnings=warnings,
-        unresolved_miss_count=len(priority),
-        champion_candidate_count=len(champion_candidate_ids),
-        prerequisite_capabilities=(
-            executable_release.execution_plan.capability_map[cap].prerequisites),
-        methodology=methodology,
-        delivered_examples=candidate_steps*batch_size,
-        replayed_misses=replayed_misses,
-        resolved_exam_misses=len(resolved_priority_ids),
-        champion_prioritized=champion_prioritized,
-        seed=_runtime_state._seed(receipt, capability=cap),
-        diagnostic_context_consumed=policy_selection[
-            "diagnostic_context_consumed"],
-        diagnostic_context_key=policy_selection["diagnostic_context_key"],
-    ))
+    teacher_decision = _teacher_decision(
+        cap, policy_key, warnings, priority, champion_candidate_ids,
+        executable_release.execution_plan.capability_map[cap].prerequisites,
+        methodology, candidate_steps, batch_size, replayed_misses,
+        resolved_priority_ids, champion_prioritized, receipt, policy_selection)
     lesson_generator, lesson_source_digest = _runtime_assessment.released_lesson_source_identity(
         executable_release, cap)
     event = {
@@ -846,6 +914,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "teacher_geometry_epoch": teacher_geometry_epoch,
         "teacher_context_scope": teacher_curriculum_scope,
         "teacher_strategy_population": _strategy_population_event(policy_selection),
+        **({"teacher_vnext_canary": canary_event}
+           if (canary_event := _vnext_canary_event(policy_selection)) is not None else {}),
         **teacher_vnext,
         **({"realized_teacher_action": realized_action}
            if realized_action is not None else {}),

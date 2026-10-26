@@ -17,10 +17,15 @@ from bilqis_mlx.learning.teacher_outcomes import (
     current_health,
     observe,
     predict,
+    predict_backoff,
     proposed_action,
     student_region,
 )
-from bilqis_mlx.learning.teacher_proposals import acquire, candidate_proposals
+from bilqis_mlx.learning.teacher_proposals import (
+    acquire,
+    candidate_proposals,
+    select_canary_proposal,
+)
 from bilqis_mlx.learning import learning_experiment as _learning_experiment
 from bilqis_mlx.learning import student_ops as _student_ops
 from bilqis_mlx.learning import teacher_feedback as _teacher_feedback
@@ -146,19 +151,20 @@ def build_action(teacher: dict, *, capability: str, phase: str,
 
 
 def prediction_before(teacher: dict, *, region: dict, action: dict) -> dict:
-    return predict(teacher, region=region, action=action)
+    return predict_backoff(teacher, region=region, action=action)
 
 
 def prepare_candidate(receipt: dict, school, teacher: dict, *, capability: str,
                       phase: str, lesson_grade: str, curriculum_scope: str,
                       geometry_epoch: str | None, policy_key: str, policy: dict,
                       candidate_steps: int, batch_size: int,
-                      shadow_enabled: bool) -> PreparedCandidate:
+                      shadow_enabled: bool,
+                      action_override: dict | None = None) -> PreparedCandidate:
     region = build_region(
         receipt, school, teacher, capability=capability, phase=phase,
         lesson_grade=lesson_grade, curriculum_scope=curriculum_scope,
         geometry_epoch=geometry_epoch)
-    action = build_action(
+    action = action_override or build_action(
         teacher, capability=capability, phase=phase,
         curriculum_scope=curriculum_scope, policy_key=policy_key,
         policy=policy, candidate_steps=candidate_steps, batch_size=batch_size)
@@ -173,7 +179,8 @@ def prepare_candidate(receipt: dict, school, teacher: dict, *, capability: str,
 
 def prepare_from_visit(receipt, school, teacher, capability, phase, lesson_grade,
                        curriculum_scope, geometry_epoch, policy_key, policy,
-                       candidate_steps, batch_size, enabled):
+                       candidate_steps, batch_size, enabled,
+                       action_override=None):
     if not enabled:
         return None
     return prepare_candidate(
@@ -181,7 +188,7 @@ def prepare_from_visit(receipt, school, teacher, capability, phase, lesson_grade
         lesson_grade=lesson_grade, curriculum_scope=curriculum_scope,
         geometry_epoch=geometry_epoch, policy_key=policy_key, policy=policy,
         candidate_steps=candidate_steps, batch_size=batch_size,
-        shadow_enabled=True)
+        shadow_enabled=True, action_override=action_override)
 
 
 def select_policy_and_prepare(
@@ -189,22 +196,58 @@ def select_policy_and_prepare(
         phase: str, lesson_grade: str, curriculum_scope: str,
         geometry_epoch: str | None, diagnostics: dict,
         learning_settings, candidate_steps: int, batch_size: int):
+    action_override = None
     if learning_settings is not None:
-        policy_key, policy, selection = _learning_experiment.contextual_pick(
+        legacy_policy_key, legacy_policy, selection = _learning_experiment.contextual_pick(
             engine, teacher, capability, phase, rng,
             curriculum_scope=curriculum_scope, diagnostics=diagnostics,
             return_metadata=True,
             student_checkpoint_sha256=school.current_student.sha256)
+        policy_key, policy = legacy_policy_key, legacy_policy
+        region = build_region(
+            receipt, school, teacher, capability=capability, phase=phase,
+            lesson_grade=lesson_grade, curriculum_scope=curriculum_scope,
+            geometry_epoch=geometry_epoch)
+        proposals = list(candidate_proposals(
+            teacher, capability=capability, phase=phase,
+            curriculum_scope=curriculum_scope,
+            candidate_steps=candidate_steps, batch_size=batch_size))
+        learned = learned_proposals(
+            teacher, region=region,
+            rng=random.Random(int(receipt["generation"]) + 1),
+            candidate_steps=candidate_steps, batch_size=batch_size)
+        proposals.extend(learned["proposals"])
+        candidate_ordinal = int(
+            (teacher.get("outcome_model") or {}).get("events", 0)) + 1
+        canary = select_canary_proposal(
+            teacher, region=region, proposals=tuple(proposals),
+            candidate_ordinal=candidate_ordinal,
+            rng=random.Random(int(receipt["generation"]) + 1),
+            allowed_effective_policy_keys=selection.get(
+                "active_effective_strategy_keys"))
+        selection["origin"] = "INHERITED_LEGACY_UCB"
+        selection["actual_authority_changed"] = False
+        selection["legacy_policy_key"] = legacy_policy_key
+        selection["vnext_canary"] = canary
+        if canary["actual_authority_changed"]:
+            action_override = canary["selected"]["proposal"]
+            policy_key = action_override["policy_key"]
+            policy = teacher["strategies"][policy_key]
+            selection["origin"] = "TEACHER_VNEXT_CANARY"
+            selection["actual_authority_changed"] = True
     else:
         policy_key, policy = engine.pick(teacher, lesson_grade, rng)
         selection = {
             "diagnostic_context_consumed": False,
             "diagnostic_context_key": None,
+            "origin": "INHERITED_LEGACY_UCB",
+            "actual_authority_changed": False,
         }
     prepared = prepare_from_visit(
         receipt, school, teacher, capability, phase, lesson_grade,
         curriculum_scope, geometry_epoch, policy_key, policy,
-        candidate_steps, batch_size, learning_settings is not None)
+        candidate_steps, batch_size, learning_settings is not None,
+        action_override=action_override)
     return policy_key, policy, selection, prepared
 
 
@@ -277,7 +320,7 @@ def finalize_candidate(
     proposals.extend(learned["proposals"])
     proposal_shadow = acquire(
         teacher, region=region, proposals=tuple(proposals),
-        rng=random.Random(acquisition_seed))
+        rng=random.Random(acquisition_seed), predictor=predict_backoff)
     return {
         "teacher_outcome_observation": observation,
         "teacher_outcome_prediction_before": prediction,

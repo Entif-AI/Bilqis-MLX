@@ -1,9 +1,10 @@
-# CURRENT SUPERSESSION | 2026-10-26 | Teacher vNext calibration completed
+# CURRENT SUPERSESSION | 2026-10-26 | Teacher vNext bounded proposal canary
 
 The canonical repository is `/Users/emilie/Code/bilqis-mlx` on branch
-`349-bouta-tree-fitty`. The first merged Teacher vNext human calibration run completed
-normally at generation **43120**, native AdamW step **148016**, after 292 command visits.
-The assistant did not start, stop or otherwise manipulate neural training.
+`349-bouta-tree-fitty`. Teacher vNext has moved beyond shadow-only proposal ranking:
+the pending implementation gives it bounded real proposal-selection authority while
+leaving all neural admission/safety authority unchanged. The assistant did not start,
+stop or otherwise manipulate neural training.
 
 The append-only ledger contains **267 actual teacher proposals, 17 retained visits and
 228 retained optimizer updates**: 6.37% proposal retention. The dominant failure remains
@@ -20,19 +21,31 @@ actual candidates still run their full authorized horizon and the existing reten
 decision remains sovereign. A second human-operated calibration run is required before
 considering a separate activation patch.
 
-The learned local proposal distribution remains structurally underpowered rather than
-merely a few samples short: 267 visits fragmented into **223 exact StudentRegions**;
-the busiest region received only four observations, while qualification requires 16
-observations and three retentions. Do not weaken those support gates or undo the
-learner-state aliasing correction. The next proposal-authority design should consider a
-separately reviewed hierarchical/backoff evidence model or controlled exploration that
-preserves materially distinct learner states.
+The learned local proposal distribution's structural starvation is repaired with a
+hierarchical evidence backoff. Exact `StudentRegion` identity and all receipts remain
+unchanged; prediction may back off through compatible capability+phase, capability,
+grade+phase and grade neighborhoods while preserving curriculum scope, geometry epoch
+and numeric scope. The learned distribution still requires **16 observations / 3
+retentions**. On a clean replay of 160 states from the completed first calibration run,
+95 states now qualify and 65 remain underpowered.
 
-Current code work for this calibration is limited to the shadow policy and its focused
-regressions. It does not change source/oracle truth, retention admission, student/AdamW
-custody, promotion, qualification, championship authority, or human ownership of neural
-training. Verify the exact Git SHA and remote state after the pending commit/push before
-the next human rerun.
+The bounded canary schedules one opportunity every four actual teacher candidates. A
+vNext proposal receives real authority only if it maps to an existing executable
+strategy, has at least eight compatible observations plus one retained observation, and
+remains in the inherited controller's post-retirement active effective-policy set.
+Otherwise the visit falls back to legacy selection. Legacy selection is still computed
+first and retained as a counterfactual receipt. Novel learned/local policies remain
+shadow-only. Clean first-run replay of the last 160 states schedules 40 canary slots;
+14 have enough retained evidence for vNext selection and 26 safely fall back. This is a
+support/coverage replay, not a claim that those counterfactual choices would retain.
+
+Multi-fidelity early stopping remains shadow-only. Source/oracle truth, lesson
+validation, candidate retention, student/AdamW custody, promotion, qualification,
+championship authority and human ownership of neural training are unchanged. A later
+human run advanced the durable run head to generation 43286 while this checkout was
+dirty during implementation; treat that run as exploratory only because exact code
+provenance is ambiguous. There is currently no live trainer process. Verify the exact
+Git SHA and remote state after the pending commit/push before the next human rerun.
 
 ---
 

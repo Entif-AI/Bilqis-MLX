@@ -12,11 +12,17 @@ from enum import Enum
 import math
 
 from bilqis_mlx.compatibility.historical_teacher_policy import KNOBS
-from bilqis_mlx.learning.teacher_outcomes import predict, proposed_action
+from bilqis_mlx.learning.teacher_outcomes import (
+    BackoffPolicy,
+    predict,
+    predict_backoff,
+    proposed_action,
+)
 from bilqis_mlx.learning.teacher_strategy_population import (
     active_effective_strategy_keys,
     effective_policy_features,
     effective_policy_key,
+    effective_strategy_inventory,
 )
 
 
@@ -28,6 +34,8 @@ PROPOSAL_FAMILIES = (
     "LEARNED_LOCAL_DISTRIBUTION",
 )
 MAX_POLICY_OLD_PREVIEW_EXAMPLES = 24
+MIN_CANARY_CADENCE = 2
+MIN_CANARY_EVIDENCE = 1
 
 
 class TeacherProposalError(str, Enum):
@@ -61,6 +69,31 @@ DEFAULT_ACQUISITION_POLICY = AcquisitionPolicy(
     exploration_weight=.20,
     protected_risk_weight=1.0,
     target_prior_gain=.5,
+)
+
+
+@dataclass(frozen=True)
+class CanaryPolicy:
+    version: str
+    every_n_visits: int
+    minimum_evidence_observations: int
+    minimum_retained_observations: int
+
+    def __post_init__(self) -> None:
+        if (not self.version or type(self.every_n_visits) is not int or
+                self.every_n_visits < MIN_CANARY_CADENCE or
+                type(self.minimum_evidence_observations) is not int or
+                self.minimum_evidence_observations < MIN_CANARY_EVIDENCE or
+                type(self.minimum_retained_observations) is not int or
+                self.minimum_retained_observations < MIN_CANARY_EVIDENCE):
+            raise ValueError(TeacherProposalError.ACQUISITION_POLICY_INVALID.value)
+
+
+DEFAULT_CANARY_POLICY = CanaryPolicy(
+    version="teacher-vnext-canary/v1",
+    every_n_visits=4,
+    minimum_evidence_observations=8,
+    minimum_retained_observations=1,
 )
 
 
@@ -200,14 +233,15 @@ def candidate_proposals(teacher: dict, *, capability: str, phase: str,
 
 
 def acquire(teacher: dict, *, region: dict, proposals, rng,
-            policy: AcquisitionPolicy = DEFAULT_ACQUISITION_POLICY) -> dict:
+            policy: AcquisitionPolicy = DEFAULT_ACQUISITION_POLICY,
+            predictor=predict) -> dict:
     """Thompson-style shadow acquisition across a bounded proposal set."""
     proposals = tuple(proposals)
     if not proposals:
         raise ValueError(TeacherProposalError.ACQUISITION_PROPOSALS_EMPTY.value)
     rows = []
     for proposal in proposals:
-        estimate = predict(teacher, region=region, action=proposal)
+        estimate = predictor(teacher, region=region, action=proposal)
         trials = int(estimate["trials"])
         retained = int(estimate["retained"])
         sampled_retention = rng.betavariate(
@@ -246,4 +280,76 @@ def acquire(teacher: dict, *, region: dict, proposals, rng,
         "selected": ranked[0],
         "ranked": ranked,
         "actual_authority_changed": False,
+    }
+
+
+def _executable_proposals(teacher: dict, proposals, *,
+                          allowed_effective_policy_keys=None) -> tuple[dict, ...]:
+    strategies = teacher.get("strategies", {})
+    inventory = effective_strategy_inventory(teacher)
+    allowed = (
+        None if allowed_effective_policy_keys is None
+        else set(allowed_effective_policy_keys))
+    executable = []
+    for proposal in proposals:
+        effective_key = proposal.get("effective_policy_key")
+        if allowed is not None and effective_key not in allowed:
+            continue
+        policy_key = proposal.get("policy_key")
+        if policy_key not in strategies:
+            members = inventory.get(effective_key, ())
+            policy_key = min(members) if members else None
+        if policy_key is None:
+            continue
+        executable.append({**proposal, "policy_key": policy_key})
+    return tuple(executable)
+
+
+def select_canary_proposal(
+        teacher: dict, *, region: dict, proposals, candidate_ordinal: int, rng,
+        policy: CanaryPolicy = DEFAULT_CANARY_POLICY,
+        allowed_effective_policy_keys=None) -> dict:
+    """Select one evidence-backed vNext proposal on a deterministic 1/N canary cadence."""
+    result = {
+        "schema": "bilqis.teacher-vnext-canary/v1",
+        "policy_version": policy.version,
+        "candidate_ordinal": candidate_ordinal,
+        "scheduled": candidate_ordinal % policy.every_n_visits == 0,
+        "actual_authority_changed": False,
+    }
+    if not result["scheduled"]:
+        return {**result, "status": "NOT_SCHEDULED", "selected": None}
+    executable = _executable_proposals(
+        teacher, proposals,
+        allowed_effective_policy_keys=allowed_effective_policy_keys)
+    backoff_policy = BackoffPolicy(
+        version="teacher-vnext-canary-backoff/v1",
+        minimum_observations=policy.minimum_evidence_observations)
+
+    def predictor(current_teacher, *, region, action):
+        return predict_backoff(
+            current_teacher, region=region, action=action, policy=backoff_policy)
+
+    supported = tuple(
+        proposal for proposal in executable
+        if ((estimate := predictor(teacher, region=region, action=proposal))["trials"] >=
+            policy.minimum_evidence_observations and
+            estimate["retained"] >= policy.minimum_retained_observations)
+    )
+    if not supported:
+        return {
+            **result, "status": "FALLBACK_UNDERPOWERED", "selected": None,
+            "executable_proposals": len(executable), "supported_proposals": 0,
+        }
+    decision = acquire(
+        teacher, region=region, proposals=supported, rng=rng,
+        predictor=predictor)
+    return {
+        **result,
+        "status": "SELECTED",
+        "selected": decision["selected"],
+        "ranked": decision["ranked"],
+        "executable_proposals": len(executable),
+        "supported_proposals": len(supported),
+        "actual_authority_changed": True,
     }
