@@ -1616,6 +1616,12 @@ class CausalTeacherExperimentTests(unittest.TestCase):
 
         self.assertEqual(set(teacher["strategies"]), before_keys)
         self.assertEqual(teacher["mutations"], before_mutations)
+        _, _, metadata = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(99),
+            curriculum_scope="scope", return_metadata=True)
+        self.assertEqual(
+            metadata["selection_policy"],
+            "bilqis.mlx.teacher-selection/349-replay-v1")
 
     def test_candidate_step_budget_recovers_when_interference_streak_breaks(self):
         teacher = {

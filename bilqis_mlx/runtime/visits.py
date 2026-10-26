@@ -614,6 +614,13 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
+        "teacher_selection_policy": policy_selection["selection_policy"],
+        "teacher_strategy_population": {
+            key: policy_selection.get(key)
+            for key in ("strategy_archive_count", "active_effective_strategy_count",
+                        "dormant_effective_strategy_count",
+                        "checkpoint_retired_effective_strategy_count")
+            if policy_selection.get(key) is not None},
         **({"realized_teacher_action": realized_action}
            if realized_action is not None else {}),
         "attempted_optimizer_updates": attempted_optimizer_updates,
@@ -812,6 +819,7 @@ def _select_visit_policy(engine, teacher, cap, school, rng, learning_settings, t
             policy_selection = {
                 "diagnostic_context_consumed": False,
                 "diagnostic_context_key": None, "selection_reason": "INHERITED_BANDIT",
+                "selection_policy": "bilqis.mlx.teacher-selection/inherited-v1",
             }
     return policy_key, policy, policy_selection
 

@@ -9,6 +9,7 @@ from bilqis_mlx.learning.teacher_feedback import LearningExperimentError
 
 
 UCB_EXPLORATION_WEIGHT = 0.6
+SELECTION_POLICY = "bilqis.mlx.teacher-selection/349-replay-v1"
 ACTIVE_EFFECTIVE_STRATEGY_LIMIT = 16
 ACTIVE_EFFECTIVE_INCUMBENT_LIMIT = 8
 DEEP_POLICY_DEPTH_MINIMUM = 3

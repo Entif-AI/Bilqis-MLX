@@ -26,7 +26,7 @@ from bilqis_mlx.learning.teacher_feedback import (
     LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
     select_weakness_targets,
 )
-from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome
+from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, SELECTION_POLICY as TEACHER_SELECTION_POLICY, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome
 from bilqis_mlx.learning.teacher_realized_action import bind_record as _bind_realized_action_record, describe as realized_teacher_action, record_outcome as _record_realized_action_outcome
 
 
@@ -652,6 +652,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             return key, policy, {
                 "diagnostic_context_consumed": diagnostic_context_consumed,
                 "diagnostic_context_key": diagnostic_key, "selection_reason": selection_reason,
+                "selection_policy": TEACHER_SELECTION_POLICY,
                 "active_effective_strategy_count": len(active_effective),
                 "dormant_effective_strategy_count":
                     len(inventory) - len(active_effective),
