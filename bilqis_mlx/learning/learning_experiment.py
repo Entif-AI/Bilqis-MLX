@@ -784,7 +784,11 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                        math.sqrt(math.log(trials+2)/(record["trials"]+1)))
         stagnation = record["no_target_gain_streak"]
         return mean + exploration/(1+stagnation+rejection_pressure)
-    best_effective = max(selection_scope, key=score_effective)
+    retained_scope = {
+        key: record for key, record in selection_scope.items()
+        if record.get("retained", 0) > 0
+    }
+    best_effective = max(retained_scope or selection_scope, key=score_effective)
     best_record = selection_scope[best_effective]
 
     def member_rank(key):
@@ -793,10 +797,14 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         return (record.get("retained", 0), mean, record["trials"], key)
 
     best = max(best_record["members"], key=member_rank)
+    proven_retained = best_record.get("retained", 0) > 0
+    exploration_due = (
+        proven_retained and rejection_pressure > 0 and
+        rejection_pressure % REJECTION_PRESSURE_EXPLORATION_INTERVAL == 0)
     pressure_exploit = (
         rejection_pressure >= REJECTION_PRESSURE_CONTEXTUAL_START and
         rejection_pressure % REJECTION_PRESSURE_EXPLORATION_INTERVAL != 0)
-    if diagnostic_consumed or pressure_exploit:
+    if diagnostic_consumed or (proven_retained and not exploration_due) or pressure_exploit:
         return result(
             best, teacher["strategies"][best],
             diagnostic_context_consumed=diagnostic_consumed)
@@ -823,13 +831,13 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             diagnostic_context_consumed=diagnostic_consumed)
     # Require evidence, but keep inherited exploration alive. The base pick
     # still gets a chance whenever it lacks direct context observations.
-    proven_retained = best_record.get("retained", 0) > 0
-    if (proven_retained and rejection_pressure > 0 and
+    if (not exploration_due and proven_retained and rejection_pressure > 0 and
             (original_effective not in effective_scope or
              score_effective(best_effective) >
              score_effective(original_effective))):
         return result(best, teacher["strategies"][best])
-    if ((best_record["trials"] >= 2 or proven_retained) and
+    if (not exploration_due and
+            (best_record["trials"] >= 2 or proven_retained) and
             original_effective in effective_scope and
             score_effective(best_effective) > score_effective(original_effective)):
         return result(best, teacher["strategies"][best])

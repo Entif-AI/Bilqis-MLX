@@ -146,19 +146,18 @@ def record_outcome(action_record: dict | None, *, rejected: bool,
 
 
 def selection_record(policy: dict, record: dict) -> tuple[str, dict]:
-    actions = record.get("realized_actions")
-    latest = record.get("latest_realized_action_key")
-    if isinstance(actions, dict) and isinstance(latest, str):
-        action_record = actions.get(latest)
-        if isinstance(action_record, dict) and action_record.get("trials", 0) > 0:
-            return "realized:" + latest, action_record
     return "nominal:" + effective_policy_key(policy), record
 
 
 def context_scope(teacher: dict, scope: dict, *,
                   active_effective: set[str] | None = None,
                   diagnostic_key: str | None = None) -> dict:
-    """Pool evidence by the latest delivered action of each active nominal policy."""
+    """Pool predictive evidence by active nominal policy behavior.
+
+    Exact realized deliveries remain separately receipted.  Selection aggregates
+    those outcomes because the next exact delivery cannot be known before the policy
+    has already been chosen and the lesson has been assembled.
+    """
     groups = {}
     strategies = teacher.get("strategies", {})
     for policy_key, record in scope.items():

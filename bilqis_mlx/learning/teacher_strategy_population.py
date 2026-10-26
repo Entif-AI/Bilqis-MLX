@@ -42,14 +42,9 @@ def effective_context_scope(teacher: dict, scope: dict) -> dict:
         policy = strategies.get(policy_key)
         if policy is None:
             raise ValueError(LearningExperimentError.STRATEGY_ID_DRIFT.value)
-        latest = record.get("latest_realized_action_key")
-        realized = record.get("realized_actions")
-        evidence = (
-            realized.get(latest)
-            if isinstance(realized, dict) and isinstance(latest, str)
-            else None)
-        if not isinstance(evidence, dict) or not evidence.get("trials"):
-            evidence = record
+        # Exact realized actions are forensic subrecords.  The contextual policy
+        # record remains the predictive aggregate over legacy and realized outcomes.
+        evidence = record
         effective_key = effective_policy_key(policy)
         group = groups.setdefault(effective_key, {
             "trials": 0, "reward_sum": 0., "unsafe": 0, "retained": 0,

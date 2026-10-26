@@ -1566,3 +1566,30 @@ retry while preserving all historical exams, weights, own AdamW, retention evide
 mastery debt and promotion criteria. No threshold is lowered and no score is
 discarded; the change only prevents repeated qualification authority from being
 created by question-set variance alone.
+
+
+## ADR-104 | 2026-10-25 | Teacher selection exploits retained incumbents and aggregates realized-delivery outcomes
+
+**Direct user correction after a long no-retention interval following the bounded
+teacher-strategy and realized-delivery changes.** The 16-strategy active population
+bounded the search space but did not bound novelty pressure inside that population.
+The inherited UCB still assigned every untried challenger an overwhelming novelty
+bonus, so contexts with a proven retained incumbent could repeatedly choose unseen
+challengers instead. This defeated the purpose of maintaining an incumbent bench.
+
+Contextual selection now prefers the best retained active strategy whenever one exists
+and remains in force while that incumbent continues to work. Exploration is not
+removed: after four consecutive rejected attempts for the capability/scope, one
+selection slot is returned to challenger exploration before incumbent exploitation
+resumes. Contexts with no retained evidence continue to explore normally. Retention,
+source-gold, custody, AdamW, promotion and qualification criteria are unchanged.
+
+This ADR also supersedes ADR-102's rule that contextual selection should use only the
+**latest** realized-action identity. Exact realized deliveries remain individually
+receipted and outcome-credited for diagnostics, but they are post-action facts: the
+next exact delivery signature is not knowable until after a nominal policy has already
+been chosen and the lesson assembled. Selection therefore uses the aggregate outcome
+distribution produced by each nominal effective policy across all of its exact
+realized deliveries. This preserves realized-delivery provenance without fragmenting
+predictive evidence across batch-level signatures that may never repeat, and a later
+failed realized variant no longer erases earlier retained evidence for the same policy.

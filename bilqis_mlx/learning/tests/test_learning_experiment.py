@@ -900,7 +900,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         pick, _ = contextual_pick(Legacy, teacher, "C.ADD", "RECOVERY_2", random.Random(2))
         self.assertEqual(pick, "positive")
 
-    def test_contextual_credit_follows_latest_realized_action_not_nominal_average(self):
+    def test_contextual_selection_aggregates_exact_realized_action_outcomes(self):
         import bilqis_mlx.learning.learning_experiment as experiment
 
         teacher = {
@@ -962,11 +962,13 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         picked, _ = contextual_pick(
             Legacy, teacher, "C.ADD", "MAIN", random.Random(2),
             curriculum_scope="scope")
-        self.assertEqual(picked, "variable")
+        self.assertEqual(picked, "steady")
         context = teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
         self.assertEqual(
             context["variable"]["latest_realized_action_key"],
             good_action["key"])
+        self.assertEqual(
+            context["variable"]["realized_actions"][bad_action["key"]]["trials"], 1)
         self.assertEqual(
             context["variable"]["realized_actions"][good_action["key"]]["trials"], 1)
 
@@ -1189,6 +1191,158 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertGreater(len(inventory), len(active))
         self.assertIn(
             _effective_policy_key(teacher["strategies"][proven]), active)
+
+    def test_retained_incumbent_is_used_before_untried_challengers(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+
+        strategies = {}
+        global_stats = {}
+        for index in range(17):
+            key = f"policy-{index:02d}"
+            strategies[key] = {
+                "old": 8, "preview": 0, "depth": 1, "contrast": 0.,
+                "lr": .00004 + index * .000001, "distill": 0.,
+            }
+            global_stats[key] = {
+                "trials": 10 if index == 0 else 0,
+                "reward_sum": 2. if index == 0 else 0.,
+                "reward_ema": .2 if index == 0 else 0.,
+                "latest": .2 if index == 0 else None,
+            }
+        teacher = {
+            "strategies": strategies,
+            "global_stats": global_stats,
+            "grade_stats": {},
+            "events": 10,
+            "mutations": 0,
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "negative_archetypes": [], "events": 5,
+                "contexts": {
+                    "C.ADD|MAIN|scope": {
+                        "policy-00": {
+                            "trials": 5, "reward_sum": 2., "unsafe": 0,
+                            "retained": 5, "latest": .4,
+                            "no_target_gain_streak": 0,
+                        },
+                    },
+                },
+            },
+        }
+
+        picked, _ = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
+            curriculum_scope="scope")
+
+        self.assertEqual(picked, "policy-00")
+
+        teacher["causal_experiment"]["capability_stagnation"] = {
+            "C.ADD|scope": {
+                "rejection_streak": 4,
+                "consecutive_interference_rejections": 0,
+                "no_target_gain_streak": 0,
+                "attempts_since_retained": 4,
+                "total_rejections": 4,
+                "total_retained": 5,
+                "current_rejection_reasons": {
+                    "NO_MEASURABLE_TARGET_GAIN": 4,
+                },
+            },
+        }
+        exploratory, _ = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
+            curriculum_scope="scope")
+        self.assertNotEqual(exploratory, "policy-00")
+
+    def test_realized_delivery_variants_preserve_aggregate_retention_evidence(self):
+        import bilqis_mlx.learning.learning_experiment as experiment
+        from bilqis_mlx.learning.teacher_realized_action import context_scope
+
+        teacher = {
+            "strategies": {
+                "variable": {"lr": .0001, "old": 16, "depth": 3,
+                             "contrast": 1.0},
+            },
+            "global_stats": {}, "grade_stats": {}, "events": 0,
+        }
+        retained = decide({
+            "C.ADD": {"before": 3, "after": 5, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        rejected = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        common = dict(candidate_steps=16, batch_size=32,
+                      guidance_applied_steps=0, enrichment_examples=0)
+        first_action = experiment.realized_teacher_action(
+            teacher["strategies"]["variable"],
+            policy_controls=({"effective_old_grade_examples": 12},), **common)
+        second_action = experiment.realized_teacher_action(
+            teacher["strategies"]["variable"],
+            policy_controls=({"effective_old_grade_examples": 9},), **common)
+        self.assertNotEqual(first_action["key"], second_action["key"])
+
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="variable",
+            decision=retained, local_gain=.4, curriculum_scope="scope",
+            realized_action=first_action)
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="variable",
+            decision=rejected, local_gain=0., curriculum_scope="scope",
+            realized_action=second_action)
+        record = teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
+
+        selection = context_scope(teacher, record)
+        evidence = next(iter(selection.values()))
+        self.assertEqual(evidence["trials"], 2)
+        self.assertEqual(evidence["retained"], 1)
+
+    def test_exact_realized_failure_does_not_erase_legacy_context_retention(self):
+        import bilqis_mlx.learning.learning_experiment as experiment
+        from bilqis_mlx.learning.teacher_realized_action import context_scope
+
+        teacher = {
+            "strategies": {
+                "variable": {"lr": .0001, "old": 16, "depth": 3,
+                             "contrast": 1.0},
+            },
+            "global_stats": {}, "grade_stats": {}, "events": 0,
+            "causal_experiment": {
+                "version": "bilqis.mlx.causal-teacher-experiment/v1",
+                "negative_archetypes": [], "events": 3,
+                "contexts": {
+                    "C.ADD|MAIN|scope": {
+                        "variable": {
+                            "trials": 3, "reward_sum": .8, "unsafe": 1,
+                            "retained": 2, "latest": .2,
+                            "no_target_gain_streak": 0,
+                        },
+                    },
+                },
+            },
+        }
+        rejected = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        action = experiment.realized_teacher_action(
+            teacher["strategies"]["variable"], candidate_steps=16,
+            batch_size=32,
+            policy_controls=({"effective_old_grade_examples": 9},),
+            guidance_applied_steps=0, enrichment_examples=0)
+
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="variable",
+            decision=rejected, local_gain=0., curriculum_scope="scope",
+            realized_action=action)
+        record = teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
+        evidence = next(iter(context_scope(teacher, record).values()))
+
+        self.assertEqual(evidence["trials"], 4)
+        self.assertEqual(evidence["retained"], 2)
+        self.assertEqual(
+            record["variable"]["realized_actions"][action["key"]]["trials"], 1)
 
     def test_contextual_pick_keeps_strategy_archive_immutable(self):
         import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
