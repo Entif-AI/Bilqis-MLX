@@ -23,6 +23,56 @@ def exam(grade, generation, rubric, scores, *, step, sha="signed-model"):
 
 
 class SchoolTelemetryTests(unittest.TestCase):
+    def test_compact_header_reports_stable_run_metrics(self):
+        board = Dashboard(
+            stream=io.StringIO(), clock=lambda: 1800.0,
+            show_all_panels=True, tables=LETTER_TABLES,
+            compact_header=True)
+        board.started = 0.0
+        board.state.update(retained_visits=5, visits=20, attempted_steps=5400)
+        board._rate_step = 5383
+        board._rate_time = 1740.0
+
+        board._sample_step_rate()
+        headings, values = board.render(width=260, height=20).splitlines()[:2]
+
+        start = headings.index("R/H")
+        self.assertEqual(values[start:start + 5].strip(), "10")
+        start = headings.index("RTN%")
+        self.assertEqual(values[start:start + 5].strip(), "25")
+        start = headings.index("ST/M")
+        self.assertEqual(values[start:start + 5].strip(), "180")
+
+    def test_grew_averages_active_capabilities_including_stagnation_withheld(self):
+        board = Dashboard(
+            stream=io.StringIO(), clock=lambda: 3600.0,
+            show_all_panels=True, tables=LETTER_TABLES,
+            compact_header=True)
+        board.started = 0.0
+        board.school_telemetry = SchoolTelemetry(
+            board, active_grades=("A", "B"), champions={})
+        for grade, scores in (
+                ("A", {"A.IDENTITY": (5, 10), "A.LINK": (5, 10)}),
+                ("B", {"B.AND": (5, 10), "B.OR": (5, 10)})):
+            ingest(board, exam(grade, 1, f"rubric-{grade}", scores, step=100))
+        board.school_telemetry.begin_execution(grade="B", step=100)
+        ingest(board, exam("A", 2, "rubric-A", {
+            "A.IDENTITY": (7, 10), "A.LINK": (6, 10)}, step=120))
+        ingest(board, exam("B", 2, "rubric-B", {
+            "B.AND": (4, 10), "B.OR": (7, 10)}, step=120))
+        ingest(board, {
+            "event": "SCHOOL_GRADE_RELEASE_REPLACED", "grade": "B",
+            "generation": 3, "optimizer_step": 120,
+            "old_capabilities": ["B.AND", "B.OR"],
+            "new_capabilities": ["B.AND"],
+            "withheld_capabilities": ["B.OR"],
+        })
+
+        self.assertEqual(board.state["grew"], 10)
+        headings, values = board.render(width=260, height=20).splitlines()[:2]
+        start = headings.index("GREW")
+        self.assertEqual(values[start:start + 5].strip(), "+10")
+
     def test_merkle_state_keeps_champion_inventory_visible(self):
         from bilqis_mlx.data_plane import close_data_planes
         from bilqis_mlx.state_dag import persist
@@ -113,6 +163,28 @@ class SchoolTelemetryTests(unittest.TestCase):
             display = board.render(width=180, height=42)
             self.assertNotIn("START", display)
             self.assertNotIn("FIRST", display)
+
+    def test_begin_execution_resets_command_local_visit_and_rate_counters(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            for generation in (10, 11):
+                ingest(board, {
+                    "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                    "grade": "B", "generation": generation,
+                    "capability": "B.AND", "optimizer_step": 100,
+                    "attempted_optimizer_updates": 16,
+                    "retained_optimizer_updates": 0,
+                })
+            self.assertEqual(board.school_telemetry.visits, 2)
+            self.assertEqual(board.state["visits"], 2)
+
+            board.school_telemetry.begin_execution(grade="B", step=100)
+
+            self.assertEqual(board.school_telemetry.visits, 0)
+            self.assertEqual(board.state["visits"], 0)
+            self.assertEqual(board.state["attempted_steps"], 0)
+            self.assertEqual(board.state["retained_steps"], 0)
+            self.assertEqual(board.state["retained_visits"], 0)
 
     def test_method_column_projects_actual_instruction_mechanism(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -408,7 +480,7 @@ class SchoolTelemetryTests(unittest.TestCase):
         for heading in (
                 "BILQIS", "RUNTIME", "MAX TIME", "STEPS", "EXAM", "VISITS",
                 "TEACHER", "GRADES", "CAPS", "STUDENT LATEST", "STUDENT BEST",
-                "STEPS/MIN", "RETAINED", "RUN"):
+                "ST/M", "RTN", "RTN%", "GREW", "R/H", "RUN"):
             self.assertIn(heading, headings)
         self.assertIn("A:MAIN", values)
         self.assertIn("1d 13h 47m 25s", values)

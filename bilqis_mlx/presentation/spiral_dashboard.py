@@ -978,11 +978,11 @@ class Dashboard:
                 ("CAPS",curriculum['capabilities'],5,True),
                 ("STUDENT LATEST",latest,18,False),
                 ("STUDENT BEST",best,18,False),
-                ("STEPS/MIN",
-                 round(self._steps_per_min)
-                 if isinstance(self._steps_per_min,(int,float)) else "-",
-                 9,True),
-                ("RETAINED",retained if type(retained) is int else "-",8,True),
+                ("ST/M",round(self._steps_per_min) if isinstance(self._steps_per_min,(int,float)) else "-",5,True),
+                ("RTN",retained if type(retained) is int else "-",4,True),
+                ("RTN%",round(retained*100/visits) if type(retained) is int and type(visits) is int and visits>0 else "-",5,True),
+                ("GREW",f"{state['grew']:+d}" if type(state.get('grew')) is int else "-",5,True),
+                ("R/H",round(retained*3600/elapsed) if type(retained) is int and elapsed>0 else "-",5,True),
             ])
             halt=state.get('halt')
             if halt:
@@ -1083,19 +1083,16 @@ class Dashboard:
             self.dirty=True
 
     def _sample_step_rate(self):
-        """Measure attempted optimizer throughput only at real dashboard draws."""
+        """Normalize attempted optimizer throughput across the current run."""
         if self.state.get("_rate_sample_eligible", True) is False:
             return
         step=self.state.get("attempted_steps")
         now=self.clock()
         if type(step) is not int:
             return
-        if self._rate_step is None:
-            self._rate_step,self._rate_time=step,now
-            return
-        elapsed=now-self._rate_time
-        if elapsed>0 and step!=self._rate_step:
-            self._steps_per_min=(step-self._rate_step)/elapsed*60
+        elapsed=now-self.started
+        if elapsed>0:
+            self._steps_per_min=step/elapsed*60
             self._rate_step,self._rate_time=step,now
 
     def _latest_all_grade_score(self):

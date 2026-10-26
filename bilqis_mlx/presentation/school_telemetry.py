@@ -12,6 +12,7 @@ from typing import Any
 import string
 
 from bilqis_mlx.presentation.spiral_dashboard import Column
+from bilqis_mlx.presentation.growth_projection import GrowthProjection
 from ..compatibility.telemetry_events import (
     historical_capability_grade,
     historical_course_admission,
@@ -420,6 +421,7 @@ class SchoolTelemetry:
         self.best = {}
         self.last_cap = {}  # (capability, complete-rubric) -> (correct,total)
         self.start_cap = {}
+        self.growth = GrowthProjection(active_grades)
         self.last_source_training = {}  # capability -> (accuracy, optimizer_step)
         self.exam_cohorts = {}  # (grade, semantic rubric) -> last sampled cohort
         self.reported_scope_inventory = {}
@@ -507,6 +509,8 @@ class SchoolTelemetry:
         if (not grade or not old_caps or not new_caps or
                 any(not isinstance(cap, str) for cap in (*old_caps, *new_caps))):
             raise ValueError("SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID")
+        self.board.state["grew"] = self.growth.replace_grade(
+            grade, old_caps, new_caps, event.get("withheld_capabilities", ()))
         old_set = set(old_caps)
 
         # Rows before this event describe the superseded curriculum. Keep them
@@ -561,8 +565,10 @@ class SchoolTelemetry:
                 step=step, prefix=grade or self.board.state.get("prefix"),
                 _rate_sample_eligible=True)
             return
+        self.visits = 0
         self.start = dict(self.latest)
         self.start_cap = dict(self.last_cap)
+        self.board.state["grew"] = self.growth.begin_execution()
         self.execution_start_step = step if type(step) is int else None
         # Emit current snapshots immediately so START is truthful before the
         # first new exam in this execution command.
@@ -598,8 +604,12 @@ class SchoolTelemetry:
             ]
         self.board.state.update(
             step=step if type(step) is int else self.board.state.get("step"),
-            prefix=grade or self.board.state.get("prefix"),
+            prefix=grade or self.board.state.get("prefix"), visits=0,
+            attempted_steps=0, retained_steps=0, retained_visits=0,
             _rate_sample_eligible=True)
+        self.board.started = self.board.clock()
+        self.board._rate_step = None
+        self.board._rate_time = None
 
     def _start(self, grade, event):
         self.begin_execution(grade=grade, step=event.get("optimizer_step"))
@@ -838,6 +848,8 @@ class SchoolTelemetry:
             if live:
                 self.era_cohorts[key].add(cohort_sha)
             for cap, (score, count) in sorted(caps.items()):
+                self.board.state["grew"] = self.growth.observe(
+                    g, cap, score, count)
                 cap_key = (cap, rubric, effective_scope)
                 baseline = self.start_cap.setdefault(cap_key, (score, count))
                 earlier = self.last_cap.get(cap_key)
