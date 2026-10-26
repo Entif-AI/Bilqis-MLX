@@ -1627,3 +1627,26 @@ The portable contract and fixture are shared authority for the divergent develop
 teacher in #130. Shared code is optional; compatible evidence semantics, replay,
 calibration, multi-fidelity authority boundaries and final-retention authority are
 mandatory. See `docs/architecture/TEACHER_VNEXT_PORTABLE_CONTRACT_V1.md`.
+
+
+## ADR-106 | 2026-10-25 | Incumbent evidence is checkpoint-local when the student is unchanged
+
+**Live evidence falsified the assumption that a strategy which retained on an older
+student remains a useful incumbent for the current student.** The same effective
+policy can improve a capability at one durable checkpoint and push that capability in
+the opposite direction after later retained learning, even when capability, phase,
+curriculum scope and teaching geometry are otherwise unchanged.
+
+Prometheus therefore treats repeated failures of one effective policy against one
+unchanged durable student as checkpoint-local negative evidence. After a bounded
+number of failures, that policy rotates out of the active contextual bench for the
+remainder of that exact student checkpoint and a fresh eligible challenger rotates in.
+The historical strategy/archive record is not deleted or rewritten. A retained update
+changes the student checkpoint and automatically gives the policy a clean opportunity
+against the new learner state.
+
+This is a liveness/efficiency correction, not a retention shortcut. Candidate
+retention, source/oracle truth, custody, AdamW, promotion and qualification authority
+are unchanged. Teacher vNext's `StudentRegion` remains the longer-term generalization
+surface; exact checkpoint identity here is used only to prevent redundant retries
+against an actually unchanged learner, not as the predictive region key.

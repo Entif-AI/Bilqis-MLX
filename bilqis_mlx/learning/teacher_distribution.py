@@ -2,12 +2,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 import hashlib
 import json
 import math
 
 from bilqis_mlx.compatibility.historical_teacher_policy import KNOBS
 from bilqis_mlx.learning.teacher_outcomes import MODEL_SCHEMA, proposed_action
+
+
+class TeacherDistributionError(str, Enum):
+    POLICY_INVALID = "TEACHER_DISTRIBUTION_POLICY_INVALID"
+    REGION_INVALID = "TEACHER_DISTRIBUTION_REGION_INVALID"
 
 
 @dataclass(frozen=True)
@@ -25,7 +31,7 @@ class DistributionPolicy:
                 self.samples < 1 or
                 not isinstance(self.log_lr_jitter, (int, float)) or
                 not math.isfinite(self.log_lr_jitter) or self.log_lr_jitter < 0):
-            raise ValueError("TEACHER_DISTRIBUTION_POLICY_INVALID")
+            raise ValueError(TeacherDistributionError.POLICY_INVALID.value)
 
 
 DEFAULT_DISTRIBUTION_POLICY = DistributionPolicy(
@@ -43,7 +49,7 @@ def _region_records(teacher: dict, region: dict) -> tuple[dict, ...]:
         return ()
     key = region.get("key")
     if not isinstance(key, str):
-        raise ValueError("TEACHER_DISTRIBUTION_REGION_INVALID")
+        raise ValueError(TeacherDistributionError.REGION_INVALID.value)
     return tuple(
         record for record in model.get("contexts", {}).values()
         if isinstance(record, dict) and

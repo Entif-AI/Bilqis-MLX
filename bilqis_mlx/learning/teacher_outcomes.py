@@ -7,6 +7,7 @@ teacher implementation can consume without sharing runtime internals.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from enum import Enum
 import hashlib
 import json
 import math
@@ -18,7 +19,41 @@ MODEL_SCHEMA = "bilqis.teacher-outcome-model/v1"
 MODEL_VERSION = 1
 WILSON_Z_95 = 1.959963984540054
 RECENT_OBSERVATION_LIMIT = 128
-OBSERVATION_METRIC_INVALID = "TEACHER_OUTCOME_OBSERVATION_METRIC_INVALID"
+PERCENT_SCALE = 100
+SCORE_BAND_PERFECT_MIN = 100
+SCORE_BAND_EXCELLENT_MIN = 95
+SCORE_BAND_STRONG_MIN = 85
+SCORE_BAND_MID_MIN = 70
+SCORE_BAND_WEAK_MIN = 50
+COUNT_BAND_LOW_MAX = 3
+COUNT_BAND_MID_MAX = 7
+MIN_VARIANCE_SAMPLE_SIZE = 2
+
+
+class TeacherOutcomeError(str, Enum):
+    ACTION_INVALID = "TEACHER_OUTCOME_ACTION_INVALID"
+    HEALTH_OBSERVATION_INVALID = "TEACHER_HEALTH_OBSERVATION_INVALID"
+    HEALTH_POLICY_INVALID = "TEACHER_HEALTH_POLICY_INVALID"
+    MODEL_DRIFT = "TEACHER_OUTCOME_MODEL_DRIFT"
+    OBSERVATION_METRIC_INVALID = "TEACHER_OUTCOME_OBSERVATION_METRIC_INVALID"
+    OBSERVATION_REGION_INVALID = "TEACHER_OUTCOME_OBSERVATION_REGION_INVALID"
+    OBSERVATION_RESULT_INVALID = "TEACHER_OUTCOME_OBSERVATION_RESULT_INVALID"
+    OBSERVATION_SCHEMA_INVALID = "TEACHER_OUTCOME_OBSERVATION_SCHEMA_INVALID"
+    PREDICTION_INVALID = "TEACHER_OUTCOME_PREDICTION_INVALID"
+    PROPOSED_ACTION_INVALID = "TEACHER_PROPOSED_ACTION_INVALID"
+    PROTECTED_INVALID = "TEACHER_OUTCOME_PROTECTED_INVALID"
+    REGION_COUNT_INVALID = "TEACHER_REGION_COUNT_INVALID"
+    REGION_IDENTITY_INVALID = "TEACHER_REGION_IDENTITY_INVALID"
+    REGION_INVALID = "TEACHER_OUTCOME_REGION_INVALID"
+    REGION_KEY_COLLISION = "TEACHER_OUTCOME_REGION_KEY_COLLISION"
+    REGION_OVERFRAGMENTED = "TEACHER_OUTCOME_REGION_OVERFRAGMENTED"
+    REGION_SCORE_INVALID = "TEACHER_REGION_SCORE_INVALID"
+    RESULT_INVALID = "TEACHER_OUTCOME_RESULT_INVALID"
+    SHADOW_REVIEW_INVALID = "TEACHER_OUTCOME_SHADOW_REVIEW_INVALID"
+    STATE_INVALID = "TEACHER_OUTCOME_STATE_INVALID"
+    STEP_COST_INVALID = "TEACHER_OUTCOME_STEP_COST_INVALID"
+    TARGET_INVALID = "TEACHER_OUTCOME_TARGET_INVALID"
+    WALL_TIME_INVALID = "TEACHER_OUTCOME_WALL_TIME_INVALID"
 
 
 @dataclass(frozen=True)
@@ -34,7 +69,7 @@ class HealthPolicy:
                 self.minimum_support < 1 or
                 self.exhausted_zero_retention_visits < self.minimum_support or
                 not 0 < self.low_yield_retention_fraction < 1):
-            raise ValueError("TEACHER_HEALTH_POLICY_INVALID")
+            raise ValueError(TeacherOutcomeError.HEALTH_POLICY_INVALID.value)
 
 
 DEFAULT_HEALTH_POLICY = HealthPolicy(
@@ -50,29 +85,29 @@ def _score_band(correct: int | None, total: int | None) -> str:
         return "UNMEASURED"
     if (type(correct) is not int or type(total) is not int or total < 1 or
             not 0 <= correct <= total):
-        raise ValueError("TEACHER_REGION_SCORE_INVALID")
-    percent = 100 * correct / total
-    if percent == 100:
+        raise ValueError(TeacherOutcomeError.REGION_SCORE_INVALID.value)
+    percent = PERCENT_SCALE * correct / total
+    if percent == SCORE_BAND_PERFECT_MIN:
         return "P100"
-    if percent >= 95:
+    if percent >= SCORE_BAND_EXCELLENT_MIN:
         return "P095_099"
-    if percent >= 85:
+    if percent >= SCORE_BAND_STRONG_MIN:
         return "P085_094"
-    if percent >= 70:
+    if percent >= SCORE_BAND_MID_MIN:
         return "P070_084"
-    if percent >= 50:
+    if percent >= SCORE_BAND_WEAK_MIN:
         return "P050_069"
     return "P000_049"
 
 
 def _count_band(value: int, *, prefix: str) -> str:
     if type(value) is not int or value < 0:
-        raise ValueError("TEACHER_REGION_COUNT_INVALID")
+        raise ValueError(TeacherOutcomeError.REGION_COUNT_INVALID.value)
     if value == 0:
         return prefix + "00"
-    if value <= 3:
+    if value <= COUNT_BAND_LOW_MAX:
         return prefix + "01_03"
-    if value <= 7:
+    if value <= COUNT_BAND_MID_MAX:
         return prefix + "04_07"
     return prefix + "08_PLUS"
 
@@ -93,7 +128,7 @@ def student_region(*, capability: str, phase: str, lesson_grade: str,
             (geometry_epoch is not None and not isinstance(geometry_epoch, str)) or
             (numeric_maximum is not None and
              (type(numeric_maximum) is not int or numeric_maximum < 0))):
-        raise ValueError("TEACHER_REGION_IDENTITY_INVALID")
+        raise ValueError(TeacherOutcomeError.REGION_IDENTITY_INVALID.value)
     region = {
         "schema": REGION_SCHEMA,
         "capability": capability,
@@ -124,7 +159,7 @@ def proposed_action(*, family: str, effective_policy_key: str,
             not isinstance(effective_policy_key, str) or not effective_policy_key or
             (policy_key is not None and not isinstance(policy_key, str)) or
             (parameters is not None and not isinstance(parameters, dict))):
-        raise ValueError("TEACHER_PROPOSED_ACTION_INVALID")
+        raise ValueError(TeacherOutcomeError.PROPOSED_ACTION_INVALID.value)
     predictive = {
         "family": family,
         "effective_policy_key": effective_policy_key,
@@ -143,43 +178,43 @@ def validate_portable_observation(observation: dict) -> None:
     """Validate the architecture-neutral evidence contract consumed by #321/#130."""
     if (not isinstance(observation, dict) or
             observation.get("schema") != OBSERVATION_SCHEMA):
-        raise ValueError("TEACHER_OUTCOME_OBSERVATION_SCHEMA_INVALID")
+        raise ValueError(TeacherOutcomeError.OBSERVATION_SCHEMA_INVALID.value)
     region = observation.get("region")
     action = observation.get("proposed_action")
     if (not isinstance(region, dict) or region.get("schema") != REGION_SCHEMA or
             not isinstance(region.get("key"), str)):
-        raise ValueError("TEACHER_OUTCOME_OBSERVATION_REGION_INVALID")
+        raise ValueError(TeacherOutcomeError.OBSERVATION_REGION_INVALID.value)
     forbidden_region_keys = {
         "student_sha256", "checkpoint_sha256", "cohort_sha256",
         "batch_sha256", "source_cohort_sha256",
     }
     if forbidden_region_keys & set(region):
-        raise ValueError("TEACHER_OUTCOME_REGION_OVERFRAGMENTED")
+        raise ValueError(TeacherOutcomeError.REGION_OVERFRAGMENTED.value)
     _validate_action(action)
     if (type(observation.get("retained")) is not bool or
             not isinstance(observation.get("rejection_reason"), str) or
             type(observation.get("attempted_steps")) is not int or
             type(observation.get("retained_steps")) is not int or
             not 0 <= observation["retained_steps"] <= observation["attempted_steps"]):
-        raise ValueError("TEACHER_OUTCOME_OBSERVATION_RESULT_INVALID")
+        raise ValueError(TeacherOutcomeError.OBSERVATION_RESULT_INVALID.value)
     for key in ("target_delta", "protected_net_delta",
                 "worst_protected_loss", "wall_seconds"):
         if (not isinstance(observation.get(key), (int, float)) or
                 not math.isfinite(observation[key])):
-            raise ValueError(OBSERVATION_METRIC_INVALID)
+            raise ValueError(TeacherOutcomeError.OBSERVATION_METRIC_INVALID.value)
     if observation["worst_protected_loss"] < 0 or observation["wall_seconds"] < 0:
-        raise ValueError(OBSERVATION_METRIC_INVALID)
+        raise ValueError(TeacherOutcomeError.OBSERVATION_METRIC_INVALID.value)
 
 
 def _validate_action(action: dict) -> None:
     if (not isinstance(action, dict) or not isinstance(action.get("family"), str) or
             not isinstance(action.get("effective_policy_key"), str)):
-        raise ValueError("TEACHER_OUTCOME_ACTION_INVALID")
+        raise ValueError(TeacherOutcomeError.ACTION_INVALID.value)
 
 
 def _model(teacher: dict) -> dict:
     if not isinstance(teacher, dict):
-        raise ValueError("TEACHER_OUTCOME_STATE_INVALID")
+        raise ValueError(TeacherOutcomeError.STATE_INVALID.value)
     model = teacher.setdefault("outcome_model", {
         "schema": MODEL_SCHEMA,
         "version": MODEL_VERSION,
@@ -192,13 +227,13 @@ def _model(teacher: dict) -> dict:
             type(model.get("events")) is not int or
             not isinstance(model.get("contexts"), dict) or
             not isinstance(model.setdefault("recent", []), list)):
-        raise ValueError("TEACHER_OUTCOME_MODEL_DRIFT")
+        raise ValueError(TeacherOutcomeError.MODEL_DRIFT.value)
     return model
 
 
 def _context_key(region: dict, action: dict) -> str:
     if region.get("schema") != REGION_SCHEMA or not isinstance(region.get("key"), str):
-        raise ValueError("TEACHER_OUTCOME_REGION_INVALID")
+        raise ValueError(TeacherOutcomeError.REGION_INVALID.value)
     _validate_action(action)
     action_key = action.get("key") or hashlib.sha256(json.dumps({
         "family": action["family"],
@@ -234,7 +269,7 @@ def _outcome_record(model: dict, key: str, region: dict, action: dict) -> dict:
         "wall_seconds_sq_sum": 0., "rejection_reasons": {},
     })
     if record.get("region") != region:
-        raise ValueError("TEACHER_OUTCOME_REGION_KEY_COLLISION")
+        raise ValueError(TeacherOutcomeError.REGION_KEY_COLLISION.value)
     return record
 
 
@@ -269,24 +304,26 @@ def observe(teacher: dict, *, region: dict, action: dict, retained: bool,
             shadow_review: dict | None = None) -> dict:
     """Update compact predictive aggregates and return a portable event observation."""
     if type(retained) is not bool or not isinstance(rejection_reason, str) or not rejection_reason:
-        raise ValueError("TEACHER_OUTCOME_RESULT_INVALID")
+        raise ValueError(TeacherOutcomeError.RESULT_INVALID.value)
     if (type(attempted_steps) is not int or type(retained_steps) is not int or
             attempted_steps < 0 or not 0 <= retained_steps <= attempted_steps):
-        raise ValueError("TEACHER_OUTCOME_STEP_COST_INVALID")
-    target_delta = _finite_number(target_delta, name="TEACHER_OUTCOME_TARGET_INVALID")
+        raise ValueError(TeacherOutcomeError.STEP_COST_INVALID.value)
+    target_delta = _finite_number(
+        target_delta, name=TeacherOutcomeError.TARGET_INVALID.value)
     protected_net_delta = _finite_number(
-        protected_net_delta, name="TEACHER_OUTCOME_PROTECTED_INVALID")
+        protected_net_delta, name=TeacherOutcomeError.PROTECTED_INVALID.value)
     worst_protected_loss = _finite_number(
-        worst_protected_loss, name="TEACHER_OUTCOME_PROTECTED_INVALID", minimum=0.)
+        worst_protected_loss, name=TeacherOutcomeError.PROTECTED_INVALID.value,
+        minimum=0.)
     wall_seconds = _finite_number(
-        wall_seconds, name="TEACHER_OUTCOME_WALL_TIME_INVALID", minimum=0.)
+        wall_seconds, name=TeacherOutcomeError.WALL_TIME_INVALID.value, minimum=0.)
     if (predicted_retention_probability is not None and
             (not isinstance(predicted_retention_probability, (int, float)) or
              not math.isfinite(predicted_retention_probability) or
              not 0 <= predicted_retention_probability <= 1)):
-        raise ValueError("TEACHER_OUTCOME_PREDICTION_INVALID")
+        raise ValueError(TeacherOutcomeError.PREDICTION_INVALID.value)
     if shadow_review is not None and not isinstance(shadow_review, dict):
-        raise ValueError("TEACHER_OUTCOME_SHADOW_REVIEW_INVALID")
+        raise ValueError(TeacherOutcomeError.SHADOW_REVIEW_INVALID.value)
     key = _context_key(region, action)
     model = _model(teacher)
     record = _outcome_record(model, key, region, action)
@@ -346,7 +383,7 @@ def _wilson(retained: int, trials: int) -> tuple[float, float]:
 
 
 def _standard_error(total: float, square_total: float, trials: int) -> float:
-    if trials < 2:
+    if trials < MIN_VARIANCE_SAMPLE_SIZE:
         return 0.
     mean = total / trials
     variance = max(0., (square_total - trials * mean * mean) / (trials - 1))
@@ -401,7 +438,7 @@ def health_summary(observations, *, policy: HealthPolicy = DEFAULT_HEALTH_POLICY
         if (not isinstance(row, dict) or type(row.get("retained")) is not bool or
                 type(row.get("attempted_steps")) is not int or
                 type(row.get("retained_steps")) is not int):
-            raise ValueError("TEACHER_HEALTH_OBSERVATION_INVALID")
+            raise ValueError(TeacherOutcomeError.HEALTH_OBSERVATION_INVALID.value)
     attempted = len(rows)
     retained = sum(int(row["retained"]) for row in rows)
     attempted_steps = sum(row["attempted_steps"] for row in rows)

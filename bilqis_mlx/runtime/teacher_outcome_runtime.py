@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 import random
 
 from bilqis_mlx.learning.teacher_multifidelity import (
@@ -34,6 +35,10 @@ class PreparedCandidate:
     action: dict
     prediction: dict
     shadow_rungs: tuple[int, ...]
+
+
+class TeacherOutcomeRuntimeError(str, Enum):
+    PREPARATION_MISSING = "TEACHER_VNEXT_PREPARATION_MISSING"
 
 
 def previsit_diagnostics(receipt: dict, capability: str, *,
@@ -177,7 +182,8 @@ def select_policy_and_prepare(
         policy_key, policy, selection = _learning_experiment.contextual_pick(
             engine, teacher, capability, phase, rng,
             curriculum_scope=curriculum_scope, diagnostics=diagnostics,
-            return_metadata=True)
+            return_metadata=True,
+            student_checkpoint_sha256=school.current_student.sha256)
     else:
         policy_key, policy = engine.pick(teacher, lesson_grade, rng)
         selection = {
@@ -277,7 +283,7 @@ def finalize_from_visit(teacher, prepared, outcome, attempted_updates,
                         retained_updates, wall_seconds, shadow_target_probes,
                         acquisition_seed):
     if prepared is None:
-        raise ValueError("TEACHER_VNEXT_PREPARATION_MISSING")
+        raise ValueError(TeacherOutcomeRuntimeError.PREPARATION_MISSING.value)
     return finalize_candidate(
         teacher, prepared=prepared, outcome=outcome,
         attempted_optimizer_updates=attempted_updates,

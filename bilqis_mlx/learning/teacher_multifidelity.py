@@ -2,9 +2,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 
 
 SCHEMA = "bilqis.teacher-multifidelity-shadow/v1"
+
+
+class TeacherMultifidelityError(str, Enum):
+    ACTIVATION_POLICY_INVALID = "TEACHER_MULTIFIDELITY_ACTIVATION_POLICY_INVALID"
+    BUDGET_INVALID = "TEACHER_MULTIFIDELITY_BUDGET_INVALID"
+    OUTCOME_INVALID = "TEACHER_MULTIFIDELITY_OUTCOME_INVALID"
+    POLICY_INVALID = "TEACHER_MULTIFIDELITY_POLICY_INVALID"
+    PROBES_INVALID = "TEACHER_MULTIFIDELITY_PROBES_INVALID"
+    REVIEW_INVALID = "TEACHER_MULTIFIDELITY_REVIEW_INVALID"
 
 
 @dataclass(frozen=True)
@@ -19,7 +29,7 @@ class ShadowPolicy:
                 tuple(sorted(set(self.rungs))) != self.rungs or
                 type(self.minimum_target_delta_to_continue) is not int or
                 self.minimum_target_delta_to_continue < 1):
-            raise ValueError("TEACHER_MULTIFIDELITY_POLICY_INVALID")
+            raise ValueError(TeacherMultifidelityError.POLICY_INVALID.value)
 
 
 DEFAULT_SHADOW_POLICY = ShadowPolicy(
@@ -43,7 +53,7 @@ class ActivationPolicy:
                 not 0 <= self.maximum_false_kill_rate <= 1 or
                 not isinstance(self.minimum_mean_steps_saved, (int, float)) or
                 self.minimum_mean_steps_saved < 0):
-            raise ValueError("TEACHER_MULTIFIDELITY_ACTIVATION_POLICY_INVALID")
+            raise ValueError(TeacherMultifidelityError.ACTIVATION_POLICY_INVALID.value)
 
 
 DEFAULT_ACTIVATION_POLICY = ActivationPolicy(
@@ -56,7 +66,7 @@ DEFAULT_ACTIVATION_POLICY = ActivationPolicy(
 
 def active_rungs(policy: ShadowPolicy, full_budget_steps: int) -> tuple[int, ...]:
     if type(full_budget_steps) is not int or full_budget_steps < 1:
-        raise ValueError("TEACHER_MULTIFIDELITY_BUDGET_INVALID")
+        raise ValueError(TeacherMultifidelityError.BUDGET_INVALID.value)
     rungs = tuple(step for step in policy.rungs if step <= full_budget_steps)
     if not rungs or rungs[-1] != full_budget_steps:
         rungs = (*rungs, full_budget_steps)
@@ -66,13 +76,13 @@ def active_rungs(policy: ShadowPolicy, full_budget_steps: int) -> tuple[int, ...
 def evaluate_shadow(policy: ShadowPolicy, *, probes,
                     final_retained: bool, full_budget_steps: int) -> dict:
     if type(final_retained) is not bool:
-        raise ValueError("TEACHER_MULTIFIDELITY_OUTCOME_INVALID")
+        raise ValueError(TeacherMultifidelityError.OUTCOME_INVALID.value)
     expected = active_rungs(policy, full_budget_steps)
     rows = tuple(probes)
     if (not rows or tuple(step for step, _ in rows) != expected or
             any(type(step) is not int or not isinstance(delta, (int, float))
                 for step, delta in rows)):
-        raise ValueError("TEACHER_MULTIFIDELITY_PROBES_INVALID")
+        raise ValueError(TeacherMultifidelityError.PROBES_INVALID.value)
     first_stop = next((
         step for step, delta in rows[:-1]
         if delta < policy.minimum_target_delta_to_continue
@@ -100,7 +110,7 @@ def qualify_activation(reviews, *,
                        policy: ActivationPolicy = DEFAULT_ACTIVATION_POLICY) -> dict:
     rows = tuple(reviews)
     if any(not isinstance(row, dict) or row.get("mode") != "SHADOW" for row in rows):
-        raise ValueError("TEACHER_MULTIFIDELITY_REVIEW_INVALID")
+        raise ValueError(TeacherMultifidelityError.REVIEW_INVALID.value)
     false_kills = sum(bool(row.get("false_kill")) for row in rows)
     stops = sum(row.get("first_would_stop_step") is not None for row in rows)
     mean_saved = (

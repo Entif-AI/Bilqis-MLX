@@ -168,6 +168,20 @@ Local mutation and learned-distribution proposals are shadow-only in v1. They ma
 describe interventions that are not already one of the 512 historical strategy IDs,
 but they do not mutate that historical archive.
 
+### Exact-checkpoint retry containment
+
+Exact checkpoint identity is deliberately forbidden from `StudentRegion`, but it has
+one narrow operational use: avoiding redundant retries against an unchanged learner.
+If an effective policy repeatedly fails while the durable student SHA remains exactly
+the same, Prometheus temporarily rotates that policy out of the active contextual bench
+and backfills the slot with an eligible challenger. A retained update changes the SHA
+and clears that temporary containment automatically.
+
+This containment is not predictive generalization and must not be projected into
+#130 as a requirement to use SHA as a learned feature. The portable semantic is:
+**do not keep paying for the same failed intervention against the same unchanged
+learner merely because it retained sometime in historical state.**
+
 ## Shadow acquisition
 
 Schema: `bilqis.teacher-proposal-shadow/v1`.

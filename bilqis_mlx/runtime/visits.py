@@ -163,6 +163,8 @@ def _strategy_population_event(selection: dict) -> dict:
         "archive_count": selection.get("strategy_archive_count"),
         "active_effective_count": selection.get("active_effective_strategy_count"),
         "dormant_effective_count": selection.get("dormant_effective_strategy_count"),
+        "checkpoint_retired_effective_count": selection.get(
+            "checkpoint_retired_effective_strategy_count", 0),
     }
 
 
@@ -248,7 +250,8 @@ def _apply_retention_decision(
             policy_key=policy_key, decision=outcome, local_gain=candidate_gain,
             curriculum_scope=teacher_curriculum_scope,
             diagnostics=previsit_diagnostics,
-            realized_action=realized_action)
+            realized_action=realized_action,
+            student_checkpoint_sha256=school.current_student.sha256)
         if outcome["decision"] == "PROVISIONAL":
             _learning_learning_experiment.commit_trial(
                 parent_parameters, parent_optimizer, params, optimizer)

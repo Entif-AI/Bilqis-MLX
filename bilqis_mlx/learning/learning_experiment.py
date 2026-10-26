@@ -45,6 +45,8 @@ INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET = 4
 REJECTION_PRESSURE_CONTEXTUAL_START = 2
 REJECTION_PRESSURE_EXPLORATION_INTERVAL = 4
 GEOMETRY_HISTORICAL_PRIOR_WEIGHT = 0.25
+SAME_STUDENT_POLICY_FAILURE_LIMIT = 2
+STUDENT_SHA256_HEX_LENGTH = 64
 
 
 @dataclass(frozen=True)
@@ -485,6 +487,91 @@ def _capability_stagnation_record(channel: dict, capability: str,
     return record
 
 
+def _validated_student_checkpoint(student_checkpoint_sha256: str | None) -> str | None:
+    if student_checkpoint_sha256 is None:
+        return None
+    if (not isinstance(student_checkpoint_sha256, str) or
+            len(student_checkpoint_sha256) != STUDENT_SHA256_HEX_LENGTH or
+            any(char not in "0123456789abcdef" for char in student_checkpoint_sha256)):
+        raise ValueError(LearningExperimentError.STUDENT_CHECKPOINT_INVALID.value)
+    return student_checkpoint_sha256
+
+
+def _checkpoint_policy_failures(channel: dict, context_key: str,
+                                student_checkpoint_sha256: str | None) -> dict:
+    checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
+    if checkpoint is None:
+        return {}
+    epoch = channel.get("student_policy_epoch")
+    if not isinstance(epoch, dict) or epoch.get("student_sha256") != checkpoint:
+        return {}
+    if not isinstance(epoch.get("contexts"), dict):
+        raise ValueError(LearningExperimentError.STUDENT_POLICY_EPOCH_INVALID.value)
+    failures = epoch["contexts"].get(context_key, {})
+    if (not isinstance(failures, dict) or any(
+            not isinstance(key, str) or type(value) is not int or value < 0
+            for key, value in failures.items())):
+        raise ValueError(LearningExperimentError.STUDENT_POLICY_FAILURE_INVALID.value)
+    return failures
+
+
+def _record_checkpoint_policy_outcome(
+        channel: dict, context_key: str, effective_policy_key: str,
+        student_checkpoint_sha256: str | None, *, rejected: bool) -> None:
+    checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
+    if checkpoint is None:
+        return
+    epoch = channel.get("student_policy_epoch")
+    if not isinstance(epoch, dict) or epoch.get("student_sha256") != checkpoint:
+        epoch = {"student_sha256": checkpoint, "contexts": {}}
+        channel["student_policy_epoch"] = epoch
+    if not isinstance(epoch.get("contexts"), dict):
+        raise ValueError(LearningExperimentError.STUDENT_POLICY_EPOCH_INVALID.value)
+    failures = epoch["contexts"].setdefault(context_key, {})
+    if rejected:
+        failures[effective_policy_key] = failures.get(effective_policy_key, 0) + 1
+    else:
+        failures.pop(effective_policy_key, None)
+
+
+def _checkpoint_active_effective_strategies(
+        teacher: dict, grade: str, scope: dict, channel: dict,
+        context_key: str, active_effective: tuple[str, ...],
+        inventory: dict[str, list[str]],
+        student_checkpoint_sha256: str | None) -> tuple[tuple[str, ...], set[str]]:
+    checkpoint_failures = _checkpoint_policy_failures(
+        channel, context_key, student_checkpoint_sha256)
+    retired = {
+        key for key, failures in checkpoint_failures.items()
+        if failures >= SAME_STUDENT_POLICY_FAILURE_LIMIT
+    }
+    if not retired:
+        return active_effective, retired
+    evidence = _effective_context_scope(teacher, scope) if scope else {}
+    eligible = [key for key in active_effective if key not in retired]
+    replacements = [
+        key for key in inventory if key not in retired and key not in eligible
+    ]
+
+    def replacement_rank(key):
+        record = evidence.get(key) or {}
+        members = inventory[key]
+        return (
+            int(record.get("trials", 0)),
+            int(record.get("retained", 0)),
+            -sum(_historical_policy_mean(teacher, grade, member)
+                 for member in members) / len(members),
+            key,
+        )
+
+    replacements.sort(key=replacement_rank)
+    eligible.extend(replacements[:max(0, len(active_effective) - len(eligible))])
+    if not eligible:
+        eligible = [min(
+            inventory, key=lambda key: (checkpoint_failures.get(key, 0), key))]
+    return tuple(eligible), retired
+
+
 def _inherited_exploration(teacher: dict, grade: str, policy_key: str) -> float:
     local = teacher.get("grade_stats", {}).get(str(grade), {})
     info = local.get(policy_key) or teacher.get("global_stats", {}).get(policy_key)
@@ -694,7 +781,8 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
 
 def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                     *, curriculum_scope: str = "", diagnostics: dict | None = None,
-                    return_metadata: bool = False):
+                    return_metadata: bool = False,
+                    student_checkpoint_sha256: str | None = None):
     """Preserve the inherited bandit's exploration; prefer proven safe context."""
     grade = capability.partition(".")[0]
     channel = _channel(teacher)
@@ -706,6 +794,9 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     scope = channel["contexts"].get(context_key, {})
     active_effective, inventory = _active_effective_strategy_keys(
         teacher, grade, scope)
+    active_effective, retired_effective = _checkpoint_active_effective_strategies(
+        teacher, grade, scope, channel, context_key, active_effective, inventory,
+        student_checkpoint_sha256)
     active_set = set(active_effective)
 
     def population_metadata():
@@ -713,6 +804,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             "active_effective_strategy_count": len(active_effective),
             "dormant_effective_strategy_count": len(inventory) - len(active_effective),
             "strategy_archive_count": len(teacher.get("strategies", {})),
+            "checkpoint_retired_effective_strategy_count": len(retired_effective),
         }
 
     def result(key, policy, *, diagnostic_context_consumed=False):
@@ -870,7 +962,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                     policy_key: str, decision: dict, local_gain: float,
                     curriculum_scope: str = "",
                     diagnostics: dict | None = None,
-                    realized_action: dict | None = None) -> dict:
+                    realized_action: dict | None = None,
+                    student_checkpoint_sha256: str | None = None) -> dict:
     """Source-paired trial outcome; never rewrite historical UCB rewards."""
     if (policy_key not in teacher.get("strategies", {}) or
             not math.isfinite(local_gain) or
@@ -883,6 +976,7 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     diagnostic_key, _diagnostic_payload = _diagnostic_context(
         channel, capability, curriculum_scope, diagnostics)
     scope = channel["contexts"].setdefault(capability+"|"+phase+"|"+curriculum_scope, {})
+    context_key = capability+"|"+phase+"|"+curriculum_scope
     record = scope.setdefault(policy_key, {"trials": 0, "reward_sum": 0.,
                                             "unsafe": 0, "retained": 0,
                                             "latest": None,
@@ -942,6 +1036,11 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         capability_stagnation["attempts_since_retained"] = 0
         capability_stagnation["total_retained"] += 1
         capability_stagnation["current_rejection_reasons"] = {}
+    _record_checkpoint_policy_outcome(
+        channel, context_key,
+        _effective_policy_key(teacher["strategies"][policy_key]),
+        student_checkpoint_sha256,
+        rejected=decision["decision"] == "REJECT")
     if no_target_gain:
         capability_stagnation["no_target_gain_streak"] += 1
     else:

@@ -8,6 +8,7 @@ future authority change.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 import math
 
 from bilqis_mlx.compatibility.historical_teacher_policy import KNOBS
@@ -26,6 +27,14 @@ PROPOSAL_FAMILIES = (
     "GLOBAL_CHALLENGER",
     "LEARNED_LOCAL_DISTRIBUTION",
 )
+MAX_POLICY_OLD_PREVIEW_EXAMPLES = 24
+
+
+class TeacherProposalError(str, Enum):
+    ACQUISITION_POLICY_INVALID = "TEACHER_ACQUISITION_POLICY_INVALID"
+    ACQUISITION_PROPOSALS_EMPTY = "TEACHER_ACQUISITION_PROPOSALS_EMPTY"
+    FAMILY_INVALID = "TEACHER_PROPOSAL_FAMILY_INVALID"
+    STRATEGIES_MISSING = "TEACHER_PROPOSAL_STRATEGIES_MISSING"
 
 
 @dataclass(frozen=True)
@@ -44,7 +53,7 @@ class AcquisitionPolicy:
                 self.exploration_weight < 0 or
                 self.protected_risk_weight < 0 or
                 self.target_prior_gain <= 0):
-            raise ValueError("TEACHER_ACQUISITION_POLICY_INVALID")
+            raise ValueError(TeacherProposalError.ACQUISITION_POLICY_INVALID.value)
 
 
 DEFAULT_ACQUISITION_POLICY = AcquisitionPolicy(
@@ -58,7 +67,7 @@ DEFAULT_ACQUISITION_POLICY = AcquisitionPolicy(
 def _policy_action(family: str, policy_key: str | None, policy: dict, *,
                    candidate_steps: int, batch_size: int) -> dict:
     if family not in PROPOSAL_FAMILIES:
-        raise ValueError("TEACHER_PROPOSAL_FAMILY_INVALID")
+        raise ValueError(TeacherProposalError.FAMILY_INVALID.value)
     parameters = effective_policy_features(policy)
     parameters.update(candidate_steps=candidate_steps, batch_size=batch_size)
     return proposed_action(
@@ -110,7 +119,8 @@ def _local_mutations(policy: dict) -> tuple[dict, ...]:
             continue
         candidate = dict(policy)
         candidate[field] = neighbor
-        if candidate.get("old", 0) + candidate.get("preview", 0) > 24:
+        if (candidate.get("old", 0) + candidate.get("preview", 0) >
+                MAX_POLICY_OLD_PREVIEW_EXAMPLES):
             continue
         variants.append(candidate)
     return tuple(variants)
@@ -122,7 +132,7 @@ def candidate_proposals(teacher: dict, *, capability: str, phase: str,
     """Build a bounded proposal set spanning exploitation and exploration families."""
     strategies = teacher.get("strategies", {})
     if not isinstance(strategies, dict) or not strategies:
-        raise ValueError("TEACHER_PROPOSAL_STRATEGIES_MISSING")
+        raise ValueError(TeacherProposalError.STRATEGIES_MISSING.value)
     scope = _context(teacher, capability, phase, curriculum_scope)
     proposals = []
     incumbent_key = _best_retained(scope)
@@ -194,7 +204,7 @@ def acquire(teacher: dict, *, region: dict, proposals, rng,
     """Thompson-style shadow acquisition across a bounded proposal set."""
     proposals = tuple(proposals)
     if not proposals:
-        raise ValueError("TEACHER_ACQUISITION_PROPOSALS_EMPTY")
+        raise ValueError(TeacherProposalError.ACQUISITION_PROPOSALS_EMPTY.value)
     rows = []
     for proposal in proposals:
         estimate = predict(teacher, region=region, action=proposal)
