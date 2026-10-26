@@ -4,7 +4,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
-from unittest.mock import patch
 
 from bilqis_mlx.runtime.teacher_observation_capture import store_sidecar, read_sidecar
 
@@ -138,6 +137,8 @@ class VisitObservationTests(unittest.TestCase):
                 reserve_gib=0., model_topology=ModelTopologySpec.from_record(receipt["model_topology"]))
             event = result["_pending_visit_events"][-1]
             observation = read_observation(root, event) if enabled else None
+            if enabled:
+                self._assert_cold_publication(root, result, published, outcome_kind, observation)
             learner = {key: np.asarray(value).tolist() for key, value in parameters.items()}
             adamw = {key: ({name: np.asarray(value).tolist() for name, value in cell.items()}
                            if isinstance(cell, dict) else np.asarray(cell).tolist())
@@ -145,12 +146,48 @@ class VisitObservationTests(unittest.TestCase):
             return dict(trace=trace, result=result, learner=learner, adamw=adamw,
                         observation=observation, event=event, release=release.release_sha256, published=published)
 
+    def _assert_cold_publication(self, root, result, published, outcome_kind, observation):
+        from contextlib import redirect_stdout
+        from dataclasses import asdict
+        import io
+        from bilqis_mlx.runtime import checkpoints
+        from bilqis_mlx.runtime.teacher_observation_replay import read_committed_observations
+        from bilqis_mlx.learning.teacher_observations import summarize_observations
+        committed = {**result, "school": {**result["school"], "current_student": asdict(published)}}
+        pending = committed.pop("_pending_visit_events")
+        boundary = checkpoints._boundary_delivery_events(committed, pending, (), None)
+        committed = checkpoints._persist(root, checkpoints._with_delivery_outbox(committed, boundary))
+        cold = read_committed_observations(root)
+        self.assertEqual(len(cold), 1)
+        self.assertEqual(cold[0]["ledger_delivery"], "OUTBOX_COMMITTED_NOT_EMITTED")
+        with redirect_stdout(io.StringIO()):
+            checkpoints._reconcile_delivery_outbox(root, committed)
+            journal = (root / "events.jsonl").read_bytes()
+            checkpoints._reconcile_delivery_outbox(root, committed)
+        self.assertEqual((root / "events.jsonl").read_bytes(), journal)
+        emitted = read_committed_observations(root)
+        self.assertEqual(len(emitted), 1)
+        self.assertEqual(emitted[0]["event_id"], cold[0]["event_id"])
+        self.assertEqual(emitted[0]["publication"]["checkpoint"], asdict(published))
+        summary = summarize_observations(emitted)
+        self.assertEqual(summary["attempted_steps"]["value"], 0 if outcome_kind == "skip" else 2)
+        expected = ("NOT_MEASURED" if outcome_kind == "skip" else "MEASURED")
+        self.assertEqual(observation["outcome"]["retention"]["status"], expected)
+        if outcome_kind == "skip":
+            self.assertEqual(observation["outcome"]["target"]["before"]["status"], "MEASURED")
+            self.assertFalse(observation["steps"])
+        else:
+            self.assertEqual(observation["outcome"]["retention"]["value"],
+                             "RETAINED" if outcome_kind == "retained" else "REJECTED")
+        if outcome_kind == "target-only":
+            self.assertEqual(observation["outcome"]["protected"]["net_correct_delta"]["status"], "NOT_MEASURED")
+
     def test_enabled_disabled_orchestration_is_behaviorally_identical(self):
         from copy import deepcopy
-        for kind in ("retained", "rejected", "target-only", "skip"):
-            with self.subTest(kind=kind):
-                enabled = self.run_visit(enabled=True, outcome_kind=kind)
-                disabled = self.run_visit(enabled=False, outcome_kind=kind)
+        for kind, autonomy in ((kind, autonomy) for kind in ("retained", "rejected", "target-only", "skip") for autonomy in (False, True)):
+            with self.subTest(kind=kind, autonomy=autonomy):
+                enabled = self.run_visit(enabled=True, outcome_kind=kind, autonomy=autonomy)
+                disabled = self.run_visit(enabled=False, outcome_kind=kind, autonomy=autonomy)
                 self.assertEqual(enabled["trace"], disabled["trace"])
                 self.assertEqual(enabled["learner"], disabled["learner"])
                 self.assertEqual(enabled["adamw"], disabled["adamw"])
@@ -228,3 +265,32 @@ class CaptureIdentityTests(unittest.TestCase):
             self.assertEqual(len(step["positions"]), 3)
             self.assertEqual(step["positions"][-1]["roles"], ["retention_support"])
             self.assertTrue(step["realization_changed"])
+
+
+    def test_readback_verifies_policy_and_selection_context_objects(self):
+        from bilqis_mlx.runtime.teacher_observation_capture import read_observation
+        for field in ("policy_evidence_epoch", "selection_source_context"):
+            with self.subTest(field=field), TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                capture, _ = self.capture(root)
+                event = {}
+                capture.finish(event, decision=None, paired=None, protected=None,
+                    stage="ORDINARY", attempted=1, retained=1)
+                (root / capture.proposal[field]["file"]).write_text("{}")
+                with self.assertRaisesRegex(ValueError, "CONTENT_MISMATCH"):
+                    read_observation(root, event)
+
+    def test_skip_scores_preserve_only_valid_pre_action_measurements(self):
+        from bilqis_mlx.runtime.teacher_observation_capture import read_observation
+        for correct, total, expected in ((6, 6, "MEASURED"), (0, 0, "NOT_MEASURED"),
+                                          (7, 6, "NOT_MEASURED")):
+            with self.subTest(correct=correct, total=total), TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                capture, _ = self.capture(root)
+                event = {"target_probe_correct": correct, "target_probe_total": total}
+                capture.finish(event, decision=None, paired=None, protected=None,
+                    stage="PERFECT_TARGET_SKIP", attempted=0, retained=0)
+                observation = read_observation(root, event)
+                self.assertEqual(observation["outcome"]["target"]["before"]["status"], expected)
+                self.assertEqual(observation["outcome"]["target"]["after"]["status"], "NOT_MEASURED")
+                self.assertEqual(observation["attempt_status"], "SELECTION_SKIPPED")

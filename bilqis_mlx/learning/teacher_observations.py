@@ -171,7 +171,7 @@ def _paired_measurements(paired, protected):
         if not isinstance(capability, str) or not isinstance(evidence, Mapping):
             return _unmeasured("PAIRED_PROBE_INVALID"), _unmeasured("PAIRED_PROBE_INVALID")
         before, after, total = evidence.get("before"), evidence.get("after"), evidence.get("total")
-        if any(type(value) is not int for value in (before, after, total)) or not 0 <= before <= total or not 0 <= after <= total:
+        if any(type(value) is not int for value in (before, after, total)) or total < MINIMUM_SCORE_TOTAL or not 0 <= before <= total or not 0 <= after <= total:
             return _unmeasured("PAIRED_PROBE_INVALID"), _unmeasured("PAIRED_PROBE_INVALID")
         entries[capability] = {"before": before, "after": after, "total": total}
     if not protected:
@@ -216,7 +216,7 @@ def candidate_outcome(decision: Mapping | None, *, paired=None, protected=None,
     before, after, total = (decision.get("active_probe_before"),
                             decision.get("active_probe_after"),
                             decision.get("active_probe_total"))
-    target_valid = all(type(value) is int for value in (before, after, total)) and 0 <= before <= total and 0 <= after <= total
+    target_valid = all(type(value) is int for value in (before, after, total)) and total >= MINIMUM_SCORE_TOTAL and 0 <= before <= total and 0 <= after <= total
     target_only = stage == "TARGET_ONLY_REJECTED"
     paired_evidence, protected_evidence = _paired_measurements(paired, protected)
     if target_only:

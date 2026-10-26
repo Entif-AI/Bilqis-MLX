@@ -197,10 +197,16 @@ class ObservationCapture:
     def finish(self, event, *, decision, paired, protected, stage, attempted, retained):
         if not self.enabled:
             return
-        from ..learning.teacher_observations import candidate_outcome, portable_v1_observation
+        from ..learning.teacher_observations import (
+            candidate_outcome, portable_v1_observation, MeasurementStatus, _score_pair,
+        )
         outcome = candidate_outcome(decision, paired=paired, protected=protected, stage=stage,
             attempted_steps=attempted, retained_steps=retained,
             wall_seconds=max(0., time.monotonic() - self.started))
+        skip_score = _score_pair((event.get("target_probe_correct"), event.get("target_probe_total")))
+        if not attempted and skip_score is not None:
+            outcome["target"]["before"] = {"status": MeasurementStatus.MEASURED, "value": event["target_probe_correct"]}
+            outcome["target"]["total"] = {"status": MeasurementStatus.MEASURED, "value": event["target_probe_total"]}
         envelope = {"schema": SCHEMA, "attempt_id": self.attempt_id,
             "proposal_id": self.proposal_id, "proposal": self.proposal_ref,
             "steps": list(self.steps), "outcome": outcome,
@@ -225,6 +231,9 @@ def read_observation(run_dir, event):
     if (state._fingerprint(proposal) != envelope["proposal_id"] or
             proposal.get("attempt_id") != envelope["attempt_id"]):
         ErrorBus.Raise(SCHOOL.TEACHER_OBSERVATION.INVALID)
+    for field in ("policy_evidence_epoch", "selection_source_context"):
+        if field in proposal:
+            read_sidecar(run_dir, proposal[field])
     steps = [read_sidecar(run_dir, step) for step in envelope["steps"]]
     for index, step in enumerate(steps, start=1):
         if (step.get("attempt_id") != envelope["attempt_id"] or

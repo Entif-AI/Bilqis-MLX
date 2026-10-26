@@ -168,3 +168,13 @@ class MissingScopeTests(unittest.TestCase):
         summary = summarize_observations([])
         self.assertEqual(summary["seconds_per_provisional_retention"]["status"], "NOT_MEASURED")
         self.assertEqual(summary["seconds_per_durable_retention"]["status"], "NOT_MEASURED")
+
+
+class ZeroDenominatorTests(unittest.TestCase):
+    def test_zero_question_count_is_not_a_measured_zero(self):
+        value = candidate_outcome({"decision": "REJECT", "reason": "fixture",
+            "active_probe_before": 0, "active_probe_after": 0, "active_probe_total": 0,
+            "worst_protected_loss": 0}, paired={"peer": {"before": 0, "after": 0, "total": 0}},
+            protected={"peer"}, stage="fixture", attempted_steps=1, retained_steps=0, wall_seconds=0.)
+        self.assertEqual(value["target"]["total"]["status"], "NOT_MEASURED")
+        self.assertEqual(value["protected"]["scope"]["status"], "NOT_MEASURED")

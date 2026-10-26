@@ -73,3 +73,44 @@ proposal and ordered delivery joins. It does not repair a corrupt artifact or
 reinterpret a historical pre-v2 lineage as executable. The existing operator retains
 neural-update authority. Three disposable test owners cover missingness, native
 instrumentation-on/off equivalence, topology/epoch partitioning and crash replay.
+
+
+## Acceptance coverage and qualification use
+
+The existing tests exercise the actual generic visit boundary with typed disposable
+Factory releases. Each ordinary/autonomy attempt is committed through the canonical
+checkpoint outbox, cold-read before journal delivery, replayed twice and summarized.
+The enabled/disabled comparison covers retained, rejected, target-only rejected and
+perfect-target skipped visits in both routes. It compares selector/reward calls,
+RNG state, source draws, ordered optimizer rows, candidate decisions, complete learner
+values, native AdamW state and published checkpoint identity. Only capture artifacts
+and elapsed capture time may differ.
+
+| Obligation | Proof owner |
+| --- | --- |
+| Ordinary and autonomy delivery, support, changed realization | `runtime/tests/test_teacher_observation_capture.py::VisitObservationTests` |
+| Eight route/outcome combinations with capture on/off | `VisitObservationTests::test_enabled_disabled_orchestration_is_behaviorally_identical` |
+| Ordered duplicate rows and actual delivered roles | `CaptureIdentityTests::test_realized_step_preserves_multiplicity_and_changed_composition` |
+| Topology partition, stable statistics, changed policy epoch | `CaptureIdentityTests::test_topology_is_partition_and_statistics_do_not_change_policy_epoch` |
+| Policy/source-context sidecar integrity | `CaptureIdentityTests::test_readback_verifies_policy_and_selection_context_objects` |
+| Skip before-score with no fabricated after-score | `CaptureIdentityTests::test_skip_scores_preserve_only_valid_pre_action_measurements` |
+| Zero denominators, partial grades, empty protected scope | `learning/tests/test_teacher_observations.py` |
+| Unchanged portable v1 fixture | `TeacherObservationTests::test_fully_measured_fixture_bridges_to_unchanged_portable_v1` |
+| Crash/cold read, repeated replay, distinct attempts on one checkpoint | `runtime/tests/test_teacher_observation_replay.py` |
+| Forged publication, divergent duplicate attempt, unpublished sidecars | `ObservationReplayTests` |
+
+Readback verifies the policy epoch and selection-source objects as well as the
+proposal, delivery rows and immutable generation. Missing/corrupt objects fail
+readback. Valid skip scores retain the measured pre-action score/denominator;
+a post-action score and protected safety remain unmeasured.
+
+Before #324 begins, its qualification manifest must pin the policy/evidence epoch,
+resolved controls, release/source identities and seed/cost contract from this
+adapter. Freeze the same baseline policy in both topology arms. Raw observations
+retain topology and policy partition identities; callers must partition before
+summarizing. The summary does not merge experimental arms automatically.
+
+A verified #333 engineering receipt supplies one prerequisite to #324. It does not
+close #150/#320, authorize a merge or start either neural qualification arm. The
+human must still freeze the workload/budget and initiate the real runs. Learning,
+calibration and shadow-controller quality remain unmeasured by these tests.
