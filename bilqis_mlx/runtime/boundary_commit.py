@@ -1,6 +1,8 @@
 """Whole-student scoring and transactional stop-boundary commits."""
 from __future__ import annotations
 
+from .topology_lifecycle import topology_for_checkpoint as _topology_for_checkpoint
+
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.factory.schedule as _factory_schedule
 import bilqis_mlx.generated_assessment as _bilqis_mlx_generated_assessment
@@ -142,7 +144,7 @@ def _commit_scored_student(mx, run_dir, receipt, manifest, course, school,
         roles = ()
     name = ("best-" if roles else "working-") + str(school.visits) + "-" + _uuid.uuid4().hex[:12]
     candidate = _runtime_checkpoints._bundle_pointer(run_dir, name, parameters, optimizer, graph,
-                                reserve_gib=reserve_gib)
+                                reserve_gib=reserve_gib, model_topology=_topology_for_checkpoint(receipt))
     if roles:
         proof = _runtime_state._fingerprint({"manifest": manifest["manifest_sha256"],
                               "rubric": rubric, "cohort": cohort.digest,
@@ -244,7 +246,8 @@ def _flush_flash_student(run_dir, receipt, course, parameters, optimizer, graph,
     else:
         name = "flash-working-" + str(school.visits) + "-" + _uuid.uuid4().hex[:12]
         candidate = _runtime_checkpoints._bundle_pointer(
-            run_dir, name, parameters, optimizer, graph, reserve_gib=reserve_gib)
+            run_dir, name, parameters, optimizer, graph, reserve_gib=reserve_gib,
+            model_topology=_topology_for_checkpoint(receipt))
     due = _dataclasses.replace(due, current_student=candidate)
     receipt = _learning_championship_runtime._bind_checkpoint_origin(receipt, candidate)
     record = _runtime_checkpoints._advance(

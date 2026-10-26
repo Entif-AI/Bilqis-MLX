@@ -56,7 +56,7 @@ def _validate_legacy_head(kind: str, labels: list[str]) -> None:
         raise ValueError(_UNTRUSTED_HEAD_ABI)
 
 
-def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
+def prepare_typed_batches(rows: list[dict], heads: dict, *, context: int = 96) -> dict:
     """Teach direct numerals both as numeric exercises and real output tokens."""
     if not rows:
         raise ValueError("ANSWER_CASTE_EMPTY_LESSON")
@@ -88,7 +88,7 @@ def prepare_typed_batches(rows: list[dict], heads: dict) -> dict:
         if row.get("gold") not in labels:
             raise ValueError("ANSWER_CASTE_GOLD_OUTSIDE_HEAD")
         tokens = row.get("tokens")
-        if (not isinstance(tokens, list) or not 1 <= len(tokens) <= 96 or
+        if (not isinstance(tokens, list) or not 1 <= len(tokens) <= context or
                 any(type(t) is not int or t < 0 for t in tokens)):
             raise ValueError("ANSWER_CASTE_INPUT_TOKENS_INVALID")
         grouped.setdefault(kind, []).append(row)
@@ -145,7 +145,7 @@ def predict_rows(mx, weights, rows, heads, config) -> dict[str, str]:
             if len(vocabulary) != weights["embedding.weight"].shape[0]:
                 raise ValueError("ANSWER_CASTE_MODEL_FULL_VOCABULARY_DRIFT")
             lengths = np.asarray([len(row["tokens"]) for row in own], dtype=np.int32)
-            if any(not 1 <= n <= 96 for n in lengths) or any(
+            if any(not 1 <= n <= weights["position.weight"].shape[0] for n in lengths) or any(
                     type(t) is not int or not 0 <= t < len(vocabulary)
                     for row in own for t in row["tokens"]):
                 raise ValueError("ANSWER_CASTE_INPUT_TOKENS_INVALID")
@@ -211,7 +211,7 @@ def _objective(mx, weights, batches, config, *, champion_guidance=None):
 
 
 def typed_objective(mx, weights, rows, heads, config, *, champion_guidance=None):
-    batches = prepare_typed_batches(rows, heads)
+    batches = prepare_typed_batches(rows, heads, context=weights["position.weight"].shape[0])
     _check_model_shape(weights, batches)
     return _objective(mx, weights, batches, config,
                       champion_guidance=champion_guidance)
@@ -220,7 +220,7 @@ def typed_objective(mx, weights, rows, heads, config, *, champion_guidance=None)
 def typed_step(mx, weights, optimizer, rows, heads, config, *,
                champion_guidance=None):
     """Operator adapter, exercised only against synthetic models in tests."""
-    batches = prepare_typed_batches(rows, heads)
+    batches = prepare_typed_batches(rows, heads, context=weights["position.weight"].shape[0])
     _check_model_shape(weights, batches)
     loss, gradients = mx.value_and_grad(
         lambda current: _objective(mx, current, batches, config,
@@ -240,7 +240,7 @@ def evaluate_rows(mx, weights, rows, heads, config, *,
     """Observe restricted-4 and unrestricted-101 separately, never conflate."""
     if numeric_scope not in ("numeric_0_3", "numeric_full_101"):
         raise ValueError("ANSWER_CASTE_UNKNOWN_NUMERIC_DIAGNOSTIC")
-    batches = prepare_typed_batches(rows, heads)
+    batches = prepare_typed_batches(rows, heads, context=weights["position.weight"].shape[0])
     if numeric_scope == "numeric_full_101" and "numeric_0_3" in batches:
         renamed = batches.pop("numeric_0_3")
         head = heads["numeric_full_101"]

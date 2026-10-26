@@ -14,6 +14,62 @@ The runtime error catalog is the authority for new failures. Raw string exceptio
 
 ## Typed catalog
 
+### `SCHOOL.MODEL_TOPOLOGY.INVALID`
+
+Invalid model topology.
+
+Owner: `runtime.model_topology`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: The requested model topology is invalid.
+
+Recovery: Provide positive structural dimensions with a width divisible by head count.
+
+Legacy aliases: `MODEL_TOPOLOGY_INVALID`
+
+### `SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID`
+
+Invalid persisted model topology.
+
+Owner: `runtime.model_topology`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: The persisted model topology record is invalid.
+
+Recovery: Preserve the run and inspect its immutable topology metadata.
+
+Legacy aliases: `MODEL_TOPOLOGY_RECORD_INVALID`
+
+### `SCHOOL.MODEL_TOPOLOGY.MISMATCH`
+
+Model topology mismatch.
+
+Owner: `runtime.model_topology`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Requested, persisted, or recovered model topology does not match.
+
+Recovery: Resume with the persisted topology; do not mutate a run's structure.
+
+Legacy aliases: `MODEL_TOPOLOGY_MISMATCH`
+
+### `SCHOOL.MODEL_TOPOLOGY.PARAMETER_SHAPES_INVALID`
+
+Model parameter shapes do not match topology.
+
+Owner: `runtime.model_topology`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Loaded parameters do not match the persisted model topology.
+
+Recovery: Preserve the checkpoint and inspect topology and tensor provenance.
+
+Legacy aliases: `MODEL_TOPOLOGY_PARAMETER_SHAPES_INVALID`
+
 ### `SCHOOL.STATE.INVALID_GRADE_PROGRAM_OR_CHAMPIONS`
 
 Invalid grade program or champions.

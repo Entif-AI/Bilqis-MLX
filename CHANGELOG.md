@@ -2,6 +2,12 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [0.3.0] - 2026-10-26
+
+### Added
+- Typed, versioned structural model topology selected at run creation, recorded with run/checkpoint identity and verified on resume independently of semantic vocabulary growth.
+- Deterministic disposable non-default model construction with explicit initialization provenance; historical defaults retain their imported student and own AdamW.
+
 ## [0.2.0] - 2026-10-17
 
 ### Added

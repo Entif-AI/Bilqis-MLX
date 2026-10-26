@@ -23,9 +23,12 @@ import bilqis_mlx.runtime.disk as _runtime_disk
 import bilqis_mlx.runtime.mlx_checkpoint as _runtime_mlx_checkpoint
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.timing_trace as _runtime_timing_trace
+import bilqis_mlx.runtime.topology_lifecycle as _topology
+from .model_topology import validate_parameter_shapes
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.state_dag as _state_dag
 import bilqis_mlx.source as _bilqis_mlx_source
+import dataclasses as _dataclasses
 import contextlib as _contextlib
 import fcntl as _fcntl
 import json as _json
@@ -92,7 +95,7 @@ def prepare_source(legacy_root: _pathlib.Path, source_checkpoint: _pathlib.Path,
 
 def _init(run_dir, manifest, course, policy_sha, historical_teacher,
           teacher_provenance, checkpoint,
-          *, source_root, reserve_gib, permitted_preexisting=()):
+          *, source_root, reserve_gib, permitted_preexisting=(), model_topology=None):
     import mlx.core as mx
     import bilqis_mlx.learning.student_ops as _learning_student_ops
     _runtime_checkpoints._clean_staged_bundles(run_dir)
@@ -101,10 +104,11 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
             p.name not in permitted for p in run_dir.iterdir()):
         raise ValueError("HUMAN_TRAINER_NEW_RUN_HAS_EXISTING_CONTENT")
     _runtime_disk.assert_headroom(run_dir, required_bytes=600_000_000, reserve_gib=reserve_gib)
-    parameters, optimizer, config, graph, answer_ids = _learning_student_ops._initial_model(checkpoint)
+    parameters, optimizer, config, graph, answer_ids, topology, initialization = (
+        _topology.initial_model(checkpoint, model_topology, _learning_student_ops._initial_model))
     initial_pointer = _runtime_checkpoints._bundle_pointer(
         run_dir, "initial-"+_uuid.uuid4().hex[:12], parameters, optimizer, graph,
-        reserve_gib=reserve_gib)
+        reserve_gib=reserve_gib, model_topology=topology)
     release, program, _ = _compatibility_executable_projection.compile_projected_executable_release(
         course, course, source_root, graph)
     state = _curriculum_scheduler.start_new(program, initial_pointer)
@@ -130,6 +134,9 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
         "teacher": _json.loads(_runtime_state._canonical(historical_teacher)),
         "teacher_provenance": teacher_provenance,
         "config": config,
+        "model_topology": topology.to_record(),
+        "model_implementation": _topology.model_implementation(),
+        "model_initialization": initialization,
         "parameter_shapes": parameter_shapes,
         "semantic_graph_sha256": _runtime_state._fingerprint(graph),
         "factory_release_sha256": release.release_sha256,
@@ -153,7 +160,9 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
                       "provider_descriptors_sha256":
                           release.verification.provider_descriptors_sha256,
                       "source_version": course.version,
-                      "factory_release_sha256": release.release_sha256}
+                      "factory_release_sha256": release.release_sha256,
+                      "model_topology": topology.to_record(),
+                      "model_implementation": _topology.model_implementation()}
     receipt = _runtime_checkpoints._persist(run_dir, _runtime_checkpoints._with_delivery_outbox(receipt, (init_event,)))
     _runtime_checkpoints._reconcile_delivery_outbox(run_dir, receipt)
     return parameters, optimizer, graph, receipt
@@ -167,12 +176,13 @@ def _require_current_resume(run_dir, receipt):
 
 
 def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
-            source_root, successor_course=None, admitted_courses=None):
+            source_root, successor_course=None, admitted_courses=None, model_topology=None):
     path = run_dir / "state.json"
     if not path.is_file():
         raise ValueError("HUMAN_TRAINER_RESUME_REQUIRES_PRIOR_RUN")
     receipt = _state_dag.read_current(run_dir)
     _require_current_resume(run_dir, receipt)
+    topology = _topology.inspect_resume_topology(run_dir, receipt, model_topology)
     import mlx.core as mx
     import bilqis_mlx.learning.championship_runtime as _learning_championship_runtime
     if (receipt.get("schema") != VERSION or receipt.get("accepted_authority") != _compatibility_source_bootstrap.AUTHORITY
@@ -194,14 +204,14 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
         raise ValueError("HUMAN_TRAINER_BUNDLE_PATH_ESCAPES_RUN")
     parameters, optimizer, bundle, graph = _runtime_mlx_checkpoint.load_semantically_bound_bundle(directory)
     executable.verify_semantic_catalog(graph)
+    validate_parameter_shapes(parameters, topology, len(graph["tokens"]))
     if (bundle["source_digest"] != _bilqis_mlx_source.AUDITED_PARENT.sha256 or
             bundle["safetensors_sha256"] != school.current_student.sha256 or
             bundle["optimizer_step"] != school.current_student.optimizer_step or
             school.current_student.filename != receipt["model_bundle"] or
             _runtime_state._fingerprint(graph) != receipt["semantic_graph_sha256"] or
             {name:list(value.shape) for name,value in parameters.items()} !=
-            receipt["parameter_shapes"] or
-            len(parameters) != 39):
+            receipt["parameter_shapes"]):
         raise ValueError("HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT")
     if _state_dag.read_generation(run_dir, receipt["generation"]) != receipt:
         raise ValueError("HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED")

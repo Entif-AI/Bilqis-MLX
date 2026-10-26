@@ -1,6 +1,8 @@
 """Serialized operator session and school phase dispatch."""
 from __future__ import annotations
 
+from .topology_lifecycle import operator_topology
+
 from bilqis_mlx import paths as _paths
 
 import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
@@ -39,7 +41,7 @@ import uuid as _uuid
 def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoint: _pathlib.Path,
             manifest_path: _pathlib.Path, *, resume: bool = False, minutes: int = 90,
             max_visits: int = 0, steps_per_visit: int = 16,
-            batch_size: int = 32, reserve_gib: float = 100.,
+            batch_size: int = 32, reserve_gib: float = 100., model_topology=None,
             numeric_staircase: bool = False,
             boolean_composite: bool = False,
             boolean_idboolops: bool = False,
@@ -119,14 +121,13 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
         if (saved_path.is_file() and _state_dag.read_current(_pathlib.Path(run_dir)).get(
                 "learning_experiment") is not None):
             raise ValueError("LEARNING_EXPERIMENT_PROTECTED_RESUME_REQUIRES_RETENTION")
+    model_topology = operator_topology(run_dir, resume=resume, requested=model_topology)
     import mlx.core as mx
     mx.set_default_device(mx.gpu)
     with _runtime_timing_trace.trace_span("PREPARE_SOURCE"):
         manifest, historical_course, engine, teacher_sha, historical_teacher, provenance = _runtime_session.prepare_source(
             source_root, source_checkpoint, manifest_path)
     course_a = _compatibility_live_releases.initial_course(historical_course)
-    # Build only verified source-bound metadata; no student, optimizer or
-    # checkpoint is touched while preparing a future grade's course.
     course_b = None
     course_c = None
     staircase_course = None
@@ -203,7 +204,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
             params, optimizer, graph, receipt = _runtime_session._init(
                 run_dir, manifest, course, teacher_sha,
                 historical_teacher, provenance, source_checkpoint,
-                source_root=source_root, reserve_gib=reserve_gib,
+                source_root=source_root, reserve_gib=reserve_gib, model_topology=model_topology,
                 permitted_preexisting=(
                     (".experiment-run.json",)
                     if experiment_budget is not None else ()))

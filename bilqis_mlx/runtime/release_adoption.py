@@ -1,6 +1,8 @@
 """Executable release, profile and JIT adoption transactions."""
 from __future__ import annotations
 
+from .topology_lifecycle import topology_for_checkpoint as _topology_for_checkpoint
+
 from bilqis_mlx.errors import ErrorBus, FACTORY, SCHOOL
 
 
@@ -548,7 +550,8 @@ def _materialize_prepared_successor(
         parameters, optimizer, graph, next_graph)
     pointer = _runtime_checkpoints._bundle_pointer(
         run_dir, "catalog-admission-" + _uuid.uuid4().hex[:12],
-        grown, own_optimizer, next_graph, reserve_gib=reserve_gib)
+        grown, own_optimizer, next_graph, reserve_gib=reserve_gib,
+        model_topology=_topology_for_checkpoint(receipt))
     config = {**receipt["config"], "vocab_size": len(next_graph["tokens"]),
               "answer_heads": _factory_executable_release.answer_heads_from_executable_release(
                   successor, next_graph)}

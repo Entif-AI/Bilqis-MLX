@@ -12926,6 +12926,70 @@
   "schema": "bilqis.error-catalog/v1",
   "typed_errors": [
     {
+      "code": "SCHOOL.MODEL_TOPOLOGY.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "MODEL_TOPOLOGY_INVALID"
+      ],
+      "message_key": "errors.school.model_topology.invalid.message",
+      "message_template": "The requested model topology is invalid.",
+      "next_action": "Provide positive structural dimensions with a width divisible by head count.",
+      "operator_steps": [],
+      "owner": "runtime.model_topology",
+      "preserve_state": true,
+      "recovery_key": "errors.school.model_topology.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid model topology"
+    },
+    {
+      "code": "SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "MODEL_TOPOLOGY_RECORD_INVALID"
+      ],
+      "message_key": "errors.school.model_topology.record_invalid.message",
+      "message_template": "The persisted model topology record is invalid.",
+      "next_action": "Preserve the run and inspect its immutable topology metadata.",
+      "operator_steps": [],
+      "owner": "runtime.model_topology",
+      "preserve_state": true,
+      "recovery_key": "errors.school.model_topology.record_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid persisted model topology"
+    },
+    {
+      "code": "SCHOOL.MODEL_TOPOLOGY.MISMATCH",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "MODEL_TOPOLOGY_MISMATCH"
+      ],
+      "message_key": "errors.school.model_topology.mismatch.message",
+      "message_template": "Requested, persisted, or recovered model topology does not match.",
+      "next_action": "Resume with the persisted topology; do not mutate a run's structure.",
+      "operator_steps": [],
+      "owner": "runtime.model_topology",
+      "preserve_state": true,
+      "recovery_key": "errors.school.model_topology.mismatch.recovery",
+      "self_heal_owner": null,
+      "title": "Model topology mismatch"
+    },
+    {
+      "code": "SCHOOL.MODEL_TOPOLOGY.PARAMETER_SHAPES_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "MODEL_TOPOLOGY_PARAMETER_SHAPES_INVALID"
+      ],
+      "message_key": "errors.school.model_topology.parameter_shapes_invalid.message",
+      "message_template": "Loaded parameters do not match the persisted model topology.",
+      "next_action": "Preserve the checkpoint and inspect topology and tensor provenance.",
+      "operator_steps": [],
+      "owner": "runtime.model_topology",
+      "preserve_state": true,
+      "recovery_key": "errors.school.model_topology.parameter_shapes_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Model parameter shapes do not match topology"
+    },
+    {
       "code": "SCHOOL.STATE.INVALID_GRADE_PROGRAM_OR_CHAMPIONS",
       "disposition": "CORRECT_INPUT_OR_STATE",
       "legacy_codes": [

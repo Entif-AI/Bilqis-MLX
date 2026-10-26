@@ -26,12 +26,12 @@ def _initial_model(source_checkpoint: _pathlib.Path):
         model.answer_ids.cpu().numpy().tolist())
 
 
-def _make_batch(rows: list[dict]):
+def _make_batch(rows: list[dict], context: int = 96):
     import numpy as np
     if not rows:
         raise ValueError("HUMAN_TRAINER_EMPTY_BATCH")
     lengths = np.asarray([len(row["tokens"]) for row in rows], dtype=np.int32)
-    if min(lengths) < 1 or max(lengths) > 96:
+    if min(lengths) < 1 or max(lengths) > context:
         raise ValueError("HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT")
     ids = np.zeros((len(rows), int(lengths.max())), dtype=np.int32)
     labels = np.zeros(len(rows), dtype=np.int32)
@@ -50,7 +50,7 @@ def _predictions(mx, parameters, rows, config, answer_ids):
     batch_rows = _runtime_mlx_parity.inference_batch_rows(rows)
     for offset in range(0, len(rows), batch_rows):
         batch = rows[offset:offset+batch_rows]
-        ids, lengths, _ = _make_batch(batch)
+        ids, lengths, _ = _make_batch(batch, parameters["position.weight"].shape[0])
         logits = _runtime_mlx_parity.forward_arrays(mx, parameters, ids, lengths,
                                 heads=config["heads"], layers=config["layers"],
                                 answer_ids=answer_ids)
@@ -110,7 +110,7 @@ def _train_step(mx, parameters, optimizer, rows, config, answer_ids,
         return typed_step(mx, parameters, optimizer, rows, config["answer_heads"],
                           config, champion_guidance=champion_guidance)
     import numpy as np
-    ids, lengths, labels = _make_batch(rows)
+    ids, lengths, labels = _make_batch(rows, parameters["position.weight"].shape[0])
     expected = mx.array(np.eye(2, dtype=np.float32)[labels])
     advice = None
     if champion_guidance is not None:

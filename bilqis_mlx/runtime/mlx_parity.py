@@ -56,7 +56,8 @@ def forward_arrays(mx, tensors, ids, lengths, *, heads: int, layers: int, answer
     import numpy as np
     ids = np.asarray(ids, dtype=np.int32)
     lengths = np.asarray(lengths, dtype=np.int32)
-    if (ids.ndim != 2 or lengths.shape != (len(ids),) or
+    if (ids.ndim != 2 or ids.shape[1] > tensors["position.weight"].shape[0] or
+            lengths.shape != (len(ids),) or
             any(length < 1 or length > ids.shape[1] for length in lengths)):
         raise ValueError("MLX_INVALID_INPUT_LENGTHS")
     batch, sequence = ids.shape

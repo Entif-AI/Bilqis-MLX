@@ -42,6 +42,36 @@ def _spec(
 
 
 class SCHOOL:
+    class MODEL_TOPOLOGY:
+        INVALID = _spec(
+            ("SCHOOL", "MODEL_TOPOLOGY", "INVALID"), owner="runtime.model_topology",
+            title="Invalid model topology", message_template="The requested model topology is invalid.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Provide positive structural dimensions with a width divisible by head count.",
+            legacy_codes=("MODEL_TOPOLOGY_INVALID",),
+        )
+        RECORD_INVALID = _spec(
+            ("SCHOOL", "MODEL_TOPOLOGY", "RECORD_INVALID"), owner="runtime.model_topology",
+            title="Invalid persisted model topology", message_template="The persisted model topology record is invalid.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Preserve the run and inspect its immutable topology metadata.",
+            legacy_codes=("MODEL_TOPOLOGY_RECORD_INVALID",),
+        )
+        MISMATCH = _spec(
+            ("SCHOOL", "MODEL_TOPOLOGY", "MISMATCH"), owner="runtime.model_topology",
+            title="Model topology mismatch", message_template="Requested, persisted, or recovered model topology does not match.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Resume with the persisted topology; do not mutate a run's structure.",
+            legacy_codes=("MODEL_TOPOLOGY_MISMATCH",),
+        )
+        PARAMETER_SHAPES_INVALID = _spec(
+            ("SCHOOL", "MODEL_TOPOLOGY", "PARAMETER_SHAPES_INVALID"), owner="runtime.model_topology",
+            title="Model parameter shapes do not match topology", message_template="Loaded parameters do not match the persisted model topology.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Preserve the checkpoint and inspect topology and tensor provenance.",
+            legacy_codes=("MODEL_TOPOLOGY_PARAMETER_SHAPES_INVALID",),
+        )
+
     class RESUME:
         BOOLEAN_COMPOSITE_REQUIRES_RESUME = _spec(
             ('SCHOOL', 'RESUME', 'BOOLEAN_COMPOSITE_REQUIRES_RESUME'), owner='compatibility.cli_preflight',
@@ -727,6 +757,10 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.MODEL_TOPOLOGY.INVALID,
+    SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID,
+    SCHOOL.MODEL_TOPOLOGY.MISMATCH,
+    SCHOOL.MODEL_TOPOLOGY.PARAMETER_SHAPES_INVALID,
     SCHOOL.STATE.INVALID_GRADE_PROGRAM_OR_CHAMPIONS,
     SCHOOL.STATE.QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES,
     SCHOOL.STATE.INVALID_SCHOOL_COUNTER,

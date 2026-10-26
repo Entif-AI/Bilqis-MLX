@@ -40,27 +40,8 @@ def _fp32_array(mx, item, *, what: str):
     return item
 
 
-def save_new_bundle(destination: Path, parameters: Mapping[str, object], optimizer,
-                    *, source_digest: str, reserve_gib: float = 100.0,
-                    semantic_catalog: dict | None = None) -> dict:
-    """Store an optimizer-bearing snapshot in an exclusive new directory.
-
-    For now used by disposable fixtures only. The caller may not substitute
-    this for full-history AdamW equivalence without independent comparison.
-    """
-    import mlx.core as mx
+def _bundle_arrays(mx, parameters, state):
     names = list(parameters)
-    _validate_name_list(names)
-    if (len(source_digest) != 64 or
-            any(x not in "0123456789abcdef" for x in source_digest)):
-        raise ValueError("MLX_BUNDLE_SOURCE_DIGEST_MISSING")
-    if not optimizer.bias_correction:
-        raise ValueError("MLX_BUNDLE_REQUIRES_BIAS_CORRECTED_ADAMW")
-    state = optimizer.state
-    if set(state) != {"step", "learning_rate", *names}:
-        raise ValueError("MLX_BUNDLE_OPTIMIZER_STATE_NOT_COMPLETE")
-    if not (0 < len(names) <= 4096):
-        raise ValueError("MLX_BUNDLE_TOO_MANY_PARAMETERS")
     arrays = {}
     expected_bytes = 0
     for i, name in enumerate(names):
@@ -77,6 +58,34 @@ def save_new_bundle(destination: Path, parameters: Mapping[str, object], optimiz
             expected_bytes += arr.size * arr.itemsize
     arrays["adamw_global_step"] = state["step"]
     arrays["adamw_learning_rate"] = state["learning_rate"]
+    return arrays, expected_bytes
+
+
+def save_new_bundle(destination: Path, parameters: Mapping[str, object], optimizer,
+                    *, source_digest: str, reserve_gib: float = 100.0,
+                    semantic_catalog: dict | None = None, model_topology=None) -> dict:
+    """Store an optimizer-bearing snapshot in an exclusive new directory.
+
+    For now used by disposable fixtures only. The caller may not substitute
+    this for full-history AdamW equivalence without independent comparison.
+    """
+    from .model_topology import validate_parameter_shapes
+    if model_topology is not None:
+        validate_parameter_shapes(parameters, model_topology, len(semantic_catalog["tokens"]))
+    import mlx.core as mx
+    names = list(parameters)
+    _validate_name_list(names)
+    if (len(source_digest) != 64 or
+            any(x not in "0123456789abcdef" for x in source_digest)):
+        raise ValueError("MLX_BUNDLE_SOURCE_DIGEST_MISSING")
+    if not optimizer.bias_correction:
+        raise ValueError("MLX_BUNDLE_REQUIRES_BIAS_CORRECTED_ADAMW")
+    state = optimizer.state
+    if set(state) != {"step", "learning_rate", *names}:
+        raise ValueError("MLX_BUNDLE_OPTIMIZER_STATE_NOT_COMPLETE")
+    if not (0 < len(names) <= 4096):
+        raise ValueError("MLX_BUNDLE_TOO_MANY_PARAMETERS")
+    arrays, expected_bytes = _bundle_arrays(mx, parameters, state)
     if semantic_catalog is not None:
         from bilqis_mlx.vocabulary_growth import _check_catalog, digest
         _check_catalog(semantic_catalog)
@@ -100,6 +109,10 @@ def save_new_bundle(destination: Path, parameters: Mapping[str, object], optimiz
         "tensor_count": len(arrays),
         "uncompressed_parameter_and_moment_bytes": expected_bytes,
     }
+    if model_topology is not None:
+        manifest["model_topology"] = model_topology.to_record()
+        from .topology_lifecycle import model_implementation
+        manifest["model_implementation"] = model_implementation()
     if semantic_catalog is not None:
         manifest["semantic_catalog"] = {
             "filename": "semantic-catalog.json",
@@ -134,6 +147,10 @@ def load_bundle(destination: Path):
     manifest = json.loads((destination/"manifest.json").read_text())
     if manifest.get("schema") != SCHEMA:
         raise ValueError("MLX_BUNDLE_SCHEMA_DRIFT")
+    topology = None
+    if manifest.get("model_topology") is not None:
+        from .model_topology import ModelTopologySpec
+        topology = ModelTopologySpec.from_record(manifest["model_topology"])
     vocabulary_record = manifest.get("semantic_catalog")
     if vocabulary_record is not None:
         _read_catalog(destination,vocabulary_record)
@@ -174,6 +191,9 @@ def load_bundle(destination: Path):
                          betas=hp["betas"], eps=hp["eps"],
                          weight_decay=hp["weight_decay"],bias_correction=True)
     restored.state=state
+    if topology is not None:
+        from .model_topology import validate_parameter_shapes
+        validate_parameter_shapes(params, topology, int(params["embedding.weight"].shape[0]))
     mx.eval(params, restored.state)
     return params,restored,manifest
 

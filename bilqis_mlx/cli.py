@@ -129,6 +129,8 @@ def _inspect(run_dir: Path) -> dict:
                 "visits": school["visits"],
                 "optimizer_step": student["optimizer_step"],
                 "checkpoint_sha256": student["sha256"],
+                "model_topology": saved.get("model_topology"),
+                "model_implementation": saved.get("model_implementation"),
                 "vocabulary": {
                     "active_checkpoint_token_count": actual_tokens,
                     "declared_config_token_count": reported_tokens,
@@ -248,7 +250,8 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
               numeric_staircase=False, boolean_composite=False, boolean_idboolops=False,
               full_grade_b=False,
               retention_enabled=True,
-              boolean_association_bridge=False):
+              boolean_association_bridge=False, model_topology=None):
+    from .runtime.model_topology import CURRENT_DEFAULT_TOPOLOGY
     legacy_root, original_checkpoint = _source_paths(legacy_code_root, champion_checkpoint)
     existing = (run_dir / "state.json").is_file()
     if resume and not existing:
@@ -259,6 +262,8 @@ def preflight(run_dir: Path, *, resume=False, verify_source=False,
         raise ValueError("BOOLEAN_ASSOCIATION_BRIDGE_REQUIRES_RESUME")
     snapshot = _inspect(run_dir)
     snapshot.update({"result":"PREFLIGHT_ONLY_NO_NEURAL_UPDATES",
+                     "model_topology": (snapshot.get("model_topology") if resume else
+                         (model_topology or CURRENT_DEFAULT_TOPOLOGY).to_record()),
                      "start_behavior":"EXPLICIT_SAVED_STATE_RESUME" if resume else "GRADE_A_NEW_RUN",
                      "blockers":[],
                      "retention_mode": ("DEFAULT_PROTECTED" if retention_enabled else
@@ -462,6 +467,8 @@ def parse_args(argv=None):
             p.add_argument("--verify-source",action="store_true",
                            help="Recheck all 216 candidate records against the pinned source (neural-inert)")
             p.add_argument("--resume",action="store_true")
+            p.add_argument("--model-topology", type=Path,
+                           help="Versioned ModelTopologySpec JSON; resume must match saved topology.")
             p.add_argument('--numeric-staircase', action='store_true',
                            help='Warm-start C at 0..3, grow to 6 before MUL/DIV')
             p.add_argument('--boolean-composite', action='store_true',
@@ -726,6 +733,10 @@ def _main(args):
         if args.action in ("explain", "explain-error"):
             return _explain_code(args.code)
         _guard_independent_no_retention(args)
+        from .runtime.topology_lifecycle import topology_from_file, operator_topology
+        topology = topology_from_file(args.model_topology)
+        if topology is not None:
+            operator_topology(args.run_dir, resume=args.resume, requested=topology)
         if args.dry_run:
             _report_retention_plan(args)
             return preflight(args.run_dir,resume=args.resume,
@@ -737,7 +748,7 @@ def _main(args):
                              boolean_idboolops=args.boolean_idboolops,
                              full_grade_b=args.full_grade_b,
                              retention_enabled=not args.no_retention,
-                             boolean_association_bridge=args.boolean_association_bridge)
+                             boolean_association_bridge=args.boolean_association_bridge, model_topology=topology)
         if args.verify_source:
             raise ValueError("VERIFY_SOURCE_REQUIRES_DRY_RUN")
         if not args.human_run:
@@ -763,7 +774,7 @@ def _main(args):
                 experiment_budget = _experiment_budget(args)
                 result = operate(
                     args.run_dir, legacy_root, original_checkpoint, GRADE_A_MANIFEST,
-                    resume=args.resume, minutes=args.minutes,
+                    resume=args.resume, minutes=args.minutes, model_topology=topology,
                     steps_per_visit=args.steps_per_visit, max_visits=args.max_visits,
                     batch_size=args.batch_size, reserve_gib=args.reserve_gib,
                     numeric_staircase=args.numeric_staircase,

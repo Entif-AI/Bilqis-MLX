@@ -324,7 +324,7 @@ def _confidence_guidance(mx, mentors, picked, config, answer_ids,
             row.get("answer_kind", "binary") != "binary" for row in picked):
         return None
     import numpy as np
-    ids, lengths, labels = _learning_student_ops._make_batch(picked)
+    ids, lengths, labels = _learning_student_ops._make_batch(picked, config.get("context", 96))
     vote_logits = []
     row_capabilities = tuple(row.get("capability") for row in picked)
     if lesson_grade is None:

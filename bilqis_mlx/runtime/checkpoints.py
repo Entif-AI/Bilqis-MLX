@@ -61,6 +61,14 @@ def _recover_orphaned_commit(run_dir: _pathlib.Path, latest: dict) -> dict:
             proposed.get("teacher_source_sha256") != latest.get("teacher_source_sha256") or
             proposed.get("accepted_authority") != latest.get("accepted_authority")):
         raise ValueError("HUMAN_TRAINER_RECOVERY_INCONSISTENT_LINEAGE")
+    if proposed.get("model_topology") != latest.get("model_topology"):
+        from ..errors import ErrorBus, SCHOOL
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH)
+    if latest.get("model_topology") is not None:
+        from .topology_lifecycle import inspect_resume_topology
+        from .model_topology import ModelTopologySpec
+        inspect_resume_topology(run_dir, proposed,
+            ModelTopologySpec.from_record(latest["model_topology"]))
     # Verify every retained old/new whole-student pointer before publication.
     _verify_best_custody(run_dir, proposed)
     proposed = _state_dag.persist(run_dir, proposed)
@@ -98,7 +106,7 @@ def _notify_viewer(event: dict):
 
 
 def _bundle_pointer(run_dir: _pathlib.Path, name: str, parameters, optimizer, graph,
-                    *, reserve_gib: float):
+                    *, reserve_gib: float, model_topology=None):
     stage_root = run_dir / ".bundle-staging"
     if stage_root.is_symlink() or (stage_root.exists() and not stage_root.is_dir()):
         raise ValueError("HUMAN_TRAINER_UNSAFE_STAGING_ROOT")
@@ -109,7 +117,7 @@ def _bundle_pointer(run_dir: _pathlib.Path, name: str, parameters, optimizer, gr
         raise ValueError("HUMAN_TRAINER_BUNDLE_ALREADY_PUBLISHED")
     metadata = _runtime_mlx_checkpoint.save_new_bundle(
         stage_directory, parameters, optimizer, source_digest=_bilqis_mlx_source.AUDITED_PARENT.sha256,
-        semantic_catalog=graph, reserve_gib=reserve_gib)
+        semantic_catalog=graph, reserve_gib=reserve_gib, model_topology=model_topology)
     restored, restored_optimizer, manifest, restored_graph = (
         _runtime_mlx_checkpoint.load_semantically_bound_bundle(stage_directory))
     if (metadata != manifest or restored_graph != graph or
