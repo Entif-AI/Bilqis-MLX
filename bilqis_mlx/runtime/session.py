@@ -2,6 +2,10 @@
 from __future__ import annotations
 
 from ..errors import ErrorBus, SCHOOL
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
 
 import bilqis_mlx.backup as _bilqis_mlx_backup
 import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
@@ -12,9 +16,6 @@ import bilqis_mlx.factory.schedule as _factory_schedule
 import bilqis_mlx.grade_a_manifest as _bilqis_mlx_grade_a_manifest
 import bilqis_mlx.learning.capability_frontier as _learning_capability_frontier
 import bilqis_mlx.learning.championship_identity as _learning_championship_identity
-import bilqis_mlx.learning.championship_runtime as _learning_championship_runtime
-import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
-import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.runtime.admission as _runtime_admission
 import bilqis_mlx.runtime.assessment as _runtime_assessment
 import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
@@ -93,6 +94,7 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
           teacher_provenance, checkpoint,
           *, source_root, reserve_gib, permitted_preexisting=()):
     import mlx.core as mx
+    import bilqis_mlx.learning.student_ops as _learning_student_ops
     _runtime_checkpoints._clean_staged_bundles(run_dir)
     permitted = {LOCKFILE, *permitted_preexisting}
     if (run_dir / "state.json").exists() or any(
@@ -172,6 +174,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
     receipt = _state_dag.read_current(run_dir)
     _require_current_resume(run_dir, receipt)
     import mlx.core as mx
+    import bilqis_mlx.learning.championship_runtime as _learning_championship_runtime
     if (receipt.get("schema") != VERSION or receipt.get("accepted_authority") != _compatibility_source_bootstrap.AUTHORITY
             or receipt.get("source_manifest_sha256") != manifest["manifest_sha256"]
             or receipt.get("teacher_source_sha256") != policy_sha):
@@ -252,6 +255,7 @@ def _resume_command(run_dir: _pathlib.Path, source_root: _pathlib.Path,
                     autonomous_curriculum: bool = False) -> str:
     """Only name non-default options in the next human-owned shell command."""
     from bilqis_mlx.paths import LEGACY_SOURCE, active_run_dir
+    import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
 
     command = "npm run train -- --human-run --resume"
     if learning_settings is None:
