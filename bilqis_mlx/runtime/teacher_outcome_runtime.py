@@ -6,6 +6,7 @@ from enum import Enum
 import random
 
 from bilqis_mlx.learning.teacher_multifidelity import (
+    active_rungs,
     DEFAULT_ACTIVATION_POLICY,
     DEFAULT_SHADOW_POLICY,
     evaluate_shadow,

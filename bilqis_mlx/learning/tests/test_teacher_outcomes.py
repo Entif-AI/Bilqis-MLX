@@ -210,6 +210,35 @@ class TeacherOutcomeContractTests(unittest.TestCase):
         self.assertEqual(action["family"], "INCUMBENT_REPLAY")
         self.assertNotIn("preview", action["parameters"])
 
+    def test_prometheus_adapter_prepares_shadow_rungs(self):
+        from bilqis_mlx.runtime.teacher_outcome_runtime import prepare_candidate
+
+        policy = {"lr": .0001, "old": 8, "preview": 1,
+                  "depth": 3, "contrast": .5, "distill": .15}
+        teacher = {
+            "strategies": {"policy-1": policy},
+            "causal_experiment": {"contexts": {}, "capability_stagnation": {}},
+        }
+        receipt = {
+            "numeric_maximum": 7,
+            "last_exam": {
+                "scores": {
+                    "C.ADD": {"correct": 28, "total": 33},
+                    "C.SUB": {"correct": 30, "total": 33},
+                },
+            },
+        }
+        school = SimpleNamespace(carried_mastery_debt=("A.IDENTITY", "B.AND"))
+
+        prepared = prepare_candidate(
+            receipt, school, teacher,
+            capability="C.ADD", phase="RECOVERY_1", lesson_grade="C",
+            curriculum_scope="scope", geometry_epoch="integer-v1",
+            policy_key="policy-1", policy=policy,
+            candidate_steps=16, batch_size=8, shadow_enabled=True)
+
+        self.assertEqual(prepared.shadow_rungs, (2, 4, 8, 16))
+
     def test_shadow_proposals_mutate_locally_without_mutating_historical_archive(self):
         from bilqis_mlx.learning.teacher_proposals import candidate_proposals
 
