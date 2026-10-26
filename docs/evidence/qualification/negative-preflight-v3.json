@@ -1,0 +1,68 @@
+{
+  "cases": [
+    {
+      "actual_optimizer_updates": 0,
+      "detail": {
+        "detail": "MANIFEST_DIGEST"
+      },
+      "exit": 2,
+      "mutation": "factory_head",
+      "status": "NOT_READY"
+    },
+    {
+      "actual_optimizer_updates": 0,
+      "detail": {
+        "detail": "MANIFEST_DIGEST"
+      },
+      "exit": 2,
+      "mutation": "topology",
+      "status": "NOT_READY"
+    },
+    {
+      "actual_optimizer_updates": 0,
+      "detail": {
+        "detail": "MANIFEST_DIGEST"
+      },
+      "exit": 2,
+      "mutation": "curriculum",
+      "status": "NOT_READY"
+    },
+    {
+      "actual_optimizer_updates": 0,
+      "detail": {
+        "detail": "MANIFEST_DIGEST"
+      },
+      "exit": 2,
+      "mutation": "numeric_scope",
+      "status": "NOT_READY"
+    },
+    {
+      "actual_optimizer_updates": 0,
+      "detail": {
+        "detail": "MANIFEST_DIGEST"
+      },
+      "exit": 2,
+      "mutation": "policy",
+      "status": "NOT_READY"
+    },
+    {
+      "actual_optimizer_updates": 0,
+      "detail": {
+        "detail": "MANIFEST_DIGEST"
+      },
+      "exit": 2,
+      "mutation": "budget",
+      "status": "NOT_READY"
+    },
+    {
+      "actual_optimizer_updates": 0,
+      "detail": {
+        "detail": "EXPECTED_MANIFEST_DIGEST"
+      },
+      "exit": 2,
+      "mutation": "manifest_digest",
+      "status": "NOT_READY"
+    }
+  ],
+  "manifest_sha256": "9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f"
+}

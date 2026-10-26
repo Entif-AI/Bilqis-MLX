@@ -1,0 +1,30 @@
+{
+  "actual_optimizer_updates": 0,
+  "arm": "baseline",
+  "budget": {
+    "attempted_step_ceiling": 16000,
+    "batch_size": 32,
+    "checkpoint_estimate_bytes": 600000000,
+    "fresh_source_draw_rounds_per_capability_per_post_seed": 8,
+    "max_visits": 1000,
+    "minutes": 90,
+    "qualification_inference_rows_ceiling": 2793,
+    "steps_per_visit": 16,
+    "wall_semantics": "SOFT_SESSION_LIMIT_AT_SAFE_BOUNDARY; DUE_EXAMS_AND_FINAL_CHECKPOINT_FINISH"
+  },
+  "manifest_sha256": "9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f",
+  "neural_authority": false,
+  "numeric_maximum": 8,
+  "run_dir": "/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026/runs/qualification-324-baseline",
+  "schema": "bilqis.factory.qualification-preflight/v1",
+  "status": "QUALIFICATION_MANIFEST_FROZEN_AND_READY_FOR_HUMAN_INITIATION",
+  "topology": {
+    "context": 96,
+    "digest": "6655a25bec72eca55d15b1d1ab78d17cb928ac9679bdacde96c8b5d5302463bd",
+    "ffn_dimension": 1536,
+    "heads": 24,
+    "layers": 6,
+    "schema": "bilqis.mlx.model-topology/v1",
+    "width": 384
+  }
+}

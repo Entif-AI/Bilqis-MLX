@@ -1,12 +1,12 @@
 # Issue #324 frozen experiment review packet
 
 **Disposition: QUALIFICATION_MANIFEST_FROZEN_AND_READY_FOR_HUMAN_INITIATION.**
-**NO NEURAL RUN EXECUTED.** Neither proposed neural command below has been executed. No experiment run directory exists.
+**NO OFFICIAL V3 QUALIFICATION ARM HAS BEEN EXECUTED.** The original v2 baseline launch aborted before a completed visit and is preserved as superseded evidence. Bounded repair-validation epochs described below are not qualification evidence.
 
-Canonical manifest digest: `167c308831e95a1aa13a18b04608957b786281a030022ef6de3e2d0634cd964a`.
-Exact executable head: `59fa6bbfd1765df45277637430acf2a00d9e1e91`.
+Canonical manifest digest: `9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f`.
+Exact executable head: `6c815d4fdaa2d6c1978cbad93cd7962d05cb940c`.
 Preparation branch: `codex/324-learning-qualification-20261026`, stacked on the verified #333 head.
-Executable checkout: `/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-20261026`. This detached checkout stays at the manifest head while review-only artifacts are committed on the preparation branch.
+Executable checkout: `/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026`. This detached checkout stays at the manifest head while review-only artifacts are committed on the preparation branch.
 
 ## Frozen inputs
 
@@ -23,6 +23,8 @@ Semantic catalog/ABI: `477ccbf6c7a9c0e978d94ff88329bccd6b51da46c788782976aefb6fe
 Policy/control identity: `733453ffcadebf641a9a789754919c9e82cb11c7c544a8eb6452f4005dc78775`.
 
 The original bounded workload is unchanged. Native source observation generation 44238 had already reached numeric inputs **0..8** before freezing. Its future ceiling 10 is excluded. Earlier notes reporting 0..7 are older observations, not the frozen scope. The same ABI and numeric ceiling apply in every arm; no SKOS or Grade D enters the learner.
+
+V3 intentionally reuses that already-sealed generation-44238 workload, release chain, policy, seeds, fixtures and budgets. The live source run has advanced since the original freeze; refreezing from its current state would change the experiment. V3 therefore changes only the repaired executable identity and fresh run paths.
 
 - A (6): `A.IDENTITY`, `A.PARENT`, `A.LINK`, `A.MEMBER`, `A.EDGE`, `A.MAPS`.
 - B (8): `B.NOT`, `B.AND`, `B.OR`, `B.XOR`, `B.IMPLIES`, `B.IFF`, `B.COMPOSITE`, `B.IDBOOLOPS`.
@@ -54,30 +56,31 @@ The capacity arm has about 2.36 times the parameters while preserving context le
 First inspect either arm without neural authority:
 
 ```sh
-cd /Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-20261026
-python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v2.json --arm baseline --expected-digest 167c308831e95a1aa13a18b04608957b786281a030022ef6de3e2d0634cd964a --dry-run
-python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v2.json --arm capacity --expected-digest 167c308831e95a1aa13a18b04608957b786281a030022ef6de3e2d0634cd964a --dry-run
+cd /Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026
+python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm baseline --expected-digest 9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f --dry-run
+python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm capacity --expected-digest 9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f --dry-run
 ```
 
 After explicit human review/authorization, run the arms sequentially with these proposed commands:
 
 ```sh
-cd /Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-20261026
-python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v2.json --arm baseline --expected-digest 167c308831e95a1aa13a18b04608957b786281a030022ef6de3e2d0634cd964a --human-run
-python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v2.json --arm capacity --expected-digest 167c308831e95a1aa13a18b04608957b786281a030022ef6de3e2d0634cd964a --human-run
+cd /Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026
+python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm baseline --expected-digest 9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f --human-run
+python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm capacity --expected-digest 9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f --human-run
 ```
 
-Only the last two commands can update fresh experiment students and their own AdamW, teacher/run receipts, candidate/champion records and checkpoints. They write under `/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-20261026/runs/qualification-324-baseline` and `.../qualification-324-capacity`. They do not target the continuing canonical student. Neither command was run.
+Only the last two commands can update fresh official experiment students and their own AdamW, teacher/run receipts, candidate/champion records and checkpoints. They write under `/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026/runs/qualification-324-baseline` and `.../qualification-324-capacity`. They do not target the continuing canonical student. Neither official v3 command has been run.
 
 ## Verified preparation evidence
 
-- Both actual arm dry-runs passed at the pinned executable head, with `neural_authority=false`, `actual_optimizer_updates=0`, and no run directory created.
+- Both v3 arm dry-runs pass at exact head `6c815d4f…`, with `neural_authority=false`, `actual_optimizer_updates=0`, and neither official v3 run directory created.
 - Seven CLI mutation cases (head, topology, curriculum, numeric scope, policy, budget, manifest seal) fail closed with zero updates. Unit tests also reseal mutations to exercise internal identity checks.
-- Qualification unit suite: 14 native tests and 11 subtests pass. Minimal no-pip environment: 12 pass, two native-construction cases explicitly skip.
-- Exact executable-head hosted Portable CI [40321841155](https://github.com/Entif-AI/Bilqis-MLX/actions/runs/40321841155) and Semantic ABI CI [40321841144](https://github.com/Entif-AI/Bilqis-MLX/actions/runs/40321841144) succeed.
+- Qualification unit suite: 15 tests pass, including the staged-release terminal-evaluation regression. The focused v2 semantic-authority diagnostics regression also passes.
+- A final one-visit, five-minute disposable qualification-path validation at the v3 production bytes completed end to end with exit 0. Its expected result is `NOT_QUALIFIED / FULL_WORKLOAD_NOT_YET_INTRODUCED`; it proves launch, visit, observation publication, checkpoint stop and terminal evaluation survive the repaired seams. It is not an official arm and cannot satisfy #324 learning criteria.
 - Factory architecture/closure, source/ABI, release/docs/errors and hygiene/size guards pass. Independent external ABI enforcement remains advisory/unconfigured locally.
 - PM-2026-10-26-007 / RC-135 / PAT-096 records the repaired portable mock-import issue and was read back in the native ledger.
-- Manifest v2 changes only the executable commit after a test-only portability fix. Production bytes, workload, release chain, policy, seeds, fixtures and budgets are identical to v1. V1 is retained as superseded evidence; v2 is the single active manifest.
+- Manual launch exposed two post-preparation defects. First, lesson diagnostics received scheduler-only `ScheduleCapability` authority after Factory-v2 cutover; `1edba645…` routes diagnostics through the admitted semantic curriculum and adds a v2-authority regression. Second, early terminal evaluation restored staged Grade-A state against the final A+B+C schedule; `b4e535c5…` restores against the currently admitted release, and `6c815d4f…` locks that behavior with a focused regression.
+- The aborted v2 baseline directory is preserved in the superseded v2 execution checkout and MUST NOT be resumed or counted. V3 uses fresh run identities. V1/v2 are historical evidence; v3 is the single active manifest.
 
 ## Remaining #324 acceptance
 
@@ -91,4 +94,4 @@ Only the last two commands can update fresh experiment students and their own Ad
 - [ ] Actual checkpoint/recovery, candidate/debt/scheduling/resource evidence and causal comparison.
 - [ ] Final QUALIFIED or NOT_QUALIFIED receipt. Learning and cross-topology benefit remain NOT_MEASURED.
 
-One seed pair and one capacity contrast can expose sensitivity but cannot establish a population-level causal law. If both arms fail similarly, preserve competing policy/runtime/capacity/interference hypotheses. Missingness and source-gold remain explicit. IPR-0220 is OPEN. No merge, real neural run, Grade D, SKOS expansion or historical resume/migration was performed.
+One seed pair and one capacity contrast can expose sensitivity but cannot establish a population-level causal law. If both arms fail similarly, preserve competing policy/runtime/capacity/interference hypotheses. Missingness and source-gold remain explicit. IPR-0220 is OPEN. PR #291/SKOS has since merged independently to main, but no SKOS semantics enter this frozen experiment. No official v3 arm, Factory merge, Grade D, semantic cutover or historical resume/migration has been performed.
