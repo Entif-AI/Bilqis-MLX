@@ -16,9 +16,7 @@ from .state import (
     _caps, _score_pool, _school_state_boundary_issue, verify_state,
     assessment_capabilities, next_capability, weakest_three,
 )
-from .promotion import (
-    PROMOTION_MEAN_FLOOR, PromotionError, _promotion_debt, _boundary_mastery_debt, _introduced_grade_capabilities, _mean_accuracy, _promotion_sweep_fields_cleared, _promotion_sweep_due, _start_promotion_sweep,
-)
+from .promotion import (PROMOTION_SWEEP_FAILURE_FLOOR, PromotionError, _promotion_debt, _boundary_mastery_debt, _introduced_grade_capabilities, _mean_accuracy, _promotion_sweep_fields_cleared, _promotion_sweep_due, _start_promotion_sweep, migrate_promotion_sweep_attempt_epoch, restore_promotion_attempt_fields)
 import hashlib
 import json
 from pathlib import Path
@@ -158,8 +156,6 @@ def migrate_legacy_debt_cadence_epoch(program, state: SchoolState) -> SchoolStat
             stage="MAIN", first_recovery=(), main_sweep_visited=(),
             latest_rubric_digest=migrated.latest_rubric_digest)
     return migrated
-
-
 
 
 def _main_queue(program, state: SchoolState) -> tuple[str, ...]:
@@ -691,7 +687,7 @@ def _assess_promotion_sweep(program, state: SchoolState,
             (capability, running[capability].correct, running[capability].total)
             for capability in scope),
     )
-    if _mean_accuracy(running, scope) < PROMOTION_MEAN_FLOOR:
+    if _mean_accuracy(running, scope) < PROMOTION_SWEEP_FAILURE_FLOOR:
         return_stage = state.promotion_sweep_return_stage
         ordinary = _promotion_sweep_fields_cleared(
             running_state, stage=return_stage, queue=(),
@@ -1133,6 +1129,7 @@ def read_state(path: Path, program) -> SchoolState:
     raw["carried_mastery_debt"] = tuple(raw.get("carried_mastery_debt", ()))
     legacy_debt_cadence_policy = "debt_cadence_policy" not in raw
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in raw
+    legacy_promotion_sweep_attempt_epoch = restore_promotion_attempt_fields(raw)
     legacy_frontier_priority_epoch = (
         "frontier_priority_visits" not in raw and
         "nongating_b_visits" not in raw)
@@ -1163,6 +1160,8 @@ def read_state(path: Path, program) -> SchoolState:
         result = migrate_legacy_debt_cadence_queue(program, result)
     if legacy_b_full_run_epoch:
         result = migrate_legacy_debt_cadence_epoch(program, result)
+    result = (migrate_promotion_sweep_attempt_epoch(program, result)
+              if legacy_promotion_sweep_attempt_epoch else result)
     verify_state(program, result)
     return result
 

@@ -15,6 +15,9 @@ from bilqis_mlx.curriculum.scheduler import (
     migrate_legacy_debt_cadence_policy, migrate_legacy_debt_cadence_queue,
     verify_state,
 )
+from bilqis_mlx.curriculum.promotion import (
+    migrate_promotion_sweep_attempt_epoch, restore_promotion_attempt_fields,
+)
 
 def _canonical(data: object) -> str:
     return json.dumps(data, sort_keys=True, ensure_ascii=False,
@@ -55,6 +58,7 @@ def _state_from_json(value: dict, course) -> SchoolState:
         "nongating_b_visits" not in school)
     legacy_debt_cadence_policy = "debt_cadence_policy" not in school
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in school
+    legacy_promotion_sweep_attempt_epoch = restore_promotion_attempt_fields(school)
     school.setdefault("main_sweep_visited", ())
     school.setdefault("carried_mastery_debt", ())
     school.setdefault("introduction_frontiers", ())
@@ -73,7 +77,7 @@ def _state_from_json(value: dict, course) -> SchoolState:
         school["debt_cadence_policy"] = None
     for name in ("active_grades", "queue", "first_recovery", "pending_failures",
                  "main_sweep_visited", "carried_mastery_debt",
-                 "promotion_sweep_scope"):
+                 "promotion_sweep_scope", "promotion_sweep_attempt_scope"):
         school[name] = tuple(school[name])
     school["promotion_sweep_scores"] = tuple(
         (capability, correct, total)
@@ -90,6 +94,8 @@ def _state_from_json(value: dict, course) -> SchoolState:
         result = migrate_legacy_debt_cadence_queue(course, result)
     if legacy_b_full_run_epoch:
         result = migrate_legacy_debt_cadence_epoch(course, result)
+    if legacy_promotion_sweep_attempt_epoch:
+        result = migrate_promotion_sweep_attempt_epoch(course, result)
     verify_state(course, result)
     return result
 

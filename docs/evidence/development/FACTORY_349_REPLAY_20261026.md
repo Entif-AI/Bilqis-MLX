@@ -36,16 +36,19 @@ Disposition meanings:
 | `7ca5b08` retire stale same-student policies | SUPERSEDED | The historical any-rejection retirement rule is not replayed. The corrected no-target-gain rule from `4246f95` is used instead. |
 | `bb7a5ed` distinguish learner-state regions | ALREADY_EQUIVALENT | Current #333 observation/student-region evidence already distinguishes grade score shape, mastery debt and related state bands. |
 | `4246f95` distinguish target inertia from interference | ADAPT | Candidate-step throttling now uses consecutive interference failures; no-target-gain breaks that streak. Same-student retirement requires four consecutive `NO_MEASURABLE_TARGET_GAIN` outcomes and resets on a new student checkpoint. |
-| `ddf21e7` shadow rung scheduler | DEFER | May be rederived offline from #333 replay evidence. It does not receive live selection authority in this replay. |
-| `96e0ba0` shadow stopping horizon | DEFER | Same boundary as `ddf21e7`; requires a separate measured experiment before live authority. |
-| `ee64915` bounded vNext canary authority | REJECT | Would reintroduce a parallel control/outcome authority beside current Factory/#333. No live canary authority is replayed. |
+| `ddf21e7` shadow rung scheduler | ADAPT | Restored the versioned 2/4/8/16 multi-fidelity ladder through current Factory visits and #333 observation envelopes. It adds target-probe inference for calibration but does not stop real candidates. |
+| `96e0ba0` shadow stopping horizon | ADAPT | Restored the calibrated v2 rule: no stop recommendation before step 8; a step-8 recommendation requires no prior positive target gain. The shadow review and activation receipt are projected through #333. |
+| `ee64915` bounded vNext canary authority | ADAPT | Restored bounded 1-in-4 live selection authority without restoring the historical parallel outcome store. Only evidence-backed existing executable policies inside the current post-retirement active set may override the current selector; underpowered cases fall back and novel learned parameters remain shadow-only. |
 
 Critical prerequisite `e7f811e` is likewise SUPERSEDED: current #333
 proposal -> delivery -> outcome capture is the passive observation contract.
 
-The replayed selector has an independent policy identity,
-`bilqis.mlx.teacher-selection/349-replay-v1`, carried in selection metadata,
-#333 proposal receipts and visit events. The causal evidence schema remains v1
+The replayed selector has policy identity
+`bilqis.mlx.teacher-selection/349-replay-v2` when the bounded vNext canary owns
+the choice; the ordinary contextual path retains its existing v1 identity. The
+legacy/current selector is still computed first and retained as counterfactual
+metadata when vNext overrides it. #333 remains the canonical proposal ->
+delivery -> outcome -> cost authority. The causal evidence schema remains v1
 because compatible historical evidence is not being rewritten.
 
 ## Retention, scheduling and promotion ledger
@@ -57,11 +60,29 @@ because compatible historical evidence is not being rewritten.
 | `d89b139` cap nongating B effort at 20% | SUPERSEDED | Current generic `DebtCadencePolicy` bounds whole-grade debt turns without hard-coding B/C identity. |
 | `d22564d` bounded full Grade-B runs | ALREADY_EQUIVALENT | Current debt cadence enters one canonical bounded-debt-grade pass after no more than four non-debt turns. |
 | `5c5a0ec` preserve promotion-sweep capacity | ALREADY_EQUIVALENT | Current promotion sweep freezes the trigger vector and replaces only the freshly rescored semantic. |
-| `d89bc02` bind promotion retries to learning state | DEFER | Current ADR explicitly allows a later fresh >90% assessment to retry. A same-student retry latch would be a new promotion policy and must be versioned deliberately. |
-| `768e36e` promotion-sweep 92/87 hysteresis | DEFER | Conflicts with current ADR-084/093 authority: strict >90% entry and >=90% continuation. Not silently imported. |
+| `d89bc02` bind promotion retries to learning state | APPLY | A failed promotion sweep is durably bound to the exact student checkpoint SHA plus exact introduced semantic scope. Fresh cohort flux alone cannot re-arm the unchanged student; retained learning or scope expansion can. Legacy receipts migrate neural-inertly to the conservative already-attempted state. |
+| `768e36e` promotion-sweep 92/87 hysteresis | APPLY | Promotion sweeps now require >=92% fresh introduced-grade mean to enter and continue down through exactly 87%, aborting only below 87%. This preserves the stitched semantic-sweep mechanism while adding the deliberately validated noise buffer. |
 
-No scheduler/promotion threshold change in this replay alters #324's frozen
-evaluation criterion.
+These scheduler/promotion changes apply only to the post-#324 successor. The
+frozen #324 v3 executable and manifest remain unchanged.
+
+## Operator evidence and authority correction
+
+The initial replay classified vNext, shadow multi-fidelity and hysteresis too
+conservatively because the current README/ADR projection had lost the most recent
+operator decisions. Contemporaneous session minutes recovered the causal sequence:
+
+- same-student cohort flux repeatedly re-armed promotion sweeps until `d89bc02`;
+- the 2/4/8/16 ladder was calibrated so step-8 shadow stopping replay saved about
+  25% of candidate steps with one false kill in 125 stop recommendations;
+- `ee64915` deliberately granted bounded 1-in-4 vNext canary selection authority;
+- promotion replay showed the old 90% hair-trigger converting cohort variance into
+  wasted sweeps, leading to the user-approved 92/87 hysteresis in `768e36e`.
+
+The human operator additionally reports hours of live use with the vNext/shadow
+lineage sustaining lesson retention above 10%, versus roughly 2-3% before these
+changes. That report is accepted as operator evidence for the replay decision; it
+is not misrepresented here as a newly reproduced controlled experiment.
 
 ## Dashboard and operator ledger
 
@@ -83,12 +104,15 @@ replay. Historical numeric-ceiling/profile migrations `b4397c4` and
 ## Verification
 
 - Dashboard: 53 presentation tests pass.
-- Teacher learning/control: 51 learning-experiment tests pass.
-- #333 observation/capture: 17 focused tests pass, including capture-enabled vs
-  capture-disabled learner/AdamW behavioral equivalence.
+- Curriculum/promotion: 69 staged-school and school tests pass, including 92% entry,
+  87% continuation and same-student/scope retry regressions.
+- Teacher learning/control: 56 tests pass, including five focused vNext/multi-fidelity
+  replay tests and the existing learning-experiment suite.
+- #333 observation/capture: 12 focused capture/replay tests pass.
 - Architecture, module-size, documentation, error-control and code-smell
   baseline checks pass with zero new baseline-relative debt.
 - No neural training was initiated by this replay.
 - No direct merge or cherry-pick train from `349-bouta-tree-fitty` was used.
-- No historical `teacher_outcomes`, `teacher_proposals` or live canary owner
-  was restored beside current Factory/#333.
+- No historical parallel `teacher_outcomes`/proposal evidence authority was
+  restored beside current Factory/#333. The bounded canary is a mode of the
+  current selector and its evidence is carried by the current observation path.

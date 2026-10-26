@@ -202,6 +202,10 @@ class SchoolState:
     # assessment freezes the baseline; each sweep visit replaces only the
     # semantic that was just rescored.
     promotion_sweep_scores: tuple[tuple[str, int, int], ...] = ()
+    # A promotion attempt is owned by one exact learner state and semantic
+    # scope. Fresh cohort flux alone cannot re-arm an unchanged student.
+    promotion_sweep_attempt_student_sha256: str | None = None
+    promotion_sweep_attempt_scope: tuple[str, ...] = ()
     # Historical ADR-090 candidate-visit counters retain their saved receipt
     # fields. ADR-094 moved scheduling authority to whole grade-turns.
     frontier_priority_visits: int = 0

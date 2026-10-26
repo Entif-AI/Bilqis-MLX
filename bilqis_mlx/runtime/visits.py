@@ -11,6 +11,9 @@ import bilqis_mlx.learning.lesson_guidance as _learning_lesson_guidance
 import bilqis_mlx.learning.stagnation_control as _learning_stagnation_control
 import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.learning.teacher_feedback as _learning_teacher_feedback
+import bilqis_mlx.learning.teacher_multifidelity as _learning_teacher_multifidelity
+import bilqis_mlx.learning.teacher_strategy_population as _learning_teacher_strategy_population
+import bilqis_mlx.learning.teacher_vnext_replay as _learning_teacher_vnext_replay
 import bilqis_mlx.profiles.catalog as _profiles_catalog
 import bilqis_mlx.profiles.retention as _profiles_retention
 import bilqis_mlx.runtime.admission as _runtime_admission
@@ -206,6 +209,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     with _runtime_timing_trace.trace_span("TRAIN_SCORE_BEFORE", capability=cap, row_count=len(rows)):
         before = _learning_student_ops._train_score(mx, params, rows, receipt["config"],
                               receipt["answer_ids"])
+    shadow_rungs = (
+        _learning_teacher_multifidelity.active_rungs(
+            _learning_teacher_multifidelity.DEFAULT_SHADOW_POLICY, candidate_steps)
+        if learning_settings is not None else ())
+    shadow_probes = []
     parent_parameters, parent_optimizer = params, optimizer
     probe_rows, protected_caps, parent_predictions, params, optimizer, skipped = (
         _prepare_retention_trial(
@@ -483,6 +491,13 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             last_loss, last_norm = _learning_student_ops._train_step(
                 mx, params, optimizer, training_rows, receipt["config"],
                 receipt["answer_ids"], champion_guidance=training_guidance)
+        rung = step + 1
+        if shadow_rungs and rung in shadow_rungs and rung < candidate_steps:
+            with _runtime_timing_trace.trace_span(
+                    "TEACHER_SHADOW_RUNG", capability=cap, visit_step=rung):
+                rung_score = _learning_student_ops._train_score(
+                    mx, params, rows, receipt["config"], receipt["answer_ids"])
+            shadow_probes.append((rung, rung_score - before))
         _runtime_timing_trace.trace_mark("OPTIMIZER_STEP_END", capability=cap, visit_step=step + 1,
                    optimizer_step=int(optimizer.state["step"].item()))
     with _runtime_timing_trace.trace_span("TRAIN_SCORE_AFTER", capability=cap, row_count=len(rows)):
@@ -492,6 +507,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     if attempted_step != step_before+candidate_steps:
         raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
     candidate_gain = after-before
+    if shadow_rungs:
+        shadow_probes.append((candidate_steps, candidate_gain))
     realized_action = (
         _learning_learning_experiment.realized_teacher_action(
             policy, candidate_steps=candidate_steps, batch_size=batch_size,
@@ -704,11 +721,23 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         teaching_file = ("autonomy/teaching/" + delivery.specimen_content_sha256 + ".json")
         _runtime_state._durable_json(run_dir / teaching_file, {"rows": delivered_autonomy_rows})
         event["autonomy_teaching"] = {**_dataclasses.asdict(delivery), "specimen_file": teaching_file}
+    shadow_review = shadow_activation = None
+    if learning_settings is not None and outcome is not None:
+        shadow_review = _learning_teacher_multifidelity.evaluate_shadow(
+            _learning_teacher_multifidelity.DEFAULT_SHADOW_POLICY,
+            probes=shadow_probes,
+            final_retained=outcome["decision"] == "PROVISIONAL",
+            full_budget_steps=candidate_steps)
+        shadow_activation = _learning_teacher_multifidelity.record_review(
+            teacher, shadow_review)
+        event["teacher_multifidelity_shadow"] = shadow_review
+        event["teacher_multifidelity_activation"] = shadow_activation
     capture.finish(event, decision=outcome,
         paired=pair if learning_settings is not None else None,
         protected=probed if learning_settings is not None else None,
         stage=stage if learning_settings is not None else "UNPROTECTED_VISIT",
-        attempted=attempted_optimizer_updates, retained=retained_optimizer_updates)
+        attempted=attempted_optimizer_updates, retained=retained_optimizer_updates,
+        shadow_review=shadow_review, shadow_activation=shadow_activation)
     stagnation = receipt.get("stagnation_session")
     if stagnation is not None:
         stagnation = _learning_stagnation_control.record_visit(
@@ -814,6 +843,39 @@ def _select_visit_policy(engine, teacher, cap, school, rng, learning_settings, t
                     diagnostics=previsit_diagnostics,
                     return_metadata=True,
                     student_checkpoint_sha256=school.current_student.sha256))
+            legacy_policy_key = policy_key
+            legacy_selection_reason = policy_selection.get("selection_reason")
+            context_key = cap + "|" + school.stage + "|" + teacher_curriculum_scope
+            channel = teacher.get("causal_experiment", {})
+            scope = channel.get("contexts", {}).get(context_key, {})
+            active_effective, inventory = (
+                _learning_teacher_strategy_population.active_effective_strategy_keys(
+                    teacher, lesson_grade, scope))
+            active_effective, _retired = (
+                _learning_teacher_strategy_population.checkpoint_active_effective_strategy_keys(
+                    teacher, lesson_grade, scope, channel, context_key,
+                    active_effective, inventory, school.current_student.sha256))
+            candidate_ordinal = int(
+                teacher.get("causal_experiment", {}).get("events", 0)) + 1
+            canary = _learning_teacher_vnext_replay.select_canary(
+                teacher, capability=cap, phase=school.stage,
+                curriculum_scope=teacher_curriculum_scope,
+                candidate_ordinal=candidate_ordinal, rng=rng,
+                active_effective_policy_keys=active_effective,
+                inventory=inventory)
+            policy_selection = dict(policy_selection)
+            policy_selection["vnext_canary"] = canary
+            policy_selection["actual_authority_changed"] = bool(
+                canary.get("actual_authority_changed"))
+            if canary.get("status") == "SELECTED":
+                policy_key = canary["policy_key"]
+                policy = teacher["strategies"][policy_key]
+                policy_selection.update({
+                    "legacy_policy_key": legacy_policy_key,
+                    "legacy_selection_reason": legacy_selection_reason,
+                    "selection_reason": "VNEXT_CANARY",
+                    "selection_policy": _learning_teacher_vnext_replay.SELECTION_POLICY,
+                })
         else:
             policy_key, policy = engine.pick(teacher, lesson_grade, rng)
             policy_selection = {
