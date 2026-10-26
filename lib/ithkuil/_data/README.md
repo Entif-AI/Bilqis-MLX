@@ -42,6 +42,24 @@ silently absorbed into table coverage. Source prose, cross-references, split
 blocks and irregular forms receive no inferred root, degree or curriculum link.
 See [the structural inventory and mapping review](../AFFIX_FRONTIER.md).
 
+## Extraction-frontier closure (#86)
+
+From the repository root, generate the canonical Stage-A receipt and its derived
+human summary without rerunning source extraction:
+
+```sh
+.venv/bin/python -B -m lib.ithkuil.src.source_frontier
+.venv/bin/python -B -m lib.ithkuil.src.source_frontier --check
+.venv/bin/python -B -m unittest lib.ithkuil.tests.test_source_frontier -q
+```
+
+`csv/sources/extraction_frontier.json` reconciles source identities and tracked
+chapter artifacts against current canonical rows, pins and extraction/debt
+receipts. `../EXTRACTION_FRONTIER.md` is generated from that same receipt.
+Neither artifact grants semantic, graph-write, curriculum or training authority.
+Pinned-but-unparsed sources and legacy unmeasured debt remain explicit. Run
+`--check` after source-data changes; do not maintain frontier counts by hand.
+
 ## Ordering boundary
 
 Website hierarchy is source structure and is retained: chapter, section, subsection, anchor, and parent-child relationships belong in the data.
