@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
 
+from bilqis_mlx import __version__ as SOFTWARE_VERSION
 from bilqis_mlx.presentation.dashboard import build, ingest
 from bilqis_mlx.presentation.operator_status import score_summary
 from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES, SchoolTelemetry
@@ -226,7 +227,7 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertIn("START", " ".join(board.operator_lines))
             display = board.render(width=180, height=42)
             self.assertEqual(board.run_version, "9.8.7")
-            self.assertIn("9.8.7/0.3.0", display)
+            self.assertIn(f"9.8.7/{SOFTWARE_VERSION}", display)
             self.assertNotIn("START", display)
             self.assertNotIn("FIRST", display)
 

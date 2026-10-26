@@ -174,6 +174,6 @@ python3 -B scripts/check_historical_abi.py
 python3 -B scripts/check_semantic_boundaries.py
 ```
 
-The portable Linux GitHub Actions jobs verify source, semantic ABI, release manifests, selected neural-inert tests and regression-aware code hygiene. Full neural testing is Apple Silicon only. Conventional Commits, Semantic Versioning and a dated `CHANGELOG.md` govern source releases. Tag an immutable annotated `vMAJOR.MINOR.PATCH` on a verified clean `main`; the tag workflow validates and publishes release notes. See [contribution and release rules](CONTRIBUTING.md).
+The portable Linux GitHub Actions jobs verify source, semantic ABI, release manifests, selected neural-inert tests and regression-aware code hygiene. Full neural testing is Apple Silicon only. Conventional Commits, Semantic Versioning and a dated `CHANGELOG.md` govern source releases. Release Please watches reviewed commits on `main`, maintains the next version/changelog PR, and creates the immutable `vMAJOR.MINOR.PATCH` tag plus GitHub Release only after that release PR merges. The tag workflow independently verifies the resulting source/tag contract. See [contribution and release rules](CONTRIBUTING.md).
 
 For detailed historical decision-making and source provenance, read [ADR.md](ADR.md), [AGENTS.md](AGENTS.md) and the [archived pre-consolidation README](docs/history/README_PRE_CANONICAL_20261017.md). Historical example paths in old research papers are **provenance**, not current operator commands. Protected research contracts must not be copied into public repositories.

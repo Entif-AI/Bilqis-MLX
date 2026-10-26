@@ -1678,3 +1678,30 @@ The first release under this clarified operator contract is `0.3.0`. This versio
 surface is provenance and operator telemetry only: it does not alter neural state,
 curriculum authority, retention, custody, promotion, qualification or championship
 semantics.
+
+
+## ADR-108 | 2026-10-25 | Release Please owns future SemVer transitions
+
+**ADR-107 established software-version provenance; this ADR clarifies who advances
+that version.** `v0.2.0` remains the last actually tagged source release. Ordinary
+feature/fix branches retain the last released SemVer and express release intent through
+Conventional Commit history instead of pre-claiming a future version. After reviewed
+changes reach `main`, Release Please computes the next SemVer, updates the generated
+release changelog and all checked-in version surfaces in one release PR, and creates
+the immutable tag/GitHub Release only after that PR passes review and merges. The first
+expected generated successor from the present feature set is `v0.3.0`; it is not
+considered released until that automation completes on `main`.
+
+The local commit-msg Husky hook and GitHub PR workflow both enforce Conventional
+Commits. Release Please uses `fix` as PATCH evidence, `feat` as MINOR evidence, and a
+breaking marker as MAJOR evidence. The release PR is the sole ordinary writer of
+`CHANGELOG.md`, `package.json`, `package-lock.json`, `pyproject.toml`,
+`bilqis_mlx.__version__`, and `.release-please-manifest.json` for release advancement.
+The existing tag workflow becomes verification-only so there is exactly one release
+publisher. No synthetic check-run attestation or branch-protection bypass is adopted;
+bot-created PR CI follows GitHub's normal approval-required security gate when it
+applies.
+
+This release automation remains source provenance only. It cannot start neural
+training, alter a student or AdamW, certify curriculum mastery, or convert a source
+release into a neural qualification claim.

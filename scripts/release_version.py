@@ -15,7 +15,7 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 CONVENTIONAL = re.compile(
-    r"^(feat|fix|docs|test|build|ci|perf|refactor|chore|revert)(\([a-z0-9][a-z0-9-]*\))?!?: .{3,}$"
+    r"^(feat|fix|docs|test|build|ci|perf|refactor|revert|style|chore)(\([a-z0-9][a-z0-9-]*\))?!?: .{3,}$"
 )
 
 
@@ -39,13 +39,18 @@ def changelog_section(changelog: str, version: str) -> str:
 def version_contract(root: Path, *, require_tag: bool = False) -> dict:
     project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     package = json.loads((root / "package.json").read_text(encoding="utf-8"))
+    package_lock = json.loads((root / "package-lock.json").read_text(encoding="utf-8"))
     version = project["project"]["version"]
     python_init = (root / "bilqis_mlx" / "__init__.py").read_text(encoding="utf-8")
     python_match = re.search(
-        r'^__version__\s*=\s*["\']([^"\']+)["\']\s*$', python_init, re.M)
+        r'^__version__\s*=\s*["\']([^"\']+)["\'](?:\s*#.*)?$', python_init, re.M)
     python_version = python_match.group(1) if python_match else None
+    release_manifest = json.loads(
+        (root / ".release-please-manifest.json").read_text(encoding="utf-8"))
     if (not VERSION.fullmatch(version) or package.get("version") != version or
-            python_version != version):
+            package_lock.get("version") != version or
+            package_lock.get("packages", {}).get("", {}).get("version") != version or
+            python_version != version or release_manifest.get(".") != version):
         raise ValueError("RELEASE_SEMVER_OR_MANIFEST_MISMATCH")
     notes = changelog_section((root / "CHANGELOG.md").read_text(encoding="utf-8"), version)
     tag = "v" + version
