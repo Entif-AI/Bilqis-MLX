@@ -200,6 +200,45 @@ class QualificationTests(unittest.TestCase):
         self.assertTrue(all(s['fresh_coverage'] for s in result['sweeps']))
         self.assertTrue(all(s['exact_training_overlap'] == 0 for s in result['sweeps']))
 
+    def test_terminal_evaluation_uses_the_current_admitted_stage(self):
+        from bilqis_mlx.runtime.qualification_results import evaluate_finished_arm
+        current_release = SimpleNamespace(release_sha256='a' * 64)
+        final_release = SimpleNamespace(
+            release_sha256='b' * 64,
+            execution_plan=SimpleNamespace(
+                capabilities=(SimpleNamespace(capability_id='C.X'),)),
+        )
+        prepared = SimpleNamespace(
+            arm={'id': 'baseline', 'run_dir': str(self.root / 'staged-run')},
+            manifest={'digest': 'c' * 64},
+            release=final_release,
+            graph={},
+            stages=(current_release, final_release),
+        )
+        receipt = {
+            'qualification': {'manifest_sha256': 'c' * 64},
+            'school': {'current_student': {'sha256': 'd' * 64}},
+        }
+        stage_program = object()
+        school = object()
+        with patch('bilqis_mlx.state_dag.read_current', return_value=receipt), \
+                patch('bilqis_mlx.runtime.admission._read_executable_factory_release_artifact',
+                      return_value=current_release), \
+                patch('bilqis_mlx.factory.schedule.schedule_program_from_executable_release',
+                      return_value=stage_program) as schedule, \
+                patch('bilqis_mlx.runtime.state._state_from_json', return_value=school) as restore, \
+                patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities',
+                      return_value=()), \
+                patch('bilqis_mlx.runtime.teacher_observation_replay.read_committed_observations',
+                      return_value=[]), \
+                patch('bilqis_mlx.learning.teacher_observations.summarize_observations',
+                      return_value={}), \
+                patch('bilqis_mlx.runtime.qualification_results._durable_json'):
+            result = evaluate_finished_arm(prepared)
+        schedule.assert_called_once_with(current_release)
+        restore.assert_called_once_with(receipt['school'], stage_program)
+        self.assertEqual(result['reason'], 'FULL_WORKLOAD_NOT_YET_INTRODUCED')
+
 
     def test_explicit_human_launch_maps_only_frozen_limits(self):
         from bilqis_mlx.runtime.qualification import execute
