@@ -331,7 +331,7 @@ class SchoolTelemetryTests(unittest.TestCase):
                 [
                     ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
                     ("LR", 2), ("D", 1), ("C", 1), ("OLD", 3),
-                    ("DSTIL", 5), ("CREDIT", 7), ("HEALTH", 9),
+                    ("DSTIL", 5), ("CREDIT", 7), ("P(RET)", 6), ("HEALTH", 9),
                 ],
             )
             self.assertEqual(

@@ -13,6 +13,38 @@ HEALTH_LABELS = MappingProxyType({
 MINIMUM_SUPPORT = 8
 EXHAUSTED_ZERO_RETENTION_VISITS = 16
 LOW_YIELD_RETENTION_FRACTION = .10
+PREDICTION_MINIMUM_SUPPORT = 8
+
+
+def _record(history: dict, key) -> dict:
+    return history.setdefault(key, {"trials": 0, "retained": 0})
+
+
+def _prediction_before(event: dict, history: dict) -> float:
+    explicit = event.get("teacher_outcome_prediction_before")
+    if isinstance(explicit, dict):
+        probability = explicit.get("retention_probability")
+        if isinstance(probability, (int, float)) and 0 <= probability <= 1:
+            return float(probability)
+    retention = event.get("candidate_retention")
+    capability = event.get("capability")
+    policy = event.get("teacher_policy")
+    if not isinstance(retention, dict):
+        return .5
+    phase = retention.get("phase")
+    grade = event.get("grade") or (
+        capability.partition(".")[0] if isinstance(capability, str) else None)
+    keys = (
+        ("exact", capability, phase, policy),
+        ("capability", capability, policy),
+        ("grade_phase", grade, phase, policy),
+        ("grade", grade, policy),
+    )
+    for key in keys:
+        row = history.get(key)
+        if isinstance(row, dict) and row.get("trials", 0) >= PREDICTION_MINIMUM_SUPPORT:
+            return row.get("retained", 0) / row["trials"]
+    return .5
 
 
 def _derived_health(event: dict, history: dict) -> dict | None:
@@ -27,10 +59,18 @@ def _derived_health(event: dict, history: dict) -> dict | None:
                 for value in (capability, policy, phase)) or
             decision not in ("PROVISIONAL", "REJECT")):
         return None
-    record = history.setdefault(
-        (capability, phase, policy), {"trials": 0, "retained": 0})
-    record["trials"] += 1
-    record["retained"] += decision == "PROVISIONAL"
+    grade = event.get("grade") or capability.partition(".")[0]
+    keys = (
+        ("exact", capability, phase, policy),
+        ("capability", capability, policy),
+        ("grade_phase", grade, phase, policy),
+        ("grade", grade, policy),
+    )
+    for key in keys:
+        row = _record(history, key)
+        row["trials"] += 1
+        row["retained"] += decision == "PROVISIONAL"
+    record = history[keys[0]]
     trials, retained = record["trials"], record["retained"]
     rate = retained / trials
     if trials < MINIMUM_SUPPORT:
@@ -46,6 +86,15 @@ def _derived_health(event: dict, history: dict) -> dict | None:
 
 
 def teacher_fields(event: dict, history: dict | None = None) -> dict:
+    fields = {}
+    if history is not None:
+        fields["p_ret"] = f"{_prediction_before(event, history) * 100:.1f}%"
+    else:
+        explicit = event.get("teacher_outcome_prediction_before")
+        if isinstance(explicit, dict):
+            probability = explicit.get("retention_probability")
+            if isinstance(probability, (int, float)) and 0 <= probability <= 1:
+                fields["p_ret"] = f"{probability * 100:.1f}%"
     health = event.get("teacher_policy_health")
     if not isinstance(health, dict):
         # Preserve readback of the original 349 Teacher vNext events.
@@ -53,7 +102,6 @@ def teacher_fields(event: dict, history: dict | None = None) -> dict:
     if not isinstance(health, dict) and history is not None:
         health = _derived_health(event, history)
     status = health.get("status") if isinstance(health, dict) else None
-    return (
-        {"health": HEALTH_LABELS[status]}
-        if status in HEALTH_LABELS else {}
-    )
+    if status in HEALTH_LABELS:
+        fields["health"] = HEALTH_LABELS[status]
+    return fields

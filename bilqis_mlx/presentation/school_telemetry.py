@@ -13,6 +13,7 @@ import string
 
 from bilqis_mlx.presentation.spiral_dashboard import Column
 from bilqis_mlx.presentation.growth_projection import GrowthProjection
+from bilqis_mlx.presentation.progression_projection import GraduationProjection
 from bilqis_mlx.presentation.teacher_vnext import teacher_fields as _teacher_vnext_fields
 from ..compatibility.telemetry_events import (
     historical_capability_grade,
@@ -34,8 +35,6 @@ _SIGNAL_LABELS = {
 
 def _signal_label(signal) -> str:
     return _SIGNAL_LABELS.get(str(signal), str(signal))
-
-
 def _teacher_decision_text(decision: object) -> str:
     if not isinstance(decision, dict):
         return "LESSON COMMITTED; exam pending"
@@ -60,16 +59,12 @@ _REASON_LABELS = {
     "ACTIVE_SCHOOL_GRADE_REGRESSION": "FRONTIER LOSS",
     "PAIRED_SCREEN_WITHIN_BUDGET": "WITHIN BUDGET",
 }
-
-
 def _warning_text(event: dict) -> str:
     decision = event.get("teacher_decision")
     if not isinstance(decision, dict):
         return "-"
     warnings = [_signal_label(signal) for signal in decision.get("warning_signals", ())]
     return ",".join(warnings) if warnings else "-"
-
-
 def _candidate_result_reason(event: dict) -> tuple[str, str]:
     candidate = event.get("candidate_retention")
     steps = event.get("retained_optimizer_updates")
@@ -292,7 +287,7 @@ LETTER_TABLES = (
         Column("C", 1, "contrast", right=True),
         Column("OLD", 3, "old", optional=True, right=True),
         Column("DSTIL", 5, "distill", optional=True, right=True),
-        Column("CREDIT", 7, "credit", right=True), Column("HEALTH", 9, "health", optional=True))),
+        Column("CREDIT", 7, "credit", right=True), Column("P(RET)", 6, "p_ret", optional=True, right=True), Column("HEALTH", 9, "health", optional=True))),
     ("GRADES & MASTERY", (
         Column("CAPABILITY", 10, "subject"),
         Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
@@ -434,6 +429,7 @@ class SchoolTelemetry:
         self.execution_start_step = None
         self.live_projected_generations = set()
         self.teacher_policy_health = {}
+        self.graduations = GraduationProjection(); self.board.state["graduations"] = self.graduations.summary()
         self.board.grade_program = tuple(self.grades)
 
     def _grade(self, name):
@@ -486,6 +482,7 @@ class SchoolTelemetry:
             "progress": self._progress,
             "autonomy": self._autonomy,
         }[kind](grade, event)
+        self.board.state["graduations"] = self.graduations.observe(event)
 
     def _init(self, grade, event):
         if event.get("event") in {
@@ -568,6 +565,7 @@ class SchoolTelemetry:
         self.start = dict(self.latest)
         self.start_cap = dict(self.last_cap)
         self.board.state["grew"] = self.growth.begin_execution()
+        self.board.state["graduations"] = self.graduations.begin_execution()
         self.execution_start_step = step if type(step) is int else None
         # Emit current snapshots immediately so START is truthful before the
         # first new exam in this execution command.

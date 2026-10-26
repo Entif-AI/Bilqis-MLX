@@ -983,6 +983,8 @@ class Dashboard:
                 ("RTN%",round(retained*100/visits) if type(retained) is int and type(visits) is int and visits>0 else "-",5,True),
                 ("GREW",f"{state['grew']:+d}" if type(state.get('grew')) is int else "-",5,True),
                 ("R/H",round(retained*3600/elapsed) if type(retained) is int and elapsed>0 else "-",5,True),
+                ("G/RTN",f"{state['grew']/retained:+.2f}" if type(state.get('grew')) is int and type(retained) is int and retained>0 else "-",6,True),
+                ("GRAD",state.get("graduations","0.0.0 / 0.0.0"),18,False),
             ])
             halt=state.get('halt')
             if halt:

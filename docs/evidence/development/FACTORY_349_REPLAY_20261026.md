@@ -95,20 +95,36 @@ is not misrepresented here as a newly reproduced controlled experiment.
 | `79efeaf` stable steps/minute | ADAPT | Replayed as cumulative command-local `ST/M`, eliminating refresh-window jitter. |
 | `0fa95da` retention percentage | ADAPT | Replayed as `RTN%` over command-local visits. |
 | `728f91a` whole-school GREW | ADAPT | Replayed across measured active capabilities, including capabilities withheld for stagnation; missing measurements are not fabricated. |
-| `e7f811e` teacher policy health display | ADAPT | Restored the SOUP & TEACHER `HEALTH` column with the historical `PRODUCTIVE / EXPLORE / LOW-YIELD / EXHAUSTED` vocabulary. The current dashboard derives it read-only from each policy's capability/phase visit outcomes, so existing journals gain the display without restoring the historical parallel outcome-model authority. |
+| `e7f811e` teacher policy yield/health display | ADAPT | Restored SOUP & TEACHER `P(RET)` plus `HEALTH`. Explicit historical prediction receipts remain authoritative when present; current journals derive a pre-outcome retention estimate from the nearest capability/phase/policy evidence neighborhood with >=8 observations, falling back to the historical 50% prior when underpowered. HEALTH retains the historical `PRODUCTIVE / EXPLORE / LOW-YIELD / EXHAUSTED` vocabulary. Both are read-only projections and do not restore the historical parallel outcome-model authority. |
 | `7fef150` compact dashboard presentation | DEFER | Pure presentation compaction can follow after the final metric set stabilizes. |
 
 Prerequisite `aac2a0b` command-local counter reset is included in the dashboard
 replay. Historical numeric-ceiling/profile migrations `b4397c4` and
 `80a49d0` are SUPERSEDED by current declarative Factory scope ownership.
 
+Two additional operator metrics were added on 2026-10-26:
+
+- `G/RTN` = command-local whole-school `GREW` divided by command-local
+  retained visits. It is rendered as signed percentage-point growth per
+  retention, so retention volume can be distinguished from retention impact.
+- `GRAD` = `major.total-successes.attempts / lifetime-major.lifetime-total-successes.lifetime-attempts`.
+  An attempt begins when a promotion sweep actually enters. Every completed
+  sweep that opens a new semantic stage or grade increments total-successes;
+  the subset that crosses to a new letter grade increments major. The left
+  triplet resets at each execution-session start; the right triplet spans the
+  model history represented by the append-only run journal. Historical journals
+  without explicit promotion-result events are reconstructed conservatively from
+  promotion-sweep phase, introduction-stage and forward-grade transitions.
+
 ## Verification
 
-- Dashboard: 53 presentation tests pass.
-- Policy-health follow-up: 55 school-telemetry tests pass, and a one-shot dashboard
+- Dashboard/operator metrics: 59 presentation tests pass.
+- Policy-yield/health follow-up: a one-shot dashboard
   render against the operator's already-running `microspenics-349-replay` journal
-  displays `HEALTH` with live `LOW-YIELD`, `PRODUCTIVE`, and `EXPLORE`
-  classifications without restarting or mutating the trainer.
+  displays live `P(RET)` and `HEALTH` values without restarting or mutating
+  the trainer. The same readback showed command-local `GREW +10`, `RTN 18`,
+  `G/RTN +0.56`, and correctly reported `GRAD 0.0.0 / 0.0.0` because no
+  promotion sweep had yet fired in that journal.
 - Curriculum/promotion: 69 staged-school and school tests pass, including 92% entry,
   87% continuation and same-student/scope retry regressions.
 - Teacher learning/control: 56 tests pass, including five focused vNext/multi-fidelity
