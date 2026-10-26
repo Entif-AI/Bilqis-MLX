@@ -1,12 +1,12 @@
 ---
 name: ithkuil-ingestion
-description: "Rebuild pinned New Ithkuil source tables and inspect extraction debt in Bilqis-MLX using deterministic repository commands. Use for source-to-CSV rebuilds, not curriculum admission or neural training."
+description: "Rebuild pinned New Ithkuil source tables, compile canonical CSVs to RDF/SKOS, run semantic conformance and inspect held/debt evidence in Bilqis-MLX using deterministic repository commands. Not curriculum admission or neural training."
 ---
 
 # Ithkuil Ingestion
 
-This implementation exposes Stage A only. Semantic build, conformance and optional
-graph orchestration are governed by the contract but not yet exposed by this Skill.
+This implementation exposes source rebuild and semantic build/conformance.
+Optional graph orchestration is governed by the contract but not yet exposed.
 
 ## Authority preflight
 
@@ -30,6 +30,15 @@ frontier receipt and explicit debt. A non-success result stops downstream work.
 Read-only debt inspection reads existing receipts; do not invoke a publishing CLI
 under an inspection request.
 
+## Compile and check canonical CSVs
+
+Read [references/semantic.md](references/semantic.md), then invoke the repository's
+`lib.ithkuil.src.ingestion_semantic` action with explicit inputs and output root.
+It calls the canonical compiler followed by every registered conformance gate.
+Do not interpret rows, suppress failed gates or repair CSVs inside this action.
+Surface both core and full-domain artifacts, their distinct digests, held ledger,
+coverage and constituent gate evidence. Failed conformance blocks graph eligibility.
+
 ## Postflight and recovery
 
 Validate the actual result and referenced artifact digests after action. Preserve
@@ -39,4 +48,4 @@ Never blindly replay an ambiguously acknowledged publication.
 
 No curriculum/training/checkpoint/optimizer mutation, pin override, graph reset,
 default graph fallback, Git push/merge or external publication is authorized by
-this Skill. Graph operations are not part of this Stage-A implementation.
+this Skill. Graph operations are not part of this implementation.
