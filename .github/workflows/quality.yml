@@ -56,7 +56,10 @@ jobs:
             --github-output "$GITHUB_OUTPUT"
       - name: Install semantic profile dependencies
         if: steps.skos.outputs.action != 'SKIP'
-        run: python3 -m pip install -r lib/ithkuil/requirements-falkor.txt
+        run: >-
+          python3 -m pip install
+          -r lib/ithkuil/requirements-extraction.txt
+          -r lib/ithkuil/requirements-falkor.txt
       - name: Verify deterministic source semantic profile
         if: steps.skos.outputs.action != 'SKIP'
         env:
