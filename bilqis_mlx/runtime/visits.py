@@ -527,7 +527,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 teacher, capability=cap, phase=school.stage, policy_key=policy_key,
                 decision=outcome, local_gain=candidate_gain,
                 curriculum_scope=teacher_curriculum_scope,
-                diagnostics=previsit_diagnostics)
+                diagnostics=previsit_diagnostics,
+                student_checkpoint_sha256=school.current_student.sha256)
             if outcome["decision"] == "PROVISIONAL":
                 _learning_learning_experiment.commit_trial(parent_parameters, parent_optimizer, params, optimizer)
             else:
@@ -794,7 +795,8 @@ def _select_visit_policy(engine, teacher, cap, school, rng, learning_settings, t
                     engine, teacher, cap, school.stage, rng,
                     curriculum_scope=teacher_curriculum_scope,
                     diagnostics=previsit_diagnostics,
-                    return_metadata=True))
+                    return_metadata=True,
+                    student_checkpoint_sha256=school.current_student.sha256))
         else:
             policy_key, policy = engine.pick(teacher, lesson_grade, rng)
             policy_selection = {

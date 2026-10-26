@@ -14,6 +14,7 @@ from bilqis_mlx.learning.learning_experiment import (
     fork_student, commit_trial, sampled_protection, whole_grade_protection,
     missing_grade_capabilities,
     selection_credit, select_source_lesson, candidate_step_budget,
+    _active_effective_strategy_keys, _effective_policy_key,
 )
 
 
@@ -85,6 +86,39 @@ def live_scale_teacher():
                                   "no_target_gain_streak": 0},
                 }
             },
+        },
+    }
+
+
+def strategy_population_teacher(count=24):
+    policies = []
+    for old in (4, 8, 12, 16, 20):
+        for depth in (1, 3):
+            for contrast in (0., .5):
+                for lr in (.00004, .00008, .00013, .0002, .0003):
+                    for distill in (0., .15, .35, .65):
+                        policies.append({
+                            "old": old, "preview": 0, "depth": depth,
+                            "contrast": contrast, "lr": lr,
+                            "distill": distill,
+                        })
+    strategies = {
+        f"policy-{index:03d}": policy
+        for index, policy in enumerate(policies[:count])
+    }
+    stats = {
+        key: {"trials": 10, "reward_sum": 0., "reward_ema": 0., "latest": 0.}
+        for key in strategies
+    }
+    return {
+        "strategies": strategies,
+        "global_stats": stats,
+        "grade_stats": {"C": {key: dict(value) for key, value in stats.items()}},
+        "events": 30,
+        "mutations": 0,
+        "causal_experiment": {
+            "version": "bilqis.mlx.causal-teacher-experiment/v1",
+            "negative_archetypes": [], "events": 0, "contexts": {},
         },
     }
 
@@ -1546,6 +1580,139 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         commit_trial(weights, parent, branch, branch_opt)
         self.assertEqual(int(parent.state["step"].item()), parent_step+1)
         self.assertFalse(np.array_equal(np.asarray(weights["embedding.weight"]), parent_weight))
+
+    def test_active_strategy_population_is_bounded_and_preserves_proven_incumbent(self):
+        teacher = strategy_population_teacher()
+        proven = "policy-023"
+        retained = decide({
+            "C.ADD": {"before": 3, "after": 5, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        for _ in range(5):
+            observe_context(
+                teacher, capability="C.ADD", phase="MAIN",
+                policy_key=proven, decision=retained, local_gain=.4,
+                curriculum_scope="scope")
+        scope = teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"]
+
+        active, inventory = _active_effective_strategy_keys(
+            teacher, "C", scope)
+
+        self.assertLessEqual(len(active), 16)
+        self.assertGreater(len(inventory), len(active))
+        self.assertIn(
+            _effective_policy_key(teacher["strategies"][proven]), active)
+
+    def test_contextual_pick_keeps_strategy_archive_immutable(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher()
+        before_keys = set(teacher["strategies"])
+        before_mutations = teacher["mutations"]
+
+        for seed in range(12):
+            contextual_pick(
+                policy_engine, teacher, "C.ADD", "MAIN", random.Random(seed),
+                curriculum_scope="scope")
+
+        self.assertEqual(set(teacher["strategies"]), before_keys)
+        self.assertEqual(teacher["mutations"], before_mutations)
+
+    def test_candidate_step_budget_recovers_when_interference_streak_breaks(self):
+        teacher = {
+            "strategies": {"policy": {"lr": .00013}},
+            "global_stats": {
+                "policy": {"trials": 20, "reward_sum": 0.,
+                           "reward_ema": 0., "latest": 0.},
+            },
+            "grade_stats": {}, "events": 20,
+        }
+        interference = decide({
+            "C.SUB": {"before": 22, "after": 23, "total": 33},
+            "A.EDGE": {"before": 6, "after": 4, "total": 6},
+        }, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"A.EDGE"}, settings=Settings())
+        no_gain = decide({
+            "C.SUB": {"before": 22, "after": 22, "total": 33},
+        }, active_capability="C.SUB", phase="RECOVERY_1", protected=set(),
+            settings=Settings())
+
+        for _ in range(4):
+            observe_context(
+                teacher, capability="C.SUB", phase="RECOVERY_1",
+                policy_key="policy", decision=interference, local_gain=.03,
+                curriculum_scope="scope")
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 4)
+
+        observe_context(
+            teacher, capability="C.SUB", phase="RECOVERY_1",
+            policy_key="policy", decision=no_gain, local_gain=0.,
+            curriculum_scope="scope")
+        self.assertEqual(
+            candidate_step_budget(
+                16, teacher, "C.SUB", curriculum_scope="scope"), 16)
+
+    def test_same_student_no_gain_streak_retires_policy_until_checkpoint_changes(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+
+        teacher = strategy_population_teacher(count=17)
+        policy = "policy-000"
+        teacher["global_stats"][policy].update(
+            trials=10, reward_sum=2., reward_ema=.2, latest=.2)
+        teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"] = {
+            policy: {"trials": 5, "reward_sum": 2., "unsafe": 0,
+                     "retained": 5, "latest": .4, "no_target_gain_streak": 0},
+        }
+        checkpoint_a = "a" * 64
+        checkpoint_b = "b" * 64
+        no_gain = decide({
+            "C.ADD": {"before": 5, "after": 4, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        interference = decide({
+            "C.ADD": {"before": 3, "after": 4, "total": 6},
+            "B.XOR": {"before": 6, "after": 4, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected={"B.XOR"},
+            settings=Settings(), mature_grades=frozenset({"B"}))
+
+        for _ in range(3):
+            observe_context(
+                teacher, capability="C.ADD", phase="MAIN",
+                policy_key=policy, decision=no_gain, local_gain=-.2,
+                curriculum_scope="scope",
+                student_checkpoint_sha256=checkpoint_a)
+        still_active = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
+            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a,
+            return_metadata=True)
+        self.assertEqual(
+            still_active[2]["checkpoint_retired_effective_strategy_count"], 0)
+
+        observe_context(
+            teacher, capability="C.ADD", phase="MAIN",
+            policy_key=policy, decision=interference, local_gain=.2,
+            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a)
+        for _ in range(4):
+            observe_context(
+                teacher, capability="C.ADD", phase="MAIN",
+                policy_key=policy, decision=no_gain, local_gain=-.2,
+                curriculum_scope="scope",
+                student_checkpoint_sha256=checkpoint_a)
+        retired = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
+            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a,
+            return_metadata=True)
+        self.assertEqual(
+            retired[2]["checkpoint_retired_effective_strategy_count"], 1)
+        self.assertNotEqual(retired[0], policy)
+
+        new_student = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
+            curriculum_scope="scope", student_checkpoint_sha256=checkpoint_b,
+            return_metadata=True)
+        self.assertEqual(
+            new_student[2]["checkpoint_retired_effective_strategy_count"], 0)
 
 
 
