@@ -34,6 +34,36 @@ class ResetTests(unittest.TestCase):
             self.assertEqual(i._read('MATCH()-[e:Foreign]->() RETURN e.key'),[['foreign-edge']])
             self.assertEqual(i.materialize(bundle)['status'],'complete')
 
+    def test_above_provider_cap_reset_rebuild_and_identity_guards(self):
+        with tempfile.TemporaryDirectory() as d:
+            i,bundle=self.prepare(d)
+            for start in range(0,10000,500):
+                i.graph.query("UNWIND $rows AS k CREATE (n:RdfTerm {key:k,owner:$owner})",{'owner':i.owner,'rows':[f'scale-{n:05d}' for n in range(start,start+500)]})
+                i.graph.query("UNWIND $rows AS k MATCH(n:RdfTerm {key:k}) CREATE (n)-[:RDF {key:k,owner:$owner}]->(n)",{'owner':i.owner,'rows':[f'scale-{n:05d}' for n in range(start,start+500)]})
+            i.graph.query("MATCH(m:BilqisProjection {owner:$owner}) SET m.state='incomplete',m.nodes=10039,m.edges=10063",{'owner':i.owner})
+            i.graph.query("CREATE (a:Foreign {key:'scale-foreign-a'}),(b:Foreign {key:'scale-foreign-b'}),(a)-[:Foreign {key:'scale-foreign-edge'}]->(b)")
+            plan=plan_reset(i)
+            self.assertEqual(plan['blockers'],[])
+            self.assertEqual(plan['enumeration'],{'owned_node_rows':10040,'boundary_rows':10063})
+            self.assertEqual((plan['owned_nodes'],plan['owned_edges']),(10039,10063))
+            self.assertEqual(len(set(plan['node_keys'])),10039)
+            self.assertEqual(len(set(plan['edge_keys'])),10063)
+            self.assertEqual(plan,plan_reset(i))
+            for field,value in (('owner','wrong-owner'),('canonical_sha256','wrong-digest')):
+                with self.assertRaises(ProfileError):reset_owned(i,{**plan,field:value})
+            with self.assertRaises(ProfileError):plan_reset(Importer(i.db,i.name,'wrong-owner'))
+            issued=[];original=i.graph.query
+            def capture(query,params=None,**kwargs):
+                issued.append(query)
+                return original(query,params,**kwargs)
+            i.graph.query=capture
+            result=reset_owned(i,plan)
+            self.assertEqual((result['deleted_nodes'],result['deleted_edges']),(10039,10063))
+            self.assertEqual(issued,[RESET_QUERY])
+            self.assertEqual(i._read('MATCH(n:Foreign) RETURN n.key ORDER BY n.key'),[['scale-foreign-a'],['scale-foreign-b']])
+            self.assertEqual(i._read('MATCH()-[e:Foreign]->() RETURN e.key'),[['scale-foreign-edge']])
+            self.assertEqual(i.materialize(bundle)['status'],'complete')
+
     def test_each_foreign_boundary_refuses_before_any_deletion(self):
         for case in ('incoming','outgoing','owned-edge-foreign-node'):
             with self.subTest(case=case),tempfile.TemporaryDirectory() as d:

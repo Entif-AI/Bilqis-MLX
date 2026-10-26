@@ -13,7 +13,14 @@ from .falkor_projection import VERSION
 def plan_reset(importer):
     state=importer.status()
     if state.get('version')!=VERSION:raise ProfileError('FALKOR_RESET_VERSION_UNSUPPORTED')
-    rows=importer._read('MATCH(n) WHERE n.owner=$owner RETURN properties(n),labels(n)',{'owner':importer.owner})
+    node_match='MATCH(n) WHERE n.owner=$owner'
+    boundary_match='MATCH(a)-[e]->(b) WHERE a.owner=$owner OR b.owner=$owner OR e.owner=$owner'
+    def counts():
+        return (importer._read(node_match+' RETURN count(n)',{'owner':importer.owner})[0][0],
+                importer._read(boundary_match+' RETURN count(e)',{'owner':importer.owner})[0][0])
+    before=counts()
+    # Internal IDs break ties only for this operational scan; keys remain deletion identity.
+    rows=list(importer._pages(node_match+' RETURN properties(n),labels(n) ORDER BY id(n)'))
     nodes=[];blockers=[]
     for props,labels in rows:
         if 'BilqisProjection' in labels: continue
@@ -22,13 +29,22 @@ def plan_reset(importer):
         else:nodes.append(props['key'])
     node_set=set(nodes)
     edges=[]
-    boundaries=importer._read('MATCH(a)-[e]->(b) WHERE a.owner=$owner OR b.owner=$owner OR e.owner=$owner RETURN a.key,a.owner,e.key,e.owner,type(e),b.key,b.owner',{'owner':importer.owner})
+    boundaries=list(importer._pages(boundary_match+' RETURN a.key,a.owner,e.key,e.owner,type(e),b.key,b.owner ORDER BY id(e)'))
     for source,source_owner,key,owner,kind,target,target_owner in boundaries:
         if source_owner!=importer.owner or target_owner!=importer.owner or owner!=importer.owner or kind!='RDF' or source not in node_set or target not in node_set:
             blockers.append({'code':'FOREIGN_BOUNDARY','source':source or '', 'edge':key or '', 'target':target or '', 'relationship_type':kind})
         else:edges.append(key)
+    after=counts()
+    if before!=after or after!=(len(rows),len(boundaries)):
+        blockers.append({'code':'ENUMERATION_COUNT_MISMATCH','before':list(before),
+                         'after':list(after),'enumerated':[len(rows),len(boundaries)]})
+    if importer.status()!=state:
+        blockers.append({'code':'PROJECTION_CHANGED_DURING_ENUMERATION'})
+    if len(node_set)!=len(nodes) or len(set(edges))!=len(edges) or any(not key for key in edges):
+        blockers.append({'code':'DUPLICATE_OWNED_KEY'})
     return {'schema':'bilqis.skos.reset-plan/v1','graph':importer.name,'owner':importer.owner,
             'canonical_sha256':state['digest'],'state':state['state'],'projection_version':state['version'],
+            'enumeration':{'owned_node_rows':after[0],'boundary_rows':after[1]},
             'owned_nodes':len(nodes),'owned_edges':len(edges),'node_keys':sorted(nodes),'edge_keys':sorted(edges),
             'foreign_nodes_touching_owned_edges':[{'source':s or '', 'edge':k or '', 'target':t or ''} for s,so,k,eo,kind,t,to in boundaries if eo==importer.owner and (so!=importer.owner or to!=importer.owner)],
             'foreign_edges_touching_owned_nodes':[k or '' for s,so,k,eo,kind,t,to in boundaries if eo!=importer.owner and (so==importer.owner or to==importer.owner)],
@@ -41,21 +57,25 @@ OPTIONAL MATCH (n:RdfTerm) WHERE n.owner=$owner
 WITH m,n ORDER BY n.key
 WITH m,collect(n) AS owned
 WHERE [n IN owned | n.key]=$node_keys
+WITH m
 OPTIONAL MATCH (a)-[bad]->(b)
 WHERE (a.owner=$owner OR b.owner=$owner OR bad.owner=$owner)
 AND (coalesce(a.owner,'')<>$owner OR coalesce(b.owner,'')<>$owner
  OR coalesce(bad.owner,'')<>$owner OR type(bad)<>'RDF'
  OR NOT ('RdfTerm' IN labels(a)) OR NOT ('RdfTerm' IN labels(b)))
-WITH m,owned,count(bad) AS bad_count WHERE bad_count=0
+WITH m,count(bad) AS bad_count WHERE bad_count=0
 OPTIONAL MATCH ()-[e:RDF]->() WHERE e.owner=$owner
-WITH m,owned,e ORDER BY e.key
-WITH m,owned,collect(e) AS edges
+WITH m,e ORDER BY e.key
+WITH m,collect(e) AS edges
 WHERE [e IN edges | e.key]=$edge_keys
 SET m.state='resetting'
 FOREACH (e IN edges | DELETE e)
+WITH m,size(edges) AS deleted_edges
+OPTIONAL MATCH (n:RdfTerm) WHERE n.owner=$owner
+WITH m,deleted_edges,collect(n) AS owned
 FOREACH (n IN owned | DELETE n)
 SET m.state='empty',m.digest='',m.nodes=0,m.edges=0
-RETURN size(owned),size(edges)
+RETURN size(owned),deleted_edges
 """
 
 
