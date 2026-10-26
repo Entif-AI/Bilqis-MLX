@@ -492,6 +492,13 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     if attempted_step != step_before+candidate_steps:
         raise ValueError("HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT")
     candidate_gain = after-before
+    realized_action = (
+        _learning_learning_experiment.realized_teacher_action(
+            policy, candidate_steps=candidate_steps, batch_size=batch_size,
+            policy_controls=policy_control_receipts,
+            guidance_applied_steps=confidence_applied_steps,
+            enrichment_examples=enrichment_examples)
+        if learning_settings is not None else None)
     outcome = context_credit = None
     if learning_settings is not None:
         with _runtime_timing_trace.trace_span("RETENTION_CANDIDATE_EVIDENCE", capability=cap):
@@ -528,6 +535,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 decision=outcome, local_gain=candidate_gain,
                 curriculum_scope=teacher_curriculum_scope,
                 diagnostics=previsit_diagnostics,
+                realized_action=realized_action,
                 student_checkpoint_sha256=school.current_student.sha256)
             if outcome["decision"] == "PROVISIONAL":
                 _learning_learning_experiment.commit_trial(parent_parameters, parent_optimizer, params, optimizer)
@@ -606,6 +614,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
+        **({"realized_teacher_action": realized_action}
+           if realized_action is not None else {}),
         "attempted_optimizer_updates": attempted_optimizer_updates,
         "candidate_step_control": {
             "configured_steps": steps_per_visit,

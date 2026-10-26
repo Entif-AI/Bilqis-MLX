@@ -1714,6 +1714,78 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(
             new_student[2]["checkpoint_retired_effective_strategy_count"], 0)
 
+    def test_realized_delivery_variants_keep_separate_outcome_evidence(self):
+        import bilqis_mlx.learning.learning_experiment as experiment
+        teacher = {
+            "strategies": {
+                "variable": {"lr": .0001, "old": 16, "depth": 3,
+                             "contrast": 1.0},
+            },
+            "global_stats": {}, "grade_stats": {}, "events": 0,
+        }
+        retained = decide({
+            "C.ADD": {"before": 3, "after": 5, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        rejected = decide({
+            "C.ADD": {"before": 3, "after": 3, "total": 6},
+        }, active_capability="C.ADD", phase="MAIN", protected=set(),
+            settings=Settings())
+        common = dict(candidate_steps=16, batch_size=32,
+                      guidance_applied_steps=0, enrichment_examples=0)
+        first_action = experiment.realized_teacher_action(
+            teacher["strategies"]["variable"],
+            policy_controls=({"effective_old_grade_examples": 12},), **common)
+        second_action = experiment.realized_teacher_action(
+            teacher["strategies"]["variable"],
+            policy_controls=({"effective_old_grade_examples": 9},), **common)
+        self.assertNotEqual(first_action["key"], second_action["key"])
+
+        first = observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="variable",
+            decision=retained, local_gain=.4, curriculum_scope="scope",
+            realized_action=first_action)
+        second = observe_context(
+            teacher, capability="C.ADD", phase="MAIN", policy_key="variable",
+            decision=rejected, local_gain=0., curriculum_scope="scope",
+            realized_action=second_action)
+        record = teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"][
+            "variable"]
+
+        self.assertEqual(record["trials"], 2)
+        self.assertEqual(record["retained"], 1)
+        self.assertEqual(record["realized_actions"][first_action["key"]]["retained"], 1)
+        self.assertEqual(record["realized_actions"][second_action["key"]]["unsafe"], 1)
+        self.assertEqual(first["realized_action_key"], first_action["key"])
+        self.assertEqual(second["realized_action_key"], second_action["key"])
+
+    def test_realized_delivery_identity_tracks_delivery_not_requested_old_mix(self):
+        import bilqis_mlx.learning.learning_experiment as experiment
+        controls = ({
+            "effective_old_grade_examples": 5,
+            "depth_control": "SOURCE_TOKEN_LENGTH_PROXY",
+            "contrast_control": "SOURCE_GROUP_DIVERSITY",
+        },)
+        common = dict(
+            candidate_steps=16, batch_size=32, policy_controls=controls,
+            guidance_applied_steps=0, enrichment_examples=0)
+        requested_four = experiment.realized_teacher_action(
+            {"lr": .0001, "old": 4, "distill": .15}, **common)
+        requested_twenty = experiment.realized_teacher_action(
+            {"lr": .0001, "old": 20, "distill": .15}, **common)
+        changed_delivery = experiment.realized_teacher_action(
+            {"lr": .0001, "old": 20, "distill": .15}, **{
+                **common,
+                "policy_controls": ({
+                    "effective_old_grade_examples": 6,
+                    "depth_control": "SOURCE_TOKEN_LENGTH_PROXY",
+                    "contrast_control": "SOURCE_GROUP_DIVERSITY",
+                },),
+            })
+
+        self.assertEqual(requested_four["key"], requested_twenty["key"])
+        self.assertNotEqual(requested_four["key"], changed_delivery["key"])
+
 
 
 class DebtRehearsalTests(unittest.TestCase):

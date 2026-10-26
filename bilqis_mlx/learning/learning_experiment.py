@@ -26,15 +26,8 @@ from bilqis_mlx.learning.teacher_feedback import (
     LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
     select_weakness_targets,
 )
-from bilqis_mlx.learning.teacher_strategy_population import (
-    UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT,
-    active_effective_strategy_keys as _active_effective_strategy_keys,
-    checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies,
-    effective_context_scope as _effective_context_scope_impl,
-    effective_policy_key as _effective_policy_key_impl,
-    pick_existing_active as _pick_existing_active,
-    record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome,
-)
+from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome
+from bilqis_mlx.learning.teacher_realized_action import bind_record as _bind_realized_action_record, describe as realized_teacher_action, record_outcome as _record_realized_action_outcome
 
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
@@ -802,6 +795,7 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                     policy_key: str, decision: dict, local_gain: float,
                     curriculum_scope: str = "",
                     diagnostics: dict | None = None,
+                    realized_action: dict | None = None,
                     student_checkpoint_sha256: str | None = None) -> dict:
     """Source-paired trial outcome; never rewrite historical UCB rewards."""
     if (policy_key not in teacher.get("strategies", {}) or
@@ -822,8 +816,9 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
                                             "no_target_gain_streak": 0})
     record.setdefault("no_target_gain_streak", 0)
     record.setdefault("retained", 0)
+    action_key, action_record, stagnation_key = _bind_realized_action_record(record, realized_action, policy_key)
     shared_stagnation = _shared_stagnation_record(
-        channel, capability, curriculum_scope, policy_key)
+        channel, capability, curriculum_scope, stagnation_key)
     capability_stagnation = _capability_stagnation_record(
         channel, capability, curriculum_scope)
     # Normalized worst-case retention cost stops many small wins concealing
@@ -898,6 +893,9 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         diagnostic["unsafe"] += 1
     else:
         diagnostic["retained"] += 1
+    _record_realized_action_outcome(
+        action_record, rejected=decision["decision"] == "REJECT",
+        no_target_gain=no_target_gain, reward=reward, diagnostic_key=diagnostic_key)
     strain = decision.get("matrix_strain") or {}
     if strain.get("status") == "MEASURED":
         # A bounded teacher-observable geometric feature; outcome rewards
@@ -933,6 +931,7 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
             "attempts_since_retained":
                 capability_stagnation["attempts_since_retained"],
             "diagnostic_context_key": diagnostic_key,
+            **({"realized_action_key": action_key} if action_key is not None else {}),
             "inherited_exploration_credit": inherited_exploration,
             "teacher_selection_reward": selection_reward,
             "legacy_reward_reinterpreted": False,
