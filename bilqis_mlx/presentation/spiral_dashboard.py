@@ -112,7 +112,6 @@ WIDE_ROW_FRACTIONS = {
     "GRADES & MASTERY": .22,
 }
 
-
 def _score_tuple(value):
     if not isinstance(value,str) or "/" not in value:
         return None
@@ -982,6 +981,7 @@ class Dashboard:
                  if isinstance(self._steps_per_min,(int,float)) else "-",
                  9,True),
                 ("RETAINED",retained if type(retained) is int else "-",8,True),
+                ("R/H",round(retained*3600/elapsed) if type(retained) is int and elapsed>0 else "-",5,True),
             ])
             halt=state.get('halt')
             if halt:
