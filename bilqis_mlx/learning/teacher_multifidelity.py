@@ -22,20 +22,24 @@ class ShadowPolicy:
     version: str
     rungs: tuple[int, ...]
     minimum_target_delta_to_continue: int
+    minimum_decision_step: int = 1
 
     def __post_init__(self) -> None:
         if (not self.version or not self.rungs or
                 any(type(step) is not int or step < 1 for step in self.rungs) or
                 tuple(sorted(set(self.rungs))) != self.rungs or
                 type(self.minimum_target_delta_to_continue) is not int or
-                self.minimum_target_delta_to_continue < 1):
+                self.minimum_target_delta_to_continue < 1 or
+                type(self.minimum_decision_step) is not int or
+                self.minimum_decision_step < 1):
             raise ValueError(TeacherMultifidelityError.POLICY_INVALID.value)
 
 
 DEFAULT_SHADOW_POLICY = ShadowPolicy(
-    version="teacher-multifidelity-shadow/v1",
+    version="teacher-multifidelity-shadow/v2",
     rungs=(2, 4, 8, 16),
     minimum_target_delta_to_continue=1,
+    minimum_decision_step=8,
 )
 
 
@@ -84,8 +88,11 @@ def evaluate_shadow(policy: ShadowPolicy, *, probes,
                 for step, delta in rows)):
         raise ValueError(TeacherMultifidelityError.PROBES_INVALID.value)
     first_stop = next((
-        step for step, delta in rows[:-1]
-        if delta < policy.minimum_target_delta_to_continue
+        step for index, (step, delta) in enumerate(rows[:-1])
+        if (step >= policy.minimum_decision_step and
+            delta < policy.minimum_target_delta_to_continue and
+            max(prior_delta for _, prior_delta in rows[:index + 1]) <
+            policy.minimum_target_delta_to_continue)
     ), None)
     shadow_steps = first_stop if first_stop is not None else full_budget_steps
     return {

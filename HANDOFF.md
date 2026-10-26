@@ -1,4 +1,42 @@
-# CURRENT SUPERSESSION | 2026-10-23 | Prometheus direct-U7C + C promotion sweep
+# CURRENT SUPERSESSION | 2026-10-26 | Teacher vNext calibration completed
+
+The canonical repository is `/Users/emilie/Code/bilqis-mlx` on branch
+`349-bouta-tree-fitty`. The first merged Teacher vNext human calibration run completed
+normally at generation **43120**, native AdamW step **148016**, after 292 command visits.
+The assistant did not start, stop or otherwise manipulate neural training.
+
+The append-only ledger contains **267 actual teacher proposals, 17 retained visits and
+228 retained optimizer updates**: 6.37% proposal retention. The dominant failure remains
+`NO_MEASURABLE_TARGET_GAIN` at **175/267 (65.54%)**. Every actual policy-selection
+receipt still reports `INHERITED_LEGACY_UCB`, so this result does **not** establish that
+Teacher vNext proposal selection failed; vNext was observing and shadow-ranking only.
+
+Teacher vNext multi-fidelity calibration now uses shadow policy v2. It waits through
+step 8 and recommends stopping there only when no probe through step 8 has shown a
+positive target gain. Replay of the completed run gives **125 hypothetical stops, one
+false kill (0.8%), and 1,000/3,996 candidate optimizer steps saved (25.03%)**. The
+configured shadow gate reports `QUALIFIED` on this run, but `authority_changed=false`:
+actual candidates still run their full authorized horizon and the existing retention
+decision remains sovereign. A second human-operated calibration run is required before
+considering a separate activation patch.
+
+The learned local proposal distribution remains structurally underpowered rather than
+merely a few samples short: 267 visits fragmented into **223 exact StudentRegions**;
+the busiest region received only four observations, while qualification requires 16
+observations and three retentions. Do not weaken those support gates or undo the
+learner-state aliasing correction. The next proposal-authority design should consider a
+separately reviewed hierarchical/backoff evidence model or controlled exploration that
+preserves materially distinct learner states.
+
+Current code work for this calibration is limited to the shadow policy and its focused
+regressions. It does not change source/oracle truth, retention admission, student/AdamW
+custody, promotion, qualification, championship authority, or human ownership of neural
+training. Verify the exact Git SHA and remote state after the pending commit/push before
+the next human rerun.
+
+---
+
+# PRIOR SUPERSESSION | 2026-10-23 | Prometheus direct-U7C + C promotion sweep
 
 This supersedes the issue-349 run snapshot below for current operator state. The active
 run is `runs/codex-0001-prometheus`, generation **27343**, factory release

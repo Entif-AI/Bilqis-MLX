@@ -1739,3 +1739,37 @@ unchanged; this is an operator-telemetry correction only.
 
 Candidate retention, source/oracle truth, student/AdamW custody, promotion,
 qualification and human ownership of neural training remain unchanged.
+
+## ADR-110 | 2026-10-26 | Shadow early stopping requires target inertia through step eight
+
+The first completed human calibration run on merged Teacher vNext ended normally at
+generation 43120 / optimizer step 148016 after 292 command visits. Its append-only
+ledger contains 267 actual teacher proposals, 17 retained candidates and 228 retained
+optimizer updates, for 6.37% proposal retention. Legacy UCB selected all 267 actual
+policies; Teacher vNext remained evidence/shadow-only. `NO_MEASURABLE_TARGET_GAIN`
+remained dominant at 175/267 proposals (65.54%), so this run is evidence about the
+legacy selector plus vNext calibration, not a test of learned proposal authority.
+
+The original multi-fidelity shadow rule was too eager: stopping at the first inert
+2/4/8-step probe would have recommended 231 stops and falsely killed 9 eventual
+retentions. Replay of the completed run establishes a safer shadow policy: **do not
+recommend an early stop before step 8, and at step 8 stop only when no earlier probe
+through that rung has shown the configured positive target gain.** This preserves a
+candidate such as `[0, 1, 0, 2]`, whose transient step-4 gain is evidence against target
+inertia even though its step-8 cumulative delta returns to zero.
+
+Under this v2 shadow rule, the completed run yields 125 hypothetical stops, one false
+kill (generation 42833, `C.COUNT`, trajectory `[0, 0, 0, 2]`) and 1,000 saved candidate
+optimizer steps out of 3,996 attempted (25.03%). The false-kill rate among stop
+recommendations is 0.8% and mean savings are 3.75 steps/review, satisfying the current
+shadow activation evidence thresholds on this run. **Qualification is evidence, not
+authority:** actual early stopping remains disabled, full candidate execution and the
+existing retention gate remain authoritative, and another human-operated run is
+required before any separate activation decision.
+
+The same run also reveals support starvation in the learned local proposal model:
+267 visits produced 223 exact `StudentRegion` keys, with no exact region receiving more
+than four observations, while the learned distribution requires at least 16 observations
+and three retentions. Do not lower those evidence thresholds or collapse materially
+different learner states merely to force qualification. Any future pooling/backoff or
+authority-transition design requires separate evidence and review.

@@ -129,7 +129,7 @@ class TeacherOutcomeContractTests(unittest.TestCase):
         self.assertEqual(summary["attempted_candidates"], 20)
         self.assertEqual(summary["optimizer_steps_per_retention"], None)
 
-    def test_shadow_ladder_records_false_kill_without_early_stopping(self):
+    def test_shadow_ladder_waits_through_step_eight_for_late_bloomer(self):
         from bilqis_mlx.learning.teacher_multifidelity import (
             DEFAULT_SHADOW_POLICY, evaluate_shadow,
         )
@@ -141,11 +141,42 @@ class TeacherOutcomeContractTests(unittest.TestCase):
             full_budget_steps=16)
 
         self.assertEqual(review["mode"], "SHADOW")
-        self.assertEqual(review["first_would_stop_step"], 2)
-        self.assertTrue(review["false_kill"])
+        self.assertIsNone(review["first_would_stop_step"])
+        self.assertFalse(review["false_kill"])
         self.assertEqual(review["actual_steps_spent"], 16)
-        self.assertEqual(review["shadow_steps_if_active"], 2)
+        self.assertEqual(review["shadow_steps_if_active"], 16)
         self.assertEqual(review["actual_authority_changed"], False)
+
+    def test_shadow_ladder_stops_at_eight_after_persistent_target_inertia(self):
+        from bilqis_mlx.learning.teacher_multifidelity import (
+            DEFAULT_SHADOW_POLICY, evaluate_shadow,
+        )
+
+        review = evaluate_shadow(
+            DEFAULT_SHADOW_POLICY,
+            probes=((2, 0), (4, 0), (8, 0), (16, 0)),
+            final_retained=False,
+            full_budget_steps=16)
+
+        self.assertEqual(review["first_would_stop_step"], 8)
+        self.assertEqual(review["shadow_steps_if_active"], 8)
+        self.assertEqual(review["shadow_steps_saved"], 8)
+        self.assertFalse(review["false_kill"])
+
+    def test_shadow_ladder_preserves_earlier_gain_even_if_step_eight_is_inert(self):
+        from bilqis_mlx.learning.teacher_multifidelity import (
+            DEFAULT_SHADOW_POLICY, evaluate_shadow,
+        )
+
+        review = evaluate_shadow(
+            DEFAULT_SHADOW_POLICY,
+            probes=((2, 0), (4, 1), (8, 0), (16, 2)),
+            final_retained=True,
+            full_budget_steps=16)
+
+        self.assertIsNone(review["first_would_stop_step"])
+        self.assertEqual(review["shadow_steps_if_active"], 16)
+        self.assertFalse(review["false_kill"])
 
     def test_shadow_ladder_preserves_promising_candidate_to_full_budget(self):
         from bilqis_mlx.learning.teacher_multifidelity import (
