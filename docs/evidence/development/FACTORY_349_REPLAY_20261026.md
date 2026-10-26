@@ -95,6 +95,7 @@ is not misrepresented here as a newly reproduced controlled experiment.
 | `79efeaf` stable steps/minute | ADAPT | Replayed as cumulative command-local `ST/M`, eliminating refresh-window jitter. |
 | `0fa95da` retention percentage | ADAPT | Replayed as `RTN%` over command-local visits. |
 | `728f91a` whole-school GREW | ADAPT | Replayed across measured active capabilities, including capabilities withheld for stagnation; missing measurements are not fabricated. |
+| `e7f811e` teacher policy health display | ADAPT | Restored the SOUP & TEACHER `HEALTH` column with the historical `PRODUCTIVE / EXPLORE / LOW-YIELD / EXHAUSTED` vocabulary. The current dashboard derives it read-only from each policy's capability/phase visit outcomes, so existing journals gain the display without restoring the historical parallel outcome-model authority. |
 | `7fef150` compact dashboard presentation | DEFER | Pure presentation compaction can follow after the final metric set stabilizes. |
 
 Prerequisite `aac2a0b` command-local counter reset is included in the dashboard
@@ -104,6 +105,10 @@ replay. Historical numeric-ceiling/profile migrations `b4397c4` and
 ## Verification
 
 - Dashboard: 53 presentation tests pass.
+- Policy-health follow-up: 55 school-telemetry tests pass, and a one-shot dashboard
+  render against the operator's already-running `microspenics-349-replay` journal
+  displays `HEALTH` with live `LOW-YIELD`, `PRODUCTIVE`, and `EXPLORE`
+  classifications without restarting or mutating the trainer.
 - Curriculum/promotion: 69 staged-school and school tests pass, including 92% entry,
   87% continuation and same-student/scope retry regressions.
 - Teacher learning/control: 56 tests pass, including five focused vNext/multi-fidelity

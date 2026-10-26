@@ -13,6 +13,7 @@ import string
 
 from bilqis_mlx.presentation.spiral_dashboard import Column
 from bilqis_mlx.presentation.growth_projection import GrowthProjection
+from bilqis_mlx.presentation.teacher_vnext import teacher_fields as _teacher_vnext_fields
 from ..compatibility.telemetry_events import (
     historical_capability_grade,
     historical_course_admission,
@@ -22,7 +23,6 @@ from ..compatibility.telemetry_events import (
     historical_withheld_inventory_change_explains,
 )
 
-
 TELEMETRY_VERSION = "bilqis.school50.telemetry/v1"
 _SIGNAL_LABELS = {
     "REPETITIVE_ANSWERS": "S1",
@@ -31,7 +31,6 @@ _SIGNAL_LABELS = {
     "DISCONNECTED_PREREQUISITES": "S4",
     "EXCESSIVE_INTRODUCTORY_COMPLEXITY": "S5",
 }
-
 
 def _signal_label(signal) -> str:
     return _SIGNAL_LABELS.get(str(signal), str(signal))
@@ -53,7 +52,6 @@ def _teacher_decision_text(decision: object) -> str:
     if type(champion) is int and champion:
         parts.append(f"champ {champion}")
     return " | ".join(parts) + "; exam pending" if parts else "LESSON COMMITTED; exam pending"
-
 
 _REASON_LABELS = {
     "NO_MEASURABLE_TARGET_GAIN": "NO TARGET GAIN",
@@ -294,7 +292,7 @@ LETTER_TABLES = (
         Column("C", 1, "contrast", right=True),
         Column("OLD", 3, "old", optional=True, right=True),
         Column("DSTIL", 5, "distill", optional=True, right=True),
-        Column("CREDIT", 7, "credit", right=True))),
+        Column("CREDIT", 7, "credit", right=True), Column("HEALTH", 9, "health", optional=True))),
     ("GRADES & MASTERY", (
         Column("CAPABILITY", 10, "subject"),
         Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
@@ -435,6 +433,7 @@ class SchoolTelemetry:
         self.last_exam_grade = None
         self.execution_start_step = None
         self.live_projected_generations = set()
+        self.teacher_policy_health = {}
         self.board.grade_program = tuple(self.grades)
 
     def _grade(self, name):
@@ -746,6 +745,7 @@ class SchoolTelemetry:
                 teacher[field] = "OFF" if field in unavailable else _whole(strategy.get(field))
             else:
                 teacher[field] = "OFF" if field in unavailable else _display(strategy.get(field))
+        teacher.update(_teacher_vnext_fields(event, self.teacher_policy_health))
         self.board.rows["SOUP & TEACHER"].append(teacher)
         attempted = event.get("attempted_optimizer_updates", 0)
         if type(attempted) is not int or attempted < 0:

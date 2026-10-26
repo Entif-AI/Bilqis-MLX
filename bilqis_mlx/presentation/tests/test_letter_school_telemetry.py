@@ -331,7 +331,7 @@ class SchoolTelemetryTests(unittest.TestCase):
                 [
                     ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
                     ("LR", 2), ("D", 1), ("C", 1), ("OLD", 3),
-                    ("DSTIL", 5), ("CREDIT", 7),
+                    ("DSTIL", 5), ("CREDIT", 7), ("HEALTH", 9),
                 ],
             )
             self.assertEqual(
@@ -339,16 +339,12 @@ class SchoolTelemetryTests(unittest.TestCase):
                  for column in tables["SYSTEM & QUALIFICATION"]],
                 [("TYPE", 7), ("DETAILS", 32)],
             )
-
             board.rows["SYSTEM & QUALIFICATION"].append({
                 "kind": "DIAGNOSTIC", "grade": "B",
                 "detail": "active S2:B.OR | 14 NOT MEASURED",
             })
             system = board._section_rows("SYSTEM & QUALIFICATION")[-1]
-            self.assertEqual(
-                system["detail"],
-                "S2[OR] 14 NM",
-            )
+            self.assertEqual(system["detail"], "S2[OR] 14 NM")
 
             rendered = board.render(width=210, height=40)
             self.assertIn(" | ", rendered.splitlines()[5])
@@ -359,6 +355,58 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertNotIn("PREVIEW", rendered)
             self.assertNotIn("PAR_KL", rendered)
             self.assertNotIn("BRG_CE", rendered)
+
+    def test_teacher_policy_health_is_visible_in_soup_and_teacher(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            self.assertIn(
+                ("HEALTH", 9),
+                [(column.name, column.width)
+                 for column in dict(board.tables)["SOUP & TEACHER"]],
+            )
+            for attempt in range(16):
+                ingest(board, {
+                    "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                    "grade": "C", "generation": attempt + 2,
+                    "capability": "C.ADD", "optimizer_step": 120 + attempt,
+                    "teacher_policy": "policy-low",
+                    "strategy": {
+                        "lr": .00013, "depth": 3, "contrast": .5,
+                        "old": 8, "preview": 0, "distill": .15,
+                    },
+                    "source_training_accuracy_before": .5,
+                    "source_training_accuracy_after": .6,
+                    "teacher_reward": .1, "gradient_norm": 1.0, "loss": .4,
+                    "next_phase": "RECOVERY_1",
+                    "teacher_decision": {"selected": {}},
+                    "candidate_retention": {
+                        "active_capability": "C.ADD",
+                        "phase": "RECOVERY_1",
+                        "decision": "PROVISIONAL" if attempt == 0 else "REJECT",
+                        "reason": "FIXTURE",
+                        "local_correct_delta": 1 if attempt == 0 else 0,
+                        "protected_net_correct_delta": 0,
+                        "worst_protected_loss": 0,
+                    },
+                })
+            self.assertEqual(
+                board.rows["SOUP & TEACHER"][-1]["health"], "LOW-YIELD")
+
+    def test_teacher_policy_health_marks_unproven_and_exhausted_policies(self):
+        from bilqis_mlx.presentation.teacher_vnext import teacher_fields
+        history = {}
+        event = {
+            "capability": "C.SUB", "teacher_policy": "policy-zero",
+            "candidate_retention": {
+                "phase": "RECOVERY_2", "decision": "REJECT",
+            },
+        }
+        for _ in range(7):
+            fields = teacher_fields(event, history)
+        self.assertEqual(fields["health"], "EXPLORE")
+        for _ in range(9):
+            fields = teacher_fields(event, history)
+        self.assertEqual(fields["health"], "EXHAUSTED")
 
     def test_mastery_growth_keeps_right_and_grew_subcolumns_aligned(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,
