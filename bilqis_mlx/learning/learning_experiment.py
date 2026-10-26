@@ -45,7 +45,7 @@ INTERFERENCE_REJECTIONS_FOR_QUARTER_BUDGET = 4
 REJECTION_PRESSURE_CONTEXTUAL_START = 2
 REJECTION_PRESSURE_EXPLORATION_INTERVAL = 4
 GEOMETRY_HISTORICAL_PRIOR_WEIGHT = 0.25
-SAME_STUDENT_POLICY_FAILURE_LIMIT = 2
+SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT = 4
 STUDENT_SHA256_HEX_LENGTH = 64
 
 
@@ -497,8 +497,8 @@ def _validated_student_checkpoint(student_checkpoint_sha256: str | None) -> str 
     return student_checkpoint_sha256
 
 
-def _checkpoint_policy_failures(channel: dict, context_key: str,
-                                student_checkpoint_sha256: str | None) -> dict:
+def _checkpoint_policy_no_gain_streaks(channel: dict, context_key: str,
+                                       student_checkpoint_sha256: str | None) -> dict:
     checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
     if checkpoint is None:
         return {}
@@ -517,7 +517,7 @@ def _checkpoint_policy_failures(channel: dict, context_key: str,
 
 def _record_checkpoint_policy_outcome(
         channel: dict, context_key: str, effective_policy_key: str,
-        student_checkpoint_sha256: str | None, *, rejected: bool) -> None:
+        student_checkpoint_sha256: str | None, *, no_target_gain: bool) -> None:
     checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
     if checkpoint is None:
         return
@@ -527,11 +527,11 @@ def _record_checkpoint_policy_outcome(
         channel["student_policy_epoch"] = epoch
     if not isinstance(epoch.get("contexts"), dict):
         raise ValueError(LearningExperimentError.STUDENT_POLICY_EPOCH_INVALID.value)
-    failures = epoch["contexts"].setdefault(context_key, {})
-    if rejected:
-        failures[effective_policy_key] = failures.get(effective_policy_key, 0) + 1
+    streaks = epoch["contexts"].setdefault(context_key, {})
+    if no_target_gain:
+        streaks[effective_policy_key] = streaks.get(effective_policy_key, 0) + 1
     else:
-        failures.pop(effective_policy_key, None)
+        streaks.pop(effective_policy_key, None)
 
 
 def _checkpoint_active_effective_strategies(
@@ -539,11 +539,11 @@ def _checkpoint_active_effective_strategies(
         context_key: str, active_effective: tuple[str, ...],
         inventory: dict[str, list[str]],
         student_checkpoint_sha256: str | None) -> tuple[tuple[str, ...], set[str]]:
-    checkpoint_failures = _checkpoint_policy_failures(
+    checkpoint_failures = _checkpoint_policy_no_gain_streaks(
         channel, context_key, student_checkpoint_sha256)
     retired = {
         key for key, failures in checkpoint_failures.items()
-        if failures >= SAME_STUDENT_POLICY_FAILURE_LIMIT
+        if failures >= SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT
     }
     if not retired:
         return active_effective, retired
@@ -1040,7 +1040,7 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         channel, context_key,
         _effective_policy_key(teacher["strategies"][policy_key]),
         student_checkpoint_sha256,
-        rejected=decision["decision"] == "REJECT")
+        no_target_gain=no_target_gain)
     if no_target_gain:
         capability_stagnation["no_target_gain_streak"] += 1
     else:

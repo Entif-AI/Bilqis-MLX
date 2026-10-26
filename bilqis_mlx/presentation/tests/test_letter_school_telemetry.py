@@ -252,15 +252,27 @@ class SchoolTelemetryTests(unittest.TestCase):
                     "capability": "B.AND",
                     "optimizer_step": 100,
                     "attempted_optimizer_updates": 16,
-                    "retained_optimizer_updates": 0,
+                    "retained_optimizer_updates": 8 if generation == 11 else 0,
                 })
             self.assertEqual(board.school_telemetry.visits, 2)
             self.assertEqual(board.state["visits"], 2)
+            self.assertEqual(board.state["attempted_steps"], 32)
+            self.assertEqual(board.state["retained_steps"], 8)
+            self.assertEqual(board.state["retained_visits"], 1)
+            board._rate_step = 32
+            board._rate_time = 1.0
+            board._steps_per_min = 186
 
             board.school_telemetry.begin_execution(grade="B", step=100)
 
             self.assertEqual(board.school_telemetry.visits, 0)
             self.assertEqual(board.state["visits"], 0)
+            self.assertEqual(board.state["attempted_steps"], 0)
+            self.assertEqual(board.state["retained_steps"], 0)
+            self.assertEqual(board.state["retained_visits"], 0)
+            self.assertIsNone(board._rate_step)
+            self.assertIsNone(board._rate_time)
+            self.assertIsNone(board._steps_per_min)
             ingest(board, {
                 "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
                 "grade": "B",

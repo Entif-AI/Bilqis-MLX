@@ -570,7 +570,12 @@ class SchoolTelemetry:
             ]
         self.board.state.update(
             step=step if type(step) is int else self.board.state.get("step"),
-            prefix=grade or self.board.state.get("prefix"), visits=0, _rate_sample_eligible=True)
+            prefix=grade or self.board.state.get("prefix"), visits=0,
+            attempted_steps=0, retained_steps=0, retained_visits=0,
+            _rate_sample_eligible=True)
+        self.board._rate_step = None
+        self.board._rate_time = None
+        self.board._steps_per_min = None
 
     def _start(self, grade, event):
         version = event.get("software_version")

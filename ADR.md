@@ -1705,3 +1705,37 @@ applies.
 This release automation remains source provenance only. It cannot start neural
 training, alter a student or AdamW, certify curriculum mastery, or convert a source
 release into a neural qualification claim.
+
+
+## ADR-109 | 2026-10-26 | Same-student retirement requires consecutive target inertia
+
+**A completed 57-minute control run on the pre-vNext controller refined ADR-106 before
+its checkpoint-retirement rule reached production.** The run ended at optimizer step
+147376 after 290 command visits. Its append-only teacher ledger contained 273 actual
+teacher proposals: 182 (66.7%) failed with `NO_MEASURABLE_TARGET_GAIN`, 72 moved the
+target but failed a preservation/interference gate, and 19 were retained. The run was
+still executing source commit `13e5252`, so it did not exercise ADR-106 or Teacher
+vNext and is treated as control evidence rather than validation of those changes.
+
+Replay showed that retiring an effective policy after two arbitrary rejections was
+too aggressive: across the available post-generation-39000 history it would suppress
+several later retained winners, including one C.SUB winner in this control run. A
+rejection that measurably moves the target is not evidence that the teaching policy is
+target-inert; it may instead be an interference problem. Checkpoint-local retirement
+therefore counts only **consecutive `NO_MEASURABLE_TARGET_GAIN` outcomes** for the
+same effective policy/context/unchanged student. Any measurable target movement resets
+that policy-local streak even if the candidate is rejected by a later preservation
+gate. Retirement begins after four consecutive no-target-gain outcomes. Historical
+replay at that threshold removed 73 later failed retries / 1,160 attempted optimizer
+steps with zero observed retained winners in the blocked class. This replay is evidence
+for containment, not a guarantee of future retention probability.
+
+The same control run exposed a dashboard accounting defect: command-local `visits`
+reset at `SCHOOL_SESSION_STARTED`, while attempted steps, retained steps and retained
+visits did not. Ratios shown across those counters could therefore mix different
+execution epochs. `begin_execution` now resets all four command-local counters together
+and resets the attempted-step rate sampler. Historical append-only events remain
+unchanged; this is an operator-telemetry correction only.
+
+Candidate retention, source/oracle truth, student/AdamW custody, promotion,
+qualification and human ownership of neural training remain unchanged.
