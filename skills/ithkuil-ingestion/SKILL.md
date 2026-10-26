@@ -1,12 +1,11 @@
 ---
 name: ithkuil-ingestion
-description: "Rebuild pinned New Ithkuil source tables, compile canonical CSVs to RDF/SKOS, run semantic conformance and inspect held/debt evidence in Bilqis-MLX using deterministic repository commands. Not curriculum admission or neural training."
+description: "Rebuild pinned New Ithkuil sources, compile canonical CSVs to RDF/SKOS, run conformance, inspect held/debt evidence and optionally materialize/read back an explicitly owned Falkor graph in Bilqis-MLX. Not curriculum admission or neural training."
 ---
 
 # Ithkuil Ingestion
 
-This implementation exposes source rebuild and semantic build/conformance.
-Optional graph orchestration is governed by the contract but not yet exposed.
+The graph stage is optional. Source and semantic builds require no graph service.
 
 ## Authority preflight
 
@@ -39,6 +38,14 @@ Do not interpret rows, suppress failed gates or repair CSVs inside this action.
 Surface both core and full-domain artifacts, their distinct digests, held ledger,
 coverage and constituent gate evidence. Failed conformance blocks graph eligibility.
 
+## Optional owned graph
+
+Only for explicit graph-write intent, read [references/graph.md](references/graph.md)
+and invoke `lib.ithkuil.src.ingestion_graph` with the successful semantic result and
+exact target/readback parameters. Never infer a graph, reset permission or endpoint.
+Return materialization and canonical readback evidence separately from semantic
+success. A graph failure must not rewrite or invalidate the canonical corpus.
+
 ## Postflight and recovery
 
 Validate the actual result and referenced artifact digests after action. Preserve
@@ -48,4 +55,4 @@ Never blindly replay an ambiguously acknowledged publication.
 
 No curriculum/training/checkpoint/optimizer mutation, pin override, graph reset,
 default graph fallback, Git push/merge or external publication is authorized by
-this Skill. Graph operations are not part of this implementation.
+this Skill. Graph writes require their own explicit target/owner authorization.
