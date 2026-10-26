@@ -653,6 +653,10 @@ def _adopt_prepared_successor(
 def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, graph,
                              course, release, program, *, numeric_staircase):
     """Rebind a wide historical scope, then advance the admitted staircase."""
+    if receipt.get("qualification") is not None:
+        from .qualification_manifest import require
+        require(release.release_sha256 in receipt["qualification"].get("allowed_releases", [receipt["qualification"]["release_sha256"]]), "FROZEN_RELEASE_DRIFT")
+        return receipt, course, release, program
     if numeric_staircase:
         initial_maximum, final_maximum = _profiles_catalog.numeric_scope_bounds()
         if receipt.get("numeric_maximum", 0) > final_maximum:
@@ -694,6 +698,10 @@ def _auto_adopt_known_grade_boundary(
             "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT"):
         return parameters, optimizer, graph, receipt, course, False
 
+    if receipt.get("qualification") is not None:
+        from .qualification import advance_frozen_boundary
+        return advance_frozen_boundary(mx, run_dir, receipt, course, grade_a_course,
+            source_root, parameters, optimizer, graph, release, school, manifest)
     transition = _profiles_catalog.next_school_transition(
         release, graph, full_boolean=full_grade_b,
         numeric_staircase=numeric_staircase,

@@ -14,6 +14,18 @@ The runtime error catalog is the authority for new failures. Raw string exceptio
 
 ## Typed catalog
 
+### `SCHOOL.QUALIFICATION.INVALID`
+
+Qualification preflight failed.
+
+Owner: `runtime.qualification_manifest`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Frozen qualification input or operator boundary is invalid: {detail}
+
+Recovery: Inspect the pinned qualification manifest and retain all existing run evidence.
+
 ### `SCHOOL.TEACHER_OBSERVATION.INVALID`
 
 Invalid teacher observation.

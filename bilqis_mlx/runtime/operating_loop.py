@@ -58,7 +58,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
             flash_mode: bool = False,
             boolean_association_bridge: bool = False,
             autonomous_curriculum: bool = False,
-            experiment_budget: _runtime_experiment_runs.ExperimentRunBudget | None = None) -> dict:
+            experiment_budget: _runtime_experiment_runs.ExperimentRunBudget | None = None, qualification=None) -> dict:
     """ENTRYPOINT FOR THE HUMAN'S SHELL ONLY. Never call in agent tests."""
     _runtime_timing_trace.trace_mark(
         "OPERATE_START", resume=resume, max_visits=max_visits,
@@ -204,7 +204,7 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
             params, optimizer, graph, receipt = _runtime_session._init(
                 run_dir, manifest, course, teacher_sha,
                 historical_teacher, provenance, source_checkpoint,
-                source_root=source_root, reserve_gib=reserve_gib, model_topology=model_topology,
+                source_root=source_root, reserve_gib=reserve_gib, model_topology=model_topology, qualification=qualification,
                 permitted_preexisting=(
                     (".experiment-run.json",)
                     if experiment_budget is not None else ()))

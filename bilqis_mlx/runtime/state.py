@@ -95,5 +95,5 @@ def _state_from_json(value: dict, course) -> SchoolState:
 
 
 def _seed(receipt: dict, *, capability: str, step: int = 0) -> int:
-    return int(_fingerprint([receipt["run_id"], receipt["generation"],
+    return int(_fingerprint([receipt.get("qualification_training_seed", receipt["run_id"]), receipt["generation"],
                              capability, step])[:16], 16)

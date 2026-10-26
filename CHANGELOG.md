@@ -2,6 +2,12 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [0.5.0] - 2026-10-26
+
+### Added
+- Immutable retained-learning qualification manifests, evidence-bound preflight and explicit human launch for two controlled topology arms.
+- Fresh seeded initialization, frozen prerequisite-compatible workload prefixes, finite visit budgets and independently seeded post-acquisition/fresh-probe receipts.
+
 ## [0.4.0] - 2026-10-26
 
 ### Added

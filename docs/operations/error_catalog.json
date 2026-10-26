@@ -12926,6 +12926,20 @@
   "schema": "bilqis.error-catalog/v1",
   "typed_errors": [
     {
+      "code": "SCHOOL.QUALIFICATION.INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [],
+      "message_key": "errors.school.qualification.invalid.message",
+      "message_template": "Frozen qualification input or operator boundary is invalid: {detail}",
+      "next_action": "Inspect the pinned qualification manifest and retain all existing run evidence.",
+      "operator_steps": [],
+      "owner": "runtime.qualification_manifest",
+      "preserve_state": true,
+      "recovery_key": "errors.school.qualification.invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Qualification preflight failed"
+    },
+    {
       "code": "SCHOOL.TEACHER_OBSERVATION.INVALID",
       "disposition": "CORRECT_INPUT_OR_STATE",
       "legacy_codes": [],

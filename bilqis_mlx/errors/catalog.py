@@ -42,6 +42,15 @@ def _spec(
 
 
 class SCHOOL:
+    class QUALIFICATION:
+        INVALID = _spec(
+            ("SCHOOL", "QUALIFICATION", "INVALID"), owner="runtime.qualification_manifest",
+            title="Qualification preflight failed",
+            message_template="Frozen qualification input or operator boundary is invalid: {detail}",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the pinned qualification manifest and retain all existing run evidence.",
+        )
+
     class TEACHER_OBSERVATION:
         INVALID = _spec(
             ("SCHOOL", "TEACHER_OBSERVATION", "INVALID"), owner="runtime.teacher_observations",
@@ -777,6 +786,7 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.QUALIFICATION.INVALID,
     SCHOOL.TEACHER_OBSERVATION.INVALID,
     SCHOOL.TEACHER_OBSERVATION.CONTENT_MISMATCH,
     SCHOOL.TEACHER_OBSERVATION.DUPLICATE_ATTEMPT,

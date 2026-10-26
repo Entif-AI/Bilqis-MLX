@@ -38,6 +38,7 @@ jobs:
           bilqis_mlx/learning/tests/test_teacher_observations.py
           bilqis_mlx/runtime/tests/test_teacher_observation_capture.py
           bilqis_mlx/runtime/tests/test_teacher_observation_replay.py
+          bilqis_mlx/runtime/tests/test_qualification.py
           bilqis_mlx/runtime/tests/test_model_topology.py
           bilqis_mlx/runtime/tests/test_topology_lifecycle.py
           bilqis_mlx/runtime/tests/test_state_archive.py

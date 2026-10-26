@@ -93,9 +93,23 @@ def prepare_source(legacy_root: _pathlib.Path, source_checkpoint: _pathlib.Path,
     return manifest, course, _historical_teacher_policy, teacher_sha, teacher, provenance
 
 
+def _initial_run_inputs(checkpoint, model_topology, course, source_root, qualification):
+    if qualification is not None:
+        from .qualification_manifest import QualificationPreparation, require
+        require(isinstance(qualification, QualificationPreparation), "TYPED_PREPARATION_REQUIRED")
+        initial = qualification.initial_model()
+        release = qualification.initial_release
+        return (*initial, release, _factory_schedule.schedule_program_from_executable_release(release))
+    import bilqis_mlx.learning.student_ops as student_ops
+    initial = _topology.initial_model(checkpoint, model_topology, student_ops._initial_model)
+    release, program, _ = _compatibility_executable_projection.compile_projected_executable_release(
+        course, course, source_root, initial[3])
+    return (*initial, release, program)
+
+
 def _init(run_dir, manifest, course, policy_sha, historical_teacher,
           teacher_provenance, checkpoint,
-          *, source_root, reserve_gib, permitted_preexisting=(), model_topology=None):
+          *, source_root, reserve_gib, permitted_preexisting=(), model_topology=None, qualification=None):
     import mlx.core as mx
     import bilqis_mlx.learning.student_ops as _learning_student_ops
     _runtime_checkpoints._clean_staged_bundles(run_dir)
@@ -104,16 +118,16 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
             p.name not in permitted for p in run_dir.iterdir()):
         raise ValueError("HUMAN_TRAINER_NEW_RUN_HAS_EXISTING_CONTENT")
     _runtime_disk.assert_headroom(run_dir, required_bytes=600_000_000, reserve_gib=reserve_gib)
-    parameters, optimizer, config, graph, answer_ids, topology, initialization = (
-        _topology.initial_model(checkpoint, model_topology, _learning_student_ops._initial_model))
+    parameters, optimizer, config, graph, answer_ids, topology, initialization, release, program = (
+        _initial_run_inputs(checkpoint, model_topology, course, source_root, qualification))
     initial_pointer = _runtime_checkpoints._bundle_pointer(
         run_dir, "initial-"+_uuid.uuid4().hex[:12], parameters, optimizer, graph,
         reserve_gib=reserve_gib, model_topology=topology)
-    release, program, _ = _compatibility_executable_projection.compile_projected_executable_release(
-        course, course, source_root, graph)
     state = _curriculum_scheduler.start_new(program, initial_pointer)
     release, release_file, admission = _runtime_admission._executable_factory_admission(
         run_dir, release, initial_pointer, _runtime_state._fingerprint(graph), graph)
+    if qualification is not None:
+        qualification.persist_releases(run_dir)
     parameter_shapes = {name: list(param.shape) for name, param in parameters.items()}
     championship_identity = _learning_championship_identity.build_school_identity(
         course_sha256=release.execution_plan.curriculum_sha256,
@@ -148,6 +162,7 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
         "answer_ids": answer_ids,
         "result": "ACTIVE_GRADE_" + state.grade,
         "last_exam": None,
+        **(qualification.receipt_fields() if qualification is not None else {}),
     }
     init_event = {"event": "SCHOOL_NEW_RUN_INITIALIZED", "generation": 1,
                       "grade": state.grade,
