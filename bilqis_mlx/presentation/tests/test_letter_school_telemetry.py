@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
 
+from bilqis_mlx import __version__ as SOFTWARE_VERSION
 from bilqis_mlx.presentation.dashboard import build, ingest
 from bilqis_mlx.presentation.operator_status import score_summary
 from bilqis_mlx.presentation.school_telemetry import LETTER_TABLES, SchoolTelemetry
@@ -211,7 +212,8 @@ class SchoolTelemetryTests(unittest.TestCase):
             board.school_telemetry.begin_execution(grade="A", step=120)
             ingest(board, {"event": "SCHOOL_SESSION_STARTED", "grade": "A",
                            "generation": 20, "optimizer_step": 120,
-                           "checkpoint_sha256": "a" * 64})
+                           "checkpoint_sha256": "a" * 64,
+                           "software_version": "9.8.7"})
             ingest(board, exam("A", 30, "rubric-a", {"A.IDENTITY": (8, 12)},
                                step=136))
 
@@ -224,8 +226,20 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertEqual(mastery["best"], "10/12")
             self.assertIn("START", " ".join(board.operator_lines))
             display = board.render(width=180, height=42)
+            self.assertEqual(board.run_version, "9.8.7")
+            self.assertIn(f"9.8.7/{SOFTWARE_VERSION}", display)
             self.assertNotIn("START", display)
             self.assertNotIn("FIRST", display)
+
+    def test_unversioned_legacy_run_does_not_borrow_dashboard_ui_version(self):
+        board = Dashboard(stream=io.StringIO(), show_all_panels=True,
+                          tables=LETTER_TABLES, compact_header=True)
+
+        rendered = board.render(width=240, height=30)
+
+        self.assertIsNone(board.run_version)
+        self.assertIn("VER RUN/UI", rendered)
+        self.assertIn("legacy/", rendered)
 
     def test_begin_execution_resets_replayed_visit_counter(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -238,15 +252,27 @@ class SchoolTelemetryTests(unittest.TestCase):
                     "capability": "B.AND",
                     "optimizer_step": 100,
                     "attempted_optimizer_updates": 16,
-                    "retained_optimizer_updates": 0,
+                    "retained_optimizer_updates": 8 if generation == 11 else 0,
                 })
             self.assertEqual(board.school_telemetry.visits, 2)
             self.assertEqual(board.state["visits"], 2)
+            self.assertEqual(board.state["attempted_steps"], 32)
+            self.assertEqual(board.state["retained_steps"], 8)
+            self.assertEqual(board.state["retained_visits"], 1)
+            board._rate_step = 32
+            board._rate_time = 1.0
+            board._steps_per_min = 186
 
             board.school_telemetry.begin_execution(grade="B", step=100)
 
             self.assertEqual(board.school_telemetry.visits, 0)
             self.assertEqual(board.state["visits"], 0)
+            self.assertEqual(board.state["attempted_steps"], 0)
+            self.assertEqual(board.state["retained_steps"], 0)
+            self.assertEqual(board.state["retained_visits"], 0)
+            self.assertIsNone(board._rate_step)
+            self.assertIsNone(board._rate_time)
+            self.assertIsNone(board._steps_per_min)
             ingest(board, {
                 "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
                 "grade": "B",
@@ -404,7 +430,8 @@ class SchoolTelemetryTests(unittest.TestCase):
                 [
                     ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
                     ("LR", 2), ("D", 1), ("C", 1), ("OLD", 3),
-                    ("DSTIL", 5), ("CREDIT", 7),
+                    ("DSTIL", 5), ("CREDIT", 7), ("P(RET)", 6),
+                    ("HEALTH", 9), ("SHADOW", 8),
                 ],
             )
             self.assertEqual(
@@ -1205,6 +1232,51 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertFalse(board.rows["SENTINEL & RETENTION"])
             self.assertTrue(any("NOT MEASURED" in x["detail"]
                                 for x in board.rows["SYSTEM & QUALIFICATION"]))
+
+    def test_teacher_vnext_health_prediction_and_shadow_are_visible(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {
+                "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                "generation": 2,
+                "grade": "C",
+                "active_grade": "C",
+                "capability": "C.ADD",
+                "optimizer_step": 146900,
+                "teacher_policy": "policy-1234567890",
+                "strategy": {"lr": .00008, "depth": 1, "contrast": 1.,
+                             "old": 8, "preview": 0, "distill": .15},
+                "source_training_accuracy_before": .5,
+                "source_training_accuracy_after": .6,
+                "teacher_reward": -.05,
+                "gradient_norm": 1.0,
+                "loss": .5,
+                "next_phase": "RECOVERY_1",
+                "teacher_outcome_prediction_before": {
+                    "retention_probability": .25,
+                },
+                "teacher_health": {
+                    "status": "LOW_YIELD",
+                    "retention_rate": .08,
+                    "optimizer_steps_per_retention": 120.0,
+                    "retention_brier_score": .21,
+                },
+                "teacher_multifidelity_shadow": {
+                    "first_would_stop_step": 4,
+                    "false_kill": False,
+                    "would_continue_to_full_budget": False,
+                },
+            })
+
+            teacher = board.rows["SOUP & TEACHER"][-1]
+            self.assertEqual(teacher["p_ret"], "25.0%")
+            self.assertEqual(teacher["health"], "LOW-YIELD")
+            self.assertEqual(teacher["shadow"], "STOP@4")
+            system = board.rows["SYSTEM & QUALIFICATION"][-1]
+            self.assertEqual(system["kind"], "TEACHER")
+            self.assertIn("retain 8.0%", system["detail"])
+            self.assertIn("120.0 steps/retain", system["detail"])
+            self.assertIn("Brier 0.210", system["detail"])
 
     def test_live_exam_projects_warning_and_teacher_outcome_receipts(self):
         with tempfile.TemporaryDirectory() as tmp:

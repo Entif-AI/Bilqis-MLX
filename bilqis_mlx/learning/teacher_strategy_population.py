@@ -15,8 +15,8 @@ DEEP_POLICY_DEPTH_MINIMUM = 3
 _INEFFECTIVE_POLICY_FIELDS = frozenset({"preview"})
 
 
-def effective_policy_key(policy: dict) -> str:
-    """Identity for knobs that actually change the current source lesson."""
+def effective_policy_features(policy: dict) -> dict:
+    """Canonical pre-action knobs that actually change the current source lesson."""
     if not isinstance(policy, dict):
         raise ValueError(LearningExperimentError.POLICY_INVALID.value)
     effective = {
@@ -30,6 +30,12 @@ def effective_policy_key(policy: dict) -> str:
     if "contrast" in effective:
         effective["contrast"] = (
             "DIVERSE" if float(effective["contrast"]) >= .5 else "RANDOM")
+    return effective
+
+
+def effective_policy_key(policy: dict) -> str:
+    """Identity for knobs that actually change the current source lesson."""
+    effective = effective_policy_features(policy)
     return hashlib.sha256(
         json.dumps(effective, sort_keys=True).encode()).hexdigest()[:12]
 

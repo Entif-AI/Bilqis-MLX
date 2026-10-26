@@ -1593,3 +1593,149 @@ distribution produced by each nominal effective policy across all of its exact
 realized deliveries. This preserves realized-delivery provenance without fragmenting
 predictive evidence across batch-level signatures that may never repeat, and a later
 failed realized variant no longer erases earlier retained evidence for the same policy.
+
+
+## ADR-105 | 2026-10-25 | Teacher vNext begins as portable evidence and shadow control
+
+**Issue #321 creates the successor teacher-learning control plane without granting it
+new neural authority.** The current strategy bandit remains the actual Prometheus
+selector while vNext records an architecture-neutral learner/action/outcome ledger,
+estimates retention probability plus target/protected/cost effects with uncertainty,
+and evaluates multi-fidelity and proposal-family decisions in shadow mode.
+
+The predictive learner state is a coarse `StudentRegion`, not an exact checkpoint or
+generated-batch identity. Exact student, source, cohort, proposal and realized-delivery
+identities remain immutable provenance outside the generalization key. This prevents
+the evidence fragmentation observed during the first realized-action experiment.
+The region nevertheless preserves material learner topology: active-grade capability
+score bands, mastery-debt shape and differentiated high rejection-pressure bands keep
+distinct learner states from aliasing merely because they share one aggregate grade
+mean. This is semantic state generalization, not checkpoint identity.
+
+Candidate evaluation now supports neural-inert target probes at a versioned
+multi-fidelity ladder (`2/4/8/16` in the first policy). The candidate still runs its
+existing full authorized horizon and the existing retention decision remains the sole
+durable student/AdamW admission authority. Shadow receipts measure hypothetical early
+stops, false kills/continues and compute savings. An explicit evidence gate can report
+that active early stopping appears qualified, but that receipt does not activate it.
+
+The shadow proposal layer distinguishes incumbent replay, local incumbent mutation,
+neighbor transfer, global challenge and a learned local proposal distribution. It may
+recommend parameter combinations absent from the historical 512-strategy archive;
+the archive itself remains immutable. Thompson-style acquisition uses predicted
+retention, target gain, protected risk, compute cost and uncertainty instead of an
+unbounded unseen-arm novelty bonus. No shadow proposal changes actual policy selection
+in this epoch.
+
+The portable contract and fixture are shared authority for the divergent developmental
+teacher in #130. Shared code is optional; compatible evidence semantics, replay,
+calibration, multi-fidelity authority boundaries and final-retention authority are
+mandatory. See `docs/architecture/TEACHER_VNEXT_PORTABLE_CONTRACT_V1.md`.
+
+
+## ADR-106 | 2026-10-25 | Incumbent evidence is checkpoint-local when the student is unchanged
+
+**Live evidence falsified the assumption that a strategy which retained on an older
+student remains a useful incumbent for the current student.** The same effective
+policy can improve a capability at one durable checkpoint and push that capability in
+the opposite direction after later retained learning, even when capability, phase,
+curriculum scope and teaching geometry are otherwise unchanged.
+
+Prometheus therefore treats repeated failures of one effective policy against one
+unchanged durable student as checkpoint-local negative evidence. After a bounded
+number of failures, that policy rotates out of the active contextual bench for the
+remainder of that exact student checkpoint and a fresh eligible challenger rotates in.
+The historical strategy/archive record is not deleted or rewritten. A retained update
+changes the student checkpoint and automatically gives the policy a clean opportunity
+against the new learner state.
+
+This is a liveness/efficiency correction, not a retention shortcut. Candidate
+retention, source/oracle truth, custody, AdamW, promotion and qualification authority
+are unchanged. Teacher vNext's `StudentRegion` remains the longer-term generalization
+surface; exact checkpoint identity here is used only to prevent redundant retries
+against an actually unchanged learner, not as the predictive region key.
+
+
+## ADR-107 | 2026-10-25 | Trainer software identity is SemVer-governed and run-owned
+
+**Direct user request to make fast-moving trainer changes operationally legible.**
+Bilqis MLX software releases use Semantic Versioning, a dated checked-in changelog,
+and one version value shared by the Python package, Python project manifest and npm
+manifest. Compatible fixes increment PATCH, backward-compatible capability additions
+increment MINOR, and breaking software/runtime contracts increment MAJOR. A release
+tranche updates its version and changelog together; immutable release tags remain
+`vMAJOR.MINOR.PATCH` after reviewed integration.
+
+The dashboard distinguishes the version of the trainer that produced the run from the
+version of the dashboard code rendering it. `SCHOOL_SESSION_STARTED` records the
+trainer `software_version`, and the active receipt carries the same value for durable
+readback. A detached dashboard displays that run-owned value when available and its
+own UI package version separately. Historical sessions that predate software-version
+telemetry are explicitly displayed as `unversioned`; they must never borrow the
+version number of a newer observer checkout.
+
+The first release under this clarified operator contract is `0.3.0`. This versioning
+surface is provenance and operator telemetry only: it does not alter neural state,
+curriculum authority, retention, custody, promotion, qualification or championship
+semantics.
+
+
+## ADR-108 | 2026-10-25 | Release Please owns future SemVer transitions
+
+**ADR-107 established software-version provenance; this ADR clarifies who advances
+that version.** `v0.2.0` remains the last actually tagged source release. Ordinary
+feature/fix branches retain the last released SemVer and express release intent through
+Conventional Commit history instead of pre-claiming a future version. After reviewed
+changes reach `main`, Release Please computes the next SemVer, updates the generated
+release changelog and all checked-in version surfaces in one release PR, and creates
+the immutable tag/GitHub Release only after that PR passes review and merges. The first
+expected generated successor from the present feature set is `v0.3.0`; it is not
+considered released until that automation completes on `main`.
+
+The local commit-msg Husky hook and GitHub PR workflow both enforce Conventional
+Commits. Release Please uses `fix` as PATCH evidence, `feat` as MINOR evidence, and a
+breaking marker as MAJOR evidence. The release PR is the sole ordinary writer of
+`CHANGELOG.md`, `package.json`, `package-lock.json`, `pyproject.toml`,
+`bilqis_mlx.__version__`, and `.release-please-manifest.json` for release advancement.
+The existing tag workflow becomes verification-only so there is exactly one release
+publisher. No synthetic check-run attestation or branch-protection bypass is adopted;
+bot-created PR CI follows GitHub's normal approval-required security gate when it
+applies.
+
+This release automation remains source provenance only. It cannot start neural
+training, alter a student or AdamW, certify curriculum mastery, or convert a source
+release into a neural qualification claim.
+
+
+## ADR-109 | 2026-10-26 | Same-student retirement requires consecutive target inertia
+
+**A completed 57-minute control run on the pre-vNext controller refined ADR-106 before
+its checkpoint-retirement rule reached production.** The run ended at optimizer step
+147376 after 290 command visits. Its append-only teacher ledger contained 273 actual
+teacher proposals: 182 (66.7%) failed with `NO_MEASURABLE_TARGET_GAIN`, 72 moved the
+target but failed a preservation/interference gate, and 19 were retained. The run was
+still executing source commit `13e5252`, so it did not exercise ADR-106 or Teacher
+vNext and is treated as control evidence rather than validation of those changes.
+
+Replay showed that retiring an effective policy after two arbitrary rejections was
+too aggressive: across the available post-generation-39000 history it would suppress
+several later retained winners, including one C.SUB winner in this control run. A
+rejection that measurably moves the target is not evidence that the teaching policy is
+target-inert; it may instead be an interference problem. Checkpoint-local retirement
+therefore counts only **consecutive `NO_MEASURABLE_TARGET_GAIN` outcomes** for the
+same effective policy/context/unchanged student. Any measurable target movement resets
+that policy-local streak even if the candidate is rejected by a later preservation
+gate. Retirement begins after four consecutive no-target-gain outcomes. Historical
+replay at that threshold removed 73 later failed retries / 1,160 attempted optimizer
+steps with zero observed retained winners in the blocked class. This replay is evidence
+for containment, not a guarantee of future retention probability.
+
+The same control run exposed a dashboard accounting defect: command-local `visits`
+reset at `SCHOOL_SESSION_STARTED`, while attempted steps, retained steps and retained
+visits did not. Ratios shown across those counters could therefore mix different
+execution epochs. `begin_execution` now resets all four command-local counters together
+and resets the attempted-step rate sampler. Historical append-only events remain
+unchanged; this is an operator-telemetry correction only.
+
+Candidate retention, source/oracle truth, student/AdamW custody, promotion,
+qualification and human ownership of neural training remain unchanged.

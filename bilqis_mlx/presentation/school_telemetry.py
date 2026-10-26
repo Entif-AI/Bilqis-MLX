@@ -18,6 +18,13 @@ from bilqis_mlx.presentation.operator_status import (
     inventory_scope as _inventory_scope, notify_grade_admitted,
     withheld_inventory_change_explains as _withheld_inventory_change_explains,
 )
+from bilqis_mlx.presentation.teacher_vnext import (
+    health_transition as _teacher_health_transition,
+    teacher_fields as _teacher_vnext_fields,
+)
+from bilqis_mlx.presentation.retention_projection import (
+    candidate_retention_row as _candidate_retention_row,
+)
 from ..compatibility.telemetry_events import (
     HISTORICAL_EVENT_KINDS,
     historical_event_grade,
@@ -162,44 +169,6 @@ def _instruction_method_text(event: dict) -> str:
     return "-"
 
 
-def _candidate_retention_row(event: dict, grade: str, attempt: int) -> dict | None:
-    retention = event.get("candidate_retention")
-    if not isinstance(retention, dict):
-        return None
-    capability = retention.get("active_capability") or event.get("capability") or "-"
-    before = retention.get("active_probe_before")
-    after = retention.get("active_probe_after")
-    total = retention.get("active_probe_total")
-    target = (f"{before}>{after}/{total}"
-              if all(type(value) is int for value in (before, after, total)) and total > 0
-              else "-")
-    local = retention.get("local_correct_delta")
-    protected = retention.get("protected_net_correct_delta")
-    worst = retention.get("worst_protected_loss")
-    reason = str(retention.get("reason") or "UNKNOWN")
-    unsampled = retention.get("unsampled_admitted_capabilities")
-    evidence = reason
-    if type(unsampled) is int:
-        evidence += f" | unsampled {unsampled}"
-    frontier_grade = retention.get("protected_frontier_grade")
-    frontier_delta = retention.get("protected_frontier_grade_net_correct_delta")
-    if isinstance(frontier_grade, str) and type(frontier_delta) is int:
-        evidence += f" | frontier {frontier_grade} {frontier_delta:+d}"
-    return {
-        "grade": grade,
-        "capability": capability,
-        "attempt": attempt,
-        "target": target,
-        "target_delta": f"{local:+d}" if type(local) is int else "-",
-        "protected": f"{protected:+d}" if type(protected) is int else "-",
-        "worst": ("0" if worst == 0 else f"-{worst}"
-                  if type(worst) is int and worst > 0 else "-"),
-        "decision": str(retention.get("decision") or "UNKNOWN"),
-        "result": str(retention.get("decision") or "UNKNOWN"),
-        "evidence": evidence,
-    }
-
-
 def _diagnostic_system_rows(event: dict, grade: str) -> tuple[dict, ...]:
     rows = []
     diagnostics = event.get("learning_diagnostics")
@@ -296,7 +265,10 @@ LETTER_TABLES = (
         Column("C", 1, "contrast", right=True),
         Column("OLD", 3, "old", optional=True, right=True),
         Column("DSTIL", 5, "distill", optional=True, right=True),
-        Column("CREDIT", 7, "credit", right=True))),
+        Column("CREDIT", 7, "credit", right=True),
+        Column("P(RET)", 6, "p_ret", optional=True, right=True),
+        Column("HEALTH", 9, "health", optional=True),
+        Column("SHADOW", 8, "shadow", optional=True))),
     ("GRADES & MASTERY", (
         Column("CAPABILITY", 10, "subject"),
         Column("WAS/TOP/NOW/ALL", 15, "score_line", right=True),
@@ -598,9 +570,17 @@ class SchoolTelemetry:
             ]
         self.board.state.update(
             step=step if type(step) is int else self.board.state.get("step"),
-            prefix=grade or self.board.state.get("prefix"), visits=0, _rate_sample_eligible=True)
+            prefix=grade or self.board.state.get("prefix"), visits=0,
+            attempted_steps=0, retained_steps=0, retained_visits=0,
+            _rate_sample_eligible=True)
+        self.board._rate_step = None
+        self.board._rate_time = None
+        self.board._steps_per_min = None
 
     def _start(self, grade, event):
+        version = event.get("software_version")
+        if isinstance(version, str) and version:
+            self.board.run_version = version
         self.begin_execution(grade=grade, step=event.get("optimizer_step"))
 
     def _progress(self, grade, event):
@@ -735,6 +715,12 @@ class SchoolTelemetry:
                 teacher[field] = "OFF" if field in unavailable else _whole(strategy.get(field))
             else:
                 teacher[field] = "OFF" if field in unavailable else _display(strategy.get(field))
+        teacher.update(_teacher_vnext_fields(event))
+        status, system = _teacher_health_transition(
+            event, self.board.state.get("teacher_health_status"))
+        if system is not None:
+            self.board.push("system", {**system, "grade": grade}, redraw=False)
+            self.board.state["teacher_health_status"] = status
         self.board.rows["SOUP & TEACHER"].append(teacher)
         attempted = event.get("attempted_optimizer_updates", 0)
         if type(attempted) is not int or attempted < 0:

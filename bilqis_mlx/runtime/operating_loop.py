@@ -1,6 +1,7 @@
 """Serialized operator session and school phase dispatch."""
 from __future__ import annotations
 
+from bilqis_mlx import __version__ as _software_version
 from bilqis_mlx import paths as _paths
 
 import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
@@ -312,8 +313,10 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
             pending.append(rehabilitation_event)
             receipt["_pending_visit_events"] = pending
         school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
+        receipt["software_version"] = _software_version
         _runtime_checkpoints._record(run_dir, {
             "event": "SCHOOL_SESSION_STARTED",
+            "software_version": _software_version,
             "generation": receipt["generation"],
             "run_id": receipt["run_id"],
             "grade": school.grade,
