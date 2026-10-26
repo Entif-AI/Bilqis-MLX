@@ -980,8 +980,10 @@ class Dashboard:
                  round(self._steps_per_min)
                  if isinstance(self._steps_per_min,(int,float)) else "-",
                  9,True),
-                ("RETAINED",retained if type(retained) is int else "-",8,True),
-                ("R/H",round(retained*3600/elapsed) if type(retained) is int and elapsed>0 else "-",5,True),
+                ("RTN",retained if type(retained) is int else "-",3,True),
+                ("RTN%",round(retained*100/visits)
+                 if type(retained) is int and type(visits) is int and visits>0 else "-",4,True),
+                ("R/H",round(retained*3600/elapsed) if type(retained) is int and elapsed>0 else "-",3,True),
             ])
             halt=state.get('halt')
             if halt:

@@ -31,11 +31,13 @@ class SchoolTelemetryTests(unittest.TestCase):
             show_all_panels=True, tables=LETTER_TABLES,
             compact_header=True)
         board.started = 0.0
-        board.state.update(retained_visits=5)
+        board.state.update(retained_visits=5, visits=20)
 
         headings, values = board.render(width=240, height=20).splitlines()[:2]
         start = headings.index("R/H")
         self.assertEqual(values[start:start + 5].strip(), "10")
+        start = headings.index("RTN%")
+        self.assertEqual(values[start:start + 5].strip(), "25")
 
     def test_step_rate_is_run_normalized_not_redraw_delta(self):
         board = Dashboard(
@@ -606,7 +608,7 @@ class SchoolTelemetryTests(unittest.TestCase):
         for heading in (
                 "BILQIS", "RUNTIME", "MAX TIME", "STEPS", "EXAM", "VISITS",
                 "TEACHER", "GRADES", "CAPS", "STUDENT LATEST", "STUDENT BEST",
-                "STEPS/MIN", "RETAINED", "R/H", "RUN"):
+                "STEPS/MIN", "RTN", "RTN%", "R/H", "RUN"):
             self.assertIn(heading, headings)
         self.assertIn("A:MAIN", values)
         self.assertIn("1d 13h 47m 25s", values)
