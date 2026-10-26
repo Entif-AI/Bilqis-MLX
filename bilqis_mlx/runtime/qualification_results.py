@@ -64,7 +64,6 @@ def evaluate_finished_arm(prepared):
     from .mlx_checkpoint import load_semantically_bound_bundle
     from .teacher_observation_replay import read_committed_observations
     from ..learning.teacher_observations import summarize_observations
-    import mlx.core as mx
     started = time.monotonic()
     root = Path(prepared.arm['run_dir'])
     receipt = read_current(root)
@@ -84,6 +83,7 @@ def evaluate_finished_arm(prepared):
         'reason': 'ACQUISITION_NOT_DEMONSTRATED', 'sweeps': [], 'evaluation_optimizer_updates': 0}
     full_scope = tuple(c.capability_id for c in release.execution_plan.capabilities)
     if set(assessment_capabilities(program, school)) == set(full_scope):
+        import mlx.core as mx
         parameters, optimizer, _, bound_graph = load_semantically_bound_bundle(root/receipt['model_bundle'])
         require(_fingerprint(bound_graph) == _fingerprint(graph), 'RESULT_GRAPH')
         before_step = int(optimizer.state['step'].item())
