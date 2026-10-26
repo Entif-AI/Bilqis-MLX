@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ithkuil Ingestion"
+  short_description: "Rebuild pinned Ithkuil source tables safely"
+  default_prompt: "Use $ithkuil-ingestion to rebuild the pinned source corpus and report its frontier receipt."

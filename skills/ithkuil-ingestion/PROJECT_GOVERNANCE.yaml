@@ -1,0 +1,13 @@
+schema_version: 0.1
+project: entif-rosetta
+subproject: bilqis-mlx-ithkuil-ingestion
+authority_mode: public_only
+public_authorities:
+  - docs/governance/PUBLIC_COMMONS_AND_PRIVATE_OPERATION_BOUNDARY.md
+  - docs/governance/AUTHORITY_CLOSURE_AND_REQUIREMENTS_TRACEABILITY.md
+  - docs/governance/PUBLIC_PRIVATE_AUTHORITY_BRIDGE.yaml
+protected_authority_resolution: stop_and_route_if_required
+external_write_posture: classification_required
+authority_preflight: required
+postflight_validation: required
+authority_map_update_on_relationship_change: required
