@@ -1,0 +1,335 @@
+{
+  "canonical_rdf_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+  "fixture": "Full #93/#94 release corpus; literal expectations frozen offline from canonical RDF, never from live database results. Lookup selects an actually emitted concept. Mapping/neighbor absence is explicit; hasSense supplies a positive admitted semantic relation.",
+  "queries": [
+    {
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND r.predicate_iri=$predicate AND v.lexical=$lexical AND v.datatype=$datatype RETURN DISTINCT s.iri ORDER BY s.iri",
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+        ]
+      ],
+      "id": "grammar-code",
+      "params": {
+        "datatype": "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code",
+        "lexical": "ACC",
+        "predicate": "http://www.w3.org/2004/02/skos/core#notation"
+      }
+    },
+    {
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND r.predicate_iri=$predicate AND v.lexical=$lexical AND v.datatype=$datatype RETURN DISTINCT s.iri ORDER BY s.iri",
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+        ]
+      ],
+      "id": "utf8-notation",
+      "params": {
+        "datatype": "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil",
+        "lexical": "cč",
+        "predicate": "http://www.w3.org/2004/02/skos/core#notation"
+      }
+    },
+    {
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.lexical,v.datatype ORDER BY v.datatype,v.lexical",
+      "expected": [
+        [
+          "ACC",
+          "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code"
+        ],
+        [
+          "lf",
+          "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil"
+        ]
+      ],
+      "id": "concept-notations",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC",
+        "predicate": "http://www.w3.org/2004/02/skos/core#notation"
+      }
+    },
+    {
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.iri ORDER BY v.iri",
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+        ]
+      ],
+      "id": "concept-schemes",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC",
+        "predicate": "http://www.w3.org/2004/02/skos/core#inScheme"
+      }
+    },
+    {
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.iri ORDER BY v.iri",
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACH"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ADS"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ANN"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ANP"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/APH"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ARB"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ATE"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CMD"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CNV"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/COI"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CRP"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CRR"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CTP"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CTV"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DCC"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DEJ"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DES"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DIS"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DLC"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DOL"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DPB"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DRS"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DUB"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EUH"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EUP"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EXA"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EXG"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/FOR"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/FSC"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/GRT"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IDG"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IFT"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IPL"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IPT"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IRO"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ISP"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IVD"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/MAN"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/MNF"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/OPT"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PES"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPT"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPV"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPX"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PSC"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PSM"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RAC"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RFL"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RPU"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RSG"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RVL"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SAT"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SGS"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SKP"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SOL"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/STU"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/TRP"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/VEX"
+        ]
+      ],
+      "id": "family-members",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/collection/bias_adjunct",
+        "predicate": "http://www.w3.org/2004/02/skos/core#member"
+      }
+    },
+    {
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.iri ORDER BY v.iri",
+      "expected": [],
+      "id": "semantic-neighbor",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC",
+        "predicate": "http://www.w3.org/2004/02/skos/core#related"
+      }
+    },
+    {
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.iri ORDER BY v.iri",
+      "expected": [],
+      "id": "admitted-cross-scheme",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC",
+        "predicate": "http://www.w3.org/2004/02/skos/core#closeMatch"
+      }
+    },
+    {
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.iri ORDER BY v.iri",
+      "expected": [],
+      "id": "held-exact-excluded",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC",
+        "predicate": "http://www.w3.org/2004/02/skos/core#exactMatch"
+      }
+    },
+    {
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(l:RdfTerm)-[t:RDF]->(doc:RdfTerm),(l)-[i:RDF]->(loc:RdfTerm),(doc)-[j:RDF]->(sid:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND t.owner=$owner AND i.owner=$owner AND j.owner=$owner AND s.iri=$iri AND r.predicate_iri=$source AND t.predicate_iri=$source AND i.predicate_iri=$identifier AND j.predicate_iri=$identifier RETURN l.iri,loc.lexical,doc.iri,sid.lexical ORDER BY l.iri,loc.lexical",
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/source/locus/4fda3cbca22f3857b8cbdfcd9a37a34fa973de5a934460adbb65bcf114b4eeb9",
+          "source=NI-WEB-CH08;section=NI-WEB-CH08:8.5;table=NI-WEB-CH08:T010;line=4545",
+          "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+          "NI-WEB-CH08"
+        ]
+      ],
+      "id": "public-source",
+      "params": {
+        "identifier": "http://purl.org/dc/terms/identifier",
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC",
+        "source": "http://purl.org/dc/terms/source"
+      }
+    },
+    {
+      "cypher": "MATCH(root:RdfTerm)-[r:RDF]->(s:RdfTerm),(s)-[t:RDF]->(stem:RdfTerm),(s)-[u:RDF]->(spec:RdfTerm) WHERE root.owner=$owner AND r.owner=$owner AND t.owner=$owner AND u.owner=$owner AND root.iri=$root AND r.predicate_iri=$sense AND t.predicate_iri=$stem AND u.predicate_iri=$spec RETURN s.iri,stem.lexical,spec.lexical ORDER BY s.iri",
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+          "STEM 3",
+          "BSC"
+        ]
+      ],
+      "id": "root-sense-dimensions",
+      "params": {
+        "root": "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897",
+        "sense": "https://github.com/Entif-AI/Bilqis-MLX/vocab/hasSense",
+        "spec": "https://github.com/Entif-AI/Bilqis-MLX/vocab/lexiconSpecification",
+        "stem": "https://github.com/Entif-AI/Bilqis-MLX/vocab/lexiconStem"
+      }
+    },
+    {
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND r.predicate_iri=$predicate AND v.lexical=$label AND v.language=$language RETURN DISTINCT s.iri ORDER BY s.iri",
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-704aefdd5c35bc"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-ca3db16882138e"
+        ]
+      ],
+      "id": "shared-label-is-candidates",
+      "params": {
+        "label": "Crohn's disease",
+        "language": "en",
+        "predicate": "http://www.w3.org/2004/02/skos/core#prefLabel"
+      }
+    }
+  ],
+  "schema": "bilqis.skos.smoke-suite/v1",
+  "version": "1.0.0"
+}

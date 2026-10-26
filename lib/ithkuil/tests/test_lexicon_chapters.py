@@ -52,7 +52,7 @@ class LexiconChapterExtractionTests(unittest.TestCase):
 
     def test_chapters_one_and_two_extract_source_roots_and_senses(self):
         module = load_module()
-        roots, senses, evidence = module.build()
+        roots, senses, evidence = module.build(module.CHAPTERS)
         by_form = {row["root_form_raw"]: row for row in roots}
 
         self.assertEqual(len(roots), 503)

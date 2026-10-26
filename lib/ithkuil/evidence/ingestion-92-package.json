@@ -1,0 +1,146 @@
+{
+  "archive_bytes": 36928,
+  "archive_sha256": "0eaa3a96882f02ea275e08a7657fb96e0cc56b376db37489a5193558b8751fa8",
+  "artifact": "ithkuil-ingestion-1.0.0.skill",
+  "files": {
+    "ithkuil-ingestion/PROJECT_GOVERNANCE.yaml": {
+      "bytes": 1019,
+      "sha256": "c74b945a8bca72c8458dbafa2d7cb9b5bfa104b1a31f39af919511e773b41ccc"
+    },
+    "ithkuil-ingestion/SKILL.md": {
+      "bytes": 3600,
+      "sha256": "6f86ef8b39cb6caed23366cae02087a200e3eb3992676123900c004ab7da740f"
+    },
+    "ithkuil-ingestion/agents/openai.yaml": {
+      "bytes": 268,
+      "sha256": "6e2c851bc1e7857e6aa2cd9f03ee627bc89964bcf4c48d6434d5bcf2284d1589"
+    },
+    "ithkuil-ingestion/assets/fixture/configuration.html": {
+      "bytes": 30456,
+      "sha256": "60f5655e5115960c4bddb325da454a997dbe9e6a5a838d87e532041d8c2edbc2"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/affix_degrees.csv": {
+      "bytes": 733,
+      "sha256": "64b600f2bf62e83a21a409f642fb8dea8d6e0a51881c32575d8085fe1f60e8db"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/allomorph_rules.csv": {
+      "bytes": 390,
+      "sha256": "4c562fee8935d9d9c229f5a42092a0e814f172419a029319b848bfe646172056"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/bilqis_ithkuil_crosswalk.csv": {
+      "bytes": 528,
+      "sha256": "0f6ed046d57e94103d92f573d2f8a0a181487f2e06808b78e797bf3288595930"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/bilqis_semantic_bridges.csv": {
+      "bytes": 325,
+      "sha256": "f939d9eae462c8db38b76faa0161034055aadf412cc3b59f145ec5e8287d0d07"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/composition_components.csv": {
+      "bytes": 2938,
+      "sha256": "d5f64a12cd68e1973fd1b42c9931f8574ce214fa17f1bd238292cd3ade7e57e2"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/grammatical_categories.csv": {
+      "bytes": 2027,
+      "sha256": "9d910546efbbc89a79a1bb4aae690d7f9f392dddac7bb2cf439a59933d8fab97"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/lexicon_root_evidence.csv": {
+      "bytes": 801,
+      "sha256": "ed791eab5c912c4b1c10f683403ae2a73443fd3ac25b8c2fc45108f0221100c5"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/lexicon_root_senses.csv": {
+      "bytes": 1814,
+      "sha256": "d59772f3575cfb1698199474f8b951d92bc565274a3c8b58608a235e56214d07"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/lexicon_roots.csv": {
+      "bytes": 1764,
+      "sha256": "2670341c1fea9e812753f5276bd3e5863155e5e2242f3664e666b25994af1789"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/morpheme_compositions.csv": {
+      "bytes": 4885,
+      "sha256": "3f16cf1ce9bbb33d4d1fa065f4f902b59c394ebf43e19f0f447366676d3fe40d"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/morphemes_atomic.csv": {
+      "bytes": 6312,
+      "sha256": "e3d1b6448ed9ef28ef956469e2b4c70ca5697b4388ad369e9b56ed0a827fc4f9"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/root_senses.csv": {
+      "bytes": 119,
+      "sha256": "f3d5be4afd5db022024dc88caa81627fc21ccd63b32b55ca411a241966ca5351"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/source_assertions.csv": {
+      "bytes": 7216,
+      "sha256": "cb5e7ff5b7de3d5700c251ebe7a46ed8d4b177fc6b356663c30a20a401fb41b6"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/source_sections.csv": {
+      "bytes": 3972,
+      "sha256": "875f676f4f42e8b2c7911d4dbb4bc59fa9e4498dcada3c59fd490b2496af4511"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/source_table_cells.csv": {
+      "bytes": 234,
+      "sha256": "7c052d5e4df64ce4f4c674ea6fad375815f1f636686837bad78441cdec59d47b"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/source_tables.csv": {
+      "bytes": 5053,
+      "sha256": "4cdfe12e5333a49175fc15e68257116e77a1510290e873afae50fa6f669179e5"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/sources/curriculum_manifest.csv": {
+      "bytes": 131,
+      "sha256": "91551b6970cf9e9cc5e6511f612caa4a68ca4c196cb67897b4eb68efe04629b5"
+    },
+    "ithkuil-ingestion/assets/fixture/csv/sources/source_manifest.csv": {
+      "bytes": 2563,
+      "sha256": "dfbf3f590c1dbbe4d47937aeb09535a8d889b0755855fdd2f441c8c66444b781"
+    },
+    "ithkuil-ingestion/assets/fixture/descriptor.json": {
+      "bytes": 3258,
+      "sha256": "a30b6a8190d667303e32063410517e1075ea7ce825695d8a4c964ab4dc114f2b"
+    },
+    "ithkuil-ingestion/assets/fixture/smoke.json": {
+      "bytes": 7243,
+      "sha256": "9ea964c8e258c369cc90127ffde9fac24346759974b42e6ecad1ff93c3a9e6c4"
+    },
+    "ithkuil-ingestion/assets/fixture/source.html": {
+      "bytes": 62439,
+      "sha256": "05b81b70251b313b20aa702b6fb5ff71e533a544434150c427fab9ad4f2078cf"
+    },
+    "ithkuil-ingestion/references/authority.md": {
+      "bytes": 1769,
+      "sha256": "039ab71d7d4fe41de3e9077781dd292c5089836372a1cef1a66468107ad9d3f5"
+    },
+    "ithkuil-ingestion/references/fixture.md": {
+      "bytes": 3782,
+      "sha256": "4243ea01368f4e4beed4326de3f733c333289b16ccfe78359fb1e08dc9caa91f"
+    },
+    "ithkuil-ingestion/references/graph.md": {
+      "bytes": 2862,
+      "sha256": "ed196a87e0417e53c8450c0ba8fb1dacad695d70f0ca96a6e096db2b3aa5ef33"
+    },
+    "ithkuil-ingestion/references/package.md": {
+      "bytes": 2259,
+      "sha256": "98c058e1b66e4e4b38f1a285e1156e77bb9d83e9c81c8efca3cb93da65dd451d"
+    },
+    "ithkuil-ingestion/references/semantic.md": {
+      "bytes": 2312,
+      "sha256": "8a3cad98c9b3fd51ba781750b3d6ad1630850c0b12554af8b77baa8687d0f35a"
+    },
+    "ithkuil-ingestion/references/source.md": {
+      "bytes": 1966,
+      "sha256": "ffe42bd081bc97a640d26508aba22c6524b3a0542fdfd099db88053a68d8c67f"
+    },
+    "ithkuil-ingestion/scripts/cleanroom.py": {
+      "bytes": 1070,
+      "sha256": "a38789b1cdc9ea3bdbb77e01b35f9af432ae8500191c15b4fe2bf53806bc2ed4"
+    }
+  },
+  "inspection": "case-fold uniqueness, relative package paths, Markdown link closure, workstation/private-location and credential-marker checks passed; bounded fixture files manually reviewed",
+  "packager": {
+    "commit": "dbd4588f9e1033efb41dad4bef2f7947c8993d44",
+    "files": {
+      "package_skill.py": "1a33059b0db1ef73375d46d513e5ea81369d2e8838c970597b0d52ddef8d1c0f",
+      "quick_validate.py": "67cf5703402013936c8fb75ad6a1afecd8841d45cc5e606b634eb05825fde365"
+    },
+    "repository": "anthropics/skills"
+  },
+  "schema": "bilqis.ithkuil.skill-package/v1",
+  "version": "1.0.0"
+}

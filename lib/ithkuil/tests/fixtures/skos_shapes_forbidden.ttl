@@ -1,0 +1,28 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix config: <https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/> .
+@prefix collection: <https://github.com/Entif-AI/Bilqis-MLX/id/collection/> .
+@prefix ordered: <https://github.com/Entif-AI/Bilqis-MLX/id/ordered_collection/> .
+
+# A source document is evidence, not an independently governed semantic scheme.
+<https://www.ithkuil.net/newithkuil_05_verbs.htm> a skos:ConceptScheme .
+
+# Family membership must never manufacture hierarchy.
+config:MFF skos:broader collection:configuration .
+collection:configuration skos:narrower config:MFF .
+
+# Case source-table order is not source-semantic order.
+collection:case a skos:OrderedCollection .
+ordered:case-source-table-order a skos:OrderedCollection .
+
+# Curriculum sequence is a separate projection.
+ordered:curriculum-sequence a skos:OrderedCollection .
+
+# A notation-bearing root resource is not forced to become one semantic sense.
+<https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-0bd881a56fac9e>
+    a skos:Concept .
+
+# Multi-scheme participation keeps one concept IRI; it does not mint scheme clones.
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF/new-ithkuil>
+    a skos:Concept .
+<https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF/shared-shape-fixture>
+    a skos:Concept .

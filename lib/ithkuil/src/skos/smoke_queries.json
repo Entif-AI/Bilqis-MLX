@@ -1,0 +1,168 @@
+{
+  "schema": "bilqis.skos.smoke-suite/v1",
+  "version": "1.0.0",
+  "fixture": "synthetic #40 core with #63 reviewed mapping fixture; not current-corpus admission",
+  "queries": [
+    {
+      "id": "grammar-code",
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND r.predicate_iri=$predicate AND v.lexical=$lexical AND v.datatype=$datatype RETURN DISTINCT s.iri ORDER BY s.iri",
+      "params": {
+        "predicate": "http://www.w3.org/2004/02/skos/core#notation",
+        "lexical": "A",
+        "datatype": "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code"
+      },
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A"
+        ]
+      ]
+    },
+    {
+      "id": "utf8-notation",
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND r.predicate_iri=$predicate AND v.lexical=$lexical AND v.datatype=$datatype RETURN DISTINCT s.iri ORDER BY s.iri",
+      "params": {
+        "predicate": "http://www.w3.org/2004/02/skos/core#notation",
+        "lexical": "ẓ",
+        "datatype": "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil"
+      },
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/B"
+        ]
+      ]
+    },
+    {
+      "id": "concept-notations",
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.lexical,v.datatype ORDER BY v.datatype,v.lexical",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A",
+        "predicate": "http://www.w3.org/2004/02/skos/core#notation"
+      },
+      "expected": [
+        [
+          "A",
+          "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code"
+        ],
+        [
+          "∅",
+          "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil"
+        ]
+      ]
+    },
+    {
+      "id": "concept-schemes",
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.iri ORDER BY v.iri",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A",
+        "predicate": "http://www.w3.org/2004/02/skos/core#inScheme"
+      },
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/fixture-secondary"
+        ]
+      ]
+    },
+    {
+      "id": "family-members",
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.iri ORDER BY v.iri",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/collection/fixture-family",
+        "predicate": "http://www.w3.org/2004/02/skos/core#member"
+      },
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/B"
+        ]
+      ]
+    },
+    {
+      "id": "semantic-neighbor",
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.iri ORDER BY v.iri",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A",
+        "predicate": "http://www.w3.org/2004/02/skos/core#related"
+      },
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/B"
+        ]
+      ]
+    },
+    {
+      "id": "admitted-cross-scheme",
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.iri ORDER BY v.iri",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A",
+        "predicate": "http://www.w3.org/2004/02/skos/core#closeMatch"
+      },
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/B"
+        ]
+      ]
+    },
+    {
+      "id": "held-exact-excluded",
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND v.owner=$owner AND s.iri=$iri AND r.predicate_iri=$predicate RETURN v.iri ORDER BY v.iri",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A",
+        "predicate": "http://www.w3.org/2004/02/skos/core#exactMatch"
+      },
+      "expected": []
+    },
+    {
+      "id": "public-source",
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(l:RdfTerm)-[t:RDF]->(doc:RdfTerm),(l)-[i:RDF]->(loc:RdfTerm),(doc)-[j:RDF]->(sid:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND t.owner=$owner AND i.owner=$owner AND j.owner=$owner AND s.iri=$iri AND r.predicate_iri=$source AND t.predicate_iri=$source AND i.predicate_iri=$identifier AND j.predicate_iri=$identifier RETURN l.iri,loc.lexical,doc.iri,sid.lexical ORDER BY l.iri,loc.lexical",
+      "params": {
+        "iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A",
+        "source": "http://purl.org/dc/terms/source",
+        "identifier": "http://purl.org/dc/terms/identifier"
+      },
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/source/locus/grammar/TEST/A-fixture",
+          "fixture-locus",
+          "https://www.ithkuil.net/newithkuil_02_morpho-phonology.htm",
+          "NI-WEB-CH02"
+        ]
+      ]
+    },
+    {
+      "id": "root-sense-dimensions",
+      "cypher": "MATCH(root:RdfTerm)-[r:RDF]->(s:RdfTerm),(s)-[t:RDF]->(stem:RdfTerm),(s)-[u:RDF]->(spec:RdfTerm) WHERE root.owner=$owner AND r.owner=$owner AND t.owner=$owner AND u.owner=$owner AND root.iri=$root AND r.predicate_iri=$sense AND t.predicate_iri=$stem AND u.predicate_iri=$spec RETURN s.iri,stem.lexical,spec.lexical ORDER BY s.iri",
+      "params": {
+        "root": "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-WEB-CH02/ROOT-FIXTURE",
+        "sense": "https://github.com/Entif-AI/Bilqis-MLX/vocab/hasSense",
+        "stem": "https://github.com/Entif-AI/Bilqis-MLX/vocab/lexiconStem",
+        "spec": "https://github.com/Entif-AI/Bilqis-MLX/vocab/lexiconSpecification"
+      },
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-WEB-CH02/ROOT-FIXTURE/STEM%201/BSC",
+          "STEM 1",
+          "BSC"
+        ]
+      ]
+    },
+    {
+      "id": "shared-label-is-candidates",
+      "cypher": "MATCH(s:RdfTerm)-[r:RDF]->(v:RdfTerm) WHERE s.owner=$owner AND r.owner=$owner AND r.predicate_iri=$predicate AND v.lexical=$label AND v.language=$language RETURN DISTINCT s.iri ORDER BY s.iri",
+      "params": {
+        "predicate": "http://www.w3.org/2004/02/skos/core#prefLabel",
+        "label": "Alpha",
+        "language": "en"
+      },
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/A"
+        ],
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/TEST/B"
+        ]
+      ]
+    }
+  ]
+}

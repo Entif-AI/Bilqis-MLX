@@ -1,0 +1,152 @@
+{
+  "counts": {
+    "divergent_case_keys": 32,
+    "divergent_register_keys": 6,
+    "grammar_rows": 607,
+    "grammar_semantic_keys": 485,
+    "multi_divergent_summary_keys": 38,
+    "multi_same_summary_keys": 84,
+    "single_summary_keys": 363
+  },
+  "examples": {
+    "CASE::ACT": [
+      {
+        "allomorph_condition": "formative Slot IX underlying case form",
+        "allomorph_group_id": "AG-e67c943697dd70",
+        "atomic_id": "ATOM-1dd3cebdcc2f9f",
+        "morpheme_class": "VC_vocalic_exponent",
+        "morpheme_family": "case",
+        "primary_section_id": "NI-WEB-CH04:4.7.1",
+        "primary_source_anchor": "",
+        "primary_source_id": "NI-WEB-CH04",
+        "primary_source_line": "14381",
+        "primary_source_url": "https://www.ithkuil.net/newithkuil_04_case.htm",
+        "primary_table_id": "NI-WEB-CH04:T066",
+        "realization_type": "underlying_glottal",
+        "semantic_summary": "activative case",
+        "slot": "IX",
+        "source_assertion_id": "AST-506b5a2386a9ab",
+        "value_name": "activative"
+      },
+      {
+        "allomorph_condition": "surface realization of glottal case form",
+        "allomorph_group_id": "AG-e67c943697dd70",
+        "atomic_id": "ATOM-b0078ab5063976",
+        "morpheme_class": "VC_vocalic_exponent",
+        "morpheme_family": "case",
+        "primary_section_id": "NI-WEB-CH04:4.7.1",
+        "primary_source_anchor": "",
+        "primary_source_id": "NI-WEB-CH04",
+        "primary_source_line": "14381",
+        "primary_source_url": "https://www.ithkuil.net/newithkuil_04_case.htm",
+        "primary_table_id": "NI-WEB-CH04:T066",
+        "realization_type": "realized_allomorph",
+        "semantic_summary": "activative case realized glottal form",
+        "slot": "IX",
+        "source_assertion_id": "AST-e03bb17220bd62",
+        "value_name": "activative"
+      }
+    ],
+    "CONFIGURATION::DDS": [
+      {
+        "allomorph_condition": "",
+        "allomorph_group_id": "AG-5397353b36fd51",
+        "atomic_id": "ATOM-02a4496bfbac3a",
+        "morpheme_class": "CA_consonantal_exponent",
+        "morpheme_family": "configuration",
+        "primary_section_id": "NI-WEB-CH03:3.1",
+        "primary_source_anchor": "",
+        "primary_source_id": "NI-WEB-CH03",
+        "primary_source_line": "3239",
+        "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+        "primary_table_id": "NI-WEB-CH03:T003",
+        "realization_type": "overt",
+        "semantic_summary": "Configuration value duplex/dissimilar/separate",
+        "slot": "VI / C_A complex",
+        "source_assertion_id": "AST-54b66e2ec43212",
+        "value_name": "duplex/dissimilar/separate"
+      }
+    ],
+    "EFFECT::1:BEN": [
+      {
+        "allomorph_condition": "default; replaced by listed alternant when immediately preceded by y",
+        "allomorph_group_id": "AG-3e133dd5e139fd",
+        "atomic_id": "ATOM-bab207e06f0db1",
+        "morpheme_class": "VN_vocalic_exponent",
+        "morpheme_family": "effect",
+        "primary_section_id": "NI-WEB-CH05:5.0",
+        "primary_source_anchor": "",
+        "primary_source_id": "NI-WEB-CH05",
+        "primary_source_line": "3358",
+        "primary_source_url": "https://www.ithkuil.net/newithkuil_05_verbs.htm",
+        "primary_table_id": "NI-WEB-CH05:T003",
+        "realization_type": "overt",
+        "semantic_summary": "Effect value 1:BEN",
+        "slot": "VIII / V_N",
+        "source_assertion_id": "AST-5e7a6ec5f37e36",
+        "value_name": "1:BEN"
+      },
+      {
+        "allomorph_condition": "immediately preceded by y",
+        "allomorph_group_id": "AG-3e133dd5e139fd",
+        "atomic_id": "ATOM-c2249e51c173ff",
+        "morpheme_class": "VN_vocalic_exponent",
+        "morpheme_family": "effect",
+        "primary_section_id": "NI-WEB-CH05:5.0",
+        "primary_source_anchor": "",
+        "primary_source_id": "NI-WEB-CH05",
+        "primary_source_line": "3358",
+        "primary_source_url": "https://www.ithkuil.net/newithkuil_05_verbs.htm",
+        "primary_table_id": "NI-WEB-CH05:T003",
+        "realization_type": "conditioned_allomorph",
+        "semantic_summary": "Effect value 1:BEN",
+        "slot": "VIII / V_N",
+        "source_assertion_id": "AST-6deaf879b875a3",
+        "value_name": "1:BEN"
+      }
+    ],
+    "REGISTER::DSV": [
+      {
+        "allomorph_condition": "final register adjunct; may be omitted when the last word of the register clause is pronounced with low pitch where the source permits",
+        "allomorph_group_id": "AG-06e8bb7fb0a0fe",
+        "atomic_id": "ATOM-0c655eea22faae",
+        "morpheme_class": "fixed_register_adjunct",
+        "morpheme_family": "register_adjunct_final",
+        "primary_section_id": "NI-WEB-CH08:8.3",
+        "primary_source_anchor": "Sec8_3",
+        "primary_source_id": "NI-WEB-CH08",
+        "primary_source_line": "3563",
+        "primary_source_url": "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+        "primary_table_id": "NI-WEB-CH08:T005",
+        "realization_type": "overt_optional",
+        "semantic_summary": "discursive (direct speech) register final adjunct",
+        "slot": "register final",
+        "source_assertion_id": "AST-15ac104e078f77",
+        "value_name": "discursive (direct speech)"
+      },
+      {
+        "allomorph_condition": "placed at the start of the registered word or phrase",
+        "allomorph_group_id": "AG-319117c8703b20",
+        "atomic_id": "ATOM-257e51f4a984fb",
+        "morpheme_class": "fixed_register_adjunct",
+        "morpheme_family": "register_adjunct_initial",
+        "primary_section_id": "NI-WEB-CH08:8.3",
+        "primary_source_anchor": "Sec8_3",
+        "primary_source_id": "NI-WEB-CH08",
+        "primary_source_line": "3563",
+        "primary_source_url": "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+        "primary_table_id": "NI-WEB-CH08:T005",
+        "realization_type": "overt",
+        "semantic_summary": "discursive (direct speech) register initial adjunct",
+        "slot": "register initial",
+        "source_assertion_id": "AST-8e2666f8bbd8ea",
+        "value_name": "discursive (direct speech)"
+      }
+    ]
+  },
+  "fixture_schema": "bilqis.skos.definition-source-fixture/v1",
+  "tracked_input_digests": {
+    "morphemes_atomic.csv": "6c6e2ea64a659b7061bdc3d388201c6219207bc1aa002869537f56d1f7ddf083",
+    "source_assertions.csv": "20a197bd4ca9757c19b731652d124139109351294a3b561fb456c81f2e922f7d"
+  }
+}

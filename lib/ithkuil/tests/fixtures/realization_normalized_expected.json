@@ -1,0 +1,523 @@
+{
+  "atomic_root_control": {
+    "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-WEB-CH07/ATOM-00e59b6388deca",
+    "realizations": [
+      {
+        "allomorph_condition": "",
+        "allomorph_group_id": "AG-1391179ab1ab24",
+        "atomic_id": "ATOM-00e59b6388deca",
+        "morpheme_class": "CS_consonantal_root",
+        "morpheme_family": "case_affix_root",
+        "primary_section_id": "NI-WEB-CH07:7.6.1",
+        "primary_source_anchor": "",
+        "primary_source_id": "NI-WEB-CH07",
+        "primary_source_line": "10450",
+        "primary_source_url": "https://www.ithkuil.net/newithkuil_07_affixes.htm",
+        "primary_table_id": "NI-WEB-CH07:T019",
+        "realization_type": "overt",
+        "slot": "V/VII or affixual adjunct",
+        "surface_form_normalized": "sy",
+        "surface_form_raw": "sy"
+      }
+    ],
+    "role": "root",
+    "scheme_iris": [],
+    "source_records": [
+      [
+        "morphemes_atomic",
+        "ATOM-00e59b6388deca"
+      ]
+    ]
+  },
+  "fixture_schema": "bilqis.skos.realization-normalized-fixture/v1",
+  "groups": {
+    "AFFILIATION::ASO": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/AFFILIATION/ASO",
+      "realizations": [
+        {
+          "allomorph_condition": "sole exponent in C_A complex",
+          "allomorph_group_id": "AG-e5aa07f182221f",
+          "atomic_id": "ATOM-9b4208b045f444",
+          "morpheme_class": "CA_consonantal_exponent",
+          "morpheme_family": "affiliation",
+          "primary_section_id": "NI-WEB-CH03:3.6",
+          "primary_source_anchor": "Sec3_6",
+          "primary_source_id": "NI-WEB-CH03",
+          "primary_source_line": "6525",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+          "primary_table_id": "NI-WEB-CH03:T035",
+          "realization_type": "standalone_allomorph",
+          "slot": "VI / C_A complex",
+          "surface_form_normalized": "nļ",
+          "surface_form_raw": "nļ"
+        },
+        {
+          "allomorph_condition": "inside C_A complex",
+          "allomorph_group_id": "AG-e5aa07f182221f",
+          "atomic_id": "ATOM-f08340cc673ded",
+          "morpheme_class": "CA_consonantal_exponent",
+          "morpheme_family": "affiliation",
+          "primary_section_id": "NI-WEB-CH03:3.6",
+          "primary_source_anchor": "Sec3_6",
+          "primary_source_id": "NI-WEB-CH03",
+          "primary_source_line": "6525",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+          "primary_table_id": "NI-WEB-CH03:T035",
+          "realization_type": "overt",
+          "slot": "VI / C_A complex",
+          "surface_form_normalized": "l",
+          "surface_form_raw": "l"
+        }
+      ],
+      "role": "concept",
+      "scheme_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ],
+      "source_records": [
+        [
+          "morphemes_atomic",
+          "ATOM-9b4208b045f444"
+        ],
+        [
+          "morphemes_atomic",
+          "ATOM-f08340cc673ded"
+        ]
+      ]
+    },
+    "CASE::ACT": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CASE/ACT",
+      "realizations": [
+        {
+          "allomorph_condition": "formative Slot IX underlying case form",
+          "allomorph_group_id": "AG-e67c943697dd70",
+          "atomic_id": "ATOM-1dd3cebdcc2f9f",
+          "morpheme_class": "VC_vocalic_exponent",
+          "morpheme_family": "case",
+          "primary_section_id": "NI-WEB-CH04:4.7.1",
+          "primary_source_anchor": "",
+          "primary_source_id": "NI-WEB-CH04",
+          "primary_source_line": "14381",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_04_case.htm",
+          "primary_table_id": "NI-WEB-CH04:T066",
+          "realization_type": "underlying_glottal",
+          "slot": "IX",
+          "surface_form_normalized": "ai'",
+          "surface_form_raw": "ai’"
+        },
+        {
+          "allomorph_condition": "surface realization of glottal case form",
+          "allomorph_group_id": "AG-e67c943697dd70",
+          "atomic_id": "ATOM-b0078ab5063976",
+          "morpheme_class": "VC_vocalic_exponent",
+          "morpheme_family": "case",
+          "primary_section_id": "NI-WEB-CH04:4.7.1",
+          "primary_source_anchor": "",
+          "primary_source_id": "NI-WEB-CH04",
+          "primary_source_line": "14381",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_04_case.htm",
+          "primary_table_id": "NI-WEB-CH04:T066",
+          "realization_type": "realized_allomorph",
+          "slot": "IX",
+          "surface_form_normalized": "a'i",
+          "surface_form_raw": "a’i"
+        }
+      ],
+      "role": "concept",
+      "scheme_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ],
+      "source_records": [
+        [
+          "morphemes_atomic",
+          "ATOM-1dd3cebdcc2f9f"
+        ],
+        [
+          "morphemes_atomic",
+          "ATOM-b0078ab5063976"
+        ]
+      ]
+    },
+    "CONFIGURATION::DDS": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/DDS",
+      "realizations": [
+        {
+          "allomorph_condition": "",
+          "allomorph_group_id": "AG-5397353b36fd51",
+          "atomic_id": "ATOM-02a4496bfbac3a",
+          "morpheme_class": "CA_consonantal_exponent",
+          "morpheme_family": "configuration",
+          "primary_section_id": "NI-WEB-CH03:3.1",
+          "primary_source_anchor": "",
+          "primary_source_id": "NI-WEB-CH03",
+          "primary_source_line": "3239",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+          "primary_table_id": "NI-WEB-CH03:T003",
+          "realization_type": "overt",
+          "slot": "VI / C_A complex",
+          "surface_form_normalized": "ţs",
+          "surface_form_raw": "ţs"
+        }
+      ],
+      "role": "concept",
+      "scheme_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ],
+      "source_records": [
+        [
+          "morphemes_atomic",
+          "ATOM-02a4496bfbac3a"
+        ]
+      ]
+    },
+    "CONFIGURATION::UPX": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/UPX",
+      "realizations": [
+        {
+          "allomorph_condition": "default or unmarked value",
+          "allomorph_group_id": "AG-9b0ba4e5deddc5",
+          "atomic_id": "ATOM-e09a479fdaca6d",
+          "morpheme_class": "CA_consonantal_exponent",
+          "morpheme_family": "configuration",
+          "primary_section_id": "NI-WEB-CH03:3.1",
+          "primary_source_anchor": "",
+          "primary_source_id": "NI-WEB-CH03",
+          "primary_source_line": "3239",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+          "primary_table_id": "NI-WEB-CH03:T003",
+          "realization_type": "zero",
+          "slot": "VI / C_A complex",
+          "surface_form_normalized": "∅",
+          "surface_form_raw": "∅"
+        }
+      ],
+      "role": "concept",
+      "scheme_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ],
+      "source_records": [
+        [
+          "morphemes_atomic",
+          "ATOM-e09a479fdaca6d"
+        ]
+      ]
+    },
+    "EFFECT::1:BEN": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/EFFECT/1%3ABEN",
+      "realizations": [
+        {
+          "allomorph_condition": "default; replaced by listed alternant when immediately preceded by y",
+          "allomorph_group_id": "AG-3e133dd5e139fd",
+          "atomic_id": "ATOM-bab207e06f0db1",
+          "morpheme_class": "VN_vocalic_exponent",
+          "morpheme_family": "effect",
+          "primary_section_id": "NI-WEB-CH05:5.0",
+          "primary_source_anchor": "",
+          "primary_source_id": "NI-WEB-CH05",
+          "primary_source_line": "3358",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_05_verbs.htm",
+          "primary_table_id": "NI-WEB-CH05:T003",
+          "realization_type": "overt",
+          "slot": "VIII / V_N",
+          "surface_form_normalized": "ia",
+          "surface_form_raw": "ia"
+        },
+        {
+          "allomorph_condition": "immediately preceded by y",
+          "allomorph_group_id": "AG-3e133dd5e139fd",
+          "atomic_id": "ATOM-c2249e51c173ff",
+          "morpheme_class": "VN_vocalic_exponent",
+          "morpheme_family": "effect",
+          "primary_section_id": "NI-WEB-CH05:5.0",
+          "primary_source_anchor": "",
+          "primary_source_id": "NI-WEB-CH05",
+          "primary_source_line": "3358",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_05_verbs.htm",
+          "primary_table_id": "NI-WEB-CH05:T003",
+          "realization_type": "conditioned_allomorph",
+          "slot": "VIII / V_N",
+          "surface_form_normalized": "uä",
+          "surface_form_raw": "uä"
+        }
+      ],
+      "role": "concept",
+      "scheme_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ],
+      "source_records": [
+        [
+          "morphemes_atomic",
+          "ATOM-bab207e06f0db1"
+        ],
+        [
+          "morphemes_atomic",
+          "ATOM-c2249e51c173ff"
+        ]
+      ]
+    },
+    "EXTENSION::ATV": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/EXTENSION/ATV",
+      "realizations": [
+        {
+          "allomorph_condition": "configuration overt",
+          "allomorph_group_id": "AG-7d8867057545a4",
+          "atomic_id": "ATOM-395bf7e4e2e299",
+          "morpheme_class": "CA_consonantal_exponent",
+          "morpheme_family": "extension",
+          "primary_section_id": "NI-WEB-CH03:3.6",
+          "primary_source_anchor": "Sec3_6",
+          "primary_source_id": "NI-WEB-CH03",
+          "primary_source_line": "6525",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+          "primary_table_id": "NI-WEB-CH03:T035",
+          "realization_type": "overt",
+          "slot": "VI / C_A complex",
+          "surface_form_normalized": "p",
+          "surface_form_raw": "p"
+        },
+        {
+          "allomorph_condition": "configuration is null",
+          "allomorph_group_id": "AG-7d8867057545a4",
+          "atomic_id": "ATOM-765c2f17f5ffd5",
+          "morpheme_class": "CA_consonantal_exponent",
+          "morpheme_family": "extension",
+          "primary_section_id": "NI-WEB-CH03:3.6",
+          "primary_source_anchor": "Sec3_6",
+          "primary_source_id": "NI-WEB-CH03",
+          "primary_source_line": "6525",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+          "primary_table_id": "NI-WEB-CH03:T035",
+          "realization_type": "conditioned_allomorph",
+          "slot": "VI / C_A complex",
+          "surface_form_normalized": "b",
+          "surface_form_raw": "b"
+        }
+      ],
+      "role": "concept",
+      "scheme_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ],
+      "source_records": [
+        [
+          "morphemes_atomic",
+          "ATOM-395bf7e4e2e299"
+        ],
+        [
+          "morphemes_atomic",
+          "ATOM-765c2f17f5ffd5"
+        ]
+      ]
+    },
+    "EXTENSION::DPL": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/EXTENSION/DPL",
+      "realizations": [
+        {
+          "allomorph_condition": "configuration overt",
+          "allomorph_group_id": "AG-2a48b2d4d76142",
+          "atomic_id": "ATOM-7a9fc0786105ab",
+          "morpheme_class": "CA_consonantal_exponent",
+          "morpheme_family": "extension",
+          "primary_section_id": "NI-WEB-CH03:3.6",
+          "primary_source_anchor": "Sec3_6",
+          "primary_source_id": "NI-WEB-CH03",
+          "primary_source_line": "6525",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+          "primary_table_id": "NI-WEB-CH03:T035",
+          "realization_type": "overt",
+          "slot": "VI / C_A complex",
+          "surface_form_normalized": "b",
+          "surface_form_raw": "b"
+        },
+        {
+          "allomorph_condition": "configuration is null",
+          "allomorph_group_id": "AG-2a48b2d4d76142",
+          "atomic_id": "ATOM-8bc797ae19dfed",
+          "morpheme_class": "CA_consonantal_exponent",
+          "morpheme_family": "extension",
+          "primary_section_id": "NI-WEB-CH03:3.6",
+          "primary_source_anchor": "Sec3_6",
+          "primary_source_id": "NI-WEB-CH03",
+          "primary_source_line": "6525",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+          "primary_table_id": "NI-WEB-CH03:T035",
+          "realization_type": "conditioned_allomorph",
+          "slot": "VI / C_A complex",
+          "surface_form_normalized": "bz",
+          "surface_form_raw": "bz"
+        }
+      ],
+      "role": "concept",
+      "scheme_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ],
+      "source_records": [
+        [
+          "morphemes_atomic",
+          "ATOM-7a9fc0786105ab"
+        ],
+        [
+          "morphemes_atomic",
+          "ATOM-8bc797ae19dfed"
+        ]
+      ]
+    },
+    "PERSPECTIVE_ESSENCE::M.NRM": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/PERSPECTIVE_ESSENCE/M.NRM",
+      "realizations": [
+        {
+          "allomorph_condition": "sole exponent in C_A complex",
+          "allomorph_group_id": "AG-be4395138f1092",
+          "atomic_id": "ATOM-2096dbdae9a4c2",
+          "morpheme_class": "CA_fused_exponent",
+          "morpheme_family": "perspective_essence",
+          "primary_section_id": "NI-WEB-CH03:3.6",
+          "primary_source_anchor": "Sec3_6",
+          "primary_source_id": "NI-WEB-CH03",
+          "primary_source_line": "6525",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+          "primary_table_id": "NI-WEB-CH03:T035",
+          "realization_type": "standalone_allomorph",
+          "slot": "VI / C_A complex",
+          "surface_form_normalized": "l",
+          "surface_form_raw": "l"
+        },
+        {
+          "allomorph_condition": "default/unmarked",
+          "allomorph_group_id": "AG-be4395138f1092",
+          "atomic_id": "ATOM-52561afd815916",
+          "morpheme_class": "CA_fused_exponent",
+          "morpheme_family": "perspective_essence",
+          "primary_section_id": "NI-WEB-CH03:3.6",
+          "primary_source_anchor": "Sec3_6",
+          "primary_source_id": "NI-WEB-CH03",
+          "primary_source_line": "6525",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_03_morphology.htm",
+          "primary_table_id": "NI-WEB-CH03:T035",
+          "realization_type": "zero",
+          "slot": "VI / C_A complex",
+          "surface_form_normalized": "∅",
+          "surface_form_raw": "∅"
+        }
+      ],
+      "role": "concept",
+      "scheme_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ],
+      "source_records": [
+        [
+          "morphemes_atomic",
+          "ATOM-2096dbdae9a4c2"
+        ],
+        [
+          "morphemes_atomic",
+          "ATOM-52561afd815916"
+        ]
+      ]
+    },
+    "REGISTER::DSV": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/REGISTER/DSV",
+      "realizations": [
+        {
+          "allomorph_condition": "final register adjunct; may be omitted when the last word of the register clause is pronounced with low pitch where the source permits",
+          "allomorph_group_id": "AG-06e8bb7fb0a0fe",
+          "atomic_id": "ATOM-0c655eea22faae",
+          "morpheme_class": "fixed_register_adjunct",
+          "morpheme_family": "register_adjunct_final",
+          "primary_section_id": "NI-WEB-CH08:8.3",
+          "primary_source_anchor": "Sec8_3",
+          "primary_source_id": "NI-WEB-CH08",
+          "primary_source_line": "3563",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+          "primary_table_id": "NI-WEB-CH08:T005",
+          "realization_type": "overt_optional",
+          "slot": "register final",
+          "surface_form_normalized": "hai",
+          "surface_form_raw": "hai"
+        },
+        {
+          "allomorph_condition": "placed at the start of the registered word or phrase",
+          "allomorph_group_id": "AG-319117c8703b20",
+          "atomic_id": "ATOM-257e51f4a984fb",
+          "morpheme_class": "fixed_register_adjunct",
+          "morpheme_family": "register_adjunct_initial",
+          "primary_section_id": "NI-WEB-CH08:8.3",
+          "primary_source_anchor": "Sec8_3",
+          "primary_source_id": "NI-WEB-CH08",
+          "primary_source_line": "3563",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+          "primary_table_id": "NI-WEB-CH08:T005",
+          "realization_type": "overt",
+          "slot": "register initial",
+          "surface_form_normalized": "ha",
+          "surface_form_raw": "ha"
+        }
+      ],
+      "role": "concept",
+      "scheme_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ],
+      "source_records": [
+        [
+          "morphemes_atomic",
+          "ATOM-0c655eea22faae"
+        ],
+        [
+          "morphemes_atomic",
+          "ATOM-257e51f4a984fb"
+        ]
+      ]
+    },
+    "REGISTER::NRR": {
+      "identity_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/REGISTER/NRR",
+      "realizations": [
+        {
+          "allomorph_condition": "unmarked/default register boundary",
+          "allomorph_group_id": "AG-a2e8951ea0775d",
+          "atomic_id": "ATOM-0a27199f07517d",
+          "morpheme_class": "fixed_register_adjunct",
+          "morpheme_family": "register_adjunct_final",
+          "primary_section_id": "NI-WEB-CH08:8.3",
+          "primary_source_anchor": "Sec8_3",
+          "primary_source_id": "NI-WEB-CH08",
+          "primary_source_line": "3563",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+          "primary_table_id": "NI-WEB-CH08:T005",
+          "realization_type": "zero",
+          "slot": "register final",
+          "surface_form_normalized": "∅",
+          "surface_form_raw": "∅"
+        },
+        {
+          "allomorph_condition": "unmarked/default register boundary",
+          "allomorph_group_id": "AG-a243f9d223418b",
+          "atomic_id": "ATOM-68f38fe846454a",
+          "morpheme_class": "fixed_register_adjunct",
+          "morpheme_family": "register_adjunct_initial",
+          "primary_section_id": "NI-WEB-CH08:8.3",
+          "primary_source_anchor": "Sec8_3",
+          "primary_source_id": "NI-WEB-CH08",
+          "primary_source_line": "3563",
+          "primary_source_url": "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+          "primary_table_id": "NI-WEB-CH08:T005",
+          "realization_type": "zero",
+          "slot": "register initial",
+          "surface_form_normalized": "∅",
+          "surface_form_raw": "∅"
+        }
+      ],
+      "role": "concept",
+      "scheme_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ],
+      "source_records": [
+        [
+          "morphemes_atomic",
+          "ATOM-0a27199f07517d"
+        ],
+        [
+          "morphemes_atomic",
+          "ATOM-68f38fe846454a"
+        ]
+      ]
+    }
+  }
+}

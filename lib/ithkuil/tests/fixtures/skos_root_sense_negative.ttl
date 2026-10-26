@@ -1,0 +1,7 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<urn:source:LEXSENSE-e3f64d03c6f6ec>
+    skos:broader <urn:negative:root-is-not-sense-taxonomy> .
+
+<https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-01e02023f505ec>
+    skos:broader <https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-01e02023f505ec/STEM%201/BSC> .

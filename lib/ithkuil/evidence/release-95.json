@@ -1,0 +1,1387 @@
+{
+  "acceptance": {
+    "akasha_traversal": "PASS",
+    "canonical_rdf_fresh_materialization": "PASS",
+    "emitted_fixture_preflight": "PASS",
+    "read_only_smoke_suite": "PASS",
+    "release_digest_bound_receipts": "PASS",
+    "two_rebuild_semantic_equivalence": "PASS",
+    "unrelated_foreign_data_preserved": "PASS"
+  },
+  "authority_boundary": "IPR-0220; no curriculum admission or neural updates",
+  "branch": "codex/skos-31-43-pro-20261024",
+  "candidate_revision": "eb3ce818319382bb1946a3a4a23ea585a638ea70",
+  "canonical_rdf": {
+    "sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "triple_count": 130173
+  },
+  "clean_rebuild_evidence_sha256": "3d212f0f7d70541ac37844eae93eb9423eb46a68dd1dd6ac9233c9a278443378",
+  "clean_rebuild_revision": "da3465173d444872544d9ca3f577dbdb470bb112",
+  "dependencies": {
+    "falkordb": "1.8.0",
+    "pyshacl": "0.40.1",
+    "rdflib": "7.6.0",
+    "redis": "8.1.0"
+  },
+  "equivalence": {
+    "differences": [],
+    "excluded_materialization_fields": [
+      "timestamp"
+    ]
+  },
+  "execution": "Repository code, inference-free validation and orchestration ran locally; only DB protocol traffic crossed the existing SSH tunnel.",
+  "first_import": {
+    "canonical_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "edges": 130173,
+    "graph": "bilqis_skos_release95_2e8effc5df5b",
+    "nodes": 67410,
+    "owner": "codex_release95_c2464d4d062d",
+    "projection_version": "1.0.0",
+    "status": "complete"
+  },
+  "first_materialization": {
+    "canonical_rdf_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "coverage_status": "partial",
+    "edges_by_type": {
+      "RDF": 130173
+    },
+    "graph": "bilqis_skos_release95_2e8effc5df5b",
+    "importer": {
+      "dirty_source": false,
+      "git_commit": "58955da182f0c05401c676f5a7266b41235431c0",
+      "implementation_sha256": "92395e42231d4d6457e3407bfd09b97f3a017e701d6c44909ab3fb9db1f07077",
+      "version": "2.0.0"
+    },
+    "indexes": [
+      {
+        "label": "RdfTerm",
+        "present": true,
+        "property": "iri"
+      },
+      {
+        "label": "RdfTerm",
+        "present": true,
+        "property": "lexical"
+      },
+      {
+        "label": "RdfTerm",
+        "present": true,
+        "property": "datatype"
+      }
+    ],
+    "nodes_by_label": {
+      "Collection": 9,
+      "Concept": 3383,
+      "ConceptScheme": 1,
+      "Literal": 43030,
+      "RdfTerm": 67410,
+      "Resource": 24380
+    },
+    "owner": "codex_release95_c2464d4d062d",
+    "projection_version": "1.0.0",
+    "schema": "bilqis.skos.materialization/v1",
+    "semantic_coverage": {
+      "ref": "coverage.json",
+      "sha256": "73a249c1dfff4c9cda382808b5d0bf87c8912bb04b3ac8b805675262007c6461"
+    },
+    "smoke_suite": {
+      "canonical_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+      "cases": [
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+            ]
+          ],
+          "id": "grammar-code",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+            ]
+          ],
+          "id": "utf8-notation",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "ACC",
+              "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code"
+            ],
+            [
+              "lf",
+              "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil"
+            ]
+          ],
+          "expected": [
+            [
+              "ACC",
+              "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code"
+            ],
+            [
+              "lf",
+              "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil"
+            ]
+          ],
+          "id": "concept-notations",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+            ]
+          ],
+          "id": "concept-schemes",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ADS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ANN"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ANP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/APH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ARB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ATE"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CMD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CNV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/COI"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CRP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CRR"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CTP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CTV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DCC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DEJ"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DES"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DIS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DLC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DOL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DPB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DRS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DUB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EUH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EUP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EXA"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EXG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/FOR"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/FSC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/GRT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IDG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IFT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IPL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IRO"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ISP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IVD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/MAN"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/MNF"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/OPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PES"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPX"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PSC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PSM"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RAC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RFL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RPU"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RSG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RVL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SAT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SGS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SKP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SOL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/STU"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/TRP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/VEX"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ADS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ANN"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ANP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/APH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ARB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ATE"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CMD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CNV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/COI"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CRP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CRR"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CTP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CTV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DCC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DEJ"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DES"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DIS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DLC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DOL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DPB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DRS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DUB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EUH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EUP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EXA"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EXG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/FOR"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/FSC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/GRT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IDG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IFT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IPL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IRO"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ISP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IVD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/MAN"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/MNF"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/OPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PES"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPX"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PSC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PSM"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RAC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RFL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RPU"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RSG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RVL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SAT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SGS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SKP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SOL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/STU"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/TRP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/VEX"
+            ]
+          ],
+          "id": "family-members",
+          "passed": true
+        },
+        {
+          "actual": [],
+          "expected": [],
+          "id": "semantic-neighbor",
+          "passed": true
+        },
+        {
+          "actual": [],
+          "expected": [],
+          "id": "admitted-cross-scheme",
+          "passed": true
+        },
+        {
+          "actual": [],
+          "expected": [],
+          "id": "held-exact-excluded",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/source/locus/4fda3cbca22f3857b8cbdfcd9a37a34fa973de5a934460adbb65bcf114b4eeb9",
+              "source=NI-WEB-CH08;section=NI-WEB-CH08:8.5;table=NI-WEB-CH08:T010;line=4545",
+              "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+              "NI-WEB-CH08"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/source/locus/4fda3cbca22f3857b8cbdfcd9a37a34fa973de5a934460adbb65bcf114b4eeb9",
+              "source=NI-WEB-CH08;section=NI-WEB-CH08:8.5;table=NI-WEB-CH08:T010;line=4545",
+              "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+              "NI-WEB-CH08"
+            ]
+          ],
+          "id": "public-source",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+              "STEM 3",
+              "BSC"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+              "STEM 3",
+              "BSC"
+            ]
+          ],
+          "id": "root-sense-dimensions",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-704aefdd5c35bc"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-ca3db16882138e"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-704aefdd5c35bc"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-ca3db16882138e"
+            ]
+          ],
+          "id": "shared-label-is-candidates",
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "schema": "bilqis.skos.smoke-report/v1",
+      "suite_sha256": "95b54cee4f73b8df353ac560e542bf13ac38f1421641231240f160e3766f8a16",
+      "suite_version": "1.0.0"
+    },
+    "status": "complete",
+    "timestamp": "2026-10-26T12:04:31.118947+00:00",
+    "version": "1.0.0"
+  },
+  "first_readback": {
+    "admitted_relation": {
+      "actual": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+          "STEM 3",
+          "BSC"
+        ]
+      ],
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+          "STEM 3",
+          "BSC"
+        ]
+      ],
+      "predicate_iri": "https://github.com/Entif-AI/Bilqis-MLX/vocab/hasSense",
+      "source_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897"
+    },
+    "akasha": {
+      "candidate_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+      ],
+      "canonical_rdf_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+      "concept_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC",
+      "coverage_status": "partial",
+      "families": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/collection/bias_adjunct"
+      ],
+      "graph": "bilqis_skos_release95_2e8effc5df5b",
+      "neighbors": [],
+      "notation": {
+        "datatype": "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code",
+        "lexical": "ACC"
+      },
+      "owner": "codex_release95_c2464d4d062d",
+      "schema": "bilqis.akasha.skos-read/v1",
+      "schemes": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ]
+    },
+    "credential": {
+      "graph_scoped": true,
+      "read_only": true,
+      "removed_after_proof": true
+    },
+    "denials": {
+      "projection_mismatch": "AKASHA_SKOS_PROJECTION_MISMATCH",
+      "semantic_write": "NoPermissionError",
+      "unrelated_graph": "NoPermissionError"
+    },
+    "projection_marker_unchanged": true
+  },
+  "graph": "bilqis_skos_release95_2e8effc5df5b",
+  "held_behavior": "CONFIGURATION/MFF stays HELD for NOTATION_COLLISION. Absent mappings remain absent. Semantic coverage remains partial; no semantic decision changed.",
+  "implementation_revision": "58955da182f0c05401c676f5a7266b41235431c0",
+  "incidents": [
+    "PM-2026-10-26-004",
+    "PM-2026-10-26-005",
+    "PM-2026-10-26-006"
+  ],
+  "initial_state": "empty",
+  "issue": 95,
+  "limits": [
+    "Semantic coverage remains partial.",
+    "The two unrelated foreign nodes/edge are deliberate reset fixtures inside the new test namespace.",
+    "No unrelated graph was reset or deleted; no source/RDF/semantic mutation, training or merge."
+  ],
+  "owner": "codex_release95_c2464d4d062d",
+  "preserved_projection_recovery": {
+    "deleted_edges": 130173,
+    "deleted_nodes": 67410,
+    "foreign_edges_before_after": [
+      [
+        0
+      ]
+    ],
+    "foreign_nodes_before_after": [
+      [
+        0
+      ]
+    ],
+    "graph": "bilqis_skos_release95_2e8effc5df5b",
+    "marker": {
+      "digest": "",
+      "edges": 0,
+      "nodes": 0,
+      "owner": "codex_release95_c2464d4d062d",
+      "state": "empty",
+      "version": "1.0.0"
+    },
+    "owner": "codex_release95_c2464d4d062d",
+    "reset75_revision": "58955da182f0c05401c676f5a7266b41235431c0",
+    "status": "empty"
+  },
+  "recovery_incident": "PM-2026-10-26-004",
+  "release_census_revision": "5dc1c53f33996d7001952d3bfee44f2b71dd7262",
+  "release_census_sha256": "cb6b532b0ccaad84387b36c7eae17dda45fdec4855098f7fa5c0bc2564d000ea",
+  "reset75_proof": {
+    "file": "reset-75-scale.json",
+    "sha256": "19d2b9826d7a07a2dcf7cae8aa7afbe3efd8e5d3ded2fdb9a2be835babc9a322"
+  },
+  "reset_plan": {
+    "blockers": [],
+    "canonical_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "enumeration": {
+      "boundary_rows": 130173,
+      "owned_node_rows": 67411
+    },
+    "foreign_edges_touching_owned_nodes": [],
+    "foreign_nodes_touching_owned_edges": [],
+    "graph": "bilqis_skos_release95_2e8effc5df5b",
+    "owned_edges": 130173,
+    "owned_nodes": 67410,
+    "owner": "codex_release95_c2464d4d062d",
+    "plan_sha256": "72f046d4691368934c115909a97374d43137326b83ace523fd7bcbb3736b3e39",
+    "projection_version": "1.0.0",
+    "schema": "bilqis.skos.reset-plan/v1",
+    "state": "complete"
+  },
+  "reset_readback": {
+    "digest": "",
+    "edges": 0,
+    "nodes": 0,
+    "owner": "codex_release95_c2464d4d062d",
+    "state": "empty",
+    "version": "1.0.0"
+  },
+  "reset_result": {
+    "deleted_edges": 130173,
+    "deleted_nodes": 67410,
+    "graph": "bilqis_skos_release95_2e8effc5df5b",
+    "owner": "codex_release95_c2464d4d062d",
+    "status": "empty"
+  },
+  "schema": "bilqis.ithkuil.release95-proof/v1",
+  "second_import": {
+    "canonical_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "edges": 130173,
+    "graph": "bilqis_skos_release95_2e8effc5df5b",
+    "nodes": 67410,
+    "owner": "codex_release95_c2464d4d062d",
+    "projection_version": "1.0.0",
+    "status": "complete"
+  },
+  "second_materialization": {
+    "canonical_rdf_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "coverage_status": "partial",
+    "edges_by_type": {
+      "RDF": 130173
+    },
+    "graph": "bilqis_skos_release95_2e8effc5df5b",
+    "importer": {
+      "dirty_source": false,
+      "git_commit": "58955da182f0c05401c676f5a7266b41235431c0",
+      "implementation_sha256": "92395e42231d4d6457e3407bfd09b97f3a017e701d6c44909ab3fb9db1f07077",
+      "version": "2.0.0"
+    },
+    "indexes": [
+      {
+        "label": "RdfTerm",
+        "present": true,
+        "property": "iri"
+      },
+      {
+        "label": "RdfTerm",
+        "present": true,
+        "property": "lexical"
+      },
+      {
+        "label": "RdfTerm",
+        "present": true,
+        "property": "datatype"
+      }
+    ],
+    "nodes_by_label": {
+      "Collection": 9,
+      "Concept": 3383,
+      "ConceptScheme": 1,
+      "Literal": 43030,
+      "RdfTerm": 67410,
+      "Resource": 24380
+    },
+    "owner": "codex_release95_c2464d4d062d",
+    "projection_version": "1.0.0",
+    "schema": "bilqis.skos.materialization/v1",
+    "semantic_coverage": {
+      "ref": "coverage.json",
+      "sha256": "73a249c1dfff4c9cda382808b5d0bf87c8912bb04b3ac8b805675262007c6461"
+    },
+    "smoke_suite": {
+      "canonical_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+      "cases": [
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+            ]
+          ],
+          "id": "grammar-code",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+            ]
+          ],
+          "id": "utf8-notation",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "ACC",
+              "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code"
+            ],
+            [
+              "lf",
+              "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil"
+            ]
+          ],
+          "expected": [
+            [
+              "ACC",
+              "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code"
+            ],
+            [
+              "lf",
+              "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil"
+            ]
+          ],
+          "id": "concept-notations",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+            ]
+          ],
+          "id": "concept-schemes",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ADS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ANN"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ANP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/APH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ARB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ATE"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CMD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CNV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/COI"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CRP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CRR"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CTP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CTV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DCC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DEJ"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DES"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DIS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DLC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DOL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DPB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DRS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DUB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EUH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EUP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EXA"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EXG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/FOR"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/FSC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/GRT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IDG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IFT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IPL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IRO"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ISP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IVD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/MAN"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/MNF"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/OPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PES"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPX"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PSC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PSM"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RAC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RFL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RPU"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RSG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RVL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SAT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SGS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SKP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SOL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/STU"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/TRP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/VEX"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ADS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ANN"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ANP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/APH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ARB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ATE"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CMD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CNV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/COI"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CRP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CRR"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CTP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/CTV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DCC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DEJ"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DES"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DIS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DLC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DOL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DPB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DRS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DUB"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EUH"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EUP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EXA"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/EXG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/FOR"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/FSC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/GRT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IDG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IFT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IPL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IRO"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ISP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/IVD"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/MAN"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/MNF"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/OPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PES"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPV"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PPX"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PSC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/PSM"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RAC"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RFL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RPU"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RSG"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/RVL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SAT"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SGS"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SKP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/SOL"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/STU"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/TRP"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/VEX"
+            ]
+          ],
+          "id": "family-members",
+          "passed": true
+        },
+        {
+          "actual": [],
+          "expected": [],
+          "id": "semantic-neighbor",
+          "passed": true
+        },
+        {
+          "actual": [],
+          "expected": [],
+          "id": "admitted-cross-scheme",
+          "passed": true
+        },
+        {
+          "actual": [],
+          "expected": [],
+          "id": "held-exact-excluded",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/source/locus/4fda3cbca22f3857b8cbdfcd9a37a34fa973de5a934460adbb65bcf114b4eeb9",
+              "source=NI-WEB-CH08;section=NI-WEB-CH08:8.5;table=NI-WEB-CH08:T010;line=4545",
+              "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+              "NI-WEB-CH08"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/source/locus/4fda3cbca22f3857b8cbdfcd9a37a34fa973de5a934460adbb65bcf114b4eeb9",
+              "source=NI-WEB-CH08;section=NI-WEB-CH08:8.5;table=NI-WEB-CH08:T010;line=4545",
+              "https://www.ithkuil.net/newithkuil_08_adjuncts.htm",
+              "NI-WEB-CH08"
+            ]
+          ],
+          "id": "public-source",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+              "STEM 3",
+              "BSC"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+              "STEM 3",
+              "BSC"
+            ]
+          ],
+          "id": "root-sense-dimensions",
+          "passed": true
+        },
+        {
+          "actual": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-704aefdd5c35bc"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-ca3db16882138e"
+            ]
+          ],
+          "expected": [
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-704aefdd5c35bc"
+            ],
+            [
+              "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-ca3db16882138e"
+            ]
+          ],
+          "id": "shared-label-is-candidates",
+          "passed": true
+        }
+      ],
+      "passed": true,
+      "schema": "bilqis.skos.smoke-report/v1",
+      "suite_sha256": "95b54cee4f73b8df353ac560e542bf13ac38f1421641231240f160e3766f8a16",
+      "suite_version": "1.0.0"
+    },
+    "status": "complete",
+    "timestamp": "2026-10-26T12:13:15.791478+00:00",
+    "version": "1.0.0"
+  },
+  "second_readback": {
+    "admitted_relation": {
+      "actual": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+          "STEM 3",
+          "BSC"
+        ]
+      ],
+      "expected": [
+        [
+          "https://github.com/Entif-AI/Bilqis-MLX/id/sense/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897/STEM%203/BSC",
+          "STEM 3",
+          "BSC"
+        ]
+      ],
+      "predicate_iri": "https://github.com/Entif-AI/Bilqis-MLX/vocab/hasSense",
+      "source_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-LEXICON-CURRICULUM/LEXROOT-0028a4ec750897"
+    },
+    "akasha": {
+      "candidate_iris": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+      ],
+      "canonical_rdf_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+      "concept_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC",
+      "coverage_status": "partial",
+      "families": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/collection/bias_adjunct"
+      ],
+      "graph": "bilqis_skos_release95_2e8effc5df5b",
+      "neighbors": [],
+      "notation": {
+        "datatype": "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code",
+        "lexical": "ACC"
+      },
+      "owner": "codex_release95_c2464d4d062d",
+      "schema": "bilqis.akasha.skos-read/v1",
+      "schemes": [
+        "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil"
+      ]
+    },
+    "credential": {
+      "graph_scoped": true,
+      "read_only": true,
+      "removed_after_proof": true
+    },
+    "denials": {
+      "projection_mismatch": "AKASHA_SKOS_PROJECTION_MISMATCH",
+      "semantic_write": "NoPermissionError",
+      "unrelated_graph": "NoPermissionError"
+    },
+    "projection_marker_unchanged": true
+  },
+  "status": "passed",
+  "suite_sha256": "95b54cee4f73b8df353ac560e542bf13ac38f1421641231240f160e3766f8a16",
+  "unrelated_foreign_nodes_and_edge_survived": true,
+  "validation": {
+    "additional_live_reset_tests": 5,
+    "code_smells": "passed; zero new baseline-relative findings",
+    "error_control_plane": "passed; zero new debt",
+    "module_size": "passed; no new or worsened debt",
+    "portable_skos_tests": 486,
+    "skipped_live_tests": 13
+  }
+}

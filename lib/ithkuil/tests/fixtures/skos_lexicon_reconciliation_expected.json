@@ -1,0 +1,82 @@
+{
+  "canonical_byte_count": 17977047,
+  "canonical_sha256": "df21d927c97b458ff72e0910d5d120edd32dc14dd3f2273dda75e300c2308731",
+  "canonical_triple_count": 73946,
+  "compiler_input_closure_sha256": "719a92def4d18bf31f56dd5a47989d62dcb0ad37b9a6901981f070ac646a8d51",
+  "counts": {
+    "root_rows_consumed": 5810,
+    "root_resources_emitted": 5810,
+    "root_resources_held": 0,
+    "sense_rows_consumed": 3008,
+    "sense_concepts_emitted": 3008,
+    "sense_rows_held": 0,
+    "roots_with_zero_parsed_senses": 5097,
+    "roots_with_multiple_parsed_senses": 706,
+    "notation_count": 5810
+  },
+  "coverage": {
+    "stem": {
+      "ROOT-WIDE": 714,
+      "STEM 1": 784,
+      "STEM 2": 758,
+      "STEM 3": 751,
+      "STEMS 1-3": 1
+    },
+    "specification": {
+      "BSC": 2096,
+      "CSV": 304,
+      "CTE": 304,
+      "OBJ": 304
+    },
+    "source_locus_kind": {
+      "compact_numbered_stem": 39,
+      "prose": 54,
+      "table": 2915
+    },
+    "root_chapters": {
+      "1": 39,
+      "2": 464,
+      "3": 122,
+      "4": 719,
+      "5": 250,
+      "6": 730,
+      "7": 3486
+    },
+    "sense_chapters": {
+      "1": 43,
+      "2": 1572,
+      "3": 100,
+      "4": 811,
+      "5": 32,
+      "6": 334,
+      "7": 116
+    }
+  },
+  "evidence_rows": 9488,
+  "frontier": "tracked-new-ithkuil-lexicon-chapters-1-2-3-4-5-6-7",
+  "frontier_contract": {
+    "scope": "tracked-new-ithkuil-lexicon-chapters-1-2-3-4-5-6-7",
+    "source_id": "NI-LEXICON-CURRICULUM",
+    "included_chapters": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7"
+    ],
+    "outside_closure": [
+      "pinned New Ithkuil affix-reference source"
+    ],
+    "claim": "current tracked Chapter 1,2,3,4,5,6,7 source frontier only; not complete official lexicon coverage"
+  },
+  "lexicon_source_sha256": "4bdc52e672ce3f98a9d27c0392f31600a861dc32be982f3332777454cac6c5df",
+  "notation_count": 5810,
+  "receipt_sha256": "08fde223950e8d0fb6e3eb64946cab78a8b81d1d93df741cbdcf10682f0b61c1",
+  "root_rows": 5810,
+  "roots_with_multiple_parsed_senses": 706,
+  "roots_with_zero_parsed_senses": 5097,
+  "schema": "bilqis.skos.lexicon-reconciliation-snapshot/v1",
+  "sense_rows": 3008
+}

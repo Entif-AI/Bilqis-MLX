@@ -1,0 +1,93 @@
+{
+  "schema": "bilqis.ithkuil.chapter4-extraction-expected/v1",
+  "source": {
+    "filename": "New Ithkuil Lexicon - Chapter 04 - Psychology and Sociology.pdf",
+    "sha256": "3bb95d35bc684cdf4c891d32b5c44e8b796db5e0bb97443961ac6cb0fe7e3d34",
+    "canonical_sha256": "d26d5aabc844ba9cafca68c6e1c7459b0f325e745b919a4aac3e08a61e684a21",
+    "canonical_page_start": 115,
+    "page_count": 130,
+    "canonical_page_text_variant_pages": ["42", "87", "88", "89"],
+    "min_text_similarity": 0.9679083094555874
+  },
+  "counts": {
+    "roots": 719,
+    "senses": 811,
+    "unique_sense_coordinates": 811,
+    "evidence": 2475,
+    "roots_without_senses": 456,
+    "source_observations": 3133,
+    "parsed_sense_observations": 811
+  },
+  "dispositions": {
+    "DEBT_CONFLICT": 20,
+    "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 2131,
+    "DEBT_UNSUPPORTED_SHAPE": 171,
+    "PARSED": 811
+  },
+  "output_sha256": {
+    "lexicon_root_evidence.csv": "22c3f5a7684e42610a2e8366937a0044c3007ba8a58a017c030e90bbf9e8ac78",
+    "lexicon_root_senses.csv": "a154d3894fbda774f6c31998f5820f7c0288fb182ba2f6ae9872d22ae2030151",
+    "lexicon_roots.csv": "53292b8ec4935c9d748adac1b2266843db1ef4472ff792e1556b016c9e5b1baf"
+  },
+  "accounting_sha256": "410fc88cdbccacb24e7511583cbf4b5169af411dd525b7d2dd1f0202949f2162",
+  "representative_shapes": {
+    "recovered_root_rows": [
+      "-ŢČ-",
+      "-SG-",
+      "-ŠFW-"
+    ],
+    "root_locus_debt": [
+      {"root_form_raw": "-ẒPY-", "pdf_page": 99, "lexicon_section": "4.5.1.3.1", "line": 16},
+      {"root_form_raw": "-ẒPL-", "pdf_page": 99, "lexicon_section": "4.5.1.3.1", "line": 20},
+      {"root_form_raw": "-ẒPR-", "pdf_page": 99, "lexicon_section": "4.5.1.3.1", "line": 22},
+      {"root_form_raw": "-ẒPŘ-", "pdf_page": 99, "lexicon_section": "4.5.1.3.1", "line": 26},
+      {"root_form_raw": "-ŘBY-", "pdf_page": 100, "lexicon_section": "4.5.1.3.1", "line": 28},
+      {"root_form_raw": "-PŇ-", "pdf_page": 129, "lexicon_section": "4.5.10.4", "line": 44}
+    ],
+    "ordinary_table_sense": {
+      "root_form_raw": "-RMY-",
+      "stem": "STEM 3",
+      "specification": "BSC",
+      "status": "PARSED",
+      "source_locus": {
+        "kind": "table",
+        "pdf_page": 15,
+        "table_index": 1,
+        "row": 1,
+        "column": 2
+      }
+    },
+    "multi_sense_root": {
+      "root_form_raw": "-NF-",
+      "coordinates": [
+        ["STEM 1", "BSC"],
+        ["STEM 2", "BSC"],
+        ["STEM 3", "BSC"]
+      ],
+      "source_pdf_page": "15",
+      "source_table_index": "3"
+    },
+    "prose_debt": {
+      "root_form_raw": "-ŇÇPF-",
+      "status": "DEBT_INSUFFICIENT_SENSE_EVIDENCE",
+      "source_locus": {
+        "kind": "prose",
+        "pdf_page": 102,
+        "line_start": 14,
+        "line_end": 14
+      }
+    },
+    "unsupported_table": {
+      "root_form_raw": "",
+      "status": "DEBT_UNSUPPORTED_SHAPE",
+      "source_locus": {
+        "kind": "table",
+        "pdf_page": 1,
+        "table_index": 1,
+        "row": 0,
+        "column": 0
+      }
+    },
+    "prose_parsed_sense_count": 0
+  }
+}

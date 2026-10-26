@@ -1,0 +1,82 @@
+{
+  "legacy_sha256": {
+    "source_sections.csv": "765f30d97c64b68266a45cf77fed69cdba2ce70d5ec368ec1d6c817c259d856f",
+    "source_table_cells.csv": "438477664f9d59291b31ce1010315aaaaabeccab66321c5f800b63905ada0778",
+    "source_tables.csv": "ef0ebb70ad5373c7e75cf318377aee44723fa676eda5d4366ce236a6ffa79b65"
+  },
+  "output_sha256": {
+    "source_sections.csv": "765f30d97c64b68266a45cf77fed69cdba2ce70d5ec368ec1d6c817c259d856f",
+    "source_table_cells.csv": "d43de43ab990876be78cb07ae34ffc6bdc54b18ff8327118baa31814c5631768",
+    "source_tables.csv": "d85cad7573ecb4d22f17a4dd61e0280b05c3cd0c4b1a57edb820a6ef8ec356e5",
+    "sources/affix_frontier_accounting.json": "230e2c1d5f00fe39cfd7fbfa49a9b00f78c85973bc7918859e24688c2c4db04f"
+  },
+  "receipt": {
+    "counts": {
+      "cells": 8060,
+      "observations": 19954,
+      "tables": 403
+    },
+    "dispositions": {
+      "CONFLICT": 2,
+      "PARSED": 8463,
+      "TABLE_COVERED": 1994,
+      "UNSUPPORTED": 9495
+    },
+    "engine": "PyMuPDF",
+    "engine_version": "1.27.2.3",
+    "inventory": {
+      "detected_tables": 440,
+      "table_shapes": {
+        "10x2": 150,
+        "10x3": 9,
+        "10x4": 250,
+        "10x5": 9,
+        "10x6": 2,
+        "11x3": 1,
+        "11x9": 1,
+        "12x4": 1,
+        "12x43": 1,
+        "14x3": 3,
+        "14x4": 2,
+        "19x4": 1,
+        "2x4": 1,
+        "3x2": 1,
+        "4x2": 1,
+        "6x2": 1,
+        "7x4": 1,
+        "8x3": 2,
+        "8x7": 1,
+        "9x2": 2
+      }
+    },
+    "observations_sha256": "230e2c1d5f00fe39cfd7fbfa49a9b00f78c85973bc7918859e24688c2c4db04f",
+    "outputs": {
+      "source_table_cells.csv": {
+        "bytes": 2728012,
+        "sha256": "ee2384fa5a917006094106dbdca5d84540271b42cf7841595191c2e4a41d4f8f"
+      },
+      "source_tables.csv": {
+        "bytes": 117962,
+        "sha256": "9b3319a69940bf4dbfab086e9de27a7184a933a23331ff588bf9d1a94f3b927a"
+      }
+    },
+    "page_count": 140,
+    "parser_sha256": "2441b5a597c3e2569b7f760b19f8e7bc0b4ee976591c4e298f9614e55a8e687b",
+    "parser_version": "1.0.0",
+    "pdf_format": "PDF 1.3",
+    "schema": "ithkuil.affix_frontier.receipt.v1",
+    "semantic_relationships_inferred": false,
+    "source_bytes": 833483,
+    "source_id": "NI-AFFIX-PDF",
+    "source_pdf": "newithkuil_affixes.pdf",
+    "source_sha256": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+    "source_url": "https://www.ithkuil.net/newithkuil_affixes.pdf",
+    "structure_parser_sha256": "07d799abba0354ea38075a41de22457aa539bc59842e4ebf86767e11f3c35fd7",
+    "table_dispositions": {
+      "CONFLICT": 2,
+      "PARSED": 403,
+      "UNSUPPORTED": 35
+    }
+  },
+  "schema": "bilqis.ithkuil.affix-frontier/v1"
+}

@@ -1,0 +1,123 @@
+{
+  "acceptance": {
+    "all_domains_reconcile": "PASS: atomic, lexicon, residue and mapping authoritative coverage fragments referenced with exact file hash/pointer",
+    "all_rows_accounted_once": "PASS: canonical #69 validation compares actual CSV census against row ledger and rejects missing/duplicate/cross-domain overlap",
+    "frontier_explicit": "PASS: three pinned-unparsed artifact IDs, source debt and separate domain-debt summaries retained without adding incompatible units",
+    "non_emitted_counts_visible": "PASS: 1051 held, 1 rejected, 9488 IR-only; no unsupported rows in this semantic census",
+    "semantic_digest_bound": "PASS: exact #93 candidate, immutable conformance manifest, RDF bytes, coverage, CSV and frontier receipt identities verified"
+  },
+  "authority_boundary": "IPR-0220; no curriculum admission or neural updates",
+  "candidate_revision": "eb3ce818319382bb1946a3a4a23ea585a638ea70",
+  "canonical_rdf": {
+    "sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "triple_count": 130173
+  },
+  "census": {
+    "evidence_bundle": "54b20fb4800b92f6b658ab1d76241c3bc4d735b58eddea7d66b629cb64171e0a",
+    "file": "release-94/release-census.json",
+    "sha256": "cb6b532b0ccaad84387b36c7eae17dda45fdec4855098f7fa5c0bc2564d000ea"
+  },
+  "commands": [
+    "<python> -B -m lib.ithkuil.src.release_census --repo <release-runtime> --csv-root <release-csv> --bundle <release-conformance-bundle> --proof lib/ithkuil/evidence/release-93.json --output-root <new-census-root>",
+    "<python> -B -m unittest lib.ithkuil.tests.test_skos_release_census lib.ithkuil.tests.test_skos_no_omission -v",
+    "Remove coverage.json from an isolated copied conformance bundle; invoke the same CLI; require nonzero exit and no census output.",
+    "npm run quality:check; git diff --check"
+  ],
+  "implementation_parent": "da3465173d444872544d9ca3f577dbdb470bb112",
+  "issue": 94,
+  "limits": [
+    "Declared-scope row accounting is complete; semantic coverage remains partial.",
+    "Frontier/debt observation counts are not additive semantic-row totals.",
+    "No semantic repair, graph mutation, training, merge or manual issue close."
+  ],
+  "negative_output_created": false,
+  "omission_fixture_results": [
+    {
+      "domain": "atomic",
+      "failure": {
+        "code": "NO_OMISSION_MISMATCH",
+        "details": [
+          "missing=atomic:morphemes_atomic:ATOM-A3"
+        ]
+      },
+      "removed": {
+        "key": "ATOM-A3",
+        "owner": "#47",
+        "reason_code": "NOTATION_COLLISION",
+        "semantic_iri": "urn:atomic:a3",
+        "status": "HELD",
+        "table": "morphemes_atomic"
+      }
+    },
+    {
+      "domain": "lexicon",
+      "failure": {
+        "code": "NO_OMISSION_MISMATCH",
+        "details": [
+          "missing=lexicon:lexicon_root_evidence:EVID-L3"
+        ]
+      },
+      "removed": {
+        "key": "EVID-L3",
+        "owner": "#55",
+        "reason_code": "SOURCE_EVIDENCE_IR_ONLY",
+        "semantic_iri": null,
+        "status": "IR_ONLY",
+        "table": "lexicon_root_evidence"
+      }
+    },
+    {
+      "domain": "mapping",
+      "failure": {
+        "code": "NO_OMISSION_MISMATCH",
+        "details": [
+          "missing=mapping:mapping_bridge:MAP-M2"
+        ]
+      },
+      "removed": {
+        "key": "MAP-M2",
+        "owner": "#66",
+        "reason_code": "MAPPING_SOURCE_REJECTED",
+        "semantic_iri": null,
+        "status": "REJECTED",
+        "table": "mapping_bridge"
+      }
+    },
+    {
+      "domain": "residue",
+      "failure": {
+        "code": "NO_OMISSION_MISMATCH",
+        "details": [
+          "missing=residue:affix_residue:AFF-R2"
+        ]
+      },
+      "removed": {
+        "key": "AFF-R2",
+        "owner": "#61",
+        "reason_code": "RESIDUE_UNSUPPORTED_ROW",
+        "semantic_iri": null,
+        "status": "UNSUPPORTED",
+        "table": "affix_residue"
+      }
+    }
+  ],
+  "removed_coverage_reference": {
+    "code": "RELEASE_CENSUS_INPUT_INVALID",
+    "details": "CONFORMANCE_EVIDENCE_FILE_SET_MISMATCH",
+    "status": "failed"
+  },
+  "schema": "bilqis.ithkuil.release94-proof/v1",
+  "status": "passed",
+  "summary": "release-94/RELEASE_CENSUS.md",
+  "two_workspace_census_identities_match": true,
+  "verification": {
+    "diff_check": "passed",
+    "focused_and_no_omission_tests": {
+      "failures": 0,
+      "skips": 0,
+      "tests": 11
+    },
+    "quality": "passed; zero new baseline-relative findings",
+    "semantic_compiler_changes": "none; existing #93 release artifacts were validated and reused"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "acceptance": {
+    "ambiguity_fail_closed": "PASS: partial coverage and held/debt remain visible; source, conformance and graph failures stop their dependent writers and preserve prior artifacts.",
+    "boundaries_preserved": "PASS: canonical source, relational IR, RDF, optional graph and curriculum/neural authority remain separate; package contains instructions, thin routing and bounded test inputs only.",
+    "dependencies_explicit": "PASS: canonical ingestion_contract.json identifies stage owners, prerequisites, failure/retry rules and artifact identities; #93-#97 retain production release ownership.",
+    "every_child_proven": "PASS: all six child outcomes have executable or inspection evidence; GitHub issues remain open until authorized merge.",
+    "no_prose_only_closure": "PASS: 27 ingestion tests and 472 SKOS tests pass with 2 and 12 live-only skips; additional packaged live graph proof passes."
+  },
+  "authority_boundary": "IPR-0220; no curriculum admission or neural updates",
+  "branch": "codex/skos-31-43-pro-20261024",
+  "children": {
+    "87": {
+      "commit": "3a099867c82c514933aeee11ed2c77e2905a3e13",
+      "evidence": "https://github.com/Entif-AI/Bilqis-MLX/issues/87#issuecomment-6405403722",
+      "proof": "Normative JSON/Markdown contract; 3 contract tests, included in the passing ingestion suite."
+    },
+    "88": {
+      "commit": "91e7d979e04cc2f7d61dc279e0cc2a732aaecdca",
+      "evidence": "https://github.com/Entif-AI/Bilqis-MLX/issues/88#issuecomment-6405563050",
+      "proof": "Canonical pinned source staging, frontier readback, parser failure and publication reconciliation tests."
+    },
+    "89": {
+      "commit": "8a736c2f76a45843b494663dacb3a87b8653c0b0",
+      "evidence": "https://github.com/Entif-AI/Bilqis-MLX/issues/89#issuecomment-6405710623",
+      "proof": "Canonical build and all four conformance gates; actual no-omission failure suppresses graph eligibility."
+    },
+    "90": {
+      "commit": "00fc9651fbecdc1b95a05e70eb535d92d0cfeabc",
+      "evidence": "https://github.com/Entif-AI/Bilqis-MLX/issues/90#issuecomment-6405815180",
+      "proof": "Disabled/unavailable/live/foreign-boundary paths; packaged live proof revalidates receipt and Akasha readback."
+    },
+    "91": {
+      "commit": "effa5dc8aa3c1a7a1eda02fb9a7f66b8a5690463",
+      "evidence": "ingestion-91.json",
+      "proof": "Two independent bounded-source rebuilds and failure isolation; rerun through packaged surface by #92."
+    },
+    "92": {
+      "commit": "efeb2a985deef43b30114bc489ecdd5e4d8e5f99",
+      "evidence": "https://github.com/Entif-AI/Bilqis-MLX/issues/92#issuecomment-6409868468",
+      "proof": "Governed upstream package, exact archive inspection and packaged clean-room plus live graph proof; ingestion-92.json and ingestion-92-package.json."
+    }
+  },
+  "disposition": "BRANCH_COMPLETE_MERGE_GATED",
+  "incident_context": "Existing #91 PM-2026-10-26-002 / RC-133 / PAT-094; no new parent-closeout incident.",
+  "issue": 29,
+  "limits": [
+    "Parent outcome is governed orchestration, not production/full-corpus release or full New Ithkuil coverage.",
+    "No merge or manual issue closure; all lifecycle completion remains merge-gated.",
+    "Independent ABI expected fingerprint is unavailable locally; remote CI remains its authority."
+  ],
+  "next_permitted_action": "Read live #93, #30 and named dependencies; verify the branch-state gate before beginning the full-corpus source release proof.",
+  "package": {
+    "artifact": "ithkuil-ingestion-1.0.0.skill",
+    "sha256": "0eaa3a96882f02ea275e08a7657fb96e0cc56b376db37489a5193558b8751fa8",
+    "version": "1.0.0"
+  },
+  "schema": "bilqis.ithkuil.parent29-closeout/v1",
+  "verified_implementation_head": "efeb2a985deef43b30114bc489ecdd5e4d8e5f99"
+}

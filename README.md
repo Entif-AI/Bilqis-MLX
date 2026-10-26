@@ -1,5 +1,8 @@
 # Bilqis MLX
 
+New Ithkuil semantic corpus: [release artifacts, rebuild and consumer guide](lib/ithkuil/RELEASE_REBUILD.md).
+The guide separates canonical RDF/SKOS from optional Falkor state and curriculum/training authority.
+
 ## CONTROLLING USER CORRECTION — 2026-10-22: foundations before worlds
 
 **2026-10-22 follow-up — progression with Boolean debt:** NOT and AND may be

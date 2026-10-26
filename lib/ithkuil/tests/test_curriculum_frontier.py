@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lib.ithkuil.tests.source_expectations import LEXICON
+
 import csv
 import os
 from pathlib import Path
@@ -120,8 +122,8 @@ class CurriculumFrontierTest(unittest.TestCase):
         self.assertEqual(
             sum(row["priority_tier"] == "NEXT_96" for row in candidates), 96
         )
-        self.assertEqual(len(senses), 1615)
-        self.assertEqual(len(inventory), 503)
+        self.assertEqual(len(senses), LEXICON["sense_rows"])
+        self.assertEqual(len(inventory), LEXICON["root_rows"])
         self.assertEqual(len(deferred), 36)
 
         self.assertEqual(

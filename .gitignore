@@ -9,6 +9,7 @@ data/
 .local/
 .bilqis-local.json
 artifacts/
+lib/ithkuil/_private/
 *.pt
 *.pth
 *.ckpt

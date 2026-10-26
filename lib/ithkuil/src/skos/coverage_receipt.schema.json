@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Entif-AI/Bilqis-MLX/schema/semantic-coverage-v1",
+  "title": "Bilqis semantic coverage receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "compiler", "inputs", "canonical_rdf", "domains", "totals", "frontier_debt_declared", "conflicts", "build_status"],
+  "properties": {
+    "schema": {"const": "bilqis.skos.semantic-coverage/v1"},
+    "compiler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "profile_version", "profile_sha256"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "profile_version": {"type": "string", "minLength": 1},
+        "profile_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "inputs": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["domain", "artifact", "sha256"],
+        "properties": {
+          "domain": {"type": "string", "minLength": 1},
+          "artifact": {"type": "string", "minLength": 1},
+          "sha256": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    },
+    "canonical_rdf": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sha256", "triple_count"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "triple_count": {"$ref": "#/$defs/count"}
+      }
+    },
+    "domains": {
+      "type": "object", "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/domain"}
+    },
+    "totals": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_rows", "dispositions"],
+      "properties": {
+        "source_rows": {"$ref": "#/$defs/count"},
+        "dispositions": {"$ref": "#/$defs/dispositions"}
+      }
+    },
+    "frontier_debt_declared": {"const": true},
+    "conflicts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["blocking", "by_reason"],
+      "properties": {
+        "blocking": {"$ref": "#/$defs/count"},
+        "by_reason": {"type": "object", "additionalProperties": {"$ref": "#/$defs/count"}}
+      }
+    },
+    "build_status": {"enum": ["complete", "partial", "blocked"]}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "count": {"type": "integer", "minimum": 0},
+    "dispositions": {
+      "type": "object", "additionalProperties": false,
+      "required": ["EMITTED", "HELD", "REJECTED", "UNSUPPORTED", "IR_ONLY"],
+      "properties": {
+        "EMITTED": {"$ref": "#/$defs/count"},
+        "HELD": {"$ref": "#/$defs/count"},
+        "REJECTED": {"$ref": "#/$defs/count"},
+        "UNSUPPORTED": {"$ref": "#/$defs/count"},
+        "IR_ONLY": {"$ref": "#/$defs/count"}
+      }
+    },
+    "semantic_counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["concepts", "roots", "senses", "mappings", "compositions", "allomorphs"],
+      "properties": {
+        "concepts": {"$ref": "#/$defs/count"},
+        "roots": {"$ref": "#/$defs/count"},
+        "senses": {"$ref": "#/$defs/count"},
+        "mappings": {"$ref": "#/$defs/count"},
+        "compositions": {"$ref": "#/$defs/count"},
+        "allomorphs": {"$ref": "#/$defs/count"}
+      }
+    },
+    "domain": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_rows", "dispositions", "rows", "semantic_counts", "notation_counts", "frontier_debt"],
+      "properties": {
+        "source_rows": {"$ref": "#/$defs/count"},
+        "dispositions": {"$ref": "#/$defs/dispositions"},
+        "rows": {"type": "array", "items": {"$ref": "#/$defs/row"}},
+        "semantic_counts": {"$ref": "#/$defs/semantic_counts"},
+        "notation_counts": {"type": "object", "additionalProperties": {"$ref": "#/$defs/count"}},
+        "frontier_debt": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["code", "count", "blocking"],
+            "properties": {
+              "code": {"type": "string", "minLength": 1},
+              "count": {"$ref": "#/$defs/count"},
+              "blocking": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    },
+    "row": {
+      "type": "object", "additionalProperties": false,
+      "required": ["table", "key", "status", "reason_code", "owner", "semantic_iri"],
+      "properties": {
+        "table": {"type": "string", "minLength": 1},
+        "key": {"type": "string", "minLength": 1},
+        "status": {"enum": ["EMITTED", "HELD", "REJECTED", "UNSUPPORTED", "IR_ONLY"]},
+        "reason_code": {"type": "string"},
+        "owner": {"type": "string"},
+        "semantic_iri": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
