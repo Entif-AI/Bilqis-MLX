@@ -42,6 +42,26 @@ def _spec(
 
 
 class SCHOOL:
+    class TEACHER_OBSERVATION:
+        INVALID = _spec(
+            ("SCHOOL", "TEACHER_OBSERVATION", "INVALID"), owner="runtime.teacher_observations",
+            title="Invalid teacher observation", message_template="The teacher observation record or provenance is invalid.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Preserve the candidate result and inspect the observation schema and provenance.",
+        )
+        CONTENT_MISMATCH = _spec(
+            ("SCHOOL", "TEACHER_OBSERVATION", "CONTENT_MISMATCH"), owner="runtime.teacher_observations",
+            title="Teacher observation content mismatch", message_template="The content-addressed teacher observation sidecar is missing, corrupt, or not the recorded content.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Preserve the run and reconcile the sidecar path and digest before replay.",
+        )
+        DUPLICATE_ATTEMPT = _spec(
+            ("SCHOOL", "TEACHER_OBSERVATION", "DUPLICATE_ATTEMPT"), owner="runtime.teacher_observations",
+            title="Divergent duplicate teacher observation", message_template="One candidate attempt has divergent committed teacher observations.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Preserve both receipts and reconcile the durable outbox before any replay.",
+        )
+
     class MODEL_TOPOLOGY:
         INVALID = _spec(
             ("SCHOOL", "MODEL_TOPOLOGY", "INVALID"), owner="runtime.model_topology",
@@ -757,6 +777,9 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.TEACHER_OBSERVATION.INVALID,
+    SCHOOL.TEACHER_OBSERVATION.CONTENT_MISMATCH,
+    SCHOOL.TEACHER_OBSERVATION.DUPLICATE_ATTEMPT,
     SCHOOL.MODEL_TOPOLOGY.INVALID,
     SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID,
     SCHOOL.MODEL_TOPOLOGY.MISMATCH,

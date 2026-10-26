@@ -20,6 +20,7 @@ import bilqis_mlx.runtime.checkpoints as _runtime_checkpoints
 import bilqis_mlx.runtime.release_adoption as _runtime_release_adoption
 import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.runtime.timing_trace as _runtime_timing_trace
+from .teacher_observation_capture import ObservationCapture
 import bilqis_mlx.source_adapters.school as _source_adapters_school
 import dataclasses as _dataclasses
 import json as _json
@@ -136,7 +137,9 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 source_root=None, learning_settings: _learning_learning_experiment.Settings | None = None,
                 boolean_association_bridge: bool = False,
                 source_prefetch_executor=None, source_prefetch_workers: int = 0,
-                autonomy_teaching_option: str | None = None):
+                autonomy_teaching_option: str | None = None,
+                capture_teacher_observations: bool = True):
+    capture = ObservationCapture(run_dir, receipt, enabled=capture_teacher_observations)
     school = _runtime_state._state_from_json(receipt["school"], _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course))
     if (receipt.get("mentor_epoch") is not None and
             receipt.get("championship_school_identity") !=
@@ -189,6 +192,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     policy_key, policy, policy_selection = _select_visit_policy(
         engine, teacher, cap, school, rng, learning_settings,
         teacher_curriculum_scope, previsit_diagnostics, lesson_grade)
+    capture.select_option(cap, autonomy_teaching_option)
+    capture.propose(executable_release, school, cap, policy_key, policy, policy_selection,
+        configured_steps=steps_per_visit, effective_steps=candidate_steps, batch_size=batch_size,
+        settings=learning_settings, enrichment=boolean_association_bridge, source_rows=rows,
+        teacher=teacher, parent_optimizer_step=int(optimizer.state["step"].item()))
     original_learning_rate = optimizer.learning_rate
     optimizer.learning_rate = float(policy["lr"])
     # Teacher reward must measure transfer on the newly drawn source cohort,
@@ -205,6 +213,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             source_root, graph, executable_release, params, optimizer,
             original_learning_rate, teacher))
     if skipped is not None:
+        capture.finish(skipped["_pending_visit_events"][-1], decision=None, paired=None,
+            protected=None, stage="PERFECT_TARGET_SKIP", attempted=0, retained=0)
         return skipped
     last_loss = 0.0
     last_norm = 0.0
@@ -239,81 +249,14 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         course_digest = course.digest()
         graph_digest = receipt.get("semantic_graph_sha256") or _runtime_state._fingerprint(graph)
 
+        from .source_prefetch import visit_source_request
+
         def source_request(step_index):
-            selected = None
-            if int(policy.get("old", 0)) > 0 and old_capabilities:
-                selected = old_capabilities[(school.visits + step_index) % len(old_capabilities)]
-            retention_support_capability = (
-                retention_support_capabilities[
-                    (school.visits + step_index) %
-                    len(retention_support_capabilities)]
-                if retention_support_capabilities else None)
-            fresh_seed = _runtime_state._seed(receipt, capability=cap, step=step_index + 1)
-            prior_seed = (_runtime_state._seed(
-                receipt, capability="EXPERIMENT_OLD:" + selected, step=step_index)
-                if selected is not None else None)
-            fragile_seeds = {
-                name: tuple(_runtime_state._seed(
-                    receipt, capability=f"FRAGILE_PRESERVE:{name}:{attempt}",
-                    step=step_index + 1) for attempt in range(3))
-                for name in fragile_requested
-            }
-            teaching_seed = _runtime_state._seed(
-                receipt, capability="TEACHING_ENRICHMENT:" + cap,
-                step=step_index + 1)
-            retention_support_seed = _runtime_state._seed(
-                receipt,
-                capability=(
-                    "RETENTION_SUPPORT:" + retention_support_capability
-                    if retention_support_capability is not None
-                    else "RETENTION_SUPPORT:NONE"),
-                step=step_index + 1)
-            identity = _runtime_state._fingerprint({
-                "schema": SOURCE_PREFETCH_SCHEMA,
-                "factory_release_sha256": executable_release.release_sha256,
-                "run_id": receipt["run_id"],
-                "generation": receipt["generation"],
-                "source_manifest_sha256": receipt.get("source_manifest_sha256"),
-                "course_digest": course_digest,
-                "factory_release_sha256": executable_release.release_sha256,
-                "graph_digest": graph_digest,
-                "durable_parent_sha256": school.current_student.sha256,
-                "parent_optimizer_step": step_before,
-                "capability": cap,
-                "visit_step": step_index + 1,
-                "policy": policy,
-                "prior_capability": selected,
-                "batch_size": batch_size,
-                "fresh_seed": fresh_seed,
-                "prior_seed": prior_seed,
-                "fragile_seeds": fragile_seeds,
-                "retention_support_capability": retention_support_capability,
-                "retention_support_seed": retention_support_seed,
-                "retention_support_rotation": school.visits + step_index,
-                "teaching_seed": teaching_seed,
-                "teaching_enrichment_enabled": boolean_association_bridge,
-            })
-            return {
-                "identity": identity,
-                "source_root": str(_pathlib.Path(source_root).resolve()),
-                "graph": graph,
-                "course": course,
-                "executable_release": executable_release,
-                "capability": cap,
-                "batch_size": batch_size,
-                "fresh_seed": fresh_seed,
-                "prior_capability": selected,
-                "prior_seed": prior_seed,
-                "fragile_fixed_rows": tuple(fragile_fixed_rows),
-                "fragile_requested": fragile_requested,
-                "fragile_seeds": fragile_seeds,
-                "fragile_rotation": step_index * 4,
-                "retention_support_capability": retention_support_capability,
-                "retention_support_seed": retention_support_seed,
-                "retention_support_rotation": school.visits + step_index,
-                "teaching_seed": teaching_seed,
-                "teaching_enrichment_enabled": boolean_association_bridge,
-            }
+            return visit_source_request(
+                step_index, policy, old_capabilities, school, retention_support_capabilities,
+                receipt, cap, fragile_requested, boolean_association_bridge,
+                executable_release, course_digest, graph_digest, step_before,
+                course, graph, source_root, batch_size, fragile_fixed_rows)
 
         def submit_source_request(step_index):
             request = source_request(step_index)
@@ -359,6 +302,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                         each=max(32, batch_size)))
                     autonomy_option_specimen_ids.update(
                         row["id"] for row in fresh)
+        option_rows = tuple(fresh)
         fresh.extend(priority)
         preservation = ()
         retention_support = ()
@@ -527,6 +471,13 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 row for row in training_rows
                 if row.get("id") in autonomy_option_specimen_ids)
         training_guidance = _extend_binary_guidance(guidance, enrichment_rows)
+        capture.delivery(executable_release, cap, step + 1, training_rows,
+            option_rows=option_rows, priority=window, preservation=delivered_preservation,
+            support=delivered_retention_support, enrichment=enrichment_rows,
+            prior=prior if learning_settings is not None else (),
+            mentors={"champion_shas": [item.get("checkpoint_sha256") for item in confidence_champions],
+                     "soups": soup_vote_receipts, "distill": policy.get("distill")},
+            guidance=training_guidance, controls=lesson_control, seed=lesson_seed)
         with _runtime_timing_trace.trace_span("STEP_TRAIN", capability=cap, visit_step=step + 1,
                         batch_size=len(training_rows)):
             last_loss, last_norm = _learning_student_ops._train_step(
@@ -735,6 +686,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         teaching_file = ("autonomy/teaching/" + delivery.specimen_content_sha256 + ".json")
         _runtime_state._durable_json(run_dir / teaching_file, {"rows": delivered_autonomy_rows})
         event["autonomy_teaching"] = {**_dataclasses.asdict(delivery), "specimen_file": teaching_file}
+    capture.finish(event, decision=outcome,
+        paired=pair if learning_settings is not None else None,
+        protected=probed if learning_settings is not None else None,
+        stage=stage if learning_settings is not None else "UNPROTECTED_VISIT",
+        attempted=attempted_optimizer_updates, retained=retained_optimizer_updates)
     stagnation = receipt.get("stagnation_session")
     if stagnation is not None:
         stagnation = _learning_stagnation_control.record_visit(
@@ -843,7 +799,7 @@ def _select_visit_policy(engine, teacher, cap, school, rng, learning_settings, t
             policy_key, policy = engine.pick(teacher, lesson_grade, rng)
             policy_selection = {
                 "diagnostic_context_consumed": False,
-                "diagnostic_context_key": None,
+                "diagnostic_context_key": None, "selection_reason": "INHERITED_BANDIT",
             }
     return policy_key, policy, policy_selection
 

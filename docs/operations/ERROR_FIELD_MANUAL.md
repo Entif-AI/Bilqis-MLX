@@ -14,6 +14,42 @@ The runtime error catalog is the authority for new failures. Raw string exceptio
 
 ## Typed catalog
 
+### `SCHOOL.TEACHER_OBSERVATION.INVALID`
+
+Invalid teacher observation.
+
+Owner: `runtime.teacher_observations`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: The teacher observation record or provenance is invalid.
+
+Recovery: Preserve the candidate result and inspect the observation schema and provenance.
+
+### `SCHOOL.TEACHER_OBSERVATION.CONTENT_MISMATCH`
+
+Teacher observation content mismatch.
+
+Owner: `runtime.teacher_observations`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: The content-addressed teacher observation sidecar is missing, corrupt, or not the recorded content.
+
+Recovery: Preserve the run and reconcile the sidecar path and digest before replay.
+
+### `SCHOOL.TEACHER_OBSERVATION.DUPLICATE_ATTEMPT`
+
+Divergent duplicate teacher observation.
+
+Owner: `runtime.teacher_observations`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: One candidate attempt has divergent committed teacher observations.
+
+Recovery: Preserve both receipts and reconcile the durable outbox before any replay.
+
 ### `SCHOOL.MODEL_TOPOLOGY.INVALID`
 
 Invalid model topology.

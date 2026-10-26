@@ -353,6 +353,10 @@ def _boundary_delivery_events(record, pending, roles, exam_event):
         event = dict(provisional)
         event["recovered_at_student_sha256"] = school["current_student"]["sha256"]
         event["checkpoint_status"] = "RECORDED_AT_BOUNDARY"
+        if event.get("teacher_observation") is not None:
+            event["teacher_observation_publication"] = {
+                "status": "DURABLE_CHECKPOINT_OUTBOX", "generation": record["generation"],
+                "run_id": record["run_id"], "checkpoint": school["current_student"]}
         events.append(event)
     if roles:
         frontier = record["capability_best"]

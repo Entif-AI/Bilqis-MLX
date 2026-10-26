@@ -17,6 +17,7 @@ from bilqis_mlx.source_adapters.school import live_source_registry
 from bilqis_mlx.live_curriculum import draw_course_rows
 from bilqis_mlx.factory.teaching import optional_teaching_rows
 from .source_execution import SourceExecutionContext
+from . import state as _runtime_state
 
 
 SCHEMA = "bilqis.mlx.source-prefetch/v1"
@@ -160,3 +161,88 @@ def prepare_step_sources(request: dict) -> dict:
         "retention_support": list(retention_support),
         "teaching_enrichment_rows": list(enrichment),
     }
+
+
+def visit_source_request(step_index, policy, old_capabilities, school, retention_support_capabilities, receipt, cap, fragile_requested, boolean_association_bridge, executable_release, course_digest, graph_digest, step_before, course, graph, source_root, batch_size, fragile_fixed_rows):
+    """Construct the existing worker packet without model or teacher authority."""
+    selected, retention_support_capability, fresh_seed, prior_seed, fragile_seeds = (
+        _visit_source_seeds(step_index, policy, old_capabilities, school,
+            retention_support_capabilities, receipt, cap, fragile_requested))
+    teaching_seed = _runtime_state._seed(
+        receipt, capability="TEACHING_ENRICHMENT:" + cap,
+        step=step_index + 1)
+    retention_support_seed = _runtime_state._seed(
+        receipt,
+        capability=(
+            "RETENTION_SUPPORT:" + retention_support_capability
+            if retention_support_capability is not None
+            else "RETENTION_SUPPORT:NONE"),
+        step=step_index + 1)
+    identity = _runtime_state._fingerprint({
+        "schema": SCHEMA,
+        "factory_release_sha256": executable_release.release_sha256,
+        "run_id": receipt["run_id"],
+        "generation": receipt["generation"],
+        "source_manifest_sha256": receipt.get("source_manifest_sha256"),
+        "course_digest": course_digest,
+        "factory_release_sha256": executable_release.release_sha256,
+        "graph_digest": graph_digest,
+        "durable_parent_sha256": school.current_student.sha256,
+        "parent_optimizer_step": step_before,
+        "capability": cap,
+        "visit_step": step_index + 1,
+        "policy": policy,
+        "prior_capability": selected,
+        "batch_size": batch_size,
+        "fresh_seed": fresh_seed,
+        "prior_seed": prior_seed,
+        "fragile_seeds": fragile_seeds,
+        "retention_support_capability": retention_support_capability,
+        "retention_support_seed": retention_support_seed,
+        "retention_support_rotation": school.visits + step_index,
+        "teaching_seed": teaching_seed,
+        "teaching_enrichment_enabled": boolean_association_bridge,
+    })
+    return {
+        "identity": identity,
+        "source_root": str(Path(source_root).resolve()),
+        "graph": graph,
+        "course": course,
+        "executable_release": executable_release,
+        "capability": cap,
+        "batch_size": batch_size,
+        "fresh_seed": fresh_seed,
+        "prior_capability": selected,
+        "prior_seed": prior_seed,
+        "fragile_fixed_rows": tuple(fragile_fixed_rows),
+        "fragile_requested": fragile_requested,
+        "fragile_seeds": fragile_seeds,
+        "fragile_rotation": step_index * 4,
+        "retention_support_capability": retention_support_capability,
+        "retention_support_seed": retention_support_seed,
+        "retention_support_rotation": school.visits + step_index,
+        "teaching_seed": teaching_seed,
+        "teaching_enrichment_enabled": boolean_association_bridge,
+    }
+
+
+def _visit_source_seeds(step_index, policy, old_capabilities, school, retention_support_capabilities, receipt, cap, fragile_requested):
+    selected = None
+    if int(policy.get("old", 0)) > 0 and old_capabilities:
+        selected = old_capabilities[(school.visits + step_index) % len(old_capabilities)]
+    retention_support_capability = (
+        retention_support_capabilities[
+            (school.visits + step_index) %
+            len(retention_support_capabilities)]
+        if retention_support_capabilities else None)
+    fresh_seed = _runtime_state._seed(receipt, capability=cap, step=step_index + 1)
+    prior_seed = (_runtime_state._seed(
+        receipt, capability="EXPERIMENT_OLD:" + selected, step=step_index)
+        if selected is not None else None)
+    fragile_seeds = {
+        name: tuple(_runtime_state._seed(
+            receipt, capability=f"FRAGILE_PRESERVE:{name}:{attempt}",
+            step=step_index + 1) for attempt in range(3))
+        for name in fragile_requested
+    }
+    return selected, retention_support_capability, fresh_seed, prior_seed, fragile_seeds

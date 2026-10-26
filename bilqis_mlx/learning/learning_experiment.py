@@ -671,11 +671,11 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     diagnostic_key, _diagnostic_payload = _diagnostic_context(
         channel, capability, curriculum_scope, diagnostics)
 
-    def result(key, policy, *, diagnostic_context_consumed=False):
+    def result(key, policy, *, diagnostic_context_consumed=False, selection_reason="INHERITED_FALLBACK"):
         if return_metadata:
             return key, policy, {
                 "diagnostic_context_consumed": diagnostic_context_consumed,
-                "diagnostic_context_key": diagnostic_key,
+                "diagnostic_context_key": diagnostic_key, "selection_reason": selection_reason,
             }
         return key, policy
 
@@ -683,7 +683,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     scope = channel["contexts"].get(context_key, {})
     if not scope:
         original_key, original_policy = engine.pick(teacher, grade, rng)
-        return result(original_key, original_policy)
+        return result(original_key, original_policy, selection_reason="INHERITED_NO_CONTEXT")
     effective_scope = _effective_context_scope(teacher, scope)
     diagnostic_scope = _diagnostic_effective_scope(
         teacher, scope, diagnostic_key)
@@ -740,7 +740,8 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     if diagnostic_consumed or pressure_exploit:
         return result(
             best, teacher["strategies"][best],
-            diagnostic_context_consumed=diagnostic_consumed)
+            diagnostic_context_consumed=diagnostic_consumed,
+            selection_reason="DIAGNOSTIC_OR_PRESSURE_CONTEXT")
 
     # Healthy operation and a bounded pressure cadence still consult the
     # inherited bandit. Avoid calling it on pressure-exploitation visits:
@@ -751,7 +752,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     if original_effective == best_effective:
         return result(
             original_key, original_policy,
-            diagnostic_context_consumed=diagnostic_consumed)
+            diagnostic_context_consumed=diagnostic_consumed, selection_reason="INHERITED_MATCHES_CONTEXT")
     # Require evidence, but keep inherited exploration alive. The base pick
     # still gets a chance whenever it lacks direct context observations.
     proven_retained = best_record.get("retained", 0) > 0
@@ -759,11 +760,11 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
             (original_effective not in effective_scope or
              score_effective(best_effective) >
              score_effective(original_effective))):
-        return result(best, teacher["strategies"][best])
+        return result(best, teacher["strategies"][best], selection_reason="PROVEN_RETAINED_CONTEXT")
     if ((best_record["trials"] >= 2 or proven_retained) and
             original_effective in effective_scope and
             score_effective(best_effective) > score_effective(original_effective)):
-        return result(best, teacher["strategies"][best])
+        return result(best, teacher["strategies"][best], selection_reason="CONTEXT_UCB_PREFERENCE")
     return result(original_key, original_policy)
 
 
