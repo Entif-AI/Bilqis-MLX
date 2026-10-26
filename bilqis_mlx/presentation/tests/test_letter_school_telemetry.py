@@ -404,7 +404,8 @@ class SchoolTelemetryTests(unittest.TestCase):
                 [
                     ("CAPABILITY", 10), ("VISIT", 5), ("POLICY", 10),
                     ("LR", 2), ("D", 1), ("C", 1), ("OLD", 3),
-                    ("DSTIL", 5), ("CREDIT", 7),
+                    ("DSTIL", 5), ("CREDIT", 7), ("P(RET)", 6),
+                    ("HEALTH", 9), ("SHADOW", 8),
                 ],
             )
             self.assertEqual(
@@ -1205,6 +1206,51 @@ class SchoolTelemetryTests(unittest.TestCase):
             self.assertFalse(board.rows["SENTINEL & RETENTION"])
             self.assertTrue(any("NOT MEASURED" in x["detail"]
                                 for x in board.rows["SYSTEM & QUALIFICATION"]))
+
+    def test_teacher_vnext_health_prediction_and_shadow_are_visible(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            ingest(board, {
+                "event": "SCHOOL_TEACHER_VISIT_COMMITTED",
+                "generation": 2,
+                "grade": "C",
+                "active_grade": "C",
+                "capability": "C.ADD",
+                "optimizer_step": 146900,
+                "teacher_policy": "policy-1234567890",
+                "strategy": {"lr": .00008, "depth": 1, "contrast": 1.,
+                             "old": 8, "preview": 0, "distill": .15},
+                "source_training_accuracy_before": .5,
+                "source_training_accuracy_after": .6,
+                "teacher_reward": -.05,
+                "gradient_norm": 1.0,
+                "loss": .5,
+                "next_phase": "RECOVERY_1",
+                "teacher_outcome_prediction_before": {
+                    "retention_probability": .25,
+                },
+                "teacher_health": {
+                    "status": "LOW_YIELD",
+                    "retention_rate": .08,
+                    "optimizer_steps_per_retention": 120.0,
+                    "retention_brier_score": .21,
+                },
+                "teacher_multifidelity_shadow": {
+                    "first_would_stop_step": 4,
+                    "false_kill": False,
+                    "would_continue_to_full_budget": False,
+                },
+            })
+
+            teacher = board.rows["SOUP & TEACHER"][-1]
+            self.assertEqual(teacher["p_ret"], "25.0%")
+            self.assertEqual(teacher["health"], "LOW-YIELD")
+            self.assertEqual(teacher["shadow"], "STOP@4")
+            system = board.rows["SYSTEM & QUALIFICATION"][-1]
+            self.assertEqual(system["kind"], "TEACHER")
+            self.assertIn("retain 8.0%", system["detail"])
+            self.assertIn("120.0 steps/retain", system["detail"])
+            self.assertIn("Brier 0.210", system["detail"])
 
     def test_live_exam_projects_warning_and_teacher_outcome_receipts(self):
         with tempfile.TemporaryDirectory() as tmp:

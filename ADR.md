@@ -1593,3 +1593,37 @@ distribution produced by each nominal effective policy across all of its exact
 realized deliveries. This preserves realized-delivery provenance without fragmenting
 predictive evidence across batch-level signatures that may never repeat, and a later
 failed realized variant no longer erases earlier retained evidence for the same policy.
+
+
+## ADR-105 | 2026-10-25 | Teacher vNext begins as portable evidence and shadow control
+
+**Issue #321 creates the successor teacher-learning control plane without granting it
+new neural authority.** The current strategy bandit remains the actual Prometheus
+selector while vNext records an architecture-neutral learner/action/outcome ledger,
+estimates retention probability plus target/protected/cost effects with uncertainty,
+and evaluates multi-fidelity and proposal-family decisions in shadow mode.
+
+The predictive learner state is a coarse `StudentRegion`, not an exact checkpoint or
+generated-batch identity. Exact student, source, cohort, proposal and realized-delivery
+identities remain immutable provenance outside the generalization key. This prevents
+the evidence fragmentation observed during the first realized-action experiment.
+
+Candidate evaluation now supports neural-inert target probes at a versioned
+multi-fidelity ladder (`2/4/8/16` in the first policy). The candidate still runs its
+existing full authorized horizon and the existing retention decision remains the sole
+durable student/AdamW admission authority. Shadow receipts measure hypothetical early
+stops, false kills/continues and compute savings. An explicit evidence gate can report
+that active early stopping appears qualified, but that receipt does not activate it.
+
+The shadow proposal layer distinguishes incumbent replay, local incumbent mutation,
+neighbor transfer, global challenge and a learned local proposal distribution. It may
+recommend parameter combinations absent from the historical 512-strategy archive;
+the archive itself remains immutable. Thompson-style acquisition uses predicted
+retention, target gain, protected risk, compute cost and uncertainty instead of an
+unbounded unseen-arm novelty bonus. No shadow proposal changes actual policy selection
+in this epoch.
+
+The portable contract and fixture are shared authority for the divergent developmental
+teacher in #130. Shared code is optional; compatible evidence semantics, replay,
+calibration, multi-fidelity authority boundaries and final-retention authority are
+mandatory. See `docs/architecture/TEACHER_VNEXT_PORTABLE_CONTRACT_V1.md`.

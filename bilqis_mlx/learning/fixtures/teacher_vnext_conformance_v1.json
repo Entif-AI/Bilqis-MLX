@@ -1,0 +1,51 @@
+{
+  "schema": "bilqis.teacher-vnext-conformance/v1",
+  "description": "Architecture-neutral Teacher vNext evidence fixture. Prometheus and the divergent developmental teacher must be able to emit equivalent portable semantics without sharing runtime state shapes.",
+  "region": {
+    "capability": "C.ADD",
+    "phase": "RECOVERY_1",
+    "lesson_grade": "C",
+    "curriculum_scope": "fixture/scope",
+    "geometry_epoch": "fixture-geometry-v1",
+    "numeric_maximum": 7,
+    "capability_correct": 28,
+    "capability_total": 33,
+    "grade_correct": 205,
+    "grade_total": 231,
+    "rejection_streak": 5,
+    "attempts_since_retained": 7,
+    "mastery_debt_count": 3
+  },
+  "action": {
+    "family": "LOCAL_INCUMBENT_MUTATION",
+    "effective_policy_key": "fixture-policy",
+    "parameters": {
+      "learning_rate": 0.00008,
+      "candidate_steps": 8,
+      "batch_size": 32,
+      "depth": "SHALLOW",
+      "contrast": "DIVERSE"
+    }
+  },
+  "outcome": {
+    "retained": true,
+    "rejection_reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+    "target_delta": 2,
+    "protected_net_delta": 0,
+    "worst_protected_loss": 0,
+    "attempted_steps": 8,
+    "retained_steps": 8,
+    "wall_seconds": 1.5
+  },
+  "expected": {
+    "capability_score_band": "P070_084",
+    "grade_score_band": "P085_094",
+    "rejection_pressure_band": "R04_07",
+    "attempts_since_retained_band": "A04_07",
+    "mastery_debt_band": "D01_03",
+    "retention_probability_after_one": 1.0,
+    "expected_target_delta_after_one": 2.0,
+    "expected_protected_net_delta_after_one": 0.0,
+    "expected_candidate_steps_after_one": 8.0
+  }
+}
