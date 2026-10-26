@@ -2,6 +2,12 @@
 
 All new releases use [Semantic Versioning](https://semver.org/) and Conventional Commit subjects. Dates refer to the tagged source release, not to any claim that a neural student has qualified new capabilities.
 
+## [0.4.0] - 2026-10-26
+
+### Added
+- Replayable Factory teacher observations with ordered delivery sidecars, explicit measurement missingness, topology/policy partitions and canonical checkpoint-outbox joins.
+- Read-only reconstruction and diagnostic summaries, without changing teacher selection, source draws, candidate horizons or retention authority.
+
 ## [0.3.0] - 2026-10-26
 
 ### Added

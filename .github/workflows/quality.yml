@@ -35,6 +35,9 @@ jobs:
       - name: Portable non-neural custody and release tests
         run: >-
           python3 -B scripts/run_tests.py
+          bilqis_mlx/learning/tests/test_teacher_observations.py
+          bilqis_mlx/runtime/tests/test_teacher_observation_capture.py
+          bilqis_mlx/runtime/tests/test_teacher_observation_replay.py
           bilqis_mlx/runtime/tests/test_model_topology.py
           bilqis_mlx/runtime/tests/test_topology_lifecycle.py
           bilqis_mlx/runtime/tests/test_state_archive.py

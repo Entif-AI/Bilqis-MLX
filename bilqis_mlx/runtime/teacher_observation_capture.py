@@ -8,7 +8,7 @@ from pathlib import Path
 import time
 
 from ..errors import ErrorBus, SCHOOL
-from ..factory.teaching import describe_delivered_teaching
+from ..factory.teaching import describe_delivered_teaching, content_digest
 from . import state
 
 SCHEMA = "bilqis.factory.teacher-observation/v1"
@@ -52,7 +52,7 @@ def store_sidecar(run_dir, payload):
 
 def read_sidecar(run_dir, reference):
     digest = reference.get("sha256")
-    if (not isinstance(digest, str) or len(digest) != hashlib.sha256().digest_size * 2 or
+    if (not isinstance(digest, str) or len(digest) != len(hashlib.sha256().hexdigest()) or
             any(char not in "0123456789abcdef" for char in digest) or
             reference.get("file") != f"{SIDECAR_ROOT}/{digest}.json"):
         ErrorBus.Raise(SCHOOL.TEACHER_OBSERVATION.CONTENT_MISMATCH)
@@ -72,7 +72,10 @@ def policy_epoch(receipt, release, *, configured_steps, batch_size, settings, en
     root = Path(__file__).resolve().parents[1]
     owners = ("runtime/visits.py", "runtime/source_prefetch.py",
               "runtime/teacher_observation_capture.py", "learning/teacher_observations.py",
-              "learning/learning_experiment.py", "learning/teacher_feedback.py")
+              "learning/learning_experiment.py", "learning/teacher_feedback.py",
+              "learning/source_selection.py", "learning/lesson_guidance.py",
+              "runtime/candidate_evidence.py", "runtime/state.py",
+              "profiles/retention.py", "compatibility/historical_teacher_policy.py")
     return {
         "schema": EPOCH_SCHEMA,
         "implementation": {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
@@ -81,7 +84,7 @@ def policy_epoch(receipt, release, *, configured_steps, batch_size, settings, en
         "factory_release_sha256": release.release_sha256,
         "semantic_graph_sha256": receipt.get("semantic_graph_sha256"),
         "source_manifest_sha256": receipt.get("source_manifest_sha256"),
-        "feature_schema": "bilqis.factory.student-region/v1",
+        "feature_schema": "bilqis.teacher-student-region/v1",
         "selector": "existing-contextual-pick-or-inherited-bandit/v1",
         "option_rule": "ordinary-source-direct; autonomy-existing-selected-option",
         "fallback": "existing-engine-pick; unchanged-diagnostic-context-rules",
@@ -133,6 +136,9 @@ class ObservationCapture:
         self.proposal = {
             "schema": PROPOSAL_SCHEMA, "attempt_id": self.attempt_id,
             "provenance": context, "capability": capability, "phase": school.stage,
+            "frontier_context": {"active_grades": list(school.active_grades),
+                                 "introduction_frontiers": list(school.introduction_frontiers),
+                                 "carried_mastery_debt": list(school.carried_mastery_debt)},
             "offered_options": list(release.execution_plan.capability_map[capability].teaching_option_ids),
             "source_binding": asdict(release.source_bindings.by_capability[capability]),
             "selected_provider": {"id": release.execution_plan.capability_map[capability].provider_id,
@@ -148,7 +154,7 @@ class ObservationCapture:
                           "factory_release_sha256": release.release_sha256},
             "student_region": student_region(self.receipt,
                 schedule_program_from_executable_release(release), capability, school.stage, teacher,
-                curriculum_scope=str(self.receipt.get("curriculum_mode", "NOT_MEASURED")),
+                curriculum_scope=(str(self.receipt.get("curriculum_mode", "")) + "/" + str(self.receipt.get("numeric_maximum", ""))),
                 numeric_maximum=self.receipt.get("numeric_maximum")),
             "selection_source_context": store_sidecar(self.run_dir, {"rows": source_rows}),
         }
@@ -216,10 +222,22 @@ def read_observation(run_dir, event):
             envelope.get("proposal_id") != reference["proposal_id"]):
         ErrorBus.Raise(SCHOOL.TEACHER_OBSERVATION.INVALID)
     proposal = read_sidecar(run_dir, envelope["proposal"])
+    if (state._fingerprint(proposal) != envelope["proposal_id"] or
+            proposal.get("attempt_id") != envelope["attempt_id"]):
+        ErrorBus.Raise(SCHOOL.TEACHER_OBSERVATION.INVALID)
     steps = [read_sidecar(run_dir, step) for step in envelope["steps"]]
-    for step in steps:
+    for index, step in enumerate(steps, start=1):
+        if (step.get("attempt_id") != envelope["attempt_id"] or
+                step.get("proposal_id") != envelope["proposal_id"] or step.get("step") != index):
+            ErrorBus.Raise(SCHOOL.TEACHER_OBSERVATION.INVALID)
         for position in step["positions"]:
             position["row"] = read_sidecar(run_dir, position["row"])
+        selected = [position["row"] for position in step["positions"] if "selected_option" in position["roles"]]
+        delivery = step.get("delivered_teaching")
+        if selected and (not isinstance(delivery, dict) or
+                delivery.get("specimen_content_sha256") != content_digest(selected) or
+                delivery.get("specimen_ids") != list(dict.fromkeys(row["id"] for row in selected))):
+            ErrorBus.Raise(SCHOOL.TEACHER_OBSERVATION.INVALID)
     return {**envelope, "proposal": proposal, "steps": steps,
             "publication": event.get("teacher_observation_publication", {"status": "NOT_PUBLISHED"}),
             "event_id": event.get("event_id")}

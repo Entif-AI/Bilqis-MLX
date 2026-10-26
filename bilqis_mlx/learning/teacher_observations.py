@@ -22,8 +22,17 @@ class MeasurementStatus(StrEnum):
 
 MEASURED = MeasurementStatus.MEASURED
 NOT_MEASURED = MeasurementStatus.NOT_MEASURED
-OBSERVATION_SCHEMA = "bilqis.factory-teacher-observation/v1"
+OUTCOME_SCHEMA = "bilqis.factory.teacher-outcome/v1"
+SUMMARY_SCHEMA = "bilqis.factory.teacher-observation-summary/v1"
 PORTABLE_V1_SCHEMA = "bilqis.teacher-outcome-observation/v1"
+REGION_SCHEMA = "bilqis.teacher-student-region/v1"
+PERCENT_SCALE = 100
+SCORE_BANDS = ((100, "P100"), (95, "P095_099"), (85, "P085_094"),
+               (70, "P070_084"), (50, "P050_069"))
+COUNT_BANDS = ((0, "00"), (3, "01_03"), (7, "04_07"),
+               (15, "08_15"), (31, "16_31"))
+PAIR_LENGTH = 2
+MINIMUM_SCORE_TOTAL = 1
 
 
 def _measured(value):
@@ -35,51 +44,37 @@ def _unmeasured(reason: str):
 
 
 def _score_pair(value):
-    if (isinstance(value, (tuple, list)) and len(value) == 2):
+    if (isinstance(value, (tuple, list)) and len(value) == PAIR_LENGTH):
         correct, total = value
         if (type(correct) is int and type(total) is int and
-                0 <= correct <= total and total > 0):
+                0 <= correct <= total and total >= MINIMUM_SCORE_TOTAL):
             return correct, total
         return None
     if not isinstance(value, Mapping):
         return None
     correct, total = value.get("correct"), value.get("total")
     if (type(correct) is not int or type(total) is not int or
-            correct < 0 or total < 1 or correct > total):
+            correct < 0 or total < MINIMUM_SCORE_TOTAL or correct > total):
         return None
     return correct, total
 
 
 def _score_band(correct, total):
-    if correct is None or total is None or total < 1:
+    if correct is None or total is None or total < MINIMUM_SCORE_TOTAL:
         return "UNMEASURED"
-    percent = 100 * correct / total
-    if percent == 100:
-        return "P100"
-    if percent >= 95:
-        return "P095_099"
-    if percent >= 85:
-        return "P085_094"
-    if percent >= 70:
-        return "P070_084"
-    if percent >= 50:
-        return "P050_069"
+    percent = PERCENT_SCALE * correct / total
+    for minimum, label in SCORE_BANDS:
+        if percent >= minimum:
+            return label
     return "P000_049"
 
 
 def _count_band(value, *, prefix):
     if type(value) is not int or value < 0:
         return "UNMEASURED"
-    if value == 0:
-        return prefix + "00"
-    if value <= 3:
-        return prefix + "01_03"
-    if value <= 7:
-        return prefix + "04_07"
-    if value <= 15:
-        return prefix + "08_15"
-    if value <= 31:
-        return prefix + "16_31"
+    for maximum, label in COUNT_BANDS:
+        if value <= maximum:
+            return prefix + label
     return prefix + "32_PLUS"
 
 
@@ -90,25 +85,20 @@ def _program_grade(program, capability: str) -> str:
     ErrorBus.Raise(SCHOOL.TEACHER_OBSERVATION.INVALID, capability=capability)
 
 
-def _stagnation(teacher, capability, phase):
+def _stagnation(teacher, capability, scope):
     if not isinstance(teacher, Mapping):
-        return 0, 0
+        return None, None
     causal = teacher.get("causal_experiment")
     if not isinstance(causal, Mapping):
         return 0, 0
     entries = causal.get("capability_stagnation")
     if not isinstance(entries, Mapping):
         return 0, 0
-    # The authoritative runtime uses capability|scope as its key.  This
-    # projection deliberately aggregates matching contexts rather than making
-    # scope identity a region key.
-    matches = [item for key, item in entries.items()
-               if isinstance(key, str) and key.startswith(capability + "|") and
-               isinstance(item, Mapping)]
-    if not matches:
-        return 0, 0
-    return (max(int(item.get("rejection_streak", 0)) for item in matches),
-            max(int(item.get("attempts_since_retained", 0)) for item in matches))
+    # Rejection pressure is current-scope evidence, not a maximum over older curricula.
+    entry = entries.get(capability + "|" + scope, {})
+    if not isinstance(entry, Mapping):
+        return None, None
+    return entry.get("rejection_streak", 0), entry.get("attempts_since_retained", 0)
 
 
 def student_region(receipt: Mapping, program, capability: str, phase: str,
@@ -139,8 +129,8 @@ def student_region(receipt: Mapping, program, capability: str, phase: str,
                         (item.id, _score_pair(scores.get(item.id)))
                         for grade in program.grades if grade.id == lesson_grade for item in grade.capabilities]
     present = [(name, pair) for name, pair in grade_scores if pair is not None]
-    grade_correct = grade_correct if grade_correct is not None else (sum(pair[0] for _, pair in present) if present else None)
-    grade_total = grade_total if grade_total is not None else (sum(pair[1] for _, pair in present) if present else None)
+    grade_correct = grade_correct if grade_correct is not None else (sum(pair[0] for _, pair in present) if present and len(present) == len(grade_scores) else None)
+    grade_total = grade_total if grade_total is not None else (sum(pair[1] for _, pair in present) if present and len(present) == len(grade_scores) else None)
     shape = "|".join(f"{name}={_score_band(*pair) if pair else 'UNMEASURED'}"
                      for name, pair in sorted(grade_scores)) or "UNMEASURED"
     debt = tuple((receipt.get("school") or {}).get("carried_mastery_debt") or ())
@@ -149,9 +139,9 @@ def student_region(receipt: Mapping, program, capability: str, phase: str,
     }
     debt_grades = Counter(grade_by_capability[item] for item in debt
                           if item in grade_by_capability)
-    rejection_streak, attempts_since_retained = _stagnation(teacher, capability, phase)
+    rejection_streak, attempts_since_retained = _stagnation(teacher, capability, curriculum_scope)
     predictive = {
-        "schema": "bilqis.teacher-student-region/v1",
+        "schema": REGION_SCHEMA,
         "capability": capability,
         "phase": phase.removeprefix("ASSESS_"),
         "lesson_grade": lesson_grade,
@@ -184,6 +174,8 @@ def _paired_measurements(paired, protected):
         if any(type(value) is not int for value in (before, after, total)) or not 0 <= before <= total or not 0 <= after <= total:
             return _unmeasured("PAIRED_PROBE_INVALID"), _unmeasured("PAIRED_PROBE_INVALID")
         entries[capability] = {"before": before, "after": after, "total": total}
+    if not protected:
+        return _measured(entries), _unmeasured("EMPTY_PROTECTED_MEASUREMENT_SCOPE")
     protected_entries = {cap: entries[cap] for cap in sorted(protected) if cap in entries}
     if protected and set(protected) - set(protected_entries):
         return _measured(entries), _unmeasured("PROTECTED_PROBE_INCOMPLETE")
@@ -205,7 +197,7 @@ def candidate_outcome(decision: Mapping | None, *, paired=None, protected=None,
             not isinstance(wall_seconds, (int, float)) or wall_seconds < 0):
         ErrorBus.Raise(SCHOOL.TEACHER_OBSERVATION.INVALID)
     base = {
-        "schema": OBSERVATION_SCHEMA,
+        "schema": OUTCOME_SCHEMA,
         "stage": stage,
         "attempted_steps": attempted_steps,
         "retained_steps": retained_steps,
@@ -214,13 +206,13 @@ def candidate_outcome(decision: Mapping | None, *, paired=None, protected=None,
         "fixed_frontier": _unmeasured("NO_CANDIDATE_SCREEN"),
     }
     if decision is None:
-        return {**base, "retention": _unmeasured("ORDINARY_DIRECT_TEACHING"),
-                "rejection_class": _unmeasured("ORDINARY_DIRECT_TEACHING"),
-                "target": {"before": _unmeasured("ORDINARY_DIRECT_TEACHING"),
-                           "after": _unmeasured("ORDINARY_DIRECT_TEACHING"),
-                           "total": _unmeasured("ORDINARY_DIRECT_TEACHING")},
-                "paired": _unmeasured("ORDINARY_DIRECT_TEACHING"),
-                "protected": {"net_correct_delta": _unmeasured("ORDINARY_DIRECT_TEACHING")}}
+        return {**base, "retention": _unmeasured("NO_CANDIDATE_SCREEN"),
+                "rejection_class": _unmeasured("NO_CANDIDATE_SCREEN"),
+                "target": {"before": _unmeasured("NO_CANDIDATE_SCREEN"),
+                           "after": _unmeasured("NO_CANDIDATE_SCREEN"),
+                           "total": _unmeasured("NO_CANDIDATE_SCREEN")},
+                "paired": _unmeasured("NO_CANDIDATE_SCREEN"),
+                "protected": {"net_correct_delta": _unmeasured("NO_CANDIDATE_SCREEN")}}
     before, after, total = (decision.get("active_probe_before"),
                             decision.get("active_probe_after"),
                             decision.get("active_probe_total"))
@@ -244,7 +236,7 @@ def candidate_outcome(decision: Mapping | None, *, paired=None, protected=None,
         "fixed_frontier": fixed_frontier if isinstance(fixed_frontier, Mapping) else _unmeasured("FIXED_FRONTIER_NOT_RECORDED"),
         "worst_protected_loss": (_unmeasured("TARGET_DID_NOT_GAIN") if target_only else
             (_measured(decision["worst_protected_loss"])
-             if type(decision.get("worst_protected_loss")) is int else _unmeasured("PROTECTED_LOSS_NOT_RECORDED"))),
+             if protected_evidence["status"] == MEASURED and type(decision.get("worst_protected_loss")) is int else _unmeasured("PROTECTED_LOSS_NOT_RECORDED"))),
     }
 
 
@@ -278,23 +270,77 @@ def portable_v1_observation(region: Mapping, action: Mapping, outcome: Mapping):
     return observation
 
 
+def _total(outcomes, field):
+    values = [item.get(field) for item in outcomes]
+    if any(type(value) not in (int, float) or not math.isfinite(value) for value in values):
+        return _unmeasured("COST_FIELD_NOT_RECORDED")
+    return _measured(sum(values))
+
+
+def _ratio(numerator, denominator):
+    if numerator.get("status") != MEASURED or denominator is None or denominator <= 0:
+        return _unmeasured("NO_MEASURED_RETENTION_DENOMINATOR")
+    return _measured(numerator["value"] / denominator)
+
+
 def summarize_observations(receipts) -> dict:
     """Summarize observed outcomes; absent prediction surfaces stay explicit."""
-    outcomes = [item.get("outcome", item) if isinstance(item, Mapping) else None
-                for item in receipts]
+    envelopes = [item for item in receipts if isinstance(item, Mapping)]
+    outcomes = [item.get("outcome", item) for item in envelopes]
     outcomes = [item for item in outcomes if isinstance(item, Mapping)]
     retained = sum(item.get("retention", {}).get("value") == "RETAINED" for item in outcomes)
     rejected = sum(item.get("retention", {}).get("value") == "REJECTED" for item in outcomes)
-    delivered = sum(len(item.get("delivered_teaching", ())) for item in receipts if isinstance(item, Mapping))
-    return {"schema": OBSERVATION_SCHEMA, "observation_count": len(outcomes),
-            "attempted_steps": _measured(sum(item.get("attempted_steps", 0) for item in outcomes)),
-            "retained_steps": _measured(sum(item.get("retained_steps", 0) for item in outcomes)),
-            "wall_seconds": _measured(sum(item.get("wall_seconds", 0.) for item in outcomes)),
+    expanded = [item for item in envelopes if isinstance(item.get("steps"), (tuple, list))]
+    positions = [position for item in expanded for step in item["steps"]
+                 if isinstance(step, Mapping) for position in step.get("positions", ())
+                 if isinstance(position, Mapping)]
+    role_counts = Counter(role for position in positions
+                          for role in position.get("roles", ()) if isinstance(role, str))
+    delivered_steps = sum(bool(step.get("delivered_teaching")) for item in expanded
+                          for step in item["steps"] if isinstance(step, Mapping))
+    proposals = [item.get("proposal") for item in expanded
+                 if isinstance(item.get("proposal"), Mapping)]
+    scheduling = (_measured({"lesson_grades": dict(Counter(
+        proposal.get("student_region", {}).get("lesson_grade") for proposal in proposals
+        if isinstance(proposal.get("student_region"), Mapping))),
+        "phases": dict(Counter(proposal.get("phase") for proposal in proposals)),
+        "mastery_debt_shapes": dict(Counter(
+            proposal.get("student_region", {}).get("mastery_debt_shape") for proposal in proposals
+            if isinstance(proposal.get("student_region"), Mapping)))})
+        if proposals else _unmeasured("PROPOSAL_NOT_EXPANDED"))
+    accepted = [item for item in envelopes
+                if item.get("outcome", item).get("retention", {}).get("value") == "RETAINED"]
+    publications_known = all(isinstance(item.get("publication"), Mapping) for item in accepted)
+    durable = (sum(item["publication"].get("status") == "DURABLE_CHECKPOINT_OUTBOX"
+                   for item in accepted) if publications_known else None)
+    totals = {name: _total(outcomes, name) for name in ("attempted_steps", "retained_steps", "wall_seconds")}
+    return {"schema": SUMMARY_SCHEMA, "observation_count": len(outcomes),
+            "predictions": _unmeasured("NO_PREDICTION_EVIDENCE"),
+            "attempted_steps_per_provisional_retention": _ratio(totals["attempted_steps"], retained),
+            "seconds_per_provisional_retention": _ratio(totals["wall_seconds"], retained),
+            "seconds_per_durable_retention": _ratio(totals["wall_seconds"], durable),
+            "attempted_steps": totals["attempted_steps"],
+            "retained_steps": totals["retained_steps"],
+            "wall_seconds": totals["wall_seconds"],
             "retention_yield": _measured(retained / (retained + rejected)) if retained + rejected else _unmeasured("NO_CANDIDATE_SCREENS"),
+            "retention_yield_semantics": "PROVISIONAL_RAM_CANDIDATE_ACCEPTANCE",
+            "durable_retention_yield": (_measured(durable / (retained + rejected))
+                if durable is not None and retained + rejected else _unmeasured("NO_DURABLE_RETENTION_DENOMINATOR")),
+            "retention": {"provisional_accepted_attempts": _measured(len(accepted)),
+                          "provisional_retained_steps": _measured(sum(
+                              item.get("outcome", item).get("retained_steps", 0) for item in accepted)),
+                          "durable_accepted_attempts": (_measured(durable)
+                              if durable is not None else _unmeasured("PUBLICATION_NOT_EXPANDED"))},
             "rejection_mix": _measured(dict(Counter(
                 item.get("rejection_class", {}).get("value") for item in outcomes
                 if (item.get("retention", {}).get("value") == "REJECTED" and
                     item.get("rejection_class", {}).get("status") == MEASURED)))) if rejected else _unmeasured("NO_REJECTIONS"),
-            "coverage": {"delivered_rows": _measured(delivered) if delivered else _unmeasured("DELIVERED_ROWS_NOT_EXPANDED")},
+            "coverage": ({"optimizer_rows": _measured(len(positions)),
+                          "delivered_teaching_steps": _measured(delivered_steps),
+                          "roles": _measured(dict(role_counts))}
+                         if expanded else {"optimizer_rows": _unmeasured("STEPS_NOT_EXPANDED"),
+                                           "delivered_teaching_steps": _unmeasured("STEPS_NOT_EXPANDED"),
+                                           "roles": _unmeasured("STEPS_NOT_EXPANDED")}),
+            "scheduling": scheduling,
             "calibration": _unmeasured("NO_PREDICTION_EVIDENCE"),
             "shadow_probes": _unmeasured("NO_SHADOW_PROBE_EVIDENCE")}

@@ -100,7 +100,8 @@ class TeacherObservationTests(unittest.TestCase):
             {"decision": "PROVISIONAL", "reason": fixture["outcome"]["rejection_reason"],
              "active_probe_before": 4, "active_probe_after": 6, "active_probe_total": 8,
              "protected_net_correct_delta": 0, "worst_protected_loss": 0},
-            paired={"C.ADD": {"before": 4, "after": 6, "total": 8}}, protected=(),
+            paired={"C.ADD": {"before": 4, "after": 6, "total": 8},
+                    "B.AND": {"before": 3, "after": 3, "total": 8}}, protected={"B.AND"},
             stage="RETAINED", attempted_steps=8, retained_steps=8, wall_seconds=1.5),
         )
         self.assertEqual(portable["retained"], True)
@@ -117,4 +118,53 @@ class TeacherObservationTests(unittest.TestCase):
             None, stage="ORDINARY", attempted_steps=1, retained_steps=1, wall_seconds=0),))
         self.assertEqual(summary["calibration"]["status"], "NOT_MEASURED")
         self.assertEqual(summary["shadow_probes"]["status"], "NOT_MEASURED")
-        self.assertEqual(summary["coverage"]["delivered_rows"]["status"], "NOT_MEASURED")
+        self.assertEqual(summary["coverage"]["optimizer_rows"]["status"], "NOT_MEASURED")
+
+    def test_summary_counts_expanded_zero_step_skip_and_durable_acceptance_separately(self):
+        accepted = candidate_outcome(
+            {"decision": "PROVISIONAL", "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+             "active_probe_before": 4, "active_probe_after": 5, "active_probe_total": 6,
+             "worst_protected_loss": 0}, paired={"C.ADD": {"before": 4, "after": 5, "total": 6}},
+            protected=(), stage="COMPLETE_SAME_GRADE", attempted_steps=3,
+            retained_steps=2, wall_seconds=1.5)
+        summary = summarize_observations((
+            {"outcome": accepted, "publication": {"status": "DURABLE_CHECKPOINT_OUTBOX"},
+             "proposal": {"phase": "MAIN", "student_region": {
+                 "lesson_grade": "C", "mastery_debt_shape": "A:1"}},
+             "steps": [{"delivered_teaching": {"option_id": "source.direct/C.ADD"},
+                        "positions": [{"row": {"id": "one"}, "roles": ["constructed_target"]},
+                                      {"row": {"id": "two"}, "roles": ["retention_support"]}]}]},
+            {"outcome": candidate_outcome(None, stage="PERFECT_TARGET_SKIP", attempted_steps=0,
+                                           retained_steps=0, wall_seconds=0),
+             "proposal": {"phase": "MAIN", "student_region": {
+                 "lesson_grade": "C", "mastery_debt_shape": "A:1"}}, "steps": []},
+        ))
+        self.assertEqual(summary["coverage"]["optimizer_rows"]["value"], 2)
+        self.assertEqual(summary["coverage"]["roles"]["value"]["retention_support"], 1)
+        self.assertEqual(summary["retention"]["provisional_accepted_attempts"]["value"], 1)
+        self.assertEqual(summary["retention"]["durable_accepted_attempts"]["value"], 1)
+        self.assertEqual(summary["scheduling"]["value"]["lesson_grades"]["C"], 2)
+
+
+class MissingScopeTests(unittest.TestCase):
+    def test_empty_protected_scope_is_unmeasured_even_if_decision_reports_zero(self):
+        value = candidate_outcome({"decision": "PROVISIONAL", "reason": "PAIRED_SCREEN_WITHIN_BUDGET",
+            "active_probe_before": 1, "active_probe_after": 2, "active_probe_total": 6,
+            "worst_protected_loss": 0}, paired={"target": {"before": 1, "after": 2, "total": 6}},
+            protected=(), stage="COMPLETE_SAME_GRADE", attempted_steps=1, retained_steps=1, wall_seconds=0.)
+        self.assertEqual(value["protected"]["scope"]["status"], "NOT_MEASURED")
+        self.assertEqual(value["worst_protected_loss"]["status"], "NOT_MEASURED")
+
+    def test_partial_grade_score_is_not_a_complete_grade_band(self):
+        value = student_region({"last_exam": {"scores": {"C.ADD": {"correct": 6, "total": 6}}}},
+                               program(), "C.ADD", "MAIN")
+        self.assertEqual(value["capability_score_band"], "P100")
+        self.assertEqual(value["grade_score_band"], "UNMEASURED")
+
+    def test_pressure_uses_current_scope_and_undefined_ratio_is_not_zero(self):
+        teacher = {"causal_experiment": {"capability_stagnation": {"C.ADD|old": {"rejection_streak": 31}}}}
+        value = student_region(receipt(), program(), "C.ADD", "MAIN", teacher, curriculum_scope="new")
+        self.assertEqual(value["rejection_pressure_band"], "R00")
+        summary = summarize_observations([])
+        self.assertEqual(summary["seconds_per_provisional_retention"]["status"], "NOT_MEASURED")
+        self.assertEqual(summary["seconds_per_durable_retention"]["status"], "NOT_MEASURED")
