@@ -30,6 +30,8 @@ def isolated_run(repo: Path, fixture: Path, target: Path, python: str) -> dict:
     negatives.mkdir(parents=True)
     for name in ("skos_root_sense_negative.ttl", "skos_composition_negative.ttl"):
         shutil.copyfile(repo / "lib/ithkuil/tests/fixtures" / name, negatives / name)
+    for name in ("ingestion_cleanroom.py", "ingestion_failure_proof.py", "ingestion_failure_injection.py"):
+        shutil.copyfile(repo / "lib/ithkuil/tests" / name, library / "tests" / name)
     shutil.copytree(fixture, target / "fixture")
     # No _raw, _data, runs, checkpoints, Git checkout or user Python path exists.
     environment = {key: value for key, value in os.environ.items()
@@ -91,8 +93,18 @@ def main():
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--fixture", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--verify-failures", action="store_true")
     args = parser.parse_args()
     receipt = prove(args.repo.resolve(), args.fixture.resolve(), args.output_root.resolve(), sys.executable)
+    if args.verify_failures:
+        environment = {key: value for key, value in os.environ.items()
+                       if not key.startswith(("PYTHON", "BILQIS"))}
+        completed = subprocess.run(
+            [sys.executable, "-B", "-m", "lib.ithkuil.tests.ingestion_failure_proof",
+             "--proof", str(args.output_root.resolve())],
+            cwd=args.output_root.resolve() / "one/runtime", env=environment,
+            capture_output=True, text=True, check=True)
+        receipt["failure_proof"] = json.loads(completed.stdout)
     print(json.dumps(receipt, ensure_ascii=False, sort_keys=True))
 
 

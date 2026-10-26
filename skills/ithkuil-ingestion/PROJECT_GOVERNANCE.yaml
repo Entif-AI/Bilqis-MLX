@@ -11,3 +11,17 @@ external_write_posture: classification_required
 authority_preflight: required
 postflight_validation: required
 authority_map_update_on_relationship_change: required
+workflow_contract: lib/ithkuil/ingestion_contract.json
+write_surfaces:
+  - staged_source_and_relational_ir
+  - dedicated_semantic_and_proof_outputs
+  - explicitly_authorized_owned_graph
+forbidden_write_surfaces:
+  - curriculum_and_neural_state
+  - source_pins
+  - automatic_graph_reset
+  - automatic_external_publication
+validation_relationships:
+  - project_skill_governance
+  - upstream_skill_validator_and_packager
+  - packaged_bounded_cleanroom_and_failure_proof

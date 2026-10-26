@@ -1,6 +1,8 @@
 ---
 name: ithkuil-ingestion
 description: "Rebuild pinned New Ithkuil sources, compile canonical CSVs to RDF/SKOS, run conformance, inspect held/debt evidence and optionally materialize/read back an explicitly owned Falkor graph in Bilqis-MLX. Not curriculum admission or neural training."
+metadata:
+  version: "1.0.0"
 ---
 
 # Ithkuil Ingestion
@@ -41,7 +43,9 @@ coverage and constituent gate evidence. Failed conformance blocks graph eligibil
 ## Bounded workflow proof
 
 For an explicitly bounded clean-room proof, read [references/fixture.md](references/fixture.md).
-Invoke the repository fixture runner with the declared source/seed inputs. Its typed
+For a packaged proof, read [references/package.md](references/package.md) and run
+[scripts/cleanroom.py](scripts/cleanroom.py). The build stages the canonical bounded
+fixture into package assets; use those declared source/seed inputs. Its typed
 fixture receipt is separate from production frontier closure; never relabel it.
 
 ## Optional owned graph
