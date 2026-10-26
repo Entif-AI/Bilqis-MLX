@@ -541,7 +541,7 @@ class Dashboard:
                                         row['title_step']
                                         if type(row['title_step']) is int else -1),
                         reverse=True)
-                    for row in ranked[:6]:
+                    for row in ranked:
                         row.pop('_score',None)
                         row.pop('_breadth',None)
                         rows.append(row)
