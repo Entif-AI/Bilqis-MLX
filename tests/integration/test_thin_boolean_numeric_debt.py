@@ -10,6 +10,7 @@ import unittest
 from unittest.mock import patch
 
 from bilqis_mlx import trainer
+from bilqis_mlx.runtime import release_adoption
 from bilqis_mlx.curriculum.scheduler import start_new
 from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
 from bilqis_mlx.profiles.catalog import numeric_entry_transition
@@ -94,29 +95,8 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
                     _adopt_executable_profile(run, stale, fixture.grade_a, SOURCE, graph,
                                               profile, allow_mastery_debt=True)
                 if automatic:
-                    measured = {**measured, 'school': {**measured['school'],
-                        'stage': 'AWAITING_NEXT_GRADE_WITH_DEBT', 'queue': [],
-                        'carried_mastery_debt': list(measured['debt_admission_boundary_exam']['scores'])},
-                        'numeric_scope_final_maximum': 4}
-                    from bilqis_mlx.runtime import release_adoption
-                    runtime_dispatch = release_adoption._auto_adopt_known_grade_boundary
-                    with patch('bilqis_mlx.profiles.catalog.boolean_entry_profile', return_value=profile):
-                        with patch.object(release_adoption,
-                                '_auto_adopt_known_grade_boundary',
-                                wraps=runtime_dispatch) as dispatch_spy:
-                            _, _, _, admitted, course, changed = (
-                                release_adoption._auto_adopt_known_grade_boundary(
-                                    mx, run, measured, fixture.grade_a, fixture.grade_a,
-                                    SOURCE, fixture.manifest, params, own, graph,
-                                    reserve_gib=0., full_grade_b=False,
-                                    numeric_staircase=False))
-                    dispatch_spy.assert_called_once_with(
-                        mx, run, measured, fixture.grade_a, fixture.grade_a,
-                        SOURCE, fixture.manifest, params, own, graph,
-                        reserve_gib=0., full_grade_b=False,
-                        numeric_staircase=False)
-                    self.assertTrue(changed)
-                    release = trainer._read_executable_factory_release_artifact(run, admitted)
+                    admitted, course, release = self._auto_boolean_entry(
+                        mx, run, measured, fixture, params, own, graph, profile)
                 else:
                     admitted, course, release, _ = _adopt_executable_profile(
                         run, measured, fixture.grade_a, SOURCE, graph, profile, allow_mastery_debt=True)
@@ -162,3 +142,29 @@ class ThinBooleanNumericDebtTests(unittest.TestCase):
         self.assertEqual(int(grown_own.state['step'].item()), int(own.state['step'].item()))
         self.assertEqual(numeric['mentor_epoch']['previous_boundary_checkpoint'],
                          admitted['school']['current_student'])
+
+    def _auto_boolean_entry(self, mx, run, measured, fixture, params, own, graph, profile):
+        measured = {**measured, 'school': {**measured['school'],
+            'stage': 'AWAITING_NEXT_GRADE_WITH_DEBT', 'queue': [],
+            'carried_mastery_debt': list(measured['debt_admission_boundary_exam']['scores'])},
+            'numeric_scope_final_maximum': 4}
+        from bilqis_mlx.runtime import release_adoption
+        runtime_dispatch = release_adoption._auto_adopt_known_grade_boundary
+        with patch('bilqis_mlx.profiles.catalog.boolean_entry_profile', return_value=profile):
+            with patch.object(release_adoption,
+                    '_auto_adopt_known_grade_boundary',
+                    wraps=runtime_dispatch) as dispatch_spy:
+                _, _, _, admitted, course, changed = (
+                    release_adoption._auto_adopt_known_grade_boundary(
+                        mx, run, measured, fixture.grade_a, fixture.grade_a,
+                        SOURCE, fixture.manifest, params, own, graph,
+                        reserve_gib=0., full_grade_b=False,
+                        numeric_staircase=False))
+        dispatch_spy.assert_called_once_with(
+            mx, run, measured, fixture.grade_a, fixture.grade_a,
+            SOURCE, fixture.manifest, params, own, graph,
+            reserve_gib=0., full_grade_b=False,
+            numeric_staircase=False)
+        self.assertTrue(changed)
+        release = trainer._read_executable_factory_release_artifact(run, admitted)
+        return admitted, course, release

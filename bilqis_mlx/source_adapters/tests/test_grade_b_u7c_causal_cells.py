@@ -11,6 +11,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 import json
 import unittest
+from types import MappingProxyType
 
 from bilqis_mlx.grade_a_probe import read_sources
 from bilqis_mlx.grade_a_release import accepted_grade_a
@@ -29,7 +30,7 @@ MANIFEST = ROOT / "docs/provenance/GRADE_A_CANDIDATE_MANIFEST_V2.json"
 
 # U7C kept only causally useful cells while balancing TRUE/FALSE per gate.
 # Repeated patterns are deliberate weights, not duplicate source records.
-U7C_PATTERN_QUOTAS = {
+U7C_PATTERN_QUOTAS = MappingProxyType({key: MappingProxyType(value) for key, value in {
     "NOT": {(False,): 1, (True,): 1},
     "AND": {(True, True): 2, (True, False): 1, (False, True): 1},
     "OR": {(False, False): 2, (True, False): 1, (False, True): 1},
@@ -46,16 +47,16 @@ U7C_PATTERN_QUOTAS = {
         (True, False): 1,
         (True, True): 1,
     },
-}
+}.items()})
 
-FULLY_CAUSAL_PATTERNS = {
+FULLY_CAUSAL_PATTERNS = MappingProxyType({key: frozenset(value) for key, value in {
     "NOT": {(False,), (True,)},
     "AND": {(True, True)},
     "OR": {(False, False)},
     "XOR": {(False, False), (False, True), (True, False), (True, True)},
     "IMPLIES": {(True, False)},
     "IFF": {(False, False), (False, True), (True, False), (True, True)},
-}
+}.items()})
 
 
 def _u7c_cells(rows: tuple[dict, ...], operation: str) -> tuple[dict, ...]:

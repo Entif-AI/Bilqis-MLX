@@ -1,6 +1,8 @@
 """Source cohort persistence and routine, promotion and generalization lifetimes."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, FACTORY
+
 import json
 from collections import Counter
 
@@ -312,7 +314,7 @@ def _draw_live_rows(source_root, graph, *, seed, capability=None, each=None,
     """Draw from bound v2 authority, retaining the historical Course entrypoint."""
     if source_context is not None:
         if not isinstance(source_context, SourceExecutionContext):
-            raise TypeError("FACTORY_ASSESSMENT_SOURCE_CONTEXT_REQUIRED")
+            raise TypeError(FACTORY.EXECUTION.ASSESSMENT_SOURCE_CONTEXT_REQUIRED.legacy_codes[0])
         return source_context.draw_rows(seed=seed, capability=capability, each=each)
     if executable_release is not None:
         from ..source_adapters.school import live_source_registry

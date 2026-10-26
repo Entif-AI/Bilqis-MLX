@@ -211,24 +211,7 @@ def inspect_factory_architecture(root: Path) -> tuple[str, ...]:
     if not (src / "factory").is_dir():
         return ("FACTORY_PACKAGE_MISSING",)
 
-    # A/B/C remain compatibility/provider modules during migration. There is no
-    # permission to repeat the pattern for D or any later grade.
-    for path in sorted(src.rglob("*.py")):
-        if "tests" in path.relative_to(src).parts:
-            continue
-        tree = ast.parse(_source(path))
-        if path.relative_to(src).parts[0] == "compatibility":
-            problems.extend(_compatibility_writer_calls(tree, path, src))
-        if path not in {src / "trainer.py", src / "cli.py"}:
-            for node in ast.walk(tree):
-                if _imports_trainer_facade(node, path, src):
-                    problems.append(f"{path.relative_to(root)} LEAF_IMPORTS_TRAINER")
-        if set(path.relative_to(src).parts) & {"compatibility", "research"}:
-            continue
-        match = FUTURE_GRADE_FILE.match(path.name)
-        if match:
-            problems.append(
-                f"{path.relative_to(root)} FUTURE_GRADE_RUNTIME_FORK:{match.group(1).upper()}")
+    problems.extend(_inspect_runtime_ownership(src, root))
 
     for relative in GENERIC_RUNTIME:
         path = root / relative
@@ -303,6 +286,31 @@ def _research_imports(src, root):
                     target.startswith(".research")):
                 problems.append(
                     f"{path.relative_to(root)}:{node.lineno} RUNTIME_IMPORTS_RESEARCH")
+    return problems
+
+
+def _inspect_runtime_ownership(src, root):
+    problems = []
+    """Inspect compatibility writers and runtime ownership across production modules."""
+    # A/B/C remain compatibility/provider modules during migration. There is no
+    # permission to repeat the pattern for D or any later grade.
+    for path in sorted(src.rglob("*.py")):
+        if "tests" in path.relative_to(src).parts:
+            continue
+        tree = ast.parse(_source(path))
+        if path.relative_to(src).parts[0] == "compatibility":
+            problems.extend(_compatibility_writer_calls(tree, path, src))
+        if path not in {src / "trainer.py", src / "cli.py"}:
+            for node in ast.walk(tree):
+                if _imports_trainer_facade(node, path, src):
+                    problems.append(f"{path.relative_to(root)} LEAF_IMPORTS_TRAINER")
+        if set(path.relative_to(src).parts) & {"compatibility", "research"}:
+            continue
+        match = FUTURE_GRADE_FILE.match(path.name)
+        if match:
+            problems.append(
+                f"{path.relative_to(root)} FUTURE_GRADE_RUNTIME_FORK:{match.group(1).upper()}")
+
     return problems
 
 

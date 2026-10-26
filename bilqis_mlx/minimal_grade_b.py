@@ -1,6 +1,8 @@
 """Reduced Grade-B release: AND, IFF, COMPOSITE and IDBOOLOPS only."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, SOURCE
+
 from dataclasses import replace
 import hashlib
 import json
@@ -104,7 +106,7 @@ def _identification_rows(source_root: Path, graph: dict, *, seed: int,
     result = tuple({**row, "generator": GENERATOR,
                     "oracle": IDENTIFICATION_ORACLE} for row in rows)
     if any(evaluate_identification(row["record"]) != row["gold"] for row in result):
-        raise ValueError("GRADE_B_MINIMAL_IDBOOLOPS_ORACLE_DRIFT")
+        raise ErrorBus.legacy_error(SOURCE.BOOLEAN.MINIMAL_IDBOOLOPS_ORACLE_DRIFT)
     return result
 
 

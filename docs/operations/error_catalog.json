@@ -1,6 +1,6 @@
 {
-  "legacy_raw_file_count": 172,
-  "legacy_raw_raise_count": 2034,
+  "legacy_raw_file_count": 167,
+  "legacy_raw_raise_count": 1935,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -381,13 +381,6 @@
       "path": "bilqis_mlx/boolean_composite_oracle.py"
     },
     {
-      "code_hint": "GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH'",
-      "path": "bilqis_mlx/boolean_composite_oracle.py"
-    },
-    {
       "code_hint": "GRADE_B_COMPOSITE_ORACLE_CONNECTIVE_ARITY",
       "count": 1,
       "exception": "ValueError",
@@ -420,13 +413,6 @@
       "count": 2,
       "exception": "ValueError",
       "expression": "'GRADE_B_COMPOSITE_ORACLE_UNKNOWN_OPERATOR'",
-      "path": "bilqis_mlx/boolean_composite_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY'",
       "path": "bilqis_mlx/boolean_composite_oracle.py"
     },
     {
@@ -500,13 +486,6 @@
       "path": "bilqis_mlx/boolean_identification.py"
     },
     {
-      "code_hint": "GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE'",
-      "path": "bilqis_mlx/boolean_identification.py"
-    },
-    {
       "code_hint": "GRADE_B_IDBOOLOPS_OPERATOR_BALANCE_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -518,13 +497,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_B_IDBOOLOPS_OPERATOR_DOMAIN_INVALID'",
-      "path": "bilqis_mlx/boolean_identification.py"
-    },
-    {
-      "code_hint": "GRADE_B_IDBOOLOPS_RECORD_SHAPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_IDBOOLOPS_RECORD_SHAPE'",
       "path": "bilqis_mlx/boolean_identification.py"
     },
     {
@@ -561,13 +533,6 @@
       "exception": "ValueError",
       "expression": "'GRADE_B_IDBOOLOPS_VARIATION_EXHAUSTED'",
       "path": "bilqis_mlx/boolean_identification.py"
-    },
-    {
-      "code_hint": "GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID'",
-      "path": "bilqis_mlx/boolean_identification_oracle.py"
     },
     {
       "code_hint": "GRADE_B_IDBOOLOPS_ORACLE_ENTITY_OUTSIDE_WORLD",
@@ -780,27 +745,6 @@
       "path": "bilqis_mlx/compatibility/assessment.py"
     },
     {
-      "code_hint": "BOOLEAN_COMPOSITE_REQUIRES_RESUME",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'BOOLEAN_COMPOSITE_REQUIRES_RESUME'",
-      "path": "bilqis_mlx/compatibility/cli_preflight.py"
-    },
-    {
-      "code_hint": "BOOLEAN_IDBOOLOPS_REQUIRES_RESUME",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'BOOLEAN_IDBOOLOPS_REQUIRES_RESUME'",
-      "path": "bilqis_mlx/compatibility/cli_preflight.py"
-    },
-    {
-      "code_hint": "BOOLEAN_REVISION_SOURCE_STUDENT_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'BOOLEAN_REVISION_SOURCE_STUDENT_MISSING'",
-      "path": "bilqis_mlx/compatibility/cli_preflight.py"
-    },
-    {
       "code_hint": "FACTORY_COMPATIBILITY_COURSE_REQUIRED",
       "count": 1,
       "exception": "TypeError",
@@ -918,13 +862,6 @@
       "exception": "ValueError",
       "expression": "'FIXED_FRONTIER_GRADE_C_PRE_ADMISSION_STATE_MISSING'",
       "path": "bilqis_mlx/compatibility/frontier_recovery.py"
-    },
-    {
-      "code_hint": "GRADE_ADMISSION_REQUIRES_COMPLETE_PERFECT_CUMULATIVE_EXAM",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_ADMISSION_REQUIRES_COMPLETE_PERFECT_CUMULATIVE_EXAM'",
-      "path": "bilqis_mlx/compatibility/grade_transition.py"
     },
     {
       "code_hint": "HISTORICAL_GRADE_A_RUBRIC_NOT_REPRODUCIBLE",
@@ -1459,55 +1396,6 @@
       "path": "bilqis_mlx/curriculum/__init__.py"
     },
     {
-      "code_hint": "FACTORY_SCHEDULE_PROGRAM_REQUIRED",
-      "count": 4,
-      "exception": "TypeError",
-      "expression": "'FACTORY_SCHEDULE_PROGRAM_REQUIRED'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_HAS_NO_REPRESENTED_GRADE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_HAS_NO_REPRESENTED_GRADE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_INVALID_SCORE_TYPE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_INVALID_SCORE_TYPE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_NOT_COURSE_SEALED_RUBRIC",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_NOT_COURSE_SEALED_RUBRIC'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_NOT_GRADE_SEALED_RUBRIC",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_NOT_GRADE_SEALED_RUBRIC'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
       "code_hint": "ASSESSMENT_NOT_SCHEDULED_AT_DURABLE_BOUNDARY",
       "count": 1,
       "exception": "ValueError",
@@ -1519,34 +1407,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'ASSESSMENT_RUBRIC_CHANGED_MID_COURSE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_RUBRIC_IDENTITY_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_RUBRIC_IDENTITY_MISSING'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY'",
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {
@@ -1620,27 +1480,6 @@
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {
-      "code_hint": "FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_INVALID'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_NOT_ADDITIVE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_NOT_ADDITIVE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
       "code_hint": "FACTORY_SCHEDULE_REVISION_INVALID",
       "count": 1,
       "exception": "ValueError",
@@ -1697,87 +1536,10 @@
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {
-      "code_hint": "INVALID_CAPABILITY_SCORE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_CAPABILITY_SCORE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "INVALID_CARRIED_MASTERY_DEBT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_CARRIED_MASTERY_DEBT'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "INVALID_DEBT_CADENCE_POLICY",
-      "count": 3,
-      "exception": "ValueError",
-      "expression": "'INVALID_DEBT_CADENCE_POLICY'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "INVALID_GRADE_PROGRAM_OR_CHAMPIONS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_GRADE_PROGRAM_OR_CHAMPIONS'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "INVALID_GRADE_REVALIDATION_STATE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_GRADE_REVALIDATION_STATE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "INVALID_INTRODUCTION_FRONTIER_HISTORY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_INTRODUCTION_FRONTIER_HISTORY'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "INVALID_INTRODUCTION_STAGE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_INTRODUCTION_STAGE'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "INVALID_MAIN_SWEEP_HISTORY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_MAIN_SWEEP_HISTORY'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "INVALID_PARTIAL_SCHOOL_COMPLETION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_PARTIAL_SCHOOL_COMPLETION'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "INVALID_SCHOOL_COUNTER",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_SCHOOL_COUNTER'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
       "code_hint": "NOT_AT_WHOLE_SCHOOL_SOUP_BOUNDARY",
       "count": 1,
       "exception": "ValueError",
       "expression": "'NOT_AT_WHOLE_SCHOOL_SOUP_BOUNDARY'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES'",
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {
@@ -1841,20 +1603,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'VISIT_NOT_NEXT_SCHEDULED_CAPABILITY'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "WEAKEST_THREE_INCOMPLETE_POOL",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'WEAKEST_THREE_INCOMPLETE_POOL'",
-      "path": "bilqis_mlx/curriculum/scheduler.py"
-    },
-    {
-      "code_hint": "WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE'",
       "path": "bilqis_mlx/curriculum/scheduler.py"
     },
     {
@@ -3433,13 +3181,6 @@
       "path": "bilqis_mlx/factory/candidate_staging.py"
     },
     {
-      "code_hint": "FACTORY_CURRICULUM_DEFINITION_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_CURRICULUM_DEFINITION_REQUIRED'",
-      "path": "bilqis_mlx/factory/curriculum_definition.py"
-    },
-    {
       "code_hint": "FACTORY_LEGACY_COURSE_REQUIRED",
       "count": 1,
       "exception": "TypeError",
@@ -3535,13 +3276,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_CURRICULUM_STAGES_INVALID'",
-      "path": "bilqis_mlx/factory/curriculum_definition.py"
-    },
-    {
-      "code_hint": "FACTORY_CURRICULUM_UNKNOWN_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_CURRICULUM_UNKNOWN_CAPABILITY'",
       "path": "bilqis_mlx/factory/curriculum_definition.py"
     },
     {
@@ -5302,27 +5036,6 @@
       "path": "bilqis_mlx/grade_a_release.py"
     },
     {
-      "code_hint": "GRADE_B_ORACLE_ASSIGNMENTS_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_ORACLE_ASSIGNMENTS_INVALID'",
-      "path": "bilqis_mlx/grade_b_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_ORACLE_CONNECTIVE_SHAPE",
-      "count": 3,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_ORACLE_CONNECTIVE_SHAPE'",
-      "path": "bilqis_mlx/grade_b_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID'",
-      "path": "bilqis_mlx/grade_b_oracle.py"
-    },
-    {
       "code_hint": "GRADE_B_ORACLE_ENTITY_OUTSIDE_WORLD",
       "count": 1,
       "exception": "ValueError",
@@ -5348,13 +5061,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_B_ORACLE_UNATTESTED_ENTITY'",
-      "path": "bilqis_mlx/grade_b_oracle.py"
-    },
-    {
-      "code_hint": "GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY'",
       "path": "bilqis_mlx/grade_b_oracle.py"
     },
     {
@@ -6366,13 +6072,6 @@
       "path": "bilqis_mlx/learning/epoch_championships.py"
     },
     {
-      "code_hint": "FRAGILE_PRESERVATION_EXAM_ROW_LEAK",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_EXAM_ROW_LEAK'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
       "code_hint": "FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE",
       "count": 1,
       "exception": "ValueError",
@@ -6384,13 +6083,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_MIXED_REPRESENTATION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_MIXED_REPRESENTATION'",
       "path": "bilqis_mlx/learning/fragile_replay.py"
     },
     {
@@ -6461,13 +6153,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT'",
-      "path": "bilqis_mlx/learning/fragile_replay.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_U7C_PATTERN_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_U7C_PATTERN_DRIFT'",
       "path": "bilqis_mlx/learning/fragile_replay.py"
     },
     {
@@ -6674,20 +6359,6 @@
       "path": "bilqis_mlx/learning/learning_experiment.py"
     },
     {
-      "code_hint": "LEARNING_EXPERIMENT_BINARY_CLASS_MISSING",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_BINARY_CLASS_MISSING'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
       "code_hint": "LEARNING_EXPERIMENT_CHANNEL_VERSION_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -6825,20 +6496,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'LEARNING_EXPERIMENT_MISSING_ACTIVE_CAPABILITY'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_MISSING_FRESH_CURRENT_ROWS",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_MISSING_FRESH_CURRENT_ROWS'",
-      "path": "bilqis_mlx/learning/learning_experiment.py"
-    },
-    {
-      "code_hint": "LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS",
-      "count": 2,
-      "exception": "ValueError",
-      "expression": "'LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS'",
       "path": "bilqis_mlx/learning/learning_experiment.py"
     },
     {
@@ -7521,27 +7178,6 @@
       "path": "bilqis_mlx/live_grade_b.py"
     },
     {
-      "code_hint": "GRADE_B_BOOLEAN_CONTEXT_LENGTH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_BOOLEAN_CONTEXT_LENGTH'",
-      "path": "bilqis_mlx/live_grade_b.py"
-    },
-    {
-      "code_hint": "GRADE_B_BOOLEAN_SOURCE_ROOT_MISMATCH",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_BOOLEAN_SOURCE_ROOT_MISMATCH'",
-      "path": "bilqis_mlx/live_grade_b.py"
-    },
-    {
-      "code_hint": "GRADE_B_BOOLEAN_TOKEN_ABI_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_BOOLEAN_TOKEN_ABI_DRIFT'",
-      "path": "bilqis_mlx/live_grade_b.py"
-    },
-    {
       "code_hint": "GRADE_B_BOOLEAN_TRUTH_TABLE_SOURCE_DRIFT",
       "count": 1,
       "exception": "ValueError",
@@ -7598,13 +7234,6 @@
       "path": "bilqis_mlx/live_grade_b.py"
     },
     {
-      "code_hint": "GRADE_B_UNKNOWN_OPERATOR",
-      "count": 3,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_UNKNOWN_OPERATOR'",
-      "path": "bilqis_mlx/live_grade_b.py"
-    },
-    {
       "code_hint": "GRADE_C_FULL_REGISTRY_REQUIRES_BILQIS_INTEGER_MAX=",
       "count": 1,
       "exception": "ValueError",
@@ -7623,13 +7252,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_C_INTEGER_SCOPE_INVALID'",
-      "path": "bilqis_mlx/live_grade_c.py"
-    },
-    {
-      "code_hint": "GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED",
-      "count": 3,
-      "exception": "ValueError",
-      "expression": "'GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED'",
       "path": "bilqis_mlx/live_grade_c.py"
     },
     {
@@ -7672,13 +7294,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'GRADE_B_MINIMAL_ANSWER_HEAD_TOKEN_MISSING'",
-      "path": "bilqis_mlx/minimal_grade_b.py"
-    },
-    {
-      "code_hint": "GRADE_B_MINIMAL_IDBOOLOPS_ORACLE_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'GRADE_B_MINIMAL_IDBOOLOPS_ORACLE_DRIFT'",
       "path": "bilqis_mlx/minimal_grade_b.py"
     },
     {
@@ -8550,13 +8165,6 @@
       "path": "bilqis_mlx/profiles/catalog.py"
     },
     {
-      "code_hint": "FRAGILE_PRESERVATION_POLICY_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_POLICY_INVALID'",
-      "path": "bilqis_mlx/profiles/retention.py"
-    },
-    {
       "code_hint": "FACTORY_BOOLEAN_PROFILE_SELECTION_INVALID",
       "count": 1,
       "exception": "TypeError",
@@ -9010,13 +8618,6 @@
       "exception": "ValueError",
       "expression": "'HUMAN_TRAINER_HISTORICAL_EXAM_RELEASE_INVALID'",
       "path": "bilqis_mlx/runtime/admission.py"
-    },
-    {
-      "code_hint": "FACTORY_ASSESSMENT_SOURCE_CONTEXT_REQUIRED",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'FACTORY_ASSESSMENT_SOURCE_CONTEXT_REQUIRED'",
-      "path": "bilqis_mlx/runtime/assessment.py"
     },
     {
       "code_hint": "FACTORY_EXECUTABLE_COHORT_CONTRACT_REQUIRED",
@@ -9667,20 +9268,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'LEARNING_EXPERIMENT_PROBE_SCOPE_INCOMPLETE'",
-      "path": "bilqis_mlx/runtime/candidate_evidence.py"
-    },
-    {
-      "code_hint": "RETENTION_SUPPORT_ROTATION_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'RETENTION_SUPPORT_ROTATION_INVALID'",
-      "path": "bilqis_mlx/runtime/candidate_evidence.py"
-    },
-    {
-      "code_hint": "RETENTION_SUPPORT_ROW_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'RETENTION_SUPPORT_ROW_INVALID'",
       "path": "bilqis_mlx/runtime/candidate_evidence.py"
     },
     {
@@ -10657,13 +10244,6 @@
       "path": "bilqis_mlx/runtime/release_adoption.py"
     },
     {
-      "code_hint": "FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED",
-      "count": 3,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED'",
-      "path": "bilqis_mlx/runtime/release_adoption.py"
-    },
-    {
       "code_hint": "FACTORY_PROFILE_EXPANSION_NOT_AT_GRADE_BOUNDARY",
       "count": 1,
       "exception": "ValueError",
@@ -10675,13 +10255,6 @@
       "count": 1,
       "exception": "ValueError",
       "expression": "'FACTORY_PROFILE_EXPANSION_REQUIRES_COMPLETE_PERFECT_PREFIX'",
-      "path": "bilqis_mlx/runtime/release_adoption.py"
-    },
-    {
-      "code_hint": "INVALID_DEBT_CADENCE_POLICY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_DEBT_CADENCE_POLICY'",
       "path": "bilqis_mlx/runtime/release_adoption.py"
     },
     {
@@ -10783,34 +10356,6 @@
       "path": "bilqis_mlx/runtime/source_development.py"
     },
     {
-      "code_hint": "Expected a SourceAdapterRegistry",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'Expected a SourceAdapterRegistry'",
-      "path": "bilqis_mlx/runtime/source_execution.py"
-    },
-    {
-      "code_hint": "Expected an AnswerModalityRegistry",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'Expected an AnswerModalityRegistry'",
-      "path": "bilqis_mlx/runtime/source_execution.py"
-    },
-    {
-      "code_hint": "Expected an ExecutableFactoryRelease",
-      "count": 1,
-      "exception": "TypeError",
-      "expression": "'Expected an ExecutableFactoryRelease'",
-      "path": "bilqis_mlx/runtime/source_execution.py"
-    },
-    {
-      "code_hint": "FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY'",
-      "path": "bilqis_mlx/runtime/source_execution.py"
-    },
-    {
       "code_hint": "SOURCE_PREFETCH_FORBIDDEN_AUTHORITY",
       "count": 1,
       "exception": "ValueError",
@@ -10837,13 +10382,6 @@
       "exception": "ValueError",
       "expression": "'SOURCE_PREFETCH_REQUEST_SCHEMA_DRIFT'",
       "path": "bilqis_mlx/runtime/source_prefetch.py"
-    },
-    {
-      "code_hint": "INVALID_DEBT_CADENCE_POLICY",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'INVALID_DEBT_CADENCE_POLICY'",
-      "path": "bilqis_mlx/runtime/state.py"
     },
     {
       "code_hint": "boom",
@@ -12463,69 +12001,6 @@
       "path": "bilqis_mlx/source_adapters/school.py"
     },
     {
-      "code_hint": "FRAGILE_PRESERVATION_MIXED_REPRESENTATION",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_MIXED_REPRESENTATION'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_OPERAND_KIND_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_OPERAND_KIND_INVALID'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_SOURCE_POLICY_UNKNOWN",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_SOURCE_POLICY_UNKNOWN'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_U7C_PATTERN_CONTRACT_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_U7C_PATTERN_CONTRACT_INVALID'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FRAGILE_PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
-      "code_hint": "FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT",
-      "count": 7,
-      "exception": "ValueError",
-      "expression": "'FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT'",
-      "path": "bilqis_mlx/source_adapters/school.py"
-    },
-    {
       "code_hint": "LESSON_SOURCE_IDENTIFICATION_OBSERVATIONS_MISSING",
       "count": 1,
       "exception": "ValueError",
@@ -13450,6 +12925,758 @@
   ],
   "schema": "bilqis.error-catalog/v1",
   "typed_errors": [
+    {
+      "code": "FACTORY.EXECUTION.CURRICULUM_DEFINITION_REQUIRED",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_CURRICULUM_DEFINITION_REQUIRED"
+      ],
+      "message_key": "errors.factory.execution.curriculum_definition_required.message",
+      "message_template": "Factory curriculum definition required",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "factory.curriculum_definition",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.execution.curriculum_definition_required.recovery",
+      "self_heal_owner": null,
+      "title": "Factory curriculum definition required"
+    },
+    {
+      "code": "FACTORY.EXECUTION.CURRICULUM_UNKNOWN_CAPABILITY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_CURRICULUM_UNKNOWN_CAPABILITY"
+      ],
+      "message_key": "errors.factory.execution.curriculum_unknown_capability.message",
+      "message_template": "Factory curriculum unknown capability",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "factory.curriculum_definition",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.execution.curriculum_unknown_capability.recovery",
+      "self_heal_owner": null,
+      "title": "Factory curriculum unknown capability"
+    },
+    {
+      "code": "SCHOOL.LEARNING.MISSING_FRESH_CURRENT_ROWS",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "LEARNING_EXPERIMENT_MISSING_FRESH_CURRENT_ROWS"
+      ],
+      "message_key": "errors.school.learning.missing_fresh_current_rows.message",
+      "message_template": "Learning experiment missing fresh current rows",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "learning.learning_experiment",
+      "preserve_state": true,
+      "recovery_key": "errors.school.learning.missing_fresh_current_rows.recovery",
+      "self_heal_owner": null,
+      "title": "Learning experiment missing fresh current rows"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.BOOLEAN_CONTEXT_LENGTH",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_BOOLEAN_CONTEXT_LENGTH"
+      ],
+      "message_key": "errors.source.boolean.boolean_context_length.message",
+      "message_template": "Grade b boolean context length",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "live_grade_b",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.boolean_context_length.recovery",
+      "self_heal_owner": null,
+      "title": "Grade b boolean context length"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.BOOLEAN_SOURCE_ROOT_MISMATCH",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_BOOLEAN_SOURCE_ROOT_MISMATCH"
+      ],
+      "message_key": "errors.source.boolean.boolean_source_root_mismatch.message",
+      "message_template": "Grade b boolean source root mismatch",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "live_grade_b",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.boolean_source_root_mismatch.recovery",
+      "self_heal_owner": null,
+      "title": "Grade b boolean source root mismatch"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.BOOLEAN_TOKEN_ABI_DRIFT",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_BOOLEAN_TOKEN_ABI_DRIFT"
+      ],
+      "message_key": "errors.source.boolean.boolean_token_abi_drift.message",
+      "message_template": "Grade b boolean token abi drift",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "live_grade_b",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.boolean_token_abi_drift.recovery",
+      "self_heal_owner": null,
+      "title": "Grade b boolean token abi drift"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.UNKNOWN_OPERATOR",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_UNKNOWN_OPERATOR"
+      ],
+      "message_key": "errors.source.boolean.unknown_operator.message",
+      "message_template": "Grade b unknown operator",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "live_grade_b",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.unknown_operator.recovery",
+      "self_heal_owner": null,
+      "title": "Grade b unknown operator"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED"
+      ],
+      "message_key": "errors.source.boolean.native_registry_admission_not_verified.message",
+      "message_template": "Grade c native registry admission not verified",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "live_grade_c",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.native_registry_admission_not_verified.recovery",
+      "self_heal_owner": null,
+      "title": "Grade c native registry admission not verified"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.MINIMAL_IDBOOLOPS_ORACLE_DRIFT",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_MINIMAL_IDBOOLOPS_ORACLE_DRIFT"
+      ],
+      "message_key": "errors.source.boolean.minimal_idboolops_oracle_drift.message",
+      "message_template": "Grade b minimal idboolops oracle drift",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "minimal_grade_b",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.minimal_idboolops_oracle_drift.recovery",
+      "self_heal_owner": null,
+      "title": "Grade b minimal idboolops oracle drift"
+    },
+    {
+      "code": "SOURCE.REPLAY.PRESERVATION_POLICY_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_PRESERVATION_POLICY_INVALID"
+      ],
+      "message_key": "errors.source.replay.preservation_policy_invalid.message",
+      "message_template": "Fragile preservation policy invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "profiles.retention",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.preservation_policy_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile preservation policy invalid"
+    },
+    {
+      "code": "FACTORY.EXECUTION.ASSESSMENT_SOURCE_CONTEXT_REQUIRED",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_ASSESSMENT_SOURCE_CONTEXT_REQUIRED"
+      ],
+      "message_key": "errors.factory.execution.assessment_source_context_required.message",
+      "message_template": "Factory assessment source context required",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "runtime.assessment",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.execution.assessment_source_context_required.recovery",
+      "self_heal_owner": null,
+      "title": "Factory assessment source context required"
+    },
+    {
+      "code": "SOURCE.REPLAY.RETENTION_SUPPORT_ROTATION_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "RETENTION_SUPPORT_ROTATION_INVALID"
+      ],
+      "message_key": "errors.source.replay.retention_support_rotation_invalid.message",
+      "message_template": "Retention support rotation invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "runtime.candidate_evidence",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.retention_support_rotation_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Retention support rotation invalid"
+    },
+    {
+      "code": "SOURCE.REPLAY.RETENTION_SUPPORT_ROW_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "RETENTION_SUPPORT_ROW_INVALID"
+      ],
+      "message_key": "errors.source.replay.retention_support_row_invalid.message",
+      "message_template": "Retention support row invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "runtime.candidate_evidence",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.retention_support_row_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Retention support row invalid"
+    },
+    {
+      "code": "FACTORY.EXECUTION.EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED"
+      ],
+      "message_key": "errors.factory.execution.executable_profile_transition_unsupported.message",
+      "message_template": "Factory executable profile transition unsupported",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "runtime.release_adoption",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.execution.executable_profile_transition_unsupported.recovery",
+      "self_heal_owner": null,
+      "title": "Factory executable profile transition unsupported"
+    },
+    {
+      "code": "FACTORY.EXECUTION.EXPECTED_A_SOURCEADAPTERREGISTRY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "Expected a SourceAdapterRegistry"
+      ],
+      "message_key": "errors.factory.execution.expected_a_sourceadapterregistry.message",
+      "message_template": "Expected a sourceadapterregistry",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "runtime.source_execution",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.execution.expected_a_sourceadapterregistry.recovery",
+      "self_heal_owner": null,
+      "title": "Expected a sourceadapterregistry"
+    },
+    {
+      "code": "FACTORY.EXECUTION.EXPECTED_AN_ANSWERMODALITYREGISTRY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "Expected an AnswerModalityRegistry"
+      ],
+      "message_key": "errors.factory.execution.expected_an_answermodalityregistry.message",
+      "message_template": "Expected an answermodalityregistry",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "runtime.source_execution",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.execution.expected_an_answermodalityregistry.recovery",
+      "self_heal_owner": null,
+      "title": "Expected an answermodalityregistry"
+    },
+    {
+      "code": "FACTORY.EXECUTION.EXPECTED_AN_EXECUTABLEFACTORYRELEASE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "Expected an ExecutableFactoryRelease"
+      ],
+      "message_key": "errors.factory.execution.expected_an_executablefactoryrelease.message",
+      "message_template": "Expected an executablefactoryrelease",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "runtime.source_execution",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.execution.expected_an_executablefactoryrelease.recovery",
+      "self_heal_owner": null,
+      "title": "Expected an executablefactoryrelease"
+    },
+    {
+      "code": "FACTORY.EXECUTION.EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY"
+      ],
+      "message_key": "errors.factory.execution.executable_generation_unknown_capability.message",
+      "message_template": "Factory executable generation unknown capability",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "runtime.source_execution",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.execution.executable_generation_unknown_capability.recovery",
+      "self_heal_owner": null,
+      "title": "Factory executable generation unknown capability"
+    },
+    {
+      "code": "SOURCE.REPLAY.PRESERVATION_OPERAND_KIND_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_PRESERVATION_OPERAND_KIND_INVALID"
+      ],
+      "message_key": "errors.source.replay.preservation_operand_kind_invalid.message",
+      "message_template": "Fragile preservation operand kind invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "source_adapters.school",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.preservation_operand_kind_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile preservation operand kind invalid"
+    },
+    {
+      "code": "SOURCE.REPLAY.PRESERVATION_OPERAND_PATTERN_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID"
+      ],
+      "message_key": "errors.source.replay.preservation_operand_pattern_invalid.message",
+      "message_template": "Fragile preservation operand pattern invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "source_adapters.school",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.preservation_operand_pattern_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile preservation operand pattern invalid"
+    },
+    {
+      "code": "SOURCE.REPLAY.PRESERVATION_SOURCE_GOLD_DRIFT",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT"
+      ],
+      "message_key": "errors.source.replay.preservation_source_gold_drift.message",
+      "message_template": "Fragile preservation source gold drift",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "source_adapters.school",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.preservation_source_gold_drift.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile preservation source gold drift"
+    },
+    {
+      "code": "SOURCE.REPLAY.PRESERVATION_SOURCE_POLICY_UNKNOWN",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_PRESERVATION_SOURCE_POLICY_UNKNOWN"
+      ],
+      "message_key": "errors.source.replay.preservation_source_policy_unknown.message",
+      "message_template": "Fragile preservation source policy unknown",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "source_adapters.school",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.preservation_source_policy_unknown.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile preservation source policy unknown"
+    },
+    {
+      "code": "SOURCE.REPLAY.PRESERVATION_STRUCTURAL_SIGNATURE_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID"
+      ],
+      "message_key": "errors.source.replay.preservation_structural_signature_invalid.message",
+      "message_template": "Fragile preservation structural signature invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "source_adapters.school",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.preservation_structural_signature_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile preservation structural signature invalid"
+    },
+    {
+      "code": "SOURCE.REPLAY.PRESERVATION_U7C_PATTERN_CONTRACT_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_PRESERVATION_U7C_PATTERN_CONTRACT_INVALID"
+      ],
+      "message_key": "errors.source.replay.preservation_u7c_pattern_contract_invalid.message",
+      "message_template": "Fragile preservation u7c pattern contract invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "source_adapters.school",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.preservation_u7c_pattern_contract_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile preservation u7c pattern contract invalid"
+    },
+    {
+      "code": "SOURCE.REPLAY.PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID"
+      ],
+      "message_key": "errors.source.replay.preservation_u7c_structural_request_invalid.message",
+      "message_template": "Fragile preservation u7c structural request invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "source_adapters.school",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.preservation_u7c_structural_request_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile preservation u7c structural request invalid"
+    },
+    {
+      "code": "SOURCE.REPLAY.REPLAY_ORACLE_OR_COMPOSITION_DRIFT",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT"
+      ],
+      "message_key": "errors.source.replay.replay_oracle_or_composition_drift.message",
+      "message_template": "Fragile replay oracle or composition drift",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "source_adapters.school",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.replay_oracle_or_composition_drift.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile replay oracle or composition drift"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.COMPOSITE_ORACLE_COMPOSITION_WIDTH",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH"
+      ],
+      "message_key": "errors.source.boolean.composite_oracle_composition_width.message",
+      "message_template": "Composite oracle composition width",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "boolean_composite_oracle",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.composite_oracle_composition_width.recovery",
+      "self_heal_owner": null,
+      "title": "Composite oracle composition width"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY"
+      ],
+      "message_key": "errors.source.boolean.composite_oracle_unknown_task_or_capability.message",
+      "message_template": "Composite oracle unknown task or capability",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "boolean_composite_oracle",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.composite_oracle_unknown_task_or_capability.recovery",
+      "self_heal_owner": null,
+      "title": "Composite oracle unknown task or capability"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.IDBOOLOPS_OBSERVATION_SHAPE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE"
+      ],
+      "message_key": "errors.source.boolean.idboolops_observation_shape.message",
+      "message_template": "Idboolops observation shape",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "boolean_identification",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.idboolops_observation_shape.recovery",
+      "self_heal_owner": null,
+      "title": "Idboolops observation shape"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.IDBOOLOPS_RECORD_SHAPE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_IDBOOLOPS_RECORD_SHAPE"
+      ],
+      "message_key": "errors.source.boolean.idboolops_record_shape.message",
+      "message_template": "Idboolops record shape",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "boolean_identification",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.idboolops_record_shape.recovery",
+      "self_heal_owner": null,
+      "title": "Idboolops record shape"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID"
+      ],
+      "message_key": "errors.source.boolean.idboolops_oracle_direct_operand_invalid.message",
+      "message_template": "Idboolops oracle direct operand invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "boolean_identification_oracle",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.idboolops_oracle_direct_operand_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Idboolops oracle direct operand invalid"
+    },
+    {
+      "code": "SCHOOL.RESUME.BOOLEAN_COMPOSITE_REQUIRES_RESUME",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "BOOLEAN_COMPOSITE_REQUIRES_RESUME"
+      ],
+      "message_key": "errors.school.resume.boolean_composite_requires_resume.message",
+      "message_template": "Boolean composite requires resume",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "compatibility.cli_preflight",
+      "preserve_state": true,
+      "recovery_key": "errors.school.resume.boolean_composite_requires_resume.recovery",
+      "self_heal_owner": null,
+      "title": "Boolean composite requires resume"
+    },
+    {
+      "code": "SCHOOL.RESUME.BOOLEAN_IDBOOLOPS_REQUIRES_RESUME",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "BOOLEAN_IDBOOLOPS_REQUIRES_RESUME"
+      ],
+      "message_key": "errors.school.resume.boolean_idboolops_requires_resume.message",
+      "message_template": "Boolean idboolops requires resume",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "compatibility.cli_preflight",
+      "preserve_state": true,
+      "recovery_key": "errors.school.resume.boolean_idboolops_requires_resume.recovery",
+      "self_heal_owner": null,
+      "title": "Boolean idboolops requires resume"
+    },
+    {
+      "code": "SCHOOL.RESUME.BOOLEAN_REVISION_SOURCE_STUDENT_MISSING",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "BOOLEAN_REVISION_SOURCE_STUDENT_MISSING"
+      ],
+      "message_key": "errors.school.resume.boolean_revision_source_student_missing.message",
+      "message_template": "Boolean revision source student missing",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "compatibility.cli_preflight",
+      "preserve_state": true,
+      "recovery_key": "errors.school.resume.boolean_revision_source_student_missing.recovery",
+      "self_heal_owner": null,
+      "title": "Boolean revision source student missing"
+    },
+    {
+      "code": "FACTORY.ADMISSION.COMPLETE_PRIOR_EXAM_REQUIRED",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_ADMISSION_REQUIRES_COMPLETE_PERFECT_CUMULATIVE_EXAM"
+      ],
+      "message_key": "errors.factory.admission.complete_prior_exam_required.message",
+      "message_template": "Grade admission requires complete perfect cumulative exam",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "compatibility.grade_transition",
+      "preserve_state": true,
+      "recovery_key": "errors.factory.admission.complete_prior_exam_required.recovery",
+      "self_heal_owner": null,
+      "title": "Grade admission requires complete perfect cumulative exam"
+    },
+    {
+      "code": "SCHOOL.SCHEDULE.PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY"
+      ],
+      "message_key": "errors.school.schedule.prior_grade_expansion_changed_existing_capability.message",
+      "message_template": "Factory schedule prior grade expansion changed existing capability",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.scheduler",
+      "preserve_state": true,
+      "recovery_key": "errors.school.schedule.prior_grade_expansion_changed_existing_capability.recovery",
+      "self_heal_owner": null,
+      "title": "Factory schedule prior grade expansion changed existing capability"
+    },
+    {
+      "code": "SCHOOL.SCHEDULE.PRIOR_GRADE_EXPANSION_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_INVALID"
+      ],
+      "message_key": "errors.school.schedule.prior_grade_expansion_invalid.message",
+      "message_template": "Factory schedule prior grade expansion invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.scheduler",
+      "preserve_state": true,
+      "recovery_key": "errors.school.schedule.prior_grade_expansion_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Factory schedule prior grade expansion invalid"
+    },
+    {
+      "code": "SCHOOL.SCHEDULE.PRIOR_GRADE_EXPANSION_NOT_ADDITIVE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_NOT_ADDITIVE"
+      ],
+      "message_key": "errors.school.schedule.prior_grade_expansion_not_additive.message",
+      "message_template": "Factory schedule prior grade expansion not additive",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.scheduler",
+      "preserve_state": true,
+      "recovery_key": "errors.school.schedule.prior_grade_expansion_not_additive.recovery",
+      "self_heal_owner": null,
+      "title": "Factory schedule prior grade expansion not additive"
+    },
+    {
+      "code": "SCHOOL.SCHEDULE.PROGRAM_REQUIRED",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_SCHEDULE_PROGRAM_REQUIRED"
+      ],
+      "message_key": "errors.school.schedule.program_required.message",
+      "message_template": "Factory schedule program required",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.scheduler",
+      "preserve_state": true,
+      "recovery_key": "errors.school.schedule.program_required.recovery",
+      "self_heal_owner": null,
+      "title": "Factory schedule program required"
+    },
+    {
+      "code": "SCHOOL.SCHEDULE.INVALID_DEBT_CADENCE_POLICY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_DEBT_CADENCE_POLICY"
+      ],
+      "message_key": "errors.school.schedule.invalid_debt_cadence_policy.message",
+      "message_template": "Invalid debt cadence policy",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.scheduler",
+      "preserve_state": true,
+      "recovery_key": "errors.school.schedule.invalid_debt_cadence_policy.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid debt cadence policy"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.ORACLE_ASSIGNMENTS_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_ORACLE_ASSIGNMENTS_INVALID"
+      ],
+      "message_key": "errors.source.boolean.oracle_assignments_invalid.message",
+      "message_template": "Oracle assignments invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "grade_b_oracle",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.oracle_assignments_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Oracle assignments invalid"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.ORACLE_CONNECTIVE_SHAPE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_ORACLE_CONNECTIVE_SHAPE"
+      ],
+      "message_key": "errors.source.boolean.oracle_connective_shape.message",
+      "message_template": "Oracle connective shape",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "grade_b_oracle",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.oracle_connective_shape.recovery",
+      "self_heal_owner": null,
+      "title": "Oracle connective shape"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.ORACLE_DIRECT_EXPRESSION_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID"
+      ],
+      "message_key": "errors.source.boolean.oracle_direct_expression_invalid.message",
+      "message_template": "Oracle direct expression invalid",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "grade_b_oracle",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.oracle_direct_expression_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Oracle direct expression invalid"
+    },
+    {
+      "code": "SOURCE.BOOLEAN.ORACLE_UNKNOWN_TASK_OR_CAPABILITY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY"
+      ],
+      "message_key": "errors.source.boolean.oracle_unknown_task_or_capability.message",
+      "message_template": "Oracle unknown task or capability",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "grade_b_oracle",
+      "preserve_state": true,
+      "recovery_key": "errors.source.boolean.oracle_unknown_task_or_capability.recovery",
+      "self_heal_owner": null,
+      "title": "Oracle unknown task or capability"
+    },
+    {
+      "code": "SOURCE.REPLAY.PRESERVATION_EXAM_ROW_LEAK",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_PRESERVATION_EXAM_ROW_LEAK"
+      ],
+      "message_key": "errors.source.replay.preservation_exam_row_leak.message",
+      "message_template": "Fragile preservation exam row leak",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "learning.fragile_replay",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.preservation_exam_row_leak.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile preservation exam row leak"
+    },
+    {
+      "code": "SOURCE.REPLAY.PRESERVATION_MIXED_REPRESENTATION",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_PRESERVATION_MIXED_REPRESENTATION"
+      ],
+      "message_key": "errors.source.replay.preservation_mixed_representation.message",
+      "message_template": "Fragile preservation mixed representation",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "learning.fragile_replay",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.preservation_mixed_representation.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile preservation mixed representation"
+    },
+    {
+      "code": "SOURCE.REPLAY.REPLAY_U7C_PATTERN_DRIFT",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FRAGILE_REPLAY_U7C_PATTERN_DRIFT"
+      ],
+      "message_key": "errors.source.replay.replay_u7c_pattern_drift.message",
+      "message_template": "Fragile replay u7c pattern drift",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "learning.fragile_replay",
+      "preserve_state": true,
+      "recovery_key": "errors.source.replay.replay_u7c_pattern_drift.recovery",
+      "self_heal_owner": null,
+      "title": "Fragile replay u7c pattern drift"
+    },
     {
       "code": "SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE",
       "disposition": "READ_ONLY_HISTORICAL_EVIDENCE",

@@ -1,6 +1,10 @@
 """Versioned inverse Boolean-operator identification capability for Grade B."""
 from __future__ import annotations
 
+from .curriculum import BOOLEAN_SIGNATURE_OPERAND_COUNT
+
+from bilqis_mlx.errors import ErrorBus, SOURCE
+
 from collections import Counter
 from dataclasses import replace
 import hashlib
@@ -106,7 +110,7 @@ def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
     _require_historical_graph(legacy_root, graph)
     if (record.get("task") != TASK or "world" in record or
             set(record) != {"task", "observations", "options"}):
-        raise ValueError("GRADE_B_IDBOOLOPS_RECORD_SHAPE")
+        ErrorBus.raise_legacy(SOURCE.BOOLEAN.IDBOOLOPS_RECORD_SHAPE)
     names = graph["tokens"]
     premise = names.index("micro.proof.premise")
     conclusion = names.index("micro.proof.conclusion")
@@ -120,10 +124,10 @@ def encode_record(record: dict, legacy_root: Path, graph: dict) -> list[int]:
         raise ValueError("GRADE_B_IDBOOLOPS_OBSERVATIONS_MISSING")
     for observation in observations:
         operands = observation.get("operands")
-        if (not isinstance(operands, list) or len(operands) != 2 or
+        if (not isinstance(operands, list) or len(operands) != BOOLEAN_SIGNATURE_OPERAND_COUNT or
                 any(not isinstance(item, dict) or item.get("kind") != "literal" or
                     type(item.get("value")) is not bool for item in operands)):
-            raise ValueError("GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE")
+            ErrorBus.raise_legacy(SOURCE.BOOLEAN.IDBOOLOPS_OBSERVATION_SHAPE)
         for operand in operands:
             tokens.extend((premise, true_id if operand["value"] else false_id))
         tokens.extend((conclusion, true_id if observation["result"] else false_id,

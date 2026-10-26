@@ -1,6 +1,8 @@
 """Fresh and fixed source evidence for candidate retention."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, SOURCE
+
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.fixed_frontier as _bilqis_mlx_fixed_frontier
 import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
@@ -32,11 +34,11 @@ def _select_fresh_retention_support_rows(
         rows, *, rotation: int) -> tuple[dict, ...]:
     """Choose one complete fresh source family for preservation rehearsal."""
     if type(rotation) is not int or rotation < 0:
-        raise ValueError("RETENTION_SUPPORT_ROTATION_INVALID")
+        raise ErrorBus.legacy_error(SOURCE.REPLAY.RETENTION_SUPPORT_ROTATION_INVALID)
     groups = {}
     for row in rows:
         if not isinstance(row, dict) or not isinstance(row.get("id"), str):
-            raise ValueError("RETENTION_SUPPORT_ROW_INVALID")
+            raise ErrorBus.legacy_error(SOURCE.REPLAY.RETENTION_SUPPORT_ROW_INVALID)
         groups.setdefault(row.get("source_id", row["id"]), []).append(row)
     if not groups:
         return ()

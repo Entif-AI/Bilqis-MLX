@@ -20,6 +20,20 @@ class ErrorBus:
         ErrorBus.Raise(spec, **context)
 
     @staticmethod
+    def legacy_error(spec: ErrorSpec, **context: object) -> BilqisError:
+        """Construct a typed failure with its sole recorded legacy wire alias."""
+        if len(spec.legacy_codes) != 1:
+            raise ValueError
+        error = BilqisError(spec, context)
+        error.args = (spec.legacy_codes[0],)
+        return error
+
+    @staticmethod
+    def raise_legacy(spec: ErrorSpec, **context: object) -> NoReturn:
+        """Preserve one declared wire alias while reporting the typed invariant."""
+        raise ErrorBus.legacy_error(spec, **context)
+
+    @staticmethod
     def report(error: BaseException | str) -> ErrorReport:
         if isinstance(error, BilqisError):
             spec = error.spec

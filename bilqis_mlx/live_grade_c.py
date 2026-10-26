@@ -5,6 +5,8 @@ Actual C admission is a human-operated successor transition after A+B mastery.
 """
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, SOURCE
+
 from dataclasses import replace
 import json
 from pathlib import Path
@@ -46,10 +48,10 @@ def constructor_digest():
                 evidence.get("semantic_release_sha256") != digest(CONTRACT) or
                 evidence.get("lesson_plan_sha256") != digest([p.__dict__ for p in PLANS]) or
                 not evidence.get("source_files_sha256")):
-            raise ValueError("GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED")
+            raise ErrorBus.legacy_error(SOURCE.BOOLEAN.NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED)
         return digest(evidence["source_files_sha256"])
     except (OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
-        raise ValueError("GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED") from exc
+        raise ErrorBus.legacy_error(SOURCE.BOOLEAN.NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED) from exc
 
 
 def provider_implementation_digest():
@@ -89,7 +91,7 @@ def expanded_graph(parent: dict):
     if (evidence.get("release") != RELEASE or evidence.get("admission_receipts") != sorted(expected) or
             evidence.get("native_rows_sha256") != digest(evidence.get("rows")) or
             evidence.get("spreadsheet_id") != "1xtOjO0jGCxjU2bgcg0TKpVruJ4Z5O3vW9ixu6oMQ-so"):
-        raise ValueError("GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED")
+        raise ErrorBus.legacy_error(SOURCE.BOOLEAN.NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED)
     graph, _ = append_catalog(parent, admissions(),
         canonical_registry_rows=evidence["rows"], approved_ledger_version=RELEASE,
         approved_admissions=tuple(sorted(expected)))

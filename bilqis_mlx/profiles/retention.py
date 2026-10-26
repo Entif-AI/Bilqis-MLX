@@ -1,4 +1,5 @@
 """Declarative retention policy layered over admitted execution profiles."""
+from bilqis_mlx.errors import ErrorBus, SOURCE
 from dataclasses import dataclass
 
 
@@ -15,7 +16,7 @@ class FragilePreservationPolicy:
                 len(set(self.capabilities)) != len(self.capabilities) or
                 type(self.per_capability_target) is not int or self.per_capability_target < 1 or
                 not isinstance(self.source_selector, str) or not self.source_selector):
-            raise ValueError("FRAGILE_PRESERVATION_POLICY_INVALID")
+            raise ErrorBus.legacy_error(SOURCE.REPLAY.PRESERVATION_POLICY_INVALID)
 
 
 _FRAGILE_POLICY = FragilePreservationPolicy(

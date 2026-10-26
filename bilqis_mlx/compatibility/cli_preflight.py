@@ -5,6 +5,8 @@ old saved receipts legible while current CLI status/preflight uses v2 artifacts.
 """
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
 import json
 
 from .live_releases import (
@@ -153,10 +155,10 @@ def legacy_boolean_revision_preflight(
         return {}
     if not resume:
         if boolean_composite:
-            raise ValueError("BOOLEAN_COMPOSITE_REQUIRES_RESUME")
-        raise ValueError("BOOLEAN_IDBOOLOPS_REQUIRES_RESUME")
+            ErrorBus.raise_legacy(SCHOOL.RESUME.BOOLEAN_COMPOSITE_REQUIRES_RESUME)
+        ErrorBus.raise_legacy(SCHOOL.RESUME.BOOLEAN_IDBOOLOPS_REQUIRES_RESUME)
     if not isinstance(checkpoint_sha256, str) or not checkpoint_sha256:
-        raise ValueError("BOOLEAN_REVISION_SOURCE_STUDENT_MISSING")
+        ErrorBus.raise_legacy(SCHOOL.RESUME.BOOLEAN_REVISION_SOURCE_STUDENT_MISSING)
     return {
         "legacy_boolean_revision_flags": {
             "composite_requested": boolean_composite,

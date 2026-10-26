@@ -7,7 +7,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .scheduler import SchoolState, Score
+    from .state import SchoolState, Score
 
 class PromotionError(str, Enum):
     GRADE_MEAN_REQUIRES_COMPLETE_SEMANTIC_SET = "GRADE_MEAN_REQUIRES_COMPLETE_SEMANTIC_SET"

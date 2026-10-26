@@ -26,6 +26,17 @@ class ErrorControlPlaneTests(unittest.TestCase):
         self.assertTrue(report.preserve_state)
         self.assertIn("immutable", report.next_action.lower())
 
+    def test_typed_error_can_preserve_one_declared_legacy_wire_code(self):
+        spec = SCHOOL.STATE.COURSE_DIGEST_MISMATCH
+        with self.assertRaises(BilqisError) as caught:
+            ErrorBus.raise_legacy(spec, saved_course_digest="old", runtime_course_digest="new")
+        self.assertEqual(str(caught.exception), spec.legacy_codes[0])
+        self.assertEqual(caught.exception.code, spec.code)
+        report = ErrorBus.report(caught.exception)
+        self.assertFalse(report.legacy_untyped)
+        self.assertEqual(report.code, spec.code)
+        self.assertTrue(report.preserve_state)
+
     def test_legacy_string_error_is_still_routed_through_one_bus(self):
         report = ErrorBus.report(
             ValueError("FACTORY_RELEASE_RUNTIME_SOURCE_ADAPTER_DRIFT"))

@@ -1,6 +1,10 @@
 """Admitted finite-world, Boolean and numeric source adapters and independent checks."""
 from __future__ import annotations
 
+from ..curriculum import BOOLEAN_SIGNATURE_OPERAND_COUNT
+
+from bilqis_mlx.errors import ErrorBus, SOURCE
+
 from dataclasses import dataclass as _dataclass
 from typing import Callable as _Callable
 from ..grade_b_oracle import _direct_truth, evaluate as grade_b_gold, operand_truth
@@ -404,41 +408,41 @@ def _preservation_pattern_counts(capability: str, rows, *, each: int) -> dict:
         try:
             return _u7c_pattern_counts(capability.removeprefix("B."), each)
         except ValueError as exc:
-            raise ValueError("FRAGILE_PRESERVATION_U7C_PATTERN_CONTRACT_INVALID") from exc
+            raise ErrorBus.legacy_error(SOURCE.REPLAY.PRESERVATION_U7C_PATTERN_CONTRACT_INVALID) from exc
     if any(_is_direct_u7c_row(row) for row in relevant):
-        raise ValueError("FRAGILE_PRESERVATION_MIXED_REPRESENTATION")
+        raise ErrorBus.legacy_error(SOURCE.REPLAY.PRESERVATION_MIXED_REPRESENTATION)
     return {pattern: 1 for pattern in TRUTH_PATTERNS}
 
 
 def _replay_operand_pattern(record: dict) -> list[bool]:
     """Recompute OR/XOR operand truth for historical worlds or direct U7C ASTs."""
     if not isinstance(record, dict):
-        raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
+        raise ErrorBus.legacy_error(SOURCE.REPLAY.REPLAY_ORACLE_OR_COMPOSITION_DRIFT)
     if record.get("task") == "evaluate":
         expression = record.get("expression")
         query = record.get("query")
         assignments = record.get("assignments")
         if (not isinstance(expression, dict) or expression != query or
                 not isinstance(assignments, dict)):
-            raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
+            raise ErrorBus.legacy_error(SOURCE.REPLAY.REPLAY_ORACLE_OR_COMPOSITION_DRIFT)
         args = expression.get("args")
-        if not isinstance(args, list) or len(args) != 2:
-            raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
+        if not isinstance(args, list) or len(args) != BOOLEAN_SIGNATURE_OPERAND_COUNT:
+            raise ErrorBus.legacy_error(SOURCE.REPLAY.REPLAY_ORACLE_OR_COMPOSITION_DRIFT)
         try:
             return [_direct_truth(arg, assignments) for arg in args]
         except ValueError as exc:
-            raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT") from exc
+            raise ErrorBus.legacy_error(SOURCE.REPLAY.REPLAY_ORACLE_OR_COMPOSITION_DRIFT) from exc
     if record.get("task") == "micro":
         world = record.get("world")
         query = record.get("query")
         args = query.get("args") if isinstance(query, dict) else None
-        if not isinstance(world, dict) or not isinstance(args, list) or len(args) != 2:
-            raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
+        if not isinstance(world, dict) or not isinstance(args, list) or len(args) != BOOLEAN_SIGNATURE_OPERAND_COUNT:
+            raise ErrorBus.legacy_error(SOURCE.REPLAY.REPLAY_ORACLE_OR_COMPOSITION_DRIFT)
         try:
             return [operand_truth(world, arg) for arg in args]
         except ValueError as exc:
-            raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT") from exc
-    raise ValueError("FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT")
+            raise ErrorBus.legacy_error(SOURCE.REPLAY.REPLAY_ORACLE_OR_COMPOSITION_DRIFT) from exc
+    raise ErrorBus.legacy_error(SOURCE.REPLAY.REPLAY_ORACLE_OR_COMPOSITION_DRIFT)
 
 
 def _operand_kind(node: dict) -> str:
@@ -450,7 +454,7 @@ def _operand_kind(node: dict) -> str:
     else:
         value = kind
     if not isinstance(value, str) or not value:
-        raise ValueError("FRAGILE_PRESERVATION_OPERAND_KIND_INVALID")
+        raise ErrorBus.legacy_error(SOURCE.REPLAY.PRESERVATION_OPERAND_KIND_INVALID)
     return value
 
 
@@ -464,12 +468,12 @@ def structural_signature(row: dict) -> tuple:
     universe = (_DIRECT_BOOLEAN_UNIVERSE if _is_direct_u7c_row(row)
                 else row.get("universe_size"))
     if (not isinstance(capability, str) or not capability or
-            not isinstance(raw, (list, tuple)) or len(raw) != 2 or
+            not isinstance(raw, (list, tuple)) or len(raw) != BOOLEAN_SIGNATURE_OPERAND_COUNT or
             any(type(value) is not bool for value in raw) or
-            not isinstance(args, list) or len(args) != 2 or
+            not isinstance(args, list) or len(args) != BOOLEAN_SIGNATURE_OPERAND_COUNT or
             (universe != _DIRECT_BOOLEAN_UNIVERSE and
              (type(universe) is not int or universe < 1))):
-        raise ValueError("FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID")
+        raise ErrorBus.legacy_error(SOURCE.REPLAY.PRESERVATION_STRUCTURAL_SIGNATURE_INVALID)
     return (capability, tuple(raw), tuple(_operand_kind(arg) for arg in args),
             universe)
 
@@ -477,19 +481,19 @@ def structural_signature(row: dict) -> tuple:
 
 def _fragile_row_pattern(row):
     raw = row.get("operand_truths")
-    if (not isinstance(raw, (list, tuple)) or len(raw) != 2 or
+    if (not isinstance(raw, (list, tuple)) or len(raw) != BOOLEAN_SIGNATURE_OPERAND_COUNT or
             any(type(value) is not bool for value in raw)):
-        raise ValueError("FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID")
+        raise ErrorBus.legacy_error(SOURCE.REPLAY.PRESERVATION_OPERAND_PATTERN_INVALID)
     pattern = tuple(raw)
     if pattern not in TRUTH_PATTERNS:
-        raise ValueError("FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT")
+        raise ErrorBus.legacy_error(SOURCE.REPLAY.PRESERVATION_SOURCE_GOLD_DRIFT)
     return pattern
 
 
 def _fragile_eligible(row):
     return (isinstance(row.get("capability"), str) and
             isinstance(row.get("operand_truths"), (list, tuple)) and
-            len(row.get("operand_truths")) == 2)
+            len(row.get("operand_truths")) == BOOLEAN_SIGNATURE_OPERAND_COUNT)
 
 
 def _fragile_verify_row(row, capability):
@@ -500,7 +504,7 @@ def _fragile_verify_row(row, capability):
 def _fragile_structural_capability(rows, limit):
     capabilities = {row.get("capability") for row in rows}
     if len(capabilities) != 1 or limit < 4 or limit % 2:
-        raise ValueError("FRAGILE_PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID")
+        raise ErrorBus.legacy_error(SOURCE.REPLAY.PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID)
     return next(iter(capabilities))
 
 
@@ -530,5 +534,5 @@ _FRAGILE_SOURCE_POLICY = _FragileSourcePolicy(
 def fragile_source_policy(selector: str):
     """Resolve the existing source selector to its immutable semantic callbacks."""
     if selector != BOOLEAN_RUNTIME_SAMPLER:
-        raise ValueError("FRAGILE_PRESERVATION_SOURCE_POLICY_UNKNOWN")
+        raise ErrorBus.legacy_error(SOURCE.REPLAY.PRESERVATION_SOURCE_POLICY_UNKNOWN)
     return _FRAGILE_SOURCE_POLICY

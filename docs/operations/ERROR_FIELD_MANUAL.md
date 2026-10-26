@@ -14,6 +14,664 @@ The runtime error catalog is the authority for new failures. Raw string exceptio
 
 ## Typed catalog
 
+### `FACTORY.EXECUTION.CURRICULUM_DEFINITION_REQUIRED`
+
+Factory curriculum definition required.
+
+Owner: `factory.curriculum_definition`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory curriculum definition required
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FACTORY_CURRICULUM_DEFINITION_REQUIRED`
+
+### `FACTORY.EXECUTION.CURRICULUM_UNKNOWN_CAPABILITY`
+
+Factory curriculum unknown capability.
+
+Owner: `factory.curriculum_definition`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory curriculum unknown capability
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FACTORY_CURRICULUM_UNKNOWN_CAPABILITY`
+
+### `SCHOOL.LEARNING.MISSING_FRESH_CURRENT_ROWS`
+
+Learning experiment missing fresh current rows.
+
+Owner: `learning.learning_experiment`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Learning experiment missing fresh current rows
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `LEARNING_EXPERIMENT_MISSING_FRESH_CURRENT_ROWS`
+
+### `SOURCE.BOOLEAN.BOOLEAN_CONTEXT_LENGTH`
+
+Grade b boolean context length.
+
+Owner: `live_grade_b`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Grade b boolean context length
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_BOOLEAN_CONTEXT_LENGTH`
+
+### `SOURCE.BOOLEAN.BOOLEAN_SOURCE_ROOT_MISMATCH`
+
+Grade b boolean source root mismatch.
+
+Owner: `live_grade_b`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Grade b boolean source root mismatch
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_BOOLEAN_SOURCE_ROOT_MISMATCH`
+
+### `SOURCE.BOOLEAN.BOOLEAN_TOKEN_ABI_DRIFT`
+
+Grade b boolean token abi drift.
+
+Owner: `live_grade_b`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Grade b boolean token abi drift
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_BOOLEAN_TOKEN_ABI_DRIFT`
+
+### `SOURCE.BOOLEAN.UNKNOWN_OPERATOR`
+
+Grade b unknown operator.
+
+Owner: `live_grade_b`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Grade b unknown operator
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_UNKNOWN_OPERATOR`
+
+### `SOURCE.BOOLEAN.NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED`
+
+Grade c native registry admission not verified.
+
+Owner: `live_grade_c`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Grade c native registry admission not verified
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED`
+
+### `SOURCE.BOOLEAN.MINIMAL_IDBOOLOPS_ORACLE_DRIFT`
+
+Grade b minimal idboolops oracle drift.
+
+Owner: `minimal_grade_b`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Grade b minimal idboolops oracle drift
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_MINIMAL_IDBOOLOPS_ORACLE_DRIFT`
+
+### `SOURCE.REPLAY.PRESERVATION_POLICY_INVALID`
+
+Fragile preservation policy invalid.
+
+Owner: `profiles.retention`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile preservation policy invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_PRESERVATION_POLICY_INVALID`
+
+### `FACTORY.EXECUTION.ASSESSMENT_SOURCE_CONTEXT_REQUIRED`
+
+Factory assessment source context required.
+
+Owner: `runtime.assessment`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory assessment source context required
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FACTORY_ASSESSMENT_SOURCE_CONTEXT_REQUIRED`
+
+### `SOURCE.REPLAY.RETENTION_SUPPORT_ROTATION_INVALID`
+
+Retention support rotation invalid.
+
+Owner: `runtime.candidate_evidence`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Retention support rotation invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `RETENTION_SUPPORT_ROTATION_INVALID`
+
+### `SOURCE.REPLAY.RETENTION_SUPPORT_ROW_INVALID`
+
+Retention support row invalid.
+
+Owner: `runtime.candidate_evidence`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Retention support row invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `RETENTION_SUPPORT_ROW_INVALID`
+
+### `FACTORY.EXECUTION.EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED`
+
+Factory executable profile transition unsupported.
+
+Owner: `runtime.release_adoption`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory executable profile transition unsupported
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED`
+
+### `FACTORY.EXECUTION.EXPECTED_A_SOURCEADAPTERREGISTRY`
+
+Expected a sourceadapterregistry.
+
+Owner: `runtime.source_execution`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Expected a sourceadapterregistry
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `Expected a SourceAdapterRegistry`
+
+### `FACTORY.EXECUTION.EXPECTED_AN_ANSWERMODALITYREGISTRY`
+
+Expected an answermodalityregistry.
+
+Owner: `runtime.source_execution`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Expected an answermodalityregistry
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `Expected an AnswerModalityRegistry`
+
+### `FACTORY.EXECUTION.EXPECTED_AN_EXECUTABLEFACTORYRELEASE`
+
+Expected an executablefactoryrelease.
+
+Owner: `runtime.source_execution`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Expected an executablefactoryrelease
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `Expected an ExecutableFactoryRelease`
+
+### `FACTORY.EXECUTION.EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY`
+
+Factory executable generation unknown capability.
+
+Owner: `runtime.source_execution`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory executable generation unknown capability
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY`
+
+### `SOURCE.REPLAY.PRESERVATION_OPERAND_KIND_INVALID`
+
+Fragile preservation operand kind invalid.
+
+Owner: `source_adapters.school`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile preservation operand kind invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_PRESERVATION_OPERAND_KIND_INVALID`
+
+### `SOURCE.REPLAY.PRESERVATION_OPERAND_PATTERN_INVALID`
+
+Fragile preservation operand pattern invalid.
+
+Owner: `source_adapters.school`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile preservation operand pattern invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID`
+
+### `SOURCE.REPLAY.PRESERVATION_SOURCE_GOLD_DRIFT`
+
+Fragile preservation source gold drift.
+
+Owner: `source_adapters.school`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile preservation source gold drift
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT`
+
+### `SOURCE.REPLAY.PRESERVATION_SOURCE_POLICY_UNKNOWN`
+
+Fragile preservation source policy unknown.
+
+Owner: `source_adapters.school`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile preservation source policy unknown
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_PRESERVATION_SOURCE_POLICY_UNKNOWN`
+
+### `SOURCE.REPLAY.PRESERVATION_STRUCTURAL_SIGNATURE_INVALID`
+
+Fragile preservation structural signature invalid.
+
+Owner: `source_adapters.school`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile preservation structural signature invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID`
+
+### `SOURCE.REPLAY.PRESERVATION_U7C_PATTERN_CONTRACT_INVALID`
+
+Fragile preservation u7c pattern contract invalid.
+
+Owner: `source_adapters.school`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile preservation u7c pattern contract invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_PRESERVATION_U7C_PATTERN_CONTRACT_INVALID`
+
+### `SOURCE.REPLAY.PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID`
+
+Fragile preservation u7c structural request invalid.
+
+Owner: `source_adapters.school`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile preservation u7c structural request invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID`
+
+### `SOURCE.REPLAY.REPLAY_ORACLE_OR_COMPOSITION_DRIFT`
+
+Fragile replay oracle or composition drift.
+
+Owner: `source_adapters.school`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile replay oracle or composition drift
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT`
+
+### `SOURCE.BOOLEAN.COMPOSITE_ORACLE_COMPOSITION_WIDTH`
+
+Composite oracle composition width.
+
+Owner: `boolean_composite_oracle`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Composite oracle composition width
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH`
+
+### `SOURCE.BOOLEAN.COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY`
+
+Composite oracle unknown task or capability.
+
+Owner: `boolean_composite_oracle`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Composite oracle unknown task or capability
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY`
+
+### `SOURCE.BOOLEAN.IDBOOLOPS_OBSERVATION_SHAPE`
+
+Idboolops observation shape.
+
+Owner: `boolean_identification`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Idboolops observation shape
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE`
+
+### `SOURCE.BOOLEAN.IDBOOLOPS_RECORD_SHAPE`
+
+Idboolops record shape.
+
+Owner: `boolean_identification`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Idboolops record shape
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_IDBOOLOPS_RECORD_SHAPE`
+
+### `SOURCE.BOOLEAN.IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID`
+
+Idboolops oracle direct operand invalid.
+
+Owner: `boolean_identification_oracle`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Idboolops oracle direct operand invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID`
+
+### `SCHOOL.RESUME.BOOLEAN_COMPOSITE_REQUIRES_RESUME`
+
+Boolean composite requires resume.
+
+Owner: `compatibility.cli_preflight`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Boolean composite requires resume
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `BOOLEAN_COMPOSITE_REQUIRES_RESUME`
+
+### `SCHOOL.RESUME.BOOLEAN_IDBOOLOPS_REQUIRES_RESUME`
+
+Boolean idboolops requires resume.
+
+Owner: `compatibility.cli_preflight`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Boolean idboolops requires resume
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `BOOLEAN_IDBOOLOPS_REQUIRES_RESUME`
+
+### `SCHOOL.RESUME.BOOLEAN_REVISION_SOURCE_STUDENT_MISSING`
+
+Boolean revision source student missing.
+
+Owner: `compatibility.cli_preflight`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Boolean revision source student missing
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `BOOLEAN_REVISION_SOURCE_STUDENT_MISSING`
+
+### `FACTORY.ADMISSION.COMPLETE_PRIOR_EXAM_REQUIRED`
+
+Grade admission requires complete perfect cumulative exam.
+
+Owner: `compatibility.grade_transition`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Grade admission requires complete perfect cumulative exam
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_ADMISSION_REQUIRES_COMPLETE_PERFECT_CUMULATIVE_EXAM`
+
+### `SCHOOL.SCHEDULE.PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY`
+
+Factory schedule prior grade expansion changed existing capability.
+
+Owner: `curriculum.scheduler`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory schedule prior grade expansion changed existing capability
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY`
+
+### `SCHOOL.SCHEDULE.PRIOR_GRADE_EXPANSION_INVALID`
+
+Factory schedule prior grade expansion invalid.
+
+Owner: `curriculum.scheduler`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory schedule prior grade expansion invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_INVALID`
+
+### `SCHOOL.SCHEDULE.PRIOR_GRADE_EXPANSION_NOT_ADDITIVE`
+
+Factory schedule prior grade expansion not additive.
+
+Owner: `curriculum.scheduler`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory schedule prior grade expansion not additive
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_NOT_ADDITIVE`
+
+### `SCHOOL.SCHEDULE.PROGRAM_REQUIRED`
+
+Factory schedule program required.
+
+Owner: `curriculum.scheduler`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Factory schedule program required
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FACTORY_SCHEDULE_PROGRAM_REQUIRED`
+
+### `SCHOOL.SCHEDULE.INVALID_DEBT_CADENCE_POLICY`
+
+Invalid debt cadence policy.
+
+Owner: `curriculum.scheduler`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid debt cadence policy
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `INVALID_DEBT_CADENCE_POLICY`
+
+### `SOURCE.BOOLEAN.ORACLE_ASSIGNMENTS_INVALID`
+
+Oracle assignments invalid.
+
+Owner: `grade_b_oracle`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Oracle assignments invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_ORACLE_ASSIGNMENTS_INVALID`
+
+### `SOURCE.BOOLEAN.ORACLE_CONNECTIVE_SHAPE`
+
+Oracle connective shape.
+
+Owner: `grade_b_oracle`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Oracle connective shape
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_ORACLE_CONNECTIVE_SHAPE`
+
+### `SOURCE.BOOLEAN.ORACLE_DIRECT_EXPRESSION_INVALID`
+
+Oracle direct expression invalid.
+
+Owner: `grade_b_oracle`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Oracle direct expression invalid
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID`
+
+### `SOURCE.BOOLEAN.ORACLE_UNKNOWN_TASK_OR_CAPABILITY`
+
+Oracle unknown task or capability.
+
+Owner: `grade_b_oracle`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Oracle unknown task or capability
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY`
+
+### `SOURCE.REPLAY.PRESERVATION_EXAM_ROW_LEAK`
+
+Fragile preservation exam row leak.
+
+Owner: `learning.fragile_replay`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile preservation exam row leak
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_PRESERVATION_EXAM_ROW_LEAK`
+
+### `SOURCE.REPLAY.PRESERVATION_MIXED_REPRESENTATION`
+
+Fragile preservation mixed representation.
+
+Owner: `learning.fragile_replay`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile preservation mixed representation
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_PRESERVATION_MIXED_REPRESENTATION`
+
+### `SOURCE.REPLAY.REPLAY_U7C_PATTERN_DRIFT`
+
+Fragile replay u7c pattern drift.
+
+Owner: `learning.fragile_replay`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Fragile replay u7c pattern drift
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `FRAGILE_REPLAY_U7C_PATTERN_DRIFT`
+
 ### `SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE`
 
 Historical evidence cannot resume under Factory v2.
@@ -216,7 +874,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2034** raw raises across **172** files. The baseline gate permits only reduction.
+Current production scan: **1935** raw raises across **167** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -235,17 +893,8 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `ARTIFACT_DRIFT` | 1 | `bilqis_mlx/verification/review_evidence.py` |
 | `ARTIFACT_INVALID` | 1 | `bilqis_mlx/verification/review_evidence.py` |
 | `ARTIFACT_MISSING` | 1 | `bilqis_mlx/verification/review_evidence.py` |
-| `ASSESSMENT_HAS_NO_REPRESENTED_GRADE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `ASSESSMENT_INVALID_SCORE_TYPE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `ASSESSMENT_NOT_COURSE_SEALED_RUBRIC` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `ASSESSMENT_NOT_GRADE_SEALED_RUBRIC` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `ASSESSMENT_NOT_SCHEDULED_AT_DURABLE_BOUNDARY` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `ASSESSMENT_RUBRIC_CHANGED_MID_COURSE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `ASSESSMENT_RUBRIC_IDENTITY_MISSING` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `AUTONOMOUS_CURRICULUM_INCOMPATIBLE_WITH_FLASH_MODE` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
 | `AUTONOMOUS_CURRICULUM_REQUIRES_RETENTION` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
 | `AUTONOMY_ACTION_DEFERRAL_INVALID` | 1 | `bilqis_mlx/factory/autonomy.py` |
@@ -403,9 +1052,8 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `BOOLEAN_ASSOCIATION_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/boolean_association.py` |
 | `BOOLEAN_ASSOCIATION_UNKNOWN_OPERATOR` | 1 | `bilqis_mlx/boolean_association.py` |
 | `BOOLEAN_ASSOCIATION_VARIATION_EXHAUSTED` | 1 | `bilqis_mlx/boolean_association.py` |
-| `BOOLEAN_COMPOSITE_REQUIRES_RESUME` | 2 | `bilqis_mlx/compatibility/cli_preflight.py`, `bilqis_mlx/runtime/operating_loop.py` |
-| `BOOLEAN_IDBOOLOPS_REQUIRES_RESUME` | 2 | `bilqis_mlx/compatibility/cli_preflight.py`, `bilqis_mlx/runtime/operating_loop.py` |
-| `BOOLEAN_REVISION_SOURCE_STUDENT_MISSING` | 1 | `bilqis_mlx/compatibility/cli_preflight.py` |
+| `BOOLEAN_COMPOSITE_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
+| `BOOLEAN_IDBOOLOPS_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
 | `BRIDGE_LEGACY_ALIAS_INVALID` | 1 | `bilqis_mlx/ithkuil_alignment.py` |
 | `CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `CANDIDATE_FRONTIER_BUILDER_STALE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
@@ -454,7 +1102,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `CAPABILITY_FRONTIER_WHOLE_STUDENT_REQUIRED` | 1 | `bilqis_mlx/learning/capability_frontier.py` |
 | `CAPABILITY_PREREQUISITE_NOT_MASTERED_IN_EARLIER_GRADE` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `CAPABILITY_ROOT_OR_PROVENANCE_MISSING` | 1 | `bilqis_mlx/curriculum/__init__.py` |
-| `CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `CHAMPIONSHIP_ACTIVE_ROLE_CAPABILITY_UNKNOWN` | 1 | `bilqis_mlx/learning/epoch_championships.py` |
 | `CHAMPIONSHIP_BATTERY_BATCH_DUPLICATE_QUESTION` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `CHAMPIONSHIP_BATTERY_CHECKPOINT_INCOMPARABLE` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
@@ -821,9 +1468,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `EXPERIMENT_RUN_SYMLINK` | 10 | `bilqis_mlx/runtime/experiment_runs.py` |
 | `EXPERIMENT_RUN_UNREGISTERED_PATH` | 3 | `bilqis_mlx/runtime/experiment_runs.py` |
 | `EXPERIMENT_RUN_WRONG_ISSUE` | 1 | `bilqis_mlx/runtime/experiment_runs.py` |
-| `Expected a SourceAdapterRegistry` | 1 | `bilqis_mlx/runtime/source_execution.py` |
-| `Expected an AnswerModalityRegistry` | 1 | `bilqis_mlx/runtime/source_execution.py` |
-| `Expected an ExecutableFactoryRelease` | 1 | `bilqis_mlx/runtime/source_execution.py` |
 | `FACTORY_ADMISSION_BASELINE_DRIFT` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `FACTORY_ADMISSION_COURSE_MISMATCH` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `FACTORY_ADMISSION_OPTIMIZER_STEP_INVALID` | 1 | `bilqis_mlx/factory/model.py` |
@@ -844,7 +1488,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `FACTORY_ASSESSMENT_SCOPE_DUPLICATE_CAPABILITY` | 1 | `bilqis_mlx/factory/assessment.py` |
 | `FACTORY_ASSESSMENT_SCOPE_EMPTY` | 2 | `bilqis_mlx/factory/assessment.py`, `bilqis_mlx/live_curriculum.py` |
 | `FACTORY_ASSESSMENT_SCOPE_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/assessment.py` |
-| `FACTORY_ASSESSMENT_SOURCE_CONTEXT_REQUIRED` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/school.py` |
@@ -868,14 +1511,12 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `FACTORY_CURRICULUM_CAPABILITY_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_COMPOSITION_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_DEFINITION_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
-| `FACTORY_CURRICULUM_DEFINITION_REQUIRED` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_DUPLICATE_ROOT` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_GRADE_DIFFICULTY_DRIFT` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_GRADE_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_GRADE_INVENTORY_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_PREREQUISITE_NOT_EARLIER` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_STAGES_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
-| `FACTORY_CURRICULUM_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_UNTAUGHT_EXAM_ROOT` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_DUPLICATE_ANSWER_MODALITY` | 1 | `bilqis_mlx/factory/answers.py` |
 | `FACTORY_DUPLICATE_GENERATOR_ADAPTER` | 1 | `bilqis_mlx/factory/adapters.py` |
@@ -913,9 +1554,8 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `FACTORY_EXECUTABLE_GENERALIZATION_BURN_LEDGER_INVALID` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `FACTORY_EXECUTABLE_GENERATION_REGISTRY_REQUIRED` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_EXECUTABLE_GENERATION_RELEASE_REQUIRED` | 1 | `bilqis_mlx/factory/generation.py` |
-| `FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY` | 2 | `bilqis_mlx/factory/generation.py`, `bilqis_mlx/runtime/source_execution.py` |
+| `FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH` | 1 | `bilqis_mlx/runtime/release_adoption.py` |
-| `FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED` | 3 | `bilqis_mlx/runtime/release_adoption.py` |
 | `FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT` | 1 | `bilqis_mlx/factory/executable_release.py` |
 | `FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID` | 1 | `bilqis_mlx/factory/executable_release.py` |
 | `FACTORY_EXECUTABLE_RELEASE_ARTIFACT_DIGEST_DRIFT` | 1 | `bilqis_mlx/runtime/admission.py` |
@@ -1075,11 +1715,7 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `FACTORY_SCHEDULE_EXECUTABLE_RELEASE_REQUIRED` | 1 | `bilqis_mlx/factory/schedule.py` |
 | `FACTORY_SCHEDULE_GRADE_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
 | `FACTORY_SCHEDULE_MANIFEST_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_INVALID` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_NOT_ADDITIVE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_PROGRAM_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_PROGRAM_REQUIRED` | 4 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_REVISION_INVALID` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_REVISION_REQUIRES_ACTIVE_GRADE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_STAGES_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
@@ -1137,20 +1773,10 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `FLASH_MODE_REQUIRES_RESUME` | 2 | `bilqis_mlx/cli.py`, `bilqis_mlx/runtime/operating_loop.py` |
 | `FLASH_SCHEDULER_EXAM_REQUIRES_CHECKPOINTED_STUDENT` | 1 | `bilqis_mlx/runtime/exam_execution.py` |
 | `FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED` | 1 | `bilqis_mlx/runtime/candidate_evidence.py` |
-| `FRAGILE_PRESERVATION_EXAM_ROW_LEAK` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_PRESERVATION_MIXED_REPRESENTATION` | 2 | `bilqis_mlx/learning/fragile_replay.py`, `bilqis_mlx/source_adapters/school.py` |
-| `FRAGILE_PRESERVATION_OPERAND_KIND_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FRAGILE_PRESERVATION_POLICY_INVALID` | 1 | `bilqis_mlx/profiles/retention.py` |
 | `FRAGILE_PRESERVATION_ROTATION_INVALID` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FRAGILE_PRESERVATION_SOURCE_POLICY_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FRAGILE_PRESERVATION_U7C_PATTERN_CONTRACT_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FRAGILE_PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FRAGILE_REPLAY_CAPABILITY_SET_INVALID` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
@@ -1158,8 +1784,7 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_INVALID_PREDICTION` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_MISSING_PAIRED_PREDICTION` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT` | 8 | `bilqis_mlx/learning/fragile_replay.py`, `bilqis_mlx/source_adapters/school.py` |
-| `FRAGILE_REPLAY_U7C_PATTERN_DRIFT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
+| `FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_UNBOUND_EXAM_COHORT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_UNSAFE_COHORT_PATH` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FULL_CONTINUATION_DISPOSABLE_RESTART_DRIFT` | 1 | `bilqis_mlx/full_student_qualification.py` |
@@ -1169,7 +1794,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `FULL_CONTINUATION_PINNED_CHECKPOINT_CHANGED` | 1 | `bilqis_mlx/full_student_qualification.py` |
 | `FULL_CONTINUATION_UNKNOWN_DEVICE` | 1 | `bilqis_mlx/full_student_qualification.py` |
 | `GRADE_ADMISSION_INVALID_CANDIDATE_PACKAGE` | 1 | `bilqis_mlx/grade_transition.py` |
-| `GRADE_ADMISSION_REQUIRES_COMPLETE_PERFECT_CUMULATIVE_EXAM` | 1 | `bilqis_mlx/compatibility/grade_transition.py` |
 | `GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS` | 2 | `bilqis_mlx/compatibility/scheduler_transitions.py`, `bilqis_mlx/curriculum/scheduler.py` |
 | `GRADE_APPEND_NOT_AT_PARTIAL_BOUNDARY` | 1 | `bilqis_mlx/compatibility/scheduler_transitions.py` |
 | `GRADE_APPEND_PRIOR_RUBRIC_NOT_VERIFIED` | 1 | `bilqis_mlx/compatibility/scheduler_transitions.py` |
@@ -1226,9 +1850,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `GRADE_A_UNKNOWN_SPLIT` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_UNTAUGHT_WORLD_SIZE` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_B_BALANCED_EVEN_SAMPLE_REQUIRED` | 1 | `bilqis_mlx/live_grade_b.py` |
-| `GRADE_B_BOOLEAN_CONTEXT_LENGTH` | 1 | `bilqis_mlx/live_grade_b.py` |
-| `GRADE_B_BOOLEAN_SOURCE_ROOT_MISMATCH` | 1 | `bilqis_mlx/live_grade_b.py` |
-| `GRADE_B_BOOLEAN_TOKEN_ABI_DRIFT` | 1 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_B_BOOLEAN_TRUTH_TABLE_SOURCE_DRIFT` | 1 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_B_COMPOSITE_FROZEN_TOKEN_PREFIX_MISMATCH` | 1 | `bilqis_mlx/boolean_composite.py` |
 | `GRADE_B_COMPOSITE_INVALID_DRAW` | 1 | `bilqis_mlx/boolean_composite.py` |
@@ -1236,13 +1857,11 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `GRADE_B_COMPOSITE_OPERATOR_DOMAIN_INVALID` | 1 | `bilqis_mlx/boolean_composite.py` |
 | `GRADE_B_COMPOSITE_OPERATOR_WIDTH` | 1 | `bilqis_mlx/boolean_composite.py` |
 | `GRADE_B_COMPOSITE_ORACLE_APPLY_SHAPE` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
-| `GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH` | 2 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_CONNECTIVE_ARITY` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_ENTITY_OUTSIDE_WORLD` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_LEAF_ARITY` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_UNATTESTED_ENTITY` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_UNKNOWN_OPERATOR` | 2 | `bilqis_mlx/boolean_composite_oracle.py` |
-| `GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY` | 2 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_UNMASTERED_COMPARISON` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_UNMASTERED_LEAF` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_UNMASTERED_RELATION` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
@@ -1258,10 +1877,8 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `GRADE_B_IDBOOLOPS_INDEPENDENT_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_INVALID_DRAW` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_OBSERVATIONS_MISSING` | 1 | `bilqis_mlx/boolean_identification.py` |
-| `GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_OPERATOR_BALANCE_DRIFT` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_OPERATOR_DOMAIN_INVALID` | 1 | `bilqis_mlx/boolean_identification.py` |
-| `GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_ENTITY_OUTSIDE_WORLD` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_NOT_UNIQUE` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_OBSERVATIONS_MISSING` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
@@ -1275,7 +1892,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `GRADE_B_IDBOOLOPS_ORACLE_UNMASTERED_COMPARISON` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_UNMASTERED_OPERAND` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_UNMASTERED_RELATION` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
-| `GRADE_B_IDBOOLOPS_RECORD_SHAPE` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_RELEASE_NOT_EXECUTABLE` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_REQUIRES_COMPOSITE_PARENT` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_SOURCE_TRUTH_DISAGREEMENT` | 1 | `bilqis_mlx/boolean_identification.py` |
@@ -1284,21 +1900,16 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `GRADE_B_MINIMAL_ADMISSION_COHORT_INCOMPLETE` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_ANSWER_HEAD_TOKEN_MISSING` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_IDBOOLOPS_NOT_UNIQUE` | 1 | `bilqis_mlx/minimal_boolean_identification_oracle.py` |
-| `GRADE_B_MINIMAL_IDBOOLOPS_ORACLE_DRIFT` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_IDBOOLOPS_UNKNOWN_TASK_OR_CAPABILITY` | 1 | `bilqis_mlx/minimal_boolean_identification_oracle.py` |
 | `GRADE_B_MINIMAL_INVALID_DRAW` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_PREDECESSOR_NOT_ADMITTED_GRADE_A` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_RELEASE_NOT_EXECUTABLE` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_OPERATOR_VARIATION_EXHAUSTED` | 1 | `bilqis_mlx/live_grade_b.py` |
-| `GRADE_B_ORACLE_ASSIGNMENTS_INVALID` | 1 | `bilqis_mlx/grade_b_oracle.py` |
-| `GRADE_B_ORACLE_CONNECTIVE_SHAPE` | 3 | `bilqis_mlx/grade_b_oracle.py` |
-| `GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID` | 2 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_ENTITY_OUTSIDE_WORLD` | 1 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_OPERAND_ARITY` | 1 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_OPERAND_SHAPE` | 1 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_UNATTESTED_ENTITY` | 1 | `bilqis_mlx/grade_b_oracle.py` |
-| `GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY` | 2 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_UNMASTERED_COMPARISON` | 1 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_UNMASTERED_OPERAND` | 1 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_UNMASTERED_RELATION` | 1 | `bilqis_mlx/grade_b_oracle.py` |
@@ -1307,12 +1918,10 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `GRADE_B_SOURCE_RELEASE_NOT_EXECUTABLE` | 1 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_B_SOURCE_TOKEN_IDENTITIES_UNAVAILABLE` | 1 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_B_THREE_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/live_grade_b.py` |
-| `GRADE_B_UNKNOWN_OPERATOR` | 3 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_CAPABILITY_COUNT_OUTSIDE_SIX_TO_NINE` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `GRADE_C_FULL_REGISTRY_REQUIRES_BILQIS_INTEGER_MAX=` | 1 | `bilqis_mlx/live_grade_c.py` |
 | `GRADE_C_HISTORICAL_PREFIX_DRIFT` | 1 | `bilqis_mlx/live_grade_c.py` |
 | `GRADE_C_INTEGER_SCOPE_INVALID` | 1 | `bilqis_mlx/live_grade_c.py` |
-| `GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED` | 3 | `bilqis_mlx/live_grade_c.py` |
 | `GRADE_C_REGISTERED_GRAPH_DRIFT` | 1 | `bilqis_mlx/live_grade_c.py` |
 | `GRADE_C_REQUIRES_UNCHANGED_A_B_RELEASE` | 1 | `bilqis_mlx/live_grade_c.py` |
 | `GRADE_MIXES_DIFFICULTY_LEVELS` | 1 | `bilqis_mlx/curriculum/__init__.py` |
@@ -1499,23 +2108,13 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `INVALID_BINARY_ANSWER_LABELS` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `INVALID_BOOLEAN_OPERATOR_ANSWER_LABELS` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `INVALID_BOUNDED_ANSWER_FAMILY` | 1 | `bilqis_mlx/curriculum/__init__.py` |
-| `INVALID_CAPABILITY_SCORE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `INVALID_CARRIED_MASTERY_DEBT` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `INVALID_DEBT_CADENCE_POLICY` | 5 | `bilqis_mlx/curriculum/scheduler.py`, `bilqis_mlx/runtime/release_adoption.py`, `bilqis_mlx/runtime/state.py` |
 | `INVALID_DISK_BUDGET` | 1 | `bilqis_mlx/runtime/disk.py` |
 | `INVALID_EXPERIMENT_DISK_BUDGET` | 1 | `bilqis_mlx/runtime/experiment_runs.py` |
 | `INVALID_EXPERIMENT_REQUIRED_BYTES` | 1 | `bilqis_mlx/runtime/experiment_runs.py` |
 | `INVALID_EXPERIMENT_RUN_NAME` | 1 | `bilqis_mlx/runtime/experiment_runs.py` |
-| `INVALID_GRADE_PROGRAM_OR_CHAMPIONS` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `INVALID_GRADE_REVALIDATION_STATE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `INVALID_INTEGER_0_3_ANSWER_LABELS` | 1 | `bilqis_mlx/curriculum/__init__.py` |
-| `INVALID_INTRODUCTION_FRONTIER_HISTORY` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `INVALID_INTRODUCTION_STAGE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `INVALID_MAIN_SWEEP_HISTORY` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `INVALID_OR_DUPLICATE_CAPABILITY_ID` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `INVALID_OR_DUPLICATE_LETTER_GRADE` | 1 | `bilqis_mlx/curriculum/__init__.py` |
-| `INVALID_PARTIAL_SCHOOL_COMPLETION` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `INVALID_SCHOOL_COUNTER` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `INVALID_TEACHER_GRADE_ROSTER` | 1 | `bilqis_mlx/learning/teacher_votes.py` |
 | `ISSUE349_EXISTING_RUN_REQUIRES_RESUME` | 1 | `bilqis_mlx/cli.py` |
 | `ISSUE349_EXPERIMENT_RUN_MUST_BE_DIRECT_CHILD` | 1 | `bilqis_mlx/cli.py` |
@@ -1535,8 +2134,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `JIT_CURRICULUM_SOURCE_DEVELOPMENT_INVALID` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
 | `JIT_CURRICULUM_STEP_INVALID` | 1 | `bilqis_mlx/factory/jit_curriculum.py` |
 | `LEARNING_EXPERIMENT_ADAMW_DRIFT` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
-| `LEARNING_EXPERIMENT_BINARY_CLASS_MISSING` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
-| `LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_CHANNEL_VERSION_DRIFT` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_DUPLICATE_ROW` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
@@ -1561,8 +2158,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `LEARNING_EXPERIMENT_INVALID_SELECTION_CREDIT` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_INVALID_SETTINGS` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_MISSING_ACTIVE_CAPABILITY` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
-| `LEARNING_EXPERIMENT_MISSING_FRESH_CURRENT_ROWS` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
-| `LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS` | 2 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_PARAMETER_IDENTITY_DRIFT` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_POLICY_OWN_ADAMW_DRIFT` | 1 | `bilqis_mlx/runtime/reconciliation.py` |
 | `LEARNING_EXPERIMENT_PROBE_SCOPE_INCOMPLETE` | 1 | `bilqis_mlx/runtime/candidate_evidence.py` |
@@ -1789,7 +2384,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `PASIGRAPHY_TOKEN_HAS_NO_IDENTITY` | 1 | `bilqis_mlx/token_atlas.py` |
 | `PASIGRAPHY_UNINTERPRETABLE_TOKEN` | 1 | `bilqis_mlx/token_atlas.py` |
 | `Pinned original token identity drift` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
-| `QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `REFERENTIAL_NOT_SUPPORTED_OR_AMBIGUOUS` | 1 | `bilqis_mlx/ni_construction.py` |
 | `REFERENTIAL_OUTSIDE_NEUTRAL_MONADIC_SUBSET` | 1 | `bilqis_mlx/ni_construction.py` |
 | `REFERENTIAL_SURFACE_REQUIRED` | 1 | `bilqis_mlx/ni_construction.py` |
@@ -1826,8 +2420,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `REGISTRY_UNRESOLVED_GRADE_REFERENCE` | 2 | `bilqis_mlx/registry_ast.py` |
 | `REGISTRY_UNRESOLVED_LESSON_REFERENCE` | 2 | `bilqis_mlx/registry_ast.py` |
 | `RESUME_EXPLICIT_BUT_NO_SAVED_NEW_SCHOOL_RUN` | 1 | `bilqis_mlx/cli.py` |
-| `RETENTION_SUPPORT_ROTATION_INVALID` | 1 | `bilqis_mlx/runtime/candidate_evidence.py` |
-| `RETENTION_SUPPORT_ROW_INVALID` | 1 | `bilqis_mlx/runtime/candidate_evidence.py` |
 | `SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
 | `SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
 | `SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
@@ -2071,8 +2663,6 @@ Current production scan: **2034** raw raises across **172** files. The baseline 
 | `VOCAB_ROOT_HAS_UNTAUGHT_PREREQUISITE_ID` | 1 | `bilqis_mlx/vocabulary_growth.py` |
 | `VOCAB_TYPED_ARITY_INVALID` | 1 | `bilqis_mlx/vocabulary_growth.py` |
 | `VOCAB_TYPED_SIGNATURE_ARITY_MISMATCH` | 1 | `bilqis_mlx/vocabulary_growth.py` |
-| `WEAKEST_THREE_INCOMPLETE_POOL` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
-| `WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `WHOLE_STUDENT_CANDIDATES_NOT_COMPARABLE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `WHOLE_STUDENT_CANDIDATE_POOL_EMPTY` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `WHOLE_STUDENT_PEAK_EMPTY_EXAM` | 1 | `bilqis_mlx/learning/whole_student_retention.py` |

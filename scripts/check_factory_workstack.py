@@ -107,29 +107,9 @@ def validate_manifest(
         if entry["track"] not in ALLOWED_TRACKS:
             raise WorkstackError(f"FACTORY_WORKSTACK_TRACK_INVALID:{spec_id}")
 
-        dependencies = entry["depends_on"]
-        if not isinstance(dependencies, list) or not all(isinstance(item, str) for item in dependencies):
-            raise WorkstackError(f"FACTORY_WORKSTACK_DEPENDENCIES_INVALID:{spec_id}")
-        if len(dependencies) != len(set(dependencies)):
-            raise WorkstackError(f"FACTORY_WORKSTACK_DUPLICATE_DEPENDENCY:{spec_id}")
-        if spec_id in dependencies:
-            raise WorkstackError(f"FACTORY_WORKSTACK_SELF_DEPENDENCY:{spec_id}")
-        graph[spec_id] = set(dependencies)
+        graph[spec_id] = _validated_dependencies(entry, spec_id)
 
-        issue_number = entry["issue_number"]
-        issue_sha256 = entry["issue_sha256"]
-        if issue_number is not None:
-            if not isinstance(issue_number, int) or isinstance(issue_number, bool) or issue_number <= 0:
-                raise WorkstackError(f"FACTORY_WORKSTACK_ISSUE_INVALID:{spec_id}")
-            if issue_number in issues:
-                raise WorkstackError(f"FACTORY_WORKSTACK_DUPLICATE_ISSUE:{issue_number}")
-            issues.add(issue_number)
-            if not isinstance(issue_sha256, str) or SHA256.fullmatch(issue_sha256) is None:
-                raise WorkstackError(f"FACTORY_WORKSTACK_ISSUE_HASH_INVALID:{spec_id}")
-        elif execution_ready:
-            raise WorkstackError(f"FACTORY_WORKSTACK_ISSUE_MISSING:{spec_id}")
-        elif issue_sha256 is not None:
-            raise WorkstackError(f"FACTORY_WORKSTACK_ISSUE_HASH_WITHOUT_ISSUE:{spec_id}")
+        _validate_issue_identity(entry, spec_id, issues, execution_ready)
 
     for spec_id, dependencies in graph.items():
         missing = sorted(dependencies - ids)
@@ -144,19 +124,7 @@ def validate_manifest(
     except CycleError as exc:
         raise WorkstackError("FACTORY_WORKSTACK_CYCLE") from exc
 
-    if root is not None:
-        root = root.resolve()
-        for entry in leaves:
-            path = root / entry["path"]
-            if not path.is_file():
-                raise WorkstackError(f"FACTORY_WORKSTACK_SPEC_FILE_MISSING:{entry['spec_id']}")
-            content = path.read_bytes()
-            actual_hash = hashlib.sha256(content).hexdigest()
-            if actual_hash != entry["spec_sha256"]:
-                raise WorkstackError(f"FACTORY_WORKSTACK_SPEC_HASH_MISMATCH:{entry['spec_id']}")
-            first_line = content.decode("utf-8").splitlines()[0]
-            if not first_line.startswith(f"# {entry['spec_id']}:"):
-                raise WorkstackError(f"FACTORY_WORKSTACK_SPEC_FILE_ID_MISMATCH:{entry['spec_id']}")
+    _validate_spec_files(root, leaves)
 
     return order
 
@@ -225,6 +193,53 @@ def main(argv: list[str] | None = None) -> int:
     print(f"FACTORY_WORKSTACK_OK leaves={len(order)}")
     print("READY=" + ",".join(ready))
     return 0
+
+
+def _validate_issue_identity(entry, spec_id, issues, execution_ready):
+    """Validate issue identity and uniqueness after each leaf shape."""
+    issue_number = entry["issue_number"]
+    issue_sha256 = entry["issue_sha256"]
+    if issue_number is not None:
+        if not isinstance(issue_number, int) or isinstance(issue_number, bool) or issue_number <= 0:
+            raise WorkstackError(f"FACTORY_WORKSTACK_ISSUE_INVALID:{spec_id}")
+        if issue_number in issues:
+            raise WorkstackError(f"FACTORY_WORKSTACK_DUPLICATE_ISSUE:{issue_number}")
+        issues.add(issue_number)
+        if not isinstance(issue_sha256, str) or SHA256.fullmatch(issue_sha256) is None:
+            raise WorkstackError(f"FACTORY_WORKSTACK_ISSUE_HASH_INVALID:{spec_id}")
+    elif execution_ready:
+        raise WorkstackError(f"FACTORY_WORKSTACK_ISSUE_MISSING:{spec_id}")
+    elif issue_sha256 is not None:
+        raise WorkstackError(f"FACTORY_WORKSTACK_ISSUE_HASH_WITHOUT_ISSUE:{spec_id}")
+
+
+def _validate_spec_files(root, leaves):
+    """Check pinned spec bytes and file identity without changing the manifest."""
+    if root is not None:
+        root = root.resolve()
+        for entry in leaves:
+            path = root / entry["path"]
+            if not path.is_file():
+                raise WorkstackError(f"FACTORY_WORKSTACK_SPEC_FILE_MISSING:{entry['spec_id']}")
+            content = path.read_bytes()
+            actual_hash = hashlib.sha256(content).hexdigest()
+            if actual_hash != entry["spec_sha256"]:
+                raise WorkstackError(f"FACTORY_WORKSTACK_SPEC_HASH_MISMATCH:{entry['spec_id']}")
+            first_line = content.decode("utf-8").splitlines()[0]
+            if not first_line.startswith(f"# {entry['spec_id']}:"):
+                raise WorkstackError(f"FACTORY_WORKSTACK_SPEC_FILE_ID_MISMATCH:{entry['spec_id']}")
+
+
+def _validated_dependencies(entry, spec_id):
+    dependencies = entry["depends_on"]
+    if not isinstance(dependencies, list) or not all(isinstance(item, str) for item in dependencies):
+        raise WorkstackError(f"FACTORY_WORKSTACK_DEPENDENCIES_INVALID:{spec_id}")
+    if len(dependencies) != len(set(dependencies)):
+        raise WorkstackError(f"FACTORY_WORKSTACK_DUPLICATE_DEPENDENCY:{spec_id}")
+    if spec_id in dependencies:
+        raise WorkstackError(f"FACTORY_WORKSTACK_SELF_DEPENDENCY:{spec_id}")
+
+    return set(dependencies)
 
 
 if __name__ == "__main__":

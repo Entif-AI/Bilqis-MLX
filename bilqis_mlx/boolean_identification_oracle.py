@@ -1,6 +1,10 @@
 """Independent inverse oracle for B.IDBOOLOPS Boolean primitive identification."""
 from __future__ import annotations
 
+from .curriculum import BOOLEAN_SIGNATURE_OPERAND_COUNT
+
+from bilqis_mlx.errors import ErrorBus, SOURCE
+
 from .curriculum import BOOLEAN_OPERATORS
 
 
@@ -40,7 +44,7 @@ def _apply(operator: str, values: tuple[bool, ...]) -> bool:
     # IDBOOLOPS normalizes every candidate to the same two-slot experimental
     # surface. Unary NOT acts on the first proposition; the second proposition
     # is controlled irrelevant context. This keeps arity from leaking identity.
-    if len(values) != 2:
+    if len(values) != BOOLEAN_SIGNATURE_OPERAND_COUNT:
         raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_PROBE_ARITY")
     if operator == "NOT":
         return not values[0]
@@ -86,8 +90,8 @@ def evaluate(record: dict, capability: str = CAPABILITY) -> str:
             values = tuple(operand["value"] for operand in observation["operands"]
                            if isinstance(operand, dict) and operand.get("kind") == "literal"
                            and type(operand.get("value")) is bool)
-            if len(values) != 2:
-                raise ValueError("GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID")
+            if len(values) != BOOLEAN_SIGNATURE_OPERAND_COUNT:
+                ErrorBus.raise_legacy(SOURCE.BOOLEAN.IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID)
         truth_patterns.add(values)
         parsed.append((values, observation["result"]))
     required = {(False, False), (False, True), (True, False), (True, True)}

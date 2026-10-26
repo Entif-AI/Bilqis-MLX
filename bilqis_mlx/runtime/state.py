@@ -1,6 +1,8 @@
 """Canonical serialization and deterministic identities for durable school state."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
 import hashlib
 import json
 import os
@@ -65,7 +67,7 @@ def _state_from_json(value: dict, course) -> SchoolState:
     policy_value = school.get("debt_cadence_policy")
     if policy_value is not None:
         if not isinstance(policy_value, dict):
-            raise ValueError("INVALID_DEBT_CADENCE_POLICY")
+            raise ErrorBus.legacy_error(SCHOOL.SCHEDULE.INVALID_DEBT_CADENCE_POLICY)
         school["debt_cadence_policy"] = DebtCadencePolicy(**policy_value)
     else:
         school["debt_cadence_policy"] = None

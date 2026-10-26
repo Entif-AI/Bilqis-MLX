@@ -456,33 +456,38 @@ class PreparedSuccessorTests(PreparedSuccessorFixture, unittest.TestCase):
                                 {str(path.relative_to(root)): path.read_bytes()
                                  for path in root.rglob("*") if path.is_file()},
                                 bytes_after_first_recovery)
-                        events = [json.loads(line) for line in (root / "events.jsonl").read_text().splitlines()]
-                        self.assertEqual(events, saved["delivery_outbox"])
-                        self.assertEqual(len(events), 1)
-                        event = events[0]
-                        self.assertEqual(event["actual_neural_updates"], 0)
-                        if growing:
-                            self.assertEqual(event["event"], "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED")
-                            self.assertEqual(event["growth"], materialized.growth)
-                            self.assertEqual(event["previous_student_sha256"], self.checkpoint.sha256)
-                            self.assertEqual(saved["last_exam"], materialized.rebaselined_exam)
-                        else:
-                            self.assertEqual(event["event"], "SCHOOL_EXECUTION_PROFILE_ADOPTED")
-                            self.assertEqual(event["transition_kind"],
-                                             "APPEND_GRADE" if appended else "REVISE_PROFILE")
-                        self.assertEqual(event["generation"], 1)
-                        self.assertEqual(event["grade"], "Y" if appended else "Z")
-                        self.assertEqual(event["factory_release_sha256"], staged.successor.release_sha256)
-                        self.assertEqual(event["optimizer_step"], materialized_student.optimizer_step)
-                        if growing:
-                            self.assertEqual(event["semantic_geometry"], "APPEND_ONLY_EXPANSION")
-                        else:
-                            self.assertEqual(event["previous_factory_release_sha256"], self.current.release_sha256)
-                            self.assertEqual(event["revised_grade"], None if appended else "Z")
-                            self.assertFalse(event["debt_admission"])
-                            self.assertEqual(event["carried_mastery_debt"], [])
-                        self.assertEqual(event["student_sha256"], materialized_student.sha256)
-                        self.optimizer.update.assert_not_called()
+                        self._assert_committed_transition(
+                            root, saved, graph, growing, appended, staged, materialized, materialized_student)
+
+    def _assert_committed_transition(self, root, saved, graph, growing, appended, staged, materialized, materialized_student):
+        import json
+        events = [json.loads(line) for line in (root / "events.jsonl").read_text().splitlines()]
+        self.assertEqual(events, saved["delivery_outbox"])
+        self.assertEqual(len(events), 1)
+        event = events[0]
+        self.assertEqual(event["actual_neural_updates"], 0)
+        if growing:
+            self.assertEqual(event["event"], "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED")
+            self.assertEqual(event["growth"], materialized.growth)
+            self.assertEqual(event["previous_student_sha256"], self.checkpoint.sha256)
+            self.assertEqual(saved["last_exam"], materialized.rebaselined_exam)
+        else:
+            self.assertEqual(event["event"], "SCHOOL_EXECUTION_PROFILE_ADOPTED")
+            self.assertEqual(event["transition_kind"],
+                             "APPEND_GRADE" if appended else "REVISE_PROFILE")
+        self.assertEqual(event["generation"], 1)
+        self.assertEqual(event["grade"], "Y" if appended else "Z")
+        self.assertEqual(event["factory_release_sha256"], staged.successor.release_sha256)
+        self.assertEqual(event["optimizer_step"], materialized_student.optimizer_step)
+        if growing:
+            self.assertEqual(event["semantic_geometry"], "APPEND_ONLY_EXPANSION")
+        else:
+            self.assertEqual(event["previous_factory_release_sha256"], self.current.release_sha256)
+            self.assertEqual(event["revised_grade"], None if appended else "Z")
+            self.assertFalse(event["debt_admission"])
+            self.assertEqual(event["carried_mastery_debt"], [])
+        self.assertEqual(event["student_sha256"], materialized_student.sha256)
+        self.optimizer.update.assert_not_called()
 
     def test_both_geometries_use_the_common_commit_tail(self):
         for growing in (False, True):

@@ -7,6 +7,8 @@ implementations can evolve through FactoryRelease without rewriting the AST.
 """
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, FACTORY
+
 from dataclasses import asdict, dataclass
 import hashlib
 import json
@@ -173,7 +175,7 @@ def instructional_constituent_roots(
         curriculum: CurriculumDefinition, capability_id: str) -> tuple[str, ...]:
     """Return own and structurally earlier instructional roots in stable order."""
     if not isinstance(curriculum, CurriculumDefinition):
-        raise TypeError("FACTORY_CURRICULUM_DEFINITION_REQUIRED")
+        raise TypeError(FACTORY.EXECUTION.CURRICULUM_DEFINITION_REQUIRED.legacy_codes[0])
     validate_curriculum_definition(curriculum, answer_kinds=tuple(dict.fromkeys(
         family.kind for grade in curriculum.grades for cap in grade.capabilities
         for family in cap.answer_families)))
@@ -189,7 +191,7 @@ def instructional_constituent_roots(
             return tuple(dict.fromkeys((
                 *earlier_roots, *capabilities[capability_id].taught_roots)))
         earlier_roots.extend(root for cap in grade.capabilities for root in cap.taught_roots)
-    raise ValueError("FACTORY_CURRICULUM_UNKNOWN_CAPABILITY")
+    raise ErrorBus.legacy_error(FACTORY.EXECUTION.CURRICULUM_UNKNOWN_CAPABILITY)
 
 
 def validate_source_bindings(

@@ -770,26 +770,8 @@ def compile_executable_factory_release(
         answer_modalities, answer_heads, source_root=source_root, graph=graph,
         verification_seed=verification_seed)
 
-    predecessor_sha = None
-    transition = None
-    if predecessor is not None:
-        if not isinstance(predecessor, ExecutableFactoryRelease):
-            raise TypeError("FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID")
-        predecessor.verify()
-        derived_lineage = PlanLineage.from_semantic_catalogs(
-            predecessor.execution_plan, plan,
-            predecessor.semantic_catalog, semantic_catalog)
-        if lineage is not None and lineage != derived_lineage:
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT")
-        lineage = derived_lineage
-        transition = diff_execution_plans(
-            predecessor.execution_plan, plan, lineage=lineage)
-        if transition.semantic_geometry == SemanticGeometryChange.INCOMPATIBLE.value:
-            raise ValueError("FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY")
-        predecessor_sha = predecessor.release_sha256
-    elif lineage is not None:
-        raise ValueError("FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR")
-
+    predecessor_sha, transition = _prepare_predecessor_transition(
+        predecessor, plan, semantic_catalog, lineage)
     release = ExecutableFactoryRelease(
         schema=SCHEMA,
         curriculum=curriculum,
@@ -887,3 +869,28 @@ def answer_heads_from_executable_release(
             "implementation_sha256": modality.implementation_sha256,
         }
     return result
+
+
+def _prepare_predecessor_transition(predecessor, plan, semantic_catalog, lineage):
+    """Verify predecessor custody and derive the exact semantic transition."""
+    predecessor_sha = None
+    transition = None
+    if predecessor is not None:
+        if not isinstance(predecessor, ExecutableFactoryRelease):
+            raise TypeError("FACTORY_EXECUTABLE_RELEASE_PREDECESSOR_INVALID")
+        predecessor.verify()
+        derived_lineage = PlanLineage.from_semantic_catalogs(
+            predecessor.execution_plan, plan,
+            predecessor.semantic_catalog, semantic_catalog)
+        if lineage is not None and lineage != derived_lineage:
+            raise ValueError("FACTORY_EXECUTABLE_RELEASE_LINEAGE_DRIFT")
+        lineage = derived_lineage
+        transition = diff_execution_plans(
+            predecessor.execution_plan, plan, lineage=lineage)
+        if transition.semantic_geometry == SemanticGeometryChange.INCOMPATIBLE.value:
+            raise ValueError("FACTORY_EXECUTABLE_RELEASE_INCOMPATIBLE_GEOMETRY")
+        predecessor_sha = predecessor.release_sha256
+    elif lineage is not None:
+        raise ValueError("FACTORY_EXECUTABLE_RELEASE_LINEAGE_WITHOUT_PREDECESSOR")
+
+    return predecessor_sha, transition

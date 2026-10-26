@@ -7,6 +7,8 @@ or permanently embargoed examination question is introduced.
 """
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, SOURCE
+
 from dataclasses import replace
 import hashlib
 import importlib
@@ -117,7 +119,7 @@ def _logic_source(legacy_root: Path):
     logic = importlib.import_module("bilqis_logic.kernel")
     expected = Path(legacy_root).resolve() / "bilqis_logic/kernel.py"
     if Path(logic.__file__).resolve() != expected:
-        raise ValueError("GRADE_B_BOOLEAN_SOURCE_ROOT_MISMATCH")
+        raise ErrorBus.legacy_error(SOURCE.BOOLEAN.BOOLEAN_SOURCE_ROOT_MISMATCH)
     return logic
 
 
@@ -126,9 +128,9 @@ def _encode_logic_record(logic, record: dict, graph: dict) -> list[int]:
     try:
         tokens = [names.index(logic.TOKENS[index]) for index in logic.encode(record)]
     except (IndexError, ValueError) as exc:
-        raise ValueError("GRADE_B_BOOLEAN_TOKEN_ABI_DRIFT") from exc
+        raise ErrorBus.legacy_error(SOURCE.BOOLEAN.BOOLEAN_TOKEN_ABI_DRIFT) from exc
     if not 1 <= len(tokens) <= 96:
-        raise ValueError("GRADE_B_BOOLEAN_CONTEXT_LENGTH")
+        raise ErrorBus.legacy_error(SOURCE.BOOLEAN.BOOLEAN_CONTEXT_LENGTH)
     return tokens
 
 
@@ -183,7 +185,7 @@ def _u7c_pattern_counts(op: str, each: int) -> dict[tuple[bool, ...], int]:
     if op == "IFF":
         return {(False, False): low, (True, True): high,
                 (False, True): low, (True, False): high}
-    raise ValueError("GRADE_B_UNKNOWN_OPERATOR")
+    raise ErrorBus.legacy_error(SOURCE.BOOLEAN.UNKNOWN_OPERATOR)
 
 
 def draw_connectives(legacy_root: Path, graph: dict, *, seed: int,
@@ -199,7 +201,7 @@ def draw_connectives(legacy_root: Path, graph: dict, *, seed: int,
     selected = (CONNECTIVES if capability is None else
                 (capability.removeprefix("B."),))
     if not selected or any(op not in CONNECTIVES for op in selected):
-        raise ValueError("GRADE_B_UNKNOWN_OPERATOR")
+        raise ErrorBus.legacy_error(SOURCE.BOOLEAN.UNKNOWN_OPERATOR)
     result = []
     for op in selected:
         rng = random.Random(_digest([GENERATOR, seed, op]))
@@ -267,4 +269,4 @@ def independent_truth(op: str, values: tuple[bool, ...]) -> bool:
     if op == "XOR": return a != b
     if op == "IMPLIES": return not a or b
     if op == "IFF": return a == b
-    raise ValueError("GRADE_B_UNKNOWN_OPERATOR")
+    raise ErrorBus.legacy_error(SOURCE.BOOLEAN.UNKNOWN_OPERATOR)

@@ -1,6 +1,8 @@
 """Historical numerical transition and admission-readiness contracts."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, FACTORY
+
 from ..grade_transition import candidate_package_digest, cumulative_exam_digest
 from dataclasses import asdict
 import hashlib
@@ -31,7 +33,7 @@ def require_complete_cumulative_prior_exam(
             any(score.correct != count or score.total != count
                 for cap, count in expected.items()
                 for score in (assessment.scores[cap],))):
-        raise ValueError("GRADE_ADMISSION_REQUIRES_COMPLETE_PERFECT_CUMULATIVE_EXAM")
+        ErrorBus.raise_legacy(FACTORY.ADMISSION.COMPLETE_PRIOR_EXAM_REQUIRED)
 
 
 def next_grade_readiness(
@@ -64,7 +66,51 @@ def next_grade_readiness(
     except (TypeError, ValueError) as exc:
         blockers.append("GRADE_ADMISSION_APPEND_BOUNDARY_BLOCKED:" + str(exc))
 
+    package_digest, expected_capabilities, package_nodes = _candidate_readiness(
+        candidate_package, source_backend, independent_backend,
+        candidate_semantic_release, semantic_release, added, successor,
+        source_operations, blockers)
+    review_report = _review_readiness(
+        planned_grade, previous, review_evidence, semantic_release,
+        candidate_package, package_digest, approved_release_receipt,
+        cumulative_exam_receipt, assessment, expected_capabilities,
+        package_nodes, state, stage_mastery_receipts, blockers)
+    review_binding = ({key: value for key, value in review_report.items()
+                       if key in {"schema", "grade", "phase", "status", "subject_sha256",
+                                  "evidence_sha256", "evidence_manifest_sha256",
+                                  "evidence_receipt_digest", "phase_evidence_sha256",
+                                  "semantic_release"}}
+                      if isinstance(review_report, dict) else None)
+    result = {
+        "status": "BLOCKED" if blockers else "READY_FOR_HUMAN_ADMISSION_REVIEW",
+        "blockers": list(dict.fromkeys(blockers)),
+        "parent_release": parent_release,
+        "planned_grade": planned_grade,
+        "planned_capabilities": ([cap.id for cap in added.capabilities] if added else []),
+        "planned_vocabulary_operations": (sorted(operation.symbol for operation in
+                                                   candidate_package.operation_bindings)
+                                         if isinstance(candidate_package, TypedCandidatePackage) else []),
+        "planned_course_digest": successor.digest() if added else None,
+        "semantic_release": semantic_release,
+        "candidate_package_sha256": package_digest,
+        "actual_neural_updates": 0,
+        "training_authorized": False,
+        "source_status": "SOURCE_ONLY_CANDIDATE",
+        "review_report": review_binding,
+    }
+    result["planned_admission_event"] = {
+        "event": "SCHOOL_NEXT_GRADE_ADMISSION_PLANNED",
+        "grade": planned_grade, "parent_release": previous.version,
+        "semantic_release": semantic_release, "review": review_binding,
+        "actual_neural_updates": 0,
+    }
+    return result
+
+
+def _candidate_readiness(candidate_package, source_backend, independent_backend, candidate_semantic_release, semantic_release, added, successor, source_operations, blockers):
+    """Check historical source candidate bindings and preserve ordered blockers."""
     package_digest = None
+    expected_capabilities, package_nodes = set(), {}
     if not isinstance(candidate_package, TypedCandidatePackage):
         blockers.append("GRADE_ADMISSION_SOURCE_CANDIDATE_MISSING")
     else:
@@ -97,6 +143,10 @@ def next_grade_readiness(
                                           for symbol, operation in package_operations.items())):
             blockers.append("GRADE_ADMISSION_SOURCE_BINDINGS_MISMATCH")
 
+    return package_digest, expected_capabilities, package_nodes
+
+
+def _review_readiness(planned_grade, previous, review_evidence, semantic_release, candidate_package, package_digest, approved_release_receipt, cumulative_exam_receipt, assessment, expected_capabilities, package_nodes, state, stage_mastery_receipts, blockers):
     review_report = None
     if isinstance(planned_grade, str) and isinstance(previous.version, str):
         try:
@@ -139,33 +189,4 @@ def next_grade_readiness(
                              state.current_student.sha256 + ":" + str(state.current_student.optimizer_step))
                     if not inventory.supports([(stage_mastery_receipts or {}).get(prerequisite)], claim):
                         blockers.append("GRADE_ADMISSION_EARLIER_STAGE_MASTERY_REQUIRED:" + prerequisite)
-    review_binding = ({key: value for key, value in review_report.items()
-                       if key in {"schema", "grade", "phase", "status", "subject_sha256",
-                                  "evidence_sha256", "evidence_manifest_sha256",
-                                  "evidence_receipt_digest", "phase_evidence_sha256",
-                                  "semantic_release"}}
-                      if isinstance(review_report, dict) else None)
-    result = {
-        "status": "BLOCKED" if blockers else "READY_FOR_HUMAN_ADMISSION_REVIEW",
-        "blockers": list(dict.fromkeys(blockers)),
-        "parent_release": parent_release,
-        "planned_grade": planned_grade,
-        "planned_capabilities": ([cap.id for cap in added.capabilities] if added else []),
-        "planned_vocabulary_operations": (sorted(operation.symbol for operation in
-                                                   candidate_package.operation_bindings)
-                                         if isinstance(candidate_package, TypedCandidatePackage) else []),
-        "planned_course_digest": successor.digest() if added else None,
-        "semantic_release": semantic_release,
-        "candidate_package_sha256": package_digest,
-        "actual_neural_updates": 0,
-        "training_authorized": False,
-        "source_status": "SOURCE_ONLY_CANDIDATE",
-        "review_report": review_binding,
-    }
-    result["planned_admission_event"] = {
-        "event": "SCHOOL_NEXT_GRADE_ADMISSION_PLANNED",
-        "grade": planned_grade, "parent_release": previous.version,
-        "semantic_release": semantic_release, "review": review_binding,
-        "actual_neural_updates": 0,
-    }
-    return result
+    return review_report

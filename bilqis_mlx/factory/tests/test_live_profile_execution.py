@@ -353,7 +353,9 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         registry = SourceAdapterRegistry(tuple(RegisteredSourceAdapter(
             SourceAdapter(f"fixture.provider.{i}", f"fixture.generator.{i}",
                           (f"fixture.oracle.{i}",), str(i + 1) * 64),
-            partial(draw, i), partial(check, i)) for i in range(2)))
+            partial(draw, i), partial(check, i),
+            semantic_footprint=lambda row: ("root." + row["capability"].split("-")[-1],))
+            for i in range(2)))
         names = tuple(f"opaque.task-{i}" for i in range(12))
         curriculum = CurriculumDefinition("fixture.twelve/v1", (GradeSpec("Z", tuple(
             CapabilitySpec(name, "fixture", (f"root.{i}",), (f"root.{i}",), (), (),
@@ -394,6 +396,41 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         self.assertTrue(all(context is historical_course for _, _, context in calls))
         expected_context = curriculum
         program = schedule_program_from_executable_release(release)
+        self._assert_receipt_schedule(release, program)
+        self._assert_projected_schedule(program, names)
+        self._assert_thin_profiles(names, curriculum, bindings, registry, graph, calls)
+
+    def _assert_thin_profiles(self, names, curriculum, bindings, registry, graph, calls):
+        from bilqis_mlx.factory.executable_release import compile_executable_factory_release
+        from bilqis_mlx.factory.execution import CurriculumProfile, GradeProfile
+        from bilqis_mlx.factory.generation import draw_executable_release_rows
+        from bilqis_mlx.factory.schedule import schedule_program_from_executable_release
+        from bilqis_mlx.factory.tests.test_executable_release import _answers
+
+        for requested in ((names[-1],), (names[9], names[0], names[5])):
+            with self.subTest(profile=requested):
+                selected = tuple(name for name in names if name in requested)
+                thin = compile_executable_factory_release(
+                    curriculum, bindings, CurriculumProfile("fixture.thin", grades=(
+                        GradeProfile("Z", enabled_capabilities=requested),)),
+                    registry, _answers(), source_root=None, graph=graph, verification_seed=11)
+                self.assertEqual(thin.curriculum, curriculum)
+                self.assertEqual(thin.source_bindings, bindings)
+                self.assertEqual(thin.execution_plan.grades[0].capabilities, selected)
+                self.assertEqual(thin.execution_plan.grades[0].cumulative_scope, selected)
+                calls.clear()
+                subset_rows = draw_executable_release_rows(None, graph, thin, registry, seed=17)
+                self.assertEqual(calls, [(i % 2, name, curriculum) for i, name in enumerate(names)
+                                         if name in selected])
+                self.assertEqual(tuple(row["capability"] for row in subset_rows),
+                                 tuple(name for name in selected for _ in range(4)))
+                thin_schedule = schedule_program_from_executable_release(thin)
+                self.assertEqual(tuple(thin_schedule.capability_map), selected)
+                self.assertFalse(thin_schedule.program_complete)
+
+
+    def _assert_receipt_schedule(self, release, program):
+        from unittest.mock import patch
         from dataclasses import replace
         from bilqis_mlx.runtime.release_adoption import _schedule_for_receipt
         supplied = replace(program, program_complete=False)
@@ -404,6 +441,9 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
             self.assertIs(_schedule_for_receipt(ROOT, receipt, supplied), program)
         read_program.assert_called_once_with(str(ROOT.resolve()), release.release_sha256,
                                              receipt["factory_release_file"])
+
+    def _assert_projected_schedule(self, program, names):
+        from dataclasses import replace
         from bilqis_mlx.curriculum.scheduler import adopt_appended_program, start_new
         from bilqis_mlx.learning.champions import Checkpoint
         checkpoint = Checkpoint("a" * 64, "bundles/disposable-append", 7, True)
@@ -442,26 +482,6 @@ class TwelveCapabilityProviderTests(unittest.TestCase):
         self.assertEqual(program.assessment_manifest_sha256, program.grades[0].assessment_sha256)
         self.assertEqual(program.exact_scope_rubric(names), program.grades[0].assessment_sha256)
         self.assertNotEqual(program.exact_scope_rubric(names[:-1]), program.grades[0].assessment_sha256)
-        for requested in ((names[-1],), (names[9], names[0], names[5])):
-            with self.subTest(profile=requested):
-                selected = tuple(name for name in names if name in requested)
-                thin = compile_executable_factory_release(
-                    curriculum, bindings, CurriculumProfile("fixture.thin", grades=(
-                        GradeProfile("Z", enabled_capabilities=requested),)),
-                    registry, _answers(), source_root=None, graph=graph, verification_seed=11)
-                self.assertEqual(thin.curriculum, curriculum)
-                self.assertEqual(thin.source_bindings, bindings)
-                self.assertEqual(thin.execution_plan.grades[0].capabilities, selected)
-                self.assertEqual(thin.execution_plan.grades[0].cumulative_scope, selected)
-                calls.clear()
-                subset_rows = draw_executable_release_rows(None, graph, thin, registry, seed=17)
-                self.assertEqual(calls, [(i % 2, name, curriculum) for i, name in enumerate(names)
-                                         if name in selected])
-                self.assertEqual(tuple(row["capability"] for row in subset_rows),
-                                 tuple(name for name in selected for _ in range(4)))
-                thin_schedule = schedule_program_from_executable_release(thin)
-                self.assertEqual(tuple(thin_schedule.capability_map), selected)
-                self.assertFalse(thin_schedule.program_complete)
 
 
 @unittest.skipUnless(SOURCE.is_dir(), "Pinned historic source not mounted")

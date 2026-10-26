@@ -1,6 +1,8 @@
 """Cohort custody and source-guided replay during candidate admission."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, SOURCE
+
 import json
 from pathlib import Path
 from collections import Counter
@@ -34,7 +36,7 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
     direct_fixed = tuple(row for row in fixed_rows if source.is_exact(row))
     if direct_fixed:
         if len(direct_fixed) != len(tuple(fixed_rows)):
-            raise ValueError("FRAGILE_PRESERVATION_MIXED_REPRESENTATION")
+            ErrorBus.raise_legacy(SOURCE.REPLAY.PRESERVATION_MIXED_REPRESENTATION)
         capability = source.structural_capability(direct_fixed, limit)
         required = source.pattern_counts(
             capability, direct_fixed, each=limit)
@@ -49,43 +51,31 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
             shift = rotation % len(signatures)
             ordered = signatures[shift:] + signatures[:shift]
             desired.extend(ordered[index % len(ordered)] for index in range(count))
-        candidates = []
-        for row in rows:
-            if row.get("id") in excluded or not source.is_exact(row):
-                continue
-            try:
-                signature = source.signature(row)
-            except ValueError:
-                continue
-            candidates.append((row, signature))
-        selected, used = [], set()
-        for wanted in desired:
-            chosen = None
-            for level, key in enumerate(source.matching_keys(wanted)):
-                chosen = next((row for row, signature in candidates
-                    if row["id"] not in used and
-                    source.matching_keys(signature)[level] == key), None)
-                if chosen is not None:
-                    break
-            if chosen is None:
-                return ()
-            selected.append(chosen)
-            used.add(chosen["id"])
-        return tuple(selected)
+        candidates = _structural_candidates(rows, excluded, source, exact=True)
+        return _match_structural_rows(candidates, desired, source, require_all=True)
     desired = sorted({source.signature(row) for row in fixed_rows})
     if not desired:
         return ()
     shift = rotation % len(desired)
     desired = (desired[shift:] + desired[:shift])[:min(limit, len(desired))]
+    candidates = _structural_candidates(rows, excluded, source, exact=False)
+    return _match_structural_rows(candidates, desired, source, require_all=False)
+
+
+def _structural_candidates(rows, excluded, source, *, exact):
     candidates = []
     for row in rows:
-        if row.get("id") in excluded:
+        if row.get("id") in excluded or (exact and not source.is_exact(row)):
             continue
         try:
             signature = source.signature(row)
         except ValueError:
             continue
         candidates.append((row, signature))
+    return candidates
+
+
+def _match_structural_rows(candidates, desired, source, *, require_all):
     selected, used = [], set()
     for wanted in desired:
         chosen = None
@@ -95,9 +85,12 @@ def select_structural_preservation_rows(rows, fixed_rows, *, excluded_ids=frozen
                 source.matching_keys(signature)[level] == key), None)
             if chosen is not None:
                 break
-        if chosen is not None:
-            selected.append(chosen)
-            used.add(chosen["id"])
+        if chosen is None:
+            if require_all:
+                return ()
+            continue
+        selected.append(chosen)
+        used.add(chosen["id"])
     return tuple(selected)
 
 
@@ -189,7 +182,7 @@ def fresh_preservation_rows(fixed_rows, *, capabilities, draw_rows, seed_for,
                     break
         selected.extend(delivered[:target])
     if any(row["id"] in excluded for row in selected):
-        raise ValueError("FRAGILE_PRESERVATION_EXAM_ROW_LEAK")
+        ErrorBus.raise_legacy(SOURCE.REPLAY.PRESERVATION_EXAM_ROW_LEAK)
     return tuple(selected)
 
 
@@ -242,7 +235,7 @@ def load_replay_rows(run_dir: Path, receipt: dict, *, capabilities) -> tuple[dic
         required = _source_policy().pattern_counts(name, group, each=expected)
         if all(_source_policy().is_exact(row) for row in group):
             if observed_patterns != Counter(required):
-                raise ValueError("FRAGILE_REPLAY_U7C_PATTERN_DRIFT")
+                ErrorBus.raise_legacy(SOURCE.REPLAY.REPLAY_U7C_PATTERN_DRIFT)
         elif set(observed_patterns) != set(required):
             raise ValueError("FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE")
     return rows

@@ -176,65 +176,19 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                                course=course, executable_release=executable_release)
     # Active maxed capability roles advise only inside their own grade.
     # Frozen grade soups remain the separately diluted cross-grade voice.
-    with _runtime_timing_trace.trace_span("MENTOR_SOURCES_LOAD", capability=cap):
-        confidence_champions, frozen_soups, soup_vote_receipts = _learning_lesson_guidance._mentor_sources_for_visit(
-            run_dir, receipt, lesson_grade, graph, len(program.grades))
+    confidence_champions, frozen_soups, soup_vote_receipts = _load_visit_mentors(
+        run_dir, receipt, lesson_grade, graph, program, cap)
     confidence_examples = 0
     confidence_total_weight = 0.0
     confidence_applied_steps = 0
-    direct_capability_votes = {}
-    direct_capabilities = []
-    for mentor in confidence_champions:
-        for source_grade, votes in mentor.get("source_grade_votes", {}).items():
-            direct_capability_votes[source_grade] = (
-                direct_capability_votes.get(source_grade, 0) + votes)
-        direct_capabilities.extend(mentor.get("capabilities", ()))
-    with _runtime_timing_trace.trace_span(
-            "CHAMPION_WEAKNESS_DISCOVERY", capability=cap):
-        champion_candidates = _learning_lesson_guidance._champion_directed_rows(
-            mx, confidence_champions, params, rows, receipt["config"],
-            receipt["answer_ids"])
-    champion_candidate_ids = {row["id"] for row in champion_candidates}
-    # Every unsuccessful examination construction can become direct teaching
-    # material once scoring has completed. No held-out embargo survives.
-    priority = [r for r in receipt.get("teacher_misses", ())
-                if r["capability"] == cap]
-    deferred_misses = []
-    if receipt.get("numeric_maximum") is not None:
-        priority, deferred_misses = _profiles_catalog.partition_numeric_scope(
-            priority, receipt["numeric_maximum"])
-    priority_ids = {row["id"] for row in priority}
-    priority.extend(
-        row for row in champion_candidates if row["id"] not in priority_ids)
-    miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
-    if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
-        raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
-    previous_methodology = next((
-        member.get("lesson_methodology")
-        for member in reversed(receipt.get("delivery_outbox", ()))
-        if member.get("capability") == cap and "lesson_methodology" in member
-    ), None)
-    warnings = _learning_teacher_feedback.active_warning_signals(
-        receipt.get("last_exam"), previous_methodology, cap)
-    previsit_diagnostics = {
-        "warnings": warnings,
-        "unresolved_miss_count": len(priority),
-        "champion_candidate_count": len(champion_candidate_ids),
-    }
-    with _runtime_timing_trace.trace_span("POLICY_SELECT", capability=cap):
-        if learning_settings is not None:
-            policy_key, policy, policy_selection = (
-                _learning_learning_experiment.contextual_pick(
-                    engine, teacher, cap, school.stage, rng,
-                    curriculum_scope=teacher_curriculum_scope,
-                    diagnostics=previsit_diagnostics,
-                    return_metadata=True))
-        else:
-            policy_key, policy = engine.pick(teacher, lesson_grade, rng)
-            policy_selection = {
-                "diagnostic_context_consumed": False,
-                "diagnostic_context_key": None,
-            }
+    direct_capability_votes, direct_capabilities = _direct_mentor_votes(confidence_champions)
+    champion_candidates, champion_candidate_ids = _discover_champion_weakness(
+        mx, confidence_champions, params, rows, receipt, cap)
+    priority, deferred_misses, miss_exposures, warnings, previsit_diagnostics = (
+        _prepare_visit_feedback(receipt, cap, champion_candidates, champion_candidate_ids))
+    policy_key, policy, policy_selection = _select_visit_policy(
+        engine, teacher, cap, school, rng, learning_settings,
+        teacher_curriculum_scope, previsit_diagnostics, lesson_grade)
     original_learning_rate = optimizer.learning_rate
     optimizer.learning_rate = float(policy["lr"])
     # Teacher reward must measure transfer on the newly drawn source cohort,
@@ -245,30 +199,13 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         before = _learning_student_ops._train_score(mx, params, rows, receipt["config"],
                               receipt["answer_ids"])
     parent_parameters, parent_optimizer = params, optimizer
-    probe_rows = protected_caps = parent_predictions = None
-    if learning_settings is not None:
-        with _runtime_timing_trace.trace_span("RETENTION_PROBE_BUILD", capability=cap):
-            probe_rows, protected_caps, unsampled_caps = _runtime_candidate_evidence._learning_probe_rows(
-                source_root, graph, receipt, course, school, cap, learning_settings,
-                schedule_program=_runtime_release_adoption._schedule_for_receipt(
-                    run_dir, receipt, course),
-                executable_release=executable_release)
-        target_rows = [row for row in probe_rows if row["capability"] == cap]
-        with _runtime_timing_trace.trace_span("RETENTION_PARENT_PREDICT", capability=cap,
-                        row_count=len(target_rows)):
-            parent_predictions = _learning_student_ops._predictions(
-                mx, parent_parameters, target_rows, receipt["config"], receipt["answer_ids"])
-        if target_rows and all(parent_predictions[row["id"]] == row["gold"]
-                               for row in target_rows):
-            # A strict positive-gain gate cannot admit a trial whose fresh
-            # target panel already scores perfectly. Preserve any accepted
-            # in-memory student updates until their normal checkpoint boundary.
-            parent_optimizer.learning_rate = original_learning_rate
-            return _skip_perfect_target_visit(
-                run_dir, receipt, school, course, cap, len(target_rows),
-                int(parent_optimizer.state["step"].item()), teacher=teacher)
-        with _runtime_timing_trace.trace_span("FORK_CANDIDATE", capability=cap):
-            params, optimizer = _learning_learning_experiment.fork_student(mx, parent_parameters, parent_optimizer)
+    probe_rows, protected_caps, parent_predictions, params, optimizer, skipped = (
+        _prepare_retention_trial(
+            mx, run_dir, receipt, course, school, cap, learning_settings,
+            source_root, graph, executable_release, params, optimizer,
+            original_learning_rate, teacher))
+    if skipped is not None:
+        return skipped
     last_loss = 0.0
     last_norm = 0.0
     methodology_steps = []
@@ -285,21 +222,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
             fragile_fixed_rows = load_replay_rows(
                 run_dir, receipt,
                 capabilities=_profiles_retention.fragile_preservation_capabilities())
-    old_capabilities = (
-        _learning_learning_experiment.earlier_grade_capabilities(
-            _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school.champions,
-            cap, carried_mastery_debt=getattr(school, "carried_mastery_debt", ()))
-        if learning_settings is not None else ())
-    retention_support_capabilities = ()
-    if (learning_settings is not None and
-            getattr(school, "active_grades", ()) and
-            getattr(school, "schema", None) is not None):
-        admitted_for_support = _curriculum_scheduler.assessment_capabilities(
-            _runtime_release_adoption._schedule_for_receipt(
-                run_dir, receipt, course), school)
-        retention_support_capabilities = (
-            _runtime_candidate_evidence._retention_support_capabilities(
-                admitted_for_support, getattr(school, "active_grades", ()), cap))
+    old_capabilities, retention_support_capabilities = _visit_retention_scope(
+        run_dir, receipt, course, school, cap, learning_settings)
     delivered_autonomy_rows = []
     autonomy_option_specimen_ids = set()
     prefetch_futures = {}
@@ -840,3 +764,132 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         optimizer_step=int(optimizer.state["step"].item()),
         decision=outcome.get("decision") if isinstance(outcome, dict) else None)
     return result
+
+
+def _prepare_visit_feedback(receipt, cap, champion_candidates, champion_candidate_ids):
+    """Prepare source-verified replay and observed diagnostics before policy selection."""
+    # Every unsuccessful examination construction can become direct teaching
+    # material once scoring has completed. No held-out embargo survives.
+    priority = [r for r in receipt.get("teacher_misses", ())
+                if r["capability"] == cap]
+    deferred_misses = []
+    if receipt.get("numeric_maximum") is not None:
+        priority, deferred_misses = _profiles_catalog.partition_numeric_scope(
+            priority, receipt["numeric_maximum"])
+    priority_ids = {row["id"] for row in priority}
+    priority.extend(
+        row for row in champion_candidates if row["id"] not in priority_ids)
+    miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
+    if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
+        raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")
+    previous_methodology = next((
+        member.get("lesson_methodology")
+        for member in reversed(receipt.get("delivery_outbox", ()))
+        if member.get("capability") == cap and "lesson_methodology" in member
+    ), None)
+    warnings = _learning_teacher_feedback.active_warning_signals(
+        receipt.get("last_exam"), previous_methodology, cap)
+    previsit_diagnostics = {
+        "warnings": warnings,
+        "unresolved_miss_count": len(priority),
+        "champion_candidate_count": len(champion_candidate_ids),
+    }
+    return priority, deferred_misses, miss_exposures, warnings, previsit_diagnostics
+
+
+def _direct_mentor_votes(confidence_champions):
+    """Summarize existing mentor votes for the visit receipt."""
+    direct_capability_votes = {}
+    direct_capabilities = []
+    for mentor in confidence_champions:
+        for source_grade, votes in mentor.get("source_grade_votes", {}).items():
+            direct_capability_votes[source_grade] = (
+                direct_capability_votes.get(source_grade, 0) + votes)
+        direct_capabilities.extend(mentor.get("capabilities", ()))
+    return direct_capability_votes, direct_capabilities
+
+
+def _visit_retention_scope(run_dir, receipt, course, school, cap, learning_settings):
+    """Resolve admitted prior-grade and support scopes without changing policy."""
+    old_capabilities = (
+        _learning_learning_experiment.earlier_grade_capabilities(
+            _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school.champions,
+            cap, carried_mastery_debt=getattr(school, "carried_mastery_debt", ()))
+        if learning_settings is not None else ())
+    retention_support_capabilities = ()
+    if (learning_settings is not None and
+            getattr(school, "active_grades", ()) and
+            getattr(school, "schema", None) is not None):
+        admitted_for_support = _curriculum_scheduler.assessment_capabilities(
+            _runtime_release_adoption._schedule_for_receipt(
+                run_dir, receipt, course), school)
+        retention_support_capabilities = (
+            _runtime_candidate_evidence._retention_support_capabilities(
+                admitted_for_support, getattr(school, "active_grades", ()), cap))
+    return old_capabilities, retention_support_capabilities
+
+
+def _select_visit_policy(engine, teacher, cap, school, rng, learning_settings, teacher_curriculum_scope, previsit_diagnostics, lesson_grade):
+    """Ask the existing teacher to select the visit policy."""
+    with _runtime_timing_trace.trace_span("POLICY_SELECT", capability=cap):
+        if learning_settings is not None:
+            policy_key, policy, policy_selection = (
+                _learning_learning_experiment.contextual_pick(
+                    engine, teacher, cap, school.stage, rng,
+                    curriculum_scope=teacher_curriculum_scope,
+                    diagnostics=previsit_diagnostics,
+                    return_metadata=True))
+        else:
+            policy_key, policy = engine.pick(teacher, lesson_grade, rng)
+            policy_selection = {
+                "diagnostic_context_consumed": False,
+                "diagnostic_context_key": None,
+            }
+    return policy_key, policy, policy_selection
+
+
+def _prepare_retention_trial(mx, run_dir, receipt, course, school, cap, learning_settings, source_root, graph, executable_release, params, optimizer, original_learning_rate, teacher):
+    parent_parameters, parent_optimizer = params, optimizer
+    probe_rows = protected_caps = parent_predictions = None
+    if learning_settings is not None:
+        with _runtime_timing_trace.trace_span("RETENTION_PROBE_BUILD", capability=cap):
+            probe_rows, protected_caps, unsampled_caps = _runtime_candidate_evidence._learning_probe_rows(
+                source_root, graph, receipt, course, school, cap, learning_settings,
+                schedule_program=_runtime_release_adoption._schedule_for_receipt(
+                    run_dir, receipt, course),
+                executable_release=executable_release)
+        target_rows = [row for row in probe_rows if row["capability"] == cap]
+        with _runtime_timing_trace.trace_span("RETENTION_PARENT_PREDICT", capability=cap,
+                        row_count=len(target_rows)):
+            parent_predictions = _learning_student_ops._predictions(
+                mx, parent_parameters, target_rows, receipt["config"], receipt["answer_ids"])
+        if target_rows and all(parent_predictions[row["id"]] == row["gold"]
+                               for row in target_rows):
+            # A strict positive-gain gate cannot admit a trial whose fresh
+            # target panel already scores perfectly. Preserve any accepted
+            # in-memory student updates until their normal checkpoint boundary.
+            parent_optimizer.learning_rate = original_learning_rate
+            skipped = _skip_perfect_target_visit(
+                run_dir, receipt, school, course, cap, len(target_rows),
+                int(parent_optimizer.state["step"].item()), teacher=teacher)
+            return probe_rows, protected_caps, parent_predictions, params, optimizer, skipped
+        with _runtime_timing_trace.trace_span("FORK_CANDIDATE", capability=cap):
+            params, optimizer = _learning_learning_experiment.fork_student(mx, parent_parameters, parent_optimizer)
+    return probe_rows, protected_caps, parent_predictions, params, optimizer, None
+
+
+def _discover_champion_weakness(mx, confidence_champions, params, rows, receipt, cap):
+    with _runtime_timing_trace.trace_span(
+            "CHAMPION_WEAKNESS_DISCOVERY", capability=cap):
+        champion_candidates = _learning_lesson_guidance._champion_directed_rows(
+            mx, confidence_champions, params, rows, receipt["config"],
+            receipt["answer_ids"])
+    champion_candidate_ids = {row["id"] for row in champion_candidates}
+    return champion_candidates, champion_candidate_ids
+
+
+def _load_visit_mentors(run_dir, receipt, lesson_grade, graph, program, cap):
+    with _runtime_timing_trace.trace_span("MENTOR_SOURCES_LOAD", capability=cap):
+        confidence_champions, frozen_soups, soup_vote_receipts = _learning_lesson_guidance._mentor_sources_for_visit(
+            run_dir, receipt, lesson_grade, graph, len(program.grades))
+    return confidence_champions, frozen_soups, soup_vote_receipts

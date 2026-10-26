@@ -1,6 +1,8 @@
 """Executable release, profile and JIT adoption transactions."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, FACTORY, SCHOOL
+
 
 import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
@@ -130,7 +132,7 @@ def _profile_transition(previous_program, successor_program, school, *,
               else debt_cadence_policy)
     if (policy is not None and not isinstance(
             policy, _curriculum_scheduler.DebtCadencePolicy)):
-        raise ValueError("INVALID_DEBT_CADENCE_POLICY")
+        raise ErrorBus.legacy_error(SCHOOL.SCHEDULE.INVALID_DEBT_CADENCE_POLICY)
     if topology is _curriculum_scheduler.ScheduleTopology.UNCHANGED and mastery_debt is None:
         next_state = (school if policy == school.debt_cadence_policy else
                       _dataclasses.replace(school, debt_cadence_policy=policy))
@@ -169,7 +171,7 @@ def _profile_transition(previous_program, successor_program, school, *,
             next_state, debt_cadence_policy=policy)
         _curriculum_scheduler.verify_state(successor_program, next_state)
         return next_state, revised_grade, False
-    raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
+    raise ErrorBus.legacy_error(FACTORY.EXECUTION.EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED)
 
 
 def _profile_championship_state(
@@ -514,7 +516,7 @@ def _materialize_prepared_successor(
         graph, parameters, optimizer, next_graph, *, reserve_gib):
     """Materialize only the released ABI geometry, without school publication."""
     if successor.transition is None:
-        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
+        raise ErrorBus.legacy_error(FACTORY.EXECUTION.EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED)
     geometry = successor.transition.semantic_geometry
     if geometry == _factory_executable_release.SemanticGeometryChange.UNCHANGED:
         successor.verify_semantic_catalog(graph)
@@ -523,7 +525,7 @@ def _materialize_prepared_successor(
         return PreparedSuccessorMaterialization(
             parameters, optimizer, graph, current_student, None, None)
     if geometry != _factory_executable_release.SemanticGeometryChange.APPEND_ONLY_EXPANSION:
-        raise ValueError("FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED")
+        raise ErrorBus.legacy_error(FACTORY.EXECUTION.EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED)
 
     from .assessment import _load_executable_cohort
     from ..learning.student_ops import _predictions

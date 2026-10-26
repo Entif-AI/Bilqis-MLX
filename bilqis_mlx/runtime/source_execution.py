@@ -1,6 +1,8 @@
 """Runtime inputs closed over one verified executable factory release."""
 from __future__ import annotations
 
+from bilqis_mlx.errors import ErrorBus, FACTORY
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -31,11 +33,11 @@ class SourceExecutionContext:
 
     def __post_init__(self) -> None:
         if not isinstance(self.release, ExecutableFactoryRelease):
-            raise TypeError("Expected an ExecutableFactoryRelease")
+            raise TypeError(FACTORY.EXECUTION.EXPECTED_AN_EXECUTABLEFACTORYRELEASE.legacy_codes[0])
         if not isinstance(self.source_registry, SourceAdapterRegistry):
-            raise TypeError("Expected a SourceAdapterRegistry")
+            raise TypeError(FACTORY.EXECUTION.EXPECTED_A_SOURCEADAPTERREGISTRY.legacy_codes[0])
         if not isinstance(self.answer_registry, AnswerModalityRegistry):
-            raise TypeError("Expected an AnswerModalityRegistry")
+            raise TypeError(FACTORY.EXECUTION.EXPECTED_AN_ANSWERMODALITYREGISTRY.legacy_codes[0])
         self.release.verify()
         self.release.verify_semantic_catalog(self.graph)
         bindings = self.release.source_bindings.by_capability
@@ -48,7 +50,7 @@ class SourceExecutionContext:
         """Check a complete host request before any of its providers run."""
         admitted = self.release.execution_plan.capability_map
         if any(capability not in admitted for capability in capabilities):
-            raise ValueError("FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY")
+            raise ErrorBus.legacy_error(FACTORY.EXECUTION.EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY)
 
     def draw_rows(self, *, seed: int, capability: str | None = None,
                   each: int | None = None) -> list[dict]:
