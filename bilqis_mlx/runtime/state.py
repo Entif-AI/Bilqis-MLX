@@ -10,7 +10,7 @@ import uuid
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.curriculum.scheduler import (
     SchoolState, migrate_b_full_run_epoch, migrate_c_frontier_priority_epoch,
-    migrate_foundational_rehearsal_epoch,
+    migrate_foundational_rehearsal_epoch, migrate_promotion_sweep_attempt_epoch,
     verify_state,
 )
 
@@ -54,19 +54,24 @@ def _state_from_json(value: dict, course) -> SchoolState:
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in school
     legacy_foundational_rehearsal_epoch = (
         "non_foundational_training_turns_since_foundational_run" not in school)
+    legacy_promotion_sweep_attempt_epoch = (
+        "promotion_sweep_attempt_student_sha256" not in school or
+        "promotion_sweep_attempt_scope" not in school)
     school.setdefault("main_sweep_visited", ())
     school.setdefault("carried_mastery_debt", ())
     school.setdefault("introduction_frontiers", ())
     school.setdefault("promotion_sweep_scope", ())
     school.setdefault("promotion_sweep_return_stage", None)
     school.setdefault("promotion_sweep_scores", ())
+    school.setdefault("promotion_sweep_attempt_student_sha256", None)
+    school.setdefault("promotion_sweep_attempt_scope", ())
     school.setdefault("frontier_priority_visits", 0)
     school.setdefault("nongating_b_visits", 0)
     school.setdefault("non_b_training_turns_since_b_run", 0)
     school.setdefault("non_foundational_training_turns_since_foundational_run", 0)
     for name in ("active_grades", "queue", "first_recovery", "pending_failures",
                  "main_sweep_visited", "carried_mastery_debt",
-                 "promotion_sweep_scope"):
+                 "promotion_sweep_scope", "promotion_sweep_attempt_scope"):
         school[name] = tuple(school[name])
     school["promotion_sweep_scores"] = tuple(
         (capability, correct, total)
@@ -83,6 +88,8 @@ def _state_from_json(value: dict, course) -> SchoolState:
         result = migrate_b_full_run_epoch(course, result)
     if legacy_foundational_rehearsal_epoch:
         result = migrate_foundational_rehearsal_epoch(course, result)
+    if legacy_promotion_sweep_attempt_epoch:
+        result = migrate_promotion_sweep_attempt_epoch(course, result)
     verify_state(course, result)
     return result
 

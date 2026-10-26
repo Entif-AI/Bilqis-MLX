@@ -154,6 +154,8 @@ class SchoolState:
     promotion_sweep_scope: tuple[str, ...] = ()
     promotion_sweep_return_stage: str | None = None
     promotion_sweep_scores: tuple[tuple[str, int, int], ...] = ()
+    promotion_sweep_attempt_student_sha256: str | None = None
+    promotion_sweep_attempt_scope: tuple[str, ...] = ()
     frontier_priority_visits: int = 0
     nongating_b_visits: int = 0
     non_b_training_turns_since_b_run: int = 0

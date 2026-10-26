@@ -117,6 +117,21 @@ def migrate_foundational_rehearsal_epoch(program, state: SchoolState) -> SchoolS
         FOUNDATIONAL_DEBT_RUN_INTERVAL)
 
 
+def migrate_promotion_sweep_attempt_epoch(program, state: SchoolState) -> SchoolState:
+    """Disarm legacy score-flux retries until the student or scope changes.
+
+    Historical receipts did not remember which unchanged student had already
+    attempted the current promotion scope. Treat the current checkpoint/scope as
+    already attempted rather than inventing fresh qualification authority on resume.
+    """
+    program = _program(program)
+    return replace(
+        state,
+        promotion_sweep_attempt_student_sha256=state.current_student.sha256,
+        promotion_sweep_attempt_scope=_introduced_grade_capabilities(program, state),
+    )
+
+
 def migrate_c_frontier_priority_epoch(program, state: SchoolState) -> SchoolState:
     """Re-anchor pre-policy queued work without inventing neural progress.
 
@@ -1137,12 +1152,19 @@ def read_state(path: Path, program) -> SchoolState:
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in raw
     legacy_foundational_rehearsal_epoch = (
         "non_foundational_training_turns_since_foundational_run" not in raw)
+    legacy_promotion_sweep_attempt_epoch = (
+        "promotion_sweep_attempt_student_sha256" not in raw or
+        "promotion_sweep_attempt_scope" not in raw)
     raw["promotion_sweep_scope"] = tuple(raw.get("promotion_sweep_scope", ()))
     raw["promotion_sweep_return_stage"] = raw.get(
         "promotion_sweep_return_stage")
     raw["promotion_sweep_scores"] = tuple(
         (capability, correct, total)
         for capability, correct, total in raw.get("promotion_sweep_scores", ()))
+    raw["promotion_sweep_attempt_student_sha256"] = raw.get(
+        "promotion_sweep_attempt_student_sha256")
+    raw["promotion_sweep_attempt_scope"] = tuple(
+        raw.get("promotion_sweep_attempt_scope", ()))
     raw["non_b_training_turns_since_b_run"] = raw.get(
         "non_b_training_turns_since_b_run", 0)
     raw["non_foundational_training_turns_since_foundational_run"] = raw.get(
@@ -1157,6 +1179,8 @@ def read_state(path: Path, program) -> SchoolState:
         result = migrate_b_full_run_epoch(program, result)
     if legacy_foundational_rehearsal_epoch:
         result = migrate_foundational_rehearsal_epoch(program, result)
+    if legacy_promotion_sweep_attempt_epoch:
+        result = migrate_promotion_sweep_attempt_epoch(program, result)
     verify_state(program, result)
     return result
 

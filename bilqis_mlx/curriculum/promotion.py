@@ -54,6 +54,16 @@ def _verify_promotion_sweep_state(program, state: SchoolState) -> None:
     scope = state.promotion_sweep_scope
     return_stage = state.promotion_sweep_return_stage
     scores = state.promotion_sweep_scores
+    attempt_student = state.promotion_sweep_attempt_student_sha256
+    attempt_scope = state.promotion_sweep_attempt_scope
+    attempt_pair_valid = (
+        (attempt_student is None and not attempt_scope) or
+        (isinstance(attempt_student, str) and len(attempt_student) == 64 and
+         all(char in "0123456789abcdef" for char in attempt_student) and
+         bool(attempt_scope) and len(set(attempt_scope)) == len(attempt_scope))
+    )
+    if not attempt_pair_valid:
+        raise ValueError(PromotionError.INVALID_PROMOTION_SWEEP_STATE.value)
     if not sweep_active:
         if scope or return_stage is not None or scores:
             raise ValueError(PromotionError.PROMOTION_SWEEP_STATE_OUTSIDE_SWEEP.value)
@@ -78,7 +88,7 @@ def _verify_promotion_sweep_state(program, state: SchoolState) -> None:
             type(item[2]) is int and 0 <= item[1] <= item[2] and item[2] > 0
             for item in scores)
     )
-    if (not scope or scope != introduced or
+    if (not scope or scope != introduced or attempt_scope != scope or
             not valid_return_stage or not valid_queue or not valid_phase_queue):
         raise ValueError(PromotionError.INVALID_PROMOTION_SWEEP_STATE.value)
     if not valid_scores:
@@ -90,6 +100,9 @@ def _promotion_sweep_due(program, state: SchoolState,
     if state.revalidation_target_grade is not None or state.grade in state.champions:
         return False
     scope = _introduced_grade_capabilities(program, state)
+    if (state.promotion_sweep_attempt_student_sha256 == state.current_student.sha256 and
+            state.promotion_sweep_attempt_scope == scope):
+        return False
     return _mean_accuracy(snapshot.scores, scope) >= PROMOTION_MEAN_FLOOR
 
 
@@ -100,6 +113,8 @@ def _start_promotion_sweep(program, state: SchoolState,
         state, stage="PROMOTION_SWEEP", queue=scope,
         promotion_sweep_scope=scope,
         promotion_sweep_return_stage=state.stage,
+        promotion_sweep_attempt_student_sha256=state.current_student.sha256,
+        promotion_sweep_attempt_scope=scope,
         promotion_sweep_scores=tuple(
             (capability, snapshot.scores[capability].correct,
              snapshot.scores[capability].total)

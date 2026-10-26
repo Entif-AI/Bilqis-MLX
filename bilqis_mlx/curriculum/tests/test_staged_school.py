@@ -453,6 +453,53 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertNotEqual(state.stage, "ASSESS_PROMOTION_SWEEP")
         self.assertNotIn("c.2", assessment_capabilities(course, state))
 
+    def test_failed_promotion_sweep_does_not_retrigger_on_same_student_flux(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        state = grade_loop(course, state, pointer)
+
+        qualifying = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        qualifying["c.1"] = (17, 20)
+        state = assess(course, state, snapshot(course, pointer, qualifying))
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+
+        state = visit(course, state, "c.0", pointer)
+        state = assess(course, state, snapshot(course, pointer, qualifying))
+        state = visit(course, state, "c.1", pointer)
+        below_floor = dict(qualifying)
+        below_floor["c.1"] = (15, 20)
+        state = assess(course, state, snapshot(course, pointer, below_floor))
+        self.assertEqual(state.stage, "RECOVERY_1")
+
+        # The student did not change during the failed sweep or subsequent
+        # recovery visit. A new cohort may rank above the threshold, but that
+        # score flux is not a new learning event and cannot re-arm graduation.
+        state = grade_loop(course, state, pointer)
+        reranked = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        reranked["c.1"] = (17, 20)
+        state = assess(course, state, snapshot(course, pointer, reranked))
+
+        self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertNotEqual(state.stage, "ASSESS_PROMOTION_SWEEP")
+        self.assertEqual(state.current_student, pointer)
+
+        retained = cp("whole-student-after-retention", step=pointer.optimizer_step + 1)
+        state = grade_loop(course, state, retained)
+        reranked_after_learning = {
+            c: (8, 8) for c in assessment_capabilities(course, state)
+        }
+        reranked_after_learning["c.1"] = (17, 20)
+        state = assess(
+            course, state,
+            snapshot(course, retained, reranked_after_learning))
+
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.current_student, retained)
+
     def test_promotion_sweep_only_replaces_the_semantic_just_rescored(self):
         course = staged_course()
         state, pointer = enter_c(course)
@@ -495,6 +542,26 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertEqual(restored, state)
         self.assertEqual(restored.stage, "PROMOTION_SWEEP")
         self.assertEqual(restored.queue, ("c.0", "c.1"))
+
+    def test_legacy_state_migration_disarms_current_student_scope(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        raw = asdict(state)
+        raw.pop("promotion_sweep_attempt_student_sha256", None)
+        raw.pop("promotion_sweep_attempt_scope", None)
+
+        restored = _state_from_json(raw, course)
+
+        self.assertEqual(
+            restored.promotion_sweep_attempt_student_sha256, pointer.sha256)
+        self.assertEqual(restored.promotion_sweep_attempt_scope, ("c.0",))
+        qualifying = {
+            c: (8, 8) for c in assessment_capabilities(course, restored)
+        }
+        assessed = assess(
+            course, restored, snapshot(course, pointer, qualifying))
+        self.assertNotEqual(assessed.stage, "PROMOTION_SWEEP")
 
     def test_incomplete_staged_grade_restores_frontier_after_cross_grade_spiral(self):
         course = staged_course()

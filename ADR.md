@@ -1539,3 +1539,30 @@ the legacy nominal grade/global bandit as though the requested strategy alone ca
 the delivered lesson. Historical grade/global statistics remain available only as the
 existing bounded exploration prior. Retention, source-gold, custody, promotion,
 qualification and student/AdamW rules are unchanged.
+
+
+## ADR-103 | 2026-10-25 | Promotion sweep retries are bound to student checkpoint and semantic scope
+
+**Direct user correction after live Grade-C qualification repeatedly fired on an
+unchanged student.** Fresh generated assessment cohorts are intentionally variable,
+so a fixed student can drift above and below the 90% promotion floor without any
+retained neural update. That score flux is useful assessment evidence, but it is not
+new learning and may not repeatedly manufacture graduation attempts.
+
+Each promotion-sweep attempt is therefore durably bound to the exact causal student
+checkpoint and the exact introduced semantic scope that triggered it. The first
+qualifying assessment for a previously unattempted checkpoint/scope pair may start the
+sweep. If that sweep fails, later cohorts for the same unchanged student and same
+scope remain ordinary assessment evidence and cannot re-enter `PROMOTION_SWEEP`.
+A retained candidate changes the causal student checkpoint and may re-arm that same
+scope. A successful sweep that expands the introduced semantic scope also creates a
+new qualification contract and may receive one attempt even if the student itself did
+not change between the two scopes.
+
+Historical receipts predate this attempt memory. On resume, they migrate
+neural-inertly by treating the currently loaded student and current introduced scope
+as already attempted. This conservative migration prevents an immediate score-flux
+retry while preserving all historical exams, weights, own AdamW, retention evidence,
+mastery debt and promotion criteria. No threshold is lowered and no score is
+discarded; the change only prevents repeated qualification authority from being
+created by question-set variance alone.
