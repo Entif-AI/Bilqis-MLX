@@ -23,10 +23,10 @@
         "_data/csv/source_sections.csv": "875f676f4f42e8b2c7911d4dbb4bc59fa9e4498dcada3c59fd490b2496af4511",
         "_data/csv/source_table_cells.csv": "7c052d5e4df64ce4f4c674ea6fad375815f1f636686837bad78441cdec59d47b",
         "_data/csv/source_tables.csv": "4cdfe12e5333a49175fc15e68257116e77a1510290e873afae50fa6f669179e5",
-        "_data/csv/sources/fixture_frontier.json": "499598d4768faba924b5ed1f7c81df8271aaf2647e3e06aa66c53c5e0ba5644f"
+        "_data/csv/sources/fixture_frontier.json": "75399505ba9999a5f3ab304d124c05f741911f3fd785cb745bc7d0afd0929b96"
       },
       "csv_closure_sha256": "91245af0defaa9bc12638fb5be35b5293b36f8e4074d7ad672bad956bcf0cbe6",
-      "fixture_frontier_sha256": "4a0e9e4e4ce535e52fd28cade47f92ac28c7d0d1884e40252d7516e78b29824a",
+      "fixture_frontier_sha256": "3b367074f2e75bf6c9e8466982a05dde8d33a11d1ab6daccb965f41817addfbb",
       "full_bundle": "d8f913499e9b1bced3f280ae3d1451ad9bbc7dc4d5a644ffdf23af6937824033",
       "full_rdf": "e6c56fd5cb0a3da3c2eb23d0dad499ad7210e5211e98b78367e000a4edf91762",
       "gates": [
@@ -96,8 +96,8 @@
       ],
       "held_ledger": "474962c1dc05a2e593a5b32f4b8709e7c246e89aeddd9dcb896d10ea96c444aa",
       "source_input": {
-        "configuration_excerpt_sha256": "fbc74c722d84fd336001d0b8e3c310e030bd0b469dac3ec1ec7e75cd4109d507",
-        "descriptor_sha256": "24545179102bbc7f6f8f18a9611555761deb4414c29b720facd20493e1e81f5e",
+        "configuration_excerpt_sha256": "60f5655e5115960c4bddb325da454a997dbe9e6a5a838d87e532041d8c2edbc2",
+        "descriptor_sha256": "a30b6a8190d667303e32063410517e1075ea7ce825695d8a4c964ab4dc114f2b",
         "excerpt_sha256": "05b81b70251b313b20aa702b6fb5ff71e533a544434150c427fab9ad4f2078cf"
       }
     },
@@ -140,7 +140,7 @@
       },
       "importer": {
         "dirty_source": false,
-        "git_commit": "00fc9651fbecdc1b95a05e70eb535d92d0cfeabc",
+        "git_commit": "e8b05196904d9548e66fa344278dc62b2390d2d6",
         "implementation_sha256": "03302b885ff313d077abbb84f4d88e7bec0cac942d39385211573b371fbbe3cb",
         "version": "2.0.0"
       },
@@ -351,8 +351,8 @@
     "fixture_only": true,
     "foreign_boundary": "blocked at reset_plan; node census unchanged",
     "graphs": [
-      "bilqis_skos_91_4f0f04ba9e3c",
-      "bilqis_skos_91_b27e20f5b924"
+      "bilqis_skos_91_ee0d6ef8dc3c",
+      "bilqis_skos_91_28e515df53b0"
     ],
     "prior_authoritative_artifacts_unchanged": true,
     "schema": "bilqis.ithkuil.fixture-graph-proof/v1",

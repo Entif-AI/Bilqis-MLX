@@ -5,9 +5,10 @@
     "production_admission": false
   },
   "configuration_excerpt": {
+    "derivation": "lxml-serialized-parent-table; trailing whitespace normalized to one LF",
     "parent_table_id": "NI-WEB-CH03:T003",
     "path": "configuration.html",
-    "sha256": "fbc74c722d84fd336001d0b8e3c310e030bd0b469dac3ec1ec7e75cd4109d507"
+    "sha256": "60f5655e5115960c4bddb325da454a997dbe9e6a5a838d87e532041d8c2edbc2"
   },
   "excerpt": {
     "derivation": "lxml-serialized-parent-table/v1",

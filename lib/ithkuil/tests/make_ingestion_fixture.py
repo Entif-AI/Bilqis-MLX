@@ -136,7 +136,7 @@ def main():
     config_table = html.fromstring(raw).xpath("//table")[2]
     excerpt = b'<!doctype html><html><head><meta charset="utf-8"></head><body>' + etree.tostring(table, encoding="utf-8", method="html") + b"</body></html>\n"
     (TARGET / "source.html").write_bytes(excerpt)
-    config_excerpt = etree.tostring(config_table, encoding="utf-8", method="html")
+    config_excerpt = etree.tostring(config_table, encoding="utf-8", method="html").rstrip() + b"\n"
     (TARGET / "configuration.html").write_bytes(config_excerpt)
     locus = next(row for row in rows["source_tables"] if row["table_id"] == "NI-WEB-CH03:T035")
     descriptor = {
@@ -150,7 +150,8 @@ def main():
                     "matrix_sha256": sha(encoded(table_matrix(table))),
                     "derivation": "lxml-serialized-parent-table/v1"},
         "configuration_excerpt": {"path": "configuration.html", "sha256": sha(config_excerpt),
-                                  "parent_table_id": "NI-WEB-CH03:T003"},
+                                  "parent_table_id": "NI-WEB-CH03:T003",
+                                  "derivation": "lxml-serialized-parent-table; trailing whitespace normalized to one LF"},
         "seed_csv": hashes,
         "seed_provenance": {"repository_commit": "00fc9651fbecdc1b95a05e70eb535d92d0cfeabc",
                             "selection": "unaltered canonical rows plus transitive foreign-key closure; support fixtures for admitted profiles"},
