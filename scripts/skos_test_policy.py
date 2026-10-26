@@ -23,10 +23,6 @@ BUNDLE_PATHS = (
     Path("lib/ithkuil/requirements-falkor.txt"),
     Path("lib/ithkuil/requirements-semantic.txt"),
     Path("scripts/package_ithkuil_skill.py"),
-    Path("scripts/run_tests.py"),
-    Path("scripts/skos_test_policy.py"),
-    Path("scripts/tests/test_run_tests.py"),
-    Path("scripts/tests/test_skos_test_policy.py"),
     Path("skills/ithkuil-ingestion"),
 )
 
@@ -326,9 +322,11 @@ def _run_plan(root: Path, plan_value: TestPlan) -> int:
     runner = [sys.executable, "-B", "scripts/run_tests.py"]
     if plan_value.action == "DIFF":
         runner.extend(plan_value.tests)
-    else:
-        runner.append("lib/ithkuil/tests")
-    return subprocess.run(runner, cwd=root, check=False).returncode
+        return subprocess.run(runner, cwd=root, check=False).returncode
+    return subprocess.run([
+        sys.executable, "-B", "-m", "unittest", "discover",
+        "-s", "lib/ithkuil/tests", "-p", "test_skos_*.py", "-v",
+    ], cwd=root, check=False).returncode
 
 
 def main(argv: list[str] | None = None) -> int:

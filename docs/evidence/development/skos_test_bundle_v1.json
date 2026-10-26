@@ -1,8 +1,8 @@
 {
-  "byte_count": 44684421,
-  "evidence": "PR #291 merged release-97 exhaustive audit; test-policy maintenance does not alter SKOS semantics",
-  "file_count": 328,
+  "byte_count": 44651032,
+  "evidence": "PR #291 merged release-97 exhaustive audit; test-policy control-plane changes do not alter released semantic bytes",
+  "file_count": 324,
   "release_commit": "175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8",
   "schema": "bilqis.skos-test-bundle/v1",
-  "sha256": "e079011b7a5a84b7990858f440dafef1d0641d893df009ba53c29f2f222f3af6"
+  "sha256": "572926819c70e390faf419c6fe522344fec7b9fe3a2c219d96a7b515c07e88ae"
 }

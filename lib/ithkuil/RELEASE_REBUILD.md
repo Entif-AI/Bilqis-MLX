@@ -137,15 +137,19 @@ commands before optional materialization; a failed test must not fall through.
 The exhaustive Ithkuil/SKOS suite is release proof, not an unrelated-build tax.
 `docs/evidence/development/skos_test_bundle_v1.json` binds the verified semantic
 and test bundle by SHA-256 over canonical source, tracked corpus data, fixtures,
-tests, ingestion/package inputs, and the test-policy code itself.
+tests, and ingestion/package inputs. The generic test runner and fingerprint
+planner are control-plane code: changing them triggers their own policy tests and
+the complete portable semantic CI profile, but does not pretend the released
+semantic bytes changed.
 
 For ordinary repository-wide testing, an exact matching bundle prints
 `SKOS_VERIFIED_BUNDLE_UNCHANGED <sha256> FULL_SUITE_SKIPPED` and reuses the
 already-established exhaustive release proof. Any byte change invalidates that
 fast path. CI then selects owning tests plus fixed semantic canaries when the
 change is narrow and mechanically attributable, or falls back to the complete
-suite for corpus, shared canonicalization/conformance/publication, policy, receipt,
-or otherwise ambiguous changes.
+portable `test_skos_*.py` semantic profile for corpus, shared
+canonicalization/conformance/publication, policy, receipt, or otherwise ambiguous
+changes.
 
 Use these commands deliberately:
 
@@ -156,9 +160,10 @@ npm run test:skos:full
 ```
 
 `test:skos:full` remains the release/new-policy escape hatch and never consults
-the skip receipt. Updating the receipt without the corresponding full proof is not
-a valid release action; CI forces full verification whenever the receipt or policy
-changes relative to its triggering base.
+the skip receipt. It intentionally includes clean-room, ingestion, source-frontier,
+package and release tests that may require the release-capable environment and
+source fixtures. Hosted CI does not impersonate that environment: policy changes
+run policy tests plus the full portable semantic profile instead.
 
 ## RDF and notation queries
 
