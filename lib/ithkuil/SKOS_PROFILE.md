@@ -1,0 +1,638 @@
+# Bilqis New Ithkuil SKOS/RDF profile
+
+Status: normative for the semantic projection, implemented under issues #20 and #31.
+This profile preserves the source CSVs as upstream authority. It does not allocate
+student tokens, admit curriculum semantics, or change training state. Subsequent
+profile sections are owned by #32–36; compiler implementation is owned by #37–43.
+
+## 1. Namespace and stable identity (#31)
+
+The permanent namespace base is `https://github.com/Entif-AI/Bilqis-MLX/`.
+The paths below identify resources. They are not claims that GitHub serves an RDF
+representation at those paths. A repository rename or deployment move MUST NOT
+silently rewrite this base. A future HTTP resolver may provide redirects without
+changing the identifier contract.
+
+| Entity kind | Path under the base | Required stable keys |
+| --- | --- | --- |
+| ConceptScheme | `id/scheme/{scheme_id}` | Profile-owned scheme ID, initially `new-ithkuil` |
+| Grammar-value Concept | `id/grammar/{category_code}/{value_code}` | The source category/value pair |
+| Family Collection | `id/collection/{family_id}` | Source family key such as `configuration` |
+| OrderedCollection | `id/ordered_collection/{collection_id}` | An admitted source-semantic ordered grouping ID |
+| Notation datatype | `id/datatype/{notation_system}` | `new-ithkuil` or `grammar-code` |
+| Lexical root resource | `id/root/{source_id}/{root_id}` | Public source identity and pinned root entity ID |
+| Root-sense Concept | `id/sense/{source_id}/{root_id}/{stem}/{specification}` | Public source identity and source-defined structural sense coordinates |
+| Extension term | `vocab/{term}` | Admitted vocabulary term key |
+
+For lexicon records, `root_id` is the existing `lexicon_root_id`; for grammar-site
+root records it is the pinned `atomic_id`. A sense's stable composite identifier is
+the root plus its source-declared ASCII `stem` and `specification`. Structural code case
+is canonicalized to uppercase (`Stem 1` and `STEM 1` are the same coordinate).
+Aggregate source coordinates such as `STEMS 1-3` stay aggregate; this contract does
+not expand them into invented senses. `sense_from_source` recognizes two explicit
+extractor schemas. In both, a present blank `stem` means the source's root-wide
+scope and becomes the reserved component `ROOT-WIDE`. In `root_senses` only, a
+present blank `specification` means an explicitly unspecified source sense and
+becomes `UNSPECIFIED`. A blank specification in `lexicon_root_senses`, an absent
+column, unknown source shape, or unknown structural code fails closed. These
+sentinels preserve the extractors' declared scopes; they do not infer missing
+stems or specifications. In the current corpus this preserves all 1,815 senses,
+including 714 lexicon root-wide senses and the grammar-site unspecified senses.
+
+The legacy `sense_id` and `lexicon_sense_id` hashes include mutable summary text in
+the existing extractors. They MUST remain source-row locators and MUST NOT be used
+as semantic IRI keys. A summary punctuation correction can remint those hashes
+without changing the structural sense. If two source records with the same
+structural coordinates disagree about meaning, the resolver must hold the conflict
+rather than choose one by row order. Source-document identity is evidence and does
+not by itself create a `skos:ConceptScheme` or a SKOS mapping relationship. The
+source-qualified root/sense IRIs preserve current source-record identity; concrete
+corpus projection may reconcile those records only with explicit source proof.
+Issue #36 mapping semantics apply to independently governed semantic identities,
+not merely to two documents that describe the same New Ithkuil meaning. Equal
+glosses or root spellings alone cannot merge source records.
+
+Scheme and datatype keys are profile declarations, not English labels. A new
+scheme key requires a genuinely different governed inventory. Merely reserving an
+extension term IRI does not admit its predicate or class; #35 and concrete residue
+issues own that decision. The `hasRootSense` fixture is a reserved example only.
+
+### Encoding and normalization
+
+Except for the declared uppercase structural sense-code normalization, keys are
+nonempty, case-sensitive Unicode strings in NFC. Leading/trailing
+whitespace, control/format/surrogate characters, and whole `.` or `..` segments are
+rejected. Non-NFC keys are rejected with `IDENTITY_KEY_NOT_NFC`, never silently
+collapsed. Key normalization is an upstream, explicitly reviewed identity change.
+These restrictions apply to keys, not to literal New Ithkuil notation.
+
+Encode each component independently as UTF-8 with uppercase percent escapes. Only
+RFC 3986 unreserved ASCII characters `A-Z a-z 0-9 - . _ ~` remain unescaped.
+In particular `/`, `%`, `?`, `#`, spaces, and non-ASCII bytes are encoded. Slashes
+between components are structural. Percent strings are ordinary source text and
+are escaped again, so `a/b` and `a%2Fb` stay distinct. No case-folding, transliteration,
+label-derived slug, source-line number, file path, row ordinal, or Falkor ID enters
+the grammar. The fixed kind prefix and component boundaries prevent cross-kind
+and delimiter collisions.
+
+Source snapshot versions, timestamps and file hashes describe evidence, not identity,
+and do not enter these IRIs. Root IDs and category/value codes are pinned source
+keys; sense keys use the structural composite above. This layer MUST NOT derive
+semantic keys from mutable glosses or the legacy gloss-derived sense hashes. An
+upstream change to a root or structural coordinate creates a migration review,
+not permission to silently rename an existing concept. A changed source text hash
+does not itself prove a semantic change or semantic equivalence.
+
+### Identity continuity and failure behavior
+
+Editorial label or note corrections preserve the IRI when semantic identity is
+unchanged. Meaning changes require a new stable key/IRI and an explicit successor
+record while preserving the old identity and its evidence. The successor record
+does not assert `skos:exactMatch`; mapping strength is separately governed by #36.
+`check_successor` verifies the caller's explicit semantic-change disposition; it
+does not infer semantic equivalence from text similarity or a hash change.
+
+`from_record` reads only the required key fields. Missing keys produce
+`MISSING_IDENTITY_KEY`; mutable labels or store IDs never act as a fallback.
+`validate_assignments` validates previously stored/imported assignments. Two
+different identities assigned one IRI produce `IRI_COLLISION` with both identities.
+One identity assigned multiple IRIs produces `IDENTITY_DRIFT`. A wrong single IRI
+produces `NONCANONICAL_IRI`. Errors are deterministic under input reordering.
+Reusing an IRI for an explicitly changed meaning produces `MEANING_CHANGE_REUSES_IRI`;
+a new IRI without the required recorded successor produces `SUCCESSOR_RECORD_REQUIRED`.
+
+### Fixtures and proof
+
+`tests/fixtures/skos_identity.json` is the machine-readable fixture table. It records
+entity kind, stable keys, exact expected IRI, rationale, and label-change survival.
+It includes the source-backed copular root and two of its distinct senses, both
+notation datatypes, a collection, an ordered collection, scheme, extension term,
+and an explicitly synthetic Unicode/reserved-character boundary case.
+
+Run from the repository root:
+
+```sh
+python3 -B -m unittest lib.ithkuil.tests.test_skos_identity -v
+```
+
+The tests assert literal expected IRIs, repeated/reversed builds, label/path/store
+metadata changes, changed stable keys, distinct source senses, invalid inputs,
+synthetic collisions, identity drift, and explicit successor behavior. No RDF
+emission or graph-store materialization is performed by this identity contract.
+
+Standards basis: [W3C SKOS Reference](https://www.w3.org/TR/skos-reference/),
+[RFC 3986](https://www.rfc-editor.org/rfc/rfc3986), and
+[RFC 3987](https://www.rfc-editor.org/rfc/rfc3987). The namespace, key grammar and
+error codes above are this project's profile choices, not additional W3C rules.
+
+## 2. Resource shapes and semantic organization (#32)
+
+This section fixes which source entities become SKOS concepts, schemes, collections,
+ordered collections, or generic RDF resources. It does not define labels, notation
+datatypes, semantic relations, mappings, provenance, or curriculum structure.
+
+| Source entity | RDF/SKOS shape | Scheme rule | Grouping/order rule |
+| --- | --- | --- | --- |
+| Grammar value such as Configuration `MFF`, Case `ACT`, or Register `NRR` | `skos:Concept` | One or more explicitly declared semantic inventories via `skos:inScheme` | Family membership may use `skos:Collection`; it does not imply hierarchy |
+| Grammar family such as Configuration, Case, or Register | `skos:Collection` | A collection is grouping structure, not a second concept identity | Emit `skos:member`; CSV/table/chapter order is ignored |
+| Source-defined semantic paradigm with meaningful order | `skos:OrderedCollection` | Members keep their existing concept identities | Emit one `skos:memberList` only when the order is explicitly semantic in the source |
+| Lexicon root resource | generic RDF resource | Source-document identity is not a concept scheme | The resource may receive notation under #33 without becoming a `skos:Concept` merely for that purpose |
+| Root-sense identity | `skos:Concept` | Participate in the admitted semantic scheme(s) | Remains distinct from the notation-bearing root and from sibling Stem/Specification senses |
+| Independently governed semantic inventory | `skos:ConceptScheme` | Scheme identity is profile-governed, never inferred from a source file/URL | Source documents can support one scheme without becoming schemes themselves |
+
+### Concept and scheme rules
+
+Every emitted semantic concept has one stable #31 IRI and at least one explicit
+`skos:inScheme` assertion. When the same underlying concept legitimately
+participates in more than one scheme, emit multiple `skos:inScheme` triples from
+that one concept IRI. Do not clone the concept merely to create scheme-local IDs.
+When two independently governed inventories have distinct identities, preserve
+both identities; #36 decides whether a SKOS mapping relation is justified.
+
+Source documents, source IDs, source URLs, chapter boundaries, tracked PDF splits,
+and extractor files are evidence/provenance boundaries. They do not automatically
+become concept schemes. In particular, the grammar HTML and lexicon PDF can describe
+the same New Ithkuil inventory without requiring a cross-scheme mapping merely
+because the evidence arrived through different documents.
+
+### Collection rules
+
+Use `skos:Collection` for real grammatical or semantic grouping where membership
+does not mean subsumption. Configuration, Case, and Register are representative
+unordered family collections. `skos:member` carries membership. The compiler MUST
+NOT derive `skos:broader` or `skos:narrower` from family membership, table nesting,
+file layout, chapter placement, or collection containment. #35 owns any later
+semantic-relation admission independently of these shapes.
+
+Member order supplied by a CSV reader has no semantic effect on a normal
+collection. Reversing or shuffling source rows must therefore leave the resulting
+collection graph unchanged.
+
+### OrderedCollection admission
+
+`skos:OrderedCollection` is admitted only when the source itself defines a
+meaningful semantic/paradigmatic order. The current Level scale is a positive
+fixture: source table `NI-WEB-CH05:T034` names the ordered comparison scale from
+MINIMAL through EQUATIVE to MAXIMAL as
+`MIN, SBE, IFR, DFT, EQU, SUR, SPL, SPQ, MAX`. The shape contract emits that
+source-defined scale with `skos:memberList` and an RDF list.
+
+CSV row order, source table order without independent semantic meaning, source
+chapter order, filesystem order, and curriculum/pedagogical order are prohibited
+order bases. Case remains an unordered collection merely because the source prints
+its values in rows. Curriculum prerequisites and teaching sequence remain a
+separate projection over stable semantic IDs.
+
+### Root and sense separation
+
+A notation-bearing lexicon root can remain an independently addressable generic RDF
+resource. It MUST NOT be typed as `skos:Concept` merely because #33 later attaches a
+notation. Source-defined Stem/Specification meanings are separate `skos:Concept`
+resources using the #31 sense IRI grammar. This preserves one root with many senses
+without collapsing those meanings into the written root form. A custom root→sense
+predicate is not admitted here; #35 owns that extension decision if graph consumers
+demonstrate the need.
+
+### Executable contract and fixtures
+
+`src/skos/shapes.py` exposes frozen resource specs and a pure RDFLib graph builder.
+It accepts only declared scheme references, concept members, and explicit
+`SOURCE_SEMANTIC` ordered collections. Unsupported order bases fail with
+`ORDER_BASIS_NOT_SOURCE_SEMANTIC`; undeclared schemes/members and wrong identity
+kinds fail closed rather than generating guessed RDF.
+
+`tests/fixtures/skos_shapes_positive.ttl` is the literal positive RDF fixture. It
+contains representative Configuration, Case, Register, Level, root, and root-sense
+shapes plus one synthetic second scheme proving that multi-scheme participation
+keeps one concept IRI. `tests/fixtures/skos_shapes_forbidden.ttl` records triples
+that the shape layer must never manufacture: false hierarchy, Case/table order,
+curriculum order, root-as-concept coercion, and scheme-specific concept clones.
+
+Run from the repository root with the semantic dependency set installed:
+
+```sh
+python3 -m pip install -r lib/ithkuil/requirements-semantic.txt
+python3 -B -m unittest lib.ithkuil.tests.test_skos_shapes -v
+```
+
+The tests compare the emitted graph with the positive RDF fixture, prove the
+forbidden triples are absent, read the Level `skos:memberList` through RDFLib's RDF
+Collection interface, reject non-semantic order bases, prove ordinary collection
+row shuffling is graph-invariant, and keep the root resource distinct from its
+sense concepts.
+
+## 3. Typed notation (#33)
+
+`skos:notation` represents a source notation string attached to a semantic resource.
+Notation is representation, not semantic identity, provenance, realization policy, or
+an allomorph condition. Two canonical notation systems are admitted:
+
+| Notation system | Datatype IRI | Intended lexical values |
+| --- | --- | --- |
+| literal New Ithkuil | `https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil` | Source-facing New Ithkuil forms such as `ẓ`, `i’ö`, and the explicit zero exponent `∅` |
+| grammar code | `https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code` | Source grammar abbreviations/codes such as `MFF` |
+
+The datatype IRIs are the stable datatype identities defined by #31. No additional
+notation datatype is valid until the profile intentionally adds another stable
+notation-system identity.
+
+### Lexical-form contract
+
+Notation is source-preserving Unicode. The compiler MUST construct RDF typed literals
+without Unicode normalization; the RDFLib implementation uses `normalize=False`.
+It MUST NOT NFC-normalize, NFD-normalize, transliterate, ASCII-fold, case-fold,
+substitute typography, or otherwise rewrite the lexical code-point sequence. A
+precomposed NFC string and its canonically equivalent NFD sequence therefore remain
+distinct lexical notations unless an upstream source contract explicitly admits an
+alias. RDF escaping or output encoding may change serialized bytes, but parsing the
+serialization MUST recover the exact original Unicode code points.
+
+Unpaired UTF-16 surrogate code points U+D800–U+DFFF are not Unicode scalar values and
+are not legal notation input. They fail with `NOTATION_SURROGATE_FORBIDDEN`; the
+semantic layer MUST NOT replace, drop, pair, or otherwise repair them. All other
+accepted notation code points remain byte-for-byte/code-point-for-code-point untouched
+by the notation constructor.
+
+This semantic layer preserves the lexical Unicode string, not the original source-file
+byte sequence. Byte-level source evidence remains upstream in the source/provenance
+records and is not embedded in `skos:notation`.
+
+The empty string is not a legal notation. Leading or trailing Unicode whitespace is
+also illegal. Implementations MUST reject padded values rather than trimming them.
+Whitespace inside an otherwise valid lexical value is preserved exactly and is
+significant if such a value is source-admitted. The explicit zero exponent is the
+single literal `∅` (U+2205); it is never represented by an empty string.
+
+Notation values are datatype literals and MUST NOT carry a language tag. A resource may
+carry more than one `skos:notation`, including values from both canonical notation
+systems. The datatype distinguishes the notation systems; a grammar code and a literal
+New Ithkuil form on the same resource do not conflict.
+
+Allomorph conditions, slot metadata, source loci, and realization state remain outside
+the notation literal. #45 and #59 own realization/allomorph semantics.
+
+### Same-scheme collision contract
+
+The exact collision key is the tuple:
+
+`(governing scheme IRI, notation datatype IRI, exact lexical Unicode string)`.
+
+The governing scheme and resource identity in every collision claim MUST be absolute
+IRIs rather than relative references or arbitrary text. Invalid scheme and resource
+claims fail as `INVALID_NOTATION_SCHEME_IRI` and
+`INVALID_NOTATION_RESOURCE_IRI` before grouping, so collision identity cannot be
+manufactured from local labels or relative paths.
+
+Two claims from the same resource for the same tuple are idempotent. Equal lexical
+strings under different datatypes or different schemes are different keys. NFC and NFD
+strings with different code-point sequences are different keys even when Unicode
+canonical normalization would make them equivalent.
+
+A blocking notation collision exists only when two or more distinct semantic resource
+IRIs claim the same exact key and that notation is expected to identify a resource
+uniquely within the governing scheme. The collision report MUST contain the complete
+scheme/datatype/lexical tuple and every conflicting stable resource IRI. If a notation
+class is explicitly not expected to identify uniquely, the same exact homograph on
+multiple resources is allowed but remains visible as an allowed-homograph result for
+corpus review. If any claim for an exact tuple carries the uniqueness requirement, a
+second distinct resource is a collision.
+
+`analyze_notation_claims` returns deterministic collision and allowed-homograph
+groups. `validate_notation_collisions` fails with `NOTATION_COLLISION` on the first
+deterministically ordered blocking group. Corpus-wide enforcement remains owned by #47.
+
+### Fixtures and proof
+
+`tests/fixtures/skos_notation.json` contains ASCII grammar-code, non-ASCII source,
+multi-codepoint source, explicit-zero, NFC/NFD boundary, same-resource multi-system,
+blocking-collision, and allowed-homograph fixtures.
+
+Run from the repository root with RDFLib 7.6.0 installed:
+
+```sh
+python3 -B -m unittest lib.ithkuil.tests.test_skos_notation -v
+```
+
+The tests perform real RDF N-Triples serialize/parse/serialize/parse round trips and
+compare the recovered lexical strings by exact Unicode code points. They also prove
+datatype/language-tag validation, explicit empty/whitespace behavior, valid
+same-resource multi-system notation, stable collision diagnostics under input
+reordering, and the distinction between blocking collisions and permitted homographs.
+
+## 4. Source labels and documentation (#34)
+
+Only explicitly source-grounded assertions enter the text projection. A source
+reference is required for every input; #39 checks those references against the
+public source graph. The text module does not infer source authority from a URL
+or confidence score. Generated labels and paraphrases are held.
+
+| Source/normalized field | SKOS property | Scope | Multiplicity per resource/language |
+| --- | --- | --- | --- |
+| `value_name`, `category_name`, `root_gloss`, `preferred_label` | `prefLabel` | Concept/resource identity | At most one distinct value; identical assertions deduplicate |
+| `alternate_label` | `altLabel` | Explicit source lexical alternative | Multiple distinct attested alternatives |
+| `hidden_label` | `hiddenLabel` | Explicit source search/historical alias | Multiple; never invented by normalization |
+| `sense_summary`, `definition` | `definition` | Identity-level meaning | One distinct value; competing definitions held |
+| `semantic_summary` | `definition` or `note` | Requires an explicit `concept` or `realization` classification | Concept definitions must agree; explicitly scoped realization notes coexist |
+| `scope_note` | `scopeNote` | Source-qualified scope restrictions | Multiple |
+| `note` | `note` | Source-classified note | Multiple |
+| `example` | `example` | Explicit source example | Multiple |
+| `history_note` | `historyNote` | Source-classified historical information | Multiple |
+| `change_note` | `changeNote` | Source-classified change information | Multiple |
+| `editorial_note` | `editorialNote` | Source-classified editorial information | Multiple |
+
+The normalized fields in this table are an admission interface, not claims that
+all these columns already exist in the CSV corpus. An adapter must retain the
+original field/locus and explicit role. In particular `evidence_excerpt` without a
+known source evidence role is not automatically a definition, example or note.
+
+Every admitted text literal requires an explicit language tag. Current source
+fields are English; adapters may supply `en` only for those declared English fields.
+The boundary accepts ASCII language codes of 2–8 letters with optional 1–8-character
+ASCII alphanumeric subtags and canonicalizes tag case to lowercase. Missing or
+unsupported tags are held, never guessed from text. Different languages may each
+have one preferred label on the same resource IRI. Preferred, alternate and hidden
+label sets are pairwise disjoint for the same resource/language/lexical value.
+
+Text code points, punctuation and whitespace are preserved exactly; whitespace-only
+values are held. No paraphrase, punctuation replacement or Unicode normalization
+is performed. The compact source-excerpt ceiling is 180 code points, matching the
+source corpus's compact-meaning boundary. Longer values are held with their source
+reference, not silently truncated or copied wholesale into RDF.
+
+Conflicting preferred labels or identity-level definitions produce deterministic
+`PREFERRED_LABEL_CONFLICT` or `DEFINITION_CONFLICT` outcomes. Input order, frequency,
+string length and apparent fluency are not authority rules. A caller may catch
+the `ProfileError` and write a held ledger entry; no partial text graph escapes
+the failed projection. Duplicate identical assertions deduplicate.
+
+An explicit realization-scoped `semantic_summary` becomes `skos:note`; it cannot
+replace the concept definition. This disposition is valid only when the adapter
+has established realization scope from the governing source rule. Material
+meaning disagreements must remain concept-level conflicts; they may not be
+relabeled as realization notes merely to pass validation. #46 owns corpus-specific
+normalization of divergent realization summaries. Unknown text roles/scopes,
+unattested generated labels, absent sources, and invalid language are held.
+Omitting scope for `semantic_summary` is an error; there is no default promotion to
+concept meaning. Fields whose role is already explicit, such as `sense_summary`
+or normalized `definition`, use their declared table role.
+
+Proof: `python -B -m unittest lib.ithkuil.tests.test_skos_text -v` in the environment
+installed from `requirements-semantic.txt`. Tests cover every admitted property,
+duplicate and conflicting preferred labels, label-class disjointness, multilingual
+identity preservation, realization-note demotion, conflicting definitions, missing
+source/language, generated text, unknown roles, long prose and exact RDF round trips.
+
+## 5. Semantic relations and extension admission (#35)
+
+| Source-qualified relation | Disposition | Predicate or condition |
+| --- | --- | --- |
+| Genuine semantic subsumption | `SKOS_SEMANTIC_RELATION` | Narrower concept `skos:broader` broader concept |
+| The inverse subsumption direction | `SKOS_SEMANTIC_RELATION` | Broader concept `skos:narrower` narrower concept |
+| Genuine conceptual association | `SKOS_SEMANTIC_RELATION` | `skos:related`, only with semantic evidence |
+| Grammatical family membership | `SKOS_MEMBERSHIP` | Family `skos:member` member; no semantic hierarchy |
+| Root-to-sense link | `RELATIONAL_IR_ONLY` until an extension/standard is admitted | #53 owns the concrete relationship decision |
+| Composition membership | `RELATIONAL_IR_ONLY` until admitted | #57 owns construction semantics |
+| Ordered composition component | `RELATIONAL_IR_ONLY` until admitted | #58 owns source role/order preservation |
+| Allomorph relation or condition | `RELATIONAL_IR_ONLY` until admitted | #59 owns the source rule model |
+| Conceptual contrast | `SKOS_SEMANTIC_RELATION` only when the source establishes an associative concept relation | Otherwise `HELD`; opposite-looking forms are insufficient |
+| Any unknown relation type or missing source evidence | `HELD` | Never use `skos:related` as graph glue |
+| Reviewed necessary linguistic residue | `BILQIS_EXTENSION` | Its admitted predicate, with declared domain/range |
+
+The decision matrix is a **non-authoritative classification helper** over premises
+already established by source review. Its `source_attested` / `semantic_proof`
+inputs do not prove source truth, authorize graph emission, or validate endpoint
+types. Those checks belong to source-qualified normalization/emission (#37-40).
+The helper never emits RDF. Semantic proof is not inferred from adjacency, labels,
+shared tables, morphology, source order, or model confidence. Family membership
+always remains membership, and structural linguistic relations never become SKOS
+semantic relations merely because they are useful to traverse.
+
+An extension entry has a stable term key/IRI, precise definition, relation kind,
+domain, range, public source fixture, source justification, rejected SKOS and
+generic-RDF alternatives, a negative fixture, recurring-use and machine-need
+dispositions, and optional subproperty/specialization proof. All required fields
+and proof references must validate. A missing fixture, convenience-only proposal,
+unknown relation kind, or an existing faithful SKOS primitive blocks admission.
+Custom-predicate qualification always starts from the raw registry term and reruns
+the checklist; there is no trusted `AdmittedExtension` wrapper or cached admission.
+
+The fixture registry `tests/fixtures/skos_extension_example.json` defines the
+`bilqis-extension-admission/1` format. Its scope is explicitly
+`admission-fixture-only`: passing a fixture gate does not install a production
+vocabulary. The real source rule `ALLO-08d9bb00e7a0dd` maps `fbm` through `fv` to `vw`
+under its attested condition. Its replacement role is a legitimate non-SKOS
+linguistic relation; a fixture term `surfaceReplacement` passes the admission
+checklist. The gate resolves that source key in canonical `allomorph_rules.csv` and
+parses a negative RDF fixture containing the exact source-bound false
+`skos:related` edge; matching caller-supplied proof strings are not evidence.
+Generic `rdf:value` cannot distinguish its input, intermediate and replacement roles.
+This establishes the boundary; #57–60 choose the actual minimal production terms.
+
+A custom subproperty of `skos:broader`, `skos:narrower` or `skos:related` additionally
+requires concept domain/range, the matching semantic relation kind, and a parsed
+specialization graph that binds the candidate property to both the SKOS superproperty
+and the real source key. A structural allomorph or composition relation fails even
+when a caller supplies a claimed specialization identifier. Unsupported or unbound
+specialization evidence remains unproven/held; no arbitrary proof map can admit it.
+
+Proof: `test_skos_relations.py` parses positive and negative RDF fixtures, checks
+each decision-matrix row, validates the real allomorph source row, rejects forged
+wrapper/source/negative/specialization evidence and unnecessary/custom membership,
+and keeps the core matrix non-authoritative. Unknown relations remain source IR or
+held state; no full corpus relations are emitted by this profile gate.
+
+## 6. Cross-scheme mapping semantics (#36)
+
+SKOS mapping properties relate semantic concepts from independently governed
+inventories. They never merge identities, never mint identity aliases, and never emit
+`owl:sameAs`. A source document, chapter, PDF, source ID, or extractor boundary is
+evidence provenance, not a concept scheme. Distinct source-document IDs therefore do
+not prove that two resources belong to independent schemes.
+
+This section defines only the normalized semantic admission contract. It does not
+interpret raw `bilqis_ithkuil_crosswalk.csv` or `bilqis_semantic_bridges.csv`
+states. Issue #62 owns the adapter from raw review/workbook states into the normalized
+states below. No raw corpus row is emitted by #36.
+
+### Predicate strength and source-state matrix
+
+| Predicate | Required normalized review state | Extra proof | Insufficient / held | Direction/symmetry | Historical-only emission |
+| --- | --- | --- | --- | --- | --- |
+| `skos:exactMatch` | `admitted_exact_equivalence` | Explicit `exactness_proof_ref` proving admitted equivalence | Similarity, absence of contradiction, ambiguous exactness, or a close-only qualification | Symmetric; emit both directions | Never |
+| `skos:closeMatch` | `admitted_close_match` | Explicit `qualification_ref` stating the admitted close correspondence | Proposal/ambiguity or a failed/missing exactness review without a separate close admission | Symmetric; emit both directions | Never |
+| `skos:broadMatch` | `admitted_broad_match` | Explicit source-grounded `direction_ref` | Label generality, collection membership, row order, or inferred direction without source evidence | Directional; inverse is `skos:narrowMatch` | Never |
+| `skos:narrowMatch` | `admitted_narrow_match` | Explicit source-grounded `direction_ref` | Label specificity, collection membership, row order, or inferred direction without source evidence | Directional; inverse is `skos:broadMatch` | Never |
+| `skos:relatedMatch` | `admitted_related_match` | Source/evidence review sufficient for admitted associative correspondence | Co-occurrence, topical resemblance, proposal, or unresolved relation type | Symmetric; emit both directions | Never |
+
+Every normalized claim also requires a nonempty `source_ref`, nonempty
+`evidence_ref`, explicit source and target scheme IRIs, and an explicit
+`independent_schemes` disposition. Both semantic resource IRIs remain distinct.
+If the inventories are not independently governed, or if both resources belong to the
+same governing scheme for this claim, the mapping is held rather than manufactured.
+
+`exactMatch` is not the default when nothing disproves equivalence. It requires the
+positive normalized state `admitted_exact_equivalence` plus explicit exactness proof.
+Likewise `closeMatch` is not a downgrade bucket for uncertain exactness. It requires
+its own independently reviewed state, `admitted_close_match`, plus an explicit
+qualification. An exact admission cannot be silently emitted as close, and an
+ambiguous or insufficient exactness review stays held.
+
+For directional mappings, `A skos:broadMatch B` means the target B is broader than
+the source A; the emitted inverse is `B skos:narrowMatch A`.
+`A skos:narrowMatch B` emits the inverse `B skos:broadMatch A`.
+Direction must be source-grounded. The compiler does not infer hierarchy from labels,
+collections, row order, or apparent generality.
+
+### Held and unsupported states
+
+The following normalized review states never emit a SKOS mapping assertion:
+
+| Review state | Held reason |
+| --- | --- |
+| `proposal` | `MAPPING_PROPOSAL_HELD` |
+| `blocked` | `MAPPING_BLOCKED_HELD` |
+| `deferred` | `MAPPING_DEFERRED_HELD` |
+| `historical_only` | `MAPPING_HISTORICAL_ONLY_HELD` |
+| `rejected_equivalence` | `MAPPING_REJECTED_EQUIVALENCE_HELD` |
+| `ambiguous` | `MAPPING_AMBIGUOUS_HELD` |
+
+Any review state outside the enumerated normalized state space fails closed as
+`UNSUPPORTED_MAPPING_REVIEW_STATE`. Raw values such as
+`APPROVED_TYPED_FORMAL_ADAPTER`, `formal_adapter`, or other workbook strategy
+labels are not normalized mapping admissions and are not interpreted here.
+
+The current tracked crosswalk contains 222 rows whose targets are only
+`source_document` or `source_section`; the 330 semantic-bridge rows target only
+`source_document`, `source_section`, or two `historical_source` records. There
+are currently zero confirmed concept-target equivalence rows in those raw tables.
+Accordingly, the executable positive fixtures for this section are deliberately
+synthetic and must not be read as admissions of existing Bilqis↔Ithkuil semantics.
+In particular, existing `APPROVED_*` source strategies are not promoted to SKOS
+semantic matches merely because their workflow label contains “approved.”
+
+### Conflict rules
+
+For each unordered semantic resource pair, `exactMatch` conflicts with hierarchical
+or associative mapping assertions, and a hierarchical mapping conflicts with
+`relatedMatch`. Conflicts in either orientation fail as
+`CONFLICTING_MAPPING_PREDICATES`; the implementation never chooses the strongest,
+weakest, or first relation automatically. `broadMatch` and reversed `narrowMatch`
+describe the same direction and remain idempotent at the RDF graph layer.
+
+`exactMatch` is symmetric, transitive and a subproperty of `closeMatch`.
+`closeMatch`, `broadMatch`, `narrowMatch` and `relatedMatch` are not declared
+transitive. The validator checks exact-match reachability for clashes with explicit
+hierarchical/associative mappings. It also checks the `broaderTransitive` reachability
+implied by broad/narrow mappings against associative links. Such path conflicts fail
+as `ENTAILED_MAPPING_CONFLICT`, with the endpoints and clash type. These are
+validation computations only: no inferred closure triples are written.
+
+Explicit admitted `exactMatch` and `closeMatch` may coexist, since exact implies
+close. Source-qualified reciprocal broad mappings and hierarchy cycles are not
+rejected merely for forming a cycle; SKOS permits them. A cycle carrying an actual
+disjoint-property clash still fails. There are no mixed-property substitution rules
+that propagate a broad/related edge through an exact/close link. Close chains never
+gain exactness. These distinctions follow the [W3C SKOS Reference, sections 10.3,
+10.4 and 10.6](https://www.w3.org/TR/skos-reference/#mapping).
+
+Source/evidence references, concept endpoint types, scheme memberships and independent
+governance are reviewed input premises at this boundary. #37–40 and #62 bind them to
+the actual source closure before corpus emission. A string reference alone is not
+proof of source truth. The explicit self-mapping rejection is this profile's
+cross-inventory admission rule; it is not a claim that SKOS forbids reflexive edges.
+
+### Executable contract and fixtures
+
+`src/skos/mapping.py` exposes frozen `MappingClaim` and `MappingDecision`
+records plus pure decision, conflict-validation, and graph-projection functions.
+`tests/fixtures/skos_mapping_admission.json` is the machine-readable predicate/state
+matrix and synthetic admission fixture. `tests/fixtures/skos_mapping_positive.ttl`
+is the literal expected RDF fixture. The implementation emits only SKOS mapping
+predicates and their required symmetric/inverse triples; it never emits
+`owl:sameAs`.
+
+Run from the repository root with RDFLib 7.6.0:
+
+```sh
+python3 -B -m unittest lib.ithkuil.tests.test_skos_mapping -v
+```
+
+The tests compare literal expected triples and the Turtle fixture, perform a real RDF
+serialize/parse round trip, cover all five positive predicates and all six held
+states, reject unknown/raw future states, require exactness/close/directional proof,
+prove broad/narrow inverse directionality, detect direct and entailed path conflicts,
+preserve exact/close coexistence and valid reciprocal hierarchy, require source/evidence and independent-scheme disposition, forbid
+self-mapping identity collapse, and verify that the current raw corpus contains no
+concept-target equivalence admissions.
+
+## Mapping admission table (#62)
+
+Issue #62 implements the finite normalization gate consumed by later mapping emission.
+It does **not** emit RDF and does not interpret source prose. The runtime performs an
+exact lookup in a versioned table; zero matches are `UNSUPPORTED`, and duplicate or
+multiple matches fail closed.
+
+### Exact decision key
+
+Each raw record is normalized to these exact fields:
+
+`record_kind, relation_state, equivalence_state, mapping_disposition, review_state,
+registry_state, source_era, target_kind, source_match_state`.
+
+For crosswalk rows, `relation_state` is `relation_type`, `review_state` is
+`crosswalk_state`, and `registry_state` is explicitly `__NOT_PRESENT__`. For bridge
+rows, `relation_state` is `link_type`, `review_state` is `bridge_epistemic_state`,
+`registry_state` is `registry_state_raw`, and the unavailable equivalence/disposition
+dimensions are explicitly `__NOT_PRESENT__`. There are no wildcards.
+
+`source_match_state` is included because it is a finite source-qualification state.
+The current files contain no normalized caution/dependency enum. Free English fields,
+including `semantic_differential` and `semantic_caution_or_dependencies`, are therefore
+excluded from the key and cannot change an admission result.
+
+### Current corpus disposition
+
+The current corpus contains 222 crosswalk rows and 330 semantic-bridge rows. These
+collapse to 13 and 26 exact policy combinations respectively, 39 total. Current target
+kinds are only `source_document`, `source_section`, and `historical_source`; there are
+zero concept targets. Consequently no current raw row is a SKOS mapping admission.
+
+The crosswalk's `APPROVED_*` strategy labels remain `HOLD` because they are workflow
+or construction strategies, not #36 normalized semantic mapping admissions. The one
+`rejected_exact_equivalence` row is `REJECT`. Bridge proposal, blocked, deferred,
+historical-only, research-only, research-seed, and source-seeded states remain `HOLD`
+with stable reason codes.
+
+### Five emitting outcomes
+
+The five emitting forms are present only as explicitly `synthetic_normalized_admissions`
+in the fixture. They reproduce #36's normalized reviewed states literally:
+
+- `exactMatch + admitted_exact_equivalence -> EMIT_EXACT`
+- `closeMatch + admitted_close_match -> EMIT_CLOSE`
+- `broadMatch + admitted_broad_match -> EMIT_BROAD`
+- `narrowMatch + admitted_narrow_match -> EMIT_NARROW`
+- `relatedMatch + admitted_related_match -> EMIT_RELATED`
+
+These synthetic rows are contract fixtures, not invented approvals of the current raw
+crosswalk or bridge corpus. Actual source/endpoint validation and later RDF emission
+remain owned by #63-#66.
+
+### Executable artifacts
+
+`src/skos/mapping_admission.py` loads and validates the table, creates exact row keys,
+returns one deterministic disposition, validates full observed coverage, and emits a
+stable coverage report. `src/skos/mapping_admission_table.json` is the
+versioned table. `tests/fixtures/skos_mapping_admission_coverage.json` is the literal
+current-corpus report. Tests prove 552-row coverage, all five synthetic emit outcomes,
+no current raw emission, proposal/blocked/deferred/historical/rejected negatives,
+unknown-state failure, duplicate/multiple-match failure, and row-order/commentary
+invariance.
+
+The runtime table lives with production code; test fixtures do not act as an
+implicit production policy source. JSON object-key order is nonsemantic. The
+policy loader rejects emitting rules targeting a source document or historical
+source and rejects normalized strength swaps, such as classifying an admitted
+close mapping as exact. The normalized decision is eligibility under the table,
+not source/endpoint evidence; #36 and the source-qualified mapping emitter still
+enforce their required proof and identity boundaries.

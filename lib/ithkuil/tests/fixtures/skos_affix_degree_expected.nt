@@ -1,0 +1,26 @@
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/0> <http://purl.org/dc/terms/identifier> "DEG-72c7e112e8fe0a" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/0> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/009eb51556496620cf39d2f111a5c7e0cb041f3264a6542ed671b29faa211a89> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/0> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/0> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "0"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/0> <http://www.w3.org/2004/02/skos/core#definition> "CCV successive case-scope"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/0> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/0> <https://github.com/Entif-AI/Bilqis-MLX/vocab/degreeOf> <https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-WEB-CH05/ATOM-c413d0e6c8faa8> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/1> <http://purl.org/dc/terms/identifier> "DEG-f700e59e3201ca" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/1> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/009eb51556496620cf39d2f111a5c7e0cb041f3264a6542ed671b29faa211a89> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "1"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/1> <http://www.w3.org/2004/02/skos/core#definition> "SUB subjunctive Mood"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/1> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/1> <https://github.com/Entif-AI/Bilqis-MLX/vocab/degreeOf> <https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-WEB-CH05/ATOM-c413d0e6c8faa8> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/9> <http://purl.org/dc/terms/identifier> "DEG-e32c399ac9babc" .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/9> <http://purl.org/dc/terms/source> <https://github.com/Entif-AI/Bilqis-MLX/source/locus/009eb51556496620cf39d2f111a5c7e0cb041f3264a6542ed671b29faa211a89> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/9> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2004/02/skos/core#Concept> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/9> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "9"^^<http://www.w3.org/2001/XMLSchema#nonNegativeInteger> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/9> <http://www.w3.org/2004/02/skos/core#definition> "CCP precedent case-scope"@en .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/9> <http://www.w3.org/2004/02/skos/core#inScheme> <https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil> .
+<https://github.com/Entif-AI/Bilqis-MLX/id/affix-degree/ATOM-c413d0e6c8faa8/9> <https://github.com/Entif-AI/Bilqis-MLX/vocab/degreeOf> <https://github.com/Entif-AI/Bilqis-MLX/id/root/NI-WEB-CH05/ATOM-c413d0e6c8faa8> .
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/009eb51556496620cf39d2f111a5c7e0cb041f3264a6542ed671b29faa211a89> <http://purl.org/dc/terms/bibliographicCitation> "Chapter 5: Verbs; source NI-WEB-CH05; section NI-WEB-CH05:5.2.7; table NI-WEB-CH05:T023; line 8968." .
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/009eb51556496620cf39d2f111a5c7e0cb041f3264a6542ed671b29faa211a89> <http://purl.org/dc/terms/identifier> "source=NI-WEB-CH05;section=NI-WEB-CH05:5.2.7;table=NI-WEB-CH05:T023;line=8968" .
+<https://github.com/Entif-AI/Bilqis-MLX/source/locus/009eb51556496620cf39d2f111a5c7e0cb041f3264a6542ed671b29faa211a89> <http://purl.org/dc/terms/source> <https://www.ithkuil.net/newithkuil_05_verbs.htm> .
+<https://www.ithkuil.net/newithkuil_05_verbs.htm> <http://purl.org/dc/terms/bibliographicCitation> "Chapter 5: Verbs" .
+<https://www.ithkuil.net/newithkuil_05_verbs.htm> <http://purl.org/dc/terms/identifier> "NI-WEB-CH05" .

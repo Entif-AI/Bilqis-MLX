@@ -10,8 +10,12 @@ the progression frontier. **ADR-094 replaces the old one-B-candidate-per-five ca
 with a bounded grade-turn cadence:** after at most four completed non-B training
 turns, B receives one contiguous pass over every currently imperfect admitted B
 capability, then yields for four more non-B turns before another B pass can occur.
+
 Do not narrow Prometheus back to a historical reduced Boolean profile, and do not
 add Boolean mastery as a Grade-C prerequisite.
+
+New Ithkuil semantic corpus: [release artifacts, rebuild and consumer guide](lib/ithkuil/RELEASE_REBUILD.md).
+The guide separates canonical RDF/SKOS from optional Falkor state and curriculum/training authority.
 
 ## CONTROLLING USER CORRECTION — 2026-10-22: foundations before worlds
 

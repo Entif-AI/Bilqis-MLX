@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ithkuil Ingestion"
+  short_description: "Rebuild Ithkuil sources and validate semantic RDF"
+  default_prompt: "Use $ithkuil-ingestion to rebuild pinned sources or compile validated CSVs, preserving frontier, held and conformance evidence."

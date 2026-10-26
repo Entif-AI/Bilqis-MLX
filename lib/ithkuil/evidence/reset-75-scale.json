@@ -1,0 +1,53 @@
+{
+  "authority_boundary": "IPR-0220; no neural training or curriculum admission",
+  "blockers": [],
+  "canonical_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+  "enumeration": {
+    "boundary_rows": 130173,
+    "owned_node_rows": 67411
+  },
+  "evidence": {
+    "bounded-tests.log": "2586aa0e34ab8aa877833cd59725337de8fa0e26063a0db90c9377c87ccc4db1",
+    "corrected-reset-explain.txt": "40e1965272b986d4143f66232219c1321f78d980df1f095b7e20fc33fbce245f",
+    "old-reset-explain.txt": "4fb7b3a0f7c1fa2dc40e7920e002a43afa9d173d4fe0f1fd770eed09f03373bf",
+    "reset-scale-corrected.log": "6558b502df5ac5c1e8b773867d418e18fdf99c2d7d1161119baec465594b1df0"
+  },
+  "execution_correction": "Drop validated node array before edge enumeration/aggregation; rematch nodes after deleting selected edges in the same fenced transaction. Old query retained the node array through edge rows. OOM was observed with old query and concurrent read-only scan; causal contributions were not isolated.",
+  "foreign_edges_touching_owned_nodes": [],
+  "foreign_nodes_touching_owned_edges": [],
+  "graph": "bilqis_skos_release95_2e8effc5df5b",
+  "incidents": [
+    "PM-2026-10-26-005",
+    "PM-2026-10-26-006"
+  ],
+  "limits": [
+    "Prior 39-node/63-edge bounded proof never exceeded provider cap and was insufficient.",
+    "Pagination repair does not change canonical RDF, release census or semantic coverage.",
+    "Full preserved graph reset is deferred to the #95 recovery proof."
+  ],
+  "owned_edges": 130173,
+  "owned_nodes": 67410,
+  "owner": "codex_release95_c2464d4d062d",
+  "page_size": 1000,
+  "plan_sha256": "9b4b93d184f053fa791f9c639a899b732ad120f33277daa12540aaa10b5da5c5",
+  "preserved_graph_dry_run_only": true,
+  "projection_version": "1.0.0",
+  "provider_resultset_limit": 10000,
+  "schema": "bilqis.skos.reset75-scale-proof/v1",
+  "source_parent": "98ff7bcd2103b0b97bc0cafe47b88c24537b2412",
+  "state": "incomplete",
+  "status": "passed",
+  "synthetic_live_reset": {
+    "foreign_subgraph_survives": true,
+    "owned_edges": 10063,
+    "owned_nodes": 10039,
+    "reset_rebuild": "passed",
+    "wrong_graph_owner_digest_stale_set_and_atomic_race": "refused"
+  },
+  "tests": {
+    "live_reset": 5,
+    "portable_paging": 4,
+    "portable_release_fixture": 4,
+    "prior_bounded_import_and_reset": 10
+  }
+}

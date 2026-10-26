@@ -1,0 +1,55 @@
+{
+  "rows": [
+    {
+      "domain": "atomic",
+      "key": "ATOM-A1",
+      "table": "morphemes_atomic"
+    },
+    {
+      "domain": "atomic",
+      "key": "ATOM-A2",
+      "table": "morphemes_atomic"
+    },
+    {
+      "domain": "atomic",
+      "key": "ATOM-A3",
+      "table": "morphemes_atomic"
+    },
+    {
+      "domain": "lexicon",
+      "key": "LEXROOT-L1",
+      "table": "lexicon_roots"
+    },
+    {
+      "domain": "lexicon",
+      "key": "LEXSENSE-L2",
+      "table": "lexicon_root_senses"
+    },
+    {
+      "domain": "lexicon",
+      "key": "EVID-L3",
+      "table": "lexicon_root_evidence"
+    },
+    {
+      "domain": "mapping",
+      "key": "MAP-M1",
+      "table": "mapping_crosswalk"
+    },
+    {
+      "domain": "mapping",
+      "key": "MAP-M2",
+      "table": "mapping_bridge"
+    },
+    {
+      "domain": "residue",
+      "key": "COMP-R1",
+      "table": "morpheme_compositions"
+    },
+    {
+      "domain": "residue",
+      "key": "AFF-R2",
+      "table": "affix_residue"
+    }
+  ],
+  "schema": "bilqis.skos.source-row-set/v1"
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "bilqis.skos.residue-reconciliation-snapshot/v1",
+  "counts": {
+    "source_rows": 6062,
+    "emitted": 6062,
+    "held": 0,
+    "ir_only": 0
+  },
+  "canonical_triple_count": 54271,
+  "canonical_byte_count": 9896717,
+  "canonical_sha256": "f9aaa79e9839c68b1973546002ce8674d70836c9873a5b0cf7c2bbe6365f8bee",
+  "residue_source_sha256": "198cc83edc44d2804016193ea97f85d269e5ce133cd0b9dd2b4ae343eafae3dd",
+  "receipt_sha256": "359a4797eaa21ab4302f8671dd4ffea28f3094e99882e9adfe3ff872c3cb9b67"
+}

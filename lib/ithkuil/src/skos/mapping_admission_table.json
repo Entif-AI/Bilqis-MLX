@@ -1,0 +1,638 @@
+{
+  "schema": "bilqis.skos.mapping-admission/v1",
+  "table_version": "2026-10-24.1",
+  "key_fields": [
+    "record_kind",
+    "relation_state",
+    "equivalence_state",
+    "mapping_disposition",
+    "review_state",
+    "registry_state",
+    "source_era",
+    "target_kind",
+    "source_match_state"
+  ],
+  "normalized_caution_dimensions": [],
+  "commentary_excluded": [
+    "bilqis_source_definition",
+    "new_ithkuil_bridge",
+    "official_locus",
+    "semantic_differential",
+    "source_grounded_semantic_meaning",
+    "semantic_caution_or_dependencies"
+  ],
+  "rules": [
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "ALGEBRA ROLE ALIGNMENT",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "source_seeded",
+        "registry_state": "SOURCE-SEEDED; LEXICAL PROBE NOT ACTIVE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_SOURCE_SEEDED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "ANALOGY; NEEDS CONTEXT TYPES",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; CONTEXT GATE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "ANALOGY; NEEDS GOAL/RESULT",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; NEW GOAL SEMANTICS",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "ANALOGY; NEEDS REFERENCE FRAME",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; REFERENCE FRAME GATE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "ANALOGY; NEEDS TRANSITIONS",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; EVENT CONSTRUCTION GATE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "ANALOGY; REQUIRES FRAME",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; FRAME NOT IMPLEMENTED",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "ANALOGY; REQUIRES PURPOSE ROLES",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; NEW PURPOSE SEMANTICS",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "CARDINALITY / EMPTY OBJECT",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "source_seeded",
+        "registry_state": "SOURCE-SEEDED; LEXICAL PROBE NOT ACTIVE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_SOURCE_SEEDED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "CARDINALITY / ORDER",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "source_seeded",
+        "registry_state": "SOURCE-SEEDED; LEXICAL PROBE NOT ACTIVE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_SOURCE_SEEDED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "CARDINALITY ALIGNMENT",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "source_seeded",
+        "registry_state": "SOURCE-SEEDED; LEXICAL PROBE NOT ACTIVE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_SOURCE_SEEDED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "COMPOSITIONAL ALIGNMENT",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; NO G26 COMPILER",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "EXACT MATHEMATICAL / LOGICAL DONOR MORPHOLOGY",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "proposal",
+        "registry_state": "SOURCE MINED / PROPOSED ONLY",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_PROPOSAL_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "FORMAL 3×2 MATRIX; CONDITIONALLY CONSTRUCTIBLE",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "blocked",
+        "registry_state": "BLOCKED: MATHEMATICAL ENCODING ≠ LEARNED MEANING",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_BLOCKED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "FUTURE NUMBER TYPES",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "source_seeded",
+        "registry_state": "SOURCE-SEEDED; LEXICAL PROBE NOT ACTIVE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_SOURCE_SEEDED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "HISTORICAL INSPIRATION ONLY",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "historical_only",
+        "registry_state": "HISTORICAL ONLY; NOT TRAINING GOLD",
+        "source_era": "historical_2011",
+        "target_kind": "historical_source",
+        "source_match_state": "historical_unpinned"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_HISTORICAL_ONLY_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "MATHEMATICAL / TYPED COMPOSITION PROPOSAL",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_only",
+        "registry_state": "RESEARCH ONLY / TRAINING NOT ACTIVE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_ONLY_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "METALANGUAGE ALIGNMENT",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "source_seeded",
+        "registry_state": "SOURCE-SEEDED; NO GRAMMAR COMPILER",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_SOURCE_SEEDED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "NUMBER TYPES",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "source_seeded",
+        "registry_state": "SOURCE-SEEDED; LEXICAL PROBE NOT ACTIVE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_SOURCE_SEEDED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "OBJECT / STRUCTURE / OPERATOR",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "source_seeded",
+        "registry_state": "SOURCE-SEEDED; LEXICAL PROBE NOT ACTIVE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_SOURCE_SEEDED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "OPERATION ALIGNMENT",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "source_seeded",
+        "registry_state": "SOURCE-SEEDED; LEXICAL PROBE NOT ACTIVE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_SOURCE_SEEDED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "PARTIAL ANALOGY; NEEDS INTERVALS",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; NEW INTERVAL/PROCESS SEMANTICS",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "PARTIAL EQUIVALENCE",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "source_seeded",
+        "registry_state": "SOURCE-SEEDED; LEXICAL PROBE NOT ACTIVE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_SOURCE_SEEDED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "PRAGMATIC GROUNDING REQUIRED",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "deferred",
+        "registry_state": "DEFERRED UNDER ALGEBRA-ONLY RULE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_DEFERRED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "STRUCTURAL ALIGNMENT",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; NEW RELATION TYPES",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "STRUCTURAL ALIGNMENT",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; NO G26 COMPILER",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "bridge",
+        "relation_state": "STRUCTURAL ALIGNMENT",
+        "equivalence_state": "__NOT_PRESENT__",
+        "mapping_disposition": "__NOT_PRESENT__",
+        "review_state": "research_seed",
+        "registry_state": "RESEARCH SEED; NUMERIC GATE",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_RESEARCH_SEED_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "APPROVED_COMPOSITION_STRATEGY",
+        "equivalence_state": "composition_strategy",
+        "mapping_disposition": "APPROVED_COMPOSITION_STRATEGY",
+        "review_state": "ADJUDICATED_VD",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "APPROVED_NAMED_REFERENT_STRATEGY",
+        "equivalence_state": "named_referent_strategy",
+        "mapping_disposition": "APPROVED_NAMED_REFERENT_STRATEGY",
+        "review_state": "ADJUDICATED_VD",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "APPROVED_NATIVE_PROTOCOL_FUNCTION",
+        "equivalence_state": "native_protocol_only",
+        "mapping_disposition": "APPROVED_NATIVE_PROTOCOL_FUNCTION",
+        "review_state": "ADJUDICATED_VD",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "APPROVED_QUALIFIED_RELATION",
+        "equivalence_state": "qualified_relation",
+        "mapping_disposition": "APPROVED_QUALIFIED_RELATION",
+        "review_state": "ADJUDICATED_VD",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "APPROVED_QUALIFIED_RELATION",
+        "equivalence_state": "qualified_relation",
+        "mapping_disposition": "APPROVED_QUALIFIED_RELATION",
+        "review_state": "ADJUDICATED_VD",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "APPROVED_TYPED_FORMAL_ADAPTER",
+        "equivalence_state": "formal_adapter",
+        "mapping_disposition": "APPROVED_TYPED_FORMAL_ADAPTER",
+        "review_state": "ADJUDICATED_VD",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "APPROVED_TYPED_FORMAL_ADAPTER",
+        "equivalence_state": "formal_adapter",
+        "mapping_disposition": "APPROVED_TYPED_FORMAL_ADAPTER",
+        "review_state": "ADJUDICATED_VD",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "NUMBER_COMPOSITION_CANDIDATE",
+        "equivalence_state": "composition_strategy",
+        "mapping_disposition": "APPROVED_COMPOSITION_STRATEGY",
+        "review_state": "MAPPING_REVIEW",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "NUMBER_FORM_WITH_OPTIONAL_DIRECT_ROOT",
+        "equivalence_state": "composition_strategy",
+        "mapping_disposition": "APPROVED_COMPOSITION_STRATEGY",
+        "review_state": "MAPPING_REVIEW",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "NUMBER_ROOT_CANDIDATE",
+        "equivalence_state": "qualified_relation",
+        "mapping_disposition": "APPROVED_QUALIFIED_RELATION",
+        "review_state": "MAPPING_REVIEW",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_section",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "PARTIAL_OR_RELATED",
+        "equivalence_state": "qualified_relation",
+        "mapping_disposition": "APPROVED_QUALIFIED_RELATION",
+        "review_state": "MAPPING_REVIEW",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "PARTIAL_OR_RELATED",
+        "equivalence_state": "rejected_exact_equivalence",
+        "mapping_disposition": "REJECTED_EXACT_EQUIVALENCE",
+        "review_state": "MAPPING_REVIEW",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_url"
+      },
+      "outcome": "REJECT",
+      "reason_code": "MAPPING_REJECTED_EXACT_EQUIVALENCE"
+    },
+    {
+      "key": {
+        "record_kind": "crosswalk",
+        "relation_state": "STRUCTURAL_SERIALIZATION_REVIEW",
+        "equivalence_state": "native_protocol_only",
+        "mapping_disposition": "APPROVED_NATIVE_PROTOCOL_FUNCTION",
+        "review_state": "MAPPING_REVIEW",
+        "registry_state": "__NOT_PRESENT__",
+        "source_era": "current_snapshot",
+        "target_kind": "source_document",
+        "source_match_state": "exact_case_sensitive_basename"
+      },
+      "outcome": "HOLD",
+      "reason_code": "MAPPING_STRATEGY_NOT_SEMANTIC_ADMISSION_HELD"
+    }
+  ],
+  "synthetic_normalized_admissions": [
+    {
+      "predicate": "exactMatch",
+      "review_state": "admitted_exact_equivalence",
+      "outcome": "EMIT_EXACT"
+    },
+    {
+      "predicate": "closeMatch",
+      "review_state": "admitted_close_match",
+      "outcome": "EMIT_CLOSE"
+    },
+    {
+      "predicate": "broadMatch",
+      "review_state": "admitted_broad_match",
+      "outcome": "EMIT_BROAD"
+    },
+    {
+      "predicate": "narrowMatch",
+      "review_state": "admitted_narrow_match",
+      "outcome": "EMIT_NARROW"
+    },
+    {
+      "predicate": "relatedMatch",
+      "review_state": "admitted_related_match",
+      "outcome": "EMIT_RELATED"
+    }
+  ]
+}

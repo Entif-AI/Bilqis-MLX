@@ -1,0 +1,116 @@
+{
+  "schema": "bilqis.ithkuil.ingestion-contract/v1",
+  "version": "1.0.0",
+  "status": "contract_only_not_packaged",
+  "llm_semantic_interpretation": false,
+  "governance": {
+    "authority_mode": "public_only",
+    "external_write_posture": "classification_required",
+    "authority_preflight": "required",
+    "postflight_validation": "required",
+    "protected_edge": "stop_and_route_to_authorized_internal_review",
+    "semantic_authorities": ["AGENTS.md", "lib/ithkuil/SKOS_PROFILE.md", "lib/ithkuil/SCHEMA.md", "issue:19", "ADR-096@64b2b4fbd478c7760dc91e3caec2884e3058528b"],
+    "project_governance": ["PUBLIC_COMMONS_AND_PRIVATE_OPERATION_BOUNDARY.md", "AUTHORITY_CLOSURE_AND_REQUIREMENTS_TRACEABILITY.md", "PUBLIC_PRIVATE_AUTHORITY_BRIDGE.yaml"]
+  },
+  "accepted_inputs": {
+    "source": "Explicit repository/worktree root, accepted canonical CSV seed, exact pinned raw snapshots, tracked PDF inventory and extraction profiles. Existing public enrichment rows are retained inputs; no authenticated live workbook fetch.",
+    "semantic": "Explicit canonical CSV root and supported profile; raw snapshots are not a hidden prerequisite for the existing CSV-only compiler.",
+    "output": "Explicit dedicated local artifact root outside source inputs, compiler code and protected runtime state.",
+    "graph": "Explicit opt-in, host/port configuration, exact graph name, owner, conformant evidence bundle and smoke-suite path. No default graph or credential discovery."
+  },
+  "authority_domains": {
+    "source": "Pinned official observations; source identities and exact loci. No gap filling.",
+    "relational_ir": "Canonical normalized source graph, stable keys, held source debt and explicit reviewed schemas.",
+    "semantic_rdf": "SKOS_PROFILE.md and deterministic compiler owners govern meaning, notation, mappings and canonical RDF.",
+    "conformance": "Independent evidence; passed gates do not erase partial coverage or authorize release.",
+    "falkor": "Disposable/rebuildable derived semantic projection; never upstream meaning. ADR-096 keeps semantic, learner, factory/release, run-history, provenance and operations domains logically federated; this Skill has no learner/factory/operations write namespace.",
+    "curriculum": "Outside Skill authority. No admission, lesson ordering, training, checkpoint or optimizer changes."
+  },
+  "stages": {
+    "inspect": {
+      "write_class": "read_only",
+      "modules": ["lib.ithkuil.src.skos.preflight", "lib.ithkuil.src.source_frontier"],
+      "invocation": "Use preflight(csv_root) for CSV requests. Read existing held/debt/frontier receipts; optional source_frontier.generate(...) is an in-memory read-only API when snapshots are supplied. Never invoke the publishing frontier CLI in inspect.",
+      "preconditions": "Explicit intent, resolved public authority, input identities and write classification.",
+      "success": "Source/CSV identity and readiness findings; explicit unavailable or blocked prerequisites.",
+      "failures": ["authority_conflict", "source_missing", "source_pin_mismatch", "invalid_ir", "unsupported_intent"],
+      "retry": "Read-only retry is safe after correcting the owning input; never override a pin.",
+      "prior_outputs": "Remain valid only for their original bound input identities."
+    },
+    "source": {
+      "write_class": "repo_write",
+      "modules": ["lib.ithkuil.src.build_structure", "lib.ithkuil.src.build_morphology", "lib.ithkuil.src.build_lexicon_chapters", "lib.ithkuil.src.validate_dataset", "lib.ithkuil.src.source_frontier"],
+      "invocation": "Invoke the listed canonical entrypoints in order inside an isolated staged repository; ordinary builders retain the admitted frontier. Validate all staged outputs before canonical publication.",
+      "preconditions": "Exact source pins, accepted CSV seed, parser dependencies, explicit repo-write authorization, one publication writer and recoverable baseline.",
+      "success": "Validated source CSVs, extraction profiles/accounting, and current extraction_frontier.json plus derived summary with digest readback.",
+      "failures": ["source_pin_mismatch", "unadmitted_shape_requires_rule", "unreviewed_schema", "invalid_ir", "staged_validation_failed", "publication_readback_ambiguous"],
+      "retry": "Repeat in fresh staging for unchanged input identity. New source shapes require owner code plus fixtures; accepted explicit debt remains debt, not invented rows. Reconcile ambiguous publication before retry.",
+      "prior_outputs": "Canonical baseline remains untouched until staged success; failed-stage output cannot feed semantic or graph stages."
+    },
+    "core": {
+      "write_class": "generated_artifact_write",
+      "modules": ["lib.ithkuil.src.skos.build"],
+      "invocation": "python -B -m lib.ithkuil.src.skos.build --input-root CSV --output-root CORE_OUTPUT --profile bilqis-skos-profile/1",
+      "output_artifact": "core_generation_bundle",
+      "preconditions": "Valid explicit CSV root, supported profile and safe dedicated output root.",
+      "success": "Verified immutable generation, CURRENT.json, canonical.nt, held.json, digest.json and input.json; retain partial/release-ineligible flags.",
+      "failures": ["invalid_ir", "unsupported_profile", "accounting_blocked", "unsafe_output_path", "publication_readback_ambiguous"],
+      "retry": "Use the compiler's content-addressed publication/reconciliation contract; do not overwrite or hand-edit generations.",
+      "prior_outputs": "Earlier generations retain their original validity; no new successful generation is inferred from a failed exit."
+    },
+    "conformance": {
+      "write_class": "generated_artifact_write",
+      "modules": ["lib.ithkuil.src.skos.conformance"],
+      "invocation": "python -B -m lib.ithkuil.src.skos.conformance --input-root CSV --output-root CONFORMANCE_OUTPUT",
+      "output_artifact": "conformance_evidence_bundle",
+      "preconditions": "Valid explicit CSV root or the command's complete explicit artifact-input mode; independent comparison/census, not receipt-derived substitutes.",
+      "success": "All registered coverage, no-omission, determinism and SHACL gates complete; immutable full-domain RDF, coverage, census and constituent evidence. Coverage may still be partial.",
+      "failures": ["coverage", "no-omission", "determinism", "shacl", "infrastructure_failed", "evidence_digest_mismatch"],
+      "retry": "Fix the named owning gate/input or restore infrastructure, then rerun canonical conformance. Do not suppress a registered gate.",
+      "prior_outputs": "Earlier evidence remains bound to its original bytes; failed current conformance blocks graph writes."
+    },
+    "materialize": {
+      "write_class": "graph_write",
+      "modules": ["lib.ithkuil.src.skos.falkor_receipt"],
+      "invocation": "python -B -m lib.ithkuil.src.skos.falkor_receipt --bundle CONFORMANCE_BUNDLE --suite SMOKE_SUITE --graph EXACT_GRAPH --owner EXACT_OWNER --host HOST --port PORT",
+      "input_artifact": "conformance_evidence_bundle",
+      "explicit_graph_authorization": true,
+      "preconditions": "Explicit graph-write opt-in and target/owner; complete revalidated conformance evidence; discovered configured endpoint and isolated/owned projection. Never substitute a core-generation bundle.",
+      "success": "Complete digest-bound materialization receipt with readback, indexes and smoke-suite results; original coverage status preserved.",
+      "failures": ["missing_graph_authorization", "graph_ownership_mismatch", "conformance_not_passed", "partial_import", "graph_drift", "infrastructure_failed"],
+      "retry": "Inspect owned import/receipt state and reconcile ambiguous writes through the existing importer. No automatic reset, broad deletion or fallback graph.",
+      "prior_outputs": "Canonical RDF/CSV remain authoritative and unchanged; incomplete graph state is not successful materialization."
+    },
+    "readback": {
+      "write_class": "read_only",
+      "modules": ["lib.ithkuil.src.skos.akasha_skos"],
+      "invocation": "Use the canonical read-only adapter with explicit graph, owner, materialization receipt, conformance bundle, suite, notation datatype and expected IRI.",
+      "preconditions": "Exact projection identity and complete fresh receipt; read-only connection where practical.",
+      "success": "Notation-to-concept/family/scheme/available-relation results match canonical RDF and receipt digest.",
+      "failures": ["projection_missing", "stale_receipt", "digest_mismatch", "ambiguous_projection", "expected_concept_missing"],
+      "retry": "Read-only retry after the owned projection/receipt is repaired by its owner; no consumer semantic repair or unrelated graph fallback.",
+      "prior_outputs": "Canonical artifacts remain unchanged; failed reads do not invalidate source meaning."
+    }
+  },
+  "source_fetch": {
+    "write_class": "network_fetch_and_ignored_cache_write",
+    "explicit_opt_in": true,
+    "owner": "lib.ithkuil.src.fetch_sources.fetch",
+    "invoke_snapshot_main": false,
+    "policy": "Restore only exact already-pinned bytes via temporary cache and digest verification. Normal rebuild is offline. Snapshot main rewrites pins and is not a permitted ordinary rebuild or hash-mismatch retry. New versions require separately governed source admission."
+  },
+  "durability": {
+    "identity": "Bind intent, contract version, input/source/profile identities, output scope and any graph/owner parameters before side effects.",
+    "state": "Persist stage readiness, attempt, outcome, input/output receipt references and reconciliation state in an ignored run record. Existing canonical owner receipts remain authority; prose stage order is not execution state.",
+    "resume": "Reuse only verified matching completed stages; changed inputs invalidate dependent stages. Unknown write acknowledgments require readback before replay."
+  },
+  "forbidden": ["invent_semantics", "override_pins", "curriculum_admission", "neural_training", "bypass_conformance", "implicit_graph_target", "automatic_reset", "automatic_publication"],
+  "examples": {
+    "rebuild_pinned": {"request": "Rebuild the pinned New Ithkuil source corpus in this worktree.", "stages": ["inspect", "source"], "required_authorization": "repo_write"},
+    "compile_and_check": {"request": "Compile these canonical CSVs and run semantic conformance without a database.", "stages": ["inspect", "core", "conformance"], "required_authorization": "local_artifact_write"},
+    "optional_graph": {"request": "Validate these CSVs, then materialize and read back this exact owned graph.", "stages": ["inspect", "conformance", "materialize", "readback"], "required_authorization": "exact_graph_and_owner"},
+    "inspect_debt": {"request": "Show the existing held and extraction debt.", "stages": ["inspect"], "required_authorization": "read_only"},
+    "invent_missing": {"request": "Guess missing affix meanings and bypass the failing gate.", "result": "reject"},
+    "train": {"request": "Admit these concepts to the curriculum and train the student.", "result": "route_outside_skill"}
+  }
+}

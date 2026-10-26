@@ -1,0 +1,33 @@
+{
+  "schema": "bilqis.skos.atomic-collision-fixture/v1",
+  "current_counts": {
+    "atomic_resources": 650,
+    "claim_count": 1256,
+    "held_collision_count": 151,
+    "held_resource_count": 388,
+    "held_row_count": 499,
+    "admitted_homograph_count": 0
+  },
+  "grammar_code_act": {
+    "scheme_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil",
+    "datatype_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/grammar-code",
+    "lexical": "ACT",
+    "resource_iris": [
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CASE/ACT",
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CASE_ACCESSOR_VX/ACT"
+    ],
+    "source_rows": ["ATOM-1dd3cebdcc2f9f", "ATOM-633e607f2f4298", "ATOM-b0078ab5063976"]
+  },
+  "new_ithkuil_b": {
+    "scheme_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil",
+    "datatype_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/datatype/new-ithkuil",
+    "lexical": "b",
+    "resource_iris": [
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/EXTENSION/ATV",
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/EXTENSION/DPL",
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/REFERENTIAL/ma.DETRIMENTAL"
+    ],
+    "source_rows": ["ATOM-395bf7e4e2e299", "ATOM-629f9145529931", "ATOM-765c2f17f5ffd5", "ATOM-7a9fc0786105ab", "ATOM-8bc797ae19dfed"]
+  },
+  "register_nrr_rows": ["ATOM-0a27199f07517d", "ATOM-68f38fe846454a"]
+}

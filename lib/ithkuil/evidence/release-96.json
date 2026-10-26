@@ -1,0 +1,87 @@
+{
+  "acceptance": {
+    "artifact_and_digest_locations": "PASS",
+    "authority_layers_separated": "PASS",
+    "literal_query_examples": "PASS",
+    "rebuild_and_conformance_commands": "PASS",
+    "skill_and_optional_graph_boundary": "PASS"
+  },
+  "authority_boundary": "IPR-0220; source/IR/RDF/store/curriculum separated; semantic coverage remains partial",
+  "bound_proofs": {
+    "optional_graph_and_akasha": "release-95.json; both live rebuild/readbacks",
+    "package": "ingestion-92-package.json",
+    "reset": "reset-75-scale.json plus preserved recovery in release-95.json",
+    "source_and_semantic_commands": "release-93.json; both archived builds"
+  },
+  "canonical_rdf_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+  "docs_sha256": {
+    "README.md": "d38ef09722b34571d7d37fc275c67618643d2a99fd2ab17b8e4c807ad4f0d16a",
+    "lib/ithkuil/FALKOR_PROJECTION.md": "c66e492bb6768ea69c2b81471294283d2f93c8ad00e5bdf220661577c2806191",
+    "lib/ithkuil/RELEASE_REBUILD.md": "bece0612fa807e2d0e43bf0ca84b78d68860103a0e06b7150e408b8a4ce553c3",
+    "lib/ithkuil/SKOS_COMPILER.md": "a64454d86946e94c141bf70867a8c5149b01157015ab4410e77f10dc815c019d"
+  },
+  "guide": "lib/ithkuil/RELEASE_REBUILD.md",
+  "links_checked": [
+    "_data/csv/sources/source_manifest.csv",
+    "_data/csv/sources/extraction_frontier.json",
+    "SCHEMA.md",
+    "EXTRACTION_FRONTIER.md",
+    "SKOS_PROFILE.md",
+    "SKOS_COMPILER.md",
+    "FALKOR_PROJECTION.md",
+    "evidence/release-93.json",
+    "evidence/release-94/release-census.json",
+    "evidence/release-95.json",
+    "evidence/release-94/RELEASE_CENSUS.md",
+    "tests/fixtures/release95_smoke.json",
+    "requirements-falkor.txt",
+    "FALKOR_PROJECTION.md",
+    "evidence/reset-75-scale.json",
+    "../../skills/ithkuil-ingestion/SKILL.md",
+    "INGESTION_SKILL_CONTRACT.md",
+    "evidence/ithkuil-ingestion-1.0.0.skill",
+    "evidence/ingestion-92-package.json"
+  ],
+  "official_external_reference_links_verified": [
+    "https://docs.falkordb.com/commands/graph.query",
+    "https://docs.falkordb.com/commands/graph.ro-query",
+    "https://docs.falkordb.com/cypher/indexing/range-index"
+  ],
+  "parser_modules_checked": [
+    "lib.ithkuil.src.ingestion",
+    "lib.ithkuil.src.ingestion_semantic",
+    "lib.ithkuil.src.skos.akasha_skos",
+    "lib.ithkuil.src.skos.conformance",
+    "lib.ithkuil.src.skos.falkor_receipt",
+    "lib.ithkuil.src.skos.falkor_reset",
+    "lib.ithkuil.src.validate_dataset"
+  ],
+  "platform_prerequisites": [
+    "Compatible local Python and declared requirements",
+    "Pinned raw source snapshots verified against manifest for fresh rebuild",
+    "Separately authorized Falkor graph/owner and configured endpoint for optional graph stage",
+    "Existing credentials remain operator-managed"
+  ],
+  "repository_docs_check": "DOCS_CHECK_OK",
+  "schema": "bilqis.ithkuil.release96-docs/v1",
+  "source_parent": "80f26807f29e51d535a4e4cc70ccce7741f58a41",
+  "sparql_actual": [
+    [
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+    ],
+    [
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+    ]
+  ],
+  "sparql_expected": [
+    [
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/ACC"
+    ],
+    [
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/BIAS/DFD"
+    ]
+  ],
+  "standalone_ir_validation": "PASS: 18 sources, 772 atomic rows, 1917 compositions; canonical owner command executed",
+  "status": "passed",
+  "verification_posture": "CLI help/options and local paths mechanically verified; both SPARQL examples executed against exact release RDF. Mutating source/graph commands use existing exact-artifact execution receipts rather than re-executing authorized resets or rebuilding sources for a prose change."
+}

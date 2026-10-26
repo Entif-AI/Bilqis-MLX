@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:bilqis:ithkuil:extraction-frontier:v1",
+  "title": "Bilqis Ithkuil source extraction frontier",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "version",
+    "generator",
+    "inputs",
+    "reconciliation",
+    "claims",
+    "aggregates",
+    "entries",
+    "receipt_sha256"
+  ],
+  "properties": {
+    "schema": {"const": "bilqis.ithkuil.extraction-frontier/v1"},
+    "version": {"const": "1.0.0"},
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implementation", "version", "sha256"],
+      "properties": {
+        "implementation": {"const": "source_frontier.py"},
+        "version": {"const": "1.0.0"},
+        "sha256": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]}
+    },
+    "reconciliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_manifest_entries", "split_chapter_entries", "entry_count"],
+      "properties": {
+        "source_manifest_entries": {"const": 18},
+        "split_chapter_entries": {"const": 8},
+        "entry_count": {"const": 26}
+      }
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["full_new_ithkuil_coverage", "semantic_admission", "curriculum_admission"],
+      "properties": {
+        "full_new_ithkuil_coverage": {"const": false},
+        "semantic_admission": {"const": false},
+        "curriculum_admission": {"const": false}
+      }
+    },
+    "aggregates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grammar", "morphology", "lexicon", "affix", "debt", "unparsed_artifact_ids"],
+      "properties": {
+        "grammar": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["structural_rows", "semantic_exhaustiveness_measured", "semantic_exhaustiveness_debt"],
+          "properties": {
+            "structural_rows": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+            "semantic_exhaustiveness_measured": {"const": false},
+            "semantic_exhaustiveness_debt": {"const": 1}
+          }
+        },
+        "morphology": {"type": "object", "minProperties": 2, "additionalProperties": {"$ref": "#/$defs/tableReceipt"}},
+        "lexicon": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["roots", "senses", "evidence", "roots_without_parsed_senses", "chapters"],
+          "properties": {
+            "roots": {"type": "integer", "minimum": 0},
+            "senses": {"type": "integer", "minimum": 0},
+            "evidence": {"type": "integer", "minimum": 0},
+            "roots_without_parsed_senses": {"type": "integer", "minimum": 0},
+            "chapters": {"type": "object", "minProperties": 8, "additionalProperties": {"$ref": "#/$defs/chapterCounts"}}
+          }
+        },
+        "affix": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["parsed_tables", "parsed_cells", "unsupported_tables", "conflicting_tables", "unsupported_observations", "debt_by_reason", "semantic_relationships_inferred"],
+          "properties": {
+            "parsed_tables": {"type": "integer", "minimum": 0},
+            "parsed_cells": {"type": "integer", "minimum": 0},
+            "unsupported_tables": {"type": "integer", "minimum": 0},
+            "conflicting_tables": {"type": "integer", "minimum": 0},
+            "unsupported_observations": {"type": "integer", "minimum": 0},
+            "debt_by_reason": {"$ref": "#/$defs/debt"},
+            "semantic_relationships_inferred": {"const": false}
+          }
+        },
+        "debt": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["by_reason"],
+          "properties": {"by_reason": {"$ref": "#/$defs/debt"}}
+        },
+        "unparsed_artifact_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "entries": {"type": "array", "minItems": 26, "maxItems": 26, "items": {"$ref": "#/$defs/entry"}},
+    "receipt_sha256": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "debt": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "tableReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "sha256"],
+      "properties": {"count": {"type": "integer", "minimum": 0}, "sha256": {"$ref": "#/$defs/digest"}}
+    },
+    "chapterCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roots", "senses", "evidence", "roots_without_parsed_senses"],
+      "properties": {
+        "roots": {"type": "integer", "minimum": 0},
+        "senses": {"type": "integer", "minimum": 0},
+        "evidence": {"type": "integer", "minimum": 0},
+        "roots_without_parsed_senses": {"type": "integer", "minimum": 0}
+      }
+    },
+    "parser": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["implementation", "version", "sha256"],
+          "properties": {
+            "implementation": {"type": "string", "minLength": 1},
+            "version": {"type": "string", "minLength": 1},
+            "sha256": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]}
+          },
+          "additionalProperties": true
+        }
+      ]
+    },
+    "identity": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sha256"],
+          "properties": {"sha256": {"$ref": "#/$defs/digest"}}
+        }
+      ]
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "artifact_id", "kind", "pinned_sha256", "observed_sha256", "status", "parser", "scope", "canonical_rows", "source_receipt", "debt_by_reason", "last_success_identity"],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "artifact_id": {"type": "string", "minLength": 1},
+        "kind": {"type": "string", "minLength": 1},
+        "pinned_sha256": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "observed_sha256": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "status": {"enum": ["PARSED_COMPLETE_FOR_TRACKED_SLICE", "PARSED_WITH_DEBT", "PINNED_UNPARSED", "BLOCKED_SOURCE_IDENTITY", "UNSUPPORTED"]},
+        "parser": {"$ref": "#/$defs/parser"},
+        "scope": {"type": "string", "minLength": 1},
+        "canonical_rows": {"type": "object", "additionalProperties": {"$ref": "#/$defs/tableReceipt"}},
+        "source_receipt": {"oneOf": [{"type": "object"}, {"type": "null"}]},
+        "debt_by_reason": {"$ref": "#/$defs/debt"},
+        "last_success_identity": {"$ref": "#/$defs/identity"}
+      }
+    }
+  }
+}

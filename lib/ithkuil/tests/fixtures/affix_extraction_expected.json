@@ -1,0 +1,59 @@
+{
+  "counts": {
+    "cells": 8060,
+    "observations": 19954,
+    "tables": 403
+  },
+  "dispositions": {
+    "CONFLICT": 2,
+    "PARSED": 8463,
+    "TABLE_COVERED": 1994,
+    "UNSUPPORTED": 9495
+  },
+  "inventory": {
+    "detected_tables": 440,
+    "table_shapes": {
+      "10x2": 150,
+      "10x3": 9,
+      "10x4": 250,
+      "10x5": 9,
+      "10x6": 2,
+      "11x3": 1,
+      "11x9": 1,
+      "12x4": 1,
+      "12x43": 1,
+      "14x3": 3,
+      "14x4": 2,
+      "19x4": 1,
+      "2x4": 1,
+      "3x2": 1,
+      "4x2": 1,
+      "6x2": 1,
+      "7x4": 1,
+      "8x3": 2,
+      "8x7": 1,
+      "9x2": 2
+    }
+  },
+  "observations_sha256": "230e2c1d5f00fe39cfd7fbfa49a9b00f78c85973bc7918859e24688c2c4db04f",
+  "outputs": {
+    "source_table_cells.csv": {
+      "bytes": 2728012,
+      "sha256": "ee2384fa5a917006094106dbdca5d84540271b42cf7841595191c2e4a41d4f8f"
+    },
+    "source_tables.csv": {
+      "bytes": 117962,
+      "sha256": "9b3319a69940bf4dbfab086e9de27a7184a933a23331ff588bf9d1a94f3b927a"
+    }
+  },
+  "page_count": 140,
+  "pdf_format": "PDF 1.3",
+  "source_bytes": 833483,
+  "source_id": "NI-AFFIX-PDF",
+  "source_sha256": "5b758ff4c79ba6ccb6e241e59507f7849a7c470c4b34b431bf546cd028aea3aa",
+  "table_dispositions": {
+    "CONFLICT": 2,
+    "PARSED": 403,
+    "UNSUPPORTED": 35
+  }
+}

@@ -1,0 +1,1052 @@
+{
+  "version": "bilqis.skos.compiler-input/v1",
+  "description": "Tracked-CSV-only closure required before #38-#43 semantic compilation.",
+  "tables": [
+    {
+      "name": "source_manifest",
+      "path": "sources/source_manifest.csv",
+      "role": "core_source_registry",
+      "columns": [
+        "source_id",
+        "source_type",
+        "title",
+        "requested_url",
+        "final_url",
+        "local_name",
+        "sha256",
+        "bytes",
+        "fetched_at_utc",
+        "content_type",
+        "last_modified",
+        "etag"
+      ],
+      "primary_key": [
+        "source_id"
+      ],
+      "required_nonblank": [
+        "source_id",
+        "source_type",
+        "final_url",
+        "sha256",
+        "content_type"
+      ],
+      "foreign_keys": [],
+      "enums": {
+        "source_type": [
+          "affix_reference",
+          "grammar_appendix",
+          "grammar_chapter",
+          "grammar_index",
+          "lexicon"
+        ],
+        "content_type": [
+          "application/pdf",
+          "text/html"
+        ]
+      }
+    },
+    {
+      "name": "curriculum_manifest",
+      "path": "sources/curriculum_manifest.csv",
+      "role": "provenance_support_only",
+      "columns": [
+        "workbook_id",
+        "workbook_title",
+        "workbook_url",
+        "tab",
+        "requested_range",
+        "returned_range",
+        "returned_rows",
+        "snapshot_json_sha256",
+        "snapshot_at_utc",
+        "role"
+      ],
+      "primary_key": [
+        "workbook_id",
+        "tab"
+      ],
+      "required_nonblank": [
+        "workbook_id",
+        "tab",
+        "requested_range",
+        "snapshot_json_sha256",
+        "role"
+      ],
+      "foreign_keys": [],
+      "enums": {
+        "role": [
+          "enrichment_only_no_curriculum_order"
+        ]
+      }
+    },
+    {
+      "name": "source_sections",
+      "path": "source_sections.csv",
+      "role": "core_source_graph",
+      "columns": [
+        "section_id",
+        "source_id",
+        "chapter_number",
+        "chapter_title",
+        "section_number",
+        "section_title",
+        "source_heading_text",
+        "hierarchy_depth",
+        "parent_section_id",
+        "source_anchor",
+        "source_url",
+        "source_line"
+      ],
+      "primary_key": [
+        "section_id"
+      ],
+      "required_nonblank": [
+        "section_id",
+        "source_id",
+        "chapter_number",
+        "source_url"
+      ],
+      "foreign_keys": [
+        {
+          "fields": [
+            "source_id"
+          ],
+          "target": "source_manifest",
+          "target_fields": [
+            "source_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id",
+            "parent_section_id"
+          ],
+          "target": "source_sections",
+          "target_fields": [
+            "source_id",
+            "section_id"
+          ],
+          "optional_if_any_blank": true
+        }
+      ],
+      "enums": {}
+    },
+    {
+      "name": "source_tables",
+      "path": "source_tables.csv",
+      "role": "core_source_graph",
+      "columns": [
+        "table_id",
+        "source_id",
+        "section_id",
+        "chapter_number",
+        "section_number",
+        "context_label",
+        "table_role",
+        "row_count",
+        "column_count",
+        "header_row_detected",
+        "header_text",
+        "header_text_sha256",
+        "header_char_count",
+        "header_text_truncated",
+        "source_url",
+        "source_anchor",
+        "source_line"
+      ],
+      "primary_key": [
+        "table_id"
+      ],
+      "required_nonblank": [
+        "table_id",
+        "source_id",
+        "table_role",
+        "source_url"
+      ],
+      "foreign_keys": [
+        {
+          "fields": [
+            "source_id"
+          ],
+          "target": "source_manifest",
+          "target_fields": [
+            "source_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id",
+            "section_id"
+          ],
+          "target": "source_sections",
+          "target_fields": [
+            "source_id",
+            "section_id"
+          ],
+          "optional_if_any_blank": true
+        }
+      ],
+      "enums": {
+        "table_role": [
+          "mixed_or_explanatory",
+          "navigation_or_layout",
+          "paradigm_or_inventory",
+          "single_row",
+          "structured_table"
+        ],
+        "header_row_detected": [
+          "false",
+          "true"
+        ],
+        "header_text_truncated": [
+          "false",
+          "true"
+        ]
+      }
+    },
+    {
+      "name": "source_assertions",
+      "path": "source_assertions.csv",
+      "role": "core_source_graph",
+      "columns": [
+        "assertion_id",
+        "entity_kind",
+        "entity_id",
+        "assertion_kind",
+        "note",
+        "source_id",
+        "section_id",
+        "table_id",
+        "source_line",
+        "source_url",
+        "source_anchor",
+        "evidence_status"
+      ],
+      "primary_key": [
+        "assertion_id"
+      ],
+      "required_nonblank": [
+        "assertion_id",
+        "entity_kind",
+        "entity_id",
+        "assertion_kind",
+        "source_id",
+        "section_id",
+        "source_url",
+        "evidence_status"
+      ],
+      "foreign_keys": [
+        {
+          "fields": [
+            "source_id"
+          ],
+          "target": "source_manifest",
+          "target_fields": [
+            "source_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id",
+            "section_id"
+          ],
+          "target": "source_sections",
+          "target_fields": [
+            "source_id",
+            "section_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id",
+            "table_id"
+          ],
+          "target": "source_tables",
+          "target_fields": [
+            "source_id",
+            "table_id"
+          ],
+          "optional_if_any_blank": true
+        }
+      ],
+      "enums": {
+        "entity_kind": [
+          "atomic_morpheme",
+          "morpheme_composition"
+        ],
+        "assertion_kind": [
+          "case_affix_cs_join",
+          "case_table_crosscheck",
+          "case_vc_component",
+          "case_vx_join",
+          "composition_rule",
+          "form_value",
+          "root_degree_join",
+          "root_paradigm",
+          "suppletive_cp_vc_join",
+          "vx_matrix_join"
+        ],
+        "evidence_status": [
+          "official_source_observed"
+        ]
+      }
+    },
+    {
+      "name": "grammatical_categories",
+      "path": "grammatical_categories.csv",
+      "role": "core_semantic_ir",
+      "columns": [
+        "category_id",
+        "family",
+        "category_code",
+        "category_name",
+        "description_summary",
+        "source_id",
+        "section_id",
+        "table_id",
+        "source_line",
+        "source_url",
+        "source_anchor"
+      ],
+      "primary_key": [
+        "category_id"
+      ],
+      "required_nonblank": [
+        "category_id",
+        "family",
+        "category_code",
+        "category_name",
+        "source_id",
+        "section_id",
+        "source_url"
+      ],
+      "foreign_keys": [
+        {
+          "fields": [
+            "source_id"
+          ],
+          "target": "source_manifest",
+          "target_fields": [
+            "source_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id",
+            "section_id"
+          ],
+          "target": "source_sections",
+          "target_fields": [
+            "source_id",
+            "section_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id",
+            "table_id"
+          ],
+          "target": "source_tables",
+          "target_fields": [
+            "source_id",
+            "table_id"
+          ],
+          "optional_if_any_blank": true
+        }
+      ],
+      "enums": {}
+    },
+    {
+      "name": "morphemes_atomic",
+      "path": "morphemes_atomic.csv",
+      "role": "core_semantic_ir",
+      "columns": [
+        "atomic_id",
+        "surface_form_raw",
+        "surface_form_normalized",
+        "morpheme_family",
+        "morpheme_class",
+        "slot",
+        "category_code",
+        "category_name",
+        "value_code",
+        "value_name",
+        "semantic_summary",
+        "realization_type",
+        "allomorph_group_id",
+        "allomorph_condition",
+        "derivation",
+        "primary_source_id",
+        "primary_section_id",
+        "primary_table_id",
+        "primary_source_line",
+        "primary_source_url",
+        "primary_source_anchor",
+        "evidence_status"
+      ],
+      "primary_key": [
+        "atomic_id"
+      ],
+      "required_nonblank": [
+        "atomic_id",
+        "surface_form_raw",
+        "surface_form_normalized",
+        "morpheme_family",
+        "morpheme_class",
+        "category_code",
+        "category_name",
+        "value_code",
+        "value_name",
+        "semantic_summary",
+        "realization_type",
+        "allomorph_group_id",
+        "derivation",
+        "primary_source_id",
+        "primary_section_id",
+        "primary_source_url",
+        "evidence_status"
+      ],
+      "foreign_keys": [
+        {
+          "fields": [
+            "primary_source_id"
+          ],
+          "target": "source_manifest",
+          "target_fields": [
+            "source_id"
+          ]
+        },
+        {
+          "fields": [
+            "primary_source_id",
+            "primary_section_id"
+          ],
+          "target": "source_sections",
+          "target_fields": [
+            "source_id",
+            "section_id"
+          ]
+        },
+        {
+          "fields": [
+            "primary_source_id",
+            "primary_table_id"
+          ],
+          "target": "source_tables",
+          "target_fields": [
+            "source_id",
+            "table_id"
+          ],
+          "optional_if_any_blank": true
+        }
+      ],
+      "enums": {
+        "morpheme_family": [
+          "affiliation",
+          "affix_root",
+          "affix_vowel",
+          "aspect",
+          "bias_adjunct",
+          "case",
+          "case_accessor_vowel",
+          "case_affix_root",
+          "case_scope",
+          "configuration",
+          "effect",
+          "extension",
+          "function_specification_context",
+          "illocution",
+          "level",
+          "lexical_root",
+          "mood",
+          "number_root",
+          "perspective_essence",
+          "phase",
+          "referential",
+          "register_adjunct_final",
+          "register_adjunct_initial",
+          "specialized_root",
+          "standard_vowel_sequence",
+          "suppletive_adjunct_cp",
+          "valence",
+          "validation"
+        ],
+        "morpheme_class": [
+          "CA_consonantal_exponent",
+          "CA_fused_exponent",
+          "CN_consonantal_exponent",
+          "CP_consonantal_exponent",
+          "CS_consonantal_root",
+          "VC_vocalic_exponent",
+          "VK_vocalic_exponent",
+          "VN_vocalic_exponent",
+          "VR_vocalic_exponent",
+          "VX_vocalic_exponent",
+          "fixed_consonantal_adjunct",
+          "fixed_register_adjunct",
+          "lexical_consonantal_root",
+          "referential_consonantal_exponent",
+          "vocalic_exponent"
+        ],
+        "realization_type": [
+          "conditioned_allomorph",
+          "overt",
+          "overt_optional",
+          "realized_allomorph",
+          "standalone_allomorph",
+          "underlying_glottal",
+          "zero"
+        ],
+        "derivation": [
+          "source_rule_plus_table",
+          "source_table"
+        ],
+        "evidence_status": [
+          "official_source_observed"
+        ]
+      }
+    },
+    {
+      "name": "root_senses",
+      "path": "root_senses.csv",
+      "role": "core_semantic_ir",
+      "columns": [
+        "sense_id",
+        "atomic_id",
+        "stem",
+        "specification",
+        "sense_summary",
+        "source_id",
+        "section_id",
+        "table_id",
+        "source_line",
+        "source_url",
+        "source_anchor"
+      ],
+      "primary_key": [
+        "sense_id"
+      ],
+      "required_nonblank": [
+        "sense_id",
+        "atomic_id",
+        "sense_summary",
+        "source_id",
+        "section_id",
+        "source_url"
+      ],
+      "foreign_keys": [
+        {
+          "fields": [
+            "atomic_id"
+          ],
+          "target": "morphemes_atomic",
+          "target_fields": [
+            "atomic_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id"
+          ],
+          "target": "source_manifest",
+          "target_fields": [
+            "source_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id",
+            "section_id"
+          ],
+          "target": "source_sections",
+          "target_fields": [
+            "source_id",
+            "section_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id",
+            "table_id"
+          ],
+          "target": "source_tables",
+          "target_fields": [
+            "source_id",
+            "table_id"
+          ],
+          "optional_if_any_blank": true
+        }
+      ],
+      "enums": {}
+    },
+    {
+      "name": "lexicon_roots",
+      "path": "lexicon_roots.csv",
+      "role": "core_semantic_ir",
+      "columns": [
+        "lexicon_root_id",
+        "root_form_raw",
+        "root_form_normalized",
+        "root_gloss",
+        "lexicon_chapter",
+        "lexicon_section",
+        "section_title",
+        "source_pdf_page",
+        "source_printed_page",
+        "source_id",
+        "source_url",
+        "tracked_pdf_name",
+        "tracked_pdf_sha256",
+        "canonical_source_sha256",
+        "evidence_status"
+      ],
+      "primary_key": [
+        "lexicon_root_id"
+      ],
+      "required_nonblank": [
+        "lexicon_root_id",
+        "root_form_raw",
+        "root_form_normalized",
+        "root_gloss",
+        "lexicon_chapter",
+        "lexicon_section",
+        "source_id",
+        "source_url",
+        "tracked_pdf_name",
+        "tracked_pdf_sha256",
+        "canonical_source_sha256",
+        "evidence_status"
+      ],
+      "foreign_keys": [
+        {
+          "fields": [
+            "source_id"
+          ],
+          "target": "source_manifest",
+          "target_fields": [
+            "source_id"
+          ]
+        }
+      ],
+      "enums": {
+        "evidence_status": [
+          "official_source_observed"
+        ]
+      }
+    },
+    {
+      "name": "lexicon_root_senses",
+      "path": "lexicon_root_senses.csv",
+      "role": "core_semantic_ir",
+      "columns": [
+        "lexicon_sense_id",
+        "lexicon_root_id",
+        "root_form_raw",
+        "stem",
+        "specification",
+        "sense_summary",
+        "source_text_sha256",
+        "source_text_char_count",
+        "source_example_excerpt",
+        "lexicon_chapter",
+        "lexicon_section",
+        "source_pdf_page",
+        "source_printed_page",
+        "source_table_index",
+        "source_locus_kind",
+        "source_id",
+        "source_url",
+        "tracked_pdf_name",
+        "tracked_pdf_sha256",
+        "evidence_status"
+      ],
+      "primary_key": [
+        "lexicon_sense_id"
+      ],
+      "required_nonblank": [
+        "lexicon_sense_id",
+        "lexicon_root_id",
+        "root_form_raw",
+        "specification",
+        "sense_summary",
+        "source_text_sha256",
+        "source_text_char_count",
+        "lexicon_chapter",
+        "lexicon_section",
+        "source_pdf_page",
+        "source_printed_page",
+        "source_locus_kind",
+        "source_id",
+        "source_url",
+        "tracked_pdf_name",
+        "tracked_pdf_sha256",
+        "evidence_status"
+      ],
+      "foreign_keys": [
+        {
+          "fields": [
+            "lexicon_root_id"
+          ],
+          "target": "lexicon_roots",
+          "target_fields": [
+            "lexicon_root_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id"
+          ],
+          "target": "source_manifest",
+          "target_fields": [
+            "source_id"
+          ]
+        }
+      ],
+      "enums": {
+        "source_locus_kind": [
+          "compact_numbered_stem",
+          "prose",
+          "table"
+        ],
+        "evidence_status": [
+          "official_source_observed"
+        ]
+      }
+    },
+    {
+      "name": "lexicon_root_evidence",
+      "path": "lexicon_root_evidence.csv",
+      "role": "core_semantic_ir",
+      "columns": [
+        "lexicon_evidence_id",
+        "lexicon_root_id",
+        "root_form_raw",
+        "evidence_kind",
+        "evidence_excerpt",
+        "source_text_sha256",
+        "source_text_char_count",
+        "lexicon_chapter",
+        "lexicon_section",
+        "source_pdf_page",
+        "source_printed_page",
+        "source_id",
+        "source_url",
+        "tracked_pdf_name",
+        "tracked_pdf_sha256",
+        "canonical_source_sha256",
+        "evidence_status"
+      ],
+      "primary_key": [
+        "lexicon_evidence_id"
+      ],
+      "required_nonblank": [
+        "lexicon_evidence_id",
+        "lexicon_root_id",
+        "root_form_raw",
+        "evidence_kind",
+        "evidence_excerpt",
+        "source_text_sha256",
+        "source_text_char_count",
+        "lexicon_chapter",
+        "lexicon_section",
+        "source_pdf_page",
+        "source_printed_page",
+        "source_id",
+        "source_url",
+        "tracked_pdf_name",
+        "tracked_pdf_sha256",
+        "canonical_source_sha256",
+        "evidence_status"
+      ],
+      "foreign_keys": [
+        {
+          "fields": [
+            "lexicon_root_id"
+          ],
+          "target": "lexicon_roots",
+          "target_fields": [
+            "lexicon_root_id"
+          ]
+        },
+        {
+          "fields": [
+            "source_id"
+          ],
+          "target": "source_manifest",
+          "target_fields": [
+            "source_id"
+          ]
+        }
+      ],
+      "enums": {
+        "evidence_kind": [
+          "example_context",
+          "note",
+          "scope_note",
+          "scope_restriction",
+          "specification_note",
+          "debt_insufficient_sense_evidence",
+          "debt_unsupported_shape",
+          "debt_conflict",
+          "debt_ambiguous_locus"
+        ],
+        "evidence_status": [
+          "official_source_observed"
+        ]
+      }
+    },
+    {
+      "name": "morpheme_compositions",
+      "path": "morpheme_compositions.csv",
+      "role": "non_core_fk_support_only",
+      "columns": [
+        "composition_id",
+        "surface_form_raw",
+        "surface_form_normalized",
+        "surface_pattern",
+        "composition_type",
+        "construction_name",
+        "slot",
+        "category_code",
+        "category_name",
+        "value_code",
+        "value_name",
+        "semantic_summary",
+        "component_count",
+        "condition",
+        "derivation",
+        "primary_source_id",
+        "primary_section_id",
+        "primary_table_id",
+        "primary_source_line",
+        "primary_source_url",
+        "primary_source_anchor",
+        "evidence_status"
+      ],
+      "primary_key": [
+        "composition_id"
+      ],
+      "required_nonblank": [
+        "composition_id",
+        "composition_type",
+        "derivation",
+        "primary_source_id",
+        "primary_section_id",
+        "primary_source_url",
+        "evidence_status"
+      ],
+      "foreign_keys": [
+        {
+          "fields": [
+            "primary_source_id"
+          ],
+          "target": "source_manifest",
+          "target_fields": [
+            "source_id"
+          ]
+        },
+        {
+          "fields": [
+            "primary_source_id",
+            "primary_section_id"
+          ],
+          "target": "source_sections",
+          "target_fields": [
+            "source_id",
+            "section_id"
+          ]
+        },
+        {
+          "fields": [
+            "primary_source_id",
+            "primary_table_id"
+          ],
+          "target": "source_tables",
+          "target_fields": [
+            "source_id",
+            "table_id"
+          ],
+          "optional_if_any_blank": true
+        }
+      ],
+      "enums": {
+        "composition_type": [
+          "VXCS_affix",
+          "case_accessor",
+          "case_stacking",
+          "construction_template",
+          "inverse_case_accessor",
+          "morpheme_complex_template",
+          "slot_template",
+          "suppletive_adjunct",
+          "word_template"
+        ],
+        "derivation": [
+          "source_join",
+          "source_template"
+        ],
+        "evidence_status": [
+          "official_source_join",
+          "official_source_observed"
+        ]
+      }
+    }
+  ],
+  "conditional_foreign_keys": [
+    {
+      "table": "source_assertions",
+      "selector_field": "entity_kind",
+      "source_field": "entity_id",
+      "targets": {
+        "atomic_morpheme": {
+          "table": "morphemes_atomic",
+          "field": "atomic_id"
+        },
+        "morpheme_composition": {
+          "table": "morpheme_compositions",
+          "field": "composition_id"
+        }
+      }
+    }
+  ],
+  "source_bindings": [
+    {
+      "table": "source_sections",
+      "source_field": "source_id",
+      "url_field": "source_url"
+    },
+    {
+      "table": "source_tables",
+      "source_field": "source_id",
+      "url_field": "source_url"
+    },
+    {
+      "table": "source_assertions",
+      "source_field": "source_id",
+      "url_field": "source_url"
+    },
+    {
+      "table": "grammatical_categories",
+      "source_field": "source_id",
+      "url_field": "source_url"
+    },
+    {
+      "table": "morphemes_atomic",
+      "source_field": "primary_source_id",
+      "url_field": "primary_source_url"
+    },
+    {
+      "table": "root_senses",
+      "source_field": "source_id",
+      "url_field": "source_url"
+    },
+    {
+      "table": "lexicon_roots",
+      "source_field": "source_id",
+      "url_field": "source_url"
+    },
+    {
+      "table": "lexicon_root_senses",
+      "source_field": "source_id",
+      "url_field": "source_url"
+    },
+    {
+      "table": "lexicon_root_evidence",
+      "source_field": "source_id",
+      "url_field": "source_url"
+    },
+    {
+      "table": "morpheme_compositions",
+      "source_field": "primary_source_id",
+      "url_field": "primary_source_url"
+    }
+  ],
+  "semantic_invariants": [
+    {
+      "name": "atomic_source_assertion_coverage",
+      "table": "morphemes_atomic",
+      "key_field": "atomic_id",
+      "assertion_kind": "atomic_morpheme",
+      "reason_code": "MISSING_SOURCE_ASSERTION"
+    },
+    {
+      "name": "composition_source_assertion_coverage",
+      "table": "morpheme_compositions",
+      "key_field": "composition_id",
+      "assertion_kind": "morpheme_composition",
+      "reason_code": "MISSING_SOURCE_ASSERTION"
+    },
+    {
+      "name": "atomic_semantic_key_label_consistency",
+      "table": "morphemes_atomic",
+      "key_fields": [
+        "category_code",
+        "value_code"
+      ],
+      "value_fields": [
+        "category_name",
+        "value_name"
+      ],
+      "ignored_realization_fields": [
+        "semantic_summary",
+        "morpheme_family",
+        "surface_form_raw",
+        "surface_form_normalized",
+        "realization_type",
+        "allomorph_condition"
+      ],
+      "reason_code": "CONFLICTING_SEMANTIC_KEY"
+    },
+    {
+      "name": "lexicon_child_parent_binding",
+      "children": [
+        "lexicon_root_senses",
+        "lexicon_root_evidence"
+      ],
+      "parent": "lexicon_roots",
+      "parent_key": "lexicon_root_id",
+      "equal_fields": [
+        "root_form_raw",
+        "source_id",
+        "source_url"
+      ],
+      "locus_fields": [
+        "source_id",
+        "source_url",
+        "tracked_pdf_name",
+        "tracked_pdf_sha256",
+        "lexicon_chapter",
+        "lexicon_section"
+      ],
+      "reason_code": "LEXICON_PARENT_BINDING_CONFLICT"
+    }
+  ],
+  "deferred_non_core": {
+    "composition_semantics": "#57-#60; morpheme_compositions is loaded here only to close source_assertion entity FKs and source provenance.",
+    "affix_degrees": "#56",
+    "allomorph_rules": "#59",
+    "bilqis_mapping_tables": "#62-#66",
+    "source_table_cells_and_extractor_completeness": "#28",
+    "curriculum_order": "out of semantic compiler input"
+  },
+  "reason_codes": [
+    "MISSING_TABLE",
+    "MISSING_COLUMN",
+    "UNEXPECTED_COLUMN",
+    "DUPLICATE_CSV_HEADER",
+    "MALFORMED_UTF8",
+    "MALFORMED_CSV",
+    "BLANK_PRIMARY_KEY",
+    "BLANK_REQUIRED_FIELD",
+    "DUPLICATE_PRIMARY_KEY",
+    "INVALID_ENUM_STATE",
+    "UNKNOWN_FOREIGN_KEY",
+    "UNKNOWN_SOURCE_ASSERTION_ENTITY",
+    "SOURCE_URL_BINDING_CONFLICT",
+    "MISSING_SOURCE_ASSERTION",
+    "CONFLICTING_SEMANTIC_KEY",
+    "LEXICON_PARENT_BINDING_CONFLICT",
+    "TABLE_READ_ERROR",
+    "INVALID_COMPILER_INPUT_MANIFEST"
+  ]
+}

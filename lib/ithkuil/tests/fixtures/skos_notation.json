@@ -1,0 +1,71 @@
+{
+  "schema": "bilqis.skos.notation-fixtures/v1",
+  "scheme_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil",
+  "roundtrip": [
+    {
+      "id": "ascii-grammar-code",
+      "resource_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF",
+      "datatype": "grammar-code",
+      "lexical": "MFF"
+    },
+    {
+      "id": "source-non-ascii",
+      "resource_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF",
+      "datatype": "new-ithkuil",
+      "lexical": "ẓ"
+    },
+    {
+      "id": "zero-exponent",
+      "resource_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/UPX",
+      "datatype": "new-ithkuil",
+      "lexical": "∅"
+    },
+    {
+      "id": "multi-codepoint-source",
+      "resource_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CASE/ABL",
+      "datatype": "new-ithkuil",
+      "lexical": "i’ö"
+    },
+    {
+      "id": "nfd-synthetic-boundary",
+      "resource_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/SYNTHETIC/NFD",
+      "datatype": "new-ithkuil",
+      "lexical": "c\u030c",
+      "synthetic": true
+    },
+    {
+      "id": "nfc-synthetic-boundary",
+      "resource_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/SYNTHETIC/NFC",
+      "datatype": "new-ithkuil",
+      "lexical": "č",
+      "synthetic": true
+    }
+  ],
+  "same_resource_multisystem": {
+    "resource_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF",
+    "notations": [
+      {"datatype": "grammar-code", "lexical": "MFF"},
+      {"datatype": "new-ithkuil", "lexical": "ẓ"}
+    ]
+  },
+  "collision": {
+    "scheme_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil",
+    "datatype": "new-ithkuil",
+    "lexical": "ẓ",
+    "resource_iris": [
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFF",
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/CONFIGURATION/MFS"
+    ],
+    "expected_unique": true
+  },
+  "allowed_homograph": {
+    "scheme_iri": "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/new-ithkuil",
+    "datatype": "new-ithkuil",
+    "lexical": "a",
+    "resource_iris": [
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/SYNTHETIC/HOMOGRAPH-A",
+      "https://github.com/Entif-AI/Bilqis-MLX/id/grammar/SYNTHETIC/HOMOGRAPH-B"
+    ],
+    "expected_unique": false
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "schema": "bilqis.skos.mapping-admission/v1",
+  "matrix": {
+    "exactMatch": {
+      "review_state": "admitted_exact_equivalence",
+      "strength": "explicit admitted equivalence",
+      "insufficient": "similarity, absence of contradiction, ambiguous exactness, close-only qualification",
+      "symmetry": true,
+      "inverse": "exactMatch",
+      "requires": [
+        "source_ref",
+        "evidence_ref",
+        "independent_schemes",
+        "exactness_proof_ref"
+      ],
+      "historical_emission": false,
+      "transitive": true,
+      "subproperty_of": "closeMatch"
+    },
+    "closeMatch": {
+      "review_state": "admitted_close_match",
+      "strength": "explicit qualified close correspondence; never uncertain exactness",
+      "insufficient": "proposal, ambiguity, failed or missing exactness review without a separate close admission",
+      "symmetry": true,
+      "inverse": "closeMatch",
+      "requires": [
+        "source_ref",
+        "evidence_ref",
+        "independent_schemes",
+        "qualification_ref"
+      ],
+      "historical_emission": false,
+      "transitive": false,
+      "subproperty_of": null
+    },
+    "broadMatch": {
+      "review_state": "admitted_broad_match",
+      "strength": "source-grounded directional broader mapping",
+      "insufficient": "label generality, collection membership, row order, or direction inferred without source evidence",
+      "symmetry": false,
+      "inverse": "narrowMatch",
+      "requires": [
+        "source_ref",
+        "evidence_ref",
+        "independent_schemes",
+        "direction_ref"
+      ],
+      "historical_emission": false,
+      "transitive": false,
+      "subproperty_of": null
+    },
+    "narrowMatch": {
+      "review_state": "admitted_narrow_match",
+      "strength": "source-grounded directional narrower mapping",
+      "insufficient": "label specificity, collection membership, row order, or direction inferred without source evidence",
+      "symmetry": false,
+      "inverse": "broadMatch",
+      "requires": [
+        "source_ref",
+        "evidence_ref",
+        "independent_schemes",
+        "direction_ref"
+      ],
+      "historical_emission": false,
+      "transitive": false,
+      "subproperty_of": null
+    },
+    "relatedMatch": {
+      "review_state": "admitted_related_match",
+      "strength": "explicit admitted associative correspondence",
+      "insufficient": "co-occurrence, topical resemblance, proposal, or unresolved relation type",
+      "symmetry": true,
+      "inverse": "relatedMatch",
+      "requires": [
+        "source_ref",
+        "evidence_ref",
+        "independent_schemes"
+      ],
+      "historical_emission": false,
+      "transitive": false,
+      "subproperty_of": null
+    }
+  },
+  "synthetic": true,
+  "schemes": {
+    "a": "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/synthetic-mapping-a",
+    "b": "https://github.com/Entif-AI/Bilqis-MLX/id/scheme/synthetic-mapping-b"
+  },
+  "positive_claims": [
+    {
+      "id": "exact",
+      "source_iri": "https://example.invalid/synthetic/a/exact",
+      "target_iri": "https://example.invalid/synthetic/b/exact",
+      "predicate": "exactMatch",
+      "review_state": "admitted_exact_equivalence",
+      "source_ref": "SYNTHETIC:EXACT",
+      "evidence_ref": "SYNTHETIC:EVIDENCE:EXACT",
+      "independent_schemes": true,
+      "exactness_proof_ref": "SYNTHETIC:PROOF:EXACT"
+    },
+    {
+      "id": "close",
+      "source_iri": "https://example.invalid/synthetic/a/close",
+      "target_iri": "https://example.invalid/synthetic/b/close",
+      "predicate": "closeMatch",
+      "review_state": "admitted_close_match",
+      "source_ref": "SYNTHETIC:CLOSE",
+      "evidence_ref": "SYNTHETIC:EVIDENCE:CLOSE",
+      "independent_schemes": true,
+      "qualification_ref": "SYNTHETIC:QUALIFICATION:CLOSE"
+    },
+    {
+      "id": "broad",
+      "source_iri": "https://example.invalid/synthetic/a/narrower-1",
+      "target_iri": "https://example.invalid/synthetic/b/broader-1",
+      "predicate": "broadMatch",
+      "review_state": "admitted_broad_match",
+      "source_ref": "SYNTHETIC:BROAD",
+      "evidence_ref": "SYNTHETIC:EVIDENCE:BROAD",
+      "independent_schemes": true,
+      "direction_ref": "SYNTHETIC:DIRECTION:NARROWER-TO-BROADER"
+    },
+    {
+      "id": "narrow",
+      "source_iri": "https://example.invalid/synthetic/a/broader-2",
+      "target_iri": "https://example.invalid/synthetic/b/narrower-2",
+      "predicate": "narrowMatch",
+      "review_state": "admitted_narrow_match",
+      "source_ref": "SYNTHETIC:NARROW",
+      "evidence_ref": "SYNTHETIC:EVIDENCE:NARROW",
+      "independent_schemes": true,
+      "direction_ref": "SYNTHETIC:DIRECTION:BROADER-TO-NARROWER"
+    },
+    {
+      "id": "related",
+      "source_iri": "https://example.invalid/synthetic/a/related",
+      "target_iri": "https://example.invalid/synthetic/b/related",
+      "predicate": "relatedMatch",
+      "review_state": "admitted_related_match",
+      "source_ref": "SYNTHETIC:RELATED",
+      "evidence_ref": "SYNTHETIC:EVIDENCE:RELATED",
+      "independent_schemes": true
+    }
+  ],
+  "held_states": {
+    "proposal": "MAPPING_PROPOSAL_HELD",
+    "blocked": "MAPPING_BLOCKED_HELD",
+    "deferred": "MAPPING_DEFERRED_HELD",
+    "historical_only": "MAPPING_HISTORICAL_ONLY_HELD",
+    "rejected_equivalence": "MAPPING_REJECTED_EQUIVALENCE_HELD",
+    "ambiguous": "MAPPING_AMBIGUOUS_HELD"
+  },
+  "expected_triples": [
+    [
+      "https://example.invalid/synthetic/a/exact",
+      "http://www.w3.org/2004/02/skos/core#exactMatch",
+      "https://example.invalid/synthetic/b/exact"
+    ],
+    [
+      "https://example.invalid/synthetic/b/exact",
+      "http://www.w3.org/2004/02/skos/core#exactMatch",
+      "https://example.invalid/synthetic/a/exact"
+    ],
+    [
+      "https://example.invalid/synthetic/a/close",
+      "http://www.w3.org/2004/02/skos/core#closeMatch",
+      "https://example.invalid/synthetic/b/close"
+    ],
+    [
+      "https://example.invalid/synthetic/b/close",
+      "http://www.w3.org/2004/02/skos/core#closeMatch",
+      "https://example.invalid/synthetic/a/close"
+    ],
+    [
+      "https://example.invalid/synthetic/a/narrower-1",
+      "http://www.w3.org/2004/02/skos/core#broadMatch",
+      "https://example.invalid/synthetic/b/broader-1"
+    ],
+    [
+      "https://example.invalid/synthetic/b/broader-1",
+      "http://www.w3.org/2004/02/skos/core#narrowMatch",
+      "https://example.invalid/synthetic/a/narrower-1"
+    ],
+    [
+      "https://example.invalid/synthetic/a/broader-2",
+      "http://www.w3.org/2004/02/skos/core#narrowMatch",
+      "https://example.invalid/synthetic/b/narrower-2"
+    ],
+    [
+      "https://example.invalid/synthetic/b/narrower-2",
+      "http://www.w3.org/2004/02/skos/core#broadMatch",
+      "https://example.invalid/synthetic/a/broader-2"
+    ],
+    [
+      "https://example.invalid/synthetic/a/related",
+      "http://www.w3.org/2004/02/skos/core#relatedMatch",
+      "https://example.invalid/synthetic/b/related"
+    ],
+    [
+      "https://example.invalid/synthetic/b/related",
+      "http://www.w3.org/2004/02/skos/core#relatedMatch",
+      "https://example.invalid/synthetic/a/related"
+    ]
+  ]
+}

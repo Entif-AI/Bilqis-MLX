@@ -1,0 +1,55 @@
+{
+  "source": {
+    "sha256": "0fd4aa1df217533427f950b86a4b7c4963dc5e66f7be927c8ad56a2ee990fdbd",
+    "canonical_page_start": 261,
+    "page_count": 59,
+    "canonical_page_text_variant_pages": [
+      "6",
+      "16",
+      "17",
+      "18",
+      "28",
+      "32",
+      "33",
+      "36",
+      "41",
+      "42",
+      "43",
+      "44",
+      "45",
+      "46",
+      "47",
+      "48",
+      "49",
+      "50",
+      "52",
+      "54",
+      "55",
+      "56",
+      "57",
+      "58"
+    ],
+    "min_text_similarity": 0.8346055979643766
+  },
+  "counts": {
+    "roots": 733,
+    "senses": 334,
+    "unique_sense_coordinates": 334,
+    "evidence": 1000,
+    "roots_without_senses": 639,
+    "source_observations": 1361,
+    "parsed_sense_observations": 334
+  },
+  "dispositions": {
+    "DEBT_CONFLICT": 13,
+    "DEBT_INSUFFICIENT_SENSE_EVIDENCE": 948,
+    "DEBT_UNSUPPORTED_SHAPE": 66,
+    "PARSED": 334
+  },
+  "output_sha256": {
+    "lexicon_roots.csv": "504b7bba8278cbedbfbe065047cf944d71dcb10fea5c3f231e1d86eb70ec5d37",
+    "lexicon_root_senses.csv": "08d482abdd9caa8e6a9943ee382e0a98cb8a10796f4ef98340f905173c822b24",
+    "lexicon_root_evidence.csv": "6a001d73718765cd89d0431f8bd97a8dcd6332924c5ff3045714f652333fb2ca"
+  },
+  "accounting_sha256": "1d120f091e914c71392be81b4dabdd5af35b29690a88bd12e02a9373c5b53a45"
+}

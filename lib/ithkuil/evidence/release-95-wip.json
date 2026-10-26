@@ -1,0 +1,79 @@
+{
+  "authority_boundary": "IPR-0220; no curriculum admission or neural updates",
+  "branch": "codex/skos-31-43-pro-20261024",
+  "canonical_rdf_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+  "census_file": "release-94/release-census.json",
+  "completed": "#94 census is pushed and merge-gated; #95 portable proof/fixture guard passes four tests, actual reset/rebuild proof remains incomplete.",
+  "corrected_fixture_sha256": "95b54cee4f73b8df353ac560e542bf13ac38f1421641231240f160e3766f8a16",
+  "false_boundary_blocker_count": 6842,
+  "fixture": "lib/ithkuil/tests/fixtures/release95_smoke.json",
+  "fixture_incident_checkpoint": "https://github.com/Entif-AI/Bilqis-MLX/issues/95#issuecomment-6412255674",
+  "full_bundle_id": "f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec",
+  "graph": "bilqis_skos_release95_2e8effc5df5b",
+  "incidents": {
+    "PM-2026-10-26-004": {
+      "patterns": [
+        "PAT-047"
+      ],
+      "root_causes": [
+        "RC-061"
+      ],
+      "status": "contained; emitted-concept fixture and executable pre-mutation guard installed; native ledger readback verified"
+    },
+    "PM-2026-10-26-005": {
+      "patterns": [
+        "PAT-095"
+      ],
+      "root_causes": [
+        "RC-134"
+      ],
+      "status": "open; full-graph reset pagination defect; native ledger readback verified"
+    }
+  },
+  "issue": 95,
+  "limits": [
+    "This WIP checkpoint does not complete #95 or authorize release/merge.",
+    "#93 canonical RDF and #94 row census remain valid and unchanged.",
+    "No saved student, optimizer, teacher, source pins, canonical RDF or unrelated graph was changed."
+  ],
+  "native_projection_state": {
+    "digest": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "edges": 130173,
+    "nodes": 67410,
+    "owner": "codex_release95_c2464d4d062d",
+    "state": "incomplete",
+    "version": "1.0.0"
+  },
+  "next_permitted_actions": [
+    "Reread live #75, parent #27 and direct #74 dependency before repairing the owning planner. Reread #95/#30 and named dependencies after compaction.",
+    "Fix unpaged node/boundary enumeration using existing Importer._pages; bind complete identities/counts to native aggregate counts and preserve atomic reset fencing and all genuine foreign-boundary refusals. Do not raise global server result limit or weaken safety gates.",
+    "Run red/green owner tests under a simulated provider cap plus actual full graph preflight; complete counts must be 67410 owned terms and 130173 RDF edges, with no false blockers.",
+    "Only after exact #75 preflight passes, safely reset this owned isolated graph, verify empty state, create session-reconciled.json with initial_state=empty and the corrected suite hash, then run release_graph_proof into a fresh output root. No blind retry of old output root.",
+    "After two matching complete materialization/read-only journeys, turn in #95; then read live #96/#97 and continue the release-closeout spine and #30/#19 audit. Preserve merge gating; no merge or manual issue closure."
+  ],
+  "no_reset_executed": true,
+  "owner": "codex_release95_c2464d4d062d",
+  "owner_blocker": "https://github.com/Entif-AI/Bilqis-MLX/issues/75#issuecomment-6412498798",
+  "release_candidate": "eb3ce818319382bb1946a3a4a23ea585a638ea70",
+  "reset_plan_summary": {
+    "canonical_sha256": "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e",
+    "foreign_edges_touching_owned_nodes": [],
+    "foreign_nodes_touching_owned_edges": [],
+    "graph": "bilqis_skos_release95_2e8effc5df5b",
+    "owned_edges": 3158,
+    "owned_nodes": 9999,
+    "owner": "codex_release95_c2464d4d062d",
+    "projection_version": "1.0.0",
+    "schema": "bilqis.skos.reset-plan/v1",
+    "state": "incomplete"
+  },
+  "resultset_limit": 10000,
+  "schema": "bilqis.ithkuil.release95-wip/v1",
+  "status": "BLOCKED_ON_OWNER_75",
+  "verification": {
+    "failures": 0,
+    "live_two_materialization_proof": "NOT_COMPLETE",
+    "portable_tests": 4
+  },
+  "verified_parent": "5dc1c53f33996d7001952d3bfee44f2b71dd7262"
+}

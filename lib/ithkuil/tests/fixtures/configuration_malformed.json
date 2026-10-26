@@ -1,0 +1,14 @@
+{
+  "fixture_schema": "bilqis.skos.configuration-negative-fixture/v1",
+  "base_atomic_id": "ATOM-141cf12b11fa90",
+  "synthetic_atomic_id": "ATOM-fixture-mss-conflict",
+  "mutations": {
+    "allomorph_group_id": "AG-fixture-mss-conflict",
+    "semantic_summary": "Configuration value conflicting source label",
+    "surface_form_normalized": "fixture-form",
+    "surface_form_raw": "fixture-form",
+    "value_name": "conflicting source label"
+  },
+  "expected_resolution_issue": "CONFLICTING_SEMANTIC_MEANING",
+  "expected_selector_error": "CONFIGURATION_RESOLUTION_HELD"
+}
