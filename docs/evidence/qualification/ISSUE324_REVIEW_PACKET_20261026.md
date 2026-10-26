@@ -3,8 +3,8 @@
 **Disposition: QUALIFICATION_MANIFEST_FROZEN_AND_READY_FOR_HUMAN_INITIATION.**
 **NO OFFICIAL V3 QUALIFICATION ARM HAS BEEN EXECUTED.** The original v2 baseline launch aborted before a completed visit and is preserved as superseded evidence. Bounded repair-validation epochs described below are not qualification evidence.
 
-Canonical manifest digest: `9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f`.
-Exact executable head: `6c815d4fdaa2d6c1978cbad93cd7962d05cb940c`.
+Canonical manifest digest: `7c84593af015bc38119b0ff75ed64bd322efced17a661dffe3324d5480a5c556`.
+Exact executable head: `895a15321020c379d4bf4b12a55d55e45511a4a3`.
 Preparation branch: `codex/324-learning-qualification-20261026`, stacked on the verified #333 head.
 Executable checkout: `/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026`. This detached checkout stays at the manifest head while review-only artifacts are committed on the preparation branch.
 
@@ -57,29 +57,29 @@ First inspect either arm without neural authority:
 
 ```sh
 cd /Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026
-python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm baseline --expected-digest 9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f --dry-run
-python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm capacity --expected-digest 9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f --dry-run
+python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm baseline --expected-digest 7c84593af015bc38119b0ff75ed64bd322efced17a661dffe3324d5480a5c556 --dry-run
+python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm capacity --expected-digest 7c84593af015bc38119b0ff75ed64bd322efced17a661dffe3324d5480a5c556 --dry-run
 ```
 
 After explicit human review/authorization, run the arms sequentially with these proposed commands:
 
 ```sh
 cd /Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026
-python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm baseline --expected-digest 9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f --human-run
-python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm capacity --expected-digest 9d0990732c7fdb101ddbac3441807ed5f16ab0cb2b92fb3b527fd6f6e6dba70f --human-run
+python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm baseline --expected-digest 7c84593af015bc38119b0ff75ed64bd322efced17a661dffe3324d5480a5c556 --human-run
+python3 -B -m bilqis_mlx.runtime.qualification --manifest /Users/emilie/Code/.worktrees/bilqis-mlx/324-learning-qualification-20261026/docs/evidence/qualification/issue324-20261026-v3.json --arm capacity --expected-digest 7c84593af015bc38119b0ff75ed64bd322efced17a661dffe3324d5480a5c556 --human-run
 ```
 
 Only the last two commands can update fresh official experiment students and their own AdamW, teacher/run receipts, candidate/champion records and checkpoints. They write under `/Users/emilie/Code/.worktrees/bilqis-mlx/324-frozen-execution-v3-20261026/runs/qualification-324-baseline` and `.../qualification-324-capacity`. They do not target the continuing canonical student. Neither official v3 command has been run.
 
 ## Verified preparation evidence
 
-- Both v3 arm dry-runs pass at exact head `6c815d4f…`, with `neural_authority=false`, `actual_optimizer_updates=0`, and neither official v3 run directory created.
+- Both v3 arm dry-runs pass at exact head `895a1532…`, with `neural_authority=false`, `actual_optimizer_updates=0`, and neither official v3 run directory created.
 - Seven CLI mutation cases (head, topology, curriculum, numeric scope, policy, budget, manifest seal) fail closed with zero updates. Unit tests also reseal mutations to exercise internal identity checks.
 - Qualification unit suite: 15 tests pass, including the staged-release terminal-evaluation regression. The focused v2 semantic-authority diagnostics regression also passes.
 - A final one-visit, five-minute disposable qualification-path validation at the v3 production bytes completed end to end with exit 0. Its expected result is `NOT_QUALIFIED / FULL_WORKLOAD_NOT_YET_INTRODUCED`; it proves launch, visit, observation publication, checkpoint stop and terminal evaluation survive the repaired seams. It is not an official arm and cannot satisfy #324 learning criteria.
 - Factory architecture/closure, source/ABI, release/docs/errors and hygiene/size guards pass. Independent external ABI enforcement remains advisory/unconfigured locally.
 - PM-2026-10-26-007 / RC-135 / PAT-096 records the repaired portable mock-import issue and was read back in the native ledger.
-- Manual launch exposed two post-preparation defects. First, lesson diagnostics received scheduler-only `ScheduleCapability` authority after Factory-v2 cutover; `1edba645…` routes diagnostics through the admitted semantic curriculum and adds a v2-authority regression. Second, early terminal evaluation restored staged Grade-A state against the final A+B+C schedule; `b4e535c5…` restores against the currently admitted release, and `6c815d4f…` locks that behavior with a focused regression.
+- Manual launch exposed two post-preparation defects. First, lesson diagnostics received scheduler-only `ScheduleCapability` authority after Factory-v2 cutover; `1edba645…` routes diagnostics through the admitted semantic curriculum and adds a v2-authority regression. Second, early terminal evaluation restored staged Grade-A state against the final A+B+C schedule; `b4e535c5…` restores against the currently admitted release, and `6c815d4f…` locks that behavior with a focused regression. Final executable `895a1532…` removes the one new opaque diagnostic error identity caught by `quality:check`; the full quality gate then passes with zero new baseline-relative findings.
 - The aborted v2 baseline directory is preserved in the superseded v2 execution checkout and MUST NOT be resumed or counted. V3 uses fresh run identities. V1/v2 are historical evidence; v3 is the single active manifest.
 
 ## Remaining #324 acceptance
