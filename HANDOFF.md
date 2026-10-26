@@ -1,10 +1,23 @@
-# CURRENT SUPERSESSION | 2026-10-26 | Teacher vNext bounded proposal canary
+# CURRENT SUPERSESSION | 2026-10-26 | Promotion sweep hysteresis + Teacher vNext canary
 
 The canonical repository is `/Users/emilie/Code/bilqis-mlx` on branch
 `349-bouta-tree-fitty`. Teacher vNext has moved beyond shadow-only proposal ranking:
 the pending implementation gives it bounded real proposal-selection authority while
 leaving all neural admission/safety authority unchanged. The assistant did not start,
 stop or otherwise manipulate neural training.
+
+Promotion-sweep diagnosis over generations 42711+ found 31 sweep attempts: 12 at C
+introduction stage 4, 16 at stage 5, and 3 final-stage attempts at stage 6. Twenty-four
+attempts had no retained update; 22 of those still fell below the
+old 90% continuation floor on an unchanged student. The final-stage attempt began at
+208/231 = 90.04%; a perfect-target C.COUNT skip performed no neural update, then one
+fresh-cohort miss changed only C.COUNT from 33/33 to 32/33 and immediately dropped the
+stitched mean to 207/231 = 89.61%. The governing user correction therefore replaces
+the old single 90% threshold with **92% entry / 87% failure hysteresis**. A sweep starts
+only at mean >=92% and continues while the running stitched mean is >=87%; below 87%
+aborts. Replay of all 31 historical launches shows only 4 would have entered at 92%,
+suppressing 27/31 (87.1%) of the observed sweep launches. The existing
+one-attempt-per-student+scope latch remains unchanged.
 
 The append-only ledger contains **267 actual teacher proposals, 17 retained visits and
 228 retained optimizer updates**: 6.37% proposal retention. The dominant failure remains

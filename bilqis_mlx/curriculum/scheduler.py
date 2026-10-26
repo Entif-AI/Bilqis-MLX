@@ -10,7 +10,7 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 from dataclasses import asdict, replace
 from fractions import Fraction
 from .promotion import (
-    PROMOTION_MEAN_FLOOR, PromotionError, _promotion_debt, _boundary_mastery_debt, _introduced_grade_capabilities, _mean_accuracy, _promotion_sweep_fields_cleared, _verify_promotion_sweep_state, _promotion_sweep_due, _start_promotion_sweep,
+    PROMOTION_SWEEP_FAILURE_FLOOR, PromotionError, _promotion_debt, _boundary_mastery_debt, _introduced_grade_capabilities, _mean_accuracy, _promotion_sweep_fields_cleared, _verify_promotion_sweep_state, _promotion_sweep_due, _start_promotion_sweep,
 )
 from .program_adoption import (
     adopt_appended_program, adopt_expanded_prior_grade, adopt_revised_program,
@@ -879,7 +879,7 @@ def _assess_promotion_sweep(program, state: SchoolState,
             (capability, running[capability].correct, running[capability].total)
             for capability in scope),
     )
-    if _mean_accuracy(running, scope) < PROMOTION_MEAN_FLOOR:
+    if _mean_accuracy(running, scope) < PROMOTION_SWEEP_FAILURE_FLOOR:
         return_stage = state.promotion_sweep_return_stage
         ordinary = _promotion_sweep_fields_cleared(
             running_state, stage=return_stage, queue=(),

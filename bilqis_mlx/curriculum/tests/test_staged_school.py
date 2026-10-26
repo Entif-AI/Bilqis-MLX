@@ -408,7 +408,7 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertIn("c.1", state.carried_mastery_debt)
         self.assertNotIn("C", state.champions)
 
-    def test_exactly_ninety_mean_starts_promotion_sweep(self):
+    def test_promotion_sweep_requires_ninety_two_percent_entry_mean(self):
         course = staged_course()
         state, pointer = enter_c(course)
         state = grade_loop(course, state, pointer)
@@ -416,20 +416,37 @@ class StagedSchoolTests(unittest.TestCase):
         state = assess(course, state, snapshot(course, pointer, perfect))
         state = finish_promotion_sweep(course, state, pointer, perfect)
         state = grade_loop(course, state, pointer)
-        exactly_ninety = {
+        below_entry = {
             c: (8, 8) for c in assessment_capabilities(course, state)
         }
-        exactly_ninety["c.1"] = (16, 20)
+        below_entry["c.1"] = (419, 500)  # (100% + 83.8%) / 2 = 91.9%
 
         state = assess(
-            course, state, snapshot(course, pointer, exactly_ninety))
+            course, state, snapshot(course, pointer, below_entry))
+
+        self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
+        self.assertEqual(state.introduction_stage, 1)
+
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        state = grade_loop(course, state, pointer)
+        exactly_entry = {
+            c: (8, 8) for c in assessment_capabilities(course, state)
+        }
+        exactly_entry["c.1"] = (21, 25)  # (100% + 84%) / 2 = 92%
+
+        state = assess(
+            course, state, snapshot(course, pointer, exactly_entry))
 
         self.assertEqual(state.stage, "PROMOTION_SWEEP")
         self.assertEqual(state.queue, ("c.0", "c.1"))
         self.assertEqual(state.introduction_stage, 1)
         self.assertNotIn("c.2", assessment_capabilities(course, state))
 
-    def test_grade_mean_promotion_sweep_aborts_only_when_mean_falls_below_ninety(self):
+    def test_promotion_sweep_hysteresis_aborts_only_below_eighty_seven_percent(self):
         course = staged_course()
         state, pointer = enter_c(course)
         state = grade_loop(course, state, pointer)
@@ -438,15 +455,35 @@ class StagedSchoolTests(unittest.TestCase):
         state = finish_promotion_sweep(course, state, pointer, perfect)
         state = grade_loop(course, state, pointer)
         scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
-        scores["c.1"] = (17, 20)
+        scores["c.1"] = (21, 25)  # 92% grade mean
         state = assess(course, state, snapshot(course, pointer, scores))
 
         state = visit(course, state, "c.0", pointer)
         state = assess(course, state, snapshot(course, pointer, scores))
         state = visit(course, state, "c.1", pointer)
-        below_ninety = dict(scores)
-        below_ninety["c.1"] = (15, 20)
-        state = assess(course, state, snapshot(course, pointer, below_ninety))
+        exactly_exit = dict(scores)
+        exactly_exit["c.1"] = (37, 50)  # (100% + 74%) / 2 = 87%
+        state = assess(course, state, snapshot(course, pointer, exactly_exit))
+
+        self.assertEqual(state.introduction_stage, 2)
+        self.assertEqual(state.queue, ("c.2",))
+
+        state, pointer = enter_c(course)
+        state = grade_loop(course, state, pointer)
+        perfect = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        state = assess(course, state, snapshot(course, pointer, perfect))
+        state = finish_promotion_sweep(course, state, pointer, perfect)
+        state = grade_loop(course, state, pointer)
+        scores = {c: (8, 8) for c in assessment_capabilities(course, state)}
+        scores["c.1"] = (21, 25)
+        state = assess(course, state, snapshot(course, pointer, scores))
+
+        state = visit(course, state, "c.0", pointer)
+        state = assess(course, state, snapshot(course, pointer, scores))
+        state = visit(course, state, "c.1", pointer)
+        below_exit = dict(scores)
+        below_exit["c.1"] = (369, 500)  # (100% + 73.8%) / 2 = 86.9%
+        state = assess(course, state, snapshot(course, pointer, below_exit))
 
         self.assertEqual(state.introduction_stage, 1)
         self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
@@ -471,7 +508,7 @@ class StagedSchoolTests(unittest.TestCase):
         state = assess(course, state, snapshot(course, pointer, qualifying))
         state = visit(course, state, "c.1", pointer)
         below_floor = dict(qualifying)
-        below_floor["c.1"] = (15, 20)
+        below_floor["c.1"] = (7, 10)
         state = assess(course, state, snapshot(course, pointer, below_floor))
         self.assertEqual(state.stage, "RECOVERY_1")
 

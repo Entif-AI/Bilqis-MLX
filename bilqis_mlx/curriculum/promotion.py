@@ -17,7 +17,8 @@ class PromotionError(str, Enum):
     PROMOTION_SWEEP_ASSESSMENT_WITHOUT_VISIT = "PROMOTION_SWEEP_ASSESSMENT_WITHOUT_VISIT"
 
 
-PROMOTION_MEAN_FLOOR = Fraction(9, 10)
+PROMOTION_SWEEP_ENTRY_FLOOR = Fraction(92, 100)
+PROMOTION_SWEEP_FAILURE_FLOOR = Fraction(87, 100)
 
 
 def _introduced_grade_capabilities(program, state: SchoolState) -> tuple[str, ...]:
@@ -103,7 +104,7 @@ def _promotion_sweep_due(program, state: SchoolState,
     if (state.promotion_sweep_attempt_student_sha256 == state.current_student.sha256 and
             state.promotion_sweep_attempt_scope == scope):
         return False
-    return _mean_accuracy(snapshot.scores, scope) >= PROMOTION_MEAN_FLOOR
+    return _mean_accuracy(snapshot.scores, scope) >= PROMOTION_SWEEP_ENTRY_FLOOR
 
 
 def _start_promotion_sweep(program, state: SchoolState,

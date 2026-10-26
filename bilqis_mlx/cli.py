@@ -447,7 +447,8 @@ def human_stop_summary(result: dict) -> str:
     debt_wait = "_PROMOTED_WITH_DEBT_" in reason
     explanation = (
         ("The current admitted grade earned automatic progression from a "
-         "stable >=90% promotion sweep while retaining imperfect semantics "
+         "promotion sweep entered at >=92% and completed without falling below 87%, "
+         "while retaining imperfect semantics "
          "as mastery debt; awaiting the next factory-admitted curriculum grade.")
         if debt_wait else
         ("The current admitted grade is mastered; awaiting the next "

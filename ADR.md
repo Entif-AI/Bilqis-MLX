@@ -1816,3 +1816,32 @@ lesson validation, candidate execution, retention admission, student/AdamW custo
 promotion, qualification and championship authority are unchanged. Multi-fidelity
 early stopping remains shadow-only and is not activated by this decision. Neural
 training remains human-operated.
+
+## ADR-112 | 2026-10-26 | Promotion sweeps use 92/87 hysteresis
+
+**Direct user correction after live sweep diagnosis.** The one-attempt-per-student and
+introduced-scope latch from ADR-103 is working: unchanged failed attempts do not re-arm
+from cohort reshuffling alone. The remaining failure is the sweep threshold itself.
+Across 31 observed sweep attempts, the median trigger mean was 90.91%; 24 attempts had
+no retained student update, yet 22 of those still crossed below the old 90% continuation
+floor. The final-stage C attempt demonstrated the mechanism cleanly: the unchanged
+student entered at 208/231 = 90.04%, C.COUNT was already perfect so no neural update
+occurred, and the next fresh cohort scored that capability 32/33 instead of 33/33,
+dropping the stitched mean to 207/231 = 89.61% and aborting immediately.
+
+The active promotion policy therefore uses explicit hysteresis. A previously unattempted
+student+scope pair may enter `PROMOTION_SWEEP` only when the fresh introduced-grade mean
+is **at least 92%**. Once the sweep is active, the running stitched grade mean may vary
+inside the hysteresis band and the sweep aborts only when that mean falls **below 87%**.
+Exactly 92% starts; exactly 87% continues. Every other sweep invariant remains intact:
+canonical capability order, per-capability fresh authoritative replacement, frozen
+unswept scores, checkpoint/scope-bound attempt memory, mastery-debt carry-forward,
+source/oracle truth, retention custody, student+own-AdamW custody, championship
+authority, and human ownership of neural training.
+
+This intentionally supersedes the single-threshold portions of ADR-084/085/093/099/103
+without rewriting those historical decisions. It is a pragmatic buffer, not a claim
+that 92/87 is statistically optimal. Future evidence may replace these constants with a
+calibrated readiness model, but until then no first-crossing near 90% may launch a sweep.
+Replay of those 31 historical launches shows that only 4 began at or above 92%; the
+entry buffer would therefore have suppressed 27/31 (87.1%) of the observed launches.
