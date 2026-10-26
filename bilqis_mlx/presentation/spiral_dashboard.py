@@ -976,13 +976,13 @@ class Dashboard:
                 ("INT ROOTS",self._number_semantics_text(),11,False),
                 ("STUDENT LATEST",latest,18,False),
                 ("STUDENT BEST",best,18,False),
-                ("STEPS/MIN",
-                 round(self._steps_per_min)
-                 if isinstance(self._steps_per_min,(int,float)) else "-",
-                 9,True),
+                ("ST/M",round(self._steps_per_min)
+                 if isinstance(self._steps_per_min,(int,float)) else "-",4,True),
                 ("RTN",retained if type(retained) is int else "-",3,True),
                 ("RTN%",round(retained*100/visits)
                  if type(retained) is int and type(visits) is int and visits>0 else "-",4,True),
+                ("GREW",(f"{state['grew']:+d}"
+                          if type(state.get('grew')) is int else "-"),4,True),
                 ("R/H",round(retained*3600/elapsed) if type(retained) is int and elapsed>0 else "-",3,True),
             ])
             halt=state.get('halt')

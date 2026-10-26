@@ -53,6 +53,37 @@ class SchoolTelemetryTests(unittest.TestCase):
 
         self.assertEqual(round(board._steps_per_min), 180)
 
+    def test_grew_averages_active_capabilities_including_stagnation_withheld(self):
+        board = Dashboard(
+            stream=io.StringIO(), clock=lambda: 3600.0,
+            show_all_panels=True, tables=LETTER_TABLES,
+            compact_header=True)
+        board.started = 0.0
+        board.school_telemetry = SchoolTelemetry(
+            board, active_grades=("A", "B"), champions={})
+        for grade, scores in (
+                ("A", {"A.IDENTITY": (5, 10), "A.LINK": (5, 10)}),
+                ("B", {"B.AND": (5, 10), "B.OR": (5, 10)})):
+            ingest(board, exam(grade, 1, f"rubric-{grade}", scores, step=100))
+        board.school_telemetry.begin_execution(grade="B", step=100)
+        ingest(board, exam("A", 2, "rubric-A", {
+            "A.IDENTITY": (7, 10), "A.LINK": (6, 10)}, step=120))
+        ingest(board, exam("B", 2, "rubric-B", {
+            "B.AND": (4, 10), "B.OR": (7, 10)}, step=120))
+
+        ingest(board, {
+            "event": "SCHOOL_GRADE_RELEASE_REPLACED", "grade": "B",
+            "generation": 3, "optimizer_step": 120,
+            "old_capabilities": ["B.AND", "B.OR"],
+            "new_capabilities": ["B.AND"],
+            "withheld_capabilities": ["B.OR"],
+        })
+
+        self.assertEqual(board.state["grew"], 10)
+        headings, values = board.render(width=210, height=20).splitlines()[:2]
+        start = headings.index("GREW")
+        self.assertEqual(values[start:start + 4].strip(), "+10")
+
     def test_withheld_grade_mean_is_labeled_active_scope_and_qualification_blocked(self):
         with tempfile.TemporaryDirectory() as tmp:
             board = build(Path(tmp), stream=io.StringIO())
@@ -608,7 +639,7 @@ class SchoolTelemetryTests(unittest.TestCase):
         for heading in (
                 "BILQIS", "RUNTIME", "MAX TIME", "STEPS", "EXAM", "VISITS",
                 "TEACHER", "GRADES", "CAPS", "STUDENT LATEST", "STUDENT BEST",
-                "STEPS/MIN", "RTN", "RTN%", "R/H", "RUN"):
+                "ST/M", "RTN", "RTN%", "GREW", "R/H", "RUN"):
             self.assertIn(heading, headings)
         self.assertIn("A:MAIN", values)
         self.assertIn("1d 13h 47m 25s", values)

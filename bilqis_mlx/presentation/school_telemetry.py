@@ -12,6 +12,7 @@ from typing import Any
 import string
 
 from bilqis_mlx.presentation.spiral_dashboard import Column
+from bilqis_mlx.presentation.growth_projection import GrowthProjection
 from bilqis_mlx.presentation.operator_status import (
     PROFILE_ADOPTION_EVENTS, apply_profile_adoption,
     display_metric as _display, exam_qualification_display,
@@ -351,7 +352,6 @@ def _grade_from_capability(name: str, event_grade: str) -> str:
     prefix = name.split(".", 1)[0]
     return prefix if len(prefix) == 1 and prefix.isalpha() else event_grade
 
-
 def _source_provenance(event: dict):
     """Independent metrics must identify their validation set and whole student."""
     for key in ("dataset_sha256", "student_sha256"):
@@ -388,6 +388,7 @@ class SchoolTelemetry:
         self.best = {}
         self.last_cap = {}  # (capability, complete-rubric) -> (correct,total)
         self.start_cap = {}
+        self.growth = GrowthProjection(active_grades)
         self.last_source_training = {}  # capability -> (accuracy, optimizer_step)
         self.exam_cohorts = {}  # (grade, semantic rubric) -> last sampled cohort
         self.reported_scope_inventory = {}
@@ -402,12 +403,10 @@ class SchoolTelemetry:
         self.execution_start_step = None
         self.live_projected_generations = set()
         self.board.grade_program = tuple(self.grades)
-
     def _grade(self, name):
         if name not in self.grades:
             self.grades.append(name)
             self.board.grade_program = tuple(self.grades)
-
     def _reset_score_era(self, *, reason: str, grade: str | None) -> None:
         """Start a new longitudinal-score era without deleting event history."""
         self.score_era += 1
@@ -422,7 +421,6 @@ class SchoolTelemetry:
             "kind": "SCORE ERA", "grade": grade or "-",
             "detail": f"ERA {self.score_era} | RESET {reason}",
         }, redraw=False)
-
     def ingest(self, event: dict):
         if (event.get("event", "").startswith("SCHOOL_") and
                 event.get("telemetry_schema", TELEMETRY_VERSION) != TELEMETRY_VERSION):
@@ -478,8 +476,8 @@ class SchoolTelemetry:
         if (not grade or not old_caps or not new_caps or
                 any(not isinstance(cap, str) for cap in (*old_caps, *new_caps))):
             raise ValueError("SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID")
+        self.board.state["grew"] = self.growth.replace_grade(grade, old_caps, new_caps, event.get("withheld_capabilities", ()))
         old_set = set(old_caps)
-
         # Rows before this event describe the superseded curriculum. Keep them
         # in the immutable event log, not in the operator's active curriculum.
         for table in ("CANDIDATES", "SOUP & TEACHER", "BRIDGE FAMILIES",
@@ -535,6 +533,7 @@ class SchoolTelemetry:
         self.visits = 0
         self.start = dict(self.latest)
         self.start_cap = dict(self.last_cap)
+        self.board.state["grew"] = self.growth.begin_execution()
         self.execution_start_step = step if type(step) is int else None
         # Emit current snapshots immediately so START is truthful before the
         # first new exam in this execution command.
@@ -822,6 +821,7 @@ class SchoolTelemetry:
             if live:
                 self.era_cohorts[key].add(cohort_sha)
             for cap, (score, count) in sorted(caps.items()):
+                self.board.state["grew"] = self.growth.observe(g, cap, score, count)
                 cap_key = (cap, rubric, effective_scope)
                 baseline = self.start_cap.setdefault(cap_key, (score, count))
                 earlier = self.last_cap.get(cap_key)
