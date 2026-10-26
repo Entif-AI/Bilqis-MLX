@@ -174,7 +174,7 @@ def create_student(topology: ModelTopologySpec, vocab_size: int, *, seed: int,
         betas = tuple(options["betas"])
         eps = float(options["eps"])
         weight_decay = float(options["weight_decay"])
-        if (len(betas) != 2 or not 0 < learning_rate or not 0 < eps or
+        if (len(betas) != len(DEFAULT_OPTIMIZER["betas"]) or not 0 < learning_rate or not 0 < eps or
                 not 0 <= weight_decay or any(not 0 < float(beta) < 1 for beta in betas)):
             raise ValueError
     except (KeyError, TypeError, ValueError):
