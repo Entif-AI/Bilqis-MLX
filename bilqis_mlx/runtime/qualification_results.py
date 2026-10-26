@@ -60,6 +60,7 @@ def evaluate_finished_arm(prepared):
     from ..source_adapters.school import live_source_registry
     from ..factory.schedule import schedule_program_from_executable_release
     from ..curriculum.scheduler import assessment_capabilities
+    from .admission import _read_executable_factory_release_artifact
     from .mlx_checkpoint import load_semantically_bound_bundle
     from .teacher_observation_replay import read_committed_observations
     from ..learning.teacher_observations import summarize_observations
@@ -69,7 +70,11 @@ def evaluate_finished_arm(prepared):
     receipt = read_current(root)
     require(receipt['qualification']['manifest_sha256'] == prepared.manifest['digest'], 'RESULT_MANIFEST')
     release, graph = prepared.release, prepared.graph
-    program = schedule_program_from_executable_release(release)
+    current_release = _read_executable_factory_release_artifact(root, receipt)
+    allowed_releases = tuple(
+        stage.release_sha256 for stage in (prepared.stages or (prepared.release,)))
+    require(current_release.release_sha256 in allowed_releases, 'RESULT_RELEASE')
+    program = schedule_program_from_executable_release(current_release)
     from .state import _state_from_json
     school = _state_from_json(receipt['school'], program)
     observations = read_committed_observations(root)
