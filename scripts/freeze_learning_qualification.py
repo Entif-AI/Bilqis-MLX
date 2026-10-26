@@ -81,7 +81,8 @@ def source_inputs(source):
     from bilqis_mlx.source import AUDITED_PARENT
     checkpoint = source/'runs/primitive-consolidation-v16-triplets'/AUDITED_PARENT.basename
     teacher = checkpoint.parent/'state.json'
-    manifest = source.parents[1]/'docs/GRADE_A_CANDIDATE_MANIFEST_V2.json'
+    from bilqis_mlx.cli import GRADE_A_MANIFEST
+    manifest = GRADE_A_MANIFEST
     import torch
     payload = torch.load(checkpoint, map_location='cpu', weights_only=True, mmap=True)
     group = payload['optimizer']['param_groups'][0]

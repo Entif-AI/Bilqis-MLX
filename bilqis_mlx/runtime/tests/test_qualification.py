@@ -256,3 +256,25 @@ class QualificationTests(unittest.TestCase):
         self.assertIs(adopt.call_args.kwargs['compiled_successor'], self.release)
         self.assertFalse(adopt.call_args.kwargs['allow_mastery_debt'])
         self.assertTrue(result[-1])
+
+
+    def test_freezer_reuses_the_current_operator_manifest_location(self):
+        from types import SimpleNamespace
+        from scripts.freeze_learning_qualification import source_inputs
+        from bilqis_mlx.runtime.qualification_manifest import file_digest
+        source = self.root/'source'
+        folder = source/'runs/primitive-consolidation-v16-triplets'
+        folder.mkdir(parents=True)
+        checkpoint = folder/'fixture.pt'
+        checkpoint.write_bytes(b'source metadata fixture')
+        (folder/'state.json').write_text('{}')
+        (source/'bilqis_school').mkdir()
+        (source/'bilqis_school/engine.py').write_text('# fixture')
+        current = self.root/'current-authority.json'
+        current.write_text('{}')
+        payload = {'optimizer': {'param_groups': [{'lr': .001, 'betas': [.9,.95], 'eps': 1e-8, 'weight_decay': .1}]}}
+        with patch.dict('sys.modules', {'torch': SimpleNamespace(load=lambda *a, **k: payload)}), \
+                patch('bilqis_mlx.source.AUDITED_PARENT', SimpleNamespace(basename='fixture.pt', sha256=file_digest(checkpoint))), \
+                patch('bilqis_mlx.cli.GRADE_A_MANIFEST', current):
+            inputs, _, _ = source_inputs(source)
+        self.assertEqual(inputs['manifest'], str(current))
