@@ -5,7 +5,8 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
+from types import SimpleNamespace
 
 from bilqis_mlx.runtime import qualification_manifest as contract
 from bilqis_mlx.runtime.model_topology import ModelTopologySpec
@@ -123,7 +124,8 @@ class QualificationTests(unittest.TestCase):
         for human, dry in ((False, False), (False, True), (True, True)):
             with self.subTest(human=human, dry=dry), \
                     patch('bilqis_mlx.runtime.qualification.preflight', return_value=prepared), \
-                    patch('bilqis_mlx.runtime.operating_loop.operate', side_effect=AssertionError('NEURAL_RUN_FORBIDDEN')):
+                    patch.dict('sys.modules', {'bilqis_mlx.runtime.operating_loop':
+                        SimpleNamespace(operate=Mock(side_effect=AssertionError('NEURAL_RUN_FORBIDDEN')))}):
                 report = execute(None, 'base', prepared.manifest['digest'], root=self.root,
                                  human_run=human, dry_run=dry)
                 self.assertEqual(report['actual_optimizer_updates'], 0)
@@ -190,7 +192,7 @@ class QualificationTests(unittest.TestCase):
         prepared.manifest['workload']['grades'] = {'Z': list(prepared.release.execution_plan.capability_map)}
         def predictions(mx, parameters, rows, config, answer_ids):
             return {row['id']: row['gold'] for row in rows}
-        with patch('bilqis_mlx.learning.student_ops._predictions', side_effect=predictions):
+        with patch.dict('sys.modules', {'bilqis_mlx.learning.student_ops': SimpleNamespace(_predictions=predictions)}):
             result = _evaluate_sweeps(prepared, {'config': {}, 'answer_ids': [1,2]},
                 {'sweeps': [], 'status': 'NOT_QUALIFIED'}, None, [], fixture.registry, None)
         self.assertEqual(result['status'], 'QUALIFIED')
@@ -204,8 +206,9 @@ class QualificationTests(unittest.TestCase):
         prepared = self.validate()
         prepared.manifest['source'] = {'root': 'source', 'checkpoint': 'checkpoint', 'manifest': 'source-manifest'}
         prepared.manifest['policy']['value'].update(reserve_gib=100., source_prefetch_workers=2)
+        launch = Mock(return_value={})
         with patch('bilqis_mlx.runtime.qualification.preflight', return_value=prepared), \
-                patch('bilqis_mlx.runtime.operating_loop.operate', return_value={}) as launch, \
+                patch.dict('sys.modules', {'bilqis_mlx.runtime.operating_loop': SimpleNamespace(operate=launch)}), \
                 patch('bilqis_mlx.runtime.qualification_results.evaluate_finished_arm', return_value={'status': 'NOT_QUALIFIED'}):
             execute(None, 'base', prepared.manifest['digest'], root=self.root, human_run=True)
         args = launch.call_args.kwargs
