@@ -12926,6 +12926,406 @@
   "schema": "bilqis.error-catalog/v1",
   "typed_errors": [
     {
+      "code": "SCHOOL.STATE.INVALID_GRADE_PROGRAM_OR_CHAMPIONS",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_GRADE_PROGRAM_OR_CHAMPIONS"
+      ],
+      "message_key": "errors.school.state.invalid_grade_program_or_champions.message",
+      "message_template": "Invalid grade program or champions",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.invalid_grade_program_or_champions.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid grade program or champions"
+    },
+    {
+      "code": "SCHOOL.STATE.QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES"
+      ],
+      "message_key": "errors.school.state.queue_capability_outside_active_and_passed_grades.message",
+      "message_template": "Queue capability outside active and passed grades",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.queue_capability_outside_active_and_passed_grades.recovery",
+      "self_heal_owner": null,
+      "title": "Queue capability outside active and passed grades"
+    },
+    {
+      "code": "SCHOOL.STATE.INVALID_SCHOOL_COUNTER",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_SCHOOL_COUNTER"
+      ],
+      "message_key": "errors.school.state.invalid_school_counter.message",
+      "message_template": "Invalid school counter",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.invalid_school_counter.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid school counter"
+    },
+    {
+      "code": "SCHOOL.STATE.INVALID_INTRODUCTION_FRONTIER_HISTORY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_INTRODUCTION_FRONTIER_HISTORY"
+      ],
+      "message_key": "errors.school.state.invalid_introduction_frontier_history.message",
+      "message_template": "Invalid introduction frontier history",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.invalid_introduction_frontier_history.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid introduction frontier history"
+    },
+    {
+      "code": "SCHOOL.STATE.INVALID_MAIN_SWEEP_HISTORY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_MAIN_SWEEP_HISTORY"
+      ],
+      "message_key": "errors.school.state.invalid_main_sweep_history.message",
+      "message_template": "Invalid main sweep history",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.invalid_main_sweep_history.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid main sweep history"
+    },
+    {
+      "code": "SCHOOL.STATE.INVALID_CARRIED_MASTERY_DEBT",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_CARRIED_MASTERY_DEBT"
+      ],
+      "message_key": "errors.school.state.invalid_carried_mastery_debt.message",
+      "message_template": "Invalid carried mastery debt",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.invalid_carried_mastery_debt.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid carried mastery debt"
+    },
+    {
+      "code": "SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY"
+      ],
+      "message_key": "errors.school.state.carried_mastery_debt_at_completion_boundary.message",
+      "message_template": "Carried mastery debt at completion boundary",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.carried_mastery_debt_at_completion_boundary.recovery",
+      "self_heal_owner": null,
+      "title": "Carried mastery debt at completion boundary"
+    },
+    {
+      "code": "SCHOOL.STATE.INVALID_INTRODUCTION_STAGE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_INTRODUCTION_STAGE"
+      ],
+      "message_key": "errors.school.state.invalid_introduction_stage.message",
+      "message_template": "Invalid introduction stage",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.invalid_introduction_stage.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid introduction stage"
+    },
+    {
+      "code": "SCHOOL.STATE.INVALID_PARTIAL_SCHOOL_COMPLETION",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_PARTIAL_SCHOOL_COMPLETION"
+      ],
+      "message_key": "errors.school.state.invalid_partial_school_completion.message",
+      "message_template": "Invalid partial school completion",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.invalid_partial_school_completion.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid partial school completion"
+    },
+    {
+      "code": "SCHOOL.STATE.WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE"
+      ],
+      "message_key": "errors.school.state.whole_school_cannot_complete_partial_course.message",
+      "message_template": "Whole school cannot complete partial course",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.whole_school_cannot_complete_partial_course.recovery",
+      "self_heal_owner": null,
+      "title": "Whole school cannot complete partial course"
+    },
+    {
+      "code": "SCHOOL.STATE.WEAKEST_THREE_INCOMPLETE_POOL",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "WEAKEST_THREE_INCOMPLETE_POOL"
+      ],
+      "message_key": "errors.school.state.weakest_three_incomplete_pool.message",
+      "message_template": "Weakest three incomplete pool",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.weakest_three_incomplete_pool.recovery",
+      "self_heal_owner": null,
+      "title": "Weakest three incomplete pool"
+    },
+    {
+      "code": "SCHOOL.STATE.INVALID_CAPABILITY_SCORE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_CAPABILITY_SCORE"
+      ],
+      "message_key": "errors.school.state.invalid_capability_score.message",
+      "message_template": "Invalid capability score",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.invalid_capability_score.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid capability score"
+    },
+    {
+      "code": "SCHOOL.STATE.ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE"
+      ],
+      "message_key": "errors.school.state.assessment_not_same_checkpoint_or_course.message",
+      "message_template": "Assessment not same checkpoint or course",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.assessment_not_same_checkpoint_or_course.recovery",
+      "self_heal_owner": null,
+      "title": "Assessment not same checkpoint or course"
+    },
+    {
+      "code": "SCHOOL.STATE.ASSESSMENT_RUBRIC_IDENTITY_MISSING",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "ASSESSMENT_RUBRIC_IDENTITY_MISSING"
+      ],
+      "message_key": "errors.school.state.assessment_rubric_identity_missing.message",
+      "message_template": "Assessment rubric identity missing",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.assessment_rubric_identity_missing.recovery",
+      "self_heal_owner": null,
+      "title": "Assessment rubric identity missing"
+    },
+    {
+      "code": "SCHOOL.STATE.ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL"
+      ],
+      "message_key": "errors.school.state.assessment_rubric_scope_does_not_cover_active_pool.message",
+      "message_template": "Assessment rubric scope does not cover active pool",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.assessment_rubric_scope_does_not_cover_active_pool.recovery",
+      "self_heal_owner": null,
+      "title": "Assessment rubric scope does not cover active pool"
+    },
+    {
+      "code": "SCHOOL.STATE.ASSESSMENT_HAS_NO_REPRESENTED_GRADE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "ASSESSMENT_HAS_NO_REPRESENTED_GRADE"
+      ],
+      "message_key": "errors.school.state.assessment_has_no_represented_grade.message",
+      "message_template": "Assessment has no represented grade",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.assessment_has_no_represented_grade.recovery",
+      "self_heal_owner": null,
+      "title": "Assessment has no represented grade"
+    },
+    {
+      "code": "SCHOOL.STATE.ASSESSMENT_NOT_GRADE_SEALED_RUBRIC",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "ASSESSMENT_NOT_GRADE_SEALED_RUBRIC"
+      ],
+      "message_key": "errors.school.state.assessment_not_grade_sealed_rubric.message",
+      "message_template": "Assessment not grade sealed rubric",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.assessment_not_grade_sealed_rubric.recovery",
+      "self_heal_owner": null,
+      "title": "Assessment not grade sealed rubric"
+    },
+    {
+      "code": "SCHOOL.STATE.ASSESSMENT_NOT_COURSE_SEALED_RUBRIC",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "ASSESSMENT_NOT_COURSE_SEALED_RUBRIC"
+      ],
+      "message_key": "errors.school.state.assessment_not_course_sealed_rubric.message",
+      "message_template": "Assessment not course sealed rubric",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.assessment_not_course_sealed_rubric.recovery",
+      "self_heal_owner": null,
+      "title": "Assessment not course sealed rubric"
+    },
+    {
+      "code": "SCHOOL.STATE.ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL"
+      ],
+      "message_key": "errors.school.state.assessment_not_complete_active_pool.message",
+      "message_template": "Assessment not complete active pool",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.assessment_not_complete_active_pool.recovery",
+      "self_heal_owner": null,
+      "title": "Assessment not complete active pool"
+    },
+    {
+      "code": "SCHOOL.STATE.ASSESSMENT_INVALID_SCORE_TYPE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "ASSESSMENT_INVALID_SCORE_TYPE"
+      ],
+      "message_key": "errors.school.state.assessment_invalid_score_type.message",
+      "message_template": "Assessment invalid score type",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.assessment_invalid_score_type.recovery",
+      "self_heal_owner": null,
+      "title": "Assessment invalid score type"
+    },
+    {
+      "code": "SCHOOL.STATE.ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT"
+      ],
+      "message_key": "errors.school.state.assessment_total_differs_from_sealed_item_count.message",
+      "message_template": "Assessment total differs from sealed item count",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.assessment_total_differs_from_sealed_item_count.recovery",
+      "self_heal_owner": null,
+      "title": "Assessment total differs from sealed item count"
+    },
+    {
+      "code": "SCHOOL.STATE.INVALID_GRADE_REVALIDATION_STATE",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_GRADE_REVALIDATION_STATE"
+      ],
+      "message_key": "errors.school.state.invalid_grade_revalidation_state.message",
+      "message_template": "Invalid grade revalidation state",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.invalid_grade_revalidation_state.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid grade revalidation state"
+    },
+    {
+      "code": "SCHOOL.LEARNING.BINARY_PATTERN_CAPACITY",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY"
+      ],
+      "message_key": "errors.school.learning.binary_pattern_capacity.message",
+      "message_template": "Learning experiment binary pattern capacity",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "learning.source_selection",
+      "preserve_state": true,
+      "recovery_key": "errors.school.learning.binary_pattern_capacity.recovery",
+      "self_heal_owner": null,
+      "title": "Learning experiment binary pattern capacity"
+    },
+    {
+      "code": "SCHOOL.LEARNING.BINARY_CLASS_MISSING",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "LEARNING_EXPERIMENT_BINARY_CLASS_MISSING"
+      ],
+      "message_key": "errors.school.learning.binary_class_missing.message",
+      "message_template": "Learning experiment binary class missing",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "learning.source_selection",
+      "preserve_state": true,
+      "recovery_key": "errors.school.learning.binary_class_missing.recovery",
+      "self_heal_owner": null,
+      "title": "Learning experiment binary class missing"
+    },
+    {
+      "code": "SCHOOL.LEARNING.MISSING_SOURCE_ROWS",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS"
+      ],
+      "message_key": "errors.school.learning.missing_source_rows.message",
+      "message_template": "Learning experiment missing source rows",
+      "next_action": "Inspect the owning contract and inputs; preserve recorded state.",
+      "operator_steps": [],
+      "owner": "learning.source_selection",
+      "preserve_state": true,
+      "recovery_key": "errors.school.learning.missing_source_rows.recovery",
+      "self_heal_owner": null,
+      "title": "Learning experiment missing source rows"
+    },
+    {
       "code": "FACTORY.EXECUTION.CURRICULUM_DEFINITION_REQUIRED",
       "disposition": "CORRECT_INPUT_OR_STATE",
       "legacy_codes": [

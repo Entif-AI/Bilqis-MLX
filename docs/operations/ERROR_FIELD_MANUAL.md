@@ -14,6 +14,356 @@ The runtime error catalog is the authority for new failures. Raw string exceptio
 
 ## Typed catalog
 
+### `SCHOOL.STATE.INVALID_GRADE_PROGRAM_OR_CHAMPIONS`
+
+Invalid grade program or champions.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid grade program or champions
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `INVALID_GRADE_PROGRAM_OR_CHAMPIONS`
+
+### `SCHOOL.STATE.QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES`
+
+Queue capability outside active and passed grades.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Queue capability outside active and passed grades
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES`
+
+### `SCHOOL.STATE.INVALID_SCHOOL_COUNTER`
+
+Invalid school counter.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid school counter
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `INVALID_SCHOOL_COUNTER`
+
+### `SCHOOL.STATE.INVALID_INTRODUCTION_FRONTIER_HISTORY`
+
+Invalid introduction frontier history.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid introduction frontier history
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `INVALID_INTRODUCTION_FRONTIER_HISTORY`
+
+### `SCHOOL.STATE.INVALID_MAIN_SWEEP_HISTORY`
+
+Invalid main sweep history.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid main sweep history
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `INVALID_MAIN_SWEEP_HISTORY`
+
+### `SCHOOL.STATE.INVALID_CARRIED_MASTERY_DEBT`
+
+Invalid carried mastery debt.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid carried mastery debt
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `INVALID_CARRIED_MASTERY_DEBT`
+
+### `SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY`
+
+Carried mastery debt at completion boundary.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Carried mastery debt at completion boundary
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY`
+
+### `SCHOOL.STATE.INVALID_INTRODUCTION_STAGE`
+
+Invalid introduction stage.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid introduction stage
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `INVALID_INTRODUCTION_STAGE`
+
+### `SCHOOL.STATE.INVALID_PARTIAL_SCHOOL_COMPLETION`
+
+Invalid partial school completion.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid partial school completion
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `INVALID_PARTIAL_SCHOOL_COMPLETION`
+
+### `SCHOOL.STATE.WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE`
+
+Whole school cannot complete partial course.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Whole school cannot complete partial course
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE`
+
+### `SCHOOL.STATE.WEAKEST_THREE_INCOMPLETE_POOL`
+
+Weakest three incomplete pool.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Weakest three incomplete pool
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `WEAKEST_THREE_INCOMPLETE_POOL`
+
+### `SCHOOL.STATE.INVALID_CAPABILITY_SCORE`
+
+Invalid capability score.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid capability score
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `INVALID_CAPABILITY_SCORE`
+
+### `SCHOOL.STATE.ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE`
+
+Assessment not same checkpoint or course.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Assessment not same checkpoint or course
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE`
+
+### `SCHOOL.STATE.ASSESSMENT_RUBRIC_IDENTITY_MISSING`
+
+Assessment rubric identity missing.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Assessment rubric identity missing
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `ASSESSMENT_RUBRIC_IDENTITY_MISSING`
+
+### `SCHOOL.STATE.ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL`
+
+Assessment rubric scope does not cover active pool.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Assessment rubric scope does not cover active pool
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL`
+
+### `SCHOOL.STATE.ASSESSMENT_HAS_NO_REPRESENTED_GRADE`
+
+Assessment has no represented grade.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Assessment has no represented grade
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `ASSESSMENT_HAS_NO_REPRESENTED_GRADE`
+
+### `SCHOOL.STATE.ASSESSMENT_NOT_GRADE_SEALED_RUBRIC`
+
+Assessment not grade sealed rubric.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Assessment not grade sealed rubric
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `ASSESSMENT_NOT_GRADE_SEALED_RUBRIC`
+
+### `SCHOOL.STATE.ASSESSMENT_NOT_COURSE_SEALED_RUBRIC`
+
+Assessment not course sealed rubric.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Assessment not course sealed rubric
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `ASSESSMENT_NOT_COURSE_SEALED_RUBRIC`
+
+### `SCHOOL.STATE.ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL`
+
+Assessment not complete active pool.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Assessment not complete active pool
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL`
+
+### `SCHOOL.STATE.ASSESSMENT_INVALID_SCORE_TYPE`
+
+Assessment invalid score type.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Assessment invalid score type
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `ASSESSMENT_INVALID_SCORE_TYPE`
+
+### `SCHOOL.STATE.ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT`
+
+Assessment total differs from sealed item count.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Assessment total differs from sealed item count
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT`
+
+### `SCHOOL.STATE.INVALID_GRADE_REVALIDATION_STATE`
+
+Invalid grade revalidation state.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid grade revalidation state
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `INVALID_GRADE_REVALIDATION_STATE`
+
+### `SCHOOL.LEARNING.BINARY_PATTERN_CAPACITY`
+
+Learning experiment binary pattern capacity.
+
+Owner: `learning.source_selection`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Learning experiment binary pattern capacity
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY`
+
+### `SCHOOL.LEARNING.BINARY_CLASS_MISSING`
+
+Learning experiment binary class missing.
+
+Owner: `learning.source_selection`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Learning experiment binary class missing
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `LEARNING_EXPERIMENT_BINARY_CLASS_MISSING`
+
+### `SCHOOL.LEARNING.MISSING_SOURCE_ROWS`
+
+Learning experiment missing source rows.
+
+Owner: `learning.source_selection`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Learning experiment missing source rows
+
+Recovery: Inspect the owning contract and inputs; preserve recorded state.
+
+Legacy aliases: `LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS`
+
 ### `FACTORY.EXECUTION.CURRICULUM_DEFINITION_REQUIRED`
 
 Factory curriculum definition required.

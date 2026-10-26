@@ -1,5 +1,7 @@
 """Pure source-row selection under the teacher's selected lesson policy."""
 
+from bilqis_mlx.errors import ErrorBus, SCHOOL
+
 COMPOSITION_DEPTH_POLICY_THRESHOLD = 3
 
 
@@ -11,7 +13,7 @@ def _choose_binary_rows(source, count, policy, rng):
     for row in source:
         groups.setdefault(tuple(row["operand_truths"]), []).append(row)
     if count < len(groups):
-        raise ValueError("LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY")
+        ErrorBus.raise_legacy(SCHOOL.LEARNING.BINARY_PATTERN_CAPACITY)
     chosen = []
     for pattern in sorted(groups):
         options = list(groups[pattern])
@@ -25,7 +27,7 @@ def _choose_binary_rows(source, count, policy, rng):
     pools = {gold: [row for row in source if row["gold"] == gold]
              for gold in ("FALSE", "TRUE")}
     if any(not pool for pool in pools.values()):
-        raise ValueError("LEARNING_EXPERIMENT_BINARY_CLASS_MISSING")
+        ErrorBus.raise_legacy(SCHOOL.LEARNING.BINARY_CLASS_MISSING)
     if policy.get("depth", 1) >= COMPOSITION_DEPTH_POLICY_THRESHOLD:
         for pool in pools.values():
             pool.sort(key=lambda row: (-len(row["tokens"]), row["id"]))
@@ -121,4 +123,4 @@ def _fresh_support_rows(current: list[dict], policy: dict, rng,
 
 def _require_source_rows(source):
     if not source:
-        raise ValueError("LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS")
+        ErrorBus.raise_legacy(SCHOOL.LEARNING.MISSING_SOURCE_ROWS)

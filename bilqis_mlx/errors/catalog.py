@@ -103,6 +103,160 @@ class SCHOOL:
         )
 
     class STATE:
+        ASSESSMENT_HAS_NO_REPRESENTED_GRADE = _spec(
+            ("SCHOOL", "STATE", "ASSESSMENT_HAS_NO_REPRESENTED_GRADE"), owner="curriculum.state",
+            title='Assessment has no represented grade', message_template='Assessment has no represented grade',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('ASSESSMENT_HAS_NO_REPRESENTED_GRADE',),
+        )
+        ASSESSMENT_INVALID_SCORE_TYPE = _spec(
+            ("SCHOOL", "STATE", "ASSESSMENT_INVALID_SCORE_TYPE"), owner="curriculum.state",
+            title='Assessment invalid score type', message_template='Assessment invalid score type',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('ASSESSMENT_INVALID_SCORE_TYPE',),
+        )
+        ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL = _spec(
+            ("SCHOOL", "STATE", "ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL"), owner="curriculum.state",
+            title='Assessment not complete active pool', message_template='Assessment not complete active pool',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL',),
+        )
+        ASSESSMENT_NOT_COURSE_SEALED_RUBRIC = _spec(
+            ("SCHOOL", "STATE", "ASSESSMENT_NOT_COURSE_SEALED_RUBRIC"), owner="curriculum.state",
+            title='Assessment not course sealed rubric', message_template='Assessment not course sealed rubric',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('ASSESSMENT_NOT_COURSE_SEALED_RUBRIC',),
+        )
+        ASSESSMENT_NOT_GRADE_SEALED_RUBRIC = _spec(
+            ("SCHOOL", "STATE", "ASSESSMENT_NOT_GRADE_SEALED_RUBRIC"), owner="curriculum.state",
+            title='Assessment not grade sealed rubric', message_template='Assessment not grade sealed rubric',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('ASSESSMENT_NOT_GRADE_SEALED_RUBRIC',),
+        )
+        ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE = _spec(
+            ("SCHOOL", "STATE", "ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE"), owner="curriculum.state",
+            title='Assessment not same checkpoint or course', message_template='Assessment not same checkpoint or course',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE',),
+        )
+        ASSESSMENT_RUBRIC_IDENTITY_MISSING = _spec(
+            ("SCHOOL", "STATE", "ASSESSMENT_RUBRIC_IDENTITY_MISSING"), owner="curriculum.state",
+            title='Assessment rubric identity missing', message_template='Assessment rubric identity missing',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('ASSESSMENT_RUBRIC_IDENTITY_MISSING',),
+        )
+        ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL = _spec(
+            ("SCHOOL", "STATE", "ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL"), owner="curriculum.state",
+            title='Assessment rubric scope does not cover active pool', message_template='Assessment rubric scope does not cover active pool',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL',),
+        )
+        ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT = _spec(
+            ("SCHOOL", "STATE", "ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT"), owner="curriculum.state",
+            title='Assessment total differs from sealed item count', message_template='Assessment total differs from sealed item count',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT',),
+        )
+        CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY = _spec(
+            ("SCHOOL", "STATE", "CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY"), owner="curriculum.state",
+            title='Carried mastery debt at completion boundary', message_template='Carried mastery debt at completion boundary',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY',),
+        )
+        INVALID_CAPABILITY_SCORE = _spec(
+            ("SCHOOL", "STATE", "INVALID_CAPABILITY_SCORE"), owner="curriculum.state",
+            title='Invalid capability score', message_template='Invalid capability score',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('INVALID_CAPABILITY_SCORE',),
+        )
+        INVALID_CARRIED_MASTERY_DEBT = _spec(
+            ("SCHOOL", "STATE", "INVALID_CARRIED_MASTERY_DEBT"), owner="curriculum.state",
+            title='Invalid carried mastery debt', message_template='Invalid carried mastery debt',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('INVALID_CARRIED_MASTERY_DEBT',),
+        )
+        INVALID_GRADE_PROGRAM_OR_CHAMPIONS = _spec(
+            ("SCHOOL", "STATE", "INVALID_GRADE_PROGRAM_OR_CHAMPIONS"), owner="curriculum.state",
+            title='Invalid grade program or champions', message_template='Invalid grade program or champions',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('INVALID_GRADE_PROGRAM_OR_CHAMPIONS',),
+        )
+        INVALID_GRADE_REVALIDATION_STATE = _spec(
+            ("SCHOOL", "STATE", "INVALID_GRADE_REVALIDATION_STATE"), owner="curriculum.state",
+            title='Invalid grade revalidation state', message_template='Invalid grade revalidation state',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('INVALID_GRADE_REVALIDATION_STATE',),
+        )
+        INVALID_INTRODUCTION_FRONTIER_HISTORY = _spec(
+            ("SCHOOL", "STATE", "INVALID_INTRODUCTION_FRONTIER_HISTORY"), owner="curriculum.state",
+            title='Invalid introduction frontier history', message_template='Invalid introduction frontier history',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('INVALID_INTRODUCTION_FRONTIER_HISTORY',),
+        )
+        INVALID_INTRODUCTION_STAGE = _spec(
+            ("SCHOOL", "STATE", "INVALID_INTRODUCTION_STAGE"), owner="curriculum.state",
+            title='Invalid introduction stage', message_template='Invalid introduction stage',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('INVALID_INTRODUCTION_STAGE',),
+        )
+        INVALID_MAIN_SWEEP_HISTORY = _spec(
+            ("SCHOOL", "STATE", "INVALID_MAIN_SWEEP_HISTORY"), owner="curriculum.state",
+            title='Invalid main sweep history', message_template='Invalid main sweep history',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('INVALID_MAIN_SWEEP_HISTORY',),
+        )
+        INVALID_PARTIAL_SCHOOL_COMPLETION = _spec(
+            ("SCHOOL", "STATE", "INVALID_PARTIAL_SCHOOL_COMPLETION"), owner="curriculum.state",
+            title='Invalid partial school completion', message_template='Invalid partial school completion',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('INVALID_PARTIAL_SCHOOL_COMPLETION',),
+        )
+        INVALID_SCHOOL_COUNTER = _spec(
+            ("SCHOOL", "STATE", "INVALID_SCHOOL_COUNTER"), owner="curriculum.state",
+            title='Invalid school counter', message_template='Invalid school counter',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('INVALID_SCHOOL_COUNTER',),
+        )
+        QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES = _spec(
+            ("SCHOOL", "STATE", "QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES"), owner="curriculum.state",
+            title='Queue capability outside active and passed grades', message_template='Queue capability outside active and passed grades',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES',),
+        )
+        WEAKEST_THREE_INCOMPLETE_POOL = _spec(
+            ("SCHOOL", "STATE", "WEAKEST_THREE_INCOMPLETE_POOL"), owner="curriculum.state",
+            title='Weakest three incomplete pool', message_template='Weakest three incomplete pool',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('WEAKEST_THREE_INCOMPLETE_POOL',),
+        )
+        WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE = _spec(
+            ("SCHOOL", "STATE", "WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE"), owner="curriculum.state",
+            title='Whole school cannot complete partial course', message_template='Whole school cannot complete partial course',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE',),
+        )
         HISTORICAL_NOT_RESUMABLE = _spec(
             ("SCHOOL", "STATE", "HISTORICAL_NOT_RESUMABLE"),
             owner="runtime.session",
@@ -193,6 +347,27 @@ class SCHOOL:
         )
 
     class LEARNING:
+        BINARY_CLASS_MISSING = _spec(
+            ("SCHOOL", "LEARNING", "BINARY_CLASS_MISSING"), owner="learning.source_selection",
+            title='Learning experiment binary class missing', message_template='Learning experiment binary class missing',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('LEARNING_EXPERIMENT_BINARY_CLASS_MISSING',),
+        )
+        BINARY_PATTERN_CAPACITY = _spec(
+            ("SCHOOL", "LEARNING", "BINARY_PATTERN_CAPACITY"), owner="learning.source_selection",
+            title='Learning experiment binary pattern capacity', message_template='Learning experiment binary pattern capacity',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('LEARNING_EXPERIMENT_BINARY_PATTERN_CAPACITY',),
+        )
+        MISSING_SOURCE_ROWS = _spec(
+            ("SCHOOL", "LEARNING", "MISSING_SOURCE_ROWS"), owner="learning.source_selection",
+            title='Learning experiment missing source rows', message_template='Learning experiment missing source rows',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the owning contract and inputs; preserve recorded state.",
+            legacy_codes=('LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS',),
+        )
         MISSING_FRESH_CURRENT_ROWS = _spec(
             ('SCHOOL', 'LEARNING', 'MISSING_FRESH_CURRENT_ROWS'), owner='learning.learning_experiment',
             title='Learning experiment missing fresh current rows', message_template='Learning experiment missing fresh current rows',
@@ -552,6 +727,31 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.STATE.INVALID_GRADE_PROGRAM_OR_CHAMPIONS,
+    SCHOOL.STATE.QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES,
+    SCHOOL.STATE.INVALID_SCHOOL_COUNTER,
+    SCHOOL.STATE.INVALID_INTRODUCTION_FRONTIER_HISTORY,
+    SCHOOL.STATE.INVALID_MAIN_SWEEP_HISTORY,
+    SCHOOL.STATE.INVALID_CARRIED_MASTERY_DEBT,
+    SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY,
+    SCHOOL.STATE.INVALID_INTRODUCTION_STAGE,
+    SCHOOL.STATE.INVALID_PARTIAL_SCHOOL_COMPLETION,
+    SCHOOL.STATE.WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE,
+    SCHOOL.STATE.WEAKEST_THREE_INCOMPLETE_POOL,
+    SCHOOL.STATE.INVALID_CAPABILITY_SCORE,
+    SCHOOL.STATE.ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE,
+    SCHOOL.STATE.ASSESSMENT_RUBRIC_IDENTITY_MISSING,
+    SCHOOL.STATE.ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL,
+    SCHOOL.STATE.ASSESSMENT_HAS_NO_REPRESENTED_GRADE,
+    SCHOOL.STATE.ASSESSMENT_NOT_GRADE_SEALED_RUBRIC,
+    SCHOOL.STATE.ASSESSMENT_NOT_COURSE_SEALED_RUBRIC,
+    SCHOOL.STATE.ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL,
+    SCHOOL.STATE.ASSESSMENT_INVALID_SCORE_TYPE,
+    SCHOOL.STATE.ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT,
+    SCHOOL.STATE.INVALID_GRADE_REVALIDATION_STATE,
+    SCHOOL.LEARNING.BINARY_PATTERN_CAPACITY,
+    SCHOOL.LEARNING.BINARY_CLASS_MISSING,
+    SCHOOL.LEARNING.MISSING_SOURCE_ROWS,
     FACTORY.EXECUTION.CURRICULUM_DEFINITION_REQUIRED,
     FACTORY.EXECUTION.CURRICULUM_UNKNOWN_CAPABILITY,
     SCHOOL.LEARNING.MISSING_FRESH_CURRENT_ROWS,

@@ -37,6 +37,17 @@ class ErrorControlPlaneTests(unittest.TestCase):
         self.assertEqual(report.code, spec.code)
         self.assertTrue(report.preserve_state)
 
+    def test_extracted_owner_failures_are_registered_and_keep_wire_aliases(self):
+        from bilqis_mlx.errors.catalog import CATALOG
+        for spec in (SCHOOL.STATE.INVALID_CAPABILITY_SCORE,
+                     SCHOOL.LEARNING.MISSING_SOURCE_ROWS):
+            with self.subTest(code=spec.code):
+                self.assertIn(spec, CATALOG)
+                error = ErrorBus.legacy_error(spec)
+                self.assertEqual(str(error), spec.legacy_codes[0])
+                self.assertEqual(ErrorBus.explain(spec.code)[0].code, spec.code)
+                self.assertFalse(ErrorBus.explain(spec.code)[0].legacy_untyped)
+
     def test_legacy_string_error_is_still_routed_through_one_bus(self):
         report = ErrorBus.report(
             ValueError("FACTORY_RELEASE_RUNTIME_SOURCE_ADAPTER_DRIFT"))

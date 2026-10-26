@@ -4,12 +4,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
 from enum import Enum
+import hashlib
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.factory.schedule import ScheduleProgram
 from .promotion import PromotionError, _verify_promotion_sweep_state
 
+
+SHA256_HEX_LENGTH = hashlib.sha256().digest_size * 2
 
 SCHOOL_STATE_SCHEMA = "bilqis.mlx.letter-grade/v1"
 STAGES = frozenset(("MAIN", "ASSESS_MAIN", "RECOVERY_1", "ASSESS_RECOVERY_1",
@@ -65,7 +68,7 @@ class Score:
     def __post_init__(self):
         if (type(self.correct) is not int or type(self.total) is not int or
                 not 0 <= self.correct <= self.total or self.total < 1):
-            raise ValueError("INVALID_CAPABILITY_SCORE")
+            ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_CAPABILITY_SCORE)
 
     @property
     def accuracy(self):
@@ -120,40 +123,40 @@ class Assessment:
         if (self.checkpoint_sha256 != checkpoint.sha256 or
                 self.optimizer_step != checkpoint.optimizer_step or
                 self.course_digest != program.digest()):
-            raise ValueError("ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE")
-        if (len(self.rubric_digest) != 64 or
+            ErrorBus.raise_legacy(SCHOOL.STATE.ASSESSMENT_NOT_SAME_CHECKPOINT_OR_COURSE)
+        if (len(self.rubric_digest) != SHA256_HEX_LENGTH or
                 any(c not in "0123456789abcdef" for c in self.rubric_digest) or
                 not self.evaluation_id):
-            raise ValueError("ASSESSMENT_RUBRIC_IDENTITY_MISSING")
+            ErrorBus.raise_legacy(SCHOOL.STATE.ASSESSMENT_RUBRIC_IDENTITY_MISSING)
         rubric_scope = (required_capabilities if rubric_capabilities is None
                         else rubric_capabilities)
         if not set(required_capabilities) <= set(rubric_scope):
-            raise ValueError("ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL")
+            ErrorBus.raise_legacy(SCHOOL.STATE.ASSESSMENT_RUBRIC_SCOPE_DOES_NOT_COVER_ACTIVE_POOL)
         represented = [grade for grade in program.grades if
                        any(cap.id in rubric_scope
                            for cap in grade.capabilities)]
         if not represented:
-            raise ValueError("ASSESSMENT_HAS_NO_REPRESENTED_GRADE")
+            ErrorBus.raise_legacy(SCHOOL.STATE.ASSESSMENT_HAS_NO_REPRESENTED_GRADE)
         # Each grade seals its *cumulative* exam (including prior grades).
         # A newly introduced B rubric need not share A's exam digest.
         grade_seal = (program.exact_scope_rubric(rubric_scope) or
                       represented[-1].assessment_sha256)
         if grade_seal is not None and self.rubric_digest != grade_seal:
-            raise ValueError("ASSESSMENT_NOT_GRADE_SEALED_RUBRIC")
+            ErrorBus.raise_legacy(SCHOOL.STATE.ASSESSMENT_NOT_GRADE_SEALED_RUBRIC)
         all_caps = _caps(program, tuple(g.id for g in program.grades))
         if (set(rubric_scope) == set(all_caps) and
                 program.assessment_manifest_sha256 is not None and
                 self.rubric_digest != program.assessment_manifest_sha256):
-            raise ValueError("ASSESSMENT_NOT_COURSE_SEALED_RUBRIC")
+            ErrorBus.raise_legacy(SCHOOL.STATE.ASSESSMENT_NOT_COURSE_SEALED_RUBRIC)
         if set(self.scores) != set(required_capabilities):
-            raise ValueError("ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL")
+            ErrorBus.raise_legacy(SCHOOL.STATE.ASSESSMENT_NOT_COMPLETE_ACTIVE_POOL)
         if not all(isinstance(s, Score) for s in self.scores.values()):
-            raise ValueError("ASSESSMENT_INVALID_SCORE_TYPE")
+            ErrorBus.raise_legacy(SCHOOL.STATE.ASSESSMENT_INVALID_SCORE_TYPE)
         declared_counts = {cap: count for grade in program.grades
                            for cap, count in grade.exam_item_counts}
         if any(cap in declared_counts and score.total != declared_counts[cap]
                for cap, score in self.scores.items()):
-            raise ValueError("ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT")
+            ErrorBus.raise_legacy(SCHOOL.STATE.ASSESSMENT_TOTAL_DIFFERS_FROM_SEALED_ITEM_COUNT)
 
 
 @dataclass(frozen=True)
@@ -296,14 +299,14 @@ def verify_state(program, state: SchoolState):
     if (not set(state.active_grades) <= known or
             tuple(g.id for g in program.grades if g.id in state.active_grades) != state.active_grades or
             not set(state.champions) <= known):
-        raise ValueError("INVALID_GRADE_PROGRAM_OR_CHAMPIONS")
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_GRADE_PROGRAM_OR_CHAMPIONS)
     if (state.debt_cadence_policy is not None and
             (not isinstance(state.debt_cadence_policy, DebtCadencePolicy) or
              not {state.debt_cadence_policy.bounded_debt_grade_id,
                   state.debt_cadence_policy.progression_priority_grade_id} <= known)):
         ErrorBus.raise_legacy(SCHOOL.SCHEDULE.INVALID_DEBT_CADENCE_POLICY)
     if any(cap not in _score_pool(program, state) for cap in state.queue + state.first_recovery):
-        raise ValueError("QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES")
+        ErrorBus.raise_legacy(SCHOOL.STATE.QUEUE_CAPABILITY_OUTSIDE_ACTIVE_AND_PASSED_GRADES)
     if (state.visits < 0 or state.school_cycles < 1 or
             type(state.grade_exam_epoch) is not int or state.grade_exam_epoch < 0 or
             type(state.introduction_stage) is not int or state.introduction_stage < 0 or
@@ -313,7 +316,7 @@ def verify_state(program, state: SchoolState):
             state.nongating_b_visits < 0 or
             type(state.non_b_training_turns_since_b_run) is not int or
             state.non_b_training_turns_since_b_run < 0):
-        raise ValueError("INVALID_SCHOOL_COUNTER")
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_SCHOOL_COUNTER)
     frontiers = state.introduction_frontiers
     grade_lookup = {grade.id: grade for grade in program.grades}
     if (len({grade for grade, _ in frontiers}) != len(frontiers) or
@@ -321,20 +324,20 @@ def verify_state(program, state: SchoolState):
                 for grade, stage in frontiers) or
             any(stage >= max(1, len(grade_lookup[grade].teaching_stages))
                 for grade, stage in frontiers)):
-        raise ValueError("INVALID_INTRODUCTION_FRONTIER_HISTORY")
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_INTRODUCTION_FRONTIER_HISTORY)
     if (len(set(state.main_sweep_visited)) != len(state.main_sweep_visited) or
             not set(state.main_sweep_visited) <= set(state.active_grades)):
-        raise ValueError("INVALID_MAIN_SWEEP_HISTORY")
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_MAIN_SWEEP_HISTORY)
     all_active_caps = set(_caps(program, state.active_grades))
     if (len(set(state.carried_mastery_debt)) != len(state.carried_mastery_debt) or
             not set(state.carried_mastery_debt) <= all_active_caps):
-        raise ValueError("INVALID_CARRIED_MASTERY_DEBT")
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_CARRIED_MASTERY_DEBT)
     if state.carried_mastery_debt and state.stage in (
             "AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED"):
-        raise ValueError("CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY")
+        ErrorBus.raise_legacy(SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY)
     current = next(g for g in program.grades if g.id == state.grade)
     if state.introduction_stage >= max(1, len(current.teaching_stages)):
-        raise ValueError("INVALID_INTRODUCTION_STAGE")
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_INTRODUCTION_STAGE)
     _verify_promotion_sweep_state(program, state)
     program = _program(program)
     if state.revalidation_target_grade is not None:
@@ -346,18 +349,18 @@ def verify_state(program, state: SchoolState):
                                     "DEFERRED_STAGNATION") or
                 not set(state.active_grades[:state.active_grades.index(
                     state.revalidation_target_grade) + 1]) <= set(state.champions)):
-            raise ValueError("INVALID_GRADE_REVALIDATION_STATE")
+            ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_GRADE_REVALIDATION_STATE)
     if state.stage == "AWAITING_NEXT_GRADE" and (
             program.program_complete or state.grade != program.grades[-1].id or
             state.queue or state.pending_failures or
             state.grade not in state.champions):
-        raise ValueError("INVALID_PARTIAL_SCHOOL_COMPLETION")
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_PARTIAL_SCHOOL_COMPLETION)
     if state.stage == "AWAITING_NEXT_GRADE_WITH_DEBT" and (
             program.program_complete or state.grade != state.active_grades[-1] or
             state.queue or not state.carried_mastery_debt):
         raise ValueError(PromotionError.INVALID_DEBT_BEARING_GRADE_BOUNDARY.value)
     if state.stage == "WHOLE_SCHOOL_MASTERED" and not program.program_complete:
-        raise ValueError("WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE")
+        ErrorBus.raise_legacy(SCHOOL.STATE.WHOLE_SCHOOL_CANNOT_COMPLETE_PARTIAL_COURSE)
 
 
 
@@ -379,7 +382,7 @@ def next_capability(state: SchoolState) -> str | None:
 def weakest_three(scores: dict[str, Score], pool: tuple[str, ...]) -> tuple[str, ...]:
     """Select up to three failures from the complete cumulative introduced pool."""
     if len(set(pool)) != len(pool) or not set(pool) <= set(scores):
-        raise ValueError("WEAKEST_THREE_INCOMPLETE_POOL")
+        ErrorBus.raise_legacy(SCHOOL.STATE.WEAKEST_THREE_INCOMPLETE_POOL)
     ranking = sorted((c for c in pool if not scores[c].perfect),
                      key=lambda c: (scores[c].accuracy, c))
     return tuple(ranking[:3])
