@@ -1,16 +1,13 @@
-"""Historical plans apply through the canonical generation/outbox transaction."""
-from copy import deepcopy
-from dataclasses import asdict, replace
+"""V2 retirement preserves historical evidence without entering live writers."""
+from contextlib import ExitStack
+import hashlib
 import json
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from bilqis_mlx.curriculum.scheduler import start_new
-from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_course
-from bilqis_mlx.learning.champions import Checkpoint
-from bilqis_mlx.runtime import checkpoints, session
+from bilqis_mlx.runtime import session
 from bilqis_mlx.state_dag import read_current
 
 
@@ -19,140 +16,106 @@ class HistoricalRecoveryTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.course = _synthetic_course(6)
-        self.student = Checkpoint('a' * 64, 'bundles/unchanged', 23, True)
-        self.school = start_new(self.course, self.student)
-        self.receipt = checkpoints._persist(self.root, {
-            'generation': 1, 'run_id': 'historical-test', 'school': asdict(self.school),
-            'model_bundle': self.student.filename, 'capability_best': {},
-            'source_manifest_sha256': 'b' * 64, 'teacher_source_sha256': 'c' * 64,
-        })
-        self.manifest = {'exam_rubric_sha256': 'd' * 64}
+        bundle = self.root / 'bundles/historical'
+        bundle.mkdir(parents=True)
+        payload = b'disposable historical checksum witness; not a trainable model'
+        (bundle / 'model-and-own-adamw.safetensors').write_bytes(payload)
+        sha = hashlib.sha256(payload).hexdigest()
+        (bundle / 'manifest.json').write_text(json.dumps({
+            'schema': 'bilqis.mlx.fp32-adamw-bundle/v1',
+            'safetensors_sha256': sha, 'optimizer_step': 23, 'source_digest': 'b' * 64}))
+        self.receipt = {
+            'schema': session.VERSION, 'run_id': 'historical-test', 'generation': 1,
+            'model_bundle': 'bundles/historical', 'curriculum_mode': 'historical-fixture/v1',
+            'semantic_graph_sha256': 'c' * 64,
+            'school': {'course_digest': 'd' * 64, 'current_student': {
+                'sha256': sha, 'filename': 'bundles/historical',
+                'optimizer_step': 23, 'model_and_native_adamw': True}},
+        }
+        (self.root / 'state.json').write_text(json.dumps(self.receipt))
 
-    def migrate(self, receipt=None):
-        # This fixture has no model binary. Custody verification remains a
-        # required runtime call; persistence and delivery execute without mocks.
-        with patch.object(checkpoints, '_verify_best_custody') as custody:
-            result = session._migrate_historical_grade_a(
-                self.root, receipt or self.receipt, self.school, self.course, self.manifest)
-        return result, custody
+    def snapshot(self):
+        return {str(p.relative_to(self.root)): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in self.root.rglob('*') if p.is_file()}
 
-    def test_publication_repeated_resume_and_stale_baseline(self):
-        (record, school), custody = self.migrate()
-        self.assertEqual(record, read_current(self.root))
-        self.assertEqual(school.current_student, self.student)
-        self.assertEqual(record['generation'], 2)
-        custody.assert_called_once()
-        repeated, _ = self.migrate(record)
-        self.assertEqual(repeated, (record, school))
-        self.assertEqual(len((self.root / 'events.jsonl').read_text().splitlines()), 1)
-        with self.assertRaisesRegex(ValueError, 'HISTORICAL_RECOVERY_BASELINE_DRIFT'):
-            self.migrate(self.receipt)
+    def forbidden_effects(self):
+        stack = ExitStack()
+        self.addCleanup(stack.close)
+        owners = {
+            'session._runtime_checkpoints': ('_clean_staged_bundles', '_recover_orphaned_commit',
+                '_advance', '_persist', '_record', '_publish_boundary', '_reconcile_delivery_outbox'),
+            'session._runtime_mlx_checkpoint': ('load_semantically_bound_bundle',),
+            'session._runtime_release_adoption': ('_ensure_executable_release',),
+            'session._runtime_admission': ('_factory_admission', '_executable_factory_admission'),
+        }
+        for owner, names in owners.items():
+            target = session
+            for part in owner.split('.')[1:]:
+                target = getattr(target, part)
+            for name in names:
+                stack.enter_context(patch.object(target, name,
+                    side_effect=AssertionError('historical path entered ' + name)))
 
-    def test_crash_after_state_commit_reconciles_original_event_once(self):
-        reconcile = checkpoints._reconcile_delivery_outbox
-        def interrupted(root, record):
-            if record['generation'] == 2:
-                raise RuntimeError('interrupted delivery')
-            return reconcile(root, record)
-        with patch.object(checkpoints, '_reconcile_delivery_outbox', side_effect=interrupted):
-            with self.assertRaisesRegex(RuntimeError, 'interrupted delivery'):
-                self.migrate()
-        committed = read_current(self.root)
-        self.assertEqual(committed['generation'], 2)
-        recovered, _ = self.migrate(committed)
-        self.assertEqual(recovered[0], committed)
-        self.migrate(committed)
-        events = [json.loads(line) for line in (self.root / 'events.jsonl').read_text().splitlines()]
-        self.assertEqual(events, committed['delivery_outbox'])
+    def test_historical_resume_is_repeatedly_readonly_at_both_entrypoints(self):
+        before = self.snapshot()
+        self.forbidden_effects()
+        for _ in range(2):
+            with self.assertRaisesRegex(ValueError, 'SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE'):
+                session._resume_admitted_student(self.root, {}, None, None, None, None)
+            with self.assertRaisesRegex(ValueError, 'SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE'):
+                session._resume(self.root, {}, None, None, grade_a_course=None, source_root=None)
+            self.assertEqual(self.snapshot(), before)
+            self.assertEqual(read_current(self.root), self.receipt)
 
-    def test_compatibility_plan_is_readonly_and_input_bound(self):
-        from bilqis_mlx.compatibility.resume_migration import migrate_historical_grade_a
-        before = deepcopy(self.receipt)
-        snapshot = {str(p.relative_to(self.root)): p.read_bytes()
-                    for p in self.root.rglob('*') if p.is_file()}
-        plan = migrate_historical_grade_a(self.receipt, self.school, self.course, self.manifest)
-        self.assertEqual(plan, migrate_historical_grade_a(
-            self.receipt, self.school, self.course, self.manifest))
-        self.assertEqual(self.receipt, before)
-        self.assertEqual(snapshot, {str(p.relative_to(self.root)): p.read_bytes()
-                                   for p in self.root.rglob('*') if p.is_file()})
-        drifted = {**self.receipt, 'school': asdict(replace(self.school, visits=1))}
-        with self.assertRaisesRegex(ValueError, 'HISTORICAL_RECOVERY_BASELINE_DRIFT'):
-            self.migrate(drifted)
+    def test_historical_inspection_exposes_only_recorded_metadata(self):
+        from bilqis_mlx.compatibility.resume_migration import inspect_historical_run
+        before = self.snapshot()
+        report = inspect_historical_run(self.root, read_current(self.root))
+        self.assertEqual(report['runtime_schema'], session.VERSION)
+        self.assertEqual(report['run_id'], self.receipt['run_id'])
+        self.assertEqual(report['optimizer_step'], 23)
+        self.assertEqual(report['student_sha256'], self.receipt['school']['current_student']['sha256'])
+        self.assertEqual(report['curriculum_mode'], 'historical-fixture/v1')
+        self.assertEqual(report['payload_checksum'], 'VERIFIED')
+        self.assertEqual(report['recorded_state'], self.receipt)
+        self.assertEqual(self.snapshot(), before)
 
-    def test_frontier_recovery_rebases_real_persisted_cohort_without_student_update(self):
-        from bilqis_mlx.factory.tests.test_execution_plan import _synthetic_registry
-        from bilqis_mlx.runtime.tests.test_admission import _executable_fixture
-        from bilqis_mlx.runtime.assessment import _routine_executable_cohort
-        from bilqis_mlx.generated_assessment import score
-        release, graph = _executable_fixture()
-        cohort, pointer = _routine_executable_cohort(
-            self.root, self.receipt, {"manifest_sha256": "b" * 64},
-            release, _synthetic_registry(), None, graph,
-            capabilities=tuple(release.execution_plan.capability_map), assessment_epoch=0)
-        guesses = {row["id"]: row["gold"] for row in cohort.rows}
-        source = {**pointer, "student_sha256": "e" * 64, "optimizer_step": 22,
-                  "scores": score(cohort, guesses, asdict(self.student))["scores"],
-                  "exam_rubric_sha256": pointer["rubric_sha256"]}
-        self.receipt = checkpoints._advance(
-            self.root, {**self.receipt, "config": {}, "answer_ids": [1, 2]},
-            self.school, last_exam=source)
-        cohort_bytes = (self.root / pointer["cohort_file"]).read_bytes()
-        def plan(_mx, _root, receipt):
-            return (source if receipt["last_exam"]["student_sha256"] !=
-                    self.student.sha256 else None)
-        with patch("bilqis_mlx.compatibility.frontier_recovery.recover_legacy_frontier",
-                   side_effect=plan), patch("bilqis_mlx.learning.student_ops._predictions",
-                                            return_value=guesses):
-            migrated = session._recover_legacy_frontier(
-                None, self.root, self.receipt, self.course, {})
-            repeated = session._recover_legacy_frontier(
-                None, self.root, migrated, self.course, {})
-        self.assertEqual(migrated, repeated)
-        self.assertEqual(migrated["school"]["current_student"], asdict(self.student))
-        self.assertEqual(migrated["last_exam"]["scores"], source["scores"])
-        self.assertEqual(migrated["last_exam"]["student_sha256"], self.student.sha256)
-        self.assertEqual(migrated["last_exam"]["optimizer_step"], self.student.optimizer_step)
-        self.assertEqual((self.root / pointer["cohort_file"]).read_bytes(), cohort_bytes)
-        events = [json.loads(line) for line in (self.root / "events.jsonl").read_text().splitlines()]
-        self.assertEqual([event["event"] for event in events], ["SCHOOL_FIXED_FRONTIER_REBASELINED"])
+    def test_corrupt_payload_and_unknown_runtime_are_not_retired_valid_history(self):
+        self.forbidden_effects()
+        blob = self.root / 'bundles/historical/model-and-own-adamw.safetensors'
+        blob.write_bytes(b'corrupt')
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, 'SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID') as invalid:
+            session._resume_admitted_student(self.root, {}, None, None, None, None)
+        self.assertEqual(invalid.exception.context["reason"], "MLX_BUNDLE_TENSOR_FILE_CORRUPTED")
+        self.assertEqual(self.snapshot(), before)
+        unknown = {**self.receipt, 'schema': 'unknown/runtime'}
+        (self.root / 'state.json').write_text(json.dumps(unknown))
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, 'SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID') as invalid:
+            session._resume_admitted_student(self.root, {}, None, None, None, None)
+        self.assertEqual(self.snapshot(), before)
 
-    def test_historical_frontier_interpreter_rejects_ambiguous_admission_evidence(self):
-        from bilqis_mlx.compatibility.frontier_recovery import _grade_c_admission_event
-        current, previous = {"sha256": "a" * 64}, {"sha256": "e" * 64}
-        event = {"event": "SCHOOL_COURSE_ADMITTED", "grade": "C",
-                 "student_sha256": current["sha256"],
-                 "previous_student_sha256": previous["sha256"]}
-        path = self.root / "events.jsonl"
-        path.write_text(json.dumps(event) + "\n" + json.dumps(event) + "\n")
-        before = path.read_bytes()
-        with self.assertRaisesRegex(ValueError, "ADMISSION_EVENT_DRIFT"):
-            _grade_c_admission_event(self.root, current, previous, "C")
-        self.assertEqual(path.read_bytes(), before)
+    def test_invalid_json_retains_native_corruption_failure(self):
+        self.forbidden_effects()
+        (self.root / 'state.json').write_text('{broken')
+        before = self.snapshot()
+        with self.assertRaises(ValueError) as caught:
+            session._resume_admitted_student(self.root, {}, None, None, None, None)
+        self.assertNotIn('SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE', str(caught.exception))
+        self.assertEqual(self.snapshot(), before)
 
-    def test_plan_rejects_school_not_bound_to_the_receipt(self):
-        from bilqis_mlx.compatibility.resume_migration import migrate_historical_grade_a
-        drifted = replace(self.school, current_student=replace(self.student, optimizer_step=24))
-        with self.assertRaisesRegex(ValueError, "HISTORICAL_MIGRATION_SCHOOL_DRIFT"):
-            migrate_historical_grade_a(self.receipt, drifted, self.course, self.manifest)
+    def test_current_admission_is_not_classified_as_historical(self):
+        current = {**self.receipt, 'factory_admission_v2': {'schema': 'current-fixture'}}
+        with patch('bilqis_mlx.compatibility.resume_migration.inspect_historical_run',
+                   side_effect=AssertionError('current state entered historical reader')):
+            session._require_current_resume(self.root, current)
 
-    def test_orphan_generation_replays_without_repeating_the_migration(self):
-        from bilqis_mlx import state_dag
-        durable = state_dag._durable
-        def interrupt(path, *args, **kwargs):
-            if Path(path).name == "state.json":
-                raise RuntimeError("lost head publication")
-            return durable(path, *args, **kwargs)
-        with patch.object(state_dag, "_durable", side_effect=interrupt):
-            with self.assertRaisesRegex(RuntimeError, "lost head publication"):
-                self.migrate()
-        self.assertEqual(read_current(self.root), self.receipt)
-        self.assertTrue((self.root / "states/0000002.json").is_file())
-        (recovered, _), _ = self.migrate()
-        self.assertEqual(recovered["generation"], 2)
-        self.assertEqual(read_current(self.root), recovered)
-        self.migrate(recovered)
-        events = [json.loads(line) for line in (self.root / "events.jsonl").read_text().splitlines()]
-        self.assertEqual(sum(e["event"] == "SCHOOL_LIVE_GRADE_A_MIGRATED" for e in events), 1)
-        self.assertEqual(recovered["school"]["current_student"], asdict(self.student))
+    def test_malformed_historical_identity_fails_without_retirement_or_writes(self):
+        self.forbidden_effects()
+        broken = {**self.receipt, 'model_bundle': '../outside'}
+        (self.root / 'state.json').write_text(json.dumps(broken))
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, 'SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID') as invalid:
+            session._resume_admitted_student(self.root, {}, None, None, None, None)
+        self.assertEqual(self.snapshot(), before)

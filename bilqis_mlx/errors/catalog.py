@@ -43,6 +43,22 @@ def _spec(
 
 class SCHOOL:
     class STATE:
+        HISTORICAL_NOT_RESUMABLE = _spec(
+            ("SCHOOL", "STATE", "HISTORICAL_NOT_RESUMABLE"),
+            owner="runtime.session",
+            title="Historical evidence cannot resume under Factory v2",
+            message_template="The verified pre-v2 run remains read-only historical evidence.",
+            disposition="READ_ONLY_HISTORICAL_EVIDENCE",
+            next_action="Inspect historical provenance; use a supported Factory v2 run for current execution.",
+        )
+        HISTORICAL_ARTIFACT_INVALID = _spec(
+            ("SCHOOL", "STATE", "HISTORICAL_ARTIFACT_INVALID"),
+            owner="compatibility.resume_migration",
+            title="Historical artifact validation failed",
+            message_template="Historical evidence failed validation: {reason}.",
+            disposition="PRESERVE_AND_INSPECT",
+            next_action="Inspect the recorded bytes and provenance; do not rewrite or resume the artifact.",
+        )
         SCHEMA_MISMATCH = _spec(
             ("SCHOOL", "STATE", "SCHEMA_MISMATCH"),
             owner="curriculum.scheduler",
@@ -193,6 +209,8 @@ class FACTORY:
 
 
 CATALOG = (
+    SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE,
+    SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID,
     SCHOOL.STATE.SCHEMA_MISMATCH,
     SCHOOL.STATE.COURSE_DIGEST_MISMATCH,
     SCHOOL.STATE.STAGE_INVALID,

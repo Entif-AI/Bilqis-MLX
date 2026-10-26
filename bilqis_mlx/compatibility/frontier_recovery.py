@@ -129,11 +129,3 @@ def _recover_grade_c_boundary_source(mx, run_dir, receipt):
         else dict(pre.get("last_exam") or {}))
     return _verify_recovered_boundary_exam(
         mx, run_dir, source_exam, pre, previous, epoch)
-
-
-def recover_legacy_frontier(mx, run_dir, receipt):
-    """Read and validate the historical source exam; runtime owns application."""
-    from .live_releases import NUMERIC_RELEASE
-    if receipt.get("curriculum_mode") != NUMERIC_RELEASE:
-        return None
-    return _recover_grade_c_boundary_source(mx, run_dir, receipt)

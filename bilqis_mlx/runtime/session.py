@@ -1,6 +1,8 @@
 """Operator locking, source preparation and saved-session lifecycle."""
 from __future__ import annotations
 
+from ..errors import ErrorBus, SCHOOL
+
 import bilqis_mlx.backup as _bilqis_mlx_backup
 import bilqis_mlx.compatibility.executable_projection as _compatibility_executable_projection
 import bilqis_mlx.compatibility.historical_teacher_policy as _historical_teacher_policy
@@ -24,7 +26,6 @@ import bilqis_mlx.runtime.state as _runtime_state
 import bilqis_mlx.state_dag as _state_dag
 import bilqis_mlx.source as _bilqis_mlx_source
 import contextlib as _contextlib
-import dataclasses as _dataclasses
 import fcntl as _fcntl
 import json as _json
 import os as _os
@@ -156,86 +157,21 @@ def _init(run_dir, manifest, course, policy_sha, historical_teacher,
     return parameters, optimizer, graph, receipt
 
 
-def _recovery_baseline(run_dir, receipt):
-    """Apply recovery only to the current durable generation under operator lock."""
-    if _state_dag.read_current(run_dir) != receipt:
-        raise ValueError("HISTORICAL_RECOVERY_BASELINE_DRIFT")
-    recovered = _runtime_checkpoints._recover_orphaned_commit(run_dir, receipt)
-    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, recovered)
-    return recovered
-
-
-def _migrate_historical_grade_a(run_dir, receipt, school, live_course, manifest):
-    from ..compatibility.resume_migration import migrate_historical_grade_a
-    receipt = _recovery_baseline(run_dir, receipt)
-    if receipt.get("historical_grade_champions") is not None:
-        return receipt, _runtime_state._state_from_json(receipt["school"], live_course)
-    _runtime_checkpoints._verify_best_custody(run_dir, receipt)
-    planned = migrate_historical_grade_a(receipt, school, live_course, manifest)
-    if planned is None:
-        return receipt, school
-    values, school, event = planned
-    record = _runtime_checkpoints._advance(run_dir, values, school, persist=False)
-    event = {**event, "generation": record["generation"]}
-    record = _runtime_checkpoints._persist(run_dir,
-        _runtime_checkpoints._with_delivery_outbox(record, (event,)))
-    _runtime_checkpoints._reconcile_delivery_outbox(run_dir, record)
-    return record, school
-
-
-def _recover_legacy_frontier(mx, run_dir, receipt, course, parameters):
-    """Idempotently bind an early Grade-C frontier to its graph-grown parent."""
-    from bilqis_mlx.learning.student_ops import _predictions
-    from bilqis_mlx.runtime.checkpoints import _advance, _persist, _with_delivery_outbox, _reconcile_delivery_outbox
-
-    from ..compatibility.frontier_recovery import recover_legacy_frontier
-    receipt = _recovery_baseline(run_dir, receipt)
-    source_exam = recover_legacy_frontier(mx, run_dir, receipt)
-    if source_exam is None:
-        return receipt
-    school = _runtime_state._state_from_json(receipt["school"], course)
-    previous_caps = (receipt.get("mentor_epoch") or {}).get("previous_capabilities") or ()
-    previous_grade = (
-        previous_caps[-1].partition(".")[0] if previous_caps else None)
-    from ..fixed_frontier import load_frontier_cohort, rebaseline_frontier_exam
-    cohort = load_frontier_cohort(run_dir, source_exam)
-    guesses = _predictions(
-        mx, parameters, list(cohort.rows), receipt["config"], receipt["answer_ids"])
-    migrated_exam = rebaseline_frontier_exam(
-        run_dir, source_exam, checkpoint=_dataclasses.asdict(school.current_student),
-        predictions=guesses,
-        assessment_grade=source_exam.get("assessment_grade", previous_grade),
-        grade_exam_epoch=source_exam.get("grade_exam_epoch"))
-    migrated = {**receipt,
-                "last_exam": migrated_exam,
-                "grade_c_fixed_frontier_cohort_sha256": cohort.digest}
-    record = _advance(
-        run_dir, migrated, school, last_exam=migrated_exam,
-        result=receipt.get("result"), persist=False)
-    event = {
-        "event": "SCHOOL_FIXED_FRONTIER_REBASELINED",
-        "generation": record["generation"],
-        "grade": school.grade,
-        "student_sha256": school.current_student.sha256,
-        "optimizer_step": school.current_student.optimizer_step,
-        "previous_student_sha256": source_exam.get("student_sha256"),
-        "cohort_sha256": cohort.digest,
-        "rows": len(cohort.rows),
-        "actual_neural_updates": 0,
-    }
-    record = _persist(run_dir, _with_delivery_outbox(record, (event,)))
-    _reconcile_delivery_outbox(run_dir, record)
-    return record
-
+def _require_current_resume(run_dir, receipt):
+    if receipt.get("factory_admission_v2") is None:
+        from ..compatibility.resume_migration import inspect_historical_run
+        inspect_historical_run(run_dir, receipt)
+        ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE)
 
 
 def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
             source_root, successor_course=None, admitted_courses=None):
-    import mlx.core as mx
     path = run_dir / "state.json"
     if not path.is_file():
         raise ValueError("HUMAN_TRAINER_RESUME_REQUIRES_PRIOR_RUN")
     receipt = _state_dag.read_current(run_dir)
+    _require_current_resume(run_dir, receipt)
+    import mlx.core as mx
     if (receipt.get("schema") != VERSION or receipt.get("accepted_authority") != _compatibility_source_bootstrap.AUTHORITY
             or receipt.get("source_manifest_sha256") != manifest["manifest_sha256"]
             or receipt.get("teacher_source_sha256") != policy_sha):
@@ -246,31 +182,15 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
                           "grade": "A", "generation": receipt["generation"],
                           **reconciled})
     receipt = _runtime_checkpoints._recover_orphaned_commit(run_dir, receipt)
-    saved_mode = receipt.get("curriculum_mode")
-    sealed_v1_release = _runtime_admission._verified_legacy_upgrade_release(run_dir, receipt)
-    executable = (
-        _runtime_admission._read_executable_factory_release_artifact(run_dir, receipt)
-        if receipt.get("factory_admission_v2") is not None else None)
-    old_mode = (
-        executable is None and sealed_v1_release is None and saved_mode is None)
-    old_course = (
-        sealed_v1_release.course if sealed_v1_release is not None else
-        _compatibility_source_bootstrap.accepted_grade_a(manifest) if old_mode else course)
-    school_program = (
-        _factory_schedule.schedule_program_from_executable_release(executable)
-        if executable is not None else
-        _runtime_release_adoption._schedule_for_receipt(run_dir, receipt, old_course))
+    executable = _runtime_admission._read_executable_factory_release_artifact(run_dir, receipt)
+    old_course = course
+    school_program = _factory_schedule.schedule_program_from_executable_release(executable)
     school = _runtime_state._state_from_json(receipt["school"], school_program)
     directory = (run_dir / receipt["model_bundle"]).resolve(strict=True)
     if directory.parent != (run_dir / "bundles").resolve(strict=True):
         raise ValueError("HUMAN_TRAINER_BUNDLE_PATH_ESCAPES_RUN")
     parameters, optimizer, bundle, graph = _runtime_mlx_checkpoint.load_semantically_bound_bundle(directory)
-    if executable is not None:
-        executable.verify_semantic_catalog(graph)
-    else:
-        _compatibility_executable_projection.verify_legacy_resume_binding(
-            receipt, old_course, graph, manifest, _runtime_state._fingerprint,
-            sealed_v1_release=sealed_v1_release)
+    executable.verify_semantic_catalog(graph)
     if (bundle["source_digest"] != _bilqis_mlx_source.AUDITED_PARENT.sha256 or
             bundle["safetensors_sha256"] != school.current_student.sha256 or
             bundle["optimizer_step"] != school.current_student.optimizer_step or
@@ -282,13 +202,8 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
         raise ValueError("HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT")
     if _state_dag.read_generation(run_dir, receipt["generation"]) != receipt:
         raise ValueError("HUMAN_TRAINER_RESUME_IMMUTABLE_STATE_DIVERGED")
-    if not old_mode:
-        _runtime_assessment._verify_saved_cohort(
-            run_dir, receipt, old_course,
-            sealed_v1_release=sealed_v1_release)
+    _runtime_assessment._verify_saved_cohort(run_dir, receipt, old_course)
     mx.eval(parameters, optimizer.state)
-    receipt = _recover_legacy_frontier(mx, run_dir, receipt, old_course, parameters)
-    school = _runtime_state._state_from_json(receipt["school"], school_program)
     if "capability_best" not in receipt:
         # Existing full-history run: reconstruct bests from actual sealed
         # checkpoint receipts before permitting reference-aware retirement.
@@ -305,10 +220,7 @@ def _resume(run_dir, manifest, course, policy_sha, *, grade_a_course,
                           "grade": "A", "generation": receipt["generation"],
                           "champion_roles": len(frontier),
                           "whole_student_unchanged": True})
-    if old_mode:
-        receipt, school = _migrate_historical_grade_a(
-            run_dir, receipt, school, course, manifest)
-    active_course = course if old_mode else old_course
+    active_course = course
     receipt, _, _ = _runtime_release_adoption._ensure_executable_release(
         run_dir, receipt, active_course, grade_a_course, source_root, graph)
     receipt = _learning_championship_runtime._repair_profile_revision_epoch_history(
@@ -394,20 +306,13 @@ def _resume_admitted_student(run_dir, manifest, historical_course, course_a,
                              source_root, teacher_sha):
     """Resolve the saved source profile and resume under the caller's operator lock."""
     saved = _state_dag.read_current(run_dir)
+    _require_current_resume(run_dir, saved)
     pending = run_dir / "states" / f"{saved['generation'] + 1:07d}.json"
     if pending.exists() and (pending.is_symlink() or not pending.is_file()):
         raise ValueError(_PENDING_GENERATION_UNSAFE_PATH)
-    pending_state = (_state_dag.read_generation(run_dir, saved["generation"] + 1)
-                     if pending.exists() else None)
-    if saved.get("factory_admission_v2") is not None:
-        saved_release = _runtime_admission._read_executable_factory_release_artifact(
-            run_dir, saved)
-        course = _factory_schedule.schedule_program_from_executable_release(saved_release)
-        admitted_courses = None
-    else:
-        course, admitted_courses = _compatibility_executable_projection.resolve_legacy_resume_course(
-            historical_course, source_root, saved, course_a,
-            pending=pending_state)
+    saved_release = _runtime_admission._read_executable_factory_release_artifact(run_dir, saved)
+    course = _factory_schedule.schedule_program_from_executable_release(saved_release)
+    admitted_courses = None
     with _runtime_timing_trace.trace_span("RESUME_STUDENT"):
         params, optimizer, graph, receipt = _resume(
             run_dir, manifest, course, teacher_sha,

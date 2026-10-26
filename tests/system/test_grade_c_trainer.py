@@ -59,27 +59,12 @@ class GradeTransitionCompatibilityDisposableTests(unittest.TestCase):
                      "graph", "teacher", "policy_sha"):
             setattr(self.fixture, name, deepcopy(getattr(self, name)))
 
-    def test_compatibility_exposes_readonly_planning_without_activation(self):
+    def test_historical_compatibility_has_no_migration_or_activation(self):
         import bilqis_mlx.compatibility.grade_transition as historical
-        from bilqis_mlx.compatibility.resume_migration import migrate_historical_grade_a
-        from copy import deepcopy
+        import bilqis_mlx.compatibility.resume_migration as inspection
         self.assertFalse(hasattr(historical, "activate_numeric_grade"))
-        pointer = Checkpoint("a" * 64, "bundles/readonly", 7, True)
-        school = start_new(self.grade_a, pointer)
-        school = replace(school, champions={self.grade_a.grades[0].id: pointer})
-        receipt = dict(generation=1, school=asdict(school),
-                       capability_best={"historical": {"source": "retained"}})
-        before = deepcopy(receipt)
-        plan = migrate_historical_grade_a(receipt, school, self.grade_a, self.manifest)
-        self.assertEqual(receipt, before)
-        values, migrated, event = plan
-        self.assertEqual(migrated.current_student, pointer)
-        self.assertEqual(migrated.champions, {})
-        self.assertEqual(values["historical_grade_champions"],
-                         {self.grade_a.grades[0].id: asdict(pointer)})
-        self.assertEqual(values["historical_capability_best"], receipt["capability_best"])
-        self.assertEqual(event["event"], "SCHOOL_LIVE_GRADE_A_MIGRATED")
-        self.assertIsNone(migrate_historical_grade_a(values, migrated, self.grade_a, self.manifest))
+        self.assertFalse(hasattr(inspection, "migrate_historical_grade_a"))
+        self.assertTrue(callable(inspection.inspect_historical_run))
 
     def test_current_module_exposes_no_transition_or_readiness(self):
         import bilqis_mlx.grade_transition as current

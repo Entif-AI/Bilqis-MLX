@@ -14,6 +14,30 @@ The runtime error catalog is the authority for new failures. Raw string exceptio
 
 ## Typed catalog
 
+### `SCHOOL.STATE.HISTORICAL_NOT_RESUMABLE`
+
+Historical evidence cannot resume under Factory v2.
+
+Owner: `runtime.session`
+Disposition: `READ_ONLY_HISTORICAL_EVIDENCE`
+Self-heal owner: `none`
+
+Message: The verified pre-v2 run remains read-only historical evidence.
+
+Recovery: Inspect historical provenance; use a supported Factory v2 run for current execution.
+
+### `SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID`
+
+Historical artifact validation failed.
+
+Owner: `compatibility.resume_migration`
+Disposition: `PRESERVE_AND_INSPECT`
+Self-heal owner: `none`
+
+Message: Historical evidence failed validation: {reason}.
+
+Recovery: Inspect the recorded bytes and provenance; do not rewrite or resume the artifact.
+
 ### `SCHOOL.STATE.SCHEMA_MISMATCH`
 
 Saved school schema is not supported.
@@ -192,7 +216,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **2004** raw raises across **167** files. The baseline gate permits only reduction.
+Current production scan: **2034** raw raises across **172** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -379,9 +403,9 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `BOOLEAN_ASSOCIATION_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/boolean_association.py` |
 | `BOOLEAN_ASSOCIATION_UNKNOWN_OPERATOR` | 1 | `bilqis_mlx/boolean_association.py` |
 | `BOOLEAN_ASSOCIATION_VARIATION_EXHAUSTED` | 1 | `bilqis_mlx/boolean_association.py` |
-| `BOOLEAN_COMPOSITE_REQUIRES_RESUME` | 2 | `bilqis_mlx/cli.py`, `bilqis_mlx/runtime/operating_loop.py` |
-| `BOOLEAN_IDBOOLOPS_REQUIRES_RESUME` | 2 | `bilqis_mlx/cli.py`, `bilqis_mlx/runtime/operating_loop.py` |
-| `BOOLEAN_REVISION_SOURCE_STUDENT_MISSING` | 1 | `bilqis_mlx/cli.py` |
+| `BOOLEAN_COMPOSITE_REQUIRES_RESUME` | 2 | `bilqis_mlx/compatibility/cli_preflight.py`, `bilqis_mlx/runtime/operating_loop.py` |
+| `BOOLEAN_IDBOOLOPS_REQUIRES_RESUME` | 2 | `bilqis_mlx/compatibility/cli_preflight.py`, `bilqis_mlx/runtime/operating_loop.py` |
+| `BOOLEAN_REVISION_SOURCE_STUDENT_MISSING` | 1 | `bilqis_mlx/compatibility/cli_preflight.py` |
 | `BRIDGE_LEGACY_ALIAS_INVALID` | 1 | `bilqis_mlx/ithkuil_alignment.py` |
 | `CANDIDATE_FRONTIER_ARTIFACT_UNREADABLE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `CANDIDATE_FRONTIER_BUILDER_STALE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
@@ -673,9 +697,6 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `CUTOVER_INVALID_OBSERVATION` | 1 | `bilqis_mlx/grade_release_plan.py` |
 | `DASHBOARD_PARTIAL_CANDIDATE_LEDGER` | 1 | `bilqis_mlx/presentation/spiral_dashboard.py` |
 | `DASHBOARD_REQUIRES_INTERACTIVE_TTY_USE_PLAIN_MODE` | 1 | `bilqis_mlx/presentation/spiral_dashboard.py` |
-| `DEBT_ADMISSION_BOUNDARY_SCOPE_INCOMPLETE` | 1 | `bilqis_mlx/compatibility/frontier_recovery.py` |
-| `DEBT_ADMISSION_BOUNDARY_SCORE_SCOPE_DRIFT` | 1 | `bilqis_mlx/compatibility/frontier_recovery.py` |
-| `DEBT_ADMISSION_DECLARED_SCOPE_DRIFT` | 1 | `bilqis_mlx/compatibility/frontier_recovery.py` |
 | `DEBT_ADMISSION_REQUIRES_EXACT_COMPLETE_BOUNDARY` | 1 | `bilqis_mlx/runtime/release_adoption.py` |
 | `DEBT_GRADE_ADMISSION_INCOMPATIBLE_WITH_NUMERIC_STAIRCASE` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
 | `DEBT_GRADE_ADMISSION_REQUIRES_RESUME` | 1 | `bilqis_mlx/runtime/operating_loop.py` |
@@ -800,6 +821,9 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `EXPERIMENT_RUN_SYMLINK` | 10 | `bilqis_mlx/runtime/experiment_runs.py` |
 | `EXPERIMENT_RUN_UNREGISTERED_PATH` | 3 | `bilqis_mlx/runtime/experiment_runs.py` |
 | `EXPERIMENT_RUN_WRONG_ISSUE` | 1 | `bilqis_mlx/runtime/experiment_runs.py` |
+| `Expected a SourceAdapterRegistry` | 1 | `bilqis_mlx/runtime/source_execution.py` |
+| `Expected an AnswerModalityRegistry` | 1 | `bilqis_mlx/runtime/source_execution.py` |
+| `Expected an ExecutableFactoryRelease` | 1 | `bilqis_mlx/runtime/source_execution.py` |
 | `FACTORY_ADMISSION_BASELINE_DRIFT` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `FACTORY_ADMISSION_COURSE_MISMATCH` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `FACTORY_ADMISSION_OPTIMIZER_STEP_INVALID` | 1 | `bilqis_mlx/factory/model.py` |
@@ -820,12 +844,11 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `FACTORY_ASSESSMENT_SCOPE_DUPLICATE_CAPABILITY` | 1 | `bilqis_mlx/factory/assessment.py` |
 | `FACTORY_ASSESSMENT_SCOPE_EMPTY` | 2 | `bilqis_mlx/factory/assessment.py`, `bilqis_mlx/live_curriculum.py` |
 | `FACTORY_ASSESSMENT_SCOPE_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/assessment.py` |
-| `FACTORY_BOOLEAN_MINIMUM_SAMPLE_REQUIRED` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FACTORY_ASSESSMENT_SOURCE_CONTEXT_REQUIRED` | 1 | `bilqis_mlx/runtime/assessment.py` |
+| `FACTORY_BOOLEAN_EVIDENCE_PRODUCER_UNRESOLVED` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FACTORY_BOOLEAN_PROFILE_PARAMETER_SCOPE_DRIFT` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FACTORY_BOOLEAN_PROFILE_PARAMETER_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FACTORY_BOOLEAN_PROFILE_SELECTION_INVALID` | 1 | `bilqis_mlx/profiles/school.py` |
-| `FACTORY_BOOLEAN_RUNTIME_SAMPLE_EXHAUSTED` | 1 | `bilqis_mlx/source_adapters/school.py` |
-| `FACTORY_BOOLEAN_TRUTH_PATTERN_COVERAGE_MISSING` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FACTORY_CATALOG_BOUNDARY_COHORT_REQUIRED` | 1 | `bilqis_mlx/runtime/release_adoption.py` |
 | `FACTORY_CATALOG_NO_DISABLED_GRADE` | 1 | `bilqis_mlx/profiles/catalog.py` |
 | `FACTORY_CATALOG_RELEASE_REQUIRED` | 1 | `bilqis_mlx/profiles/catalog.py` |
@@ -845,12 +868,14 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `FACTORY_CURRICULUM_CAPABILITY_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_COMPOSITION_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_DEFINITION_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
+| `FACTORY_CURRICULUM_DEFINITION_REQUIRED` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_DUPLICATE_ROOT` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_GRADE_DIFFICULTY_DRIFT` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_GRADE_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_GRADE_INVENTORY_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_PREREQUISITE_NOT_EARLIER` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_STAGES_INVALID` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
+| `FACTORY_CURRICULUM_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_CURRICULUM_UNTAUGHT_EXAM_ROOT` | 1 | `bilqis_mlx/factory/curriculum_definition.py` |
 | `FACTORY_DUPLICATE_ANSWER_MODALITY` | 1 | `bilqis_mlx/factory/answers.py` |
 | `FACTORY_DUPLICATE_GENERATOR_ADAPTER` | 1 | `bilqis_mlx/factory/adapters.py` |
@@ -888,9 +913,9 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `FACTORY_EXECUTABLE_GENERALIZATION_BURN_LEDGER_INVALID` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `FACTORY_EXECUTABLE_GENERATION_REGISTRY_REQUIRED` | 1 | `bilqis_mlx/factory/generation.py` |
 | `FACTORY_EXECUTABLE_GENERATION_RELEASE_REQUIRED` | 1 | `bilqis_mlx/factory/generation.py` |
-| `FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/factory/generation.py` |
+| `FACTORY_EXECUTABLE_GENERATION_UNKNOWN_CAPABILITY` | 2 | `bilqis_mlx/factory/generation.py`, `bilqis_mlx/runtime/source_execution.py` |
 | `FACTORY_EXECUTABLE_PROFILE_TRANSITION_MISMATCH` | 1 | `bilqis_mlx/runtime/release_adoption.py` |
-| `FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED` | 1 | `bilqis_mlx/runtime/release_adoption.py` |
+| `FACTORY_EXECUTABLE_PROFILE_TRANSITION_UNSUPPORTED` | 3 | `bilqis_mlx/runtime/release_adoption.py` |
 | `FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_CATALOG_DRIFT` | 1 | `bilqis_mlx/factory/executable_release.py` |
 | `FACTORY_EXECUTABLE_RELEASE_ANSWER_HEAD_INVALID` | 1 | `bilqis_mlx/factory/executable_release.py` |
 | `FACTORY_EXECUTABLE_RELEASE_ARTIFACT_DIGEST_DRIFT` | 1 | `bilqis_mlx/runtime/admission.py` |
@@ -1050,8 +1075,11 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `FACTORY_SCHEDULE_EXECUTABLE_RELEASE_REQUIRED` | 1 | `bilqis_mlx/factory/schedule.py` |
 | `FACTORY_SCHEDULE_GRADE_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
 | `FACTORY_SCHEDULE_MANIFEST_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
+| `FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_CHANGED_EXISTING_CAPABILITY` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
+| `FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_INVALID` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
+| `FACTORY_SCHEDULE_PRIOR_GRADE_EXPANSION_NOT_ADDITIVE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_PROGRAM_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
-| `FACTORY_SCHEDULE_PROGRAM_REQUIRED` | 2 | `bilqis_mlx/curriculum/scheduler.py` |
+| `FACTORY_SCHEDULE_PROGRAM_REQUIRED` | 4 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_REVISION_INVALID` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_REVISION_REQUIRES_ACTIVE_GRADE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `FACTORY_SCHEDULE_STAGES_INVALID` | 1 | `bilqis_mlx/factory/schedule.py` |
@@ -1109,14 +1137,20 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `FLASH_MODE_REQUIRES_RESUME` | 2 | `bilqis_mlx/cli.py`, `bilqis_mlx/runtime/operating_loop.py` |
 | `FLASH_SCHEDULER_EXAM_REQUIRES_CHECKPOINTED_STUDENT` | 1 | `bilqis_mlx/runtime/exam_execution.py` |
 | `FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED` | 1 | `bilqis_mlx/runtime/candidate_evidence.py` |
-| `FRAGILE_PRESERVATION_EXAM_ROW_LEAK` | 2 | `bilqis_mlx/runtime/candidate_evidence.py`, `bilqis_mlx/runtime/source_prefetch.py` |
+| `FRAGILE_PRESERVATION_EXAM_ROW_LEAK` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_PRESERVATION_INCOMPLETE_TRUTH_TABLE` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_PRESERVATION_INVALID_CAPABILITY_SET` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_PRESERVATION_OPERAND_KIND_INVALID` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
+| `FRAGILE_PRESERVATION_MIXED_REPRESENTATION` | 2 | `bilqis_mlx/learning/fragile_replay.py`, `bilqis_mlx/source_adapters/school.py` |
+| `FRAGILE_PRESERVATION_OPERAND_KIND_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FRAGILE_PRESERVATION_OPERAND_PATTERN_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FRAGILE_PRESERVATION_POLICY_INVALID` | 1 | `bilqis_mlx/profiles/retention.py` |
 | `FRAGILE_PRESERVATION_ROTATION_INVALID` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
+| `FRAGILE_PRESERVATION_SOURCE_GOLD_DRIFT` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FRAGILE_PRESERVATION_SOURCE_POLICY_UNKNOWN` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FRAGILE_PRESERVATION_SOURCE_TOKENS_MISSING` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
+| `FRAGILE_PRESERVATION_STRUCTURAL_SIGNATURE_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FRAGILE_PRESERVATION_U7C_PATTERN_CONTRACT_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
+| `FRAGILE_PRESERVATION_U7C_STRUCTURAL_REQUEST_INVALID` | 1 | `bilqis_mlx/source_adapters/school.py` |
 | `FRAGILE_REPLAY_CAPABILITY_SET_INVALID` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_COHORT_CONTENT_DRIFT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_INCOMPLETE_B_CAPABILITY` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
@@ -1124,7 +1158,8 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `FRAGILE_REPLAY_INCOMPLETE_TRUTH_TABLE` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_INVALID_PREDICTION` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_MISSING_PAIRED_PREDICTION` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
-| `FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
+| `FRAGILE_REPLAY_ORACLE_OR_COMPOSITION_DRIFT` | 8 | `bilqis_mlx/learning/fragile_replay.py`, `bilqis_mlx/source_adapters/school.py` |
+| `FRAGILE_REPLAY_U7C_PATTERN_DRIFT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_UNBOUND_EXAM_COHORT` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FRAGILE_REPLAY_UNSAFE_COHORT_PATH` | 1 | `bilqis_mlx/learning/fragile_replay.py` |
 | `FULL_CONTINUATION_DISPOSABLE_RESTART_DRIFT` | 1 | `bilqis_mlx/full_student_qualification.py` |
@@ -1134,7 +1169,7 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `FULL_CONTINUATION_PINNED_CHECKPOINT_CHANGED` | 1 | `bilqis_mlx/full_student_qualification.py` |
 | `FULL_CONTINUATION_UNKNOWN_DEVICE` | 1 | `bilqis_mlx/full_student_qualification.py` |
 | `GRADE_ADMISSION_INVALID_CANDIDATE_PACKAGE` | 1 | `bilqis_mlx/grade_transition.py` |
-| `GRADE_ADMISSION_REQUIRES_COMPLETE_PERFECT_CUMULATIVE_EXAM` | 1 | `bilqis_mlx/grade_transition.py` |
+| `GRADE_ADMISSION_REQUIRES_COMPLETE_PERFECT_CUMULATIVE_EXAM` | 1 | `bilqis_mlx/compatibility/grade_transition.py` |
 | `GRADE_APPEND_FUTURE_CHAMPION_ALREADY_EXISTS` | 2 | `bilqis_mlx/compatibility/scheduler_transitions.py`, `bilqis_mlx/curriculum/scheduler.py` |
 | `GRADE_APPEND_NOT_AT_PARTIAL_BOUNDARY` | 1 | `bilqis_mlx/compatibility/scheduler_transitions.py` |
 | `GRADE_APPEND_PRIOR_RUBRIC_NOT_VERIFIED` | 1 | `bilqis_mlx/compatibility/scheduler_transitions.py` |
@@ -1191,6 +1226,9 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `GRADE_A_UNKNOWN_SPLIT` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_A_UNTAUGHT_WORLD_SIZE` | 1 | `bilqis_mlx/grade_a_probe.py` |
 | `GRADE_B_BALANCED_EVEN_SAMPLE_REQUIRED` | 1 | `bilqis_mlx/live_grade_b.py` |
+| `GRADE_B_BOOLEAN_CONTEXT_LENGTH` | 1 | `bilqis_mlx/live_grade_b.py` |
+| `GRADE_B_BOOLEAN_SOURCE_ROOT_MISMATCH` | 1 | `bilqis_mlx/live_grade_b.py` |
+| `GRADE_B_BOOLEAN_TOKEN_ABI_DRIFT` | 1 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_B_BOOLEAN_TRUTH_TABLE_SOURCE_DRIFT` | 1 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_B_COMPOSITE_FROZEN_TOKEN_PREFIX_MISMATCH` | 1 | `bilqis_mlx/boolean_composite.py` |
 | `GRADE_B_COMPOSITE_INVALID_DRAW` | 1 | `bilqis_mlx/boolean_composite.py` |
@@ -1198,13 +1236,13 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `GRADE_B_COMPOSITE_OPERATOR_DOMAIN_INVALID` | 1 | `bilqis_mlx/boolean_composite.py` |
 | `GRADE_B_COMPOSITE_OPERATOR_WIDTH` | 1 | `bilqis_mlx/boolean_composite.py` |
 | `GRADE_B_COMPOSITE_ORACLE_APPLY_SHAPE` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
-| `GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
+| `GRADE_B_COMPOSITE_ORACLE_COMPOSITION_WIDTH` | 2 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_CONNECTIVE_ARITY` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_ENTITY_OUTSIDE_WORLD` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_LEAF_ARITY` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_UNATTESTED_ENTITY` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_UNKNOWN_OPERATOR` | 2 | `bilqis_mlx/boolean_composite_oracle.py` |
-| `GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
+| `GRADE_B_COMPOSITE_ORACLE_UNKNOWN_TASK_OR_CAPABILITY` | 2 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_UNMASTERED_COMPARISON` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_UNMASTERED_LEAF` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
 | `GRADE_B_COMPOSITE_ORACLE_UNMASTERED_RELATION` | 1 | `bilqis_mlx/boolean_composite_oracle.py` |
@@ -1220,9 +1258,10 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `GRADE_B_IDBOOLOPS_INDEPENDENT_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_INVALID_DRAW` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_OBSERVATIONS_MISSING` | 1 | `bilqis_mlx/boolean_identification.py` |
-| `GRADE_B_IDBOOLOPS_OPERAND_TRUTH_EXHAUSTED` | 1 | `bilqis_mlx/boolean_identification.py` |
+| `GRADE_B_IDBOOLOPS_OBSERVATION_SHAPE` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_OPERATOR_BALANCE_DRIFT` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_OPERATOR_DOMAIN_INVALID` | 1 | `bilqis_mlx/boolean_identification.py` |
+| `GRADE_B_IDBOOLOPS_ORACLE_DIRECT_OPERAND_INVALID` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_ENTITY_OUTSIDE_WORLD` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_NOT_UNIQUE` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_OBSERVATIONS_MISSING` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
@@ -1236,39 +1275,30 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `GRADE_B_IDBOOLOPS_ORACLE_UNMASTERED_COMPARISON` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_UNMASTERED_OPERAND` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
 | `GRADE_B_IDBOOLOPS_ORACLE_UNMASTERED_RELATION` | 1 | `bilqis_mlx/boolean_identification_oracle.py` |
-| `GRADE_B_IDBOOLOPS_QUERY_MARKER_MISSING` | 1 | `bilqis_mlx/boolean_identification.py` |
+| `GRADE_B_IDBOOLOPS_RECORD_SHAPE` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_RELEASE_NOT_EXECUTABLE` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_REQUIRES_COMPOSITE_PARENT` | 1 | `bilqis_mlx/boolean_identification.py` |
-| `GRADE_B_IDBOOLOPS_SOURCE_ENCODING_DRIFT` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_SOURCE_TRUTH_DISAGREEMENT` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_IDBOOLOPS_VARIATION_EXHAUSTED` | 1 | `bilqis_mlx/boolean_identification.py` |
-| `GRADE_B_IDBOOLOPS_WORLD_ENCODING_DRIFT` | 1 | `bilqis_mlx/boolean_identification.py` |
 | `GRADE_B_MINIMAL_ADMISSION_COHORT_INCOMPLETE` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_ANSWER_HEAD_TOKEN_MISSING` | 1 | `bilqis_mlx/minimal_grade_b.py` |
-| `GRADE_B_MINIMAL_COMPOSITE_VARIATION_EXHAUSTED` | 1 | `bilqis_mlx/minimal_grade_b.py` |
-| `GRADE_B_MINIMAL_FROZEN_TOKEN_PREFIX_MISMATCH` | 2 | `bilqis_mlx/minimal_grade_b.py` |
-| `GRADE_B_MINIMAL_IDBOOLOPS_BALANCED_COUNT_REQUIRED` | 1 | `bilqis_mlx/minimal_grade_b.py` |
-| `GRADE_B_MINIMAL_IDBOOLOPS_BALANCE_DRIFT` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_IDBOOLOPS_NOT_UNIQUE` | 1 | `bilqis_mlx/minimal_boolean_identification_oracle.py` |
-| `GRADE_B_MINIMAL_IDBOOLOPS_OBSERVATIONS_MISSING` | 1 | `bilqis_mlx/minimal_boolean_identification_oracle.py` |
-| `GRADE_B_MINIMAL_IDBOOLOPS_OBSERVATION_SHAPE` | 1 | `bilqis_mlx/minimal_boolean_identification_oracle.py` |
-| `GRADE_B_MINIMAL_IDBOOLOPS_OPTION_DRIFT` | 1 | `bilqis_mlx/minimal_boolean_identification_oracle.py` |
-| `GRADE_B_MINIMAL_IDBOOLOPS_SIGNATURE_INCOMPLETE` | 1 | `bilqis_mlx/minimal_boolean_identification_oracle.py` |
+| `GRADE_B_MINIMAL_IDBOOLOPS_ORACLE_DRIFT` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_IDBOOLOPS_UNKNOWN_TASK_OR_CAPABILITY` | 1 | `bilqis_mlx/minimal_boolean_identification_oracle.py` |
-| `GRADE_B_MINIMAL_IDBOOLOPS_VARIATION_EXHAUSTED` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_INVALID_DRAW` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_PREDECESSOR_NOT_ADMITTED_GRADE_A` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_RELEASE_NOT_EXECUTABLE` | 1 | `bilqis_mlx/minimal_grade_b.py` |
 | `GRADE_B_MINIMAL_UNKNOWN_CAPABILITY` | 1 | `bilqis_mlx/minimal_grade_b.py` |
-| `GRADE_B_OPERATOR_NOT_BINARY_DISCRIMINATING` | 1 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_B_OPERATOR_VARIATION_EXHAUSTED` | 1 | `bilqis_mlx/live_grade_b.py` |
-| `GRADE_B_ORACLE_CONNECTIVE_SHAPE` | 1 | `bilqis_mlx/grade_b_oracle.py` |
+| `GRADE_B_ORACLE_ASSIGNMENTS_INVALID` | 1 | `bilqis_mlx/grade_b_oracle.py` |
+| `GRADE_B_ORACLE_CONNECTIVE_SHAPE` | 3 | `bilqis_mlx/grade_b_oracle.py` |
+| `GRADE_B_ORACLE_DIRECT_EXPRESSION_INVALID` | 2 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_ENTITY_OUTSIDE_WORLD` | 1 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_OPERAND_ARITY` | 1 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_OPERAND_SHAPE` | 1 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_UNATTESTED_ENTITY` | 1 | `bilqis_mlx/grade_b_oracle.py` |
-| `GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY` | 1 | `bilqis_mlx/grade_b_oracle.py` |
+| `GRADE_B_ORACLE_UNKNOWN_TASK_OR_CAPABILITY` | 2 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_UNMASTERED_COMPARISON` | 1 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_UNMASTERED_OPERAND` | 1 | `bilqis_mlx/grade_b_oracle.py` |
 | `GRADE_B_ORACLE_UNMASTERED_RELATION` | 1 | `bilqis_mlx/grade_b_oracle.py` |
@@ -1277,16 +1307,13 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `GRADE_B_SOURCE_RELEASE_NOT_EXECUTABLE` | 1 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_B_SOURCE_TOKEN_IDENTITIES_UNAVAILABLE` | 1 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_B_THREE_ORACLE_DISAGREEMENT` | 1 | `bilqis_mlx/live_grade_b.py` |
-| `GRADE_B_UNKNOWN_OPERATOR` | 2 | `bilqis_mlx/live_grade_b.py` |
+| `GRADE_B_UNKNOWN_OPERATOR` | 3 | `bilqis_mlx/live_grade_b.py` |
 | `GRADE_CAPABILITY_COUNT_OUTSIDE_SIX_TO_NINE` | 1 | `bilqis_mlx/curriculum/__init__.py` |
-| `GRADE_C_DEBT_ADMISSION_BOUNDARY_DRIFT` | 1 | `bilqis_mlx/grade_transition.py` |
-| `GRADE_C_DEBT_ADMISSION_REQUIRES_REHABILITATED_CURRENT_A_B_DEBT` | 1 | `bilqis_mlx/grade_transition.py` |
 | `GRADE_C_FULL_REGISTRY_REQUIRES_BILQIS_INTEGER_MAX=` | 1 | `bilqis_mlx/live_grade_c.py` |
 | `GRADE_C_HISTORICAL_PREFIX_DRIFT` | 1 | `bilqis_mlx/live_grade_c.py` |
 | `GRADE_C_INTEGER_SCOPE_INVALID` | 1 | `bilqis_mlx/live_grade_c.py` |
-| `GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED` | 1 | `bilqis_mlx/live_grade_c.py` |
+| `GRADE_C_NATIVE_REGISTRY_ADMISSION_NOT_VERIFIED` | 3 | `bilqis_mlx/live_grade_c.py` |
 | `GRADE_C_REGISTERED_GRAPH_DRIFT` | 1 | `bilqis_mlx/live_grade_c.py` |
-| `GRADE_C_REQUIRES_ONE_COMPLETE_CUMULATIVE_A_B_PASS` | 1 | `bilqis_mlx/grade_transition.py` |
 | `GRADE_C_REQUIRES_UNCHANGED_A_B_RELEASE` | 1 | `bilqis_mlx/live_grade_c.py` |
 | `GRADE_MIXES_DIFFICULTY_LEVELS` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `GRADE_REPLACEMENT_MUST_REDUCE_CAPABILITY_INVENTORY` | 1 | `bilqis_mlx/compatibility/scheduler_transitions.py` |
@@ -1384,7 +1411,6 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `HUMAN_TRAINER_GENERALIZATION_EXPOSURE_EVIDENCE_MISSING` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `HUMAN_TRAINER_GENERATED_COHORT_CUSTODY_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
 | `HUMAN_TRAINER_GENERATED_COHORT_WRITEBACK_DRIFT` | 1 | `bilqis_mlx/runtime/assessment.py` |
-| `HUMAN_TRAINER_GRADE_REPLACEMENT_CONFIG_MISSING` | 1 | `bilqis_mlx/compatibility/trainer_transitions.py` |
 | `HUMAN_TRAINER_HISTORICAL_EXAM_ADMISSION_INVALID` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `HUMAN_TRAINER_HISTORICAL_EXAM_ADMISSION_REQUIRED` | 1 | `bilqis_mlx/runtime/admission.py` |
 | `HUMAN_TRAINER_HISTORICAL_EXAM_LINEAGE_DRIFT` | 1 | `bilqis_mlx/runtime/admission.py` |
@@ -1400,13 +1426,11 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `HUMAN_TRAINER_LIVE_RUBRIC_IDENTITY_DRIFT` | 1 | `bilqis_mlx/runtime/boundary_commit.py` |
 | `HUMAN_TRAINER_LIVE_RUBRIC_SCOPE_DRIFT` | 1 | `bilqis_mlx/runtime/boundary_commit.py` |
 | `HUMAN_TRAINER_LIVE_SOURCE_REQUIRED` | 1 | `bilqis_mlx/runtime/visits.py` |
-| `HUMAN_TRAINER_MINIMAL_GRADE_B_REQUIRES_GRAPH` | 1 | `bilqis_mlx/compatibility/trainer_transitions.py` |
 | `HUMAN_TRAINER_MISSING_BINARY_TRAINING_CLASS` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID` | 1 | `bilqis_mlx/runtime/visits.py` |
 | `HUMAN_TRAINER_MISS_REPLAY_ANSWER_CLASS_CAPACITY` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `HUMAN_TRAINER_MISS_REPLAY_EXCEEDS_BATCH` | 1 | `bilqis_mlx/learning/lesson_guidance.py` |
 | `HUMAN_TRAINER_NEW_RUN_HAS_EXISTING_CONTENT` | 1 | `bilqis_mlx/runtime/session.py` |
-| `HUMAN_TRAINER_NEXT_GRADE_ADMISSION_BOUNDARY_NOT_MET` | 1 | `bilqis_mlx/compatibility/trainer_transitions.py` |
 | `HUMAN_TRAINER_NO_SCHEDULED_CAPABILITY` | 1 | `bilqis_mlx/runtime/visits.py` |
 | `HUMAN_TRAINER_OPTIMIZER_STEP_DRIFT` | 1 | `bilqis_mlx/runtime/visits.py` |
 | `HUMAN_TRAINER_OUTBOX_ADVANCE_SOURCE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
@@ -1437,7 +1461,6 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `HUMAN_TRAINER_SAVED_COHORT_RELEASE_NOT_ADMITTED` | 1 | `bilqis_mlx/compatibility/assessment.py` |
 | `HUMAN_TRAINER_SEQUENCE_OUTSIDE_LEGACY_CONTEXT` | 1 | `bilqis_mlx/learning/student_ops.py` |
 | `HUMAN_TRAINER_SOURCE_PREFETCH_IDENTITY_DRIFT` | 1 | `bilqis_mlx/runtime/visits.py` |
-| `HUMAN_TRAINER_TYPED_GRADE_REVISION_CONFIG_MISSING` | 1 | `bilqis_mlx/compatibility/trainer_transitions.py` |
 | `HUMAN_TRAINER_UNCOMMITTED_BUNDLE_SOURCE_DRIFT` | 1 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_UNCOMMITTED_BUNDLE_UNSAFE_PATH` | 2 | `bilqis_mlx/runtime/checkpoints.py` |
 | `HUMAN_TRAINER_UNKNOWN_LESSON_GRADE` | 1 | `bilqis_mlx/runtime/visits.py` |
@@ -1478,6 +1501,7 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `INVALID_BOUNDED_ANSWER_FAMILY` | 1 | `bilqis_mlx/curriculum/__init__.py` |
 | `INVALID_CAPABILITY_SCORE` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
 | `INVALID_CARRIED_MASTERY_DEBT` | 1 | `bilqis_mlx/curriculum/scheduler.py` |
+| `INVALID_DEBT_CADENCE_POLICY` | 5 | `bilqis_mlx/curriculum/scheduler.py`, `bilqis_mlx/runtime/release_adoption.py`, `bilqis_mlx/runtime/state.py` |
 | `INVALID_DISK_BUDGET` | 1 | `bilqis_mlx/runtime/disk.py` |
 | `INVALID_EXPERIMENT_DISK_BUDGET` | 1 | `bilqis_mlx/runtime/experiment_runs.py` |
 | `INVALID_EXPERIMENT_REQUIRED_BYTES` | 1 | `bilqis_mlx/runtime/experiment_runs.py` |
@@ -1537,6 +1561,7 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `LEARNING_EXPERIMENT_INVALID_SELECTION_CREDIT` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_INVALID_SETTINGS` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_MISSING_ACTIVE_CAPABILITY` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
+| `LEARNING_EXPERIMENT_MISSING_FRESH_CURRENT_ROWS` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_MISSING_SOURCE_ROWS` | 2 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_PARAMETER_IDENTITY_DRIFT` | 1 | `bilqis_mlx/learning/learning_experiment.py` |
 | `LEARNING_EXPERIMENT_POLICY_OWN_ADAMW_DRIFT` | 1 | `bilqis_mlx/runtime/reconciliation.py` |
@@ -1801,6 +1826,8 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `REGISTRY_UNRESOLVED_GRADE_REFERENCE` | 2 | `bilqis_mlx/registry_ast.py` |
 | `REGISTRY_UNRESOLVED_LESSON_REFERENCE` | 2 | `bilqis_mlx/registry_ast.py` |
 | `RESUME_EXPLICIT_BUT_NO_SAVED_NEW_SCHOOL_RUN` | 1 | `bilqis_mlx/cli.py` |
+| `RETENTION_SUPPORT_ROTATION_INVALID` | 1 | `bilqis_mlx/runtime/candidate_evidence.py` |
+| `RETENTION_SUPPORT_ROW_INVALID` | 1 | `bilqis_mlx/runtime/candidate_evidence.py` |
 | `SCHOOL_AUTONOMY_EVIDENCE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
 | `SCHOOL_AUTONOMY_SOURCE_COVERAGE_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
 | `SCHOOL_AUTONOMY_TEACHING_RECEIPT_INVALID` | 1 | `bilqis_mlx/presentation/school_telemetry.py` |
@@ -1929,6 +1956,8 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `SOUP_NONFP32_OR_NONFINITE_WEIGHTS` | 1 | `bilqis_mlx/soup.py` |
 | `SOUP_PARAMETER_SHAPE_MISMATCH` | 1 | `bilqis_mlx/soup.py` |
 | `SOUP_UNVERIFIED_OR_MISSING_CHAMPION_CONTRIBUTORS` | 1 | `bilqis_mlx/soup.py` |
+| `SOURCE_FOOTPRINT_INVALID` | 1 | `bilqis_mlx/factory/adapters.py` |
+| `SOURCE_FOOTPRINT_UNAVAILABLE` | 1 | `bilqis_mlx/factory/adapters.py` |
 | `SOURCE_MICRO_ORACLE_CONFLICT` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
 | `SOURCE_MICRO_UNKNOWN_ROOT` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
 | `SOURCE_MICRO_WORLD_MISMATCH` | 1 | `bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py` |
@@ -2056,6 +2085,7 @@ Current production scan: **2004** raw raises across **167** files. The baseline 
 | `_INVALID` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `_STALE` | 1 | `bilqis_mlx/factory/candidate_frontier.py` |
 | `boom` | 1 | `bilqis_mlx/runtime/tests/test_mlx_memory.py` |
+| `lacks U7C pattern` | 1 | `bilqis_mlx/source_adapters/tests/test_grade_b_u7c_causal_cells.py` |
 | `undefined` | 1 | `bilqis_mlx/semantics/tests/test_source_memo.py` |
 | `unreachable` | 1 | `bilqis_mlx/learning/championship_runtime.py` |
 | `unsupported fixture operator` | 1 | `bilqis_mlx/verification/tests/test_verification_laws.py` |

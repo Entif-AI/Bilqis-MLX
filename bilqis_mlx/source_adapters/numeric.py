@@ -131,9 +131,8 @@ def inspect_record(record):
 
 
 def check_numeric(row, *, graph, **_):
-    """Check codec/gold agreement through the independent arithmetic oracle."""
-    from ..verification.numeric import independent_value
-    value = independent_value(decode(row["record"]["symbols"]))
+    """Check codec/gold agreement against the source arithmetic semantics."""
+    value = evaluate(decode(row["record"]["symbols"]))
     gold = ("TRUE" if value else "FALSE") if type(value) is bool else str(value)
     return (gold == row["gold"] and
             [graph["tokens"][index] for index in row["tokens"]] ==

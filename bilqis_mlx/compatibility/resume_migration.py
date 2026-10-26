@@ -1,49 +1,60 @@
-"""One-time migrations for receipts predating executable factory v2."""
+"""Read-only inspection of retired pre-v2 training evidence."""
 from __future__ import annotations
 
-from dataclasses import asdict, replace
 import json
+from pathlib import Path
 
-from .live_releases import INITIAL_RELEASE
+from ..data_plane import verify_file_digest
+from ..errors import ErrorBus, SCHOOL
+from ..runtime.mlx_checkpoint import SCHEMA as BUNDLE_SCHEMA, _read_catalog
 
 
-def migrate_historical_grade_a(receipt, school, live_course, manifest):
-    """Archive fixed-rubric Grade-A authority and rebind to generated live A."""
-
-    if json.dumps(asdict(school), sort_keys=True) != json.dumps(receipt.get("school"), sort_keys=True):
-        raise ValueError("HISTORICAL_MIGRATION_SCHOOL_DRIFT")
-    if receipt.get("historical_grade_champions") is not None:
-        return None
-    legacy_frontier = receipt.get("capability_best", {})
-    historical_champions = dict(school.champions)
-    if historical_champions:
-        school = replace(
-            school,
-            champions={},
-            stage="MAIN",
-            queue=tuple(
-                capability.id
-                for capability in live_course.grades[0].capabilities),
-            first_recovery=(),
-            pending_failures=(),
-        )
-    school = replace(
-        school,
-        course_digest=live_course.digest(),
-        latest_rubric_digest=None,
-    )
-    record = {**receipt, "school": asdict(school)}
-    record["historical_capability_best"] = legacy_frontier
-    record["historical_grade_champions"] = {
-        key: asdict(item) for key, item in historical_champions.items()}
-    record["capability_best"] = {}
-    record["curriculum_mode"] = INITIAL_RELEASE
-    record["legacy_frontier_pending_replay"] = bool(legacy_frontier)
-    event = {
-        "event": "SCHOOL_LIVE_GRADE_A_MIGRATED",
-        "historical_rubric": manifest["exam_rubric_sha256"],
-        "live_rubric": live_course.grades[0].assessment_sha256,
-        "legacy_best_slots": len(legacy_frontier),
-        "source_student_unchanged": True,
+def inspect_historical_run(run_dir, receipt):
+    """Verify recorded identities/checksums without loading a model or optimizer."""
+    if (receipt.get("schema") != "bilqis.mlx.human-grade-a-trainer/v1" or
+            receipt.get("factory_admission_v2") is not None):
+        ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason="HUMAN_TRAINER_RESUME_SOURCE_OR_POLICY_DRIFT")
+    school = receipt.get("school") or {}
+    student = school.get("current_student") or {}
+    filename = receipt.get("model_bundle")
+    if (not isinstance(receipt.get("run_id"), str) or not receipt["run_id"] or
+            type(receipt.get("generation")) is not int or receipt["generation"] < 0 or
+            not isinstance(filename, str) or student.get("filename") != filename or
+            type(student.get("optimizer_step")) is not int or student["optimizer_step"] < 0 or
+            student.get("model_and_native_adamw") is not True):
+        ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason="HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT")
+    root = Path(run_dir)
+    relative = Path(filename)
+    if relative.parent != Path("bundles"):
+        ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason="HUMAN_TRAINER_BUNDLE_PATH_ESCAPES_RUN")
+    directory = root / relative
+    if directory.is_symlink() or directory.resolve(strict=True).parent != (root / "bundles").resolve(strict=True):
+        ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason="HUMAN_TRAINER_BUNDLE_PATH_ESCAPES_RUN")
+    manifest_file = directory / "manifest.json"
+    blob = directory / "model-and-own-adamw.safetensors"
+    if manifest_file.is_symlink() or blob.is_symlink():
+        ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason="HUMAN_TRAINER_BUNDLE_PATH_ESCAPES_RUN")
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    if manifest.get("schema") != BUNDLE_SCHEMA:
+        ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason="MLX_BUNDLE_SCHEMA_DRIFT")
+    if not verify_file_digest(blob, manifest.get("safetensors_sha256")):
+        ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason="MLX_BUNDLE_TENSOR_FILE_CORRUPTED")
+    if (manifest.get("safetensors_sha256") != student.get("sha256") or
+            manifest.get("optimizer_step") != student["optimizer_step"]):
+        ErrorBus.Raise(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason="HUMAN_TRAINER_RESUME_MODEL_ADAMW_OR_SEMANTIC_DRIFT")
+    if manifest.get("semantic_catalog") is not None:
+        _read_catalog(directory, manifest["semantic_catalog"])
+    if receipt.get("factory_admission") is not None:
+        from ..runtime.admission import _verified_legacy_upgrade_release
+        _verified_legacy_upgrade_release(root, receipt)
+    return {
+        "runtime_schema": receipt["schema"], "bundle_schema": manifest["schema"],
+        "run_id": receipt["run_id"], "generation": receipt["generation"],
+        "student_sha256": student["sha256"], "optimizer_step": student["optimizer_step"],
+        "curriculum_mode": receipt.get("curriculum_mode"),
+        "course_digest": school.get("course_digest"),
+        "semantic_graph_sha256": receipt.get("semantic_graph_sha256"),
+        "source_digest": manifest.get("source_digest"),
+        "payload_checksum": "VERIFIED", "tensor_contents": "NOT_INSPECTED",
+        "recorded_state": json.loads(json.dumps(receipt)),
     }
-    return record, school, event

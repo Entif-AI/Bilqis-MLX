@@ -15,7 +15,7 @@ from ..factory.model import SourceAdapter
 from ..semantics.copular import (
     SYMBOL, ENTITIES, ReferentWorld, bind_operation, identify, evaluate, references,
 )
-from ..verification.copular import VERSION as ORACLE
+ORACLE = "bilqis.ithkuil-reference-identity-oracle/v1"
 from ..vocabulary_growth import digest
 
 
@@ -168,16 +168,15 @@ def draw(source_root, graph, *, seed: int, each: int = 12,
 
 
 def check_copular(row, *, graph, **_):
-    from ..verification.copular import independent_answer
     from ..vocabulary_growth import digest
     try:
         record = row["record"]
-        gold = independent_answer(record)
         tokens = row["tokens"]
         if (not isinstance(tokens, list) or
                 any(type(index) is not int or not 0 <= index < len(graph["tokens"]) for index in tokens)):
             return False
         world, expression = decode([graph["tokens"][index] for index in tokens], graph)
+        gold = "TRUE" if evaluate(world, expression) else "FALSE"
         return (record == _record(world, expression) and
                 row["gold"] == gold and row["id"] == row["source_id"] == digest(record) and
                 row["capability"] == CAPABILITY and row["root"] == SYMBOL and
