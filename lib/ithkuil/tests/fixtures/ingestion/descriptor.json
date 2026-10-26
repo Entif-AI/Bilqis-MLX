@@ -1,0 +1,58 @@
+{
+  "claims": {
+    "curriculum_admission": false,
+    "full_new_ithkuil_coverage": false,
+    "production_admission": false
+  },
+  "configuration_excerpt": {
+    "parent_table_id": "NI-WEB-CH03:T003",
+    "path": "configuration.html",
+    "sha256": "fbc74c722d84fd336001d0b8e3c310e030bd0b469dac3ec1ec7e75cd4109d507"
+  },
+  "excerpt": {
+    "derivation": "lxml-serialized-parent-table/v1",
+    "matrix_sha256": "ddaecea945c2598d4848eee34faeb67cd8ffa472500e3652ede6edecb9f598e5",
+    "path": "source.html",
+    "sha256": "05b81b70251b313b20aa702b6fb5ff71e533a544434150c427fab9ad4f2078cf",
+    "table_ordinal": 1
+  },
+  "fixture_id": "bounded-source-closure-91",
+  "parent": {
+    "section_id": "NI-WEB-CH03:3.6",
+    "sha256": "93d9d61682fa2d051fc667cf2952a0e521b07ec42629e2788f57b0b2f4c34c0f",
+    "source_anchor": "Sec3_6",
+    "source_id": "NI-WEB-CH03",
+    "source_line": "6525",
+    "table_id": "NI-WEB-CH03:T035",
+    "table_ordinal": 35,
+    "url": "https://www.ithkuil.net/newithkuil_03_morphology.htm"
+  },
+  "schema": "bilqis.ithkuil.ingestion-fixture/v1",
+  "scope": "fixture_only",
+  "seed_csv": {
+    "affix_degrees.csv": "64b600f2bf62e83a21a409f642fb8dea8d6e0a51881c32575d8085fe1f60e8db",
+    "allomorph_rules.csv": "4c562fee8935d9d9c229f5a42092a0e814f172419a029319b848bfe646172056",
+    "bilqis_ithkuil_crosswalk.csv": "0f6ed046d57e94103d92f573d2f8a0a181487f2e06808b78e797bf3288595930",
+    "bilqis_semantic_bridges.csv": "f939d9eae462c8db38b76faa0161034055aadf412cc3b59f145ec5e8287d0d07",
+    "composition_components.csv": "d5f64a12cd68e1973fd1b42c9931f8574ce214fa17f1bd238292cd3ade7e57e2",
+    "grammatical_categories.csv": "9d910546efbbc89a79a1bb4aae690d7f9f392dddac7bb2cf439a59933d8fab97",
+    "lexicon_root_evidence.csv": "ed791eab5c912c4b1c10f683403ae2a73443fd3ac25b8c2fc45108f0221100c5",
+    "lexicon_root_senses.csv": "d59772f3575cfb1698199474f8b951d92bc565274a3c8b58608a235e56214d07",
+    "lexicon_roots.csv": "2670341c1fea9e812753f5276bd3e5863155e5e2242f3664e666b25994af1789",
+    "morpheme_compositions.csv": "3f16cf1ce9bbb33d4d1fa065f4f902b59c394ebf43e19f0f447366676d3fe40d",
+    "morphemes_atomic.csv": "e3d1b6448ed9ef28ef956469e2b4c70ca5697b4388ad369e9b56ed0a827fc4f9",
+    "root_senses.csv": "f3d5be4afd5db022024dc88caa81627fc21ccd63b32b55ca411a241966ca5351",
+    "source_assertions.csv": "cb5e7ff5b7de3d5700c251ebe7a46ed8d4b177fc6b356663c30a20a401fb41b6",
+    "source_sections.csv": "875f676f4f42e8b2c7911d4dbb4bc59fa9e4498dcada3c59fd490b2496af4511",
+    "source_table_cells.csv": "7c052d5e4df64ce4f4c674ea6fad375815f1f636686837bad78441cdec59d47b",
+    "source_tables.csv": "4cdfe12e5333a49175fc15e68257116e77a1510290e873afae50fa6f669179e5",
+    "sources/curriculum_manifest.csv": "91551b6970cf9e9cc5e6511f612caa4a68ca4c196cb67897b4eb68efe04629b5",
+    "sources/source_manifest.csv": "dfbf3f590c1dbbe4d47937aeb09535a8d889b0755855fdd2f441c8c66444b781"
+  },
+  "seed_provenance": {
+    "repository_commit": "00fc9651fbecdc1b95a05e70eb535d92d0cfeabc",
+    "selection": "unaltered canonical rows plus transitive foreign-key closure; support fixtures for admitted profiles"
+  },
+  "source_id": "FIXTURE-91-CH03-T035",
+  "version": "1.0.0"
+}

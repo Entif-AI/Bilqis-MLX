@@ -38,6 +38,12 @@ Do not interpret rows, suppress failed gates or repair CSVs inside this action.
 Surface both core and full-domain artifacts, their distinct digests, held ledger,
 coverage and constituent gate evidence. Failed conformance blocks graph eligibility.
 
+## Bounded workflow proof
+
+For an explicitly bounded clean-room proof, read [references/fixture.md](references/fixture.md).
+Invoke the repository fixture runner with the declared source/seed inputs. Its typed
+fixture receipt is separate from production frontier closure; never relabel it.
+
 ## Optional owned graph
 
 Only for explicit graph-write intent, read [references/graph.md](references/graph.md)

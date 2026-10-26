@@ -116,7 +116,11 @@ def _frontier(frontier_path: Path, input_root: Path, repo_root: Path) -> tuple[d
         raise ValueError("EXTRACTION_FRONTIER_MISSING_OR_UNSAFE")
     payload = frontier_path.read_bytes()
     frontier = json.loads(payload.decode("utf-8"))
-    if frontier.get("schema") != "bilqis.ithkuil.extraction-frontier/v1":
+    fixture = frontier.get("schema") == "bilqis.ithkuil.fixture-frontier/v1"
+    if fixture and (frontier.get("scope") != "fixture_only" or frontier.get("claims") != {
+            "production_admission": False, "full_new_ithkuil_coverage": False, "curriculum_admission": False}):
+        raise ValueError("FIXTURE_FRONTIER_CLAIMS_INVALID")
+    if not fixture and frontier.get("schema") != "bilqis.ithkuil.extraction-frontier/v1":
         raise ValueError("EXTRACTION_FRONTIER_SCHEMA_INVALID")
     claimed = frontier.get("receipt_sha256")
     without_digest = dict(frontier)
@@ -209,7 +213,8 @@ def _validate_source_result(result: dict | None, result_sha: str | None,
             or Path(expected_frontier.get("path", "")).expanduser().resolve() != frontier_path
             or expected_frontier.get("sha256") != frontier_sha):
         raise ValueError("STAGE_A_FRONTIER_IDENTITY_MISMATCH")
-    frontier_key = "_data/csv/sources/extraction_frontier.json"
+    frontier_key = ("_data/csv/sources/fixture_frontier.json" if result.get("fixture_only") is True
+                    else "_data/csv/sources/extraction_frontier.json")
     if published.get(frontier_key) != frontier_sha:
         raise ValueError("STAGE_A_FRONTIER_PUBLISHED_HASH_MISMATCH")
     return {"provided": True, "stage_a_success": True,
@@ -428,6 +433,7 @@ def run_semantic(repo_root: str | Path, python_executable: str, input_root: str 
             "orchestrator_sha256": _file_sha(Path(__file__)),
         }
         input_identity = {
+            "fixture_only": frontier.get("schema") == "bilqis.ithkuil.fixture-frontier/v1",
             "csv_root": str(csv_root), "csv_closure_sha256": closure_sha,
             "csv_file_sha256": csv_hashes,
             "csv_snapshot_file_sha256": snapshot_source_hashes,

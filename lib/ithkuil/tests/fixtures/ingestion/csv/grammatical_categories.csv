@@ -1,0 +1,10 @@
+category_id,family,category_code,category_name,description_summary,source_id,section_id,table_id,source_line,source_url,source_anchor
+CAT-0c6565cf7af6e1,affix_root,VXCS_AFFIX_ROOT,V_XC_S affix root,Degree of Consent,NI-WEB-CH04,NI-WEB-CH04:4.2.11,NI-WEB-CH04:T016,7359,https://www.ithkuil.net/newithkuil_04_case.htm,Sec4_2_11
+CAT-253cb3cf79c8a8,suppletive_adjunct_cp,SUPPLETIVE_ADJUNCT,Suppletive adjunct,Carrier Adjunct fixed C_P exponent,NI-WEB-CH08,NI-WEB-CH08:8.4.1,NI-WEB-CH08:T006,4180,https://www.ithkuil.net/newithkuil_08_adjuncts.htm,Sec8_4_1
+CAT-57aba109205752,case_accessor_vowel,CASE_ACCESSOR_VX,Case-derived V_X,V_X value corresponding to thematic case,NI-WEB-CH07,NI-WEB-CH07:7.6,NI-WEB-CH07:T011,5709,https://www.ithkuil.net/newithkuil_07_affixes.htm,Sec7_6
+CAT-65fe52b58b48cd,case_affix_root,INVERSE_CASE_ACCESSOR,Inverse Case Accessor,Consonantal increment used for inverse case accessor type 1,NI-WEB-CH07,NI-WEB-CH07:7.6.1,NI-WEB-CH07:T019,10450,https://www.ithkuil.net/newithkuil_07_affixes.htm,
+CAT-81593799d69b26,affix_vowel,VX_TYPE_3,V_X affix type 3,"V_X exponent for affix type 3, degree 1",NI-WEB-CH07,NI-WEB-CH07:7.0,NI-WEB-CH07:T003,3079,https://www.ithkuil.net/newithkuil_07_affixes.htm,
+CAT-822c81c7d38c75,case,CASE,Case,thematic case; semantic role CONTENT,NI-WEB-CH04,NI-WEB-CH04:4.2.1,NI-WEB-CH04:T003,4104,https://www.ithkuil.net/newithkuil_04_case.htm,
+CAT-ad369d4938bfd1,affix_vowel,VX_TYPE_1,V_X affix type 1,"V_X exponent for affix type 1, degree 1",NI-WEB-CH07,NI-WEB-CH07:7.0,NI-WEB-CH07:T003,3079,https://www.ithkuil.net/newithkuil_07_affixes.htm,
+CAT-cf4d696f0906d4,case_affix_root,CASE_STACKING,Case Stacking,Consonantal increment used for case stacking type 1,NI-WEB-CH07,NI-WEB-CH07:7.6.1,NI-WEB-CH07:T019,10450,https://www.ithkuil.net/newithkuil_07_affixes.htm,
+CAT-d0028c2524c753,case_affix_root,CASE_ACCESSOR,Case Accessor,Consonantal increment used for case accessor type 1,NI-WEB-CH07,NI-WEB-CH07:7.6.1,NI-WEB-CH07:T019,10450,https://www.ithkuil.net/newithkuil_07_affixes.htm,
