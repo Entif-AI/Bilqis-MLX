@@ -1640,6 +1640,1078 @@
         15
       ],
       "source_parent_sha256": "6fcac77b5c46749f4831f8e4d739689a781b49dfcf3bf04016ce0d450a187da6"
+    },
+    {
+      "key": "C01.1",
+      "number": 486,
+      "parent_key": "C01",
+      "parent_number": 347,
+      "deps": [],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C01.1 | Prepare exact replay plus SKOS integration baseline and custody",
+      "body_sha256": "8b149215f437def80e242fdd0c9f565cd8f083bb336262007035bc2f3b6f8fb6",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "c3913e355fe9a9aa6a8159d2f71b5317074eeec93c79befd6bb26efb5593e4a7"
+    },
+    {
+      "key": "C01.2",
+      "number": 487,
+      "parent_key": "C01",
+      "parent_number": 347,
+      "deps": [
+        "C01.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C01.2 | Establish pinned EGM lanes and one-writer source ownership",
+      "body_sha256": "c2ee927f7bd4ae70e501541e0660522c70339743559753c662e85fcb7eacb96b",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "c3913e355fe9a9aa6a8159d2f71b5317074eeec93c79befd6bb26efb5593e4a7"
+    },
+    {
+      "key": "C01.3",
+      "number": 488,
+      "parent_key": "C01",
+      "parent_number": 347,
+      "deps": [
+        "C01.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C01.3 | Validate dependencies and prepare bounded worker contracts",
+      "body_sha256": "06f2eed3879bc538f43c930684e6d950686ce55a5214b648219a959be42304bd",
+      "clause_span": [
+        8,
+        11
+      ],
+      "source_parent_sha256": "c3913e355fe9a9aa6a8159d2f71b5317074eeec93c79befd6bb26efb5593e4a7"
+    },
+    {
+      "key": "C01.4",
+      "number": 489,
+      "parent_key": "C01",
+      "parent_number": 347,
+      "deps": [
+        "C01.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C01.4 | Publish pinned architecture and lane integration handoff",
+      "body_sha256": "567828cf215377d13b81dcfc377f100679a66931a7998c1750d283251d5ab346",
+      "clause_span": [
+        11,
+        14
+      ],
+      "source_parent_sha256": "c3913e355fe9a9aa6a8159d2f71b5317074eeec93c79befd6bb26efb5593e4a7"
+    },
+    {
+      "key": "C02.1",
+      "number": 490,
+      "parent_key": "C02",
+      "parent_number": 371,
+      "deps": [
+        "A05",
+        "A06",
+        "B10",
+        "B11",
+        "C01",
+        "A13"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C02.1 | Adapt executable Factory rows into typed BAMF training inputs",
+      "body_sha256": "3eb677fcf17825e7d274117a3d8cd76376703884b76ff26c05812850621dcf32",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "c15634d64be5cc3b3e656ebb29a37644901c670a4352b9337ad4f3aed581bdc4"
+    },
+    {
+      "key": "C02.2",
+      "number": 491,
+      "parent_key": "C02",
+      "parent_number": 371,
+      "deps": [
+        "C02.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C02.2 | Compile source-visible targets and preserve legal modalities",
+      "body_sha256": "96b49fc9047da1e14e7c38f96cc019a905a22a1d1859194255db59e49383cc41",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "c15634d64be5cc3b3e656ebb29a37644901c670a4352b9337ad4f3aed581bdc4"
+    },
+    {
+      "key": "C02.3",
+      "number": 492,
+      "parent_key": "C02",
+      "parent_number": 371,
+      "deps": [
+        "C02.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C02.3 | Deliver strategy provenance and unified model backend batches",
+      "body_sha256": "ff7ef77f13ce96b2729dca4233e31d9e84ec6388a483a4292617795a4fe05829",
+      "clause_span": [
+        8,
+        11
+      ],
+      "source_parent_sha256": "c15634d64be5cc3b3e656ebb29a37644901c670a4352b9337ad4f3aed581bdc4"
+    },
+    {
+      "key": "C02.4",
+      "number": 493,
+      "parent_key": "C02",
+      "parent_number": 371,
+      "deps": [
+        "C02.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C02.4 | Emit teacher feedback and grade-neutral workload receipts",
+      "body_sha256": "7b10d51b90adfdbfe1dcf029b6ffd84df52c56e024838de462a645578d6b9d73",
+      "clause_span": [
+        11,
+        14
+      ],
+      "source_parent_sha256": "c15634d64be5cc3b3e656ebb29a37644901c670a4352b9337ad4f3aed581bdc4"
+    },
+    {
+      "key": "C03.1",
+      "number": 494,
+      "parent_key": "C03",
+      "parent_number": 376,
+      "deps": [
+        "C01",
+        "C02",
+        "B13"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C03.1 | Port replay-salvaged bounded teacher policy and prior evidence",
+      "body_sha256": "795356927dda7968a61b15cb9da81a4658619d40f119106bb360c3c49a33ecf6",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "1bc2326d1e1d8677d286e1d679be4e197c254aeb2c16611aeb7e45f70b840998"
+    },
+    {
+      "key": "C03.2",
+      "number": 495,
+      "parent_key": "C03",
+      "parent_number": 376,
+      "deps": [
+        "C03.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C03.2 | Preserve source-scored canaries and shadow-strategy semantics",
+      "body_sha256": "adac7bed6d7da81d3d81b57425dd71313a4127f838f0e718097d98ab3eff8a40",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "1bc2326d1e1d8677d286e1d679be4e197c254aeb2c16611aeb7e45f70b840998"
+    },
+    {
+      "key": "C03.3",
+      "number": 496,
+      "parent_key": "C03",
+      "parent_number": 376,
+      "deps": [
+        "C03.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C03.3 | Bind valid mentor advice and report real teacher health",
+      "body_sha256": "4deb52340ac2557ccd7ca39aa64560ad51a4e9eca70644c63dc245f729f83359",
+      "clause_span": [
+        8,
+        12
+      ],
+      "source_parent_sha256": "1bc2326d1e1d8677d286e1d679be4e197c254aeb2c16611aeb7e45f70b840998"
+    },
+    {
+      "key": "C03.4",
+      "number": 497,
+      "parent_key": "C03",
+      "parent_number": 376,
+      "deps": [
+        "C03.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C03.4 | Apply grade-neutral capability scheduling and accepted evidence",
+      "body_sha256": "e5ca967fef6732bbd0ed9ceccdb4ee8396b9605a2c6d8f4e0d7910cbf2f6d7a7",
+      "clause_span": [
+        12,
+        17
+      ],
+      "source_parent_sha256": "1bc2326d1e1d8677d286e1d679be4e197c254aeb2c16611aeb7e45f70b840998"
+    },
+    {
+      "key": "C04.1",
+      "number": 498,
+      "parent_key": "C04",
+      "parent_number": 373,
+      "deps": [
+        "A07",
+        "B11",
+        "C02"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C04.1 | Plan typed pure exact and neural-capability execution routes",
+      "body_sha256": "a0552789b4e06ef8ba4e20b0d897dba904e67816f21aa23d940a11dcb7028e45",
+      "clause_span": [
+        0,
+        3
+      ],
+      "source_parent_sha256": "fd4c3e6eee3d89acfdc878b3273e6d320229ab3d4b9e3f64a94093f59d9f63d1"
+    },
+    {
+      "key": "C04.2",
+      "number": 499,
+      "parent_key": "C04",
+      "parent_number": 373,
+      "deps": [
+        "C04.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C04.2 | Bound source-visible compositions and safe unresolved fallbacks",
+      "body_sha256": "a180f53181b37579bbd5aad2c189a08aca87eab487361e124a9994ac56a0a796",
+      "clause_span": [
+        3,
+        6
+      ],
+      "source_parent_sha256": "fd4c3e6eee3d89acfdc878b3273e6d320229ab3d4b9e3f64a94093f59d9f63d1"
+    },
+    {
+      "key": "C04.3",
+      "number": 500,
+      "parent_key": "C04",
+      "parent_number": 373,
+      "deps": [
+        "C04.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C04.3 | Record provenance-safe route costs and guard gold separation",
+      "body_sha256": "809476abd47b22df415692bdb9f4e72743644658c00b4b7a09380921b017a073",
+      "clause_span": [
+        6,
+        9
+      ],
+      "source_parent_sha256": "fd4c3e6eee3d89acfdc878b3273e6d320229ab3d4b9e3f64a94093f59d9f63d1"
+    },
+    {
+      "key": "C05.1",
+      "number": 501,
+      "parent_key": "C05",
+      "parent_number": 378,
+      "deps": [
+        "C03",
+        "C04",
+        "B12",
+        "B13"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C05.1 | Evaluate complete solver parent candidate and source-grounded gains",
+      "body_sha256": "9cebe8b765007a8c38c07c5ca8866ffef9d1f10f2c53f0bd47d2869cfca852fa",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "d75989b0c67de13eb52c13fb30ad6004c446beb69ce84f6fc46da11503abecbb"
+    },
+    {
+      "key": "C05.2",
+      "number": 502,
+      "parent_key": "C05",
+      "parent_number": 378,
+      "deps": [
+        "C05.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C05.2 | Preserve cumulative retention championships and carried mastery debt",
+      "body_sha256": "715a72f35baafbaacb285e2d0283894fd61f8a2a6c933b5c9302d575b39b3b60",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "d75989b0c67de13eb52c13fb30ad6004c446beb69ce84f6fc46da11503abecbb"
+    },
+    {
+      "key": "C05.3",
+      "number": 503,
+      "parent_key": "C05",
+      "parent_number": 378,
+      "deps": [
+        "C05.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C05.3 | Accept lawful promotion and evidence only through uniform grade policy",
+      "body_sha256": "9f3ffe2cdc2ab46df73d8bf88d74a7a27ea7ffd03c2837f9df4b550c56ea244c",
+      "clause_span": [
+        8,
+        13
+      ],
+      "source_parent_sha256": "d75989b0c67de13eb52c13fb30ad6004c446beb69ce84f6fc46da11503abecbb"
+    },
+    {
+      "key": "C06.1",
+      "number": 504,
+      "parent_key": "C06",
+      "parent_number": 379,
+      "deps": [
+        "A06",
+        "A09",
+        "B11",
+        "C03"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C06.1 | Derive typed Impact Exigency Novelty ordinal evidence",
+      "body_sha256": "588b93b1fc012c824bc5eb14a7cbd71cddfadd2923705d9d7d54e12cd75cc222",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "e24975df849e93df7d23fe9b9f881b5572f84ec673ed8f572169d45aa5fe9fd9"
+    },
+    {
+      "key": "C06.2",
+      "number": 505,
+      "parent_key": "C06",
+      "parent_number": 379,
+      "deps": [
+        "C06.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C06.2 | Apply grade-neutral dispatcher and bounded teacher priority",
+      "body_sha256": "5588d94efb0d336d32ca82375c9845702273e7f79c332516793fee9f85578ed4",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "e24975df849e93df7d23fe9b9f881b5572f84ec673ed8f572169d45aa5fe9fd9"
+    },
+    {
+      "key": "C06.3",
+      "number": 506,
+      "parent_key": "C06",
+      "parent_number": 379,
+      "deps": [
+        "C06.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C06.3 | Aggregate correction trends without claiming source gold",
+      "body_sha256": "d16afe295383c9d32b6b1e97f3fcc4d267bdca8eb6d382530adc160d152c6fbe",
+      "clause_span": [
+        8,
+        12
+      ],
+      "source_parent_sha256": "e24975df849e93df7d23fe9b9f881b5572f84ec673ed8f572169d45aa5fe9fd9"
+    },
+    {
+      "key": "C06.4",
+      "number": 507,
+      "parent_key": "C06",
+      "parent_number": 379,
+      "deps": [
+        "C06.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C06.4 | Publish causal priority and recovery-observability receipts",
+      "body_sha256": "37bda9daae4092c640416a7495e634683de9644646579c4b1d8c8cf235157944",
+      "clause_span": [
+        12,
+        15
+      ],
+      "source_parent_sha256": "e24975df849e93df7d23fe9b9f881b5572f84ec673ed8f572169d45aa5fe9fd9"
+    },
+    {
+      "key": "C07.1",
+      "number": 508,
+      "parent_key": "C07",
+      "parent_number": 380,
+      "deps": [
+        "A09",
+        "A12",
+        "C05",
+        "C06"
+      ],
+      "kind": "group",
+      "title": "BAMF-0.2 C07.1 | Own persisted authorization lease and atomic staged-admission interfaces",
+      "body_sha256": "a0a7778cace3ad39214e476c02fdc64ae3cc57c7cf34f1d1587c8fd21abde7d7",
+      "clause_span": [],
+      "source_parent_sha256": "c854845e6f9dfafae4a15970d23914e9278b5ecc171e2f37269445cf63414ba4"
+    },
+    {
+      "key": "C07.1a",
+      "number": 509,
+      "parent_key": "C07.1",
+      "parent_number": 508,
+      "deps": [
+        "A09",
+        "A12",
+        "C05",
+        "C06"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C07.1a | Define explicit persisted atlas-admission lease and source scope",
+      "body_sha256": "7ab1668ccb10cf693b47ab4c8eb65e16f6a71a4d33a1d459dfe925aa9c115341",
+      "clause_span": [
+        0,
+        3
+      ],
+      "source_parent_sha256": "c854845e6f9dfafae4a15970d23914e9278b5ecc171e2f37269445cf63414ba4"
+    },
+    {
+      "key": "C07.1b",
+      "number": 510,
+      "parent_key": "C07.1",
+      "parent_number": 508,
+      "deps": [
+        "C07.1a"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C07.1b | Stage and atomically adopt lawful Factory successors",
+      "body_sha256": "674e10bc86708b8bdbd7b998c835da8fa11f42d3c09b8eb43a8df71e6a088219",
+      "clause_span": [
+        3,
+        6
+      ],
+      "source_parent_sha256": "c854845e6f9dfafae4a15970d23914e9278b5ecc171e2f37269445cf63414ba4"
+    },
+    {
+      "key": "C07.2",
+      "number": 511,
+      "parent_key": "C07",
+      "parent_number": 380,
+      "deps": [
+        "C07.1b"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C07.2 | Handle out-of-scope releases debt and predecessor evidence",
+      "body_sha256": "49edbfae5a61a28ce484bd2405cc10bd3dc2b21551a3d846d46a600dc62a3364",
+      "clause_span": [
+        6,
+        9
+      ],
+      "source_parent_sha256": "c854845e6f9dfafae4a15970d23914e9278b5ecc171e2f37269445cf63414ba4"
+    },
+    {
+      "key": "C07.3",
+      "number": 512,
+      "parent_key": "C07",
+      "parent_number": 380,
+      "deps": [
+        "C07.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C07.3 | Implement recursive event-driven self-maintaining admission flywheel",
+      "body_sha256": "7beaf49681fd1860b6a2200b3fd5392745265dc48bf0216eb19db9eee01d1deb",
+      "clause_span": [
+        9,
+        11
+      ],
+      "source_parent_sha256": "c854845e6f9dfafae4a15970d23914e9278b5ecc171e2f37269445cf63414ba4"
+    },
+    {
+      "key": "C08.1",
+      "number": 513,
+      "parent_key": "C08",
+      "parent_number": 374,
+      "deps": [
+        "C02",
+        "B11"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C08.1 | Estimate topology-aware activations and deterministic microbatches",
+      "body_sha256": "ca519e04b706baf2f78b4137c9016d7813691667bd77a9dcbe97149395baef7f",
+      "clause_span": [
+        0,
+        3
+      ],
+      "source_parent_sha256": "75e35ff39b8c1e569567484b158481e2934875cccc4df03f1364174470831a4c"
+    },
+    {
+      "key": "C08.2",
+      "number": 514,
+      "parent_key": "C08",
+      "parent_number": 374,
+      "deps": [
+        "C08.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C08.2 | Retry bounded allocation without corrupting retained candidates",
+      "body_sha256": "2cb8de0f0568c0422bdad0a9fc4d047d58d2fdee3d5dc3eff7ce9668e4f93b87",
+      "clause_span": [
+        3,
+        5
+      ],
+      "source_parent_sha256": "75e35ff39b8c1e569567484b158481e2934875cccc4df03f1364174470831a4c"
+    },
+    {
+      "key": "C08.3",
+      "number": 515,
+      "parent_key": "C08",
+      "parent_number": 374,
+      "deps": [
+        "C08.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C08.3 | Preserve isolated CPU source workers and runtime resource floors",
+      "body_sha256": "8f3c420ef6cafcbcc5d62f7ae110428e6ea94f109b4b8c71d98d7a4815382b51",
+      "clause_span": [
+        5,
+        8
+      ],
+      "source_parent_sha256": "75e35ff39b8c1e569567484b158481e2934875cccc4df03f1364174470831a4c"
+    },
+    {
+      "key": "C09.1",
+      "number": 516,
+      "parent_key": "C09",
+      "parent_number": 377,
+      "deps": [
+        "A01",
+        "B07",
+        "B13",
+        "C04"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C09.1 | Index reverse dependencies of semantic and learned artifacts",
+      "body_sha256": "ae5e1ab27976bebd7e772d0f925c77d064ae323088b03702cfb5432295abd3c0",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "f4cea30c4f80682a50ad550e8d7b94fe23ca6039fa92220275ed212e480fc310"
+    },
+    {
+      "key": "C09.2",
+      "number": 517,
+      "parent_key": "C09",
+      "parent_number": 377,
+      "deps": [
+        "C09.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C09.2 | Requalify affected learning state without rewriting historical evidence",
+      "body_sha256": "abac8445ecd2ff4fb3ab242d11f32ba07daed6ca7e07e9af5ac4e1f2fd36cd10",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "f4cea30c4f80682a50ad550e8d7b94fe23ca6039fa92220275ed212e480fc310"
+    },
+    {
+      "key": "C09.3",
+      "number": 518,
+      "parent_key": "C09",
+      "parent_number": 377,
+      "deps": [
+        "C09.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C09.3 | Propagate corrections through local projections and typed operators",
+      "body_sha256": "d101bb81015d707ee7a20f479f6c6df12797dc690b03bd80a1b6fb6aa398af6c",
+      "clause_span": [
+        8,
+        12
+      ],
+      "source_parent_sha256": "f4cea30c4f80682a50ad550e8d7b94fe23ca6039fa92220275ed212e480fc310"
+    },
+    {
+      "key": "C10.1",
+      "number": 519,
+      "parent_key": "C10",
+      "parent_number": 383,
+      "deps": [
+        "B13",
+        "C07",
+        "C09"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C10.1 | Define immutable Rosetta event and namespace projections",
+      "body_sha256": "5d3932e1ee72b053af3587513214869cbc3f639fe489ddb054e8088516cf6793",
+      "clause_span": [
+        0,
+        3
+      ],
+      "source_parent_sha256": "601e7bd811028e75467cc80aa1a84e8f90b1e0f427a46fc0cdc050527f453302"
+    },
+    {
+      "key": "C10.2",
+      "number": 520,
+      "parent_key": "C10",
+      "parent_number": 383,
+      "deps": [
+        "C10.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C10.2 | Enqueue deduplicated source and learning events without trainer IO",
+      "body_sha256": "fb379939a2ff61d2e829bab65b14192676112842b86badf3e16eb6f60f9277e6",
+      "clause_span": [
+        3,
+        6
+      ],
+      "source_parent_sha256": "601e7bd811028e75467cc80aa1a84e8f90b1e0f427a46fc0cdc050527f453302"
+    },
+    {
+      "key": "C10.3",
+      "number": 521,
+      "parent_key": "C10",
+      "parent_number": 383,
+      "deps": [
+        "C10.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C10.3 | Rebuild staging graph projections and enforce public-private boundary",
+      "body_sha256": "1e328b0b81633c634f2357ae85bb3169f16ccc085283a3fc10fe8f8fa9bb38f1",
+      "clause_span": [
+        6,
+        8
+      ],
+      "source_parent_sha256": "601e7bd811028e75467cc80aa1a84e8f90b1e0f427a46fc0cdc050527f453302"
+    },
+    {
+      "key": "C11.1",
+      "number": 522,
+      "parent_key": "C11",
+      "parent_number": 384,
+      "deps": [
+        "C03",
+        "C05",
+        "C07",
+        "C08",
+        "C10"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C11.1 | Expose production BAMF create dry-run and resume CLI",
+      "body_sha256": "9b4fd4b43c11d91cab582e6f8dc5a554c74ef0750172d0adf1d5c54f904391b7",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "8431857031af7015e56eee99d353652e0588989831e8a6e5f9da5fea93dd30a5"
+    },
+    {
+      "key": "C11.2",
+      "number": 523,
+      "parent_key": "C11",
+      "parent_number": 384,
+      "deps": [
+        "C11.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C11.2 | Display truthful grade-neutral curriculum and learner cockpit",
+      "body_sha256": "db3d6745d9289f34c89778f7d9df415392390d2352c42dc11db8210f97a354f8",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "8431857031af7015e56eee99d353652e0588989831e8a6e5f9da5fea93dd30a5"
+    },
+    {
+      "key": "C11.3",
+      "number": 524,
+      "parent_key": "C11",
+      "parent_number": 384,
+      "deps": [
+        "C11.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C11.3 | Document real operator launch and resource custody commands",
+      "body_sha256": "b51a4e813903c8dc5cb4bd4e149de8a64da688d4031311e7a3ccfddbc86c1b3d",
+      "clause_span": [
+        8,
+        11
+      ],
+      "source_parent_sha256": "8431857031af7015e56eee99d353652e0588989831e8a6e5f9da5fea93dd30a5"
+    },
+    {
+      "key": "C12.1",
+      "number": 525,
+      "parent_key": "C12",
+      "parent_number": 381,
+      "deps": [
+        "A12",
+        "B13",
+        "C05",
+        "C09"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C12.1 | Package source-cleared reusable semantic and procedure manifests",
+      "body_sha256": "d8d5b411dccc008c2d27009677cfd0bae614add4243f067aedcd296fe7a7dedf",
+      "clause_span": [
+        0,
+        3
+      ],
+      "source_parent_sha256": "191f75ae06ec8d17e203dce66984061e7e2f665bc577b2f08f8bd16887681729"
+    },
+    {
+      "key": "C12.2",
+      "number": 526,
+      "parent_key": "C12",
+      "parent_number": 381,
+      "deps": [
+        "C12.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C12.2 | Bind compatible local plastic deltas and staged imports",
+      "body_sha256": "cb732978ee6f250067c3c946451817f0914cacbe99fd9865b61b6db96e8934da",
+      "clause_span": [
+        3,
+        6
+      ],
+      "source_parent_sha256": "191f75ae06ec8d17e203dce66984061e7e2f665bc577b2f08f8bd16887681729"
+    },
+    {
+      "key": "C12.3",
+      "number": 527,
+      "parent_key": "C12",
+      "parent_number": 381,
+      "deps": [
+        "C12.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C12.3 | Validate private-safe exports and local exchange compatibility",
+      "body_sha256": "d731bb721e14c338999d5d621e4c81bf068be7041aeca99a58aa60f2643b488b",
+      "clause_span": [
+        6,
+        9
+      ],
+      "source_parent_sha256": "191f75ae06ec8d17e203dce66984061e7e2f665bc577b2f08f8bd16887681729"
+    },
+    {
+      "key": "C13.1",
+      "number": 528,
+      "parent_key": "C13",
+      "parent_number": 385,
+      "deps": [
+        "A12",
+        "B13",
+        "C05",
+        "C07",
+        "C08",
+        "C09",
+        "C10"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C13.1 | Prepare disposable combined-system acceptance and source fixtures",
+      "body_sha256": "eb1e548fd0215849e895ab95f9129ddab3d807fd249be6642430e143db8c6667",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "d54318a5147c7839a4f052e4e05d534d51d6138904fb4cd7ae664e97cf9da6cb"
+    },
+    {
+      "key": "C13.2",
+      "number": 529,
+      "parent_key": "C13",
+      "parent_number": 385,
+      "deps": [
+        "C13.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C13.2 | Exercise native retained learning rollback and correction scenarios",
+      "body_sha256": "a8370c4a9a0cb94b74eb853701ab258b70a799042c95f241024c9c3ffa1f78f2",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "d54318a5147c7839a4f052e4e05d534d51d6138904fb4cd7ae664e97cf9da6cb"
+    },
+    {
+      "key": "C13.3",
+      "number": 530,
+      "parent_key": "C13",
+      "parent_number": 385,
+      "deps": [
+        "C13.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C13.3 | Collect existing guard receipts and responsible issue handoff",
+      "body_sha256": "84526be816a0b1c5a2cb80d2eb30b2fb674df8f036162bfc38fb2d2ad12d6cc5",
+      "clause_span": [
+        8,
+        11
+      ],
+      "source_parent_sha256": "d54318a5147c7839a4f052e4e05d534d51d6138904fb4cd7ae664e97cf9da6cb"
+    },
+    {
+      "key": "C14.1",
+      "number": 531,
+      "parent_key": "C14",
+      "parent_number": 386,
+      "deps": [
+        "A10",
+        "A11",
+        "C07",
+        "C11",
+        "C13"
+      ],
+      "kind": "group",
+      "title": "BAMF-0.2 C14.1 | Own the source-defined developmental program and interleaved scheduling policy",
+      "body_sha256": "dc8e85298b86d3c8f01ecbfc0d72887fe3c9250dd72d35eec832d27d0525e955",
+      "clause_span": [],
+      "source_parent_sha256": "e33f265eae49c53e5f051d93314e7f904b51d5f386895bd7a783eed7fc983faa"
+    },
+    {
+      "key": "C14.1a",
+      "number": 532,
+      "parent_key": "C14.1",
+      "parent_number": 531,
+      "deps": [
+        "A10",
+        "A11",
+        "C07",
+        "C11",
+        "C13"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C14.1a | Declare constructive L0 and released L1-L2 domain programs",
+      "body_sha256": "51b2f2517a6cacef826b49dd4dc71e7ae88297b0002581c33c610e87b601d85c",
+      "clause_span": [
+        0,
+        5
+      ],
+      "source_parent_sha256": "e33f265eae49c53e5f051d93314e7f904b51d5f386895bd7a783eed7fc983faa"
+    },
+    {
+      "key": "C14.1b",
+      "number": 533,
+      "parent_key": "C14.1",
+      "parent_number": 531,
+      "deps": [
+        "C14.1a"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C14.1b | Select lawful interleaved stages from admitted release and evidence",
+      "body_sha256": "e837cb02076c5ee4e9219f82eaa69caf395a4595416d96977d3effdbade34374",
+      "clause_span": [
+        5,
+        10
+      ],
+      "source_parent_sha256": "e33f265eae49c53e5f051d93314e7f904b51d5f386895bd7a783eed7fc983faa"
+    },
+    {
+      "key": "C14.2",
+      "number": 534,
+      "parent_key": "C14",
+      "parent_number": 386,
+      "deps": [
+        "C14.1b"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C14.2 | Deliver source coverage and resource-aware operator runbook",
+      "body_sha256": "630645b8565085dce65006dd557f227cf7742633c1b849fdcc9471c66f680b21",
+      "clause_span": [
+        10,
+        15
+      ],
+      "source_parent_sha256": "e33f265eae49c53e5f051d93314e7f904b51d5f386895bd7a783eed7fc983faa"
+    },
+    {
+      "key": "C14.3",
+      "number": 535,
+      "parent_key": "C14",
+      "parent_number": 386,
+      "deps": [
+        "C14.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C14.3 | Extend recursive grade-neutral domain rules and succession",
+      "body_sha256": "0c08ca0fd511036faf7838ad67a3e7c9216be76688784f0a4165e54f5baf5bf2",
+      "clause_span": [
+        15,
+        20
+      ],
+      "source_parent_sha256": "e33f265eae49c53e5f051d93314e7f904b51d5f386895bd7a783eed7fc983faa"
+    },
+    {
+      "key": "C15.1",
+      "number": 536,
+      "parent_key": "C15",
+      "parent_number": 387,
+      "deps": [
+        "B14",
+        "C11",
+        "C12",
+        "C13",
+        "C14",
+        "C16"
+      ],
+      "kind": "group",
+      "title": "BAMF-0.2 C15.1 | Own three-lane integration and immutable delivery-manifest preparation",
+      "body_sha256": "507551080a30644390e29f470a2812a9dc7a012b519fe26d50175d8a80d2830e",
+      "clause_span": [],
+      "source_parent_sha256": "e9f779a289f1853fad58a02db4fbd7c2f454d88e60adbf7f062a1f3d16c8b3f5"
+    },
+    {
+      "key": "C15.1a",
+      "number": 537,
+      "parent_key": "C15.1",
+      "parent_number": 536,
+      "deps": [
+        "B14",
+        "C11",
+        "C12",
+        "C13",
+        "C14",
+        "C16"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C15.1a | Integrate completed lane receipts with fresh EGM ownership",
+      "body_sha256": "c046b1ae66a648b1e069bae3d0ebeed2c0bd4bbdb3986dcbff1ccc666ce5427e",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "e9f779a289f1853fad58a02db4fbd7c2f454d88e60adbf7f062a1f3d16c8b3f5"
+    },
+    {
+      "key": "C15.1b",
+      "number": 538,
+      "parent_key": "C15.1",
+      "parent_number": 536,
+      "deps": [
+        "C15.1a"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C15.1b | Publish traceable delivery manifest and roadmap projections",
+      "body_sha256": "8073ffffbf904bb633d2a9e77583c0ff6046b8408a8be2e645f29bdf8095114c",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "e9f779a289f1853fad58a02db4fbd7c2f454d88e60adbf7f062a1f3d16c8b3f5"
+    },
+    {
+      "key": "C15.2",
+      "number": 539,
+      "parent_key": "C15",
+      "parent_number": 387,
+      "deps": [
+        "C15.1b"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C15.2 | Keep software delivery distinct from full school mastery claims",
+      "body_sha256": "7298bcc763d4d92d63a7072adf1072e8cfe13a7850adf00e5635c05f97612aa0",
+      "clause_span": [
+        8,
+        11
+      ],
+      "source_parent_sha256": "e9f779a289f1853fad58a02db4fbd7c2f454d88e60adbf7f062a1f3d16c8b3f5"
+    },
+    {
+      "key": "C15.3",
+      "number": 540,
+      "parent_key": "C15",
+      "parent_number": 387,
+      "deps": [
+        "C15.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C15.3 | Reconcile immutable issue closure receipts and full Factory coverage",
+      "body_sha256": "a857da95cf7c36210ac860764d21fa7bb5ea8a4c8b34380f0d47ef41ecdf6a68",
+      "clause_span": [
+        11,
+        14
+      ],
+      "source_parent_sha256": "e9f779a289f1853fad58a02db4fbd7c2f454d88e60adbf7f062a1f3d16c8b3f5"
+    },
+    {
+      "key": "C16.1",
+      "number": 541,
+      "parent_key": "C16",
+      "parent_number": 382,
+      "deps": [
+        "B13",
+        "C02",
+        "C03",
+        "C05",
+        "C08"
+      ],
+      "kind": "group",
+      "title": "BAMF-0.2 C16.1 | Own persistent student create and correctly bound initial generation",
+      "body_sha256": "a995c47b9adaaf8afcc2897fa85070c502458c142f9bdff2b53badf801802b6f",
+      "clause_span": [],
+      "source_parent_sha256": "8c6d5b26d6c02d87cc3d67e5a7d76108bd808adee853b63867542ed4b6718cfc"
+    },
+    {
+      "key": "C16.1a",
+      "number": 542,
+      "parent_key": "C16.1",
+      "parent_number": 541,
+      "deps": [
+        "B13",
+        "C02",
+        "C03",
+        "C05",
+        "C08"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C16.1a | Implement persistent BAMF create dry-run and resume entrypoints",
+      "body_sha256": "f4e1e837644ab750f2ba390503ae21abefea9bb69ff077cf281e7b09d84bbcd1",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "8c6d5b26d6c02d87cc3d67e5a7d76108bd808adee853b63867542ed4b6718cfc"
+    },
+    {
+      "key": "C16.1b",
+      "number": 543,
+      "parent_key": "C16.1",
+      "parent_number": 541,
+      "deps": [
+        "C16.1a"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C16.1b | Bind fresh student topology teacher optimizer and admitted foundations",
+      "body_sha256": "562a519151e1f8f64ab1bbdde9fba9541517877603ed23e5106c10e7a3d3462e",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "8c6d5b26d6c02d87cc3d67e5a7d76108bd808adee853b63867542ed4b6718cfc"
+    },
+    {
+      "key": "C16.2",
+      "number": 544,
+      "parent_key": "C16",
+      "parent_number": 382,
+      "deps": [
+        "C16.1b"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C16.2 | Expose earliest lawful learning readiness without optional blockers",
+      "body_sha256": "6cb3b0a1d1fcddee6affbcf050198ed5ba8429f2f8b0b4d80d25a68716d66c93",
+      "clause_span": [
+        8,
+        12
+      ],
+      "source_parent_sha256": "8c6d5b26d6c02d87cc3d67e5a7d76108bd808adee853b63867542ed4b6718cfc"
+    },
+    {
+      "key": "C16.3",
+      "number": 545,
+      "parent_key": "C16",
+      "parent_number": 382,
+      "deps": [
+        "C16.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 C16.3 | Handoff the exact durable human-started student lineage",
+      "body_sha256": "750e364c6ff22c12635b7e49675dbf526dce6a0efa2ddf58bb5c985e917c43a2",
+      "clause_span": [
+        12,
+        17
+      ],
+      "source_parent_sha256": "8c6d5b26d6c02d87cc3d67e5a7d76108bd808adee853b63867542ed4b6718cfc"
     }
   ]
 }

@@ -2,6 +2,9 @@
 
 Continue the BAMF-0.2 program in Entif-AI/Bilqis-MLX. Root #341; lane #344; start #347 (C01).
 
+<!-- BAMF02:LANE-C-DEEP-ENTRYPOINT -->
+**Current low-burn launch:** start with the deepest ready child [C01.1 #486](https://github.com/Entif-AI/Bilqis-MLX/issues/486), not the original broad [C01 #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347). Follow `children/registry.json` for child prerequisites and native parents. Original parent remains the complete integration/acceptance contract; all technical requirements and existing EGM guardrails are unchanged. No live training starts from issue planning.
+
 ## Bootstrap once
 
 Read root README.md, AGENTS.md, the root successor amendment and this lane's live issue. Read `docs/architecture/BAMF_0_2.md` for shared contract orientation once. Confirm the actual branch and worktree. Lane C first publishes the exact combined baseline from replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23` and SKOS `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8`. Branch `codex/bamf02-c-runtime` from that baseline in a dedicated worktree. Before it is published, prepare source adapters, isolated modules and literal fixtures against the pinned inputs without mutating shared runtime owners.

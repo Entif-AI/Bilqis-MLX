@@ -8,6 +8,13 @@ The 43 original owner issues retain their **entire** engineering specifications 
 
 The first full hierarchy is [A09 #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360), including its A09.1 grandchildren. See [child index](children/README.md) and [machine-readable tree](children/index.json). `workstack.json` retains all 43 original owners and records the direct children of a decomposed owner; the approved Blueprint and SPEC remain the normative design.
 
+<!-- BAMF02:ALL-LANES-GROOMED-20261027 -->
+## Current native issue-tree routing | 27 October 2026
+
+43 original complete owner contracts across three lanes; 157 native recursively linked child nodes (A 44, B 53, C 60). Assign an agent **only to a deepest ready implementable child**, never to an intermediate group or an original integration parent. If a child remains too large, recursively subdivide it without dropping source clauses, technical details or original acceptance. See [full native child registry](children/README.md), [machine-readable tree](children/registry.json) and updated [complete parent book](ISSUE_BOOK.md).
+
+First ready child candidates: A [A01.1 #396](https://github.com/Entif-AI/Bilqis-MLX/issues/396), B [B01.1a #434](https://github.com/Entif-AI/Bilqis-MLX/issues/434), C [C01.1 #486](https://github.com/Entif-AI/Bilqis-MLX/issues/486). Readiness still depends on actual upstream branch/receipt state and existing one-writer rules.
+
 ## Parallel start
 
 - Lane A: [Semantics and curricula](https://github.com/Entif-AI/Bilqis-MLX/issues/342), start [A01 #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345). [Launch instructions](EXECUTION_LANE_A.md).

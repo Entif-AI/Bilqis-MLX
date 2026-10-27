@@ -949,7 +949,14 @@
         "projection"
       ],
       "number": 347,
-      "body_sha256": "f16028ca5f7cfd45d7a5e6ac1019d303bb13b05d8baf6bee2ba5df48692d972c"
+      "body_sha256": "c3913e355fe9a9aa6a8159d2f71b5317074eeec93c79befd6bb26efb5593e4a7",
+      "children": [
+        "C01.1",
+        "C01.2",
+        "C01.3",
+        "C01.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C02",
@@ -983,7 +990,14 @@
         "update_semantics"
       ],
       "number": 371,
-      "body_sha256": "63bf3212f9e4880b4246984372f448a635d65adef9fc3f0c7dbb38bb1bd34e66"
+      "body_sha256": "c15634d64be5cc3b3e656ebb29a37644901c670a4352b9337ad4f3aed581bdc4",
+      "children": [
+        "C02.1",
+        "C02.2",
+        "C02.3",
+        "C02.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C03",
@@ -1015,7 +1029,14 @@
         "plastic"
       ],
       "number": 376,
-      "body_sha256": "fede8a05210b5330774da266b520310ac6dad320f1ba12a9b2892b7f9a2ea48d"
+      "body_sha256": "1bc2326d1e1d8677d286e1d679be4e197c254aeb2c16611aeb7e45f70b840998",
+      "children": [
+        "C03.1",
+        "C03.2",
+        "C03.3",
+        "C03.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C04",
@@ -1045,7 +1066,13 @@
         "learning_witness"
       ],
       "number": 373,
-      "body_sha256": "8c3ade25a3662236d7538b592d8c213ac4e48c7a267507e31ac65c590eb987af"
+      "body_sha256": "fd4c3e6eee3d89acfdc878b3273e6d320229ab3d4b9e3f64a94093f59d9f63d1",
+      "children": [
+        "C04.1",
+        "C04.2",
+        "C04.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C05",
@@ -1076,7 +1103,13 @@
         "learning_witness"
       ],
       "number": 378,
-      "body_sha256": "012bcb98ba08754565cee68686b3ad064df89b57aeaf50d0937108dec9f12825"
+      "body_sha256": "d75989b0c67de13eb52c13fb30ad6004c446beb69ce84f6fc46da11503abecbb",
+      "children": [
+        "C05.1",
+        "C05.2",
+        "C05.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C06",
@@ -1103,7 +1136,14 @@
         "projection"
       ],
       "number": 379,
-      "body_sha256": "c34baccca1a58adb1f6b320380ce71d74ccade6ea33de60624e3f55a9570fb79"
+      "body_sha256": "e24975df849e93df7d23fe9b9f881b5572f84ec673ed8f572169d45aa5fe9fd9",
+      "children": [
+        "C06.1",
+        "C06.2",
+        "C06.3",
+        "C06.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C07",
@@ -1136,7 +1176,13 @@
         "coverage_completion"
       ],
       "number": 380,
-      "body_sha256": "e67586c6290c9023ae110d5bef08389c0d2ecbe29c6f69e3a1bb15918b71be9a"
+      "body_sha256": "c854845e6f9dfafae4a15970d23914e9278b5ecc171e2f37269445cf63414ba4",
+      "children": [
+        "C07.1",
+        "C07.2",
+        "C07.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C08",
@@ -1163,7 +1209,13 @@
         "learning"
       ],
       "number": 374,
-      "body_sha256": "6e75d6b9b743184d9ec2e826e4a47faa9ef59ee83c28d351dc496b4d251e86dc"
+      "body_sha256": "75e35ff39b8c1e569567484b158481e2934875cccc4df03f1364174470831a4c",
+      "children": [
+        "C08.1",
+        "C08.2",
+        "C08.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C09",
@@ -1193,7 +1245,13 @@
         "custody"
       ],
       "number": 377,
-      "body_sha256": "87231397c82f91c35ced5f697ee5da622d7a74175b12ecd4d7a063d58d3c3a53"
+      "body_sha256": "f4cea30c4f80682a50ad550e8d7b94fe23ca6039fa92220275ed212e480fc310",
+      "children": [
+        "C09.1",
+        "C09.2",
+        "C09.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C10",
@@ -1225,7 +1283,13 @@
         "custody"
       ],
       "number": 383,
-      "body_sha256": "e13a6c5a1500f61174634ebc545b7b6f8a03cb3fa8e76aa692e0a6a07b004266"
+      "body_sha256": "601e7bd811028e75467cc80aa1a84e8f90b1e0f427a46fc0cdc050527f453302",
+      "children": [
+        "C10.1",
+        "C10.2",
+        "C10.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C11",
@@ -1259,7 +1323,13 @@
         "coverage_completion"
       ],
       "number": 384,
-      "body_sha256": "9b0b604de58bae9b1042e8d785d0681ece7a6c4487312b6896d19d8624b2e791"
+      "body_sha256": "8431857031af7015e56eee99d353652e0588989831e8a6e5f9da5fea93dd30a5",
+      "children": [
+        "C11.1",
+        "C11.2",
+        "C11.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C12",
@@ -1288,7 +1358,13 @@
         "package_adoption"
       ],
       "number": 381,
-      "body_sha256": "bae4032ee5f479c88a664af8c35fe232fbad31ecdbe69f8decad1f59b0d79a2f"
+      "body_sha256": "191f75ae06ec8d17e203dce66984061e7e2f665bc577b2f08f8bd16887681729",
+      "children": [
+        "C12.1",
+        "C12.2",
+        "C12.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C13",
@@ -1327,7 +1403,13 @@
         "learning_witness"
       ],
       "number": 385,
-      "body_sha256": "41a3c1dcea410222edafbbfa586256c4c89b148b36ba090b7c77eb6307a2c54f"
+      "body_sha256": "d54318a5147c7839a4f052e4e05d534d51d6138904fb4cd7ae664e97cf9da6cb",
+      "children": [
+        "C13.1",
+        "C13.2",
+        "C13.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C14",
@@ -1362,7 +1444,13 @@
         "bravo_fixture"
       ],
       "number": 386,
-      "body_sha256": "bfff4f3fd658e4b6c09b0596af2f5e3137726cfc4e5be5e57e834cce194663b8"
+      "body_sha256": "e33f265eae49c53e5f051d93314e7f904b51d5f386895bd7a783eed7fc983faa",
+      "children": [
+        "C14.1",
+        "C14.2",
+        "C14.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C15",
@@ -1396,7 +1484,13 @@
         "coverage_completion"
       ],
       "number": 387,
-      "body_sha256": "fa8ee18a21319542ddab55bce4cac4399e243061957e3ff0353b377763edec52"
+      "body_sha256": "e9f779a289f1853fad58a02db4fbd7c2f454d88e60adbf7f062a1f3d16c8b3f5",
+      "children": [
+        "C15.1",
+        "C15.2",
+        "C15.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C16",
@@ -1430,7 +1524,13 @@
         "learning_witness"
       ],
       "number": 382,
-      "body_sha256": "737f9147c452fea077f165b3aad5913b8c8434b3ac8762b4b577f9a924668517"
+      "body_sha256": "8c6d5b26d6c02d87cc3d67e5a7d76108bd808adee853b63867542ed4b6718cfc",
+      "children": [
+        "C16.1",
+        "C16.2",
+        "C16.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     }
   ]
 }

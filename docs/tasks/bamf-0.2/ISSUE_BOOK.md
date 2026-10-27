@@ -1,7 +1,7 @@
 # BAMF-0.2 complete implementation issue book
 
 <!-- BAMF02:LIVE-DECOMPOSITION-DIRECTIVE -->
-> Implementation routing update (2026-10-27): This assembled issue book may lag live issue amendments. The exact live mirrors are under `issues/`; A09 has a recursive child tree under `children/` and `children/index.json`. Preserve the complete original parent contract and assign implementation to its deepest ready child.
+> Active implementation starts at the deepest dependency-ready native GitHub child, not the original broad owner. All 43 original specifications, engineering constraints and acceptance contracts remain intact. The exact complete child tree is `children/registry.json`. No predecessor BAV crosswalk, live trainer experiment or new research gate is part of this issue-grooming pass.
 
 <!-- BAMF02:A01 -->
 # A01 | Compile the pinned SKOS release into the BAMF semantic authority snapshot
@@ -10,6 +10,17 @@
 
 ## Outcome
 Compile the pinned SKOS release into the BAMF semantic authority snapshot. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A01 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A01.1 #396](https://github.com/Entif-AI/Bilqis-MLX/issues/396) | Bind the pinned corpus and source-qualified semantic identities | bounded implementable leaf; parent A01.
+- [A01.2 #397](https://github.com/Entif-AI/Bilqis-MLX/issues/397) | Build deterministic ABI and immutable semantic-release files | bounded implementable leaf; parent A01.
+- [A01.3 #398](https://github.com/Entif-AI/Bilqis-MLX/issues/398) | Expose source-hold census and the database-free atlas reader | bounded implementable leaf; parent A01.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** None within BAMF; start against the pinned source contracts.
@@ -36,7 +47,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Read the canonical release produced by #291 and verify its source, coverage and RDF digests. Emit stable concept records, admitted types/relations, morphology/sense distinctions, source loci, held mappings and canonical ordering. Preserve root versus Stem x Specification sense identities; emit allomorph/form variants as realizations, not duplicate meanings. Retain the existing formal Boolean/numeric source owners with explicit domain bindings. Derive ABI entries in the prior accepted ordering followed by canonical new-ID ordering. Persist atlas.json, concepts.jsonl, relations.jsonl, held.jsonl and a content-addressed manifest using the repository canonical serializer. Count source rows, RDF terms, semantic concepts, active ABI indices and trainable capabilities separately. Attach an explicit reason to every corpus item that is not yet a teaching candidate. Complete #292's projection contract through this leaf rather than implementing a second registry. The graph materialization receipt may witness the same digest, but canonical RDF/IR bytes supply the build. Expose a pure read API so neural workers consume a frozen snapshot without a database. Predecessor trace: BAV-REQ-001/002; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Read the canonical release produced by #291 and verify its source, coverage and RDF digests. Emit stable concept records, admitted types/relations, morphology/sense distinctions, source loci, held mappings and canonical ordering. Preserve root versus Stem x Specification sense identities; emit allomorph/form variants as realizations, not duplicate meanings. Retain the existing formal Boolean/numeric source owners with explicit domain bindings. Derive ABI entries in the prior accepted ordering followed by canonical new-ID ordering. Persist atlas.json, concepts.jsonl, relations.jsonl, held.jsonl and a content-addressed manifest using the repository canonical serializer. Count source rows, RDF terms, semantic concepts, active ABI indices and trainable capabilities separately. Attach an explicit reason to every corpus item that is not yet a teaching candidate. Complete #292's projection contract through this leaf rather than implementing a second registry. The graph materialization receipt may witness the same digest, but canonical RDF/IR bytes supply the build. Expose a pure read API so neural workers consume a frozen snapshot without a database. Predecessor trace: BAMF-REQ-001/002; the implementation follows the explicit BAMF-0.2 contract repeated here.
 
 ## Relevant shared contracts
 
@@ -57,6 +68,11 @@ Two clean builds from the same pinned release have identical digests. A literal 
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_projection.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+<!-- BAMF02:PROOF-REPAIR-345-20261027 -->
+**Adversarial admission request (BAMF-REQ-001/002; F17):** Feed a held SKOS source identity with a plausible public-language gloss, similar admitted concept and explicitly requested learner activation. The ABI compiler and Factory gate must refuse emission/admission, preserve the source-owned hold reason and leave prior active-bank/index/lesson manifests identical. Reordering labels or supplying a convincing paraphrase cannot change the hold; only the source-authorized release/admission transition can. This is an active request test, not merely passive inspection of held.jsonl.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/A01/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -67,6 +83,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A01/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+The new BAMF-0.2 trainer treats **every admitted grade by the same generic Factory/teacher scheduling, retention and evaluation policy**. Grade labels describe curriculum, not priority or scheduling authority. Earlier letter-specific learning schedules are historical only and SHALL NOT be imported. Keep source-gold, prerequisites, independent retention and operator-start authority intact.
+**Canonical proof references:** BAMF-REQ-001, BAMF-REQ-002; fixtures: F17. Apply the detailed acceptance in the BAMF-0.2-SPEC-001 and current Blueprint; publication of this issue does not declassify private implementation evidence. The current model/operator identifiers are BAMF-0.2 and BAMF_*; do not revive legacy BAV names.
+
+---
+
 <!-- BAMF02:A02 -->
 # A02 | Implement append-only semantic banks and active-vocabulary allocation
 
@@ -74,6 +97,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Implement append-only semantic banks and active-vocabulary allocation. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A02 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A02.1 #399](https://github.com/Entif-AI/Bilqis-MLX/issues/399) | Allocate stable semantic banks and activate admitted identity rows | bounded implementable leaf; parent A02.
+- [A02.2 #400](https://github.com/Entif-AI/Bilqis-MLX/issues/400) | Stage capacity expansion with unchanged old tensors and moments | bounded implementable leaf; parent A02.
+- [A02.3 #401](https://github.com/Entif-AI/Bilqis-MLX/issues/401) | Mirror allocation lineage and publish bank resource estimates | bounded implementable leaf; parent A02.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345), [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346), [A06: #352](https://github.com/Entif-AI/Bilqis-MLX/issues/352)
@@ -97,7 +131,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Represent global ABI indices as bank\*8192+offset and keep a stable full-ID map. Start one bank; append another only when qualified admissions exceed existing capacity. Activation within a reserved bank initializes the row from its source features and creates zero moments/count0; inactive rows are not trained through tied softmax. Expansion binds previous generation, allocation-source digest and admitted IDs. Prepare tensors, active mask, output-domain map and registry-mirror delta together, then pass them to the existing admission transaction. Preserve all old row bytes and optimizer state. When count exceeds65535, uint32 extended indices continue without an address-codec redesign; validate uint32 bounds. Full output logits are the ordered concatenation of active bank projections, never a modulo alias. Mirror admitted token descriptions and allocation lineage into the existing Registry evidence/export contract; a spreadsheet remains a navigable mirror, not an independent semantic registry. Provide a resource estimate before materializing new banks and stage until it fits. Predecessor trace: BAV-REQ-011; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Represent global ABI indices as bank\*8192+offset and keep a stable full-ID map. Start one bank; append another only when qualified admissions exceed existing capacity. Activation within a reserved bank initializes the row from its source features and creates zero moments/count0; inactive rows are not trained through tied softmax. Expansion binds previous generation, allocation-source digest and admitted IDs. Prepare tensors, active mask, output-domain map and registry-mirror delta together, then pass them to the existing admission transaction. Preserve all old row bytes and optimizer state. When count exceeds65535, uint32 extended indices continue without an address-codec redesign; validate uint32 bounds. Full output logits are the ordered concatenation of active bank projections, never a modulo alias. Mirror admitted token descriptions and allocation lineage into the existing Registry evidence/export contract; a spreadsheet remains a navigable mirror, not an independent semantic registry. Provide a resource estimate before materializing new banks and stage until it fits. Predecessor trace: BAMF-REQ-011; the implementation follows the explicit BAMF-0.2 contract repeated here.
 
 ## Relevant shared contracts
 
@@ -128,6 +162,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A02/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-011; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A03 -->
 # A03 | Bind typed AST semantics to role-addressable frame contracts
 
@@ -135,6 +176,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Bind typed AST semantics to role-addressable frame contracts. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A03 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A03.1 #402](https://github.com/Entif-AI/Bilqis-MLX/issues/402) | Declare canonical typed AST and occurrence-aware frame records | bounded implementable leaf; parent A03.
+- [A03.2 #403](https://github.com/Entif-AI/Bilqis-MLX/issues/403) | Validate frame bindings and preserve atomic fallback | bounded implementable leaf; parent A03.
+- [A03.3 #404](https://github.com/Entif-AI/Bilqis-MLX/issues/404) | Ship approved formal and source frame adapters with typed errors | bounded implementable leaf; parent A03.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345)
@@ -159,7 +211,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Define frozen typed records with schema versions and canonical serialization. Reuse existing AST constructors and approved operator meanings. Introduce FrameInstance occurrence IDs derived from source-instance identity plus structural path, separate from canonical content digest. Use (role_id,occurrence_index) keys and explicit parent/child edges. Specify NONE, UNKNOWN and unresolved alternative bindings through declared typed states, not absent dictionary keys. Validate role counts, allowed types, scope and declared causal prefix. Preserve atomic fallback for AST constructs lacking an approved frame schema. Create released adapters for current A/B/C source ASTs without branching the trainer by grade. Bind each new schema to actual source rules; an executable formal operator may have a formal-domain schema when a New Ithkuil realization is not yet admitted. Return typed errors through the existing error catalog with source span and failed role. Predecessor trace: BAV-REQ-003/006; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Define frozen typed records with schema versions and canonical serialization. Reuse existing AST constructors and approved operator meanings. Introduce FrameInstance occurrence IDs derived from source-instance identity plus structural path, separate from canonical content digest. Use (role_id,occurrence_index) keys and explicit parent/child edges. Specify NONE, UNKNOWN and unresolved alternative bindings through declared typed states, not absent dictionary keys. Validate role counts, allowed types, scope and declared causal prefix. Preserve atomic fallback for AST constructs lacking an approved frame schema. Create released adapters for current A/B/C source ASTs without branching the trainer by grade. Bind each new schema to actual source rules; an executable formal operator may have a formal-domain schema when a New Ithkuil realization is not yet admitted. Return typed errors through the existing error catalog with source span and failed role. Predecessor trace: BAMF-REQ-003/006; the implementation follows the explicit BAMF-0.2 contract repeated here.
 
 ## Relevant shared contracts
 
@@ -187,6 +239,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A03/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-003; fixtures: F01, F02, F03. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A04 -->
 # A04 | Build the reversible four-slot frame codec and extended fallback
 
@@ -194,6 +253,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Build the reversible four-slot frame codec and extended fallback. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A04 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A04.1 #405](https://github.com/Entif-AI/Bilqis-MLX/issues/405) | Encode and decode exact compact-frame v1 u64 records | bounded implementable leaf; parent A04.
+- [A04.2 #406](https://github.com/Entif-AI/Bilqis-MLX/issues/406) | Implement canonical extended-frame fallback and shared accessors | bounded implementable leaf; parent A04.
+- [A04.3 #407](https://github.com/Entif-AI/Bilqis-MLX/issues/407) | Preserve ordered constituent metadata and codec identity | bounded implementable leaf; parent A04.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349)
@@ -216,7 +286,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Implement exact shifts/masks from the frame contract using integer operations. Validate ranges before packing, reserve version1 and record complete presence1111. Keep schema tag lookup release-local and content-addressed. Serialize the u64 in little-endian8 bytes with an explicit codec identifier; JSON may expose its decimal string to avoid floating-point loss. Encode all other frames in extended canonical slot arrays with uint32 indices, child references and occurrence metadata. Select fallback by a typed disposition, never by catching arbitrary exceptions. Use the same exact role-index accessor for both representations so downstream neural code is codec-neutral. Include original constituent order and full source metadata in the sidecar. Empty/zero indices are distinct. This is a compact representation, not a separate semantic identity. Predecessor trace: BAV-REQ-004; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Implement exact shifts/masks from the frame contract using integer operations. Validate ranges before packing, reserve version1 and record complete presence1111. Keep schema tag lookup release-local and content-addressed. Serialize the u64 in little-endian8 bytes with an explicit codec identifier; JSON may expose its decimal string to avoid floating-point loss. Encode all other frames in extended canonical slot arrays with uint32 indices, child references and occurrence metadata. Select fallback by a typed disposition, never by catching arbitrary exceptions. Use the same exact role-index accessor for both representations so downstream neural code is codec-neutral. Include original constituent order and full source metadata in the sidecar. Empty/zero indices are distinct. This is a compact representation, not a separate semantic identity. Predecessor trace: BAMF-REQ-004; the implementation follows the explicit BAMF-0.2 contract repeated here.
 
 ## Relevant shared contracts
 
@@ -231,6 +301,11 @@ Round-trip[0,1,8190,8191], all-zero and all-max words against literal expected i
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_frame_codec.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+<!-- BAMF02:PROOF-REPAIR-351-20261027 -->
+**Codec-semantic adversaries (BAMF-REQ-003/004; F02/F03/F04):** Pack/serialize/decode four same-type admitted fillers in four distinct legal role slots: all four canonical IDs and role/occurrence bindings must survive with their source sidecar, not collapse by semantic type. Feed two occupants of one declared singular role without a lawful collective: hold with typed schema/cardinality failure, never overwrite. An in-range but inactive or held semantic index must be rejected before readout. Deliberately reuse a release-local schema tag for a different full schema or decode under wrong release: validate exact sidecar/schema identity and fail or use a lawful extended representation; no truncated 17th tag or silent reinterpretation. Include valid zero-index/presence contrast.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/A04/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -241,6 +316,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A04/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-003, BAMF-REQ-004; fixtures: F02, F03, F04. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A05 -->
 # A05 | Compile causally valid mixed frame and atomic sequences
 
@@ -248,6 +330,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Compile causally valid mixed frame and atomic sequences. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A05 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A05.1 #408](https://github.com/Entif-AI/Bilqis-MLX/issues/408) | Compile causal incremental partial-frame sequences | bounded implementable leaf; parent A05.
+- [A05.2 #409](https://github.com/Entif-AI/Bilqis-MLX/issues/409) | Produce source-position maps and isolated prefix-boundary receipts | bounded implementable leaf; parent A05.
+- [A05.3 #410](https://github.com/Entif-AI/Bilqis-MLX/issues/410) | Separate hidden answers and enforce bounded packed sequence length | bounded implementable leaf; parent A05.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349), [A04: #351](https://github.com/Entif-AI/Bilqis-MLX/issues/351), [A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354)
@@ -270,7 +363,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Implement a streaming partial-frame builder. Close and pack a frame only when its final required constituent is visible. Represent incomplete frames by the visible atoms or explicit partial node; never rewrite an already-consumed prefix position in an incremental cache. For append streaming, emit a closure reference at the closing position; full-prefix compilation may compact the complete frame only in a newly keyed cache epoch. Emit position-to-source maps, source-to-position maps, prefix ends, scope boundaries, padding mask, exact role access and expansion handles. Include policy version in compiler digest. Keep batch rows independent. Compile answers only as target tensors outside the model input view. Bound neural length to1024 and report overflow before padding/allocation; split lawful source sequences at existing boundaries rather than silently truncate. Return actual atoms/frame, fallback shares and sidecar bytes. Predecessor trace: BAV-REQ-005; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Implement a streaming partial-frame builder. Close and pack a frame only when its final required constituent is visible. Represent incomplete frames by the visible atoms or explicit partial node; never rewrite an already-consumed prefix position in an incremental cache. For append streaming, emit a closure reference at the closing position; full-prefix compilation may compact the complete frame only in a newly keyed cache epoch. Emit position-to-source maps, source-to-position maps, prefix ends, scope boundaries, padding mask, exact role access and expansion handles. Include policy version in compiler digest. Keep batch rows independent. Compile answers only as target tensors outside the model input view. Bound neural length to1024 and report overflow before padding/allocation; split lawful source sequences at existing boundaries rather than silently truncate. Return actual atoms/frame, fallback shares and sidecar bytes. Predecessor trace: BAMF-REQ-005; the implementation follows the explicit BAMF-0.2 contract repeated here.
 
 ## Relevant shared contracts
 
@@ -290,9 +383,14 @@ ContextEligibility binds principal/tenant, purpose, source/evidence regime, sema
 Refinement is a prediction-local computation. Let p be the query prediction boundary and V(p) the ordered frames with causal_prefix_end<=p that passed context eligibility. Compute Fp=len(V(p)) and quota=min(32,ceil(Fp/8)) using only V(p). Rank requested-role matches, then source-visible salience, then stable source position within V(p). Refinement results are keyed by (input-generation,p,query-ID,frame-occurrence) and never overwrite a shared backbone hidden state used by an earlier prediction. Future frames, labels, row padding and future query requests do not enter selection. Parallel teacher-forced predictions each use their own p-local view. Derive recurrence choice from SHA256(run-seed,visit-ID,p,query-ID,frame-occurrence), never total batch length. Pass budget is 0/1/2 for the selected frame. Increasing a row from8 to9 complete frames can change the later query's quota but cannot change the earlier query at fixed p. The single backbone produces immutable causal hidden states; the small local refiner operates on prediction-specific copies.
 
 ## Acceptance and bounded proof
-Compile every prefix of a literal four-member frame and show unavailable members never appear in embeddings or handles. Compare logits for identical prefixes with different future suffixes using B11 integration. Mixed atomic/nested/packed sequences reconstruct the same visible AST. Streamed closure changes cache identity rather than mutating old keys. A two-row batch with unequal lengths has no cross-row content or padding visibility.
+Compile every prefix of a literal four-member frame and show unavailable members never appear in embeddings or handles. At A05 completion, compare literal compiled source-visible prefix tensors, handles, masks, sidecars and cache identities with changed future suffixes; they must be identical at the fixed prediction prefix. Final neural-logit equivalence is a separate downstream F05 witness owned by B11 #369 and integration C13 #385; A05 may not claim that proof before B11 exists. Mixed atomic/nested/packed sequences reconstruct the same visible AST. Streamed closure changes cache identity rather than mutating old keys. A two-row batch with unequal lengths has no cross-row content or padding visibility.
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_frame_compiler.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
+
+
+
+<!-- BAMF02:PROOF-REPAIR-357-20261027 -->
+**Staged F05/F16 proof ownership (BAMF-REQ-005/015):** At A05 completion test every partial prefix without a neural model and assert no future member, concealed teacher target, gold-only role hint or changed post-prefix source material enters its input/sidecar/cache keys. A simulated change only to gold labels must not change serialized input. Record status `COMPILER_PREFIX_PASS; NEURAL_F05_PENDING_B11` rather than claiming complete F05. Require downstream B11 actual 12-layer logits invariance for full-prefix vs appended future and reject stale decode history before C15 grants full F05 pass.
 
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/A05/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
@@ -304,6 +402,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A05/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-005; fixtures: F05, F16. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A06 -->
 # A06 | Compile source-grounded factorized features once per release
 
@@ -311,6 +416,16 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Compile source-grounded factorized features once per release. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A06 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A06.1 #411](https://github.com/Entif-AI/Bilqis-MLX/issues/411) | Build deterministic source-factor and graph-feature projection | bounded implementable leaf; parent A06.
+- [A06.2 #412](https://github.com/Entif-AI/Bilqis-MLX/issues/412) | Publish immutable local AtlasFeatures and independent reference vectors | bounded implementable leaf; parent A06.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345), [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349)
@@ -365,6 +480,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A06/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-002; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A07 -->
 # A07 | Register exact semantic and deterministic cognitive operators
 
@@ -372,6 +494,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Register exact semantic and deterministic cognitive operators. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A07 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A07.1 #413](https://github.com/Entif-AI/Bilqis-MLX/issues/413) | Register typed source-qualified deterministic operators | bounded implementable leaf; parent A07.
+- [A07.2 #414](https://github.com/Entif-AI/Bilqis-MLX/issues/414) | Separate solver applicability from independent evaluation gold | bounded implementable leaf; parent A07.
+- [A07.3 #415](https://github.com/Entif-AI/Bilqis-MLX/issues/415) | Emit bounded execution receipts and typed compositional DAG nodes | bounded implementable leaf; parent A07.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349)
@@ -427,6 +560,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A07/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-013; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A08 -->
 # A08 | Generate capability and lesson programs across the full SKOS inventory
 
@@ -434,6 +574,19 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Generate capability and lesson programs across the full SKOS inventory. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A08 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A08.1 #416](https://github.com/Entif-AI/Bilqis-MLX/issues/416) | Own the source-family coverage census and constructive checker contract | intermediate group (assign grandchildren); parent A08.
+- [A08.1a #417](https://github.com/Entif-AI/Bilqis-MLX/issues/417) | Inventory source-qualified semantic families and constructor coverage | bounded implementable leaf; parent A08.1.
+- [A08.1b #418](https://github.com/Entif-AI/Bilqis-MLX/issues/418) | Compile constructive lessons and independent typed checkers | bounded implementable leaf; parent A08.1.
+- [A08.2 #419](https://github.com/Entif-AI/Bilqis-MLX/issues/419) | Bind stable capability identities to existing Factory releases | bounded implementable leaf; parent A08.
+- [A08.3 #420](https://github.com/Entif-AI/Bilqis-MLX/issues/420) | Register Boolean integer and qualified world-model rules without grade branches | bounded implementable leaf; parent A08.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345), [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349), [A06: #352](https://github.com/Entif-AI/Bilqis-MLX/issues/352), [A07: #353](https://github.com/Entif-AI/Bilqis-MLX/issues/353)
@@ -460,6 +613,10 @@ Use immutable typed records and the existing ErrorBus/catalog for boundary failu
 ## Implementation prescription
 Build reusable family adapters for positive identity, typed role binding, source-attested relation recognition, morphology composition/decomposition, numeric/Boolean composition, scope/modality/time distinctions and released transformations. Enumerate every semantic concept in the pinned atlas and map it to required source-qualified construction families or a source-qualification hold; missing implementation remains IMPLEMENTATION_UNCOVERED debt. For each family emit positive constructive teaching, source-valid contrasts, canonical answer modality, independent checker reference, prerequisite closure and variation axes. Definitions and source examples supply input facts; do not invent causal laws from English glosses. Qualified source facts can be looked up directly; harder tasks combine/rebind them. Store capability ID as a digest-stable semantic/operator signature, not root ordinal or grade letter. Use existing FactoryRelease/ExecutableFactoryRelease and factory verifier.1-9 capability deltas are data. Additional root breadth reuses the same engine rather than creating one issue or trainer per root.
 
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** Compile coverage and lawful construction/assessment programs from a versioned registry keyed by source-qualified semantic family, typed operator signature and answer modality, never a grade letter. The Boolean rule set covers truth tables, polarity and legal connective patterns; integer rules cover number/successor/arithmetic prerequisites, range and overflow; an admitted world-model family must use source-attested actor, time, state and causal relations. All three feed the identical FactoryRelease and teacher interfaces. Registering a family adds data/adapters and independent oracles, not new scheduler branches.
+
 ## Relevant shared contracts
 
 ### Curriculum
@@ -469,7 +626,7 @@ One generative Factory compiles the eligible SKOS atlas and existing formal doma
 Expose solve(input_frame, task_contract, generation, budget)->TypedAnswer plus bounded execution receipt. Eligible runtime mechanisms are exact source-visible role/identity lookup, explicitly registered deterministic functions, qualified cached transforms and neural composition/prediction. Build a typed dependency DAG; run independent pure CPU operations in ready sets and serialize MLX operations. A deterministic operator declares semantic input/output signatures, applicability, version, effect=PURE, and independent literal fixtures. The evaluator's answer labels, scoring oracle and held evaluation records are not runtime inputs. Exact operators may compute answers from the task inputs, including arithmetic. Score the complete solver identically for parent and candidate. Skip optimizer work on already-perfect capabilities; use failure-targeted lessons to improve routing, binding, composition and remaining errors. Neural-only scores are optional debugging views, never a delivery gate.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Route construction
 TaskGoal/v1=(goal_id,output_signature,source_visible_bindings,expression_or_holes,allowed_operator_ids,budget). The source adapter lowers a typed task AST into an explicit acyclic expression/DAG; it does not receive evaluation labels. Node=(node_id,operator_id_or_hole,ordered_operand_refs,expected_output_signature,scope). Operand refs are input(frameOccurrence,role,occurrence), literal(typed source value), or result(previous_node_id). Maximum64 nodes, maximum depth8. Validate all refs, types, scope and cycles first. Exact bound nodes execute in topological order; memoization keys include full immediate dependencies. A hole declares candidate operators, candidate visible operand refs and constraints, never the correct candidate. Fill holes once through the B10 typed decoder from the single backbone call: emit operator choice and operand references as dependent typed decisions. If a hole has exactly one legal candidate after independent type/applicability checks, bind it deterministically; if multiple remain, neural selection is permitted and evaluated by downstream outcome. Each pure operator call consumes1 operation unit, including a failed applicability call; memoized hits consume a counted lookup but0 compute-operation units. Maximum64 output decisions bounds neural selections. No automatic speculative tree enumeration is added. Unknown/invalid binding returns UNRESOLVED with the unsatisfied signature; a qualified alternative may be used only within the same declared budget. Output receipts retain selected bindings and executed nodes. A legal source problem represented as ADD(MUL(2,3),4) deterministically executes two nodes and returns10. For a context needing learned participant binding, the typed DAG contains a hole followed by an exact function. The solver learns to connect existing operations without giving up its exact operations.
@@ -485,6 +642,14 @@ Build the actual full-atlas coverage ledger, with eligible/held counts reconcili
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/factory/tests/test_skos_curriculum.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+<!-- BAMF02:PROOF-REPAIR-358-20261027 -->
+**No false learning-credit gate (BAMF-REQ-015/024):** Produce a complete eligible-corpus lesson program and a missing-constructor coverage ledger without executing a neural step; this may pass A08 software coverage but MUST remain `LEARNING_UNVERIFIED` for BAMF-REQ-024. No generated lesson count, all-source coverage number, or synthetic checker correctness can be substituted for real learner-retained fresh transfer. The C05/C13/C14 independent evidence controls the later learning disposition.
+
+
+**Functional Factory acceptance (ADR-BAMF02-004):** A rule registry switches Boolean, integer and a source-qualified world-model fixture without inspecting grade IDs. The same family instantiated under another grade produces equivalent verified constructions and coverage; unsupported/held families remain visible as implementation/source debt rather than disappearing from the coverage census.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/A08/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -495,6 +660,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A08/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-015 for source-census/program preparation; BAMF-REQ-024 is DOWNSTREAM ONLY and is NOT proven by A08's curriculum-generation completion (actual true-learning owners C05 #378, C13 #385 and C14 #386); fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A09 -->
 # A09 | Generate a resumable prerequisite-aware curriculum frontier
 
@@ -502,6 +674,19 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Generate a resumable prerequisite-aware curriculum frontier. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:A09-LOSSLESS-DECOMPOSITION-20261027 -->
+## Recursive implementation ownership (lossless, 27 October 2026)
+
+**Do not assign A09 as one monolithic coding job.** Its complete original requirements, implementation prescription, shared contracts and acceptance remain in force below, unchanged. Implement them through these bounded native GitHub sub-issues, assigning the deepest ready child to each worker. A09 closes only after every descendant and every original A09 requirement is met. Smaller work packets never weaken engineering scope.
+
+- [A09.1 #389](https://github.com/Entif-AI/Bilqis-MLX/issues/389) is an intermediary group, further split into [A09.1a #390](https://github.com/Entif-AI/Bilqis-MLX/issues/390) immutable snapshot and [A09.1b #391](https://github.com/Entif-AI/Bilqis-MLX/issues/391) pure qualified-event reconciliation.
+- [A09.2 #392](https://github.com/Entif-AI/Bilqis-MLX/issues/392): typed prerequisite closure and distinct ready/held/uncovered disposition.
+- [A09.3 #393](https://github.com/Entif-AI/Bilqis-MLX/issues/393): deterministic bounded constituent-first curriculum proposals.
+- [A09.4 #394](https://github.com/Entif-AI/Bilqis-MLX/issues/394): content-addressed cursor, replay, correction epochs and typed fixed point.
+- [A09.5 #395](https://github.com/Entif-AI/Bilqis-MLX/issues/395): integration with the existing Factory frontier, staging interfaces and original A09 acceptance.
+
+Every child defines its interfaces, dependencies and owned acceptance. Child turn-in closes only that child, not an ancestor. The current planning pass does not run the trainer, add scientific experiments or revisit deliberately cloned predecessor BAV requirements.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358)
@@ -529,6 +714,10 @@ Use immutable typed records and the existing ErrorBus/catalog for boundary failu
 ## Implementation prescription
 Project A08 candidates into the existing CandidateFrontierRelease and CandidateBinding shapes. Resolve prerequisite closure using taught/current capability evidence. Rank eligible deltas first by smallest prerequisite slope, then released downstream unlock count, then oldest unvisited ready item and stable ID. Expose salience features to the existing teacher; priority never alters semantic gold. Resume from content-addressed coverage ledger and cursor; no root can vanish merely because a newer release arrived. Batch up to16 new IDs and1-9 capabilities; recursively schedule constituent introductions before composites. Emit COMPLETE_ATLAS_COVERAGE only when every frozen source-eligible concept has its requested task coverage and implementation-uncovered debt is zero; HELD entries remain enumerated with source/remediation owners. Propose and stage successors continuously. Runtime adoption remains C07's explicit lease/admission boundary.
 
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** Make next_atlas_delta a thin adapter over a deterministic pure planner: plan(snapshot, domain_rule_registry) -> (frontier, coverage_delta, bounded_reasons). Snapshot binds immutable source/release, prerequisite DAG, active/staged/held/uncovered coverage, admitted capability evidence, rule-policy version, rights and resource limits. Recursively close constituent requirements, emit the smallest legal next delta, then stop at a fixed point or a typed actionable hold. Never infer prerequisite edges, graduation authority or priority from the grade label; never mutate a run, teacher, or admission lease inside the planner. Reconcile new accepted events into a new snapshot and replan, preserving old epochs and decisions.
+
 ## Relevant shared contracts
 
 ### Curriculum
@@ -548,6 +737,9 @@ Three successive generated deltas advance beyond A/B/C without grade-specific co
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/factory/tests/test_atlas_frontier.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+**Functional Factory acceptance (ADR-BAMF02-004):** Literal fixtures prove equal source/policy/evidence snapshots yield byte-identical plans, grade-label permutation preserves proposal identity modulo labels, true cross-domain dependency blocks while unrelated ready work proceeds, changed evidence/correction creates only justified replan deltas, repeated replay is idempotent, cycles and all-HELD corpora terminate with typed status rather than spinning, and successive bounded constituent releases reach closure.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/A09/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -558,6 +750,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A09/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-015; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A10 -->
 # A10 | Compile BRAVO evidence strata into Factory learning releases
 
@@ -565,6 +764,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Compile BRAVO evidence strata into Factory learning releases. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A10 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A10.1 #421](https://github.com/Entif-AI/Bilqis-MLX/issues/421) | Bind qualified BRAVO source strata and provenance-safe records | bounded implementable leaf; parent A10.
+- [A10.2 #422](https://github.com/Entif-AI/Bilqis-MLX/issues/422) | Compile typed reconstructions and held-out family-separated lessons | bounded implementable leaf; parent A10.
+- [A10.3 #423](https://github.com/Entif-AI/Bilqis-MLX/issues/423) | Deliver literal public BRAVO fixtures with lawful cohort and rights lineage | bounded implementable leaf; parent A10.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358)
@@ -588,7 +798,12 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Consume source-span-linked interpreted frames from the qualified VieDay stratum release. Begin with category/value/unit summaries, then time logs, structured reflections and narrative subsets as each is available. Use PUBLIC_FIXTURE analogues for public tests; PRIVATE_REAL intake uses #327's private boundary. Bind source digest, interpretation revision, concept/role IDs, prerequisite capabilities, positive/negative families, checker, task modality and rights to each lesson. Preserve blank/zero, reported/computed values, planned/occurred status, negation, temporal disagreements and alternate interpretations. Train typed reconstruction and a small declared English template codec initially; free-form narrative stays separate until its qualified semantics exist. Split by source episode/template lineage for fresh challenges, while ordinary post-exam errors remain teachable under the existing classroom policy. No all-strata gate: one qualified subset can feed an ordinary FactoryRelease. Commit the PUBLIC_FIXTURE source, parsed record, expected Frame/lesson and exact checker result from Bravo fixture.
+Consume source-span-linked interpreted frames from the qualified VieDay stratum release. Begin with category/value/unit summaries, then time logs, structured reflections and narrative subsets as each is available. Use PUBLIC_FIXTURE analogues for public tests; PRIVATE_REAL intake uses #327's private boundary. Bind source digest, interpretation revision, concept/role IDs, prerequisite capabilities, positive/negative families, checker, task modality and rights to each lesson. Preserve blank/zero, reported/computed values, planned/occurred status, negation, temporal disagreements and alternate interpretations. Train typed reconstruction and a small declared English template codec initially; free-form narrative stays separate until its qualified semantics exist. Split by immutable original source-family/episode identity for fresh challenges before grouping within a family by template lineage, while ordinary post-exam errors remain teachable under the existing classroom policy. No all-strata gate: one qualified subset can feed an ordinary FactoryRelease. Commit the PUBLIC_FIXTURE source, parsed record, expected Frame/lesson and exact checker result from Bravo fixture.
+
+
+
+<!-- BAMF02:CONFORMANCE-SOURCE-FAMILY-INDEPENDENCE -->
+**Witness independence contract:** A corpus adapter must preserve the common episode, source-family and derivation-chain identity of every paraphrase, template instantiation, translated summary and derived answer. Split by source family before forming any train/validation/holdout cohort and record the independent external witness that validates each gold target. Renaming, paraphrasing, reformatting or duplicating the same underlying source cannot create additional heldout evidence. A family's rights and interpretation revisions propagate to every derivative.
 
 ## Relevant shared contracts
 
@@ -609,6 +824,15 @@ One public structured summary becomes a source-linked typed lesson and independe
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/source_adapters/tests/test_evidence_frames.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required adversarial witness-split proof (BAMF-REQ-021; F10):** Create multiple rendered/paraphrased copies of one source episode and try to place siblings on both sides of a claimed independent training/holdout split. The adapter must reject the independent-witness claim, preserve one family identity and keep its derived observations correlated. Contrast a genuinely separately sourced episode, which may enter the heldout cohort if its rights and gold are independently qualified. Include the split-family receipt in the handoff to C05.
+
+
+
+<!-- BAMF02:PROOF-REPAIR-361-20261027 -->
+**Missing-report and private-lifecycle adversaries (BAMF-REQ-019/021; F06):** A planned public synthetic 09:30 event whose expected report never arrives produces an explicit missing-report/verification-needed state, NOT a confirmed event non-occurrence and NOT a source-gold negative. Only an independent authorized observation may conclude non-occurrence. For PRIVATE_REAL intake, exercise source→interpretation→lesson→trainer preparation with synthetic protected sentinels and scan public worktree/CI/issue/export outputs: only permitted opaque handles/digests may cross the boundary; blocking at the final export stage alone is a FAIL. Keep the original family ID stable through variant templates, translations and splits.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/A10/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -619,6 +843,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A10/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-006, BAMF-REQ-019, BAMF-REQ-021; fixtures: F06, F10. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A11 -->
 # A11 | Generate lawful ambiguity and structural contrast lessons
 
@@ -626,6 +857,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Generate lawful ambiguity and structural contrast lessons. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A11 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A11.1 #424](https://github.com/Entif-AI/Bilqis-MLX/issues/424) | Implement checker-grounded structural lesson transformations | bounded implementable leaf; parent A11.
+- [A11.2 #425](https://github.com/Entif-AI/Bilqis-MLX/issues/425) | Produce bounded ambiguity alternatives and deterministic noise lineage | bounded implementable leaf; parent A11.
+- [A11.3 #426](https://github.com/Entif-AI/Bilqis-MLX/issues/426) | Connect source-valid contrasts to the existing Factory teacher | bounded implementable leaf; parent A11.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349), [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358)
@@ -676,6 +918,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A11/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-003; fixtures: F01. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A12 -->
 # A12 | Complete the single-authority semantic cutover and release receipt
 
@@ -683,6 +932,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Complete the single-authority semantic cutover and release receipt. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A12 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A12.1 #427](https://github.com/Entif-AI/Bilqis-MLX/issues/427) | Audit current consumers against one admitted semantic source authority | bounded implementable leaf; parent A12.
+- [A12.2 #428](https://github.com/Entif-AI/Bilqis-MLX/issues/428) | Cut over current aliases and enforce semantic import boundaries | bounded implementable leaf; parent A12.
+- [A12.3 #429](https://github.com/Entif-AI/Bilqis-MLX/issues/429) | Prove data-only successor admission and source-held exclusion | bounded implementable leaf; parent A12.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348), [A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357), [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358), [A09: #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360), [A11: #362](https://github.com/Entif-AI/Bilqis-MLX/issues/362)
@@ -708,6 +968,11 @@ Use immutable typed records and the existing ErrorBus/catalog for boundary failu
 ## Implementation prescription
 Trace every current semantic input to one explicit admitted source release or separately declared formal domain. Verify ABI, AST, frames, lesson manifests, graph projection and registry mirror share that binding. Classify old catalogs as historical readers or generated derivatives; remove current-path overrides and duplicate aliases once callers migrate. Extend the existing semantic-boundary guard with declared imports and ownership rules, not a regex ban on every historical filename. Produce a compact source-to-consumer table and a rebuild receipt. Close #295 only after its existing acceptance is met on the exact combined branch; this leaf's completion alone must identify any remaining existing-owner work. Keep the source-grade implementation generic and add one Grade-D-equivalent data-only successor witness.
 
+
+
+<!-- BAMF02:CONFORMANCE-HELD-GLOSS-GATE -->
+**Held-identity exactness:** The release cutover consumes explicit source-qualified semantic admission receipts, never lexical resemblance, English gloss plausibility, equivalent labels or a graph edge as admission authority. A held SKOS identity is observable in coverage diagnostics with its cause but remains absent from active ABI, trainable model rows and qualified lesson constructors until its owning release gate succeeds.
+
 ## Relevant shared contracts
 
 ### Identity
@@ -730,6 +995,10 @@ Regenerate release/ABI/AST/lessons twice and compare hashes. A stale shadow cata
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_release_audit.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required held-gloss adversary (BAMF-REQ-001/002; F17):** Offer a plausible English gloss and an existing similar admitted concept for a held/unmapped source ID. Assert that semantic-ABI activation, factor features, Factory lesson emission and teacher-target construction all refuse it with a source-owned held reason. Reorder or rename labels and verify no change to the held disposition. Only an independently approved release/admission can change this result.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/A12/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -740,6 +1009,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A12/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-001; fixtures: F17. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:A13 -->
 # A13 | Enforce combined context eligibility before neural or motif access
 
@@ -747,6 +1023,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Enforce combined context eligibility before neural or motif access. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:A13 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [A13.1 #430](https://github.com/Entif-AI/Bilqis-MLX/issues/430) | Define and validate eligible source-bound context and join records | bounded implementable leaf; parent A13.
+- [A13.2 #431](https://github.com/Entif-AI/Bilqis-MLX/issues/431) | Expose immutable context projections to solver attention and caches | bounded implementable leaf; parent A13.
+- [A13.3 #432](https://github.com/Entif-AI/Bilqis-MLX/issues/432) | Propagate contextual invalidation while retaining local public fixtures | bounded implementable leaf; parent A13.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349)
@@ -769,7 +1056,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Implement versioned ContextEligibility and EligibleContext records using the shared eligibility contract. Validate all member handles and pair/set joins before A05 packing and B08 motif reads. Produce stable reason codes for release mismatch, revoked source, temporal mismatch, forbidden join, unresolved purpose and invisible prefix. Retain blocked evidence only in the authorized source store; return source handles and bounded diagnostics to the caller. Emit a digest over the approved membership and relevant policy/time/rights projections. Runtime exact operators, neural attention and cached transforms consume only this approved view. Provide PUBLIC_FORMAL envelopes for existing source-grounded A/B/C constructors. Public tests use independent synthetic actors/scopes. Changes to eligibility generate C09 invalidations; a live external policy service is not required for each gradient step because the visit pins one approved frontier. Predecessor trace: BAV-REQ-010/F09; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Implement versioned ContextEligibility and EligibleContext records using the shared eligibility contract. Validate all member handles and pair/set joins before A05 packing and B08 motif reads. Produce stable reason codes for release mismatch, revoked source, temporal mismatch, forbidden join, unresolved purpose and invisible prefix. Retain blocked evidence only in the authorized source store; return source handles and bounded diagnostics to the caller. Emit a digest over the approved membership and relevant policy/time/rights projections. Runtime exact operators, neural attention and cached transforms consume only this approved view. Provide PUBLIC_FORMAL envelopes for existing source-grounded A/B/C constructors. Public tests use independent synthetic actors/scopes. Changes to eligibility generate C09 invalidations; a live external policy service is not required for each gradient step because the visit pins one approved frontier. Predecessor trace: BAMF-REQ-010/F09; the implementation follows the explicit BAMF-0.2 contract repeated here.
 
 ## Relevant shared contracts
 
@@ -800,6 +1087,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/A13/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-010, BAMF-REQ-018; fixtures: F08, F09. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B01 -->
 # B01 | Declare BAMF v2 topology and generate the complete parameter manifest
 
@@ -807,6 +1101,20 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Declare BAMF v2 topology and generate the complete parameter manifest. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B01 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B01.1 #433](https://github.com/Entif-AI/Bilqis-MLX/issues/433) | Own versioned topology identity and the frozen parameter registry | intermediate group (assign grandchildren); parent B01.
+- [B01.1a #434](https://github.com/Entif-AI/Bilqis-MLX/issues/434) | Freeze v2 architecture identity and explicit legacy-reader isolation | bounded implementable leaf; parent B01.1.
+- [B01.1b #435](https://github.com/Entif-AI/Bilqis-MLX/issues/435) | Declare the complete typed FP32 parameter and tensor registry | bounded implementable leaf; parent B01.1.
+- [B01.2 #436](https://github.com/Entif-AI/Bilqis-MLX/issues/436) | Reconcile parameter counts adapters and frame feature capacities | bounded implementable leaf; parent B01.
+- [B01.3 #437](https://github.com/Entif-AI/Bilqis-MLX/issues/437) | Separate generation bank extents and validated topology config | bounded implementable leaf; parent B01.
+- [B01.4 #438](https://github.com/Entif-AI/Bilqis-MLX/issues/438) | Reject v1 neural-state promotion across v2 generation boundaries | bounded implementable leaf; parent B01.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** None within BAMF; start against the pinned source contracts.
@@ -832,7 +1140,12 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Implement explicit v1/v2 deserialization and a model factory dispatch keyed by architecture ID bamf-atlas-v2. Freeze dense geometry, modules, initializer seeds and shape policy. Declare every weight/norm/gate/head/convolution/adapter tensor centrally, with stable names, FP32 type and FAST/SLOW group. Generate initialization, shape validation, parameter count, optimizer tree and serialization order from this declaration. Preserve v1 reader behavior. Initial dense matrices count67,239,936, semantic table6,291,456 and motif table2,097,152; auxiliary tensors must be itemized and final total printed, not forced to a marketing estimate. Three rank8 adapters add36,864 matrix parameters. Frame feature and type tables use their declared separate capacities. Version embedding-bank extents as generation state, while dense geometry remains immutable. Store source/release and teacher identities separately from topology. Make config self-describing and validate contradictory channels/heads, zero sizes and unsupported dtypes before allocation. Predecessor trace: BAV-REQ-007; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Implement explicit v1/v2 deserialization and a model factory dispatch keyed by architecture ID bamf-atlas-v2. Freeze dense geometry, modules, initializer seeds and shape policy. Declare every weight/norm/gate/head/convolution/adapter tensor centrally, with stable names, FP32 type and FAST/SLOW group. Generate initialization, shape validation, parameter count, optimizer tree and serialization order from this declaration. Preserve v1 reader behavior. Initial dense matrices count67,239,936, semantic table6,291,456 and motif table2,097,152; auxiliary tensors must be itemized and final total printed, not forced to a marketing estimate. Three rank8 adapters add36,864 matrix parameters. Frame feature and type tables use their declared separate capacities. Version embedding-bank extents as generation state, while dense geometry remains immutable. Store source/release and teacher identities separately from topology. Make config self-describing and validate contradictory channels/heads, zero sizes and unsupported dtypes before allocation. Predecessor trace: BAMF-REQ-007; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+
+
+<!-- BAMF02:CONFORMANCE-V1-RESUME-NEGATIVE -->
+**Hard v1/v2 isolation:** Existing six-layer/v1 checkpoint metadata and optimizer trees are historical read-only evidence. The BAMF-0.2 factory must not reinterpret those arrays, positional embeddings, absolute-position contracts, shape-compatible subsets or AdamW moments as a valid 12-layer v2 generation, even if names or dimensions overlap. Import only source-qualified behavioral teaching artifacts through the independently approved teacher interface, never numeric student-state transfer.
 
 ## Relevant shared contracts
 
@@ -918,6 +1231,15 @@ Exact generated shapes agree with an instantiated tree and serialized tree. Seed
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_model_topology_v2.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required topology-adversary proof (BAMF-REQ-007/023; F14):** Attempt to load a real frozen v1 absolute-position/six-layer checkpoint as BAMF-0.2 using the v2 selector. Require explicit typed incompatibility BEFORE any v2 parameter/optimizer allocation or mutation, with old bundle/hash preserved byte-identically. Renaming its architecture field or coercing a subset of tensor shapes must not bypass the gate. Separately verify historical read-only inspection remains possible without migration.
+
+
+
+<!-- BAMF02:PROOF-REPAIR-346-20261027 -->
+**Independent tensor/initializer oracle (BAMF-REQ-007/008):** Against a separately written literal fixture, require stored non-square weight shapes Wq=[384,768], Wk=Wv=[192,768], Wo=[768,384], Wup=[3072,768], Wdown=[768,3072], with Linear(x,W)=x @ W.T and an explicit basis-vector numerical multiplication. Comparing only generated manifest to generated tree is insufficient; a mutually transposed implementation must FAIL. Fixed-seed initialization must match a second independent golden vector/digest for seeded A, zero B, identity centered causal convolution and inactive semantic rows. Verify stable-path/row seeding unaffected by append-only bank growth.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/B01/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -928,6 +1250,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B01/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota, or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-007; fixtures: F14. Read the current BAMF-0.2-SPEC-001 acceptance and Blueprint before implementation, without exposing protected detail in public. Runtime and operator reason names are BAMF_*; old BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B02 -->
 # B02 | Implement tied factorized semantic embeddings and paged readout
 
@@ -935,6 +1264,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Implement tied factorized semantic embeddings and paged readout. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B02 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B02.1 #439](https://github.com/Entif-AI/Bilqis-MLX/issues/439) | Compose source-factorized identity embeddings with active-row masking | bounded implementable leaf; parent B02.
+- [B02.2 #440](https://github.com/Entif-AI/Bilqis-MLX/issues/440) | Initialize new rows and gather differentiable constituents | bounded implementable leaf; parent B02.
+- [B02.3 #441](https://github.com/Entif-AI/Bilqis-MLX/issues/441) | Match shared tensor registry and validate output-parameter coverage | bounded implementable leaf; parent B02.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346), [A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348), [A06: #352](https://github.com/Entif-AI/Bilqis-MLX/issues/352)
@@ -988,6 +1328,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B02/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-011; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B03 -->
 # B03 | Build the role-aware frame encoder and constituent handles
 
@@ -995,6 +1342,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Build the role-aware frame encoder and constituent handles. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B03 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B03.1 #442](https://github.com/Entif-AI/Bilqis-MLX/issues/442) | Implement role-order-sensitive frame encoding and member gradients | bounded implementable leaf; parent B03.
+- [B03.2 #443](https://github.com/Entif-AI/Bilqis-MLX/issues/443) | Preserve legal atomic partial and empty-frame fallbacks | bounded implementable leaf; parent B03.
+- [B03.3 #444](https://github.com/Entif-AI/Bilqis-MLX/issues/444) | Carry nested frame scope handles and observable frame counts | bounded implementable leaf; parent B03.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B02: #359](https://github.com/Entif-AI/Bilqis-MLX/issues/359), [A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357)
@@ -1046,6 +1404,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B03/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-012; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B04 -->
 # B04 | Implement causal compressed-convolution GQA and incremental RoPE caches
 
@@ -1053,6 +1418,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Implement causal compressed-convolution GQA and incremental RoPE caches. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B04 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B04.1 #445](https://github.com/Entif-AI/Bilqis-MLX/issues/445) | Implement frozen-shape causal depthwise QKV convolutions | bounded implementable leaf; parent B04.
+- [B04.2 #446](https://github.com/Entif-AI/Bilqis-MLX/issues/446) | Wire grouped-query RoPE and zero-safe native MLX attention | bounded implementable leaf; parent B04.
+- [B04.3 #447](https://github.com/Entif-AI/Bilqis-MLX/issues/447) | Bind decode cache identity and literal FP32 attention reference | bounded implementable leaf; parent B04.
+- [B04.4 #448](https://github.com/Entif-AI/Bilqis-MLX/issues/448) | Validate tensor-ledger prefix and constructor consistency | bounded implementable leaf; parent B04.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346)
@@ -1076,7 +1453,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Project Q/K/V with frozen shapes and apply independent per-channel three-tap convolution to projected pre-RoPE arrays. Initialize kernel[0,0,1] under oldest-to-current ordering so initial behavior is identity. Use left padding only; keep last two pre-convolution projected values perhead in decode cache. Scope/sequence boundaries zero the history, including a boundary inside a batch. Apply MLX fast.rope toQ/K with exact offset, then native fast SDPA16:8GQA. Handle allmasked/paddedquery rows by an explicit zero-result mask. Recombine384 and outputproject768. Cache manifest carries layer,scope,prefix,RoPEvariant andgeneration. Include a tiny explicit FP32 reference implementation for equality testing only; production uses fusedSDPA. Store installedMLXversion in runtime identity and use its observed signature, not undocumented flags. Predecessor trace: BAV-REQ-008; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
+Project Q/K/V with frozen shapes and apply independent per-channel three-tap convolution to projected pre-RoPE arrays. Initialize kernel[0,0,1] under oldest-to-current ordering so initial behavior is identity. Use left padding only; keep last two pre-convolution projected values perhead in decode cache. Scope/sequence boundaries zero the history, including a boundary inside a batch. Apply MLX fast.rope toQ/K with exact offset, then native fast SDPA16:8GQA. Handle allmasked/paddedquery rows by an explicit zero-result mask. Recombine384 and outputproject768. Cache manifest carries layer,scope,prefix,RoPEvariant andgeneration. Include a tiny explicit FP32 reference implementation for equality testing only; production uses fusedSDPA. Store installedMLXversion in runtime identity and use its observed signature, not undocumented flags. Predecessor trace: BAMF-REQ-008; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
 
 ## Relevant shared contracts
 
@@ -1087,9 +1464,14 @@ Frozen dense topology:12 blocks, width768, FFN3072, pre-RMSNorm(eps1e-5), square
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
 
 ## Acceptance and bounded proof
-Compare fused and explicit reference on2heads-equivalent fixture within1e-5relative/1e-6absolute where supported. Full-prefix versus chunked/single-token outputs agree within tolerance. Perturb future suffix and preserve earlier output exactly within tolerance. Confirm KV storage is8heads, not16tiled. Boundary reset,allmaskedrow and two unequal lengths remain finite. One backward reachesQ/K/V/conv/outputparameters.
+Compare fused and independent explicit references using the actual production geometry 16 query heads ×24, 8 key/value heads ×24 (group ratio 2) at small literal sequence length, within declared relative/absolute tolerance. A reduced two-head helper may be tested separately but cannot stand in for the production CCGQA proof. Full-prefix versus chunked/single-token outputs agree within tolerance. Perturb future suffix and preserve earlier output exactly within tolerance. Confirm KV storage is8heads, not16tiled. Boundary reset,allmaskedrow and two unequal lengths remain finite. One backward reachesQ/K/V/conv/outputparameters.
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_attention.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
+
+
+
+<!-- BAMF02:PROOF-REPAIR-350-20261027 -->
+**Production attention/prefix negative (BAMF-REQ-005/008; F05):** A literal 16Q:8KV tiny-T reference must prove grouped K/V is read as eight channels without materializing a 16-KV tile; exact channel grouping, causal depthwise convolution order and RoPE are externally checked against independent golden values. Cache the later extended prefix, then request an earlier prefix using that stale history: reject/miss or recompute it, and require the earlier logits to match an isolated fresh earlier-prefix run. A perturbed future suffix may never alter any earlier fixed-prefix output.
 
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/B04/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
@@ -1101,6 +1483,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B04/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-005, BAMF-REQ-008; fixtures: F05. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B05 -->
 # B05 | Implement three-group Block AttnRes with stable depth selection
 
@@ -1108,6 +1497,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Implement three-group Block AttnRes with stable depth selection. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B05 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B05.1 #449](https://github.com/Entif-AI/Bilqis-MLX/issues/449) | Implement shared depth selection and normalized residual weights | bounded implementable leaf; parent B05.
+- [B05.2 #450](https://github.com/Entif-AI/Bilqis-MLX/issues/450) | Place motif and plasticity boundaries within three group selectors | bounded implementable leaf; parent B05.
+- [B05.3 #451](https://github.com/Entif-AI/Bilqis-MLX/issues/451) | Persist complete selector tensor identities and diagnostics | bounded implementable leaf; parent B05.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346), [B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350)
@@ -1130,7 +1530,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Implement the exact Q/K/V/output and per-boundary gated residual equations in the depth contract. Retain h0 and summaries at layers4,8,12; shared selector projections have128 inner channels and the residual interface stays768. The type/role composition is computed by the released factor composer and uses no target labels. Source weights are normalized across h0 and completed groups only, with a fixed source order. Capture g1 after the second motif read; apply each plastic adapter after selection. Save all four shared projection matrices and the three gate vectors/biases in B01's registry and B13's checkpoint. Optional diagnostics expose alpha without assigning fixed cognitive functions to layers. Predecessor trace: BAV-REQ-009; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
+Implement the exact Q/K/V/output and per-boundary gated residual equations in the depth contract. Retain h0 and summaries at layers4,8,12; shared selector projections have128 inner channels and the residual interface stays768. The type/role composition is computed by the released factor composer and uses no target labels. Source weights are normalized across h0 and completed groups only, with a fixed source order. Capture g1 after the second motif read; apply each plastic adapter after selection. Save all four shared projection matrices and the three gate vectors/biases in B01's registry and B13's checkpoint. Optional diagnostics expose alpha without assigning fixed cognitive functions to layers. Predecessor trace: BAMF-REQ-009; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
 
 ## Relevant shared contracts
 
@@ -1158,6 +1558,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B05/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-009; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B06 -->
 # B06 | Add bounded recurrent constituent refinement with input recall
 
@@ -1165,6 +1572,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Add bounded recurrent constituent refinement with input recall. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B06 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B06.1 #452](https://github.com/Entif-AI/Bilqis-MLX/issues/452) | Build shared recurrent constituent attention with input recall | bounded implementable leaf; parent B06.
+- [B06.2 #453](https://github.com/Entif-AI/Bilqis-MLX/issues/453) | Select bounded prediction-local refinement passes and masked routing | bounded implementable leaf; parent B06.
+- [B06.3 #454](https://github.com/Entif-AI/Bilqis-MLX/issues/454) | Preserve original backbone states and exact frame handle outputs | bounded implementable leaf; parent B06.
+- [B06.4 #455](https://github.com/Entif-AI/Bilqis-MLX/issues/455) | Reconcile refinement tensors with the authoritative registry | bounded implementable leaf; parent B06.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355)
@@ -1187,7 +1606,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Use one shared768-wide recurrent-state module with a compressed single-head192-channel member-attention block for at most two additional local passes. Each pass receives current frame hidden state, immutable original frame seed, visible member vectors and requested-role features. Reinject the original input every pass and merge through a residual gate initialized0.01. A small three-class0/1/2 routing head can learn from measured outcomes. Initial policy uses one pass for explicit member questions, zero otherwise, and permits two for unresolved nested queries. Use the prediction-local selection and quota defined in the Causal refinement contract. During training sample0/1/2 passes from the visit seed on eligible frames so the second pass receives training. Missing routing labels mask its auxiliary loss. Main answer loss still propagates through selected passes. Reuse one backbone result; refinement does not rerun all12 layers. Declare Q/K/V projections[192,768], attention output[768,192], recurrent residual gate and its bias in the tensor registry. Exact member handles return768-wide embeddings. For a selected frame, initialize state from the global frame hidden vector; query uses state+immutable_frame_seed+requested_role768; keys/values use only legal visible members. This preserves the predecessor768-wide local-resolution interface while choosing192 inner attention channels. Predecessor trace: BAV-REQ-012/013; the implementation follows the explicit BAMF-0.2 contract repeated here. Preserve immutable global hidden states and return a separate per-query refinement view. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
+Use one shared768-wide recurrent-state module with a compressed single-head192-channel member-attention block for at most two additional local passes. Each pass receives current frame hidden state, immutable original frame seed, visible member vectors and requested-role features. Reinject the original input every pass and merge through a residual gate initialized0.01. A small three-class0/1/2 routing head can learn from measured outcomes. Initial policy uses one pass for explicit member questions, zero otherwise, and permits two for unresolved nested queries. Use the prediction-local selection and quota defined in the Causal refinement contract. During training sample0/1/2 passes from the visit seed on eligible frames so the second pass receives training. Missing routing labels mask its auxiliary loss. Main answer loss still propagates through selected passes. Reuse one backbone result; refinement does not rerun all12 layers. Declare Q/K/V projections[192,768], attention output[768,192], recurrent residual gate and its bias in the tensor registry. Exact member handles return768-wide embeddings. For a selected frame, initialize state from the global frame hidden vector; query uses state+immutable_frame_seed+requested_role768; keys/values use only legal visible members. This preserves the predecessor768-wide local-resolution interface while choosing192 inner attention channels. Predecessor trace: BAMF-REQ-012/013; the implementation follows the explicit BAMF-0.2 contract repeated here. Preserve immutable global hidden states and return a separate per-query refinement view. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
 
 ## Relevant shared contracts
 
@@ -1218,6 +1637,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B06/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-005, BAMF-REQ-012; fixtures: F05. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B07 -->
 # B07 | Implement transactional motif-key allocation and structural fallback
 
@@ -1225,6 +1651,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Implement transactional motif-key allocation and structural fallback. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B07 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B07.1 #456](https://github.com/Entif-AI/Bilqis-MLX/issues/456) | Canonicalize full typed motif identities and structural matching | bounded implementable leaf; parent B07.
+- [B07.2 #457](https://github.com/Entif-AI/Bilqis-MLX/issues/457) | Allocate deterministic motif pages and compare collision-safe keys | bounded implementable leaf; parent B07.
+- [B07.3 #458](https://github.com/Entif-AI/Bilqis-MLX/issues/458) | Commit append-only motif allocation only with retained candidate | bounded implementable leaf; parent B07.
+- [B07.4 #459](https://github.com/Entif-AI/Bilqis-MLX/issues/459) | Verify the common declared motif parameter registry | bounded implementable leaf; parent B07.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346), [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349)
@@ -1247,7 +1685,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Canonicalize full typed keys. Derive structural keys by replacing permitted fillers with admitted type IDs while retaining roles, scope and relation structure. Look up exact instance first, then structural motif. Allocate missing structural keys before instance keys, ordered by observed use then key digest, at most64 new slots per candidate preparation. When full, add one16384-slot page up to65536 if the resource budget permits; otherwise retain factorized fallback and pending-key evidence. Initialize new vectors deterministically. Always compare full keys after hash lookup. Stable slots are append-only. Allocation and counters used for future allocation are copy-on-write candidate state, published only on acceptance. Preserve original release keys; accepted semantics-preserving alias maps are explicit artifacts. Predecessor trace: BAV-REQ-010; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
+Canonicalize full typed keys. Derive structural keys by replacing permitted fillers with admitted type IDs while retaining roles, scope and relation structure. Look up exact instance first, then structural motif. Allocate missing structural keys before instance keys, ordered by observed use then key digest, at most64 new slots per candidate preparation. When full, add one16384-slot page up to65536 if the resource budget permits; otherwise retain already encoded factorized structural features in h and pending-key evidence; no extra gated motif residual or new parameter is introduced on a miss. Initialize new vectors deterministically. Always compare full keys after hash lookup. Stable slots are append-only. Allocation and counters used for future allocation are copy-on-write candidate state, published only on acceptance. Preserve original release keys; accepted semantics-preserving alias maps are explicit artifacts. Predecessor trace: BAMF-REQ-010; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
 
 ## Relevant shared contracts
 
@@ -1261,9 +1699,19 @@ Use the actual plural package bilqis_mlx/semantics/. Canonical semantic IDs come
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
 
 ## Acceptance and bounded proof
-Force a hash collision between distinct full keys and return the correct value. Different fillers share a permitted structural motif; role swap changes the key. Rejection restores allocation, tensor and counters byte-for-byte. Restart reproduces pending slot IDs. Capacity exhaustion uses fallback without overwrite. Page growth preserves all old slots and moments.
+Inject two distinct canonical full motif keys into the same deterministic test bucket/index through a test-only bucket seam (or explicitly reduced bucket width); exact full-key comparison must discriminate them and never return the other slot. Do not require finding a cryptographic SHA collision. Different fillers share a permitted structural motif; role swap changes the key. Rejection restores allocation, tensor and counters byte-for-byte. Restart reproduces pending slot IDs. Capacity exhaustion uses fallback without overwrite. Page growth preserves all old slots and moments.
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_atlas_engram_allocation.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
+
+
+
+<!-- BAMF02:PROOF-REPAIR-356-20261027 -->
+**Executable F11 adversary (BAMF-REQ-010):** The production full canonical key digest remains cryptographic and unchanged. In tests, supply a deterministic bucket/index collision function while leaving the full-key byte comparison real. With two distinct role/scope/instance keys sharing a bucket, lookup must return only the matching key's slot or a miss, not an alias. Verify the test seam cannot be enabled by production configuration or bypass source/scope checks; accepted slot IDs and rejected candidate allocations remain transactionally stable.
+
+
+
+<!-- BAMF02:EGM-MOTIF-356-20261027 -->
+**EGM motif-miss equivalence (BAMF-REQ-010):** With source-qualified factorized frame input already in h but no eligible exact or structural motif slot, both motif sites must return h exactly unchanged; a legitimate hit applies its gated residual at the declared site. Capacity exhaustion cannot fabricate a fallback trainable slot, nor may later allocation retroactively alter an earlier cached miss.
 
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/B07/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
@@ -1275,6 +1723,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B07/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-010, BAMF-REQ-020; fixtures: F11, F12. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B08 -->
 # B08 | Train two context-gated motif-memory reads inside the model
 
@@ -1282,6 +1737,16 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Train two context-gated motif-memory reads inside the model. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B08 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B08.1 #460](https://github.com/Entif-AI/Bilqis-MLX/issues/460) | Compute gated exact and structural motif reads with safe misses | bounded implementable leaf; parent B08.
+- [B08.2 #461](https://github.com/Entif-AI/Bilqis-MLX/issues/461) | Persist participating motif state and place the mid-depth read | bounded implementable leaf; parent B08.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356), [A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354)
@@ -1321,9 +1786,14 @@ Every generation binds topology/implementation, parameter-bank extents, active s
 ContextEligibility binds principal/tenant, purpose, source/evidence regime, semantic release, rights/policy epoch, observation/effective-time frontier, correction generation and causal prefix. Before pooling, motif lookup or attention, validate individual records and the proposed set: matching compatible release, allowed purpose, compatible jurisdiction/scope, live source permissions, valid observation time and permitted joins. SOURCE_AVAILABLE alone authorizes no training. The result is an immutable EligibleContext with approved frame/member handles, blocked reasons, allowed join classes and a digest used by every cache. Existing direct formal A/B/C inputs receive an explicit PUBLIC_FORMAL envelope and do not undergo redundant NLP. Incompatible pairs never share the neural working set even when both pass individually. Eligibility is enforced outside learned gates; its public fixture uses synthetic principals and scopes.
 
 ## Acceptance and bounded proof
-Both read sites influence a nondegenerate loss and receive finite gradients. Changing a qualified slot affects its applicable frames. Held or foreign-release entries are not read. Miss fallback stays finite. Save/load restores values and gates. Rejection after both sites update restores the complete parent.
+Both read sites influence a nondegenerate loss and receive finite gradients. Changing a qualified slot affects its applicable frames. Held or foreign-release entries are not read. A missed exact/structural motif lookup returns the already factorized hidden state h unchanged at each of the two read sites; other qualified non-motif paths remain finite and differentiable. Save/load restores values and gates. Rejection after both sites update restores the complete parent.
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_atlas_engram_reads.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
+
+
+
+<!-- BAMF02:EGM-MOTIF-366-20261027 -->
+**EGM motif-hit/miss discriminator (BAMF-REQ-010):** Construct the same admitted frame with one eligible full-key hit and one otherwise identical missing key. On the miss, record bitwise/declared-FP32-equal h before and after EACH read site, with zero motif residual and no new vector/moment; on the hit, require the expected gated slot projection and gradients. A source-held or revoked motif is a miss, not a borrowed structural match.
 
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/B08/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
@@ -1335,6 +1805,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B08/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-010; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B09 -->
 # B09 | Provision fast adapters and explicit multi-timescale plasticity
 
@@ -1342,6 +1819,19 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Provision fast adapters and explicit multi-timescale plasticity. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B09 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B09.1 #462](https://github.com/Entif-AI/Bilqis-MLX/issues/462) | Own adapter group identity and the persisted plasticity mode policy | intermediate group (assign grandchildren); parent B09.
+- [B09.1a #463](https://github.com/Entif-AI/Bilqis-MLX/issues/463) | Introduce identity-initialized FAST adapters and parameter groups | bounded implementable leaf; parent B09.1.
+- [B09.1b #464](https://github.com/Entif-AI/Bilqis-MLX/issues/464) | Implement FOUNDATION ADAPTIVE update-cadence state | bounded implementable leaf; parent B09.1.
+- [B09.2 #465](https://github.com/Entif-AI/Bilqis-MLX/issues/465) | Apply per-step legal row participation and optimizer masks | bounded implementable leaf; parent B09.
+- [B09.3 #466](https://github.com/Entif-AI/Bilqis-MLX/issues/466) | Bind accepted promotion events to grade-neutral plasticity transition | bounded implementable leaf; parent B09.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366)
@@ -1359,12 +1849,16 @@ Baseline replay `d21797e72365bf93ea7cad3a4ef9020ec9817f23`; SKOS merge `175cdf67
 Package tests live beside their owner. Keep root/shared trainer files under Lane C coordination. Update direct callers in the same patch when an interface changes.
 
 ## Interface to implement
-`PlasticityPolicy; parameter_update_mask(mode,manifest,activation_epoch); next_update_mode(state,teacher_choice) -> FULL|FAST`
+`PlasticityPolicy; group_eligibility(mode,manifest,accepted_ages) -> GroupEligibility; step_participation(inputs,semantic_denominator,motif_reads,role_reads) -> StepParticipation; parameter_update_mask(group_eligible,step_participation,active_admitted) -> UpdateMask; next_update_mode(state,teacher_choice) -> FULL|FAST`
 
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
 Add three rank8 adapters at group boundaries. Zero B matrices make initial adapters identity. FAST includes adapters, motif parameters and newly activated semantic rows; SLOW includes established embeddings and dense parameters. A new identity row becomes established after8 accepted candidates in which it participated under the shared update-mask contract. FOUNDATION updates the full tree. ADAPTIVE offers FAST candidates, then FULL after eight accepted FAST candidates; the existing teacher can request FULL earlier for foundational remediation. This policy selects update eligibility, while the teacher still selects targets, learning rate and pedagogy. Persist mode, counters, row ages and policy version. Advance clocks by accepted updates rather than wall time. Inference always consumes both groups. Freeze group eligibility at candidate preparation. Derive the final row-update mask separately for every optimizer step from actual participation and active/admitted state, before clipping and AdamW arithmetic. B12 owns optimizer moments and update counts. Apply the exact Plasticity transition contract at the retained promotion-event boundary. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
+
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** FOUNDATION/ADAPTIVE state, source-qualified foundation_capability_ids and accepted FAST/FULL clocks are serialized run-policy data, never inferred from Grade A/B/C labels. Recursive Factory release additions do not silently reset them; an accepted current-generation qualification receipt, not a grade transition by name, controls the allowed mode transition.
 
 ## Relevant shared contracts
 
@@ -1372,7 +1866,7 @@ Add three rank8 adapters at group boundaries. Zero B matrices make initial adapt
 Include three rank8 residual adapters from initialization, one after each group selector: h'=h+(1/8)B\*SiLU(A\*RMSNorm(h)); A[8,768] seeded, B[768,8] zero. FAST group contains adapters, motif vectors/projections/gates and newly activated identity rows; SLOW contains established embeddings and dense/core parameters. Foundation mode updates all groups. Adaptive mode updates FAST each candidate and offers a FULL candidate after8 accepted FAST candidates, or when the existing teacher requests foundational remediation. Rejection leaves both clocks and all state at the retained parent. Keep native AdamW arithmetic and selected hyperparameters; the optimizer owner maintains per-parameter update counts so inactive/new parameters receive correct bias correction. Inactive parameters and their moments are byte-identical across a FAST candidate. No background neural writes: all adaptation occurs inside the existing human-started serialized visit transaction. The cadence policy is explicit versioned data; no learned meta-optimizer is required for delivery. Define group_eligible at candidate start and row_participates for each optimizer step. Identity rows participate when gathered as visible input/feedback OR included among the step's legal tied output candidates; active softmax denominator rows therefore participate even when not input tokens. Motif rows participate only if actually gathered by either read site. Type/role/schema rows participate if gathered or in a legal role-output denominator. Dense modules participate when executed on a nonzero loss-bearing path. Update mask=group_eligible AND row_participates AND active-admitted. Mask gradients BEFORE computing the global clipping norm. Ineligible/unparticipating rows get no weight decay, moment update, count increment or age increment, even when another row in the same tensor is updated. A participating eligible row with zero numerical gradient still advances AdamW moments/count and applicable decay, because it participated in the objective; numerical cancellation is not a different training history. Skip the complete optimizer step only when there is no loss-bearing target. Parameter moments/counts advance on each candidate optimizer step; publish them only if that candidate is retained. Row establishment age is distinct: increment once per accepted candidate if that row had any actual masked optimizer step in the candidate, independent of its2/4/8/16 internal steps. At age8 an identity row is established for the NEXT candidate. Candidate rejection preserves parent weights,m/v/counts,establishment ages and consolidation counters exactly. This participation policy is serialized in the optimizer identity. Start every fresh run in FOUNDATION. The immutable initial admitted FactoryRelease defines foundation_capability_ids. Transition to ADAPTIVE only at an accepted current-generation promotion sweep that enters the92% gate, sustains87% through one sweep of every introduced foundation semantic, and emits the existing promoted/promoted-with-debt receipt. C05 passes that exact receipt to B09 after candidate retention; B09 persists ModeTransition and resets accepted_fast_since_full=0. This mode transition does not clear carried debt or fabricate a perfect championship. A new foundation admission after the transition remains ADAPTIVE, with its new rows FAST for their first8 accepted participating candidates; teacher remediation can request FULL. In ADAPTIVE choose FULL whenever teacher requests it or accepted_fast_since_full>=8, otherwise FAST. An accepted FAST candidate increments that counter once; an accepted FULL resets it to0. Rejected scheduled/teacher FULL retains the counter and mode; a failed scheduled FULL is still due, while independent legal teacher strategies continue. FOUNDATION accepted/rejected candidates never increment the FAST counter. Cold resume reads these exact fields, not inferred grade labels or elapsed time. An operator may explicitly restore FOUNDATION via a versioned run-policy event; no silent mode switch occurs.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Custody
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
@@ -1384,9 +1878,17 @@ Define group_eligible at candidate start and row_participates for each optimizer
 Start every fresh run in FOUNDATION. The immutable initial admitted FactoryRelease defines foundation_capability_ids. Transition to ADAPTIVE only at an accepted current-generation promotion sweep that enters the92% gate, sustains87% through one sweep of every introduced foundation semantic, and emits the existing promoted/promoted-with-debt receipt. C05 passes that exact receipt to B09 after candidate retention; B09 persists ModeTransition and resets accepted_fast_since_full=0. This mode transition does not clear carried debt or fabricate a perfect championship. A new foundation admission after the transition remains ADAPTIVE, with its new rows FAST for their first8 accepted participating candidates; teacher remediation can request FULL. In ADAPTIVE choose FULL whenever teacher requests it or accepted_fast_since_full>=8, otherwise FAST. An accepted FAST candidate increments that counter once; an accepted FULL resets it to0. Rejected scheduled/teacher FULL retains the counter and mode; a failed scheduled FULL is still due, while independent legal teacher strategies continue. FOUNDATION accepted/rejected candidates never increment the FAST counter. Cold resume reads these exact fields, not inferred grade labels or elapsed time. An operator may explicitly restore FOUNDATION via a versioned run-policy event; no silent mode switch occurs.
 
 ## Acceptance and bounded proof
-Initial adapter output equals its input. FAST changes only eligible parameters and rows. Rejected FAST candidates do not advance clocks. Eight accepted FAST candidates schedule FULL across restart. Row establishment counts its own updates. Teacher-triggered FULL uses the same generic visit path. Test FOUNDATION promotion-with-debt transition, accepted/rejected FAST/FULL schedules, teacher early FULL reset, a new semantic row, and cold resume on either side of the transition.
+Initial adapter output equals its input. FAST changes only eligible parameters and rows. Rejected FAST candidates do not advance clocks. Eight accepted FAST candidates schedule FULL across restart. Row establishment counts once per ACCEPTED participating candidate, not once per internal optimizer step. Teacher-triggered FULL uses the same generic visit path. Test FOUNDATION promotion-with-debt transition, accepted/rejected FAST/FULL schedules, teacher early FULL reset, a new semantic row, and cold resume on either side of the transition.
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_plasticity.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
+
+
+
+<!-- BAMF02:PROOF-REPAIR-368-20261027 -->
+**Per-step mask and maturation adversary (BAMF-REQ-016/017):** Within one eligible candidate run two optimizer steps involving different semantic/motif rows and assert two different row-participation masks, with the mask applied BEFORE clipping and AdamW. A participating numerical-zero-gradient row advances its correct count/decay; an unparticipating row remains byte-identical even with a huge masked gradient. One accepted candidate with eight internal optimizer steps increments each participating row's establishment age by exactly one; a rejected candidate increments zero. Cold resume preserves these clocks and FULL/FAST policy.
+
+
+**Functional Factory acceptance (ADR-BAMF02-004):** A grade-label permutation with identical initial foundation set, promotion evidence and accepted-candidate history yields byte-identical parameter-group eligibility, consolidation clock and cold-resume policy state.
 
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/B09/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
@@ -1398,6 +1900,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B09/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-016, BAMF-REQ-017; fixtures: F12. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B10 -->
 # B10 | Implement typed scalar, slot and structured answer heads
 
@@ -1405,6 +1914,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Implement typed scalar, slot and structured answer heads. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B10 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B10.1 #467](https://github.com/Entif-AI/Bilqis-MLX/issues/467) | Bind tied semantic values and occurrence-aware role outputs | bounded implementable leaf; parent B10.
+- [B10.2 #468](https://github.com/Entif-AI/Bilqis-MLX/issues/468) | Implement finite control decisions and schema-constrained frame output | bounded implementable leaf; parent B10.
+- [B10.3 #469](https://github.com/Entif-AI/Bilqis-MLX/issues/469) | Enforce causal dependency feedback masking and typed answer legality | bounded implementable leaf; parent B10.
+- [B10.4 #470](https://github.com/Entif-AI/Bilqis-MLX/issues/470) | Match AnswerPlan v2 and complete readout tensor census | bounded implementable leaf; parent B10.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B02: #359](https://github.com/Entif-AI/Bilqis-MLX/issues/359), [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363)
@@ -1429,7 +1950,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Reuse current Boolean, numeric and native semantic-token answer bindings. Add released role-selection and structured frame-output modalities. Concept values use the tied semantic head. Structural control uses a separate finite head for selecting roles, ending a frame and representing unresolved output. Legal roles come from the released schema; repeated roles include occurrence indices. Cap output at64 decisions, respecting the combined input/generated1024-position budget. Predict independent roles in parallel only when the answer dependency DAG allows it; dependent decisions consume earlier committed outputs. Teacher forcing exposes earlier targets only. Preserve UNKNOWN and unresolved alternative sets where allowed. Mask losses to legal active answers and actually supplied auxiliary labels. Validate a completed typed answer before publication; invalid neural output becomes an explicit solver failure/fallback request. Implement the exact AnswerPlan/v2 state transition in the Typed decoder contract. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
+Reuse current Boolean, numeric and native semantic-token answer bindings. Add released role-selection and structured frame-output modalities. Concept values use the tied semantic head. ROLE selection uses the shared released role-table logits and schema-constrained occurrence indices. A separate finite CONTROL head emits only EMIT_VALUE, EMIT_UNKNOWN, EMIT_ALTERNATIVES and END_FRAME; it does not select or encode role IDs. Legal roles come from the released schema; repeated roles include occurrence indices. Cap output at64 decisions, respecting the combined input/generated1024-position budget. Predict independent roles in parallel only when the answer dependency DAG allows it; dependent decisions consume earlier committed outputs. Teacher forcing exposes earlier targets only. Preserve UNKNOWN and unresolved alternative sets where allowed. Mask losses to legal active answers and actually supplied auxiliary labels. Validate a completed typed answer before publication; invalid neural output becomes an explicit solver failure/fallback request. Implement the exact AnswerPlan/v2 state transition in the Typed decoder contract. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
 
 ## Relevant shared contracts
 
@@ -1443,7 +1964,7 @@ The neural input uses FP32 E_identity[bank,row,768], tied to semantic output log
 FrameSchema binds released schema ID/revision, AST construct, ordered roles, allowed concept types, min/max cardinality, order mode and scope. FrameInstance binds occurrence ID, content digest, source span, parent occurrence, exact (role, occurrence-index)->ConceptRef/child-frame bindings and causal_prefix_end. ConceptRef binds semantic ID, semantic release, ABI index, type IDs and source reference. A repeated type in different roles is legal; occurrence is separate from content identity. A complete four-member frame packs four 13-bit indices in bits 0..51; bits52..55 are presence mask1111, bits56..59 the release-local schema tag, bits60..63 codec version1. Preserve full schema and metadata in a sidecar. Extended or atomic encoding handles nesting, repeated occupants, >4 slots, >16 schema tags, partial frames and indices>=8192. Original order, scope, negation, modality, time and source lineage round-trip exactly. A frame becomes one neural position only when all members are visible before the prediction boundary.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Causal refinement
 Refinement is a prediction-local computation. Let p be the query prediction boundary and V(p) the ordered frames with causal_prefix_end<=p that passed context eligibility. Compute Fp=len(V(p)) and quota=min(32,ceil(Fp/8)) using only V(p). Rank requested-role matches, then source-visible salience, then stable source position within V(p). Refinement results are keyed by (input-generation,p,query-ID,frame-occurrence) and never overwrite a shared backbone hidden state used by an earlier prediction. Future frames, labels, row padding and future query requests do not enter selection. Parallel teacher-forced predictions each use their own p-local view. Derive recurrence choice from SHA256(run-seed,visit-ID,p,query-ID,frame-occurrence), never total batch length. Pass budget is 0/1/2 for the selected frame. Increasing a row from8 to9 complete frames can change the later query's quota but cannot change the earlier query at fixed p. The single backbone produces immutable causal hidden states; the small local refiner operates on prediction-specific copies.
@@ -1459,6 +1980,11 @@ Current A/B/C answer mappings remain unchanged. Four-role outputs preserve bindi
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_atlas_readout.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+<!-- BAMF02:PROOF-REPAIR-367-20261027 -->
+**Typed-head separation adversary (BAMF-REQ-012/013):** Construct a frame decision requiring a concrete ROLE and a separate CONTROL action. Swapping role ID logits must alter ROLE output but not CONTROL codes; swapping a CONTROL code must not become a valid role binding. A decoder that routes role selection through CONTROL must fail. Validate legal role occurrence, dependency order and END_FRAME requirements before publication.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/B10/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -1469,6 +1995,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B10/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-013; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B11 -->
 # B11 | Assemble the real atlas-native model and architecture dispatch
 
@@ -1476,6 +2009,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Assemble the real atlas-native model and architecture dispatch. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B11 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B11.1 #471](https://github.com/Entif-AI/Bilqis-MLX/issues/471) | Assemble complete atlas-native forward and registry geometry | bounded implementable leaf; parent B11.
+- [B11.2 #472](https://github.com/Entif-AI/Bilqis-MLX/issues/472) | Unify direct inference gradient retention and championship dispatch | bounded implementable leaf; parent B11.
+- [B11.3 #473](https://github.com/Entif-AI/Bilqis-MLX/issues/473) | Reconcile full model tensor prefixes and mixed-frame integration | bounded implementable leaf; parent B11.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365), [B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366), [B09: #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368), [B10: #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367)
@@ -1526,9 +2070,19 @@ Refinement is a prediction-local computation. Let p be the query prediction boun
 AnswerPlan/v2 contains modalityID, input_prefix_end, ordered DecisionSpec records, allowedOutputSchema, maximum_decisions<=64 and generation binding. DecisionSpec=(id,roleID,occurrence,kind,legalValues,depends_on). kind is VALUE, ROLE, CONTROL or EPISTEMIC. Topologically sort by dependency and then stable ID; cycles are input errors. Run the12-block backbone once on the source-visible prefix. Freeze memory H and each node's anchor h_anchor (the last visible task-query position, or explicit input position from the task contract). For decision j, dependency feedback is the arithmetic mean of encode_value of already committed parent decisions, zero for no parents. encode_value(ConceptRef)=its768 identity embedding; a source-visible literal or structural action uses a deterministic768-dimensional signed SHA256 expansion of its canonical typed JSON, divided by sqrt768. A missing earlier dependency prevents execution. Compute s_j=RMSNorm(h_anchor+role768+sinusoidal_occurrence768+W_feedback\*feedback). Compute c_j=Wout\*softmax((Wq\*s_j)\*(Wk\*H)^T/sqrt192+visibility_mask)\*(Wv\*H), and z_j=RMSNorm(s_j+c_j). Q/K/V have192 inner dimensions; output and feedback are768-wide. Concept values use the active tied identity table. Other native modality values are a finite released legal-value list scored by dot(z_j,encode_value(value))/sqrt768. ROLE uses a128-dimensional query against the shared role table, masking to the schema's role/occurrence candidates. CONTROL uses four fixed outcomes EMIT_VALUE,EMIT_UNKNOWN,EMIT_ALTERNATIVES,END_FRAME. EPISTEMIC uses the released five-state classifier. Independent decisions may share one ready batch; dependent decisions wait for parent output commitment. During training only earlier parent targets enter feedback; the current target and descendants stay exclusively in loss. Inference feeds selected actual outputs, never target values. END_FRAME is legal only after required roles have committed; output budget exhaustion returns an explicit partial/unresolved answer. No extra backbone call is needed: only this shared bounded decoder and local refinement run. Input positions plus output decisions must fit the declared1024 budget.
 
 ## Acceptance and bounded proof
-The actual12-layer forward runs and matches the parameter census. Demonstrate nonzero finite gradients in embeddings, attention, FFN, depth selector, memory, adapters and readout. A zero-initialized adapter A may first receive gradient after B updates; prove that second step. Prefix invariance holds. A complete update changes loss and saves. Old run files remain unchanged. All consumers use the architecture dispatch.
+The actual12-layer forward runs and matches the parameter census. Demonstrate nonzero finite gradients in embeddings, attention, FFN, depth selector, memory, adapters and readout. The adapter A matrix is seeded nonzero and its B matrix starts exactly zero. At the first nondegenerate backward pass B has a finite nonzero gradient while A is initially zero-gradient; update B once, then prove the second backward reaches A. Initial adapter output remains the identity residual. Prefix invariance holds. A complete update changes loss and saves. Old run files remain unchanged. All consumers use the architecture dispatch.
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_model.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
+
+
+
+<!-- BAMF02:PROOF-REPAIR-369-20261027 -->
+**Adapter wake-up regression (BAMF-REQ-007/008):** Using literal fixed-seed A and zero B, compute the first and second step gradients independently of constructor-shape assertions. Both-zero A/B initialization must fail because it prevents the required first-step B update. Confirm first-pass zero adapter contribution does not imply zero backbone gradient or frozen optimizer state.
+
+
+
+<!-- BAMF02:PROOF-CAUSAL-369-20261027 -->
+**Downstream causal F05 owner (BAMF-REQ-005/008; F05):** Consume A05's compiler-only prefix witness; run the actual instantiated 12-layer model with the same earlier causal prefix and two different future suffixes. Compare fresh/valid single-token, chunked and full-prefix logits within declared deterministic tolerance. Then inject a later-prefix cache into an earlier prediction request: it MUST be rejected/recomputed and never influence earlier logits, even when masked tensors happen to have compatible shapes. Record actual heads/groups, source-handle identity and output deltas. Only this downstream executed neural fixture can close F05, not A05's compiler-only green test.
 
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/B11/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
@@ -1540,6 +2094,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B11/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-008, BAMF-REQ-013; fixtures: F05. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B12 -->
 # B12 | Extend native AdamW custody to masked plastic groups and candidate transactions
 
@@ -1547,6 +2108,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Extend native AdamW custody to masked plastic groups and candidate transactions. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B12 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B12.1 #474](https://github.com/Entif-AI/Bilqis-MLX/issues/474) | Preserve exact native AdamW and per-parameter participation counts | bounded implementable leaf; parent B12.
+- [B12.2 #475](https://github.com/Entif-AI/Bilqis-MLX/issues/475) | Commit or reject complete candidate optimizer and weight transactions | bounded implementable leaf; parent B12.
+- [B12.3 #476](https://github.com/Entif-AI/Bilqis-MLX/issues/476) | Implement preclip row masks and distinct step versus establishment clocks | bounded implementable leaf; parent B12.
+- [B12.4 #477](https://github.com/Entif-AI/Bilqis-MLX/issues/477) | Reconcile shared optimizer manifest and parameter tree | bounded implementable leaf; parent B12.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369)
@@ -1579,7 +2152,7 @@ Preserve native AdamW equations and the teacher-selected learning rate, betas, e
 Include three rank8 residual adapters from initialization, one after each group selector: h'=h+(1/8)B\*SiLU(A\*RMSNorm(h)); A[8,768] seeded, B[768,8] zero. FAST group contains adapters, motif vectors/projections/gates and newly activated identity rows; SLOW contains established embeddings and dense/core parameters. Foundation mode updates all groups. Adaptive mode updates FAST each candidate and offers a FULL candidate after8 accepted FAST candidates, or when the existing teacher requests foundational remediation. Rejection leaves both clocks and all state at the retained parent. Keep native AdamW arithmetic and selected hyperparameters; the optimizer owner maintains per-parameter update counts so inactive/new parameters receive correct bias correction. Inactive parameters and their moments are byte-identical across a FAST candidate. No background neural writes: all adaptation occurs inside the existing human-started serialized visit transaction. The cadence policy is explicit versioned data; no learned meta-optimizer is required for delivery. Define group_eligible at candidate start and row_participates for each optimizer step. Identity rows participate when gathered as visible input/feedback OR included among the step's legal tied output candidates; active softmax denominator rows therefore participate even when not input tokens. Motif rows participate only if actually gathered by either read site. Type/role/schema rows participate if gathered or in a legal role-output denominator. Dense modules participate when executed on a nonzero loss-bearing path. Update mask=group_eligible AND row_participates AND active-admitted. Mask gradients BEFORE computing the global clipping norm. Ineligible/unparticipating rows get no weight decay, moment update, count increment or age increment, even when another row in the same tensor is updated. A participating eligible row with zero numerical gradient still advances AdamW moments/count and applicable decay, because it participated in the objective; numerical cancellation is not a different training history. Skip the complete optimizer step only when there is no loss-bearing target. Parameter moments/counts advance on each candidate optimizer step; publish them only if that candidate is retained. Row establishment age is distinct: increment once per accepted candidate if that row had any actual masked optimizer step in the candidate, independent of its2/4/8/16 internal steps. At age8 an identity row is established for the NEXT candidate. Candidate rejection preserves parent weights,m/v/counts,establishment ages and consolidation counters exactly. This participation policy is serialized in the optimizer identity. Start every fresh run in FOUNDATION. The immutable initial admitted FactoryRelease defines foundation_capability_ids. Transition to ADAPTIVE only at an accepted current-generation promotion sweep that enters the92% gate, sustains87% through one sweep of every introduced foundation semantic, and emits the existing promoted/promoted-with-debt receipt. C05 passes that exact receipt to B09 after candidate retention; B09 persists ModeTransition and resets accepted_fast_since_full=0. This mode transition does not clear carried debt or fabricate a perfect championship. A new foundation admission after the transition remains ADAPTIVE, with its new rows FAST for their first8 accepted participating candidates; teacher remediation can request FULL. In ADAPTIVE choose FULL whenever teacher requests it or accepted_fast_since_full>=8, otherwise FAST. An accepted FAST candidate increments that counter once; an accepted FULL resets it to0. Rejected scheduled/teacher FULL retains the counter and mode; a failed scheduled FULL is still due, while independent legal teacher strategies continue. FOUNDATION accepted/rejected candidates never increment the FAST counter. Cold resume reads these exact fields, not inferred grade labels or elapsed time. An operator may explicitly restore FOUNDATION via a versioned run-policy event; no silent mode switch occurs.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Custody
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
@@ -1605,6 +2178,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B12/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-016; fixtures: F12. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B13 -->
 # B13 | Persist and cold-resume the complete BAMF learning generation
 
@@ -1612,6 +2192,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Persist and cold-resume the complete BAMF learning generation. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B13 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B13.1 #478](https://github.com/Entif-AI/Bilqis-MLX/issues/478) | Write versioned content-addressed BAMF state bundles atomically | bounded implementable leaf; parent B13.
+- [B13.2 #479](https://github.com/Entif-AI/Bilqis-MLX/issues/479) | Validate complete generation and cold-resume exact training state | bounded implementable leaf; parent B13.
+- [B13.3 #480](https://github.com/Entif-AI/Bilqis-MLX/issues/480) | Keep disposable caches and historical v1 reader custody separate | bounded implementable leaf; parent B13.
+- [B13.4 #481](https://github.com/Entif-AI/Bilqis-MLX/issues/481) | Reconcile committed parameter schema with checkpoint manifests | bounded implementable leaf; parent B13.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B12: #370](https://github.com/Entif-AI/Bilqis-MLX/issues/370), [A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348), [B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356)
@@ -1636,7 +2228,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Extend the existing bundle with a versioned v2 section and sidecars for semantic banks, active ABI, motif keys, plasticity policy/counts, compiler/features and correction frontier. Hash payloads, persist through existing content-addressed storage and atomically publish one generation pointer. Reuse outbox reconciliation and references to unchanged objects. Validate sidecar census and tensor identities before constructing the optimizer. Cold resume in a clean process reconstructs the next visit selection and identical neural output. Keep the human-run lock and100GiB disk reserve. Inference caches remain disposable. Historical bundles retain their existing readers and immutable source bytes. Predecessor trace: BAV-REQ-016/023; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
+Extend the existing bundle with a versioned v2 section and sidecars for semantic banks, active ABI, motif keys, plasticity policy/counts, compiler/features and correction frontier. Hash payloads, persist through existing content-addressed storage and atomically publish one generation pointer. Reuse outbox reconciliation and references to unchanged objects. Validate sidecar census and tensor identities before constructing the optimizer. Cold resume in a clean process reconstructs the next visit selection and identical neural output. Keep the human-run lock and100GiB disk reserve. Inference caches remain disposable. Historical bundles retain their existing readers and immutable source bytes. Predecessor trace: BAMF-REQ-016/023; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.
 
 ## Relevant shared contracts
 
@@ -1669,6 +2261,11 @@ Save/load reproduces parameters, moments, local counts, teacher context, active 
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_bamf_checkpoint.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+<!-- BAMF02:PROOF-REPAIR-372-20261027 -->
+**Literal historical-v1 and accepted-generation witnesses (BAMF-REQ-007/016/023; F14/F20):** Read a genuine frozen six-layer/absolute-position v1 bundle through its historical reader without mutation; then attempt to resume the same bytes as `bamf-atlas-v2`: a typed incompatibility must happen before building v2 optimizer or copying moments/tensors. A valid accepted source-qualified BAMF lesson must persist exact student/parent/retained generation IDs, optimizer step, row counts/ages, motif keys/slot extent, semantic bank identities, teacher cursor and source release. Cold resume and one next controlled optimizer step must match uninterrupted execution; rejected candidate and old specimen hashes stay unchanged.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/B13/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -1679,6 +2276,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B13/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-007, BAMF-REQ-009, BAMF-REQ-016, BAMF-REQ-023; fixtures: F12, F14, F20. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:B14 -->
 # B14 | Implement the derived low-bit KV-cache codec with FP32 fallback
 
@@ -1686,6 +2290,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Implement the derived low-bit KV-cache codec with FP32 fallback. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:B14 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [B14.1 #482](https://github.com/Entif-AI/Bilqis-MLX/issues/482) | Implement deterministic rotated three-bit cache vector coding | bounded implementable leaf; parent B14.
+- [B14.2 #483](https://github.com/Entif-AI/Bilqis-MLX/issues/483) | Reconstruct quantized norms and small-record FP32 fallback | bounded implementable leaf; parent B14.
+- [B14.3 #484](https://github.com/Entif-AI/Bilqis-MLX/issues/484) | Bind derived cache to causal generation and FP32 reference policies | bounded implementable leaf; parent B14.
+- [B14.4 #485](https://github.com/Entif-AI/Bilqis-MLX/issues/485) | Reject revoked source caches and rebuild from eligible FP32 state | bounded implementable leaf; parent B14.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372)
@@ -1708,7 +2324,12 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Implement bamf.rot3/v1 exactly as the cache contract specifies. Generate one seeded orthogonal24x24 transform with deterministic QR sign normalization and persist its digest. Scale rotated unit coordinates by sqrt24 before normal-codebook quantization. Pack3-bit codes little-endian. Per32-vector block store a FP32 maximum norm and8-bit relative norms; preserve zero vectors. Decode, inverse-rotate, renormalize direction and restore the norm. Compress cold K/V records only when at least256 vectors amortize headers; smaller records remain FP32. Bind cache records to lineage, causal prefix, masks and codec manifest. Report actual byte costs. Reference candidate evaluation remains FP32. Interactive inference recomputes when a cache is incompatible or fails declared quality checks. Deliver this after the first complete learning path. Predecessor trace: BAV-REQ-014; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Implement bamf.rot3/v1 exactly as the cache contract specifies. Generate one seeded orthogonal24x24 transform with deterministic QR sign normalization and persist its digest. Scale rotated unit coordinates by sqrt24 before normal-codebook quantization. Pack3-bit codes little-endian. Per32-vector block store a FP32 maximum norm and8-bit relative norms; preserve zero vectors. Decode, inverse-rotate, renormalize direction and restore the norm. Compress cold K/V records only when at least256 vectors amortize headers; smaller records remain FP32. Bind cache records to lineage, causal prefix, masks and codec manifest. Report actual byte costs. Reference candidate evaluation remains FP32. Interactive inference recomputes when a cache is incompatible or fails declared quality checks. Deliver this after the first complete learning path. Predecessor trace: BAMF-REQ-014; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+
+
+<!-- BAMF02:CONFORMANCE-CACHE-RIGHTS-PREFIX -->
+**Cache identity completeness:** Before reading a derived cold K/V record, validate the exact source/semantic release, allowed rights-purpose and policy epoch, context eligibility digest, causal prefix/offset/mask, topology, codec/codebook/rotation transform, training generation and model/optimizer-independent inference state. A revoked or superseded source must be rejected before decode or attention even when the record checksum and compressed bytes remain valid. Recompute from qualified canonical FP32 source and persist only an eligible new derived cache record; do not reuse old content by changing its key label.
 
 ## Relevant shared contracts
 
@@ -1726,6 +2347,10 @@ Literal code sequence0..7 round-trips through bit packing. Zero vectors decode e
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_cache_codec.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required rights-only adversary (BAMF-REQ-014; F13):** Save a valid compressed cache; change ONLY the source-rights or permission epoch while preserving topology, vector bytes, offset, mask and key hash. The old cache must be invalidated BEFORE decode and not influence chosen output; with a requalified admissible view, recomputation must produce the canonical FP32-equivalent outcome within the declared fidelity contract. Separately change only causal prefix or topology and prove the same failure. Assert no gradient/AdamW/gold or canonical frame sidecar reads the lossy payload.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/B14/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -1736,6 +2361,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/B14/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-014; fixtures: F13. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C01 -->
 # C01 | Create the three-lane integration baseline and executable EGM work contract
 
@@ -1743,6 +2375,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Create the three-lane integration baseline and executable EGM work contract. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C01 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C01.1 #486](https://github.com/Entif-AI/Bilqis-MLX/issues/486) | Prepare exact replay plus SKOS integration baseline and custody | bounded implementable leaf; parent C01.
+- [C01.2 #487](https://github.com/Entif-AI/Bilqis-MLX/issues/487) | Establish pinned EGM lanes and one-writer source ownership | bounded implementable leaf; parent C01.
+- [C01.3 #488](https://github.com/Entif-AI/Bilqis-MLX/issues/488) | Validate dependencies and prepare bounded worker contracts | bounded implementable leaf; parent C01.
+- [C01.4 #489](https://github.com/Entif-AI/Bilqis-MLX/issues/489) | Publish pinned architecture and lane integration handoff | bounded implementable leaf; parent C01.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** None within BAMF; start against the pinned source contracts.
@@ -1770,13 +2414,17 @@ Use immutable typed records and the existing ErrorBus/catalog for boundary failu
 ## Implementation prescription
 Create a successor integration branch from the exact post-324 replay head plus SKOS-bearing main, recording both commit IDs. Preserve the frozen #324 specimen unchanged. Record the owner-authorized BAMF successor gate: the source bridge can be built now; first live adoption follows BAMF's own source/custody/retained-learning witness rather than waiting for the old model-size comparison. Add the scoped outcome-first evaluation and admission-lease amendments to AGENTS/ADR. Install or locate EGM at the pinned commit and create a project-local execution instruction pointing to its real persona/standard paths. Create three lane branches with one writer each: semantics, neural, integration. Lane A owns semantics/factory new modules, B owns neural new modules, C owns shared trainer/CLI/checkpoint wiring; B13 proposes checkpoint patches through C's shared-file queue. Validate the issue DAG and direct dependency receipts. Copy this delivered spec into repository docs without creating a fourth workstream. C16 owns the foundation successor launch witness: at least one source-valid end-to-end retained capability improvement, complete rollback of a deliberately damaging disposable candidate, and cold-resume equivalence. This exact-head receipt satisfies the BAMF foundation launch gate. C13 is the later expanded-system release qualification and is not a prerequisite of C16 or foundation training.
 
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** Treat SPEC-0001 functional Factory architecture and ADR-BAMF02-004 as BAMF successor execution invariants. README.md/AGENTS.md historical Grade-B-specific directives are provenance for older runs only; current code and issues must use grade-neutral source/typed-rule/admission policy. Keep the checked-in 43 issue mirrors synchronized to the exact live issue bodies and workstack body digests, so compaction cannot revive old contracts.
+
 ## Relevant shared contracts
 
 ### Authority
 The owner-selected deliverable is one fresh BAMF-0.2 student lineage using the post-#324 replay Factory plus merged SKOS. The original 12-layer/768-wide model remains the dense backbone. Whole-system success counts exact lookup, declared deterministic operators, learned memory, neural prediction and their compositions equally. Original #324 specimens, old students and their optimizer state remain readable historical evidence. BAMF's own end-to-end retained-learning slice is the successor readiness gate; implementation of #292-#295 can proceed alongside model construction. New semantic releases enter the existing Factory/admission owner. A human-started run may delegate subsequent source-valid additions through an explicit persisted admission lease; the default remains staging. Existing source-gold, current-state retention, one neural writer and checkpoint recovery continue to protect the learning investment. Current author authority is the 27 October 2026 owner instruction and root #341; IPR-0220 remains the opaque curriculum authority reference.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Custody
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
@@ -1789,6 +2437,9 @@ Record exact baseline and clean integration diff. Workstack detects a cycle, mis
 
 Start with `python3 -B scripts/check_bamf_workstack.py docs/tasks/bamf-0.2/workstack.json`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+**Functional Factory acceptance (ADR-BAMF02-004):** Integration receipt checks mirrored issue-body fingerprints, absence of inherited Grade-B debt-turn/circulation exceptions, and availability of a pure planner and typed rule-policy owner. No claim of executable proof until the live implementation tests run.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C01/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -1799,6 +2450,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C01/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota, or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-023; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Read the current BAMF-0.2-SPEC-001 acceptance and Blueprint before implementation, without exposing protected detail in public. Runtime and operator reason names are BAMF_*; old BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C02 -->
 # C02 | Adapt ordinary Factory batches to BAMF inputs and targets
 
@@ -1806,6 +2464,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Adapt ordinary Factory batches to BAMF inputs and targets. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C02 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C02.1 #490](https://github.com/Entif-AI/Bilqis-MLX/issues/490) | Adapt executable Factory rows into typed BAMF training inputs | bounded implementable leaf; parent C02.
+- [C02.2 #491](https://github.com/Entif-AI/Bilqis-MLX/issues/491) | Compile source-visible targets and preserve legal modalities | bounded implementable leaf; parent C02.
+- [C02.3 #492](https://github.com/Entif-AI/Bilqis-MLX/issues/492) | Deliver strategy provenance and unified model backend batches | bounded implementable leaf; parent C02.
+- [C02.4 #493](https://github.com/Entif-AI/Bilqis-MLX/issues/493) | Emit teacher feedback and grade-neutral workload receipts | bounded implementable leaf; parent C02.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357), [A06: #352](https://github.com/Entif-AI/Bilqis-MLX/issues/352), [B10: #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367), [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369), [C01: #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347), [A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354)
@@ -1830,7 +2500,16 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Consume the delivered rows and answer bindings from the existing executable Factory release. Compile source-visible inputs through A05, attach deterministic atlas features, and build separately masked typed targets. Preserve source row IDs, operation/capability IDs, actual teacher strategy, requested/delivered counts, rehearsal provenance and optimizer-step seed. Support all current answer modalities and new B10 structured outputs through a registry, never a grade switch. Pad only actual batch maxima; cap constituent and frame work through C08. Auxiliary labels come from source or explicit outcome evidence and remain absent otherwise. Route inference and training through the same backend selection. Feed realized delivery into #333's teacher observation capture, retaining exact row and cost attribution. The default path handles current A/B/C with atomic fallbacks before richer frame coverage arrives. Predecessor trace: BAV-REQ-015; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Consume the delivered rows and answer bindings from the existing executable Factory release. Compile source-visible inputs through A05, attach deterministic atlas features, and build separately masked typed targets. Preserve source row IDs, operation/capability IDs, actual teacher strategy, requested/delivered counts, rehearsal provenance and optimizer-step seed. Support all current answer modalities and new B10 structured outputs through a registry, never a grade switch. Pad only actual batch maxima; cap constituent and frame work through C08. Auxiliary labels come from source or explicit outcome evidence and remain absent otherwise. Route inference and training through the same backend selection. Feed realized delivery into #333's teacher observation capture, retaining exact row and cost attribution. The default path handles current A/B/C with atomic fallbacks before richer frame coverage arrives. Predecessor trace: BAMF-REQ-015; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+
+
+<!-- BAMF02:CONFORMANCE-TARGET-AND-GRADE-BLIND -->
+**Input/target isolation and grade-neutral adapter:** A prepared example has separate source-visible model inputs and independently held typed answer/auxiliary labels; target fields, future teacher-forced decisions, grading expectations and sealed holdout exemplars cannot enter input embeddings, feature caches, sequence compilation or motif keys. The same registry dispatch applies to every admitted grade/answer modality: no branch keyed to a grade letter, old scheduler debt class or future-frontier label. Store source-family/episode identity so training-versus-holdout splits can be verified downstream.
+
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** Convert every admitted FactoryRelease through one typed construction/teaching/assessment adapter. Resolve domain-specific Boolean, integer or qualified world-model rule sets from released semantic signatures and source-family identity, not a grade ID. The same legal teaching input and assessment obligations must compile identically after a pure grade-label permutation; independently owned gold stays out of the student input.
 
 ## Relevant shared contracts
 
@@ -1838,7 +2517,7 @@ Consume the delivered rows and answer bindings from the existing executable Fact
 FrameSchema binds released schema ID/revision, AST construct, ordered roles, allowed concept types, min/max cardinality, order mode and scope. FrameInstance binds occurrence ID, content digest, source span, parent occurrence, exact (role, occurrence-index)->ConceptRef/child-frame bindings and causal_prefix_end. ConceptRef binds semantic ID, semantic release, ABI index, type IDs and source reference. A repeated type in different roles is legal; occurrence is separate from content identity. A complete four-member frame packs four 13-bit indices in bits 0..51; bits52..55 are presence mask1111, bits56..59 the release-local schema tag, bits60..63 codec version1. Preserve full schema and metadata in a sidecar. Extended or atomic encoding handles nesting, repeated occupants, >4 slots, >16 schema tags, partial frames and indices>=8192. Original order, scope, negation, modality, time and source lineage round-trip exactly. A frame becomes one neural position only when all members are visible before the prediction boundary.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Resource
 Use the existing96GB M3 Ultra, one sovereign MLX writer and at most2 CPU deterministic preparation workers. Workers receive only source/release/seed packets, never writable model/optimizer/teacher state. Batch actual lengths; start32 short rows and reduce through16/8/4/2/1 as frame/constituent activation estimates approach the48GiB trainer envelope. Keep a stable deterministic batching plan per visit. Full1024-frame workloads begin1-4 rows. Default context1024 applies to compiled neural positions, not raw atoms. MLX peak allocated/cache memory, preparation cost, accepted steps/hour, actual capability gain and disk reserve are visible. CPU checks run on either device; real MLX and learning acceptance run only on the Mac Studio lane.
@@ -1860,6 +2539,13 @@ Current A/B/C released fixtures compile and score through one adapter. Inference
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_training_adapter.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required causal/grade metamorphic proof (BAMF-REQ-005/015; F16):** Hold identical legal source-visible inputs constant and change only the concealed gold answer and its auxiliary labels; serialized model-input tensors, eligible context digest, prefix features and inference logits must stay identical. Only target/loss may change. Recompile a set of otherwise identical valid lessons with permuted grade labels: packet eligibility, modality mapping, sampling metadata and source/target separation remain unchanged, apart from grade metadata for reporting. Reject training/heldout siblings from one known source family as independent evidence.
+
+
+**Functional Factory acceptance (ADR-BAMF02-004):** Swap grade labels for a source-identical pair of released capabilities and assert matching compiled lessons, task contracts, source evidence and independent gold boundaries. Swap domains while holding the grade label fixed and assert the required rule-set-specific coverage changes without any runtime grade branch.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C02/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -1870,6 +2556,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C02/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-015; fixtures: F16. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C03 -->
 # C03 | Carry the replay-salvaged teacher into the new student lineage
 
@@ -1877,6 +2570,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Carry the replay-salvaged teacher into the new student lineage. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C03 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C03.1 #494](https://github.com/Entif-AI/Bilqis-MLX/issues/494) | Port replay-salvaged bounded teacher policy and prior evidence | bounded implementable leaf; parent C03.
+- [C03.2 #495](https://github.com/Entif-AI/Bilqis-MLX/issues/495) | Preserve source-scored canaries and shadow-strategy semantics | bounded implementable leaf; parent C03.
+- [C03.3 #496](https://github.com/Entif-AI/Bilqis-MLX/issues/496) | Bind valid mentor advice and report real teacher health | bounded implementable leaf; parent C03.
+- [C03.4 #497](https://github.com/Entif-AI/Bilqis-MLX/issues/497) | Apply grade-neutral capability scheduling and accepted evidence | bounded implementable leaf; parent C03.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [C01: #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347), [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372)
@@ -1902,12 +2607,21 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Port the exact replay behavior, using its current owner functions rather than rebuilding the selector. Preserve useful strategy history as prior evidence with explicit old/new student region labels; start checkpoint-local no-gain/interference counters for the new learner. Keep up to16 effective strategies and8 incumbents. Carry the every-fourth existing-policy canary, current UCB/retained exploitation and actual realized-delivery chain. The2/4/8/16 ladder stays shadow evidence under #321/#323 until its separate owner changes execution authority. New bank/plasticity epochs invalidate stale region matches without deleting the historical record. Old6-layer mentors may supply source-gold-checked typed advice under the championship contract; preserve their runtime as read-only and never average tensors into the12-layer student. Expose teacher health from actual observations. Historical Factory-v1 student artifacts remain read-only evidence; mentor inference is allowed only through the currently supported compatibility evaluator and current source binding. Readability never silently enables historical resume or an incompatible optimizer/weight import. Predecessor trace: BAV-REQ-017; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Port the exact replay behavior, using its current owner functions rather than rebuilding the selector. Preserve useful strategy history as prior evidence with explicit old/new student region labels; start checkpoint-local no-gain/interference counters for the new learner. Keep up to16 effective strategies and8 incumbents. Carry the every-fourth existing-policy canary, current UCB/retained exploitation and actual realized-delivery chain. The2/4/8/16 ladder stays shadow evidence under #321/#323 until its separate owner changes execution authority. New bank/plasticity epochs invalidate stale region matches without deleting the historical record. Old6-layer mentors may supply source-gold-checked typed advice under the championship contract; preserve their runtime as read-only and never average tensors into the12-layer student. Expose teacher health from actual observations. Historical Factory-v1 student artifacts remain read-only evidence; mentor inference is allowed only through the currently supported compatibility evaluator and current source binding. Readability never silently enables historical resume or an incompatible optimizer/weight import. Predecessor trace: BAMF-REQ-017; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+
+
+<!-- BAMF02:CONFORMANCE-TEACHER-GRADE-PARITY -->
+**Grade-neutral dispatch contract:** The BAMF-0.2 adapter may carry grade labels for reporting and content lineage, but must not use a letter, historical B-debt flag, active-frontier label or grade-specific visit counter as a scheduler input, priority override, admission rule, effort quota or retest cadence. Preserve replay teacher strategy/retention evidence while isolating obsolete historical scheduling decisions at the old-run boundary. For otherwise identical source-qualified candidate records, selection inputs and outcomes must be identical regardless of grade label. Legitimate prerequisites, competence observations, source rights and independent scores remain active inputs.
+
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** The replay teacher consumes lawful offers from the generic Factory planner and operates one scheduler/retention/evidence policy for all grades. Grade identifiers remain observation labels only. Carried debt, queue fairness, retry, stagnation and promotion are evidence- and source-dependency-driven; previous Grade-B debt turns, B ceilings and C bypass clauses are not live controls. Domain rule sets change legal exercises, never teacher privileges.
 
 ## Relevant shared contracts
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Custody
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
@@ -1920,6 +2634,13 @@ Replay a fixed observation sequence and match strategy eligibility, no-gain rese
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_bamf_teacher.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required negative/metamorphic proof (BAMF-REQ-017):** Run a fixed, replayable cohort of eligible candidate lessons with equal source qualification, independent learner evidence and priority features but permuted A/B/C/future grade labels. Assert identical teacher eligibility, priority scores, ordered selection, retest opportunity, source-gold/retention decisions and next persisted teacher state. Include independent cases where a concept in any grade carries mastery debt, and show the label alone neither starves it nor forces a special turn. An explicit legacy percentage-cap or periodic B-only turn implementation MUST fail this fixture. Repeat after cold resume and record delivered rows, not merely proposed visits.
+
+
+**Functional Factory acceptance (ADR-BAMF02-004):** Use identical learner evidence and prerequisite graphs under permuted grade IDs and compare delivered opportunities, debt handling, strategy selection inputs and retests. A true source prerequisite prevents selection under either permutation; a missing implied grade-order edge must never be fabricated.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C03/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -1930,6 +2651,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C03/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+The new BAMF-0.2 trainer treats **every admitted grade by the same generic Factory/teacher scheduling, retention and evaluation policy**. Grade labels describe curriculum, not priority or scheduling authority. Earlier letter-specific learning schedules are historical only and SHALL NOT be imported. Keep source-gold, prerequisites, independent retention and operator-start authority intact.
+**Canonical proof references:** BAMF-REQ-015, BAMF-REQ-017; fixtures: stage-specific acceptance; no uniquely assigned baseline ID. Apply the detailed acceptance in the BAMF-0.2-SPEC-001 and current Blueprint; publication of this issue does not declassify private implementation evidence. The current model/operator identifiers are BAMF-0.2 and BAMF_*; do not revive legacy BAV names.
+
+---
+
 <!-- BAMF02:C04 -->
 # C04 | Compose exact and neural mechanisms behind one capability solver
 
@@ -1937,6 +2665,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Compose exact and neural mechanisms behind one capability solver. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C04 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C04.1 #498](https://github.com/Entif-AI/Bilqis-MLX/issues/498) | Plan typed pure exact and neural-capability execution routes | bounded implementable leaf; parent C04.
+- [C04.2 #499](https://github.com/Entif-AI/Bilqis-MLX/issues/499) | Bound source-visible compositions and safe unresolved fallbacks | bounded implementable leaf; parent C04.
+- [C04.3 #500](https://github.com/Entif-AI/Bilqis-MLX/issues/500) | Record provenance-safe route costs and guard gold separation | bounded implementable leaf; parent C04.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A07: #353](https://github.com/Entif-AI/Bilqis-MLX/issues/353), [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369), [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371)
@@ -2000,6 +2739,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C04/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-013; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C05 -->
 # C05 | Evaluate and retain end-to-end capabilities with current school safeguards
 
@@ -2007,6 +2753,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Evaluate and retain end-to-end capabilities with current school safeguards. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C05 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C05.1 #501](https://github.com/Entif-AI/Bilqis-MLX/issues/501) | Evaluate complete solver parent candidate and source-grounded gains | bounded implementable leaf; parent C05.
+- [C05.2 #502](https://github.com/Entif-AI/Bilqis-MLX/issues/502) | Preserve cumulative retention championships and carried mastery debt | bounded implementable leaf; parent C05.
+- [C05.3 #503](https://github.com/Entif-AI/Bilqis-MLX/issues/503) | Accept lawful promotion and evidence only through uniform grade policy | bounded implementable leaf; parent C05.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376), [C04: #373](https://github.com/Entif-AI/Bilqis-MLX/issues/373), [B12: #370](https://github.com/Entif-AI/Bilqis-MLX/issues/370), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372)
@@ -2033,13 +2790,22 @@ Use immutable typed records and the existing ErrorBus/catalog for boundary failu
 ## Implementation prescription
 Evaluate the same complete solver for retained parent and challenger. Preserve source-correct typed answers, the existing fresh-target improvement rule, grade/school aggregate non-regression and scaled protected-capability loss allowances. For already-perfect exact capabilities, skip pointless neural candidates and advance/rehearse through existing scheduling rules; useful cache/configuration changes receive their own versioned outcome receipt rather than fabricated retained optimizer steps. Run fresh generated compositions inside taught semantic scope, including previously unseen role fillers and legal structural variants. Distinguish progression92/87 from perfect cumulative mastery and championship. Keep fresh same-cohort title inference and settled unordered-pair history. Optional path attribution is diagnostic; no neural-only gate or architecture control-arm requirement is introduced. A whole capability can improve through a changed route, adapter, motif or dense weight.
 
+
+
+<!-- BAMF02:CONFORMANCE-RETENTION-INDEPENDENCE-RUBRIC -->
+**Source-family and rubric fidelity:** Score target improvement on independently held-out source-family/episode evidence under a pinned rubric, not on paraphrase clones or a silent evaluator-version change. Preserve immutable historical results with their original rubric and policy epoch. Any retrospective normalized comparison is a separate versioned translator receipt naming source and destination rubric, scope, source families and uncertainty; it never overwrites historic evidence or upgrades a candidate to retained without fresh valid target improvement and protected-school checks. Apply the same conditions to exact and neural outputs in every grade.
+
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** Evaluate promotion, graduation, retention and carried mastery debt using common FactoryRelease requirements and independently measured capability evidence, not inferred ordinal grade progression. Source-backed prerequisite edges, current approved promotion policy and valid admission authority can block a proposal; an unfinished earlier named grade cannot itself grant or deny a later domain. No special B-nongating/C-advance rule or reciprocal exception exists; the same policy applies to every grade.
+
 ## Relevant shared contracts
 
 ### Solver
 Expose solve(input_frame, task_contract, generation, budget)->TypedAnswer plus bounded execution receipt. Eligible runtime mechanisms are exact source-visible role/identity lookup, explicitly registered deterministic functions, qualified cached transforms and neural composition/prediction. Build a typed dependency DAG; run independent pure CPU operations in ready sets and serialize MLX operations. A deterministic operator declares semantic input/output signatures, applicability, version, effect=PURE, and independent literal fixtures. The evaluator's answer labels, scoring oracle and held evaluation records are not runtime inputs. Exact operators may compute answers from the task inputs, including arithmetic. Score the complete solver identically for parent and candidate. Skip optimizer work on already-perfect capabilities; use failure-targeted lessons to improve routing, binding, composition and remaining errors. Neural-only scores are optional debugging views, never a delivery gate.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Custody
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
@@ -2058,6 +2824,13 @@ An exact answer and neural answer with the same correct semantics receive identi
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_bamf_capability_retention.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required adversarial proof (BAMF-REQ-021/024; F10/F18):** Generate a family of paraphrases from one source; place siblings into training and alleged holdout, and require the split checker to reject independence and disallow a retained-gain claim. Recompute a frozen historical result under a changed rubric: its original value/receipt must remain byte-identical, translated value must carry an explicit translator/version and cross-epoch comparison must not count as new learning. A fresh independent source-family target must actually improve with protected-grade outcomes valid; swap grade labels on otherwise equivalent target/protected cohorts and show the same retention decision.
+
+
+**Functional Factory acceptance (ADR-BAMF02-004):** Fixture 1: two independent capabilities under arbitrary labels with identical debt/evidence/policy produce the same eligibility and retained-learning decision after label permutation. Fixture 2: add a real released prerequisite edge and observe the same legal block under both permutations. Fixture 3: a promotion receipt never substitutes for absent source, rights, independent fresh evidence or a required admission lease.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C05/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -2068,6 +2841,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C05/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-017, BAMF-REQ-021, BAMF-REQ-024; fixtures: F10, F16, F18. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C06 -->
 # C06 | Route attention and curriculum priorities with SÍ SÉ SON signals
 
@@ -2075,6 +2855,18 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Route attention and curriculum priorities with SÍ SÉ SON signals. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C06 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C06.1 #504](https://github.com/Entif-AI/Bilqis-MLX/issues/504) | Derive typed Impact Exigency Novelty ordinal evidence | bounded implementable leaf; parent C06.
+- [C06.2 #505](https://github.com/Entif-AI/Bilqis-MLX/issues/505) | Apply grade-neutral dispatcher and bounded teacher priority | bounded implementable leaf; parent C06.
+- [C06.3 #506](https://github.com/Entif-AI/Bilqis-MLX/issues/506) | Aggregate correction trends without claiming source gold | bounded implementable leaf; parent C06.
+- [C06.4 #507](https://github.com/Entif-AI/Bilqis-MLX/issues/507) | Publish causal priority and recovery-observability receipts | bounded implementable leaf; parent C06.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A06: #352](https://github.com/Entif-AI/Bilqis-MLX/issues/352), [A09: #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360), [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369), [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376)
@@ -2098,7 +2890,16 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Build three five-class ordinal heads and a deterministic evidence adapter. Impact uses declared task consequences and measured downstream dependency/coverage effects; Exigency uses deadlines, blocked useful work and active repair needs; Novelty compares the event/structure with the current expectation and observed outcomes. UNKNOWN is explicit. Use the dispatcher ordering in the shared contract, not a weighted global sum. The teacher consumes admissible priority features and continues selecting HOW. Maintain local aggregation windows by20 events and capability epoch; repeated small defects can become a process-level candidate. Label source-backed examples and outcome-derived bins by a versioned rule, masking unlabeled heads. Track whether accepted lessons change later actions/routes and whether corrections stop recurring. A surprising assertion stays a conjecture until its ordinary source/admission route qualifies it. Predecessor trace: BAV-REQ-018; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Build three five-class ordinal heads and a deterministic evidence adapter. Impact uses declared task consequences and measured downstream dependency/coverage effects; Exigency uses deadlines, blocked useful work and active repair needs; Novelty compares the event/structure with the current expectation and observed outcomes. UNKNOWN is explicit. Use the dispatcher ordering in the shared contract, not a weighted global sum. The teacher consumes admissible priority features and continues selecting HOW. Maintain local aggregation windows by20 events and capability epoch; repeated small defects can become a process-level candidate. Label source-backed examples and outcome-derived bins by a versioned rule, masking unlabeled heads. Track whether accepted lessons change later actions/routes and whether corrections stop recurring. A surprising assertion stays a conjecture until its ordinary source/admission route qualifies it. Predecessor trace: BAMF-REQ-018; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+
+
+<!-- BAMF02:CONFORMANCE-SALience-AGGREGATE-RIGHTS -->
+**Aggregation and rights precedence:** The expectation comparator must aggregate multiple independently observed, similarly structured minor discrepancies into a candidate pattern even when each leaf event would not independently attract attention. Distinguish separate events from paraphrases of one source; deduplicate source-lineage repetitions and preserve provenance, time/scope and alternative explanations. Aggregated salience may nominate investigation or qualified teaching, never override revoked source rights, missing gold, consent or a held source. The three SÍ/SÉ/SON dimensions remain separately observable rather than a single weighted truth score.
+
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** SÍ/SÉ/SON signals are typed evidence inputs to the common grade-neutral teaching/priority policy, not a separate scheduler or permission to override a source/release prerequisite. Their outcome-based ordering must be equivariant to grade-ID renaming. Semantic-domain-specific risk or coverage can be expressed in a released source policy, never a letter-graduation shortcut.
 
 ## Relevant shared contracts
 
@@ -2106,7 +2907,7 @@ Build three five-class ordinal heads and a deterministic evidence adapter. Impac
 SÍ SÉ SON supplies three independent ordinal signals: UNKNOWN, LOW, MODERATE, HIGH, CRITICAL for Impact, Exigency and expectation-relative Osmotic Novelty. Attach source/evaluator and basis rather than a universal weighted sum. The teacher receives legal options with these features and retains HOW authority. Dispatcher ordering is: required correction/invalidated state; urgent relevant work; ready capability with demonstrated downstream unlock; novelty-guided exploration; normal fair frontier rotation. Break ties by age then stable ID. Aggregate event->cluster->pattern->trend at fixed local windows, preserving the underlying observations. A missing expected event differs from a reported negative event. Persistent repeated errors nominate procedure repair, not repeated identical lessons. Auxiliary heads only learn from explicit labels or measured outcome-derived labels; speculative scores do not mint source gold.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Projection
 Use Rosetta v3 existing Observation, Frame, Conjecture, Evaluation and Run/Action/ToolCall/Receipt semantics with application namespaced envelopes. Keep CID content identity, stable RID and external XID separate. Akasha consumes immutable source/release/learner events through a local outbox, projects them into declared namespaces, and is rebuildable. #297 owns domain/authority contracts; #299/#300 own release and run/evidence projection; #301 recovery. Store source/effective/observed/recorded times where relevant. A live Falkor service is not a training dependency: compile neighborhoods into a release artifact and enqueue observations locally. Mutation remains with the source/run owners. PRIVATE_REAL data stays outside public worktrees, CI, issue bodies and exports; #327 protects the private pilot. PUBLIC_FIXTURE development continues independently.
@@ -2115,6 +2916,13 @@ Use Rosetta v3 existing Observation, Frame, Conjecture, Evaluation and Run/Actio
 A time-critical known problem can outrank a novel low-impact curiosity; a useful new cross-domain relation can outrank routine repetition when deadlines are equal. Missing expected report differs from explicitnegative report. Repeated identical failure triggers one grouped repair candidate, not20newdiscoveries. Head losses mask UNKNOWN-without-label cases. Priority changes do not override teacher strategy or fabricate semantic truth.
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/learning/tests/test_atlas_salience.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
+
+
+
+**Required contrast fixtures (BAMF-REQ-018; F08/F19):** A single minor mismatch remains below the declared candidate threshold, but many distinct, source-qualified analogous mismatches produce an aggregate trend candidate with a recorded lineage set; unrelated mismatches and many paraphrases of one event do NOT produce that trend. Revoke training rights on an otherwise high-novelty example: no optimizer input or admitted gold may result, regardless of novelty or impact. The unknown-label auxiliary heads remain masked. Neither the aggregate nor novelty alone may promote a source or turn conjecture into observation.
+
+
+**Functional Factory acceptance (ADR-BAMF02-004):** Permuting grade IDs with fixed salience, source rights, evidence and dependencies preserves proposal ordering and actionable holds. Rights/correction blocks defeat novelty and exigency under every grade label.
 
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C06/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
@@ -2126,6 +2934,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C06/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-018; fixtures: F08, F19. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C07 -->
 # C07 | Advance the Factory continuously under an explicit atlas admission lease
 
@@ -2133,6 +2948,19 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Advance the Factory continuously under an explicit atlas admission lease. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C07 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C07.1 #508](https://github.com/Entif-AI/Bilqis-MLX/issues/508) | Own persisted authorization lease and atomic staged-admission interfaces | intermediate group (assign grandchildren); parent C07.
+- [C07.1a #509](https://github.com/Entif-AI/Bilqis-MLX/issues/509) | Define explicit persisted atlas-admission lease and source scope | bounded implementable leaf; parent C07.1.
+- [C07.1b #510](https://github.com/Entif-AI/Bilqis-MLX/issues/510) | Stage and atomically adopt lawful Factory successors | bounded implementable leaf; parent C07.1.
+- [C07.2 #511](https://github.com/Entif-AI/Bilqis-MLX/issues/511) | Handle out-of-scope releases debt and predecessor evidence | bounded implementable leaf; parent C07.
+- [C07.3 #512](https://github.com/Entif-AI/Bilqis-MLX/issues/512) | Implement recursive event-driven self-maintaining admission flywheel | bounded implementable leaf; parent C07.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A09: #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360), [A12: #364](https://github.com/Entif-AI/Bilqis-MLX/issues/364), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C06: #379](https://github.com/Entif-AI/Bilqis-MLX/issues/379)
@@ -2158,7 +2986,11 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-A human-started BAMF command may opt into --admission-policy atlas-release, binding an exact approved atlas release, allowed family/operator set, source rights, bank/resource ceiling and versioned prerequisite/progression policy. Persist this lease with the run. Within it, repeatedly compile, validate, stage and adopt ready deltas through the existing prepared-successor entrypoint. Default without lease remains STAGED with a precise operator action. Check the current checkpoint, optimizer step, source/answer implementations and frontier immediately before adoption. Do not require a new human prompt for every already-authorized concept. A new external semantic release or out-of-scope domain requires a renewed lease, while old authorized learning continues. A/B/C initialize the developmental staircase; proceed into source-attested SKOS families according to prerequisites and useful outcomes, not a fixed D-O list. Keep B debt and numeric scope from the real run manifest, not historic constants.
+A human-started BAMF command may opt into --admission-policy atlas-release, binding an exact approved atlas release, allowed family/operator set, source rights, bank/resource ceiling and versioned prerequisite/progression policy. Persist this lease with the run. Within it, repeatedly compile, validate, stage and adopt ready deltas through the existing prepared-successor entrypoint. Default without lease remains STAGED with a precise operator action. Check the current checkpoint, optimizer step, source/answer implementations and frontier immediately before adoption. Do not require a new human prompt for every already-authorized concept. A new external semantic release or out-of-scope domain requires a renewed lease, while old authorized learning continues. A/B/C initialize the developmental staircase; proceed into source-attested SKOS families according to prerequisites and useful outcomes, not a fixed D-O list. Read carried debt for every admitted grade, numeric scope and policy version from the current run manifest, never historical grade-specific constants.
+
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** Implement a self-maintaining admission flywheel: fold each verified source, coverage, learning, correction or policy event into an immutable versioned planner snapshot; recompute the pure ready frontier and stage its next minimal prerequisite-closed delta; upon a permitted atomic admission under the existing persisted atlas lease, record the new generation and replan from the accepted receipt. Repeat only while state actually advances; yield a typed FIXED_POINT, WAITING_FOR_EVIDENCE, HELD, IMPLEMENTATION_UNCOVERED or LEASE_REQUIRED status instead of busy-polling. The planner proposes but cannot authorize new source/rights, admit outside the lease, promote a grade by fiat, or initiate MLX training.
 
 ## Relevant shared contracts
 
@@ -2169,7 +3001,7 @@ The owner-selected deliverable is one fresh BAMF-0.2 student lineage using the p
 One generative Factory compiles the eligible SKOS atlas and existing formal domains into capability definitions, typed construction programs, teaching choices, assessments and executable releases. #292 owns ABI projection, #293 AST identity, #294 lesson manifest, #295 authority cutover, #296 the staged flywheel. These leaves supply their BAMF implementation deltas, not a parallel runtime. Enumerate the entire pinned corpus into ACTIVE/READY/HELD/EXHAUSTED coverage entries with reason and prerequisite links. Ready selection is topological and deterministic; introduce the smallest justified distinction, positively teach constituents, then composition. Source list order and broader/narrower edges alone do not define prerequisites. In one delta add1-9 capabilities and an initial admission budget of16 total new semantic identities including newly required constituents; recursively split a larger eligible closure into successive deltas. A changing semantic release is a new coverage epoch, not a reset. Reuse current prepare_realized_candidates/propose_curriculum_delta/admission functions. The16-ID budget is versioned admission policy, not a semantic capacity limit. Split a larger closure into constructive constituent releases, then the dependent capability; preserve already qualified larger source families through an explicit policy version rather than silently dropping their members. Freeze source_eligible_concept_ids and required_source_family_ids using source/rights/semantic qualification alone. Maintain separate source_disposition and implementation_status. SOURCE_HELD means missing source meaning, unresolved mapping, incompatible rights or unqualified semantics; it records an exact source reason. IMPLEMENTATION_UNCOVERED means source-qualified but lacking a constructor/checker/binding and remains mandatory delivery debt. ADAPTER_READY, STAGED, ADMITTED, EXPOSED and QUALIFIED are implementation/learning states, not changes to source eligibility. The atlas compiler emits a required coverage row for every source-eligible concept and family before inspecting adapter availability. A08 must implement every required reusable family in that frozen census; new roots within a covered family are data, not new per-root tickets. Generic positive identity/definition/contrast fixtures cover source-defined concepts; operator/fact application fixtures use the declared formal or source-attested relation contract. Uncovered families may be bypassed by the scheduler while independent work runs, but COMPLETE_ATLAS_COVERAGE requires zero source-qualified implementation debt and every required coverage obligation met. Keep counts for source-held, implementation-uncovered, ready, exposed and qualified independently visible. The full-delivery receipt binds the frozen eligible census so unsupported code cannot shrink the denominator.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Custody
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
@@ -2182,6 +3014,9 @@ One lease admits three data-defined successors and resumes from the second witho
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_admission.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+**Functional Factory acceptance (ADR-BAMF02-004):** Crash/replay before, during and after staging/admission yields the same next legal delta and no duplicate release; introducing a qualified family or a correction reopens only affected frontier obligations. Grade-name permutations and symmetric debt produce equivalent lease/admission decisions; a true source prerequisite or rights hold blocks both. No continuous background optimizer writer is introduced.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C07/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -2192,6 +3027,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C07/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-015; fixtures: F17. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C08 -->
 # C08 | Make batch preparation and resource budgets topology-aware
 
@@ -2199,6 +3041,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Make batch preparation and resource budgets topology-aware. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C08 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C08.1 #513](https://github.com/Entif-AI/Bilqis-MLX/issues/513) | Estimate topology-aware activations and deterministic microbatches | bounded implementable leaf; parent C08.
+- [C08.2 #514](https://github.com/Entif-AI/Bilqis-MLX/issues/514) | Retry bounded allocation without corrupting retained candidates | bounded implementable leaf; parent C08.
+- [C08.3 #515](https://github.com/Entif-AI/Bilqis-MLX/issues/515) | Preserve isolated CPU source workers and runtime resource floors | bounded implementable leaf; parent C08.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371), [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369)
@@ -2235,7 +3088,7 @@ Use the existing96GB M3 Ultra, one sovereign MLX writer and at most2 CPU determi
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ## Acceptance and bounded proof
 Accumulated gradient matches an unsplit small batch within declaredFP32 tolerance. Two CPU source workers produce same packets as serial. Stale prepared packet rejects. OOM simulation retries once and retains source/stepidentity. Batch1 exhaustion preserves parent. Disk guard considers complete weights,moments,manifest and publication overhead.
@@ -2252,6 +3105,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C08/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-022; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C09 -->
 # C09 | Propagate corrections through reusable cognition and learned support
 
@@ -2259,6 +3119,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Propagate corrections through reusable cognition and learned support. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C09 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C09.1 #516](https://github.com/Entif-AI/Bilqis-MLX/issues/516) | Index reverse dependencies of semantic and learned artifacts | bounded implementable leaf; parent C09.
+- [C09.2 #517](https://github.com/Entif-AI/Bilqis-MLX/issues/517) | Requalify affected learning state without rewriting historical evidence | bounded implementable leaf; parent C09.
+- [C09.3 #518](https://github.com/Entif-AI/Bilqis-MLX/issues/518) | Propagate corrections through local projections and typed operators | bounded implementable leaf; parent C09.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345), [B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C04: #373](https://github.com/Entif-AI/Bilqis-MLX/issues/373)
@@ -2282,7 +3153,12 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Index immediate dependencies for atlas features, packedframes, motifs, exact caches, operator compositions and capability support. Use immutable correction events and reverse direct edges. Hold directly affected artifacts before their next use; revalidate lazily in impact/exigency order. Propagation stops when materialized content and eligibility are unchanged. Record alternatives when concurrent corrections disagree, rather than last-write-wins. A learned capability supported by invalidated material enters REQUALIFICATION_REQUIRED and receives targeted fresh source tasks; valid unrelated capabilities continue. Preserve the original observations and historical tensor checkpoints. Route invalidations to Akasha via C10. Include deterministic expiry/as-of projections as immediate dependencies when time changes validity. Predecessor trace: BAV-REQ-019/020; the implementation follows the explicit BAMF-0.2 contract repeated here.
+Index immediate dependencies for atlas features, packedframes, motifs, exact caches, operator compositions and capability support. Use immutable correction events and reverse direct edges. Hold directly affected artifacts before their next use; revalidate lazily in impact/exigency order. Propagation stops when materialized content and eligibility are unchanged. Record alternatives when concurrent corrections disagree, rather than last-write-wins. A learned capability supported by invalidated material enters REQUALIFICATION_REQUIRED and receives targeted fresh source tasks; valid unrelated capabilities continue. Preserve the original observations and historical tensor checkpoints. Route invalidations to Akasha via C10. Include deterministic expiry/as-of projections as immediate dependencies when time changes validity. Predecessor trace: BAMF-REQ-019/020; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+
+
+<!-- BAMF02:CONFORMANCE-CORRECTION-ESCALATION -->
+**Stale-fact process-failure contract:** If an accepted correction has invalidated relevant source/context/motif/teacher descendants and the system subsequently claims remediation but repeats the superseded fact, classify that recurrence as an affected-lineage propagation/repair failure, not another ordinary novelty observation or a successful correction. Preserve original source, event time, correction receipt, prior remediation attempt and offending derived path; hold unsafe descendants, emit a typed actionable process-fault reason and require repair/requalification evidence before reuse. An authorized genuinely new observation does not get mislabeled as stale.
 
 ## Relevant shared contracts
 
@@ -2303,6 +3179,10 @@ Change one source premise and repair only its affected direct chain. An unrelate
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_atlas_revalidation.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required adversarial proof (BAMF-REQ-019/020; F15):** Construct a public synthetic event, superseding correction, first stale replay and recorded remediation. Force the identical superseded belief to reappear AFTER the remediation is reported complete: the affected path must be held, an explicit propagation/process fault raised with source/correction/derived IDs, and the previously retained learner generation left historically intact but marked for requalification. A separate independent later event with the same wording but legitimate new evidence must not trigger this fault.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C09/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -2313,6 +3193,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C09/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-019, BAMF-REQ-020; fixtures: F06, F07, F15, F19. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C10 -->
 # C10 | Publish BAMF learning and release events into Rosetta/Akasha projections
 
@@ -2320,6 +3207,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Publish BAMF learning and release events into Rosetta/Akasha projections. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C10 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C10.1 #519](https://github.com/Entif-AI/Bilqis-MLX/issues/519) | Define immutable Rosetta event and namespace projections | bounded implementable leaf; parent C10.
+- [C10.2 #520](https://github.com/Entif-AI/Bilqis-MLX/issues/520) | Enqueue deduplicated source and learning events without trainer IO | bounded implementable leaf; parent C10.
+- [C10.3 #521](https://github.com/Entif-AI/Bilqis-MLX/issues/521) | Rebuild staging graph projections and enforce public-private boundary | bounded implementable leaf; parent C10.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380), [C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377)
@@ -2372,6 +3270,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C10/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-006; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C11 -->
 # C11 | Expose a usable BAMF cockpit and stable launch/resume commands
 
@@ -2379,6 +3284,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Expose a usable BAMF cockpit and stable launch/resume commands. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C11 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C11.1 #522](https://github.com/Entif-AI/Bilqis-MLX/issues/522) | Expose production BAMF create dry-run and resume CLI | bounded implementable leaf; parent C11.
+- [C11.2 #523](https://github.com/Entif-AI/Bilqis-MLX/issues/523) | Display truthful grade-neutral curriculum and learner cockpit | bounded implementable leaf; parent C11.
+- [C11.3 #524](https://github.com/Entif-AI/Bilqis-MLX/issues/524) | Document real operator launch and resource custody commands | bounded implementable leaf; parent C11.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380), [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374), [C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383)
@@ -2406,10 +3322,15 @@ Use immutable typed records and the existing ErrorBus/catalog for boundary failu
 ## Implementation prescription
 Add BAMF v2 to the existing train, dry-run and resume parser. Preserve human-run and source-prefetch controls. Add --admission-policy atlas-release with --atlas-release-manifest; resume reads saved values and rejects conflicting overrides before mutation. Reuse the existing metric owners for ST/M,R/H,RTN%,GREW,G/RTN,GRAD,P(RET),HEALTH. Add a compact expandable panel with active concepts/banks, ready/held coverage, atoms/frame, fallback, expansion, motif hits, plasticity mode and memory pressure. Keep the main cockpit compact and put detailed data in receipts. Distinguish staged curriculum, gained capability, retained steps, debt and perfect mastery. Publish actual parser-tested commands for preflight, owner launch, resume and read-only status.
 
+
+
+<!-- BAMF02:CONFORMANCE-COCKPIT-GRADE-EVIDENCE -->
+**Grade-neutral operator evidence:** The cockpit may group metrics by grade for comprehension, but scheduler authority remains capability/source/prerequisite evidence, not letter-based quotas. Display candidate provenance, eligible-vs-held source cohorts, actual delivered work, observed grade/capability debt, promotion attempts, whole-school fresh retention and true learned transfer separately. A grade label alone cannot manufacture a priority reason or hide an eligible capability. The existing run's historical grade policies remain visible as lineage metadata rather than falsely applied to BAMF-0.2.
+
 ## Relevant shared contracts
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Resource
 Use the existing96GB M3 Ultra, one sovereign MLX writer and at most2 CPU deterministic preparation workers. Workers receive only source/release/seed packets, never writable model/optimizer/teacher state. Batch actual lengths; start32 short rows and reduce through16/8/4/2/1 as frame/constituent activation estimates approach the48GiB trainer envelope. Keep a stable deterministic batching plan per visit. Full1024-frame workloads begin1-4 rows. Default context1024 applies to compiled neural positions, not raw atoms. MLX peak allocated/cache memory, preparation cost, accepted steps/hour, actual capability gain and disk reserve are visible. CPU checks run on either device; real MLX and learning acceptance run only on the Mac Studio lane.
@@ -2428,6 +3349,10 @@ Fresh v2 and resume parse; conflicting saved topology fails. Ten retentions with
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/presentation/tests/test_bamf_metrics.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required grade-label/UI truth fixture (BAMF-REQ-017/022/024):** Feed equal qualified teacher visits for differently labeled capabilities and verify the cockpit shows identical eligibility and promotion rules without a B-only quota/cadence. Compare a long low-retention loop with an actual fresh retained improvement: the dashboard may report high throughput but MUST NOT label it learned success. Holdout/protected-grader results display their exact source and rubric revisions; no grade, debt or historical rubric is silently reclassified.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C11/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -2438,6 +3363,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C11/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-022; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C12 -->
 # C12 | Package reusable cognitive capabilities and compatible plastic deltas
 
@@ -2445,6 +3377,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Package reusable cognitive capabilities and compatible plastic deltas. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C12 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C12.1 #525](https://github.com/Entif-AI/Bilqis-MLX/issues/525) | Package source-cleared reusable semantic and procedure manifests | bounded implementable leaf; parent C12.
+- [C12.2 #526](https://github.com/Entif-AI/Bilqis-MLX/issues/526) | Bind compatible local plastic deltas and staged imports | bounded implementable leaf; parent C12.
+- [C12.3 #527](https://github.com/Entif-AI/Bilqis-MLX/issues/527) | Validate private-safe exports and local exchange compatibility | bounded implementable leaf; parent C12.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A12: #364](https://github.com/Entif-AI/Bilqis-MLX/issues/364), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377)
@@ -2468,7 +3411,7 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Create a portable manifest containing semantic signatures, release compatibility, operator/model identity, qualification fixtures, counterexamples, behavioral diff, resource envelope, rights and revocation lineage. Export source-cleared procedures and exact transforms directly. Adapter/weight deltas require identical base checkpoint, parameter schema and semantic binding. Heterogeneous recipients receive semantic teaching packages or fixtures instead. Stage imports and apply the same whole-capability retention before activation. A first local two-node directory exchange suffices; no new server or networking framework is required. Public export whitelists PUBLIC_FIXTURE/PUBLIC_DERIVED and rejects private or unclassified material. Predecessor trace: BAV-REQ-021; the implementation follows the explicit BAMF-0.2 contract repeated here. Implement the complete receiver-owned state transition from Package adoption.
+Create a portable manifest containing semantic signatures, release compatibility, operator/model identity, qualification fixtures, counterexamples, behavioral diff, resource envelope, rights and revocation lineage. Export source-cleared procedures and exact transforms directly. Adapter/weight deltas require identical base checkpoint, parameter schema and semantic binding. Heterogeneous recipients receive semantic teaching packages or fixtures instead. Stage imports and apply the same whole-capability retention before activation. A first local two-node directory exchange suffices; no new server or networking framework is required. Public export whitelists PUBLIC_FIXTURE/PUBLIC_DERIVED and rejects private or unclassified material. Predecessor trace: BAMF-REQ-021; the implementation follows the explicit BAMF-0.2 contract repeated here. Implement the complete receiver-owned state transition from Package adoption.
 
 ## Relevant shared contracts
 
@@ -2502,6 +3445,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C12/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-021; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C13 -->
 # C13 | Run the integrated disposable learning and recovery acceptance slice
 
@@ -2509,6 +3459,17 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Run the integrated disposable learning and recovery acceptance slice. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C13 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C13.1 #528](https://github.com/Entif-AI/Bilqis-MLX/issues/528) | Prepare disposable combined-system acceptance and source fixtures | bounded implementable leaf; parent C13.
+- [C13.2 #529](https://github.com/Entif-AI/Bilqis-MLX/issues/529) | Exercise native retained learning rollback and correction scenarios | bounded implementable leaf; parent C13.
+- [C13.3 #530](https://github.com/Entif-AI/Bilqis-MLX/issues/530) | Collect existing guard receipts and responsible issue handoff | bounded implementable leaf; parent C13.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A12: #364](https://github.com/Entif-AI/Bilqis-MLX/issues/364), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380), [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374), [C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377), [C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383)
@@ -2534,6 +3495,11 @@ Use immutable typed records and the existing ErrorBus/catalog for boundary failu
 ## Implementation prescription
 Use the actual Mac Studio for a finite disposable integrated run of the chosen model. Exercise creation, source-bound gradients, paired evaluation, one accepted candidate, one rejected candidate, cold restart and one append-only semantic delta. Allow up to64 attempted optimizer steps for this engineering witness and stop once the required behaviors are observed. Fix a failed witness in its owning source/loss/teacher/adapter seam rather than starting a model tournament. Lessons come from the admitted Factory and constructive constituent rules. Exercise complete solver routes and correction requalification. Run the existing portable, ABI and Factory guards once on the combined candidate. Record actual commands, hashes, outcomes and resource use. The operator's real learner stays untouched.
 
+
+
+<!-- BAMF02:CONFORMANCE-FULL-SCHOOL-WITNESS -->
+**Integrated acceptance must exercise the real retained learner, not a successful operator-only solver:** Freeze an independently qualified source family and current admitted school, measure baseline source-visible complete-solver performance, run a bounded disposable candidate using real MLX/AdamW under the grade-neutral teacher, and compare fresh heldout target performance plus all protected-grade outcomes against the same precommitted rubric. A correct exact primitive may contribute to a complete answer but cannot be counted as neural learning when its answer was already derivable without updates. Record both positive and rejected candidates.
+
 ## Relevant shared contracts
 
 ### Authority
@@ -2543,7 +3509,7 @@ The owner-selected deliverable is one fresh BAMF-0.2 student lineage using the p
 Expose solve(input_frame, task_contract, generation, budget)->TypedAnswer plus bounded execution receipt. Eligible runtime mechanisms are exact source-visible role/identity lookup, explicitly registered deterministic functions, qualified cached transforms and neural composition/prediction. Build a typed dependency DAG; run independent pure CPU operations in ready sets and serialize MLX operations. A deterministic operator declares semantic input/output signatures, applicability, version, effect=PURE, and independent literal fixtures. The evaluator's answer labels, scoring oracle and held evaluation records are not runtime inputs. Exact operators may compute answers from the task inputs, including arithmetic. Score the complete solver identically for parent and candidate. Skip optimizer work on already-perfect capabilities; use failure-targeted lessons to improve routing, binding, composition and remaining errors. Neural-only scores are optional debugging views, never a delivery gate.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Custody
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
@@ -2559,6 +3525,10 @@ Prove finite real updates, a source-grounded retained improvement, complete roll
 
 Start with `python3 -B scripts/run_tests.py tests/system/test_bamf_learning_path.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required cross-grade true-learning witness (BAMF-REQ-015/016/017/023/024; F16/F20):** On a predeclared fresh independent target family, prove a strictly improved complete-solver score after at least one real retained neural update, with protected source-gold and grade-agnostic retention valid. Perturb only concealed target labels and prove the earlier inputs/logits cannot change. Under a deliberately damaged candidate require byte-identical rollback of model, motif/semantic ABI, AdamW and teacher state; cold resume the accepted generation, verify exact identity and equal next update. Changing only grade labels on otherwise identical qualified lesson envelopes may not change admissible scheduling or retention decisions. Historical #324 and old six-layer digests remain unchanged.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C13/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -2569,6 +3539,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C13/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-016, BAMF-REQ-023, BAMF-REQ-024; fixtures: F20. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C14 -->
 # C14 | Deliver the continuing BRAVO-to-full-atlas training program
 
@@ -2576,6 +3553,19 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Deliver the continuing BRAVO-to-full-atlas training program. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C14 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C14.1 #531](https://github.com/Entif-AI/Bilqis-MLX/issues/531) | Own the source-defined developmental program and interleaved scheduling policy | intermediate group (assign grandchildren); parent C14.
+- [C14.1a #532](https://github.com/Entif-AI/Bilqis-MLX/issues/532) | Declare constructive L0 and released L1-L2 domain programs | bounded implementable leaf; parent C14.1.
+- [C14.1b #533](https://github.com/Entif-AI/Bilqis-MLX/issues/533) | Select lawful interleaved stages from admitted release and evidence | bounded implementable leaf; parent C14.1.
+- [C14.2 #534](https://github.com/Entif-AI/Bilqis-MLX/issues/534) | Deliver source coverage and resource-aware operator runbook | bounded implementable leaf; parent C14.
+- [C14.3 #535](https://github.com/Entif-AI/Bilqis-MLX/issues/535) | Extend recursive grade-neutral domain rules and succession | bounded implementable leaf; parent C14.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [A10: #361](https://github.com/Entif-AI/Bilqis-MLX/issues/361), [A11: #362](https://github.com/Entif-AI/Bilqis-MLX/issues/362), [C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380), [C11: #384](https://github.com/Entif-AI/Bilqis-MLX/issues/384), [C13: #385](https://github.com/Entif-AI/Bilqis-MLX/issues/385)
@@ -2601,13 +3591,22 @@ Use immutable typed records and the existing ErrorBus/catalog for boundary failu
 ## Implementation prescription
 Encode a continuing program as data. L0 teaches positive identity, direct Boolean and numeric constituents followed by lawful composition. L1 covers released SKOS roles/senses/morphology and individually qualified structured BRAVO category/time frames. L2 continues new concepts, ambiguity, relations and cross-family composition. L3 is optional capacity/hardware extension; L4 packages bounded capabilities. L3/L4 never block earlier education. Interleave qualified L1/L2 subsets according to prerequisites instead of waiting for every source stratum. Read initial A/B/C semantics and numeric scope from the admitted run release, not #324's frozen workload. Preserve previous skills with the existing teacher and retention. Continue until every eligible SKOS item has declared task coverage; enumerate held items and remediation owners. Give the operator exact launch/resume/source-extension instructions, visible daily outcomes and local resource limits. Attach real training results after owner initiation.
 
+
+
+<!-- BAMF02:CONFORMANCE-GRADE-NEUTRAL-PROGRAM -->
+**Curriculum progression without grade-based privileges:** The L0–L2 stages describe constructive source prerequisites and useful concepts, not a hard-coded A→B→C scheduling priority. The continuing program uses the same eligibility, retention, debt, retest and teacher scoring contracts for any admitted grade. Preserve non-gating debt of any source-qualified capability; not only old Boolean debt. One grade cannot be artificially starved, rushed or promoted because its name sorts before/after another grade. New grade introduction is a data/Factory release operation, not a trainer branch.
+
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** L0-L4 are examples of semantic complexity and optional capabilities, not a fixed grade order or imperative A-then-B-then-C curriculum algorithm. Express the continuing program as immutable curriculum policy and domain-rule manifests consumed by the single pure recursive Factory planner. Reuse the same bounded source-qualified prerequisite, evidence, teaching/assessment, promotion/debt and admission rules for Boolean, integer and future world-model semantics. Allow independent eligible domains to progress under the same generic rules; actual cross-domain prerequisites block by their typed edges. Never carry forward a named B-debt exception or assume a C entitlement.
+
 ## Relevant shared contracts
 
 ### Curriculum
 One generative Factory compiles the eligible SKOS atlas and existing formal domains into capability definitions, typed construction programs, teaching choices, assessments and executable releases. #292 owns ABI projection, #293 AST identity, #294 lesson manifest, #295 authority cutover, #296 the staged flywheel. These leaves supply their BAMF implementation deltas, not a parallel runtime. Enumerate the entire pinned corpus into ACTIVE/READY/HELD/EXHAUSTED coverage entries with reason and prerequisite links. Ready selection is topological and deterministic; introduce the smallest justified distinction, positively teach constituents, then composition. Source list order and broader/narrower edges alone do not define prerequisites. In one delta add1-9 capabilities and an initial admission budget of16 total new semantic identities including newly required constituents; recursively split a larger eligible closure into successive deltas. A changing semantic release is a new coverage epoch, not a reset. Reuse current prepare_realized_candidates/propose_curriculum_delta/admission functions. The16-ID budget is versioned admission policy, not a semantic capacity limit. Split a larger closure into constructive constituent releases, then the dependent capability; preserve already qualified larger source families through an explicit policy version rather than silently dropping their members. Freeze source_eligible_concept_ids and required_source_family_ids using source/rights/semantic qualification alone. Maintain separate source_disposition and implementation_status. SOURCE_HELD means missing source meaning, unresolved mapping, incompatible rights or unqualified semantics; it records an exact source reason. IMPLEMENTATION_UNCOVERED means source-qualified but lacking a constructor/checker/binding and remains mandatory delivery debt. ADAPTER_READY, STAGED, ADMITTED, EXPOSED and QUALIFIED are implementation/learning states, not changes to source eligibility. The atlas compiler emits a required coverage row for every source-eligible concept and family before inspecting adapter availability. A08 must implement every required reusable family in that frozen census; new roots within a covered family are data, not new per-root tickets. Generic positive identity/definition/contrast fixtures cover source-defined concepts; operator/fact application fixtures use the declared formal or source-attested relation contract. Uncovered families may be bypassed by the scheduler while independent work runs, but COMPLETE_ATLAS_COVERAGE requires zero source-qualified implementation debt and every required coverage obligation met. Keep counts for source-held, implementation-uncovered, ready, exposed and qualified independently visible. The full-delivery receipt binds the frozen eligible census so unsupported code cannot shrink the denominator.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Projection
 Use Rosetta v3 existing Observation, Frame, Conjecture, Evaluation and Run/Action/ToolCall/Receipt semantics with application namespaced envelopes. Keep CID content identity, stable RID and external XID separate. Akasha consumes immutable source/release/learner events through a local outbox, projects them into declared namespaces, and is rebuildable. #297 owns domain/authority contracts; #299/#300 own release and run/evidence projection; #301 recovery. Store source/effective/observed/recorded times where relevant. A live Falkor service is not a training dependency: compile neighborhoods into a release artifact and enqueue observations locally. Mutation remains with the source/run owners. PRIVATE_REAL data stays outside public worktrees, CI, issue bodies and exports; #327 protects the private pilot. PUBLIC_FIXTURE development continues independently.
@@ -2625,9 +3624,16 @@ Freeze source_eligible_concept_ids and required_source_family_ids using source/r
 BamfEvidenceSnapshot/v1 is the application adapter payload for the existing #326/#328-#332 source-stratum contracts, not a new Rosetta Core kind. It binds snapshotID,sourceManifestCID,sourceByteDigest,interpretationRevision,semanticRelease,rights={regime,purpose,allowedTraining},records[]. Each record is {recordID,actorRef:string,sourceSpan:{start,end},categoryRef,status:PLANNED|COMPLETED|UNKNOWN,reportedValue:{decimal:string|null,unitRef},eventTime:{startISO:null|string,endISO:null|string,timeZone},observedAt,alternatives:[],adjudicationRef}. The exact source bytes and source-native field labels remain in the source manifestation. Category/unit references are resolved against the pinned admitted release before lesson compilation; public fixture labels are not minted as runtime meanings. Minimal PUBLIC_FIXTURE source text is 'actor=actor_01; category=study; status=completed; duration=0.25 h'; record fixture-001 sets actorRef=actor_01 from the explicit source field and selects the admitted study category and hour unit, COMPLETED,decimal='0.25',null event times,observedAt='2026-01-01T00:00:00Z',allowedTraining=true, and cites the exact span0..len(source). Expected frame binds the source-visible actor handle to its released AGENT role, then category,status,reported-duration; a derived exact unit transform yields15 minutes with separate derivation. Literal templates: T1 '{actor} completed {category} for {value} {unit}.'; T2 '{actor} plans {category} for {value} {unit}.'; T3 '{actor} reported {category}; duration is unknown.' actorRef is an explicit source-visible opaque symbolic actor handle, never an inferred person. Bind it through the existing released AGENT role. The fixture renders T1 exactly as actor_01 completed study for 0.25 h. Its generated PLANNED contrast renders T2 as actor_01 plans study for 0.25 h. Its generated null-duration contrast renders T3 as actor_01 reported study; duration is unknown. The initial questions are 'What category?', 'Planned or completed?', 'What reported duration?' and 'Convert the reported duration to minutes.' Their typed goal contracts select existing pure/semantic operators. Null duration produces UNKNOWN, zero produces0; contradictory dates produce alternatives and no invented chronology. Checker compares exact rational unit conversion and released role/status IDs. Missing/unadjudicated stratum emits its own source hold; qualified public records continue. English templates are deterministic peripheral realizations of the typed frame, not a free-form language model requirement.
 
 ## Acceptance and bounded proof
-Dry-run enumerates the entire pinned atlas into covered/ready/held, creates three successive deltas and consumes one BRAVO public fixture stratum. C progresses while carrying B debt. Unqualified narrative does not block structured summaries. Future grades require data, not trainer branches. Report actual learned outcomes separately from software readiness.
+Dry-run enumerates the entire pinned atlas into covered/ready/held, creates three successive deltas and consumes one BRAVO public fixture stratum. A source-qualified capability in any grade progresses while independently protected mastery debt exists elsewhere; the reciprocal case passes under equivalent prerequisites and evidence. Unqualified narrative does not block structured summaries. Future grades require data, not trainer branches. Report actual learned outcomes separately from software readiness.
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/factory/tests/test_bamf_training_program.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
+
+
+
+**Required symmetric fixture (BAMF-REQ-015/017/024):** Demonstrate a valid successor capability progressing while a different grade has unresolved, protected debt, then reverse the letters under an equivalent legal prerequisite graph and obtain the same scheduling/assessment disposition. The comparison uses anonymous grade-label permutations, not a named-grade advancement exception. Permuting label-only metadata across a frozen candidate set must leave admitted opportunities, debt visibility, promotion gates and actual delivered workload unchanged. Invalid prerequisites still block regardless of grade; a hold in one family must not block unrelated ready work.
+
+
+**Functional Factory acceptance (ADR-BAMF02-004):** With one synthetic Boolean family, one integer family and one qualified world-model family, show domain-specific lesson/assessment rule selection with a shared scheduler; permute grade labels and preserve legal outcomes, including symmetric debt. Validate three event-driven plan/admit/replan cycles, restart at a staged state, immutable previous evidence, a true cross-domain prerequisite hold and an all-held fixed-point receipt. No fixed grade-by-grade script is permitted.
 
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C14/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
@@ -2639,6 +3645,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C14/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-024; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C15 -->
 # C15 | Close BAMF delivery with fresh EGM review and three-lane receipts
 
@@ -2646,6 +3659,19 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Close BAMF delivery with fresh EGM review and three-lane receipts. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C15 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C15.1 #536](https://github.com/Entif-AI/Bilqis-MLX/issues/536) | Own three-lane integration and immutable delivery-manifest preparation | intermediate group (assign grandchildren); parent C15.
+- [C15.1a #537](https://github.com/Entif-AI/Bilqis-MLX/issues/537) | Integrate completed lane receipts with fresh EGM ownership | bounded implementable leaf; parent C15.1.
+- [C15.1b #538](https://github.com/Entif-AI/Bilqis-MLX/issues/538) | Publish traceable delivery manifest and roadmap projections | bounded implementable leaf; parent C15.1.
+- [C15.2 #539](https://github.com/Entif-AI/Bilqis-MLX/issues/539) | Keep software delivery distinct from full school mastery claims | bounded implementable leaf; parent C15.
+- [C15.3 #540](https://github.com/Entif-AI/Bilqis-MLX/issues/540) | Reconcile immutable issue closure receipts and full Factory coverage | bounded implementable leaf; parent C15.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B14: #375](https://github.com/Entif-AI/Bilqis-MLX/issues/375), [C11: #384](https://github.com/Entif-AI/Bilqis-MLX/issues/384), [C12: #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381), [C13: #385](https://github.com/Entif-AI/Bilqis-MLX/issues/385), [C14: #386](https://github.com/Entif-AI/Bilqis-MLX/issues/386), [C16: #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382)
@@ -2671,6 +3697,15 @@ Use immutable typed records and the existing ErrorBus/catalog for boundary failu
 ## Implementation prescription
 Integrate verified lane commits through the sole integration owner. Run a genuinely fresh EGM implementation-readiness/codebase-details review using the public specification, diff, tests and runbook without chat history. Repair blockers/majors, record justified contests and perform one targeted re-audit. Reconcile root outcomes, existing-owner hooks, Development closing links and parser-tested commands. Update the roadmap/registry projections from current receipts while preserving historical rows. Publish one immutable delivery manifest pinning semantic release, Factory/teacher head, topology, compiler, plasticity, codec, tests and artifacts. Keep separate status fields for software delivery and the later student's full-atlas mastery. Actual merge remains an owner decision.
 
+
+
+<!-- BAMF02:CONFORMANCE-BEHAVIORAL-PROOF-CLOSURE -->
+**Behavioral conformance gate (not citation coverage):** Build one machine-readable and human-reviewable matrix for all BAMF-REQ-001…024 and negative F01…F20. Each row binds normative SPEC text/variant revision, directly owning ticket/commit and contract path, literal input fixture, independently specified expected behavior, observed test output, runner/environment, fresh-run evidence/receipt and reviewer decision. `MENTIONED`, `SPECIFIED`, `CODE_PRESENT`, `EXECUTED_PASS`, `EXECUTED_FAIL` and `BLOCKED` are distinct states; a requirement link, label, synthetic green mock, issue closure or test name alone never qualifies as `EXECUTED_PASS`. Treat grade-neutral invariance and no legacy BAV runtime namespace as explicit failure gates, not decorative ADR citations. Attach a cross-document diff for normative conflicts, a dependency-graph check, branch/head and exact source/privacy boundary. Keep private evidence behind protected authority; public summary gives only disclosure-permitted proof dispositions.
+
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** Treat the pure recursive curriculum planner, semantic-family rule dispatch, stage-independent grade neutrality and self-maintaining admitted-lease loop as mandatory BAMF conformance. Audit active Google Docs, the architecture, 43 current issue bodies, their repository mirrors and the workstack. A planned behavior, a source mirror, a passing code linter or a fixture name is never a substitute for an executed current-head Factory proof.
+
 ## Relevant shared contracts
 
 ### Authority
@@ -2693,6 +3728,13 @@ Each required leaf has an exact commit, proof and EGM disposition or an owned bl
 
 Start with `python3 -B scripts/check_bamf_workstack.py docs/tasks/bamf-0.2/workstack.json`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Closeout refusal fixtures:** (1) Provide a ticket with the correct BAMF-REQ/F identifiers but no executed test: status MUST remain unproven and closeout blocked. (2) Feed one F15 stale-recurrence failure, one source-family leak, one Grade-B-only scheduling result, or one failed v1/v2 load guard: the relevant requirement is `EXECUTED_FAIL` even if other tests pass; overall delivery cannot be marked complete. (3) Change a source contract or issue-body hash after green tests: affected evidence becomes `REQUALIFICATION_REQUIRED` until rerun against the new revision. (4) Verify every 24/20 row is either truly passing with a complete receipt or explicitly blocked with named owner, never silently omitted. Distinguish implementation readiness, first operator-run readiness, and later full-atlas demonstrated learning.
+
+
+**Functional Factory acceptance (ADR-BAMF02-004):** Closeout requires observed behavioral witnesses for pure/idempotent planning, grade-label permutations with symmetric debt and true prerequisite holds, source-family/domain-rule variation, recursive automatic replan after admitted events and correction, fixed-point/held termination, single-authority admission and exact cold resume; verify exact live GitHub SHA against each checked-in issue mirror and workstack item.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C15/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -2703,6 +3745,13 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C15/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
 
 
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-023, BAMF-REQ-024; fixtures: stage-specific executable acceptance; no unique baseline fixture assigned. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
+
+---
+
 <!-- BAMF02:C16 -->
 # C16 | Open the first durable BAMF student path before optional projection work
 
@@ -2710,6 +3759,19 @@ Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed pa
 
 ## Outcome
 Open the first durable BAMF student path before optional projection work. Deliver the executable behavior below on the one selected atlas-native learner and generic Factory path.
+
+<!-- BAMF02:LOSSLESS-CHILD-ROUTING:C16 -->
+## Lossless recursive implementation routing | 27 October 2026
+
+**The complete technical specification and acceptance below remain unchanged.** This issue is an integration/ownership parent, not one low-tier coding assignment. Assign the deepest dependency-ready implementation child; group nodes are not coding tasks. Every child inherits the original source, safety, engineering and acceptance contracts. Close this parent only when all child outcomes and all original owner acceptance conditions are satisfied.
+
+- [C16.1 #541](https://github.com/Entif-AI/Bilqis-MLX/issues/541) | Own persistent student create and correctly bound initial generation | intermediate group (assign grandchildren); parent C16.
+- [C16.1a #542](https://github.com/Entif-AI/Bilqis-MLX/issues/542) | Implement persistent BAMF create dry-run and resume entrypoints | bounded implementable leaf; parent C16.1.
+- [C16.1b #543](https://github.com/Entif-AI/Bilqis-MLX/issues/543) | Bind fresh student topology teacher optimizer and admitted foundations | bounded implementable leaf; parent C16.1.
+- [C16.2 #544](https://github.com/Entif-AI/Bilqis-MLX/issues/544) | Expose earliest lawful learning readiness without optional blockers | bounded implementable leaf; parent C16.
+- [C16.3 #545](https://github.com/Entif-AI/Bilqis-MLX/issues/545) | Handoff the exact durable human-started student lineage | bounded implementable leaf; parent C16.
+
+Source semantics, grades, privacy, optimizer custody, independent gold and implementation acceptance are not relaxed. This planning/decomposition pass runs no live learner, BAV crosswalk or new research experiment.
 
 ## Direct dependencies and existing owners
 **BAMF dependencies:** [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371), [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374)
@@ -2733,7 +3795,16 @@ Package tests live beside their owner. Keep root/shared trainer files under Lane
 Use immutable typed records and the existing ErrorBus/catalog for boundary failures. The implementation receipt records exact input/output schema versions.
 
 ## Implementation prescription
-Finish the production create/dry-run/resume CLI dispatch for the current admitted source release as soon as the complete neural, teacher and custody path works. This is the same persistent BAMF lineage later expanded by C07, not a disposable model-size contestant. A separate disposable witness checks the command and rollback before the operator starts the new student. Record initial active ABI, source/curriculum/teacher identities, topology, seed, optimizer hyperparameters, parameter-bank shape and all-zero new moments. Require a new empty run directory, not an old student path. Read the currently admitted A/B/C scope and introduce foundations through its ordinary Factory plan. Expose existing dashboard metrics immediately; C11 adds the larger atlas/cockpit views later. Akasha materialization, the low-bit cache and private journal intake are parallel delivery work and do not block the first optimizer update. Publish one exact owner-start command and one cold-resume command after parser/preflight verification. Predecessor trace: BAV-REQ-022/024; the implementation follows the explicit BAMF-0.2 contract repeated here. C16 owns the foundation successor launch witness: at least one source-valid end-to-end retained capability improvement, complete rollback of a deliberately damaging disposable candidate, and cold-resume equivalence. This exact-head receipt satisfies the BAMF foundation launch gate. C13 is the later expanded-system release qualification and is not a prerequisite of C16 or foundation training.
+Finish the production create/dry-run/resume CLI dispatch for the current admitted source release as soon as the complete neural, teacher and custody path works. This is the same persistent BAMF lineage later expanded by C07, not a disposable model-size contestant. A separate disposable witness checks the command and rollback before the operator starts the new student. Record initial active ABI, source/curriculum/teacher identities, topology, seed, optimizer hyperparameters, parameter-bank shape and all-zero new moments. Require a new empty run directory, not an old student path. Read the currently admitted A/B/C scope and introduce foundations through its ordinary Factory plan. Expose existing dashboard metrics immediately; C11 adds the larger atlas/cockpit views later. Akasha materialization, the low-bit cache and private journal intake are parallel delivery work and do not block the first optimizer update. Publish one exact owner-start command and one cold-resume command after parser/preflight verification. Predecessor trace: BAMF-REQ-022/024; the implementation follows the explicit BAMF-0.2 contract repeated here. C16 owns the foundation successor launch witness: at least one source-valid end-to-end retained capability improvement, complete rollback of a deliberately damaging disposable candidate, and cold-resume equivalence. This exact-head receipt satisfies the BAMF foundation launch gate. C13 is the later expanded-system release qualification and is not a prerequisite of C16 or foundation training.
+
+
+
+<!-- BAMF02:CONFORMANCE-FIRST-RUN-NEUTRALITY -->
+**First-run teacher ownership:** The persistent BAMF-0.2 student's first source release is what the accepted Factory currently admits; A/B/C names are examples of initial corpus content, not privileged scheduling classes or an exclusive hard-coded grade switch. The operator's create/dry-run/resume path binds the same grade-neutral teacher behavior, retention and source-release policy exercised by its disposable foundation witness. Resuming must not re-enable historical Grade-B scheduling decisions from saved old trainer fields.
+
+
+<!-- BAMF02:ADR-004-FUNCTIONAL-FACTORY -->
+**Functional Factory implementation obligation (ADR-BAMF02-004):** Initialize the first persistent student from the currently admitted FactoryRelease and a single pinned generic curriculum policy. Do not encode an A/B/C historical lesson sequence as a privileged student state machine. It consumes the same future pure-planner deltas and domain-specific construction rules under C07 when leased, while the sole neural writer remains under the human-started run boundary.
 
 ## Relevant shared contracts
 
@@ -2744,7 +3815,7 @@ The owner-selected deliverable is one fresh BAMF-0.2 student lineage using the p
 Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
 
 ### Learning
-Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. BAMF-0.2 uses one grade-neutral Factory/teacher scheduler: all admitted grades compete for teaching and retests under the same source-qualified prerequisites, independently measured learning need, retention safeguards and resource policy. No grade-letter-specific quota, debt-turn cadence or priority applies. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
 
 ### Resource
 Use the existing96GB M3 Ultra, one sovereign MLX writer and at most2 CPU deterministic preparation workers. Workers receive only source/release/seed packets, never writable model/optimizer/teacher state. Batch actual lengths; start32 short rows and reduce through16/8/4/2/1 as frame/constituent activation estimates approach the48GiB trainer envelope. Keep a stable deterministic batching plan per visit. Full1024-frame workloads begin1-4 rows. Default context1024 applies to compiled neural positions, not raw atoms. MLX peak allocated/cache memory, preparation cost, accepted steps/hour, actual capability gain and disk reserve are visible. CPU checks run on either device; real MLX and learning acceptance run only on the Mac Studio lane.
@@ -2763,6 +3834,13 @@ Fresh preflight creates no neural updates and reports the exact run identity. A 
 
 Start with `python3 -B scripts/run_tests.py bilqis_mlx/runtime/tests/test_bamf_first_student.py`. Run only the affected owner tests while developing; run aggregate repository checks at the next integration boundary. Tests must assert literal observable behavior, not only output shape or a mocked call count. MLX checks use the serialized Studio lane and an isolated disposable run directory. Retain the complete actual failure receipt if a check fails; repair that seam rather than weakening the criterion.
 
+
+
+**Required first-start negative (BAMF-REQ-015/017/022; F20):** Before allowing a persistent launch, exercise a disposable generation with at least two differently labeled admitted capability families, verify equivalent source-qualified selection rules and source-gold/retention constraints, then cold-resume and compare next teacher choice and retained optimizer state to uninterrupted execution. Inject an old B-only quota/turn field in a hypothetical legacy config: ignore or explicitly reject it for BAMF-0.2, never silently enforce it. A non-admitted future grade remains blocked by source authority rather than by an assumed A/B/C-only architecture.
+
+
+**Functional Factory acceptance (ADR-BAMF02-004):** A disposable first-run witness compiles/teaches source-valid capabilities from two differently named grade declarations through the same runtime, preserves symmetric debt and a real prerequisite hold, then cold-resumes without any grade-index-dependent scheduler, mode or release mutation. A dry-run never launches optimizer updates.
+
 ## EGM and faithful execution
 Use Google EGM pinned at `b3a35956759bf7f024af2ff061b2e0b44b438e4c`. Read `docs/codex.md`, the chosen persona and its standard from the actual EGM checkout. Keep the implementer as the Elephant and launch a genuinely fresh-context Goldfish with only this issue, its named source files, the diff and test receipts. Use the delivered cold-reviewed interface contract before coding. Run a fresh codebase-details/comprehension turn-in review for this leaf, or one cohesive batch of at most three leaves with findings attributed to each issue. Resolve every blocker or major with a concrete patch or an evidence-backed contest in `docs/evidence/bamf/C16/egm.md`. One repair pass and one targeted re-audit are the default budget. Cosmetic nits never delay delivery. Continue safe independent work while a review runs. No questions back to the owner about settled choices. If a worker has no fresh-subagent facility, turn in the patch with EGM_PENDING to the designated integration reviewer rather than pretending a same-context self-review was independent. Integration requires the real fresh review.
 
@@ -2771,3 +3849,9 @@ Read root README.md and AGENTS.md once per fresh execution session, this issue p
 
 ## Completion receipt
 Record `issue_key`, lane, base/head SHA, consumed dependency commits, changed paths, test commands and totals, source/topology bindings where relevant, EGM report path/disposition, observed outcome, remaining owned defects and next ready issue. Keep this receipt in the issue/PR and `docs/evidence/bamf/C16/`; store large neural payloads outside Git. Completion means the stated behavior is exercised on the actual implementation.
+
+
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 decision alignment | 27 October 2026
+All admitted grades use the **same generic Factory/teacher scheduling, assessment and retention policy**. Grade letters classify curriculum; they confer no scheduling privilege, quota or special debt cadence. Source-gold, prerequisites, independent proofs and operator authority remain enforced. Earlier grade-specific scheduling belongs only to preserved historical policy epochs.
+**Canonical proof references:** BAMF-REQ-022; fixtures: F20. Apply the current BAMF-0.2-SPEC-001 and Blueprint, without exposing protected material in public issue text. New operator error names are BAMF_*; legacy BAV names are not active contracts.
