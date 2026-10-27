@@ -1,0 +1,91 @@
+{
+  "schema": "bilqis.bamf.issue-decomposition/v1",
+  "root": "A09",
+  "parent_issue": 360,
+  "entries": [
+    {
+      "key": "A09.1",
+      "number": 389,
+      "parent_key": "A09",
+      "parent_number": 360,
+      "deps": [
+        "A08"
+      ],
+      "kind": "group",
+      "title": "BAMF-0.2 A09.1 | Freeze the immutable curriculum snapshot and qualified-event reconciliation contracts",
+      "body_sha256": "b5fa335d638d5516bb0aefc415b7661fe6239116861ef364433231d15ac22e23"
+    },
+    {
+      "key": "A09.1a",
+      "number": 390,
+      "parent_key": "A09.1",
+      "parent_number": 389,
+      "deps": [
+        "A08"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 A09.1a | Implement the versioned immutable Factory planning snapshot and coverage identity",
+      "body_sha256": "16754d84eff0712e843ff2917b95d14cbc4dd748d46168106eda5e05d4e5c151"
+    },
+    {
+      "key": "A09.1b",
+      "number": 391,
+      "parent_key": "A09.1",
+      "parent_number": 389,
+      "deps": [
+        "A09.1a"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 A09.1b | Reconcile qualified source, learning, correction and policy events without mutation",
+      "body_sha256": "f876f0986e57c6eedb37011bd09216252a282b50a9a7090245ae0a09f6644401"
+    },
+    {
+      "key": "A09.2",
+      "number": 392,
+      "parent_key": "A09",
+      "parent_number": 360,
+      "deps": [
+        "A09.1b"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 A09.2 | Resolve typed prerequisite closure and legal ready/held Factory candidates",
+      "body_sha256": "b3ecf6db23a49ad48d20b08b37e934d05dbd1a26494ffbd329db9290caa6034e"
+    },
+    {
+      "key": "A09.3",
+      "number": 393,
+      "parent_key": "A09",
+      "parent_number": 360,
+      "deps": [
+        "A09.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 A09.3 | Select stable bounded constituent-first curriculum delta proposals",
+      "body_sha256": "04af047236a2e8fe5f09eb85bbd305a17abfe5e26ffdf314d4b358706ef0f730"
+    },
+    {
+      "key": "A09.4",
+      "number": 394,
+      "parent_key": "A09",
+      "parent_number": 360,
+      "deps": [
+        "A09.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 A09.4 | Make the planner resumable and terminating with typed fixed-point dispositions",
+      "body_sha256": "d1b663b08e9906fdfa3399528795f64b7563380e4087661f1c7196915967a6e1"
+    },
+    {
+      "key": "A09.5",
+      "number": 395,
+      "parent_key": "A09",
+      "parent_number": 360,
+      "deps": [
+        "A09.4"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 A09.5 | Wire the pure planner to existing Factory frontier and staged-release adapters",
+      "body_sha256": "1281eb0eade9189b4c4577978525501c1955538bbd779f2b532876b7f43924f6"
+    }
+  ]
+}

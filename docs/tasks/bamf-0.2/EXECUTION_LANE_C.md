@@ -8,6 +8,9 @@ Read root README.md, AGENTS.md, the root successor amendment and this lane's liv
 
 ## Work selection and isolation
 
+**Recursive owner dispatch:** When an issue has native sub-issues, assign the deepest dependency-ready implementable child, not its integration/group parent. Keep every parent requirement, engineering detail, and acceptance obligation; subdivide further if the child is still too broad. Lower-tier affordability comes from smaller work units, not weakened specifications.
+
+
 Use `docs/tasks/bamf-0.2/workstack.json` and the latest direct dependency receipts. Take the earliest ready leaf in this lane. Recheck only its named prerequisites. Read its allowed files and current amendments. Commit each coherent outcome. One lane writer owns the lane branch. Lane C owns shared trainer/CLI/ADR edits and integration; other lanes submit changes against its interface rather than racing those files.
 
 Lane keys: C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15, C16.

@@ -1,5 +1,8 @@
 # BAMF-0.2 complete implementation issue book
 
+<!-- BAMF02:LIVE-DECOMPOSITION-DIRECTIVE -->
+> Implementation routing update (2026-10-27): This assembled issue book may lag live issue amendments. The exact live mirrors are under `issues/`; A09 has a recursive child tree under `children/` and `children/index.json`. Preserve the complete original parent contract and assign implementation to its deepest ready child.
+
 <!-- BAMF02:A01 -->
 # A01 | Compile the pinned SKOS release into the BAMF semantic authority snapshot
 

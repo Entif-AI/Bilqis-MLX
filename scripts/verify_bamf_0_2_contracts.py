@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TASKS = ROOT / "docs/tasks/bamf-0.2"
 ITEMS = json.loads((TASKS / "workstack.json").read_text(encoding="utf-8"))["items"]
+CHILDREN = json.loads((TASKS / "children/index.json").read_text(encoding="utf-8"))["entries"]
 REQUIRED_ADR = {
     "A08", "A09", "B09", "C01", "C02", "C03", "C05", "C06",
     "C07", "C14", "C15", "C16",
@@ -81,6 +82,58 @@ def main() -> None:
 
     for key in keys:
         visit(key)
+
+    # Lossless recursive issue-shaping check. The original 43 owner contracts
+    # remain full; child files are additional, bounded implementation packets.
+    child_map = {child["key"]: child for child in CHILDREN}
+    issue_map = json.loads((TASKS / "issue-map.json").read_text(encoding="utf-8"))
+    if len(child_map) != len(CHILDREN) or set(child_map) & set(by_key):
+        errors.append("duplicate or colliding recursive child key")
+    a09_children = next(item for item in ITEMS if item["key"] == "A09").get("children", [])
+    if a09_children != ["A09.1", "A09.2", "A09.3", "A09.4", "A09.5"]:
+        errors.append("A09: direct child dispatch map drift")
+    child_visiting: set[str] = set()
+    child_visited: set[str] = set()
+
+    def visit_child(key: str) -> None:
+        if key in child_visiting:
+            errors.append(f"recursive child dependency cycle at {key}")
+            return
+        if key in child_visited:
+            return
+        child_visiting.add(key)
+        for dep in child_map[key]["deps"]:
+            if dep in child_map:
+                visit_child(dep)
+            elif dep not in by_key:
+                errors.append(f"{key}: unknown prerequisite {dep}")
+        child_visiting.remove(key)
+        child_visited.add(key)
+
+    for child in CHILDREN:
+        key = child["key"]
+        parent = child["parent_key"]
+        path = TASKS / "children" / f"{key}.md"
+        body = path.read_text(encoding="utf-8")
+        if hashlib.sha256(body.encode("utf-8")).hexdigest() != child["body_sha256"]:
+            errors.append(f"{key}: child body differs from indexed live-GitHub fingerprint")
+        if f"<!-- BAMF02:RECURSIVE-CHILD:{key} -->" not in body:
+            errors.append(f"{key}: child provenance marker absent")
+        if issue_map.get(key) != child["number"]:
+            errors.append(f"{key}: issue-map ID mismatch")
+        expected_parent = 360 if parent == "A09" else child_map.get(parent, {}).get("number")
+        if expected_parent is None or child["parent_number"] != expected_parent:
+            errors.append(f"{key}: parent missing or wrong")
+        if parent == "A09.1" and child["kind"] != "leaf":
+            errors.append(f"{key}: expected bounded leaf below intermediate A09.1")
+        for phrase in OBSOLETE_LIVE_POLICY:
+            if phrase in body:
+                errors.append(f"{key}: obsolete named-grade policy: {phrase}")
+        visit_child(key)
+    if "<!-- BAMF02:A09-LOSSLESS-DECOMPOSITION-20261027 -->" not in (TASKS / "issues/A09.md").read_text(encoding="utf-8"):
+        errors.append("A09: no lossless decomposition dispatch in full parent body")
+    if "decompose" not in (TASKS / "README.md").read_text(encoding="utf-8").lower():
+        errors.append("BAMF README missing recursive dispatch rule")
     for filename in ("README.md", "AGENTS.md", "docs/architecture/BAMF_0_2.md"):
         text = (ROOT / filename).read_text(encoding="utf-8")
         if "ADR-BAMF02-004" not in text:
@@ -93,6 +146,7 @@ def main() -> None:
     print("PASS: 43/43 issue API, implementation and acceptance fields match workstack")
     print("PASS: no missing/cyclic dependencies, no obsolete named-grade debt exception")
     print("PASS: 12 owner issues and 3 repository entrypoints carry ADR-BAMF02-004")
+    print(f"PASS: {len(CHILDREN)} recursive A09 sub-issues retain exact indexed mirrors, linked ownership and acyclic dependencies")
     print("NOTE: live GitHub SHA readback and executable Factory behavior require separate checks")
 
 

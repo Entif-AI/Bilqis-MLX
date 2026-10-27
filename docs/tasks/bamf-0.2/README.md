@@ -2,6 +2,12 @@
 
 The owner selected one atlas-native architecture. Read the [architecture contract](../../architecture/BAMF_0_2.md), then execute one ready leaf at a time. The full issue repeats the relevant contracts so a fresh worker can continue without this conversation.
 
+## Lossless recursive decomposition | 27 October 2026
+
+The 43 original owner issues retain their **entire** engineering specifications and acceptance requirements. To lower the cost and reasoning load of execution, recursively divide large owners into smaller, independently deliverable native GitHub sub-issues, not weaker requirements. Agents take the **deepest ready implementable child**; group/parent issues remain integration and acceptance contracts. If a child is still too broad, divide it again. Every child specifies inputs, output, dependencies, owned files, behavior and completion, without requiring the whole program to be re-reasoned. Do not add new research experiments or live neural-run gates during planning.
+
+The first full hierarchy is [A09 #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360), including its A09.1 grandchildren. See [child index](children/README.md) and [machine-readable tree](children/index.json). `workstack.json` retains all 43 original owners and records the direct children of a decomposed owner; the approved Blueprint and SPEC remain the normative design.
+
 ## Parallel start
 
 - Lane A: [Semantics and curricula](https://github.com/Entif-AI/Bilqis-MLX/issues/342), start [A01 #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345). [Launch instructions](EXECUTION_LANE_A.md).

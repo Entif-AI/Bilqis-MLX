@@ -252,7 +252,15 @@
         "coverage_completion"
       ],
       "number": 360,
-      "body_sha256": "6bf13b9999e96831075f2bdf679a349cec0b33335de896059beb18f49feda254"
+      "body_sha256": "68580f60aaef262dd2cd90d33c0fce784b99c88ed59a15ad68a4be5ceabad5c7",
+      "children": [
+        "A09.1",
+        "A09.2",
+        "A09.3",
+        "A09.4",
+        "A09.5"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A10",

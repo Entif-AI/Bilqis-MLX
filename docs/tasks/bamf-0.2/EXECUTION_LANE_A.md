@@ -8,6 +8,9 @@ Read root README.md, AGENTS.md, the root successor amendment and this lane's liv
 
 ## Work selection and isolation
 
+**Recursive owner dispatch:** A09 #360 now has a native sub-issue tree. The A09.1 node is also a group with two grandchildren. When A09 becomes ready, select the deepest dependency-ready implementable issue from `children/index.json` rather than taking the complete A09 or A09.1 group as one coding task. The full A09 engineering specification and acceptance remain unchanged. Child completion does not automatically close its parents. Decompose any other oversized issue using the same lossless rule.
+
+
 Use `docs/tasks/bamf-0.2/workstack.json` and the latest direct dependency receipts. Take the earliest ready leaf in this lane. Recheck only its named prerequisites. Read its allowed files and current amendments. Commit each coherent outcome. One lane writer owns the lane branch. Lane C owns shared trainer/CLI/ADR edits and integration; other lanes submit changes against its interface rather than racing those files.
 
 Lane keys: A01, A02, A03, A04, A05, A06, A07, A08, A09, A10, A11, A12, A13.
