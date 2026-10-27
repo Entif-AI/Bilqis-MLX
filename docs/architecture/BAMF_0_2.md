@@ -1,0 +1,717 @@
+# BAMF-0.2 | Bilqis Aspirant Metacog Frame
+
+## Executive decision
+
+27 October 2026. Implementation specification and three-workstream delivery program. Root owner: [Bilqis-MLX #341](https://github.com/Entif-AI/Bilqis-MLX/issues/341).
+
+Build one atlas-native, continually extensible cognitive learner on the existing M3 Ultra. Keep the chosen 12-layer, 768-wide neural spine; give it exact role-addressable semantic state, factorized embeddings, compressed causal attention, learned depth selection, conditional motif memory, bounded local recurrent refinement, and explicitly plastic parameter groups. Reuse the working generative Factory and replay teacher. The learner's education expands through the eligible SKOS corpus and qualified real-world evidence instead of ending at Grade C.
+
+Capability belongs to the complete system. Exact retrieval, deterministic computation, neural prediction, learned memory and composition all earn credit for successful outcomes. Spend new training on gaps, useful transfer, routing and composition. Preserve acquired competence and cheap reusable computation. SÍ SÉ SON determines where attention and adaptation are useful; observed consequences determine what is retained.
+
+The immediate target is a durable student that creates, learns, rejects a harmful candidate completely, resumes exactly, and continues through generated semantic additions. The first student path is [C16: #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382). Full delivery includes low-bit derived caches, correction propagation, portable capability packages and Akasha projections. Those later components have independent implementation owners, so they can finish while the useful student already learns.
+
+This document is the shared contract. Every linked implementation issue repeats its relevant contract, named code surfaces, algorithm, direct dependencies, focused checks and execution instructions. The machine-readable workstack and publication ledger bind the exact GitHub objects.
+
+## 1. Owner decisions and reconciliation
+
+The 27 October instruction selects an aggressive single architecture and a capability-first build. It supplies the following scoped successor decisions.
+
+| Decision | Implemented direction | Durable owner |
+| --- | --- | --- |
+| One selected model | Keep 12x768, 16Q/8KV, CCGQA, RoPE, three Block AttnRes groups, motif memory and FP32 AdamW | [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346) through [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) |
+| Whole-system capability | Runtime exact functions and sidecars are legitimate cognition; independent scoring checks the answer, not neural purity | [A07: #353](https://github.com/Entif-AI/Bilqis-MLX/issues/353), [C04: #373](https://github.com/Entif-AI/Bilqis-MLX/issues/373), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) |
+| Extensible education | A/B/C initialize; the generated frontier covers the complete pinned eligible SKOS corpus and later approved releases | [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358), [A09: #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360), [C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380), [C14: #386](https://github.com/Entif-AI/Bilqis-MLX/issues/386) |
+| Successor gate | Build the SKOS bridge and new model now; BAMF uses its own retained-learning/recovery witness | [C01: #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347), [C13: #385](https://github.com/Entif-AI/Bilqis-MLX/issues/385), root #341 |
+| Historical #324 | Keep its frozen manifests and any results intact as a separate controlled specimen | #324 and [C01: #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347) |
+| Capacity without relearning | 8192 initial semantic rows become the first append-only bank, with generation-bound expansion | [A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348), [B02: #359](https://github.com/Entif-AI/Bilqis-MLX/issues/359), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) |
+| Plasticity from initialization | Three small adapters and explicit FAST/FULL update groups, native AdamW arithmetic and complete rollback | [B09: #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368), [B12: #370](https://github.com/Entif-AI/Bilqis-MLX/issues/370) |
+| First useful run | Owner can start the admitted foundation path before graph projection, compression or private corpus completion | [C16: #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382) |
+| Teacher continuity | Consume replay #340 and existing #333 evidence; retain policy choices and current promotion/debt mechanics | [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) |
+| Three parallel lanes | Separate semantic, neural and integration branches; one writer per branch and one shared-file integrator | [C01: #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347) |
+
+The uploaded roadmap's CT-039A/G-03B rows still hold #292-#295 behind the old #324 comparison. The successor decision above is recorded as an append-only amendment on the root and affected existing owners. Historical workbook rows remain provenance. Their BAMF successor dependency points to this delivery's exact-head learning/custody receipt. This avoids a circular dependency in which the new architecture must wait for a superseded architecture to demonstrate the capability it was designed to improve.
+
+ADR-094's actual B-debt rule is a grade-turn cadence: one complete imperfect-B pass after at most four completed non-B turns. It is retained as written. A percentage of wall time is not substituted for it. Promotion uses 92% entry and 87% continuation; perfect mastery, championships and debt clearance remain separately recorded outcomes.
+
+The resource baseline keeps the existing 100 GiB disk reserve. The earlier blueprint's 30-50 GiB figure is extra working-space planning, not a replacement reserve. Neural module paths use the repository's existing `semantics/` package, correcting the singular illustrative path in older prose.
+
+## 2. Inspected implementation baseline
+
+| Surface | Exact observation | Use |
+| --- | --- | --- |
+| SKOS #291 | Merged as `175cdf6778b4eeaea23a5bd36ad7dc6664df3ae8` | Canonical source/IR/RDF, sense/morphology coverage, derived Falkor/Akasha adapters |
+| Replay teacher #340 | `d21797e72365bf93ea7cad3a4ef9020ec9817f23` on `codex/337-replay-349-20261026` | New-student teacher/runtime baseline |
+| Topology #334/#320 | Versioned v1 topology already exists | Extend explicitly to v2 |
+| Teacher observations #335/#333 | Proposal/delivery/outcome/cost owner exists | Consume, rather than replace |
+| Factory #290/#150 | Generic release, source execution, JIT candidate and admission machinery | Same path for current and future grades |
+| Semantic bridge #292-#295 | Existing open implementation owners | New lane-A leaves complete their outcomes |
+| Factory #296 | Existing stage/notify flywheel owner | Default staging plus explicit BAMF admission lease |
+| Akasha #297-#302 | Existing authority/projection/recovery owners | BAMF event adapters and readback |
+| Existing BAMF #341 | BAMF-0.1 root and expanded engineering specification | Preserved root, new versioned amendment |
+| Google EGM | `b3a35956759bf7f024af2ff061b2e0b44b438e4c` | Real fresh-context review and faithful implementation handoffs |
+
+Actual inspected code includes `ModelTopologySpec`, `expected_parameter_shapes`, `create_student`, `SourceExecutionContext`, `CandidateFrontierRelease`, `propose_curriculum_delta`, `prepare_realized_candidates`, `AnswerModalityRegistry`, `_train_step`, `save_new_bundle`, `_advance` and the current scheduler/promotion functions. The present v1 forward still uses a learned absolute-position table and full QKV matrices. BAMF therefore receives a real new forward and backend dispatch, not just a configuration file.
+
+## 3. Architecture and ownership
+
+The semantic plane owns exact admitted identities, role bindings, source evidence, temporal scope and reversible structure. The neural plane owns learned contextual composition and adaptation. The Factory owns lawful lessons and evaluation construction. The existing runtime owns admission, candidate retention, checkpoints and the one mutable learner. Akasha owns rebuildable views over immutable evidence and reusable cognitive products. Rosetta supplies the shared meaning/trace boundaries.
+
+The forward path is:
+
+`Factory source-visible AST -> released exact frames/features -> factorized embeddings -> frame encoder and motif read -> 12 CCGQA/FFN blocks with three depth selectors/adapters -> bounded constituent refinement -> typed answer -> whole-system solver/evaluator -> accepted generation or complete rollback`.
+
+The expansion path is:
+
+`SKOS release -> canonical ABI and AST bindings -> reusable construction families -> prerequisite-ready candidate -> Factory verification/staging -> persisted admission lease -> atomic active-set/bank extension -> ordinary teaching -> outcomes -> new ready work`.
+
+The correction path is:
+
+`new source/evaluation evidence -> immediate dependent hold -> local recompute/requalification -> changed result propagates one edge -> unchanged result terminates propagation`.
+
+### 3.1 Dense topology and exact parameter geometry
+
+| Component | Selected setting |
+| --- | --- |
+| Backbone | 12 blocks, width768, pre-RMSNorm epsilon1e-5 |
+| FFN | 768->3072->768, squared ReLU, two bias-free matrices |
+| Attention | 16 query heads,8 KV heads,24 channels/head; Q384,K192,V192 |
+| Local attention preprocessing | Independent causal depthwise Q/K/V convolution, kernel3 |
+| Position | RoPE24 coordinates, base10000, scale1, nontraditional layout, initial context1024 |
+| Depth selection | Groups4/4/4, shared128-wide normalized source selector |
+| Identity | Initial8192x768 table, tied active readout, append-only banks |
+| Feature factors | Type/role/schema512x128; graph features64 |
+| Frame/refinement | 768-wide local state with192-channel role interaction; up to2 local extra passes |
+| Motif memory | Initial16384x128, two gated reads, page growth to65536 |
+| Fast adapters | Three rank8 residual adapters, zero-output initialization |
+| State | Authoritative FP32 parameters, gradients and native AdamW |
+| Derived cache | rot3/v1,3-bit coordinates plus amortized norm/header metadata |
+
+The dense attention/FFN matrices total67,239,936 parameters. Initial identity rows add6,291,456 and motif vectors2,097,152. Three adapter matrix pairs add36,864. The generated manifest counts all remaining feature, normalization, routing, convolution, frame and answer-head tensors. The earlier79-85M estimate is an orientation; the actual declared tensor census is the release truth. Do not add unused parameters merely to hit an estimate.
+
+Each additional semantic bank adds6,291,456 parameters and matching optimizer/moment state. At FP32, weights+gradients+two moments cost approximately16 bytes per scalar before activations and copies. The initial core is comfortably below the machine's96GB physical memory, but activation/candidate/mentor state determines practical microbatch size. A full1024-position KV cache across12 layers is18MiB per sequence with the chosen8x24 geometry.
+
+## 4. Exact semantic and frame contracts
+
+
+## 4.1 Semantic identity and extensible capacity
+
+Use the actual plural package bilqis_mlx/semantics/. Canonical semantic IDs come from the admitted SKOS release and existing formal-domain authorities. Keep canonical identity, release content digest, ABI index, frame occurrence, model topology, implementation digest, teacher epoch and derived projection digest separate. The ABI is append-only; start with one 8192-row embedding bank and allocate additional 8192-row banks at accepted admission boundaries as required by the eligible corpus census. index = 8192*bank + row. Existing indices, tensors and moments remain unchanged. Extended frame addresses carry uint32 indices; the 13-bit fast codec applies only while each member fits. A shape-policy digest freezes bank size and allocation rules; each generation separately records bank count, active-set digest and exact tensor shapes. New rows stay masked until source admission. Reserve source-defined syntax and explicit UNKNOWN/UNRESOLVED representations through the same ABI, never by fabricating meanings for empty rows.
+
+## 4.2 Role-addressable frame and exact codec
+
+FrameSchema binds released schema ID/revision, AST construct, ordered roles, allowed concept types, min/max cardinality, order mode and scope. FrameInstance binds occurrence ID, content digest, source span, parent occurrence, exact (role, occurrence-index)->ConceptRef/child-frame bindings and causal_prefix_end. ConceptRef binds semantic ID, semantic release, ABI index, type IDs and source reference. A repeated type in different roles is legal; occurrence is separate from content identity. A complete four-member frame packs four 13-bit indices in bits 0..51; bits52..55 are presence mask1111, bits56..59 the release-local schema tag, bits60..63 codec version1. Preserve full schema and metadata in a sidecar. Extended or atomic encoding handles nesting, repeated occupants, >4 slots, >16 schema tags, partial frames and indices>=8192. Original order, scope, negation, modality, time and source lineage round-trip exactly. A frame becomes one neural position only when all members are visible before the prediction boundary.
+
+## 4.3 Factorized semantic geometry
+
+The neural input uses FP32 E_identity[bank,row,768], tied to semantic output logits; only active admitted indices are emitted. Shared features: type/role/schema tables each512x128, type aggregation as an arithmetic mean, graph features64, local slot embeddings[16,768] with extended slots represented by a deterministic sinusoid plus role/occurrence features. x=RMSNorm(Eid+Ptype(mean(Etypes))+Prole(Erole)+Pschema(Eschema)+Prel(g64)+Elocal), epsilon1e-5. Each projected term has a sigmoid gate whose raw logit is initialized to -2 (effective gate approximately0.1192). Feature extraction is deterministic per semantic release and executed before training, not through live Falkor calls. New identity rows initialize from the released feature composition plus seeded residual N(0,0.001^2). Frame encoding is role-ordered pooling plus one single-head cross-role attention layer of width192 and a 192->768 projection. Exact constituent embeddings remain addressable for refinement.
+
+## 5. Causal neural spine
+
+Frozen dense topology:12 blocks, width768, FFN3072, pre-RMSNorm(eps1e-5), squared-ReLU two-matrix FFN768->3072->768, no projection biases. Attention Q=16x24=384 channels; K=V=8x24=192; output384->768. Independently apply causal depthwise conv kernel3 to projected Q/K/V; reset left history at sequence/scope boundaries. RoPE on all24 Q/K head coordinates, base10000, traditional=False, scale1; initial trained context1024 neural positions. Native MLX fast.scaled_dot_product_attention uses16Q/8KV directly, scale1/sqrt(24), without physically repeating KV. Mask causal, padding and source scope together. All-masked queries return zeros. Every trainable tensor is declared once in the parameter manifest and saved in the same candidate transaction.
+
+## 5.1 Depth selection and bounded temporal refinement
+
+Partition12 blocks into groups[4,4,4]. Preserve h0 and one normalized per-position summary after each completed group. At boundary k, source order is h0,g1,...,gk. Shared bias-free matrices Wq/Wk/Wv[128,768] and Wout[768,128] implement q=Wq*RMSNorm(current+frame_seed), key_i=Wk*RMSNorm(summary_i+type_role768), score_i=dot(q,key_i)/sqrt128, alpha=softmax over available source axis, mix=sum(alpha_i*(Wv*summary_i)). Merge current+g_k*Wout*mix. Each boundary has gate_vector[768] initialized0 and gate_bias=log(1/9), giving g_k=0.1*sigmoid(dot(gate_vector,RMSNorm(current))+gate_bias), initially0.01. The shared factor composer supplies type_role768; source summaries retain the768-wide interface. At group1 apply the second motif read after layer4 and before capturing/selecting g1. Future groups are absent. Apply the group's adapter after selection. The local refinement module keeps a768-wide recurrent state and one compressed single-head192-channel attention block, up to2 extra passes, with immutable input/member recall every pass. Refinement never reruns the12-layer backbone. Budgeted selection is external/deterministic and selected neural paths retain soft-gate gradients.
+
+## 6. Conditional motif memory
+
+Atlas motif memory starts16384x128 FP32 and extends by16384-slot pages up to65536 under the same allocation transaction. A key contains key-schema version, semantic release, frame schema/revision, ordered role/occurrence/canonical IDs or abstract type IDs, relation signature and scope. Try exact instance motif then structural motif, otherwise factorized fallback. Hashing only indexes candidates; compare full canonical key before returning a slot. Stable slots are append-only. Allocate at candidate preparation, never inside differentiable forward; publish allocations only with accepted generation. Read sites are frame input and after layer4 before AttnRes. Each site has its own128->768 projection and sigmoid gate initialized-4. Learned vectors, allocation manifest, usage counters needed for allocation, gradients, native AdamW state and release binding share custody. Telemetry-only read counters may be outside neural state and never change answers.
+
+## 7. Continual plasticity and optimizer clocks
+
+Include three rank8 residual adapters from initialization, one after each group selector: h'=h+(1/8)B*SiLU(A*RMSNorm(h)); A[8,768] seeded, B[768,8] zero. FAST group contains adapters, motif vectors/projections/gates and newly activated identity rows; SLOW contains established embeddings and dense/core parameters. Foundation mode updates all groups. Adaptive mode updates FAST each candidate and offers a FULL candidate after8 accepted FAST candidates, or when the existing teacher requests foundational remediation. Rejection leaves both clocks and all state at the retained parent. Keep native AdamW arithmetic and selected hyperparameters; the optimizer owner maintains per-parameter update counts so inactive/new parameters receive correct bias correction. Inactive parameters and their moments are byte-identical across a FAST candidate. No background neural writes: all adaptation occurs inside the existing human-started serialized visit transaction. The cadence policy is explicit versioned data; no learned meta-optimizer is required for delivery.
+
+## 8. Complete cognitive solver and typed outputs
+
+Expose solve(input_frame, task_contract, generation, budget)->TypedAnswer plus bounded execution receipt. Eligible runtime mechanisms are exact source-visible role/identity lookup, explicitly registered deterministic functions, qualified cached transforms and neural composition/prediction. Build a typed dependency DAG; run independent pure CPU operations in ready sets and serialize MLX operations. A deterministic operator declares semantic input/output signatures, applicability, version, effect=PURE, and independent literal fixtures. The evaluator's answer labels, scoring oracle and held evaluation records are not runtime inputs. Exact operators may compute answers from the task inputs, including arithmetic. Score the complete solver identically for parent and candidate. Skip optimizer work on already-perfect capabilities; use failure-targeted lessons to improve routing, binding, composition and remaining errors. Neural-only scores are optional debugging views, never a delivery gate.
+
+## 9. Generative curriculum across SKOS
+
+One generative Factory compiles the eligible SKOS atlas and existing formal domains into capability definitions, typed construction programs, teaching choices, assessments and executable releases. #292 owns ABI projection, #293 AST identity, #294 lesson manifest, #295 authority cutover, #296 the staged flywheel. These leaves supply their BAMF implementation deltas, not a parallel runtime. Enumerate the entire pinned corpus into ACTIVE/READY/HELD/EXHAUSTED coverage entries with reason and prerequisite links. Ready selection is topological and deterministic; introduce the smallest justified distinction, positively teach constituents, then composition. Source list order and broader/narrower edges alone do not define prerequisites. In one delta add1-9 capabilities and an initial admission budget of16 total new semantic identities including newly required constituents; recursively split a larger eligible closure into successive deltas. A changing semantic release is a new coverage epoch, not a reset. Reuse current prepare_realized_candidates/propose_curriculum_delta/admission functions. The16-ID budget is versioned admission policy, not a semantic capacity limit. Split a larger closure into constructive constituent releases, then the dependent capability; preserve already qualified larger source families through an explicit policy version rather than silently dropping their members.
+
+## 10. Teacher, losses, retention and progression
+
+Reuse the replay teacher at d21797e72365bf93ea7cad3a4ef9020ec9817f23: up to16 strategies, up to8 incumbents, bounded challengers, checkpoint-local no-gain retirement after4 outcomes, separate destructive-interference accounting, every-fourth eligible existing-policy canary, and2/4/8/16 shadow probes. Actual early termination stays with its existing owner; the shadow ladder is observational. Preserve proposal->delivered rows->outcome->cost through #333. Promotion starts at active-grade mean>=92%, continues>=87%, revisits each introduced semantic once, and re-arms only on changed retained checkpoint or introduced scope. B's nongating debt follows ADR-094: one complete imperfect-B turn after at most4 completed non-B turns, then yields. This is a grade-turn cadence, not a20% wall-clock cap. Teacher controls strategy, rehearsal and LR. Loss primary typed answer1.0; supervised optional auxiliaries role.10, epistemic-state.10, each Impact/Exigency/Novelty.05, frame/atomic consistency.05; missing labels mask the corresponding term. Native output semantics and existing whole-school retention remain intact.
+
+## 11. Durable generations and cold recovery
+
+Every generation binds topology/implementation, parameter-bank extents, active semantic ABI, frame compiler, all tensors, per-parameter AdamW moments/counts/hyperparameters, motif allocation, teacher epoch, source/rights/correction frontier, evaluation contract and outbox. Stage immutable bundles, force array evaluation, fsync files/manifest, then atomically promote one pointer using the existing checkpoints/boundary_commit/data_plane owners. Rejected candidates publish observational failure evidence but retain complete parent neural and allocation state. Cold resume validates digest/shape/version/ownership before writes. v1 historical readers remain; old runs are not coerced into v2. Model swap or parameter extension records an explicit generation transition and invalidates derived caches. Existing 100GiB default disk reserve remains; the blueprint's30-50GiB is additional planning space, not a lowered runtime safety reserve.
+
+## 12. Salience and osmotic learning
+
+SÍ SÉ SON supplies three independent ordinal signals: UNKNOWN, LOW, MODERATE, HIGH, CRITICAL for Impact, Exigency and expectation-relative Osmotic Novelty. Attach source/evaluator and basis rather than a universal weighted sum. The teacher receives legal options with these features and retains HOW authority. Dispatcher ordering is: required correction/invalidated state; urgent relevant work; ready capability with demonstrated downstream unlock; novelty-guided exploration; normal fair frontier rotation. Break ties by age then stable ID. Aggregate event->cluster->pattern->trend at fixed local windows, preserving the underlying observations. A missing expected event differs from a reported negative event. Persistent repeated errors nominate procedure repair, not repeated identical lessons. Auxiliary heads only learn from explicit labels or measured outcome-derived labels; speculative scores do not mint source gold.
+
+## 13. Rosetta and Akasha integration
+
+Use Rosetta v3 existing Observation, Frame, Conjecture, Evaluation and Run/Action/ToolCall/Receipt semantics with application namespaced envelopes. Keep CID content identity, stable RID and external XID separate. Akasha consumes immutable source/release/learner events through a local outbox, projects them into declared namespaces, and is rebuildable. #297 owns domain/authority contracts; #299/#300 own release and run/evidence projection; #301 recovery. Store source/effective/observed/recorded times where relevant. A live Falkor service is not a training dependency: compile neighborhoods into a release artifact and enqueue observations locally. Mutation remains with the source/run owners. PRIVATE_REAL data stays outside public worktrees, CI, issue bodies and exports; #327 protects the private pilot. PUBLIC_FIXTURE development continues independently.
+
+## 13.1 Local correction and requalification
+
+Reusable transforms and contexts declare immediate input, operator, release, policy, time and rights dependencies. Maintain reverse direct edges. On correction, hold directly affected reusable artifacts, re-evaluate them, and propagate only when their output identity or eligibility changes. Retain immutable originals and scoped competing interpretations. A correction invalidating learned support marks the affected capability for focused requalification; it does not claim to erase weights by deleting a graph node. Reactivation requires current support and the same operational assessment contract. The outbox's eventID+payload digest makes duplicate delivery harmless and divergent duplicates explicit. Projection failure leaves the last good active pointer intact.
+
+## 14. Hardware, batching and writer budgets
+
+Use the existing96GB M3 Ultra, one sovereign MLX writer and at most2 CPU deterministic preparation workers. Workers receive only source/release/seed packets, never writable model/optimizer/teacher state. Batch actual lengths; start32 short rows and reduce through16/8/4/2/1 as frame/constituent activation estimates approach the48GiB trainer envelope. Keep a stable deterministic batching plan per visit. Full1024-frame workloads begin1-4 rows. Default context1024 applies to compiled neural positions, not raw atoms. MLX peak allocated/cache memory, preparation cost, accepted steps/hour, actual capability gain and disk reserve are visible. CPU checks run on either device; real MLX and learning acceptance run only on the Mac Studio lane.
+
+## 14.1 Concrete derived cache codec
+
+Derived inference-cache codec bamf.rot3/v1 groups32 vectors of headwidth24 into768 scalar blocks, zero-pads only the tail, normalizes each24-vector to unit length and stores an8-bit relative norm plus one FP32 maximum norm per32-vector block, applies a fixed seeded24x24 orthogonal transform and quantizes each coordinate to8 fixed Lloyd-Max normal-codebook levels using3 bits. Header pins codebook, transform, dimensions, true length, lineage, prefix and masks; norms and padding count toward measured effective bits. Use at least256 vectors per record and at most64 bytes of per-record codec metadata (shared manifest referenced out of band); smaller records stay FP32. Full blocks cost3.375 bits/channel plus amortized header, at most3.459 for256 vectors. Decode by inverse rotation and renormalization; the primary candidate evaluator uses uncompressed state. A cached inference response falls back to FP32 recomputation if typed-answer validation or declared score-drift tolerance fails. Initial acceptance is<=3.5bits/channel for full blocks and measured max attention-output relative L2 error<=0.10 on the named fixture, with exact chosen-answer agreement; keep FP32 for records failing the bound. This is a concrete derived codec inspired by TurboQuant, not a claim of reproducing all paper bounds.
+
+## 15. Training strategy derived from BRAVO
+
+Start the persistent student as soon as C16 is complete. Use a new run directory and a single fresh seed. Initialize zero AdamW moments for every learned component and pin the source-visible semantic closure. Read the currently admitted foundations and numeric ceiling from the release; the old frozen0..8 qualification workload is historical, not a global maximum.
+
+### L0: acquire and use the foundations
+
+Teach positive identity and existing direct Boolean/numeric constructions. COUNT, NUMBER, SUCCESSOR, ADD and SUB retain their prerequisite order; multiplication/division and larger scopes follow their released foundations. The exact plane is allowed to supply definitions and evaluate declared functions. The learned work is interpreting, selecting, composing, transferring and repairing the parts the current solver cannot already complete. Perfect source-visible operations do not waste neural trials. Actual incorrect or incomplete outcomes feed the teacher's existing semantic miss queue.
+
+Use FULL updates during the foundation stage. Preserve old-grade rehearsal choices and target coverage under the teacher. Target fresh gain and whole-school preservation decide acceptance. Use current promotion hysteresis to open the next released tier, carrying imperfect semantics as debt. The student keeps learning rather than waiting for all older capabilities to be perfect.
+
+### L1: expand through semantic structure and qualified evidence
+
+Activate small prerequisite-closed additions from the complete pinned SKOS inventory. The source atlas may contain more concepts than the current ABI, and the ABI may contain more than the taught frontier. The coverage ledger shows each count explicitly. The Factory introduces1-9 related capabilities at a time, an initial budget of16 total new identities including newly required constituents, and emits ordinary releases. Source coverage grows by supported semantic family, not by handwritten root-specific runtime code.
+
+BRAVO's evidence strata are independent feeders. Structured category summaries come first, then exact time/activity records, structured AM/PM reflections and qualified narrative spans. A qualified category subset can be taught while narrative work continues. The first public exercise uses synthetic/source-cleared fixtures preserving numeric, temporal, role and epistemic structure. Private journal ingestion uses its existing privacy owner and stays in private storage.
+
+Introduce typed reconstruction, role binding, unit conversion, time relations, modality and source-bound ambiguity only when their prerequisites are available. English initially appears through explicit template codecs tied to the same semantics; a general free-form language interface can later consume those foundations without changing the learner identity.
+
+### L2: deepen, specialize and adapt continuously
+
+The same run expands its banks and motif pages at accepted boundaries. Structural motifs support new fillers; repeated successful reasoning can become an exact procedure or cognitive package. ADAPTIVE mode updates the fast parameter group, with periodic teacher-compatible FULL consolidation. Retain whole-school assessments across the growing scope. Requalify affected learned capabilities after source corrections rather than pretending that deleting a cache erased parametric influence.
+
+Increase task composition only within taught scope. Fresh role bindings, alternative forms, reversed relations, nested scopes and corrected premises supply meaningful capability challenges. Outcome gains, fewer repeated failures, lower useful-work cost and improved future reuse are the success signals. Internal mechanism attribution stays optional.
+
+### L3/L4: expand resources and exchange capabilities when useful
+
+The local machine is sufficient for the initial release. Additional devices, rental GPUs, alternate network architectures and KAN implementations remain optional consumers of the same semantic contract. The delivered package exporter already supports sharing exact procedures and compatible plastic deltas, with semantic teaching packages for heterogeneous recipients. This is the immediate GNOSIS inheritance path, not a requirement to deploy a global swarm before local learning.
+
+### Training-session operating loop
+
+Preflight verifies source/active-set/topology/optimizer/space and the next candidate frontier. The owner starts a bounded or continuing human-run session. The runtime creates ordinary visits, records actual delivery, evaluates candidate effects, publishes complete accepted generations and automatically adopts eligible additions under the saved atlas lease. At a safe boundary it reports the exact stopping reason, current capability scope, debt and next work. Resume reconstructs the saved state and continues; it never silently resets the student, teacher or admission clock.
+
+The useful daily questions are: Which previously unsolved source-valid tasks can the complete system now finish? Which old capabilities degraded? Which ready semantic additions unlock the most useful next work? Did a correction actually change subsequent behavior? How much accepted learning and solved work was obtained for the elapsed time and memory budget? The cockpit answers these without JSON archaeology.
+
+## 16. Architectural salvage decisions
+
+The donor documents are design lineage. Their useful mechanisms are assigned to an existing owner in this build, so the archive changes what is shipped rather than merely enlarging a reading list.
+
+| Donor | Gap filled | Selected integration | Owner |
+| --- | --- | --- | --- |
+| Nested Learning / sparse memory notes | Local adaptation without rewriting all established competence | FAST/FULL groups, dedicated rank8 adapters, local update clocks, complete rollback | B09,B12 |
+| TRM integration / HRM reasoning notes | More computation for difficult constituent queries | Shared local recurrence, fixed input recall,0/1/2pass budget | B06 |
+| CTM integration | Temporal process and constructive ambiguity | Bounded iterative refinement and recorded contrast/noise signatures | B06,A11 |
+| Engram discussion | Repeated semantic structure consumes avoidable deep compute | Exact/structural motif keys, two gated learned reads, page growth | B07,B08 |
+| mHC/Birkhoff discussion | Controlled routing and normalized mixing | Shared normalized depth selector in the chosen Block AttnRes design | B05 |
+| Cognitive Tiles / Tapestries | Reusable exact meaning and computation | Role-addressable sidecars, transform manifests and correction edges | A03-A07,C09 |
+| GNOSIS0.4 | Cognitive inheritance across model generations | Semantic package contract, fixtures, behavioral diffs, compatible deltas | C12 |
+| SÍ SÉ SON | Attention, urgency and useful assimilation | Three ordinal signals plus outcome-driven attention dispatch | C06 |
+| BRAVO | Source-to-curriculum and progressive real-world intake | Qualified evidence strata and one generic teaching pipeline | A08-A10,C14 |
+| Rosetta v3 | Stable interoperability and interpretation lineage | Existing Core meaning, application extensions, exact source/run identities | A03,C10,C12 |
+| Akasha blueprint | Persistent queryable state without hot-loop dependence | Durable outbox, rebuildable projection, local invalidation | C09,C10 |
+| SmallThinker / KAN / AgentSociety | Local/specialist or population experimentation | Preserve package/substrate interface; no extra engine in the initial runtime | C12 |
+| Refract / AuPair / ReasoningBank | Reusing useful examples and procedures | Existing teacher choices, motif generalization, source-family contrasts | A11,B07,C03 |
+| Historical energy/KL proposals | Adaptation objectives and cooperative prioritization | Retain as research provenance; current selected optimizer/loss is explicit | B12,C06 |
+
+The selected system has enough distinct machinery already. Each adopted donor addresses a specific gap: memory access, local depth, continual plasticity, reusable semantics or operational feedback. No second optimizer, second curriculum authority, duplicate graph or separate society simulator is added to deliver this version.
+
+## 17. Interface completion details
+
+### 17.1 Shared input/output records
+
+`AtlasRelease` carries semantic digest, source/coverage digests, stable concept records, approved formal-domain bindings, relation data, held ledger and ABI allocation provenance. `CompiledFrameBatch` carries frame/atom positions, exact sidecars, role access, visible prefix maps, scope/padding masks, expansion handles and compiler digest. `AnswerPlan` carries the registered typed modality, legal output roles/values, dependency order and output budget. `ModelOutput` contains typed logits/values plus optional route/refinement diagnostics. `CapabilityResult` contains the validated final typed answer, selected operator versions, cost and immediate dependencies. `CompleteStudent` contains every tensor and state field named in the generation contract.
+
+All boundary records use versioned dataclasses or existing typed owners, canonical JSON for receipts, stable enum values and explicit optional fields. External data is parsed once at the boundary. Pure internal functions consume validated records. Error codes extend `bilqis_mlx.errors` under one BAMF family and include the failing field/expected identity/recovery action. Avoid generic opaque operator-contract errors when a precise field mismatch can be reported.
+
+### 17.2 Parameter naming and initialization
+
+Use stable paths `identity.bank.<n>`, `features.*`, `frame.*`, `blocks.<i>.*`, `depth.*`, `motif.page.<n>`, `motif.site.<n>.*`, `plastic.group.<n>.*`, `refine.*` and `readout.*`. B01 lists every shape and initializer. Initialize norm scales to1, biases only where explicitly declared, ordinary linear weights from the recorded seed and fan-in scale, causal convolution as an identity kernel, memory gates at-4, feature gates at-2, depth/refinement residual gains near0.01 and adapter output matrices at0. All parameters appear in checkpoint and optimizer enumeration.
+
+### 17.3 Fast-state lifecycle
+
+A FAST candidate changes its eligible parameters, row moments and local clocks. A FULL candidate changes the entire current active tree. A row's optimizer count begins when that row first updates, even if the global run already has many steps. Rejection restores parent parameter and allocation state. The saved generation includes the counters selecting the next cadence so a restart cannot speed up consolidation or reclassify a fresh row prematurely.
+
+### 17.4 Output construction and legitimate answer reuse
+
+A question asking for an input frame's action should use exact role lookup. A declared addition operator may calculate a sum directly. An unseen role/context composition can use the neural and exact operators together. The assessment oracle remains independently callable on its own inputs; hidden gold is never a field in a solver request. This boundary measures actual capability without penalizing efficient cognition.
+
+## 18. Detailed implementation plan
+
+### Three simultaneous workstreams
+
+**Lane A, semantic/curriculum:** source release, ABI banking, frame schemas/codec/compiler, features, exact operators, generated capability families, coverage frontier, evidence adapters and single-authority cutover. Default writer surface is new modules under `semantics/`, `factory/` and `source_adapters/` plus their package tests.
+
+**Lane B, neural/runtime:** topology, embeddings, frame encoder, attention, depth selection, local recurrence, motif memory, plasticity, typed readout, full forward, AdamW custody, checkpoint payloads and derived caches. Own new neural modules; shared checkpoint/student dispatch edits are proposed to Lane C.
+
+**Lane C, integration/teacher/operations:** exact-head integration, teacher reuse, whole-system solve and assessment, admission, salience, resource management, corrections, projections, CLI/cockpit, packages, integrated learning proof and owner training runbook. It owns shared root documentation and the integration branch.
+
+Each branch has one writer. A task can prepare pure functions against the frozen contracts while its dependency is under review, but its turn-in receipt names the actual consumed commit. Use separate lane worktrees only for actual concurrent writers. Serialize MLX proof runs on the Studio; concurrent CPU source/spec work is independent of the sole neural lane. Merge/promotion into main remains a separate owner action.
+
+### Commit and handoff discipline
+
+A leaf ends with working code, focused tests, a fresh review disposition and a commit. Push the branch, verify the remote SHA, comment on its issue and lane PR, and update the PR Development section with the issue's closing keyword. A branch receipt, not an OPEN/CLOSED label alone, proves a prerequisite. Keep progress committed and continue the next ready leaf. After context compaction, rehydrate only the active issue, its amendments, direct prerequisite receipts and listed files. The workstack is a bookmark/dependency controller, not an invitation to reread the entire archive.
+
+### EGM execution profile
+
+Use the pinned Google Elephant-Goldfish checkout. This delivery uses a noninteractive, artifact-first review because the owner explicitly authorized completing the work without questions. The Elephant resolves against the owner's chosen architecture. Fresh Goldfish reviewers reconstruct the design from these artifacts and named code sources, looking for missing definitions, contradictory interfaces, impossible dependencies and excessive execution burden. Every major/blocker receives a repair or evidence-backed contest. Review findings and resolutions are durable files.
+
+During implementation, one fresh turn-in review covers a leaf or a cohesive batch of at most three. Findings name issue keys and files. One targeted repair/re-audit is normally enough; a remaining actual correctness defect keeps only that leaf open. Cosmetic preferences are recorded without blocking other work. Tests protect source correctness, gradient connectivity, causal visibility and complete recovery. They are not a factorial research program.
+
+### Verification budget
+
+Run `python3 -B scripts/run_tests.py <named test paths>` for the leaf. Add one small real integration witness at the owning boundary. Run `npm run quality:check`, `npm run abi:verify` and the applicable Factory/SKOS gates once per integrated boundary, reusing valid content-addressed evidence for unchanged mature source artifacts where the repository supports it. The integrated disposable learning witness uses at most64 attempted optimizer steps initially; a failure becomes a concrete bug to repair. No second model architecture is trained merely to explain which component deserved credit.
+
+### Ready work
+
+Start A01, B01 and C01 in parallel. A's compiler/feature pipeline and B's attention/depth modules can advance independently against the fixed contracts. B02 joins A's feature/ABI outputs; C02 then joins the source and neural paths. C16 opens the durable student path after teacher/retention/custody/resource integration. The full atlas expansion, projections, caches and packages finish concurrently around that student.
+
+## 19. Operator command contract
+
+C16/C11 implement and parser-test these command forms before they become executable launch instructions:
+
+```sh
+npm run train -- --dry-run --verify-source \
+  --model-topology configs/models/bamf-0.2.json \
+  --run-dir runs/bamf-0.2 --source-prefetch-workers 2
+
+npm run train -- --human-run \
+  --model-topology configs/models/bamf-0.2.json \
+  --run-dir runs/bamf-0.2 --source-prefetch-workers 2 \
+  --admission-policy atlas-release --atlas-release-manifest <approved-manifest>
+
+npm run train -- --human-run --resume \
+  --run-dir runs/bamf-0.2 --source-prefetch-workers 2
+```
+
+The initial foundation command can omit the atlas lease and train only its current admitted release. The operator selects a session budget using the repository's supported time/visit switches. Resume uses saved topology, source, optimizer, teacher and lease. The new directory is distinct from current live and frozen qualification runs. These are implementation targets, not a statement that today's v1 parser already supports the BAMF fields.
+
+## 20. Completion and useful outcomes
+
+Software completion requires a real12-layer model, exact semantic/causal packing, finite connected gradients, functional motif and fast-state learning, complete save/rollback/resume, current teacher behavior, ordinary full-system assessment, generated semantic successors, append-only bank growth, usable commands, source-linked correction, derived cache fallback and a portable package/projection path. Each property has an owning issue and focused witness.
+
+The first persistent training milestone is a saved generation that improves source-valid capability and resumes intact. Subsequent milestones measure the expanding admitted atlas, older-skill retention, new compositional capability, useful corrective transfer and operational cost. Full SKOS coverage is a continuing learner outcome with an explicit source census, not a synonym for building the compiler. Held source meanings remain visible work rather than silently counted as taught or mastered.
+
+## 21. Sources and traceability
+
+Primary implementation sources are the pinned repository files listed in every issue, the merged SKOS compiler, current Factory specifications0001/0002/0003/0005-0082 as applicable, ADR-094/103 and the replay evidence. The supplied Curriculum Registry and Conjoined Triangle workbooks supply semantic/historical/program crosswalks; live source and accepted successor amendments govern execution.
+
+The private source record also retains BAMF-0.1, the expanded BAV engineering specification, BRAVO v0.3.3, Akasha v0 MVP, Rosetta v3 Core Spine, GNOSIS0.4, SÍ SÉ SON, the2025 synthesis, CTM/TRM/Nested Learning comparisons and mHC/Engram discussion. Source snapshots are hashed in the delivery manifest. Public issues contain screened implementation contracts and public repository references; raw private corpora stay in their original storage.
+
+External engineering references:
+
+- Google Elephant-Goldfish Model, pinned commit: https://github.com/google/elephant-goldfish-model/tree/b3a35956759bf7f024af2ff061b2e0b44b438e4c
+- MLX native grouped-query SDPA: https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.fast.scaled_dot_product_attention.html
+- MLX RoPE: https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.fast.rope.html
+- Compressed Convolutional Attention: https://arxiv.org/abs/2510.04476
+- Attention Residuals: https://arxiv.org/abs/2603.15031
+- Conditional Memory / Engram: https://arxiv.org/abs/2601.07372
+- TurboQuant: https://arxiv.org/abs/2504.19874
+
+References motivate the selected engineering mechanisms. Exact operational choices are specified above and in the work items, allowing implementation without rereading an entire research literature.
+
+## 22. Issue catalog
+
+The following catalog links every build outcome to its executable issue. Each issue contains the implementation prescription, relevant shared contracts, named tests, EGM handoff and branch turn-in rules.
+
+
+## 23. Predecessor requirement continuity
+
+The private expanded BAV engineering specification is preserved as a predecessor. This successor carries its24 requirement IDs into explicit implementation owners. The public table records engineering obligations and dispositions; the private source text and research crosswalk remain at their original access boundary.
+
+| Predecessor obligation | BAMF-0.2 implementation owners | Continuity |
+| --- | --- | --- |
+| BAV-REQ-001/002 single semantic authority and identity | [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345),[A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348),[A12: #364](https://github.com/Entif-AI/Bilqis-MLX/issues/364) | Canonical source, preserved senses/indices, deterministic rebuild |
+| BAV-REQ-003/004 reversible frames and64-bit codec | [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349),[A04: #351](https://github.com/Entif-AI/Bilqis-MLX/issues/351),[A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357) | Exact role/occurrence/order; extended encoding after first bank |
+| BAV-REQ-005 causal prefix | [A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357),[B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350),[B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365),[B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366),[B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) | Same visibility through every path |
+| BAV-REQ-006 Rosetta meaning/identity | [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349),[A10: #361](https://github.com/Entif-AI/Bilqis-MLX/issues/361),[C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383) | Existing interpretation and trace semantics |
+| BAV-REQ-007/008 topology andCCGQA | [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346),[B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350),[B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) | Same12x768/16Q/8KV body and two-matrixFFN |
+| BAV-REQ-009 Block AttnRes | [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355) | Shared Q/K/V/output projections and three context gates |
+| BAV-REQ-010/011 motif and active semantics | [B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356),[B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366),[A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348),[B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372),[A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354) | Initial capacities retained; explicit generation-bound expansion |
+| BAV-REQ-012/013 local/dependency refinement | [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365),[C04: #373](https://github.com/Entif-AI/Bilqis-MLX/issues/373) |768-wide local state,192-channel attention,0/1/2passes and typed DAG |
+| BAV-REQ-014 derived cache | [B14: #375](https://github.com/Entif-AI/Bilqis-MLX/issues/375) | Versioned approximate cache; canonicalFP32 preserved |
+| BAV-REQ-015 Factory teaching | [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371),[C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380),[C14: #386](https://github.com/Entif-AI/Bilqis-MLX/issues/386) | Current foundations followed by full eligible atlas |
+| BAV-REQ-016 rollback | [B12: #370](https://github.com/Entif-AI/Bilqis-MLX/issues/370),[B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372),[C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) | Complete weights, moments, clocks, allocations and source state |
+| BAV-REQ-017 replay teacher | [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376) | Exact replay-policy behavior and delivered evidence |
+| BAV-REQ-018 salience | [C06: #379](https://github.com/Entif-AI/Bilqis-MLX/issues/379) | OrthogonalI/E/N with task-relative consequences |
+| BAV-REQ-019 correction chronology | [A11: #362](https://github.com/Entif-AI/Bilqis-MLX/issues/362),[C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377),[C13: #385](https://github.com/Entif-AI/Bilqis-MLX/issues/385) | Planned/missing/negative/corrected/stale states distinguished |
+| BAV-REQ-020 descendants | [C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377),[C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383) | Immediate dependencies and scoped requalification |
+| BAV-REQ-021 source-family independence | [A10: #361](https://github.com/Entif-AI/Bilqis-MLX/issues/361),[C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378),[C12: #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) | Root lineage preserved across derivatives |
+| BAV-REQ-022 resources/commands | [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374),[C11: #384](https://github.com/Entif-AI/Bilqis-MLX/issues/384),[C16: #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382) | ExistingM3Ultra; local compiled input; verified operator commands |
+| BAV-REQ-023 history | [C01: #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347),[B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) | Old runs and frozen qualification remain intact |
+| BAV-REQ-024 actual capability | [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378),[C11: #384](https://github.com/Entif-AI/Bilqis-MLX/issues/384),[C14: #386](https://github.com/Entif-AI/Bilqis-MLX/issues/386) | Whole-system gains/retention and changed later behavior |
+
+The selected successor adds dedicated plastic parameters, append-only semantic banks, an explicit admission lease and complete-solver capability credit. Exact source-visible retrieval and computation are intended successful behavior. Scoring data stays in the evaluator; the task definition states what the solver may access. The first useful student gate is [C16: #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382); wider projections and compression complete without delaying that gate. The neural body, FP32 custody and source/teacher ownership are preserved.
+
+## 24. Detailed architectural archaeology
+
+The archive contributes executable mechanisms. Each entry states the source locus, recovered decision, chosen implementation and the artifact that carries it forward.
+
+| Source and locus | Recovered ingredient | Concrete delivery | Owner |
+| --- | --- | --- | --- |
+| CTM integration, May13-14 2025: Temporal Dynamics Integration; user's ambiguity/noise questions | Thought unfolds over bounded internal time; preserve multiple interpretations and learn from controlled ambiguity | Shared recurrent refinement with input recall; replayable structural-noise signatures and alternative-set targets | [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365),[A11: #362](https://github.com/Entif-AI/Bilqis-MLX/issues/362) |
+| Entif TRM Integration, filename20251012: recursion.py and implementation notes | A small shared refiner updates a provisional state over repeated passes; task input stays accessible | In-process MLX refiner, same production model, explicit0/1/2budget; the former service wrapper is replaced by the existing runtime | [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365),[B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) |
+| Cases Where I Was Proven Right: recursive reasoning, five-paper synthesis and Design Deep Dive appendix | Separate computation depth from parameter count; inject original input and train bounded recurrence | Reused local weights, fixed source seed, variable training passes and visible compute cost | [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365),[C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374),[C11: #384](https://github.com/Entif-AI/Bilqis-MLX/issues/384) |
+| Synthesizing2025, sections1-3/7/10 and SEAL section | Dedicated memory parameters, multi-timescale consolidation and persistent optimizer state | Three rank8 adapters, FAST/FULL groups, per-row clocks, transactional nativeAdamW | [B09: #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368),[B12: #370](https://github.com/Entif-AI/Bilqis-MLX/issues/370),[B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) |
+| Nested Learning comparison, sectionsII-IV/VI/X | Explicit propose/evaluate/consolidate lifecycle for parameter changes | Candidate state includes all plastic memory and clocks; accepted update commits one generation; rejected update preserves parent | [B12: #370](https://github.com/Entif-AI/Bilqis-MLX/issues/370),[B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372),[C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) |
+| Deep Dive, principles3 and section5 | Keep neural adaptation online through bounded reversible updates | Same human-started run learns continuously; the learner changes selected groups between durable snapshots | [B09: #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368),[C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380),[C14: #386](https://github.com/Entif-AI/Bilqis-MLX/issues/386) |
+| mHC/Engram conversation, January22 2026, sections1-5 | Stable learned mixing and cheap conditional retrieval are complementary | Existing selected depth selector receives normalized source weights; motif reads exploit exact/structural keys | [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355),[B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356),[B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366) |
+| Synthesizing2025, MLACS/ReasoningBank/Tapestries sections | Reuse transformations and structured examples instead of reconstructing everything | Exact operator DAG, applicability-keyed reuse, teacher exemplar provenance and portable capability exports | [A07: #353](https://github.com/Entif-AI/Bilqis-MLX/issues/353),[C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376),[C04: #373](https://github.com/Entif-AI/Bilqis-MLX/issues/373),[C12: #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) |
+| HRM/SmallThinker/KAN/AgentSociety comparison: integration loci | Separate local efficiency, compute depth, operator substrate and population behavior | Local learner and substrate-independent package interface; current build uses the selectedMLX body | [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365),[C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374),[C12: #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) |
+| GNOSIS0.4, sections0.8/0.15/13/15 | Cognitive inheritance, immediate-edge correction and receiver-owned adoption | Local correction index, versioned package+fixtures+behavioral diff; compatible deltas or semantic teaching package | [C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377),[C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383),[C12: #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) |
+| SÍ SÉ SON, sections9-12/18-20 | Consequence, urgency, expectation-relative novelty and subsequent behavioral assimilation | Separate salience outputs; aggregate trend/correction handling; teacher records changed future behavior | [C06: #379](https://github.com/Entif-AI/Bilqis-MLX/issues/379),[C11: #384](https://github.com/Entif-AI/Bilqis-MLX/issues/384),[C14: #386](https://github.com/Entif-AI/Bilqis-MLX/issues/386) |
+| BRAVO0.3.3, source strata and section11 | Developmental training bridges structured semantics to real qualified evidence | Generated prerequisite closure, independent strata feeders, typed reconstruction and continual expansion | [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358),[A09: #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360),[A10: #361](https://github.com/Entif-AI/Bilqis-MLX/issues/361),[C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380),[C14: #386](https://github.com/Entif-AI/Bilqis-MLX/issues/386) |
+| Rosetta v3 Core and Akasha blueprint | Stable identities, source/interpretation lineage, rebuildable derived state | Exact semantic/runtime envelopes, set-level eligibility, durable local outbox and read-only projections | [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349),[A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354),[C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377),[C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383) |
+
+A donor mechanism is carried once into its owning component. The selected Block AttnRes module supplies normalized depth mixing; the build therefore does not require a second residual-routing architecture. NativeAdamW plus sparse groups supplies the first controllable plasticity mechanism; learned optimizer internals remain a versioned future option. Recurrent refinement is local and shared rather than a secondTRM/CTM service. Semantic packages preserve optionalKAN or alternate-device implementations without making them a prerequisite. These dispositions keep the archive's intent while concentrating the initial investment on one functioning learner.
+
+### Lane A
+
+#### [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345) | Compile the pinned SKOS release into the BAMF semantic authority snapshot
+
+**Depends on:** Ready to start.
+
+**Deliver:** Read the canonical release produced by #291 and verify its source, coverage and RDF digests. Emit stable concept records, admitted types/relations, morphology/sense distinctions, source loci, held mappings and canonical ordering. Preserve root versus Stem x Specification sense identities; emit allomorph/form variants as realizations, not duplicate meanings. Retain the existing formal Boolean/numeric source owners with explicit domain bindings. Derive ABI entries in the prior accepted ordering followed by canonical new-ID ordering. Persist atlas.json, concepts.jsonl, relations.jsonl, held.jsonl and a content-addressed manifest using the repository canonical serializer. Count source rows, RDF terms, semantic concepts, active ABI indices and trainable capabilities separately. Attach an explicit reason to every corpus item that is not yet a teaching candidate. Complete #292's projection contract through this leaf rather than implementing a second registry. The graph materialization receipt may witness the same digest, but canonical RDF/IR bytes supply the build. Expose a pure read API so neural workers consume a frozen snapshot without a database. Predecessor trace: BAV-REQ-001/002; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Two clean builds from the same pinned release have identical digests. A literal root with two source-attested senses stays two senses. A held mapping stays held and absent from active indices. Reordering input files does not renumber prior indices. A stale coverage receipt yields an explicit source-owned error before output promotion. Record the real corpus census and one formal-domain binding; do not substitute an empty toy atlas for the corpus build.
+
+#### [A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348) | Implement append-only semantic banks and active-vocabulary allocation
+
+**Depends on:** [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345), [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346).
+
+**Deliver:** Represent global ABI indices as bank*8192+offset and keep a stable full-ID map. Start one bank; append another only when qualified admissions exceed existing capacity. Activation within a reserved bank initializes the row from its source features and creates zero moments/count0; inactive rows are not trained through tied softmax. Expansion binds previous generation, allocation-source digest and admitted IDs. Prepare tensors, active mask, output-domain map and registry-mirror delta together, then pass them to the existing admission transaction. Preserve all old row bytes and optimizer state. When count exceeds65535, uint32 extended indices continue without an address-codec redesign; validate uint32 bounds. Full output logits are the ordered concatenation of active bank projections, never a modulo alias. Mirror admitted token descriptions and allocation lineage into the existing Registry evidence/export contract; a spreadsheet remains a navigable mirror, not an independent semantic registry. Provide a resource estimate before materializing new banks and stage until it fits. Predecessor trace: BAV-REQ-011; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Exercise indices8191,8192 and16384. Existing rows/moments hash identically before and after accepted extension; inactive logits cannot win. Simulate rejection and crash before pointer publication and recover the exact old bank extent. A stable meaning receives the same index under source reordering; duplicate/mismatched meaning blocks only the new admission. Verify the tied readout and registry mirror have the same active set.
+
+#### [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349) | Bind typed AST semantics to role-addressable frame contracts
+
+**Depends on:** [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345).
+
+**Deliver:** Define frozen typed records with schema versions and canonical serialization. Reuse existing AST constructors and approved operator meanings. Introduce FrameInstance occurrence IDs derived from source-instance identity plus structural path, separate from canonical content digest. Use (role_id,occurrence_index) keys and explicit parent/child edges. Specify NONE, UNKNOWN and unresolved alternative bindings through declared typed states, not absent dictionary keys. Validate role counts, allowed types, scope and declared causal prefix. Preserve atomic fallback for AST constructs lacking an approved frame schema. Create released adapters for current A/B/C source ASTs without branching the trainer by grade. Bind each new schema to actual source rules; an executable formal operator may have a formal-domain schema when a New Ithkuil realization is not yet admitted. Return typed errors through the existing error catalog with source span and failed role. Predecessor trace: BAV-REQ-003/006; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Literal TRANSFER fixtures swap agent/recipient and yield different bindings/content IDs. Repeated same-type members in distinct roles survive. Singular-role duplication fails; explicitly plural role with occurrence0/1 succeeds. Nested negation/scope round-trips without flattening. Unknown schema takes the atomic fallback with all source data preserved. A foreign semantic-release ID fails before neural use.
+
+#### [A04: #351](https://github.com/Entif-AI/Bilqis-MLX/issues/351) | Build the reversible four-slot frame codec and extended fallback
+
+**Depends on:** [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349).
+
+**Deliver:** Implement exact shifts/masks from the frame contract using integer operations. Validate ranges before packing, reserve version1 and record complete presence1111. Keep schema tag lookup release-local and content-addressed. Serialize the u64 in little-endian8 bytes with an explicit codec identifier; JSON may expose its decimal string to avoid floating-point loss. Encode all other frames in extended canonical slot arrays with uint32 indices, child references and occurrence metadata. Select fallback by a typed disposition, never by catching arbitrary exceptions. Use the same exact role-index accessor for both representations so downstream neural code is codec-neutral. Include original constituent order and full source metadata in the sidecar. Empty/zero indices are distinct. This is a compact representation, not a separate semantic identity. Predecessor trace: BAV-REQ-004; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Round-trip[0,1,8190,8191], all-zero and all-max words against literal expected integers. Version mismatch and illegal presence mask reject.17th schema, index8192, five-slot frame and nested frame all choose extended encoding and reconstruct exactly. Two frame occurrences with identical contents share content identity but retain distinct occurrence IDs.
+
+#### [A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357) | Compile causally valid mixed frame and atomic sequences
+
+**Depends on:** [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349), [A04: #351](https://github.com/Entif-AI/Bilqis-MLX/issues/351), [A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354).
+
+**Deliver:** Implement a streaming partial-frame builder. Close and pack a frame only when its final required constituent is visible. Represent incomplete frames by the visible atoms or explicit partial node; never rewrite an already-consumed prefix position in an incremental cache. For append streaming, emit a closure reference at the closing position; full-prefix compilation may compact the complete frame only in a newly keyed cache epoch. Emit position-to-source maps, source-to-position maps, prefix ends, scope boundaries, padding mask, exact role access and expansion handles. Include policy version in compiler digest. Keep batch rows independent. Compile answers only as target tensors outside the model input view. Bound neural length to1024 and report overflow before padding/allocation; split lawful source sequences at existing boundaries rather than silently truncate. Return actual atoms/frame, fallback shares and sidecar bytes. Predecessor trace: BAV-REQ-005; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Compile every prefix of a literal four-member frame and show unavailable members never appear in embeddings or handles. Compare logits for identical prefixes with different future suffixes using B11 integration. Mixed atomic/nested/packed sequences reconstruct the same visible AST. Streamed closure changes cache identity rather than mutating old keys. A two-row batch with unequal lengths has no cross-row content or padding visibility.
+
+#### [A06: #352](https://github.com/Entif-AI/Bilqis-MLX/issues/352) | Compile source-grounded factorized features once per release
+
+**Depends on:** [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345), [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349).
+
+**Deliver:** Freeze a feature schema containing admitted semantic types, roles, schema IDs and64 graph features. The64-vector contains normalized degree/count statistics and signed deterministic projections of one-hop attested relation predicates/types; persist the exact projection seed and vocabulary. Keep prerequisites in separate fields sourced from curriculum contracts, not inferred from taxonomy adjacency. Enumerate at most512 values for each learned factor table; additional factor values use a release-defined compositional/UNKNOWN representation until a versioned table extension is accepted, preserving exact IDs in the sidecar. Materialize feature rows for the complete eligible atlas and mmap/read them locally. Cache keys include semantic release and feature schema. Use Falkor only as an optional readback witness to the canonical extraction. Preserve source references supporting every categorical input.
+
+**Verify:** Two builds have identical features. Swapping a role changes its feature while leaving concept identity unchanged. Held relations do not enter admitted feature inputs. A disconnected concept receives explicit zero neighborhood plus its own type features. No runtime function in the gradient path opens a network connection. The feature manifest survives source-file reordering.
+
+#### [A07: #353](https://github.com/Entif-AI/Bilqis-MLX/issues/353) | Register exact semantic and deterministic cognitive operators
+
+**Depends on:** [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349).
+
+**Deliver:** Register role lookup, identity/type inspection, set membership, Boolean functions, bounded integer operations, exact rational duration/unit conversion and released structural relations. Each operator declares input/output signatures, applicability conditions, implementation digest and pure-effect contract. Operands come only from task-visible input and admitted knowledge. Independent evaluation owns target gold. Reuse independently verified source algorithms where runtime use is allowed but keep evaluator entrypoints unreachable from solver dependencies. Return UNKNOWN/UNSUPPORTED for an inapplicable operator rather than coercing null or interpreting a plan as an occurrence. Record operation count and source binding, not verbose internal prose. Known results may be memoized by complete input and operator identity. Make function composition and partial application ordinary typed DAG nodes.
+
+**Verify:** Literal2+3=5, Boolean truth cases,0.25h=15min and role lookup work with no neural call. Null differs from0. Planned event cannot satisfy occurred-event predicate. Cached operation with changed release or operator version misses. A repository dependency test prevents solver imports of assessment/gold-label APIs. End-to-end scoring C05 gives full capability credit to this path.
+
+#### [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358) | Generate capability and lesson programs across the full SKOS inventory
+
+**Depends on:** [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345), [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349), [A06: #352](https://github.com/Entif-AI/Bilqis-MLX/issues/352), [A07: #353](https://github.com/Entif-AI/Bilqis-MLX/issues/353).
+
+**Deliver:** Build reusable family adapters for positive identity, typed role binding, source-attested relation recognition, morphology composition/decomposition, numeric/Boolean composition, scope/modality/time distinctions and released transformations. Enumerate every semantic concept in the pinned atlas and map it to supported construction families or an explicit held reason. For each family emit positive constructive teaching, source-valid contrasts, canonical answer modality, independent checker reference, prerequisite closure and variation axes. Definitions and source examples supply input facts; do not invent causal laws from English glosses. Qualified source facts can be looked up directly; harder tasks combine/rebind them. Store capability ID as a digest-stable semantic/operator signature, not root ordinal or grade letter. Use existing FactoryRelease/ExecutableFactoryRelease and factory verifier.1-9 capability deltas are data. Additional root breadth reuses the same engine rather than creating one issue or trainer per root.
+
+**Verify:** Build the actual full-atlas coverage ledger, with eligible/held counts reconciling to source concept census. Demonstrate current numeric/Boolean family plus one real source-attested morphology/role family. New concept within a supported family changes data only. Missing constructor/checker is held with exact reason while unrelated ready families still compile. Teaching construction explicitly contains its declared constituents before composite tests.
+
+#### [A09: #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360) | Generate a resumable prerequisite-aware curriculum frontier
+
+**Depends on:** [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358).
+
+**Deliver:** Project A08 candidates into the existing CandidateFrontierRelease and CandidateBinding shapes. Resolve prerequisite closure using taught/current capability evidence. Rank eligible deltas first by smallest prerequisite slope, then released downstream unlock count, then oldest unvisited ready item and stable ID. Expose salience features to the existing teacher; priority never alters semantic gold. Resume from content-addressed coverage ledger and cursor; no root can vanish merely because a newer release arrived. Batch up to16 new IDs and1-9 capabilities; recursively schedule constituent introductions before composites. Emit COMPLETE_ATLAS_COVERAGE only when every eligible concept has its requested task coverage; HELD entries remain enumerated with source/remediation owners. Propose and stage successors continuously. Runtime adoption remains C07's explicit lease/admission boundary.
+
+**Verify:** Three successive generated deltas advance beyond A/B/C without grade-specific code. Restart after staged delta produces the same next candidate. A blocked prerequisite holds its dependents while unrelated ready work progresses. Corpus reordering changes neither capability IDs nor prior allocation. A release containing only held items returns actionable coverage status, not false graduation or an infinite empty loop.
+
+#### [A10: #361](https://github.com/Entif-AI/Bilqis-MLX/issues/361) | Compile BRAVO evidence strata into Factory learning releases
+
+**Depends on:** [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358).
+
+**Deliver:** Consume source-span-linked interpreted frames from the qualified VieDay stratum release. Begin with category/value/unit summaries, then time logs, structured reflections and narrative subsets as each is available. Use PUBLIC_FIXTURE analogues for public tests; PRIVATE_REAL intake uses #327's private boundary. Bind source digest, interpretation revision, concept/role IDs, prerequisite capabilities, positive/negative families, checker, task modality and rights to each lesson. Preserve blank/zero, reported/computed values, planned/occurred status, negation, temporal disagreements and alternate interpretations. Train typed reconstruction and a small declared English template codec initially; free-form narrative stays separate until its qualified semantics exist. Split by source episode/template lineage for fresh challenges, while ordinary post-exam errors remain teachable under the existing classroom policy. No all-strata gate: one qualified subset can feed an ordinary FactoryRelease.
+
+**Verify:** One public structured summary becomes a source-linked typed lesson and independent exact check.0.25h/15min match; blank differs from0; planned differs fromcompleted; contradictory dates remain alternatives. Unclassified/private source is rejected by public export. One held narrative span does not block qualified structured summaries. A source interpretation correction changes only dependent lesson families.
+
+#### [A11: #362](https://github.com/Entif-AI/Bilqis-MLX/issues/362) | Generate lawful ambiguity and structural contrast lessons
+
+**Depends on:** [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349), [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358).
+
+**Deliver:** Implement typed transformations: role swap, cardinality change, scope/negation movement, known/unknown substitution, planned/occurred contrast, missing-versus-negative observation, and source-authorized morphology alternatives. Each transformation declares applicability and checker-derived outcome. Maintain original source and generated variant lineage separately. Add bounded ambiguity exploration with at most4 source-compatible interpretations per example, ranked deterministically; preserve unresolved alternatives as the target when evidence cannot choose. Controlled noise operates on presentation or available cues, not canonical identities/gold. Save the noise signature(type,location,amount,seed) so a later lesson can revisit a genuinely different weakness. Feed contrast choices to the teacher's existing strategy interface. Start with structural families already expressible in the current ABI.
+
+**Verify:** A role-swapped frame changes the expected role answer. Removing decisive evidence produces UNKNOWN or an alternative set, not a guessed singleton. Re-running a noise seed reproduces the exact variant. Three contrast families pass literal oracle checks and original-source preservation. The same old failure is not relabeled as a novel example merely by paraphrasing.
+
+#### [A12: #364](https://github.com/Entif-AI/Bilqis-MLX/issues/364) | Complete the single-authority semantic cutover and release receipt
+
+**Depends on:** [A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348), [A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357), [A08: #358](https://github.com/Entif-AI/Bilqis-MLX/issues/358), [A09: #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360), [A11: #362](https://github.com/Entif-AI/Bilqis-MLX/issues/362).
+
+**Deliver:** Trace every current semantic input to one explicit admitted source release or separately declared formal domain. Verify ABI, AST, frames, lesson manifests, graph projection and registry mirror share that binding. Classify old catalogs as historical readers or generated derivatives; remove current-path overrides and duplicate aliases once callers migrate. Extend the existing semantic-boundary guard with declared imports and ownership rules, not a regex ban on every historical filename. Produce a compact source-to-consumer table and a rebuild receipt. Close #295 only after its existing acceptance is met on the exact combined branch; this leaf's completion alone must identify any remaining existing-owner work. Keep the source-grade implementation generic and add one Grade-D-equivalent data-only successor witness.
+
+**Verify:** Regenerate release/ABI/AST/lessons twice and compare hashes. A stale shadow catalog cannot alter current semantics. Historical receipts still decode. One new released semantic reaches compiled lesson and read-only graph projection with unchanged old indices. A deliberate mismatched digest is caught at the first consumer. Record exact code head and existing-owner completion disposition.
+
+#### [A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354) | Enforce combined context eligibility before neural or motif access
+
+**Depends on:** [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349).
+
+**Deliver:** Implement versioned ContextEligibility and EligibleContext records using the shared eligibility contract. Validate all member handles and pair/set joins before A05 packing and B08 motif reads. Produce stable reason codes for release mismatch, revoked source, temporal mismatch, forbidden join, unresolved purpose and invisible prefix. Retain blocked evidence only in the authorized source store; return source handles and bounded diagnostics to the caller. Emit a digest over the approved membership and relevant policy/time/rights projections. Runtime exact operators, neural attention and cached transforms consume only this approved view. Provide PUBLIC_FORMAL envelopes for existing source-grounded A/B/C constructors. Public tests use independent synthetic actors/scopes. Changes to eligibility generate C09 invalidations; a live external policy service is not required for each gradient step because the visit pins one approved frontier. Predecessor trace: BAV-REQ-010/F09; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Two individually allowed frames with a forbidden joint scope produce ContextHold before any pooling or lookup. Revocation invalidates a formerly permitted view. Different policy/time frontiers produce different cache identities. A future constituent has no eligible handle. PUBLIC_FORMAL A/B/C fixtures remain executable without NLP or network calls. The full-set positive case produces an identical eligibility digest across input enumeration order while preserving source order inside each frame.
+
+
+### Lane B
+
+#### [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346) | Declare BAMF v2 topology and generate the complete parameter manifest
+
+**Depends on:** Ready to start.
+
+**Deliver:** Implement explicit v1/v2 deserialization and a model factory dispatch keyed by architecture ID bamf-atlas-v2. Freeze dense geometry, modules, initializer seeds and shape policy. Declare every weight/norm/gate/head/convolution/adapter tensor centrally, with stable names, FP32 type and FAST/SLOW group. Generate initialization, shape validation, parameter count, optimizer tree and serialization order from this declaration. Preserve v1 reader behavior. Initial dense matrices count67,239,936, semantic table6,291,456 and motif table2,097,152; auxiliary tensors must be itemized and final total printed, not forced to a marketing estimate. Three rank8 adapters add36,864 matrix parameters. Frame feature and type tables use their declared separate capacities. Version embedding-bank extents as generation state, while dense geometry remains immutable. Store source/release and teacher identities separately from topology. Make config self-describing and validate contradictory channels/heads, zero sizes and unsupported dtypes before allocation. Predecessor trace: BAV-REQ-007; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Exact generated shapes agree with an instantiated tree and serialized tree. Seed equality reproduces initialization. Invalid16Q/7KV, oddRoPE24-mismatch or different FFN method rejects. v1 historical metadata still reads. v2 bank extension changes extent receipt but not stable dense-topology digest. Report all tensors and exact parameters without constructing alternative model sizes.
+
+#### [B02: #359](https://github.com/Entif-AI/Bilqis-MLX/issues/359) | Implement tied factorized semantic embeddings and paged readout
+
+**Depends on:** [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346), [A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348), [A06: #352](https://github.com/Entif-AI/Bilqis-MLX/issues/352).
+
+**Deliver:** Implement the factorized embedding equation and fixed feature shapes. Respect per-row active state both in lookup validation and readout masking. Assemble multi-bank logits in global ABI order and expose an index map so sparse active IDs remain correctly addressed. Treat learned feature gates as parameters. Use deterministic feature-composed initialization only for newly admitted identity rows, leaving established rows intact. Include structural role/schema/position vectors without conflating their IDs with semantic vocabulary. Gather constituent embeddings differentiably; exact indices/sidecar data are nondifferentiable input. Use stable masked logsumexp for loss; reject a task with no legal answers rather than emitNaNs. Record parameter-update coverage for identity, feature and gate tensors in a disposable proof.
+
+**Verify:** A changed role changes embedding while sameID identity component stays equal. Inactive row receives zero gradient and cannot be predicted. An active row in bank1 decodes to global8192+. Tied output reuses identical parameter object/name, not a copied head. Save/load reproduces logits to1e-6 FP32 on fixedCPU reference where available or declaredMLX tolerance.
+
+#### [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363) | Build the role-aware frame encoder and constituent handles
+
+**Depends on:** [B02: #359](https://github.com/Entif-AI/Bilqis-MLX/issues/359), [A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357).
+
+**Deliver:** Use approved role order and explicit occurrence position. Project members to192-wide keys/values; a schema-conditioned192 query attends to visible members. Apply one192-wide cross-role interaction with masked single-head attention, then gated pooling and192->768 projection. Add a projected exact schema/role summary and RMSNorm. Preserve members for later selective refinement; do not detach their gradient. Atomic fallback receives its atom embedding and a one-member handle through the same interface. Partial inputs encode only visible members. Parent/child and scope features distinguish nesting without recursively flattening away boundaries. Zero-member structural control nodes receive a declared learned structural seed, never an average over empty arrays. Return actual framefill/fallback counters.
+
+**Verify:** Role swap yields a changed encoding and exact sidecar. Repeated concepts with different occurrences remain separately addressable. Nested and atomic paths both reach the same outputshape. Future member changes cannot influence partial-frame encoding. One lossbackward reaches identity, role and frameinteraction weights. Empty legal structural node remains finite.
+
+#### [B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350) | Implement causal compressed-convolution GQA and incremental RoPE caches
+
+**Depends on:** [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346).
+
+**Deliver:** Project Q/K/V with frozen shapes and apply independent per-channel three-tap convolution to projected pre-RoPE arrays. Initialize kernel[0,0,1] under oldest-to-current ordering so initial behavior is identity. Use left padding only; keep last two pre-convolution projected values perhead in decode cache. Scope/sequence boundaries zero the history, including a boundary inside a batch. Apply MLX fast.rope toQ/K with exact offset, then native fast SDPA16:8GQA. Handle allmasked/paddedquery rows by an explicit zero-result mask. Recombine384 and outputproject768. Cache manifest carries layer,scope,prefix,RoPEvariant andgeneration. Include a tiny explicit FP32 reference implementation for equality testing only; production uses fusedSDPA. Store installedMLXversion in runtime identity and use its observed signature, not undocumented flags. Predecessor trace: BAV-REQ-008; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Compare fused and explicit reference on2heads-equivalent fixture within1e-5relative/1e-6absolute where supported. Full-prefix versus chunked/single-token outputs agree within tolerance. Perturb future suffix and preserve earlier output exactly within tolerance. Confirm KV storage is8heads, not16tiled. Boundary reset,allmaskedrow and two unequal lengths remain finite. One backward reachesQ/K/V/conv/outputparameters.
+
+#### [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355) | Implement three-group Block AttnRes with stable depth selection
+
+**Depends on:** [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346), [B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350).
+
+**Deliver:** Implement the exact Q/K/V/output and per-boundary gated residual equations in the depth contract. Retain h0 and summaries at layers4,8,12; shared selector projections have128 inner channels and the residual interface stays768. The type/role composition is computed by the released factor composer and uses no target labels. Source weights are normalized across h0 and completed groups only, with a fixed source order. Capture g1 after the second motif read; apply each plastic adapter after selection. Save all four shared projection matrices and the three gate vectors/biases in B01's registry and B13's checkpoint. Optional diagnostics expose alpha without assigning fixed cognitive functions to layers. Predecessor trace: BAV-REQ-009; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Source weights sum to1. Changing a future group cannot change an earlier boundary. All three boundaries remain finite. A nondegenerate loss reaches multiple source states and selector weights. Save/load preserves output. Assert that all three group boundaries execute the module, rather than merely declaring it in configuration.
+
+#### [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365) | Add bounded recurrent constituent refinement with input recall
+
+**Depends on:** [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355).
+
+**Deliver:** Use one shared768-wide recurrent-state module with a compressed single-head192-channel member-attention block for at most two additional local passes. Each pass receives current frame hidden state, immutable original frame seed, visible member vectors and requested-role features. Reinject the original input every pass and merge through a residual gate initialized0.01. A small three-class0/1/2 routing head can learn from measured outcomes. Initial policy uses one pass for explicit member questions, zero otherwise, and permits two for unresolved nested queries. Select at most min(32,ceil(F/8)) frames per row; requested output roles take priority, then salience and source position. During training sample0/1/2 passes from the visit seed on eligible frames so the second pass receives training. Missing routing labels mask its auxiliary loss. Main answer loss still propagates through selected passes. Reuse one backbone result; refinement does not rerun all12 layers. Declare Q/K/V projections[192,768], attention output[768,192], recurrent residual gate and its bias in the tensor registry. Exact member handles return768-wide embeddings. For a selected frame, initialize state from the global frame hidden vector; query uses state+immutable_frame_seed+requested_role768; keys/values use only legal visible members. This preserves the predecessor768-wide local-resolution interface while choosing192 inner attention channels. Predecessor trace: BAV-REQ-012/013; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Zero passes is identity. One/two passes change only selected frames. Future members remain inaccessible. Original input is re-injected every pass. Backward reaches refinement parameters and two-pass save/resume repeats. Exhausted budget records remaining needs and returns the baseline answer path. One finite disposable update reduces a literal nested-role target loss.
+
+#### [B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356) | Implement transactional motif-key allocation and structural fallback
+
+**Depends on:** [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346), [A03: #349](https://github.com/Entif-AI/Bilqis-MLX/issues/349).
+
+**Deliver:** Canonicalize full typed keys. Derive structural keys by replacing permitted fillers with admitted type IDs while retaining roles, scope and relation structure. Look up exact instance first, then structural motif. Allocate missing structural keys before instance keys, ordered by observed use then key digest, at most64 new slots per candidate preparation. When full, add one16384-slot page up to65536 if the resource budget permits; otherwise retain factorized fallback and pending-key evidence. Initialize new vectors deterministically. Always compare full keys after hash lookup. Stable slots are append-only. Allocation and counters used for future allocation are copy-on-write candidate state, published only on acceptance. Preserve original release keys; accepted semantics-preserving alias maps are explicit artifacts. Predecessor trace: BAV-REQ-010; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Force a hash collision between distinct full keys and return the correct value. Different fillers share a permitted structural motif; role swap changes the key. Rejection restores allocation, tensor and counters byte-for-byte. Restart reproduces pending slot IDs. Capacity exhaustion uses fallback without overwrite. Page growth preserves all old slots and moments.
+
+#### [B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366) | Train two context-gated motif-memory reads inside the model
+
+**Depends on:** [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356), [A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354).
+
+**Deliver:** Read128-dimensional motif vectors at frame input and after layer4. Each site has a separate128->768 projection and gate conditioned on hidden state plus frame features. Initialize gate bias to-4. Missing keys use factorized fallback features. Register every projection, gate and memory page in the parameter manifest and optimizer tree. Check release/scope eligibility before gathering. Learned vectors provide continuous priors, while exact semantic IDs remain in the sidecar. Batch gathers rather than issuing one Python call per frame. Report exact/structural/miss counts, gate quantiles and touched slots as diagnostics. Predecessor trace: BAV-REQ-010; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Both read sites influence a nondegenerate loss and receive finite gradients. Changing a qualified slot affects its applicable frames. Held or foreign-release entries are not read. Miss fallback stays finite. Save/load restores values and gates. Rejection after both sites update restores the complete parent.
+
+#### [B09: #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368) | Provision fast adapters and explicit multi-timescale plasticity
+
+**Depends on:** [B01: #346](https://github.com/Entif-AI/Bilqis-MLX/issues/346), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366).
+
+**Deliver:** Add three rank8 adapters at group boundaries. Zero B matrices make initial adapters identity. FAST includes adapters, motif parameters and newly activated semantic rows; SLOW includes established embeddings and dense parameters. A new row becomes established after eight accepted updates that actually touched it. FOUNDATION updates the full tree. ADAPTIVE offers FAST candidates, then FULL after eight accepted FAST candidates; the existing teacher can request FULL earlier for foundational remediation. This policy selects update eligibility, while the teacher still selects targets, learning rate and pedagogy. Persist mode, counters, row ages and policy version. Advance clocks by accepted updates rather than wall time. Inference always consumes both groups. Freeze the update mask at candidate preparation. B12 owns optimizer moments and update counts.
+
+**Verify:** Initial adapter output equals its input. FAST changes only eligible parameters and rows. Rejected FAST candidates do not advance clocks. Eight accepted FAST candidates schedule FULL across restart. Row establishment counts its own updates. Teacher-triggered FULL uses the same generic visit path.
+
+#### [B10: #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367) | Implement typed scalar, slot and structured answer heads
+
+**Depends on:** [B02: #359](https://github.com/Entif-AI/Bilqis-MLX/issues/359), [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363).
+
+**Deliver:** Reuse current Boolean, numeric and native semantic-token answer bindings. Add released role-selection and structured frame-output modalities. Concept values use the tied semantic head. Structural control uses a separate finite head for selecting roles, ending a frame and representing unresolved output. Legal roles come from the released schema; repeated roles include occurrence indices. Cap output at64 decisions, respecting the combined input/generated1024-position budget. Predict independent roles in parallel only when the answer dependency DAG allows it; dependent decisions consume earlier committed outputs. Teacher forcing exposes earlier targets only. Preserve UNKNOWN and unresolved alternative sets where allowed. Mask losses to legal active answers and actually supplied auxiliary labels. Validate a completed typed answer before publication; invalid neural output becomes an explicit solver failure/fallback request.
+
+**Verify:** Current A/B/C answer mappings remain unchanged. Four-role outputs preserve binding under role swaps. A bank1 concept can be predicted and an inactive concept cannot. Earlier output positions cannot inspect later targets. UNKNOWN differs from empty set. The64-decision ceiling returns a typed budget status. Gradients reach identity and role heads.
+
+#### [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369) | Assemble the real atlas-native model and architecture dispatch
+
+**Depends on:** [B03: #363](https://github.com/Entif-AI/Bilqis-MLX/issues/363), [B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350), [B05: #355](https://github.com/Entif-AI/Bilqis-MLX/issues/355), [B06: #365](https://github.com/Entif-AI/Bilqis-MLX/issues/365), [B08: #366](https://github.com/Entif-AI/Bilqis-MLX/issues/366), [B09: #368](https://github.com/Entif-AI/Bilqis-MLX/issues/368), [B10: #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367).
+
+**Deliver:** Compose factorized inputs, frame encoder, input motif read,12 CCGQA/FFN blocks, three AttnRes selectors, mid-depth motif read, three adapters, local refinement and typed readout. Derive geometry from B01 and assert exact parameter-name/shape agreement. Add one backend dispatch used by inference, gradient construction, retention and championship callers. Migrate existing direct-forward callers in the same patch. Preserve existing historical v1 reader/execution restrictions. Ordinary training returns only needed outputs; detailed diagnostics are opt-in so the reporting layer does not retain all activations. Use FP32 for authoritative computation. Exercise a real mixed atomic/packed/nested batch with MLX forward and backward.
+
+**Verify:** The actual12-layer forward runs and matches the parameter census. Demonstrate nonzero finite gradients in embeddings, attention, FFN, depth selector, memory, adapters and readout. A zero-initialized adapter A may first receive gradient after B updates; prove that second step. Prefix invariance holds. A complete update changes loss and saves. Old run files remain unchanged. All consumers use the architecture dispatch.
+
+#### [B12: #370](https://github.com/Entif-AI/Bilqis-MLX/issues/370) | Extend native AdamW custody to masked plastic groups and candidate transactions
+
+**Depends on:** [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369).
+
+**Deliver:** Preserve native AdamW equations and the teacher-selected learning rate, betas, epsilon and weight decay. Maintain per-parameter update counts for correct bias correction under freezing and activation; identity/motif tables need per-row counts. Increment only eligible parameters on actual steps. Inactive parameters, moments and weight decay remain unchanged. One candidate owner publishes the entire tree as one generation. Accumulate FP32 gradients and apply the existing global norm clip. Newly activated rows begin with zero moments and count0. Rejection discards weights, moments, counts, allocations and plasticity counters together; observational teacher feedback follows its existing owner. Map historical scalar step to all parameter counts only when the historical contract updated them together. The run's global optimizer step remains the count of accepted optimizer steps.
+
+**Verify:** A FULL step matches existing native AdamW on identical arrays. Two FAST steps followed by FULL match an explicit reference using local counts. Frozen rows are bit-identical. First update of a new row uses count1. Rejection restores all hashes/clocks. A NaN gradient rejects without partial publication.
+
+#### [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372) | Persist and cold-resume the complete BAMF learning generation
+
+**Depends on:** [B12: #370](https://github.com/Entif-AI/Bilqis-MLX/issues/370), [A02: #348](https://github.com/Entif-AI/Bilqis-MLX/issues/348), [B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356).
+
+**Deliver:** Extend the existing bundle with a versioned v2 section and sidecars for semantic banks, active ABI, motif keys, plasticity policy/counts, compiler/features and correction frontier. Hash payloads, persist through existing content-addressed storage and atomically publish one generation pointer. Reuse outbox reconciliation and references to unchanged objects. Validate sidecar census and tensor identities before constructing the optimizer. Cold resume in a clean process reconstructs the next visit selection and identical neural output. Keep the human-run lock and100GiB disk reserve. Inference caches remain disposable. Historical bundles retain their existing readers and immutable source bytes. Predecessor trace: BAV-REQ-016/023; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Save/load reproduces parameters, moments, local counts, teacher context, active ABI and next seed. Crash before pointer keeps the old generation; crash after pointer before outbox delivery replays exactly once without another optimizer step. Wrong motif map, bank extent, compiler, topology or correction epoch fails before mutation. Accepted then rejected candidate followed by cold resume yields only accepted state.
+
+#### [B14: #375](https://github.com/Entif-AI/Bilqis-MLX/issues/375) | Implement the derived low-bit KV-cache codec with FP32 fallback
+
+**Depends on:** [B04: #350](https://github.com/Entif-AI/Bilqis-MLX/issues/350), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372).
+
+**Deliver:** Implement bamf.rot3/v1 exactly as the cache contract specifies. Generate one seeded orthogonal24x24 transform with deterministic QR sign normalization and persist its digest. Scale rotated unit coordinates by sqrt24 before normal-codebook quantization. Pack3-bit codes little-endian. Per32-vector block store a FP32 maximum norm and8-bit relative norms; preserve zero vectors. Decode, inverse-rotate, renormalize direction and restore the norm. Compress cold K/V records only when at least256 vectors amortize headers; smaller records remain FP32. Bind cache records to lineage, causal prefix, masks and codec manifest. Report actual byte costs. Reference candidate evaluation remains FP32. Interactive inference recomputes when a cache is incompatible or fails declared quality checks. Deliver this after the first complete learning path. Predecessor trace: BAV-REQ-014; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Literal code sequence0..7 round-trips through bit packing. Zero vectors decode exactly zero. Full256-vector records use<=3.5 effective bits/channel. The fixed attention fixture meets relative-L2<=0.10 and exact chosen-answer agreement or selects FP32 fallback. Wrong generation/offset/scope/codebook rejects. No training gradient reads decoded cache tensors.
+
+
+### Lane C
+
+#### [C01: #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347) | Create the three-lane integration baseline and executable EGM work contract
+
+**Depends on:** Ready to start.
+
+**Deliver:** Create a successor integration branch from the exact post-324 replay head plus SKOS-bearing main, recording both commit IDs. Preserve the frozen #324 specimen unchanged. Record the owner-authorized BAMF successor gate: the source bridge can be built now; first live adoption follows BAMF's own source/custody/retained-learning witness rather than waiting for the old model-size comparison. Add the scoped outcome-first evaluation and admission-lease amendments to AGENTS/ADR. Install or locate EGM at the pinned commit and create a project-local execution instruction pointing to its real persona/standard paths. Create three lane branches with one writer each: semantics, neural, integration. Lane A owns semantics/factory new modules, B owns neural new modules, C owns shared trainer/CLI/checkpoint wiring; B13 proposes checkpoint patches through C's shared-file queue. Validate the issue DAG and direct dependency receipts. Copy this delivered spec into repository docs without creating a fourth workstream.
+
+**Verify:** Record exact baseline and clean integration diff. Workstack detects a cycle, missing dependency and overlapping shared-file ownership. EGM path resolves and a genuinely fresh reviewer reads one leaf without transcript. Existing Factory/SKOS focused checks run once at the combined baseline; report actual failures by owner. No model/run data or private sources enter the commit.
+
+#### [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371) | Adapt ordinary Factory batches to BAMF inputs and targets
+
+**Depends on:** [A05: #357](https://github.com/Entif-AI/Bilqis-MLX/issues/357), [A06: #352](https://github.com/Entif-AI/Bilqis-MLX/issues/352), [B10: #367](https://github.com/Entif-AI/Bilqis-MLX/issues/367), [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369), [C01: #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347), [A13: #354](https://github.com/Entif-AI/Bilqis-MLX/issues/354).
+
+**Deliver:** Consume the delivered rows and answer bindings from the existing executable Factory release. Compile source-visible inputs through A05, attach deterministic atlas features, and build separately masked typed targets. Preserve source row IDs, operation/capability IDs, actual teacher strategy, requested/delivered counts, rehearsal provenance and optimizer-step seed. Support all current answer modalities and new B10 structured outputs through a registry, never a grade switch. Pad only actual batch maxima; cap constituent and frame work through C08. Auxiliary labels come from source or explicit outcome evidence and remain absent otherwise. Route inference and training through the same backend selection. Feed realized delivery into #333's teacher observation capture, retaining exact row and cost attribution. The default path handles current A/B/C with atomic fallbacks before richer frame coverage arrives. Predecessor trace: BAV-REQ-015; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Current A/B/C released fixtures compile and score through one adapter. Inference input contains no target fields. A changed source release rejects a stale prepared batch. A batch with packed, nested and atomic rows preserves each row's target and source identity. Report delivered rows after length packing and a finite MLX gradient step on a disposable model.
+
+#### [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376) | Carry the replay-salvaged teacher into the new student lineage
+
+**Depends on:** [C01: #347](https://github.com/Entif-AI/Bilqis-MLX/issues/347), [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372).
+
+**Deliver:** Port the exact replay behavior, using its current owner functions rather than rebuilding the selector. Preserve useful strategy history as prior evidence with explicit old/new student region labels; start checkpoint-local no-gain/interference counters for the new learner. Keep up to16 effective strategies and8 incumbents. Carry the every-fourth existing-policy canary, current UCB/retained exploitation and actual realized-delivery chain. The2/4/8/16 ladder stays shadow evidence under #321/#323 until its separate owner changes execution authority. New bank/plasticity epochs invalidate stale region matches without deleting the historical record. Old6-layer mentors may supply source-gold-checked typed advice under the championship contract; preserve their runtime as read-only and never average tensors into the12-layer student. Expose teacher health from actual observations. Historical Factory-v1 student artifacts remain read-only evidence; mentor inference is allowed only through the currently supported compatibility evaluator and current source binding. Readability never silently enables historical resume or an incompatible optimizer/weight import. Predecessor trace: BAV-REQ-017; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Replay a fixed observation sequence and match strategy eligibility, no-gain resets and canary fallback with the baseline functions. Changed retained checkpoint resets same-student retirement. Destructive interference and no-target-gain produce distinct histories. A stale teacher geometry region cannot qualify a canary. Actual proposed/delivered/outcome/cost records survive checkpoint/restart exactly once.
+
+#### [C04: #373](https://github.com/Entif-AI/Bilqis-MLX/issues/373) | Compose exact and neural mechanisms behind one capability solver
+
+**Depends on:** [A07: #353](https://github.com/Entif-AI/Bilqis-MLX/issues/353), [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369), [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371).
+
+**Deliver:** Implement a small typed route planner: use an applicable exact operator or qualified cached composition first; use neural role/semantic interpretation and learned composition for the unresolved portion; evaluate a bounded DAG and return one typed answer. Input handles remain source-bound and can be opaque outside the receiving operator's signature. Register applicability and deterministic tie order instead of free-form agent conversations. Initially allow maximum64 pure DAG operations and one backbone call plus B06's local refinements per solve; budgets are explicit per task. Exact known answers receive full score. Neural invalid output routes to a legal deterministic fallback where available or explicit unresolved status. Record only the selected operator IDs, bindings, costs, dependencies and outcome needed for replay. Keep the golden-label evaluator outside the solve dependency graph.
+
+**Verify:** Show three real routes: exact role lookup; deterministic composition of two arithmetic/temporal operations; neural interpretation followed by a pure operator. The complete pipeline solves a new role-binding composition. Wrong release/rights or invalid output is handled explicitly. No route reads evaluation labels. Parent/candidate solver runs have identical information and budgets.
+
+#### [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378) | Evaluate and retain end-to-end capabilities with current school safeguards
+
+**Depends on:** [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376), [C04: #373](https://github.com/Entif-AI/Bilqis-MLX/issues/373), [B12: #370](https://github.com/Entif-AI/Bilqis-MLX/issues/370), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372).
+
+**Deliver:** Evaluate the same complete solver for retained parent and challenger. Preserve source-correct typed answers, the existing fresh-target improvement rule, grade/school aggregate non-regression and scaled protected-capability loss allowances. For already-perfect exact capabilities, skip pointless neural candidates and advance/rehearse through existing scheduling rules; useful cache/configuration changes receive their own versioned outcome receipt rather than fabricated retained optimizer steps. Run fresh generated compositions inside taught semantic scope, including previously unseen role fillers and legal structural variants. Distinguish progression92/87 from perfect cumulative mastery and championship. Keep fresh same-cohort title inference and settled unordered-pair history. Optional path attribution is diagnostic; no neural-only gate or architecture control-arm requirement is introduced. A whole capability can improve through a changed route, adapter, motif or dense weight.
+
+**Verify:** An exact answer and neural answer with the same correct semantics receive identical task credit. One target gain with admissible protected effects retains the whole candidate; a destructive candidate restores everything. A perfect source-visible lookup does not consume an optimizer visit. Same checkpoint/scope cannot rearm a failed promotion solely via new cohort. Old/new scopes and title evidence remain separated.
+
+#### [C06: #379](https://github.com/Entif-AI/Bilqis-MLX/issues/379) | Route attention and curriculum priorities with SÍ SÉ SON signals
+
+**Depends on:** [A06: #352](https://github.com/Entif-AI/Bilqis-MLX/issues/352), [A09: #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360), [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369), [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376).
+
+**Deliver:** Build three five-class ordinal heads and a deterministic evidence adapter. Impact uses declared task consequences and measured downstream dependency/coverage effects; Exigency uses deadlines, blocked useful work and active repair needs; Novelty compares the event/structure with the current expectation and observed outcomes. UNKNOWN is explicit. Use the dispatcher ordering in the shared contract, not a weighted global sum. The teacher consumes admissible priority features and continues selecting HOW. Maintain local aggregation windows by20 events and capability epoch; repeated small defects can become a process-level candidate. Label source-backed examples and outcome-derived bins by a versioned rule, masking unlabeled heads. Track whether accepted lessons change later actions/routes and whether corrections stop recurring. A surprising assertion stays a conjecture until its ordinary source/admission route qualifies it. Predecessor trace: BAV-REQ-018; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** A time-critical known problem can outrank a novel low-impact curiosity; a useful new cross-domain relation can outrank routine repetition when deadlines are equal. Missing expected report differs from explicitnegative report. Repeated identical failure triggers one grouped repair candidate, not20newdiscoveries. Head losses mask UNKNOWN-without-label cases. Priority changes do not override teacher strategy or fabricate semantic truth.
+
+#### [C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380) | Advance the Factory continuously under an explicit atlas admission lease
+
+**Depends on:** [A09: #360](https://github.com/Entif-AI/Bilqis-MLX/issues/360), [A12: #364](https://github.com/Entif-AI/Bilqis-MLX/issues/364), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C06: #379](https://github.com/Entif-AI/Bilqis-MLX/issues/379).
+
+**Deliver:** A human-started BAMF command may opt into --admission-policy atlas-release, binding an exact approved atlas release, allowed family/operator set, source rights, bank/resource ceiling and versioned prerequisite/progression policy. Persist this lease with the run. Within it, repeatedly compile, validate, stage and adopt ready deltas through the existing prepared-successor entrypoint. Default without lease remains STAGED with a precise operator action. Check the current checkpoint, optimizer step, source/answer implementations and frontier immediately before adoption. Do not require a new human prompt for every already-authorized concept. A new external semantic release or out-of-scope domain requires a renewed lease, while old authorized learning continues. A/B/C initialize the developmental staircase; proceed into source-attested SKOS families according to prerequisites and useful outcomes, not a fixed D-O list. Keep B debt and numeric scope from the real run manifest, not historic constants.
+
+**Verify:** One lease admits three data-defined successors and resumes from the second without duplicate allocation. An out-of-scope release stages rather than silently adopts. Missing prerequisite blocks only its delta. Existing human-run authority and candidate custody remain. Newly introduced capabilities appear in the current assessment pool; future-stage concepts remain outside it. #296 retains staging semantics for callers without a BAMF lease.
+
+#### [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374) | Make batch preparation and resource budgets topology-aware
+
+**Depends on:** [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371), [B11: #369](https://github.com/Entif-AI/Bilqis-MLX/issues/369).
+
+**Deliver:** Estimate activations from actual frame lengths, constituent expansions, depth summaries, trainable state and candidate copies. Keep one logical teacher batch while splitting into deterministic microbatches; accumulate correctly weighted gradients then clip and apply one AdamW step. Start32 short rows, reduce microbatch through16/8/4/2/1 under the48GiB trainer allocation. Snapshot actual installed MLX memory APIs and record peak allocated/cache memory. On allocation failure, restore the candidate and retry once with the next smaller microbatch using the same delivered examples and stepseed; exhausted budget stops at a safe boundary. CPU workers prepare only immutable source packets; no graph/network call enters a gradient step. Preserve100GiB disk reserve, display required next-bundle bytes and fail normally before writes. Use existing SSH/tunnel only for optional graph readback, not modelstate transport.
+
+**Verify:** Accumulated gradient matches an unsplit small batch within declaredFP32 tolerance. Two CPU source workers produce same packets as serial. Stale prepared packet rejects. OOM simulation retries once and retains source/stepidentity. Batch1 exhaustion preserves parent. Disk guard considers complete weights,moments,manifest and publication overhead.
+
+#### [C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377) | Propagate corrections through reusable cognition and learned support
+
+**Depends on:** [A01: #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345), [B07: #356](https://github.com/Entif-AI/Bilqis-MLX/issues/356), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C04: #373](https://github.com/Entif-AI/Bilqis-MLX/issues/373).
+
+**Deliver:** Index immediate dependencies for atlas features, packedframes, motifs, exact caches, operator compositions and capability support. Use immutable correction events and reverse direct edges. Hold directly affected artifacts before their next use; revalidate lazily in impact/exigency order. Propagation stops when materialized content and eligibility are unchanged. Record alternatives when concurrent corrections disagree, rather than last-write-wins. A learned capability supported by invalidated material enters REQUALIFICATION_REQUIRED and receives targeted fresh source tasks; valid unrelated capabilities continue. Preserve the original observations and historical tensor checkpoints. Route invalidations to Akasha via C10. Include deterministic expiry/as-of projections as immediate dependencies when time changes validity. Predecessor trace: BAV-REQ-019/020; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Change one source premise and repair only its affected direct chain. An unrelated source edit causes no rebuild. Recomputed equal output stops propagation. A revoked motif is ineligible before retraining. Two concurrent incompatible corrections remain branches. Capability requalification is visible while source history remains immutable. A synthetic planned09:30 activity, missing expected report, explicit non-occurrence, later10:20 correction and stale replay remain five distinct cases; a later actor/time fixture exercises the corrected behavior.
+
+#### [C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383) | Publish BAMF learning and release events into Rosetta/Akasha projections
+
+**Depends on:** [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380), [C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377).
+
+**Deliver:** Emit compact application envelopes for release changes, capability outcomes, teacher visits, banks/motifs, correction lineage, plasticity epochs and package exports. Use existing Rosetta artifact/trace meanings and #297's namespaces, consuming #299/#300 projection owners. Enqueue accepted generation events through the existing durable outbox; materialize afterward outside the neural lane. Every view binds as-of/source/release/model/evaluator/rights identities. Deduplicate by eventID and payload digest. A graph outage leaves training running and events queued. Rebuild into a staging projection, verify its census and bounded queries, then atomically promote the active pointer. Raw private inputs and private paths remain outside public logs.
+
+**Verify:** Duplicate delivery is idempotent; divergent payload under one eventID rejects. Offline graph later catches up without a neural update. Rebuild yields the same release/capability views. Wrong release and cross-rights query fail. Projection receipt identifies source events, implementation and output digest.
+
+#### [C11: #384](https://github.com/Entif-AI/Bilqis-MLX/issues/384) | Expose a usable BAMF cockpit and stable launch/resume commands
+
+**Depends on:** [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380), [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374), [C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383).
+
+**Deliver:** Add BAMF v2 to the existing train, dry-run and resume parser. Preserve human-run and source-prefetch controls. Add --admission-policy atlas-release with --atlas-release-manifest; resume reads saved values and rejects conflicting overrides before mutation. Reuse the existing metric owners for ST/M,R/H,RTN%,GREW,G/RTN,GRAD,P(RET),HEALTH. Add a compact expandable panel with active concepts/banks, ready/held coverage, atoms/frame, fallback, expansion, motif hits, plasticity mode and memory pressure. Keep the main cockpit compact and put detailed data in receipts. Distinguish staged curriculum, gained capability, retained steps, debt and perfect mastery. Publish actual parser-tested commands for preflight, owner launch, resume and read-only status.
+
+**Verify:** Fresh v2 and resume parse; conflicting saved topology fails. Ten retentions with no growth differs visibly from genuine capability improvement. Zero elapsed time or visits never emitsNaN. Stagnation-held active capabilities remain in the proper GREW denominator with measurement status. Status is read-only. Runbook commands pass real dry-run.
+
+#### [C12: #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381) | Package reusable cognitive capabilities and compatible plastic deltas
+
+**Depends on:** [A12: #364](https://github.com/Entif-AI/Bilqis-MLX/issues/364), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377).
+
+**Deliver:** Create a portable manifest containing semantic signatures, release compatibility, operator/model identity, qualification fixtures, counterexamples, behavioral diff, resource envelope, rights and revocation lineage. Export source-cleared procedures and exact transforms directly. Adapter/weight deltas require identical base checkpoint, parameter schema and semantic binding. Heterogeneous recipients receive semantic teaching packages or fixtures instead. Stage imports and apply the same whole-capability retention before activation. A first local two-node directory exchange suffices; no new server or networking framework is required. Public export whitelists PUBLIC_FIXTURE/PUBLIC_DERIVED and rejects private or unclassified material. Predecessor trace: BAV-REQ-021; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Two local consumers exchange an exact operator package. A compatible adapter delta applies to a disposable clone and rolls back. Wrong base/topology/release rejects. Behavioral diff shows gains and regressions. Private payload cannot enter a public export. Counterexamples and ancestry survive a fork.
+
+#### [C13: #385](https://github.com/Entif-AI/Bilqis-MLX/issues/385) | Run the integrated disposable learning and recovery acceptance slice
+
+**Depends on:** [A12: #364](https://github.com/Entif-AI/Bilqis-MLX/issues/364), [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380), [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374), [C09: #377](https://github.com/Entif-AI/Bilqis-MLX/issues/377), [C10: #383](https://github.com/Entif-AI/Bilqis-MLX/issues/383).
+
+**Deliver:** Use the actual Mac Studio for a finite disposable integrated run of the chosen model. Exercise creation, source-bound gradients, paired evaluation, one accepted candidate, one rejected candidate, cold restart and one append-only semantic delta. Allow up to64 attempted optimizer steps for this engineering witness and stop once the required behaviors are observed. Fix a failed witness in its owning source/loss/teacher/adapter seam rather than starting a model tournament. Lessons come from the admitted Factory and constructive constituent rules. Exercise complete solver routes and correction requalification. Run the existing portable, ABI and Factory guards once on the combined candidate. Record actual commands, hashes, outcomes and resource use. The operator's real learner stays untouched.
+
+**Verify:** Prove finite real updates, a source-grounded retained improvement, complete rollback, equal resumed outputs and AdamW counts, unchanged old indices after admission, and idempotent projection. Negative cases cover future leakage, wrong release, inactive ID, corrupted allocation and stale cache. An unmet learning witness is a named remaining defect, never a success claim.
+
+#### [C14: #386](https://github.com/Entif-AI/Bilqis-MLX/issues/386) | Deliver the continuing BRAVO-to-full-atlas training program
+
+**Depends on:** [A10: #361](https://github.com/Entif-AI/Bilqis-MLX/issues/361), [A11: #362](https://github.com/Entif-AI/Bilqis-MLX/issues/362), [C07: #380](https://github.com/Entif-AI/Bilqis-MLX/issues/380), [C11: #384](https://github.com/Entif-AI/Bilqis-MLX/issues/384), [C13: #385](https://github.com/Entif-AI/Bilqis-MLX/issues/385).
+
+**Deliver:** Encode a continuing program as data. L0 teaches positive identity, direct Boolean and numeric constituents followed by lawful composition. L1 covers released SKOS roles/senses/morphology and individually qualified structured BRAVO category/time frames. L2 continues new concepts, ambiguity, relations and cross-family composition. L3 is optional capacity/hardware extension; L4 packages bounded capabilities. L3/L4 never block earlier education. Interleave qualified L1/L2 subsets according to prerequisites instead of waiting for every source stratum. Read initial A/B/C semantics and numeric scope from the admitted run release, not #324's frozen workload. Preserve previous skills with the existing teacher and retention. Continue until every eligible SKOS item has declared task coverage; enumerate held items and remediation owners. Give the operator exact launch/resume/source-extension instructions, visible daily outcomes and local resource limits. Attach real training results after owner initiation.
+
+**Verify:** Dry-run enumerates the entire pinned atlas into covered/ready/held, creates three successive deltas and consumes one BRAVO public fixture stratum. C progresses while carrying B debt. Unqualified narrative does not block structured summaries. Future grades require data, not trainer branches. Report actual learned outcomes separately from software readiness.
+
+#### [C15: #387](https://github.com/Entif-AI/Bilqis-MLX/issues/387) | Close BAMF delivery with fresh EGM review and three-lane receipts
+
+**Depends on:** [B14: #375](https://github.com/Entif-AI/Bilqis-MLX/issues/375), [C11: #384](https://github.com/Entif-AI/Bilqis-MLX/issues/384), [C12: #381](https://github.com/Entif-AI/Bilqis-MLX/issues/381), [C13: #385](https://github.com/Entif-AI/Bilqis-MLX/issues/385), [C14: #386](https://github.com/Entif-AI/Bilqis-MLX/issues/386).
+
+**Deliver:** Integrate verified lane commits through the sole integration owner. Run a genuinely fresh EGM implementation-readiness/codebase-details review using the public specification, diff, tests and runbook without chat history. Repair blockers/majors, record justified contests and perform one targeted re-audit. Reconcile root outcomes, existing-owner hooks, Development closing links and parser-tested commands. Update the roadmap/registry projections from current receipts while preserving historical rows. Publish one immutable delivery manifest pinning semantic release, Factory/teacher head, topology, compiler, plasticity, codec, tests and artifacts. Keep separate status fields for software delivery and the later student's full-atlas mastery. Actual merge remains an owner decision.
+
+**Verify:** Each required leaf has an exact commit, proof and EGM disposition or an owned blocker. Links resolve and the dependency graph is acyclic. Shared paths have one writer. A cold reviewer reconstructs create->learn->retain->expand->resume from the artifacts alone. Delivery manifest reproduces. Root closeout never invents live training or full-atlas mastery.
+
+#### [C16: #382](https://github.com/Entif-AI/Bilqis-MLX/issues/382) | Open the first durable BAMF student path before optional projection work
+
+**Depends on:** [B13: #372](https://github.com/Entif-AI/Bilqis-MLX/issues/372), [C02: #371](https://github.com/Entif-AI/Bilqis-MLX/issues/371), [C03: #376](https://github.com/Entif-AI/Bilqis-MLX/issues/376), [C05: #378](https://github.com/Entif-AI/Bilqis-MLX/issues/378), [C08: #374](https://github.com/Entif-AI/Bilqis-MLX/issues/374).
+
+**Deliver:** Finish the production create/dry-run/resume CLI dispatch for the current admitted source release as soon as the complete neural, teacher and custody path works. This is the same persistent BAMF lineage later expanded by C07, not a disposable model-size contestant. A separate disposable witness checks the command and rollback before the operator starts the new student. Record initial active ABI, source/curriculum/teacher identities, topology, seed, optimizer hyperparameters, parameter-bank shape and all-zero new moments. Require a new empty run directory, not an old student path. Read the currently admitted A/B/C scope and introduce foundations through its ordinary Factory plan. Expose existing dashboard metrics immediately; C11 adds the larger atlas/cockpit views later. Akasha materialization, the low-bit cache and private journal intake are parallel delivery work and do not block the first optimizer update. Publish one exact owner-start command and one cold-resume command after parser/preflight verification. Predecessor trace: BAV-REQ-022/024; the implementation follows the explicit BAMF-0.2 contract repeated here.
+
+**Verify:** Fresh preflight creates no neural updates and reports the exact run identity. A disposable creation/update/cold-resume traverses the same entrypoint. An old or occupied run directory is protected. Missing optional graph/cache services do not prevent the admitted foundation path. The operator's existing learner is untouched. The issue records software readiness; real retained-learning receipts are attached only after actual operator initiation.
+
