@@ -1,6 +1,6 @@
 {
   "legacy_raw_file_count": 167,
-  "legacy_raw_raise_count": 1935,
+  "legacy_raw_raise_count": 1934,
   "legacy_raw_raise_groups": [
     {
       "code_hint": "BACKUP_ARCHIVE_ROOT_SYMLINK",
@@ -9220,13 +9220,6 @@
       "exception": "ValueError",
       "expression": "'STAGNATION_STOP_EVALUATION_HAS_NO_ACTIVE_CAPABILITIES'",
       "path": "bilqis_mlx/runtime/boundary_commit.py"
-    },
-    {
-      "code_hint": "FIXED_FRONTIER_PARENT_IDENTITY_DRIFT",
-      "count": 1,
-      "exception": "ValueError",
-      "expression": "'FIXED_FRONTIER_PARENT_IDENTITY_DRIFT'",
-      "path": "bilqis_mlx/runtime/candidate_evidence.py"
     },
     {
       "code_hint": "FRAGILE_PRESERVATION_BATCH_CAPACITY_EXHAUSTED",

@@ -32,6 +32,7 @@ class RegisteredSourceAdapter:
     witness: Witness | None = None
     dependencies: Dependencies | None = None
     semantic_footprint: SemanticFootprint | None = None
+    generalization_draw: Draw | None = None
 
 
 def validate_instructional_constituents(row, *, curriculum, plan,
@@ -74,7 +75,9 @@ class SourceAdapterRegistry:
                 (adapter.dependencies is not None and
                  not callable(adapter.dependencies)) or
                 (adapter.semantic_footprint is not None and
-                 not callable(adapter.semantic_footprint))):
+                 not callable(adapter.semantic_footprint)) or
+                (adapter.generalization_draw is not None and
+                 not callable(adapter.generalization_draw))):
             raise ValueError("FACTORY_SOURCE_CONSTRUCTOR_AND_CHECKER_REQUIRED")
         key = adapter.descriptor.generator_id
         if key in self._by_generator:

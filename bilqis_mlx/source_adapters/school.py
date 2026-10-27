@@ -21,12 +21,13 @@ from ..grade_a_oracle import VERSION as A_ORACLE
 
 
 from ..live_grade_a import (GENERATOR as A_COHORT_GENERATOR, RELEASE as A_RELEASE,
-                            generator_source_digest)
+                            draw_predicates, generator_source_digest)
 from .grade_a_presentation import (
+    GENERALIZATION_ONLY_VARIATION as A_GENERALIZATION_ONLY_VARIATION,
     IRRELEVANT_CONTEXT_VARIATION as A_IRRELEVANT_CONTEXT_VARIATION,
     MEMBER_CONTEXT_VARIATION as A_MEMBER_CONTEXT_VARIATION,
     constructor_digest as a_provider_digest,
-    draw_a,
+    draw_a_generalization,
 )
 
 
@@ -87,6 +88,12 @@ def check_predicate(row, *, source_root, **_):
     library = micro if row["record"]["task"] == "micro" else development
     return (evaluate(row["record"], row["capability"]) == row["gold"] and
             list(library.encode(row["record"])) == row["tokens"])
+
+
+def draw_a(*, source_root, graph, course, capability, seed, each):
+    del course
+    return draw_predicates(
+        source_root, graph, seed=seed, capability=capability, each=each)
 
 
 def check_connective(row, *, source_root, graph, **_):
@@ -341,9 +348,11 @@ def live_source_registry() -> SourceAdapterRegistry:
             (A_ORACLE,), a_provider_digest(),
             cohort_generator_id=A_COHORT_GENERATOR,
             variation_axes=("source-valid", "balanced-gold", "fresh-seed",
-                            A_MEMBER_CONTEXT_VARIATION, A_IRRELEVANT_CONTEXT_VARIATION),
+                            A_MEMBER_CONTEXT_VARIATION, A_IRRELEVANT_CONTEXT_VARIATION,
+                            A_GENERALIZATION_ONLY_VARIATION),
             cohort_releases=((A_RELEASE, a_provider_digest()),)), draw_a, check_predicate,
-            semantic_footprint=semantic_footprint),
+            semantic_footprint=semantic_footprint,
+            generalization_draw=draw_a_generalization),
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.boolean-connectives/v1", "bilqis_mlx.live_grade_b.draw_connectives",
             (B_ORACLE,), b_digest(), cohort_generator_id=B_COHORT_GENERATOR,

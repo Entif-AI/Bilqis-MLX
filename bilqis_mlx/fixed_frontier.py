@@ -105,6 +105,19 @@ def frontier_exam(receipt: dict) -> dict:
     return refreshed
 
 
+def retention_frontier_exam(receipt: dict) -> dict:
+    """Return the immutable cumulative retention anchor when one exists.
+
+    ``fixed_frontier_exam`` is intentionally refreshed to the current retained
+    parent for diagnostics.  It therefore cannot serve as a lifetime
+    anti-ratchet baseline.  Source revisions may also invalidate the current
+    assessment plane while older source-oracled rows remain perfectly valid as
+    retention evidence.  Keep that cumulative anchor independent.
+    """
+    anchor = receipt.get("retention_frontier_exam")
+    return anchor if anchor is not None else frontier_exam(receipt)
+
+
 def refresh_frontier_exam(run_dir: Path, source_exam: dict, *, checkpoint: dict,
                           predictions: dict) -> dict:
     """Measure a retained parent on the unchanged, verified source cohort."""

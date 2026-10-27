@@ -779,9 +779,17 @@ def _prepare_visit_feedback(receipt, cap, champion_candidates, champion_candidat
     if receipt.get("numeric_maximum") is not None:
         priority, deferred_misses = _profiles_catalog.partition_numeric_scope(
             priority, receipt["numeric_maximum"])
-    priority_ids = {row["id"] for row in priority}
-    priority.extend(
-        row for row in champion_candidates if row["id"] not in priority_ids)
+    priority_by_id = {row["id"]: row for row in priority}
+    for row in champion_candidates:
+        identity = row["id"]
+        existing = priority_by_id.get(identity)
+        if existing is None:
+            priority.append(row)
+            priority_by_id[identity] = row
+        elif existing != row:
+            raise ValueError(
+                _learning_teacher_feedback.WeaknessTargetError.
+                TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT.value)
     miss_exposures = dict(receipt.get("teacher_miss_exposures", {}))
     if any(type(count) is not int or count < 0 for count in miss_exposures.values()):
         raise ValueError("HUMAN_TRAINER_MISS_EXPOSURE_STATE_INVALID")

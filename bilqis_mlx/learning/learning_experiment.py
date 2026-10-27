@@ -28,6 +28,10 @@ from bilqis_mlx.learning.teacher_feedback import (
 )
 from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, SELECTION_POLICY as TEACHER_SELECTION_POLICY, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome
 from bilqis_mlx.learning.teacher_realized_action import bind_record as _bind_realized_action_record, describe as realized_teacher_action, record_outcome as _record_realized_action_outcome
+from bilqis_mlx.learning.whole_student_retention import (
+    mature_grade_regressions as _mature_grade_regressions,
+    retention_reason as _retention_reason,
+)
 
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
@@ -266,35 +270,6 @@ def _fixed_frontier_retention_evidence(value, protected_frontier_grade):
     return frontier, after < before, active_grade_regression, after - before
 
 
-def _retention_reason(*, no_target_gain, same_grade_net_gain,
-                      fixed_grade_regression, active_grade_regression,
-                      whole_school_regression, frontier_measured,
-                      fragile_losses, exceeded):
-    if no_target_gain:
-        return "NO_MEASURABLE_TARGET_GAIN"
-    if not frontier_measured and fragile_losses:
-        return "FRAGILE_COMPOSITION_REPLAY_REGRESSION"
-    if exceeded:
-        return "PROTECTED_CAPABILITY_REGRESSION"
-    if not frontier_measured:
-        if same_grade_net_gain < 0:
-            return "SAME_GRADE_NET_REGRESSION"
-        if same_grade_net_gain == 0:
-            return "NO_POSITIVE_SAME_GRADE_GAIN"
-        if fixed_grade_regression:
-            return "FIXED_GRADE_COHORT_REGRESSION"
-        return "PAIRED_SCREEN_WITHIN_BUDGET"
-    if same_grade_net_gain < 0:
-        return "SAME_GRADE_NET_REGRESSION"
-    if fixed_grade_regression:
-        return "FIXED_LESSON_GRADE_REGRESSION"
-    if active_grade_regression:
-        return "ACTIVE_SCHOOL_GRADE_REGRESSION"
-    if whole_school_regression:
-        return "WHOLE_SCHOOL_NET_REGRESSION"
-    return "PAIRED_SCREEN_WITHIN_BUDGET"
-
-
 def _protected_diagnostics(paired, protected, active_capability, phase,
                            settings, mature_grades):
     deltas, regressions = _paired_screen(
@@ -367,8 +342,10 @@ def decide(paired: dict, *, active_capability: str, phase: str,
             fixed_frontier_replay, protected_frontier_grade))
     frontier_measured = frontier.get("status") == "MEASURED"
     protected_frontier_delta = None
+    grades = frontier.get("grades") if frontier_measured else None
+    mature_grade_regressions = _mature_grade_regressions(
+        frontier, mature_grades)
     if frontier_measured and protected_frontier_grade is not None:
-        grades = frontier.get("grades")
         grade = (grades.get(protected_frontier_grade)
                  if isinstance(grades, dict) else None)
         if isinstance(grade, dict):
@@ -388,6 +365,7 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         same_grade_net_gain=same_grade_net_gain,
         fixed_grade_regression=fixed_grade_regression,
         active_grade_regression=active_grade_regression,
+        mature_grade_regressions=mature_grade_regressions,
         whole_school_regression=whole_school_regression,
         frontier_measured=frontier_measured,
         fragile_losses=fragile_losses,
@@ -403,6 +381,7 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         "fixed_whole_school_net_correct_delta": frontier_net,
         "protected_frontier_grade": protected_frontier_grade,
         "protected_frontier_grade_net_correct_delta": protected_frontier_delta,
+        "mature_grade_frontier_regressions": mature_grade_regressions,
         "phase": phase, "active_capability": active_capability,
         "active_probe_before": active["before"],
         "active_probe_after": active["after"],

@@ -14,6 +14,53 @@ SCHEMA = "bilqis.mlx.whole-student-retention/v1"
 MAX_SCOPE_PEAKS = 4
 
 
+def mature_grade_regressions(frontier: dict,
+                             mature_grades: frozenset[str]) -> dict[str, int]:
+    """Return negative anchor deltas for already-matured grades."""
+    grades = frontier.get("grades") if frontier.get("status") == "MEASURED" else None
+    if not isinstance(grades, dict):
+        return {}
+    return {
+        grade: value["after"] - value["before"]
+        for grade, value in grades.items()
+        if (grade in mature_grades and isinstance(value, dict) and
+            type(value.get("before")) is int and type(value.get("after")) is int and
+            value["after"] < value["before"])
+    }
+
+
+def retention_reason(*, no_target_gain, same_grade_net_gain,
+                     fixed_grade_regression, active_grade_regression,
+                     mature_grade_regressions, whole_school_regression,
+                     frontier_measured, fragile_losses, exceeded):
+    """Select the first failed retention invariant in stable priority order."""
+    if no_target_gain:
+        return "NO_MEASURABLE_TARGET_GAIN"
+    if not frontier_measured and fragile_losses:
+        return "FRAGILE_COMPOSITION_REPLAY_REGRESSION"
+    if exceeded:
+        return "PROTECTED_CAPABILITY_REGRESSION"
+    if not frontier_measured:
+        if same_grade_net_gain < 0:
+            return "SAME_GRADE_NET_REGRESSION"
+        if same_grade_net_gain == 0:
+            return "NO_POSITIVE_SAME_GRADE_GAIN"
+        if fixed_grade_regression:
+            return "FIXED_GRADE_COHORT_REGRESSION"
+        return "PAIRED_SCREEN_WITHIN_BUDGET"
+    if same_grade_net_gain < 0:
+        return "SAME_GRADE_NET_REGRESSION"
+    if fixed_grade_regression:
+        return "FIXED_LESSON_GRADE_REGRESSION"
+    if active_grade_regression:
+        return "ACTIVE_SCHOOL_GRADE_REGRESSION"
+    if mature_grade_regressions:
+        return "MATURE_GRADE_FRONTIER_REGRESSION"
+    if whole_school_regression:
+        return "WHOLE_SCHOOL_NET_REGRESSION"
+    return "PAIRED_SCREEN_WITHIN_BUDGET"
+
+
 def advance_peaks(existing: list[dict], *, curriculum_mode: str,
                   numeric_maximum: int | None, rubric_sha256: str,
                   cohort_sha256: str, assessment_scope_sha256: str,

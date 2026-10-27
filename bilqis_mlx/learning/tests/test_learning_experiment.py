@@ -693,6 +693,36 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(result["decision"], "PROVISIONAL")
         self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
 
+    def test_fixed_frontier_rejects_trade_that_spends_mature_grade_for_frontier_gain(self):
+        paired = {
+            "B.IFF": {"before": 8, "after": 9, "total": 12},
+            "B.NOT": {"before": 10, "after": 10, "total": 12},
+        }
+        result = decide(
+            paired, active_capability="B.IFF", phase="RECOVERY_2",
+            protected={"B.NOT"}, settings=Settings(),
+            mature_grades=frozenset({"A"}),
+            same_grade_capabilities=("B.IFF", "B.NOT"),
+            fixed_grade_replay={"status": "MEASURED", "grade": "B",
+                                "before": 68, "after": 69, "total": 72,
+                                "cohort_sha256": "a" * 64},
+            fixed_frontier_replay={
+                "status": "MEASURED", "cohort_sha256": "a" * 64,
+                "rows": 120, "before_correct": 109, "after_correct": 109,
+                "regressions": [{"id": "a1", "capability": "A.IDENTITY"}],
+                "repaired": [{"id": "b1", "capability": "B.IFF"}],
+                "grades": {
+                    "A": {"before": 68, "after": 67, "total": 72,
+                          "net_correct_delta": -1},
+                    "B": {"before": 41, "after": 42, "total": 48,
+                          "net_correct_delta": 1},
+                },
+            },
+            protected_frontier_grade="B")
+        self.assertEqual(result["decision"], "REJECT")
+        self.assertEqual(result["reason"], "MATURE_GRADE_FRONTIER_REGRESSION")
+        self.assertEqual(result["mature_grade_frontier_regressions"], {"A": -1})
+
     def test_late_stage_allows_other_grade_gain_when_active_grade_is_flat(self):
         paired = {
             "B.IFF": {"before": 8, "after": 9, "total": 12},

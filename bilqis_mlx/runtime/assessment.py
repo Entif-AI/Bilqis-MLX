@@ -31,7 +31,8 @@ _CURRENT_ADMISSION_DRIFT = "FACTORY_EXECUTABLE_SAVED_COHORT_CURRENT_ADMISSION_DR
 
 def _draw_executable_scope_cohort(
         source_root, graph, release: ExecutableFactoryRelease,
-        registry: SourceAdapterRegistry, *, capabilities, seed: int):
+        registry: SourceAdapterRegistry, *, capabilities, seed: int,
+        generalization: bool = False):
     """Draw one exact v2 assessment scope without deriving grade identity."""
     if type(seed) is not int:
         raise TypeError("FACTORY_EXECUTABLE_COHORT_SEED_REQUIRED")
@@ -40,7 +41,8 @@ def _draw_executable_scope_cohort(
     for capability in contract.capabilities:
         rows.extend(draw_executable_release_rows(
             source_root, graph, release, registry,
-            seed=seed, capability=capability))
+            seed=seed, capability=capability,
+            generalization=generalization))
     cohort = make_cohort(
         rows,
         generator_version=contract.generator_version,
@@ -257,7 +259,8 @@ def _generalization_executable_cohort(
         )
         rows, actual = _draw_executable_scope_cohort(
             source_root, graph, release, registry,
-            capabilities=contract.capabilities, seed=seed)
+            capabilities=contract.capabilities, seed=seed,
+            generalization=True)
         if required is None:
             required = Counter(
                 _generalization_stratum(row) for row in rows.rows)
