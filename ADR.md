@@ -1377,3 +1377,13 @@ The Conjoined Triangle tracker is temporary. Mission Control replaces bespoke pr
 
 The user agrees with the core direction that canonical mutations must pass through governed authority and that Mission Control or arbitrary workers must not write source meaning or canonical evidence directly. The detailed information-flow model, including writer topology, command brokering, authorization stages and propagation mechanics, is intentionally **not frozen by this ADR**. That design remains open for the next architecture discussion. Future implementation must not infer a more specific write topology from this ADR.
 
+## ADR-097 | 2026-10-27 | Suspend developmental generalization until explicit maturity admission
+
+**Direct user correction; supersedes the active-generalization portions of ADR-067 and SPEC-0001 as they existed before this decision.** Bilqis is currently a small developmental student learning a narrow semantic inventory. Fresh GENERALIZATION assessment is not appropriate as a routine, promotion-adjacent, or graduation-gating mechanism at this stage and must not be inferred from ordinary LLM evaluation practice.
+
+The active developmental assessment lifecycle is therefore **fresh routine measurement plus fixed-within-attempt promotion**. The live runtime MUST NOT automatically generate fresh generalization cohorts, require generalization evidence for grade or whole-school graduation, inject generalization-only misses into teacher priorities, or mix generalization scores into routine/promotion longitudinal telemetry. Historical generalization cohorts, burn ledgers, readers, enums, and research fixtures remain preserved as compatibility evidence. They are not current execution authority.
+
+Promotion authority is also narrowed structurally. Ordinary recovery, debt, spiral, or grade/stage movement does not open promotion. A promotion attempt may be created only when the scheduler records an actual qualification transition by advancing `grade_exam_epoch` after a complete assessment. This prevents recovery movement from manufacturing promotion/generalization work for an imperfect grade.
+
+Generalization may return only through a future explicit human-directed maturity decision that defines when the student's semantic base is sufficiently stable, what kind of transfer/invariance is pedagogically appropriate, how the evidence is scored, and whether it can affect training or graduation. Until then, "generalization" is a dormant research/compatibility capability, not part of the school.
+

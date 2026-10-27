@@ -1361,7 +1361,7 @@ class SchoolTelemetryTests(unittest.TestCase):
                 },
             })
             ingest(board, {
-                **common, "generation": 2, "exam_plane": "GENERALIZATION",
+                **common, "generation": 2, "exam_plane": "ROUTINE",
                 "cohort_sha256": "3" * 64,
                 "cohort_file": f"cohorts/{'3' * 64}.json",
                 "scores": {
@@ -1374,6 +1374,28 @@ class SchoolTelemetryTests(unittest.TestCase):
                        board.school_telemetry.latest.items() if grade == "B"]
             self.assertEqual(len(reports), 2)
             self.assertEqual({report.total for report in reports}, {24, 36})
+
+    def test_historical_generalization_does_not_replace_active_mastery(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            board = build(Path(tmp), stream=io.StringIO())
+            common = {
+                "event": "SCHOOL_LIVE_EXAM_COMMITTED", "grade": "B",
+                "rubric": "b" * 64, "assessment_scope_sha256": "1" * 64,
+                "generator_version": "factory-live/v1", "optimizer_step": 127096,
+                "student_sha256": "d" * 64,
+            }
+            ingest(board, {**common, "generation": 1, "exam_plane": "ROUTINE",
+                "cohort_sha256": "2" * 64, "cohort_file": f"cohorts/{'2' * 64}.json",
+                "scores": {"B.AND": {"correct": 12, "total": 12}}})
+            ingest(board, {**common, "generation": 2, "exam_plane": "GENERALIZATION",
+                "cohort_sha256": "3" * 64, "cohort_file": f"cohorts/{'3' * 64}.json",
+                "scores": {"B.AND": {"correct": 5, "total": 12}}})
+
+            report = next(iter(board.school_telemetry.latest.values()))
+            self.assertEqual((report.correct, report.total), (12, 12))
+            self.assertIn("LATEST B 12/12", " ".join(board.operator_lines))
+            self.assertTrue(any(row.get("kind") == "HISTORICAL GENERALIZATION"
+                                for row in board.rows["SYSTEM & QUALIFICATION"]))
 
     def test_first_latest_best_and_regression_use_same_sealed_rubric(self):
         with tempfile.TemporaryDirectory() as tmp:

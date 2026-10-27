@@ -2,6 +2,8 @@
 
 **Authority note:** Read [`10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md`](10_CURRICULUM_AUTHORITY_CONVERGENCE_20261019.md) with this design. That record owns the cross-source authority hierarchy, supersession conflicts, New Ithkuil integration boundary, and governance-first migration order. This file owns the executable-factory architecture.
 
+**2026-10-27 correction:** GENERALIZATION is dormant compatibility/research machinery, not part of the current developmental runtime or graduation contract. References below to promotion/generalization describe historical factory capability and are superseded for live execution by ADR-097 and SPEC-0001 §7.3.
+
 ## Problem
 
 SPEC-0001 requires one declarative curriculum architecture in which new grades and capability changes flow through a common factory without edits to generic trainer, scheduler, evaluation, promotion, dashboard, checkpoint, or teacher runtime. The present implementation does not satisfy that contract. `FactoryRelease` is compiled and admission-gated, but much of live execution still reconstructs behavior from `Course`, concrete provider modules, release-name switches, CLI flags, and subsystem-local state assumptions. The reduced-Boolean experiment exposed the consequence: changing the active B roster required follow-up repairs in assessment rubric selection, championship source identity, dashboard replay, and stagnation scope.
@@ -276,7 +278,7 @@ A full synthetic Grade Z disposable system proof runs through the same generic r
 - admission;
 - teaching schedule;
 - routine assessment;
-- promotion/generalization lifecycle;
+- promotion lifecycle plus dormant generalization compatibility;
 - championship evidence;
 - stagnation containment;
 - telemetry projection;
@@ -450,7 +452,7 @@ the strengthened closure checker finds no current split-authority path.
 
 ### Wave 5: prove Grade Z through the real runtime
 
-A test-only canonical course, profile, and source provider must run through the same disposable top-level orchestration as the human shell, exercising admission, visit scheduling, routine assessment, recovery, promotion/generalization, championship, stagnation, telemetry, checkpoint/recovery, and stop handling.
+A test-only canonical course, profile, and source provider must run through the same disposable top-level orchestration as the human shell, exercising admission, visit scheduling, routine assessment, recovery, promotion, championship, stagnation, telemetry, checkpoint/recovery, and stop handling. Dormant generalization compatibility is tested separately from the live developmental path.
 
 No generic source file may change when the test grade is introduced.
 

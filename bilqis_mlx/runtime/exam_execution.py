@@ -1,10 +1,8 @@
-"""Routine, promotion and generalization exam orchestration."""
+"""Routine and promotion exam orchestration for the developmental school."""
 from __future__ import annotations
 
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.diagnostics.exam_events as _diagnostics_exam_events
-import bilqis_mlx.factory.assessment as _factory_assessment
-import bilqis_mlx.factory.model as _factory_model
 import bilqis_mlx.factory.schedule as _factory_schedule
 import bilqis_mlx.generated_assessment as _bilqis_mlx_generated_assessment
 import bilqis_mlx.learning.champions as _learning_champions
@@ -96,23 +94,20 @@ def _school_result_label(school):
 
 def _promotion_due_after_routine(
         before, after, *, complete_assessment: bool = True) -> bool:
-    """Whether a perfect routine evaluation would advance the school state.
+    """Whether the scheduler recorded a real grade qualification.
 
-    An incomplete assessment can legitimately move the scheduler to a new
-    grade during a stagnation spiral, but it cannot create a qualification
-    instrument. Distinguish *teaching progression* from *graduation authority*.
+    Ordinary debt/recovery scheduling may move between grades and stages
+    without satisfying the grade criterion. The scheduler increments the
+    grade-exam epoch only when a complete assessment actually promotes the
+    current grade, so use that durable authority rather than generic movement.
     """
-    if (getattr(before, "stage", None) == "ASSESS_PROMOTION_SWEEP" and
-            before.grade not in getattr(after, "champions", {})):
-        return False
-    return complete_assessment and (
-        after.grade != before.grade
-        or after.revalidation_target_grade != before.revalidation_target_grade
-        or after.stage in {
-            "AWAITING_NEXT_GRADE", "AWAITING_NEXT_GRADE_WITH_DEBT",
-            "AWAITING_TEACHER_SOUP",
-            "WHOLE_SCHOOL_MASTERED",
-        }
+    before_epoch = getattr(before, "grade_exam_epoch", None)
+    after_epoch = getattr(after, "grade_exam_epoch", None)
+    return (
+        complete_assessment
+        and type(before_epoch) is int
+        and type(after_epoch) is int
+        and after_epoch == before_epoch + 1
     )
 
 
@@ -286,10 +281,7 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
             progress_checkpoint=_dataclasses.asdict(school.current_student)))
 
     qualification = None
-    generalization = None
-    generalization_passed = False
-    burned_generalization = list(
-        receipt.get("burned_generalization_cohorts_v2", ()))
+    promotion_passed = False
     exam_plane = "ROUTINE"
     cohort = routine_cohort
     cohort_pointer = routine_pointer
@@ -338,66 +330,9 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         assessment = promotion_assessment
         promotion_advanced = _curriculum_scheduler.assess(program, school, promotion_assessment)
         advanced = promotion_advanced
-        if _promotion_due_after_routine(
-                school, promotion_advanced,
-                complete_assessment=complete_assessment):
-            promotion_evidence = _factory_model.LearningEvidence(
-                _factory_model.AssessmentClass.PROMOTION,
-                promotion_cohort.digest,
-                promotion_assessment.checkpoint_sha256,
-                promotion_assessment.optimizer_step,
-                True,
-            )
-            generalization_cohort, generalization = (
-                _runtime_assessment._generalization_executable_cohort(
-                    run_dir, receipt, manifest, executable_release,
-                    source_registry, source_root, graph,
-                    capabilities=active_scope,
-                    assessment_epoch=school.grade_exam_epoch,
-                    promotion_pointer=qualification,
-                    exposed_specimen_ids=tuple(
-                        row["id"] for row in routine_cohort.rows)))
-            generalization_file = generalization["cohort_file"]
-            generalization_rows = list(generalization_cohort.rows)
-            generalization_guesses = _learning_student_ops._predictions(
-                mx, parameters, generalization_rows,
-                receipt["config"], receipt["answer_ids"])
-            generalization_measured = _bilqis_mlx_generated_assessment.score(
-                generalization_cohort, generalization_guesses,
-                _dataclasses.asdict(school.current_student))
-            championship_exams.append((generalization_cohort, generalization_measured,
-                                        generalization_guesses))
-            generalization_assessment = _curriculum_scheduler.Assessment(
-                checkpoint_sha256=school.current_student.sha256,
-                optimizer_step=school.current_student.optimizer_step,
-                course_digest=program.digest(),
-                rubric_digest=rubric,
-                scores={cap: _curriculum_scheduler.Score(**entry)
-                        for cap, entry in generalization_measured["scores"].items()},
-                evaluation_id="source-oracled-generalization-cohort/" +
-                              generalization_cohort.digest + "/" +
-                              school.current_student.sha256)
-            exam_plane = "GENERALIZATION"
-            cohort = generalization_cohort
-            cohort_pointer = generalization
-            cohort_file = generalization_file
-            rows = generalization_rows
-            guesses = generalization_guesses
-            measured = generalization_measured
-            assessment = generalization_assessment
-            advanced = _curriculum_scheduler.assess(program, school, generalization_assessment)
-            generalization_evidence = _factory_model.LearningEvidence(
-                _factory_model.AssessmentClass.GENERALIZATION,
-                generalization_cohort.digest,
-                generalization_assessment.checkpoint_sha256,
-                generalization_assessment.optimizer_step,
-                _promotion_due_after_routine(
-                    school, advanced,
-                    complete_assessment=complete_assessment),
-            )
-            generalization_passed = _factory_assessment.qualification_complete(
-                promotion_evidence, generalization_evidence)
-            burned_generalization.append(generalization)
+        promotion_passed = _promotion_due_after_routine(
+            school, promotion_advanced,
+            complete_assessment=complete_assessment)
 
     scores = {k: {"correct": v.correct, "total": v.total}
               for k, v in assessment.scores.items()}
@@ -443,7 +378,6 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         "grade_exam_epoch": school.grade_exam_epoch,
         "exam_plane": exam_plane,
         "grade_test_lifecycle": (
-            _bilqis_mlx_generated_assessment.GENERALIZATION_LIFECYCLE if generalization is not None else
             _bilqis_mlx_generated_assessment.PROMOTION_ATTEMPT_LIFECYCLE if qualification is not None else
             _bilqis_mlx_generated_assessment.ROUTINE_EVAL_LIFECYCLE),
         "assessment_scope_sha256": final_scope_sha,
@@ -475,9 +409,6 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
         last_exam["candidate_cohort_sha256"] = candidate_cohort.digest
     if qualification is not None:
         last_exam["promotion_cohort_sha256"] = qualification["cohort_sha256"]
-    if generalization is not None:
-        last_exam["generalization_cohort_sha256"] = generalization["cohort_sha256"]
-        last_exam["generalization_passed"] = generalization_passed
     peaks, retention_status = _learning_whole_student_retention.advance_peaks(
         receipt.get("whole_student_peaks", []),
         curriculum_mode=receipt["curriculum_mode"],
@@ -534,20 +465,15 @@ def _take_exam(mx, run_dir, receipt, manifest, course, source_root,
                         "live_rubric_sha256": assessment.rubric_digest}
     if stagnation is not None:
         migrated_receipt["stagnation_session"] = stagnation
-    if qualification is not None and not generalization_passed:
-        # A failed fixed promotion cohort remains the same classroom criterion,
-        # including while fresh-generalization misses are taught afterward.
+    if qualification is not None and not promotion_passed:
+        # A failed fixed promotion cohort remains the same classroom criterion
+        # until the student passes it. No fresh generalization gate participates
+        # in the current developmental curriculum.
         migrated_receipt["qualification_cohort_v2"] = qualification
         migrated_receipt.pop("qualification_cohort", None)
-    elif generalization_passed:
+    elif promotion_passed:
         migrated_receipt.pop("qualification_cohort_v2", None)
         migrated_receipt.pop("qualification_cohort", None)
-    if burned_generalization:
-        migrated_receipt["burned_generalization_cohorts_v2"] = burned_generalization
-        migrated_receipt.pop("burned_generalization_cohorts", None)
-    if generalization is not None:
-        migrated_receipt["last_generalization_cohort_v2"] = generalization
-        migrated_receipt.pop("last_generalization_cohort", None)
     if epoch is not None:
         migrated_receipt["mentor_epoch"] = epoch
     migrated_receipt.pop("teacher_miss_cursor", None)

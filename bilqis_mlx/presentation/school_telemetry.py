@@ -802,6 +802,10 @@ class SchoolTelemetry:
                     total <= 0 or not 0 <= correct <= total):
                 raise ValueError("SCHOOL_TELEMETRY_SCORE_INVALID")
             cohort[score_grade][cap] = (correct, total)
+        if event.get("exam_plane") == "GENERALIZATION":
+            self.board.push("system", {"kind": "HISTORICAL GENERALIZATION", "grade": grade,
+                "detail": "PRESERVED IN LEDGER; EXCLUDED FROM ACTIVE MASTERY"}, redraw=False)
+            return
         target_evaluated = grade in cohort
 
         # Validate the full exam before emitting any dashboard rows. Historical
