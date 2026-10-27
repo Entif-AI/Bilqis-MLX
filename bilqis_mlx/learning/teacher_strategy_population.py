@@ -14,6 +14,7 @@ ACTIVE_EFFECTIVE_STRATEGY_LIMIT = 16
 ACTIVE_EFFECTIVE_INCUMBENT_LIMIT = 8
 DEEP_POLICY_DEPTH_MINIMUM = 3
 SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT = 4
+SAME_STUDENT_POLICY_UNRETAINED_LIMIT = 4
 STUDENT_SHA256_HEX_LENGTH = 64
 _INEFFECTIVE_POLICY_FIELDS = frozenset({"preview"})
 
@@ -186,21 +187,33 @@ def _checkpoint_policy_no_gain_streaks(channel: dict, context_key: str,
 
 def record_checkpoint_policy_outcome(
         channel: dict, context_key: str, effective_policy_key: str,
-        student_checkpoint_sha256: str | None, *, no_target_gain: bool) -> None:
+        student_checkpoint_sha256: str | None, *, no_target_gain: bool,
+        retained: bool) -> None:
     checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
     if checkpoint is None:
         return
     epoch = channel.get("student_policy_epoch")
     if not isinstance(epoch, dict) or epoch.get("student_sha256") != checkpoint:
-        epoch = {"student_sha256": checkpoint, "contexts": {}}
+        epoch = {
+            "student_sha256": checkpoint,
+            "contexts": {},
+            "unretained_contexts": {},
+        }
         channel["student_policy_epoch"] = epoch
-    if not isinstance(epoch.get("contexts"), dict):
+    if (not isinstance(epoch.get("contexts"), dict) or
+            not isinstance(epoch.setdefault("unretained_contexts", {}), dict)):
         raise ValueError(LearningExperimentError.STUDENT_POLICY_EPOCH_INVALID.value)
     streaks = epoch["contexts"].setdefault(context_key, {})
     if no_target_gain:
         streaks[effective_policy_key] = streaks.get(effective_policy_key, 0) + 1
     else:
         streaks.pop(effective_policy_key, None)
+
+    unretained = epoch["unretained_contexts"].setdefault(context_key, {})
+    if retained:
+        unretained.pop(effective_policy_key, None)
+    else:
+        unretained[effective_policy_key] = unretained.get(effective_policy_key, 0) + 1
 
 
 def checkpoint_active_effective_strategy_keys(
@@ -210,9 +223,23 @@ def checkpoint_active_effective_strategy_keys(
         student_checkpoint_sha256: str | None) -> tuple[tuple[str, ...], set[str]]:
     checkpoint_failures = _checkpoint_policy_no_gain_streaks(
         channel, context_key, student_checkpoint_sha256)
+    checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
+    unretained_failures = {}
+    if checkpoint is not None:
+        epoch = channel.get("student_policy_epoch")
+        if isinstance(epoch, dict) and epoch.get("student_sha256") == checkpoint:
+            unretained_contexts = epoch.get("unretained_contexts", {})
+            if not isinstance(unretained_contexts, dict):
+                raise ValueError(LearningExperimentError.STUDENT_POLICY_EPOCH_INVALID.value)
+            unretained_failures = unretained_contexts.get(context_key, {})
+            if (not isinstance(unretained_failures, dict) or any(
+                    not isinstance(key, str) or type(value) is not int or value < 0
+                    for key, value in unretained_failures.items())):
+                raise ValueError(LearningExperimentError.STUDENT_POLICY_FAILURE_INVALID.value)
     retired = {
-        key for key, failures in checkpoint_failures.items()
-        if failures >= SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT
+        key for key in set(checkpoint_failures) | set(unretained_failures)
+        if (checkpoint_failures.get(key, 0) >= SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT or
+            unretained_failures.get(key, 0) >= SAME_STUDENT_POLICY_UNRETAINED_LIMIT)
     }
     if not retired:
         return active_effective, retired

@@ -1729,12 +1729,9 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             teacher, capability="C.ADD", phase="MAIN",
             policy_key=policy, decision=interference, local_gain=.2,
             curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a)
-        for _ in range(4):
-            observe_context(
-                teacher, capability="C.ADD", phase="MAIN",
-                policy_key=policy, decision=no_gain, local_gain=-.2,
-                curriculum_scope="scope",
-                student_checkpoint_sha256=checkpoint_a)
+        self.assertEqual(
+            teacher["causal_experiment"]["stagnation"]["C.ADD|scope"]
+                   [policy]["no_target_gain_streak"], 0)
         retired = contextual_pick(
             policy_engine, teacher, "C.ADD", "MAIN", random.Random(3),
             curriculum_scope="scope", student_checkpoint_sha256=checkpoint_a,

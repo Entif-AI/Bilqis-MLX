@@ -852,7 +852,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         channel, context_key,
         _effective_policy_key(teacher["strategies"][policy_key]),
         student_checkpoint_sha256,
-        no_target_gain=no_target_gain)
+        no_target_gain=no_target_gain,
+        retained=decision["decision"] != "REJECT")
     if no_target_gain:
         capability_stagnation["no_target_gain_streak"] += 1
     else:
