@@ -239,6 +239,7 @@ def _generalization_executable_cohort(
     excluded = set(exposed_specimen_ids)
     excluded.update(row["id"] for row in promotion.rows)
     excluded.update(row["id"] for row in receipt.get("teacher_misses", ()))
+    base_excluded = set(excluded)
     # Permanent instrument history retains its original release authority; a
     # later profile may legitimately disable some capabilities from that scope.
     burned_digests, burned_specimen_sets = _burned_generalization_evidence(
@@ -282,6 +283,10 @@ def _generalization_executable_cohort(
                 cohort.digest in burned_digests or
                 specimen_set in burned_specimen_sets):
             selected = {}
+            # A burned instrument forbids repeating that cohort, not reusing
+            # its still-unexposed source-valid specimens in a new combination.
+            # Keep only genuine contamination exclusions across attempts.
+            excluded = set(base_excluded)
             continue
         pointer = _persist_executable_cohort(
             run_dir, manifest, actual, cohort)

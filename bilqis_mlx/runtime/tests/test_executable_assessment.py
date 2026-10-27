@@ -3,6 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from bilqis_mlx.curriculum import BOOLEAN_OPERATORS
 from bilqis_mlx.factory.assessment import assessment_scope_contract
@@ -22,6 +23,7 @@ from bilqis_mlx.runtime.assessment import (
     load_championship_cohort,
 )
 from bilqis_mlx.runtime.admission import _persist_executable_factory_release
+from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.trainer import _verify_live_rubric_lineage
 
 
@@ -245,6 +247,64 @@ class ExecutableAssessmentRuntimeTests(unittest.TestCase):
             self.assertNotEqual(
                 {row["id"] for row in second.rows},
                 {row["id"] for row in first.rows})
+
+    def test_generalization_can_reuse_unexposed_rows_from_a_burned_cohort(self):
+        """Burning an instrument forbids that set, not every specimen in it."""
+        receipt = self.receipt()
+        receipt["burned_generalization_cohorts_v2"] = [{"fixture": "burned"}]
+        scope = ("B.AND",)
+        first, contract = self.draw(self.reduced, scope, seed=101)
+        alternate, _ = self.draw(self.reduced, scope, seed=102)
+        first_rows = list(first.rows)
+        first_stratum = (
+            first_rows[0]["capability"], first_rows[0].get("answer_kind", "binary"),
+            first_rows[0]["gold"], tuple(first_rows[0].get("operand_truths", ())),
+            first_rows[0].get("universe_size"))
+        first_ids = {item["id"] for item in first_rows}
+        replacement = next(
+            row for row in alternate.rows
+            if row["id"] not in first_ids
+            and (
+                row["capability"], row.get("answer_kind", "binary"), row["gold"],
+                tuple(row.get("operand_truths", ())), row.get("universe_size"))
+            == first_stratum)
+        second_rows = [replacement, *first_rows[1:]]
+        second = make_cohort(
+            second_rows, generator_version=contract.generator_version,
+            seed=alternate.seed, rubric_version=contract.rubric_sha256)
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            promotion, promotion_pointer = _promotion_executable_cohort(
+                root, self.receipt(), self.manifest, self.reduced, self.registry,
+                None, self.graph, capabilities=scope, assessment_epoch=17,
+                legacy_course=self.course)
+            self.assertFalse(
+                {row["id"] for row in promotion.rows}
+                & {row["id"] for row in first.rows})
+
+            draws = 0
+
+            def controlled_draw(*args, **kwargs):
+                nonlocal draws
+                draws += 1
+                return (first if draws == 1 else second), contract
+
+            burned_set = frozenset(row["id"] for row in first.rows)
+            with patch(
+                    "bilqis_mlx.runtime.assessment._draw_executable_scope_cohort",
+                    side_effect=controlled_draw), patch(
+                    "bilqis_mlx.runtime.assessment._burned_generalization_evidence",
+                    return_value=({first.digest}, {burned_set})):
+                fresh, _ = _generalization_executable_cohort(
+                    root, receipt, self.manifest, self.reduced, self.registry,
+                    None, self.graph, capabilities=scope, assessment_epoch=17,
+                    promotion_pointer=promotion_pointer,
+                    legacy_course=self.course)
+
+            self.assertNotEqual(
+                frozenset(row["id"] for row in fresh.rows), burned_set)
+            self.assertIn(replacement["id"], {row["id"] for row in fresh.rows})
 
     def test_generalization_preserves_burned_cohort_from_prior_larger_scope(self):
         # A later grade's active scope may shrink after assessment scheduling.
