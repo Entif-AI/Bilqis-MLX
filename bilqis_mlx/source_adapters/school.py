@@ -23,6 +23,7 @@ from ..grade_a_oracle import VERSION as A_ORACLE
 from ..live_grade_a import (GENERATOR as A_COHORT_GENERATOR, RELEASE as A_RELEASE,
                             generator_source_digest)
 from .grade_a_presentation import (
+    IRRELEVANT_CONTEXT_VARIATION as A_IRRELEVANT_CONTEXT_VARIATION,
     MEMBER_CONTEXT_VARIATION as A_MEMBER_CONTEXT_VARIATION,
     constructor_digest as a_provider_digest,
     draw_a,
@@ -340,7 +341,7 @@ def live_source_registry() -> SourceAdapterRegistry:
             (A_ORACLE,), a_provider_digest(),
             cohort_generator_id=A_COHORT_GENERATOR,
             variation_axes=("source-valid", "balanced-gold", "fresh-seed",
-                            A_MEMBER_CONTEXT_VARIATION),
+                            A_MEMBER_CONTEXT_VARIATION, A_IRRELEVANT_CONTEXT_VARIATION),
             cohort_releases=((A_RELEASE, a_provider_digest()),)), draw_a, check_predicate,
             semantic_footprint=semantic_footprint),
         RegisteredSourceAdapter(SourceAdapter(

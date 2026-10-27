@@ -131,7 +131,7 @@ SOURCE_PRESENTATION_ADMITTED_PROVIDER_MISSING = (
 def _grade_a_member_context_revision_required(predecessor, registry=None) -> bool:
     """Detect the authorized neural-inert expansion of MEMBER source context."""
     from bilqis_mlx.source_adapters.grade_a_presentation import (
-        MEMBER_CONTEXT_VARIATION,
+        IRRELEVANT_CONTEXT_VARIATION, MEMBER_CONTEXT_VARIATION,
     )
     capability = "A.MEMBER"
     execution = predecessor.execution_plan.capability_map.get(capability)
@@ -147,9 +147,10 @@ def _grade_a_member_context_revision_required(predecessor, registry=None) -> boo
     registry = registry or _source_adapters_school.live_source_registry()
     current = registry.require(
         binding.generator_id, binding.oracle_id).descriptor
-    return (
-        MEMBER_CONTEXT_VARIATION in current.variation_axes and
-        MEMBER_CONTEXT_VARIATION not in admitted.variation_axes
+    authorized = (MEMBER_CONTEXT_VARIATION, IRRELEVANT_CONTEXT_VARIATION)
+    return any(
+        variation in current.variation_axes and variation not in admitted.variation_axes
+        for variation in authorized
     )
 
 

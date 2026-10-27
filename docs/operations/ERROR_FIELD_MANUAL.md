@@ -510,6 +510,76 @@ Recovery: Inspect the owning contract and inputs; preserve recorded state.
 
 Legacy aliases: `LEARNING_EXPERIMENT_MISSING_FRESH_CURRENT_ROWS`
 
+### `SOURCE.GRADE_A.CONTEXT_ORACLE_DRIFT`
+
+Grade A contextual presentation oracle drift.
+
+Owner: `source_adapters.grade_a_presentation`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: A contextual Grade A row changed source-oracled meaning.
+
+Recovery: Preserve the run and inspect the contextual presentation constructor and source oracle agreement.
+
+Legacy aliases: `FACTORY_GRADE_A_CONTEXT_ORACLE_DRIFT`
+
+### `SOURCE.GRADE_A.MICRO_CONTEXT_SOURCE_SHAPE_INVALID`
+
+Grade A Micro contextual source shape invalid.
+
+Owner: `source_adapters.grade_a_presentation`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: A Micro Grade A row cannot accept the admitted irrelevant relation context.
+
+Recovery: Preserve the row and inspect the source world shape before contextualization.
+
+Legacy aliases: `FACTORY_GRADE_A_MICRO_CONTEXT_SOURCE_SHAPE_INVALID`
+
+### `SOURCE.GRADE_A.MICRO_CONTEXT_EXHAUSTED`
+
+Grade A Micro contextual source space exhausted.
+
+Owner: `source_adapters.grade_a_presentation`
+Disposition: `REGENERATE_SOURCE`
+Self-heal owner: `none`
+
+Message: No source-valid irrelevant relation fact remains for the Micro Grade A row.
+
+Recovery: Regenerate from a fresh source-valid base row; do not weaken source or oracle requirements.
+
+Legacy aliases: `FACTORY_GRADE_A_MICRO_CONTEXT_EXHAUSTED`
+
+### `SOURCE.GRADE_A.DEVELOPMENT_CONTEXT_SOURCE_SHAPE_INVALID`
+
+Grade A Development contextual source shape invalid.
+
+Owner: `source_adapters.grade_a_presentation`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: A Development Grade A row cannot accept the admitted irrelevant set context.
+
+Recovery: Preserve the row and inspect the source world shape before contextualization.
+
+Legacy aliases: `FACTORY_GRADE_A_DEVELOPMENT_CONTEXT_SOURCE_SHAPE_INVALID`
+
+### `SOURCE.GRADE_A.CONTEXT_IDENTITY_COLLISION`
+
+Grade A contextual identity collision.
+
+Owner: `source_adapters.grade_a_presentation`
+Disposition: `REGENERATE_SOURCE`
+Self-heal owner: `none`
+
+Message: A contextual Grade A draw produced duplicate specimen identities.
+
+Recovery: Regenerate the source-valid contextual cohort and preserve the conflicting rows for diagnosis.
+
+Legacy aliases: `FACTORY_GRADE_A_CONTEXT_IDENTITY_COLLISION`
+
 ### `SOURCE.BOOLEAN.BOOLEAN_CONTEXT_LENGTH`
 
 Grade b boolean context length.

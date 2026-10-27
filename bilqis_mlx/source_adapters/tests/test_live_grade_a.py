@@ -43,6 +43,30 @@ class LiveGradeAGenerationTests(unittest.TestCase):
                             make_cohort(another, generator_version="grade-a-live/v1",
                                         seed=834, rubric_version="A/live/v1").digest)
 
+    def test_contextual_provider_preserves_all_grade_a_source_oracles(self):
+        import torch
+        from bilqis_mlx.source_adapters.school import live_source_registry
+        graph = torch.load(SOURCE, map_location="cpu", weights_only=True)["graph"]
+        registry = live_source_registry()
+        adapter = registry.require(
+            "bilqis_mlx.grade_a_probe.make_record",
+            "bilqis.mlx.grade-a-record-oracle/v2")
+        for capability in (
+                "A.IDENTITY", "A.PARENT", "A.LINK",
+                "A.MEMBER", "A.EDGE", "A.MAPS"):
+            base = draw_predicates(ROOT, graph, seed=377, each=12,
+                                   capability=capability)
+            rows = draw_a_presentation(
+                source_root=ROOT, graph=graph, course=None,
+                capability=capability, seed=377, each=12)
+            self.assertEqual([row["gold"] for row in rows],
+                             [row["gold"] for row in base])
+            self.assertTrue(all(adapter.check(
+                row, source_root=ROOT, graph=graph, course=None) for row in rows))
+            self.assertTrue(any(
+                row["id"] != original["id"] and row["tokens"] != original["tokens"]
+                for row, original in zip(rows, base)))
+
     def test_member_context_expands_the_fresh_false_size3_source_space(self):
         import torch
         graph = torch.load(SOURCE, map_location="cpu", weights_only=True)["graph"]

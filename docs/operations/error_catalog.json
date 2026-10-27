@@ -13494,6 +13494,86 @@
       "title": "Learning experiment missing fresh current rows"
     },
     {
+      "code": "SOURCE.GRADE_A.CONTEXT_ORACLE_DRIFT",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_GRADE_A_CONTEXT_ORACLE_DRIFT"
+      ],
+      "message_key": "errors.source.grade_a.context_oracle_drift.message",
+      "message_template": "A contextual Grade A row changed source-oracled meaning.",
+      "next_action": "Preserve the run and inspect the contextual presentation constructor and source oracle agreement.",
+      "operator_steps": [],
+      "owner": "source_adapters.grade_a_presentation",
+      "preserve_state": true,
+      "recovery_key": "errors.source.grade_a.context_oracle_drift.recovery",
+      "self_heal_owner": null,
+      "title": "Grade A contextual presentation oracle drift"
+    },
+    {
+      "code": "SOURCE.GRADE_A.MICRO_CONTEXT_SOURCE_SHAPE_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_GRADE_A_MICRO_CONTEXT_SOURCE_SHAPE_INVALID"
+      ],
+      "message_key": "errors.source.grade_a.micro_context_source_shape_invalid.message",
+      "message_template": "A Micro Grade A row cannot accept the admitted irrelevant relation context.",
+      "next_action": "Preserve the row and inspect the source world shape before contextualization.",
+      "operator_steps": [],
+      "owner": "source_adapters.grade_a_presentation",
+      "preserve_state": true,
+      "recovery_key": "errors.source.grade_a.micro_context_source_shape_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Grade A Micro contextual source shape invalid"
+    },
+    {
+      "code": "SOURCE.GRADE_A.MICRO_CONTEXT_EXHAUSTED",
+      "disposition": "REGENERATE_SOURCE",
+      "legacy_codes": [
+        "FACTORY_GRADE_A_MICRO_CONTEXT_EXHAUSTED"
+      ],
+      "message_key": "errors.source.grade_a.micro_context_exhausted.message",
+      "message_template": "No source-valid irrelevant relation fact remains for the Micro Grade A row.",
+      "next_action": "Regenerate from a fresh source-valid base row; do not weaken source or oracle requirements.",
+      "operator_steps": [],
+      "owner": "source_adapters.grade_a_presentation",
+      "preserve_state": true,
+      "recovery_key": "errors.source.grade_a.micro_context_exhausted.recovery",
+      "self_heal_owner": null,
+      "title": "Grade A Micro contextual source space exhausted"
+    },
+    {
+      "code": "SOURCE.GRADE_A.DEVELOPMENT_CONTEXT_SOURCE_SHAPE_INVALID",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "FACTORY_GRADE_A_DEVELOPMENT_CONTEXT_SOURCE_SHAPE_INVALID"
+      ],
+      "message_key": "errors.source.grade_a.development_context_source_shape_invalid.message",
+      "message_template": "A Development Grade A row cannot accept the admitted irrelevant set context.",
+      "next_action": "Preserve the row and inspect the source world shape before contextualization.",
+      "operator_steps": [],
+      "owner": "source_adapters.grade_a_presentation",
+      "preserve_state": true,
+      "recovery_key": "errors.source.grade_a.development_context_source_shape_invalid.recovery",
+      "self_heal_owner": null,
+      "title": "Grade A Development contextual source shape invalid"
+    },
+    {
+      "code": "SOURCE.GRADE_A.CONTEXT_IDENTITY_COLLISION",
+      "disposition": "REGENERATE_SOURCE",
+      "legacy_codes": [
+        "FACTORY_GRADE_A_CONTEXT_IDENTITY_COLLISION"
+      ],
+      "message_key": "errors.source.grade_a.context_identity_collision.message",
+      "message_template": "A contextual Grade A draw produced duplicate specimen identities.",
+      "next_action": "Regenerate the source-valid contextual cohort and preserve the conflicting rows for diagnosis.",
+      "operator_steps": [],
+      "owner": "source_adapters.grade_a_presentation",
+      "preserve_state": true,
+      "recovery_key": "errors.source.grade_a.context_identity_collision.recovery",
+      "self_heal_owner": null,
+      "title": "Grade A contextual identity collision"
+    },
+    {
       "code": "SOURCE.BOOLEAN.BOOLEAN_CONTEXT_LENGTH",
       "disposition": "CORRECT_INPUT_OR_STATE",
       "legacy_codes": [

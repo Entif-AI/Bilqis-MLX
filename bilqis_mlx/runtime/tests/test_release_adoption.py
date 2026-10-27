@@ -11,7 +11,9 @@ from bilqis_mlx.runtime.release_adoption import (
     _profile_transition,
     _source_presentation_revision_required,
 )
-from bilqis_mlx.source_adapters.grade_a_presentation import MEMBER_CONTEXT_VARIATION
+from bilqis_mlx.source_adapters.grade_a_presentation import (
+    IRRELEVANT_CONTEXT_VARIATION, MEMBER_CONTEXT_VARIATION,
+)
 from bilqis_mlx.source_adapters.school import live_source_registry
 
 
@@ -64,6 +66,36 @@ class TeachingOnlyTransitionTests(unittest.TestCase):
             release(current), registry))
         self.assertTrue(_source_presentation_revision_required(
             release(historical), registry))
+
+    def test_grade_a_context_revision_detects_member_fixed_predecessor(self):
+        registry = live_source_registry()
+        generator = "bilqis_mlx.grade_a_probe.make_record"
+        oracle = "bilqis.mlx.grade-a-record-oracle/v2"
+        current = registry.require(generator, oracle).descriptor
+        member_only = replace(
+            current,
+            variation_axes=tuple(
+                axis for axis in current.variation_axes
+                if axis != IRRELEVANT_CONTEXT_VARIATION),
+        )
+        self.assertIn(MEMBER_CONTEXT_VARIATION, member_only.variation_axes)
+        binding = SimpleNamespace(generator_id=generator, oracle_id=oracle)
+
+        def release(provider):
+            return SimpleNamespace(
+                execution_plan=SimpleNamespace(capability_map={
+                    "A.MEMBER": SimpleNamespace(provider_id=provider.adapter_id),
+                }),
+                source_bindings=SimpleNamespace(by_capability={
+                    "A.MEMBER": binding,
+                }),
+                source_adapters=(provider,),
+            )
+
+        self.assertTrue(_grade_a_member_context_revision_required(
+            release(member_only), registry))
+        self.assertFalse(_grade_a_member_context_revision_required(
+            release(current), registry))
 
     def test_source_revision_history_keeps_valid_epoch_custody_records(self):
         from dataclasses import asdict
