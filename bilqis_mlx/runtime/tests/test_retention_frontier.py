@@ -8,6 +8,22 @@ from bilqis_mlx.runtime import visits
 
 
 class RetentionFrontierTests(unittest.TestCase):
+    def test_retention_support_covers_every_active_grade_surface(self):
+        admitted = (
+            "A.IDENTITY", "A.MAPS", "B.AND", "B.IFF", "C.COUNT",
+        )
+
+        self.assertEqual(
+            candidate_evidence._retention_support_capabilities(
+                admitted, ("A", "B"), "B.AND"),
+            ("A.IDENTITY", "A.MAPS", "B.IFF"),
+        )
+        self.assertEqual(
+            candidate_evidence._retention_support_capabilities(
+                admitted, ("A", "B"), "A.IDENTITY"),
+            ("A.MAPS", "B.AND", "B.IFF"),
+        )
+
     def test_earlier_debt_visit_protects_latest_admitted_frontier_grade(self):
         school = SimpleNamespace(
             grade="B",

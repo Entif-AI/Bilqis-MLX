@@ -21,13 +21,10 @@ def _retention_support_capabilities(admitted, active_grades,
     if (not active_grades or not isinstance(capability, str) or
             "." not in capability):
         return ()
-    target_grade = capability.partition(".")[0]
-    frontier_grade = active_grades[-1]
-    support_grade = (
-        frontier_grade if target_grade != frontier_grade else target_grade)
+    protected_grades = set(active_grades)
     return tuple(sorted(
         name for name in admitted
-        if name != capability and name.partition(".")[0] == support_grade))
+        if name != capability and name.partition(".")[0] in protected_grades))
 
 
 def _select_fresh_retention_support_rows(
