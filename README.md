@@ -1,5 +1,13 @@
 # Bilqis MLX
 
+
+<!-- BAMF02:ADR-GRADE-NEUTRAL-20261027 -->
+## BAMF-0.2 successor contract | 27 October 2026
+
+The owner-selected BAMF-0.2 successor is **one grade-neutral Factory/teacher/student lineage**. All admitted grades use the same source-qualified prerequisite, learning-evidence, retention and scheduling machinery. No Grade-B-specific effort cap, circulation turn, debt cadence, grade-letter priority or historic scheduler exception applies to **BAMF-0.2**. Existing source-gold, whole-school safeguards, separate admitted-curriculum authority, frozen #324 specimens and the human-only live training start remain intact. The older README/AGENTS operating corrections below describe the existing/historical student and must not be imported as new BAMF-0.2 grade preferences.
+
+Current design authority for this successor: [BAMF-0.2 architecture and ADR-BAMF02-001](docs/architecture/BAMF_0_2.md), the restricted canonical `BAMF-0.2-SPEC-001`, and the 43 reviewed implementation leaves under #341/#342–#344. Current acceptance IDs use `BAMF-REQ-001` through `BAMF-REQ-024`; new operator reason codes use `BAMF_*`; topology selector `bamf-atlas-v2`. An unimplemented former naming draft creates no runtime compatibility mandate. Preserve BAMF-0.1 history unchanged and require actual executable evidence before claiming any BAMF-0.2 mechanism exists.
+
 New Ithkuil semantic corpus: [release artifacts, rebuild and consumer guide](lib/ithkuil/RELEASE_REBUILD.md).
 The guide separates canonical RDF/SKOS from optional Falkor state and curriculum/training authority.
 
