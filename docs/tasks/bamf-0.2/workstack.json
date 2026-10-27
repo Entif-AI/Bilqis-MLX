@@ -32,7 +32,7 @@
         "coverage_completion"
       ],
       "number": 345,
-      "body_sha256": "81c8565d0c9dd8b216331df31e3a6b91fcaf59acc1997c264cc136f934142dbb"
+      "body_sha256": "81ae5551d1150f6e1c90a17dcb9b90b96cd6acb9aa2abe93966d58b948c94704"
     },
     {
       "key": "A02",
@@ -62,7 +62,7 @@
         "feature_schema"
       ],
       "number": 348,
-      "body_sha256": "86d00bad233ec1b6fd6ae25e6df6bd16a2d63bdff30708d7c22a5e025904e66d"
+      "body_sha256": "3d4fcbf20453e674557606de663338d04475546c814dd570fdded4a5d15d10f3"
     },
     {
       "key": "A03",
@@ -89,7 +89,7 @@
         "projection"
       ],
       "number": 349,
-      "body_sha256": "3acae3ade3bf90174c92ce7dc1c8f3b025ffb31a3c89c13b1d3c68e3c5407642"
+      "body_sha256": "36eafe09da1055eaccbb09366a83e217b4f2b5db43b459bbc787393af614d443"
     },
     {
       "key": "A04",
@@ -111,7 +111,7 @@
         "identity"
       ],
       "number": 351,
-      "body_sha256": "990c0664d6e7cbc41143a52e53d5ddc3ebe7cb3993a0fa153f9eb60531195ceb"
+      "body_sha256": "356feccfb559a0ca5d3fe67f5386f2872eefd5245faf791b53f3a1855e79a83a"
     },
     {
       "key": "A05",
@@ -164,7 +164,7 @@
         "feature_schema"
       ],
       "number": 352,
-      "body_sha256": "827e043e964067563c7ba978e63c646f5463d60deece8b8aa23ba77954f9cd93"
+      "body_sha256": "e01fa9afe09d387b2a0cbad0e1753aeb93fbcd7833a0f532557965c14213a1e8"
     },
     {
       "key": "A07",
@@ -285,7 +285,7 @@
         "bravo_fixture"
       ],
       "number": 361,
-      "body_sha256": "fab210737625a56f590a4f6cfd1233d59c6684c2b63a3ad612acc8f5aa7aded0"
+      "body_sha256": "c4c87b7300d701944356a40df9c736db8946a2f128950fc017fff8fef50999a6"
     },
     {
       "key": "A11",
@@ -342,7 +342,7 @@
         "coverage_completion"
       ],
       "number": 364,
-      "body_sha256": "b3030f7e9b2d26943fbb0ed6fd4a8c46ab97e9ec00bea84586f1c0e982e45880"
+      "body_sha256": "72d53cd55c2a2834ff4f1f36c4f56bd5cef94254ca048fb37e9880ea8370e29b"
     },
     {
       "key": "A13",
@@ -400,7 +400,7 @@
         "tensor_ledger"
       ],
       "number": 346,
-      "body_sha256": "ba5d7a4cdd61a2dccf3fd1e5ba63d2d77c2bc71fe18c30f8818dae37dabf9ec0"
+      "body_sha256": "69be3bdeb783228646aaabdf9dc7342d46f99e039619850215929e9af7e0433b"
     },
     {
       "key": "B02",
@@ -426,7 +426,7 @@
         "feature_schema"
       ],
       "number": 359,
-      "body_sha256": "b5c3b7e1e651ace759cce0dbfe469781565b42bb172f5d296fcb1411c123edaa"
+      "body_sha256": "35b4fd88be01e12dff47af869c4891d5180878f0e6179b81620f15a5e78bae93"
     },
     {
       "key": "B03",
@@ -451,7 +451,7 @@
         "depth"
       ],
       "number": 363,
-      "body_sha256": "5196484d07437a5db3750d7c9dfc474cc78c1c810025ee1162c5641049ad1b59"
+      "body_sha256": "6d09501534c219cd65888cfa7d127db63a3a86c423136211422236e2d84a74e1"
     },
     {
       "key": "B04",
@@ -498,7 +498,7 @@
         "plastic"
       ],
       "number": 355,
-      "body_sha256": "675306a778d7d06489ab111c0d0bb3db1752b2c2b6abff002767ec3cbb198c0b"
+      "body_sha256": "e43b7c43894a93c73b108652cc82434498eda26bd041cd3d44209e4d284a8002"
     },
     {
       "key": "B06",
@@ -523,7 +523,7 @@
         "causal_refinement"
       ],
       "number": 365,
-      "body_sha256": "93d2e0c4b4117b310269ba0171fffb48ae67e148e37ff60c13d7abf69e5699b2"
+      "body_sha256": "fd2940dbb67de12d774e9b43217a8f3c9bbc8fcf08db96f4666b0fac1c331014"
     },
     {
       "key": "B07",
@@ -547,7 +547,7 @@
         "custody"
       ],
       "number": 356,
-      "body_sha256": "7aabb8689d65ac882c4181fe1ab79ff490e4a846033935b29ad3df98c2201c9e"
+      "body_sha256": "f7f0ab22986f7b80a358188ffbcd371d87cc8c2c76d622b3d94d9923c8e52e1d"
     },
     {
       "key": "B08",
@@ -591,7 +591,7 @@
         "bilqis_mlx/runtime/tests/test_atlas_plasticity.py (new)"
       ],
       "api": "PlasticityPolicy; parameter_update_mask(mode,manifest,activation_epoch); next_update_mode(state,teacher_choice) -> FULL|FAST",
-      "steps": "Add three rank8 adapters at group boundaries. Zero B matrices make initial adapters identity. FAST includes adapters, motif parameters and newly activated semantic rows; SLOW includes established embeddings and dense parameters. A new identity row becomes established after8 accepted candidates in which it participated under the shared update-mask contract. FOUNDATION updates the full tree. ADAPTIVE offers FAST candidates, then FULL after eight accepted FAST candidates; the existing teacher can request FULL earlier for foundational remediation. This policy selects update eligibility, while the teacher still selects targets, learning rate and pedagogy. Persist mode, counters, row ages and policy version. Advance clocks by accepted updates rather than wall time. Inference always consumes both groups. Freeze the update mask at candidate preparation. B12 owns optimizer moments and update counts. Apply the exact Plasticity transition contract at the retained promotion-event boundary. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "steps": "Add three rank8 adapters at group boundaries. Zero B matrices make initial adapters identity. FAST includes adapters, motif parameters and newly activated semantic rows; SLOW includes established embeddings and dense parameters. A new identity row becomes established after8 accepted candidates in which it participated under the shared update-mask contract. FOUNDATION updates the full tree. ADAPTIVE offers FAST candidates, then FULL after eight accepted FAST candidates; the existing teacher can request FULL earlier for foundational remediation. This policy selects update eligibility, while the teacher still selects targets, learning rate and pedagogy. Persist mode, counters, row ages and policy version. Advance clocks by accepted updates rather than wall time. Inference always consumes both groups. Freeze group eligibility at candidate preparation. Derive the final row-update mask separately for every optimizer step from actual participation and active/admitted state, before clipping and AdamW arithmetic. B12 owns optimizer moments and update counts. Apply the exact Plasticity transition contract at the retained promotion-event boundary. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
       "tests": "Initial adapter output equals its input. FAST changes only eligible parameters and rows. Rejected FAST candidates do not advance clocks. Eight accepted FAST candidates schedule FULL across restart. Row establishment counts its own updates. Teacher-triggered FULL uses the same generic visit path. Test FOUNDATION promotion-with-debt transition, accepted/rejected FAST/FULL schedules, teacher early FULL reset, a new semantic row, and cold resume on either side of the transition.",
       "contracts": [
         "plastic",
@@ -601,7 +601,7 @@
         "plasticity_transition"
       ],
       "number": 368,
-      "body_sha256": "5c26d674bf9488ce41c3bbe0159f740629c7654f5b09054ad238ec79bdeb2e63"
+      "body_sha256": "5954c96ae574582d1f84347f877fb8894d529a180007a97a245cdca8ff91dfc8"
     },
     {
       "key": "B10",
@@ -631,7 +631,7 @@
         "route_construction"
       ],
       "number": 367,
-      "body_sha256": "36aa7bb5f6294b720770a8b97292d20fe6665bfd60d607d0f9ccf02d21985321"
+      "body_sha256": "17330d223455944843fcdb5f06e8d2f403982032e2043e1e3dd0a3b13eea2804"
     },
     {
       "key": "B11",
@@ -666,7 +666,7 @@
         "typed_decoder"
       ],
       "number": 369,
-      "body_sha256": "56ef0b9b54a1b0feaffc4693079bda23b18d2827cb178fa583479fe0888cd45b"
+      "body_sha256": "58802214e4ba9a2dcd553b8373bb0f5cb9c003aab139ba3462829bc7cedef7cf"
     },
     {
       "key": "B12",
@@ -693,7 +693,7 @@
         "plasticity_transition"
       ],
       "number": 370,
-      "body_sha256": "74129f0065515fa7770abac8386ab1ef041e4d6054444ca3dc7adb116abee99c"
+      "body_sha256": "02bbe946accf6b9c24d840ed997285f05c3803f99ce4649de9c9428aa0c4695b"
     },
     {
       "key": "B13",
@@ -725,7 +725,7 @@
         "package_adoption"
       ],
       "number": 372,
-      "body_sha256": "18e76761a4444ec8472f1f8d6fd38e4980b4616893229a0ded87d08998adf854"
+      "body_sha256": "bb1dcd4c1c4c802ff92e1c3713dd1349d234933f8aca3c3049b2fd949d23926d"
     },
     {
       "key": "B14",
@@ -766,7 +766,7 @@
         "AGENTS.md (scoped amendment)",
         "ADR.md (append)",
         "docs/architecture/BAMF_0_2.md (new)",
-        "docs/tasks/BAMF_0_2_WORKSTACK.json (new)",
+        "docs/tasks/bamf-0.2/workstack.json (new)",
         "scripts/check_bamf_workstack.py (new)"
       ],
       "api": "BamfWorkItem(key,issue,lane,depends,files,contract_hash,status); validate_workstack(manifest) -> report",
@@ -779,7 +779,7 @@
         "projection"
       ],
       "number": 347,
-      "body_sha256": "f864f733d7755fd41d20f3ffb3101eb4f99507d15ef6b2bbde3869b5b6e15a3f"
+      "body_sha256": "257f93e02b91a246d40867189d9b74ece395a983f1ba64050ebb358b444ba2b6"
     },
     {
       "key": "C02",
@@ -813,7 +813,7 @@
         "update_semantics"
       ],
       "number": 371,
-      "body_sha256": "4fdb34c4f733515c7399622863a9f4e66effffb2f9db99e7322520b7ca7b2b4c"
+      "body_sha256": "153d241e3b2dda66fde30b3d4ae6dcdef010a0c139a3377fd46343941e4e29bd"
     },
     {
       "key": "C03",
@@ -845,7 +845,7 @@
         "plastic"
       ],
       "number": 376,
-      "body_sha256": "d219300c755e1db2d2abb0199dc92b0205f11848b207e7310839ae006b7006c1"
+      "body_sha256": "b493096416118e81071e7cd88fa8108feacb3faad4afb42fb14e7efae4522b20"
     },
     {
       "key": "C04",
@@ -875,7 +875,7 @@
         "learning_witness"
       ],
       "number": 373,
-      "body_sha256": "d4810ae4057bfc6d501bb8c9a4c281816c8d068c7880a6bd27d202884cf6d234"
+      "body_sha256": "c639c13f41955248b9e66b1960fbc979d917afd963e63a141621d4e93488f0cd"
     },
     {
       "key": "C05",
@@ -1118,7 +1118,7 @@
         "package_adoption"
       ],
       "number": 381,
-      "body_sha256": "39274d2d342e04253217254d76762be335d11e1f3264d3ead1412462a0ad4725"
+      "body_sha256": "490aeb204d04ffee897afb56ba999aa7261b085dd4947a6e3440e166ef9bcf97"
     },
     {
       "key": "C13",
@@ -1192,7 +1192,7 @@
         "bravo_fixture"
       ],
       "number": 386,
-      "body_sha256": "4e4f83bcba51546cad195dbc35eef724e79d260dd016887d83e55400a080ecf0"
+      "body_sha256": "d0ad27e09c418862654192bf31d6ea2ac04136e2ed148d375cdb1792a34495cd"
     },
     {
       "key": "C15",
@@ -1212,7 +1212,7 @@
       ],
       "paths": [
         "docs/evidence/bamf/delivery/ (new)",
-        "docs/tasks/BAMF_0_2_WORKSTACK.json",
+        "docs/tasks/bamf-0.2/workstack.json",
         "docs/architecture/BAMF_0_2.md"
       ],
       "api": "BamfDeliveryManifest(components,issues,commits,proofs,egm,operator_commands)",
@@ -1226,7 +1226,7 @@
         "coverage_completion"
       ],
       "number": 387,
-      "body_sha256": "433dd69a02049f0eb49216efded31191324d92c947a55dfffc2b30c4c66af9e3"
+      "body_sha256": "84fb59a7fdd4e3defa92c14ea9c555f95dd170abd1dfce964fca6aa51062abc1"
     },
     {
       "key": "C16",
@@ -1249,7 +1249,7 @@
       ],
       "api": "preflight_bamf_foundation(config,admitted_release,new_run_dir) -> LaunchReceipt",
       "steps": "Finish the production create/dry-run/resume CLI dispatch for the current admitted source release as soon as the complete neural, teacher and custody path works. This is the same persistent BAMF lineage later expanded by C07, not a disposable model-size contestant. A separate disposable witness checks the command and rollback before the operator starts the new student. Record initial active ABI, source/curriculum/teacher identities, topology, seed, optimizer hyperparameters, parameter-bank shape and all-zero new moments. Require a new empty run directory, not an old student path. Read the currently admitted A/B/C scope and introduce foundations through its ordinary Factory plan. Expose existing dashboard metrics immediately; C11 adds the larger atlas/cockpit views later. Akasha materialization, the low-bit cache and private journal intake are parallel delivery work and do not block the first optimizer update. Publish one exact owner-start command and one cold-resume command after parser/preflight verification. Predecessor trace: BAV-REQ-022/024; the implementation follows the explicit BAMF-0.2 contract repeated here. C16 owns the foundation successor launch witness: at least one source-valid end-to-end retained capability improvement, complete rollback of a deliberately damaging disposable candidate, and cold-resume equivalence. This exact-head receipt satisfies the BAMF foundation launch gate. C13 is the later expanded-system release qualification and is not a prerequisite of C16 or foundation training.",
-      "tests": "Fresh preflight creates no neural updates and reports the exact run identity. A disposable creation/update/cold-resume traverses the same entrypoint. An old or occupied run directory is protected. Missing optional graph/cache services do not prevent the admitted foundation path. The operator's existing learner is untouched. The issue records software readiness; real retained-learning receipts are attached only after actual operator initiation. C16 acceptance records parent and retained generation IDs, strictly improved fresh complete-solver target score, preserved cumulative retention, rejected-candidate complete-state identity, and equivalent cold-resume output/next update.",
+      "tests": "Fresh preflight creates no neural updates and reports the exact run identity. A disposable creation/update/cold-resume traverses the same entrypoint. An old or occupied run directory is protected. Missing optional graph/cache services do not prevent the admitted foundation path. The operator's existing learner is untouched. The disposable foundation witness must demonstrate genuine source-valid retained improvement, complete rejected-candidate rollback and cold-resume equivalence on the actual BAMF/replay code. Its exact-head receipt completes C16 and is sufficient for the operator to start the first persistent lineage. Later persistent-student learning receipts are subsequent operating evidence, not another prerequisite of the launch they follow. C16 acceptance records parent and retained generation IDs, strictly improved fresh complete-solver target score, preserved cumulative retention, rejected-candidate complete-state identity, and equivalent cold-resume output/next update.",
       "contracts": [
         "authority",
         "custody",
@@ -1260,7 +1260,7 @@
         "learning_witness"
       ],
       "number": 382,
-      "body_sha256": "8b132c6ba58ec25e57bb24aaee954887f3dc652636679b5266782bbf2923a2ac"
+      "body_sha256": "dde8bbffeac114ce75e9e09d959541fa72db4d8b69d146ab6258de86716c9b49"
     }
   ]
 }
