@@ -11,6 +11,7 @@ from collections import deque
 from pathlib import Path
 
 from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TABLES
+from bilqis_mlx.presentation.progression_projection import GraduationProjection
 from bilqis_mlx.runtime.disk import headroom_snapshot
 from bilqis_mlx.state_dag import read_current
 from bilqis_mlx.source import AUDITED_PARENT
@@ -153,6 +154,34 @@ def _replay_dashboard_journal(board: Dashboard, run_dir: Path) -> None:
                     }, redraw=False)
 
 
+def _rebuild_graduation_projection(board: Dashboard, run_dir: Path) -> None:
+    """Reconstruct run/lifetime graduation counters from the complete journal.
+
+    The dashboard tables intentionally hydrate only their bounded recent-record
+    window. Graduation totals are longitudinal counters, so they must not inherit
+    that truncation. This pass is read-only and keeps no event rows in memory.
+    """
+    events = run_dir / "events.jsonl"
+    if not events.exists():
+        return
+    projection = GraduationProjection()
+    with events.open("rb") as log:
+        while line := log.readline():
+            if not line.endswith(b"\n"):
+                break
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except (ValueError, TypeError):
+                continue
+            if event.get("event") == "SCHOOL_SESSION_STARTED":
+                projection.begin_execution()
+            projection.observe(event)
+    board.school_telemetry.graduations = projection
+    board.state["graduations"] = projection.summary()
+
+
 def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard:
     run_dir = Path(run_dir)
     board = Dashboard(stream=stream, redraw=False,
@@ -168,6 +197,7 @@ def build(run_dir: Path, *, stream=None, reserve_gib: float = 100.) -> Dashboard
     _push_saved_school_evidence(board, state, active, current_grade)
     board.push("system", {"kind": "RESTART", "detail": "Saved run: train --human-run --resume"}, redraw=False)
     _replay_dashboard_journal(board, run_dir)
+    _rebuild_graduation_projection(board, run_dir)
     if active and not board.rows["GRADES & MASTERY"]:
         board.rows["GRADES & MASTERY"].append({"grade": current_grade, "step": step,
                  "attempt": "-",

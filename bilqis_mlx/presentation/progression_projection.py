@@ -18,20 +18,23 @@ _DEFINITE_ABORT = frozenset({"RECOVERY_1", "RECOVERY_2"})
 
 @dataclass
 class _Counts:
-    major: int = 0
-    success: int = 0
+    grade_successes: int = 0
+    successes: int = 0
     attempts: int = 0
 
     def render(self) -> str:
-        return f"{self.major}.{self.success}.{self.attempts}"
+        return f"{self.grade_successes}.{self.successes}.{self.attempts}"
 
 
 class GraduationProjection:
-    """Count sweep attempts and successful semantic/grade transitions.
+    """Project ``grade successes.any successes.any attempts``.
 
     Historical journals predate an explicit promotion-result event, so a
     same-grade MAIN exit is held pending until the next event proves whether
     the introduction stage advanced. A grade change proves a major success.
+
+    ``current / lifetime`` means the current human execution command versus
+    the complete model journal across all commands/runs in this lineage.
     """
 
     def __init__(self):
@@ -56,11 +59,11 @@ class GraduationProjection:
         self._active = (grade, stage, self._current_epoch)
 
     def _success(self, *, major: bool, current_epoch: bool) -> None:
-        self.lifetime.success += 1
-        self.lifetime.major += int(major)
+        self.lifetime.successes += 1
+        self.lifetime.grade_successes += int(major)
         if current_epoch:
-            self.current.success += 1
-            self.current.major += int(major)
+            self.current.successes += 1
+            self.current.grade_successes += int(major)
 
     def _resolve_pending(self, event: dict) -> None:
         if self._pending is None:
