@@ -32,7 +32,13 @@
         "coverage_completion"
       ],
       "number": 345,
-      "body_sha256": "fe4645eb1c2a72f9468f05b84602492f48bb052b6361bd64351c5751aa0005b7"
+      "body_sha256": "d18eb54e86782d1e66359a6c8d99f21cf830e315e782a4b366192c4d85ff3e38",
+      "children": [
+        "A01.1",
+        "A01.2",
+        "A01.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A02",
@@ -62,7 +68,13 @@
         "feature_schema"
       ],
       "number": 348,
-      "body_sha256": "e087a083778e622a865ee9a5c331d3fe0beec0d0a8c6a9b293487f5941e75e15"
+      "body_sha256": "385bfa57d175f4dbe4425d0a0eda686132b70c1b0f5030a64e81c8a653f0926b",
+      "children": [
+        "A02.1",
+        "A02.2",
+        "A02.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A03",
@@ -89,7 +101,13 @@
         "projection"
       ],
       "number": 349,
-      "body_sha256": "de5e31c7518024363e1b4953b0212b7aba498f1c7313a137b1a6940c4e5c9479"
+      "body_sha256": "c76c00f4ece525da779c7d858b4704426c65687836cc85f25807aabe61a9c2e1",
+      "children": [
+        "A03.1",
+        "A03.2",
+        "A03.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A04",
@@ -111,7 +129,13 @@
         "identity"
       ],
       "number": 351,
-      "body_sha256": "2450a2313979ece6beed0a02652c8f8c533701ae1ad3050289e057e91924d73c"
+      "body_sha256": "bf059a73dac5c45336eaf8edc796bef14a1b89673e2fb371b7b4f4a6626c6628",
+      "children": [
+        "A04.1",
+        "A04.2",
+        "A04.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A05",
@@ -138,7 +162,13 @@
         "causal_refinement"
       ],
       "number": 357,
-      "body_sha256": "a6d4ab2056f1418cea6b2149bcfa68df45315ee7c3aa5a83c12f6498c9afd793"
+      "body_sha256": "f0f13a4a3d1f3f83252d48d63cb2a0b3da8715417375476112b9af159d8961fe",
+      "children": [
+        "A05.1",
+        "A05.2",
+        "A05.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A06",
@@ -164,7 +194,12 @@
         "feature_schema"
       ],
       "number": 352,
-      "body_sha256": "aa207457c5d42f1fd0f1e8878db5979e1d11e3547a262b5d225da89ef4bad63c"
+      "body_sha256": "af66aaaf49483867d04e2e655e815617894cf8541307cb04aeec28c50dd958db",
+      "children": [
+        "A06.1",
+        "A06.2"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A07",
@@ -190,7 +225,13 @@
         "route_construction"
       ],
       "number": 353,
-      "body_sha256": "b44af62b44bb208f2b4b518cd9cc30d4cb512f98e06e89707d77e291616ff89e"
+      "body_sha256": "ac344a7d121c6774acb8edbef6cbbbe1e913a4a3308f34258cef17117e31c0d7",
+      "children": [
+        "A07.1",
+        "A07.2",
+        "A07.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A08",
@@ -223,7 +264,13 @@
         "learning_witness"
       ],
       "number": 358,
-      "body_sha256": "f1d339d623f14d5cfe3e7d6b0ec68ec44473d1205573d0f407a7774255e09237"
+      "body_sha256": "f111ab57e753c29ad624c5c788354b4745ee4d005ba497d9746dc8049a48f2ab",
+      "children": [
+        "A08.1",
+        "A08.2",
+        "A08.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A09",
@@ -293,7 +340,13 @@
         "bravo_fixture"
       ],
       "number": 361,
-      "body_sha256": "0dfcca8c148cdb800db95eea61731e947970309ca737a959b9a9842d33971528"
+      "body_sha256": "a402b83088038da27adc583e479f586d9d4502522028782ea0fa4a5f5b18eea5",
+      "children": [
+        "A10.1",
+        "A10.2",
+        "A10.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A11",
@@ -317,7 +370,13 @@
         "salience"
       ],
       "number": 362,
-      "body_sha256": "008141f857fe015b3a87df57572010717bea2b33cca670a851e0fba0520aac67"
+      "body_sha256": "b63088dcad742ccb405751c286926afe3170dac032d593ce2763637c7ae0a275",
+      "children": [
+        "A11.1",
+        "A11.2",
+        "A11.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A12",
@@ -350,7 +409,13 @@
         "coverage_completion"
       ],
       "number": 364,
-      "body_sha256": "00b47699e203ef6dd8bd6c2600f4857146f7099bfa84ab513a26e755b52bd7e6"
+      "body_sha256": "7f540d85865a9cd0d58deee9ed4f80095430c9e1761ce8446036d7cfcac9cb67",
+      "children": [
+        "A12.1",
+        "A12.2",
+        "A12.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "A13",
@@ -377,7 +442,13 @@
         "recovery"
       ],
       "number": 354,
-      "body_sha256": "d74dbb36e3b8d5c10adf0ca4a8d88f272ac9eace6a8bbeed9aac7afa1a500485"
+      "body_sha256": "3f4a78f2c66eb8488a33fefa76f12639be0932623fb006fb394eaf4490dda723",
+      "children": [
+        "A13.1",
+        "A13.2",
+        "A13.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B01",

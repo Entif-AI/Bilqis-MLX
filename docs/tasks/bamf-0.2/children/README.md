@@ -1,11 +1,48 @@
-# BAMF-0.2 recursive child issue index
+# BAMF-0.2 recursively decomposed implementation issues
 
-Original 43 parent specifications remain intact and authoritative. Lower-tier agent cost is reduced by recursively bounded *implementation* units, never diminished requirements. Assign the deepest ready child.
+The original 43 owner contracts stay authoritative and unabridged. Agents take the deepest ready child. See `registry.json` for exact stable identities, parent links, dependency graph, source-clause spans and body hashes.
 
-- [A09.1 #389](https://github.com/Entif-AI/Bilqis-MLX/issues/389) | BAMF-0.2 A09.1 | Freeze the immutable curriculum snapshot and qualified-event reconciliation contracts | parent A09
-- [A09.1a #390](https://github.com/Entif-AI/Bilqis-MLX/issues/390) | BAMF-0.2 A09.1a | Implement the versioned immutable Factory planning snapshot and coverage identity | parent A09.1
-- [A09.1b #391](https://github.com/Entif-AI/Bilqis-MLX/issues/391) | BAMF-0.2 A09.1b | Reconcile qualified source, learning, correction and policy events without mutation | parent A09.1
-- [A09.2 #392](https://github.com/Entif-AI/Bilqis-MLX/issues/392) | BAMF-0.2 A09.2 | Resolve typed prerequisite closure and legal ready/held Factory candidates | parent A09
-- [A09.3 #393](https://github.com/Entif-AI/Bilqis-MLX/issues/393) | BAMF-0.2 A09.3 | Select stable bounded constituent-first curriculum delta proposals | parent A09
-- [A09.4 #394](https://github.com/Entif-AI/Bilqis-MLX/issues/394) | BAMF-0.2 A09.4 | Make the planner resumable and terminating with typed fixed-point dispositions | parent A09
-- [A09.5 #395](https://github.com/Entif-AI/Bilqis-MLX/issues/395) | BAMF-0.2 A09.5 | Wire the pure planner to existing Factory frontier and staged-release adapters | parent A09
+- [A01.1 #396](https://github.com/Entif-AI/Bilqis-MLX/issues/396): Bind the pinned corpus and source-qualified semantic identities (leaf; parent A01)
+- [A01.2 #397](https://github.com/Entif-AI/Bilqis-MLX/issues/397): Build deterministic ABI and immutable semantic-release files (leaf; parent A01)
+- [A01.3 #398](https://github.com/Entif-AI/Bilqis-MLX/issues/398): Expose source-hold census and the database-free atlas reader (leaf; parent A01)
+- [A02.1 #399](https://github.com/Entif-AI/Bilqis-MLX/issues/399): Allocate stable semantic banks and activate admitted identity rows (leaf; parent A02)
+- [A02.2 #400](https://github.com/Entif-AI/Bilqis-MLX/issues/400): Stage capacity expansion with unchanged old tensors and moments (leaf; parent A02)
+- [A02.3 #401](https://github.com/Entif-AI/Bilqis-MLX/issues/401): Mirror allocation lineage and publish bank resource estimates (leaf; parent A02)
+- [A03.1 #402](https://github.com/Entif-AI/Bilqis-MLX/issues/402): Declare canonical typed AST and occurrence-aware frame records (leaf; parent A03)
+- [A03.2 #403](https://github.com/Entif-AI/Bilqis-MLX/issues/403): Validate frame bindings and preserve atomic fallback (leaf; parent A03)
+- [A03.3 #404](https://github.com/Entif-AI/Bilqis-MLX/issues/404): Ship approved formal and source frame adapters with typed errors (leaf; parent A03)
+- [A04.1 #405](https://github.com/Entif-AI/Bilqis-MLX/issues/405): Encode and decode exact compact-frame v1 u64 records (leaf; parent A04)
+- [A04.2 #406](https://github.com/Entif-AI/Bilqis-MLX/issues/406): Implement canonical extended-frame fallback and shared accessors (leaf; parent A04)
+- [A04.3 #407](https://github.com/Entif-AI/Bilqis-MLX/issues/407): Preserve ordered constituent metadata and codec identity (leaf; parent A04)
+- [A05.1 #408](https://github.com/Entif-AI/Bilqis-MLX/issues/408): Compile causal incremental partial-frame sequences (leaf; parent A05)
+- [A05.2 #409](https://github.com/Entif-AI/Bilqis-MLX/issues/409): Produce source-position maps and isolated prefix-boundary receipts (leaf; parent A05)
+- [A05.3 #410](https://github.com/Entif-AI/Bilqis-MLX/issues/410): Separate hidden answers and enforce bounded packed sequence length (leaf; parent A05)
+- [A06.1 #411](https://github.com/Entif-AI/Bilqis-MLX/issues/411): Build deterministic source-factor and graph-feature projection (leaf; parent A06)
+- [A06.2 #412](https://github.com/Entif-AI/Bilqis-MLX/issues/412): Publish immutable local AtlasFeatures and independent reference vectors (leaf; parent A06)
+- [A07.1 #413](https://github.com/Entif-AI/Bilqis-MLX/issues/413): Register typed source-qualified deterministic operators (leaf; parent A07)
+- [A07.2 #414](https://github.com/Entif-AI/Bilqis-MLX/issues/414): Separate solver applicability from independent evaluation gold (leaf; parent A07)
+- [A07.3 #415](https://github.com/Entif-AI/Bilqis-MLX/issues/415): Emit bounded execution receipts and typed compositional DAG nodes (leaf; parent A07)
+- [A08.1 #416](https://github.com/Entif-AI/Bilqis-MLX/issues/416): Own the source-family coverage census and constructive checker contract (group; parent A08)
+- [A08.1a #417](https://github.com/Entif-AI/Bilqis-MLX/issues/417): Inventory source-qualified semantic families and constructor coverage (leaf; parent A08.1)
+- [A08.1b #418](https://github.com/Entif-AI/Bilqis-MLX/issues/418): Compile constructive lessons and independent typed checkers (leaf; parent A08.1)
+- [A08.2 #419](https://github.com/Entif-AI/Bilqis-MLX/issues/419): Bind stable capability identities to existing Factory releases (leaf; parent A08)
+- [A08.3 #420](https://github.com/Entif-AI/Bilqis-MLX/issues/420): Register Boolean integer and qualified world-model rules without grade branches (leaf; parent A08)
+- [A09.1 #389](https://github.com/Entif-AI/Bilqis-MLX/issues/389): Freeze the immutable curriculum snapshot and qualified-event reconciliation contracts (group; parent A09)
+- [A09.1a #390](https://github.com/Entif-AI/Bilqis-MLX/issues/390): Implement the versioned immutable Factory planning snapshot and coverage identity (leaf; parent A09.1)
+- [A09.1b #391](https://github.com/Entif-AI/Bilqis-MLX/issues/391): Reconcile qualified source, learning, correction and policy events without mutation (leaf; parent A09.1)
+- [A09.2 #392](https://github.com/Entif-AI/Bilqis-MLX/issues/392): Resolve typed prerequisite closure and legal ready/held Factory candidates (leaf; parent A09)
+- [A09.3 #393](https://github.com/Entif-AI/Bilqis-MLX/issues/393): Select stable bounded constituent-first curriculum delta proposals (leaf; parent A09)
+- [A09.4 #394](https://github.com/Entif-AI/Bilqis-MLX/issues/394): Make the planner resumable and terminating with typed fixed-point dispositions (leaf; parent A09)
+- [A09.5 #395](https://github.com/Entif-AI/Bilqis-MLX/issues/395): Wire the pure planner to existing Factory frontier and staged-release adapters (leaf; parent A09)
+- [A10.1 #421](https://github.com/Entif-AI/Bilqis-MLX/issues/421): Bind qualified BRAVO source strata and provenance-safe records (leaf; parent A10)
+- [A10.2 #422](https://github.com/Entif-AI/Bilqis-MLX/issues/422): Compile typed reconstructions and held-out family-separated lessons (leaf; parent A10)
+- [A10.3 #423](https://github.com/Entif-AI/Bilqis-MLX/issues/423): Deliver literal public BRAVO fixtures with lawful cohort and rights lineage (leaf; parent A10)
+- [A11.1 #424](https://github.com/Entif-AI/Bilqis-MLX/issues/424): Implement checker-grounded structural lesson transformations (leaf; parent A11)
+- [A11.2 #425](https://github.com/Entif-AI/Bilqis-MLX/issues/425): Produce bounded ambiguity alternatives and deterministic noise lineage (leaf; parent A11)
+- [A11.3 #426](https://github.com/Entif-AI/Bilqis-MLX/issues/426): Connect source-valid contrasts to the existing Factory teacher (leaf; parent A11)
+- [A12.1 #427](https://github.com/Entif-AI/Bilqis-MLX/issues/427): Audit current consumers against one admitted semantic source authority (leaf; parent A12)
+- [A12.2 #428](https://github.com/Entif-AI/Bilqis-MLX/issues/428): Cut over current aliases and enforce semantic import boundaries (leaf; parent A12)
+- [A12.3 #429](https://github.com/Entif-AI/Bilqis-MLX/issues/429): Prove data-only successor admission and source-held exclusion (leaf; parent A12)
+- [A13.1 #430](https://github.com/Entif-AI/Bilqis-MLX/issues/430): Define and validate eligible source-bound context and join records (leaf; parent A13)
+- [A13.2 #431](https://github.com/Entif-AI/Bilqis-MLX/issues/431): Expose immutable context projections to solver attention and caches (leaf; parent A13)
+- [A13.3 #432](https://github.com/Entif-AI/Bilqis-MLX/issues/432): Propagate contextual invalidation while retaining local public fixtures (leaf; parent A13)
