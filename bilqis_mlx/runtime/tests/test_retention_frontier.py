@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from bilqis_mlx import fixed_frontier
-from bilqis_mlx.runtime import candidate_evidence
+from bilqis_mlx.runtime import candidate_evidence, checkpoints
 from bilqis_mlx.runtime import visits
 
 
@@ -85,3 +85,14 @@ class RetentionFrontierTests(unittest.TestCase):
         self.assertEqual(load_frontier.call_args.args[1], {"last_exam": exam})
         self.assertEqual(predictions.call_count, 1)
         self.assertIs(predictions.call_args.args[1], candidate)
+
+    def test_regression_recovery_preserves_abandoned_terminal_checkpoint(self):
+        abandoned = {
+            "filename": "bundles/damaged-terminal", "sha256": "d" * 64,
+            "optimizer_step": 127056, "model_and_native_adamw": True,
+        }
+        self.assertEqual(
+            checkpoints._regression_recovery_checkpoint({
+                "student_regression_recovery": {"abandoned_student": abandoned},
+            }),
+            abandoned)
