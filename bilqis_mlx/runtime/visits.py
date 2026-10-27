@@ -786,7 +786,10 @@ def _prepare_visit_feedback(receipt, cap, champion_candidates, champion_candidat
         if existing is None:
             priority.append(row)
             priority_by_id[identity] = row
-        elif existing != row:
+        elif ({key: value for key, value in existing.items()
+               if key != "composition_pass"} !=
+              {key: value for key, value in row.items()
+               if key != "composition_pass"}):
             raise ValueError(
                 _learning_teacher_feedback.WeaknessTargetError.
                 TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT.value)

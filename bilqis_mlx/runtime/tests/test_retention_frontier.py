@@ -46,6 +46,18 @@ class RetentionFrontierTests(unittest.TestCase):
                 {"teacher_misses": [], "teacher_miss_exposures": {}},
                 "B.COMPOSITE", (first, second), {"same"})
 
+    def test_prepare_visit_feedback_allows_composite_pass_metadata_drift(self):
+        durable = {
+            "id": "same", "source_id": "source", "capability": "B.COMPOSITE",
+            "gold": "FALSE", "tokens": [1, 2, 3], "record": {"task": "evaluate"},
+            "composition_width": 2, "composition_pass": 0,
+        }
+        rediscovered = {**durable, "composition_pass": 1}
+        priority, *_ = visits._prepare_visit_feedback(
+            {"teacher_misses": [durable], "teacher_miss_exposures": {}},
+            "B.COMPOSITE", (rediscovered,), {"same"})
+        self.assertEqual(priority, [durable])
+
     def test_retention_frontier_survives_new_last_exam(self):
         anchor = {"cohort_sha256": "a" * 64, "student_sha256": "old"}
         receipt = {
