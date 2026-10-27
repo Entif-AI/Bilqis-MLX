@@ -21,7 +21,12 @@ from ..grade_a_oracle import VERSION as A_ORACLE
 
 
 from ..live_grade_a import (GENERATOR as A_COHORT_GENERATOR, RELEASE as A_RELEASE,
-                            draw_predicates, generator_source_digest)
+                            generator_source_digest)
+from .grade_a_presentation import (
+    MEMBER_CONTEXT_VARIATION as A_MEMBER_CONTEXT_VARIATION,
+    constructor_digest as a_provider_digest,
+    draw_a,
+)
 
 
 from ..grade_b_oracle import CONNECTIVES, VERSION as B_ORACLE
@@ -119,11 +124,6 @@ def semantic_footprint(row: dict) -> tuple[str, ...]:
     else:
         shape = inspect_source_query(record["query"])
     return tuple(dict.fromkeys(shape.rooted_operators))
-
-
-def draw_a(*, source_root, graph, course, capability, seed, each):
-    return draw_predicates(source_root, graph, seed=seed,
-                           capability=capability, each=each)
 
 
 def draw_b(*, source_root, graph, course, capability, seed, each):
@@ -337,9 +337,11 @@ def live_source_registry() -> SourceAdapterRegistry:
     return SourceAdapterRegistry((
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.predicates/v1", "bilqis_mlx.grade_a_probe.make_record",
-            (A_ORACLE,), generator_source_digest(),
+            (A_ORACLE,), a_provider_digest(),
             cohort_generator_id=A_COHORT_GENERATOR,
-            cohort_releases=((A_RELEASE, generator_source_digest()),)), draw_a, check_predicate,
+            variation_axes=("source-valid", "balanced-gold", "fresh-seed",
+                            A_MEMBER_CONTEXT_VARIATION),
+            cohort_releases=((A_RELEASE, a_provider_digest()),)), draw_a, check_predicate,
             semantic_footprint=semantic_footprint),
         RegisteredSourceAdapter(SourceAdapter(
             "source.micro.boolean-connectives/v1", "bilqis_mlx.live_grade_b.draw_connectives",

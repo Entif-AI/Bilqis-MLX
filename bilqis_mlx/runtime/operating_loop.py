@@ -144,6 +144,9 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                 run_dir, manifest, historical_course, course_a, source_root, teacher_sha)
             admitted_v2 = _runtime_admission._require_executable_factory_admission(
                 run_dir, receipt, graph)
+            receipt, _, admitted_v2, _ = (
+                _runtime_release_adoption._adopt_source_presentation_revision_if_needed(
+                    run_dir, receipt, course_a, source_root, graph, admitted_v2))
             course = _factory_schedule.schedule_program_from_executable_release(admitted_v2)
             active_grade_count = len(admitted_v2.execution_plan.grades)
             target_boolean_profile = None

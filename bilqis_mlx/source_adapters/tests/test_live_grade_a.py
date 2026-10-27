@@ -3,6 +3,7 @@ from pathlib import Path
 import unittest
 
 from bilqis_mlx.live_grade_a import draw_predicates, live_course
+from bilqis_mlx.source_adapters.grade_a_presentation import draw_a as draw_a_presentation
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.trainer import _persist_live_cohort, _verify_saved_cohort
@@ -41,6 +42,22 @@ class LiveGradeAGenerationTests(unittest.TestCase):
         self.assertNotEqual(cohort.digest,
                             make_cohort(another, generator_version="grade-a-live/v1",
                                         seed=834, rubric_version="A/live/v1").digest)
+
+    def test_member_context_expands_the_fresh_false_size3_source_space(self):
+        import torch
+        graph = torch.load(SOURCE, map_location="cpu", weights_only=True)["graph"]
+        identities = set()
+        for seed in range(12):
+            rows = draw_a_presentation(
+                source_root=ROOT, graph=graph, course=None,
+                capability="A.MEMBER", seed=seed, each=12)
+            for row in rows:
+                if row["gold"] == "FALSE" and row["universe_size"] == 3:
+                    identities.add(row["id"])
+                    self.assertTrue(row["record"]["world"]["sets"]["K1"])
+                    self.assertEqual(row["record"]["query"]["args"][1]["name"], "K0")
+        # Historical A.MEMBER FALSE/size-3 had only C(5,3)*3 = 30 records.
+        self.assertGreater(len(identities), 30)
 
     def test_rotating_cohorts_use_one_stable_school_rubric(self):
         source = accepted_grade_a(json.loads(MANIFEST.read_text()))
