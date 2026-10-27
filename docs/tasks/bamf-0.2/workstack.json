@@ -28,10 +28,11 @@
       "contracts": [
         "authority",
         "identity",
-        "projection"
+        "projection",
+        "coverage_completion"
       ],
       "number": 345,
-      "body_sha256": "fa930cc4a8183a2dab9c84dde67839d1edc5a108735d9c26939d4ef217f3eec3"
+      "body_sha256": "81c8565d0c9dd8b216331df31e3a6b91fcaf59acc1997c264cc136f934142dbb"
     },
     {
       "key": "A02",
@@ -39,7 +40,8 @@
       "lane": "A",
       "deps": [
         "A01",
-        "B01"
+        "B01",
+        "A06"
       ],
       "owners": [
         292,
@@ -56,10 +58,11 @@
       "contracts": [
         "identity",
         "embedding",
-        "custody"
+        "custody",
+        "feature_schema"
       ],
       "number": 348,
-      "body_sha256": "fbe3c2dc93efdd94fba7853133e143e4c5ca32400831cad6122a8ff2291bd59e"
+      "body_sha256": "86d00bad233ec1b6fd6ae25e6df6bd16a2d63bdff30708d7c22a5e025904e66d"
     },
     {
       "key": "A03",
@@ -131,10 +134,11 @@
         "frame",
         "backbone",
         "custody",
-        "eligibility"
+        "eligibility",
+        "causal_refinement"
       ],
       "number": 357,
-      "body_sha256": "39fc3b534136eb8a98c686b4fd1dbba4f80c3af5a77cd44b3de9109908b50f6c"
+      "body_sha256": "9db32fb5fc54526e7ec15e33f31e9b216e34bf36273e90fb5195c5e437686a58"
     },
     {
       "key": "A06",
@@ -151,15 +155,16 @@
         "bilqis_mlx/semantics/tests/test_atlas_features.py (new)"
       ],
       "api": "build_feature_manifest(release, feature_schema) -> AtlasFeatures; features_for(concept,role,schema,scope) -> FeatureRow",
-      "steps": "Freeze a feature schema containing admitted semantic types, roles, schema IDs and64 graph features. The64-vector contains normalized degree/count statistics and signed deterministic projections of one-hop attested relation predicates/types; persist the exact projection seed and vocabulary. Keep prerequisites in separate fields sourced from curriculum contracts, not inferred from taxonomy adjacency. Enumerate at most512 values for each learned factor table; additional factor values use a release-defined compositional/UNKNOWN representation until a versioned table extension is accepted, preserving exact IDs in the sidecar. Materialize feature rows for the complete eligible atlas and mmap/read them locally. Cache keys include semantic release and feature schema. Use Falkor only as an optional readback witness to the canonical extraction. Preserve source references supporting every categorical input.",
-      "tests": "Two builds have identical features. Swapping a role changes its feature while leaving concept identity unchanged. Held relations do not enter admitted feature inputs. A disconnected concept receives explicit zero neighborhood plus its own type features. No runtime function in the gradient path opens a network connection. The feature manifest survives source-file reordering.",
+      "steps": "Implement AtlasFeatures/v2 exactly as specified in the shared Feature schema. Materialize maps, graph vectors, exact ID sidecars and predecessor binding for the full admitted corpus. Reuse canonical SKOS relation predicates without deriving curriculum prerequisites from taxonomy. Export the immutable feature manifest consumed by A02 initialization and B02 embeddings. Keep inference/training reads local and preserve held-source reasons. Tests below enforce successor identity stability. Use literal committed fixture vectors computed by a small independent reference script using the stated SHA256 byte rules.",
+      "tests": "Two builds have identical features. Swapping a role changes its feature while leaving concept identity unchanged. Held relations do not enter admitted feature inputs. A disconnected concept receives explicit zero neighborhood plus its own type features. No runtime function in the gradient path opens a network connection. The feature manifest survives source-file reordering. Insert a lexically earlier new category into a successor release; every old learned row retains the same ID. Test two categories beyond512, exact zero graph, signed collision accumulation and independent golden-vector agreement.",
       "contracts": [
         "identity",
         "embedding",
-        "projection"
+        "projection",
+        "feature_schema"
       ],
       "number": 352,
-      "body_sha256": "08e9a63bc9c7cadf87e80e56dda5e3f7e60c7d26c0f6b02aae5675687a662fa8"
+      "body_sha256": "827e043e964067563c7ba978e63c646f5463d60deece8b8aa23ba77954f9cd93"
     },
     {
       "key": "A07",
@@ -181,10 +186,11 @@
       "contracts": [
         "solver",
         "frame",
-        "recovery"
+        "recovery",
+        "route_construction"
       ],
       "number": 353,
-      "body_sha256": "68c7ce5ebe061db428da41610379c5733de8c2aa6ff1c57485d7728d5d420454"
+      "body_sha256": "4c854319e1d4366d99a16db16ea131c9693833810de57f210e01ea7e99a23cc7"
     },
     {
       "key": "A08",
@@ -206,15 +212,18 @@
         "bilqis_mlx/factory/tests/test_skos_curriculum.py (new)"
       ],
       "api": "compile_semantic_curriculum(atlas, source_adapters, learned_frontier) -> CurriculumCandidateSet",
-      "steps": "Build reusable family adapters for positive identity, typed role binding, source-attested relation recognition, morphology composition/decomposition, numeric/Boolean composition, scope/modality/time distinctions and released transformations. Enumerate every semantic concept in the pinned atlas and map it to supported construction families or an explicit held reason. For each family emit positive constructive teaching, source-valid contrasts, canonical answer modality, independent checker reference, prerequisite closure and variation axes. Definitions and source examples supply input facts; do not invent causal laws from English glosses. Qualified source facts can be looked up directly; harder tasks combine/rebind them. Store capability ID as a digest-stable semantic/operator signature, not root ordinal or grade letter. Use existing FactoryRelease/ExecutableFactoryRelease and factory verifier.1-9 capability deltas are data. Additional root breadth reuses the same engine rather than creating one issue or trainer per root.",
-      "tests": "Build the actual full-atlas coverage ledger, with eligible/held counts reconciling to source concept census. Demonstrate current numeric/Boolean family plus one real source-attested morphology/role family. New concept within a supported family changes data only. Missing constructor/checker is held with exact reason while unrelated ready families still compile. Teaching construction explicitly contains its declared constituents before composite tests.",
+      "steps": "Build reusable family adapters for positive identity, typed role binding, source-attested relation recognition, morphology composition/decomposition, numeric/Boolean composition, scope/modality/time distinctions and released transformations. Enumerate every semantic concept in the pinned atlas and map it to required source-qualified construction families or a source-qualification hold; missing implementation remains IMPLEMENTATION_UNCOVERED debt. For each family emit positive constructive teaching, source-valid contrasts, canonical answer modality, independent checker reference, prerequisite closure and variation axes. Definitions and source examples supply input facts; do not invent causal laws from English glosses. Qualified source facts can be looked up directly; harder tasks combine/rebind them. Store capability ID as a digest-stable semantic/operator signature, not root ordinal or grade letter. Use existing FactoryRelease/ExecutableFactoryRelease and factory verifier.1-9 capability deltas are data. Additional root breadth reuses the same engine rather than creating one issue or trainer per root.",
+      "tests": "Build the actual full-atlas coverage ledger, with eligible/held counts reconciling to source concept census. Demonstrate current numeric/Boolean family plus one real source-attested morphology/role family. New concept within a supported family changes data only. Missing constructor/checker is IMPLEMENTATION_UNCOVERED with exact owner/reason while unrelated ready families still compile. Teaching construction explicitly contains its declared constituents before composite tests.",
       "contracts": [
         "curriculum",
         "solver",
-        "learning"
+        "learning",
+        "route_construction",
+        "coverage_completion",
+        "learning_witness"
       ],
       "number": 358,
-      "body_sha256": "fd4c0d93dfecc6ab1caf514adac2682d6a94f409cc8eed5f54fb99554a80b0b7"
+      "body_sha256": "7f79d4196a10ac142385f9b75da5145789340d2fa2ee110f03279dba3e4717ca"
     },
     {
       "key": "A09",
@@ -234,15 +243,16 @@
         "bilqis_mlx/factory/tests/test_atlas_frontier.py (new)"
       ],
       "api": "next_atlas_delta(coverage_epoch, learner_evidence, existing_plan) -> CurriculumDeltaProposal|FrontierStatus",
-      "steps": "Project A08 candidates into the existing CandidateFrontierRelease and CandidateBinding shapes. Resolve prerequisite closure using taught/current capability evidence. Rank eligible deltas first by smallest prerequisite slope, then released downstream unlock count, then oldest unvisited ready item and stable ID. Expose salience features to the existing teacher; priority never alters semantic gold. Resume from content-addressed coverage ledger and cursor; no root can vanish merely because a newer release arrived. Batch up to16 new IDs and1-9 capabilities; recursively schedule constituent introductions before composites. Emit COMPLETE_ATLAS_COVERAGE only when every eligible concept has its requested task coverage; HELD entries remain enumerated with source/remediation owners. Propose and stage successors continuously. Runtime adoption remains C07's explicit lease/admission boundary.",
+      "steps": "Project A08 candidates into the existing CandidateFrontierRelease and CandidateBinding shapes. Resolve prerequisite closure using taught/current capability evidence. Rank eligible deltas first by smallest prerequisite slope, then released downstream unlock count, then oldest unvisited ready item and stable ID. Expose salience features to the existing teacher; priority never alters semantic gold. Resume from content-addressed coverage ledger and cursor; no root can vanish merely because a newer release arrived. Batch up to16 new IDs and1-9 capabilities; recursively schedule constituent introductions before composites. Emit COMPLETE_ATLAS_COVERAGE only when every frozen source-eligible concept has its requested task coverage and implementation-uncovered debt is zero; HELD entries remain enumerated with source/remediation owners. Propose and stage successors continuously. Runtime adoption remains C07's explicit lease/admission boundary.",
       "tests": "Three successive generated deltas advance beyond A/B/C without grade-specific code. Restart after staged delta produces the same next candidate. A blocked prerequisite holds its dependents while unrelated ready work progresses. Corpus reordering changes neither capability IDs nor prior allocation. A release containing only held items returns actionable coverage status, not false graduation or an infinite empty loop.",
       "contracts": [
         "curriculum",
         "salience",
-        "custody"
+        "custody",
+        "coverage_completion"
       ],
       "number": 360,
-      "body_sha256": "dacd19b83e172f45a8c39c328621cae0079ac84189252a7a7b57ce0463f46ed3"
+      "body_sha256": "c6d7b37ebaf0a80ac70c4dc060194148ca08731e847c249c00e1f8601b3b71ed"
     },
     {
       "key": "A10",
@@ -266,15 +276,16 @@
         "bilqis_mlx/source_adapters/tests/test_evidence_frames.py (new)"
       ],
       "api": "compile_evidence_lessons(adjudicated_snapshot, source_rights, semantic_release) -> LessonCandidateSet",
-      "steps": "Consume source-span-linked interpreted frames from the qualified VieDay stratum release. Begin with category/value/unit summaries, then time logs, structured reflections and narrative subsets as each is available. Use PUBLIC_FIXTURE analogues for public tests; PRIVATE_REAL intake uses #327's private boundary. Bind source digest, interpretation revision, concept/role IDs, prerequisite capabilities, positive/negative families, checker, task modality and rights to each lesson. Preserve blank/zero, reported/computed values, planned/occurred status, negation, temporal disagreements and alternate interpretations. Train typed reconstruction and a small declared English template codec initially; free-form narrative stays separate until its qualified semantics exist. Split by source episode/template lineage for fresh challenges, while ordinary post-exam errors remain teachable under the existing classroom policy. No all-strata gate: one qualified subset can feed an ordinary FactoryRelease.",
-      "tests": "One public structured summary becomes a source-linked typed lesson and independent exact check.0.25h/15min match; blank differs from0; planned differs fromcompleted; contradictory dates remain alternatives. Unclassified/private source is rejected by public export. One held narrative span does not block qualified structured summaries. A source interpretation correction changes only dependent lesson families.",
+      "steps": "Consume source-span-linked interpreted frames from the qualified VieDay stratum release. Begin with category/value/unit summaries, then time logs, structured reflections and narrative subsets as each is available. Use PUBLIC_FIXTURE analogues for public tests; PRIVATE_REAL intake uses #327's private boundary. Bind source digest, interpretation revision, concept/role IDs, prerequisite capabilities, positive/negative families, checker, task modality and rights to each lesson. Preserve blank/zero, reported/computed values, planned/occurred status, negation, temporal disagreements and alternate interpretations. Train typed reconstruction and a small declared English template codec initially; free-form narrative stays separate until its qualified semantics exist. Split by source episode/template lineage for fresh challenges, while ordinary post-exam errors remain teachable under the existing classroom policy. No all-strata gate: one qualified subset can feed an ordinary FactoryRelease. Commit the PUBLIC_FIXTURE source, parsed record, expected Frame/lesson and exact checker result from Bravo fixture.",
+      "tests": "One public structured summary becomes a source-linked typed lesson and independent exact check.0.25h/15min match; blank differs from0; planned differs fromcompleted; contradictory dates remain alternatives. Unclassified/private source is rejected by public export. One held narrative span does not block qualified structured summaries. A source interpretation correction changes only dependent lesson families. T1 emits completed and15-minute derived answer; T2 retains PLANNED and cannot satisfy an occurred predicate; T3 has UNKNOWN, not0. A missing qualified private stratum changes only its held count. Existing public snapshots continue through the same Factory.",
       "contracts": [
         "curriculum",
         "projection",
-        "recovery"
+        "recovery",
+        "bravo_fixture"
       ],
       "number": 361,
-      "body_sha256": "382a4b1131d418353b0dbc0502a8ce7a102c5e24ef8ad640908be5127cb2cbf9"
+      "body_sha256": "fab210737625a56f590a4f6cfd1233d59c6684c2b63a3ad612acc8f5aa7aded0"
     },
     {
       "key": "A11",
@@ -298,7 +309,7 @@
         "salience"
       ],
       "number": 362,
-      "body_sha256": "f1fb41936eb6bd825d76c2dcd16c86d0e8f78c7485eadf6f60eebae433752d14"
+      "body_sha256": "6314a4902e1bbe09618320941b7d2ffeae8bd3ff65b0059bb449b69ab29cab8d"
     },
     {
       "key": "A12",
@@ -327,10 +338,11 @@
         "identity",
         "curriculum",
         "projection",
-        "custody"
+        "custody",
+        "coverage_completion"
       ],
       "number": 364,
-      "body_sha256": "0b72f71e619a6010c36cae276374b43f1878d509de7443da1bb98311bda210ba"
+      "body_sha256": "b3030f7e9b2d26943fbb0ed6fd4a8c46ab97e9ec00bea84586f1c0e982e45880"
     },
     {
       "key": "A13",
@@ -375,17 +387,20 @@
         "configs/models/bamf-0.2.json (new)",
         "bilqis_mlx/runtime/tests/test_model_topology_v2.py (new)"
       ],
-      "api": "ModelTopologySpecV2; ParameterSpec(name,shape,dtype,group,initializer); expected_bamf_shapes(spec,bank_extent) -> tuple[ParameterSpec,...]",
+      "api": "ModelTopologySpecV2; GenerationExtents; ParameterSpec; expected_bamf_shapes(spec,extents) -> tuple[ParameterSpec,...]",
       "steps": "Implement explicit v1/v2 deserialization and a model factory dispatch keyed by architecture ID bamf-atlas-v2. Freeze dense geometry, modules, initializer seeds and shape policy. Declare every weight/norm/gate/head/convolution/adapter tensor centrally, with stable names, FP32 type and FAST/SLOW group. Generate initialization, shape validation, parameter count, optimizer tree and serialization order from this declaration. Preserve v1 reader behavior. Initial dense matrices count67,239,936, semantic table6,291,456 and motif table2,097,152; auxiliary tensors must be itemized and final total printed, not forced to a marketing estimate. Three rank8 adapters add36,864 matrix parameters. Frame feature and type tables use their declared separate capacities. Version embedding-bank extents as generation state, while dense geometry remains immutable. Store source/release and teacher identities separately from topology. Make config self-describing and validate contradictory channels/heads, zero sizes and unsupported dtypes before allocation. Predecessor trace: BAV-REQ-007; the implementation follows the explicit BAMF-0.2 contract repeated here.",
       "tests": "Exact generated shapes agree with an instantiated tree and serialized tree. Seed equality reproduces initialization. Invalid16Q/7KV, oddRoPE24-mismatch or different FFN method rejects. v1 historical metadata still reads. v2 bank extension changes extent receipt but not stable dense-topology digest. Report all tensors and exact parameters without constructing alternative model sizes.",
       "contracts": [
         "authority",
         "identity",
         "backbone",
-        "plastic"
+        "plastic",
+        "typed_decoder",
+        "feature_schema",
+        "tensor_ledger"
       ],
       "number": 346,
-      "body_sha256": "196f04e034c606856292dda04516e7f59dc16bb2d828a00c1e5d2e14585d112d"
+      "body_sha256": "ba5d7a4cdd61a2dccf3fd1e5ba63d2d77c2bc71fe18c30f8818dae37dabf9ec0"
     },
     {
       "key": "B02",
@@ -402,15 +417,16 @@
         "bilqis_mlx/learning/tests/test_frame_embeddings.py (new)"
       ],
       "api": "embed_atoms(params, ConceptBatch, AtlasFeatures) -> Tensor[B,A,768]; semantic_logits(hidden, active_banks) -> IndexedLogits",
-      "steps": "Implement the factorized embedding equation and fixed feature shapes. Respect per-row active state both in lookup validation and readout masking. Assemble multi-bank logits in global ABI order and expose an index map so sparse active IDs remain correctly addressed. Treat learned feature gates as parameters. Use deterministic feature-composed initialization only for newly admitted identity rows, leaving established rows intact. Include structural role/schema/position vectors without conflating their IDs with semantic vocabulary. Gather constituent embeddings differentiably; exact indices/sidecar data are nondifferentiable input. Use stable masked logsumexp for loss; reject a task with no legal answers rather than emitNaNs. Record parameter-update coverage for identity, feature and gate tensors in a disposable proof.",
+      "steps": "Implement the factorized embedding equation and fixed feature shapes. Respect per-row active state both in lookup validation and readout masking. Assemble multi-bank logits in global ABI order and expose an index map so sparse active IDs remain correctly addressed. Treat learned feature gates as parameters. Use deterministic feature-composed initialization only for newly admitted identity rows, leaving established rows intact. Include structural role/schema/position vectors without conflating their IDs with semantic vocabulary. Gather constituent embeddings differentiably; exact indices/sidecar data are nondifferentiable input. Use stable masked logsumexp for loss; reject a task with no legal answers rather than emitNaNs. Record parameter-update coverage for identity, feature and gate tensors in a disposable proof. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
       "tests": "A changed role changes embedding while sameID identity component stays equal. Inactive row receives zero gradient and cannot be predicted. An active row in bank1 decodes to global8192+. Tied output reuses identical parameter object/name, not a copied head. Save/load reproduces logits to1e-6 FP32 on fixedCPU reference where available or declaredMLX tolerance.",
       "contracts": [
         "identity",
         "embedding",
-        "custody"
+        "custody",
+        "feature_schema"
       ],
       "number": 359,
-      "body_sha256": "e7f3b14a5ceeac880038bc3dda4d4e676ee73c4fc257fdd378ebeddb9e141a44"
+      "body_sha256": "b5c3b7e1e651ace759cce0dbfe469781565b42bb172f5d296fcb1411c123edaa"
     },
     {
       "key": "B03",
@@ -427,7 +443,7 @@
         "bilqis_mlx/learning/tests/test_frame_encoder.py (new)"
       ],
       "api": "encode_frames(compiled, atom_vectors, parameters) -> FrameEncoding(global_seeds,members,handles,features)",
-      "steps": "Use approved role order and explicit occurrence position. Project members to192-wide keys/values; a schema-conditioned192 query attends to visible members. Apply one192-wide cross-role interaction with masked single-head attention, then gated pooling and192->768 projection. Add a projected exact schema/role summary and RMSNorm. Preserve members for later selective refinement; do not detach their gradient. Atomic fallback receives its atom embedding and a one-member handle through the same interface. Partial inputs encode only visible members. Parent/child and scope features distinguish nesting without recursively flattening away boundaries. Zero-member structural control nodes receive a declared learned structural seed, never an average over empty arrays. Return actual framefill/fallback counters.",
+      "steps": "Implement the exact FrameEncoder equations from B01 Tensor ledger using role-ordered members and explicit occurrence positions. Return global seeds, original member embeddings, immutable source handles and feature summaries. Preserve gradients through original members and the frame pass. Atomic fallback preserves its atom embedding; empty legal structural nodes use the specified seed. Partial frames include only visible members. Source/parent/scope handles preserve nesting. Record frame-fill/fallback counts.",
       "tests": "Role swap yields a changed encoding and exact sidecar. Repeated concepts with different occurrences remain separately addressable. Nested and atomic paths both reach the same outputshape. Future member changes cannot influence partial-frame encoding. One lossbackward reaches identity, role and frameinteraction weights. Empty legal structural node remains finite.",
       "contracts": [
         "frame",
@@ -435,7 +451,7 @@
         "depth"
       ],
       "number": 363,
-      "body_sha256": "2ded340a593babe222e672d5bdcbe039091be0917278729fd23b2165586212ac"
+      "body_sha256": "5196484d07437a5db3750d7c9dfc474cc78c1c810025ee1162c5641049ad1b59"
     },
     {
       "key": "B04",
@@ -451,14 +467,14 @@
         "bilqis_mlx/runtime/tests/test_atlas_attention.py (new)"
       ],
       "api": "ccgqa(params,h,mask,scope,cache=None,offset=0) -> (attended,new_cache)",
-      "steps": "Project Q/K/V with frozen shapes and apply independent per-channel three-tap convolution to projected pre-RoPE arrays. Initialize kernel[0,0,1] under oldest-to-current ordering so initial behavior is identity. Use left padding only; keep last two pre-convolution projected values perhead in decode cache. Scope/sequence boundaries zero the history, including a boundary inside a batch. Apply MLX fast.rope toQ/K with exact offset, then native fast SDPA16:8GQA. Handle allmasked/paddedquery rows by an explicit zero-result mask. Recombine384 and outputproject768. Cache manifest carries layer,scope,prefix,RoPEvariant andgeneration. Include a tiny explicit FP32 reference implementation for equality testing only; production uses fusedSDPA. Store installedMLXversion in runtime identity and use its observed signature, not undocumented flags. Predecessor trace: BAV-REQ-008; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "steps": "Project Q/K/V with frozen shapes and apply independent per-channel three-tap convolution to projected pre-RoPE arrays. Initialize kernel[0,0,1] under oldest-to-current ordering so initial behavior is identity. Use left padding only; keep last two pre-convolution projected values perhead in decode cache. Scope/sequence boundaries zero the history, including a boundary inside a batch. Apply MLX fast.rope toQ/K with exact offset, then native fast SDPA16:8GQA. Handle allmasked/paddedquery rows by an explicit zero-result mask. Recombine384 and outputproject768. Cache manifest carries layer,scope,prefix,RoPEvariant andgeneration. Include a tiny explicit FP32 reference implementation for equality testing only; production uses fusedSDPA. Store installedMLXversion in runtime identity and use its observed signature, not undocumented flags. Predecessor trace: BAV-REQ-008; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
       "tests": "Compare fused and explicit reference on2heads-equivalent fixture within1e-5relative/1e-6absolute where supported. Full-prefix versus chunked/single-token outputs agree within tolerance. Perturb future suffix and preserve earlier output exactly within tolerance. Confirm KV storage is8heads, not16tiled. Boundary reset,allmaskedrow and two unequal lengths remain finite. One backward reachesQ/K/V/conv/outputparameters.",
       "contracts": [
         "backbone",
         "custody"
       ],
       "number": 350,
-      "body_sha256": "0b112f2e53b218bc21bb19b804e7d3de782fc74087fcabcbed2b08c515a10862"
+      "body_sha256": "4d44aeaae23d53a303d3ad40f6321a30ef0f1a972319fa9d298a76f17a71344a"
     },
     {
       "key": "B05",
@@ -474,7 +490,7 @@
         "bilqis_mlx/runtime/tests/test_block_attnres.py (new)"
       ],
       "api": "depth_select(current,available_summaries,frame_features,params) -> Tensor[B,F,768]",
-      "steps": "Implement the exact Q/K/V/output and per-boundary gated residual equations in the depth contract. Retain h0 and summaries at layers4,8,12; shared selector projections have128 inner channels and the residual interface stays768. The type/role composition is computed by the released factor composer and uses no target labels. Source weights are normalized across h0 and completed groups only, with a fixed source order. Capture g1 after the second motif read; apply each plastic adapter after selection. Save all four shared projection matrices and the three gate vectors/biases in B01's registry and B13's checkpoint. Optional diagnostics expose alpha without assigning fixed cognitive functions to layers. Predecessor trace: BAV-REQ-009; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "steps": "Implement the exact Q/K/V/output and per-boundary gated residual equations in the depth contract. Retain h0 and summaries at layers4,8,12; shared selector projections have128 inner channels and the residual interface stays768. The type/role composition is computed by the released factor composer and uses no target labels. Source weights are normalized across h0 and completed groups only, with a fixed source order. Capture g1 after the second motif read; apply each plastic adapter after selection. Save all four shared projection matrices and the three gate vectors/biases in B01's registry and B13's checkpoint. Optional diagnostics expose alpha without assigning fixed cognitive functions to layers. Predecessor trace: BAV-REQ-009; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
       "tests": "Source weights sum to1. Changing a future group cannot change an earlier boundary. All three boundaries remain finite. A nondegenerate loss reaches multiple source states and selector weights. Save/load preserves output. Assert that all three group boundaries execute the module, rather than merely declaring it in configuration.",
       "contracts": [
         "depth",
@@ -482,7 +498,7 @@
         "plastic"
       ],
       "number": 355,
-      "body_sha256": "40c3313eb3fa04400318f398a63f869fd1f204475624e554159a02a84761a1ba"
+      "body_sha256": "675306a778d7d06489ab111c0d0bb3db1752b2c2b6abff002767ec3cbb198c0b"
     },
     {
       "key": "B06",
@@ -498,15 +514,16 @@
         "bilqis_mlx/runtime/tests/test_atlas_refinement.py (new)"
       ],
       "api": "refine_selected(frame_hidden,member_handles,query_roles,budget,params) -> RefinementResult",
-      "steps": "Use one shared768-wide recurrent-state module with a compressed single-head192-channel member-attention block for at most two additional local passes. Each pass receives current frame hidden state, immutable original frame seed, visible member vectors and requested-role features. Reinject the original input every pass and merge through a residual gate initialized0.01. A small three-class0/1/2 routing head can learn from measured outcomes. Initial policy uses one pass for explicit member questions, zero otherwise, and permits two for unresolved nested queries. Select at most min(32,ceil(F/8)) frames per row; requested output roles take priority, then salience and source position. During training sample0/1/2 passes from the visit seed on eligible frames so the second pass receives training. Missing routing labels mask its auxiliary loss. Main answer loss still propagates through selected passes. Reuse one backbone result; refinement does not rerun all12 layers. Declare Q/K/V projections[192,768], attention output[768,192], recurrent residual gate and its bias in the tensor registry. Exact member handles return768-wide embeddings. For a selected frame, initialize state from the global frame hidden vector; query uses state+immutable_frame_seed+requested_role768; keys/values use only legal visible members. This preserves the predecessor768-wide local-resolution interface while choosing192 inner attention channels. Predecessor trace: BAV-REQ-012/013; the implementation follows the explicit BAMF-0.2 contract repeated here.",
-      "tests": "Zero passes is identity. One/two passes change only selected frames. Future members remain inaccessible. Original input is re-injected every pass. Backward reaches refinement parameters and two-pass save/resume repeats. Exhausted budget records remaining needs and returns the baseline answer path. One finite disposable update reduces a literal nested-role target loss.",
+      "steps": "Use one shared768-wide recurrent-state module with a compressed single-head192-channel member-attention block for at most two additional local passes. Each pass receives current frame hidden state, immutable original frame seed, visible member vectors and requested-role features. Reinject the original input every pass and merge through a residual gate initialized0.01. A small three-class0/1/2 routing head can learn from measured outcomes. Initial policy uses one pass for explicit member questions, zero otherwise, and permits two for unresolved nested queries. Use the prediction-local selection and quota defined in the Causal refinement contract. During training sample0/1/2 passes from the visit seed on eligible frames so the second pass receives training. Missing routing labels mask its auxiliary loss. Main answer loss still propagates through selected passes. Reuse one backbone result; refinement does not rerun all12 layers. Declare Q/K/V projections[192,768], attention output[768,192], recurrent residual gate and its bias in the tensor registry. Exact member handles return768-wide embeddings. For a selected frame, initialize state from the global frame hidden vector; query uses state+immutable_frame_seed+requested_role768; keys/values use only legal visible members. This preserves the predecessor768-wide local-resolution interface while choosing192 inner attention channels. Predecessor trace: BAV-REQ-012/013; the implementation follows the explicit BAMF-0.2 contract repeated here. Preserve immutable global hidden states and return a separate per-query refinement view. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "Zero passes is identity. One/two passes change only selected frames. Future members remain inaccessible. Original input is re-injected every pass. Backward reaches refinement parameters and two-pass save/resume repeats. Exhausted budget records remaining needs and returns the baseline answer path. One finite disposable update reduces a literal nested-role target loss. Append high-priority future frames across the8-to9 quota boundary; earlier selection IDs, pass counts and logits at fixed p are identical. Repeat with different batch padding and future teacher-forcing targets.",
       "contracts": [
         "depth",
         "frame",
-        "resource"
+        "resource",
+        "causal_refinement"
       ],
       "number": 365,
-      "body_sha256": "ca4b4b2972e40ee6da1c39e5429fb7a36885302fd58e5492f28d480b801a9072"
+      "body_sha256": "93d2e0c4b4117b310269ba0171fffb48ae67e148e37ff60c13d7abf69e5699b2"
     },
     {
       "key": "B07",
@@ -522,7 +539,7 @@
         "bilqis_mlx/learning/tests/test_atlas_engram_allocation.py (new)"
       ],
       "api": "MotifKey; MotifAllocationPlan; prepare_motifs(frames,parent_manifest,budget) -> CandidateMotifView",
-      "steps": "Canonicalize full typed keys. Derive structural keys by replacing permitted fillers with admitted type IDs while retaining roles, scope and relation structure. Look up exact instance first, then structural motif. Allocate missing structural keys before instance keys, ordered by observed use then key digest, at most64 new slots per candidate preparation. When full, add one16384-slot page up to65536 if the resource budget permits; otherwise retain factorized fallback and pending-key evidence. Initialize new vectors deterministically. Always compare full keys after hash lookup. Stable slots are append-only. Allocation and counters used for future allocation are copy-on-write candidate state, published only on acceptance. Preserve original release keys; accepted semantics-preserving alias maps are explicit artifacts. Predecessor trace: BAV-REQ-010; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "steps": "Canonicalize full typed keys. Derive structural keys by replacing permitted fillers with admitted type IDs while retaining roles, scope and relation structure. Look up exact instance first, then structural motif. Allocate missing structural keys before instance keys, ordered by observed use then key digest, at most64 new slots per candidate preparation. When full, add one16384-slot page up to65536 if the resource budget permits; otherwise retain factorized fallback and pending-key evidence. Initialize new vectors deterministically. Always compare full keys after hash lookup. Stable slots are append-only. Allocation and counters used for future allocation are copy-on-write candidate state, published only on acceptance. Preserve original release keys; accepted semantics-preserving alias maps are explicit artifacts. Predecessor trace: BAV-REQ-010; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
       "tests": "Force a hash collision between distinct full keys and return the correct value. Different fillers share a permitted structural motif; role swap changes the key. Rejection restores allocation, tensor and counters byte-for-byte. Restart reproduces pending slot IDs. Capacity exhaustion uses fallback without overwrite. Page growth preserves all old slots and moments.",
       "contracts": [
         "memory",
@@ -530,7 +547,7 @@
         "custody"
       ],
       "number": 356,
-      "body_sha256": "52925b51a3ffaf90858c5895b6dd2edfd4d91300af0a6762dfc0916b1db8c8b0"
+      "body_sha256": "7aabb8689d65ac882c4181fe1ab79ff490e4a846033935b29ad3df98c2201c9e"
     },
     {
       "key": "B08",
@@ -548,7 +565,7 @@
         "bilqis_mlx/learning/tests/test_atlas_engram_reads.py (new)"
       ],
       "api": "read_motif(site,hidden,features,slot_view,params) -> Tensor[B,F,768]",
-      "steps": "Read128-dimensional motif vectors at frame input and after layer4. Each site has a separate128->768 projection and gate conditioned on hidden state plus frame features. Initialize gate bias to-4. Missing keys use factorized fallback features. Register every projection, gate and memory page in the parameter manifest and optimizer tree. Check release/scope eligibility before gathering. Learned vectors provide continuous priors, while exact semantic IDs remain in the sidecar. Batch gathers rather than issuing one Python call per frame. Report exact/structural/miss counts, gate quantiles and touched slots as diagnostics. Predecessor trace: BAV-REQ-010; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "steps": "Implement the two exact gated motif residual reads and the gate equation from B01 Tensor ledger. Check full-key/release/scope eligibility before batched gather. Missing keys return unchanged factorized hidden state. Save every allocated vector, projection, gate and norm; report exact/structural/miss counts and actual participating rows. The second site executes after layer4 and before capturing group1 summary.",
       "tests": "Both read sites influence a nondegenerate loss and receive finite gradients. Changing a qualified slot affects its applicable frames. Held or foreign-release entries are not read. Miss fallback stays finite. Save/load restores values and gates. Rejection after both sites update restores the complete parent.",
       "contracts": [
         "memory",
@@ -557,7 +574,7 @@
         "eligibility"
       ],
       "number": 366,
-      "body_sha256": "149cf6c4c99752d597ad160612d9019d854c618b529abcad344de4dd4b06673c"
+      "body_sha256": "e790951bfa07fbba65bd698d9a1cb7a1590f52f23687a5578f0772ac863aaf70"
     },
     {
       "key": "B09",
@@ -574,15 +591,17 @@
         "bilqis_mlx/runtime/tests/test_atlas_plasticity.py (new)"
       ],
       "api": "PlasticityPolicy; parameter_update_mask(mode,manifest,activation_epoch); next_update_mode(state,teacher_choice) -> FULL|FAST",
-      "steps": "Add three rank8 adapters at group boundaries. Zero B matrices make initial adapters identity. FAST includes adapters, motif parameters and newly activated semantic rows; SLOW includes established embeddings and dense parameters. A new row becomes established after eight accepted updates that actually touched it. FOUNDATION updates the full tree. ADAPTIVE offers FAST candidates, then FULL after eight accepted FAST candidates; the existing teacher can request FULL earlier for foundational remediation. This policy selects update eligibility, while the teacher still selects targets, learning rate and pedagogy. Persist mode, counters, row ages and policy version. Advance clocks by accepted updates rather than wall time. Inference always consumes both groups. Freeze the update mask at candidate preparation. B12 owns optimizer moments and update counts.",
-      "tests": "Initial adapter output equals its input. FAST changes only eligible parameters and rows. Rejected FAST candidates do not advance clocks. Eight accepted FAST candidates schedule FULL across restart. Row establishment counts its own updates. Teacher-triggered FULL uses the same generic visit path.",
+      "steps": "Add three rank8 adapters at group boundaries. Zero B matrices make initial adapters identity. FAST includes adapters, motif parameters and newly activated semantic rows; SLOW includes established embeddings and dense parameters. A new identity row becomes established after8 accepted candidates in which it participated under the shared update-mask contract. FOUNDATION updates the full tree. ADAPTIVE offers FAST candidates, then FULL after eight accepted FAST candidates; the existing teacher can request FULL earlier for foundational remediation. This policy selects update eligibility, while the teacher still selects targets, learning rate and pedagogy. Persist mode, counters, row ages and policy version. Advance clocks by accepted updates rather than wall time. Inference always consumes both groups. Freeze the update mask at candidate preparation. B12 owns optimizer moments and update counts. Apply the exact Plasticity transition contract at the retained promotion-event boundary. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "Initial adapter output equals its input. FAST changes only eligible parameters and rows. Rejected FAST candidates do not advance clocks. Eight accepted FAST candidates schedule FULL across restart. Row establishment counts its own updates. Teacher-triggered FULL uses the same generic visit path. Test FOUNDATION promotion-with-debt transition, accepted/rejected FAST/FULL schedules, teacher early FULL reset, a new semantic row, and cold resume on either side of the transition.",
       "contracts": [
         "plastic",
         "learning",
-        "custody"
+        "custody",
+        "update_semantics",
+        "plasticity_transition"
       ],
       "number": 368,
-      "body_sha256": "49bc2b1b311d30e34f1470c8b59596b117e3126597aaf2e3241cf1a5bc714c2c"
+      "body_sha256": "5c26d674bf9488ce41c3bbe0159f740629c7654f5b09054ad238ec79bdeb2e63"
     },
     {
       "key": "B10",
@@ -599,17 +618,20 @@
         "bilqis_mlx/learning/atlas_readout.py (new)",
         "bilqis_mlx/learning/tests/test_atlas_readout.py (new)"
       ],
-      "api": "predict_typed(hidden,answer_plan,active_semantics) -> TypedAnswer; answer_loss(prediction,targets,mask) -> LossParts",
-      "steps": "Reuse current Boolean, numeric and native semantic-token answer bindings. Add released role-selection and structured frame-output modalities. Concept values use the tied semantic head. Structural control uses a separate finite head for selecting roles, ending a frame and representing unresolved output. Legal roles come from the released schema; repeated roles include occurrence indices. Cap output at64 decisions, respecting the combined input/generated1024-position budget. Predict independent roles in parallel only when the answer dependency DAG allows it; dependent decisions consume earlier committed outputs. Teacher forcing exposes earlier targets only. Preserve UNKNOWN and unresolved alternative sets where allowed. Mask losses to legal active answers and actually supplied auxiliary labels. Validate a completed typed answer before publication; invalid neural output becomes an explicit solver failure/fallback request.",
-      "tests": "Current A/B/C answer mappings remain unchanged. Four-role outputs preserve binding under role swaps. A bank1 concept can be predicted and an inactive concept cannot. Earlier output positions cannot inspect later targets. UNKNOWN differs from empty set. The64-decision ceiling returns a typed budget status. Gradients reach identity and role heads.",
+      "api": "predict_typed(hidden,eligible_context,answer_plan,active_semantics,readout_params,teacher_targets=None) -> ModelOutput; answer_loss(output,targets,mask) -> LossParts",
+      "steps": "Reuse current Boolean, numeric and native semantic-token answer bindings. Add released role-selection and structured frame-output modalities. Concept values use the tied semantic head. Structural control uses a separate finite head for selecting roles, ending a frame and representing unresolved output. Legal roles come from the released schema; repeated roles include occurrence indices. Cap output at64 decisions, respecting the combined input/generated1024-position budget. Predict independent roles in parallel only when the answer dependency DAG allows it; dependent decisions consume earlier committed outputs. Teacher forcing exposes earlier targets only. Preserve UNKNOWN and unresolved alternative sets where allowed. Mask losses to legal active answers and actually supplied auxiliary labels. Validate a completed typed answer before publication; invalid neural output becomes an explicit solver failure/fallback request. Implement the exact AnswerPlan/v2 state transition in the Typed decoder contract. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "Current A/B/C answer mappings remain unchanged. Four-role outputs preserve binding under role swaps. A bank1 concept can be predicted and an inactive concept cannot. Earlier output positions cannot inspect later targets. UNKNOWN differs from empty set. The64-decision ceiling returns a typed budget status. Gradients reach identity and role heads. A two-step fixture first chooses a source actor and then its event role; changing step2 gold leaves step1 logits unchanged. Inference step2 receives predicted step1, training receives only prior teacher-forced step1. Missing parent, dependency cycle, END_FRAME before a required role and64-step exhaustion are literal cases.",
       "contracts": [
         "solver",
         "embedding",
         "frame",
-        "learning"
+        "learning",
+        "causal_refinement",
+        "typed_decoder",
+        "route_construction"
       ],
       "number": 367,
-      "body_sha256": "9a297965996cbf8be659dee137013162c0632dd9c4bbde9bed52294bd2d0b4b7"
+      "body_sha256": "36aa7bb5f6294b720770a8b97292d20fe6665bfd60d607d0f9ccf02d21985321"
     },
     {
       "key": "B11",
@@ -632,17 +654,19 @@
         "bilqis_mlx/runtime/tests/test_atlas_model.py (new)"
       ],
       "api": "forward_bamf(params,compiled_batch,answer_plan,mode,cache) -> ModelOutput; model_backend(topology) -> Backend",
-      "steps": "Compose factorized inputs, frame encoder, input motif read,12 CCGQA/FFN blocks, three AttnRes selectors, mid-depth motif read, three adapters, local refinement and typed readout. Derive geometry from B01 and assert exact parameter-name/shape agreement. Add one backend dispatch used by inference, gradient construction, retention and championship callers. Migrate existing direct-forward callers in the same patch. Preserve existing historical v1 reader/execution restrictions. Ordinary training returns only needed outputs; detailed diagnostics are opt-in so the reporting layer does not retain all activations. Use FP32 for authoritative computation. Exercise a real mixed atomic/packed/nested batch with MLX forward and backward.",
+      "steps": "Compose factorized inputs, frame encoder, input motif read,12 CCGQA/FFN blocks, three AttnRes selectors, mid-depth motif read, three adapters, local refinement and typed readout. Derive geometry from B01 and assert exact parameter-name/shape agreement. Add one backend dispatch used by inference, gradient construction, retention and championship callers. Migrate existing direct-forward callers in the same patch. Preserve existing historical v1 reader/execution restrictions. Ordinary training returns only needed outputs; detailed diagnostics are opt-in so the reporting layer does not retain all activations. Use FP32 for authoritative computation. Exercise a real mixed atomic/packed/nested batch with MLX forward and backward. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
       "tests": "The actual12-layer forward runs and matches the parameter census. Demonstrate nonzero finite gradients in embeddings, attention, FFN, depth selector, memory, adapters and readout. A zero-initialized adapter A may first receive gradient after B updates; prove that second step. Prefix invariance holds. A complete update changes loss and saves. Old run files remain unchanged. All consumers use the architecture dispatch.",
       "contracts": [
         "backbone",
         "depth",
         "memory",
         "plastic",
-        "custody"
+        "custody",
+        "causal_refinement",
+        "typed_decoder"
       ],
       "number": 369,
-      "body_sha256": "333bd2829e72fab5ba42afe954f3e8b7cee805e6dd2c11c68cd64fbec3b9eb61"
+      "body_sha256": "56ef0b9b54a1b0feaffc4693079bda23b18d2827cb178fa583479fe0888cd45b"
     },
     {
       "key": "B12",
@@ -659,15 +683,17 @@
         "bilqis_mlx/runtime/tests/test_atlas_optimizer.py (new)"
       ],
       "api": "AdamWStateTree(parameters,m,v,update_counts); candidate_step(parent,batch,update_mask,teacher_hparams) -> CandidateState",
-      "steps": "Preserve native AdamW equations and the teacher-selected learning rate, betas, epsilon and weight decay. Maintain per-parameter update counts for correct bias correction under freezing and activation; identity/motif tables need per-row counts. Increment only eligible parameters on actual steps. Inactive parameters, moments and weight decay remain unchanged. One candidate owner publishes the entire tree as one generation. Accumulate FP32 gradients and apply the existing global norm clip. Newly activated rows begin with zero moments and count0. Rejection discards weights, moments, counts, allocations and plasticity counters together; observational teacher feedback follows its existing owner. Map historical scalar step to all parameter counts only when the historical contract updated them together. The run's global optimizer step remains the count of accepted optimizer steps.",
-      "tests": "A FULL step matches existing native AdamW on identical arrays. Two FAST steps followed by FULL match an explicit reference using local counts. Frozen rows are bit-identical. First update of a new row uses count1. Rejection restores all hashes/clocks. A NaN gradient rejects without partial publication.",
+      "steps": "Preserve native AdamW equations and the teacher-selected learning rate, betas, epsilon and weight decay. Maintain per-parameter update counts for correct bias correction under freezing and activation; identity/motif tables need per-row counts. Increment only eligible parameters on actual steps. Inactive parameters, moments and weight decay remain unchanged. One candidate owner publishes the entire tree as one generation. Accumulate FP32 gradients and apply the existing global norm clip. Newly activated rows begin with zero moments and count0. Rejection discards weights, moments, counts, allocations and plasticity counters together; observational teacher feedback follows its existing owner. Map historical scalar step to all parameter counts only when the historical contract updated them together. The run's global optimizer step remains the count of accepted optimizer steps. Apply participation masking before clip_gradients and before any weight-decay or moment arithmetic. Persist separate per-step optimizer counts and per-retained-candidate row age. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
+      "tests": "A FULL step matches existing native AdamW on identical arrays. Two FAST steps followed by FULL match an explicit reference using local counts. Frozen rows are bit-identical. First update of a new row uses count1. Rejection restores all hashes/clocks. A NaN gradient rejects without partial publication. An unused motif row is byte-identical after an update. An output-only semantic row receives its legitimate denominator gradient/update. Arbitrarily huge frozen gradients cannot change the active clipping factor. A zero-gradient participating row and a never-participating row have distinct expected clocks/decay. Reject a multi-step candidate and verify all ages/counts remain unchanged.",
       "contracts": [
         "plastic",
         "learning",
-        "custody"
+        "custody",
+        "update_semantics",
+        "plasticity_transition"
       ],
       "number": 370,
-      "body_sha256": "407fca3d866ffb608b029730d9aa5af410060c54d9f9a8e6cbf7657bf4a49494"
+      "body_sha256": "74129f0065515fa7770abac8386ab1ef041e4d6054444ca3dc7adb116abee99c"
     },
     {
       "key": "B13",
@@ -686,17 +712,20 @@
         "bilqis_mlx/runtime/tests/test_bamf_checkpoint.py (new)"
       ],
       "api": "BamfGenerationManifest; save_bamf_bundle(candidate,destination); load_bamf_generation(pointer) -> CompleteStudent",
-      "steps": "Extend the existing bundle with a versioned v2 section and sidecars for semantic banks, active ABI, motif keys, plasticity policy/counts, compiler/features and correction frontier. Hash payloads, persist through existing content-addressed storage and atomically publish one generation pointer. Reuse outbox reconciliation and references to unchanged objects. Validate sidecar census and tensor identities before constructing the optimizer. Cold resume in a clean process reconstructs the next visit selection and identical neural output. Keep the human-run lock and100GiB disk reserve. Inference caches remain disposable. Historical bundles retain their existing readers and immutable source bytes. Predecessor trace: BAV-REQ-016/023; the implementation follows the explicit BAMF-0.2 contract repeated here.",
+      "steps": "Extend the existing bundle with a versioned v2 section and sidecars for semantic banks, active ABI, motif keys, plasticity policy/counts, compiler/features and correction frontier. Hash payloads, persist through existing content-addressed storage and atomically publish one generation pointer. Reuse outbox reconciliation and references to unchanged objects. Validate sidecar census and tensor identities before constructing the optimizer. Cold resume in a clean process reconstructs the next visit selection and identical neural output. Keep the human-run lock and100GiB disk reserve. Inference caches remain disposable. Historical bundles retain their existing readers and immutable source bytes. Predecessor trace: BAV-REQ-016/023; the implementation follows the explicit BAMF-0.2 contract repeated here. Use B01's normative Tensor ledger as the complete tensor/initializer authority. Each module owns only its named prefix; shared feature/depth/identity paths remain shared. Constructor output must match the expanded ParameterSpec list exactly.",
       "tests": "Save/load reproduces parameters, moments, local counts, teacher context, active ABI and next seed. Crash before pointer keeps the old generation; crash after pointer before outbox delivery replays exactly once without another optimizer step. Wrong motif map, bank extent, compiler, topology or correction epoch fails before mutation. Accepted then rejected candidate followed by cold resume yields only accepted state.",
       "contracts": [
         "custody",
         "identity",
         "memory",
         "plastic",
-        "projection"
+        "projection",
+        "update_semantics",
+        "plasticity_transition",
+        "package_adoption"
       ],
       "number": 372,
-      "body_sha256": "a3c62b07ba1ca78cf2a152e8e9f9e09b26e22ad4857cc6d5542735a67035cb1c"
+      "body_sha256": "18e76761a4444ec8472f1f8d6fd38e4980b4616893229a0ded87d08998adf854"
     },
     {
       "key": "B14",
@@ -741,8 +770,8 @@
         "scripts/check_bamf_workstack.py (new)"
       ],
       "api": "BamfWorkItem(key,issue,lane,depends,files,contract_hash,status); validate_workstack(manifest) -> report",
-      "steps": "Create a successor integration branch from the exact post-324 replay head plus SKOS-bearing main, recording both commit IDs. Preserve the frozen #324 specimen unchanged. Record the owner-authorized BAMF successor gate: the source bridge can be built now; first live adoption follows BAMF's own source/custody/retained-learning witness rather than waiting for the old model-size comparison. Add the scoped outcome-first evaluation and admission-lease amendments to AGENTS/ADR. Install or locate EGM at the pinned commit and create a project-local execution instruction pointing to its real persona/standard paths. Create three lane branches with one writer each: semantics, neural, integration. Lane A owns semantics/factory new modules, B owns neural new modules, C owns shared trainer/CLI/checkpoint wiring; B13 proposes checkpoint patches through C's shared-file queue. Validate the issue DAG and direct dependency receipts. Copy this delivered spec into repository docs without creating a fourth workstream.",
-      "tests": "Record exact baseline and clean integration diff. Workstack detects a cycle, missing dependency and overlapping shared-file ownership. EGM path resolves and a genuinely fresh reviewer reads one leaf without transcript. Existing Factory/SKOS focused checks run once at the combined baseline; report actual failures by owner. No model/run data or private sources enter the commit.",
+      "steps": "Create a successor integration branch from the exact post-324 replay head plus SKOS-bearing main, recording both commit IDs. Preserve the frozen #324 specimen unchanged. Record the owner-authorized BAMF successor gate: the source bridge can be built now; first live adoption follows BAMF's own source/custody/retained-learning witness rather than waiting for the old model-size comparison. Add the scoped outcome-first evaluation and admission-lease amendments to AGENTS/ADR. Install or locate EGM at the pinned commit and create a project-local execution instruction pointing to its real persona/standard paths. Create three lane branches with one writer each: semantics, neural, integration. Lane A owns semantics/factory new modules, B owns neural new modules, C owns shared trainer/CLI/checkpoint wiring; B13 proposes checkpoint patches through C's shared-file queue. Validate the issue DAG and direct dependency receipts. Copy this delivered spec into repository docs without creating a fourth workstream. C16 owns the foundation successor launch witness: at least one source-valid end-to-end retained capability improvement, complete rollback of a deliberately damaging disposable candidate, and cold-resume equivalence. This exact-head receipt satisfies the BAMF foundation launch gate. C13 is the later expanded-system release qualification and is not a prerequisite of C16 or foundation training.",
+      "tests": "Record exact baseline and clean integration diff. Workstack detects a cycle, missing dependency and overlapping shared-file ownership. EGM path resolves and a genuinely fresh reviewer reads one leaf without transcript. Existing Factory/SKOS focused checks run once at the combined baseline; report actual failures by owner. No model/run data or private sources enter the commit. C16 acceptance records parent and retained generation IDs, strictly improved fresh complete-solver target score, preserved cumulative retention, rejected-candidate complete-state identity, and equivalent cold-resume output/next update.",
       "contracts": [
         "authority",
         "learning",
@@ -750,7 +779,7 @@
         "projection"
       ],
       "number": 347,
-      "body_sha256": "49b7be99ac3f8fb449f632936fb7747c299e3ca32cd03a7e0dd9f20025065161"
+      "body_sha256": "f864f733d7755fd41d20f3ffb3101eb4f99507d15ef6b2bbde3869b5b6e15a3f"
     },
     {
       "key": "C02",
@@ -779,10 +808,12 @@
         "learning",
         "resource",
         "custody",
-        "eligibility"
+        "eligibility",
+        "typed_decoder",
+        "update_semantics"
       ],
       "number": 371,
-      "body_sha256": "ed3e3d1b9ed9669c831fafeeda9daa85cab9db376ceb7844e52a027b06550ad4"
+      "body_sha256": "4fdb34c4f733515c7399622863a9f4e66effffb2f9db99e7322520b7ca7b2b4c"
     },
     {
       "key": "C03",
@@ -814,7 +845,7 @@
         "plastic"
       ],
       "number": 376,
-      "body_sha256": "7a5e5c7ea14e1931bcc1293cf2a0e3dfa8db0f62a5dfecf577a96fddc77cdb47"
+      "body_sha256": "d219300c755e1db2d2abb0199dc92b0205f11848b207e7310839ae006b7006c1"
     },
     {
       "key": "C04",
@@ -832,15 +863,19 @@
         "bilqis_mlx/runtime/tests/test_cognitive_solver.py (new)"
       ],
       "api": "solve_task(task, context, generation, budget) -> CapabilityResult",
-      "steps": "Implement a small typed route planner: use an applicable exact operator or qualified cached composition first; use neural role/semantic interpretation and learned composition for the unresolved portion; evaluate a bounded DAG and return one typed answer. Input handles remain source-bound and can be opaque outside the receiving operator's signature. Register applicability and deterministic tie order instead of free-form agent conversations. Initially allow maximum64 pure DAG operations and one backbone call plus B06's local refinements per solve; budgets are explicit per task. Exact known answers receive full score. Neural invalid output routes to a legal deterministic fallback where available or explicit unresolved status. Record only the selected operator IDs, bindings, costs, dependencies and outcome needed for replay. Keep the golden-label evaluator outside the solve dependency graph.",
-      "tests": "Show three real routes: exact role lookup; deterministic composition of two arithmetic/temporal operations; neural interpretation followed by a pure operator. The complete pipeline solves a new role-binding composition. Wrong release/rights or invalid output is handled explicitly. No route reads evaluation labels. Parent/candidate solver runs have identical information and budgets.",
+      "steps": "Implement a small typed route planner: use an applicable exact operator or qualified cached composition first; use neural role/semantic interpretation and learned composition for the unresolved portion; evaluate a bounded DAG and return one typed answer. Input handles remain source-bound and can be opaque outside the receiving operator's signature. Register applicability and deterministic tie order instead of free-form agent conversations. Initially allow maximum64 pure DAG operations and one backbone call plus B06's local refinements per solve; budgets are explicit per task. Exact known answers receive full score. Neural invalid output routes to a legal deterministic fallback where available or explicit unresolved status. Record only the selected operator IDs, bindings, costs, dependencies and outcome needed for replay. Keep the golden-label evaluator outside the solve dependency graph. Implement TaskGoal/v1 with explicit source-lowered DAG and bounded neural holes; no free-form unbounded planner is part of this leaf.",
+      "tests": "Show three real routes: exact role lookup; deterministic composition of two arithmetic/temporal operations; neural interpretation followed by a pure operator. The complete pipeline solves a new role-binding composition. Wrong release/rights or invalid output is handled explicitly. No route reads evaluation labels. Parent/candidate solver runs have identical information and budgets. Literal ADD(MUL(2,3),4) yields10 with2 pure calls. A hole choosing the qualified actor from three visible candidates feeds an exact duration lookup. Wrong type, cycle, depth9, missing binding and consumed-budget exhaustion are explicit cases. The same registered exact operators stay enabled during parent/candidate scoring.",
       "contracts": [
         "solver",
         "resource",
-        "projection"
+        "projection",
+        "causal_refinement",
+        "typed_decoder",
+        "route_construction",
+        "learning_witness"
       ],
       "number": 373,
-      "body_sha256": "e7962f857b75adf900b61817303f17cb8b4ad8c5770242598e0d32daf83106ee"
+      "body_sha256": "d4810ae4057bfc6d501bb8c9a4c281816c8d068c7880a6bd27d202884cf6d234"
     },
     {
       "key": "C05",
@@ -865,10 +900,13 @@
       "contracts": [
         "solver",
         "learning",
-        "custody"
+        "custody",
+        "plasticity_transition",
+        "route_construction",
+        "learning_witness"
       ],
       "number": 378,
-      "body_sha256": "9186468c6ccae49fc6e8e353b1e133095bdde312a57befc379c2883ecf21fed1"
+      "body_sha256": "ec4197cf93279e9c58dbd6f8d18b8dfb1ae233776407642a588d904d379ca6d7"
     },
     {
       "key": "C06",
@@ -924,10 +962,11 @@
         "authority",
         "curriculum",
         "learning",
-        "custody"
+        "custody",
+        "coverage_completion"
       ],
       "number": 380,
-      "body_sha256": "904bb209bf336828c9b24839079bf4b7132a51f21e1b17b02ec9deab0028140f"
+      "body_sha256": "b79a8b549d734105a08440e7ab91edb711cbcdecb2a674829649cb23ad487618"
     },
     {
       "key": "C08",
@@ -1046,10 +1085,11 @@
         "learning",
         "resource",
         "custody",
-        "salience"
+        "salience",
+        "coverage_completion"
       ],
       "number": 384,
-      "body_sha256": "a76f78e8e42005790c68a28e27edd8eee3acfc1faeed235f52820d1b31420dc6"
+      "body_sha256": "2862d8abcc5a93bf5c72f33f8bee8f733f1bc6ae643358b3a11274d1562c5d81"
     },
     {
       "key": "C12",
@@ -1068,16 +1108,17 @@
         "docs/operations/BAMF_0_2_PACKAGES.md (new)"
       ],
       "api": "export_capability(generation,signature,rights)->CognitivePackage; stage_import(package,receiver)->ImportPlan",
-      "steps": "Create a portable manifest containing semantic signatures, release compatibility, operator/model identity, qualification fixtures, counterexamples, behavioral diff, resource envelope, rights and revocation lineage. Export source-cleared procedures and exact transforms directly. Adapter/weight deltas require identical base checkpoint, parameter schema and semantic binding. Heterogeneous recipients receive semantic teaching packages or fixtures instead. Stage imports and apply the same whole-capability retention before activation. A first local two-node directory exchange suffices; no new server or networking framework is required. Public export whitelists PUBLIC_FIXTURE/PUBLIC_DERIVED and rejects private or unclassified material. Predecessor trace: BAV-REQ-021; the implementation follows the explicit BAMF-0.2 contract repeated here.",
-      "tests": "Two local consumers exchange an exact operator package. A compatible adapter delta applies to a disposable clone and rolls back. Wrong base/topology/release rejects. Behavioral diff shows gains and regressions. Private payload cannot enter a public export. Counterexamples and ancestry survive a fork.",
+      "steps": "Create a portable manifest containing semantic signatures, release compatibility, operator/model identity, qualification fixtures, counterexamples, behavioral diff, resource envelope, rights and revocation lineage. Export source-cleared procedures and exact transforms directly. Adapter/weight deltas require identical base checkpoint, parameter schema and semantic binding. Heterogeneous recipients receive semantic teaching packages or fixtures instead. Stage imports and apply the same whole-capability retention before activation. A first local two-node directory exchange suffices; no new server or networking framework is required. Public export whitelists PUBLIC_FIXTURE/PUBLIC_DERIVED and rejects private or unclassified material. Predecessor trace: BAV-REQ-021; the implementation follows the explicit BAMF-0.2 contract repeated here. Implement the complete receiver-owned state transition from Package adoption.",
+      "tests": "Two local consumers exchange an exact operator package. A compatible adapter delta applies to a disposable clone and rolls back. Wrong base/topology/release rejects. Behavioral diff shows gains and regressions. Private payload cannot enter a public export. Counterexamples and ancestry survive a fork. Two recipients with identical base weights but different optimizer histories both reset changed slices according to the declared policy and retain their own untouched state. Execute one subsequent optimizer step, reject a later candidate, cold-resume, and compare the exact expected local state. A changed motif binding rejects before applying any tensor delta.",
       "contracts": [
         "projection",
         "plastic",
         "recovery",
-        "solver"
+        "solver",
+        "package_adoption"
       ],
       "number": 381,
-      "body_sha256": "555929d614aca6faa4bdc391a1e11cf270f11b8150e0ccb421f64aed95903b33"
+      "body_sha256": "39274d2d342e04253217254d76762be335d11e1f3264d3ead1412462a0ad4725"
     },
     {
       "key": "C13",
@@ -1112,10 +1153,11 @@
         "solver",
         "learning",
         "custody",
-        "resource"
+        "resource",
+        "learning_witness"
       ],
       "number": 385,
-      "body_sha256": "f3324147c1bdf7edeca1c7b488846d4611cf1f91328d641b81df5a32a68525c6"
+      "body_sha256": "0706a20b66f8bf2a64841fdd774c4be59290502d1a6d7a6fed01a7a09d87736c"
     },
     {
       "key": "C14",
@@ -1144,10 +1186,13 @@
         "curriculum",
         "learning",
         "projection",
-        "resource"
+        "resource",
+        "plasticity_transition",
+        "coverage_completion",
+        "bravo_fixture"
       ],
       "number": 386,
-      "body_sha256": "d7c75a1e989b713f203b5142b4e838fcd0f3c9096a94689a63e77052646f52a1"
+      "body_sha256": "4e4f83bcba51546cad195dbc35eef724e79d260dd016887d83e55400a080ecf0"
     },
     {
       "key": "C15",
@@ -1158,7 +1203,8 @@
         "C11",
         "C12",
         "C13",
-        "C14"
+        "C14",
+        "C16"
       ],
       "owners": [
         341,
@@ -1176,10 +1222,11 @@
         "authority",
         "custody",
         "projection",
-        "resource"
+        "resource",
+        "coverage_completion"
       ],
       "number": 387,
-      "body_sha256": "1bee7a816c466d4e0d7c63ce334771108c455112929a5213952113d7f802a48b"
+      "body_sha256": "433dd69a02049f0eb49216efded31191324d92c947a55dfffc2b30c4c66af9e3"
     },
     {
       "key": "C16",
@@ -1201,16 +1248,19 @@
         "bilqis_mlx/runtime/tests/test_bamf_first_student.py (new)"
       ],
       "api": "preflight_bamf_foundation(config,admitted_release,new_run_dir) -> LaunchReceipt",
-      "steps": "Finish the production create/dry-run/resume CLI dispatch for the current admitted source release as soon as the complete neural, teacher and custody path works. This is the same persistent BAMF lineage later expanded by C07, not a disposable model-size contestant. A separate disposable witness checks the command and rollback before the operator starts the new student. Record initial active ABI, source/curriculum/teacher identities, topology, seed, optimizer hyperparameters, parameter-bank shape and all-zero new moments. Require a new empty run directory, not an old student path. Read the currently admitted A/B/C scope and introduce foundations through its ordinary Factory plan. Expose existing dashboard metrics immediately; C11 adds the larger atlas/cockpit views later. Akasha materialization, the low-bit cache and private journal intake are parallel delivery work and do not block the first optimizer update. Publish one exact owner-start command and one cold-resume command after parser/preflight verification. Predecessor trace: BAV-REQ-022/024; the implementation follows the explicit BAMF-0.2 contract repeated here.",
-      "tests": "Fresh preflight creates no neural updates and reports the exact run identity. A disposable creation/update/cold-resume traverses the same entrypoint. An old or occupied run directory is protected. Missing optional graph/cache services do not prevent the admitted foundation path. The operator's existing learner is untouched. The issue records software readiness; real retained-learning receipts are attached only after actual operator initiation.",
+      "steps": "Finish the production create/dry-run/resume CLI dispatch for the current admitted source release as soon as the complete neural, teacher and custody path works. This is the same persistent BAMF lineage later expanded by C07, not a disposable model-size contestant. A separate disposable witness checks the command and rollback before the operator starts the new student. Record initial active ABI, source/curriculum/teacher identities, topology, seed, optimizer hyperparameters, parameter-bank shape and all-zero new moments. Require a new empty run directory, not an old student path. Read the currently admitted A/B/C scope and introduce foundations through its ordinary Factory plan. Expose existing dashboard metrics immediately; C11 adds the larger atlas/cockpit views later. Akasha materialization, the low-bit cache and private journal intake are parallel delivery work and do not block the first optimizer update. Publish one exact owner-start command and one cold-resume command after parser/preflight verification. Predecessor trace: BAV-REQ-022/024; the implementation follows the explicit BAMF-0.2 contract repeated here. C16 owns the foundation successor launch witness: at least one source-valid end-to-end retained capability improvement, complete rollback of a deliberately damaging disposable candidate, and cold-resume equivalence. This exact-head receipt satisfies the BAMF foundation launch gate. C13 is the later expanded-system release qualification and is not a prerequisite of C16 or foundation training.",
+      "tests": "Fresh preflight creates no neural updates and reports the exact run identity. A disposable creation/update/cold-resume traverses the same entrypoint. An old or occupied run directory is protected. Missing optional graph/cache services do not prevent the admitted foundation path. The operator's existing learner is untouched. The issue records software readiness; real retained-learning receipts are attached only after actual operator initiation. C16 acceptance records parent and retained generation IDs, strictly improved fresh complete-solver target score, preserved cumulative retention, rejected-candidate complete-state identity, and equivalent cold-resume output/next update.",
       "contracts": [
         "authority",
         "custody",
         "learning",
-        "resource"
+        "resource",
+        "plasticity_transition",
+        "route_construction",
+        "learning_witness"
       ],
       "number": 382,
-      "body_sha256": "d97b7eec36f1593744a6ec846fb6eaad54eeb69180ad7a1ed7dac7157910b1c9"
+      "body_sha256": "8b132c6ba58ec25e57bb24aaee954887f3dc652636679b5266782bbf2923a2ac"
     }
   ]
 }

@@ -6,7 +6,7 @@
     "C": 16
   },
   "dag_acyclic": true,
-  "max_issue_chars": 12027,
-  "master_chars": 133736,
+  "max_issue_chars": 24892,
+  "master_chars": 170157,
   "all_have_prescription_proof_egm": true
 }
