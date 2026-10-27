@@ -132,6 +132,50 @@ def main() -> None:
         visit_child(key)
     if "<!-- BAMF02:A09-LOSSLESS-DECOMPOSITION-20261027 -->" not in (TASKS / "issues/A09.md").read_text(encoding="utf-8"):
         errors.append("A09: no lossless decomposition dispatch in full parent body")
+    # All new recursive sub-issues are tracked separately from the historical
+    # A09-only index. This validates static contract preservation and routing,
+    # not neural execution or any research/execution proof.
+    registry_path = TASKS / "children/registry.json"
+    if registry_path.exists():
+        from bamf02_groom_backlog import plan_for, SLICES
+
+        entries = json.loads(registry_path.read_text(encoding="utf-8"))["entries"]
+        all_children = {entry["key"]: entry for entry in entries}
+        if len(all_children) != len(entries):
+            errors.append("recursive issue registry has duplicate child keys")
+        for entry in entries:
+            key = entry["key"]
+            path = TASKS / "children" / f"{key}.md"
+            if not path.exists():
+                errors.append(f"{key}: missing child issue mirror")
+                continue
+            body = path.read_text(encoding="utf-8")
+            if hashlib.sha256(body.encode("utf-8")).hexdigest() != entry["body_sha256"]:
+                errors.append(f"{key}: child SHA differs from registry")
+            if issue_map.get(key) != entry["number"]:
+                errors.append(f"{key}: child identity differs from issue map")
+            parent = entry["parent_key"]
+            if issue_map.get(parent) != entry["parent_number"]:
+                errors.append(f"{key}: child has incorrect native parent")
+            if parent != "A09" and not parent.startswith("A09.") and f"<!-- BAMF02:WORK-PACKET:{key} -->" not in body:
+                errors.append(f"{key}: missing provenance and work-packet marker")
+            for dep in entry["deps"]:
+                if dep not in by_key and dep not in all_children:
+                    errors.append(f"{key}: dependency {dep} absent from work graph")
+        for item in ITEMS:
+            if item["key"] not in SLICES or not item.get("children"):
+                continue
+            key = item["key"]
+            full = (TASKS / "issues" / f"{key}.md").read_text(encoding="utf-8")
+            try:
+                planned = plan_for(key, full, item["number"], item["deps"])
+                expected = {step["key"] for step in planned}
+                if not expected.issubset(all_children):
+                    errors.append(f"{key}: lost or unindexed source clauses")
+                if [p["key"] for p in planned if p["parent"] == key] != item["children"]:
+                    errors.append(f"{key}: direct child dispatch drift")
+            except (KeyError, ValueError, IndexError) as exc:
+                errors.append(f"{key}: source-prescription partition invalid: {exc}")
     if "decompose" not in (TASKS / "README.md").read_text(encoding="utf-8").lower():
         errors.append("BAMF README missing recursive dispatch rule")
     for filename in ("README.md", "AGENTS.md", "docs/architecture/BAMF_0_2.md"):
@@ -147,6 +191,8 @@ def main() -> None:
     print("PASS: no missing/cyclic dependencies, no obsolete named-grade debt exception")
     print("PASS: 12 owner issues and 3 repository entrypoints carry ADR-BAMF02-004")
     print(f"PASS: {len(CHILDREN)} recursive A09 sub-issues retain exact indexed mirrors, linked ownership and acyclic dependencies")
+    if registry_path.exists():
+        print(f"PASS: {len(entries)} total indexed recursive child mirrors have correct SHA, parent identity and lossless source partitions")
     print("NOTE: live GitHub SHA readback and executable Factory behavior require separate checks")
 
 

@@ -726,6 +726,920 @@
         10
       ],
       "source_parent_sha256": "3f4a78f2c66eb8488a33fefa76f12639be0932623fb006fb394eaf4490dda723"
+    },
+    {
+      "key": "B01.1",
+      "number": 433,
+      "parent_key": "B01",
+      "parent_number": 346,
+      "deps": [],
+      "kind": "group",
+      "title": "BAMF-0.2 B01.1 | Own versioned topology identity and the frozen parameter registry",
+      "body_sha256": "4db05195b7aaa36403c1142151e302007977cf0660a149dfecacd94dc581c001",
+      "clause_span": [],
+      "source_parent_sha256": "65e8ed5c285ba527b9a9ec831f1dbad00c1a967cc90e1ee879ff7198626b098d"
+    },
+    {
+      "key": "B01.1a",
+      "number": 434,
+      "parent_key": "B01.1",
+      "parent_number": 433,
+      "deps": [],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B01.1a | Freeze v2 architecture identity and explicit legacy-reader isolation",
+      "body_sha256": "261b926b085e1a4b1013a81ff99ff65147d73f83decf4e453a395b0fb5330a51",
+      "clause_span": [
+        0,
+        2
+      ],
+      "source_parent_sha256": "65e8ed5c285ba527b9a9ec831f1dbad00c1a967cc90e1ee879ff7198626b098d"
+    },
+    {
+      "key": "B01.1b",
+      "number": 435,
+      "parent_key": "B01.1",
+      "parent_number": 433,
+      "deps": [
+        "B01.1a"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B01.1b | Declare the complete typed FP32 parameter and tensor registry",
+      "body_sha256": "26b217e2ee7541dfc35119913d56e3a6148729b19f7a806daff46a888ac7c3ad",
+      "clause_span": [
+        2,
+        5
+      ],
+      "source_parent_sha256": "65e8ed5c285ba527b9a9ec831f1dbad00c1a967cc90e1ee879ff7198626b098d"
+    },
+    {
+      "key": "B01.2",
+      "number": 436,
+      "parent_key": "B01",
+      "parent_number": 346,
+      "deps": [
+        "B01.1b"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B01.2 | Reconcile parameter counts adapters and frame feature capacities",
+      "body_sha256": "ecbd1cb836f47bedd439cfd39e79b91b202d112c53bfe601a24c966980376369",
+      "clause_span": [
+        5,
+        8
+      ],
+      "source_parent_sha256": "65e8ed5c285ba527b9a9ec831f1dbad00c1a967cc90e1ee879ff7198626b098d"
+    },
+    {
+      "key": "B01.3",
+      "number": 437,
+      "parent_key": "B01",
+      "parent_number": 346,
+      "deps": [
+        "B01.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B01.3 | Separate generation bank extents and validated topology config",
+      "body_sha256": "f7d943ea3178cd92ca58e2e6532e56154d4615316252c3bc6bf559645c9711d6",
+      "clause_span": [
+        8,
+        11
+      ],
+      "source_parent_sha256": "65e8ed5c285ba527b9a9ec831f1dbad00c1a967cc90e1ee879ff7198626b098d"
+    },
+    {
+      "key": "B01.4",
+      "number": 438,
+      "parent_key": "B01",
+      "parent_number": 346,
+      "deps": [
+        "B01.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B01.4 | Reject v1 neural-state promotion across v2 generation boundaries",
+      "body_sha256": "97339a878a8f18eee850c8f59361ed4f90e97316b99bc89a838315dc75682b5c",
+      "clause_span": [
+        11,
+        14
+      ],
+      "source_parent_sha256": "65e8ed5c285ba527b9a9ec831f1dbad00c1a967cc90e1ee879ff7198626b098d"
+    },
+    {
+      "key": "B02.1",
+      "number": 439,
+      "parent_key": "B02",
+      "parent_number": 359,
+      "deps": [
+        "B01",
+        "A02",
+        "A06"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B02.1 | Compose source-factorized identity embeddings with active-row masking",
+      "body_sha256": "d07ebcf2625a15826e343e854ba65cf4505e943883c9b1465d38937ca8bd68b1",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "2472c0dae834f6a3de441e0b53eb83c916837bfb808755968aba4c9ef2eee3c4"
+    },
+    {
+      "key": "B02.2",
+      "number": 440,
+      "parent_key": "B02",
+      "parent_number": 359,
+      "deps": [
+        "B02.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B02.2 | Initialize new rows and gather differentiable constituents",
+      "body_sha256": "3657f930c0b57fe2845752b7b79678e85437a6c98a1e8849da22348f81d4f8ad",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "2472c0dae834f6a3de441e0b53eb83c916837bfb808755968aba4c9ef2eee3c4"
+    },
+    {
+      "key": "B02.3",
+      "number": 441,
+      "parent_key": "B02",
+      "parent_number": 359,
+      "deps": [
+        "B02.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B02.3 | Match shared tensor registry and validate output-parameter coverage",
+      "body_sha256": "8685735f06174d989716aa5355f16d12d712ac4a192c3f5fe10554c2c604462b",
+      "clause_span": [
+        8,
+        12
+      ],
+      "source_parent_sha256": "2472c0dae834f6a3de441e0b53eb83c916837bfb808755968aba4c9ef2eee3c4"
+    },
+    {
+      "key": "B03.1",
+      "number": 442,
+      "parent_key": "B03",
+      "parent_number": 363,
+      "deps": [
+        "B02",
+        "A05"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B03.1 | Implement role-order-sensitive frame encoding and member gradients",
+      "body_sha256": "86a74987af8dbb69e2c019da7563884fca38b474dc72dc445d7826773322099f",
+      "clause_span": [
+        0,
+        3
+      ],
+      "source_parent_sha256": "7455336338144624516b1692befcbb950915bb54f041083e1bf0c0bbdd07535e"
+    },
+    {
+      "key": "B03.2",
+      "number": 443,
+      "parent_key": "B03",
+      "parent_number": 363,
+      "deps": [
+        "B03.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B03.2 | Preserve legal atomic partial and empty-frame fallbacks",
+      "body_sha256": "0df4cdb9c5fe2761902ae1a6ec17619e5b21675bc6866356bb898448e5507630",
+      "clause_span": [
+        3,
+        5
+      ],
+      "source_parent_sha256": "7455336338144624516b1692befcbb950915bb54f041083e1bf0c0bbdd07535e"
+    },
+    {
+      "key": "B03.3",
+      "number": 444,
+      "parent_key": "B03",
+      "parent_number": 363,
+      "deps": [
+        "B03.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B03.3 | Carry nested frame scope handles and observable frame counts",
+      "body_sha256": "f4e4718f940dfc8b074d04622c12569822dd7b0c51937f4ac21ee744feab5e9e",
+      "clause_span": [
+        5,
+        7
+      ],
+      "source_parent_sha256": "7455336338144624516b1692befcbb950915bb54f041083e1bf0c0bbdd07535e"
+    },
+    {
+      "key": "B04.1",
+      "number": 445,
+      "parent_key": "B04",
+      "parent_number": 350,
+      "deps": [
+        "B01"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B04.1 | Implement frozen-shape causal depthwise QKV convolutions",
+      "body_sha256": "1d9358bb47772c4f37bfe03d04cc0a526dd85bb4a42eb2085151f3b1a63aa584",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "349fb7c7912a6d398ca985945994b0b21e26545e0962d95404563abcc2f4d9db"
+    },
+    {
+      "key": "B04.2",
+      "number": 446,
+      "parent_key": "B04",
+      "parent_number": 350,
+      "deps": [
+        "B04.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B04.2 | Wire grouped-query RoPE and zero-safe native MLX attention",
+      "body_sha256": "b3628bc38f7a70960d734c8a8248f05e8832554b7c4fe999d13b152e0029ff8f",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "349fb7c7912a6d398ca985945994b0b21e26545e0962d95404563abcc2f4d9db"
+    },
+    {
+      "key": "B04.3",
+      "number": 447,
+      "parent_key": "B04",
+      "parent_number": 350,
+      "deps": [
+        "B04.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B04.3 | Bind decode cache identity and literal FP32 attention reference",
+      "body_sha256": "a58d14027fcf4a7bc37d1e745f2917dfe0ef1ce7c415ac3bcd935910d28cc359",
+      "clause_span": [
+        8,
+        11
+      ],
+      "source_parent_sha256": "349fb7c7912a6d398ca985945994b0b21e26545e0962d95404563abcc2f4d9db"
+    },
+    {
+      "key": "B04.4",
+      "number": 448,
+      "parent_key": "B04",
+      "parent_number": 350,
+      "deps": [
+        "B04.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B04.4 | Validate tensor-ledger prefix and constructor consistency",
+      "body_sha256": "267a0a8fc27a50a5c2d55319fbb687b78d296c4aa8b4e14d92a61572892cfa26",
+      "clause_span": [
+        11,
+        14
+      ],
+      "source_parent_sha256": "349fb7c7912a6d398ca985945994b0b21e26545e0962d95404563abcc2f4d9db"
+    },
+    {
+      "key": "B05.1",
+      "number": 449,
+      "parent_key": "B05",
+      "parent_number": 355,
+      "deps": [
+        "B01",
+        "B04"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B05.1 | Implement shared depth selection and normalized residual weights",
+      "body_sha256": "336a80c7bd64cc86ea0112d9287d0ff199856e057b782fc93cba73d7671346ed",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "116d085e981ed74a4779d96df57f629582d09433ef9acb37db4fa114cdc2d13a"
+    },
+    {
+      "key": "B05.2",
+      "number": 450,
+      "parent_key": "B05",
+      "parent_number": 355,
+      "deps": [
+        "B05.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B05.2 | Place motif and plasticity boundaries within three group selectors",
+      "body_sha256": "369f8c9c1dc21f5122f2ec80afea2f056ea1d40711a0e51085a9241dcad5ead7",
+      "clause_span": [
+        4,
+        7
+      ],
+      "source_parent_sha256": "116d085e981ed74a4779d96df57f629582d09433ef9acb37db4fa114cdc2d13a"
+    },
+    {
+      "key": "B05.3",
+      "number": 451,
+      "parent_key": "B05",
+      "parent_number": 355,
+      "deps": [
+        "B05.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B05.3 | Persist complete selector tensor identities and diagnostics",
+      "body_sha256": "316178adaf2d05a6c0e048d7ff6374a47ba98a4211aa980607ba5d960f9ee33f",
+      "clause_span": [
+        7,
+        11
+      ],
+      "source_parent_sha256": "116d085e981ed74a4779d96df57f629582d09433ef9acb37db4fa114cdc2d13a"
+    },
+    {
+      "key": "B06.1",
+      "number": 452,
+      "parent_key": "B06",
+      "parent_number": 365,
+      "deps": [
+        "B03",
+        "B05"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B06.1 | Build shared recurrent constituent attention with input recall",
+      "body_sha256": "1abef25a2295b7d3fbc4d2fb54135f51a5d23072c09c1036f8275a79e7e6c980",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "7fdd451c310669d897946ae2cc33aa19530d637f89b69bdaac3292fb461b5458"
+    },
+    {
+      "key": "B06.2",
+      "number": 453,
+      "parent_key": "B06",
+      "parent_number": 365,
+      "deps": [
+        "B06.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B06.2 | Select bounded prediction-local refinement passes and masked routing",
+      "body_sha256": "56a2e0eb769f7916abc64ae14c02c1ebf399483f8a8c441125bb6805d2b13e92",
+      "clause_span": [
+        4,
+        9
+      ],
+      "source_parent_sha256": "7fdd451c310669d897946ae2cc33aa19530d637f89b69bdaac3292fb461b5458"
+    },
+    {
+      "key": "B06.3",
+      "number": 454,
+      "parent_key": "B06",
+      "parent_number": 365,
+      "deps": [
+        "B06.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B06.3 | Preserve original backbone states and exact frame handle outputs",
+      "body_sha256": "89f04a17967728bc321bc3801a95e4d9961687a352c042b0c3c92f0d85bf4317",
+      "clause_span": [
+        9,
+        14
+      ],
+      "source_parent_sha256": "7fdd451c310669d897946ae2cc33aa19530d637f89b69bdaac3292fb461b5458"
+    },
+    {
+      "key": "B06.4",
+      "number": 455,
+      "parent_key": "B06",
+      "parent_number": 365,
+      "deps": [
+        "B06.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B06.4 | Reconcile refinement tensors with the authoritative registry",
+      "body_sha256": "ba29f74b0311034895f4cff4396347de33cacf16cb93cfc55734044063a60e68",
+      "clause_span": [
+        14,
+        19
+      ],
+      "source_parent_sha256": "7fdd451c310669d897946ae2cc33aa19530d637f89b69bdaac3292fb461b5458"
+    },
+    {
+      "key": "B07.1",
+      "number": 456,
+      "parent_key": "B07",
+      "parent_number": 356,
+      "deps": [
+        "B01",
+        "A03"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B07.1 | Canonicalize full typed motif identities and structural matching",
+      "body_sha256": "0ce1eed997252878213b8b6680818a3bacc8f4098f0eac72c2d2be4e1c00b858",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "bbb7ea40bac87a613fc3381e180b401d723627badc54f19c2c7fcb75e20b9f30"
+    },
+    {
+      "key": "B07.2",
+      "number": 457,
+      "parent_key": "B07",
+      "parent_number": 356,
+      "deps": [
+        "B07.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B07.2 | Allocate deterministic motif pages and compare collision-safe keys",
+      "body_sha256": "2ab6c329fc56b32565b2269e7a05272214d4a7f02aa4461e54a168e8086eabad",
+      "clause_span": [
+        4,
+        7
+      ],
+      "source_parent_sha256": "bbb7ea40bac87a613fc3381e180b401d723627badc54f19c2c7fcb75e20b9f30"
+    },
+    {
+      "key": "B07.3",
+      "number": 458,
+      "parent_key": "B07",
+      "parent_number": 356,
+      "deps": [
+        "B07.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B07.3 | Commit append-only motif allocation only with retained candidate",
+      "body_sha256": "1fe52f94a5d916f7fb079ad629af7fd72fe61b4cfbd2ff82152197cbeae14c41",
+      "clause_span": [
+        7,
+        10
+      ],
+      "source_parent_sha256": "bbb7ea40bac87a613fc3381e180b401d723627badc54f19c2c7fcb75e20b9f30"
+    },
+    {
+      "key": "B07.4",
+      "number": 459,
+      "parent_key": "B07",
+      "parent_number": 356,
+      "deps": [
+        "B07.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B07.4 | Verify the common declared motif parameter registry",
+      "body_sha256": "c8961c9693ba9e28f605b0924646ef118aeed37df42c74a73471a8e0c6ff0ce9",
+      "clause_span": [
+        10,
+        14
+      ],
+      "source_parent_sha256": "bbb7ea40bac87a613fc3381e180b401d723627badc54f19c2c7fcb75e20b9f30"
+    },
+    {
+      "key": "B08.1",
+      "number": 460,
+      "parent_key": "B08",
+      "parent_number": 366,
+      "deps": [
+        "B03",
+        "B05",
+        "B07",
+        "A13"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B08.1 | Compute gated exact and structural motif reads with safe misses",
+      "body_sha256": "7e96f6570d37fc27211461f52a0064a90c37ce3119f719c23b22800e3f5d9058",
+      "clause_span": [
+        0,
+        3
+      ],
+      "source_parent_sha256": "066ee8674de4aeeff05d8e006016becfc9d150cd9f97700a7f1cc025ccf83976"
+    },
+    {
+      "key": "B08.2",
+      "number": 461,
+      "parent_key": "B08",
+      "parent_number": 366,
+      "deps": [
+        "B08.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B08.2 | Persist participating motif state and place the mid-depth read",
+      "body_sha256": "c3f7927d1ad768126ba280c0f6d32df83e38d63251e99aeba6c911e5d287b8a5",
+      "clause_span": [
+        3,
+        5
+      ],
+      "source_parent_sha256": "066ee8674de4aeeff05d8e006016becfc9d150cd9f97700a7f1cc025ccf83976"
+    },
+    {
+      "key": "B09.1",
+      "number": 462,
+      "parent_key": "B09",
+      "parent_number": 368,
+      "deps": [
+        "B01",
+        "B05",
+        "B08"
+      ],
+      "kind": "group",
+      "title": "BAMF-0.2 B09.1 | Own adapter group identity and the persisted plasticity mode policy",
+      "body_sha256": "88f84b540207cf206cab916a214c90e7a0b4499fcc66b3870457aedfb745e53f",
+      "clause_span": [],
+      "source_parent_sha256": "bf36519f11a8f4850ed10e863cf553f1e48580f1f24bfe34483110fddc094859"
+    },
+    {
+      "key": "B09.1a",
+      "number": 463,
+      "parent_key": "B09.1",
+      "parent_number": 462,
+      "deps": [
+        "B01",
+        "B05",
+        "B08"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B09.1a | Introduce identity-initialized FAST adapters and parameter groups",
+      "body_sha256": "b4a60f945d843b1c33c7b86f99fe80d511740ab99ccf441d32b33a038d8e564d",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "bf36519f11a8f4850ed10e863cf553f1e48580f1f24bfe34483110fddc094859"
+    },
+    {
+      "key": "B09.1b",
+      "number": 464,
+      "parent_key": "B09.1",
+      "parent_number": 462,
+      "deps": [
+        "B09.1a"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B09.1b | Implement FOUNDATION ADAPTIVE update-cadence state",
+      "body_sha256": "89cf318c286c271654c0857f45ddf620aa45eb8e9bdeec129ebb5dbfa3c7d06f",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "bf36519f11a8f4850ed10e863cf553f1e48580f1f24bfe34483110fddc094859"
+    },
+    {
+      "key": "B09.2",
+      "number": 465,
+      "parent_key": "B09",
+      "parent_number": 368,
+      "deps": [
+        "B09.1b"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B09.2 | Apply per-step legal row participation and optimizer masks",
+      "body_sha256": "f1cba8193d5c6ac2df1bc064a67cdc8319fc3dffdb1bc2d047fd94c8da64eaa5",
+      "clause_span": [
+        8,
+        13
+      ],
+      "source_parent_sha256": "bf36519f11a8f4850ed10e863cf553f1e48580f1f24bfe34483110fddc094859"
+    },
+    {
+      "key": "B09.3",
+      "number": 466,
+      "parent_key": "B09",
+      "parent_number": 368,
+      "deps": [
+        "B09.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B09.3 | Bind accepted promotion events to grade-neutral plasticity transition",
+      "body_sha256": "25bd55c369843cef3ba1520fcd91912348d600e966f2ab2dc16413d1c9ff9ecf",
+      "clause_span": [
+        13,
+        18
+      ],
+      "source_parent_sha256": "bf36519f11a8f4850ed10e863cf553f1e48580f1f24bfe34483110fddc094859"
+    },
+    {
+      "key": "B10.1",
+      "number": 467,
+      "parent_key": "B10",
+      "parent_number": 367,
+      "deps": [
+        "B02",
+        "B03"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B10.1 | Bind tied semantic values and occurrence-aware role outputs",
+      "body_sha256": "76350710eb87112dedf5a8c714ff92f6c6ea2a6af190d14ef7d754f3303d5a4e",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "a91f0145f17f36a9c42b6a3721e8bf4ec9b6135bc78f9958b7eac56bcf201cc9"
+    },
+    {
+      "key": "B10.2",
+      "number": 468,
+      "parent_key": "B10",
+      "parent_number": 367,
+      "deps": [
+        "B10.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B10.2 | Implement finite control decisions and schema-constrained frame output",
+      "body_sha256": "99f1f597dd3e64329f93841e3b5c0fb1018dd935e3d566a8789733038bac5a3f",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "a91f0145f17f36a9c42b6a3721e8bf4ec9b6135bc78f9958b7eac56bcf201cc9"
+    },
+    {
+      "key": "B10.3",
+      "number": 469,
+      "parent_key": "B10",
+      "parent_number": 367,
+      "deps": [
+        "B10.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B10.3 | Enforce causal dependency feedback masking and typed answer legality",
+      "body_sha256": "f61424a8b48c1f656892247083547e9ae0b6211ae91a7feef28262b85b5b1625",
+      "clause_span": [
+        8,
+        12
+      ],
+      "source_parent_sha256": "a91f0145f17f36a9c42b6a3721e8bf4ec9b6135bc78f9958b7eac56bcf201cc9"
+    },
+    {
+      "key": "B10.4",
+      "number": 470,
+      "parent_key": "B10",
+      "parent_number": 367,
+      "deps": [
+        "B10.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B10.4 | Match AnswerPlan v2 and complete readout tensor census",
+      "body_sha256": "7e295c5687b5176c72fc7e6f36109307165da725881908d43f5b1d3227ef0a09",
+      "clause_span": [
+        12,
+        16
+      ],
+      "source_parent_sha256": "a91f0145f17f36a9c42b6a3721e8bf4ec9b6135bc78f9958b7eac56bcf201cc9"
+    },
+    {
+      "key": "B11.1",
+      "number": 471,
+      "parent_key": "B11",
+      "parent_number": 369,
+      "deps": [
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B08",
+        "B09",
+        "B10"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B11.1 | Assemble complete atlas-native forward and registry geometry",
+      "body_sha256": "3aa9122b705c7941024447807ee690b731a315ad8655cf7fd5365982b5d3cf84",
+      "clause_span": [
+        0,
+        3
+      ],
+      "source_parent_sha256": "69d4d40af91f07ee6df21347a1dc9295136878216820064b7cb9460898df6120"
+    },
+    {
+      "key": "B11.2",
+      "number": 472,
+      "parent_key": "B11",
+      "parent_number": 369,
+      "deps": [
+        "B11.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B11.2 | Unify direct inference gradient retention and championship dispatch",
+      "body_sha256": "1c3c1ade6e08a1bcf67503e3b3c88d335c78d5cbc0d9577ba5c998631c63490c",
+      "clause_span": [
+        3,
+        7
+      ],
+      "source_parent_sha256": "69d4d40af91f07ee6df21347a1dc9295136878216820064b7cb9460898df6120"
+    },
+    {
+      "key": "B11.3",
+      "number": 473,
+      "parent_key": "B11",
+      "parent_number": 369,
+      "deps": [
+        "B11.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B11.3 | Reconcile full model tensor prefixes and mixed-frame integration",
+      "body_sha256": "8ee251d33045a4d4e1ec8b3c9db3c591c75629c958ee2f0c5eff9597aed2ebd3",
+      "clause_span": [
+        7,
+        11
+      ],
+      "source_parent_sha256": "69d4d40af91f07ee6df21347a1dc9295136878216820064b7cb9460898df6120"
+    },
+    {
+      "key": "B12.1",
+      "number": 474,
+      "parent_key": "B12",
+      "parent_number": 370,
+      "deps": [
+        "B11"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B12.1 | Preserve exact native AdamW and per-parameter participation counts",
+      "body_sha256": "9c7b4167e54f64140d9818ef22fca935fccb1e7bbe30c26bdd813538169df2ab",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "3872ada8436365046e4d2928734261f06bb72807d5d38eb314d3a2dc214cb970"
+    },
+    {
+      "key": "B12.2",
+      "number": 475,
+      "parent_key": "B12",
+      "parent_number": 370,
+      "deps": [
+        "B12.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B12.2 | Commit or reject complete candidate optimizer and weight transactions",
+      "body_sha256": "58e505b6f9650c3a2ccca24ab1a6c2bf72a2556d616efb0668dd377b75ce4016",
+      "clause_span": [
+        4,
+        8
+      ],
+      "source_parent_sha256": "3872ada8436365046e4d2928734261f06bb72807d5d38eb314d3a2dc214cb970"
+    },
+    {
+      "key": "B12.3",
+      "number": 476,
+      "parent_key": "B12",
+      "parent_number": 370,
+      "deps": [
+        "B12.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B12.3 | Implement preclip row masks and distinct step versus establishment clocks",
+      "body_sha256": "53802be6fb7bf74bda501f994b8a5d1357bbc21d2252bfc89ee4482d2ba2f2c7",
+      "clause_span": [
+        8,
+        12
+      ],
+      "source_parent_sha256": "3872ada8436365046e4d2928734261f06bb72807d5d38eb314d3a2dc214cb970"
+    },
+    {
+      "key": "B12.4",
+      "number": 477,
+      "parent_key": "B12",
+      "parent_number": 370,
+      "deps": [
+        "B12.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B12.4 | Reconcile shared optimizer manifest and parameter tree",
+      "body_sha256": "0b116499904e9c8acf6fa2d53e944fd1c0e6bcf9e00ab226331daa84ead49109",
+      "clause_span": [
+        12,
+        15
+      ],
+      "source_parent_sha256": "3872ada8436365046e4d2928734261f06bb72807d5d38eb314d3a2dc214cb970"
+    },
+    {
+      "key": "B13.1",
+      "number": 478,
+      "parent_key": "B13",
+      "parent_number": 372,
+      "deps": [
+        "B12",
+        "A02",
+        "B07"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B13.1 | Write versioned content-addressed BAMF state bundles atomically",
+      "body_sha256": "78d5294f2683bac1936e03fea94696a37124671d29098673dd54c0745f873cf5",
+      "clause_span": [
+        0,
+        3
+      ],
+      "source_parent_sha256": "febf00349370a13bd38dfa61aad0d9561b96ffe85ada6aa00c40a74d33b25b74"
+    },
+    {
+      "key": "B13.2",
+      "number": 479,
+      "parent_key": "B13",
+      "parent_number": 372,
+      "deps": [
+        "B13.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B13.2 | Validate complete generation and cold-resume exact training state",
+      "body_sha256": "3a64d131622ed78aada6e1fb36e0796db093b7864345a316e10ae93844852d92",
+      "clause_span": [
+        3,
+        6
+      ],
+      "source_parent_sha256": "febf00349370a13bd38dfa61aad0d9561b96ffe85ada6aa00c40a74d33b25b74"
+    },
+    {
+      "key": "B13.3",
+      "number": 480,
+      "parent_key": "B13",
+      "parent_number": 372,
+      "deps": [
+        "B13.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B13.3 | Keep disposable caches and historical v1 reader custody separate",
+      "body_sha256": "f1122365f26c1ec192d8fe518fe1019478ba4ddf05dd41ee7676d4e33aff91ac",
+      "clause_span": [
+        6,
+        9
+      ],
+      "source_parent_sha256": "febf00349370a13bd38dfa61aad0d9561b96ffe85ada6aa00c40a74d33b25b74"
+    },
+    {
+      "key": "B13.4",
+      "number": 481,
+      "parent_key": "B13",
+      "parent_number": 372,
+      "deps": [
+        "B13.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B13.4 | Reconcile committed parameter schema with checkpoint manifests",
+      "body_sha256": "893998143f08486038a0d8255b249473d85b9b6282def07f8a5ac393372060cd",
+      "clause_span": [
+        9,
+        12
+      ],
+      "source_parent_sha256": "febf00349370a13bd38dfa61aad0d9561b96ffe85ada6aa00c40a74d33b25b74"
+    },
+    {
+      "key": "B14.1",
+      "number": 482,
+      "parent_key": "B14",
+      "parent_number": 375,
+      "deps": [
+        "B04",
+        "B13"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B14.1 | Implement deterministic rotated three-bit cache vector coding",
+      "body_sha256": "6518d2f9f29f7b97b12ad180867aab84b0e90a11dfcc67014f4f9ea868be2915",
+      "clause_span": [
+        0,
+        4
+      ],
+      "source_parent_sha256": "6fcac77b5c46749f4831f8e4d739689a781b49dfcf3bf04016ce0d450a187da6"
+    },
+    {
+      "key": "B14.2",
+      "number": 483,
+      "parent_key": "B14",
+      "parent_number": 375,
+      "deps": [
+        "B14.1"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B14.2 | Reconstruct quantized norms and small-record FP32 fallback",
+      "body_sha256": "9f38cead15b281828d5a12c6a4e07ff90599ae03f0886addc4ead73c8faef6f2",
+      "clause_span": [
+        4,
+        7
+      ],
+      "source_parent_sha256": "6fcac77b5c46749f4831f8e4d739689a781b49dfcf3bf04016ce0d450a187da6"
+    },
+    {
+      "key": "B14.3",
+      "number": 484,
+      "parent_key": "B14",
+      "parent_number": 375,
+      "deps": [
+        "B14.2"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B14.3 | Bind derived cache to causal generation and FP32 reference policies",
+      "body_sha256": "f258dac9a484b0695144654e52f6f24e8fa2ff389d3e1acc5316f3cebbab36ce",
+      "clause_span": [
+        7,
+        11
+      ],
+      "source_parent_sha256": "6fcac77b5c46749f4831f8e4d739689a781b49dfcf3bf04016ce0d450a187da6"
+    },
+    {
+      "key": "B14.4",
+      "number": 485,
+      "parent_key": "B14",
+      "parent_number": 375,
+      "deps": [
+        "B14.3"
+      ],
+      "kind": "leaf",
+      "title": "BAMF-0.2 B14.4 | Reject revoked source caches and rebuild from eligible FP32 state",
+      "body_sha256": "427da943daff37d125b0d39880d8a3bac089db6fec1759014eaae9111a3bd85f",
+      "clause_span": [
+        11,
+        15
+      ],
+      "source_parent_sha256": "6fcac77b5c46749f4831f8e4d739689a781b49dfcf3bf04016ce0d450a187da6"
     }
   ]
 }

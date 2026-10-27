@@ -479,7 +479,14 @@
         "tensor_ledger"
       ],
       "number": 346,
-      "body_sha256": "d843314a50b159deb89520d55b5e9d537b4148919c09cd91bd72007ff49f5f32"
+      "body_sha256": "65e8ed5c285ba527b9a9ec831f1dbad00c1a967cc90e1ee879ff7198626b098d",
+      "children": [
+        "B01.1",
+        "B01.2",
+        "B01.3",
+        "B01.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B02",
@@ -505,7 +512,13 @@
         "feature_schema"
       ],
       "number": 359,
-      "body_sha256": "cdf4cd7679360d151faa928bc379faaa587f38230038928c6f3f4321eedd87c8"
+      "body_sha256": "2472c0dae834f6a3de441e0b53eb83c916837bfb808755968aba4c9ef2eee3c4",
+      "children": [
+        "B02.1",
+        "B02.2",
+        "B02.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B03",
@@ -530,7 +543,13 @@
         "depth"
       ],
       "number": 363,
-      "body_sha256": "f9938eb44467acb1ec100a7f133601bd5ff4b79621eca67573f7d8182b705de3"
+      "body_sha256": "7455336338144624516b1692befcbb950915bb54f041083e1bf0c0bbdd07535e",
+      "children": [
+        "B03.1",
+        "B03.2",
+        "B03.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B04",
@@ -553,7 +572,14 @@
         "custody"
       ],
       "number": 350,
-      "body_sha256": "9368a4485e6a1951887fed6f739b8906cc11a170303e4dd74f890978144c275a"
+      "body_sha256": "349fb7c7912a6d398ca985945994b0b21e26545e0962d95404563abcc2f4d9db",
+      "children": [
+        "B04.1",
+        "B04.2",
+        "B04.3",
+        "B04.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B05",
@@ -577,7 +603,13 @@
         "plastic"
       ],
       "number": 355,
-      "body_sha256": "35579052095c5692ad6bb3ba5c2e8b2bfc293e9cebd3db32ebd276d2082d06cd"
+      "body_sha256": "116d085e981ed74a4779d96df57f629582d09433ef9acb37db4fa114cdc2d13a",
+      "children": [
+        "B05.1",
+        "B05.2",
+        "B05.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B06",
@@ -602,7 +634,14 @@
         "causal_refinement"
       ],
       "number": 365,
-      "body_sha256": "6c4872614ee42105db41580ea3b9232a7365b47ef20da36c7348274bd857df09"
+      "body_sha256": "7fdd451c310669d897946ae2cc33aa19530d637f89b69bdaac3292fb461b5458",
+      "children": [
+        "B06.1",
+        "B06.2",
+        "B06.3",
+        "B06.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B07",
@@ -626,7 +665,14 @@
         "custody"
       ],
       "number": 356,
-      "body_sha256": "081f0360a83dedbc1eb1bed4d986b9faab7b68cb7383638320ece8001b9e5ace"
+      "body_sha256": "bbb7ea40bac87a613fc3381e180b401d723627badc54f19c2c7fcb75e20b9f30",
+      "children": [
+        "B07.1",
+        "B07.2",
+        "B07.3",
+        "B07.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B08",
@@ -653,7 +699,12 @@
         "eligibility"
       ],
       "number": 366,
-      "body_sha256": "7cf30bbbff3d191cca32e366ae894350612c27dd6c2bf690144fa64a91062ba2"
+      "body_sha256": "066ee8674de4aeeff05d8e006016becfc9d150cd9f97700a7f1cc025ccf83976",
+      "children": [
+        "B08.1",
+        "B08.2"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B09",
@@ -680,7 +731,13 @@
         "plasticity_transition"
       ],
       "number": 368,
-      "body_sha256": "d050c7c2a1cf742b360cb104d5287e015d2a469124d83bc2d5b73ff85a87cc20"
+      "body_sha256": "bf36519f11a8f4850ed10e863cf553f1e48580f1f24bfe34483110fddc094859",
+      "children": [
+        "B09.1",
+        "B09.2",
+        "B09.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B10",
@@ -710,7 +767,14 @@
         "route_construction"
       ],
       "number": 367,
-      "body_sha256": "e7fe48227d3cdfe28bc40583feed05adf130190db415dda04e2dc7889b57b12a"
+      "body_sha256": "a91f0145f17f36a9c42b6a3721e8bf4ec9b6135bc78f9958b7eac56bcf201cc9",
+      "children": [
+        "B10.1",
+        "B10.2",
+        "B10.3",
+        "B10.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B11",
@@ -745,7 +809,13 @@
         "typed_decoder"
       ],
       "number": 369,
-      "body_sha256": "db237fef5dbfa2db1891a1c20112de56178f8bb597897e79e78ae7efdaf11b46"
+      "body_sha256": "69d4d40af91f07ee6df21347a1dc9295136878216820064b7cb9460898df6120",
+      "children": [
+        "B11.1",
+        "B11.2",
+        "B11.3"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B12",
@@ -772,7 +842,14 @@
         "plasticity_transition"
       ],
       "number": 370,
-      "body_sha256": "d96e7bcfd07b9e8739ba695f39104488fa86b2ae95770b8cd2e5a836cec0d724"
+      "body_sha256": "3872ada8436365046e4d2928734261f06bb72807d5d38eb314d3a2dc214cb970",
+      "children": [
+        "B12.1",
+        "B12.2",
+        "B12.3",
+        "B12.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B13",
@@ -804,7 +881,14 @@
         "package_adoption"
       ],
       "number": 372,
-      "body_sha256": "abdea65bdc53bf0b4e081df40be12f1d75017b93675056a039e9c0cd27523d12"
+      "body_sha256": "febf00349370a13bd38dfa61aad0d9561b96ffe85ada6aa00c40a74d33b25b74",
+      "children": [
+        "B13.1",
+        "B13.2",
+        "B13.3",
+        "B13.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "B14",
@@ -828,7 +912,14 @@
         "custody"
       ],
       "number": 375,
-      "body_sha256": "ee720b79fce24b3af52a918ad1f619f06ffc813aac44bd36578074cd34e57c42"
+      "body_sha256": "6fcac77b5c46749f4831f8e4d739689a781b49dfcf3bf04016ce0d450a187da6",
+      "children": [
+        "B14.1",
+        "B14.2",
+        "B14.3",
+        "B14.4"
+      ],
+      "execution_role": "integration_parent_after_recursive_decomposition"
     },
     {
       "key": "C01",
