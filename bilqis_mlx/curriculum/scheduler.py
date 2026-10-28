@@ -345,7 +345,8 @@ def _continue_main_sweep(program, state: SchoolState,
     if state.grade not in visited:
         visited = visited + (state.grade,)
     mature_repair = _enter_mature_debt_repair(
-        program, state, allowed_capabilities=allowed_capabilities,
+        program, replace(state, main_sweep_visited=visited),
+        allowed_capabilities=allowed_capabilities,
         reset_sweep=False)
     if mature_repair is not None:
         return mature_repair
