@@ -167,6 +167,35 @@ class StagedSchoolTests(unittest.TestCase):
             _frontier_recovery_queue(course, state, scores, ("a.0", "c.0")),
             ("c.0",))
 
+    def test_frontier_recovery_weights_large_school_mean_deficit(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = _at_introduction_stage(
+            state, len(course.grades[-1].teaching_stages) - 1,
+            stage="ASSESS_MAIN", queue=(), first_recovery=())
+        scores = snapshot(course, pointer, all_scores(course, through="C")).scores
+        priority_caps = tuple(cap.id for cap in course.grades[-1].capabilities)
+        state = replace(
+            state,
+            carried_mastery_debt=("b.0", priority_caps[0]),
+        )
+        # Model the live shape: school roughly 90%, one progression blocker ~50%,
+        # and two secondary C misses close to the school mean.
+        for capability in scores:
+            scores[capability] = Score(9, 10)
+        scores[priority_caps[0]] = Score(5, 10)
+        scores[priority_caps[1]] = Score(8, 10)
+        scores[priority_caps[2]] = Score(9, 10)
+
+        queue = _frontier_recovery_queue(
+            course, state, scores, tuple(scores))
+
+        self.assertGreaterEqual(queue.count(priority_caps[0]), 4)
+        self.assertGreater(queue.count(priority_caps[0]),
+                           queue.count(priority_caps[1]))
+        self.assertGreater(queue.count(priority_caps[1]),
+                           queue.count(priority_caps[2]))
+
     def test_new_state_does_not_infer_historical_debt_cadence(self):
         state = start_new(staged_course(), cp("new-school"))
         self.assertIsNone(state.debt_cadence_policy)
@@ -218,7 +247,7 @@ class StagedSchoolTests(unittest.TestCase):
         for capability in ("b.0", "b.1", *introduced_c):
             scores[capability] = (4, 8)
 
-        for _ in range(20):
+        for _ in range(80):
             capability = next_capability(state)
             self.assertIsNotNone(capability)
             if capability.startswith("b."):
@@ -682,6 +711,44 @@ class StagedSchoolTests(unittest.TestCase):
         state = grade_loop(course, state, targeted)
         state = assess(course, state, snapshot(course, targeted, improved))
         self.assertEqual(state.stage, "PROMOTION_SWEEP")
+
+    def test_new_promotion_scope_clears_prior_scope_retry_blockers(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = _at_introduction_stage(
+            state, len(course.grades[-1].teaching_stages) - 1,
+            stage="ASSESS_MAIN", queue=(), first_recovery=())
+        state = replace(
+            state,
+            promotion_sweep_attempt_student_sha256=pointer.sha256,
+            promotion_sweep_attempt_scope=("b.0", "b.1"),
+            promotion_sweep_retry_scores=(("b.0", 6, 8),),
+        )
+        scores = {
+            capability: (8, 8)
+            for capability in assessment_capabilities(course, state)
+        }
+        scores["c.0"] = (7, 8)
+
+        started = assess(course, state, snapshot(course, pointer, scores))
+
+        self.assertEqual(started.stage, "PROMOTION_SWEEP")
+        self.assertTrue(started.promotion_sweep_attempt_scope)
+        self.assertTrue(all(cap.startswith("c.")
+                            for cap in started.promotion_sweep_attempt_scope))
+        self.assertEqual(started.promotion_sweep_retry_scores, ())
+
+    def test_state_loader_repairs_retry_blockers_from_different_scope(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        raw = asdict(state)
+        raw["promotion_sweep_attempt_student_sha256"] = pointer.sha256
+        raw["promotion_sweep_attempt_scope"] = ["c.0"]
+        raw["promotion_sweep_retry_scores"] = [["b.0", 6, 8]]
+
+        repaired = _state_from_json(raw, course)
+
+        self.assertEqual(repaired.promotion_sweep_retry_scores, ())
 
     def test_promotion_sweep_only_replaces_the_semantic_just_rescored(self):
         course = staged_course()

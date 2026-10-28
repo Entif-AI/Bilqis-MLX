@@ -965,7 +965,7 @@ def adopt_expanded_prior_grade(previous: ScheduleProgram,
         if (old.capabilities != new.capabilities or
             old.teaching_stages != new.teaching_stages))
     if (previous_ids != successor_ids or len(changed) != 1 or
-            changed[0] >= state.grade_index):
+            changed[0] >= len(state.active_grades) - 1):
         ErrorBus.raise_legacy(SCHOOL.SCHEDULE.PRIOR_GRADE_EXPANSION_INVALID)
     index = changed[0]
     old_grade, new_grade = previous.grades[index], successor.grades[index]
@@ -986,7 +986,18 @@ def adopt_expanded_prior_grade(previous: ScheduleProgram,
     rebound = replace(
         state, course_digest=successor.digest(), champions=champions,
         carried_mastery_debt=debt, grade_exam_epoch=state.grade_exam_epoch + 1,
-        latest_rubric_digest=None, teacher_soup_digest=None)
+        latest_rubric_digest=None, teacher_soup_digest=None,
+        revalidation_target_grade=None,
+        promotion_sweep_attempt_student_sha256=None,
+        promotion_sweep_attempt_scope=(),
+        promotion_sweep_retry_scores=())
+    rebound = _promotion_sweep_fields_cleared(
+        rebound, stage="MAIN", queue=(), first_recovery=(),
+        main_sweep_visited=())
+    rebound = _enter_grade(
+        successor, rebound, len(state.active_grades) - 1,
+        stage="MAIN", first_recovery=(), main_sweep_visited=(),
+        latest_rubric_digest=None)
     verify_state(successor, rebound)
     return rebound, old_grade.id
 

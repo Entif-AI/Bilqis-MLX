@@ -171,12 +171,16 @@ def _promotion_sweep_due(program, state: SchoolState,
 def _start_promotion_sweep(program, state: SchoolState,
                            snapshot: Assessment) -> SchoolState:
     scope = _introduced_grade_capabilities(program, state)
+    retry_scores = (
+        state.promotion_sweep_retry_scores
+        if state.promotion_sweep_attempt_scope == scope else ())
     return replace(
         state, stage="PROMOTION_SWEEP", queue=scope,
         promotion_sweep_scope=scope,
         promotion_sweep_return_stage=state.stage,
         promotion_sweep_attempt_student_sha256=state.current_student.sha256,
         promotion_sweep_attempt_scope=scope,
+        promotion_sweep_retry_scores=retry_scores,
         promotion_sweep_scores=tuple(
             (capability, snapshot.scores[capability].correct,
              snapshot.scores[capability].total)

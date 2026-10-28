@@ -101,6 +101,10 @@ def _state_from_json(value: dict, course) -> SchoolState:
     school["promotion_sweep_retry_scores"] = tuple(
         (capability, correct, total)
         for capability, correct, total in school["promotion_sweep_retry_scores"])
+    attempt_scope = set(school["promotion_sweep_attempt_scope"])
+    if any(capability not in attempt_scope
+           for capability, _correct, _total in school["promotion_sweep_retry_scores"]):
+        school["promotion_sweep_retry_scores"] = ()
     school["introduction_frontiers"] = tuple(
         (grade, stage) for grade, stage in school["introduction_frontiers"])
     school["current_student"] = Checkpoint(**school["current_student"])

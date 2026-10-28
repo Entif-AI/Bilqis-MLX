@@ -1,6 +1,9 @@
 """Pure grade-debt scheduling helpers shared by the school state machine."""
 from __future__ import annotations
 
+from fractions import Fraction
+from math import ceil
+
 import bilqis_mlx.mature_debt as _mature_debt
 
 from .state import Score, SchoolState, _caps, _program, _score_pool, weakest_three
@@ -8,6 +11,8 @@ from .state import Score, SchoolState, _caps, _program, _score_pool, weakest_thr
 
 FRONTIER_CATCHUP_SHARE_DENOMINATOR = 4
 FRONTIER_CATCHUP_MINIMUM_ACTIVE_GRADES = 2
+FRONTIER_DEFICIT_WEIGHT_BUCKET = Fraction(1, 10)
+FRONTIER_DEFICIT_MAX_VISITS = 6
 _ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT = "SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT"
 _EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM = "SPIRAL_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM"
 
@@ -113,7 +118,26 @@ def _frontier_recovery_queue(program, state: SchoolState,
     priority = state.debt_cadence_policy.progression_priority_grade_id
     ranked = _imperfect_ranked(
         scores, tuple(cap for cap in _caps(program, (priority,)) if cap in allowed))
-    return ranked[:3]
+    ranked = ranked[:3]
+    if not ranked:
+        return ()
+    measured = tuple(scores[capability].accuracy for capability in pool
+                     if capability in scores)
+    school_mean = sum(measured, Fraction(0, 1)) / len(measured)
+    weights = {
+        capability: min(
+            FRONTIER_DEFICIT_MAX_VISITS,
+            1 + ceil(max(Fraction(0, 1),
+                         school_mean - scores[capability].accuracy) /
+                     FRONTIER_DEFICIT_WEIGHT_BUCKET))
+        for capability in ranked
+    }
+    return tuple(
+        capability
+        for pass_index in range(max(weights.values()))
+        for capability in ranked
+        if weights[capability] > pass_index
+    )
 
 
 def _mature_debt_repair_grade(program, state: SchoolState) -> str | None:

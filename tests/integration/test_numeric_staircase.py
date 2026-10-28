@@ -27,7 +27,8 @@ from bilqis_mlx.profiles.catalog import (
     next_numeric_scope_profile, numeric_entry_transition, numeric_row_in_scope,
     numeric_scope_profile)
 from bilqis_mlx.profiles.school import (
-    boolean_entry_profile, with_disabled_future_grades)
+    boolean_entry_profile, full_boolean_upgrade_profile,
+    with_disabled_future_grades)
 from bilqis_mlx.source_adapters.school import live_source_registry
 from tests.system import test_grade_c_trainer as fixtures
 
@@ -144,6 +145,36 @@ class NumericStaircaseTests(unittest.TestCase):
                         self.params, self.optimizer, transition,
                         reserve_gib=0.))
         return course, record
+
+    def test_c_active_reduced_b_expands_to_full_b_without_neural_updates(self):
+        _, record = self.start()
+        release = storage._read_executable_factory_release_artifact(
+            self.root, record)
+        before_student = record['school']['current_student']
+        before_step = int(self.optimizer.state['step'].item())
+        target = full_boolean_upgrade_profile(release.profile)
+
+        with redirect_stdout(io.StringIO()):
+            changed, _, successor, program = storage._adopt_executable_profile(
+                self.root, record, self.fixture.grade_a, fixtures.SOURCE,
+                self.graph, target, invalidate_assessment_evidence=True)
+
+        b_caps = tuple(cap.id for cap in program.grades[1].capabilities)
+        self.assertEqual(b_caps, (
+            'B.NOT', 'B.AND', 'B.OR', 'B.XOR', 'B.IMPLIES', 'B.IFF',
+            'B.COMPOSITE', 'B.IDBOOLOPS'))
+        self.assertTrue(
+            {'B.NOT', 'B.OR', 'B.XOR', 'B.IMPLIES'} <=
+            set(changed['school']['carried_mastery_debt']))
+        self.assertEqual(changed['school']['current_student'], before_student)
+        self.assertEqual(int(self.optimizer.state['step'].item()), before_step)
+        self.assertEqual(changed['school']['active_grades'], ['A', 'B', 'C'])
+        self.assertEqual(changed['school']['active_grades'][
+            changed['school']['grade_index']], 'C')
+        self.assertEqual(changed['school']['stage'], 'MAIN')
+        self.assertIsNone(changed['last_exam'])
+        self.assertEqual(successor.profile.profile_id,
+                         'school/boolean/full/numeric-0-4')
 
     @staticmethod
     def _perfect_to_boundary(program, school):

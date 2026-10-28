@@ -1786,6 +1786,55 @@ and ordinary retention decides what survives.
 **Status:** Accepted for bounded implementation and non-neural verification.
 
 
+## ADR-112 | 2026-10-28 | Full Grade B is the default; reduced Boolean B is explicit only
+
+The canonical U7C Grade B capability set is the normal executable curriculum:
+`B.NOT`, `B.AND`, `B.OR`, `B.XOR`, `B.IMPLIES`, `B.IFF`, `B.COMPOSITE`, and
+`B.IDBOOLOPS`. The historical reduced AND/IFF kernel is retained only as an
+explicit experimental profile selected by `--reduced-grade-b` (alias
+`--minimal-grade-b`). `--full-grade-b` remains accepted but is now the default.
+
+Existing durable runs admitted under the known historical reduced profile must
+not remain narrowed forever merely because later grades have already been
+admitted. On resume under the default policy, the runtime performs a neural-inert
+same-school profile expansion that restores the missing B semantics while
+preserving the exact causal student and its native AdamW. Added B semantics become
+carried mastery debt, stale B championship/assessment authority is invalidated,
+and the scheduler returns to the newest active progression frontier before normal
+debt cadence resumes. No historical score is fabricated for newly restored
+semantics.
+
+This expansion is curriculum/profile state only. It does not itself perform a
+neural update, declare the restored semantics mastered, lower B's bounded debt
+share, or weaken source/custody/promotion/retention gates.
+
+**Status:** Accepted for implementation and neural-inert migration verification.
+
+
+## ADR-113 | 2026-10-28 | Frontier recovery effort scales with measured weakness
+
+Weakest-first recovery must allocate effort proportionally enough to matter. A
+progression blocker near 50% while the school mean is near 90% must not receive
+the same single recovery visit as a near-mastered capability around 90%.
+
+Within the ADR-094/109 progression-priority recovery path, rank the up-to-three
+imperfect frontier capabilities by accuracy as before, then assign each a bounded
+visit weight from its deficit below the unweighted whole-school capability mean.
+Each imperfect frontier capability receives one maintenance visit; for every
+additional 10 percentage points below the school mean it receives one additional
+visit, capped at six visits in one recovery queue. Interleave weighted visits by
+rank rather than running one capability's entire weight consecutively.
+
+This is scheduling pressure, not evidence or retention credit. Exams remain
+unchanged, near-mastered imperfect semantics still receive maintenance exposure,
+and B debt cadence, promotion thresholds, plasticity bounds, mature-debt repair,
+source/custody and retention gates remain authoritative. The weighting exists to
+turn large measured deficits into correspondingly larger learning effort instead
+of merely labeling them "weakest" once.
+
+**Status:** Accepted for bounded implementation and scheduler verification.
+
+
 ## ADR-110 | 2026-10-28 | School-wide retention drought can activate plasticity for below-mean semantics
 
 **Direct user correction to ADR-108's scaling behavior.** Capability-local

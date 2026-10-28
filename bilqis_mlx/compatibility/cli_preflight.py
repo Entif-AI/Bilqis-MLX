@@ -95,19 +95,19 @@ def legacy_profile_label(saved: dict, *, full_grade_b: bool) -> dict:
     mode = saved.get("curriculum_mode")
     if mode == MINIMAL_BOOLEAN_RELEASE:
         return {
-            "profile": "MINIMAL_DEFAULT",
-            "migration_required": False,
+            "profile": "FULL_DEFAULT" if full_grade_b else "REDUCED_EXPLICIT",
+            "migration_required": full_grade_b,
             "legacy_release": mode,
         }
     if full_grade_b and mode in FULL_BOOLEAN_RELEASES:
         return {
-            "profile": "FULL_OPT_IN",
+            "profile": "FULL_DEFAULT",
             "migration_required": False,
             "legacy_release": mode,
         }
     if mode in FULL_BOOLEAN_RELEASES and not full_grade_b:
         return {
-            "profile": "MINIMAL_DEFAULT",
+            "profile": "REDUCED_EXPLICIT",
             "migration_required": True,
             "legacy_release": mode,
         }
