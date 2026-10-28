@@ -37,12 +37,12 @@ For finite numeric rows, the adapter uses the existing
 `source_adapters.numeric.decode` path and the native
 `semantics.core.Apply/Literal/Operation.signature` objects. The decoded
 operator signature must match the source semantic-graph signature and token
-index. At the source-expression root, its native
-`Operation.contract_sha256` must match the released source row contract.
-Recursive numeric children retain their canonical native numeric-operation
-contracts; the historical graph can carry a different row contract for those
-generated child operators (for example COUNT), so that distinct authority is
-not falsely collapsed. Number identities resolve through the frozen Atlas ABI; structured
+index. At every recursive depth, the graph row hash must match the canonical
+digest of its source node. The exact `CONTRACT.append_only_nodes` membership,
+not root/child position, selects canonical native append-only contracts;
+their declared node fields must also match the graph. All other numeric
+operators require native and graph-row contracts to agree. Number identities
+resolve through the frozen Atlas ABI; structured
 `NumberSet` literals remain typed atomic child frames rather than receiving
 invented semantic IDs.
 
