@@ -480,6 +480,36 @@ class SEMANTIC_COVERAGE:
         )
 
 
+class SEMANTIC_FRAME:
+    class BINDING:
+        INVALID = _spec(
+            ("SEMANTIC_FRAME", "BINDING", "INVALID"),
+            owner="semantics.frame_schema",
+            title="Semantic frame binding violates the released schema",
+            message_template=(
+                "Frame binding failed for role {role_id!r} at source span "
+                "[{span_start}, {span_end}]: {reason}."),
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action=(
+                "Preserve the source row and semantic release; correct the role, "
+                "type, scope, release, occurrence, or causal-prefix binding."),
+        )
+
+    class ADAPTER:
+        INVALID_SOURCE = _spec(
+            ("SEMANTIC_FRAME", "ADAPTER", "INVALID_SOURCE"),
+            owner="semantics.frame_adapters",
+            title="Semantic frame adapter cannot bind the source row",
+            message_template=(
+                "Frame adapter {adapter_id!r} rejected role {role_id!r} at source "
+                "span [{span_start}, {span_end}]: {reason}."),
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action=(
+                "Preserve the source row and use the released source adapter and "
+                "frame schema that own this source dialect."),
+        )
+
+
 class SOURCE:
     class GRADE_A:
         CONTEXT_ORACLE_DRIFT = _spec(
@@ -932,6 +962,8 @@ CATALOG = (
     SCHOOL.STATE.GRADE_INDEX_OUT_OF_RANGE,
     SEMANTIC_COVERAGE.PLAN.VERSION_MISMATCH,
     SEMANTIC_COVERAGE.AUDIT.INVALID_BUDGET,
+    SEMANTIC_FRAME.BINDING.INVALID,
+    SEMANTIC_FRAME.ADAPTER.INVALID_SOURCE,
     SOURCE.SAMPLING.BALANCED_BINARY_COUNT_INVALID,
     FACTORY.RELEASE.MANIFEST_CONTENT_DRIFT,
 )

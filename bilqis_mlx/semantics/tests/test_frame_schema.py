@@ -1,12 +1,24 @@
 from __future__ import annotations
 
+import json
+import hashlib
+import os
+from pathlib import Path
+import tempfile
 import unittest
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.atlas_projection import (
     AbiEntry,
+    AtlasConcept,
     AtlasCounts,
+    FormalDomainBinding,
+    FrozenAtlasConcept,
     FrozenAtlasSnapshot,
+    SourceRecordRef,
+    compile_atlas_release,
+    load_atlas_snapshot,
+    persist_atlas_release,
 )
 from bilqis_mlx.semantics.core import Apply, Operation, Signature, literal
 from bilqis_mlx.semantics.frame_schema import (
@@ -29,6 +41,7 @@ from bilqis_mlx.semantics.frame_schema import (
 
 
 RELEASE = "1" * 64
+ROOT = Path(__file__).resolve().parents[3]
 
 
 def _concept(name: str, index: int, type_name: str = "Entity") -> ConceptRef:
@@ -68,6 +81,25 @@ def _snapshot(*concepts: ConceptRef) -> FrozenAtlasSnapshot:
         teaching_candidate=True,
         reason="fixture",
     ) for item in sorted(concepts, key=lambda item: item.abi_index))
+    frozen_concepts = tuple(FrozenAtlasConcept(
+        concept=AtlasConcept(
+            semantic_id=item.semantic_id,
+            kind="concept",
+            types=item.type_ids,
+            labels=(),
+            realizations=(),
+            source_loci=(),
+            relations=(),
+            source_rows=(SourceRecordRef("fixture", "fixture", item.semantic_id),),
+        ),
+        abi_index=item.abi_index,
+        abi_bank=0,
+        abi_row=item.abi_index,
+        active=True,
+        implementation_status="ADMITTED",
+        teaching_candidate=True,
+        teaching_reason="fixture",
+    ) for item in concepts)
     return FrozenAtlasSnapshot(
         schema="bilqis.semantic-atlas-snapshot/v1",
         bundle_id="a" * 64,
@@ -83,11 +115,15 @@ def _snapshot(*concepts: ConceptRef) -> FrozenAtlasSnapshot:
         counts=AtlasCounts(1, 1, 1, len(entries), 1, len(entries), 0, 0, 0, 0),
         formal_domain_bindings=(),
         abi_entries=entries,
-        concepts=(),
+        concepts=tuple(sorted(
+            frozen_concepts, key=lambda item: item.concept.semantic_id)),
         relations=(),
         withheld_rows=(),
         semantic_lookup=tuple(sorted((entry.semantic_id, entry.index) for entry in entries)),
-        concept_lookup=(),
+        concept_lookup=tuple(
+            (item.concept.semantic_id, index)
+            for index, item in enumerate(sorted(
+                frozen_concepts, key=lambda item: item.concept.semantic_id))),
     )
 
 
@@ -107,6 +143,54 @@ class FrameSchemaRecordTests(unittest.TestCase):
         self.assertEqual(ast_construct_id(source), "literal:Entity")
         self.assertEqual(native_ast_content_digest(expression),
                          native_ast_content_digest(expression))
+
+    def test_native_apply_requires_exact_released_semantic_contract_digest(self):
+        expected_contract = "a" * 64
+        operation = Operation(
+            17,
+            "formal.operator.TRANSFER",
+            Signature(("Entity",), "Entity"),
+            expected_contract,
+        )
+        forged = Operation(
+            operation.token_index,
+            operation.symbol,
+            operation.signature,
+            "b" * 64,
+        )
+        entity = _concept("alice", 0)
+        snapshot = _snapshot(entity)
+        schema = FrameSchema(
+            schema_id="formal.frame.CONTRACT",
+            revision=1,
+            ast_construct="apply:formal.operator.TRANSFER",
+            roles=(RoleSpec("operand", ("Entity",), 1, 1),),
+            order_mode="ORDERED",
+            scope="formal-expression",
+            ast_contract_sha256=expected_contract,
+        )
+        expression = Apply(
+            forged,
+            (literal("alice", "Entity"),),
+            "Entity",
+            None,
+        )
+        with self.assertRaises(BilqisError) as caught:
+            bind_ast_frames(
+                expression,
+                snapshot,
+                schema=schema,
+                source_instance_id="contract-probe",
+                source_span=SourceSpan(0, 5),
+                bindings=(RoleOccurrence("operand", 0, concept=entity),),
+                causal_prefix_end=5,
+                declared_scope="formal-expression",
+            )
+        self.assertEqual(caught.exception.code, "SEMANTIC_FRAME.BINDING.INVALID")
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FRAME_AST_CONTRACT_MISMATCH",
+        )
 
     def test_occurrence_identity_is_source_path_identity_not_content_identity(self):
         schema = _transfer_schema()
@@ -355,7 +439,7 @@ class FrameSchemaRecordTests(unittest.TestCase):
                 **common,
                 bindings=(RoleOccurrence("actor", 0, concept=wrong_type),),
             )
-        self.assertIn("FRAME_ROLE_TYPE_INVALID",
+        self.assertIn("FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH",
                       str(typed.exception.context.get("reason")))
 
         foreign = ConceptRef(
@@ -372,6 +456,153 @@ class FrameSchemaRecordTests(unittest.TestCase):
             )
         self.assertIn("FRAME_SEMANTIC_RELEASE_MISMATCH",
                       str(release.exception.context.get("reason")))
+
+    def test_authoritative_concept_type_rejects_forged_role_allowed_type(self):
+        entity = _concept("alice", 0, "Entity")
+        snapshot = _snapshot(entity)
+        schema = FrameSchema(
+            "formal.frame.FORGED_TYPE",
+            1,
+            "source:forged",
+            (RoleSpec("actor", ("Boolean",), 1, 1),),
+            "ORDERED",
+            "clause",
+        )
+        forged = ConceptRef(
+            semantic_id=entity.semantic_id,
+            semantic_release=entity.semantic_release,
+            abi_index=entity.abi_index,
+            type_ids=("Boolean",),
+            source_reference=entity.source_reference,
+        )
+        with self.assertRaises(BilqisError) as caught:
+            bind_frame_instance(
+                schema,
+                snapshot,
+                source_instance_id="forged-type",
+                structural_path=(),
+                source_span=SourceSpan(5, 9),
+                parent_occurrence_id=None,
+                bindings=(RoleOccurrence("actor", 0, concept=forged),),
+                causal_prefix_end=9,
+                declared_scope="clause",
+            )
+        self.assertEqual(caught.exception.code, "SEMANTIC_FRAME.BINDING.INVALID")
+        self.assertEqual(caught.exception.context["role_id"], "actor")
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH",
+        )
+
+    @unittest.skipUnless(
+        os.environ.get("BILQIS_ATLAS_REAL_CORPUS"),
+        "real canonical Atlas bundle supplied only at turn-in",
+    )
+    def test_real_atlas_concept_rejects_forged_role_allowed_type(self):
+        bundle = Path(os.environ["BILQIS_ATLAS_REAL_CORPUS"])
+        legacy = ROOT / "bilqis_mlx/semantics/legacy_abi_v1.json"
+        numeric = ROOT / "bilqis_mlx/semantics/numeric_v1.json"
+        prior = ROOT / "bilqis_mlx/semantics/copular_registry_v1.json"
+        sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+        bindings = (
+            FormalDomainBinding(
+                "boolean",
+                "bilqis_mlx/semantics/legacy_abi_v1.json",
+                sha(legacy),
+                ("legacy:cogal.operator.NOT", "legacy:cogal.operator.AND"),
+                ("B.NOT", "B.AND"),
+            ),
+            FormalDomainBinding(
+                "numeric",
+                "bilqis_mlx/semantics/numeric_v1.json",
+                sha(numeric),
+                ("bilqis.numeric/v1:school.op.COUNT",
+                 "bilqis.numeric/v1:school.op.SUCC"),
+                ("C.COUNT", "C.SUCCESSOR"),
+            ),
+        )
+        release = compile_atlas_release(
+            bundle, bundle / "coverage.json", prior, bindings)
+        with tempfile.TemporaryDirectory() as directory:
+            receipt = persist_atlas_release(release, Path(directory))
+            snapshot = load_atlas_snapshot(
+                receipt.path,
+                expected_bundle_id=receipt.bundle_id,
+                expected_release_sha256=release.digest,
+                expected_source_bundle_id=release.source_bundle_id,
+            )
+            canonical = next(
+                item for item in snapshot.concepts if item.concept.types)
+
+        forged_type = "urn:forged:AllowedType"
+        forged = ConceptRef(
+            semantic_id=canonical.concept.semantic_id,
+            semantic_release=snapshot.release_sha256,
+            abi_index=canonical.abi_index,
+            type_ids=(forged_type,),
+            source_reference="attacker:forged-type",
+        )
+        schema = FrameSchema(
+            "formal.frame.REAL_ATLAS_TYPE_PROBE",
+            1,
+            "source:type-probe",
+            (RoleSpec("value", (forged_type,), 1, 1),),
+            "ORDERED",
+            "clause",
+        )
+        with self.assertRaises(BilqisError) as caught:
+            bind_frame_instance(
+                schema,
+                snapshot,
+                source_instance_id="real-type-probe",
+                structural_path=(),
+                source_span=SourceSpan(20, 30),
+                parent_occurrence_id=None,
+                bindings=(RoleOccurrence("value", 0, concept=forged),),
+                causal_prefix_end=30,
+                declared_scope="clause",
+            )
+        self.assertEqual(caught.exception.code, "SEMANTIC_FRAME.BINDING.INVALID")
+        self.assertEqual(caught.exception.context["role_id"], "value")
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH",
+        )
+
+    def test_serialized_frame_rejects_forged_occurrence_content_and_prefix(self):
+        schema = _transfer_schema()
+        frame = make_frame_instance(
+            schema,
+            source_instance_id="boundary-1",
+            structural_path=(2,),
+            source_span=SourceSpan(10, 25),
+            parent_occurrence_id=None,
+            bindings=(
+                RoleOccurrence("agent", 0, concept=_concept("alice", 10)),
+                RoleOccurrence("recipient", 0, concept=_concept("bob", 11)),
+                RoleOccurrence("theme", 0, concept=_concept("book", 12)),
+            ),
+            causal_prefix_end=25,
+        )
+        canonical = json.loads(frame.canonical_bytes())
+        cases = (
+            ("occurrence_id", "0" * 64, "FRAME_OCCURRENCE_ID_MISMATCH"),
+            ("content_digest", "0" * 64, "FRAME_CONTENT_DIGEST_MISMATCH"),
+            ("causal_prefix_end", 0, "FRAME_INSTANCE_INVALID"),
+        )
+        for field, value, reason in cases:
+            with self.subTest(field=field):
+                forged = {**canonical, field: value}
+                payload = (json.dumps(
+                    forged,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=False,
+                    allow_nan=False,
+                ) + "\n").encode()
+                with self.assertRaises(BilqisError) as caught:
+                    frame_instance_from_bytes(payload)
+                self.assertIn(reason, str(caught.exception.context.get("reason")))
 
     def test_unknown_schema_uses_atomic_fallback_with_source_data_intact(self):
         snapshot = _snapshot(_concept("alice", 0))

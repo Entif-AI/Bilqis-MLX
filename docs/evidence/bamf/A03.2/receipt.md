@@ -19,6 +19,20 @@ types, frozen Atlas semantic release and ABI index, declared frame scope, and
 source-visible causal prefix. Bindings are ordered by released schema-role order
 and then occurrence index.
 
+The cumulative A03.3 review repair additionally closes the incoming type and
+serialization boundaries. For a source-qualified Atlas concept, caller-supplied
+`ConceptRef.type_ids` must equal the canonical types in the frozen Atlas
+concept record; a forged type is rejected even when the role explicitly allows
+that forged type. Formal-domain refs are constructed by the released source
+adapter from the existing source semantic-graph/native-operation signature
+rather than a second type registry.
+
+`FrameInstance` now verifies its occurrence ID from source-instance identity
+plus structural path, verifies its content digest from schema identity plus
+bindings, and requires `causal_prefix_end >= source_span.end` in the frozen
+record constructor itself. These checks therefore apply equally to normal
+binding and canonical deserialization.
+
 `bind_ast_frames` accepts the native AST/source node plus the frozen Atlas.
 When an approved frame schema is supplied it validates and emits a
 `FrameInstance`. When no approved schema exists it emits an `AtomicFrame`
@@ -32,6 +46,10 @@ structural path and causal prefix without inventing semantic meaning.
 - NONE, UNKNOWN and ALTERNATIVES survive canonical frame-instance roundtrip.
 - Role type mismatch, declared-scope mismatch and future causal-prefix use fail
   closed.
+- A valid canonical semantic ID/index with a caller-forged, role-allowed type is
+  rejected by Atlas concept type authority.
+- Serialized occurrence-ID, content-digest and causal-prefix tampering is
+  rejected before the frame can be returned.
 - A `ConceptRef` from a foreign semantic release fails before any neural use.
 - Nested negation/scope preserves the child occurrence and child content digest;
   the child is not flattened into the parent.
@@ -42,8 +60,13 @@ structural path and causal prefix without inventing semantic meaning.
 
 ## Verification
 
-`scripts/run_tests.py bilqis_mlx/semantics/tests/test_frame_schema.py`:
-9 passed, 0 failed, 0 skipped.
+`scripts/run_tests.py bilqis_mlx/semantics/tests/test_frame_schema.py` after
+the cumulative boundary repair: 12 passed and 1 external real-Atlas witness
+skipped in ordinary mode. With the pinned real canonical Atlas bundle enabled:
+13 passed, 0 failed, 0 skipped. The real witness uses an actual source-qualified
+canonical Atlas concept for the forged-type regression. The cumulative package
+also proves that a native `Apply` with the right symbol/signature but a changed
+semantic contract SHA cannot satisfy a released frame schema.
 
 `frame_schema.py` is 662 lines and all functions remain below the 300-line
 hard function limit. `scripts/check_module_size.py` reports no A01/A03

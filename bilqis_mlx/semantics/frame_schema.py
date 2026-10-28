@@ -7,7 +7,7 @@ import hashlib
 import json
 import re
 
-from ..errors import ErrorBus, SCHOOL
+from ..errors import BilqisError, ErrorBus, SEMANTIC_FRAME, SCHOOL
 from .atlas_projection import FrozenAtlasSnapshot
 from .core import Apply, Expression, Literal, expression_digest
 
@@ -45,6 +45,28 @@ def _bytes(value: object) -> bytes:
 
 def _digest(value: object) -> str:
     return hashlib.sha256(_bytes(value)).hexdigest()
+
+
+def _occurrence_digest(source_instance_id: str, structural_path: tuple[int, ...]) -> str:
+    return _digest({
+        "source_instance_id": source_instance_id,
+        "structural_path": list(structural_path),
+    })
+
+
+def _frame_content_digest(
+    frame_schema_id: str,
+    frame_schema_revision: int,
+    bindings: tuple["RoleOccurrence", ...],
+) -> str:
+    return _digest({
+        "frame_schema_id": frame_schema_id,
+        "frame_schema_revision": frame_schema_revision,
+        "bindings": [
+            binding.content_identity()
+            for binding in sorted(bindings, key=lambda item: item.key)
+        ],
+    })
 
 
 def _text(value: object, reason: str) -> str:
@@ -95,6 +117,7 @@ class FrameSchema:
     roles: tuple[RoleSpec, ...]
     order_mode: str
     scope: str
+    ast_contract_sha256: str | None = None
     schema_version: str = FRAME_SCHEMA_RECORD
 
     def __post_init__(self) -> None:
@@ -105,6 +128,8 @@ class FrameSchema:
                 or not self.roles or len(role_ids) != len(set(role_ids))
                 or self.order_mode not in _ORDER_MODES
                 or not isinstance(self.scope, str) or not self.scope
+                or (self.ast_contract_sha256 is not None
+                    and not _SHA256.fullmatch(self.ast_contract_sha256))
                 or self.schema_version != FRAME_SCHEMA_RECORD):
             _fail("FRAME_SCHEMA_INVALID")
 
@@ -149,11 +174,14 @@ class ConceptRef:
 class ChildFrameRef:
     occurrence_id: str
     content_digest: str
+    type_ids: tuple[str, ...] = ("Frame",)
     schema_version: str = CHILD_FRAME_REF_RECORD
 
     def __post_init__(self) -> None:
         if (not _SHA256.fullmatch(self.occurrence_id)
                 or not _SHA256.fullmatch(self.content_digest)
+                or not self.type_ids
+                or self.type_ids != tuple(sorted(set(self.type_ids)))
                 or self.schema_version != CHILD_FRAME_REF_RECORD):
             _fail("FRAME_CHILD_REF_INVALID")
 
@@ -195,6 +223,7 @@ class RoleOccurrence:
             target = {
                 "kind": "child-frame",
                 "content_digest": self.child_frame.content_digest,
+                "type_ids": list(self.child_frame.type_ids),
             }
         elif self.state is BindingState.ALTERNATIVES:
             target = {
@@ -245,9 +274,16 @@ class FrameInstance:
                 or (self.parent_occurrence_id is not None
                     and not _SHA256.fullmatch(self.parent_occurrence_id))
                 or len(keys) != len(set(keys))
-                or type(self.causal_prefix_end) is not int or self.causal_prefix_end < 0
+                or type(self.causal_prefix_end) is not int
+                or self.causal_prefix_end < self.source_span.end
                 or self.schema_version != FRAME_INSTANCE_RECORD):
             _fail("FRAME_INSTANCE_INVALID")
+        if self.occurrence_id != _occurrence_digest(
+                self.source_instance_id, self.structural_path):
+            _fail("FRAME_OCCURRENCE_ID_MISMATCH")
+        if self.content_digest != _frame_content_digest(
+                self.frame_schema_id, self.frame_schema_revision, self.bindings):
+            _fail("FRAME_CONTENT_DIGEST_MISMATCH")
 
     @property
     def child_edges(self) -> tuple[FrameEdge, ...]:
@@ -312,6 +348,16 @@ class FrameTree:
             _fail("FRAME_TREE_INVALID")
 
 
+def _binding_fail(reason: str, source_span: SourceSpan, role_id: str) -> None:
+    ErrorBus.raise_(
+        SEMANTIC_FRAME.BINDING.INVALID,
+        reason=reason,
+        span_start=source_span.start,
+        span_end=source_span.end,
+        role_id=role_id,
+    )
+
+
 def ast_construct_id(expression: Expression) -> str:
     """Name native AST constructors without inventing a second expression tree."""
     if isinstance(expression, Literal):
@@ -328,6 +374,9 @@ def source_ast_construct_id(ast: object) -> str:
         kind = ast.get("kind")
         if isinstance(kind, str) and kind:
             return "source:" + kind
+        task = ast.get("task")
+        if isinstance(task, str) and task:
+            return "source-task:" + task
     _fail("FRAME_SOURCE_AST_CONSTRUCT_INVALID")
 
 
@@ -374,24 +423,14 @@ def occurrence_id(source_instance_id: str, structural_path: tuple[int, ...]) -> 
     _text(source_instance_id, "FRAME_SOURCE_INSTANCE_ID_INVALID")
     if any(type(item) is not int or item < 0 for item in structural_path):
         _fail("FRAME_STRUCTURAL_PATH_INVALID")
-    return _digest({
-        "source_instance_id": source_instance_id,
-        "structural_path": list(structural_path),
-    })
+    return _occurrence_digest(source_instance_id, structural_path)
 
 
 def content_digest(
     schema: FrameSchema,
     bindings: tuple[RoleOccurrence, ...],
 ) -> str:
-    return _digest({
-        "frame_schema_id": schema.schema_id,
-        "frame_schema_revision": schema.revision,
-        "bindings": [
-            binding.content_identity()
-            for binding in sorted(bindings, key=lambda item: item.key)
-        ],
-    })
+    return _frame_content_digest(schema.schema_id, schema.revision, bindings)
 
 
 def _binding_concepts(binding: RoleOccurrence) -> tuple[ConceptRef, ...]:
@@ -414,13 +453,15 @@ def validate_frame_bindings(
     if not isinstance(snapshot, FrozenAtlasSnapshot):
         _fail("FRAME_ATLAS_SNAPSHOT_REQUIRED")
     if declared_scope != schema.scope:
-        _fail("FRAME_SCOPE_MISMATCH")
+        _binding_fail("FRAME_SCOPE_MISMATCH", source_span, "<frame>")
     if type(causal_prefix_end) is not int or causal_prefix_end < source_span.end:
-        _fail("FRAME_CAUSAL_PREFIX_INVALID")
+        _binding_fail("FRAME_CAUSAL_PREFIX_INVALID", source_span, "<frame>")
 
     role_by_id = {role.role_id: role for role in schema.roles}
     if any(binding.role_id not in role_by_id for binding in bindings):
-        _fail("FRAME_BINDING_ROLE_UNKNOWN")
+        unknown = next(binding.role_id for binding in bindings
+                       if binding.role_id not in role_by_id)
+        _binding_fail("FRAME_BINDING_ROLE_UNKNOWN", source_span, unknown)
     grouped = {
         role.role_id: tuple(
             binding for binding in bindings if binding.role_id == role.role_id)
@@ -429,22 +470,33 @@ def validate_frame_bindings(
     for role in schema.roles:
         members = grouped[role.role_id]
         if not role.min_cardinality <= len(members) <= role.max_cardinality:
-            _fail("FRAME_ROLE_CARDINALITY_INVALID:" + role.role_id)
+            _binding_fail("FRAME_ROLE_CARDINALITY_INVALID", source_span, role.role_id)
         if tuple(item.occurrence_index for item in members) != tuple(range(len(members))):
-            _fail("FRAME_ROLE_OCCURRENCE_SEQUENCE_INVALID:" + role.role_id)
+            _binding_fail("FRAME_ROLE_OCCURRENCE_SEQUENCE_INVALID",
+                          source_span, role.role_id)
         for member in members:
             if member.child_frame is not None:
-                if "Frame" not in role.allowed_type_ids:
-                    _fail("FRAME_ROLE_TYPE_INVALID:" + role.role_id)
+                if not set(member.child_frame.type_ids).intersection(role.allowed_type_ids):
+                    _binding_fail("FRAME_ROLE_TYPE_INVALID", source_span, role.role_id)
                 continue
             for concept in _binding_concepts(member):
                 if concept.semantic_release != snapshot.release_sha256:
-                    _fail("FRAME_SEMANTIC_RELEASE_MISMATCH:" + role.role_id)
+                    _binding_fail("FRAME_SEMANTIC_RELEASE_MISMATCH",
+                                  source_span, role.role_id)
                 abi = snapshot.abi_for_semantic(concept.semantic_id)
                 if abi.index != concept.abi_index:
-                    _fail("FRAME_ABI_INDEX_MISMATCH:" + role.role_id)
+                    _binding_fail("FRAME_ABI_INDEX_MISMATCH", source_span, role.role_id)
+                authoritative = next(
+                    (item.concept.types for item in snapshot.concepts
+                     if item.concept.semantic_id == concept.semantic_id),
+                    None,
+                )
+                if (authoritative is not None
+                        and tuple(concept.type_ids) != tuple(authoritative)):
+                    _binding_fail("FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH",
+                                  source_span, role.role_id)
                 if not set(concept.type_ids).intersection(role.allowed_type_ids):
-                    _fail("FRAME_ROLE_TYPE_INVALID:" + role.role_id)
+                    _binding_fail("FRAME_ROLE_TYPE_INVALID", source_span, role.role_id)
 
     rank = {role.role_id: index for index, role in enumerate(schema.roles)}
     return tuple(sorted(
@@ -569,6 +621,13 @@ def bind_ast_frames(
         ))
     if source_ast_construct_id(ast) != schema.ast_construct:
         _fail("FRAME_AST_CONSTRUCT_MISMATCH")
+    if isinstance(ast, Apply):
+        if schema.ast_contract_sha256 is None:
+            _binding_fail("FRAME_AST_CONTRACT_REQUIRED",
+                          source_span, "<operator>")
+        if ast.operator.contract_sha256 != schema.ast_contract_sha256:
+            _binding_fail("FRAME_AST_CONTRACT_MISMATCH",
+                          source_span, "<operator>")
     instance = bind_frame_instance(
         schema,
         snapshot,
@@ -581,6 +640,35 @@ def bind_ast_frames(
         declared_scope=declared_scope or "",
     )
     return FrameTree(instance)
+
+
+def validate_frame_tree(tree: FrameTree) -> FrameTree:
+    if not isinstance(tree, FrameTree):
+        _fail("FRAME_TREE_INVALID")
+    root = tree.root
+    if isinstance(root, AtomicFrame):
+        if tree.children:
+            _fail("FRAME_ATOMIC_CHILDREN_FORBIDDEN")
+        return tree
+    expected = {
+        binding.child_frame.occurrence_id: binding.child_frame
+        for binding in root.bindings if binding.child_frame is not None
+    }
+    actual = {
+        child.root.occurrence_id: child.root
+        for child in tree.children
+    }
+    if set(expected) != set(actual):
+        _binding_fail("FRAME_CHILD_OCCURRENCE_MISMATCH",
+                      root.source_span, "<child-frame>")
+    for occurrence, reference in expected.items():
+        child = actual[occurrence]
+        if child.content_digest != reference.content_digest:
+            _binding_fail("FRAME_CHILD_CONTENT_MISMATCH",
+                          root.source_span, "<child-frame>")
+    for child in tree.children:
+        validate_frame_tree(child)
+    return tree
 
 
 def frame_schema_from_bytes(payload: bytes) -> FrameSchema:
@@ -600,8 +688,11 @@ def frame_schema_from_bytes(payload: bytes) -> FrameSchema:
             roles=roles,
             order_mode=value["order_mode"],
             scope=value["scope"],
+            ast_contract_sha256=value.get("ast_contract_sha256"),
             schema_version=value["schema_version"],
         )
+    except BilqisError:
+        raise
     except (KeyError, TypeError, ValueError, UnicodeError) as error:
         _fail("FRAME_SCHEMA_SERIALIZATION_INVALID:" + type(error).__name__)
     if schema.canonical_bytes() != payload:
@@ -623,8 +714,13 @@ def frame_instance_from_bytes(payload: bytes) -> FrameInstance:
                 source_reference=concept_value["source_reference"],
                 schema_version=concept_value["schema_version"],
             ) if concept_value is not None else None)
-            child = (ChildFrameRef(**item["child_frame"])
-                     if item["child_frame"] is not None else None)
+            child_value = item["child_frame"]
+            child = (ChildFrameRef(
+                occurrence_id=child_value["occurrence_id"],
+                content_digest=child_value["content_digest"],
+                type_ids=tuple(child_value["type_ids"]),
+                schema_version=child_value["schema_version"],
+            ) if child_value is not None else None)
             alternatives = tuple(ConceptRef(
                 semantic_id=alternative["semantic_id"],
                 semantic_release=alternative["semantic_release"],
@@ -655,6 +751,8 @@ def frame_instance_from_bytes(payload: bytes) -> FrameInstance:
             causal_prefix_end=value["causal_prefix_end"],
             schema_version=value["schema_version"],
         )
+    except BilqisError:
+        raise
     except (KeyError, TypeError, ValueError, UnicodeError) as error:
         _fail("FRAME_INSTANCE_SERIALIZATION_INVALID:" + type(error).__name__)
     if instance.canonical_bytes() != payload:
