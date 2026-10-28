@@ -2151,3 +2151,37 @@ before those gates judge the candidate.
 
 **Status:** Accepted for bounded implementation and non-neural verification.
 
+
+## ADR-118 | 2026-10-28 | Current BAMF issues remain authoritative; future work carries its normative spec in-repo
+
+For the three current BAMF-0.2 workstreams represented by GitHub issues
+#341 through #545, GitHub remains the authoritative source for issue scope,
+requirements, acceptance criteria, status, and any later issue-level correction.
+The mirrored issue/specification files already present under
+`docs/tasks/bamf-0.2/` are retained as durable planning and implementation
+context, but they must not silently supersede a changed GitHub issue during these
+existing workstreams. If an existing issue is intentionally migrated to repo-spec
+authority, that migration must be explicit in both the issue and its specification.
+
+This is a transition rule, not the long-term documentation model. For new work
+created after this decision, the normative engineering specification should live
+with the work in the repository and branch where it is being implemented, under
+ordinary version control. GitHub issues should become deliberately smaller:
+concise problem statements, ownership/navigation metadata, execution status, and
+a direct pointer to the authoritative repository specification rather than a
+second full copy of the same requirements.
+
+The repository specification is authoritative because its changes travel through
+the same commit graph as the implementation. A branch, fork, release, or archived
+commit therefore carries an explicable specification snapshot for the code state
+it contains. Requirements can be reviewed, diffed, reverted, blamed, and evolved
+with the implementation instead of relying on mutable issue text whose edit
+history is not part of the repository lineage.
+
+Future issue creation and decomposition should preserve this single-source rule:
+the issue may summarize or index the work, but normative detail belongs in the
+versioned repo specification. Agents must not maintain two independently editable
+full specifications and then guess which one wins.
+
+**Status:** Accepted as the authority-transition contract for the BAMF unified
+base and future Bilqis-MLX work shaping.
