@@ -78,3 +78,13 @@ below the 300-line function limit.
 optimizer, trainer, or grade-specific runtime path. It encodes identity indices
 only; source-admission/readout eligibility remains a later shared-accessor
 boundary owned by A04.2.
+
+## Independent EGM readback
+
+Goldfish worker-3 independently reviewed the compact v1 bit layout,
+release-local schema tags, exact eight-byte wire form and literal
+vectors at immutable `9e3ec5b`. It recomputed the literal integers
+and byte sequence independently and returned **EGM PASS, zero
+Blockers/Majors**. The reviewer inspected tests but did not execute
+them; the original 6/6 and cumulative 17/17 test counts are prime
+evidence. A04 parent integration remains open.

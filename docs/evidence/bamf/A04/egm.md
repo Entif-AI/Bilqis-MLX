@@ -24,5 +24,12 @@ validator before returning any representation. It inspected the
 17-test suite but did not successfully execute it in its older
 worker checkout; the 17/17 result is prime execution evidence.
 
-A04.1's separate compact-bit-layout review remains pending.
-No live training, source admission or merge occurred.
+A04.1's separate compact-bit-layout review also returned **EGM PASS,
+zero Blockers/Majors** at immutable `9e3ec5b`. The reviewer
+independently recomputed the literal u64 and little-endian byte
+vectors and inspected the source/test/receipt correspondence.
+No tests were executed by the reviewer.
+
+**Final scoped disposition: A04.1/A04.2/A04.3 EGM PASS.**
+The original parent integration gate remains open. No live training,
+source admission or merge occurred.
