@@ -1786,6 +1786,48 @@ and ordinary retention decides what survives.
 **Status:** Accepted for bounded implementation and non-neural verification.
 
 
+## ADR-110 | 2026-10-28 | School-wide retention drought can activate plasticity for below-mean semantics
+
+**Direct user correction to ADR-108's scaling behavior.** Capability-local
+starvation remains useful for one stubborn semantic, but it scales poorly when
+the school contains many active semantics and failures are distributed across
+them. Plasticity therefore gains a second, school-wide activation path.
+
+The teacher maintains a durable `school_attempts_since_retained` counter in its
+causal state. It increments once for every committed teacher visit that does not
+retain a candidate and resets to zero on any retained/provisional candidate whose
+trial is actually committed. This counter is independent of which capability was
+visited.
+
+For each visit, plasticity activates when either:
+
+1. the existing ADR-108 capability-local starvation threshold is reached; **or**
+2. at least 24 school-wide visits have elapsed since any retention **and** the
+   current capability's latest examination accuracy is strictly below the
+   unweighted mean of all valid capability accuracies in the latest whole-school
+   exam.
+
+Each capability receives one vote in the school mean regardless of exam-row
+count. A capability absent from the latest exam cannot activate the global-drought
+path until it has authoritative score evidence. Equality with the mean is not
+below mean. The global path remains disabled outside developmental MAIN /
+RECOVERY_1 / RECOVERY_2 stages, exactly like local plasticity.
+
+The new path changes only *eligibility for ADR-108's existing bounded slack*.
+It does not widen any loss tolerance: strict positive target gain remains
+mandatory; same-grade/fixed/frontier losses remain capped by ADR-108; fragile
+replay, source/custody/semantic identity and mature-debt hard limits remain hard.
+A single retained candidate anywhere in the school closes the global drought path
+for subsequent visits by resetting the counter to zero.
+
+Telemetry must distinguish `LOCAL_STARVATION` from
+`SCHOOL_RETENTION_DROUGHT_BELOW_MEAN`, report the school-wide drought count and
+threshold, and report the current capability score and school mean used by the
+global predicate.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
 ## ADR-108 | 2026-10-28 | Retention starvation opens a bounded plasticity escape hatch
 
 **Direct user correction after sustained zero-retention calcification.** Normal

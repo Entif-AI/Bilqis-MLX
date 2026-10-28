@@ -209,7 +209,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     teacher_curriculum_scope = (str(receipt.get("curriculum_mode", "")) + "/" +
                                 str(receipt.get("numeric_maximum", "")))
     plasticity_escape = _learning_plasticity_escape.activation(
-        teacher, cap, teacher_curriculum_scope, school, program)
+        teacher, cap, teacher_curriculum_scope, school, program, receipt=receipt)
     candidate_steps = _learning_learning_experiment.candidate_step_budget(
         steps_per_visit, teacher, cap,
         curriculum_scope=teacher_curriculum_scope)
@@ -625,6 +625,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     reward, bandit_credit, policy_health = _selection_feedback(teacher, cap, teacher_curriculum_scope, policy, outcome, before, after, context_credit)
     with _runtime_timing_trace.trace_span("TEACHER_OBSERVE", capability=cap):
         engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
+    _learning_plasticity_escape.record_school_visit(
+        teacher, retained=bool(outcome and outcome["decision"] == "PROVISIONAL"))
     expected_retained = (step_before if outcome is not None and
                          outcome["decision"] == "REJECT" else attempted_step)
     attempted_optimizer_updates = attempted_step - step_before

@@ -706,7 +706,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
 
     def test_plasticity_activation_is_starvation_local_and_closes_after_retention(self):
         from types import SimpleNamespace
-        from bilqis_mlx.learning.plasticity_escape import activation
+        from bilqis_mlx.learning.plasticity_escape import activation, record_school_visit
 
         program = SimpleNamespace(grades=(
             SimpleNamespace(id="A", teaching_stages=()),
@@ -739,6 +739,53 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             "C.COUNT|" + scope]["attempts_since_retained"] = 100
         self.assertFalse(activation(
             teacher, "C.COUNT", scope, sweep, program)["active"])
+
+        # School-wide drought is a second trigger that does not require this
+        # capability to have accumulated its own local starvation count.
+        teacher["causal_experiment"]["school_attempts_since_retained"] = 24
+        receipt = {"last_exam": {"scores": {
+            "A.MAPS": {"correct": 6, "total": 12},
+            "C.COUNT": {"correct": 20, "total": 33},
+            "C.ORDER": {"correct": 33, "total": 33},
+        }}}
+        teacher["causal_experiment"]["capability_stagnation"][
+            "C.COUNT|" + scope]["attempts_since_retained"] = 0
+        drought = activation(
+            teacher, "C.COUNT", scope, school, program, receipt=receipt)
+        self.assertTrue(drought["active"])
+        self.assertEqual(drought["activation_triggers"],
+                         ["SCHOOL_RETENTION_DROUGHT_BELOW_MEAN"])
+        self.assertEqual(drought["school_attempts_since_retained"], 24)
+        self.assertEqual(drought["school_drought_threshold"], 24)
+        self.assertEqual(drought["current_capability_score"],
+                         {"correct": 20, "total": 33})
+        self.assertLess(drought["current_capability_accuracy"],
+                        drought["school_mean_accuracy"])
+
+        # Equal/above-mean capabilities do not receive drought plasticity.
+        self.assertFalse(activation(
+            teacher, "C.ORDER", scope, school, program, receipt=receipt)["active"])
+        self.assertFalse(activation(
+            teacher, "C.MISSING", scope, school, program, receipt=receipt)["active"])
+
+        # A single retention anywhere in the school closes the global path.
+        record_school_visit(teacher, retained=True)
+        self.assertEqual(
+            teacher["causal_experiment"]["school_attempts_since_retained"], 0)
+        self.assertFalse(activation(
+            teacher, "C.COUNT", scope, school, program, receipt=receipt)["active"])
+
+    def test_school_drought_counter_counts_committed_nonretentions(self):
+        from bilqis_mlx.learning.plasticity_escape import record_school_visit
+
+        teacher = {"causal_experiment": {}}
+        for _ in range(24):
+            record_school_visit(teacher, retained=False)
+        self.assertEqual(
+            teacher["causal_experiment"]["school_attempts_since_retained"], 24)
+        record_school_visit(teacher, retained=True)
+        self.assertEqual(
+            teacher["causal_experiment"]["school_attempts_since_retained"], 0)
 
     def test_target_only_gain_with_same_grade_tie_is_not_progress(self):
         paired = {
