@@ -1,9 +1,9 @@
 # A01.1 source-qualified Atlas projection evidence
 
-Issue: #396  
-Lane: `codex/bamf02-a-semantics`  
-Consumed unified head: `44f78431709ec3b8fc23f47b45d9b18f167c7354`  
-Starting lane head: `4a700e42963271e41403a5ad0287113fbf00f79e`  
+Issue: #396
+Lane: `codex/bamf02-a-semantics`
+Consumed unified head: `44f78431709ec3b8fc23f47b45d9b18f167c7354`
+Starting lane head: `4a700e42963271e41403a5ad0287113fbf00f79e`
 Review disposition: `EGM_PENDING`
 
 ## Implemented contract
