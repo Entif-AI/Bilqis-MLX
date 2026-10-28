@@ -10,23 +10,43 @@ from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import shutil
+import tempfile
 
 from rdflib import BNode, Literal, URIRef
 from rdflib.namespace import DCTERMS, RDF, SKOS
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL, SEMANTIC_COVERAGE
+from bilqis_mlx.vocabulary_growth import digest as semantic_digest
 from lib.ithkuil.src.skos.canonical import canonicalize
 from lib.ithkuil.src.skos.coverage_schema import validate_coverage_receipt
 from lib.ithkuil.src.skos.errors import ProfileError
+from lib.ithkuil.src.skos.publication import json_bytes
 from lib.ithkuil.src.skos.rdf_read import read_canonical_graph
 
 
 ATLAS_RELEASE_SCHEMA = "bilqis.semantic-atlas-release/v1"
 ATLAS_VALIDATION_SCHEMA = "bilqis.semantic-atlas-validation/v1"
+ATLAS_ARTIFACT_SCHEMA = "bilqis.semantic-atlas-artifact/v1"
+ATLAS_MANIFEST_SCHEMA = "bilqis.semantic-atlas-manifest/v1"
+ATLAS_CONCEPT_RECORD_SCHEMA = "bilqis.semantic-atlas-concept/v1"
+ATLAS_RELATION_RECORD_SCHEMA = "bilqis.semantic-atlas-relation/v1"
+ATLAS_WITHHELD_RECORD_SCHEMA = "bilqis.semantic-atlas-withheld/v1"
 CONFORMANCE_SCHEMA = "bilqis.skos.conformance/v1"
 COVERAGE_SCHEMA = "bilqis.skos.semantic-coverage/v1"
+BANK_SIZE = 8192
+SHAPE_POLICY = {
+    "schema": "bilqis.semantic-abi-shape-policy/v1",
+    "bank_size": BANK_SIZE,
+    "index_formula": "8192*bank+row",
+    "extended_index_bits": 32,
+    "fast_codec_max_exclusive": BANK_SIZE,
+    "allocation_order": "prior-accepted-then-canonical-new-id",
+    "new_row_state": "MASKED_UNTIL_ADMISSION",
+}
 REQUIRED_GATES = frozenset({"coverage", "no-omission", "determinism", "shacl"})
 REQUIRED_BUNDLE_FILES = frozenset({
     "canonical.nt",
@@ -44,8 +64,12 @@ HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 def _canonical_bytes(value: object) -> bytes:
-    return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2,
-                       allow_nan=False) + "\n").encode("utf-8")
+    return json_bytes(value)
+
+
+def _canonical_line(value: object) -> bytes:
+    return (json.dumps(value, ensure_ascii=False, sort_keys=True,
+                       separators=(",", ":"), allow_nan=False) + "\n").encode("utf-8")
 
 
 def _digest(payload: bytes) -> str:
@@ -119,12 +143,57 @@ class FormalDomainBinding:
     source_owner: str
     source_sha256: str
     semantic_ids: tuple[str, ...]
+    capability_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if (not self.family or not self.source_owner or not HEX64.fullmatch(self.source_sha256)
                 or not self.semantic_ids or len(self.semantic_ids) != len(set(self.semantic_ids))
-                or any(not isinstance(item, str) or not item for item in self.semantic_ids)):
+                or any(not isinstance(item, str) or not item for item in self.semantic_ids)
+                or not isinstance(self.capability_ids, tuple)
+                or len(self.capability_ids) != len(set(self.capability_ids))
+                or any(not isinstance(item, str) or not item for item in self.capability_ids)):
             _fail("ATLAS_FORMAL_DOMAIN_BINDING_INVALID")
+
+
+@dataclass(frozen=True, order=True)
+class AbiEntry:
+    index: int
+    bank: int
+    row: int
+    semantic_id: str
+    symbol: str | None
+    source: str
+    active: bool
+    teaching_candidate: bool
+    reason: str
+
+
+@dataclass(frozen=True, order=True)
+class CorpusCoverageRow:
+    domain: str
+    table: str
+    key: str
+    semantic_id: str | None
+    source_disposition: str
+    implementation_status: str
+    teaching_candidate: bool
+    reason_code: str
+    teaching_reason: str
+    owner: str
+
+
+@dataclass(frozen=True)
+class AtlasCounts:
+    source_rows: int
+    rdf_terms: int
+    semantic_concepts: int
+    abi_entries: int
+    abi_banks: int
+    active_abi_indices: int
+    trainable_capabilities: int
+    source_held: int
+    source_ir_only: int
+    implementation_uncovered: int
 
 
 @dataclass(frozen=True)
@@ -138,9 +207,15 @@ class AtlasRelease:
     conformance_sha256: str
     prior_abi_sha256: str
     source_row_count: int
+    rdf_term_count: int
     concepts: tuple[AtlasConcept, ...]
     held_mappings: tuple[HeldMapping, ...]
     formal_domain_bindings: tuple[FormalDomainBinding, ...]
+    coverage_rows: tuple[CorpusCoverageRow, ...]
+    abi_entries: tuple[AbiEntry, ...]
+    shape_policy_sha256: str
+    active_set_sha256: str
+    counts: AtlasCounts
 
     @property
     def digest(self) -> str:
@@ -156,6 +231,19 @@ class ReleaseValidation:
     concept_count: int
     held_mapping_count: int
     formal_binding_count: int
+    abi_entry_count: int
+    abi_bank_count: int
+    active_abi_count: int
+    trainable_capability_count: int
+
+
+@dataclass(frozen=True)
+class AtlasArtifactReceipt:
+    schema: str
+    bundle_id: str
+    path: str
+    release_sha256: str
+    file_sha256: tuple[tuple[str, str], ...]
 
 
 def _json_input(value: Mapping | str | Path | bytes, *, reason: str) -> tuple[dict, bytes]:
@@ -177,12 +265,146 @@ def _json_input(value: Mapping | str | Path | bytes, *, reason: str) -> tuple[di
         raise AssertionError("unreachable") from error
 
 
-def _prior_abi(value: Mapping | str | Path | bytes) -> tuple[str, str]:
+def _prior_abi(value: Mapping | str | Path | bytes) -> tuple[str, str, tuple[AbiEntry, ...]]:
     data, payload = _json_input(value, reason="ATLAS_PRIOR_ABI_INVALID")
     schema = data.get("schema")
-    if not isinstance(schema, str) or not schema:
-        _fail("ATLAS_PRIOR_ABI_SCHEMA_MISSING")
-    return schema, _digest(payload if not isinstance(value, Mapping) else _canonical_bytes(data))
+    if schema == ATLAS_ARTIFACT_SCHEMA:
+        raw_entries = data.get("abi_entries")
+        if not isinstance(raw_entries, list) or not raw_entries:
+            _fail("ATLAS_PRIOR_ABI_ROWS_REQUIRED")
+        try:
+            entries = tuple(AbiEntry(**item) for item in raw_entries)
+        except (TypeError, KeyError) as error:
+            _fail("ATLAS_PRIOR_ABI_ROWS_INVALID:" + type(error).__name__)
+    else:
+        rows = data.get("rows")
+        if (not isinstance(rows, list) or len(rows) < 2 or not isinstance(rows[0], list)
+                or tuple(str(value) for value in rows[0][:3]) != (
+                    "0-based Token ID", "Bilqis token symbol", "Pasigraphy identity")):
+            _fail("ATLAS_PRIOR_ABI_ROWS_REQUIRED")
+        native_digest = data.get("native_rows_sha256")
+        if native_digest is not None and native_digest != semantic_digest(rows):
+            _fail("ATLAS_PRIOR_ABI_NATIVE_ROWS_DIGEST_MISMATCH")
+        entries_list = []
+        for expected, row in enumerate(rows[1:]):
+            if (not isinstance(row, list) or len(row) < 3
+                    or str(row[0]) != str(expected)
+                    or not isinstance(row[1], str) or not row[1]
+                    or not isinstance(row[2], str) or not row[2]):
+                _fail("ATLAS_PRIOR_ABI_ROW_ORDER_INVALID")
+            entries_list.append(AbiEntry(
+                index=expected,
+                bank=expected // BANK_SIZE,
+                row=expected % BANK_SIZE,
+                semantic_id=row[2],
+                symbol=row[1],
+                source="PRIOR_ACCEPTED_NATIVE_REGISTRY",
+                active=True,
+                teaching_candidate=True,
+                reason="PRIOR_ACCEPTED_ABI",
+            ))
+        entries = tuple(entries_list)
+        schema = schema if isinstance(schema, str) and schema else "UNVERSIONED"
+    prior_digest = _digest(payload if not isinstance(value, Mapping) else _canonical_bytes(data))
+    _validate_abi_entries(entries, require_concepts=())
+    return schema, prior_digest, entries
+
+
+def _validate_abi_entries(entries: tuple[AbiEntry, ...], *, require_concepts) -> None:
+    if not entries:
+        _fail("ATLAS_ABI_EMPTY")
+    for expected, entry in enumerate(entries):
+        if (not isinstance(entry, AbiEntry) or entry.index != expected
+                or entry.bank != expected // BANK_SIZE or entry.row != expected % BANK_SIZE
+                or not isinstance(entry.semantic_id, str) or not entry.semantic_id
+                or not isinstance(entry.reason, str) or not entry.reason
+                or entry.source not in {
+                    "PRIOR_ACCEPTED_NATIVE_REGISTRY", "PRIOR_ATLAS_ABI",
+                    "CANONICAL_SKOS", "FORMAL_DOMAIN"}):
+            _fail("ATLAS_ABI_ENTRY_INVALID")
+    ids = [entry.semantic_id for entry in entries]
+    if len(ids) != len(set(ids)):
+        _fail("ATLAS_ABI_SEMANTIC_ID_DUPLICATE")
+    symbols = [entry.symbol for entry in entries if entry.symbol is not None]
+    if len(symbols) != len(set(symbols)):
+        _fail("ATLAS_ABI_SYMBOL_DUPLICATE")
+    if not set(require_concepts) <= set(ids):
+        _fail("ATLAS_ABI_MISSING_SOURCE_CONCEPT")
+
+
+def _build_abi_entries(
+    prior: tuple[AbiEntry, ...],
+    concepts: tuple[AtlasConcept, ...],
+    bindings: tuple[FormalDomainBinding, ...],
+    held_semantic_ids: frozenset[str],
+) -> tuple[AbiEntry, ...]:
+    prior_ids = {entry.semantic_id for entry in prior}
+    concept_ids = {item.semantic_id for item in concepts}
+    formal_ids = {semantic_id for binding in bindings for semantic_id in binding.semantic_ids}
+    if held_semantic_ids & formal_ids:
+        _fail("ATLAS_HELD_IDENTITY_ADMISSION_REQUESTED")
+    new_ids = sorted((concept_ids | formal_ids) - prior_ids)
+    entries = list(prior)
+    for semantic_id in new_ids:
+        index = len(entries)
+        entries.append(AbiEntry(
+            index=index,
+            bank=index // BANK_SIZE,
+            row=index % BANK_SIZE,
+            semantic_id=semantic_id,
+            symbol=None,
+            source="CANONICAL_SKOS" if semantic_id in concept_ids else "FORMAL_DOMAIN",
+            active=False,
+            teaching_candidate=False,
+            reason="IMPLEMENTATION_UNCOVERED",
+        ))
+    result = tuple(entries)
+    _validate_abi_entries(result, require_concepts=concept_ids | formal_ids)
+    return result
+
+
+def _coverage_record(row: dict, domain: str, *, concept_ids: set[str],
+                     active_ids: set[str]) -> CorpusCoverageRow:
+    semantic_id = row.get("semantic_iri")
+    semantic_id = semantic_id if isinstance(semantic_id, str) and semantic_id else None
+    status = row["status"]
+    if status in {"HELD", "REJECTED", "UNSUPPORTED"}:
+        source_disposition = "SOURCE_HELD"
+        implementation_status = "NOT_APPLICABLE"
+        teaching_candidate = False
+        teaching_reason = row["reason_code"]
+    elif status == "IR_ONLY":
+        source_disposition = "SOURCE_IR_ONLY"
+        implementation_status = "NOT_APPLICABLE"
+        teaching_candidate = False
+        teaching_reason = row["reason_code"]
+    elif semantic_id in concept_ids:
+        source_disposition = "SOURCE_ELIGIBLE"
+        if semantic_id in active_ids:
+            implementation_status = "ADMITTED"
+            teaching_candidate = True
+            teaching_reason = "PRIOR_ACCEPTED_ABI"
+        else:
+            implementation_status = "IMPLEMENTATION_UNCOVERED"
+            teaching_candidate = False
+            teaching_reason = "IMPLEMENTATION_UNCOVERED"
+    else:
+        source_disposition = "SOURCE_EMITTED_NON_CONCEPT"
+        implementation_status = "NOT_APPLICABLE"
+        teaching_candidate = False
+        teaching_reason = row["reason_code"]
+    return CorpusCoverageRow(
+        domain=domain,
+        table=row["table"],
+        key=row["key"],
+        semantic_id=semantic_id,
+        source_disposition=source_disposition,
+        implementation_status=implementation_status,
+        teaching_candidate=teaching_candidate,
+        reason_code=row["reason_code"],
+        teaching_reason=teaching_reason,
+        owner=row.get("owner", ""),
+    )
 
 
 def _verify_bundle(root: Path) -> tuple[str, dict[str, bytes]]:
@@ -371,22 +593,26 @@ def compile_atlas_release(
 
     source_by_semantic: dict[str, list[SourceRecordRef]] = {}
     held = []
+    held_semantic_ids = set()
     for domain, domain_receipt in sorted(coverage["domains"].items()):
         for row in domain_receipt["rows"]:
             semantic_id = row.get("semantic_iri")
             ref = SourceRecordRef(domain, row["table"], row["key"])
             if row["status"] == "EMITTED" and isinstance(semantic_id, str) and semantic_id:
                 source_by_semantic.setdefault(semantic_id, []).append(ref)
-            elif domain == "mapping" and row["status"] in {"HELD", "REJECTED", "UNSUPPORTED"}:
-                held.append(HeldMapping(
-                    domain=domain,
-                    table=row["table"],
-                    key=row["key"],
-                    status=row["status"],
-                    reason_code=row["reason_code"],
-                    owner=row.get("owner", ""),
-                    semantic_id=semantic_id if isinstance(semantic_id, str) and semantic_id else None,
-                ))
+            elif row["status"] in {"HELD", "REJECTED", "UNSUPPORTED"}:
+                if isinstance(semantic_id, str) and semantic_id:
+                    held_semantic_ids.add(semantic_id)
+                if domain == "mapping":
+                    held.append(HeldMapping(
+                        domain=domain,
+                        table=row["table"],
+                        key=row["key"],
+                        status=row["status"],
+                        reason_code=row["reason_code"],
+                        owner=row.get("owner", ""),
+                        semantic_id=semantic_id if isinstance(semantic_id, str) and semantic_id else None,
+                    ))
 
     concepts = []
     for semantic_id, refs in sorted(source_by_semantic.items()):
@@ -395,7 +621,35 @@ def compile_atlas_release(
         if kind in {"root", "sense"} or (subject, RDF.type, SKOS.Concept) in graph:
             concepts.append(_concept(graph, semantic_id, tuple(refs)))
 
-    prior_schema, prior_digest = _prior_abi(prior_abi)
+    concepts = tuple(concepts)
+    bindings = _normalize_bindings(formal_domain_bindings)
+    prior_schema, prior_digest, prior_entries = _prior_abi(prior_abi)
+    abi_entries = _build_abi_entries(
+        prior_entries, concepts, bindings, frozenset(held_semantic_ids))
+    active_ids = {entry.semantic_id for entry in abi_entries if entry.active}
+    concept_ids = {item.semantic_id for item in concepts}
+    coverage_rows = tuple(sorted(
+        _coverage_record(row, domain, concept_ids=concept_ids, active_ids=active_ids)
+        for domain, receipt in coverage["domains"].items() for row in receipt["rows"]
+    ))
+    rdf_term_count = len({term for triple in graph for term in triple})
+    shape_policy_sha256 = _digest(_canonical_bytes(SHAPE_POLICY))
+    active_set_sha256 = _digest(_canonical_bytes(
+        [entry.index for entry in abi_entries if entry.active]))
+    capabilities = {
+        capability for binding in bindings for capability in binding.capability_ids}
+    counts = AtlasCounts(
+        source_rows=len(source_rows),
+        rdf_terms=rdf_term_count,
+        semantic_concepts=len(concepts),
+        abi_entries=len(abi_entries),
+        abi_banks=(len(abi_entries) + BANK_SIZE - 1) // BANK_SIZE,
+        active_abi_indices=sum(entry.active for entry in abi_entries),
+        trainable_capabilities=len(capabilities),
+        source_held=sum(row.source_disposition == "SOURCE_HELD" for row in coverage_rows),
+        source_ir_only=sum(row.source_disposition == "SOURCE_IR_ONLY" for row in coverage_rows),
+        implementation_uncovered=sum(concept.semantic_id not in active_ids for concept in concepts),
+    )
     release = AtlasRelease(
         schema=ATLAS_RELEASE_SCHEMA,
         input_schemas=tuple(sorted((
@@ -410,9 +664,15 @@ def compile_atlas_release(
         conformance_sha256=_digest(payloads["conformance.json"]),
         prior_abi_sha256=prior_digest,
         source_row_count=len(source_rows),
-        concepts=tuple(concepts),
+        rdf_term_count=rdf_term_count,
+        concepts=concepts,
         held_mappings=tuple(sorted(held)),
-        formal_domain_bindings=_normalize_bindings(formal_domain_bindings),
+        formal_domain_bindings=bindings,
+        coverage_rows=coverage_rows,
+        abi_entries=abi_entries,
+        shape_policy_sha256=shape_policy_sha256,
+        active_set_sha256=active_set_sha256,
+        counts=counts,
     )
     validate_atlas_release(release)
     return release
@@ -426,15 +686,25 @@ def validate_atlas_release(release: AtlasRelease) -> ReleaseValidation:
             or not all(HEX64.fullmatch(value) for value in (
                 release.canonical_rdf_sha256, release.coverage_sha256,
                 release.source_rows_sha256, release.conformance_sha256,
-                release.prior_abi_sha256))
-            or type(release.source_row_count) is not int or release.source_row_count < 1):
+                release.prior_abi_sha256, release.shape_policy_sha256,
+                release.active_set_sha256))
+            or type(release.source_row_count) is not int or release.source_row_count < 1
+            or type(release.rdf_term_count) is not int or release.rdf_term_count < 1):
         _fail("ATLAS_RELEASE_IDENTITY_INVALID")
     if release.concepts != tuple(sorted(release.concepts, key=lambda item: item.semantic_id)):
         _fail("ATLAS_CONCEPT_ORDER_INVALID")
     ids = tuple(item.semantic_id for item in release.concepts)
     if len(ids) != len(set(ids)) or any(not item.source_rows for item in release.concepts):
         _fail("ATLAS_CONCEPT_IDENTITY_INVALID")
-    held_ids = {item.semantic_id for item in release.held_mappings if item.semantic_id}
+    if (release.coverage_rows != tuple(sorted(release.coverage_rows))
+            or len(release.coverage_rows) != release.source_row_count
+            or any(not row.teaching_candidate and not row.teaching_reason
+                   for row in release.coverage_rows)):
+        _fail("ATLAS_COVERAGE_ROW_INVALID")
+    held_ids = {
+        row.semantic_id for row in release.coverage_rows
+        if row.source_disposition == "SOURCE_HELD" and row.semantic_id}
+    held_ids.update(item.semantic_id for item in release.held_mappings if item.semantic_id)
     if held_ids & set(ids):
         _fail("ATLAS_HELD_IDENTITY_ADMITTED")
     if release.held_mappings != tuple(sorted(release.held_mappings)):
@@ -443,6 +713,40 @@ def validate_atlas_release(release: AtlasRelease) -> ReleaseValidation:
         _fail("ATLAS_FORMAL_DOMAIN_BINDING_ORDER_INVALID")
     if not {"boolean", "numeric"} <= {item.family for item in release.formal_domain_bindings}:
         _fail("ATLAS_FORMAL_DOMAIN_BINDING_REQUIRED")
+    formal_ids = {
+        semantic_id for binding in release.formal_domain_bindings
+        for semantic_id in binding.semantic_ids}
+    if held_ids & formal_ids:
+        _fail("ATLAS_HELD_IDENTITY_ADMISSION_REQUESTED")
+    _validate_abi_entries(release.abi_entries, require_concepts=set(ids) | formal_ids)
+    abi_ids = {entry.semantic_id for entry in release.abi_entries}
+    if held_ids & abi_ids:
+        _fail("ATLAS_HELD_IDENTITY_ADMITTED")
+    if release.shape_policy_sha256 != _digest(_canonical_bytes(SHAPE_POLICY)):
+        _fail("ATLAS_ABI_SHAPE_POLICY_DRIFT")
+    expected_active = _digest(_canonical_bytes(
+        [entry.index for entry in release.abi_entries if entry.active]))
+    if release.active_set_sha256 != expected_active:
+        _fail("ATLAS_ABI_ACTIVE_SET_DRIFT")
+    capabilities = {
+        capability for binding in release.formal_domain_bindings
+        for capability in binding.capability_ids}
+    active_ids = {entry.semantic_id for entry in release.abi_entries if entry.active}
+    expected_counts = AtlasCounts(
+        source_rows=release.source_row_count,
+        rdf_terms=release.rdf_term_count,
+        semantic_concepts=len(release.concepts),
+        abi_entries=len(release.abi_entries),
+        abi_banks=(len(release.abi_entries) + BANK_SIZE - 1) // BANK_SIZE,
+        active_abi_indices=sum(entry.active for entry in release.abi_entries),
+        trainable_capabilities=len(capabilities),
+        source_held=sum(row.source_disposition == "SOURCE_HELD" for row in release.coverage_rows),
+        source_ir_only=sum(row.source_disposition == "SOURCE_IR_ONLY" for row in release.coverage_rows),
+        implementation_uncovered=sum(
+            concept.semantic_id not in active_ids for concept in release.concepts),
+    )
+    if release.counts != expected_counts:
+        _fail("ATLAS_RELEASE_COUNTS_DRIFT")
     return ReleaseValidation(
         schema=ATLAS_VALIDATION_SCHEMA,
         status="valid",
@@ -451,4 +755,135 @@ def validate_atlas_release(release: AtlasRelease) -> ReleaseValidation:
         concept_count=len(release.concepts),
         held_mapping_count=len(release.held_mappings),
         formal_binding_count=len(release.formal_domain_bindings),
+        abi_entry_count=len(release.abi_entries),
+        abi_bank_count=release.counts.abi_banks,
+        active_abi_count=release.counts.active_abi_indices,
+        trainable_capability_count=release.counts.trainable_capabilities,
+    )
+
+
+def _artifact_payloads(release: AtlasRelease) -> tuple[dict[str, bytes], bytes, str]:
+    validate_atlas_release(release)
+    by_id = {entry.semantic_id: entry for entry in release.abi_entries}
+    atlas = {
+        "schema": ATLAS_ARTIFACT_SCHEMA,
+        "release_schema": release.schema,
+        "release_sha256": release.digest,
+        "input_schemas": [list(item) for item in release.input_schemas],
+        "source_bundle_id": release.source_bundle_id,
+        "canonical_rdf_sha256": release.canonical_rdf_sha256,
+        "coverage_sha256": release.coverage_sha256,
+        "source_rows_sha256": release.source_rows_sha256,
+        "conformance_sha256": release.conformance_sha256,
+        "prior_abi_sha256": release.prior_abi_sha256,
+        "shape_policy": SHAPE_POLICY,
+        "shape_policy_sha256": release.shape_policy_sha256,
+        "active_set_sha256": release.active_set_sha256,
+        "counts": asdict(release.counts),
+        "formal_domain_bindings": [asdict(item) for item in release.formal_domain_bindings],
+        "abi_entries": [asdict(item) for item in release.abi_entries],
+    }
+    concept_records = []
+    relation_records = []
+    for concept in release.concepts:
+        entry = by_id[concept.semantic_id]
+        concept_records.append({
+            "schema": ATLAS_CONCEPT_RECORD_SCHEMA,
+            "concept": asdict(concept),
+            "abi_index": entry.index,
+            "abi_bank": entry.bank,
+            "abi_row": entry.row,
+            "active": entry.active,
+            "implementation_status": "ADMITTED" if entry.active else "IMPLEMENTATION_UNCOVERED",
+            "teaching_candidate": entry.teaching_candidate,
+            "teaching_reason": entry.reason,
+        })
+        for relation in concept.relations:
+            relation_records.append({
+                "schema": ATLAS_RELATION_RECORD_SCHEMA,
+                "source_semantic_id": concept.semantic_id,
+                "predicate": relation.predicate,
+                "target_semantic_id": relation.target,
+            })
+    withheld_records = [
+        {"schema": ATLAS_WITHHELD_RECORD_SCHEMA, **asdict(row)}
+        for row in release.coverage_rows if not row.teaching_candidate
+    ]
+    payloads = {
+        "atlas.json": _canonical_bytes(atlas),
+        "concepts.jsonl": b"".join(_canonical_line(item) for item in concept_records),
+        "relations.jsonl": b"".join(_canonical_line(item) for item in relation_records),
+        "held.jsonl": b"".join(_canonical_line(item) for item in withheld_records),
+    }
+    file_manifest = {
+        name: {"sha256": _digest(payload), "bytes": len(payload)}
+        for name, payload in sorted(payloads.items())
+    }
+    manifest = {
+        "schema": ATLAS_MANIFEST_SCHEMA,
+        "release_sha256": release.digest,
+        "shape_policy_sha256": release.shape_policy_sha256,
+        "active_set_sha256": release.active_set_sha256,
+        "files": file_manifest,
+    }
+    manifest_payload = _canonical_bytes(manifest)
+    bundle_id = _digest(manifest_payload)
+    return payloads, manifest_payload, bundle_id
+
+
+def _verify_persisted(target: Path, payloads: dict[str, bytes], manifest_payload: bytes) -> None:
+    expected = set(payloads) | {"manifest.json"}
+    if target.is_symlink() or not target.is_dir():
+        _fail("ATLAS_ARTIFACT_TARGET_INVALID")
+    if {path.name for path in target.iterdir()} != expected:
+        _fail("ATLAS_ARTIFACT_FILESET_DRIFT")
+    for name, payload in {**payloads, "manifest.json": manifest_payload}.items():
+        path = target / name
+        if path.is_symlink() or not path.is_file() or path.read_bytes() != payload:
+            _fail("ATLAS_ARTIFACT_CONTENT_DRIFT:" + name)
+
+
+def persist_atlas_release(release: AtlasRelease, output_root: str | Path) -> AtlasArtifactReceipt:
+    """Persist one immutable content-addressed semantic release without a database."""
+    payloads, manifest_payload, bundle_id = _artifact_payloads(release)
+    root = Path(output_root)
+    if root.exists() and root.is_symlink():
+        _fail("ATLAS_ARTIFACT_ROOT_SYMLINK")
+    root.mkdir(parents=True, exist_ok=True)
+    root = root.resolve()
+    target = root / bundle_id
+    if target.exists():
+        _verify_persisted(target, payloads, manifest_payload)
+    else:
+        temp = Path(tempfile.mkdtemp(prefix=".atlas-", dir=root))
+        try:
+            for name, payload in {**payloads, "manifest.json": manifest_payload}.items():
+                path = temp / name
+                with path.open("xb") as stream:
+                    stream.write(payload)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+            directory_fd = os.open(temp, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+            try:
+                os.rename(temp, target)
+            except OSError:
+                if not target.exists():
+                    raise
+                _verify_persisted(target, payloads, manifest_payload)
+        finally:
+            if temp.exists():
+                shutil.rmtree(temp)
+    _verify_persisted(target, payloads, manifest_payload)
+    manifest = json.loads(manifest_payload)
+    return AtlasArtifactReceipt(
+        schema=ATLAS_MANIFEST_SCHEMA,
+        bundle_id=bundle_id,
+        path=str(target),
+        release_sha256=release.digest,
+        file_sha256=tuple(sorted(
+            (name, item["sha256"]) for name, item in manifest["files"].items())),
     )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import hashlib
 import json
 import os
@@ -13,8 +14,11 @@ from rdflib.namespace import DCTERMS, RDF, SKOS
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.atlas_projection import (
+    AbiEntry,
+    BANK_SIZE,
     FormalDomainBinding,
     compile_atlas_release,
+    persist_atlas_release,
     validate_atlas_release,
 )
 from lib.ithkuil.src.skos.canonical import canonicalize
@@ -24,7 +28,8 @@ from lib.ithkuil.src.skos.publication import json_bytes
 
 ROOT = Path(__file__).resolve().parents[3]
 FIXTURES = ROOT / "lib/ithkuil/tests/fixtures"
-PRIOR_ABI = ROOT / "bilqis_mlx/semantics/legacy_abi_v1.json"
+LEGACY_ABI = ROOT / "bilqis_mlx/semantics/legacy_abi_v1.json"
+PRIOR_ABI = ROOT / "bilqis_mlx/semantics/copular_registry_v1.json"
 NUMERIC = ROOT / "bilqis_mlx/semantics/numeric_v1.json"
 
 
@@ -35,12 +40,14 @@ def _sha(path: Path) -> str:
 def _bindings():
     return (
         FormalDomainBinding(
-            "boolean", "bilqis_mlx/semantics/legacy_abi_v1.json", _sha(PRIOR_ABI),
+            "boolean", "bilqis_mlx/semantics/legacy_abi_v1.json", _sha(LEGACY_ABI),
             ("legacy:cogal.operator.NOT", "legacy:cogal.operator.AND"),
+            ("B.NOT", "B.AND"),
         ),
         FormalDomainBinding(
             "numeric", "bilqis_mlx/semantics/numeric_v1.json", _sha(NUMERIC),
             ("bilqis.numeric/v1:school.op.COUNT", "bilqis.numeric/v1:school.op.SUCC"),
+            ("C.COUNT", "C.SUCCESSOR"),
         ),
     )
 
@@ -153,6 +160,7 @@ class AtlasProjectionTests(unittest.TestCase):
         self.assertEqual(held.reason_code, "MAPPING_REVIEW_PENDING")
         self.assertEqual({item.family for item in release.formal_domain_bindings},
                          {"boolean", "numeric"})
+        self.assertEqual(release.counts.trainable_capabilities, 4)
 
     def test_same_pinned_inputs_are_byte_identity_deterministic(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -161,6 +169,88 @@ class AtlasProjectionTests(unittest.TestCase):
             second = compile_atlas_release(bundle, coverage, PRIOR_ABI, tuple(reversed(_bindings())))
         self.assertEqual(first, second)
         self.assertEqual(first.digest, second.digest)
+        self.assertEqual(first.abi_entries, second.abi_entries)
+
+    def test_append_only_abi_and_content_addressed_files_preserve_prior_bytes(self):
+        prior_before = PRIOR_ABI.read_bytes()
+        prior_rows = json.loads(prior_before)["rows"][1:]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle, coverage, root_id, sense_a, sense_b, held_id = _fixture_bundle(root)
+            release = compile_atlas_release(bundle, coverage, PRIOR_ABI, _bindings())
+            output = root / "artifacts"
+            first = persist_atlas_release(release, output)
+            second = persist_atlas_release(release, output)
+            target = Path(first.path)
+            files = {path.name for path in target.iterdir()}
+            manifest_bytes = (target / "manifest.json").read_bytes()
+            atlas = json.loads((target / "atlas.json").read_text())
+            withheld = [json.loads(line) for line in (target / "held.jsonl").read_text().splitlines()]
+
+        self.assertEqual(PRIOR_ABI.read_bytes(), prior_before)
+        self.assertEqual(first.bundle_id, hashlib.sha256(manifest_bytes).hexdigest())
+        self.assertEqual(first, second)
+        self.assertEqual(files, {"atlas.json", "concepts.jsonl", "relations.jsonl",
+                                 "held.jsonl", "manifest.json"})
+        self.assertEqual(len(prior_rows), 228)
+        for index, row in enumerate(prior_rows):
+            entry = release.abi_entries[index]
+            self.assertEqual((entry.index, entry.bank, entry.row),
+                             (index, index // BANK_SIZE, index % BANK_SIZE))
+            self.assertEqual((entry.symbol, entry.semantic_id), (row[1], row[2]))
+            self.assertTrue(entry.active)
+        appended = release.abi_entries[len(prior_rows):]
+        self.assertEqual([entry.semantic_id for entry in appended],
+                         sorted((root_id, sense_a, sense_b)))
+        self.assertTrue(all(not entry.active and entry.reason == "IMPLEMENTATION_UNCOVERED"
+                            for entry in appended))
+        self.assertNotIn(held_id, {entry.semantic_id for entry in release.abi_entries})
+        self.assertEqual(atlas["counts"], {
+            "abi_banks": 1,
+            "abi_entries": 231,
+            "active_abi_indices": 228,
+            "implementation_uncovered": 3,
+            "rdf_terms": release.rdf_term_count,
+            "semantic_concepts": 3,
+            "source_held": 4,
+            "source_ir_only": 1,
+            "source_rows": 11,
+            "trainable_capabilities": 4,
+        })
+        held = next(row for row in withheld if row["semantic_id"] == held_id)
+        self.assertEqual((held["source_disposition"], held["teaching_reason"]),
+                         ("SOURCE_HELD", "MAPPING_REVIEW_PENDING"))
+        uncovered = next(row for row in withheld if row["semantic_id"] == root_id)
+        self.assertEqual((uncovered["source_disposition"], uncovered["implementation_status"],
+                          uncovered["teaching_reason"]),
+                         ("SOURCE_ELIGIBLE", "IMPLEMENTATION_UNCOVERED",
+                          "IMPLEMENTATION_UNCOVERED"))
+
+    def test_forged_held_activation_is_rejected_without_artifact_drift(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle, coverage, *_, held_id = _fixture_bundle(root)
+            release = compile_atlas_release(bundle, coverage, PRIOR_ABI, _bindings())
+            receipt = persist_atlas_release(release, root / "artifacts")
+            manifest = Path(receipt.path) / "manifest.json"
+            before = manifest.read_bytes()
+            index = len(release.abi_entries)
+            forged = replace(release, abi_entries=(*release.abi_entries, AbiEntry(
+                index=index,
+                bank=index // BANK_SIZE,
+                row=index % BANK_SIZE,
+                semantic_id=held_id,
+                symbol="attacker.requested-held-meaning",
+                source="CANONICAL_SKOS",
+                active=True,
+                teaching_candidate=True,
+                reason="REQUESTED_LEARNER_ACTIVATION",
+            )))
+            with self.assertRaises(BilqisError) as caught:
+                persist_atlas_release(forged, root / "artifacts")
+            self.assertEqual(manifest.read_bytes(), before)
+        self.assertIn("ATLAS_HELD_IDENTITY_ADMITTED",
+                      str(caught.exception.context.get("reason")))
 
     def test_stale_coverage_is_rejected_before_release(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -179,6 +269,11 @@ class AtlasProjectionTests(unittest.TestCase):
         coverage = json.loads((bundle / "coverage.json").read_text())
         release = compile_atlas_release(bundle, coverage, PRIOR_ABI, _bindings())
         validation = validate_atlas_release(release)
+        with tempfile.TemporaryDirectory() as directory:
+            receipt = persist_atlas_release(release, Path(directory))
+            target = Path(receipt.path)
+            real_manifest = (target / "manifest.json").read_bytes()
+            real_files = {path.name for path in target.iterdir()}
         self.assertEqual(release.canonical_rdf_sha256,
                          "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e")
         self.assertEqual(release.source_row_count, 25692)
@@ -188,6 +283,19 @@ class AtlasProjectionTests(unittest.TestCase):
         self.assertEqual(validation.concept_count, 9079)
         self.assertGreater(sum(len(item.realizations) for item in release.concepts), 0)
         self.assertEqual(validation.formal_binding_count, 2)
+        self.assertEqual(release.prior_abi_sha256, _sha(PRIOR_ABI))
+        self.assertIn(("prior_abi", "UNVERSIONED"), release.input_schemas)
+        self.assertEqual(release.counts.abi_entries, 9307)
+        self.assertEqual(release.counts.abi_banks, 2)
+        self.assertEqual(release.counts.active_abi_indices, 228)
+        self.assertEqual(release.counts.trainable_capabilities, 4)
+        self.assertEqual(release.counts.source_held, 1052)
+        self.assertEqual(release.counts.source_ir_only, 9488)
+        self.assertEqual(release.counts.implementation_uncovered, 9079)
+        self.assertGreater(release.counts.rdf_terms, 0)
+        self.assertEqual(receipt.bundle_id, hashlib.sha256(real_manifest).hexdigest())
+        self.assertEqual(real_files, {"atlas.json", "concepts.jsonl", "relations.jsonl",
+                                      "held.jsonl", "manifest.json"})
 
 
 if __name__ == "__main__":
