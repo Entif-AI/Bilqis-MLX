@@ -19,6 +19,9 @@ class PromotionError(str, Enum):
 
 PROMOTION_SWEEP_ENTRY_FLOOR = Fraction(92, 100)
 PROMOTION_SWEEP_FAILURE_FLOOR = Fraction(87, 100)
+SCORE_RECORD_FIELDS = 3
+MINIMUM_SCORE_CORRECT = 0
+MINIMUM_SCORE_TOTAL = 1
 
 
 def _introduced_grade_capabilities(program, state: SchoolState) -> tuple[str, ...]:
@@ -71,6 +74,23 @@ def _promotion_sweep_fields_cleared(state: SchoolState, **changes) -> SchoolStat
     )
 
 
+def _failed_promotion_blockers(state: SchoolState,
+                               snapshot: Assessment) -> tuple[tuple[str, int, int], ...]:
+    return tuple(
+        (capability, snapshot.scores[capability].correct,
+         snapshot.scores[capability].total)
+        for capability in state.promotion_sweep_scope
+        if not snapshot.scores[capability].perfect
+    )
+
+
+def _retry_blocker_mean(scores: tuple[tuple[str, int, int], ...]) -> Fraction:
+    if not scores:
+        return Fraction(1, 1)
+    return sum((Fraction(correct, total) for _capability, correct, total in scores),
+               Fraction(0, 1)) / len(scores)
+
+
 def _verify_promotion_sweep_state(program, state: SchoolState) -> None:
     sweep_active = state.stage in ("PROMOTION_SWEEP", "ASSESS_PROMOTION_SWEEP")
     scope = state.promotion_sweep_scope
@@ -78,6 +98,7 @@ def _verify_promotion_sweep_state(program, state: SchoolState) -> None:
     scores = state.promotion_sweep_scores
     attempt_student = state.promotion_sweep_attempt_student_sha256
     attempt_scope = state.promotion_sweep_attempt_scope
+    retry_scores = state.promotion_sweep_retry_scores
     attempt_pair_valid = (
         (attempt_student is None and not attempt_scope) or
         (isinstance(attempt_student, str) and len(attempt_student) == 64 and
@@ -85,6 +106,15 @@ def _verify_promotion_sweep_state(program, state: SchoolState) -> None:
          bool(attempt_scope) and len(set(attempt_scope)) == len(attempt_scope))
     )
     if not attempt_pair_valid:
+        raise ValueError(PromotionError.INVALID_PROMOTION_SWEEP_STATE.value)
+    retry_capabilities = tuple(item[0] for item in retry_scores)
+    invalid_retry_score = any(
+        not isinstance(item, tuple) or len(item) != SCORE_RECORD_FIELDS or
+        item[0] not in attempt_scope or type(item[1]) is not int or
+        type(item[2]) is not int or item[2] < MINIMUM_SCORE_TOTAL or
+        not MINIMUM_SCORE_CORRECT <= item[1] <= item[2]
+        for item in retry_scores)
+    if len(set(retry_capabilities)) != len(retry_capabilities) or invalid_retry_score:
         raise ValueError(PromotionError.INVALID_PROMOTION_SWEEP_STATE.value)
     if not sweep_active:
         if scope or return_stage is not None or scores:
@@ -125,6 +155,16 @@ def _promotion_sweep_due(program, state: SchoolState,
     if (state.promotion_sweep_attempt_student_sha256 == state.current_student.sha256 and
             state.promotion_sweep_attempt_scope == scope):
         return False
+    if (state.promotion_sweep_retry_scores and
+            state.promotion_sweep_attempt_scope == scope):
+        current = tuple(
+            (capability, snapshot.scores[capability].correct,
+             snapshot.scores[capability].total)
+            for capability, _correct, _total in state.promotion_sweep_retry_scores
+        )
+        if _retry_blocker_mean(current) <= _retry_blocker_mean(
+                state.promotion_sweep_retry_scores):
+            return False
     return _mean_accuracy(snapshot.scores, scope) >= PROMOTION_SWEEP_ENTRY_FLOOR
 
 

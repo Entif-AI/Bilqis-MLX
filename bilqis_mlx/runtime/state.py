@@ -68,6 +68,7 @@ def _state_from_json(value: dict, course) -> SchoolState:
     school.setdefault("promotion_sweep_scope", ())
     school.setdefault("promotion_sweep_return_stage", None)
     school.setdefault("promotion_sweep_scores", ())
+    school.setdefault("promotion_sweep_retry_scores", ())
     school.setdefault("frontier_priority_visits", 0)
     school.setdefault("nongating_b_visits", 0)
     school.setdefault("non_b_training_turns_since_b_run", 0)
@@ -97,6 +98,9 @@ def _state_from_json(value: dict, course) -> SchoolState:
     school["promotion_sweep_scores"] = tuple(
         (capability, correct, total)
         for capability, correct, total in school["promotion_sweep_scores"])
+    school["promotion_sweep_retry_scores"] = tuple(
+        (capability, correct, total)
+        for capability, correct, total in school["promotion_sweep_retry_scores"])
     school["introduction_frontiers"] = tuple(
         (grade, stage) for grade, stage in school["introduction_frontiers"])
     school["current_student"] = Checkpoint(**school["current_student"])

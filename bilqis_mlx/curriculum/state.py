@@ -215,6 +215,9 @@ class SchoolState:
     # scope. Fresh cohort flux alone cannot re-arm an unchanged student.
     promotion_sweep_attempt_student_sha256: str | None = None
     promotion_sweep_attempt_scope: tuple[str, ...] = ()
+    # Imperfect capabilities from the last failed attempt on this scope.  A
+    # fresh checkpoint cannot retry until this blocker set measurably improves.
+    promotion_sweep_retry_scores: tuple[tuple[str, int, int], ...] = ()
     # Historical ADR-090 candidate-visit counters retain their saved receipt
     # fields. ADR-094 moved scheduling authority to whole grade-turns.
     frontier_priority_visits: int = 0

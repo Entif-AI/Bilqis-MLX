@@ -1828,6 +1828,39 @@ global predicate.
 **Status:** Accepted for bounded implementation and non-neural verification.
 
 
+## ADR-111 | 2026-10-28 | Failed promotion sweeps require blocker improvement before retry
+
+**Direct user correction after repeated graduation attempts failed without
+converging.** A changed whole-student checkpoint is not sufficient evidence that
+the reason a promotion sweep failed has changed. Retentions on unrelated
+capabilities must not repeatedly re-arm the same expensive sweep against an
+unchanged blocker profile.
+
+When a promotion sweep aborts below its hysteresis floor, or completes on an
+already-admitted older grade without advancing that grade, the scheduler records
+the imperfect capabilities in that sweep and their exact correct/total scores as
+the retry baseline. A later assessment for the same promotion scope may re-arm the
+sweep only when both ordinary entry eligibility is satisfied **and** the unweighted
+mean accuracy across those recorded blockers is strictly better than the failed
+baseline. A new student hash by itself is insufficient.
+
+Successful semantic introduction, actual grade promotion, or reaching an
+authorized next-grade boundary clears the failed-sweep blocker baseline. A changed
+promotion scope also supersedes it naturally. The blocker baseline is evidence
+about retry eligibility, not a new mastery threshold: existing 92% entry, 87%
+hysteresis, promotion, retention, source/custody, and mature-debt rules remain
+unchanged.
+
+This is deliberately compatible with ADR-094 and ADR-109. Failed B revalidation
+sweeps do not create extra B training share; B continues to receive its bounded
+debt turns, and another B sweep waits until those turns have measurably improved
+the B blocker set. Failed progression-frontier sweeps continue ordinary frontier
+recovery, but unrelated A/B retentions cannot manufacture another nominal
+graduation attempt.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
+
 ## ADR-108 | 2026-10-28 | Retention starvation opens a bounded plasticity escape hatch
 
 **Direct user correction after sustained zero-retention calcification.** Normal

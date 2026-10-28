@@ -22,7 +22,7 @@ from .state import (
     _caps, _score_pool, _school_state_boundary_issue, verify_state,
     assessment_capabilities, next_capability, weakest_three,
 )
-from .promotion import (PROMOTION_SWEEP_FAILURE_FLOOR, PromotionError, _promotion_debt, _boundary_mastery_debt, _introduced_grade_capabilities, _mean_accuracy, _promotion_sweep_fields_cleared, _promotion_sweep_due, _start_promotion_sweep, migrate_promotion_sweep_attempt_epoch, restore_promotion_attempt_fields)
+from .promotion import (PROMOTION_SWEEP_FAILURE_FLOOR, PromotionError, _promotion_debt, _boundary_mastery_debt, _failed_promotion_blockers, _introduced_grade_capabilities, _mean_accuracy, _promotion_sweep_fields_cleared, _promotion_sweep_due, _start_promotion_sweep, migrate_promotion_sweep_attempt_epoch, restore_promotion_attempt_fields)
 import hashlib
 import json
 from pathlib import Path
@@ -599,11 +599,12 @@ def _advance_after_promotion_sweep(program, state: SchoolState,
                                    snapshot: Assessment) -> SchoolState:
     debt = _promotion_debt(program, state, snapshot)
     return_stage = state.promotion_sweep_return_stage
-    cleared = _promotion_sweep_fields_cleared(
-        state, carried_mastery_debt=debt,
-        latest_rubric_digest=snapshot.rubric_digest)
     grade = next(g for g in program.grades if g.id == state.grade)
     if grade.teaching_stages and state.introduction_stage < len(grade.teaching_stages)-1:
+        cleared = _promotion_sweep_fields_cleared(
+            state, carried_mastery_debt=debt,
+            promotion_sweep_retry_scores=(),
+            latest_rubric_digest=snapshot.rubric_digest)
         next_stage = state.introduction_stage + 1
         advanced = _at_introduction_stage(
             cleared, next_stage, stage="MAIN",
@@ -611,20 +612,35 @@ def _advance_after_promotion_sweep(program, state: SchoolState,
         due = _enter_due_debt_run(program, advanced, snapshot)
         return due if due is not None else advanced
     if _perfect_in_grade(program, state.grade, snapshot.scores):
+        cleared = _promotion_sweep_fields_cleared(
+            state, carried_mastery_debt=debt,
+            promotion_sweep_retry_scores=(),
+            latest_rubric_digest=snapshot.rubric_digest)
         return replace(_promote(program, cleared, snapshot),
                        grade_exam_epoch=state.grade_exam_epoch + 1)
     boundary_debt = _boundary_mastery_debt(
         program, state, snapshot, debt)
-    cleared = replace(cleared, carried_mastery_debt=boundary_debt)
     next_index = state.grade_index + 1
     if next_index < len(state.active_grades):
+        cleared = _promotion_sweep_fields_cleared(
+            state, carried_mastery_debt=boundary_debt,
+            promotion_sweep_retry_scores=_failed_promotion_blockers(state, snapshot),
+            latest_rubric_digest=snapshot.rubric_digest)
         return _enter_grade(
             program, cleared, next_index, stage="MAIN", first_recovery=(),
             main_sweep_visited=(), latest_rubric_digest=None)
     if not program.program_complete:
+        cleared = _promotion_sweep_fields_cleared(
+            state, carried_mastery_debt=boundary_debt,
+            promotion_sweep_retry_scores=(),
+            latest_rubric_digest=snapshot.rubric_digest)
         return replace(
             cleared, stage="AWAITING_NEXT_GRADE_WITH_DEBT", queue=(),
             first_recovery=(), main_sweep_visited=())
+    cleared = _promotion_sweep_fields_cleared(
+        state, carried_mastery_debt=boundary_debt,
+        promotion_sweep_retry_scores=_failed_promotion_blockers(state, snapshot),
+        latest_rubric_digest=snapshot.rubric_digest)
     ordinary = replace(cleared, stage=return_stage, queue=())
     return _assess_ordinary(program, ordinary, snapshot)
 
@@ -654,6 +670,8 @@ def _assess_promotion_sweep(program, state: SchoolState,
         return_stage = state.promotion_sweep_return_stage
         ordinary = _promotion_sweep_fields_cleared(
             running_state, stage=return_stage, queue=(),
+            promotion_sweep_retry_scores=_failed_promotion_blockers(
+                running_state, effective_snapshot),
             latest_rubric_digest=effective_snapshot.rubric_digest)
         ordinary = _refresh_mastery_debt(program, ordinary, effective_snapshot)
         return _assess_ordinary(program, ordinary, effective_snapshot)

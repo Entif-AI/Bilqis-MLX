@@ -591,6 +591,8 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
         self.assertNotEqual(state.stage, "ASSESS_PROMOTION_SWEEP")
         self.assertNotIn("c.2", assessment_capabilities(course, state))
+        self.assertEqual(
+            state.promotion_sweep_retry_scores, (("c.1", 369, 500),))
 
     def test_failed_promotion_sweep_does_not_retrigger_on_same_student_flux(self):
         course = staged_course()
@@ -635,6 +637,51 @@ class StagedSchoolTests(unittest.TestCase):
 
         self.assertEqual(state.stage, "PROMOTION_SWEEP")
         self.assertEqual(state.current_student, retained)
+
+    def test_failed_older_grade_sweep_retries_only_after_blocker_improves(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = replace(
+            state, champions={"A": state.champions["A"]},
+            promotion_sweep_attempt_student_sha256=None,
+            promotion_sweep_attempt_scope=(),
+        )
+        state = _enter_grade(
+            course, state, 1, stage="MAIN", first_recovery=())
+        b_scores = {
+            capability: (8, 8)
+            for capability in assessment_capabilities(course, state)
+        }
+        b_scores["b.0"] = (6, 8)  # 93.75% B mean: eligible, but not mastered.
+        state = grade_loop(course, state, pointer)
+        state = assess(course, state, snapshot(course, pointer, b_scores))
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
+        state = finish_promotion_sweep(course, state, pointer, b_scores)
+        self.assertEqual(state.grade, "C")
+        self.assertEqual(state.promotion_sweep_retry_scores, (("b.0", 6, 8),))
+        state = _state_from_json(json.loads(json.dumps(asdict(state))), course)
+        self.assertEqual(state.promotion_sweep_retry_scores, (("b.0", 6, 8),))
+
+        unrelated = cp("retained-elsewhere", step=pointer.optimizer_step + 1)
+        state = _enter_grade(
+            course, state, 1, stage="MAIN", first_recovery=())
+        same_blockers = {
+            capability: (8, 8)
+            for capability in assessment_capabilities(course, state)
+        }
+        same_blockers["b.0"] = (6, 8)
+        state = grade_loop(course, state, unrelated)
+        state = assess(course, state, snapshot(course, unrelated, same_blockers))
+        self.assertNotEqual(state.stage, "PROMOTION_SWEEP")
+
+        improved = dict(same_blockers)
+        improved["b.0"] = (7, 8)
+        targeted = cp("retained-blocker-gain", step=unrelated.optimizer_step + 1)
+        state = _enter_grade(
+            course, state, 1, stage="MAIN", first_recovery=())
+        state = grade_loop(course, state, targeted)
+        state = assess(course, state, snapshot(course, targeted, improved))
+        self.assertEqual(state.stage, "PROMOTION_SWEEP")
 
     def test_promotion_sweep_only_replaces_the_semantic_just_rescored(self):
         course = staged_course()
