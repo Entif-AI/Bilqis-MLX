@@ -873,8 +873,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
         retained=decision["decision"] != "REJECT")
     _teacher_breeding.record_policy_outcome_side_effects(
         channel, effective_policy, capability=capability,
-        curriculum_scope=curriculum_scope,
-        retained=decision["decision"] != "REJECT")
+        curriculum_scope=curriculum_scope, retained=decision["decision"] != "REJECT",
+        realized_action_key=action_key)
     if no_target_gain:
         capability_stagnation["no_target_gain_streak"] += 1
     else:

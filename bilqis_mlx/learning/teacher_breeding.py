@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 
 from .teacher_strategy_population import (
     active_effective_strategy_keys, checkpoint_active_effective_strategy_keys,
@@ -13,6 +14,10 @@ from .teacher_strategy_population import (
 
 UNPROVEN_BESPOKE_PER_CAPABILITY = 8
 _INEFFECTIVE_MUTATION_FIELDS = frozenset({"preview"})
+_ADAPTIVE_NUMERIC_FIELDS = ("old", "lr", "distill")
+_ADAPTIVE_OLD_RESOLUTION = 1
+_ADAPTIVE_LR_RESOLUTION = 0.000001
+_ADAPTIVE_DISTILL_RESOLUTION = 0.01
 
 
 def _numeric_scope_family(scope: str) -> str | None:
@@ -147,6 +152,8 @@ def selection_metadata(teacher: dict, *, channel: dict, inventory: dict,
         "live_effective_strategy_count": live_count,
         "retired_effective_strategy_count": len(channel.get("retired_effective_strategies", ())),
         "strategy_archive_count": len(teacher.get("strategies", {})),
+        "realized_action_ecology_count": len(
+            channel.get("realized_action_ecology", {})),
         "checkpoint_retired_effective_strategy_count": len(checkpoint_retired),
     }
     if total_capabilities is not None:
@@ -165,6 +172,20 @@ def _record_rank(record: dict) -> tuple[float, float, int]:
     reward_sum = float(record.get("reward_sum", 0.))
     return (retained / trials if trials else 0.,
             reward_sum / trials if trials else float("-inf"), trials)
+
+
+def _birth_novelty(teacher: dict, policy_key: str) -> tuple[int, int]:
+    policy = teacher.get("strategies", {}).get(policy_key)
+    if policy is None:
+        return (0, 0)
+    birth = teacher.get("causal_experiment", {}).get(
+        "strategy_births", {}).get(effective_policy_key(policy), {})
+    if not isinstance(birth, dict):
+        return (0, 0)
+    return (
+        int(birth.get("retained_novel_realized_action_count", 0)),
+        int(birth.get("novel_realized_action_count", 0)),
+    )
 
 
 def _retained_parent_candidates(teacher: dict, capability: str,
@@ -204,9 +225,11 @@ def _retained_parent_candidates(teacher: dict, capability: str,
                         continue
                 if int(evidence.get("retained", 0)) < 1:
                     continue
-                candidates.append((_record_rank(evidence), policy_key))
+                candidates.append((
+                    _record_rank(evidence), _birth_novelty(teacher, policy_key),
+                    policy_key))
         if candidates:
-            for _rank, policy_key in sorted(candidates, reverse=True):
+            for _rank, _novelty, policy_key in sorted(candidates, reverse=True):
                 yield policy_key, basis
 
     local = teacher.get("grade_stats", {}).get(grade, {})
@@ -238,6 +261,96 @@ def _one_knob_children(base: dict, knobs: dict, rng):
             yield field, child
 
 
+def _quantized_midpoint(field: str, left: float, right: float):
+    if field == "lr":
+        value = math.sqrt(left * right)
+    else:
+        value = (left + right) / 2
+    resolution = (_ADAPTIVE_OLD_RESOLUTION if field == "old" else
+                  _ADAPTIVE_LR_RESOLUTION if field == "lr" else
+                  _ADAPTIVE_DISTILL_RESOLUTION)
+    value = round(value / resolution) * resolution
+    if field == "old":
+        return int(round(value))
+    decimals = 6 if field == "lr" else 2
+    return round(value, decimals)
+
+
+def _adaptive_numeric_children(base: dict, strategies: dict,
+                               knobs: dict, rng):
+    """Bisect one local numeric gap without leaving the historical envelope."""
+    fields = [field for field in _ADAPTIVE_NUMERIC_FIELDS
+              if field in knobs and field in base]
+    rng.shuffle(fields)
+    for field in fields:
+        allowed = tuple(knobs[field])
+        if not allowed or any(not isinstance(value, (int, float)) for value in allowed):
+            continue
+        lower_bound = float(min(allowed))
+        upper_bound = float(max(allowed))
+        base_value = float(base[field])
+        observed = sorted({
+            float(policy[field]) for policy in strategies.values()
+            if isinstance(policy, dict) and isinstance(policy.get(field), (int, float))
+            and lower_bound <= float(policy[field]) <= upper_bound
+        })
+        neighbors = []
+        lower = [value for value in observed if value < base_value]
+        upper = [value for value in observed if value > base_value]
+        if lower:
+            neighbors.append(max(lower))
+        if upper:
+            neighbors.append(min(upper))
+        rng.shuffle(neighbors)
+        for neighbor in neighbors:
+            value = _quantized_midpoint(field, base_value, neighbor)
+            numeric = float(value)
+            if (numeric <= lower_bound or numeric >= upper_bound or
+                    numeric == base_value or numeric == neighbor or
+                    numeric in observed):
+                continue
+            child = dict(base)
+            child[field] = value
+            yield field, child
+
+
+def _register_child(teacher: dict, child: dict, *, effective: str,
+                    parent_key: str, parent: dict, basis: str,
+                    field: str, capability: str, curriculum_scope: str,
+                    total_capabilities: int, mutation_mode: str):
+    strategies = teacher["strategies"]
+    identity = hashlib.sha256(
+        json.dumps(child, sort_keys=True).encode()).hexdigest()[:12]
+    if identity in strategies:
+        return None
+    strategies[identity] = child
+    teacher.setdefault("global_stats", {})[identity] = {
+        "trials": 0, "reward_sum": 0.0, "reward_ema": 0.0, "latest": None,
+    }
+    teacher["mutations"] = int(teacher.get("mutations", 0)) + 1
+    channel = teacher.setdefault("causal_experiment", {})
+    channel.setdefault("strategy_births", {})[effective] = {
+        "origin_capability": capability,
+        "origin_grade": capability.partition(".")[0],
+        "curriculum_scope": curriculum_scope,
+        "parent_policy_key": parent_key,
+        "parent_effective_policy_key": effective_policy_key(parent),
+        "parent_basis": basis,
+        "changed_fields": [field],
+        "mutation_mode": mutation_mode,
+        "birth_event": int(channel.get("events", 0)) + 1,
+        "proven_retained": False,
+    }
+    from .teacher_population_control import rebalance_live_population
+    rebalance_live_population(teacher, total_capabilities=total_capabilities)
+    return identity, child, {
+        "mutation_parent_policy_key": parent_key,
+        "mutation_parent_basis": basis,
+        "mutation_changed_fields": [field],
+        "mutation_mode": mutation_mode,
+    }
+
+
 def mint_bespoke_effective_strategy(engine, teacher: dict, rng, *,
                                     capability: str, curriculum_scope: str,
                                     diagnostic_key: str | None = None,
@@ -250,6 +363,7 @@ def mint_bespoke_effective_strategy(engine, teacher: dict, rng, *,
     existing = set(effective_strategy_inventory(teacher))
     max_context = int(getattr(engine, "MAX_TEACHER_CONTEXT_ITEMS", 24))
     seen_parents = set()
+    parents = []
     for parent_key, basis in _retained_parent_candidates(
             teacher, capability, curriculum_scope, diagnostic_key):
         if parent_key in seen_parents:
@@ -258,41 +372,26 @@ def mint_bespoke_effective_strategy(engine, teacher: dict, rng, *,
         parent = strategies[parent_key]
         if any(field not in parent for field in knobs):
             continue
-        for field, child in _one_knob_children(parent, knobs, rng):
-            if child["old"] + child["preview"] > max_context:
-                continue
-            effective = effective_policy_key(child)
-            if effective in existing:
-                continue
-            identity = hashlib.sha256(
-                json.dumps(child, sort_keys=True).encode()).hexdigest()[:12]
-            if identity in strategies:
-                continue
-            strategies[identity] = child
-            teacher.setdefault("global_stats", {})[identity] = {
-                "trials": 0, "reward_sum": 0.0, "reward_ema": 0.0, "latest": None,
-            }
-            teacher["mutations"] = int(teacher.get("mutations", 0)) + 1
-            channel = teacher.setdefault("causal_experiment", {})
-            channel.setdefault("strategy_births", {})[effective] = {
-                "origin_capability": capability,
-                "origin_grade": capability.partition(".")[0],
-                "curriculum_scope": curriculum_scope,
-                "parent_policy_key": parent_key,
-                "parent_effective_policy_key": effective_policy_key(parent),
-                "parent_basis": basis,
-                "changed_fields": [field],
-                "birth_event": int(channel.get("events", 0)) + 1,
-                "proven_retained": False,
-            }
-            from .teacher_population_control import rebalance_live_population
-            rebalance_live_population(
-                teacher, total_capabilities=total_capabilities)
-            return identity, child, {
-                "mutation_parent_policy_key": parent_key,
-                "mutation_parent_basis": basis,
-                "mutation_changed_fields": [field],
-            }
+        parents.append((parent_key, basis, parent))
+    for mutation_mode, children in (
+            ("LEGACY_GRID", lambda parent: _one_knob_children(parent, knobs, rng)),
+            ("ADAPTIVE_LOCAL_REFINEMENT",
+             lambda parent: _adaptive_numeric_children(parent, strategies, knobs, rng))):
+        for parent_key, basis, parent in parents:
+            for field, child in children(parent):
+                if child["old"] + child["preview"] > max_context:
+                    continue
+                effective = effective_policy_key(child)
+                if effective in existing:
+                    continue
+                registered = _register_child(
+                    teacher, child, effective=effective, parent_key=parent_key,
+                    parent=parent, basis=basis, field=field,
+                    capability=capability, curriculum_scope=curriculum_scope,
+                    total_capabilities=total_capabilities,
+                    mutation_mode=mutation_mode)
+                if registered is not None:
+                    return registered
     return None
 
 
@@ -308,9 +407,36 @@ def mark_bespoke_retained(channel: dict, effective_key: str, *,
 
 def record_policy_outcome_side_effects(channel: dict, effective_key: str, *,
                                        capability: str, curriculum_scope: str,
-                                       retained: bool) -> None:
+                                       retained: bool,
+                                       realized_action_key: str | None = None) -> None:
     from .teacher_population_control import record_strategy_usage
     record_strategy_usage(channel, effective_key)
+    if realized_action_key is not None:
+        ecology = channel.setdefault("realized_action_ecology", {})
+        novel = realized_action_key not in ecology
+        record = ecology.setdefault(realized_action_key, {
+            "trials": 0, "retained": 0,
+            "first_event": int(channel.get("events", 0)) + 1,
+            "last_event": int(channel.get("events", 0)) + 1,
+            "effective_policy_keys": [],
+        })
+        record["trials"] += 1
+        record["retained"] += int(retained)
+        record["last_event"] = int(channel.get("events", 0)) + 1
+        if effective_key not in record["effective_policy_keys"]:
+            record["effective_policy_keys"].append(effective_key)
+            record["effective_policy_keys"].sort()
+        birth = channel.get("strategy_births", {}).get(effective_key)
+        if isinstance(birth, dict):
+            actions = birth.setdefault("realized_action_keys", [])
+            if realized_action_key not in actions:
+                actions.append(realized_action_key)
+            if novel:
+                birth["novel_realized_action_count"] = int(
+                    birth.get("novel_realized_action_count", 0)) + 1
+                if retained:
+                    birth["retained_novel_realized_action_count"] = int(
+                        birth.get("retained_novel_realized_action_count", 0)) + 1
     if retained:
         mark_bespoke_retained(
             channel, effective_key, capability=capability,

@@ -158,14 +158,14 @@ def _teacher_event_fields(policy_selection, policy_health):
                         "active_effective_strategy_capacity",
                         "dormant_effective_strategy_count", "live_effective_strategy_count",
                         "strategy_population_capacity", "retired_effective_strategy_count",
-                        "checkpoint_retired_effective_strategy_count")
+                        "checkpoint_retired_effective_strategy_count", "realized_action_ecology_count")
             if policy_selection.get(key) is not None},
     }
     if policy_selection.get("mutation_parent_policy_key"):
         result["teacher_mutation_parent"] = {
             "policy_key": policy_selection["mutation_parent_policy_key"],
             "basis": policy_selection.get("mutation_parent_basis"),
-            "changed_fields": policy_selection.get("mutation_changed_fields", []),
+            "changed_fields": policy_selection.get("mutation_changed_fields", []), "mode": policy_selection.get("mutation_mode"),
         }
     if policy_health and policy_health["active"]:
         result["teacher_policy_health"] = policy_health

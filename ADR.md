@@ -1743,3 +1743,45 @@ do not fabricate a D curriculum as part of the numeric staircase repair. Once a
 future executable curriculum actually contains D, ordinary next-grade admission
 is eligible only after terminal C@0...10 mastery.
 
+
+## ADR-107 | 2026-10-28 | Teacher evolution refines bounded numeric genes and measures realized-action novelty
+
+ADR-104 remains the governing ancestry, evidence, locality, population, and
+retention contract, but exhausting the legacy discrete policy lattice must not
+terminate invention. The immutable historical archive may contain every legacy
+effective policy without making the teacher evolutionarily sterile.
+
+The teacher first preserves the existing one-effective-knob hereditary search.
+When that discrete neighborhood cannot produce a novel effective child, it may
+refine exactly one controllable numeric gene locally around a retained parent:
+
+- `old` remains an integer inside the historical `old` envelope;
+- `lr` remains positive inside the historical learning-rate envelope;
+- `distill` remains inside the historical distillation envelope;
+- `depth` and `contrast` remain categorical until runtime behavior actually
+  supports more than SHALLOW/DEEP and RANDOM/DIVERSE;
+- `preview` remains excluded from effective identity while future-grade preview
+  is intentionally unavailable.
+
+Adaptive mutation bisects the local gap between the parent and its nearest
+already-observed numeric neighbor, with deterministic bounded quantization. It
+does not invent out-of-envelope optimizer or guidance settings, mutate more than
+one effective gene in a child, rewrite any historical policy, or weaken
+retention, source, custody, preservation, mature-debt, or frontier gates.
+
+Static genotype novelty is insufficient evidence of useful exploration. Every
+delivered candidate already emits a `teacher-realized-action` receipt describing
+the optimizer experience that actually occurred. The teacher therefore maintains
+an append-only realized-action ecology recording first-seen action identities,
+trials, retained outcomes, and the effective policies that produced them.
+Bespoke birth receipts record which realized actions they caused and whether
+those actions were novel. Realized-action novelty may break otherwise-equal
+exploration/ancestry ties, but is never retention credit and cannot authorize an
+otherwise rejected candidate.
+
+This keeps the proven ADR-104 control plane intact: evidence chooses ancestry,
+mutation remains local and bounded, actual delivered behavior measures novelty,
+and ordinary retention decides what survives.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
