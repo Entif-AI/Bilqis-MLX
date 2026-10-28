@@ -8,11 +8,13 @@ from pathlib import Path
 import tempfile
 import unittest
 from collections import Counter
+from unittest.mock import patch
 
 from rdflib import Graph, Literal, URIRef
 from rdflib.namespace import DCTERMS, RDF, SKOS, XSD
 
 from bilqis_mlx.errors import BilqisError
+from bilqis_mlx.semantics import atlas_projection
 from bilqis_mlx.semantics.atlas_projection import (
     AbiEntry,
     BANK_SIZE,
@@ -337,6 +339,35 @@ class AtlasProjectionTests(unittest.TestCase):
                 )
         self.assertIn("ATLAS_PRIOR_ABI_PROVENANCE_REQUIRED",
                       str(caught.exception.context.get("reason")))
+
+    def test_parent_directory_sync_failure_is_unconfirmed_and_retry_reconfirms(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle, coverage, *_ = _fixture_bundle(root)
+            release = compile_atlas_release(bundle, coverage, PRIOR_ABI, _bindings())
+            output_root = root / "artifacts"
+            original_sync = atlas_projection._sync_directory
+
+            def fail_parent(path, *, reason):
+                if Path(path).resolve() == output_root.resolve():
+                    atlas_projection._fail("ATLAS_ARTIFACT_PARENT_SYNC_FAILED:INJECTED")
+                return original_sync(path, reason=reason)
+
+            with patch(
+                    "bilqis_mlx.semantics.atlas_projection._sync_directory",
+                    side_effect=fail_parent):
+                with self.assertRaises(BilqisError) as caught:
+                    persist_atlas_release(release, output_root)
+            self.assertIn("ATLAS_ARTIFACT_PARENT_SYNC_FAILED:INJECTED",
+                          str(caught.exception.context.get("reason")))
+
+            targets = [path for path in output_root.iterdir() if not path.name.startswith(".")]
+            self.assertEqual(len(targets), 1)
+            self.assertTrue((targets[0] / "manifest.json").is_file())
+
+            receipt = persist_atlas_release(release, output_root)
+            self.assertEqual(Path(receipt.path).resolve(), targets[0].resolve())
+            self.assertEqual(receipt.bundle_id, targets[0].name)
 
     def test_stale_coverage_is_rejected_before_release(self):
         with tempfile.TemporaryDirectory() as directory:

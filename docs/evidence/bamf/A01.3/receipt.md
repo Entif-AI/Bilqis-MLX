@@ -83,9 +83,21 @@ Focused tests also prove that:
 
 Persistence also fsyncs the output parent directory immediately after the atomic
 content-addressed rename, matching the repository SKOS publisher's durability
-boundary. The real-corpus test pins the exact Atlas release digest, artifact bundle
-ID, shape-policy digest, active-set digest, RDF-term count and all four persisted
-payload digests.
+boundary. A focused injected parent-directory sync failure is reported as
+`ATLAS_ARTIFACT_PARENT_SYNC_FAILED`; the already-renamed content-addressed target
+is preserved for reconciliation, and a later idempotent retry must successfully
+sync the parent directory before persistence is confirmed. The real-corpus test pins
+the exact Atlas release digest, artifact bundle ID, shape-policy digest, active-set
+digest, RDF-term count and all four persisted payload digests.
+
+The frozen snapshot reader implementation moved into
+`bilqis_mlx/semantics/atlas_snapshot.py` while
+`atlas_projection.load_atlas_snapshot` remains the compatibility facade. This is
+an ownership split only: the public reader contract and canonical artifact bytes are
+unchanged. The production-size gate now reports `atlas_projection.py` at 1067 lines
+and `atlas_snapshot.py::load_atlas_snapshot` at 181 lines, both below the hard
+1200-module/300-function limits. The remaining size-gate failures are three inherited
+shared-runtime regressions outside Lane A.
 
 The held-identity case above proves the A01 ABI boundary only. It does not claim that
 the downstream Factory admission API has already received and rejected an A01 hold
@@ -95,9 +107,9 @@ when the later semantic-coverage binding reaches it.
 ## Verification
 
 `scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_projection.py` in the
-provided dependency environment: 9 passed, 1 external real-corpus witness skipped.
+provided dependency environment: 10 passed, 1 external real-corpus witness skipped.
 
-The same test file with the pinned real-corpus witness enabled: 10 passed, 0 skipped.
+The same test file with the pinned real-corpus witness enabled: 11 passed, 0 skipped.
 The real witness exercises persistence, frozen readback, bank-1 lookup at index 8192,
 source-hold census, exact concept lookup, all admission-boundary repairs and the
 existing root/sense/realization/hold assertions.
