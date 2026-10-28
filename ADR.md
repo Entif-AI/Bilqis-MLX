@@ -2079,3 +2079,39 @@ source or custody rules, fragile replay, or mature-grade debt limits.
 
 **Status:** Accepted for bounded implementation and non-neural verification.
 
+
+## ADR-116 | 2026-10-28 | Retention support follows veto surfaces; B returns to a 20% candidate-effort ceiling
+
+**Direct correction after the restarted run remained near 3% retention.** The
+post-restart session retained only about one candidate in forty even though many
+rejected candidates still improved their target probe. Two allocation defects
+were visible in the live receipts.
+
+First, generic retention support rotated uniformly across the whole admitted
+school. After full Grade B was restored, the same optimizer batch also reserved
+four fresh B.OR and four fresh B.XOR preservation siblings. Generic support could
+therefore spend another turn on those already-preserved connectives while a hard
+lesson-grade or active-frontier surface received little rehearsal. Candidate
+construction now spends generic support on the complete lesson grade and latest
+active progression frontier. Verified fragile-preservation capabilities are
+removed from that generic schedule. Short budgets rotate across the priority
+surface between visits. Earlier-grade rehearsal remains controlled by the
+teacher's existing `old` policy.
+
+Second, ADR-094's full-grade B turn no longer matches the user's later operating
+constraint. A due B turn could expand into seven consecutive candidate visits,
+so B consumed roughly one quarter of live candidate work while C remained the
+progression frontier. Full U7C B remains admitted, but allocation returns to a
+candidate-effort boundary: four progression-frontier candidate visits earn one B
+candidate visit. Each earned visit teaches one currently imperfect B semantic,
+rotating in canonical order so no admitted Boolean semantic starves. The cadence
+resets after that B visit. This supersedes ADR-094 only for the allocation unit;
+it does not restore a reduced B curriculum or make B a C prerequisite.
+
+These changes do not relax target gain, lesson-grade, active-frontier,
+whole-school, protected-capability, fragile replay, mature-debt, source-gold,
+semantic identity or AdamW custody requirements. They change what is taught
+before those gates judge the candidate.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+

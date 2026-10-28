@@ -207,13 +207,10 @@ def visit(program, state: SchoolState, capability: str,
         policy = state.debt_cadence_policy
         if capability in set(_caps(program, (policy.progression_priority_grade_id,))):
             frontier_priority_visits += 1
+            non_b_training_turns_since_b_run += 1
         elif capability in set(_caps(program, (policy.bounded_debt_grade_id,))):
             nongating_b_visits += 1
-        if not rest:
-            if state.grade == policy.bounded_debt_grade_id:
-                non_b_training_turns_since_b_run = 0
-            else:
-                non_b_training_turns_since_b_run += 1
+            non_b_training_turns_since_b_run = 0
     if state.stage == "PROMOTION_SWEEP":
         after = "ASSESS_PROMOTION_SWEEP"
     else:

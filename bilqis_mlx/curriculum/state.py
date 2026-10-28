@@ -219,11 +219,12 @@ class SchoolState:
     # fresh checkpoint cannot retry until this blocker set measurably improves.
     promotion_sweep_retry_scores: tuple[tuple[str, int, int], ...] = ()
     # Historical ADR-090 candidate-visit counters retain their saved receipt
-    # fields. ADR-094 moved scheduling authority to whole grade-turns.
+    # fields. ADR-116 restores candidate-level B effort authority while keeping
+    # the full admitted Grade-B curriculum.
     frontier_priority_visits: int = 0
     nongating_b_visits: int = 0
-    # Saved under its historical wire name; policy supplies the active roles
-    # and number of completed non-debt turns.
+    # Saved under its historical wire name. Under ADR-116 this counts eligible
+    # progression-frontier candidate visits since the last bounded-debt visit.
     non_b_training_turns_since_b_run: int = 0
     # Absent on old receipts only until the neural-inert ADR-094 migration.
     # New schedules receive a policy only when one is explicitly supplied.

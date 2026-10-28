@@ -100,9 +100,16 @@ def _debt_run_queue(program, state: SchoolState, scores: dict[str, Score],
     allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
     debt = set(state.carried_mastery_debt)
     grade = state.debt_cadence_policy.bounded_debt_grade_id
-    return tuple(capability for capability in _caps(program, (grade,))
-                 if capability in allowed and capability in debt and
-                 capability in scores and not scores[capability].perfect)
+    eligible = tuple(
+        capability for capability in _caps(program, (grade,))
+        if capability in allowed and capability in debt and
+        capability in scores and not scores[capability].perfect)
+    if not eligible:
+        return ()
+    # One debt visit is one candidate-level training turn.  Rotate through the
+    # complete imperfect grade so every admitted B semantic stays in circulation
+    # without expanding one earned turn into a multi-candidate burst.
+    return (eligible[state.nongating_b_visits % len(eligible)],)
 
 
 def _imperfect_ranked(scores: dict[str, Score],
