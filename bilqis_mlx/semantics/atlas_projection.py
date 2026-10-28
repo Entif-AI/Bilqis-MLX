@@ -6,6 +6,7 @@ the successor ABI leaf.
 """
 from __future__ import annotations
 
+from bisect import bisect_left
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 import hashlib
@@ -35,6 +36,7 @@ ATLAS_MANIFEST_SCHEMA = "bilqis.semantic-atlas-manifest/v1"
 ATLAS_CONCEPT_RECORD_SCHEMA = "bilqis.semantic-atlas-concept/v1"
 ATLAS_RELATION_RECORD_SCHEMA = "bilqis.semantic-atlas-relation/v1"
 ATLAS_WITHHELD_RECORD_SCHEMA = "bilqis.semantic-atlas-withheld/v1"
+ATLAS_SNAPSHOT_SCHEMA = "bilqis.semantic-atlas-snapshot/v1"
 CONFORMANCE_SCHEMA = "bilqis.skos.conformance/v1"
 COVERAGE_SCHEMA = "bilqis.skos.semantic-coverage/v1"
 BANK_SIZE = 8192
@@ -48,6 +50,7 @@ SHAPE_POLICY = {
     "new_row_state": "MASKED_UNTIL_ADMISSION",
 }
 REQUIRED_GATES = frozenset({"coverage", "no-omission", "determinism", "shacl"})
+GATE_VERSIONS = {name: "1.0.0" for name in REQUIRED_GATES}
 REQUIRED_BUNDLE_FILES = frozenset({
     "canonical.nt",
     "comparison.nt",
@@ -246,6 +249,81 @@ class AtlasArtifactReceipt:
     file_sha256: tuple[tuple[str, str], ...]
 
 
+@dataclass(frozen=True)
+class FrozenAtlasConcept:
+    concept: AtlasConcept
+    abi_index: int
+    abi_bank: int
+    abi_row: int
+    active: bool
+    implementation_status: str
+    teaching_candidate: bool
+    teaching_reason: str
+
+
+@dataclass(frozen=True, order=True)
+class FrozenAtlasRelation:
+    source_semantic_id: str
+    predicate: str
+    target_semantic_id: str
+
+
+@dataclass(frozen=True)
+class FrozenAtlasSnapshot:
+    schema: str
+    bundle_id: str
+    release_sha256: str
+    source_bundle_id: str
+    canonical_rdf_sha256: str
+    coverage_sha256: str
+    source_rows_sha256: str
+    conformance_sha256: str
+    prior_abi_sha256: str
+    shape_policy_sha256: str
+    active_set_sha256: str
+    counts: AtlasCounts
+    formal_domain_bindings: tuple[FormalDomainBinding, ...]
+    abi_entries: tuple[AbiEntry, ...]
+    concepts: tuple[FrozenAtlasConcept, ...]
+    relations: tuple[FrozenAtlasRelation, ...]
+    withheld_rows: tuple[CorpusCoverageRow, ...]
+    semantic_lookup: tuple[tuple[str, int], ...]
+    concept_lookup: tuple[tuple[str, int], ...]
+
+    def abi(self, index: int) -> AbiEntry:
+        if type(index) is not int or not 0 <= index < len(self.abi_entries):
+            _fail("ATLAS_SNAPSHOT_ABI_INDEX_UNKNOWN")
+        return self.abi_entries[index]
+
+    def abi_for_semantic(self, semantic_id: str) -> AbiEntry:
+        if not isinstance(semantic_id, str) or not semantic_id:
+            _fail("ATLAS_SNAPSHOT_SEMANTIC_ID_INVALID")
+        position = bisect_left(self.semantic_lookup, (semantic_id, -1))
+        if (position == len(self.semantic_lookup)
+                or self.semantic_lookup[position][0] != semantic_id):
+            _fail("ATLAS_SNAPSHOT_SEMANTIC_ID_UNKNOWN")
+        return self.abi_entries[self.semantic_lookup[position][1]]
+
+    def concept(self, semantic_id: str) -> FrozenAtlasConcept:
+        if not isinstance(semantic_id, str) or not semantic_id:
+            _fail("ATLAS_SNAPSHOT_SEMANTIC_ID_INVALID")
+        position = bisect_left(self.concept_lookup, (semantic_id, -1))
+        if (position == len(self.concept_lookup)
+                or self.concept_lookup[position][0] != semantic_id):
+            _fail("ATLAS_SNAPSHOT_CONCEPT_UNKNOWN")
+        return self.concepts[self.concept_lookup[position][1]]
+
+    def source_hold_census(self) -> tuple[CorpusCoverageRow, ...]:
+        return tuple(
+            row for row in self.withheld_rows
+            if row.source_disposition == "SOURCE_HELD")
+
+    def implementation_uncovered_census(self) -> tuple[CorpusCoverageRow, ...]:
+        return tuple(
+            row for row in self.withheld_rows
+            if row.implementation_status == "IMPLEMENTATION_UNCOVERED")
+
+
 def _json_input(value: Mapping | str | Path | bytes, *, reason: str) -> tuple[dict, bytes]:
     try:
         if isinstance(value, Mapping):
@@ -411,17 +489,27 @@ def _verify_bundle(root: Path) -> tuple[str, dict[str, bytes]]:
     if root.is_symlink() or not root.is_dir():
         _fail("ATLAS_SOURCE_BUNDLE_INVALID")
     manifest_path = root / "manifest.json"
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        _fail("ATLAS_SOURCE_MANIFEST_INVALID")
     try:
         manifest_payload = manifest_path.read_bytes()
         manifest = json.loads(manifest_payload)
     except (OSError, ValueError, UnicodeError) as error:
         _fail("ATLAS_SOURCE_MANIFEST_INVALID:" + type(error).__name__)
-    if (not isinstance(manifest, dict) or not REQUIRED_BUNDLE_FILES <= set(manifest)
+    if (not isinstance(manifest, dict) or set(manifest) != REQUIRED_BUNDLE_FILES
             or any(not isinstance(name, str) or not isinstance(sha, str)
                    or not HEX64.fullmatch(sha) for name, sha in manifest.items())):
         _fail("ATLAS_SOURCE_MANIFEST_INVALID")
     if manifest_payload != _canonical_bytes(manifest):
         _fail("ATLAS_SOURCE_MANIFEST_NONCANONICAL")
+    expected_members = REQUIRED_BUNDLE_FILES | {"manifest.json"}
+    try:
+        members = tuple(root.iterdir())
+    except OSError as error:
+        _fail("ATLAS_SOURCE_BUNDLE_INVALID:" + type(error).__name__)
+    if ({path.name for path in members} != expected_members
+            or any(path.is_symlink() or not path.is_file() for path in members)):
+        _fail("ATLAS_SOURCE_BUNDLE_MEMBER_SET_INVALID")
     bundle_id = _digest(manifest_payload)
     if HEX64.fullmatch(root.name) and root.name != bundle_id:
         _fail("ATLAS_SOURCE_BUNDLE_ID_MISMATCH")
@@ -435,6 +523,65 @@ def _verify_bundle(root: Path) -> tuple[str, dict[str, bytes]]:
             _fail("ATLAS_SOURCE_ARTIFACT_DIGEST_MISMATCH:" + name)
         payloads[name] = payload
     return bundle_id, payloads
+
+
+def _validated_gates(conformance: dict, payloads: Mapping[str, bytes]) -> dict[str, dict]:
+    gates = conformance.get("gates")
+    if not isinstance(gates, list) or len(gates) != len(REQUIRED_GATES):
+        _fail("ATLAS_CONFORMANCE_GATES_INVALID")
+    result: dict[str, dict] = {}
+    for gate in gates:
+        if (not isinstance(gate, dict)
+                or set(gate) != {"gate", "version", "status", "evidence"}
+                or gate.get("gate") not in REQUIRED_GATES
+                or gate.get("version") != GATE_VERSIONS[gate["gate"]]
+                or gate.get("status") != "passed"
+                or not isinstance(gate.get("evidence"), dict)
+                or gate["gate"] in result):
+            _fail("ATLAS_CONFORMANCE_GATES_INVALID")
+        result[gate["gate"]] = gate
+    if set(result) != REQUIRED_GATES:
+        _fail("ATLAS_CONFORMANCE_GATES_INVALID")
+    for gate_name, aggregate in result.items():
+        file_name = "gate-" + gate_name + ".json"
+        try:
+            constituent = json.loads(payloads[file_name])
+        except (ValueError, TypeError, UnicodeError) as error:
+            _fail("ATLAS_CONFORMANCE_GATE_FILE_INVALID:" + gate_name + ":" + type(error).__name__)
+        if (not isinstance(constituent, dict)
+                or payloads[file_name] != _canonical_bytes(constituent)
+                or constituent != aggregate):
+            _fail("ATLAS_CONFORMANCE_GATE_MISMATCH:" + gate_name)
+    return result
+
+
+def _validate_source_census(coverage: dict, source_rows: object) -> tuple[tuple[str, str, str], ...]:
+    if not isinstance(source_rows, list) or any(
+            not isinstance(item, dict) or set(item) != {"domain", "table", "key"}
+            or any(not isinstance(item[field], str) or not item[field]
+                   for field in ("domain", "table", "key")) for item in source_rows):
+        _fail("ATLAS_SOURCE_CENSUS_INVALID")
+    independent = tuple(
+        (item["domain"], item["table"], item["key"]) for item in source_rows)
+    if len(independent) != len(set(independent)):
+        _fail("ATLAS_SOURCE_CENSUS_DUPLICATE")
+
+    covered = []
+    try:
+        for domain, receipt in coverage["domains"].items():
+            for row in receipt["rows"]:
+                covered.append((domain, row["table"], row["key"]))
+    except (KeyError, TypeError, AttributeError) as error:
+        _fail("ATLAS_COVERAGE_CENSUS_INVALID:" + type(error).__name__)
+    covered_tuple = tuple(covered)
+    if len(covered_tuple) != len(set(covered_tuple)):
+        _fail("ATLAS_COVERAGE_CENSUS_DUPLICATE")
+    if (len(independent) != coverage["totals"]["source_rows"]
+            or len(covered_tuple) != coverage["totals"]["source_rows"]):
+        _fail("ATLAS_SOURCE_CENSUS_COUNT_MISMATCH")
+    if set(independent) != set(covered_tuple):
+        _fail("ATLAS_SOURCE_CENSUS_IDENTITY_MISMATCH")
+    return independent
 
 
 def _stable_term(graph, term, seen: frozenset[str] = frozenset()) -> object:
@@ -499,8 +646,10 @@ def _concept(graph, semantic_id: str, source_rows: tuple[SourceRecordRef, ...]) 
         kind=_concept_kind(semantic_id),
         types=tuple(sorted({str(value) for value in graph.objects(subject, RDF.type)
                             if isinstance(value, URIRef)})),
-        labels=tuple(sorted(set(labels))),
-        realizations=tuple(sorted(set(realizations))),
+        labels=tuple(sorted(set(labels), key=lambda item: (
+            item.role, item.value, item.language or ""))),
+        realizations=tuple(sorted(set(realizations), key=lambda item: (
+            item.value, item.datatype or "", item.language or ""))),
         source_loci=tuple(sorted(set(loci))),
         relations=tuple(sorted(set(relations))),
         source_rows=tuple(sorted(source_rows)),
@@ -566,10 +715,7 @@ def compile_atlas_release(
     if (not isinstance(conformance, dict) or conformance.get("schema") != CONFORMANCE_SCHEMA
             or conformance.get("status") != "complete" or conformance.get("failed_gates") != []):
         _fail("ATLAS_CONFORMANCE_NOT_COMPLETE")
-    gates = conformance.get("gates")
-    if (not isinstance(gates, list) or {item.get("gate") for item in gates} != REQUIRED_GATES
-            or any(item.get("status") != "passed" for item in gates)):
-        _fail("ATLAS_CONFORMANCE_GATES_INVALID")
+    gates = _validated_gates(conformance, payloads)
 
     graph = read_canonical_graph(payloads["canonical.nt"])
     canonical = canonicalize(graph)
@@ -580,15 +726,10 @@ def compile_atlas_release(
             or payloads["comparison.nt"] != canonical.payload):
         _fail("ATLAS_CANONICAL_RDF_MISMATCH")
 
-    if not isinstance(source_rows, list) or any(
-            not isinstance(item, dict) or set(item) != {"domain", "table", "key"}
-            or any(not isinstance(item[field], str) or not item[field]
-                   for field in ("domain", "table", "key")) for item in source_rows):
-        _fail("ATLAS_SOURCE_CENSUS_INVALID")
-    if len(source_rows) != coverage["totals"]["source_rows"]:
-        _fail("ATLAS_SOURCE_CENSUS_COUNT_MISMATCH")
-    no_omission = next(item for item in gates if item["gate"] == "no-omission")
-    if no_omission.get("evidence", {}).get("source_rows") != len(source_rows):
+    _validate_source_census(coverage, source_rows)
+    no_omission = gates["no-omission"]
+    if (no_omission["evidence"].get("source_rows") != len(source_rows)
+            or no_omission["evidence"].get("accounted_rows") != len(source_rows)):
         _fail("ATLAS_SOURCE_CENSUS_GATE_MISMATCH")
 
     source_by_semantic: dict[str, list[SourceRecordRef]] = {}
@@ -886,4 +1027,268 @@ def persist_atlas_release(release: AtlasRelease, output_root: str | Path) -> Atl
         release_sha256=release.digest,
         file_sha256=tuple(sorted(
             (name, item["sha256"]) for name, item in manifest["files"].items())),
+    )
+
+
+def _read_persisted_artifact(bundle_dir: str | Path) -> tuple[str, dict, dict[str, bytes]]:
+    root = Path(bundle_dir)
+    expected_files = frozenset({
+        "atlas.json", "concepts.jsonl", "relations.jsonl", "held.jsonl", "manifest.json"})
+    if (root.is_symlink() or not root.is_dir() or not HEX64.fullmatch(root.name)):
+        _fail("ATLAS_SNAPSHOT_BUNDLE_PATH_INVALID")
+    try:
+        members = tuple(root.iterdir())
+    except OSError as error:
+        _fail("ATLAS_SNAPSHOT_BUNDLE_PATH_INVALID:" + type(error).__name__)
+    if ({path.name for path in members} != expected_files
+            or any(path.is_symlink() or not path.is_file() for path in members)):
+        _fail("ATLAS_SNAPSHOT_FILESET_INVALID")
+    manifest_path = root / "manifest.json"
+    try:
+        manifest_payload = manifest_path.read_bytes()
+        manifest = json.loads(manifest_payload)
+    except (OSError, ValueError, UnicodeError) as error:
+        _fail("ATLAS_SNAPSHOT_MANIFEST_INVALID:" + type(error).__name__)
+    if (not isinstance(manifest, dict)
+            or set(manifest) != {
+                "schema", "release_sha256", "shape_policy_sha256",
+                "active_set_sha256", "files"}
+            or manifest.get("schema") != ATLAS_MANIFEST_SCHEMA
+            or manifest_payload != _canonical_bytes(manifest)
+            or not all(HEX64.fullmatch(manifest.get(name, ""))
+                       for name in ("release_sha256", "shape_policy_sha256",
+                                    "active_set_sha256"))
+            or not isinstance(manifest.get("files"), dict)
+            or set(manifest["files"]) != expected_files - {"manifest.json"}):
+        _fail("ATLAS_SNAPSHOT_MANIFEST_INVALID")
+    bundle_id = _digest(manifest_payload)
+    if root.name != bundle_id:
+        _fail("ATLAS_SNAPSHOT_BUNDLE_ID_MISMATCH")
+    payloads = {}
+    for name, descriptor in sorted(manifest["files"].items()):
+        if (not isinstance(descriptor, dict) or set(descriptor) != {"sha256", "bytes"}
+                or not HEX64.fullmatch(descriptor.get("sha256", ""))
+                or type(descriptor.get("bytes")) is not int or descriptor["bytes"] < 0):
+            _fail("ATLAS_SNAPSHOT_FILE_DESCRIPTOR_INVALID:" + name)
+        payload = (root / name).read_bytes()
+        if len(payload) != descriptor["bytes"] or _digest(payload) != descriptor["sha256"]:
+            _fail("ATLAS_SNAPSHOT_FILE_DIGEST_MISMATCH:" + name)
+        payloads[name] = payload
+    return bundle_id, manifest, payloads
+
+
+def _snapshot_concept(value: object) -> AtlasConcept:
+    if not isinstance(value, dict) or set(value) != {
+            "semantic_id", "kind", "types", "labels", "realizations",
+            "source_loci", "relations", "source_rows"}:
+        _fail("ATLAS_SNAPSHOT_CONCEPT_INVALID")
+    try:
+        return AtlasConcept(
+            semantic_id=value["semantic_id"],
+            kind=value["kind"],
+            types=tuple(value["types"]),
+            labels=tuple(AtlasLabel(**item) for item in value["labels"]),
+            realizations=tuple(AtlasRealization(**item) for item in value["realizations"]),
+            source_loci=tuple(SourceLocus(**item) for item in value["source_loci"]),
+            relations=tuple(AtlasRelation(**item) for item in value["relations"]),
+            source_rows=tuple(SourceRecordRef(**item) for item in value["source_rows"]),
+        )
+    except (KeyError, TypeError) as error:
+        _fail("ATLAS_SNAPSHOT_CONCEPT_INVALID:" + type(error).__name__)
+        raise AssertionError("unreachable") from error
+
+
+def _jsonl_records(payload: bytes, *, reason: str) -> tuple[dict, ...]:
+    try:
+        lines = payload.splitlines()
+        if any(not line for line in lines):
+            _fail(reason + ":BLANK_LINE")
+        records = tuple(json.loads(line) for line in lines)
+    except (ValueError, TypeError, UnicodeError) as error:
+        _fail(reason + ":" + type(error).__name__)
+    if any(not isinstance(record, dict) for record in records):
+        _fail(reason)
+    return records
+
+
+def load_atlas_snapshot(
+    bundle_dir: str | Path,
+    *,
+    expected_bundle_id: str | None = None,
+    expected_release_sha256: str | None = None,
+    expected_source_bundle_id: str | None = None,
+) -> FrozenAtlasSnapshot:
+    """Load a fully verified immutable Atlas snapshot without a database."""
+    bundle_id, manifest, payloads = _read_persisted_artifact(bundle_dir)
+    if expected_bundle_id is not None and expected_bundle_id != bundle_id:
+        _fail("ATLAS_SNAPSHOT_EXPECTED_BUNDLE_MISMATCH")
+
+    try:
+        atlas = json.loads(payloads["atlas.json"])
+    except (ValueError, TypeError, UnicodeError) as error:
+        _fail("ATLAS_SNAPSHOT_ATLAS_INVALID:" + type(error).__name__)
+    atlas_fields = {
+        "schema", "release_schema", "release_sha256", "input_schemas",
+        "source_bundle_id", "canonical_rdf_sha256", "coverage_sha256",
+        "source_rows_sha256", "conformance_sha256", "prior_abi_sha256",
+        "shape_policy", "shape_policy_sha256", "active_set_sha256", "counts",
+        "formal_domain_bindings", "abi_entries",
+    }
+    digest_fields = (
+        "release_sha256", "source_bundle_id", "canonical_rdf_sha256",
+        "coverage_sha256", "source_rows_sha256", "conformance_sha256",
+        "prior_abi_sha256", "shape_policy_sha256", "active_set_sha256",
+    )
+    if (not isinstance(atlas, dict) or set(atlas) != atlas_fields
+            or payloads["atlas.json"] != _canonical_bytes(atlas)
+            or atlas.get("schema") != ATLAS_ARTIFACT_SCHEMA
+            or atlas.get("release_schema") != ATLAS_RELEASE_SCHEMA
+            or any(not HEX64.fullmatch(atlas.get(name, "")) for name in digest_fields)
+            or atlas["release_sha256"] != manifest["release_sha256"]
+            or atlas["shape_policy_sha256"] != manifest["shape_policy_sha256"]
+            or atlas["active_set_sha256"] != manifest["active_set_sha256"]
+            or atlas.get("shape_policy") != SHAPE_POLICY
+            or atlas["shape_policy_sha256"] != _digest(_canonical_bytes(SHAPE_POLICY))):
+        _fail("ATLAS_SNAPSHOT_ATLAS_INVALID")
+    if (expected_release_sha256 is not None
+            and expected_release_sha256 != atlas["release_sha256"]):
+        _fail("ATLAS_SNAPSHOT_EXPECTED_RELEASE_MISMATCH")
+    if (expected_source_bundle_id is not None
+            and expected_source_bundle_id != atlas["source_bundle_id"]):
+        _fail("ATLAS_SNAPSHOT_EXPECTED_SOURCE_RELEASE_MISMATCH")
+
+    try:
+        if not isinstance(atlas["counts"], dict):
+            raise TypeError("counts")
+        counts = AtlasCounts(**atlas["counts"])
+        bindings = tuple(FormalDomainBinding(
+            family=item["family"],
+            source_owner=item["source_owner"],
+            source_sha256=item["source_sha256"],
+            semantic_ids=tuple(item["semantic_ids"]),
+            capability_ids=tuple(item["capability_ids"]),
+        ) for item in atlas["formal_domain_bindings"])
+        abi_entries = tuple(AbiEntry(**item) for item in atlas["abi_entries"])
+    except (KeyError, TypeError) as error:
+        _fail("ATLAS_SNAPSHOT_ATLAS_INVALID:" + type(error).__name__)
+    if bindings != tuple(sorted(bindings)):
+        _fail("ATLAS_SNAPSHOT_BINDING_ORDER_INVALID")
+    _validate_abi_entries(abi_entries, require_concepts=())
+    if (len(abi_entries) != counts.abi_entries
+            or (len(abi_entries) + BANK_SIZE - 1) // BANK_SIZE != counts.abi_banks
+            or sum(entry.active for entry in abi_entries) != counts.active_abi_indices
+            or _digest(_canonical_bytes(
+                [entry.index for entry in abi_entries if entry.active])) != atlas["active_set_sha256"]
+            or len({capability for binding in bindings for capability in binding.capability_ids})
+                != counts.trainable_capabilities):
+        _fail("ATLAS_SNAPSHOT_COUNTS_INVALID")
+
+    concepts = []
+    for record in _jsonl_records(
+            payloads["concepts.jsonl"], reason="ATLAS_SNAPSHOT_CONCEPTS_INVALID"):
+        if set(record) != {
+                "schema", "concept", "abi_index", "abi_bank", "abi_row", "active",
+                "implementation_status", "teaching_candidate", "teaching_reason"} \
+                or record.get("schema") != ATLAS_CONCEPT_RECORD_SCHEMA:
+            _fail("ATLAS_SNAPSHOT_CONCEPT_RECORD_INVALID")
+        concept = _snapshot_concept(record["concept"])
+        index = record["abi_index"]
+        if type(index) is not int or not 0 <= index < len(abi_entries):
+            _fail("ATLAS_SNAPSHOT_CONCEPT_ABI_INVALID")
+        abi_entry = abi_entries[index]
+        if ((abi_entry.semantic_id, abi_entry.bank, abi_entry.row, abi_entry.active,
+             abi_entry.teaching_candidate, abi_entry.reason)
+                != (concept.semantic_id, record["abi_bank"], record["abi_row"],
+                    record["active"], record["teaching_candidate"], record["teaching_reason"])
+                or record["implementation_status"]
+                != ("ADMITTED" if abi_entry.active else "IMPLEMENTATION_UNCOVERED")):
+            _fail("ATLAS_SNAPSHOT_CONCEPT_ABI_MISMATCH")
+        concepts.append(FrozenAtlasConcept(
+            concept=concept,
+            abi_index=index,
+            abi_bank=record["abi_bank"],
+            abi_row=record["abi_row"],
+            active=record["active"],
+            implementation_status=record["implementation_status"],
+            teaching_candidate=record["teaching_candidate"],
+            teaching_reason=record["teaching_reason"],
+        ))
+    frozen_concepts = tuple(concepts)
+    concept_ids = tuple(item.concept.semantic_id for item in frozen_concepts)
+    if (concept_ids != tuple(sorted(concept_ids))
+            or len(concept_ids) != len(set(concept_ids))
+            or len(frozen_concepts) != counts.semantic_concepts):
+        _fail("ATLAS_SNAPSHOT_CONCEPT_ORDER_INVALID")
+
+    relations = []
+    for record in _jsonl_records(
+            payloads["relations.jsonl"], reason="ATLAS_SNAPSHOT_RELATIONS_INVALID"):
+        if (set(record) != {
+                "schema", "source_semantic_id", "predicate", "target_semantic_id"}
+                or record.get("schema") != ATLAS_RELATION_RECORD_SCHEMA):
+            _fail("ATLAS_SNAPSHOT_RELATION_RECORD_INVALID")
+        relations.append(FrozenAtlasRelation(
+            record["source_semantic_id"], record["predicate"], record["target_semantic_id"]))
+    frozen_relations = tuple(relations)
+    expected_relations = tuple(
+        FrozenAtlasRelation(item.concept.semantic_id, relation.predicate, relation.target)
+        for item in frozen_concepts for relation in item.concept.relations)
+    if frozen_relations != expected_relations:
+        _fail("ATLAS_SNAPSHOT_RELATION_MISMATCH")
+
+    withheld = []
+    for record in _jsonl_records(
+            payloads["held.jsonl"], reason="ATLAS_SNAPSHOT_WITHHELD_INVALID"):
+        if record.get("schema") != ATLAS_WITHHELD_RECORD_SCHEMA:
+            _fail("ATLAS_SNAPSHOT_WITHHELD_RECORD_INVALID")
+        values = dict(record)
+        values.pop("schema", None)
+        try:
+            row = CorpusCoverageRow(**values)
+        except TypeError as error:
+            _fail("ATLAS_SNAPSHOT_WITHHELD_RECORD_INVALID:" + type(error).__name__)
+        if row.teaching_candidate or not row.teaching_reason:
+            _fail("ATLAS_SNAPSHOT_WITHHELD_RECORD_INVALID")
+        withheld.append(row)
+    withheld_rows = tuple(withheld)
+    if (sum(row.source_disposition == "SOURCE_HELD" for row in withheld_rows)
+            != counts.source_held
+            or sum(row.source_disposition == "SOURCE_IR_ONLY" for row in withheld_rows)
+            != counts.source_ir_only
+            or len({
+                row.semantic_id for row in withheld_rows
+                if row.implementation_status == "IMPLEMENTATION_UNCOVERED"
+                and row.semantic_id
+            }) != counts.implementation_uncovered):
+        _fail("ATLAS_SNAPSHOT_WITHHELD_COUNTS_INVALID")
+    held_ids = {
+        row.semantic_id for row in withheld_rows
+        if row.source_disposition == "SOURCE_HELD" and row.semantic_id}
+    if held_ids & {entry.semantic_id for entry in abi_entries}:
+        _fail("ATLAS_SNAPSHOT_HELD_IDENTITY_ADMITTED")
+
+    semantic_lookup = tuple(sorted(
+        (entry.semantic_id, entry.index) for entry in abi_entries))
+    concept_lookup = tuple(
+        (item.concept.semantic_id, index) for index, item in enumerate(frozen_concepts))
+    return FrozenAtlasSnapshot(
+        schema=ATLAS_SNAPSHOT_SCHEMA,
+        bundle_id=bundle_id,
+        release_sha256=atlas["release_sha256"],
+        source_bundle_id=atlas["source_bundle_id"],
+        canonical_rdf_sha256=atlas["canonical_rdf_sha256"],
+        coverage_sha256=atlas["coverage_sha256"],
+        source_rows_sha256=atlas["source_rows_sha256"],
+        conformance_sha256=atlas["conformance_sha256"],
+        prior_abi_sha256=atlas["prior_abi_sha256"],
+        shape_policy_sha256=atlas["shape_policy_sha256"],
+        active_set_sha256=atlas["active_set_sha256"],
+        counts=counts,
+        formal_domain_bindings=bindings,
+        abi_entries=abi_entries,
+        concepts=frozen_concepts,
+        relations=frozen_relations,
+        withheld_rows=withheld_rows,
+        semantic_lookup=semantic_lookup,
+        concept_lookup=concept_lookup,
     )

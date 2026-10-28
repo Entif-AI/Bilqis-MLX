@@ -10,7 +10,7 @@ import unittest
 from collections import Counter
 
 from rdflib import Graph, Literal, URIRef
-from rdflib.namespace import DCTERMS, RDF, SKOS
+from rdflib.namespace import DCTERMS, RDF, SKOS, XSD
 
 from bilqis_mlx.errors import BilqisError
 from bilqis_mlx.semantics.atlas_projection import (
@@ -18,6 +18,7 @@ from bilqis_mlx.semantics.atlas_projection import (
     BANK_SIZE,
     FormalDomainBinding,
     compile_atlas_release,
+    load_atlas_snapshot,
     persist_atlas_release,
     validate_atlas_release,
 )
@@ -67,7 +68,10 @@ def _fixture_bundle(root: Path):
         graph.add((iri, SKOS.prefLabel, Literal(label, lang="en")))
         graph.add((iri, DCTERMS.source, URIRef("urn:fixture:source")))
     graph.add((URIRef(root_id), SKOS.notation, Literal("-T-")))
+    graph.add((URIRef(root_id), SKOS.notation, Literal("-T-", datatype=XSD.string)))
     graph.add((URIRef(root_id), SKOS.notation, Literal("-Tʼ-")))
+    graph.add((URIRef(root_id), SKOS.altLabel, Literal("variant")))
+    graph.add((URIRef(root_id), SKOS.altLabel, Literal("variant", lang="en")))
     graph.add((URIRef(root_id), SKOS.narrower, URIRef(sense_a)))
     graph.add((URIRef(root_id), SKOS.narrower, URIRef(sense_b)))
     canonical = canonicalize(graph)
@@ -138,6 +142,33 @@ def _fixture_bundle(root: Path):
     return bundle, coverage, root_id, sense_a, sense_b, held_id
 
 
+def _rewrite_bundle(bundle: Path, name: str, value) -> Path:
+    content = value if isinstance(value, bytes) else json_bytes(value)
+    (bundle / name).write_bytes(content)
+    manifest = json.loads((bundle / "manifest.json").read_text())
+    manifest[name] = hashlib.sha256(content).hexdigest()
+    manifest_payload = json_bytes(manifest)
+    (bundle / "manifest.json").write_bytes(manifest_payload)
+    target = bundle.parent / hashlib.sha256(manifest_payload).hexdigest()
+    bundle.rename(target)
+    return target
+
+
+def _rewrite_artifact(bundle: Path, name: str, value) -> Path:
+    content = value if isinstance(value, bytes) else json_bytes(value)
+    (bundle / name).write_bytes(content)
+    manifest = json.loads((bundle / "manifest.json").read_text())
+    manifest["files"][name] = {
+        "sha256": hashlib.sha256(content).hexdigest(),
+        "bytes": len(content),
+    }
+    manifest_payload = json_bytes(manifest)
+    (bundle / "manifest.json").write_bytes(manifest_payload)
+    target = bundle.parent / hashlib.sha256(manifest_payload).hexdigest()
+    bundle.rename(target)
+    return target
+
+
 class AtlasProjectionTests(unittest.TestCase):
     def test_source_qualified_root_senses_realizations_and_hold_are_distinct(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -152,6 +183,11 @@ class AtlasProjectionTests(unittest.TestCase):
         by_id = {item.semantic_id: item for item in release.concepts}
         self.assertEqual(by_id[root_id].kind, "root")
         self.assertEqual({value.value for value in by_id[root_id].realizations}, {"-T-", "-Tʼ-"})
+        self.assertEqual([(label.value, label.language) for label in by_id[root_id].labels
+                          if label.value == "variant"], [("variant", None), ("variant", "en")])
+        self.assertEqual([(value.value, value.datatype) for value in by_id[root_id].realizations
+                          if value.value == "-T-"],
+                         [("-T-", None), ("-T-", str(XSD.string))])
         self.assertEqual(by_id[sense_a].kind, "sense")
         self.assertEqual(by_id[sense_b].kind, "sense")
         self.assertNotEqual(sense_a, sense_b)
@@ -186,6 +222,12 @@ class AtlasProjectionTests(unittest.TestCase):
             manifest_bytes = (target / "manifest.json").read_bytes()
             atlas = json.loads((target / "atlas.json").read_text())
             withheld = [json.loads(line) for line in (target / "held.jsonl").read_text().splitlines()]
+            snapshot = load_atlas_snapshot(
+                target,
+                expected_bundle_id=first.bundle_id,
+                expected_release_sha256=release.digest,
+                expected_source_bundle_id=release.source_bundle_id,
+            )
 
         self.assertEqual(PRIOR_ABI.read_bytes(), prior_before)
         self.assertEqual(first.bundle_id, hashlib.sha256(manifest_bytes).hexdigest())
@@ -225,6 +267,15 @@ class AtlasProjectionTests(unittest.TestCase):
                           uncovered["teaching_reason"]),
                          ("SOURCE_ELIGIBLE", "IMPLEMENTATION_UNCOVERED",
                           "IMPLEMENTATION_UNCOVERED"))
+        self.assertEqual(snapshot.abi(227).semantic_id, prior_rows[227][2])
+        self.assertEqual(snapshot.abi_for_semantic(root_id).semantic_id, root_id)
+        self.assertEqual(snapshot.concept(root_id).concept.semantic_id, root_id)
+        self.assertEqual(len(snapshot.source_hold_census()), 4)
+        self.assertEqual(len({
+            row.semantic_id for row in snapshot.implementation_uncovered_census()
+            if row.semantic_id}), 3)
+        with self.assertRaises(BilqisError):
+            snapshot.abi_for_semantic(held_id)
 
     def test_forged_held_activation_is_rejected_without_artifact_drift(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -262,6 +313,102 @@ class AtlasProjectionTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID")
         self.assertIn("ATLAS_COVERAGE_RECEIPT_STALE", str(caught.exception.context.get("reason")))
 
+    def test_bundle_admission_rejects_census_gate_manifest_and_symlink_attacks(self):
+        cases = (
+            ("census_wrong_identity", "ATLAS_SOURCE_CENSUS_IDENTITY_MISMATCH"),
+            ("census_duplicate_identity", "ATLAS_SOURCE_CENSUS_DUPLICATE"),
+            ("constituent_gate_disagreement", "ATLAS_CONFORMANCE_GATE_MISMATCH:shacl"),
+            ("duplicate_conformance_gate", "ATLAS_CONFORMANCE_GATES_INVALID"),
+            ("unexpected_manifest_member", "ATLAS_SOURCE_MANIFEST_INVALID"),
+            ("symlink_manifest_member", "ATLAS_SOURCE_BUNDLE_MEMBER_SET_INVALID"),
+        )
+        for kind, reason in cases:
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as directory:
+                bundle, coverage, *_ = _fixture_bundle(Path(directory))
+                if kind.startswith("census_"):
+                    rows = json.loads((bundle / "source-rows.json").read_text())
+                    if kind == "census_wrong_identity":
+                        rows[0]["key"] = "ROW-NOT-IN-COVERAGE"
+                    else:
+                        rows[1] = dict(rows[0])
+                    bundle = _rewrite_bundle(bundle, "source-rows.json", rows)
+                elif kind == "constituent_gate_disagreement":
+                    gate = json.loads((bundle / "gate-shacl.json").read_text())
+                    gate["status"] = "failed"
+                    gate["evidence"]["conforms"] = False
+                    bundle = _rewrite_bundle(bundle, "gate-shacl.json", gate)
+                elif kind == "duplicate_conformance_gate":
+                    report = json.loads((bundle / "conformance.json").read_text())
+                    report["gates"].append(dict(report["gates"][0]))
+                    bundle = _rewrite_bundle(bundle, "conformance.json", report)
+                elif kind == "unexpected_manifest_member":
+                    bundle = _rewrite_bundle(bundle, "unexpected.json", {"note": "undeclared"})
+                else:
+                    canonical = bundle / "canonical.nt"
+                    canonical.unlink()
+                    canonical.symlink_to(bundle / "comparison.nt")
+                with self.assertRaises(BilqisError) as caught:
+                    compile_atlas_release(bundle, coverage, PRIOR_ABI, _bindings())
+                self.assertIn(reason, str(caught.exception.context.get("reason")))
+
+    def test_database_free_snapshot_rejects_tamper_missing_identity_and_latest_alias(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle, coverage, *_ = _fixture_bundle(root)
+            release = compile_atlas_release(bundle, coverage, PRIOR_ABI, _bindings())
+            receipt = persist_atlas_release(release, root / "artifacts")
+            artifact = Path(receipt.path)
+
+            with self.assertRaises(BilqisError) as mismatch:
+                load_atlas_snapshot(
+                    artifact,
+                    expected_release_sha256="0" * 64,
+                    expected_source_bundle_id=release.source_bundle_id,
+                )
+            self.assertIn("ATLAS_SNAPSHOT_EXPECTED_RELEASE_MISMATCH",
+                          str(mismatch.exception.context.get("reason")))
+
+            with self.assertRaises(BilqisError) as source_mismatch:
+                load_atlas_snapshot(
+                    artifact,
+                    expected_release_sha256=release.digest,
+                    expected_source_bundle_id="0" * 64,
+                )
+            self.assertIn("ATLAS_SNAPSHOT_EXPECTED_SOURCE_RELEASE_MISMATCH",
+                          str(source_mismatch.exception.context.get("reason")))
+
+            latest = artifact.parent / "latest"
+            artifact.rename(latest)
+            with self.assertRaises(BilqisError) as alias:
+                load_atlas_snapshot(latest)
+            self.assertIn("ATLAS_SNAPSHOT_BUNDLE_PATH_INVALID",
+                          str(alias.exception.context.get("reason")))
+            latest.rename(artifact)
+
+            atlas = json.loads((artifact / "atlas.json").read_text())
+            atlas.pop("source_bundle_id")
+            artifact = _rewrite_artifact(artifact, "atlas.json", atlas)
+            with self.assertRaises(BilqisError) as missing:
+                load_atlas_snapshot(artifact)
+            self.assertIn("ATLAS_SNAPSHOT_ATLAS_INVALID",
+                          str(missing.exception.context.get("reason")))
+
+    def test_database_free_snapshot_rejects_payload_digest_tamper(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bundle, coverage, *_ = _fixture_bundle(root)
+            release = compile_atlas_release(bundle, coverage, PRIOR_ABI, _bindings())
+            receipt = persist_atlas_release(release, root / "artifacts")
+            artifact = Path(receipt.path)
+            manifest_before = (artifact / "manifest.json").read_bytes()
+            with (artifact / "concepts.jsonl").open("ab") as output:
+                output.write(b" ")
+            with self.assertRaises(BilqisError) as caught:
+                load_atlas_snapshot(artifact)
+            self.assertEqual((artifact / "manifest.json").read_bytes(), manifest_before)
+        self.assertIn("ATLAS_SNAPSHOT_FILE_DIGEST_MISMATCH:concepts.jsonl",
+                      str(caught.exception.context.get("reason")))
+
     @unittest.skipUnless(os.environ.get("BILQIS_ATLAS_REAL_CORPUS"),
                          "real canonical conformance bundle supplied only at turn-in")
     def test_real_corpus_witness(self):
@@ -274,6 +421,12 @@ class AtlasProjectionTests(unittest.TestCase):
             target = Path(receipt.path)
             real_manifest = (target / "manifest.json").read_bytes()
             real_files = {path.name for path in target.iterdir()}
+            snapshot = load_atlas_snapshot(
+                target,
+                expected_bundle_id=receipt.bundle_id,
+                expected_release_sha256=release.digest,
+                expected_source_bundle_id=release.source_bundle_id,
+            )
         self.assertEqual(release.canonical_rdf_sha256,
                          "7a0a0cd04133be41db69ca3fe1e2f09b4efbc8c965610b75c5ac30bc0954b50e")
         self.assertEqual(release.source_row_count, 25692)
@@ -296,6 +449,14 @@ class AtlasProjectionTests(unittest.TestCase):
         self.assertEqual(receipt.bundle_id, hashlib.sha256(real_manifest).hexdigest())
         self.assertEqual(real_files, {"atlas.json", "concepts.jsonl", "relations.jsonl",
                                       "held.jsonl", "manifest.json"})
+        self.assertEqual(snapshot.counts, release.counts)
+        self.assertEqual(snapshot.source_bundle_id, release.source_bundle_id)
+        self.assertEqual(snapshot.abi(8192).index, 8192)
+        witness = snapshot.concepts[0]
+        self.assertEqual(
+            snapshot.concept(witness.concept.semantic_id).abi_index,
+            witness.abi_index)
+        self.assertEqual(len(snapshot.source_hold_census()), 1052)
 
 
 if __name__ == "__main__":
