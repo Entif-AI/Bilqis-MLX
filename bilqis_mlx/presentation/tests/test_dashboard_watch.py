@@ -74,7 +74,7 @@ class DashboardWatchTests(unittest.TestCase):
 
             board = build(root, stream=io.StringIO())
 
-            self.assertEqual(board.state["graduations"], "0.0.1 / 1.2.3")
+            self.assertEqual(board.state["graduations"], "0.0.1 / 2.2.3")
 
     def test_automatically_selects_the_only_active_cross_worktree_run(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -6,6 +6,7 @@ PROFILE_ADOPTION_EVENTS = frozenset({
     "SCHOOL_EXECUTION_PROFILE_ADOPTED",
     "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED",
 })
+CURRICULUM_REPLACEMENT_INVALID = "SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID"
 
 
 def integer_root_scope(maximum) -> str:
@@ -18,7 +19,7 @@ def apply_profile_adoption(telemetry, grade, event) -> None:
     telemetry._reset_score_era(reason=event["event"], grade=grade)
     maximum = event.get("numeric_maximum")
     if maximum is not None and (type(maximum) is not int or maximum < 0):
-        raise ValueError("SCHOOL_TELEMETRY_CURRICULUM_REPLACEMENT_INVALID")
+        raise ValueError(CURRICULUM_REPLACEMENT_INVALID)
     if maximum is not None:
         telemetry.board.state["numeric_maximum"] = maximum
     telemetry.board.state["step"] = event.get(

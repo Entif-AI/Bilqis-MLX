@@ -1688,3 +1688,47 @@ arriving from any other malformed target construction still raise
 `TEACHER_WEAKNESS_TARGET_IDENTITY_CONFLICT`. Do not weaken that guard to make a
 run proceed.
 
+
+## ADR-106 | 2026-10-27 | GRAD counts distinct model grades; Grade C climbs integer roots 4 through 10
+
+The compact `GRAD` field has three coordinates on each side of `current / lifetime`:
+
+`distinct grades reached . successful promotion sweeps . promotion-sweep attempts`.
+
+The first coordinate is a model-progression count, not a count of repeated grade
+boundary successes. Revalidating or re-promoting A/B must never inflate it. The
+lifetime coordinate is reconstructed from distinct grade admission/discovery in
+the full journal; the current-run coordinate increments only when a genuinely new
+grade is admitted/reached during that execution. A model that has reached A, B,
+and C therefore reports lifetime grade count `3` regardless of how many A/B
+promotion sweeps were repeated. For the current replay lineage this corrects
+`0.0.0 / 13.13.25` to `0.0.0 / 3.13.25`.
+
+Grade C owns a mandatory integer-root staircase. Canonical C admission begins at
+`0...4`. Once the student fully masters the current admitted C scope and reaches
+the normal grade boundary, the runtime performs a neural-inert profile revision
+to the next scope exactly one root wider: `0...5`, then `0...6`, through
+`0...10`. Scope 10 is terminal for Grade C; no further numeric profile is
+generated after it. The terminal numeric ceiling is the registry counting target
+(`10`), while `4` is both the entry scope and the full-operation unlock.
+
+The staircase is intrinsic to canonical Grade-C progression. It must not depend
+on the legacy `--numeric-staircase` CLI flag. Normal B→C admission therefore
+records `numeric_maximum=4` and `numeric_scope_final_maximum=10` (except bounded
+experiment runs that intentionally cap themselves at the entry scope).
+
+Existing replay state that was incorrectly admitted directly to profile
+`numeric-0-10` with `numeric_maximum=10` and **no**
+`numeric_scope_final_maximum` is treated as a one-shot wide-admission migration
+signature, not as evidence that the model legitimately climbed the staircase.
+When C next becomes the scheduler's active grade, the runtime rebinds that grade
+neural-inertly to `numeric-0-4`, sets terminal scope 10, preserves the student and
+native AdamW, and resumes ordinary staged C learning. A legitimately completed
+scope-10 run has `numeric_scope_final_maximum=10` and is never rewound.
+
+The current executable curriculum contains grades A/B/C only. Grade-D source
+adapters exist, but no executable D grade is presently admitted in this release;
+do not fabricate a D curriculum as part of the numeric staircase repair. Once a
+future executable curriculum actually contains D, ordinary next-grade admission
+is eligible only after terminal C@0...10 mastery.
+

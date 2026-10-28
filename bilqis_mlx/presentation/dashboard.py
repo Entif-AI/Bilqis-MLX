@@ -12,6 +12,7 @@ from pathlib import Path
 
 from bilqis_mlx.presentation.school_telemetry import SchoolTelemetry, LETTER_TABLES
 from bilqis_mlx.presentation.progression_projection import GraduationProjection
+from bilqis_mlx.profiles.catalog import displayed_numeric_maximum
 from bilqis_mlx.runtime.disk import headroom_snapshot
 from bilqis_mlx.state_dag import read_current
 from bilqis_mlx.source import AUDITED_PARENT
@@ -43,7 +44,7 @@ def _initialize_board(board: Dashboard, run_dir: Path, state, school, active,
         "teacher": state.get("teacher") if state else None,
         "last_run_status": state.get("result", "NOT_STARTED") if state else "NOT_STARTED",
     }, redraw=False)
-    board.state["numeric_maximum"] = state.get("numeric_maximum") if state else None
+    board.state["numeric_maximum"] = displayed_numeric_maximum(state)
     board.school_telemetry = SchoolTelemetry(
         board, active_grades=active, champions=school.get("champions"))
     return step, phase

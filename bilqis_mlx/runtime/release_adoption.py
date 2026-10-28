@@ -727,18 +727,21 @@ def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, grap
         from .qualification_manifest import require
         require(release.release_sha256 in receipt["qualification"].get("allowed_releases", [receipt["qualification"]["release_sha256"]]), "FROZEN_RELEASE_DRIFT")
         return receipt, course, release, program
-    if numeric_staircase:
-        initial_maximum, final_maximum = _profiles_catalog.numeric_scope_bounds()
-        if receipt.get("numeric_maximum", 0) > final_maximum:
-            current = _runtime_admission._require_executable_factory_admission(
-                run_dir, receipt, graph)
-            active = _factory_schedule.schedule_program_from_executable_release(current)
-            school = _runtime_state._state_from_json(receipt["school"], active)
-            if school.grade == active.grades[-1].id:
-                receipt, course, release, program = _adopt_executable_profile(
-                    run_dir, {**receipt, "numeric_scope_final_maximum": final_maximum},
-                    grade_a_course, source_root, graph,
-                    _profiles_catalog.numeric_scope_profile(current, initial_maximum))
+    initial_maximum, final_maximum = _profiles_catalog.numeric_scope_bounds()
+    current = _runtime_admission._require_executable_factory_admission(
+        run_dir, receipt, graph)
+    active = _factory_schedule.schedule_program_from_executable_release(current)
+    school = _runtime_state._state_from_json(receipt["school"], active)
+    wide_unscoped_entry = _wide_numeric_entry_rebind_due(
+        receipt, current, final_maximum=final_maximum)
+    legacy_oversized_scope = (
+        numeric_staircase and receipt.get("numeric_maximum", 0) > final_maximum)
+    if ((wide_unscoped_entry or legacy_oversized_scope) and
+            school.grade == active.grades[-1].id):
+        receipt, course, release, program = _adopt_executable_profile(
+            run_dir, {**receipt, "numeric_scope_final_maximum": final_maximum},
+            grade_a_course, source_root, graph,
+            _profiles_catalog.numeric_scope_profile(current, initial_maximum))
     final_scope = receipt.get("numeric_scope_final_maximum")
     if final_scope is not None:
         current = _runtime_admission._require_executable_factory_admission(
@@ -751,6 +754,16 @@ def _advance_numeric_profile(run_dir, receipt, grade_a_course, source_root, grap
             receipt, course, release, program = _adopt_executable_profile(
                 run_dir, receipt, grade_a_course, source_root, graph, next_profile)
     return receipt, course, release, program
+
+
+def _wide_numeric_entry_rebind_due(receipt, release, *, final_maximum: int) -> bool:
+    """Recognize one-shot wide C admission, not a legitimately completed staircase."""
+    profile_id = getattr(getattr(release, "profile", None), "profile_id", None)
+    return (
+        receipt.get("numeric_scope_final_maximum") is None and
+        receipt.get("numeric_maximum") == final_maximum and
+        isinstance(profile_id, str) and
+        profile_id.endswith(f"/numeric-0-{final_maximum}"))
 
 
 def _auto_adopt_known_grade_boundary(

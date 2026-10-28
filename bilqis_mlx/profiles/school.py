@@ -72,9 +72,10 @@ def numeric_foundation_profile(
     capability_ids = tuple(capability_ids)
     if not capability_ids:
         raise ValueError("FACTORY_NUMERIC_PROFILE_CAPABILITIES_REQUIRED")
+    from ..numeric_staircase import FULL_OPERATION_MAXIMUM
     active = (
         capability_ids
-        if maximum >= 6 else capability_ids[:5])
+        if maximum >= FULL_OPERATION_MAXIMUM else capability_ids[:5])
     numbers = tuple(str(index) for index in range(maximum + 1))
     overrides = tuple(CapabilityProfile(
         capability_id,

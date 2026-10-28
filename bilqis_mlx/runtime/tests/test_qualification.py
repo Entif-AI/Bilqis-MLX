@@ -150,6 +150,23 @@ class QualificationTests(unittest.TestCase):
             result = _advance_numeric_profile(*args, numeric_staircase=True)
         self.assertEqual(result[2], self.release)
 
+    def test_numeric_scope_bounds_are_four_through_ten(self):
+        from bilqis_mlx.profiles.catalog import numeric_scope_bounds
+        self.assertEqual(numeric_scope_bounds(), (4, 10))
+
+    def test_wide_unscoped_c_entry_is_migration_signature_but_completed_ten_is_not(self):
+        from types import SimpleNamespace
+        from bilqis_mlx.runtime.release_adoption import _wide_numeric_entry_rebind_due
+        release = SimpleNamespace(
+            profile=SimpleNamespace(profile_id="school/example/numeric-0-10"))
+        broken = {"numeric_maximum": 10, "numeric_scope_final_maximum": None}
+        completed = {"numeric_maximum": 10, "numeric_scope_final_maximum": 10}
+
+        self.assertTrue(_wide_numeric_entry_rebind_due(
+            broken, release, final_maximum=10))
+        self.assertFalse(_wide_numeric_entry_rebind_due(
+            completed, release, final_maximum=10))
+
 
     def test_actual_fresh_initialization_persists_the_frozen_release(self):
         try:

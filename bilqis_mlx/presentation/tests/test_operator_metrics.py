@@ -17,6 +17,29 @@ def promotion_exam(grade, stage, phase, *, generation=1):
 
 
 class OperatorMetricsTests(unittest.TestCase):
+    def test_graduation_projection_counts_distinct_model_grades_not_repeat_boundaries(self):
+        from bilqis_mlx.presentation.progression_projection import GraduationProjection
+
+        projection = GraduationProjection()
+        projection.observe({"event": "SCHOOL_NEW_RUN_INITIALIZED", "grade": "A"})
+        for generation in (1, 3):
+            projection.observe(promotion_exam("A", 0, "PROMOTION_SWEEP", generation=generation))
+            projection.observe(promotion_exam(
+                "A", 0, "AWAITING_NEXT_GRADE_WITH_DEBT", generation=generation + 1))
+        projection.observe({
+            "event": "SCHOOL_EXECUTION_PROFILE_ADOPTED", "grade": "B",
+            "transition_kind": "APPEND_GRADE",
+        })
+        for generation in (5, 7, 9):
+            projection.observe(promotion_exam("B", 0, "PROMOTION_SWEEP", generation=generation))
+            projection.observe(promotion_exam(
+                "B", 0, "AWAITING_NEXT_GRADE_WITH_DEBT", generation=generation + 1))
+        projection.observe({
+            "event": "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED", "grade": "C",
+        })
+
+        self.assertEqual(projection.summary(), "0.0.0 / 3.5.5")
+
     def test_compact_header_reports_active_integer_root_scope(self):
         board = Dashboard(
             stream=io.StringIO(), clock=lambda: 1.0,
@@ -28,6 +51,20 @@ class OperatorMetricsTests(unittest.TestCase):
 
         start = headings.index("INTROOT")
         self.assertEqual(values[start:start + 7].strip(), "0...10")
+
+    def test_broken_wide_c_receipt_projects_pending_entry_rung_four(self):
+        from bilqis_mlx.profiles.catalog import displayed_numeric_maximum
+
+        self.assertEqual(displayed_numeric_maximum({
+            "result": "ACTIVE_GRADE_A", "numeric_maximum": 10,
+            "numeric_scope_final_maximum": None,
+            "school": {"active_grades": ["A", "B", "C"]},
+        }), 4)
+        self.assertEqual(displayed_numeric_maximum({
+            "result": "ACTIVE_GRADE_C", "numeric_maximum": 10,
+            "numeric_scope_final_maximum": 10,
+            "school": {"active_grades": ["A", "B", "C"]},
+        }), 10)
 
     def test_compact_header_reports_growth_per_retention_and_graduation_triplets(self):
         board = Dashboard(
@@ -120,7 +157,7 @@ class OperatorMetricsTests(unittest.TestCase):
         # Lifetime: one failed attempt.
         projection.observe(promotion_exam("B", 0, "PROMOTION_SWEEP", generation=6))
         projection.observe(promotion_exam("B", 0, "RECOVERY_1", generation=7))
-        self.assertEqual(projection.summary(), "0.0.0 / 1.2.3")
+        self.assertEqual(projection.summary(), "0.0.0 / 2.2.3")
 
         projection.begin_execution()
 
@@ -141,7 +178,7 @@ class OperatorMetricsTests(unittest.TestCase):
         projection.observe(promotion_exam("C", 0, "PROMOTION_SWEEP", generation=13))
         projection.observe(promotion_exam("C", 0, "RECOVERY_1", generation=14))
 
-        self.assertEqual(projection.summary(), "1.2.3 / 2.4.6")
+        self.assertEqual(projection.summary(), "1.2.3 / 3.4.6")
 
 
 if __name__ == "__main__":

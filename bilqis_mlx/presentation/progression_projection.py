@@ -14,6 +14,14 @@ _BOUNDARY_SUCCESS = frozenset({
     "AWAITING_NEXT_GRADE_WITH_DEBT",
 })
 _DEFINITE_ABORT = frozenset({"RECOVERY_1", "RECOVERY_2"})
+_GRADE_REACH_EVENTS = frozenset({
+    "SCHOOL_NEW_RUN_INITIALIZED",
+    "SCHOOL_RUN_INITIALIZED",
+    "SCHOOL_COURSE_ADMITTED",
+    "SCHOOL_NEXT_GRADE_COURSE_ADMITTED",
+    "SCHOOL_EXECUTION_PROFILE_ADOPTED",
+    "SCHOOL_SEMANTIC_CATALOG_PROFILE_ADOPTED",
+})
 
 
 @dataclass
@@ -40,6 +48,7 @@ class GraduationProjection:
     def __init__(self):
         self.lifetime = _Counts()
         self.current = _Counts()
+        self._grades_reached = set()
         self._active = None
         self._pending = None
         self._current_epoch = False
@@ -60,10 +69,16 @@ class GraduationProjection:
 
     def _success(self, *, major: bool, current_epoch: bool) -> None:
         self.lifetime.successes += 1
-        self.lifetime.grade_successes += int(major)
         if current_epoch:
             self.current.successes += 1
-            self.current.grade_successes += int(major)
+
+    def _grade_reached(self, grade: object, *, current: bool) -> None:
+        if not isinstance(grade, str) or not grade or grade in self._grades_reached:
+            return
+        self._grades_reached.add(grade)
+        self.lifetime.grade_successes = len(self._grades_reached)
+        if current and self._current_epoch:
+            self.current.grade_successes += 1
 
     def _resolve_pending(self, event: dict) -> None:
         if self._pending is None:
@@ -72,6 +87,7 @@ class GraduationProjection:
         event_grade = event.get("grade")
         if isinstance(event_grade, str) and event_grade and event_grade > grade:
             self._success(major=True, current_epoch=current_epoch)
+            self._grade_reached(event_grade, current=current_epoch)
             self._pending = None
             return
         if event.get("event") not in _EXAM_EVENTS:
@@ -85,6 +101,8 @@ class GraduationProjection:
 
     def observe(self, event: dict) -> str:
         self._resolve_pending(event)
+        if event.get("event") in _GRADE_REACH_EVENTS:
+            self._grade_reached(event.get("grade"), current=self._current_epoch)
         if event.get("event") not in _EXAM_EVENTS:
             return self.summary()
         grade = event.get("grade")
@@ -92,6 +110,9 @@ class GraduationProjection:
         phase = event.get("phase")
         if not isinstance(grade, str) or type(stage) is not int:
             return self.summary()
+        # Exam history proves the model has reached this grade, but not that
+        # the grade was newly promoted during the current execution command.
+        self._grade_reached(grade, current=False)
         if phase == "PROMOTION_SWEEP":
             if self._active is None:
                 self._attempt(grade, stage)

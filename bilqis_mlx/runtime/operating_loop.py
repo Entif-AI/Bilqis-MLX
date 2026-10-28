@@ -38,6 +38,15 @@ import time as _time
 import uuid as _uuid
 
 
+def _numeric_entry_transition(release, graph, *, full_grade_b, experiment_budget):
+    initial, terminal = _profiles_catalog.numeric_scope_bounds()
+    transition = _profiles_catalog.numeric_entry_transition(
+        release, graph, full_boolean=full_grade_b, maximum=initial)
+    return _dataclasses.replace(
+        transition,
+        numeric_scope_final_maximum=(initial if experiment_budget is not None else terminal))
+
+
 def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoint: _pathlib.Path,
             manifest_path: _pathlib.Path, *, resume: bool = False, minutes: int = 90,
             max_visits: int = 0, steps_per_visit: int = 16,
@@ -184,13 +193,9 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                     receipt = _runtime_exam_execution._measure_debt_admission_boundary(
                         mx, run_dir, receipt, manifest, course, source_root,
                         params, graph)
-                catalog_transition = _profiles_catalog.numeric_entry_transition(
-                    admitted_v2, graph,
-                    full_boolean=full_grade_b,
-                    maximum=3 if numeric_staircase or experiment_budget is not None else 10)
-                if experiment_budget is not None:
-                    catalog_transition = _dataclasses.replace(
-                        catalog_transition, numeric_scope_final_maximum=4)
+                catalog_transition = _numeric_entry_transition(
+                    admitted_v2, graph, full_grade_b=full_grade_b,
+                    experiment_budget=experiment_budget)
                 params, optimizer, graph, receipt, course = (
                     _runtime_release_adoption._adopt_catalog_profile(
                         mx, run_dir, receipt, course_a, source_root, graph,
@@ -212,7 +217,8 @@ def operate(run_dir: _pathlib.Path, source_root: _pathlib.Path, source_checkpoin
                     (".experiment-run.json",)
                     if experiment_budget is not None else ()))
         if experiment_budget is not None and receipt.get("numeric_scope_final_maximum") is None:
-            receipt = {**receipt, "numeric_scope_final_maximum": 4}
+            receipt = {**receipt, "numeric_scope_final_maximum":
+                       _profiles_catalog.numeric_scope_bounds()[0]}
         params, optimizer, graph, receipt, course, _ = (
             _runtime_release_adoption._auto_adopt_known_grade_boundary(
                 mx, run_dir, receipt, course, course_a, source_root, manifest,
