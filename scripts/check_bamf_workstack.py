@@ -9,6 +9,7 @@ from graphlib import CycleError, TopologicalSorter
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 import unicodedata
 
@@ -210,11 +211,31 @@ def validate_workstack(manifest: dict, registry: dict | None = None, issue_map: 
             'issues': _issues_report(issues)}
 
 
+def check_live_owner_mirrors(manifest: dict, root: Path) -> list[dict]:
+    rows = manifest['items']
+    fields = ' '.join(f'q{i}: issue(number:{row["number"]}) {{ number body }}' for i, row in enumerate(rows))
+    query = 'query { repository(owner:"Entif-AI",name:"Bilqis-MLX") { ' + fields + ' } }'
+    response = subprocess.run(['gh', 'api', 'graphql', '-f', 'query=' + query],
+                              check=True, capture_output=True, text=True, timeout=30)
+    repository = json.loads(response.stdout)['data']['repository']
+    findings = []
+    for index, row in enumerate(rows):
+        issue = repository[f'q{index}']
+        if not isinstance(issue, dict) or issue.get('number') != row['number'] or not isinstance(issue.get('body'), str):
+            raise ValueError('Invalid live issue response')
+        live = hashlib.sha256(issue['body'].encode('utf-8')).hexdigest()
+        mirror = hashlib.sha256((root / 'issues' / (row['key'] + '.md')).read_bytes()).hexdigest()
+        if live != row['body_sha256'] or live != mirror:
+            findings.append({'code': 'LIVE_OWNER_MIRROR_MISMATCH', 'key': row['key']})
+    return findings
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('manifest', type=Path)
     parser.add_argument('--registry', type=Path, help='Recursive child registry; defaults to children/registry.json beside the manifest when present.')
     parser.add_argument('--issue-map', type=Path, help='Independent issue map; defaults to issue-map.json beside the manifest.')
+    parser.add_argument('--live', action='store_true', help='Compare every owner mirror and digest against live GitHub.')
     args = parser.parse_args()
     try:
         manifest = json.loads(args.manifest.read_text(encoding='utf-8'))
@@ -230,7 +251,15 @@ def main() -> int:
                     mirror = registry_path.parent / (key + '.md')
                     if mirror.is_file(): mirrors[key] = mirror.read_bytes()
         result = validate_workstack(manifest, registry, issue_map, mirrors)
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        if args.live and result['status'] == 'valid':
+            live_findings = check_live_owner_mirrors(manifest, args.manifest.parent)
+            result['live_owner_mirrors'] = {'checked': len(manifest['items']), 'status': 'invalid' if live_findings else 'valid'}
+            if live_findings:
+                result['issues'] = _issues_report(live_findings)
+                result['status'] = 'invalid'
+        elif args.live:
+            result['live_owner_mirrors'] = {'checked': 0, 'status': 'not_checked'}
+    except (OSError, UnicodeError, ValueError, KeyError, TypeError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
         report = ErrorBus.report(BilqisError(SCHOOL.BAMF_WORKSTACK.INPUT_INVALID, {'error_type': type(error).__name__}))
         print(json.dumps({'schema': 'bilqis.bamf.workstack.validation/v1', 'status': 'error',
                           'error': {'code': report.code, 'summary': report.summary}}))

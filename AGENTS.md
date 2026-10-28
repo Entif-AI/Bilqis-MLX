@@ -14,7 +14,11 @@ The BAMF architecture, including `ADR-BAMF02-004`, and issue hierarchy live in
 assets as source/planning inputs until a BAMF implementation issue wires them into
 the executable Factory. Current Prometheus-specific operating rules below remain
 binding for the existing student; BAMF successor work must express new behavior in
-grade-neutral Factory terms rather than hard-code a future grade letter.
+grade-neutral Factory terms rather than hard-code a future grade letter. The
+historical Grade-B cadence below applies to the existing Prometheus lineage, not
+the BAMF successor. BAMF work follows `ADR-BAMF02-004`: a functional recursive
+Factory with source-qualified typed rules and grade-neutral admission and teaching.
+These are implementation requirements, not proof that the new runtime exists.
 
 The unified branch is the reviewed integration trunk and remains live throughout
 BAMF execution. Lane A works on `codex/bamf02-a-semantics`, Lane B on

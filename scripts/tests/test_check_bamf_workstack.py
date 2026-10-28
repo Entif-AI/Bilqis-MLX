@@ -1,6 +1,7 @@
 """Behavior of the BAMF dependency and shared-file ownership boundary."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -16,7 +17,7 @@ def item(key, lane, dependencies=(), paths=()):
             'body_sha256': 'a' * 64}
 
 
-def run(items, children=None, expected_map=None, omit_registry=False, queues=None, mirror_deps=None, mirror_lines=None):
+def run(items, children=None, expected_map=None, omit_registry=False, queues=None, mirror_deps=None, mirror_lines=None, live_bodies=None, owner_bodies=None, gh_failure=False):
     with tempfile.TemporaryDirectory() as temp:
         path = Path(temp) / 'workstack.json'
         path.write_text(json.dumps({'schema': 'bilqis.bamf.workstack/v1',
@@ -37,8 +38,19 @@ def run(items, children=None, expected_map=None, omit_registry=False, queues=Non
             (Path(temp) / 'issue-map.json').write_text(json.dumps(issue_map))
         elif expected_map is not None:
             (Path(temp) / 'issue-map.json').write_text(json.dumps(expected_map))
-        result = subprocess.run([sys.executable, '-B', str(SCRIPT), str(path)],
-                                text=True, capture_output=True)
+        args = [sys.executable, '-B', str(SCRIPT), str(path)]
+        env = os.environ.copy()
+        if live_bodies is not None:
+            owners = Path(temp) / 'issues'
+            owners.mkdir()
+            for row in items:
+                (owners / (row['key'] + '.md')).write_text((owner_bodies or {}).get(row['key'], ''))
+            gh = Path(temp) / 'gh'
+            gh.write_text('#!' + sys.executable + ('\nimport sys\nsys.exit(1)\n' if gh_failure else '\nimport json\nprint(' + repr(json.dumps({'data': {'repository': {f'q{i}': {'number': row['number'], 'body': live_bodies.get(row['key'], '')} for i, row in enumerate(items)}}})) + ')\n'))
+            gh.chmod(0o755)
+            env['PATH'] = temp + os.pathsep + env['PATH']
+            args.append('--live')
+        result = subprocess.run(args, text=True, capture_output=True, env=env)
         return result.returncode, json.loads(result.stdout)
 
 
@@ -243,6 +255,22 @@ class BamfWorkstackTest(unittest.TestCase):
         code, report = run([item('C01', 'C')], children, mirror_deps={'C01.2': ['C01.1']})
         self.assertEqual(code, 1)
         self.assertIn('MIRROR_DEPENDENCIES_MISMATCH', [i['reason'] for i in report['issues']])
+
+    def test_live_owner_mirror_reconciliation_detects_drift(self):
+        row = item('C01', 'C')
+        row['body_sha256'] = hashlib.sha256(b'authoritative body').hexdigest()
+        code, report = run([row], live_bodies={'C01': 'authoritative body'}, owner_bodies={'C01': 'authoritative body'})
+        self.assertEqual(code, 0)
+        self.assertEqual(report['live_owner_mirrors'], {'checked': 1, 'status': 'valid'})
+        code, report = run([row], live_bodies={'C01': 'changed body'}, owner_bodies={'C01': 'authoritative body'})
+        self.assertEqual(code, 1)
+        self.assertIn('LIVE_OWNER_MIRROR_MISMATCH', [i['reason'] for i in report['issues']])
+        code, report = run([row], live_bodies={'C01': 'authoritative body'}, owner_bodies={'C01': 'changed mirror'})
+        self.assertEqual(code, 1)
+        self.assertIn('LIVE_OWNER_MIRROR_MISMATCH', [i['reason'] for i in report['issues']])
+        code, report = run([row], live_bodies={'C01': 'authoritative body'}, owner_bodies={'C01': 'authoritative body'}, gh_failure=True)
+        self.assertEqual(code, 2)
+        self.assertEqual(report['error']['code'], 'SCHOOL.BAMF_WORKSTACK.INPUT_INVALID')
 
     def test_same_lane_shared_file_does_not_create_a_second_writer(self):
         code, report = run([item('A01', 'A', paths=['shared.py']),
