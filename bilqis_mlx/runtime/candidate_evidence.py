@@ -138,13 +138,18 @@ def _frontier_fixed_evidence(
     frontier = {"status": "NOT_MEASURED",
                 "reason": "NO_FIXED_WHOLE_SCHOOL_FRONTIER"}
     frontier_parent = frontier_candidate = {}
-    from bilqis_mlx.fixed_frontier import (
-        load_frontier, retention_frontier_exam, screen_frontier,
-    )
-    exam = retention_frontier_exam(receipt)
+    from bilqis_mlx.fixed_frontier import load_frontier, screen_frontier, frontier_exam
+    exam = frontier_exam(receipt)
     frontier_rows, frontier_parent = load_frontier(
-        run_dir, {"last_exam": exam}, parent_sha256=exam.get("student_sha256"),
+        run_dir, receipt, parent_sha256=exam.get("student_sha256"),
         parent_optimizer_step=exam.get("optimizer_step"))
+    if frontier_rows and (exam.get("student_sha256") != school.current_student.sha256 or
+                          exam.get("optimizer_step") != school.current_student.optimizer_step):
+        if (type(exam.get("optimizer_step")) is not int or
+                school.current_student.optimizer_step <= exam["optimizer_step"]):
+            raise ValueError("FIXED_FRONTIER_PARENT_IDENTITY_DRIFT")
+        frontier_parent = _learning_student_ops._predictions(
+            mx, parent, list(frontier_rows), config, answer_ids)
     if frontier_rows:
         grade = capability.partition(".")[0]
         grade_rows = tuple(
@@ -177,7 +182,7 @@ def _frontier_fixed_evidence(
                 mx, candidate, list(other_rows), config, answer_ids))
         frontier = screen_frontier(
             frontier_rows, frontier_parent, frontier_candidate,
-            exam["cohort_sha256"])
+            frontier_exam(receipt)["cohort_sha256"])
     return frontier_rows, fixed, frontier, frontier_parent, frontier_candidate
 
 

@@ -1398,7 +1398,7 @@ Aliases/events: `SCHOOL_AUTONOMY_SAFE_HOLD`
 
 ## Legacy raw-string debt
 
-Current production scan: **1934** raw raises across **167** files. The baseline gate permits only reduction.
+Current production scan: **1935** raw raises across **167** files. The baseline gate permits only reduction.
 
 | Legacy code/prefix | Raises | Files |
 | --- | ---: | --- |
@@ -2285,7 +2285,7 @@ Current production scan: **1934** raw raises across **167** files. The baseline 
 | `FIXED_FRONTIER_MISSING_PAIRED_PREDICTION` | 1 | `bilqis_mlx/fixed_frontier.py` |
 | `FIXED_FRONTIER_MISS_DRIFT` | 1 | `bilqis_mlx/fixed_frontier.py` |
 | `FIXED_FRONTIER_NATIVE_PARENT_STEP_DRIFT` | 1 | `bilqis_mlx/runtime/frontier_refresh.py` |
-| `FIXED_FRONTIER_PARENT_IDENTITY_DRIFT` | 1 | `bilqis_mlx/fixed_frontier.py` |
+| `FIXED_FRONTIER_PARENT_IDENTITY_DRIFT` | 2 | `bilqis_mlx/fixed_frontier.py`, `bilqis_mlx/runtime/candidate_evidence.py` |
 | `FIXED_FRONTIER_REBASELINE_COHORT_REQUIRED` | 1 | `bilqis_mlx/fixed_frontier.py` |
 | `FIXED_FRONTIER_REBASELINE_SCORE_DRIFT` | 1 | `bilqis_mlx/fixed_frontier.py` |
 | `FIXED_FRONTIER_RECONSTRUCTED_SCORE_DRIFT` | 1 | `bilqis_mlx/fixed_frontier.py` |

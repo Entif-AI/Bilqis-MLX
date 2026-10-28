@@ -1387,3 +1387,14 @@ Promotion authority is also narrowed structurally. Ordinary recovery, debt, spir
 
 Generalization may return only through a future explicit human-directed maturity decision that defines when the student's semantic base is sufficiently stable, what kind of transfer/invariance is pedagogically appropriate, how the evidence is scored, and whether it can affect training or graduation. Until then, "generalization" is a dormant research/compatibility capability, not part of the school.
 
+
+## ADR-098 | 2026-10-27 | Candidate retention protects the current parent, not an older cumulative peak
+
+**Direct user correction after the step-127096 retention deadlock.** The mature-grade anti-ratchet introduced on 2026-10-27 correctly intended to prevent later-grade learning from spending already-earned Grade-A performance, but its immutable cumulative retention anchor was the wrong baseline for individual candidate admission. Once the retained student itself sat below that older peak, each later candidate was required both to improve its target and to repair historical debt back to the old peak in the same local optimizer update. The run then produced more than two thousand consecutive zero-retention visits despite hundreds of target-positive candidates.
+
+Candidate admission therefore compares the challenger against the **current retained parent** on the current parent's verified fixed whole-school cohort. The current parent SHA and native AdamW optimizer step must match that frontier exactly or the screen fails closed. Fresh target gain remains mandatory. Same-grade, fixed lesson-grade, active developmental-frontier grade, mature-grade, protected-capability and whole-school non-regression remain mandatory relative to that current parent. In particular, a candidate that makes mature Grade A worse than the retained parent is still rejected; Grade A is not currency for later-grade gains.
+
+Historical cumulative/high-water frontier receipts remain immutable provenance and may continue to inform recovery, debt analysis and diagnostics. They are not a second candidate parent and MUST NOT veto a challenger merely because the retained parent already carries older debt relative to them. Existing cumulative same-checkpoint mastery and promotion/graduation requirements remain unchanged; this ADR does not forgive debt, mint mastery, alter source-gold, weaken student/native-AdamW custody, or authorize agent-operated production training.
+
+The correction is empirically bounded. From the exact live step-127096 student, a disposable clone using current compatible code with only the candidate-frontier baseline corrected retained a `B.COMPOSITE` candidate on the 22nd actual candidate attempt: target 9→10, same-grade net +1, fixed B 41→41, mature A 58→58, whole school 99→99, and 16 optimizer updates retained. The production lineage was not mutated by that proof.
+

@@ -82,26 +82,31 @@ class RetentionFrontierTests(unittest.TestCase):
         }
         self.assertEqual(fixed_frontier.retention_frontier_exam(receipt), anchor)
 
-    def test_candidate_frontier_uses_anchor_predictions_not_current_parent(self):
+    def test_candidate_frontier_uses_current_parent_not_historical_anchor(self):
         row = {"id": "r1", "capability": "A.IDENTITY", "gold": "TRUE"}
-        exam = {
+        current_exam = {
+            "cohort_sha256": "b" * 64, "student_sha256": "current",
+            "optimizer_step": 20,
+        }
+        anchor = {
             "cohort_sha256": "a" * 64, "student_sha256": "anchor",
             "optimizer_step": 10,
         }
+        receipt = {"retention_frontier_exam": anchor}
         school = SimpleNamespace(
             current_student=SimpleNamespace(sha256="current", optimizer_step=20))
         candidate = object()
         parent = object()
 
-        with patch("bilqis_mlx.fixed_frontier.retention_frontier_exam",
-                   return_value=exam), \
+        with patch("bilqis_mlx.fixed_frontier.frontier_exam",
+                   return_value=current_exam), \
              patch("bilqis_mlx.fixed_frontier.load_frontier",
                    return_value=((row,), {"r1": "TRUE"})) as load_frontier, \
              patch("bilqis_mlx.learning.student_ops._predictions",
                    return_value={"r1": "TRUE"}) as predictions:
             rows, fixed, frontier, anchor_predictions, candidate_predictions = (
                 candidate_evidence._frontier_fixed_evidence(
-                    None, None, {}, school, "A.IDENTITY", parent, candidate,
+                    None, None, receipt, school, "A.IDENTITY", parent, candidate,
                     {}, (0, 1)))
 
         self.assertEqual(rows, (row,))
@@ -110,7 +115,9 @@ class RetentionFrontierTests(unittest.TestCase):
         self.assertEqual(frontier["status"], "MEASURED")
         self.assertEqual(fixed["before"], 1)
         self.assertEqual(fixed["after"], 1)
-        self.assertEqual(load_frontier.call_args.args[1], {"last_exam": exam})
+        self.assertIs(load_frontier.call_args.args[1], receipt)
+        self.assertEqual(load_frontier.call_args.kwargs["parent_sha256"], "current")
+        self.assertEqual(load_frontier.call_args.kwargs["parent_optimizer_step"], 20)
         self.assertEqual(predictions.call_count, 1)
         self.assertIs(predictions.call_args.args[1], candidate)
 
