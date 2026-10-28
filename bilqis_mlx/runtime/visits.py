@@ -136,6 +136,18 @@ def _skip_stagnant_target_visit(run_dir, receipt, school, course, capability,
     return result
 
 
+def _selection_feedback(teacher, capability, curriculum_scope, policy,
+                        outcome, before, after, context_credit):
+    reward = after - before
+    credit = _learning_learning_experiment.selection_credit(
+        reward, outcome, context_credit)
+    health = None if outcome is None else (
+        _learning_teacher_strategy_population.durable_policy_cooldown_status(
+            teacher.get("causal_experiment", {}), capability, curriculum_scope,
+            _learning_teacher_strategy_population.effective_policy_key(policy)))
+    return reward, credit, health
+
+
 def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 params, optimizer, graph, *, steps_per_visit, batch_size, reserve_gib,
                 source_root=None, learning_settings: _learning_learning_experiment.Settings | None = None,
@@ -582,8 +594,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         if row["capability"] != cap
     ] + deferred_misses + remaining_priority
     all_teacher_misses.sort(key=lambda row: (row["capability"], row["id"]))
-    reward = after - before
-    bandit_credit = _learning_learning_experiment.selection_credit(reward, outcome, context_credit)
+    reward, bandit_credit, policy_health = _selection_feedback(teacher, cap, teacher_curriculum_scope, policy, outcome, before, after, context_credit)
     with _runtime_timing_trace.trace_span("TEACHER_OBSERVE", capability=cap):
         engine.observe(teacher, lesson_grade, policy_key, bandit_credit)
     expected_retained = (step_before if outcome is not None and
@@ -633,6 +644,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
         "teacher_selection_policy": policy_selection["selection_policy"], "teacher_selection_reason": policy_selection["selection_reason"],
+        **({"teacher_policy_health": policy_health} if policy_health and policy_health["active"] else {}),
         "teacher_strategy_population": {
             key: policy_selection.get(key)
             for key in ("strategy_archive_count", "active_effective_strategy_count",
@@ -856,6 +868,12 @@ def _select_visit_policy(engine, teacher, cap, school, rng, learning_settings, t
                 _learning_teacher_strategy_population.checkpoint_active_effective_strategy_keys(
                     teacher, lesson_grade, scope, channel, context_key,
                     active_effective, inventory, school.current_student.sha256))
+            sibling_penalties = {
+                effective: penalty
+                for effective in active_effective
+                if (penalty := _learning_teacher_strategy_population.sibling_cooldown_penalty(
+                    channel, cap, teacher_curriculum_scope, effective)) > 0
+            }
             candidate_ordinal = int(
                 teacher.get("causal_experiment", {}).get("events", 0)) + 1
             canary = _learning_teacher_vnext_replay.select_canary(
@@ -863,7 +881,8 @@ def _select_visit_policy(engine, teacher, cap, school, rng, learning_settings, t
                 curriculum_scope=teacher_curriculum_scope,
                 candidate_ordinal=candidate_ordinal, rng=rng,
                 active_effective_policy_keys=active_effective,
-                inventory=inventory)
+                inventory=inventory,
+                effective_policy_penalties=sibling_penalties)
             policy_selection = dict(policy_selection)
             policy_selection["vnext_canary"] = canary
             policy_selection["actual_authority_changed"] = bool(

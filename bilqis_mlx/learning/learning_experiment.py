@@ -27,7 +27,7 @@ from bilqis_mlx.learning.teacher_feedback import (
     LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
     select_weakness_targets,
 )
-from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, SELECTION_POLICY as TEACHER_SELECTION_POLICY, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, mint_novel_effective_strategy as _mint_novel_effective_strategy, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome
+from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, SELECTION_POLICY as TEACHER_SELECTION_POLICY, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, mint_novel_effective_strategy as _mint_novel_effective_strategy, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome, sibling_cooldown_penalty as _sibling_cooldown_penalty
 from bilqis_mlx.learning.teacher_realized_action import bind_record as _bind_realized_action_record, describe as realized_teacher_action, record_outcome as _record_realized_action_outcome
 
 
@@ -720,7 +720,7 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         exploration = (TEACHER_UCB_EXPLORATION_WEIGHT *
                        math.sqrt(math.log(trials+2)/(record["trials"]+1)))
         stagnation = record["no_target_gain_streak"]
-        return mean + exploration/(1+stagnation+rejection_pressure)
+        return mean + exploration/(1+stagnation+rejection_pressure) - _sibling_cooldown_penalty(channel, capability, curriculum_scope, key)
     retained_scope = {
         key: record for key, record in selection_scope.items()
         if record.get("retained", 0) > 0

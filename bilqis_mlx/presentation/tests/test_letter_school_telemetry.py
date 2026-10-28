@@ -406,7 +406,13 @@ class SchoolTelemetryTests(unittest.TestCase):
         self.assertEqual(fields["health"], "UNCERTAIN")
         for _ in range(9):
             fields = teacher_fields(event, history)
-        self.assertEqual(fields["health"], "EXHAUSTED")
+        self.assertEqual(fields["health"], "LOW-YIELD")
+
+        cooled = dict(event, teacher_policy_health={
+            "status": "SEARCH_NEIGHBORHOOD_EXHAUSTED",
+            "remaining_capability_visits": 8,
+        })
+        self.assertEqual(teacher_fields(cooled, history)["health"], "EXHAUSTED")
 
         mutated = dict(event, teacher_selection_reason="FRESH_MUTATED_CHALLENGER")
         self.assertEqual(teacher_fields(mutated, {})["health"], "EXPLORE")

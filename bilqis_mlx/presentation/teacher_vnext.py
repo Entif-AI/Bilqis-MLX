@@ -11,7 +11,6 @@ HEALTH_LABELS = MappingProxyType({
     "SEARCH_NEIGHBORHOOD_EXHAUSTED": "EXHAUSTED",
 })
 MINIMUM_SUPPORT = 8
-EXHAUSTED_ZERO_RETENTION_VISITS = 16
 LOW_YIELD_RETENTION_FRACTION = .10
 PREDICTION_MINIMUM_SUPPORT = 8
 
@@ -75,8 +74,6 @@ def _derived_health(event: dict, history: dict) -> dict | None:
     rate = retained / trials
     if trials < MINIMUM_SUPPORT:
         status = "UNCERTAIN_EXPLORING"
-    elif retained == 0 and trials >= EXHAUSTED_ZERO_RETENTION_VISITS:
-        status = "SEARCH_NEIGHBORHOOD_EXHAUSTED"
     elif rate < LOW_YIELD_RETENTION_FRACTION:
         status = "LOW_YIELD"
     else:

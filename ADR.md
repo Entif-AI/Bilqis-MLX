@@ -1528,3 +1528,41 @@ Each visit records `teacher_selection_reason`; a genuinely minted policy uses
 `FRESH_MUTATED_CHALLENGER`. This makes later forensic review able to distinguish
 real search expansion from ordinary UCB rotation through the existing archive.
 
+
+## ADR-102 | 2026-10-27 | Capability cooldown survives checkpoints without permanent exile
+
+**Conservative response to repeated incumbent resurrection.** A strategy that is
+locally exhausted must not become immediately eligible merely because some other
+capability retained and changed the student SHA. Conversely, historically useful
+strategies must not be permanently blacklisted because one student neighborhood
+was hostile.
+
+The existing same-student retirement remains the first line of defense: four
+unretained attempts against one exact capability/phase/student checkpoint retire
+that effective strategy for the current checkpoint. Durable capability cooldown
+requires stronger evidence: the same effective strategy must independently hit
+that same-student unretained limit on **two distinct student checkpoints** for the
+same capability and curriculum scope. Phase does not partition the durable
+cooldown, because repeated failure in MAIN versus recovery is still evidence
+about the capability neighborhood.
+
+Once triggered, cooldown lasts for only **eight subsequent visits to that
+capability**. Visits elsewhere do not consume it. Expiry decays one failed-student
+epoch rather than deleting all evidence, so a reopened policy needs another
+materially bad student epoch before cooling again. A retained candidate using
+that policy on the cooled capability clears the durable cooldown immediately.
+There is no permanent blacklist.
+
+Cooldown is authoritative for exact-capability selection and therefore applies
+to both contextual selection and Teacher vNext canary selection. Sibling
+capabilities in the same grade receive only a small ranking penalty while the
+cooldown is active: `0.025` per cooled sibling, capped at `0.05`. This is evidence
+sharing, not exclusion; a policy exhausted for `B.IFF` may still be tried for
+`B.COMPOSITE` when its own evidence warrants it.
+
+Dashboard semantics must reflect selector authority. `EXHAUSTED` is reserved for
+an active selector-visible durable cooldown. A policy with enough observations
+but poor retention and no active cooldown is `LOW-YIELD`; low-support evidence is
+`UNCERTAIN`; actual strategy mutation remains `EXPLORE`. Presentation history may
+estimate retention probability, but it must not invent retirement authority.
+

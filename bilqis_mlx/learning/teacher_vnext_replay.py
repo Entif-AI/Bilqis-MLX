@@ -117,7 +117,8 @@ def _score(row, rng):
 
 def select_canary(teacher: dict, *, capability: str, phase: str,
                   curriculum_scope: str, candidate_ordinal: int, rng,
-                  active_effective_policy_keys, inventory) -> dict:
+                  active_effective_policy_keys, inventory,
+                  effective_policy_penalties=None) -> dict:
     """Return an evidence-backed existing policy on the bounded 1-in-4 cadence."""
     scheduled = candidate_ordinal % CANARY_EVERY_N_VISITS == 0
     base = {
@@ -139,8 +140,10 @@ def select_canary(teacher: dict, *, capability: str, phase: str,
             "evidence_level": level,
         }
     ranked = []
+    penalties = effective_policy_penalties or {}
     for effective, evidence in supported.items():
         acquisition, sampled_retention = _score(evidence, rng)
+        acquisition -= float(penalties.get(effective, 0.))
         ranked.append((acquisition, sampled_retention, effective, evidence))
     ranked.sort(key=lambda item: (item[0], item[1], item[2]), reverse=True)
     acquisition, sampled_retention, selected_effective, evidence = ranked[0]

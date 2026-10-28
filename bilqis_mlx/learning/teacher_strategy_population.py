@@ -15,6 +15,11 @@ ACTIVE_EFFECTIVE_INCUMBENT_LIMIT = 8
 DEEP_POLICY_DEPTH_MINIMUM = 3
 SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT = 4
 SAME_STUDENT_POLICY_UNRETAINED_LIMIT = 4
+DURABLE_POLICY_FAILED_STUDENT_LIMIT = 2
+DURABLE_POLICY_COOLDOWN_CAPABILITY_VISITS = 8
+SIBLING_COOLDOWN_PENALTY = .025
+MAX_FAILED_STUDENT_EPOCHS = 3
+CONTEXT_PART_COUNT = 3
 STUDENT_SHA256_HEX_LENGTH = 64
 _INEFFECTIVE_POLICY_FIELDS = frozenset({"preview"})
 
@@ -200,6 +205,104 @@ def _validated_student_checkpoint(student_checkpoint_sha256: str | None) -> str 
     return student_checkpoint_sha256
 
 
+def _context_parts(context_key: str) -> tuple[str, str, str]:
+    parts = context_key.split("|", 2)
+    if len(parts) != CONTEXT_PART_COUNT or not parts[0]:
+        raise ValueError(LearningExperimentError.STUDENT_POLICY_FAILURE_INVALID.value)
+    return parts[0], parts[1], parts[2]
+
+
+def _capability_attempts(channel: dict, capability: str, curriculum_scope: str) -> int:
+    record = channel.get("capability_stagnation", {}).get(
+        capability + "|" + curriculum_scope, {})
+    return int(record.get("total_rejections", 0)) + int(record.get("total_retained", 0))
+
+
+def _cooldown_bucket(channel: dict, capability: str, curriculum_scope: str,
+                     *, create: bool = False) -> dict:
+    all_cooldowns = channel.setdefault("policy_cooldowns", {}) if create else channel.get("policy_cooldowns", {})
+    key = capability + "|" + curriculum_scope
+    if create:
+        return all_cooldowns.setdefault(key, {})
+    bucket = all_cooldowns.get(key, {})
+    return bucket if isinstance(bucket, dict) else {}
+
+
+def durable_policy_cooldown_status(channel: dict, capability: str,
+                                   curriculum_scope: str,
+                                   effective_policy_key: str) -> dict:
+    bucket = _cooldown_bucket(channel, capability, curriculum_scope)
+    record = bucket.get(effective_policy_key)
+    if not isinstance(record, dict):
+        return {"active": False, "failed_student_epochs": 0,
+                "remaining_capability_visits": 0}
+    attempts = _capability_attempts(channel, capability, curriculum_scope)
+    until = int(record.get("cooldown_until_attempt", 0))
+    failed = list(record.get("failed_student_sha256", ()))
+    if until and attempts >= until:
+        # Expiry decays one epoch of bad evidence rather than granting amnesia.
+        record["failed_student_sha256"] = failed[-1:]
+        record.pop("cooldown_until_attempt", None)
+        until = 0
+        failed = record["failed_student_sha256"]
+    active = until > attempts
+    return {
+        "active": active,
+        "status": "SEARCH_NEIGHBORHOOD_EXHAUSTED" if active else None,
+        "failed_student_epochs": len(failed),
+        "remaining_capability_visits": max(0, until - attempts),
+    }
+
+
+def durable_cooled_effective_keys(channel: dict, capability: str,
+                                  curriculum_scope: str) -> set[str]:
+    return {
+        key for key in _cooldown_bucket(channel, capability, curriculum_scope)
+        if durable_policy_cooldown_status(
+            channel, capability, curriculum_scope, key)["active"]
+    }
+
+
+def sibling_cooldown_penalty(channel: dict, capability: str,
+                             curriculum_scope: str,
+                             effective_policy_key: str) -> float:
+    grade = capability.partition(".")[0]
+    siblings = 0
+    for bucket_key in channel.get("policy_cooldowns", {}):
+        sibling, separator, scope = bucket_key.partition("|")
+        if (not separator or sibling == capability or scope != curriculum_scope or
+                sibling.partition(".")[0] != grade):
+            continue
+        if durable_policy_cooldown_status(
+                channel, sibling, scope, effective_policy_key)["active"]:
+            siblings += 1
+    return min(.05, siblings * SIBLING_COOLDOWN_PENALTY)
+
+
+def _record_durable_capability_outcome(
+        channel: dict, context_key: str, effective_policy_key: str,
+        checkpoint: str, *, same_student_unretained: int, retained: bool) -> None:
+    capability, _phase, curriculum_scope = _context_parts(context_key)
+    bucket = _cooldown_bucket(channel, capability, curriculum_scope, create=True)
+    if retained:
+        bucket.pop(effective_policy_key, None)
+        return
+    if same_student_unretained < SAME_STUDENT_POLICY_UNRETAINED_LIMIT:
+        return
+    record = bucket.setdefault(effective_policy_key, {
+        "failed_student_sha256": [],
+    })
+    failed = record.setdefault("failed_student_sha256", [])
+    if checkpoint in failed:
+        return
+    failed.append(checkpoint)
+    del failed[:-MAX_FAILED_STUDENT_EPOCHS]
+    if len(failed) >= DURABLE_POLICY_FAILED_STUDENT_LIMIT:
+        attempts = _capability_attempts(channel, capability, curriculum_scope)
+        record["cooldown_until_attempt"] = (
+            attempts + DURABLE_POLICY_COOLDOWN_CAPABILITY_VISITS)
+
+
 def _checkpoint_policy_no_gain_streaks(channel: dict, context_key: str,
                                        student_checkpoint_sha256: str | None) -> dict:
     checkpoint = _validated_student_checkpoint(student_checkpoint_sha256)
@@ -247,6 +350,10 @@ def record_checkpoint_policy_outcome(
         unretained.pop(effective_policy_key, None)
     else:
         unretained[effective_policy_key] = unretained.get(effective_policy_key, 0) + 1
+    _record_durable_capability_outcome(
+        channel, context_key, effective_policy_key, checkpoint,
+        same_student_unretained=unretained.get(effective_policy_key, 0),
+        retained=retained)
 
 
 def checkpoint_active_effective_strategy_keys(
@@ -269,7 +376,10 @@ def checkpoint_active_effective_strategy_keys(
                     not isinstance(key, str) or type(value) is not int or value < 0
                     for key, value in unretained_failures.items())):
                 raise ValueError(LearningExperimentError.STUDENT_POLICY_FAILURE_INVALID.value)
-    retired = {
+    capability, _phase, curriculum_scope = _context_parts(context_key)
+    durable_retired = durable_cooled_effective_keys(
+        channel, capability, curriculum_scope)
+    retired = durable_retired | {
         key for key in set(checkpoint_failures) | set(unretained_failures)
         if (checkpoint_failures.get(key, 0) >= SAME_STUDENT_POLICY_NO_TARGET_GAIN_LIMIT or
             unretained_failures.get(key, 0) >= SAME_STUDENT_POLICY_UNRETAINED_LIMIT)
