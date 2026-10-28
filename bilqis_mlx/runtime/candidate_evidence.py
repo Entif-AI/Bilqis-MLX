@@ -6,6 +6,7 @@ from bilqis_mlx.errors import ErrorBus, SOURCE
 import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.fixed_frontier as _bilqis_mlx_fixed_frontier
 import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
+import bilqis_mlx.learning.plasticity_escape as _learning_plasticity_escape
 import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.profiles.retention as _profiles_retention
 import bilqis_mlx.runtime.assessment as _runtime_assessment
@@ -259,7 +260,7 @@ def _candidate_fixed_evidence(mx, run_dir, receipt, course, school, capability,
 
 def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
                               parent, candidate, probe_rows, target_parent,
-                              settings):
+                              settings, plasticity_escape=None):
     """Complete missing candidate scores only after a target gain is observed.
 
     Parent/candidate predictions are never reused across candidate weights,
@@ -298,7 +299,8 @@ def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
     protected = set(pair)-set(required)
     protected.update(name for name in required if name != capability)
     grade_net = sum(pair[name]["after"]-pair[name]["before"] for name in required)
-    if grade_net < 0:
+    if grade_net < 0 and not _learning_plasticity_escape.allows_early_grade_net(
+            plasticity_escape, grade_net):
         return (pair, protected, required,
                 {"status": "NOT_MEASURED",
                  "reason": "SAME_GRADE_NET_REGRESSION"},

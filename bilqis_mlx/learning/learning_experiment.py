@@ -22,6 +22,7 @@ from typing import Mapping
 
 import numpy as np
 import bilqis_mlx.mature_debt as _mature_debt
+import bilqis_mlx.learning.plasticity_escape as _plasticity_escape
 import bilqis_mlx.learning.teacher_breeding as _teacher_breeding
 from bilqis_mlx.learning.teacher_feedback import (
     LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
@@ -29,7 +30,6 @@ from bilqis_mlx.learning.teacher_feedback import (
 )
 from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, SELECTION_POLICY as TEACHER_SELECTION_POLICY, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome, sibling_cooldown_penalty as _sibling_cooldown_penalty
 from bilqis_mlx.learning.teacher_realized_action import bind_record as _bind_realized_action_record, describe as realized_teacher_action, record_outcome as _record_realized_action_outcome
-
 
 VERSION = "bilqis.mlx.causal-teacher-experiment/v1"
 MAX_FAILURE_ARCHETYPES = 24
@@ -341,7 +341,8 @@ def decide(paired: dict, *, active_capability: str, phase: str,
            same_grade_capabilities: tuple[str, ...] | None = None,
            fixed_grade_replay: dict | None = None,
            fixed_frontier_replay: dict | None = None,
-           protected_frontier_grade: str | None = None) -> dict:
+           protected_frontier_grade: str | None = None,
+           plasticity_escape: dict | None = None) -> dict:
     """Retain only target gains that do not sacrifice their own grade.
 
     The parent/student and native AdamW remain untouched on rejection.
@@ -361,35 +362,33 @@ def decide(paired: dict, *, active_capability: str, phase: str,
     # The same, source-oracled parent/challenger probe must improve strictly.
     no_target_gain = active_gain <= 0
     frontier, whole_school_regression, active_grade_regression, frontier_net = (
-        _fixed_frontier_retention_evidence(
-            fixed_frontier_replay, protected_frontier_grade))
+        _fixed_frontier_retention_evidence(fixed_frontier_replay, protected_frontier_grade))
     frontier_measured = frontier.get("status") == "MEASURED"
     protected_frontier_delta = None
     if frontier_measured and protected_frontier_grade is not None:
         grades = frontier.get("grades")
-        grade = (grades.get(protected_frontier_grade)
-                 if isinstance(grades, dict) else None)
+        grade = grades.get(protected_frontier_grade) if isinstance(grades, dict) else None
         if isinstance(grade, dict):
             protected_frontier_delta = grade["after"] - grade["before"]
-    fixed_grade_regression = (
-        fixed.get("status") == "MEASURED" and
-        fixed["net_correct_delta"] < 0)
-    fragile_losses = bool(
-        fragile_replay and fragile_replay.get("regressions"))
-    if fragile_replay is not None and fragile_replay.get("status") not in (
-            "MEASURED", "NOT_MEASURED"):
+    fixed_grade_regression = (fixed.get("status") == "MEASURED" and fixed["net_correct_delta"] < 0)
+    fragile_losses = bool(fragile_replay and fragile_replay.get("regressions"))
+    if fragile_replay is not None and fragile_replay.get("status") not in ("MEASURED", "NOT_MEASURED"):
         raise ValueError("LEARNING_EXPERIMENT_INVALID_FRAGILE_REPLAY")
     fingerprint = json.dumps(paired, sort_keys=True, separators=(",", ":"))
     _validate_source_cohort_sha256(source_cohort_sha256)
     reason = _retention_reason(
-        no_target_gain=no_target_gain,
+        no_target_gain=no_target_gain, same_grade_net_gain=same_grade_net_gain,
+        fixed_grade_regression=fixed_grade_regression, active_grade_regression=active_grade_regression,
+        whole_school_regression=whole_school_regression, frontier_measured=frontier_measured,
+        fragile_losses=fragile_losses, exceeded=exceeded)
+    reason, plasticity = _plasticity_escape.maybe_relax(
+        reason, state=plasticity_escape, no_target_gain=no_target_gain,
         same_grade_net_gain=same_grade_net_gain,
-        fixed_grade_regression=fixed_grade_regression,
-        active_grade_regression=active_grade_regression,
-        whole_school_regression=whole_school_regression,
-        frontier_measured=frontier_measured,
-        fragile_losses=fragile_losses,
-        exceeded=exceeded)
+        fixed_grade_net_gain=(fixed.get("net_correct_delta")
+                              if fixed.get("status") == "MEASURED" else None),
+        active_frontier_grade_net_gain=protected_frontier_delta,
+        whole_school_net_gain=frontier_net if frontier_measured else None,
+        regressions=regressions, tolerances=tolerances, fragile_losses=fragile_losses)
     projected_mature_debt, reason = _mature_debt.retention_reason(reason, frontier, mature_grades, mature_grade_debt or {})
     return {
         "version": VERSION,
@@ -412,6 +411,7 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         "mature_protected_capabilities": sorted(cap for cap in regressions
                                                  if cap.partition(".")[0] in mature_grades),
         "projected_mature_grade_debt": projected_mature_debt, "mature_grade_debt_hard_limit": _mature_debt.HARD_LIMIT,
+        "plasticity_escape": plasticity,
         "exceeded": exceeded,
         "worst_protected_loss": max(regressions.values(), default=0),
         "local_correct_delta": active_gain,

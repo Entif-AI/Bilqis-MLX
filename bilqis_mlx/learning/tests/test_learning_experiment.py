@@ -466,6 +466,36 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(controls, {"B.IFF", "B.NOT", "A.EDGE"})
         self.assertEqual(fixed["status"], "NOT_MEASURED")
 
+    def test_starvation_plasticity_allows_bounded_grade_net_loss_to_reach_fixed_evidence(self):
+        from pathlib import Path
+        from bilqis_mlx import trainer as trainer
+        grade = ("B.IFF", "B.NOT", "B.XOR")
+        rows = [{"id": cap + str(i), "capability": cap,
+                 "gold": "TRUE"} for cap in (*grade, "A.EDGE") for i in range(2)]
+        parent = predicted(rows, {"B.XOR0", "B.NOT0"})
+        candidate = dict(parent)
+        candidate["B.XOR0"] = "TRUE"
+        candidate["B.IFF0"] = "FALSE"
+        candidate["B.NOT0"] = "FALSE"
+        candidate["B.NOT1"] = "FALSE"
+        with (patch('bilqis_mlx.curriculum.scheduler.assessment_capabilities',
+                           return_value=(*grade, "A.EDGE")),
+              patch('bilqis_mlx.learning.student_ops._predictions',
+                           side_effect=lambda _mx, identity, selected, *_:
+                           {row["id"]: (parent if identity == "parent"
+                                        else candidate)[row["id"]]
+                            for row in selected}),
+              patch('bilqis_mlx.runtime.candidate_evidence._fixed_same_grade_rows',
+                    return_value=())):
+            program = schedule_program(("A", ("A.EDGE",)), ("B", grade))
+            _, _, _, fixed, _, _, stage = trainer._candidate_grade_evidence(
+                None, Path("/not-used"), {"config": {}, "answer_ids": []},
+                program, object(), "B.XOR", "parent", "candidate", rows,
+                {"B.XOR0": parent["B.XOR0"], "B.XOR1": parent["B.XOR1"]},
+                Settings(), plasticity_escape={"active": True})
+        self.assertEqual(stage, "COMPLETE_SAME_GRADE")
+        self.assertEqual(fixed["status"], "NOT_MEASURED")
+
     def test_b_recovery_uses_whole_school_frontier_even_when_scheduler_is_c(self):
         from pathlib import Path
         from bilqis_mlx import trainer as trainer
@@ -573,6 +603,142 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(result["reason"], "SAME_GRADE_NET_REGRESSION")
         self.assertEqual(result["local_correct_delta"], 1)
         self.assertEqual(result["same_grade_net_correct_delta"], -1)
+
+    def test_starvation_plasticity_can_temporarily_accept_bounded_same_grade_loss(self):
+        paired = {
+            "C.COUNT": {"before": 4, "after": 5, "total": 6},
+            "C.NUMBER": {"before": 6, "after": 5, "total": 6},
+            "C.ORDER": {"before": 6, "after": 6, "total": 6},
+        }
+        result = decide(
+            paired, active_capability="C.COUNT", phase="MAIN",
+            protected={"C.NUMBER", "C.ORDER"}, settings=Settings(),
+            same_grade_capabilities=("C.COUNT", "C.NUMBER", "C.ORDER"),
+            plasticity_escape={
+                "active": True, "attempts_since_retained": 94,
+                "activation_threshold": 16, "frontier_priority": True,
+            })
+        self.assertEqual(result["decision"], "PROVISIONAL")
+        self.assertEqual(result["reason"], "PAIRED_SCREEN_WITHIN_BUDGET")
+        self.assertEqual(result["plasticity_escape"]["waived_reason"],
+                         "NO_POSITIVE_SAME_GRADE_GAIN")
+        self.assertTrue(result["plasticity_escape"]["applied"])
+
+    def test_starvation_plasticity_still_rejects_no_gain_or_excessive_regression(self):
+        escape = {
+            "active": True, "attempts_since_retained": 94,
+            "activation_threshold": 16, "frontier_priority": True,
+        }
+        no_gain = decide(
+            {
+                "C.COUNT": {"before": 4, "after": 4, "total": 6},
+                "C.NUMBER": {"before": 6, "after": 6, "total": 6},
+            }, active_capability="C.COUNT", phase="MAIN",
+            protected={"C.NUMBER"}, settings=Settings(),
+            same_grade_capabilities=("C.COUNT", "C.NUMBER"),
+            plasticity_escape=escape)
+        self.assertEqual(no_gain["reason"], "NO_MEASURABLE_TARGET_GAIN")
+
+        excessive = decide(
+            {
+                "C.COUNT": {"before": 3, "after": 5, "total": 6},
+                "C.NUMBER": {"before": 6, "after": 3, "total": 6},
+            }, active_capability="C.COUNT", phase="RECOVERY_1",
+            protected={"C.NUMBER"}, settings=Settings(),
+            same_grade_capabilities=("C.COUNT", "C.NUMBER"),
+            plasticity_escape=escape)
+        self.assertEqual(excessive["decision"], "REJECT")
+        self.assertEqual(excessive["same_grade_net_correct_delta"], -1)
+        self.assertEqual(excessive["reason"], "PROTECTED_CAPABILITY_REGRESSION")
+
+    def test_starvation_plasticity_allows_one_extra_protected_loss(self):
+        result = decide(
+            {
+                "C.COUNT": {"before": 3, "after": 5, "total": 6},
+                "B.IFF": {"before": 6, "after": 4, "total": 6},
+            }, active_capability="C.COUNT", phase="RECOVERY_1",
+            protected={"B.IFF"}, settings=Settings(),
+            mature_grades=frozenset({"B"}),
+            same_grade_capabilities=("C.COUNT",),
+            plasticity_escape={"active": True})
+        self.assertEqual(result["decision"], "PROVISIONAL")
+        self.assertEqual(result["plasticity_escape"]["waived_reason"],
+                         "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertEqual(result["worst_protected_loss"], 2)
+
+    def test_starvation_plasticity_allows_only_one_frontier_answer_of_slack(self):
+        paired = {
+            "C.COUNT": {"before": 4, "after": 5, "total": 6},
+            "C.ORDER": {"before": 6, "after": 6, "total": 6},
+        }
+        fixed = {"status": "MEASURED", "grade": "C",
+                 "before": 60, "after": 61, "total": 72,
+                 "cohort_sha256": "a" * 64}
+        base_frontier = {
+            "status": "MEASURED", "cohort_sha256": "b" * 64,
+            "rows": 144, "before_correct": 130, "after_correct": 129,
+            "regressions": [{"id": "c-loss", "capability": "C.ORDER"}],
+            "repaired": [],
+            "grades": {"C": {"before": 61, "after": 60, "total": 72,
+                              "net_correct_delta": -1}},
+        }
+        allowed = decide(
+            paired, active_capability="C.COUNT", phase="MAIN",
+            protected={"C.ORDER"}, settings=Settings(),
+            same_grade_capabilities=("C.COUNT", "C.ORDER"),
+            fixed_grade_replay=fixed, fixed_frontier_replay=base_frontier,
+            protected_frontier_grade="C", plasticity_escape={"active": True})
+        self.assertEqual(allowed["decision"], "PROVISIONAL")
+        self.assertEqual(allowed["plasticity_escape"]["waived_reason"],
+                         "ACTIVE_SCHOOL_GRADE_REGRESSION")
+
+        too_far = decide(
+            paired, active_capability="C.COUNT", phase="MAIN",
+            protected={"C.ORDER"}, settings=Settings(),
+            same_grade_capabilities=("C.COUNT", "C.ORDER"),
+            fixed_grade_replay=fixed,
+            fixed_frontier_replay={**base_frontier, "after_correct": 128,
+                "grades": {"C": {"before": 61, "after": 59, "total": 72,
+                                  "net_correct_delta": -2}}},
+            protected_frontier_grade="C", plasticity_escape={"active": True})
+        self.assertEqual(too_far["decision"], "REJECT")
+        self.assertEqual(too_far["reason"], "ACTIVE_SCHOOL_GRADE_REGRESSION")
+
+    def test_plasticity_activation_is_starvation_local_and_closes_after_retention(self):
+        from types import SimpleNamespace
+        from bilqis_mlx.learning.plasticity_escape import activation
+
+        program = SimpleNamespace(grades=(
+            SimpleNamespace(id="A", teaching_stages=()),
+            SimpleNamespace(id="C", teaching_stages=(("C.COUNT",), ("C.ORDER",))),
+        ))
+        school = SimpleNamespace(
+            active_grades=("A", "C"), grade="C", stage="MAIN",
+            introduction_stage=0)
+        scope = "fixture/4"
+        teacher = {"causal_experiment": {"capability_stagnation": {
+            "C.COUNT|" + scope: {"attempts_since_retained": 16},
+        }}}
+        frontier = activation(teacher, "C.COUNT", scope, school, program)
+        self.assertTrue(frontier["active"])
+        self.assertEqual(frontier["activation_threshold"], 16)
+        self.assertTrue(frontier["frontier_priority"])
+
+        teacher["causal_experiment"]["capability_stagnation"][
+            "C.COUNT|" + scope]["attempts_since_retained"] = 0
+        self.assertFalse(activation(
+            teacher, "C.COUNT", scope, school, program)["active"])
+        teacher["causal_experiment"]["capability_stagnation"]["A.MAPS|" + scope] = {
+            "attempts_since_retained": 31}
+        self.assertFalse(activation(teacher, "A.MAPS", scope, school, program)["active"])
+        teacher["causal_experiment"]["capability_stagnation"]["A.MAPS|" + scope][
+            "attempts_since_retained"] = 32
+        self.assertTrue(activation(teacher, "A.MAPS", scope, school, program)["active"])
+        sweep = SimpleNamespace(**{**school.__dict__, "stage": "PROMOTION_SWEEP"})
+        teacher["causal_experiment"]["capability_stagnation"][
+            "C.COUNT|" + scope]["attempts_since_retained"] = 100
+        self.assertFalse(activation(
+            teacher, "C.COUNT", scope, sweep, program)["active"])
 
     def test_target_only_gain_with_same_grade_tie_is_not_progress(self):
         paired = {
@@ -686,7 +852,8 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(within_budget["projected_mature_grade_debt"], {"A": 2})
 
         blocked = decide(
-            paired, mature_grade_debt={"A": 4}, **common)
+            paired, mature_grade_debt={"A": 4},
+            plasticity_escape={"active": True}, **common)
         self.assertEqual(blocked["decision"], "REJECT")
         self.assertEqual(blocked["reason"], "MATURE_GRADE_DEBT_LIMIT")
         self.assertEqual(blocked["projected_mature_grade_debt"], {"A": 5})

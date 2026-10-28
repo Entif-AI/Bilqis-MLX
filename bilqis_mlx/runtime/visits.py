@@ -9,6 +9,7 @@ import bilqis_mlx.mature_debt as _mature_debt
 import bilqis_mlx.learning.championship_runtime as _learning_championship_runtime
 import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
 import bilqis_mlx.learning.lesson_guidance as _learning_lesson_guidance
+import bilqis_mlx.learning.plasticity_escape as _learning_plasticity_escape
 import bilqis_mlx.learning.stagnation_control as _learning_stagnation_control
 import bilqis_mlx.learning.student_ops as _learning_student_ops
 import bilqis_mlx.learning.teacher_feedback as _learning_teacher_feedback
@@ -207,6 +208,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     rng = _random.Random(_runtime_state._seed(receipt, capability=cap))
     teacher_curriculum_scope = (str(receipt.get("curriculum_mode", "")) + "/" +
                                 str(receipt.get("numeric_maximum", "")))
+    plasticity_escape = _learning_plasticity_escape.activation(
+        teacher, cap, teacher_curriculum_scope, school, program)
     candidate_steps = _learning_learning_experiment.candidate_step_budget(
         steps_per_visit, teacher, cap,
         curriculum_scope=teacher_curriculum_scope)
@@ -561,7 +564,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 _runtime_candidate_evidence._candidate_grade_evidence(
                     mx, run_dir, receipt, course, school, cap,
                     parent_parameters, params, probe_rows,
-                    parent_predictions, learning_settings))
+                    parent_predictions, learning_settings, plasticity_escape))
         with _runtime_timing_trace.trace_span("RETENTION_DECIDE", capability=cap):
             outcome = _learning_learning_experiment.decide(
                 pair, active_capability=cap, phase=school.stage,
@@ -575,7 +578,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 source_cohort_sha256=_runtime_state._fingerprint([
                     (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows
                     if r["capability"] in pair]),
-                fragile_replay=replay)
+                fragile_replay=replay, plasticity_escape=plasticity_escape)
         outcome["qualification_stage"] = stage
         from bilqis_mlx.learning.matrix_strain import observe as observe_matrix_strain
         with _runtime_timing_trace.trace_span("MATRIX_STRAIN", capability=cap):

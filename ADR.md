@@ -1785,3 +1785,44 @@ and ordinary retention decides what survives.
 
 **Status:** Accepted for bounded implementation and non-neural verification.
 
+
+## ADR-108 | 2026-10-28 | Retention starvation opens a bounded plasticity escape hatch
+
+**Direct user correction after sustained zero-retention calcification.** Normal
+retention remains conservative, but a capability that has gone a long time
+without retaining must not be forced to preserve every local optimum forever.
+When the teacher has positive source-paired evidence that the active capability
+actually improved, sustained retention starvation may temporarily tolerate a
+small amount of collateral regression so the learner can move to a different
+basin and repair displaced skills afterward.
+
+This is a derived, capability-local mode, not a persistent switch. It activates
+after 32 consecutive attempts without a retained candidate for an ordinary
+capability, or after 16 for the newest active grade or a semantic in the current
+introduction stage. A retained candidate resets `attempts_since_retained` to zero
+and therefore closes the escape hatch immediately on the next visit.
+
+Plasticity escape never waives the requirement for a strict positive gain on the
+active capability. It also never waives fragile-composition replay, source-gold,
+custody/provenance, semantic identity, or the mature-grade debt hard limit. When
+active, it may relax only these retention boundaries:
+
+- same-grade net change may be as low as `-1` correct answer;
+- a protected capability may exceed its ordinary per-capability loss tolerance
+  by at most one additional wrong answer;
+- fixed same-grade cohort net change may be as low as `-1`;
+- protected active-grade frontier change may be as low as `-1`;
+- whole-school fixed-frontier net change may be as low as `-1`.
+
+Anything worse remains rejected. Candidates with no measurable target gain remain
+rejected. When frontier evidence makes mature-grade debt exceed its existing hard
+limit, the candidate remains rejected even if every plasticity bound otherwise
+passes. Accepted escape candidates carry explicit telemetry naming the ordinary
+rejection reason that was conditionally waived, the starvation count, activation
+threshold, frontier-priority status, and each temporary loss bound. Ordinary
+assessment, recovery, and mature-debt repair then own earning displaced
+capabilities back; plasticity mode itself does not declare those regressions
+repaired.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+
