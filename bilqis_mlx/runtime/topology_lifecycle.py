@@ -17,7 +17,36 @@ def model_implementation():
                 precision="fp32")
 
 
-def topology_from_file(path: Path | None) -> ModelTopologySpec | None:
+def dispatch_model_factory(architecture_id, topology_record, *, legacy_factory,
+                           bamf_factory, checkpoint_manifest=None, checkpoint_path=None):
+    """Select an architecture before a factory can allocate or inspect arrays.
+
+    V2 checkpoint import remains unavailable until its custody owner implements
+    the versioned generation reader. Historical readers remain separate.
+    """
+    from .model_topology_v2 import (BAMF_ARCHITECTURE_ID, LEGACY_ARCHITECTURE_ID,
+                                    ModelTopologySpecV2, deserialize_topology)
+    from ..errors import ErrorBus, SCHOOL
+    topology = deserialize_topology(topology_record)
+    if checkpoint_path is not None:
+        if checkpoint_manifest is not None:
+            ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID)
+        try:
+            checkpoint_manifest = json.loads((Path(checkpoint_path) / "manifest.json").read_text())
+        except (OSError, ValueError):
+            ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID)
+        if not isinstance(checkpoint_manifest, dict):
+            ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID)
+    if architecture_id == LEGACY_ARCHITECTURE_ID and type(topology) is ModelTopologySpec:
+        return legacy_factory(topology)
+    if architecture_id == BAMF_ARCHITECTURE_ID and type(topology) is ModelTopologySpecV2:
+        if checkpoint_manifest is not None:
+            ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH, reason="v2-checkpoint-reader-unavailable")
+        return bamf_factory(topology)
+    ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH)
+
+
+def topology_from_file(path: Path | None):
     if path is None:
         return None
     try:
@@ -25,7 +54,8 @@ def topology_from_file(path: Path | None) -> ModelTopologySpec | None:
     except (OSError, ValueError) as exc:
         from ..errors import ErrorBus, SCHOOL
         ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.RECORD_INVALID, detail=str(exc))
-    return ModelTopologySpec.from_record(record)
+    from .model_topology_v2 import deserialize_topology
+    return deserialize_topology(record)
 
 
 def inspect_resume_topology(run_dir, receipt, requested=None):
@@ -87,6 +117,10 @@ def topology_for_checkpoint(receipt):
 
 def operator_topology(run_dir, *, resume, requested):
     """Validate operator selection before source preparation and allocation."""
+    from .model_topology_v2 import ModelTopologySpecV2
+    if isinstance(requested, ModelTopologySpecV2):
+        from ..errors import ErrorBus, SCHOOL
+        ErrorBus.Raise(SCHOOL.MODEL_TOPOLOGY.MISMATCH, reason="v2-runtime-not-yet-integrated")
     if resume:
         from ..state_dag import read_current
         return inspect_resume_topology(run_dir, read_current(run_dir), requested)
