@@ -509,6 +509,19 @@ class SEMANTIC_FRAME:
                 "frame schema that own this source dialect."),
         )
 
+    class CODEC:
+        INVALID = _spec(
+            ("SEMANTIC_FRAME", "CODEC", "INVALID"),
+            owner="semantics.frame_codec",
+            title="Semantic frame codec input violates the released codec contract",
+            message_template="Frame codec rejected the value: {reason}.",
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action=(
+                "Preserve the frame sidecar and semantic release; correct the "
+                "index, schema tag, codec version, presence mask, or release-local "
+                "schema map before retrying."),
+        )
+
 
 class SOURCE:
     class GRADE_A:
@@ -964,6 +977,7 @@ CATALOG = (
     SEMANTIC_COVERAGE.AUDIT.INVALID_BUDGET,
     SEMANTIC_FRAME.BINDING.INVALID,
     SEMANTIC_FRAME.ADAPTER.INVALID_SOURCE,
+    SEMANTIC_FRAME.CODEC.INVALID,
     SOURCE.SAMPLING.BALANCED_BINARY_COUNT_INVALID,
     FACTORY.RELEASE.MANIFEST_CONTENT_DRIFT,
 )
