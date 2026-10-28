@@ -46,13 +46,18 @@ def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
                 channel, cap, teacher_curriculum_scope, effective)) > 0
         }
         ordinal = int(channel.get("events", 0)) + 1
-        if legacy_reason == "FRESH_MUTATED_CHALLENGER":
+        if legacy_reason in {
+                "FRESH_MUTATED_CHALLENGER", "PORTABLE_RETAINED_CHALLENGER"}:
             canary = {
                 "schema": _teacher_vnext.SCHEMA,
                 "policy_version": "teacher-vnext-canary/v1",
                 "candidate_ordinal": ordinal, "scheduled": False,
                 "actual_authority_changed": False,
-                "status": "BYPASSED_BESPOKE_EXPLORATION", "policy_key": None,
+                "status": (
+                    "BYPASSED_BESPOKE_EXPLORATION"
+                    if legacy_reason == "FRESH_MUTATED_CHALLENGER"
+                    else "BYPASSED_PORTABLE_RETAINED_CHALLENGER"),
+                "policy_key": None,
             }
         else:
             canary = _teacher_vnext.select_canary(

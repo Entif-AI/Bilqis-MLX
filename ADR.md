@@ -1627,6 +1627,11 @@ override a freshly bred challenger on that same visit.
 
 New bespoke policies are capability-local while unproven. They may not
 immediately become `FRESH_ACTIVE_CHALLENGER` material for sibling capabilities.
+Once a bespoke policy has actually retained, that locality restriction is
+released: a later numeric-scope revision within the same release family may give
+the proven policy one fresh challenger trial for the same capability. Prior-scope
+reward/context evidence is not copied forward; the revised scope must earn its
+own evidence normally. Unproven children remain scope-local.
 A retention on their originating capability marks them proven and permits
 same-grade reuse thereafter. The newest eight unproven bespoke policies per
 capability receive a probationary opportunity; older unproven siblings may be

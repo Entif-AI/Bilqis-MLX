@@ -659,13 +659,13 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                 selection_detail=selection_detail)
         return key, policy
     if rejection_pressure >= BESPOKE_EXPLORATION_START:
-        novel = _teacher_breeding.mint_bespoke_effective_strategy(
-            engine, teacher, rng, capability=capability,
-            curriculum_scope=curriculum_scope, diagnostic_key=diagnostic_key, total_capabilities=total_capabilities or 1)
-        if novel is not None:
-            return result(
-                novel[0], novel[1], selection_reason="FRESH_MUTATED_CHALLENGER",
-                selection_detail=novel[2])
+        challenger = _teacher_breeding.pressure_challenger(
+            engine, teacher, rng, capability=capability, phase=phase,
+            curriculum_scope=curriculum_scope, diagnostic_key=diagnostic_key,
+            total_capabilities=total_capabilities or 1)
+        if challenger is not None:
+            return result(challenger[0], challenger[1],
+                          selection_reason=challenger[2], selection_detail=challenger[3])
     if not scope:
         original_key, original_policy = _pick_existing_active(
             engine, teacher, grade, rng, active_effective, inventory)

@@ -108,6 +108,26 @@ class TeacherVNextReplayTests(unittest.TestCase):
         self.assertIn(weak, local)
         self.assertNotIn(weak, sibling)
 
+    def test_proven_bespoke_policy_is_grade_portable_across_numeric_scope_revision(self):
+        teacher, strong, weak = _teacher()
+        channel = teacher["causal_experiment"]
+        channel["live_effective_strategies"] = [strong, weak]
+        channel["strategy_births"] = {
+            weak: {
+                "origin_capability": "C.ADD", "origin_grade": "C",
+                "curriculum_scope": "factory/10", "birth_event": 12,
+                "proven_retained": True,
+            },
+        }
+        inventory = effective_strategy_inventory(teacher)
+
+        revised_scope = filter_active_effective(
+            teacher, grade="C", capability="C.SUB",
+            curriculum_scope="factory/4", active_effective=(strong, weak),
+            inventory=inventory)
+
+        self.assertIn(weak, revised_scope)
+
     def test_durable_capability_cooldown_requires_two_failed_student_epochs_and_retention_clears(self):
         teacher, strong, _weak = _teacher()
         channel = teacher["causal_experiment"]
@@ -245,6 +265,36 @@ class TeacherVNextReplayTests(unittest.TestCase):
         self.assertEqual(metadata["selection_reason"], "VNEXT_CANARY")
         self.assertEqual(metadata["legacy_policy_key"], "p-weak")
         self.assertTrue(metadata["vnext_canary"]["actual_authority_changed"])
+
+    def test_runtime_selector_does_not_override_portable_retained_challenger(self):
+        from bilqis_mlx.runtime import visits
+
+        teacher, strong, weak = _teacher()
+        portable_metadata = {
+            "diagnostic_context_consumed": False,
+            "diagnostic_context_key": None,
+            "selection_reason": "PORTABLE_RETAINED_CHALLENGER",
+            "selection_policy": "bilqis.mlx.teacher-selection/349-replay-v1",
+            "active_effective_strategy_keys": [strong, weak],
+        }
+        school = SimpleNamespace(
+            stage="RECOVERY_1",
+            current_student=SimpleNamespace(sha256="a" * 64),
+        )
+        with mock.patch.object(
+                visits._learning_learning_experiment, "contextual_pick",
+                return_value=("p-weak", teacher["strategies"]["p-weak"],
+                              portable_metadata)):
+            key, policy, metadata = visits._select_visit_policy(
+                object(), teacher, "C.ADD", school, random.Random(7), object(),
+                "factory/7", {}, "C")
+
+        self.assertEqual(key, "p-weak")
+        self.assertEqual(policy, teacher["strategies"]["p-weak"])
+        self.assertEqual(metadata["selection_reason"],
+                         "PORTABLE_RETAINED_CHALLENGER")
+        self.assertEqual(metadata["vnext_canary"]["status"],
+                         "BYPASSED_PORTABLE_RETAINED_CHALLENGER")
 
     def test_shadow_policy_waits_until_step_eight_and_preserves_late_recovery(self):
         from bilqis_mlx.learning.teacher_multifidelity import (

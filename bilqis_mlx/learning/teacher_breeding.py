@@ -15,6 +15,104 @@ UNPROVEN_BESPOKE_PER_CAPABILITY = 8
 _INEFFECTIVE_MUTATION_FIELDS = frozenset({"preview"})
 
 
+def _numeric_scope_family(scope: str) -> str | None:
+    """Return the stable release family for a numeric-scope revision."""
+    if not isinstance(scope, str):
+        return None
+    family, separator, leaf = scope.rpartition("/")
+    return family if separator and family and leaf.isdigit() else None
+
+
+def portable_retained_challenger(teacher: dict, *, capability: str, phase: str,
+                                 curriculum_scope: str):
+    """Retry one proven same-capability policy after a numeric scope revision.
+
+    Prior-scope reward remains prior-scope evidence. This helper uses retention
+    only to prioritize one fresh trial in the new scope; it never copies the old
+    contextual record forward.
+    """
+    family = _numeric_scope_family(curriculum_scope)
+    if family is None:
+        return None
+    channel = teacher.get("causal_experiment", {})
+    strategies = teacher.get("strategies", {})
+    inventory = effective_strategy_inventory(teacher)
+    live = set(channel.get("live_effective_strategies", inventory))
+    current = channel.get("contexts", {}).get(
+        capability + "|" + phase + "|" + curriculum_scope, {})
+    tried = {
+        effective_policy_key(strategies[key])
+        for key in current if key in strategies
+    }
+    candidates = {}
+    for context_key, records in channel.get("contexts", {}).items():
+        try:
+            context_capability, _context_phase, context_scope = context_key.split("|", 2)
+        except ValueError:
+            continue
+        if (context_capability != capability or context_scope == curriculum_scope or
+                _numeric_scope_family(context_scope) != family or
+                not isinstance(records, dict)):
+            continue
+        for policy_key, record in records.items():
+            policy = strategies.get(policy_key)
+            if policy is None or not isinstance(record, dict):
+                continue
+            retained = int(record.get("retained", 0))
+            trials = int(record.get("trials", 0))
+            if retained < 1 or trials < retained:
+                continue
+            effective = effective_policy_key(policy)
+            if effective not in live or effective in tried:
+                continue
+            target = candidates.setdefault(effective, {
+                "retained": 0, "trials": 0, "reward_sum": 0.,
+                "members": [], "source_scopes": set(),
+            })
+            target["retained"] += retained
+            target["trials"] += trials
+            target["reward_sum"] += float(record.get("reward_sum", 0.))
+            target["members"].append(policy_key)
+            target["source_scopes"].add(context_scope)
+    if not candidates:
+        return None
+
+    def rank(item):
+        effective, record = item
+        return (
+            record["retained"] / record["trials"], record["retained"],
+            record["reward_sum"] / record["trials"], record["trials"], effective,
+        )
+
+    effective, record = max(candidates.items(), key=rank)
+    member = max(
+        record["members"],
+        key=lambda key: (
+            int(teacher.get("global_stats", {}).get(key, {}).get("trials", 0)), key))
+    return member, strategies[member], {
+        "portable_effective_policy_key": effective,
+        "portable_prior_retained": record["retained"],
+        "portable_prior_trials": record["trials"],
+        "portable_source_scopes": sorted(record["source_scopes"]),
+    }
+
+
+def pressure_challenger(engine, teacher: dict, rng, *, capability: str, phase: str,
+                        curriculum_scope: str, diagnostic_key: str | None,
+                        total_capabilities: int):
+    portable = portable_retained_challenger(
+        teacher, capability=capability, phase=phase,
+        curriculum_scope=curriculum_scope)
+    if portable is not None:
+        return (*portable[:2], "PORTABLE_RETAINED_CHALLENGER", portable[2])
+    novel = mint_bespoke_effective_strategy(
+        engine, teacher, rng, capability=capability,
+        curriculum_scope=curriculum_scope, diagnostic_key=diagnostic_key,
+        total_capabilities=total_capabilities)
+    return ((*novel[:2], "FRESH_MUTATED_CHALLENGER", novel[2])
+            if novel is not None else None)
+
+
 def selection_population(teacher: dict, *, grade: str, capability: str,
                          curriculum_scope: str, scope: dict, channel: dict,
                          context_key: str, student_checkpoint_sha256: str | None,
@@ -237,10 +335,10 @@ def filter_active_effective(teacher: dict, *, grade: str, capability: str,
         birth = births.get(key)
         if not isinstance(birth, dict):
             return True
-        if birth.get("curriculum_scope") != curriculum_scope:
-            return False
         if birth.get("proven_retained"):
             return birth.get("origin_grade") == grade
+        if birth.get("curriculum_scope") != curriculum_scope:
+            return False
         return (birth.get("origin_capability") == capability and
                 key in current_unproven)
 
