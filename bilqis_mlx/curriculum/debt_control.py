@@ -1,8 +1,6 @@
 """Pure grade-debt scheduling helpers shared by the school state machine."""
 from __future__ import annotations
 
-from fractions import Fraction
-
 import bilqis_mlx.mature_debt as _mature_debt
 
 from .state import Score, SchoolState, _caps, _program, _score_pool, weakest_three
@@ -10,7 +8,6 @@ from .state import Score, SchoolState, _caps, _program, _score_pool, weakest_thr
 
 FRONTIER_CATCHUP_SHARE_DENOMINATOR = 4
 FRONTIER_CATCHUP_MINIMUM_ACTIVE_GRADES = 2
-MEDIAN_PAIR_DIVISOR = 2
 _ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT = "SPIRAL_ALLOWED_CAPABILITY_OUTSIDE_ASSESSMENT"
 _EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM = "SPIRAL_EXCLUDED_GRADE_OUTSIDE_ACTIVE_PROGRAM"
 
@@ -43,7 +40,7 @@ def _frontier_catchup_target_passes(program, state: SchoolState,
                                     scores: dict[str, Score],
                                     allowed_capabilities: tuple[str, ...] | None = None
                                     ) -> int:
-    """Return total frontier MAIN passes due this sweep while below school median."""
+    """Return total frontier MAIN passes due while progression remains imperfect."""
     program = _program(program)
     if len(state.active_grades) < FRONTIER_CATCHUP_MINIMUM_ACTIVE_GRADES:
         return 1
@@ -59,14 +56,7 @@ def _frontier_catchup_target_passes(program, state: SchoolState,
         if capability in allowed and capability in scores)
     if not frontier_caps or len(school_caps) <= len(frontier_caps):
         return 1
-    ordered = sorted(scores[capability].accuracy for capability in school_caps)
-    middle = len(ordered) // 2
-    median = (ordered[middle] if len(ordered) % MEDIAN_PAIR_DIVISOR else
-              (ordered[middle - 1] + ordered[middle]) / MEDIAN_PAIR_DIVISOR)
-    frontier_mean = sum(
-        (scores[capability].accuracy for capability in frontier_caps),
-        Fraction(0, 1)) / len(frontier_caps)
-    if frontier_mean >= median:
+    if all(scores[capability].perfect for capability in frontier_caps):
         return 1
     mature_count = len(school_caps) - len(frontier_caps)
     divisor = (FRONTIER_CATCHUP_SHARE_DENOMINATOR - 1) * len(frontier_caps)

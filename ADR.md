@@ -1826,3 +1826,33 @@ repaired.
 
 **Status:** Accepted for bounded implementation and non-neural verification.
 
+
+## ADR-109 | 2026-10-28 | Progression-frontier visit priority persists until advancement
+
+**Direct user correction after `C.COUNT` fell back to roughly one visit in ten.**
+ADR-103 correctly recognized that raw capability-count fairness starves a newly
+introduced frontier semantic, but it ended catch-up priority once the frontier
+mean reached the school median. That statistical condition is not the progression
+condition. A frontier semantic can be near or above the school median and still be
+the sole blocker preventing introduction of the next semantic.
+
+While the newest active grade is the explicit progression-priority grade and any
+currently introduced eligible semantic in that grade remains imperfect, its
+ordinary MAIN sweep retains the existing ADR-103 visit-allocation floor of roughly
+one quarter of candidate opportunities. The existing bounded pass formula remains:
+
+`ceil(non_frontier_semantics / (3 * frontier_semantics))`
+
+with a minimum of one frontier pass. The school-median comparison is no longer an
+off-switch for this progression allocation. Once every currently introduced
+frontier semantic is perfect, the extra passes disappear normally and ordinary
+promotion/semantic-introduction machinery decides the next transition.
+
+This is scheduler priority only. It does not lower promotion thresholds, change
+retention gates, suppress mature-grade repair, erase A/B debt, or make B a
+progression prerequisite. ADR-094's bounded B debt turns remain intact; this
+correction prevents their surrounding multi-capability work from reducing the
+actual progression frontier to raw 1/N capability frequency between boundaries.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+

@@ -105,7 +105,7 @@ class StagedSchoolTests(unittest.TestCase):
         self.assertEqual(continued.grade, "B")
         self.assertEqual(continued.main_sweep_visited, ("A",))
 
-    def test_new_frontier_gets_bounded_catchup_passes_until_school_median(self):
+    def test_progression_frontier_keeps_bounded_priority_until_mastered(self):
         course = staged_course()
         state, pointer = enter_c(course)
         state = replace(
@@ -135,8 +135,15 @@ class StagedSchoolTests(unittest.TestCase):
         caught_up["c.0"] = (7, 8)
         state = replace(state, frontier_catchup_passes=0,
                         main_sweep_visited=("A", "B"))
+        continued = _continue_main_sweep(
+            course, state, snapshot(course, pointer, caught_up))
+        self.assertEqual((continued.grade, continued.frontier_catchup_passes),
+                         ("C", 1))
+
+        mastered = dict(caught_up)
+        mastered["c.0"] = (8, 8)
         self.assertIsNone(_continue_main_sweep(
-            course, state, snapshot(course, pointer, caught_up)))
+            course, state, snapshot(course, pointer, mastered)))
 
     def test_debt_roles_and_cadence_come_from_policy_data(self):
         course = staged_course()
