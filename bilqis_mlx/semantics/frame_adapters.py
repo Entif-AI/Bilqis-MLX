@@ -299,6 +299,8 @@ def _bind_source_expression(
         bindings=tuple(bindings),
         causal_prefix_end=causal_prefix_end,
         declared_scope="source-query",
+        source_graph=graph,
+        source_adapter_id=adapter_id,
     )
     tree = FrameTree(frame, tuple(children))
     return validate_frame_tree(tree), signature.output
@@ -429,6 +431,8 @@ def _bind_numeric_expression(
         bindings=tuple(bindings),
         causal_prefix_end=causal_prefix_end,
         declared_scope="formal-expression",
+        source_graph=graph,
+        source_adapter_id=adapter_id,
     )
     tree = FrameTree(frame, tuple(children))
     return validate_frame_tree(tree), expression.type_name

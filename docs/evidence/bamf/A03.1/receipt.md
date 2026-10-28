@@ -65,3 +65,24 @@ already owned outside this leaf.
 
 The module performs no model/optimizer write and contains no grade-specific
 runtime dispatch.
+
+## 2026-10-28 independent review repair: canonical role ordering
+
+A fresh Goldfish review found that the v1 reader could deserialize a
+canonically JSON-encoded permutation of the `bindings` array while
+retaining the same content digest. The released schema-role ordering
+was not independently represented in the frame record.
+
+The versioned `bilqis.semantic-frame-instance/v2` now carries the
+source schema's explicit `schema_role_order`. Its content digest binds
+that order as well as the canonical role/occurrence content. The frozen
+constructor and canonical reader require bindings to appear in the
+declared schema-role order, then occurrence index. A permutation with
+unchanged digest was observed being accepted before repair and now
+rejects with `FRAME_BINDING_ORDER_NONCANONICAL`.
+
+Focused `test_frame_schema.py` after this repair: 14 passed,
+0 failed, 1 optional real-Atlas test skipped in ordinary mode.
+The later A03.2 source-type authority repair and actual A/B/C adapter
+tests are recorded separately. Fresh independent immutable-head
+readback remains pending; no parent integration closure is claimed.

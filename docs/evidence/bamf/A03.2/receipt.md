@@ -79,3 +79,25 @@ scheduler/plasticity/runtime findings.
 
 `git diff --check`: passed. No trainer/model/optimizer write path is imported
 or executed, and the implementation has no grade-specific runtime branch.
+
+## 2026-10-28 independent review repair: formal source types
+
+Goldfish review found a fail-open boundary: an ABI entry without a
+matching `snapshot.concepts` record could accept caller-invented,
+role-allowed `ConceptRef.type_ids`. A direct forged-type test failed
+before repair and now rejects with
+`FRAME_CONCEPT_TYPE_AUTHORITY_MISSING`.
+
+Every accepted concept now requires an existing source type authority.
+Atlas concepts use their canonical frozen types. Formal ABI entries
+without a concept record require the existing source graph and
+registered adapter identity, matching ABI symbol/index, exact source
+reference, source-node digest and declared signature output. Direct
+`concept_ref_from_snapshot` also refuses unknown or conflicting types.
+No new formal type registry was introduced.
+
+The actual A/B/C source adapters pass their graph and adapter identity
+through the binding boundary. Focused adapter tests: 11/11 passed.
+Frame-schema tests: 14 passed, 0 failed, 1 optional real-Atlas test
+skipped in ordinary mode. Canonical frame v2 is covered by A03.1.
+Fresh independent review is pending; no source release was promoted.

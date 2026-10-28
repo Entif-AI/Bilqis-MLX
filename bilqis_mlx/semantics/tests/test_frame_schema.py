@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import json
 import hashlib
 import os
@@ -627,6 +628,59 @@ class FrameSchemaRecordTests(unittest.TestCase):
                 with self.assertRaises(BilqisError) as caught:
                     frame_instance_from_bytes(payload)
                 self.assertIn(reason, str(caught.exception.context.get("reason")))
+
+    def test_canonical_frame_reader_rejects_permuted_role_bindings(self):
+        schema = _transfer_schema()
+        frame = make_frame_instance(
+            schema,
+            source_instance_id="ordered-source",
+            structural_path=(),
+            source_span=SourceSpan(0, 12),
+            parent_occurrence_id=None,
+            bindings=(
+                RoleOccurrence("agent", 0, concept=_concept("alice", 10)),
+                RoleOccurrence("recipient", 0, concept=_concept("bob", 11)),
+                RoleOccurrence("theme", 0, concept=_concept("book", 12)),
+            ),
+            causal_prefix_end=12,
+        )
+        payload = json.loads(frame.canonical_bytes())
+        payload["bindings"] = list(reversed(payload["bindings"]))
+        permuted = (json.dumps(
+            payload, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False, allow_nan=False) + "\n").encode()
+        with self.assertRaises(BilqisError) as caught:
+            frame_instance_from_bytes(permuted)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FRAME_BINDING_ORDER_NONCANONICAL",
+        )
+
+    def test_formal_abi_without_source_type_authority_cannot_accept_forgery(self):
+        real = _concept("alice", 0, "Entity")
+        snapshot = replace(
+            _snapshot(real), concepts=(), concept_lookup=())
+        forged = replace(real, type_ids=("Number",))
+        schema = FrameSchema(
+            "frame:formal", 1, "source:formal",
+            (RoleSpec("value", ("Number",), 1, 1),),
+            "ORDERED", "source-expression",
+        )
+        with self.assertRaises(BilqisError) as caught:
+            bind_frame_instance(
+                schema, snapshot,
+                source_instance_id="formal-type-forgery",
+                structural_path=(),
+                source_span=SourceSpan(0, 8),
+                parent_occurrence_id=None,
+                bindings=(RoleOccurrence("value", 0, concept=forged),),
+                causal_prefix_end=8,
+                declared_scope="source-expression",
+            )
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FRAME_CONCEPT_TYPE_AUTHORITY_MISSING",
+        )
 
     def test_unknown_schema_uses_atomic_fallback_with_source_data_intact(self):
         snapshot = _snapshot(_concept("alice", 0))

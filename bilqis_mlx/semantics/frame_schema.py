@@ -8,12 +8,13 @@ import json
 import re
 
 from ..errors import BilqisError, ErrorBus, SEMANTIC_FRAME, SCHOOL
+from ..generated_assessment import digest as source_node_digest
 from .atlas_projection import FrozenAtlasSnapshot
-from .core import Apply, Expression, Literal, expression_digest
+from .core import Apply, Expression, Literal, Signature, expression_digest
 
 
 FRAME_SCHEMA_RECORD = "bilqis.semantic-frame-schema/v1"
-FRAME_INSTANCE_RECORD = "bilqis.semantic-frame-instance/v1"
+FRAME_INSTANCE_RECORD = "bilqis.semantic-frame-instance/v2"
 CONCEPT_REF_RECORD = "bilqis.semantic-concept-ref/v1"
 ROLE_SPEC_RECORD = "bilqis.semantic-role-spec/v1"
 ROLE_OCCURRENCE_RECORD = "bilqis.semantic-role-occurrence/v1"
@@ -57,14 +58,18 @@ def _occurrence_digest(source_instance_id: str, structural_path: tuple[int, ...]
 def _frame_content_digest(
     frame_schema_id: str,
     frame_schema_revision: int,
+    schema_role_order: tuple[str, ...],
     bindings: tuple["RoleOccurrence", ...],
 ) -> str:
+    rank = {role_id: index for index, role_id in enumerate(schema_role_order)}
     return _digest({
         "frame_schema_id": frame_schema_id,
         "frame_schema_revision": frame_schema_revision,
+        "schema_role_order": list(schema_role_order),
         "bindings": [
             binding.content_identity()
-            for binding in sorted(bindings, key=lambda item: item.key)
+            for binding in sorted(
+                bindings, key=lambda item: (rank[item.role_id], item.occurrence_index))
         ],
     })
 
@@ -260,6 +265,7 @@ class FrameInstance:
     source_span: SourceSpan
     parent_occurrence_id: str | None
     bindings: tuple[RoleOccurrence, ...]
+    schema_role_order: tuple[str, ...]
     causal_prefix_end: int
     schema_version: str = FRAME_INSTANCE_RECORD
 
@@ -274,15 +280,26 @@ class FrameInstance:
                 or (self.parent_occurrence_id is not None
                     and not _SHA256.fullmatch(self.parent_occurrence_id))
                 or len(keys) != len(set(keys))
+                or not isinstance(self.schema_role_order, tuple)
+                or not self.schema_role_order
+                or len(self.schema_role_order) != len(set(self.schema_role_order))
+                or any(not isinstance(role, str) or not role
+                       for role in self.schema_role_order)
+                or any(key[0] not in self.schema_role_order for key in keys)
                 or type(self.causal_prefix_end) is not int
                 or self.causal_prefix_end < self.source_span.end
                 or self.schema_version != FRAME_INSTANCE_RECORD):
             _fail("FRAME_INSTANCE_INVALID")
+        rank = {role: index for index, role in enumerate(self.schema_role_order)}
+        if keys != tuple(sorted(
+                keys, key=lambda key: (rank[key[0]], key[1]))):
+            _fail("FRAME_BINDING_ORDER_NONCANONICAL")
         if self.occurrence_id != _occurrence_digest(
                 self.source_instance_id, self.structural_path):
             _fail("FRAME_OCCURRENCE_ID_MISMATCH")
         if self.content_digest != _frame_content_digest(
-                self.frame_schema_id, self.frame_schema_revision, self.bindings):
+                self.frame_schema_id, self.frame_schema_revision,
+                self.schema_role_order, self.bindings):
             _fail("FRAME_CONTENT_DIGEST_MISMATCH")
 
     @property
@@ -403,13 +420,15 @@ def concept_ref_from_snapshot(
     if not isinstance(snapshot, FrozenAtlasSnapshot):
         _fail("FRAME_ATLAS_SNAPSHOT_REQUIRED")
     abi = snapshot.abi_for_semantic(semantic_id)
-    if type_ids is None:
-        matching = tuple(
-            item for item in snapshot.concepts
-            if item.concept.semantic_id == semantic_id)
-        if len(matching) != 1:
-            _fail("FRAME_CONCEPT_TYPES_REQUIRED")
-        type_ids = matching[0].concept.types
+    matching = tuple(
+        item for item in snapshot.concepts
+        if item.concept.semantic_id == semantic_id)
+    if len(matching) != 1:
+        _fail("FRAME_CONCEPT_TYPES_REQUIRED")
+    authoritative = matching[0].concept.types
+    if type_ids is not None and tuple(type_ids) != tuple(authoritative):
+        _fail("FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH")
+    type_ids = authoritative
     return ConceptRef(
         semantic_id=semantic_id,
         semantic_release=snapshot.release_sha256,
@@ -430,7 +449,9 @@ def content_digest(
     schema: FrameSchema,
     bindings: tuple[RoleOccurrence, ...],
 ) -> str:
-    return _frame_content_digest(schema.schema_id, schema.revision, bindings)
+    return _frame_content_digest(
+        schema.schema_id, schema.revision,
+        tuple(role.role_id for role in schema.roles), bindings)
 
 
 def _binding_concepts(binding: RoleOccurrence) -> tuple[ConceptRef, ...]:
@@ -441,6 +462,39 @@ def _binding_concepts(binding: RoleOccurrence) -> tuple[ConceptRef, ...]:
     return ()
 
 
+def _formal_source_types(
+    snapshot: FrozenAtlasSnapshot,
+    concept: ConceptRef,
+    source_graph: dict | None,
+    source_adapter_id: str | None,
+    source_span: SourceSpan,
+    role_id: str,
+) -> tuple[str, ...]:
+    if source_graph is None or not source_adapter_id:
+        _binding_fail("FRAME_CONCEPT_TYPE_AUTHORITY_MISSING", source_span, role_id)
+    entry = snapshot.abi_for_semantic(concept.semantic_id)
+    symbol = entry.symbol
+    if not symbol or concept.source_reference != source_adapter_id + ":" + symbol:
+        _binding_fail("FRAME_CONCEPT_TYPE_AUTHORITY_MISSING", source_span, role_id)
+    try:
+        index = source_graph["tokens"].index(symbol)
+        node = source_graph["nodes"][index]
+        if (index != entry.index or node.get("id") != symbol
+                or source_graph["row_contract_sha256"][symbol]
+                != source_node_digest(node)):
+            raise ValueError("source contract drift")
+        raw_signature = node["signature"]
+        if (isinstance(raw_signature, str) and raw_signature
+                and "->" not in raw_signature
+                and "(" not in raw_signature):
+            output_type = raw_signature
+        else:
+            output_type = Signature.parse(raw_signature).output
+    except (KeyError, IndexError, TypeError, ValueError, AttributeError):
+        _binding_fail("FRAME_CONCEPT_TYPE_AUTHORITY_MISSING", source_span, role_id)
+    return (output_type,)
+
+
 def validate_frame_bindings(
     schema: FrameSchema,
     snapshot: FrozenAtlasSnapshot,
@@ -449,6 +503,8 @@ def validate_frame_bindings(
     source_span: SourceSpan,
     causal_prefix_end: int,
     declared_scope: str,
+    source_graph: dict | None = None,
+    source_adapter_id: str | None = None,
 ) -> tuple[RoleOccurrence, ...]:
     if not isinstance(snapshot, FrozenAtlasSnapshot):
         _fail("FRAME_ATLAS_SNAPSHOT_REQUIRED")
@@ -491,8 +547,11 @@ def validate_frame_bindings(
                      if item.concept.semantic_id == concept.semantic_id),
                     None,
                 )
-                if (authoritative is not None
-                        and tuple(concept.type_ids) != tuple(authoritative)):
+                if authoritative is None:
+                    authoritative = _formal_source_types(
+                        snapshot, concept, source_graph, source_adapter_id,
+                        source_span, role.role_id)
+                if tuple(concept.type_ids) != tuple(authoritative):
                     _binding_fail("FRAME_CONCEPT_TYPE_AUTHORITY_MISMATCH",
                                   source_span, role.role_id)
                 if not set(concept.type_ids).intersection(role.allowed_type_ids):
@@ -531,6 +590,7 @@ def make_frame_instance(
         source_span=source_span,
         parent_occurrence_id=parent_occurrence_id,
         bindings=ordered,
+        schema_role_order=tuple(role.role_id for role in schema.roles),
         causal_prefix_end=causal_prefix_end,
     )
 
@@ -546,6 +606,8 @@ def bind_frame_instance(
     bindings: tuple[RoleOccurrence, ...],
     causal_prefix_end: int,
     declared_scope: str,
+    source_graph: dict | None = None,
+    source_adapter_id: str | None = None,
 ) -> FrameInstance:
     ordered = validate_frame_bindings(
         schema,
@@ -554,6 +616,8 @@ def bind_frame_instance(
         source_span=source_span,
         causal_prefix_end=causal_prefix_end,
         declared_scope=declared_scope,
+        source_graph=source_graph,
+        source_adapter_id=source_adapter_id,
     )
     return make_frame_instance(
         schema,
@@ -748,6 +812,7 @@ def frame_instance_from_bytes(payload: bytes) -> FrameInstance:
             source_span=SourceSpan(**value["source_span"]),
             parent_occurrence_id=value["parent_occurrence_id"],
             bindings=tuple(bindings),
+            schema_role_order=tuple(value["schema_role_order"]),
             causal_prefix_end=value["causal_prefix_end"],
             schema_version=value["schema_version"],
         )
