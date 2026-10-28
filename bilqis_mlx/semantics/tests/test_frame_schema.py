@@ -20,7 +20,13 @@ from bilqis_mlx.semantics.atlas_projection import (
     load_atlas_snapshot,
     persist_atlas_release,
 )
-from bilqis_mlx.semantics.core import Apply, Operation, Signature, literal
+from bilqis_mlx.semantics.core import (
+    Apply,
+    Operation,
+    Signature,
+    expression_digest,
+    literal,
+)
 from bilqis_mlx.semantics.frame_schema import (
     AtomicFrame,
     BindingState,
@@ -141,8 +147,26 @@ class FrameSchemaRecordTests(unittest.TestCase):
 
         self.assertEqual(ast_construct_id(expression), "apply:formal.operator.TRANSFER")
         self.assertEqual(ast_construct_id(source), "literal:Entity")
-        self.assertEqual(native_ast_content_digest(expression),
-                         native_ast_content_digest(expression))
+        self.assertEqual(
+            native_ast_content_digest(expression),
+            expression_digest(expression),
+        )
+        changed_operation = Operation(
+            operation.token_index,
+            operation.symbol,
+            operation.signature,
+            "b" * 64,
+        )
+        changed = Apply(
+            changed_operation,
+            expression.arguments,
+            expression.type_name,
+            expression.world_contract,
+        )
+        self.assertNotEqual(
+            native_ast_content_digest(expression),
+            native_ast_content_digest(changed),
+        )
 
     def test_native_apply_requires_exact_released_semantic_contract_digest(self):
         expected_contract = "a" * 64

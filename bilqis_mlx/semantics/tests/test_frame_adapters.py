@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
@@ -210,6 +211,29 @@ class ReleasedFrameAdapterTests(unittest.TestCase):
         )
         self.assertGreater(len(tuple(_walk(tree))), 1)
         self.assertEqual(validate_frame_tree(tree), tree)
+
+    def test_numeric_source_contract_drift_rejects_actual_c_add_row(self):
+        adapter = self.registry.require(
+            "bilqis_mlx.numeric_curriculum.draw_numeric", C_ORACLE)
+        row = next(
+            item for item in draw_numeric_rows(
+                self.numeric_graph, seed=19, maximum=3)
+            if item["capability"] == "C.ADD")
+        tampered_graph = deepcopy(self.numeric_graph)
+        original = tampered_graph["row_contract_sha256"]["school.op.ADD"]
+        replacement = "9" * 64 if original != "9" * 64 else "8" * 64
+        tampered_graph["row_contract_sha256"]["school.op.ADD"] = replacement
+        with self.assertRaises(BilqisError) as caught:
+            self._bind(adapter, row, tampered_graph)
+        self.assertEqual(
+            caught.exception.code,
+            "SEMANTIC_FRAME.ADAPTER.INVALID_SOURCE",
+        )
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FRAME_NUMERIC_CONTRACT_DRIFT",
+        )
+        self.assertEqual(caught.exception.context["role_id"], "<operator>")
 
     def test_registered_adapter_error_carries_span_role_and_adapter_identity(self):
         adapter = self.registry.require(

@@ -142,8 +142,9 @@ def _schema_for_symbol(
     adapter_id: str,
     span: SourceSpan,
     scope: str,
+    contract_sha256: str | None = None,
 ) -> tuple[FrameSchema, Signature]:
-    signature, roles, contract_sha256 = _graph_signature(
+    signature, roles, graph_contract_sha256 = _graph_signature(
         graph, symbol, adapter_id=adapter_id, span=span)
     operator = _abi_entry_for_symbol(
         snapshot, symbol, adapter_id=adapter_id, span=span, role_id="<operator>")
@@ -157,7 +158,7 @@ def _schema_for_symbol(
         ),
         order_mode="ORDERED",
         scope=scope,
-        ast_contract_sha256=contract_sha256,
+        ast_contract_sha256=contract_sha256 or graph_contract_sha256,
     )
     return schema, signature
 
@@ -338,14 +339,21 @@ def _bind_numeric_expression(
     parent_occurrence_id: str | None,
     causal_prefix_end: int,
 ) -> tuple[FrameTree, str]:
+    is_source_root = not path
     schema, graph_signature = _schema_for_symbol(
         snapshot, graph, expression.operator.symbol, ast_construct_id(expression),
-        adapter_id=adapter_id, span=span, scope="formal-expression")
+        adapter_id=adapter_id, span=span, scope="formal-expression",
+        contract_sha256=(
+            None if is_source_root else expression.operator.contract_sha256))
     if graph_signature != expression.operator.signature:
         _adapter_fail("FRAME_NUMERIC_SIGNATURE_DRIFT",
                       adapter_id, span, "<operator>")
     if expression.operator.token_index != graph["tokens"].index(expression.operator.symbol):
         _adapter_fail("FRAME_NUMERIC_OPERATOR_INDEX_DRIFT",
+                      adapter_id, span, "<operator>")
+    if (is_source_root
+            and expression.operator.contract_sha256 != schema.ast_contract_sha256):
+        _adapter_fail("FRAME_NUMERIC_CONTRACT_DRIFT",
                       adapter_id, span, "<operator>")
 
     current_occurrence = occurrence_id(source_instance_id, path)

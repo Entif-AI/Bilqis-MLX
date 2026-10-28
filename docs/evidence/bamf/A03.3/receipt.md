@@ -37,8 +37,12 @@ For finite numeric rows, the adapter uses the existing
 `source_adapters.numeric.decode` path and the native
 `semantics.core.Apply/Literal/Operation.signature` objects. The decoded
 operator signature must match the source semantic-graph signature and token
-index, and its native `Operation.contract_sha256` must match the released
-source row contract. Number identities resolve through the frozen Atlas ABI; structured
+index. At the source-expression root, its native
+`Operation.contract_sha256` must match the released source row contract.
+Recursive numeric children retain their canonical native numeric-operation
+contracts; the historical graph can carry a different row contract for those
+generated child operators (for example COUNT), so that distinct authority is
+not falsely collapsed. Number identities resolve through the frozen Atlas ABI; structured
 `NumberSet` literals remain typed atomic child frames rather than receiving
 invented semantic IDs.
 
@@ -70,6 +74,11 @@ The cumulative repair also closes the A03.2 review probes:
 - incoming causal prefixes must cover the source span.
 - native `Apply` values cannot reuse the same operator symbol/signature with a
   different semantic row contract SHA.
+- an actual C.ADD source row with only its copied source graph
+  `row_contract_sha256["school.op.ADD"]` changed to another valid SHA-256 is
+  rejected with `FRAME_NUMERIC_CONTRACT_DRIFT`, while the repository's valid
+  nested COUNT construction remains accepted under its canonical native
+  operation contract.
 
 Formal-domain types are not copied into a shadow ontology. They are supplied by
 the existing source semantic graph or native numeric `Operation.signature`
@@ -102,8 +111,14 @@ With
 `BILQIS_ATLAS_REAL_CORPUS=f1c89c1d1bcd72695c81f8e777d0fbbdf446e92cb27132bebf1cd6873ec689ec`:
 13 passed, 0 failed, 0 skipped.
 
-`scripts/run_tests.py bilqis_mlx/semantics/tests/test_frame_adapters.py`:
-7 passed, 0 failed, 0 skipped.
+`scripts/run_tests.py bilqis_mlx/semantics/tests/test_frame_adapters.py` after
+the source-contract repair: 8 passed, 0 failed, 0 skipped.
+
+The AST content-identity test now compares
+`native_ast_content_digest(expression)` to the existing
+`expression_digest(expression)` and proves that changing only the operation
+contract digest changes the expression digest; it no longer uses a tautological
+self-comparison.
 
 `scripts/run_tests.py bilqis_mlx/source_adapters/tests/test_source_adapters_micro.py`:
 3 passed, 0 failed, 0 skipped.
