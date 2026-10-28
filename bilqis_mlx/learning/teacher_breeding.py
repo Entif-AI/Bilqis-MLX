@@ -476,4 +476,15 @@ def filter_active_effective(teacher: dict, *, grade: str, capability: str,
             break
         if key in inventory and key not in eligible and allowed(key):
             eligible.append(key)
+    if not eligible:
+        def recovery_rank(key):
+            birth = births.get(key)
+            if isinstance(birth, dict) and birth.get("proven_retained"):
+                return (0, key)
+            return (1 if not isinstance(birth, dict) else 2, key)
+
+        archived = sorted(
+            (key for key in inventory if key not in live and allowed(key)),
+            key=recovery_rank)
+        eligible.extend(archived[:max(1, len(active_effective))])
     return tuple(eligible)
