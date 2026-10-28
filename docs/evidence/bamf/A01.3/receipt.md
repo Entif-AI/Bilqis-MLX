@@ -74,15 +74,30 @@ Focused tests also prove that:
 - a renamed `latest` alias is rejected rather than silently substituted;
 - a self-consistent artifact missing `source_bundle_id` is rejected;
 - payload-byte tampering fails the manifest digest check without mutating the manifest;
-- a held semantic identity remains absent from ABI lookup even when an active learner
-  request supplies a plausible symbol and explicitly requests activation.
+- a held semantic identity remains absent from ABI lookup, and a forged active ABI
+  entry for that identity is rejected before the manifest, active-set artifact, or
+  held ledger can change;
+- a prior Atlas ABI can be consumed only through a manifest-verified
+  `FrozenAtlasSnapshot`; supplying bare `atlas.json` rows as accepted predecessor
+  state fails with `ATLAS_PRIOR_ABI_PROVENANCE_REQUIRED`.
+
+Persistence also fsyncs the output parent directory immediately after the atomic
+content-addressed rename, matching the repository SKOS publisher's durability
+boundary. The real-corpus test pins the exact Atlas release digest, artifact bundle
+ID, shape-policy digest, active-set digest, RDF-term count and all four persisted
+payload digests.
+
+The held-identity case above proves the A01 ABI boundary only. It does not claim that
+the downstream Factory admission API has already received and rejected an A01 hold
+request. That cross-contract witness belongs at the existing Factory/admission seam
+when the later semantic-coverage binding reaches it.
 
 ## Verification
 
 `scripts/run_tests.py bilqis_mlx/semantics/tests/test_atlas_projection.py` in the
-provided dependency environment: 8 passed, 1 external real-corpus witness skipped.
+provided dependency environment: 9 passed, 1 external real-corpus witness skipped.
 
-The same test file with the pinned real-corpus witness enabled: 9 passed, 0 skipped.
+The same test file with the pinned real-corpus witness enabled: 10 passed, 0 skipped.
 The real witness exercises persistence, frozen readback, bank-1 lookup at index 8192,
 source-hold census, exact concept lookup, all admission-boundary repairs and the
 existing root/sense/realization/hold assertions.
@@ -96,6 +111,12 @@ The host MLX-capable Python ran
 
 `scripts/skos_test_policy.py plan --base-ref bd3a3ce0450c5f4b0b7f9aadade7db42c3ccc1bd`:
 `SKOS_VERIFIED_BUNDLE_UNCHANGED ... FULL_SUITE_SKIPPED`.
+
+`python3 -B scripts/error_control_plane.py --check` reports zero
+`bilqis_mlx/semantics/atlas_projection.py` debt. The repository-wide gate still
+exits nonzero for nine inherited literal-error findings in shared scheduler,
+plasticity and runtime owners outside this Lane A change; those findings were
+already present in the unified base and are not waived or modified here.
 
 `git diff --check`: passed.
 

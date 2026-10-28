@@ -16,6 +16,7 @@ from pathlib import Path
 import re
 import shutil
 import tempfile
+from typing import NoReturn
 
 from rdflib import BNode, Literal, URIRef
 from rdflib.namespace import DCTERMS, RDF, SKOS
@@ -40,6 +41,10 @@ ATLAS_SNAPSHOT_SCHEMA = "bilqis.semantic-atlas-snapshot/v1"
 CONFORMANCE_SCHEMA = "bilqis.skos.conformance/v1"
 COVERAGE_SCHEMA = "bilqis.skos.semantic-coverage/v1"
 BANK_SIZE = 8192
+NATIVE_REGISTRY_MIN_ROWS = 2
+NATIVE_REGISTRY_HEADER_COLUMNS = 3
+NATIVE_REGISTRY_SYMBOL_COLUMN = 1
+NATIVE_REGISTRY_IDENTITY_COLUMN = 2
 SHAPE_POLICY = {
     "schema": "bilqis.semantic-abi-shape-policy/v1",
     "bank_size": BANK_SIZE,
@@ -79,7 +84,7 @@ def _digest(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _fail(reason: str) -> None:
+def _fail(reason: str) -> NoReturn:
     ErrorBus.raise_(SCHOOL.STATE.HISTORICAL_ARTIFACT_INVALID, reason=reason)
 
 
@@ -335,54 +340,61 @@ def _json_input(value: Mapping | str | Path | bytes, *, reason: str) -> tuple[di
         else:
             payload = Path(value).read_bytes()
             data = json.loads(payload)
-        if not isinstance(data, dict):
-            raise TypeError("top level must be an object")
-        return data, payload
     except (OSError, ValueError, TypeError, UnicodeError) as error:
         _fail(reason + ":" + type(error).__name__)
-        raise AssertionError("unreachable") from error
+    if not isinstance(data, dict):
+        _fail(reason + ":TOP_LEVEL_OBJECT_REQUIRED")
+    return data, payload
 
 
-def _prior_abi(value: Mapping | str | Path | bytes) -> tuple[str, str, tuple[AbiEntry, ...]]:
+def _prior_abi(
+    value: Mapping | str | Path | bytes | FrozenAtlasSnapshot,
+) -> tuple[str, str, tuple[AbiEntry, ...]]:
+    if isinstance(value, FrozenAtlasSnapshot):
+        if (value.schema != ATLAS_SNAPSHOT_SCHEMA
+                or not HEX64.fullmatch(value.bundle_id)
+                or not value.abi_entries):
+            _fail("ATLAS_PRIOR_ABI_SNAPSHOT_INVALID")
+        entries = value.abi_entries
+        _validate_abi_entries(entries, require_concepts=())
+        return ATLAS_ARTIFACT_SCHEMA, value.bundle_id, entries
+
     data, payload = _json_input(value, reason="ATLAS_PRIOR_ABI_INVALID")
     schema = data.get("schema")
     if schema == ATLAS_ARTIFACT_SCHEMA:
-        raw_entries = data.get("abi_entries")
-        if not isinstance(raw_entries, list) or not raw_entries:
-            _fail("ATLAS_PRIOR_ABI_ROWS_REQUIRED")
-        try:
-            entries = tuple(AbiEntry(**item) for item in raw_entries)
-        except (TypeError, KeyError) as error:
-            _fail("ATLAS_PRIOR_ABI_ROWS_INVALID:" + type(error).__name__)
-    else:
-        rows = data.get("rows")
-        if (not isinstance(rows, list) or len(rows) < 2 or not isinstance(rows[0], list)
-                or tuple(str(value) for value in rows[0][:3]) != (
-                    "0-based Token ID", "Bilqis token symbol", "Pasigraphy identity")):
-            _fail("ATLAS_PRIOR_ABI_ROWS_REQUIRED")
-        native_digest = data.get("native_rows_sha256")
-        if native_digest is not None and native_digest != semantic_digest(rows):
-            _fail("ATLAS_PRIOR_ABI_NATIVE_ROWS_DIGEST_MISMATCH")
-        entries_list = []
-        for expected, row in enumerate(rows[1:]):
-            if (not isinstance(row, list) or len(row) < 3
-                    or str(row[0]) != str(expected)
-                    or not isinstance(row[1], str) or not row[1]
-                    or not isinstance(row[2], str) or not row[2]):
-                _fail("ATLAS_PRIOR_ABI_ROW_ORDER_INVALID")
-            entries_list.append(AbiEntry(
-                index=expected,
-                bank=expected // BANK_SIZE,
-                row=expected % BANK_SIZE,
-                semantic_id=row[2],
-                symbol=row[1],
-                source="PRIOR_ACCEPTED_NATIVE_REGISTRY",
-                active=True,
-                teaching_candidate=True,
-                reason="PRIOR_ACCEPTED_ABI",
-            ))
-        entries = tuple(entries_list)
-        schema = schema if isinstance(schema, str) and schema else "UNVERSIONED"
+        _fail("ATLAS_PRIOR_ABI_PROVENANCE_REQUIRED")
+    rows = data.get("rows")
+    if (not isinstance(rows, list)
+            or len(rows) < NATIVE_REGISTRY_MIN_ROWS
+            or not isinstance(rows[0], list)
+            or tuple(str(value) for value in rows[0][:NATIVE_REGISTRY_HEADER_COLUMNS]) != (
+                "0-based Token ID", "Bilqis token symbol", "Pasigraphy identity")):
+        _fail("ATLAS_PRIOR_ABI_ROWS_REQUIRED")
+    native_digest = data.get("native_rows_sha256")
+    if native_digest is not None and native_digest != semantic_digest(rows):
+        _fail("ATLAS_PRIOR_ABI_NATIVE_ROWS_DIGEST_MISMATCH")
+    entries_list = []
+    for expected, row in enumerate(rows[1:]):
+        if (not isinstance(row, list) or len(row) < NATIVE_REGISTRY_HEADER_COLUMNS
+                or str(row[0]) != str(expected)
+                or not isinstance(row[NATIVE_REGISTRY_SYMBOL_COLUMN], str)
+                or not row[NATIVE_REGISTRY_SYMBOL_COLUMN]
+                or not isinstance(row[NATIVE_REGISTRY_IDENTITY_COLUMN], str)
+                or not row[NATIVE_REGISTRY_IDENTITY_COLUMN]):
+            _fail("ATLAS_PRIOR_ABI_ROW_ORDER_INVALID")
+        entries_list.append(AbiEntry(
+            index=expected,
+            bank=expected // BANK_SIZE,
+            row=expected % BANK_SIZE,
+            semantic_id=row[NATIVE_REGISTRY_IDENTITY_COLUMN],
+            symbol=row[NATIVE_REGISTRY_SYMBOL_COLUMN],
+            source="PRIOR_ACCEPTED_NATIVE_REGISTRY",
+            active=True,
+            teaching_candidate=True,
+            reason="PRIOR_ACCEPTED_ABI",
+        ))
+    entries = tuple(entries_list)
+    schema = schema if isinstance(schema, str) and schema else "UNVERSIONED"
     prior_digest = _digest(payload if not isinstance(value, Mapping) else _canonical_bytes(data))
     _validate_abi_entries(entries, require_concepts=())
     return schema, prior_digest, entries
@@ -686,7 +698,7 @@ def _normalize_bindings(bindings) -> tuple[FormalDomainBinding, ...]:
 def compile_atlas_release(
     corpus_dir: str | Path,
     coverage_receipt: Mapping | str | Path | bytes,
-    prior_abi: Mapping | str | Path | bytes,
+    prior_abi: Mapping | str | Path | bytes | FrozenAtlasSnapshot,
     formal_domain_bindings,
 ) -> AtlasRelease:
     """Compile a source-qualified immutable Atlas projection from one pinned bundle."""
@@ -1011,6 +1023,11 @@ def persist_atlas_release(release: AtlasRelease, output_root: str | Path) -> Atl
                 os.close(directory_fd)
             try:
                 os.rename(temp, target)
+                root_fd = os.open(root, os.O_RDONLY)
+                try:
+                    os.fsync(root_fd)
+                finally:
+                    os.close(root_fd)
             except OSError:
                 if not target.exists():
                     raise
@@ -1095,7 +1112,6 @@ def _snapshot_concept(value: object) -> AtlasConcept:
         )
     except (KeyError, TypeError) as error:
         _fail("ATLAS_SNAPSHOT_CONCEPT_INVALID:" + type(error).__name__)
-        raise AssertionError("unreachable") from error
 
 
 def _jsonl_records(payload: bytes, *, reason: str) -> tuple[dict, ...]:
@@ -1159,7 +1175,7 @@ def load_atlas_snapshot(
 
     try:
         if not isinstance(atlas["counts"], dict):
-            raise TypeError("counts")
+            _fail("ATLAS_SNAPSHOT_COUNTS_INVALID")
         counts = AtlasCounts(**atlas["counts"])
         bindings = tuple(FormalDomainBinding(
             family=item["family"],

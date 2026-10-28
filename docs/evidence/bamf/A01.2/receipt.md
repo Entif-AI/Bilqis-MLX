@@ -55,10 +55,17 @@ The compiled release keeps the required count domains separate:
 - source-qualified implementation-uncovered identities: 9079
 
 Every non-teaching source row carries its source disposition, implementation
-status and explicit reason. Source-held identities cannot enter the ABI even when
-an active learner request supplies a plausible symbol or gloss. The adversarial
-test for that request fails before persistence and leaves the previously written
-manifest byte-identical.
+status and explicit reason. The ABI compiler rejects a forged attempt to append a
+source-held identity as an active ABI entry. That focused ABI-boundary test fails
+before persistence and leaves the previously written manifest, `atlas.json` active
+set, and `held.jsonl` bytes unchanged.
+
+This is not a Factory-admission witness. The existing Factory admission APIs consume
+already constructed Factory/Executable releases and do not yet receive A01's
+source-hold request surface. The Factory half of the cross-contract adversarial proof
+must be exercised at the owning downstream Factory/admission seam once that semantic
+coverage binding exists. This leaf does not create a parallel admission gate to make
+that future proof appear complete.
 
 Deterministic Atlas release SHA-256:
 `58e0c281b5da18b9b7e6c803709b29eeeb0a88f16b06f48de692808e2fb88306`
