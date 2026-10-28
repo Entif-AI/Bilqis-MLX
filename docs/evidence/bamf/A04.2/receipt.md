@@ -130,3 +130,14 @@ Combined adapter/codec suite: 25 passed, 0 failed, 0 skipped.
 The previous independent review findings are repaired and tested locally;
 fresh immutable-head EGM remains `EGM_PENDING` rather than claimed.
 No neural state or source admission was changed.
+
+## 2026-10-28 cardinality review repair
+
+Independent review found that a repeated occupant of a singular
+role could select EXTENDED instead of failing the schema contract.
+The codec now validates authoritative role order, cardinality,
+occurrence sequence and types on pack and unpack.
+
+The focused codec suite now passes 17/17, including two
+failing-before negatives and a type-mismatch regression.
+Independent readback remains pending; parent integration is open.

@@ -527,6 +527,34 @@ def _frame_semantic_release(
     return schema_map.semantic_release
 
 
+def _validate_frame_schema_shape(frame: FrameInstance, schema: FrameSchema) -> None:
+    """Representation fallback never overrides an authoritative role contract."""
+    if frame.schema_role_order != tuple(role.role_id for role in schema.roles):
+        _fail("FRAME_PACKED_FRAME_SCHEMA_ROLE_ORDER_MISMATCH")
+    role_map = {role.role_id: role for role in schema.roles}
+    if any(binding.role_id not in role_map for binding in frame.bindings):
+        _fail("FRAME_BINDING_ROLE_UNKNOWN")
+    for role in schema.roles:
+        members = tuple(
+            binding for binding in frame.bindings
+            if binding.role_id == role.role_id)
+        if not role.min_cardinality <= len(members) <= role.max_cardinality:
+            _fail("FRAME_ROLE_CARDINALITY_INVALID")
+        if tuple(item.occurrence_index for item in members) != tuple(
+                range(len(members))):
+            _fail("FRAME_ROLE_OCCURRENCE_SEQUENCE_INVALID")
+        for member in members:
+            if member.child_frame is not None:
+                if not set(member.child_frame.type_ids).intersection(
+                        role.allowed_type_ids):
+                    _fail("FRAME_ROLE_TYPE_INVALID")
+            concepts = ((member.concept,) if member.concept is not None
+                        else member.alternatives)
+            if any(not set(concept.type_ids).intersection(role.allowed_type_ids)
+                   for concept in concepts):
+                _fail("FRAME_ROLE_TYPE_INVALID")
+
+
 def classify_frame(
     frame: FrameInstance | AtomicFrame,
     schema: FrameSchema | None,
@@ -545,6 +573,7 @@ def classify_frame(
     if ((frame.frame_schema_id, frame.frame_schema_revision)
             != (schema.schema_id, schema.revision)):
         _fail("FRAME_PACK_SCHEMA_IDENTITY_MISMATCH")
+    _validate_frame_schema_shape(frame, schema)
     _frame_semantic_release(frame, schema_map)
     schema_tag = schema_map.tag_for(schema)
     if schema_tag is None:
@@ -865,6 +894,7 @@ def _validate_frame_sidecar(
             frame.frame_schema_revision,
         ) != (schema.schema_id, schema.revision):
             _fail("FRAME_PACKED_FRAME_SCHEMA_MISMATCH")
+        _validate_frame_schema_shape(frame, schema)
         for binding in frame.bindings:
             concepts = (
                 (binding.concept,) if binding.concept is not None

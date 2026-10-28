@@ -58,3 +58,12 @@ neural admission, optimizer updates, live training or a merge.
 The previous independent A04.2 review is preserved as an open finding
 until a fresh immutable-head EGM reviewer confirms the repair. No
 independent sign-off is claimed here.
+
+## 2026-10-28 schema-contract review repair
+
+The codec now checks the released frame schema's role ordering,
+cardinality, occurrence sequence and allowed types on both pack
+and unpack. A valid sidecar cannot make an invalid frame eligible
+for EXTENDED representation. The focused codec suite passes
+17/17 after the repair. Independent review of the new immutable
+head remains pending; no parent or integration gate is closed.

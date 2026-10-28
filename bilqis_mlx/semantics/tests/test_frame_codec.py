@@ -157,6 +157,52 @@ def _snapshot(*, inactive: tuple[int, ...] = (), held_id: str | None = None):
 
 
 class CompactFrameCodecTests(unittest.TestCase):
+    def test_singular_schema_role_cannot_fall_back_to_extended_when_duplicated(self):
+        schema = _schema("A")
+        schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
+        valid = _frame(schema, tuple(_concept(index) for index in range(4)))
+        duplicate = make_frame_instance(
+            schema,
+            source_instance_id="duplicate-singular-role",
+            structural_path=(),
+            source_span=SourceSpan(0, 8),
+            parent_occurrence_id=None,
+            bindings=(
+                valid.bindings[0],
+                RoleOccurrence("slot0", 1, concept=_concept(4)),
+                *valid.bindings[1:],
+            ),
+            causal_prefix_end=8,
+        )
+        with self.assertRaises(BilqisError) as caught:
+            pack_frame(duplicate, schema=schema, schema_map=schema_map)
+        self.assertEqual(
+            caught.exception.context["reason"], "FRAME_ROLE_CARDINALITY_INVALID")
+
+    def test_packed_frame_must_match_authoritative_schema_role_order(self):
+        schema = _schema("A")
+        schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
+        forged_schema = replace(schema, roles=tuple(reversed(schema.roles)))
+        forged_frame = _frame(
+            forged_schema, tuple(_concept(index) for index in range(4)))
+        with self.assertRaises(BilqisError) as caught:
+            pack_frame(
+                forged_frame, schema=schema, schema_map=schema_map)
+        self.assertEqual(
+            caught.exception.context["reason"],
+            "FRAME_PACKED_FRAME_SCHEMA_ROLE_ORDER_MISMATCH")
+
+    def test_role_type_mismatch_is_not_a_codec_fallback(self):
+        schema = _schema("A")
+        schema_map = SchemaTagMap.from_schemas(RELEASE, (schema,))
+        invalid = _frame(schema, (
+            replace(_concept(0), type_ids=("Number",)),
+            _concept(1), _concept(2), _concept(3),
+        ))
+        with self.assertRaises(BilqisError) as caught:
+            pack_frame(invalid, schema=schema, schema_map=schema_map)
+        self.assertEqual(
+            caught.exception.context["reason"], "FRAME_ROLE_TYPE_INVALID")
     def setUp(self):
         self.schemas = tuple(_schema(name) for name in ("A", "B", "C", "D"))
         self.schema_map = SchemaTagMap.from_schemas(RELEASE, self.schemas)
