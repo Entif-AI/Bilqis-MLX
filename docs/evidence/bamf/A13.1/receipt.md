@@ -58,8 +58,8 @@ neural attention, C09 invalidation or the full real A/B/C source
 constructor integration. Those are separate child/integration obligations
 and must not be claimed complete from this isolated proof.
 
-Fresh independent EGM has not returned in this resumed execution.
-`EGM_PENDING` is recorded for the integrator. No private source data,
+At initial candidate time `EGM_PENDING` was recorded; the final
+independent disposition appears below. No private source data,
 neural state or historical learner was accessed or changed.
 
 ## Source-handle evidence-binding review repair
@@ -87,5 +87,10 @@ returning `EligibleContext` before this repair. It now returns
 regressions reject source-reference substitution even when the frame
 content digest stays unchanged, and backdated member visibility
 under a still-live grant. The focused suite now passes 14/14.
-Fresh independent review of this repaired immutable head remains
-`EGM_PENDING`; no A13 parent or downstream integration is closed.
+Goldfish worker-4 independently re-reviewed immutable pushed
+`7895cea9b36e9b04ef085be2b0c3de4002cae257` and returned
+**EGM PASS, zero remaining Blockers/Majors**. The reviewer inspected
+the exact source-grant evidence/release binding, frame/member
+source-reference and visibility digests, and three adversarial
+regressions. It did not execute tests; 14/14 is prime evidence.
+No A13 parent or downstream integration is closed.
