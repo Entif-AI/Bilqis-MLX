@@ -77,7 +77,8 @@ class VisitObservationTests(unittest.TestCase):
         receipt["teacher"]["strategies"] = {"fixture-policy": policy}
         return fixture, release, program, parameters, optimizer, receipt, policy
 
-    def run_visit(self, *, enabled=True, outcome_kind="retained", autonomy=False, previous=None):
+    def run_visit(self, *, enabled=True, outcome_kind="retained", autonomy=False,
+                  previous=None, use_schedule_program=False):
         try:
             import mlx.core as mx
             import numpy as np
@@ -127,7 +128,8 @@ class VisitObservationTests(unittest.TestCase):
             self._install_seams(patches, visits, release, program, fixture, draw, evidence, predictions, train)
             mx.set_default_device(mx.cpu)
             result = visits._take_visit(mx, root, receipt, {"manifest_sha256": "b" * 64},
-                fixture.course, engine, parameters, optimizer, fixture.graph, steps_per_visit=2,
+                program if use_schedule_program else fixture.course,
+                engine, parameters, optimizer, fixture.graph, steps_per_visit=2,
                 batch_size=6, reserve_gib=0., source_root=root, learning_settings=Settings(),
                 autonomy_teaching_option="source.direct/Z.C0" if autonomy else None,
                 capture_teacher_observations=enabled)
@@ -145,6 +147,25 @@ class VisitObservationTests(unittest.TestCase):
                      for key, cell in optimizer.state.items()}
             return dict(trace=trace, result=result, learner=learner, adamw=adamw,
                         observation=observation, event=event, release=release.release_sha256, published=published)
+
+    def test_schedule_projection_visit_uses_release_curriculum_for_methodology(self):
+        from bilqis_mlx.factory.curriculum_definition import CurriculumDefinition
+        from bilqis_mlx.runtime import visits
+        seen = []
+        summarize = visits._diagnostics_teaching.summarize_teaching_visit
+
+        def capture_authority(course, *args, **kwargs):
+            seen.append(course)
+            return summarize(course, *args, **kwargs)
+
+        with patch.object(visits._diagnostics_teaching, "summarize_teaching_visit",
+                          side_effect=capture_authority):
+            result = self.run_visit(use_schedule_program=True)
+        methodology = result["event"]["lesson_methodology"]
+        self.assertEqual(len(seen), 1)
+        self.assertIsInstance(seen[0], CurriculumDefinition)
+        self.assertEqual(methodology["capability"], "Z.C0")
+        self.assertTrue(methodology["course_sha256"])
 
     def _assert_cold_publication(self, root, result, published, outcome_kind, observation):
         from contextlib import redirect_stdout

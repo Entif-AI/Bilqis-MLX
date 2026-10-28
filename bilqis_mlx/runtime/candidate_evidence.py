@@ -169,6 +169,7 @@ def _frontier_fixed_evidence(
                 "before": sum(value["before"] for value in grade_scores.values()),
                 "after": sum(value["after"] for value in grade_scores.values()),
                 "total": sum(value["total"] for value in grade_scores.values()),
+                "capabilities": grade_scores,
             }
             frontier_candidate = dict(grade_candidate)
         else:
@@ -209,6 +210,7 @@ def _same_grade_fixed_evidence(
         "before": sum(value["before"] for value in scores.values()),
         "after": sum(value["after"] for value in scores.values()),
         "total": sum(value["total"] for value in scores.values()),
+        "capabilities": scores,
     }
 
 
@@ -300,7 +302,7 @@ def _candidate_grade_evidence(mx, run_dir, receipt, course, school, capability,
     protected.update(name for name in required if name != capability)
     grade_net = sum(pair[name]["after"]-pair[name]["before"] for name in required)
     if grade_net < 0 and not _learning_plasticity_escape.allows_early_grade_net(
-            plasticity_escape, grade_net):
+            plasticity_escape, pair, required):
         return (pair, protected, required,
                 {"status": "NOT_MEASURED",
                  "reason": "SAME_GRADE_NET_REGRESSION"},

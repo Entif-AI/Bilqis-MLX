@@ -10,7 +10,8 @@ import bilqis_mlx.runtime.timing_trace as _timing_trace
 
 def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
                         teacher_curriculum_scope, previsit_diagnostics,
-                        lesson_grade, total_capabilities=None):
+                        lesson_grade, total_capabilities=None,
+                        plasticity_escape=None):
     """Select one policy while preserving contextual and vNext authority rules."""
     with _timing_trace.trace_span("POLICY_SELECT", capability=cap):
         if learning_settings is None:
@@ -26,7 +27,8 @@ def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
             curriculum_scope=teacher_curriculum_scope,
             diagnostics=previsit_diagnostics, return_metadata=True,
             student_checkpoint_sha256=school.current_student.sha256,
-            total_capabilities=total_capabilities)
+            total_capabilities=total_capabilities,
+            plasticity_active=bool((plasticity_escape or {}).get("active")))
         legacy_key, legacy_reason = key, metadata.get("selection_reason")
         context_key = cap + "|" + school.stage + "|" + teacher_curriculum_scope
         channel = teacher.get("causal_experiment", {})
@@ -47,7 +49,8 @@ def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
         }
         ordinal = int(channel.get("events", 0)) + 1
         if legacy_reason in {
-                "FRESH_MUTATED_CHALLENGER", "PORTABLE_RETAINED_CHALLENGER"}:
+                "FRESH_MUTATED_CHALLENGER", "PORTABLE_RETAINED_CHALLENGER",
+                "PLASTICITY_RETRY"}:
             canary = {
                 "schema": _teacher_vnext.SCHEMA,
                 "policy_version": "teacher-vnext-canary/v1",
@@ -56,7 +59,9 @@ def select_visit_policy(engine, teacher, cap, school, rng, learning_settings,
                 "status": (
                     "BYPASSED_BESPOKE_EXPLORATION"
                     if legacy_reason == "FRESH_MUTATED_CHALLENGER"
-                    else "BYPASSED_PORTABLE_RETAINED_CHALLENGER"),
+                    else ("BYPASSED_PORTABLE_RETAINED_CHALLENGER"
+                          if legacy_reason == "PORTABLE_RETAINED_CHALLENGER"
+                          else "BYPASSED_PLASTICITY_RETRY")),
                 "policy_key": None,
             }
         else:

@@ -1993,3 +1993,51 @@ policy remains dormant unless both B and C actually carry unfinished debt.
 
 **Status:** Accepted for bounded implementation and non-neural verification.
 
+
+## ADR-114 | 2026-10-28 | Plasticity trades normalized mastery debt, not raw correct-answer counts
+
+**Direct user correction after active Grade-C plasticity still rejected useful
+frontier trades.** A correct-answer loss has different developmental cost at
+100% mastery than it has in an already weak capability. Plasticity therefore
+must not compare collateral changes as raw answer counts or as one fixed
+`-1` allowance across heterogeneous capability cohorts.
+
+When plasticity is active, every measured capability receives one vote
+independent of its row count. For capability accuracy `a`, define normalized
+mastery debt `d = 1 - a` and mastery-debt energy `E = d^2`. The utility of a
+candidate on one capability is `E_before - E_after`; scope utility is the sum of
+those capability utilities. Positive utility means the candidate reduced total
+normalized mastery debt. The square is deliberate: borrowing a few points from
+a nearly perfect capability is cheap, but repeatedly degrading the same
+capability becomes progressively more expensive.
+
+The active capability must still show a strict positive source-paired gain.
+Plasticity may relax an otherwise raw-count-based same-grade or protected-loss
+rejection only when both the complete same-grade paired scope and the complete
+paired protection scope have strictly positive mastery-debt utility. A negative
+fixed same-grade, active-frontier, or whole-school fixed-frontier raw delta may
+likewise be waived only when that exact evidence surface has detailed
+per-capability scores and strictly positive mastery-debt utility. If an older
+evidence surface lacks per-capability paired scores, a negative raw delta remains
+non-relaxable rather than guessing a utility value.
+
+This supersedes ADR-108's fixed `-1` plasticity loss caps and one-extra-answer
+protected tolerance as the plasticity trade criterion. Ordinary retention outside
+active plasticity remains unchanged. Fragile-composition replay, source-gold,
+semantic identity, custody/provenance, strict target gain, and the mature-grade
+debt hard limit remain hard gates. Plasticity still does not declare displaced
+skills repaired; normal assessment and recovery own that work.
+
+Because activation changes candidate admissibility, the teacher must not discard
+a previously observed target-improving near miss merely because it was rejected
+before plasticity opened. On the first eligible active-plasticity opportunity,
+selection may retry an otherwise active, previously rejected target-gaining
+policy that has not yet been evaluated under plasticity before breeding another
+pressure challenger. The retry receives fresh source-paired scoring and ordinary
+retention authority; historical rejection evidence is never rewritten.
+
+Telemetry records the quadratic power and per-surface, per-capability utility so
+operators can see why a raw regression was accepted or rejected.
+
+**Status:** Accepted for bounded implementation and non-neural verification.
+

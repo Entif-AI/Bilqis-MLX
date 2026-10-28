@@ -383,12 +383,17 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         fragile_losses=fragile_losses, exceeded=exceeded)
     reason, plasticity = _plasticity_escape.maybe_relax(
         reason, state=plasticity_escape, no_target_gain=no_target_gain,
-        same_grade_net_gain=same_grade_net_gain,
+        paired=paired, same_grade_capabilities=required,
+        fixed_grade_scores=(fixed.get("capabilities")
+                            if fixed.get("status") == "MEASURED" else None),
+        frontier_scores=(frontier.get("capabilities")
+                         if frontier.get("status") == "MEASURED" else None),
+        protected_frontier_grade=protected_frontier_grade,
         fixed_grade_net_gain=(fixed.get("net_correct_delta")
                               if fixed.get("status") == "MEASURED" else None),
         active_frontier_grade_net_gain=protected_frontier_delta,
         whole_school_net_gain=frontier_net if frontier_measured else None,
-        regressions=regressions, tolerances=tolerances, fragile_losses=fragile_losses)
+        fragile_losses=fragile_losses)
     projected_mature_debt, reason = _mature_debt.retention_reason(reason, frontier, mature_grades, mature_grade_debt or {})
     return {
         "version": VERSION,
@@ -631,7 +636,9 @@ def candidate_step_budget(default_steps: int, teacher: dict, capability: str,
 def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                     *, curriculum_scope: str = "", diagnostics: dict | None = None,
                     return_metadata: bool = False,
-                    student_checkpoint_sha256: str | None = None, total_capabilities: int | None = None):
+                    student_checkpoint_sha256: str | None = None,
+                    total_capabilities: int | None = None,
+                    plasticity_active: bool = False):
     """Preserve the inherited bandit's exploration; prefer proven safe context."""
     grade = capability.partition(".")[0]
     channel = _channel(teacher)
@@ -658,6 +665,31 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                 selection_reason=selection_reason, selection_policy=TEACHER_SELECTION_POLICY,
                 selection_detail=selection_detail)
         return key, policy
+    if plasticity_active and scope:
+        retryable = []
+        for policy_key, record in scope.items():
+            policy = teacher.get("strategies", {}).get(policy_key)
+            if policy is None or not isinstance(record, dict):
+                continue
+            if _effective_policy_key(policy) not in active_set:
+                continue
+            if (int(record.get("unsafe", 0)) < 1 or
+                    int(record.get("retained", 0)) > 0 or
+                    int(record.get("no_target_gain_streak", 0)) > 0 or
+                    bool(record.get("last_plasticity_active", False))):
+                continue
+            trials = int(record.get("trials", 0))
+            if trials < 1:
+                continue
+            retryable.append((
+                float(record.get("latest", float("-inf"))),
+                float(record.get("reward_sum", 0.)) / trials,
+                -int(record.get("unsafe", 0)), policy_key,
+            ))
+        if retryable:
+            _latest, _mean, _unsafe, policy_key = max(retryable)
+            return result(policy_key, teacher["strategies"][policy_key],
+                          selection_reason="PLASTICITY_RETRY")
     if rejection_pressure >= BESPOKE_EXPLORATION_START:
         challenger = _teacher_breeding.pressure_challenger(
             engine, teacher, rng, capability=capability, phase=phase,
@@ -885,6 +917,8 @@ def observe_context(teacher: dict, *, capability: str, phase: str,
     record["trials"] += 1
     record["reward_sum"] += reward
     record["latest"] = reward
+    record["last_plasticity_active"] = bool(
+        (decision.get("plasticity_escape") or {}).get("active"))
     diagnostic_stats = record.setdefault("diagnostic_stats", {})
     diagnostic = diagnostic_stats.setdefault(diagnostic_key, {
         "trials": 0, "reward_sum": 0., "unsafe": 0, "retained": 0,

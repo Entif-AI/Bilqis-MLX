@@ -235,7 +235,8 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     policy_key, policy, policy_selection = _select_visit_policy(
         engine, teacher, cap, school, rng, learning_settings,
         teacher_curriculum_scope, previsit_diagnostics, lesson_grade,
-        len(_curriculum_scheduler.assessment_capabilities(program, school)))
+        len(_curriculum_scheduler.assessment_capabilities(program, school)),
+        plasticity_escape)
     capture.select_option(cap, autonomy_teaching_option)
     capture.propose(executable_release, school, cap, policy_key, policy, policy_selection,
         configured_steps=steps_per_visit, effective_steps=candidate_steps, batch_size=batch_size,
@@ -487,8 +488,11 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                         visit_step=step + 1):
             if methodology_unavailable is None:
                 try:
+                    methodology_offered, methodology_delivered = (
+                        _methodology_lesson_rows(cap, fresh, priority, picked))
                     methodology_steps.append(_diagnostics_teaching.inspect_lesson_step(
-                        executable_release.curriculum, cap, fresh, picked))
+                        executable_release.curriculum, cap,
+                        methodology_offered, methodology_delivered))
                 except ValueError as exc:
                     # A diagnostic implementation gap must not invent a new
                     # training gate or silently change the evolved teacher.
@@ -641,7 +645,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
     # recovery point, NOT a representation of these newly updated RAM weights.
     school = _curriculum_scheduler.visit(_runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school, cap, school.current_student, retention_frontier=_mature_debt.retained_frontier(outcome))
     methodology = _diagnostics_teaching.summarize_teaching_visit(
-        course, cap, tuple(methodology_steps),
+        executable_release.curriculum, cap, tuple(methodology_steps),
         introductory=introduction_pass,
         unmeasured_reason=methodology_unavailable)
     teacher_decision = _learning_teacher_feedback.summarize_teacher_decision(_learning_teacher_feedback.TeacherDecisionInput(
@@ -846,6 +850,24 @@ def _direct_mentor_votes(confidence_champions):
                 direct_capability_votes.get(source_grade, 0) + votes)
         direct_capabilities.extend(mentor.get("capabilities", ()))
     return direct_capability_votes, direct_capabilities
+
+
+def _methodology_lesson_rows(capability: str, fresh, priority, picked):
+    """Return target teaching evidence without injected preservation rows."""
+    offered = []
+    offered_by_id = {}
+    for row in (*fresh, *priority):
+        if row.get("capability") != capability:
+            continue
+        identity = row.get("id")
+        if identity in offered_by_id:
+            if offered_by_id[identity] != row:
+                raise ValueError("LESSON_EVIDENCE_OFFERED_IDENTITY_CONFLICT")
+            continue
+        offered_by_id[identity] = row
+        offered.append(row)
+    delivered = [row for row in picked if row.get("capability") == capability]
+    return offered, delivered
 
 
 def _visit_retention_scope(run_dir, receipt, course, school, cap, learning_settings):

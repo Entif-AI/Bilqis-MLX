@@ -466,7 +466,7 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(controls, {"B.IFF", "B.NOT", "A.EDGE"})
         self.assertEqual(fixed["status"], "NOT_MEASURED")
 
-    def test_starvation_plasticity_allows_bounded_grade_net_loss_to_reach_fixed_evidence(self):
+    def test_starvation_plasticity_rejects_raw_small_loss_when_mastery_debt_grows(self):
         from pathlib import Path
         from bilqis_mlx import trainer as trainer
         grade = ("B.IFF", "B.NOT", "B.XOR")
@@ -493,7 +493,10 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                 program, object(), "B.XOR", "parent", "candidate", rows,
                 {"B.XOR0": parent["B.XOR0"], "B.XOR1": parent["B.XOR1"]},
                 Settings(), plasticity_escape={"active": True})
-        self.assertEqual(stage, "COMPLETE_SAME_GRADE")
+        # The historical rule allowed any raw -1 grade trade under plasticity.
+        # Quadratic mastery debt correctly rejects this one: the +1 XOR repair
+        # is outweighed by damage to already-weaker NOT plus perfect IFF.
+        self.assertEqual(stage, "GRADE_NET_REJECTED")
         self.assertEqual(fixed["status"], "NOT_MEASURED")
 
     def test_b_recovery_uses_whole_school_frontier_even_when_scheduler_is_c(self):
@@ -666,7 +669,84 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                          "PROTECTED_CAPABILITY_REGRESSION")
         self.assertEqual(result["worst_protected_loss"], 2)
 
-    def test_starvation_plasticity_allows_only_one_frontier_answer_of_slack(self):
+    def test_plasticity_values_frontier_gain_by_normalized_mastery_debt(self):
+        # SUB gains four percentage points while a mastered COUNT gives back six.
+        # Raw answer accounting is -2, but normalized quadratic mastery debt says
+        # the weak capability's repair is substantially more valuable.
+        result = decide(
+            {
+                "C.SUB": {"before": 56, "after": 60, "total": 100},
+                "C.COUNT": {"before": 100, "after": 94, "total": 100},
+            }, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"C.COUNT"}, settings=Settings(),
+            same_grade_capabilities=("C.SUB", "C.COUNT"),
+            plasticity_escape={"active": True})
+        self.assertEqual(result["same_grade_net_correct_delta"], -2)
+        self.assertEqual(result["decision"], "PROVISIONAL")
+        utility = result["plasticity_escape"]["mastery_debt_utility"]
+        self.assertEqual(utility["power"], 2)
+        self.assertGreater(utility["same_grade"]["net"], 0)
+        self.assertAlmostEqual(
+            utility["same_grade"]["capabilities"]["C.SUB"]["utility_delta"],
+            .0336)
+        self.assertAlmostEqual(
+            utility["same_grade"]["capabilities"]["C.COUNT"]["utility_delta"],
+            -.0036)
+
+    def test_plasticity_can_waive_six_answer_protected_loss_when_debt_trade_wins(self):
+        paired = {
+            "C.SUB": {"before": 18, "after": 22, "total": 33},
+            "C.COUNT": {"before": 33, "after": 27, "total": 33},
+        }
+        ordinary = decide(
+            paired, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"C.COUNT"}, settings=Settings(),
+            same_grade_capabilities=("C.SUB", "C.COUNT"))
+        self.assertEqual(ordinary["decision"], "REJECT")
+        self.assertEqual(ordinary["reason"], "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertEqual(ordinary["exceeded"], {"C.COUNT": 6})
+
+        plastic = decide(
+            paired, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"C.COUNT"}, settings=Settings(),
+            same_grade_capabilities=("C.SUB", "C.COUNT"),
+            plasticity_escape={"active": True})
+        self.assertEqual(plastic["decision"], "PROVISIONAL")
+        self.assertEqual(plastic["plasticity_escape"]["waived_reason"],
+                         "PROTECTED_CAPABILITY_REGRESSION")
+        self.assertGreater(
+            plastic["plasticity_escape"]["mastery_debt_utility"]
+                   ["same_grade"]["net"], 0)
+
+    def test_plasticity_rejects_trade_when_normalized_mastery_debt_grows(self):
+        # The same +4/-6 raw trade is bad when the sacrificed capability is
+        # already materially weak rather than sitting at mastery surplus.
+        result = decide(
+            {
+                "C.SUB": {"before": 60, "after": 64, "total": 100},
+                "C.COUNT": {"before": 70, "after": 64, "total": 100},
+            }, active_capability="C.SUB", phase="RECOVERY_1",
+            protected={"C.COUNT"}, settings=Settings(),
+            same_grade_capabilities=("C.SUB", "C.COUNT"),
+            plasticity_escape={"active": True})
+        self.assertEqual(result["decision"], "REJECT")
+        self.assertEqual(result["reason"], "SAME_GRADE_NET_REGRESSION")
+        self.assertLess(
+            result["plasticity_escape"]["mastery_debt_utility"]
+                  ["same_grade"]["net"], 0)
+
+    def test_mastery_debt_utility_gives_each_capability_one_normalized_vote(self):
+        from bilqis_mlx.learning.plasticity_escape import mastery_debt_utility
+        utility = mastery_debt_utility({
+            "C.SMALL_PANEL": {"before": 6, "after": 9, "total": 12},
+            "C.LARGE_PANEL": {"before": 30, "after": 45, "total": 60},
+        })
+        small = utility["capabilities"]["C.SMALL_PANEL"]["utility_delta"]
+        large = utility["capabilities"]["C.LARGE_PANEL"]["utility_delta"]
+        self.assertAlmostEqual(small, large)
+        self.assertAlmostEqual(utility["net"], small + large)
+
+    def test_starvation_plasticity_uses_frontier_mastery_debt_not_raw_slack(self):
         paired = {
             "C.COUNT": {"before": 4, "after": 5, "total": 6},
             "C.ORDER": {"before": 6, "after": 6, "total": 6},
@@ -681,6 +761,12 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             "repaired": [],
             "grades": {"C": {"before": 61, "after": 60, "total": 72,
                               "net_correct_delta": -1}},
+            "capabilities": {
+                "C.COUNT": {"before": 25, "after": 27, "total": 36,
+                            "net_correct_delta": 2},
+                "C.ORDER": {"before": 36, "after": 33, "total": 36,
+                            "net_correct_delta": -3},
+            },
         }
         allowed = decide(
             paired, active_capability="C.COUNT", phase="MAIN",
@@ -692,17 +778,24 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(allowed["plasticity_escape"]["waived_reason"],
                          "ACTIVE_SCHOOL_GRADE_REGRESSION")
 
-        too_far = decide(
+        bad_trade = decide(
             paired, active_capability="C.COUNT", phase="MAIN",
             protected={"C.ORDER"}, settings=Settings(),
             same_grade_capabilities=("C.COUNT", "C.ORDER"),
             fixed_grade_replay=fixed,
-            fixed_frontier_replay={**base_frontier, "after_correct": 128,
-                "grades": {"C": {"before": 61, "after": 59, "total": 72,
-                                  "net_correct_delta": -2}}},
+            fixed_frontier_replay={**base_frontier,
+                "before_correct": 55, "after_correct": 52,
+                "grades": {"C": {"before": 55, "after": 52, "total": 72,
+                                  "net_correct_delta": -3}},
+                "capabilities": {
+                    "C.COUNT": {"before": 25, "after": 27, "total": 36,
+                                "net_correct_delta": 2},
+                    "C.ORDER": {"before": 30, "after": 25, "total": 36,
+                                "net_correct_delta": -5},
+                }},
             protected_frontier_grade="C", plasticity_escape={"active": True})
-        self.assertEqual(too_far["decision"], "REJECT")
-        self.assertEqual(too_far["reason"], "ACTIVE_SCHOOL_GRADE_REGRESSION")
+        self.assertEqual(bad_trade["decision"], "REJECT")
+        self.assertEqual(bad_trade["reason"], "ACTIVE_SCHOOL_GRADE_REGRESSION")
 
     def test_plasticity_activation_is_starvation_local_and_closes_after_retention(self):
         from types import SimpleNamespace
@@ -1480,6 +1573,61 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         # incumbent rather than sampling an unseen archive policy.
         self.assertEqual(picked, "less_bad")
         self.assertEqual(Legacy.calls, 0)
+
+    def test_plasticity_retries_preplasticity_target_gain_before_breeding_again(self):
+        near_miss = {
+            "contrast": 1., "depth": 1, "distill": .33,
+            "lr": .000042, "old": 20, "preview": 4,
+        }
+        parent = {
+            "contrast": 0., "depth": 1, "distill": .33,
+            "lr": .0002, "old": 12, "preview": 4,
+        }
+        teacher = {
+            "strategies": {"near_miss": near_miss, "parent": parent},
+            "global_stats": {
+                "near_miss": {"trials": 4, "reward_sum": -.4,
+                              "reward_ema": -.1, "latest": -.1},
+                "parent": {"trials": 20, "reward_sum": 2.,
+                           "reward_ema": .1, "latest": .1},
+            },
+            "grade_stats": {"C": {
+                "parent": {"trials": 20, "reward_sum": 2.,
+                           "reward_ema": .1, "latest": .1},
+            }},
+            "events": 60,
+        }
+        rejected = decide({
+            "C.DIV": {"before": 10, "after": 11, "total": 33},
+            "C.MUL": {"before": 30, "after": 28, "total": 33},
+        }, active_capability="C.DIV", phase="RECOVERY_1",
+            protected=set(), settings=Settings(),
+            same_grade_capabilities=("C.DIV", "C.MUL"))
+        self.assertEqual(rejected["reason"], "SAME_GRADE_NET_REGRESSION")
+        observe_context(
+            teacher, capability="C.DIV", phase="RECOVERY_1",
+            policy_key="near_miss", decision=rejected, local_gain=.1,
+            curriculum_scope="scope")
+        teacher["causal_experiment"]["capability_stagnation"][
+            "C.DIV|scope"]["rejection_streak"] = 8
+
+        class Legacy:
+            KNOBS = {
+                "contrast": (0., 1.), "depth": (1, 4),
+                "distill": (0., .33), "lr": (.00004, .00008, .0002, .0003),
+                "old": (4, 8, 12, 20), "preview": (0, 4),
+            }
+
+            @staticmethod
+            def pick(_teacher, _grade, _rng):
+                return "parent", _teacher["strategies"]["parent"]
+
+        picked, _policy, metadata = contextual_pick(
+            Legacy, teacher, "C.DIV", "RECOVERY_1", random.Random(2),
+            curriculum_scope="scope", return_metadata=True,
+            plasticity_active=True)
+        self.assertEqual(picked, "near_miss")
+        self.assertEqual(metadata["selection_reason"], "PLASTICITY_RETRY")
 
     def test_rejection_pressure_pools_learning_rate_evidence_across_phases(self):
         teacher = {
