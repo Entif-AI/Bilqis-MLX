@@ -6,7 +6,7 @@ from types import MappingProxyType
 
 HEALTH_LABELS = MappingProxyType({
     "PRODUCTIVE": "PRODUCTIVE",
-    "UNCERTAIN_EXPLORING": "EXPLORE",
+    "UNCERTAIN_EXPLORING": "UNCERTAIN",
     "LOW_YIELD": "LOW-YIELD",
     "SEARCH_NEIGHBORHOOD_EXHAUSTED": "EXHAUSTED",
 })
@@ -104,4 +104,6 @@ def teacher_fields(event: dict, history: dict | None = None) -> dict:
     status = health.get("status") if isinstance(health, dict) else None
     if status in HEALTH_LABELS:
         fields["health"] = HEALTH_LABELS[status]
+    if event.get("teacher_selection_reason") == "FRESH_MUTATED_CHALLENGER":
+        fields["health"] = "EXPLORE"
     return fields

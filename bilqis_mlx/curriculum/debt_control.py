@@ -62,22 +62,11 @@ def _frontier_recovery_queue(program, state: SchoolState,
 def _mature_debt_repair_grade(program, state: SchoolState) -> str | None:
     program = _program(program)
     return _mature_debt.repair_grade(
-        state.active_grades, state.champions, state.mature_capability_debt,
+        state.active_grades, state.champions, state.mature_grade_debt,
         {grade: _caps(program, (grade,)) for grade in state.active_grades})
-
-
-def _mature_debt_repair_queue(program, state: SchoolState, grade: str,
-                              allowed_capabilities: tuple[str, ...] | None = None
-                              ) -> tuple[str, ...]:
-    program = _program(program)
-    return _mature_debt.repair_queue(
-        state.mature_capability_debt, _caps(program, (grade,)),
-        allowed=allowed_capabilities)
 
 
 def _apply_mature_debt_frontier(program, state: SchoolState, frontier
                                 ) -> tuple[tuple[str, int], ...]:
-    program = _program(program)
-    mature = _caps(program, tuple(
-        grade.id for grade in program.grades if grade.id in state.champions))
-    return _mature_debt.apply_frontier(state.mature_capability_debt, mature, frontier)
+    return _mature_debt.apply_frontier(
+        state.mature_grade_debt, tuple(state.champions), frontier)

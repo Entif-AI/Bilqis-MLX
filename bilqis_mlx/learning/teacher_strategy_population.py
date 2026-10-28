@@ -19,6 +19,39 @@ STUDENT_SHA256_HEX_LENGTH = 64
 _INEFFECTIVE_POLICY_FIELDS = frozenset({"preview"})
 
 
+def mint_novel_effective_strategy(engine, teacher: dict, rng):
+    """Create one genuinely new executable strategy from the allowed knob space."""
+    strategies = teacher.get("strategies", {})
+    knobs = getattr(engine, "KNOBS", None)
+    if not knobs:
+        return None
+    max_strategies = int(getattr(engine, "MAX_STRATEGIES", 512))
+    max_attempts = int(getattr(engine, "MAX_MUTATION_ATTEMPTS", 24))
+    max_context = int(getattr(engine, "MAX_TEACHER_CONTEXT_ITEMS", 24))
+    if len(strategies) >= max_strategies:
+        return None
+    existing = set(effective_strategy_inventory(teacher))
+    fields = tuple(knobs)
+    for _ in range(max_attempts):
+        variant = {field: rng.choice(knobs[field]) for field in fields}
+        if variant["old"] + variant["preview"] > max_context:
+            continue
+        effective = effective_policy_key(variant)
+        if effective in existing:
+            continue
+        identity = hashlib.sha256(
+            json.dumps(variant, sort_keys=True).encode()).hexdigest()[:12]
+        if identity in strategies:
+            continue
+        strategies[identity] = variant
+        teacher.setdefault("global_stats", {})[identity] = {
+            "trials": 0, "reward_sum": 0.0, "reward_ema": 0.0, "latest": None,
+        }
+        teacher["mutations"] = int(teacher.get("mutations", 0)) + 1
+        return identity, variant
+    return None
+
+
 def effective_policy_features(policy: dict) -> dict:
     """Canonical pre-action knobs that actually change the current source lesson."""
     if not isinstance(policy, dict):

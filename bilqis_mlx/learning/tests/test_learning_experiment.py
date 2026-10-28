@@ -666,13 +666,25 @@ class CausalTeacherExperimentTests(unittest.TestCase):
             protected_frontier_grade="B",
         )
 
+        improving = dict(common)
+        improving["fixed_frontier_replay"] = {
+            **frontier,
+            "grades": {
+                "A": {"before": 58, "after": 60, "total": 72,
+                      "net_correct_delta": 2},
+                "B": {"before": 62, "after": 63, "total": 72,
+                      "net_correct_delta": 1},
+            },
+            "before_correct": 120, "after_correct": 123,
+            "regressions": [], "repaired": [],
+        }
         within_budget = decide(
-            paired, mature_capability_debt={"A.MAPS": 3}, **common)
+            paired, mature_grade_debt={"A": 4}, **improving)
         self.assertEqual(within_budget["decision"], "PROVISIONAL")
-        self.assertEqual(within_budget["projected_mature_grade_debt"], {"A": 4})
+        self.assertEqual(within_budget["projected_mature_grade_debt"], {"A": 2})
 
         blocked = decide(
-            paired, mature_capability_debt={"A.MAPS": 4}, **common)
+            paired, mature_grade_debt={"A": 4}, **common)
         self.assertEqual(blocked["decision"], "REJECT")
         self.assertEqual(blocked["reason"], "MATURE_GRADE_DEBT_LIMIT")
         self.assertEqual(blocked["projected_mature_grade_debt"], {"A": 5})
@@ -1665,6 +1677,37 @@ class CausalTeacherExperimentTests(unittest.TestCase):
         self.assertEqual(
             metadata["selection_policy"],
             "bilqis.mlx.teacher-selection/349-replay-v1")
+
+    def test_rejection_pressure_exploration_mints_novel_effective_strategy(self):
+        import bilqis_mlx.compatibility.historical_teacher_policy as policy_engine
+        teacher = strategy_population_teacher(count=24)
+        teacher["causal_experiment"]["contexts"]["C.ADD|MAIN|scope"] = {
+            "policy-000": {
+                "trials": 4, "reward_sum": 0., "unsafe": 4, "retained": 0,
+                "latest": -.1, "no_target_gain_streak": 4,
+            },
+        }
+        teacher["causal_experiment"]["capability_stagnation"] = {
+            "C.ADD|scope": {
+                "rejection_streak": 4, "no_target_gain_streak": 2,
+                "attempts_since_retained": 4, "total_rejections": 4,
+                "total_retained": 0, "current_rejection_reasons": {},
+            },
+        }
+        before_effective = {
+            _effective_policy_key(policy)
+            for policy in teacher["strategies"].values()
+        }
+        before_count = len(teacher["strategies"])
+
+        key, policy, metadata = contextual_pick(
+            policy_engine, teacher, "C.ADD", "MAIN", random.Random(9),
+            curriculum_scope="scope", return_metadata=True)
+
+        self.assertEqual(metadata["selection_reason"], "FRESH_MUTATED_CHALLENGER")
+        self.assertEqual(len(teacher["strategies"]), before_count + 1)
+        self.assertNotIn(_effective_policy_key(policy), before_effective)
+        self.assertEqual(teacher["strategies"][key], policy)
 
     def test_candidate_step_budget_recovers_when_interference_streak_breaks(self):
         teacher = {

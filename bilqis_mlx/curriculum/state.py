@@ -226,6 +226,7 @@ class SchoolState:
     # updates. Repair candidates pay these counts back; no historical
     # checkpoint becomes an admission baseline.
     mature_capability_debt: tuple[tuple[str, int], ...] = ()
+    mature_grade_debt: tuple[tuple[str, int], ...] = ()
 
     @property
     def grade(self) -> str:
@@ -353,6 +354,11 @@ def verify_state(program, state: SchoolState):
     if (len({capability for capability, _ in mature_debt}) != len(mature_debt) or
             any(capability not in all_active_caps or type(amount) is not int or amount < 1
                 for capability, amount in mature_debt)):
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_MATURE_CAPABILITY_DEBT)
+    grade_debt = state.mature_grade_debt
+    if (len({grade for grade, _ in grade_debt}) != len(grade_debt) or
+            any(grade not in state.active_grades or type(amount) is not int or amount < 1
+                for grade, amount in grade_debt)):
         ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_MATURE_CAPABILITY_DEBT)
     current = next(g for g in program.grades if g.id == state.grade)
     if state.introduction_stage >= max(1, len(current.teaching_stages)):

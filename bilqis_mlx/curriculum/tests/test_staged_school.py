@@ -9,7 +9,7 @@ from bilqis_mlx.curriculum.scheduler import (
     DebtCadencePolicy, _at_introduction_stage, _debt_run_due,
     _debt_run_queue, _enter_grade, _enter_mature_debt_repair,
     _continue_main_sweep, _frontier_recovery_queue, assess,
-    _mature_debt_repair_grade, _mature_debt_repair_queue,
+    _mature_debt_repair_grade,
     assess_withheld, assessment_capabilities, next_capability, start_new,
     visit, Score,
 )
@@ -51,40 +51,31 @@ def enter_c(course):
 
 
 class StagedSchoolTests(unittest.TestCase):
-    def test_mature_capability_debt_tracks_fixed_frontier_loss_and_repair(self):
+    def test_mature_grade_debt_tracks_fixed_frontier_net_loss_and_repair(self):
         course = staged_course()
         state, pointer = enter_c(course)
         state = replace(state, grade_index=1, stage="MAIN", queue=("b.0",))
-        lost = {
-            "status": "MEASURED",
-            "regressions": [
-                {"id": "a1", "capability": "a.0"},
-                {"id": "a2", "capability": "a.0"},
-            ],
-            "repaired": [],
-        }
+        lost = {"status": "MEASURED", "grades": {
+            "A": {"before": 48, "after": 46, "net_correct_delta": -2}}}
 
         state = visit(
             course, state, "b.0", pointer, retention_frontier=lost)
-        self.assertEqual(state.mature_capability_debt, (("a.0", 2),))
+        self.assertEqual(state.mature_grade_debt, (("A", 2),))
         self.assertEqual(_mature_debt_repair_grade(course, state), "A")
-        self.assertEqual(_mature_debt_repair_queue(course, state, "A"), ("a.0",))
 
         state = replace(state, grade_index=0, stage="MAIN", queue=("a.0",))
-        repaired = {
-            "status": "MEASURED", "regressions": [],
-            "repaired": [{"id": "a2", "capability": "a.0"}],
-        }
+        repaired = {"status": "MEASURED", "grades": {
+            "A": {"before": 46, "after": 47, "net_correct_delta": 1}}}
         state = visit(
             course, state, "a.0", pointer, retention_frontier=repaired)
-        self.assertEqual(state.mature_capability_debt, (("a.0", 1),))
+        self.assertEqual(state.mature_grade_debt, (("A", 1),))
         self.assertIsNone(_mature_debt_repair_grade(course, state))
 
     def test_mature_debt_repair_is_one_full_grade_pass_per_school_sweep(self):
         course = staged_course()
         state, _ = enter_c(course)
         state = replace(
-            state, mature_capability_debt=(("a.0", 2),),
+            state, mature_grade_debt=(("A", 2),),
             main_sweep_visited=(),
         )
 
@@ -104,7 +95,7 @@ class StagedSchoolTests(unittest.TestCase):
         state, pointer = enter_c(course)
         state = replace(
             state, grade_index=0, stage="ASSESS_MAIN", queue=(),
-            main_sweep_visited=(), mature_capability_debt=(("a.0", 2),),
+            main_sweep_visited=(), mature_grade_debt=(("A", 2),),
         )
         scores = all_scores(course, imperfect=("a.0", "b.0", "c.0"))
 

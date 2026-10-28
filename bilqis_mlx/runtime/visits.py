@@ -533,7 +533,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 fixed_grade_replay=fixed_grade_evidence,
                 fixed_frontier_replay=frontier,
                 protected_frontier_grade=_retention_frontier_grade(school),
-                mature_grades=frozenset(school.champions), mature_capability_debt=_mature_debt.as_mapping(school),
+                mature_grades=frozenset(school.champions), mature_grade_debt=_mature_debt.as_mapping(school),
                 negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
                 source_cohort_sha256=_runtime_state._fingerprint([
                     (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows
@@ -632,7 +632,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         "source_training_accuracy_after": after,
         "teacher_reward": reward,
         "teacher_selection_reward": bandit_credit,
-        "teacher_selection_policy": policy_selection["selection_policy"],
+        "teacher_selection_policy": policy_selection["selection_policy"], "teacher_selection_reason": policy_selection["selection_reason"],
         "teacher_strategy_population": {
             key: policy_selection.get(key)
             for key in ("strategy_archive_count", "active_effective_strategy_count",

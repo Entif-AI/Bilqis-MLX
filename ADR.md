@@ -1461,12 +1461,15 @@ before the failed anti-ratchet, Grade-B optimization could slowly erode Grade A
 for hours. Retention therefore needs a bounded memory budget plus an explicit
 repair loop.
 
-For every retained candidate with measured fixed-frontier evidence, each
-previously-correct row lost in an already-graduated capability adds one unit of
-`mature_capability_debt`. Each repaired row pays one unit back for that same
-capability, clamped at zero. This ledger is derived only from successive
-current-parent comparisons. It does not compare a challenger to an older
-checkpoint and cannot resurrect ADR-098's historical-anchor deadlock.
+For every retained candidate with measured fixed-frontier evidence, mature debt
+is updated from the **net fixed-grade delta** for each already-graduated grade.
+A net loss of two A answers adds two units of `mature_grade_debt`; a later net
+gain of three pays three units back, clamped at zero. Do not carry row-level or
+capability-local debt across changing fixed cohorts: those identities are useful
+diagnostics inside one parent-versus-candidate screen, but they are not a stable
+cross-visit currency. This ledger is derived only from successive current-parent
+comparisons. It does not compare a challenger to an older checkpoint and cannot
+resurrect ADR-098's historical-anchor deadlock.
 
 The initial control thresholds are deliberately small and inspectable. A mature
 grade with at least **2** debt answers enters repair priority. Debt identifies
@@ -1483,11 +1486,11 @@ reducing debt is allowed even when the ledger is already at or above the limit,
 so repair is never blocked by the safeguard itself. The repair pressure releases
 once debt falls below the 2-answer trigger.
 
-Existing pre-ADR-100 runs decode with an empty prospective ledger. Do not invent
-retroactive debt from fresh-cohort score differences. The current recovery run
-already owes an ordinary Grade-A MAIN pass through its existing curriculum debt,
-so it receives an immediate opportunity to repair current A weakness without a
-fabricated migration score.
+Existing pre-ADR-100 runs decode with an empty prospective ledger. Runs produced
+by the initial ADR-100 implementation may contain legacy per-capability debt;
+resume migrates that ledger by summing each capability amount into its owning
+grade, then clears the obsolete capability ledger. Do not invent additional
+retroactive debt from fresh-cohort score differences.
 
 Separately, ordinary developmental Grade-A presentation returns to plain
 `draw_predicates()` rows. The source-valid contextual/irrelevant presentation is
@@ -1495,4 +1498,33 @@ retained as dormant research machinery rather than mixed into routine learning
 or examination. This is the presentation separation that was useful inside
 `1324082`, reintroduced independently under ADR-097 without restoring any of the
 offending commit's retention mechanics.
+
+
+## ADR-101 | 2026-10-27 | Exploration must mean novel teacher strategy
+
+**User-directed correction after repeated zero-retention loops.** The dashboard
+previously rendered `UNCERTAIN_EXPLORING` as `EXPLORE`, although that health state
+only meant that an exact capability/phase/policy tuple had fewer than eight
+observations. Meanwhile the contextual teacher's rejection-pressure exploration
+path deliberately called `pick_existing()`, so it could repeatedly select known
+policies while the UI claimed exploration. Historical evidence confirmed this:
+in one 90-visit zero-retention streak, 58 nominal policy IDs represented 55
+effective strategies, but several exact effective policies recurred four to
+eight times and some capabilities repeated the same policy before trying a new
+one.
+
+`EXPLORE` is therefore reserved for an actual fresh mutation. Low-support policy
+health renders as `UNCERTAIN`. On every fourth sustained rejection-pressure
+attempt for a capability/context, the teacher now tries to mint one genuinely
+novel **effective** strategy from the existing bounded knob vocabulary. Novelty
+is checked against the effective strategy inventory, so preview-only or other
+behaviorally equivalent aliases do not count as exploration. The existing
+512-strategy archive ceiling, knob ranges, context-size limit, and bounded
+mutation-attempt count remain authoritative. If the active engine does not
+expose that bounded mutation vocabulary, selection falls back to the existing
+non-mutating compatibility behavior.
+
+Each visit records `teacher_selection_reason`; a genuinely minted policy uses
+`FRESH_MUTATED_CHALLENGER`. This makes later forensic review able to distinguish
+real search expansion from ordinary UCB rotation through the existing archive.
 

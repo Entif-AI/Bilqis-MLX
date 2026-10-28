@@ -27,7 +27,7 @@ from bilqis_mlx.learning.teacher_feedback import (
     LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
     select_weakness_targets,
 )
-from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, SELECTION_POLICY as TEACHER_SELECTION_POLICY, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome
+from bilqis_mlx.learning.teacher_strategy_population import UCB_EXPLORATION_WEIGHT as TEACHER_UCB_EXPLORATION_WEIGHT, SELECTION_POLICY as TEACHER_SELECTION_POLICY, active_effective_strategy_keys as _active_effective_strategy_keys, checkpoint_active_effective_strategy_keys as _checkpoint_active_effective_strategies, effective_context_scope as _effective_context_scope_impl, effective_policy_key as _effective_policy_key_impl, mint_novel_effective_strategy as _mint_novel_effective_strategy, pick_existing_active as _pick_existing_active, record_checkpoint_policy_outcome as _record_checkpoint_policy_outcome
 from bilqis_mlx.learning.teacher_realized_action import bind_record as _bind_realized_action_record, describe as realized_teacher_action, record_outcome as _record_realized_action_outcome
 
 
@@ -334,7 +334,7 @@ def _validate_source_cohort_sha256(value):
         raise ValueError("LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID")
 def decide(paired: dict, *, active_capability: str, phase: str,
            protected: set[str], settings: Settings,
-           mature_grades: frozenset[str] = frozenset(), mature_capability_debt: dict[str, int] | None = None,
+           mature_grades: frozenset[str] = frozenset(), mature_grade_debt: dict[str, int] | None = None,
            negative_prototypes: list[dict] | None = None,
            source_cohort_sha256: str | None = None,
            fragile_replay: dict | None = None,
@@ -390,7 +390,7 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         frontier_measured=frontier_measured,
         fragile_losses=fragile_losses,
         exceeded=exceeded)
-    projected_mature_debt, reason = _mature_debt.retention_reason(reason, frontier, mature_grades, mature_capability_debt or {})
+    projected_mature_debt, reason = _mature_debt.retention_reason(reason, frontier, mature_grades, mature_grade_debt or {})
     return {
         "version": VERSION,
         "decision": ("REJECT" if reason != "PAIRED_SCREEN_WITHIN_BUDGET"
@@ -646,7 +646,8 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
         teacher, grade, scope, channel, context_key, active_effective, inventory,
         student_checkpoint_sha256)
     active_set = set(active_effective)
-
+    capability_stagnation = _capability_stagnation(channel, capability, curriculum_scope)
+    rejection_pressure = int(capability_stagnation.get("rejection_streak", 0))
     def result(key, policy, *, diagnostic_context_consumed=False, selection_reason="INHERITED_FALLBACK"):
         if return_metadata:
             return key, policy, {
@@ -661,7 +662,9 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
                     len(retired_effective),
             }
         return key, policy
-
+    if rejection_pressure > 0 and rejection_pressure % REJECTION_PRESSURE_EXPLORATION_INTERVAL == 0:
+        novel = _mint_novel_effective_strategy(engine, teacher, rng)
+        if novel is not None: return result(novel[0], novel[1], selection_reason="FRESH_MUTATED_CHALLENGER")
     if not scope:
         original_key, original_policy = _pick_existing_active(
             engine, teacher, grade, rng, active_effective, inventory)
@@ -690,9 +693,6 @@ def contextual_pick(engine, teacher: dict, capability: str, phase: str, rng,
     selection_scope = usable_diagnostic or effective_scope
     diagnostic_consumed = bool(usable_diagnostic)
     trials = sum(v["trials"] for v in effective_scope.values())
-    capability_stagnation = _capability_stagnation(
-        channel, capability, curriculum_scope)
-    rejection_pressure = int(capability_stagnation.get("rejection_streak", 0))
     learning_rate_priors = (_learning_rate_prior_scope(
         teacher, channel, capability, curriculum_scope, context_key)
         if rejection_pressure > 0 else {})

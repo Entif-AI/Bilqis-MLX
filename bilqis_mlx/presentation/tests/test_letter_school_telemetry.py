@@ -403,10 +403,13 @@ class SchoolTelemetryTests(unittest.TestCase):
         }
         for _ in range(7):
             fields = teacher_fields(event, history)
-        self.assertEqual(fields["health"], "EXPLORE")
+        self.assertEqual(fields["health"], "UNCERTAIN")
         for _ in range(9):
             fields = teacher_fields(event, history)
         self.assertEqual(fields["health"], "EXHAUSTED")
+
+        mutated = dict(event, teacher_selection_reason="FRESH_MUTATED_CHALLENGER")
+        self.assertEqual(teacher_fields(mutated, {})["health"], "EXPLORE")
 
     def test_mastery_growth_keeps_right_and_grew_subcolumns_aligned(self):
         board = Dashboard(stream=io.StringIO(), show_all_panels=True,

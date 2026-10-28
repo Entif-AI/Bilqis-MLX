@@ -13,7 +13,7 @@ from fractions import Fraction
 from .debt_control import (
     _apply_mature_debt_frontier, _debt_cadence_mode, _debt_run_due,
     _debt_run_queue, _frontier_recovery_queue, _imperfect_ranked,
-    _mature_debt_repair_grade, _mature_debt_repair_queue,
+    _mature_debt_repair_grade,
 )
 from .state import (
     SCHOOL_STATE_SCHEMA, STAGES, _program, ScheduleTopology,
@@ -222,7 +222,7 @@ def visit(program, state: SchoolState, capability: str,
                    nongating_b_visits=nongating_b_visits,
                    non_b_training_turns_since_b_run=(
                        non_b_training_turns_since_b_run),
-                   mature_capability_debt=_apply_mature_debt_frontier(
+                   mature_grade_debt=_apply_mature_debt_frontier(
                        program, state, retention_frontier))
 
 
@@ -1109,6 +1109,15 @@ def read_state(path: Path, program) -> SchoolState:
     raw["mature_capability_debt"] = tuple(
         (capability, amount)
         for capability, amount in raw.get("mature_capability_debt", ()))
+    raw["mature_grade_debt"] = tuple(
+        (grade, amount) for grade, amount in raw.get("mature_grade_debt", ()))
+    if not raw["mature_grade_debt"] and raw["mature_capability_debt"]:
+        totals = {}
+        for capability, amount in raw["mature_capability_debt"]:
+            grade = capability.partition(".")[0]
+            totals[grade] = totals.get(grade, 0) + amount
+        raw["mature_grade_debt"] = tuple(sorted(totals.items()))
+        raw["mature_capability_debt"] = ()
     legacy_debt_cadence_policy = "debt_cadence_policy" not in raw
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in raw
     legacy_promotion_sweep_attempt_epoch = restore_promotion_attempt_fields(raw)
