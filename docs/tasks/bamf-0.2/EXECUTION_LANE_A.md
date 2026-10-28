@@ -2,6 +2,17 @@
 
 Continue the BAMF-0.2 program in Entif-AI/Bilqis-MLX. Root #341; lane #342; start #345 (A01).
 
+## Owner-authorized Lane A batch | 28 October 2026
+
+For this execution run, follow [the batch authorization](LANE_A_BATCH_AUTHORIZATION_20261028.md)
+and its dated amendment on GitHub #342. Verified same-lane leaves may accumulate
+as separate commits and receipts in one cumulative lane-to-unified PR while human
+integration review is pending. Continue with dependency-ready work rather than
+waiting after every leaf. Sync from current unified at every issue boundary;
+human merge approval, independent review, full acceptance and all custody rules
+remain unchanged. The per-issue PR wording below describes the default lifecycle;
+this scoped amendment permits batching its return path only.
+
 <!-- BAMF02:LANE-A-DEEP-ENTRYPOINT -->
 **Current low-burn launch:** start with the deepest ready child [A01.1 #396](https://github.com/Entif-AI/Bilqis-MLX/issues/396), not the original broad [A01 #345](https://github.com/Entif-AI/Bilqis-MLX/issues/345). Follow `children/registry.json` for child prerequisites and native parents. Original parent remains the complete integration/acceptance contract; all technical requirements and existing EGM guardrails are unchanged. No live training starts from issue planning.
 
