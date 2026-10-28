@@ -8,6 +8,7 @@ from bilqis_mlx.curriculum import ExamItem, validate, validate_exam_item
 from bilqis_mlx.curriculum.scheduler import (
     DebtCadencePolicy, _at_introduction_stage, _debt_run_due,
     _debt_run_queue, _enter_grade, _frontier_recovery_queue, assess,
+    _mature_debt_repair_grade, _mature_debt_repair_queue,
     assess_withheld, assessment_capabilities, next_capability, start_new,
     visit, Score,
 )
@@ -49,6 +50,35 @@ def enter_c(course):
 
 
 class StagedSchoolTests(unittest.TestCase):
+    def test_mature_capability_debt_tracks_fixed_frontier_loss_and_repair(self):
+        course = staged_course()
+        state, pointer = enter_c(course)
+        state = replace(state, grade_index=1, stage="MAIN", queue=("b.0",))
+        lost = {
+            "status": "MEASURED",
+            "regressions": [
+                {"id": "a1", "capability": "a.0"},
+                {"id": "a2", "capability": "a.0"},
+            ],
+            "repaired": [],
+        }
+
+        state = visit(
+            course, state, "b.0", pointer, retention_frontier=lost)
+        self.assertEqual(state.mature_capability_debt, (("a.0", 2),))
+        self.assertEqual(_mature_debt_repair_grade(course, state), "A")
+        self.assertEqual(_mature_debt_repair_queue(course, state, "A"), ("a.0",))
+
+        state = replace(state, grade_index=0, stage="MAIN", queue=("a.0",))
+        repaired = {
+            "status": "MEASURED", "regressions": [],
+            "repaired": [{"id": "a2", "capability": "a.0"}],
+        }
+        state = visit(
+            course, state, "a.0", pointer, retention_frontier=repaired)
+        self.assertEqual(state.mature_capability_debt, (("a.0", 1),))
+        self.assertIsNone(_mature_debt_repair_grade(course, state))
+
     def test_debt_roles_and_cadence_come_from_policy_data(self):
         course = staged_course()
         state, pointer = enter_c(course)

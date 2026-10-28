@@ -246,6 +246,13 @@ class SCHOOL:
             next_action="Inspect the owning contract and inputs; preserve recorded state.",
             legacy_codes=('INVALID_CARRIED_MASTERY_DEBT',),
         )
+        INVALID_MATURE_CAPABILITY_DEBT = _spec(
+            ("SCHOOL", "STATE", "INVALID_MATURE_CAPABILITY_DEBT"), owner="curriculum.state",
+            title='Invalid mature capability debt', message_template='Invalid mature capability debt',
+            disposition="CORRECT_INPUT_OR_STATE",
+            next_action="Inspect the mature capability debt ledger; preserve student and AdamW state.",
+            legacy_codes=('INVALID_MATURE_CAPABILITY_DEBT',),
+        )
         INVALID_GRADE_PROGRAM_OR_CHAMPIONS = _spec(
             ("SCHOOL", "STATE", "INVALID_GRADE_PROGRAM_OR_CHAMPIONS"), owner="curriculum.state",
             title='Invalid grade program or champions', message_template='Invalid grade program or champions',
@@ -842,6 +849,7 @@ CATALOG = (
     SCHOOL.STATE.INVALID_INTRODUCTION_FRONTIER_HISTORY,
     SCHOOL.STATE.INVALID_MAIN_SWEEP_HISTORY,
     SCHOOL.STATE.INVALID_CARRIED_MASTERY_DEBT,
+    SCHOOL.STATE.INVALID_MATURE_CAPABILITY_DEBT,
     SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY,
     SCHOOL.STATE.INVALID_INTRODUCTION_STAGE,
     SCHOOL.STATE.INVALID_PARTIAL_SCHOOL_COMPLETION,

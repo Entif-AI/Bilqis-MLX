@@ -61,6 +61,7 @@ def _state_from_json(value: dict, course) -> SchoolState:
     legacy_promotion_sweep_attempt_epoch = restore_promotion_attempt_fields(school)
     school.setdefault("main_sweep_visited", ())
     school.setdefault("carried_mastery_debt", ())
+    school.setdefault("mature_capability_debt", ())
     school.setdefault("introduction_frontiers", ())
     school.setdefault("promotion_sweep_scope", ())
     school.setdefault("promotion_sweep_return_stage", None)
@@ -79,6 +80,9 @@ def _state_from_json(value: dict, course) -> SchoolState:
                  "main_sweep_visited", "carried_mastery_debt",
                  "promotion_sweep_scope", "promotion_sweep_attempt_scope"):
         school[name] = tuple(school[name])
+    school["mature_capability_debt"] = tuple(
+        (capability, amount)
+        for capability, amount in school["mature_capability_debt"])
     school["promotion_sweep_scores"] = tuple(
         (capability, correct, total)
         for capability, correct, total in school["promotion_sweep_scores"])

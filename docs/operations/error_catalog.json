@@ -13142,6 +13142,22 @@
       "title": "Invalid carried mastery debt"
     },
     {
+      "code": "SCHOOL.STATE.INVALID_MATURE_CAPABILITY_DEBT",
+      "disposition": "CORRECT_INPUT_OR_STATE",
+      "legacy_codes": [
+        "INVALID_MATURE_CAPABILITY_DEBT"
+      ],
+      "message_key": "errors.school.state.invalid_mature_capability_debt.message",
+      "message_template": "Invalid mature capability debt",
+      "next_action": "Inspect the mature capability debt ledger; preserve student and AdamW state.",
+      "operator_steps": [],
+      "owner": "curriculum.state",
+      "preserve_state": true,
+      "recovery_key": "errors.school.state.invalid_mature_capability_debt.recovery",
+      "self_heal_owner": null,
+      "title": "Invalid mature capability debt"
+    },
+    {
       "code": "SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY",
       "disposition": "CORRECT_INPUT_OR_STATE",
       "legacy_codes": [

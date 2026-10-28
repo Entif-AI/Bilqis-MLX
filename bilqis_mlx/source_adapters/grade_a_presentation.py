@@ -20,7 +20,8 @@ from ..grade_a_probe import read_sources
 from ..live_grade_a import draw_predicates, generator_source_digest
 
 
-VERSION = "bilqis.mlx.grade-a-contextual-presentation/v2"
+VERSION = "bilqis.mlx.grade-a-development-presentation/v3"
+CONTEXT_VERSION = "bilqis.mlx.grade-a-contextual-presentation/v2"
 MEMBER_CONTEXT_VARIATION = "member-decoy-set-context-v1"
 IRRELEVANT_CONTEXT_VARIATION = "irrelevant-source-context-v2"
 MIN_CONTEXT_ENTITY_COUNT = 2
@@ -74,7 +75,7 @@ def _micro_context_row(row: dict, *, seed: int, source_root) -> dict:
         raise ErrorBus.legacy_error(SOURCE.GRADE_A.MICRO_CONTEXT_SOURCE_SHAPE_INVALID)
     capability = row["capability"]
     relation = "LINK" if capability == "A.PARENT" else "PARENT"
-    rng = random.Random(_digest([VERSION, "micro-context", seed, row["id"]]))
+    rng = random.Random(_digest([CONTEXT_VERSION, "micro-context", seed, row["id"]]))
     candidates = [
         [relation, left, right]
         for left in entities for right in entities if left != right
@@ -97,7 +98,7 @@ def _development_context_row(row: dict, *, seed: int, source_root) -> dict:
     if (not isinstance(sets, dict) or "K1" not in sets or
             not isinstance(universe, list) or not universe):
         raise ErrorBus.legacy_error(SOURCE.GRADE_A.DEVELOPMENT_CONTEXT_SOURCE_SHAPE_INVALID)
-    rng = random.Random(_digest([VERSION, "development-context", seed, row["id"]]))
+    rng = random.Random(_digest([CONTEXT_VERSION, "development-context", seed, row["id"]]))
     mask = 1 + rng.randrange((1 << len(universe)) - 1)
     sets["K1"] = [entity for index, entity in enumerate(universe)
                   if mask & (1 << index)]
@@ -105,7 +106,14 @@ def _development_context_row(row: dict, *, seed: int, source_root) -> dict:
 
 
 def draw_a(*, source_root, graph, course, capability, seed, each):
-    """Draw Grade-A with source-valid irrelevant context for every predicate."""
+    """Draw ordinary developmental Grade-A without contextual invariance noise."""
+    del course
+    return tuple(draw_predicates(
+        source_root, graph, seed=seed, capability=capability, each=each))
+
+
+def draw_a_contextual(*, source_root, graph, course, capability, seed, each):
+    """Preserve contextual presentation for dormant research/generalization use."""
     del course
     rows = draw_predicates(
         source_root, graph, seed=seed, capability=capability, each=each)

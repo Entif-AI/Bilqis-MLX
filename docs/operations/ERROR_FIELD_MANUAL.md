@@ -202,6 +202,20 @@ Recovery: Inspect the owning contract and inputs; preserve recorded state.
 
 Legacy aliases: `INVALID_CARRIED_MASTERY_DEBT`
 
+### `SCHOOL.STATE.INVALID_MATURE_CAPABILITY_DEBT`
+
+Invalid mature capability debt.
+
+Owner: `curriculum.state`
+Disposition: `CORRECT_INPUT_OR_STATE`
+Self-heal owner: `none`
+
+Message: Invalid mature capability debt
+
+Recovery: Inspect the mature capability debt ledger; preserve student and AdamW state.
+
+Legacy aliases: `INVALID_MATURE_CAPABILITY_DEBT`
+
 ### `SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY`
 
 Carried mastery debt at completion boundary.

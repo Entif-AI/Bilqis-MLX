@@ -10,6 +10,11 @@ from bilqis_mlx.errors import ErrorBus, SCHOOL
 
 from dataclasses import asdict, replace
 from fractions import Fraction
+from .debt_control import (
+    _apply_mature_debt_frontier, _debt_cadence_mode, _debt_run_due,
+    _debt_run_queue, _frontier_recovery_queue, _imperfect_ranked,
+    _mature_debt_repair_grade, _mature_debt_repair_queue,
+)
 from .state import (
     SCHOOL_STATE_SCHEMA, STAGES, _program, ScheduleTopology,
     classify_schedule_topology, Score, DebtCadencePolicy, Assessment, SchoolState,
@@ -24,41 +29,6 @@ from pathlib import Path
 from bilqis_mlx.learning.champions import Checkpoint, repoint_earlier, vote_counts, soup_weights
 from bilqis_mlx.factory.schedule import ScheduleProgram
 from bilqis_mlx.runtime.disk import atomic_text
-
-
-def _debt_cadence_mode(program, state: SchoolState) -> bool:
-    """A supplied policy is active while both of its grade roles carry debt."""
-    program = _program(program)
-    policy = state.debt_cadence_policy
-    if (policy is None or
-            not {policy.bounded_debt_grade_id,
-                 policy.progression_priority_grade_id} <= set(state.active_grades)):
-        return False
-    debt = set(state.carried_mastery_debt)
-    return bool(debt & set(_caps(program, (policy.bounded_debt_grade_id,)))) and bool(
-        debt & set(_caps(program, (policy.progression_priority_grade_id,))))
-
-
-def _debt_run_due(program, state: SchoolState) -> bool:
-    return (_debt_cadence_mode(program, state) and
-            state.non_b_training_turns_since_b_run >=
-            state.debt_cadence_policy.non_debt_turns_per_run)
-
-
-def _debt_run_queue(program, state: SchoolState,
-                    scores: dict[str, Score],
-                    allowed_capabilities: tuple[str, ...] | None = None
-                    ) -> tuple[str, ...]:
-    """Return the imperfect admitted capabilities for the policy's debt role."""
-    if not _debt_cadence_mode(program, state):
-        return ()
-    allowed = set(scores) if allowed_capabilities is None else set(allowed_capabilities)
-    debt = set(state.carried_mastery_debt)
-    bounded_grade_id = state.debt_cadence_policy.bounded_debt_grade_id
-    return tuple(
-        capability for capability in _caps(program, (bounded_grade_id,))
-        if capability in allowed and capability in debt and
-        capability in scores and not scores[capability].perfect)
 
 
 def _enter_due_debt_run(program, state: SchoolState,
@@ -81,27 +51,22 @@ def _enter_due_debt_run(program, state: SchoolState,
     return replace(entered, queue=queue)
 
 
-def _imperfect_ranked(scores: dict[str, Score],
-                      capabilities: tuple[str, ...]) -> tuple[str, ...]:
-    return tuple(sorted(
-        (capability for capability in capabilities
-         if capability in scores and not scores[capability].perfect),
-        key=lambda capability: (scores[capability].accuracy, capability),
-    ))
-
-
-def _frontier_recovery_queue(program, state: SchoolState,
-                             scores: dict[str, Score],
-                             pool: tuple[str, ...]) -> tuple[str, ...]:
-    """Limit priority recovery to the role named by an active policy."""
-    if not _debt_cadence_mode(program, state):
-        return weakest_three(scores, pool)
-    allowed = set(pool)
-    priority_grade_id = state.debt_cadence_policy.progression_priority_grade_id
-    ranked = _imperfect_ranked(
-        scores, tuple(cap for cap in _caps(program, (priority_grade_id,))
-                      if cap in allowed))
-    return ranked[:3]
+def _enter_mature_debt_repair(program, state: SchoolState, *,
+                              allowed_capabilities: tuple[str, ...] | None = None,
+                              reset_sweep: bool = True) -> SchoolState | None:
+    grade = _mature_debt_repair_grade(program, state)
+    if grade is None:
+        return None
+    queue = _mature_debt_repair_queue(
+        program, state, grade, allowed_capabilities=allowed_capabilities)
+    if not queue:
+        return None
+    entered = _enter_grade(
+        program, state, state.active_grades.index(grade),
+        stage="MAIN", first_recovery=(),
+        main_sweep_visited=() if reset_sweep else state.main_sweep_visited,
+        latest_rubric_digest=state.latest_rubric_digest)
+    return replace(entered, queue=queue)
 
 
 def migrate_legacy_debt_cadence_policy(program, state: SchoolState) -> SchoolState:
@@ -221,7 +186,8 @@ def start_new(program, initial_student: Checkpoint, *,
 
 
 def visit(program, state: SchoolState, capability: str,
-          student_after_visit: Checkpoint) -> SchoolState:
+          student_after_visit: Checkpoint, *, retention_frontier: dict | None = None
+          ) -> SchoolState:
     """Record a completed human-run visit. Caller supplies the admitted full student.
 
     A rejected candidate leaves the complete student checkpoint unchanged.
@@ -255,7 +221,9 @@ def visit(program, state: SchoolState, capability: str,
                    frontier_priority_visits=frontier_priority_visits,
                    nongating_b_visits=nongating_b_visits,
                    non_b_training_turns_since_b_run=(
-                       non_b_training_turns_since_b_run))
+                       non_b_training_turns_since_b_run),
+                   mature_capability_debt=_apply_mature_debt_frontier(
+                       program, state, retention_frontier))
 
 
 def require_assessment_after_flash(program, state: SchoolState) -> SchoolState:
@@ -317,6 +285,11 @@ def _resume_ordinary_spiral(program, state: SchoolState,
                             snapshot: Assessment, *,
                             allowed_capabilities: tuple[str, ...] | None = None,
                             reset_sweep: bool = True) -> SchoolState | None:
+    mature_repair = _enter_mature_debt_repair(
+        program, state, allowed_capabilities=allowed_capabilities,
+        reset_sweep=reset_sweep)
+    if mature_repair is not None:
+        return mature_repair
     if _debt_cadence_mode(program, state):
         due = _enter_due_debt_run(
             program, state, snapshot,
@@ -371,6 +344,11 @@ def _continue_main_sweep(program, state: SchoolState,
     visited = state.main_sweep_visited
     if state.grade not in visited:
         visited = visited + (state.grade,)
+    mature_repair = _enter_mature_debt_repair(
+        program, state, allowed_capabilities=allowed_capabilities,
+        reset_sweep=False)
+    if mature_repair is not None:
+        return mature_repair
     if _debt_cadence_mode(program, state):
         due = _enter_due_debt_run(
             program, state, snapshot,
@@ -1127,6 +1105,9 @@ def read_state(path: Path, program) -> SchoolState:
     raw["pending_failures"] = tuple(raw["pending_failures"])
     raw["main_sweep_visited"] = tuple(raw.get("main_sweep_visited", ()))
     raw["carried_mastery_debt"] = tuple(raw.get("carried_mastery_debt", ()))
+    raw["mature_capability_debt"] = tuple(
+        (capability, amount)
+        for capability, amount in raw.get("mature_capability_debt", ()))
     legacy_debt_cadence_policy = "debt_cadence_policy" not in raw
     legacy_b_full_run_epoch = "non_b_training_turns_since_b_run" not in raw
     legacy_promotion_sweep_attempt_epoch = restore_promotion_attempt_fields(raw)

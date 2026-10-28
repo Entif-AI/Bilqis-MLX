@@ -1443,9 +1443,52 @@ verification run after this code excision.
 `1324082` was active may still contain the exact Grade-A predicates provider
 descriptor introduced by that commit (`source.micro.predicates/v1`, implementation
 `f8e5aec...`, including `generalization-only-source-context-v3`). After the
-wholesale revert the runtime provider returns to implementation `4295399...`
-without that generalization-only axis. Resume may recognize exactly that one-way
+wholesale revert and ADR-100 developmental-presentation correction, the runtime
+provider uses implementation `c451c3e...` without that generalization-only axis.
+Resume may recognize exactly that one-way
 descriptor pair as the ADR-099 rollback of the same provider. This is not a
 general provider-drift exemption: any other adapter identity, hash, axis, oracle,
 generator, release, teaching option, or profile difference still fails closed.
+
+
+## ADR-100 | 2026-10-27 | Bounded mature-grade debt with active repair
+
+**User-directed replacement for the failed cumulative anti-ratchet.** Later-grade
+optimization may temporarily spend a small amount of already-graduated skill,
+because requiring every local candidate to match an older historical peak made
+the admissible region collapse. The opposite extreme is also unacceptable:
+before the failed anti-ratchet, Grade-B optimization could slowly erode Grade A
+for hours. Retention therefore needs a bounded memory budget plus an explicit
+repair loop.
+
+For every retained candidate with measured fixed-frontier evidence, each
+previously-correct row lost in an already-graduated capability adds one unit of
+`mature_capability_debt`. Each repaired row pays one unit back for that same
+capability, clamped at zero. This ledger is derived only from successive
+current-parent comparisons. It does not compare a challenger to an older
+checkpoint and cannot resurrect ADR-098's historical-anchor deadlock.
+
+The initial control thresholds are deliberately small and inspectable. A mature
+grade with at least **2** debt answers enters repair priority. The scheduler
+routes the indebted capabilities through their ordinary same-grade MAIN pass,
+which naturally restores direct access to that grade's earned champion and
+frozen-soup guidance. A mature grade may carry at most **4** debt answers without
+additional restriction. A candidate that would increase that grade above 4 is
+rejected as `MATURE_GRADE_DEBT_LIMIT`. Holding or reducing debt is allowed even
+when the ledger is already at or above the limit, so repair is never blocked by
+the safeguard itself. The repair pressure releases once debt falls below the
+2-answer trigger.
+
+Existing pre-ADR-100 runs decode with an empty prospective ledger. Do not invent
+retroactive debt from fresh-cohort score differences. The current recovery run
+already owes an ordinary Grade-A MAIN pass through its existing curriculum debt,
+so it receives an immediate opportunity to repair current A weakness without a
+fabricated migration score.
+
+Separately, ordinary developmental Grade-A presentation returns to plain
+`draw_predicates()` rows. The source-valid contextual/irrelevant presentation is
+retained as dormant research machinery rather than mixed into routine learning
+or examination. This is the presentation separation that was useful inside
+`1324082`, reintroduced independently under ADR-097 without restoring any of the
+offending commit's retention mechanics.
 

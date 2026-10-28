@@ -634,6 +634,49 @@ class CausalTeacherExperimentTests(unittest.TestCase):
                          frontier["regressions"])
         self.assertEqual(result["fixed_whole_school_net_correct_delta"], 0)
 
+    def test_mature_debt_budget_blocks_only_new_loss_beyond_hard_limit(self):
+        paired = {
+            "B.IFF": {"before": 8, "after": 9, "total": 12},
+            "B.NOT": {"before": 10, "after": 10, "total": 12},
+        }
+        frontier = {
+            "status": "MEASURED", "cohort_sha256": "a" * 64,
+            "rows": 144, "before_correct": 120, "after_correct": 121,
+            "regressions": [{"id": "a-loss", "capability": "A.MAPS"}],
+            "repaired": [
+                {"id": "b-gain-1", "capability": "B.IFF"},
+                {"id": "b-gain-2", "capability": "B.IFF"},
+            ],
+            "grades": {
+                "A": {"before": 58, "after": 57, "total": 72,
+                      "net_correct_delta": -1},
+                "B": {"before": 62, "after": 64, "total": 72,
+                      "net_correct_delta": 2},
+            },
+        }
+        common = dict(
+            active_capability="B.IFF", phase="RECOVERY_2",
+            protected={"B.NOT"}, settings=Settings(),
+            mature_grades=frozenset({"A"}),
+            same_grade_capabilities=("B.IFF", "B.NOT"),
+            fixed_grade_replay={"status": "MEASURED", "grade": "B",
+                                "before": 62, "after": 64, "total": 72,
+                                "cohort_sha256": "a" * 64},
+            fixed_frontier_replay=frontier,
+            protected_frontier_grade="B",
+        )
+
+        within_budget = decide(
+            paired, mature_capability_debt={"A.MAPS": 3}, **common)
+        self.assertEqual(within_budget["decision"], "PROVISIONAL")
+        self.assertEqual(within_budget["projected_mature_grade_debt"], {"A": 4})
+
+        blocked = decide(
+            paired, mature_capability_debt={"A.MAPS": 4}, **common)
+        self.assertEqual(blocked["decision"], "REJECT")
+        self.assertEqual(blocked["reason"], "MATURE_GRADE_DEBT_LIMIT")
+        self.assertEqual(blocked["projected_mature_grade_debt"], {"A": 5})
+
     def test_fixed_frontier_rejects_when_school_loses_more_than_grade_gains(self):
         paired = {
             "B.IFF": {"before": 8, "after": 9, "total": 12},

@@ -3,7 +3,9 @@ from pathlib import Path
 import unittest
 
 from bilqis_mlx.live_grade_a import draw_predicates, live_course
-from bilqis_mlx.source_adapters.grade_a_presentation import draw_a as draw_a_presentation
+from bilqis_mlx.source_adapters.grade_a_presentation import (
+    draw_a as draw_a_presentation, draw_a_contextual,
+)
 from bilqis_mlx.grade_a_release import accepted_grade_a
 from bilqis_mlx.generated_assessment import make_cohort
 from bilqis_mlx.trainer import _persist_live_cohort, _verify_saved_cohort
@@ -43,7 +45,7 @@ class LiveGradeAGenerationTests(unittest.TestCase):
                             make_cohort(another, generator_version="grade-a-live/v1",
                                         seed=834, rubric_version="A/live/v1").digest)
 
-    def test_contextual_provider_preserves_all_grade_a_source_oracles(self):
+    def test_routine_provider_uses_plain_grade_a_presentation(self):
         import torch
         from bilqis_mlx.source_adapters.school import live_source_registry
         graph = torch.load(SOURCE, map_location="cpu", weights_only=True)["graph"]
@@ -56,23 +58,19 @@ class LiveGradeAGenerationTests(unittest.TestCase):
                 "A.MEMBER", "A.EDGE", "A.MAPS"):
             base = draw_predicates(ROOT, graph, seed=377, each=12,
                                    capability=capability)
-            rows = draw_a_presentation(
+            rows = adapter.draw(
                 source_root=ROOT, graph=graph, course=None,
                 capability=capability, seed=377, each=12)
-            self.assertEqual([row["gold"] for row in rows],
-                             [row["gold"] for row in base])
+            self.assertEqual(rows, tuple(base))
             self.assertTrue(all(adapter.check(
                 row, source_root=ROOT, graph=graph, course=None) for row in rows))
-            self.assertTrue(any(
-                row["id"] != original["id"] and row["tokens"] != original["tokens"]
-                for row, original in zip(rows, base)))
 
     def test_member_context_expands_the_fresh_false_size3_source_space(self):
         import torch
         graph = torch.load(SOURCE, map_location="cpu", weights_only=True)["graph"]
         identities = set()
         for seed in range(12):
-            rows = draw_a_presentation(
+            rows = draw_a_contextual(
                 source_root=ROOT, graph=graph, course=None,
                 capability="A.MEMBER", seed=seed, each=12)
             for row in rows:

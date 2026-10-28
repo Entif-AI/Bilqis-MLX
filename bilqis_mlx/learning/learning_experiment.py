@@ -21,6 +21,7 @@ import random
 from typing import Mapping
 
 import numpy as np
+import bilqis_mlx.mature_debt as _mature_debt
 
 from bilqis_mlx.learning.teacher_feedback import (
     LearningExperimentError, WeaknessTargetError, WeaknessTargetRequest,
@@ -274,8 +275,7 @@ def _retention_reason(*, no_target_gain, same_grade_net_gain,
         return "NO_MEASURABLE_TARGET_GAIN"
     if not frontier_measured and fragile_losses:
         return "FRAGILE_COMPOSITION_REPLAY_REGRESSION"
-    if exceeded:
-        return "PROTECTED_CAPABILITY_REGRESSION"
+    if exceeded: return "PROTECTED_CAPABILITY_REGRESSION"
     if not frontier_measured:
         if same_grade_net_gain < 0:
             return "SAME_GRADE_NET_REGRESSION"
@@ -332,11 +332,9 @@ def _validate_source_cohort_sha256(value):
             (len(value) != 64 or
              any(char not in "0123456789abcdef" for char in value))):
         raise ValueError("LEARNING_EXPERIMENT_COHORT_DIGEST_INVALID")
-
-
 def decide(paired: dict, *, active_capability: str, phase: str,
            protected: set[str], settings: Settings,
-           mature_grades: frozenset[str] = frozenset(),
+           mature_grades: frozenset[str] = frozenset(), mature_capability_debt: dict[str, int] | None = None,
            negative_prototypes: list[dict] | None = None,
            source_cohort_sha256: str | None = None,
            fragile_replay: dict | None = None,
@@ -392,6 +390,7 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         frontier_measured=frontier_measured,
         fragile_losses=fragile_losses,
         exceeded=exceeded)
+    projected_mature_debt, reason = _mature_debt.retention_reason(reason, frontier, mature_grades, mature_capability_debt or {})
     return {
         "version": VERSION,
         "decision": ("REJECT" if reason != "PAIRED_SCREEN_WITHIN_BUDGET"
@@ -412,6 +411,7 @@ def decide(paired: dict, *, active_capability: str, phase: str,
         "protected_tolerances": tolerances,
         "mature_protected_capabilities": sorted(cap for cap in regressions
                                                  if cap.partition(".")[0] in mature_grades),
+        "projected_mature_grade_debt": projected_mature_debt, "mature_grade_debt_hard_limit": _mature_debt.HARD_LIMIT,
         "exceeded": exceeded,
         "worst_protected_loss": max(regressions.values(), default=0),
         "local_correct_delta": active_gain,

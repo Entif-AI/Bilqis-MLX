@@ -10,8 +10,8 @@ from .curriculum_definition import (
 )
 
 
-_GRADE_A_PRE_1324082_IMPLEMENTATION = (
-    "4295399599bd7e503ce39a98568d240f83022392e6e7d580861beee144398660")
+_GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION = (
+    "c451c3e6bf5ab538450c691d504230036b9a729ddfc67b53163c6a1f106d62a9")
 _GRADE_A_1324082_IMPLEMENTATION = (
     "f8e5aec9398538adc633deabe9c41c485e69a96044b9b86a5f1075ce6e201778")
 _GRADE_A_BASE_VARIATION_AXES = (
@@ -44,11 +44,11 @@ def _is_1324082_rollback_adapter_pair(admitted, current) -> bool:
         admitted.teaching_option_ids == current.teaching_option_ids == () and
         admitted.profile_dimensions == current.profile_dimensions == () and
         admitted.implementation_sha256 == _GRADE_A_1324082_IMPLEMENTATION and
-        current.implementation_sha256 == _GRADE_A_PRE_1324082_IMPLEMENTATION and
+        current.implementation_sha256 == _GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION and
         len(admitted.cohort_releases) == len(current.cohort_releases) == 1 and
         admitted.cohort_releases[0][0] == current.cohort_releases[0][0] and
         admitted.cohort_releases[0][1] == _GRADE_A_1324082_IMPLEMENTATION and
-        current.cohort_releases[0][1] == _GRADE_A_PRE_1324082_IMPLEMENTATION and
+        current.cohort_releases[0][1] == _GRADE_A_DEVELOPMENT_PRESENTATION_IMPLEMENTATION and
         admitted.variation_axes == _GRADE_A_1324082_VARIATION_AXES and
         current.variation_axes == _GRADE_A_BASE_VARIATION_AXES)
 

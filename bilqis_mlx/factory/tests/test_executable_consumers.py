@@ -148,11 +148,11 @@ class ExecutableConsumerTests(unittest.TestCase):
             generator_id="bilqis_mlx.grade_a_probe.make_record",
             accepted_oracle_ids=("bilqis.mlx.grade-a-record-oracle/v2",),
             implementation_sha256=(
-                "4295399599bd7e503ce39a98568d240f83022392e6e7d580861beee144398660"),
+                "c451c3e6bf5ab538450c691d504230036b9a729ddfc67b53163c6a1f106d62a9"),
             cohort_generator_id="bilqis.mlx.grade-a-live-constructor/v1",
             cohort_releases=((
                 "bilqis.mlx.grade-a-live/20261015",
-                "4295399599bd7e503ce39a98568d240f83022392e6e7d580861beee144398660",
+                "c451c3e6bf5ab538450c691d504230036b9a729ddfc67b53163c6a1f106d62a9",
             ),),
             variation_axes=(
                 "source-valid", "balanced-gold", "fresh-seed",

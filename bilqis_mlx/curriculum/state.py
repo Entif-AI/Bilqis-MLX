@@ -7,6 +7,11 @@ from enum import Enum
 import hashlib
 
 from bilqis_mlx.errors import ErrorBus, SCHOOL
+from bilqis_mlx.mature_debt import (
+    HARD_LIMIT as MATURE_DEBT_HARD_LIMIT,
+    REPAIR_THRESHOLD as MATURE_DEBT_REPAIR_THRESHOLD,
+    RELEASE_THRESHOLD as MATURE_DEBT_RELEASE_THRESHOLD,
+)
 from bilqis_mlx.learning.champions import Checkpoint
 from bilqis_mlx.factory.schedule import ScheduleProgram
 from .promotion import PromotionError, _verify_promotion_sweep_state
@@ -216,6 +221,11 @@ class SchoolState:
     # Absent on old receipts only until the neural-inert ADR-094 migration.
     # New schedules receive a policy only when one is explicitly supplied.
     debt_cadence_policy: DebtCadencePolicy | None = None
+    # Net fixed-cohort damage carried by already-graduated capabilities.
+    # Counts are local parent-to-candidate losses accumulated across retained
+    # updates. Repair candidates pay these counts back; no historical
+    # checkpoint becomes an admission baseline.
+    mature_capability_debt: tuple[tuple[str, int], ...] = ()
 
     @property
     def grade(self) -> str:
@@ -339,6 +349,11 @@ def verify_state(program, state: SchoolState):
     if state.carried_mastery_debt and state.stage in (
             "AWAITING_NEXT_GRADE", "WHOLE_SCHOOL_MASTERED"):
         ErrorBus.raise_legacy(SCHOOL.STATE.CARRIED_MASTERY_DEBT_AT_COMPLETION_BOUNDARY)
+    mature_debt = state.mature_capability_debt
+    if (len({capability for capability, _ in mature_debt}) != len(mature_debt) or
+            any(capability not in all_active_caps or type(amount) is not int or amount < 1
+                for capability, amount in mature_debt)):
+        ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_MATURE_CAPABILITY_DEBT)
     current = next(g for g in program.grades if g.id == state.grade)
     if state.introduction_stage >= max(1, len(current.teaching_stages)):
         ErrorBus.raise_legacy(SCHOOL.STATE.INVALID_INTRODUCTION_STAGE)

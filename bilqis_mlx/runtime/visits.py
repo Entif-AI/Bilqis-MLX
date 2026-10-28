@@ -5,6 +5,7 @@ import bilqis_mlx.curriculum.scheduler as _curriculum_scheduler
 import bilqis_mlx.diagnostics.teaching as _diagnostics_teaching
 import bilqis_mlx.factory.schedule as _factory_schedule
 import bilqis_mlx.learning.champion_confidence as _learning_champion_confidence
+import bilqis_mlx.mature_debt as _mature_debt
 import bilqis_mlx.learning.championship_runtime as _learning_championship_runtime
 import bilqis_mlx.learning.learning_experiment as _learning_learning_experiment
 import bilqis_mlx.learning.lesson_guidance as _learning_lesson_guidance
@@ -532,7 +533,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
                 fixed_grade_replay=fixed_grade_evidence,
                 fixed_frontier_replay=frontier,
                 protected_frontier_grade=_retention_frontier_grade(school),
-                mature_grades=frozenset(school.champions),
+                mature_grades=frozenset(school.champions), mature_capability_debt=_mature_debt.as_mapping(school),
                 negative_prototypes=teacher["causal_experiment"]["negative_archetypes"],
                 source_cohort_sha256=_runtime_state._fingerprint([
                     (r["id"],r["capability"],r["gold"],r["tokens"]) for r in probe_rows
@@ -597,7 +598,7 @@ def _take_visit(mx, run_dir, receipt, manifest, course, engine,
         raise ValueError("LEARNING_EXPERIMENT_RETAINED_ADAMW_STEP_DRIFT")
     # No new archive exists yet. The retained checkpoint is the last complete
     # recovery point, NOT a representation of these newly updated RAM weights.
-    school = _curriculum_scheduler.visit(_runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school, cap, school.current_student)
+    school = _curriculum_scheduler.visit(_runtime_release_adoption._schedule_for_receipt(run_dir, receipt, course), school, cap, school.current_student, retention_frontier=_mature_debt.retained_frontier(outcome))
     methodology = _diagnostics_teaching.summarize_teaching_visit(
         course, cap, tuple(methodology_steps),
         introductory=introduction_pass,
